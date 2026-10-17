@@ -1,0 +1,94 @@
+# Developing Stewart
+
+This project is independently buildable: runtime code lives in `src/stewart`,
+bundled guidance and launcher templates in `src/stewart/resources`, and tests
+in `tests`. Runtime dependencies are the Python standard library plus the
+declared external Git/shell prerequisites. Use the distribution's `_util` byte
+contracts; never import a containing repository's helpers or configuration.
+
+Preserve unrelated working-tree changes. Record execution state in temporary
+local plans, keep durable guidance stateless, and remove completed plans after
+their contracts reach documentation and tests. Do not add compatibility shims
+or rewrite historical receipts to fit a newer schema.
+
+Use an explicit interpreter with isolated startup (`-I`, plus `-B` where
+bytecode must stay unwritten) in development commands. Isolated mode ignores
+`PYTHONPATH`, so documented commands do not set it, and nothing selects a
+Stewart installation through it. Provision `requirements.lock`
+into a wheelhouse, then run `scripts/check.py` with the selected interpreter.
+It builds and tests an installed wheel with explicit pytest configuration and
+no parent plugins. Preserve command outputs and report actual selector counts.
+A clean result needs a firing control, a case differing in the measured
+property and an invariance case. An explanation remains a hypothesis until a
+comparison distinguishes it from its rivals. Qualify real harness enforcement
+separately from settings construction. Write useful CLI help, comments and
+failure messages along with implementation and tests.
+
+The custody rules are:
+
+- **Receipts are exclusive.** Create every record with `write_receipt`; never
+  open a session file for overwrite or use an atomic-replace writer here. A
+  retry gets a new record name. If a destination exists, that is evidence.
+- **Never follow a link the auditor could have planted.** Resolve session and
+  checkout paths through `contained`, read regular files through the verified
+  descriptor helpers in `_bootstrap.py`, and never read a FIFO, socket or device.
+  `contained` validates path shape and observed links; only descriptor-relative
+  traversal prevents a late ancestor replacement from redirecting a read.
+- **Record what was observed, who acknowledged what, and what the auditor
+  claimed, in separate fields.** No field may turn these into a grade,
+  deadline or verdict. If you parse anything from a report, attribute it.
+- **Declarations have one parser.** Auditor operations and custody consumers
+  use `report_declaration.validate_report_declaration` with explicit identities
+  and sources. Capture raw bytes first; validation cannot gate preservation.
+  Missing or invalid declarations are gaps, never prose-inferred completion.
+  Editable reports are not receipts: stage replacement bytes in the report's
+  directory, preserve surrounding bytes, and retain failed staging files.
+- **Refusals carry a `reason`.** Raise `StewartError` with a stable identifier,
+  the retained paths, and a next step; reason identifiers are part of the JSON
+  contract and tests assert on them.
+- **No workspace coordinates in logic.** Every assignment-facing path derives
+  from the `Workspace`. Behavioral tests run the tool at unrelated and nested
+  workspace paths; no scanner can recognize every possible workspace literal.
+- **Import stays side-effect free.** The package surface loads lazily; keep
+  Git, filesystem and subprocess work inside operations, never at import or in
+  parser construction.
+- **Callable API lives in `api.py`.** Package submodule names remain modules;
+  do not export a function under the same name on the package object.
+- **Verify the evidence being summarized.** Experiment rows are captured before
+  parsing, operands determine disagreements, and the released review determines
+  case membership. Input identity comes from preparation, not a rewritten
+  manifest. Submitted responses carry their collection name and receipt digest;
+  identical report bytes cannot stand in for collection identity. Submission and
+  disposition revalidation share that comparison. Status and mutations use the
+  same disposition binding validation.
+- **Measurement membership is reviewed.** Each admitted case's released IDs
+  must occur exactly once. Row counts, a firing control and the child's own
+  declaration cannot substitute for that set. Counts exclude ambiguous or
+  unreviewed measurement identities; scientific interpretation stays with the manager.
+- **Control JSON cannot choose among repeated keys.** Assignment metadata,
+  declarations, CLI inputs, input/protected manifests, launch profiles, custody
+  records and evidence-package metadata use `_json.loads_control`. Reject nested,
+  identical and escape-equivalent repeats before interpreting control fields.
+  API callers own decoding before supplying dictionaries. Raw child ledger and
+  receipt decoding stay separate; capture and package payloads preserve their
+  bytes without imposing the control rule. A matching hash is not permission to
+  choose among competing fields, and invalid historical records stay untouched.
+- **Handoffs use captured bytes.** Retention, export and status's release capture
+  associations share `captured.py` for archive/member verification. Discovery
+  digests select candidates; they never establish recoverable captures. Status
+  verifies at read time and leaves historical receipts unchanged.
+  An evidence package pins its source receipt and
+  explicit selections; importing it conveys custody, never execution permission
+  or acceptance of its claims. Never fall back to a live worktree file.
+- **Recovery preserves failure.** A failed preparation keeps its session and
+  gets a fresh assignment. Status names the observed stage and prerequisites,
+  without inferring auditor completion or experiment readiness. Only a missing
+  completed receipt supports a partial/unresolved label; an invalid or unreadable
+  record keeps its diagnostics. Failed release reads must not require success-only
+  fields or produce capture associations and run suggestions.
+- **Child ledger loading is independent of project imports.** `ledger.py`
+  depends on the standard library only. The private launcher preloads its pinned
+  bytes as `_stewart_ledger_v1` before admitting the script directory and project
+  root. Project `tools` and `stewart` remain legitimate names. Check the reserved
+  ledger namespace at release, prelaunch and startup; never catch project
+  exceptions as bootstrap refusals.

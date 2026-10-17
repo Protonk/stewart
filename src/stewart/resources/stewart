@@ -1,0 +1,16 @@
+#!/bin/sh
+# The companion's shebang is bound by the wheel installer. No Python process
+# starts before -I, so caller PYTHONHOME/PYTHONPATH cannot select startup code.
+set -eu
+case "$0" in
+  */*) stewart_bin=${0%/*} ;;
+  *) printf '%s\n' 'Invoke this launcher by its installed path.' >&2; exit 2 ;;
+esac
+stewart_bin=$(CDPATH= cd -P -- "$stewart_bin" && pwd)
+stewart_bootstrap="$stewart_bin/_stewart-python"
+IFS= read -r stewart_shebang < "$stewart_bootstrap"
+case "$stewart_shebang" in
+  '#!'/*) stewart_python=${stewart_shebang#\#!} ;;
+  *) printf '%s\n' 'The wheel installer did not bind the Python interpreter.' >&2; exit 2 ;;
+esac
+exec "$stewart_python" -I -B "$stewart_bootstrap" "$@"
