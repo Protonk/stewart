@@ -17,4 +17,12 @@ then fill the collection-bound triage deliberately. Publish only reviewed
 captured bytes. A changed question or grant needs a fresh assignment. Imported
 evidence supplies custody, not execution permission. Resume paused writers only
 after a recorded disposition and actual communication through your own channel.
-Stewart launches no agent, sends no messages, stages no files and deletes no worktree.
+Export anything worth keeping beyond retained files, then close the audit.
+Stewart launches no agent, sends no messages and stages no files. Only `close`
+deletes, and it removes only what its session recorded.
+
+Exit 0 means nothing needs your attention. 1 lists items within your role:
+rerun, or record a decision in triage. 2 refused and did nothing: fix the
+command or its preconditions. 3 means something you did not produce does not
+verify: inspect it, then recover or abandon. Codes never judge the audit's
+content.

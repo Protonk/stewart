@@ -80,8 +80,12 @@ The custody rules are:
   An evidence package pins its source receipt and
   explicit selections; importing it conveys custody, never execution permission
   or acceptance of its claims. Never fall back to a live worktree file.
-- **Recovery preserves failure.** A failed preparation keeps its session and
-  gets a fresh assignment. Status names the observed stage and prerequisites,
+- **Recovery preserves failure.** While an audit is live, a failed preparation
+  keeps its session and every failure record. `close` is the only deletion: it
+  is explicit and gated, writes its closing record first, and removes only what
+  the session recorded. An abandoned audit ID is released only under the
+  mechanical rule that `init` and `prepare` reapply; otherwise a fresh
+  assignment is needed. Status names the observed stage and prerequisites,
   without inferring auditor completion or experiment readiness. Only a missing
   completed receipt supports a partial/unresolved label; an invalid or unreadable
   record keeps its diagnostics. Failed release reads must not require success-only

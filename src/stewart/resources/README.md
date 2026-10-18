@@ -4,9 +4,10 @@ Stewart owns the mechanical side of a managed audit: initializing an
 assignment, preparing a disposable detached checkout, collecting evidence from a
 stopped auditor, recording collection-bound maintainer dispositions, publishing
 reviewed bytes, exporting selected captures for another assignment, releasing a
-paused hold, and inspecting a session. It never
-launches an agent, runs project tests, commits, imports implementation changes,
-or deletes a worktree.
+paused hold, inspecting a session, and closing a finished or abandoned audit.
+It never launches an agent, runs project tests, commits or imports
+implementation changes. Only `close` deletes, and only what its session
+recorded.
 
 The managing agent or maintainer owns everything the tool does not: the
 question, the decision it informs, source selection, admissibility reasoning,
@@ -28,14 +29,29 @@ grant permissions or add question types to the assignment schema.
   (`AUDITOR.md`), the maintainer guidance (`MAINTAINER.md`), the single assignment
   (`PROMPT.md`), retained `reports/` and declared `scratch/` areas. The tool
   takes it as `--workspace` and derives every assignment-facing path from it.
-- **Session**: private records under `.scratch/stewart/<slug>/<audit-id>/` in
-  the maintainer checkout, where `<slug>` is the workspace's last path component
-  plus a digest of its full relative path. Two workspaces that share an audit ID
-  cannot address each other's evidence. Sessions are ignored by Git and may
-  hold sensitive or large inputs.
-- **Receipts** are append-only. Every record is created exclusively; a retry
-  writes a new record with a fresh `<UTC stamp>-<8 hex>` name. Timestamps say
-  when the maintainer ran a command, never when the auditor started or finished.
+- **Session**: private records under
+  `<git-common-dir>/stewart/sessions/<slug>/<audit-id>/`, where `<slug>` is the
+  workspace's last path component plus a digest of its full relative path. Two
+  workspaces that share an audit ID cannot address each other's evidence.
+  Sessions live in Git's administration, outside every working tree: no ignore
+  rule is needed and `git clean` cannot remove them. They may hold sensitive or
+  large inputs. Sessions are repo-wide, so every linked maintainer worktree sees
+  the same audit IDs, but each belongs to the maintainer checkout that prepared
+  it; other checkouts are refused with `session_other_maintainer`.
+- **Checkout directory**: each session's auditor material lives at
+  `<checkout-home>/<repo-key>/<session-uuid>/`: the detached `worktree/`, the
+  supplied `runtime/`, any `runtime-recovered-<name>/` and experiment homes at
+  `attempts/<name>/home`. `<repo-key>` is the repository's name plus a digest of
+  its common directory. The default checkout home is
+  `~/.local/state/stewart/checkouts`; `prepare --checkout-home PATH` selects
+  another. The name carries neither the audit ID nor the workspace.
+- **Receipts** are append-only while an audit is live. Every record is created
+  exclusively; a retry writes a new record with a fresh `<UTC stamp>-<8 hex>`
+  name. Timestamps say when the maintainer ran a command, never when the
+  auditor started or finished.
+- **Closing records**: `close` retires an audit and keeps one record under
+  `<git-common-dir>/stewart/closed/<slug>/<audit-id>/<session-uuid>/`. Stewart
+  never removes closing records.
 
 ## Manager quick start
 
@@ -125,28 +141,31 @@ administrative directory, observed path and a lifetime UUID, also stored in
 `stewart-auditor.json` inside that worktree's administrative directory. Moving
 the checkout preserves its marker; removing it lets Git remove the marker with
 its administration. A later checkout can reuse the administrative directory's
-name without inheriting the old role. Reserved
-`.scratch/stewart/<slug>/<audit-id>/worktree` roots are refused even without a
-registry row. This distinguishes roles; it does not defend against compromised
-Git administration, including its role markers. Historical role records are
-exclusive and are not automatically removed. Preparation creates the worktree
-with a Git lock identifying its session UUID, then publishes the marker and role
-before unlocking. A failed registration keeps that lock, so even a forced move
-does not make the partial checkout a maintainer. Preserve it for inspection;
-do not unlock it merely to bypass role validation.
+name without inheriting the old role. A maintainer root inside a registered
+checkout directory is refused even without its marker. This distinguishes
+roles; it does not defend against compromised Git administration, including
+its role markers. Role rows are exclusive; only `close` removes a session's
+row. Preparation creates the worktree with the Git lock
+`stewart auditor registration <uuid>`, publishes the marker and role, then
+replaces it with the lifetime lock
+`stewart auditor checkout <uuid>: run stewart status before removing; close removes it with its session`.
+Git then refuses `worktree remove`, `move` and `prune` for the checkout; its
+removal goes through `close`. A failed registration keeps the registration
+lock, so even a forced move does not make the partial checkout a maintainer.
+Preserve it for inspection; do not unlock it merely to bypass role validation.
 
-Before preparation, exclude both `/.scratch/stewart/` and
-`/.scratch/stewart-runtimes/` in the project's ignore rules or the repository's
-`info/exclude`. Stewart requires a literal whole-directory rule for each root or
-an ancestor (for example, `/.scratch/`); child globs with exceptions are
-insufficient. It refuses tracked private storage and never changes or stages
-those rules automatically.
+The checkout home must be an absolute, unlinked directory private to the
+current user (mode 0700), outside every working tree of the repository, the Git
+common directory, the manager home and the interpreter prefix; each refusal
+names `checkout_home`. Preparation creates the session's checkout directory
+before the session itself, so a checkout home the manager's harness cannot
+write is refused with `manager_grant_missing` before the audit ID is used.
 
 Preparation records a session UUID and atomically creates
 `refs/stewart/sessions/<uuid>/{prompt,target,base}` (base only when assigned).
 Create-only refs keep those commits reachable after branch movement, reflog
-expiry or auditor worktree removal. They remain for failed preparations too;
-Stewart performs no automatic ref cleanup. Recovery verifies their exact names
+expiry or auditor worktree removal. They remain while the audit is live, failed
+preparations included; only `close` removes a session's refs. Recovery verifies their exact names
 and objects and refuses symbolic substitutions. Each create rejects even an
 existing dangling symbolic ref without changing its target. Stewart checks for
 symbolic names after Git prepares and locks every ref, before committing the
@@ -162,7 +181,7 @@ Conflicting or unreadable role registry records refuse manager operations.
 Historical evidence is never relabeled to the current session schema.
 
 The source launcher deploys the selected source into a private, complete runtime tree under
-`~/.cache/stewart/managers` (override with `STEWART_MANAGER_HOME` or the source
+`~/.local/state/stewart/managers` (override with `STEWART_MANAGER_HOME` or the source
 launcher's `--manager-home`). Overrides must be absolute, unlinked paths, private
 to the current user (mode 0700). Keep this manager-owned directory outside auditor
 grants; ownership/mode checks cannot establish a harness's effective grants.
@@ -226,12 +245,20 @@ commands and refusal/recovery behavior:
 1. [Select the question](QUESTION-TYPE.md#choose-a-question) and [prepare readable evidence](#prepare-readable-evidence).
    Use `init` to pin inputs and draft metadata. Author the five prose sections
    and remove `UNASSIGNED`; the manager decides question quality and scope.
-   For a multi-file specimen, add `--input-manifest .scratch/audit-inputs/ID.json`
-   to keep per-file identities and shared provenance out of the readable prompt.
-2. Commit `PROMPT.md` alone. Arrange Git administrative-write authorization in
-   the harness before calling `prepare`: worktree creation writes Git metadata
-   after allocating an exclusive session. Failed preparation is preserved and
-   requires a fresh audit ID, even if no worktree was created.
+   For a multi-file specimen, add `--input-manifest audit-inputs/ID.json`
+   (an uncommitted path of your choosing) to keep per-file identities and
+   shared provenance out of the readable prompt.
+2. Commit `PROMPT.md` alone. Arrange write authorization in the manager's
+   harness before calling `prepare`: every custody-writing command (`prepare`,
+   `launch`, `message`, `collect`, `triage`, `retain`, `resume`, `close`,
+   `recover-runtime` and the experiment commands) writes
+   `<git-common-dir>/stewart`, and `prepare`, `recover-runtime` and experiment
+   runs also write the checkout home; `close` removes from both. `status`
+   names both locations, and a
+   permission failure is refused with `manager_grant_missing` naming the one to
+   allow. A failed preparation is preserved; `close --abandon` retires it, and
+   releases the audit ID only when nothing could have used it
+   ([recovery](#failure-and-interruption-recovery)).
 3. Prepare a snapshot. With a [launch profile](#launch-profile) in the
    workspace, `prepare` prints the finished terminal command; paste it and
    record the handoff with `launch --from-profile`. Without one, give the
@@ -246,6 +273,9 @@ commands and refusal/recovery behavior:
 5. Run the named collection's `triage-draft`, review its captured bytes, fill
    the response and submit `triage`. Retain only reviewed material. Snapshot
    audits need no resume; paused holds require a recorded release and communication.
+6. Export anything worth keeping beyond the retained files, then `close` the
+   audit. It keeps one closing record and removes the session, its checkout,
+   refs and registry row.
 
 ## Prepare readable evidence
 
@@ -302,8 +332,9 @@ Small assignments can list inputs inline. For larger selections, `init
 --input-manifest PATH` factors the committed entry paths and supplemental pins
 into one inventory with a shared provenance dictionary. `PROMPT.md` carries its
 repo-relative path and SHA-256; the generated draft places prose before metadata.
-Use a fresh ignored path outside the writable audit scratch area, for example
-`.scratch/audit-inputs/one-bounded-question.json`.
+Use a fresh uncommitted path outside the writable audit scratch area, for
+example `audit-inputs/one-bounded-question.json` under a directory the project
+ignores. Stewart itself writes nothing in the working tree.
 
 With `--replace-prompt`, the inventory is created exclusively after validation,
 then the prompt is replaced. Existing inventory destinations are refused; keep
@@ -339,14 +370,18 @@ permission. Keep the human evidence map and scope in the prompt.
    intervening differences confined to the workspace, and an assigned input must
    not be among those differences even when it lives inside the workspace.
 
-3. **Prepare.** `prepare` validates the committed prompt, creates the session
-   and the detached worktree at the prompt commit, copies supplemental bytes
-   and re-verifies every input digest. It supplies a separately scoped runtime,
-   retains pristine assets, and writes a public handoff under the worktree's
-   workspace at `.stewart-handoffs/<session-uuid>.md`. A pinned private copy
-   remains at `LAUNCH.md` inside the session.
-   The handoff prints absolute scratch paths and a read-only input-check command;
-   the conventional declared `notes` directory is created for the auditor.
+3. **Prepare.** `prepare` validates the committed prompt, creates the
+   session's checkout directory under the checkout home, then the session, and
+   the locked detached worktree at the prompt commit. It copies supplemental
+   bytes and re-verifies every input digest. It supplies a separately scoped
+   runtime beside the worktree, retains pristine assets in the session, and
+   writes a public handoff under the worktree's workspace at
+   `.stewart-handoffs/<session-uuid>.md`. A pinned private copy remains at
+   `LAUNCH.md` inside the session. The handoff names the worktree and the
+   supplied runtime, prints absolute scratch paths and a read-only input-check
+   command, and names no private session path, manager storage or harness
+   configuration; the conventional declared `notes` directory is created for
+   the auditor.
 
    ```sh
    "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review prepare --mode snapshot
@@ -388,27 +423,54 @@ permission. Keep the human evidence map and scope in the prompt.
 
 6. **Inspect.** `status` is read-only and reports what exists, what is broken,
    who acknowledged what, and which commands are available next.
-   It exposes absolute worktree, launch handoff and live report destinations,
-   plus a captured-report location for every named collection. Locations do not
-   certify availability or integrity: consult preparation state, report status
-   and collection problems. A live destination is never a substitute for capture.
+   It exposes the absolute worktree and launch handoff paths, the checkout's
+   Git lock, the manager's write locations, and a captured-report location for
+   every named collection. It prints no live report destination: only a
+   collection captures a report. Locations do not certify availability or
+   integrity: consult preparation state, report status and collection problems.
    Human output includes attributed stop kinds and declaration diagnostics with
    identity comparisons, including after triage. Unavailable completion is
    labeled explicitly; triage does not erase the underlying observation.
+   Without `--audit-id`, `status` lists every session of the workspace across
+   the repository, with its owning maintainer checkout, preparation state,
+   checkout, lock, complete collections and exit code, then the workspace's
+   closed audits.
 
    ```sh
    "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review status --audit-id one-bounded-question
+   "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review status
    ```
 
-   JSON uses `stewart.status/11`: `identities.worktree.path`,
-   `identities.live_report_path`, `preparation.launch_path` and
-   `collections[].report_path` are the locators. A ready checkout with no
+   The exit code reports news, never routine next steps. `attention` lists
+   each item with its code: a failed preparation, an interrupted one
+   (`preparation_incomplete`), a partial collection or unresolved attempt that is
+   still the latest word, gaps on the latest complete collection that no valid
+   triage has addressed, a nonzero harness exit with no collection, a session
+   written by a different build, and an unfinished close or its leftovers are 1.
+   Records that do not verify, a changed handoff (`handoff_changed`), a supplied
+   runtime that no longer verifies, and a checkout removed before any complete
+   collection (`worktree_missing`) are 3; a checkout removed after one is 1.
+   Gaps a valid triage addressed are history. A targeted view of a registered
+   session whose records are missing is refused (2, `session_records_missing`);
+   the listing reports that loss as 3. The listing's code is the highest of its
+   live entries; finished closes never count.
+
+   JSON uses `stewart.status/12`: `identities.worktree.path`,
+   `preparation.launch_path` and `collections[].report_path` are the locators;
+   `manager_storage` names the private and checkout-home write locations. The
+   listing uses `stewart.status-list/1`. The asset recovery command appears only
+   while the supplied runtime fails verification. A ready checkout with no
    collections offers a conditional manual `handoff` action carrying `cwd`,
    `launch` and an absolute `prompt`, without `argv` or an inferred launch
    state, followed by a `launch` action to record the handoff. Command actions
    carry isolated `argv`, an empty `env`, and `runtime` identity. Each untriaged complete
    collection offers `triage-draft` before `triage`; neither action accepts its
-   claims. `tool` is the viewer's build; `session.stewart` is the build that
+   claims. A failed or incomplete preparation offers `close --abandon`. A
+   concluded session offers `close` once its latest complete collection is
+   triaged, no paused hold or unresolved attempt remains, nothing else is
+   pending (a retention, release or run would need the bytes close removes),
+   and a fresh inventory equals that collection's. `closes` lists earlier closing records under the
+   same audit ID. `tool` is the viewer's build; `session.stewart` is the build that
    wrote the session and `session.same_build_as_viewer` compares them.
    `launches` and `messages` list the manager's coordination records. Each
    release carries `frozen_artifacts`, the frozen paths a collection can capture
@@ -478,13 +540,72 @@ permission. Keep the human evidence map and scope in the prompt.
    "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review resume --audit-id one-bounded-question --triage 20260101T121500-4e5f6a7b --reason "Findings triaged; follow-up selected."
    ```
 
+10. **Close.** Once the audit's durable outcome has left Stewart, through
+    retention or `export`, `close` retires it. Export anything else worth
+    keeping first: closing keeps no report bytes, patches or inventories.
+
+    ```sh
+    "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review close --audit-id one-bounded-question --actor "maintainer"
+    "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review close --audit-id one-bounded-question --actor "maintainer" --abandon --reason "Preparation failed before any handoff"
+    ```
+
+    A concluded close (the default) needs records that verify (otherwise
+    `close_unverified`, 3), a triage bound to a complete collection
+    (`close_not_concluded`), no outstanding paused hold
+    (`close_hold_outstanding`), no unresolved experiment attempt
+    (`close_attempt_unresolved`) and a checkout unchanged since that collection
+    (`checkout_changed`; collect and triage again, or abandon). `status` offers
+    `close` only when these hold for the latest complete collection and no
+    other action is pending. An
+    abandon (`--abandon --reason TEXT`) is allowed in any state, including
+    failed preparations and records that do not verify. It refuses while the
+    checkout holds changes no collection captured (`uncollected_changes`)
+    unless `--discard-uncollected` is given; the closing record then lists the
+    discarded paths and digests. A session whose directory is gone but whose
+    registry row remains can be abandoned through that row.
+
+    `close` writes `CLOSING.json` exclusively before removing anything:
+    identity, the acknowledgment (actor, mode, and an abandon's reason), the
+    observations it rests on (triage and collection digests, retained paths and
+    digests, or an abandon's observed stage, problems and release basis), the
+    auditor's attributed completion and report kind and the manager's
+    attributed decision, and the removal inventory. It then removes, in order,
+    the checkout (unlocked, then `git worktree remove`), its recorded runtimes
+    and experiment homes, the checkout directory if empty, the session's
+    `refs/stewart/sessions/<uuid>/*` (each with its expected value), the role
+    registry row, and the session directory last. Removal stops at the first
+    failure and records the attempt in `CLOSE-ATTEMPT-<stamp>.json`; `status`
+    reports the close as incomplete and a rerun of `close` finishes from the
+    recorded inventory, never a wider one. `CLOSED.json` records each removal's
+    outcome once nothing recorded remains. Unrecorded entries in the checkout
+    directory are left in place and named. Closing a paused session releases no
+    hold; tell the writers.
+
+    A concluded close keeps the audit ID reserved. An abandon releases it only
+    when no chain of evidence can exist under it: `PREPARE-ERROR.json` exists
+    and names a stage before the handoff, neither `LAUNCH.md` nor the public
+    handoff exists, the session has no launch record, harness exit record or
+    collection, and the checkout, if created, holds only preparation's
+    footprint. Every doubt keeps the ID reserved. `init` and `prepare` reapply
+    that rule to every closing record under the ID: a reserved ID is refused
+    with `audit_id_reserved`, an unfinished close with `close_incomplete`, and
+    an unreadable or unsupported record with `closing_record_invalid` (3). A
+    released ID may be prepared again from any prompt commit that carries it.
+    `status` on a closed ID shows the closed view (`stewart.status-closed/1`):
+    when and by whom it closed, the mode, the decision or reason, what was
+    retained, and whether the ID is `reserved`, `released`, `close_incomplete`
+    or `unverified`. Earlier closes are listed beside a live session for the
+    same ID.
+
 ## Manual terminal launch
 
 Use the absolute worktree and public handoff paths returned by `prepare` or
 `status`. A manual handoff requires explicit harness configuration: write access
-to the worktree, read-only access to the exact supplied runtime subtree, and no
-access to the private session parent, manager cache or role registry. Do not
-add the session directory or `.scratch` as a harness working directory. The
+to the worktree, read-only access to the exact supplied runtime subtree and to
+Git administration, and no access to `<git-common-dir>/stewart` (sessions, role
+registry and closing records), the maintainer checkout's other entries, other
+sessions' checkout directories or the manager home. Do not add the session
+directory or the checkout directory as a harness working directory. The
 handoff describes permitted operations; filesystem access is enforced by the
 harness, not by the prose or Stewart itself.
 
@@ -631,11 +752,15 @@ including missing, changed, linked or special entries. Expected committed bytes
 come from the target revision, not the working file being measured. Manifest
 identity is checked before using its population and again after observation.
 
-Default output prints counts and every failed row. `--print` adds all per-file
-expected/observed digests; `--json` prints one result/refusal document. Exit 0
-means every selected byte identity matches, 1 means completed with failed rows,
-and 2 means the context/manifest was refused or usage was invalid. Report failures
-without repairing inputs. These checks establish byte identity at read time,
+Default output prints counts and every failed row, each with its code and fix.
+`--print` adds all per-file expected/observed digests; `--json` prints one
+`stewart.input-check/2` result or refusal document. Exit 0 means every selected
+byte identity matches. 1 means a committed input changed; restore it with the
+printed `git show <prompt-commit>:<path> > <path>`, which writes only the
+working tree, and run the verifier again. 2 means the context was refused or
+usage was invalid. 3 means a supplemental input or the input manifest differs:
+its original bytes are not the auditor's to restore, so describe it in the
+report, declare, and stop. These checks establish byte identity at read time,
 not continuous preservation, reading coverage, permissions or scientific value.
 Auditors can keep checksum lists and verification output in their declared notes
 directory; harness scratchpads are not authorized substitutes.
@@ -653,10 +778,35 @@ it executes no audited code to test imports.
 `start` exclusively creates a partial skeleton at the committed assignment's
 report path. An occupied destination requires `set` or `check`, never automatic
 replacement. `set` replaces only the reserved block and preserves every other
-byte. `check` reads without writing: make it the last action before stopping.
-Every successful operation prints completion, report kind, audit ID, observed HEAD and report
-path; `--print` additionally prints the full validated JSON. Exit 0 means the
-operation validated; exit 2 names a stable refusal reason and correction step.
+byte. `start` and `set` refuse with `handoff_identity` when their arguments
+differ from the issued handoff. Every successful operation prints completion,
+report kind, audit ID, observed HEAD and report path; `--print` additionally
+prints the full validated JSON. Exit 0 means the operation validated; exit 2
+names a stable refusal reason and correction step.
+
+`check` reads without writing: make it the last action before stopping. It
+takes the session's identities from the issued handoff, which preparation names
+by its session UUID (other files beside it are ordinary unexpected paths), and
+runs the same report, inventory, Git discovery, archive and declaration
+observation a collection runs. Its `stewart.auditor-check/1` result lists every
+gap a collection of the unchanged checkout would record that the checkout
+alone can show, each with its code and the change that clears it, and its exit
+code predicts the manager's: 0 nothing to change, so stop; 1 change what is
+listed and run `check` again; 3 something the auditor cannot repair does not
+verify (a supplemental input that changed or is missing, a changed input
+manifest, an unavailable handoff): describe it in the report, declare, and
+stop. File fixes write only the working tree, because the qualified harness
+denies writes to Git administration, where the checkout's index lives: restore
+a committed file with `git show <prompt-commit>:<path> > <path>`, and move a
+stray file under a declared scratch path rather than deleting it. Staging a
+path or moving HEAD needed a Git administration write, and so does the fix:
+unstage with `git reset -q <prompt-commit> -- <path>`, and restore HEAD with
+`git reset --soft <prompt-commit>`. While the input manifest does not verify,
+`check` cannot tell which uncommitted files are supplied inputs, so it never
+suggests removing one. Arguments that differ from the handoff are reported as
+`command_mismatch:<field>` (1). Manager-side facts, such as movement during
+collection or a completion and stop discrepancy, are never `check`'s concern.
+Declared completion and report kind never change any code.
 
 A report contains exactly one unindented LF-delimited block, with no trailing
 fence spaces, BOM, duplicate keys, extra fields, nested block, or duplicate block:
@@ -692,14 +842,15 @@ bytes, verifies the transcribed prompt digest, and requires the working prompt
 to be byte-identical on every operation. It requires a detached HEAD at the
 transcribed launch commit, a worktree-style `.git` file, and an absolute
 `--expected-worktree` from the handoff matching the actual canonical Git root.
-An unexpected commit is reported, never hidden by resetting HEAD. Two detached
+An unexpected commit is reported; `check` names `git reset --soft` as its fix,
+which keeps the changes, and the report should mention the commit. Two detached
 worktrees at the same commit remain different destinations.
 
 The helper takes the launch token from the handoff without private session
 access. Only Stewart checks that it equals the issued value. This establishes
 agreement with a handoff value, not proof that anyone read or understood it, and
 is not a security measure. These checkout checks do not provide isolation.
-Session schema 11 pins declaration schema 2 as well as the token. Earlier
+Session schema 12 pins declaration schema 2 as well as the token. Earlier
 sessions and declarations are unsupported by this version and left unchanged.
 Use the pinned tool version to finish an ongoing older audit; do not relabel
 its declaration, rewrite its receipts, or replace its running checkout. From
@@ -805,20 +956,44 @@ producer run, scope expansion, or release of a paused hold.
 
 - **Preparation failure after session creation** exits 2 with reason
   `prepare_failed`, retained paths and recovery steps. `PREPARE-ERROR.json`
-  records the failed stage, whether Git worktree creation completed, and whether
-  a partial checkout exists. A never-created checkout is not reported as lost.
-  Preserve that session, correct the cause (including Git administration access
-  when relevant), and use a fresh audit ID and prompt-only commit. No in-place
-  preparation retry is supported; no failure releases a recorded writer hold.
+  records the failed stage (`retention`, `worktree`, `role`, `inputs`,
+  `runtime` or `handoff`), whether Git worktree creation completed, and whether
+  a partial checkout exists. A never-created checkout is not reported as lost,
+  and records a later stage would have written (retention refs, runtime
+  records) are reported as never written, not as missing. Correct the cause
+  (including write authorization for Git administration or the checkout home).
+  No in-place retry is supported. Retire the session with
+  `close --abandon --reason TEXT`: when the failure came before any handoff and
+  the checkout holds only preparation's footprint, the audit ID is released and
+  the same assignment may be prepared again. Otherwise use a fresh audit ID and
+  prompt-only commit. No failure releases a recorded writer hold.
+- **A checkout home the manager cannot write** is refused with
+  `manager_grant_missing` before any session exists, naming the location; the
+  audit ID is not used.
 - **Preparation status** distinguishes `ready`, `failed`, `incomplete` (no
-  launch handoff), and `worktree_missing` (handoff exists, checkout is gone).
-  It observes records and paths, never an auditor process. Failed or incomplete
-  preparation offers an `init` draft command with the pinned input selection;
-  the manager must choose the new ID, scope, scratch paths and grant. It does
-  not write a replacement prompt or repair the old session.
+  launch handoff, or a handoff that differs from its pin), and
+  `worktree_missing` (handoff exists, checkout is gone). It observes records
+  and paths, never an auditor process. An interrupted preparation without a
+  failure receipt is `preparation_incomplete` (1); a changed handoff is
+  `handoff_changed` (3). Failed or incomplete preparation offers
+  `close --abandon` and an `init` draft command with the pinned input
+  selection; the manager must choose the new ID, scope, scratch paths and
+  grant. Status does not write a replacement prompt or repair the old session.
+- **Lost session records.** When a registered session's directory is missing,
+  targeted `status`, `init` and `prepare` refuse the ID with
+  `session_records_missing`, naming the registry row and refs. Preserve them,
+  or retire what the row names with `close --abandon`; the ID stays reserved.
+- **The owning maintainer checkout is gone.** A session prepared from a linked
+  maintainer worktree that was later removed is refused with
+  `session_owner_missing`. Recreate the worktree at the recorded path
+  (`git worktree add <path>`), which restores its administration's name, then
+  rerun from it, or abandon the session from another maintainer checkout of
+  the repository.
 - **Interrupted or blocked auditor.** Stop it, then collect. A partial report
   and unexpected changes are evidence; collection records them.
-- **Collection with errors** exits 1 and keeps everything it captured: the
+- **Collection with errors** exits 1, or 3 when an error means something does
+  not verify (a changed handoff or supplied runtime, invalid retention, an
+  archive mismatch), and keeps everything it captured: the
   report, the inventory, any patches and archive, and the worktree. Read the
   receipt's `errors`, resolve the cause (an unsupported entry, a moving file,
   broken Git state), and collect again. Never extract the archive over a checkout.
@@ -836,8 +1011,8 @@ producer run, scope expansion, or release of a paused hold.
   refused with its path retained; it is never rewritten.
 - **Lost or changed supplied runtime.** `recover-runtime --audit-id ID --actor NAME`
   verifies the session's private pristine archive and manifest, then materializes
-  them at a fresh `.scratch/stewart-runtimes/` path and captures that result in
-  `runtime-recoveries/<name>/`. It never overwrites the original runtime or
+  them at a fresh `runtime-recovered-<name>/` in the session's checkout
+  directory and captures that result in the session's `runtime-recoveries/<name>/`. It never overwrites the original runtime or
   retargets session commands, access scopes or releases. This restores assets
   for inspection; execution requires a separately authorized fresh assignment.
   Missing or damaged private assets cause a retained failure, without using the
@@ -848,8 +1023,13 @@ producer run, scope expansion, or release of a paused hold.
   `<python> -I -B <recovered-root>/stewart/_bootstrap.py source --manager-home <fresh-cache> -- --repo <project> --workspace <workspace> init ...`.
   Use that same source for the fresh assignment's subsequent manager commands.
   Recovery does not activate this selection automatically.
-- **Nothing is cleaned up automatically.** Remove a worktree only after the
-  required reports, partial work and unexpected changes are preserved.
+- **Nothing is removed automatically.** `close` is the only deletion. It
+  removes only what the session recorded, and only after writing its closing
+  record. A concluded close refuses a checkout changed since the triaged
+  collection; an abandon refuses uncollected changes unless told to discard
+  them. Do not remove a checkout by hand: its lifetime lock makes Git refuse,
+  and a checkout removed before any complete collection takes its evidence
+  with it.
 
 ## Handing captured evidence to another assignment
 
@@ -859,9 +1039,9 @@ claims. The manager chooses every file and the receiving question. For example,
 export a construction report and a captured script, then draft a fresh assignment:
 
 ```sh
-"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review export --audit-id one-bounded-question --collection 20260101T120000-0a1b2c3d --select REPORT.md --select files.tar:audits/parser-review/scratch/one-bounded-question/artifacts/experiment.py --output .scratch/construction-package --actor "manager"
-"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review init --audit-id independent-review --input path/to/reference.py --evidence-package .scratch/construction-package/manifest.json
-"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review export --audit-id one-bounded-question --attempt 20260101T130000-9c8d7e6f --select ATTEMPT.json --select ledger.jsonl --select stdout.txt --output .scratch/measurement-package --actor "manager"
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review export --audit-id one-bounded-question --collection 20260101T120000-0a1b2c3d --select REPORT.md --select files.tar:audits/parser-review/scratch/one-bounded-question/artifacts/experiment.py --output audit-packages/construction-package --actor "manager"
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review init --audit-id independent-review --input path/to/reference.py --evidence-package audit-packages/construction-package/manifest.json
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review export --audit-id one-bounded-question --attempt 20260101T130000-9c8d7e6f --select ATTEMPT.json --select ledger.jsonl --select stdout.txt --output audit-packages/measurement-package --actor "manager"
 ```
 
 Collection selectors are `REPORT.md` and `files.tar:<repo-relative-path>`.
@@ -881,7 +1061,9 @@ Each selected group is complete and verified against its source receipt;
 imports do not need the source session, exposed runtime or worktree. A partial
 group is refused, and importing code grants no permission to execute it.
 
-The output directory must be new and its parent must exist. Publication is
+`--output` names a directory of the manager's choosing in the maintainer
+checkout, such as `audit-packages/` above; keep it uncommitted, for example
+under a path the project ignores. The output directory must be new and its parent must exist. Publication is
 exclusive, with `manifest.json` written last. Partial failure retains its output
 and requires a fresh directory. The `stewart.evidence-package/5` manifest records
 the selecting actor, source workspace/audit/record and receipt SHA-256, the
@@ -938,7 +1120,8 @@ endpoint property.
    to SHA-256 digests under `files`. `interpreter` is a policy name:
    `repo-venv` resolves to the maintainer checkout's `.venv/bin/python`,
    `tool-interpreter` to the interpreter running the tool. `environment` is
-   `minimal`: PATH and locale, with HOME inside the attempt. The launcher uses
+   `minimal`: PATH and locale, with HOME at `attempts/<name>/home` in the
+   session's checkout directory, outside the worktree. The launcher uses
    `-I -B` and a fresh private cache prefix. The only supported command prefixes
    are `[{interpreter}, {script}, ...]` and `[{interpreter}, -B, {script}, ...]`,
    with each element a separate string token. After the script, literal arguments
@@ -991,7 +1174,7 @@ endpoint property.
    re-validates every frozen digest, pinned input and the grant, reserves the attempt
    directory exclusively (so a concurrent call is refused), hashes the
    protected files and compares them to the manifest, creates the output area
-   and the attempt `HOME` outside it, launches the child in its
+   and the attempt `HOME` in the checkout directory, launches the child in its
    own process group with the recorded argv, cwd and environment, captures
    stdout and stderr, hashes the protected files again, and reads the child's
    receipt and ledger rows through verified regular-file descriptors. The exact
@@ -1017,12 +1200,14 @@ endpoint property.
    area refuses the launch; the reservation is still resolved so it is not
    mistaken for a crash. A child that fails, times out, tampers with protected
    state or writes a malformed receipt completes the attempt with recorded
-   errors (exit 1). Another attempt needs a new release, and a new release
+   errors (exit 1); a supplied runtime that stopped verifying across the
+   attempt exits 3. The child's own exit status never becomes the tool's. Another attempt needs a new release, and a new release
    needs the output area absent: a failed attempt leaves it in the worktree on
    purpose, because its contents are evidence until a collection has captured
    them. Collect, verify the attempt's retained copies, then move or remove the
    directory by hand, or assign a fresh audit ID whose grant names another
-   output area. A changed launched assignment always needs a fresh audit ID and
+   output area. Stewart itself removes it only when `close` removes the whole
+   checkout. A changed launched assignment always needs a fresh audit ID and
    prompt-only commit.
 
 5. **Ledger.** The child uses `from _stewart_ledger_v1 import Ledger`. The
@@ -1128,7 +1313,7 @@ foreign or unsupported release/attempt records produce `records_invalid`, which
 takes precedence over healthy releases and missing attempt receipts. Individual
 records keep their diagnostics, and usable sibling releases remain visible. Failed release reads
 do not produce capture associations or run suggestions; inspecting them still
-returns a successful status response. A release suggestion appears only
+returns the status view, with exit 3 for the records that do not verify. A release suggestion appears only
 once a complete collection exists, and requires the manager to assess artifact
 readiness, reference independence, controls and measurement IDs. Each release
 in `status` names the collections whose verified captured bytes equal its frozen
@@ -1151,21 +1336,24 @@ contained.
 
 ## Records and what they mean
 
+Session records live in `<git-common-dir>/stewart/sessions/<slug>/<audit-id>/`;
+closing records under `<git-common-dir>/stewart/closed/`.
+
 | Record | Meaning |
 | --- | --- |
-| `session.json` (schema 11) | Assignment, workspace, prompt and target commits, digests, launch token, declaration schema, mode, pause acknowledgment and note, maintainer status at preparation, session UUID and durable retention refs, the supplied runtime and pristine asset pins, the public handoff digest, the auditor access scope, and the pinned launch profile when the workspace has one. |
+| `session.json` (schema 12) | Assignment, workspace, prompt and target commits, digests, launch token, declaration schema, mode, pause acknowledgment and note, maintainer status at preparation, session UUID and durable retention refs, the checkout home, the session's checkout directory and worktree, the supplied runtime and pristine asset pins, the public handoff digest, the auditor access scope, and the pinned launch profile when the workspace has one. |
 | `LAUNCH.md` | Private copy of the pinned handoff; the issued auditor path is the copy at `<workspace>/.stewart-handoffs/<session-uuid>.md` in the worktree. |
 | `runtime-pristine/`, `runtime-prepared/`, `RUNTIME-PREPARED.json` | Verified pristine assets and separately captured preparation observations of the exposed runtime. |
 | `runtime-recoveries/<name>/STARTED.json`, `RECOVERY.json`, `runtime-recovery/` | An attributed fresh materialization of private pristine assets, its source session digest and independent capture; failures remain recorded. Existing session commands and grants are unchanged. |
 | `HARNESS-EXIT.txt` | One `exit timestamp` line per run of the printed launch block, appended by the block itself when the harness ends. Not a Stewart receipt: the shell writes it. |
 | `launches/<name>.json` | The manager's acknowledgment of one handoff: style, model, effort, note, actor, bound to the launch token; from a profile, also the harness, the pinned and any override profile digests, and the rendered command. |
 | `messages/<name>.json` | One message exchanged with the auditor after launch, as the manager relays it, with direction and channel. |
-| `PREPARE-ERROR.json` | Failed preparation stage, original reason, worktree creation outcome and existence; any partial worktree is retained. |
+| `PREPARE-ERROR.json` | Failed preparation stage, original reason, worktree creation outcome and existence; any partial worktree is retained until `close`. |
 | `collections/<name>/STARTED.json` | A collection began; without `collection.json` it is a partial attempt. |
 | `collections/<name>/REPORT.md` | The captured report bytes, taken before Git work. |
 | `collections/<name>/inventory.json` | The no-follow inventory taken before Git discovery; `inventory-after.json` appears only on movement. |
 | `collections/<name>/working.patch`, `index.patch`, `status.z`, `files.tar` | Git patches against the prompt commit, porcelain status, and the archive of Git-reported files and links. |
-| `collections/<name>/collection.json` (schema 6) | Report status and digest, captured declaration validation and identity comparisons, Git discovery outcome, archive digest, unexpected paths, inventory summary, supplied runtime observation and pristine asset pins, errors, attributed stop kind. |
+| `collections/<name>/collection.json` (schema 7) | Report status and digest, captured declaration validation and identity comparisons, Git discovery outcome, archive digest, unexpected paths (naming those that are supplemental inputs) and missing supplemental inputs, inventory summary and digest, supplied runtime observation and pristine asset pins, errors as reason/message objects, attributed stop kind. |
 | `triage/<name>.json` (schema 3) | A maintainer response carrying and validating the collection name and receipt digest, report digest or gap, and any kind-bound follow-up disposition. Earlier disposition schemas are unsupported and preserved unchanged; use their pinned tool version. |
 | `retention/<name>.json` | What was published, from which capture, with digests. |
 | `RESUMED.json` | The release of a paused hold, bound to a triage. |
@@ -1173,6 +1361,8 @@ contained.
 | `attempts/<name>/RESERVED.json` | The attempt was reserved; without `ATTEMPT.json` it is unresolved and never reusable. |
 | `attempts/<name>/ATTEMPT.json` (schema 8), `stdout.txt`, `stderr.txt` | Prompt and target commits, launch outcome, raw exit or signal, endpoint comparison, supplied runtime observations and pristine asset pins, output-area creation, output capture paths and digests (including streams), measurement verification with mismatching cases beside anomalies, and errors, with process output beside them. Historical attempts require the version that wrote them. |
 | `attempts/<name>/ledger.jsonl`, `child-receipt.json` | Exact readable child output bytes used by the wrapper; created exclusively. Unavailable outputs leave an explicit capture observation instead. |
+| `closed/<slug>/<audit-id>/<uuid>/CLOSING.json` (`stewart.closing/1`) | Written before `close` removes anything: identity (session UUID, workspace, audit ID, commits, `session.json` digest, prepared and closed times, tool), the acknowledgment (actor, mode, abandon reason), observations (triage and collection digests, retained paths and digests, discarded paths and digests, an abandon's stage, problems and release basis, coordination mode), attributed claims (the manager's decision, the auditor's completion and report kind) and the removal inventory. Never removed. |
+| `closed/<slug>/<audit-id>/<uuid>/CLOSED.json` (`stewart.closed/1`), `CLOSE-ATTEMPT-<stamp>.json` | Each removal's outcome and the unrecorded entries left in place, bound to `CLOSING.json`'s digest. `CLOSED.json` is written only once nothing recorded remains; an attempt that stopped partway writes `CLOSE-ATTEMPT-*`. |
 
 Every record above except the raw captures carries `stewart`, the identity of
 the tool build that wrote it: its distribution version, complete member
@@ -1246,13 +1436,23 @@ as their replacement.
 
 The `claude-code-restricted/1` scope adapter combines restricted file tools with
 a required shell sandbox. Its exact runtime subtree is read-only, the worktree
-is writable, and the maintainer tree, private receipts, role registry and
-manager cache remain read-denied. Scope preparation snapshots all Git-registered
-checkout roots and retained role-registry session locations, including other
-maintainer checkouts, and excludes both the selected and default manager cache.
-Keep additional private caches under those excluded roots. The snapshot cannot
-cover future checkout creation or moves: finish them before preparation, or
-stop the affected auditors and prepare fresh assignments after the change.
+is writable, and `<git-common-dir>/stewart` (private receipts, role registry
+and closing records), other sessions' checkout directories and the manager homes
+remain read-denied. In the qualified harness a broader read denial wins over a
+nested read grant, so a private root that contains a granted path, such as the
+maintainer checkout containing its Git administration or an interpreter
+environment inside the project, is denied entry by entry beside that path.
+A literal denial cannot express an entry name holding `*`, `?`, `[`, `]`, `{`,
+`}`, `(`, `)`, `\` or a line break; preparation refuses such an entry with
+`scope_uncovered` before any session exists, so rename or move it. Scope
+preparation snapshots all Git-registered checkout roots and the checkout
+directories and session locations of retained role-registry rows, including
+other maintainer checkouts, and excludes both the selected and default manager
+home. Keep additional private caches under those excluded roots. The snapshot
+cannot cover checkouts created or moved later, including those prepared later
+for other audits, or entries added to the maintainer checkout later: finish them
+before preparation, or stop the affected auditors and prepare fresh assignments
+after the change.
 Read-only Git administration and the selected
 interpreter environment are separate supporting access paths. Search-only
 ancestor descriptors permit reaching an allowed subtree without listing its
@@ -1273,8 +1473,12 @@ must be exercised together. See the [Claude Code sandbox boundary](https://code.
 A collection's custody gaps are derived from its receipt: each error,
 non-present report, incomplete Git discovery, unexpected commit, unexpected
 path, movement, omitted or unreadable or unsupported inventory entry, and
-traversal boundary gets an ID. Declaration errors, mismatched or stale identities,
-and completion/stop discrepancies also get IDs. A triage must disposition every one.
+traversal boundary gets an ID, and so does each pinned supplemental input missing
+from the checkout (`supplemental_missing:<path>`). Declaration errors, mismatched
+or stale identities, and completion/stop discrepancies also get IDs. A triage
+must disposition every one. Each gap carries its exit code (1 when the auditor
+could fix it, 3 when nothing the auditor does can) and whether the auditor's
+`check` observes it from the checkout alone.
 
 ## Coverage and limits
 
@@ -1297,6 +1501,12 @@ and completion/stop discrepancies also get IDs. A triage must disposition every 
 - Acknowledgments are attributed to the maintainer's flags. `auditor stopped:
   acknowledged` is not an observed process exit. The validated reserved declaration records the auditor's completion claim,
   never a verdict. Prose status lines are not interpreted.
+- Custody survives `git clean` and branch work in the maintainer checkout, but
+  not removing or re-cloning the Git directory, deleting a checkout before
+  `collect`, or a backup that skips `.git`. `close` is the only deletion
+  Stewart performs; it removes only what its session recorded and keeps the
+  closing record. Anything worth keeping beyond retained files must go through
+  `export` before `close`.
 
 ## Python API
 
@@ -1305,7 +1515,7 @@ submodules. The API resolves lazily and remains callable regardless of whether
 the CLI or those submodules were imported first.
 
 ```python
-from stewart.api import workspace, prepare, record_launch, collect, triage_draft, triage, retain, resume, status, export_evidence, StewartError
+from stewart.api import workspace, prepare, record_launch, collect, triage_draft, triage, retain, resume, status, export_evidence, close, StewartError
 
 ws = workspace(repo_root, "audits/parser-review")
 prepared = prepare(ws, prompt_commit, mode="snapshot")          # dict with session, worktree, launch
@@ -1315,24 +1525,58 @@ response = triage_draft(ws, audit_id, collection=collected["collection"])["respo
 disposition = triage(ws, audit_id, collection=collected["collection"], response=response, actor="me")
 retain(ws, audit_id, triage=disposition["triage"], report=True)
 view = status(ws, audit_id)                                     # the same document as `status --json`
+closed = close(ws, audit_id, actor="me")                         # keeps CLOSING.json/CLOSED.json; removes the session
 ```
 
 Operations return structured results and raise `StewartError` with a stable
-`reason`, `retained` paths and `next_steps`. Importing the package performs no
-repository, process or network work.
+`reason`, `retained` paths and `next_steps`; `collect`, `status`, `run` and
+`close` results and every refusal carry the exit code the CLI would return.
+Importing the package performs no repository, process or network work.
 
 ## Exit codes
 
-| Code | Meaning |
-| --- | --- |
-| 0 | The custody operation succeeded with no recorded errors. |
-| 1 | The operation completed and recorded errors or incomplete evidence; the records are written. |
-| 2 | The operation was refused or failed before completing, or the command line was invalid. |
+Every command and helper uses the same four codes:
+
+| Code | Meaning | The auditor reads it as | The manager reads it as |
+| --- | --- | --- | --- |
+| 0 | Nothing needs attention. | Accepted; stop. | Proceed. |
+| 1 | Action is needed within your role; each listed item names the change. | Change what is listed, run `check` again. | Address the listed items: rerun, or record a decision in triage. |
+| 2 | Refused; nothing was done. | Wrong place or command; reread the handoff. | Fix the command or its preconditions. |
+| 3 | Something you did not produce does not verify. | Not yours to fix: describe it in the report, declare, and stop. | Inspect, then recover or abandon. |
+
+Three rules hold everywhere:
+
+1. **No news is good news.** Exit 0 means nothing needs attention. There is no
+   "succeeded with warnings": anything worth warning about is nonzero. Routine
+   next steps, such as launch or triage, are not news.
+2. **Codes ignore what the audit says.** Declared completion, report kind,
+   report prose, triage's claims and decision, and an experiment child's own
+   exit status never change a code. Whether the audit was done well is
+   triage's call. The one gap that compares the auditor's completion claim
+   with the manager's stop acknowledgment, `completion_stop_discrepancy`, is
+   manager-side and never `check`'s concern.
+3. **The auditor's tool predicts the manager's result.** The auditor's final
+   `check` code equals the code the manager's collection gets for everything
+   that depends only on the checkout.
+
+When both apply, 3 takes precedence over 1. A refusal caused by records that
+do not verify is 3, not 2. Each refusal reason maps to one code; reasons are
+part of the JSON contract. Per command: `collect` returns 0, 1 or 3 by its
+gaps and errors; `status` as described under [Inspect](#assignment-and-custody-steps);
+`triage-draft` returns 0, 2 for a refusal, or 3 when the collection it binds
+does not verify;
+`run` returns 1 when the child failed or preservation failed and 3 when the
+supplied runtime stopped verifying across the attempt; `close` returns 0 for a
+clean close, 1 when removal stopped partway or left unrecorded entries, and 3
+when a concluded close meets records that do not verify; `prepare` refuses a
+failed preparation with 2 (`prepare_failed`) and keeps its session.
 
 A custody operation succeeding is not an audit passing. A child's exit status
-is recorded in its attempt and never becomes the tool's exit code. In `--json` mode the
-envelope carries `ok`, `exit_code`, `result` and `error` (with `reason`,
-`message`, `retained`, `next_steps`), and nothing else is written to stdout.
+is recorded in its attempt and never becomes the tool's exit code. In `--json`
+mode the `stewart.result/2` envelope carries `ok`, which is true exactly when
+the exit code is 0, `exit_code`, `result` (present for exits 1 and 3 too) and
+`error` (with `reason`, `message`, `retained`, `next_steps`), and nothing else
+is written to stdout.
 
 ## Development checks
 

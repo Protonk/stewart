@@ -65,12 +65,19 @@ git commit -m "Assign parser field audit"
 "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review prepare --mode snapshot
 ```
 
-Follow the printed handoff and the manual's collection/triage steps. `--repo`
-must be the exact maintainer worktree root; subdirectories and registered auditor
-worktrees are refused. Sessions stay under that checkout's `.scratch/stewart`;
-supplied auditor runtimes and private manager deployments have separate roots.
-Keep private storage out of auditor grants. Historical schemas require their
-creating installation; new versions never rewrite old records for compatibility.
+Follow the printed handoff and the manual's collection, triage and close steps.
+`--repo` must be the exact maintainer worktree root; subdirectories and
+registered auditor worktrees are refused. Sessions live under the repository's
+Git common directory at `stewart/sessions/`, outside every working tree, so no
+ignore rule is needed. Each auditor checkout and its supplied runtime live in
+a per-session directory under the checkout home
+(`~/.local/state/stewart/checkouts` unless `prepare --checkout-home` names
+another); private manager deployments live under
+`~/.local/state/stewart/managers`. The manager's harness needs write access to
+both custody locations, which `status` names. Keep private storage out of
+auditor grants. `close` retires a finished or abandoned audit, keeping one
+closing record. Historical schemas require their creating installation; new
+versions never rewrite old records for compatibility.
 
 Run the standalone suite against a fresh wheel with either supported interpreter:
 
