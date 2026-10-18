@@ -68,7 +68,13 @@ def recorded_options(out, scope):
     assert settings["permissions"]["blockReadsOutsideWorkingDirectories"] is True
     assert settings["sandbox"]["filesystem"]["allowRead"] == [
         scope["worktree"], scope["runtime"], scope["git_common"], scope["interpreter_prefix"]]
-    assert scope["repository"] in settings["sandbox"]["filesystem"]["denyRead"]
+    denied = settings["sandbox"]["filesystem"]["denyRead"]
+    # A maintainer checkout that holds the Git common directory is denied entry
+    # by entry; any other repository is denied whole.
+    if Path(scope["git_common"]).is_relative_to(scope["repository"]):
+        assert scope["repository"] not in denied and any(Path(p).parent == Path(scope["repository"]) for p in denied)
+    else:
+        assert scope["repository"] in denied
     assert scope["runtime"] in settings["sandbox"]["filesystem"]["denyWrite"]
     return args[13:]
 
@@ -78,7 +84,7 @@ def render_scope(worktree):
     from stewart.auditor_scope import SCOPE_SCHEMA
     sibling = worktree.parent.with_name(worktree.parent.name + "-scope")
     return {"schema": SCOPE_SCHEMA, "repository": str(sibling / "project"), "worktree": str(worktree),
-            "runtime": str(sibling / "runtime"), "git_common": str(sibling / "git"),
+            "runtime": str(worktree.parent / "runtime"), "git_common": str(sibling / "git"),
             "manager_home": str(sibling / "manager"), "interpreter_prefix": str(sibling / "python"),
             "private_roots": sorted([str(sibling / "manager"), str(sibling / "project")])}
 
@@ -193,7 +199,7 @@ def test_profile_faults_refuse_before_any_session_exists(checkout, fault):
     with pytest.raises(StewartError) as refused:
         prepare(checkout.ws, revision)
     assert refused.value.reason == "launch_profile", fault
-    assert not (checkout.repo / ".scratch").exists(), "a profile fault must refuse before a session is allocated"
+    assert not (checkout.repo / ".git/stewart").exists(), "a profile fault must refuse before a session is allocated"
     # Control: the same workspace with the fault removed prepares and prints a command.
     if location.is_dir():
         location.rmdir()
@@ -287,8 +293,10 @@ def test_launch_block_appends_the_harness_exit_and_status_reads_it(tmp_path, run
     assert [e["exit"] for e in view["harness_exits"]] == [0, 2]
     assert any("harness exited 2" in item and "no collection exists" in item for item in view["outstanding"]), (
         "a failing harness with no collection is the signature of a launch nobody watched")
-    assert main(["--repo", str(checkout.repo), "--workspace", WS, "status", "--audit-id", ident]) == EXIT_OK
-    assert "Harness exits: 2 recorded by the launch block; last exit 2 at" in capsys.readouterr().out
+    # A nonzero harness exit with no collection is news within the manager's role.
+    assert main(["--repo", str(checkout.repo), "--workspace", WS, "status", "--audit-id", ident]) == 1
+    out = capsys.readouterr().out
+    assert "Harness exits: 2 recorded by the launch block; last exit 2 at" in out and "harness_exit_nonzero" in out
     # Pair: once a collection exists the exit is a fact, not an outstanding item.
     (Path(prepared["worktree"]) / checkout.meta["report_path"]).write_text("Status: partial\n")
     collect(checkout.ws, ident, auditor_stopped="interrupted")

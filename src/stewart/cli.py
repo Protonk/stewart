@@ -77,7 +77,8 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
     from stewart.docs import DOCUMENTS
-    documentation = commands.add_parser("docs", help="[reads bundled guidance] print a document or role template; no repository needed")
+    documentation = commands.add_parser(
+        "docs", help="[no repository or session writes] print a bundled document or role template; no repository needed")
     documentation.add_argument("document", choices=sorted(DOCUMENTS))
 
     init = commands.add_parser(
@@ -113,15 +114,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     prep = commands.add_parser(
         "prepare", help="[writes private custody, Git refs and a worktree] validate a committed prompt and build its checkout",
-        description="Select an exact non-bare maintainer root, on any branch or detached HEAD. "
-                    "Refuse registered auditor roots; require .scratch/stewart/ and .scratch/stewart-runtimes/ "
-                    "to be excluded from Git. Validate a prompt-only commit, retain its prompt/target/base "
-                    "commits with create-only refs, pin inputs, create the private session and detached "
-                    "worktree, copy supplemental bytes, and write the launch handoff. Supplies pinned declaration "
-                    "and input-verification helpers from the selected Stewart installation independently of project history. "
-                    "Requires Git administrative writes for worktree creation: arrange harness authorization before "
-                    "invoking it. Failed preparations are preserved and require a fresh audit ID. Launches nothing.",
+        description="Select an exact non-bare maintainer root, on any branch or detached HEAD, and refuse "
+                    "registered auditor roots. Validate a prompt-only commit, retain its prompt/target/base commits "
+                    "with create-only refs, pin inputs, and create the private session under the Git common "
+                    "directory (<common>/stewart/sessions). The detached worktree, its supplied runtime and "
+                    "experiment homes go in a UUID-named directory under the per-user checkout home, outside every "
+                    "working tree; the worktree stays locked for its lifetime. Copies supplemental bytes and writes "
+                    "the launch handoff. Supplies pinned declaration and input-verification helpers from the "
+                    "selected Stewart installation independently of project history. The manager's harness must "
+                    "allow writes to <common>/stewart and the checkout home (status names both). Failed "
+                    "preparations are preserved and require a fresh audit ID. Launches nothing.",
     )
+    prep.add_argument("--checkout-home", type=Path, metavar="DIRECTORY",
+                      help="absolute, unlinked, private (0700) directory for auditor checkouts, outside every "
+                           "working tree; default ~/.local/state/stewart/checkouts. No environment variable selects it")
     prep.add_argument("--prompt-commit", default="HEAD", help="full prompt-only commit ID, or HEAD")
     prep.add_argument("--mode", choices=("snapshot", "paused"), default="snapshot",
                       help="snapshot lets development continue (default); paused records a writer hold")
@@ -166,18 +172,21 @@ def build_parser() -> argparse.ArgumentParser:
     message.add_argument("--actor", required=True, help="who sent or relayed it")
 
     view = commands.add_parser(
-        "status", help="[read-only] handoff/report paths, session facts and next actions",
-        description="Inspect one session without writing or repairing anything. Problems with records are "
-                    "reported in place. Returns absolute worktree, launch, live report and per-collection report "
-                    "locators, conditional manual handoff and collection-specific triage-draft commands, launch "
+        "status", help="[no repository or session writes] one session's facts and next actions, or every session",
+        description="Inspect one session without writing or repairing anything; without --audit-id, list every "
+                    "session of the workspace across the repository with its owner, state, checkout and lock. "
+                    "Problems with records are reported in place. Returns absolute worktree, launch and "
+                    "per-collection report locators, conditional manual handoff and collection-specific triage-draft "
+                    "commands, the manager's write locations, launch "
                     "and message records, and which collections can recover each release's frozen artifacts. "
                     "Release capture associations verify archive and member bytes at read time; failures remain visible. "
                     "Missing receipts are distinct from invalid or unreadable records; neither is repaired. "
                     "Names the Stewart build that wrote the session and whether it is this one. "
                     "Locators do not certify file availability; auditor activity is unobserved. "
-                    "Success of this command says nothing about the audit's outcome.",
+                    "Exit 0 means nothing needs attention; 1 lists anomalies and unaddressed gaps; 3 means records "
+                    "or bytes do not verify. The exit code says nothing about the audit's outcome.",
     )
-    view.add_argument("--audit-id", required=True)
+    view.add_argument("--audit-id", help="the session to inspect; omit it to list every session of the workspace")
     view.add_argument("--profile", metavar="PATH", default=None,
                       help="repo-relative launch profile to render the handoff from instead of the pinned one, "
                            "for a session whose pinned recipe went stale; objects require unique keys; both are named in the view")
@@ -219,7 +228,7 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--actor", required=True, help="who selected this evidence")
 
     draft = commands.add_parser(
-        "triage-draft", help="[read-only] print an unanswered response bound to a named collection",
+        "triage-draft", help="[no repository or session writes] print an unanswered response bound to a named collection",
         description="Print response JSON on stdout and declaration/gap context on stderr. With --json, "
                     "result.response and result.context stay separate. The response includes collection identity "
                     "and receipt digest; preserve both. Null answers fail submission; no triage is recorded.",
@@ -349,7 +358,7 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
         from stewart.prepare import prepare
 
         return prepare(ws, args.prompt_commit, mode=args.mode, writers_paused=args.writers_paused,
-                       pause_note=args.pause_note), EXIT_OK
+                       pause_note=args.pause_note, checkout_home_path=args.checkout_home), EXIT_OK
     if args.command == "launch":
         from stewart.coordination import record_launch
 
@@ -362,9 +371,15 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
         return record_message(ws, args.audit_id, direction=args.direction, text=args.text,
                               actor=args.actor, channel=args.channel), EXIT_OK
     if args.command == "status":
-        from stewart.status import status
+        from stewart.status import status, status_list
 
-        return status(ws, args.audit_id, profile=args.profile), EXIT_OK
+        if args.audit_id is None:
+            if args.profile is not None:
+                raise StewartError("--profile needs --audit-id", reason="usage")
+            listing = status_list(ws)
+            return listing, listing["exit_code"]
+        view = status(ws, args.audit_id, profile=args.profile)
+        return view, view["exit_code"]
     if args.command == "collect":
         from stewart.collect import collect
 
@@ -407,6 +422,23 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
         result = run(ws, args.audit_id, release=args.release, timeout=args.timeout)
         return result, EXIT_ATTENTION if result["errors"] else EXIT_OK
     raise StewartError(f"unknown command {args.command}", reason="usage")
+
+
+def _manager_grant(ws: Workspace, exc: PermissionError) -> StewartError:
+    """A permission failure names the location the manager's harness must allow."""
+    from stewart._repository import DEFAULT_CHECKOUT_HOME, STORAGE, maintainer
+    target = Path(exc.filename) if exc.filename else None
+    roots = [Path.home() / DEFAULT_CHECKOUT_HOME]
+    try:
+        roots.insert(0, Path(maintainer(ws.repo)["common_dir"]) / STORAGE)
+    except StewartError:
+        pass
+    root = next((r for r in roots if target is not None and (target == r or target.is_relative_to(r))),
+                target.parent if target is not None else None)
+    return StewartError(f"permission denied at {target or 'an unnamed path'}: {exc.strerror}",
+                        reason="manager_grant_missing", retained=[str(target)] if target else [],
+                        next_steps=[f"allow the manager's harness to write {root}; "
+                                    "status names this repository's write locations"])
 
 
 def _shell(action: dict) -> str:
@@ -540,7 +572,7 @@ def render(command: str, result: dict) -> str:
         lines += [f"Resume recorded: {result['path']}",
                   "Tell the writers; the tool controls no process."]
     elif command == "status":
-        lines += _render_status(result)
+        lines += _render_listing(result) if "sessions" in result else _render_status(result)
     elif command == "release":
         lines += [
             f"Release recorded: {result['path']}",
@@ -587,10 +619,35 @@ def _build(identity: dict | None) -> str:
     return text
 
 
+def _render_attention(code: int, items: list[dict]) -> list[str]:
+    if code == EXIT_OK:
+        return ["Status exit 0: nothing needs attention"]
+    lines = [f"Status exit {code}: " + ("records or bytes do not verify" if code == 3 else "needs attention")]
+    lines += [f"  [{item['code']}] {item['source']}: {item['reason']}: {item['message']}" for item in items]
+    return lines
+
+
+def _render_listing(listing: dict) -> list[str]:
+    lines = [f"Sessions of workspace {listing['workspace']['rel']}: {len(listing['sessions'])}"]
+    for entry in listing["sessions"]:
+        if "problem" in entry:
+            lines.append(f"  {entry['audit_id']} [{entry['exit_code']}]: {entry['problem']['reason']}: "
+                         f"{entry['problem']['message']}")
+            continue
+        lock = entry.get("lock") or {}
+        lines.append(f"  {entry['audit_id']} [{entry['exit_code']}]: preparation {entry['preparation']}; "
+                     f"collections {entry['collections']}; owner {entry['owner']}")
+        lines.append(f"    checkout {entry['checkout']}" + ("; locked" if lock.get("locked") else ""))
+    storage = listing["manager_storage"]
+    lines.append(f"Manager write locations: {storage['private']}; checkout home {storage['checkout_home']}")
+    return [*_render_attention(listing["exit_code"], []), *lines]
+
+
 def _render_status(view: dict) -> list[str]:
     session = view["session"]
     same = session.get("same_build_as_viewer")
-    lines = [f"Audit {view['audit_id']} in workspace {view['workspace']['rel']}",
+    lines = [*_render_attention(view["exit_code"], view["attention"]),
+             f"Audit {view['audit_id']} in workspace {view['workspace']['rel']}",
              f"Session: {session['path']} (schema {session['schema_version']}, "
              f"{'supported' if session['supported'] else 'NOT supported'})",
              f"Stewart: this view by {_build(view.get('tool'))}; session written by {_build(session.get('stewart'))}"
@@ -618,10 +675,14 @@ def _render_status(view: dict) -> list[str]:
             f"Worktree: {'present' if worktree['exists'] else 'absent'}; HEAD matches prompt: {worktree['head_matches_prompt']}",
             f"Worktree path: {worktree['path']}",
             f"Launch handoff path: {view['preparation']['launch_path']} ({view['preparation']['launch_handoff']['kind']})",
-            f"Live report destination (not captured or read by status): {identities['live_report_path']}",
+            f"Checkout lock: {(worktree.get('lock') or {}).get('reason') or 'not locked'} "
+            "(removal goes through close; Stewart prints no unlock or remove commands)",
             f"Maintainer status changed since prepare: {identities['maintainer']['status_changed_since_prepare']}; "
             f"report destination exists in maintainer checkout: {identities['report_destination_exists']}",
         ]
+    storage = view.get("manager_storage")
+    if storage:
+        lines.append(f"Manager write locations: {storage['private']}; checkout home {storage['checkout_home']}")
     coordination = view.get("coordination") or {}
     if coordination:
         paused = coordination["writers_paused"]
@@ -768,7 +829,10 @@ def main(argv: list[str] | None = None) -> int:
                 parser.error("the following arguments are required: " + ", ".join("--" + flag for flag in missing))
             repo = Path(args.repo).resolve()
             ws = workspace(repo, args.workspace)
-            result, code = dispatch(ws, args)
+            try:
+                result, code = dispatch(ws, args)
+            except PermissionError as exc:
+                raise _manager_grant(ws, exc) from exc
         # ``ok`` means exit 0: a result that needs attention still carries its
         # result document, but it is not "ok".
         envelope.update(ok=code == EXIT_OK, exit_code=code, result=result)

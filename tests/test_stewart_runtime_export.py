@@ -105,7 +105,7 @@ def test_collection_runtime_groups_import_without_any_original_storage(tmp_path,
     assert support.read_json(path.parent / observed["file"])["matches_expected"] is False
     receiving = support.make_checkout(tmp_path / "receiving", run_cmd)
     destination = receiving.repo / ".scratch/transferred"
-    destination.parent.mkdir()
+    destination.parent.mkdir(exist_ok=True)
     shutil.copytree(path.parent, destination)
     shutil.rmtree(checkout.repo)
     inputs = package_inputs(receiving.repo, ".scratch/transferred/manifest.json")

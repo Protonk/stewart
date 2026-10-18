@@ -28,9 +28,10 @@ def test_handoff_locations_do_not_infer_activity_from_live_report(checkout):
     before = snapshot_tree(prepared.session)
     view = status(checkout.ws, checkout.meta['audit_id'])
     assert snapshot_tree(prepared.session) == before, 'discovering a handoff must write nothing'
-    assert view['schema'] == 'stewart.status/11'
+    assert view['schema'] == 'stewart.status/12'
     assert view['identities']['worktree']['path'] == str(prepared.worktree)
-    assert view['identities']['live_report_path'] == str(prepared.report)
+    assert 'live_report_path' not in view['identities'], 'the manager reads collected bytes, not the live report'
+    assert view['exit_code'] == 0 and view['attention'] == [], 'a ready, unlaunched session is no news'
     assert view['preparation']['launch_path'] == prepared.prepared['launch']
     assert [a['action'] for a in view['next_actions']] == ['handoff', 'launch', 'collect']
     handoff = view['next_actions'][0]
@@ -70,7 +71,7 @@ def test_each_collection_has_its_own_report_locator_and_review_draft(checkout):
     for captured in (first, second):
         row = next(c for c in view['collections'] if c['name'] == captured['collection'])
         assert row['report_path'] == str(Path(captured['path']) / 'REPORT.md')
-        assert row['report_path'] != view['identities']['live_report_path']
+        assert row['report_path'] != str(prepared.report)
         drafts = [a for a in view['next_actions'] if a['action'] == 'triage-draft'
                   and a['argv'][-1] == captured['collection']]
         assert len(drafts) == 1, 'each review must address one named collection, never just the latest report'
@@ -243,7 +244,7 @@ def test_preparation_failure_preserves_state_and_offers_fresh_draft(checkout, mo
     with pytest.raises(StewartError) as refused:
         prepare_mod.prepare(checkout.ws, revision, mode='paused', writers_paused=True, pause_note=support.PAUSE_NOTE)
     assert refused.value.reason == 'prepare_failed' and refused.value.retained and refused.value.next_steps
-    session = checkout.repo / checkout.ws.session(checkout.meta['audit_id'])
+    session = support.session_path(checkout, checkout.meta['audit_id'])
     failure = read_json(session / 'PREPARE-ERROR.json')
     assert failure['stage'] == failure_stage
     assert failure['worktree_add_completed'] == (failure_stage == 'inputs')
@@ -359,17 +360,21 @@ def _vary_status_record(location, variant, *, preimage, release_record=False):
 
 
 def _status_cli_views(checkout, capsys):
-    """Inspect via both real CLI formats; broken records must not break the envelope."""
+    """Inspect via both real CLI formats; broken records must not break the envelope.
+
+    Status renders a complete view over invalid evidence. Its exit code is the
+    view's own: 3 when records do not verify, 1 for anomalies, 0 for no news.
+    """
     from stewart.cli import main
 
     args = ['--repo', str(checkout.repo), '--workspace', checkout.ws.rel]
-    assert main([*args, '--json', 'status', '--audit-id', checkout.meta['audit_id']]) == 0, (
-        'inspecting invalid evidence must still be a successful status operation')
+    code = main([*args, '--json', 'status', '--audit-id', checkout.meta['audit_id']])
     captured = capsys.readouterr()
     assert not captured.err
     envelope = json.loads(captured.out)
-    assert envelope['ok'] is True and envelope['error'] is None and envelope['exit_code'] == 0
-    assert main([*args, 'status', '--audit-id', checkout.meta['audit_id']]) == 0
+    assert envelope['error'] is None and envelope['result'] is not None, 'broken records must not break the envelope'
+    assert envelope['exit_code'] == code == envelope['result']['exit_code'] and envelope['ok'] is (code == 0)
+    assert main([*args, 'status', '--audit-id', checkout.meta['audit_id']]) == code
     human = capsys.readouterr()
     assert not human.err
     return envelope['result'], human.out
@@ -405,6 +410,7 @@ def test_release_read_failures_keep_status_usable_and_healthy_releases_visible(t
         expected = 'record_unreadable' if variant == 'symlink' else (
             'record_schema' if variant in {'foreign', 'schema'} else 'record_corrupt')
         assert rows[first['release']]['problems'][0]['reason'] == expected
+        assert view['exit_code'] == 3, 'records that do not verify set exit 3'
         assert 'grant' not in rows[first['release']]
         assert 'captured_in' not in rows[first['release']], 'failed reads cannot make capture associations'
         assert first['release'] not in offered, 'invalid records must never authorize a suggested run'
@@ -450,6 +456,8 @@ def test_status_distinguishes_absent_receipts_from_present_invalid_receipts(tmp_
     if variant == 'missing':
         expected = 'collection_incomplete' if kind == 'collection' else 'attempt_unresolved'
         assert row['problems'][0]['reason'] == expected
+        reasons = {item['reason']: item['code'] for item in view['attention']}
+        assert reasons.get(expected) == 1, 'the latest partial state is news within the manager role, not invalid evidence'
         phrase = 'is a partial attempt' if kind == 'collection' else 'is reserved but unresolved'
         assert any(f'{kind} {name} {phrase}' in message for message in view['outstanding'])
         if kind == 'attempt':
@@ -459,6 +467,7 @@ def test_status_distinguishes_absent_receipts_from_present_invalid_receipts(tmp_
             ('collection_schema' if kind == 'collection' else 'record_schema')
             if variant in {'foreign', 'schema'} else 'record_corrupt')
         assert row['problems'][0]['reason'] == expected
+        assert view['exit_code'] == 3, 'records that do not verify set exit 3'
         assert any(f'{kind} {name}' in message and 'invalid or unreadable receipt' in message
                    for message in view['outstanding']), 'recovery guidance must name invalid evidence, not an absent receipt'
         for misleading in (f'{kind} {name} is a partial attempt', f'{name}: incomplete',

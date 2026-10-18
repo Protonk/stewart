@@ -332,7 +332,7 @@ def runtime_recovery(session: Path, name: str, session_record: dict) -> tuple[di
         raise StewartError('runtime recovery differs from its source session', reason='binding_mismatch')
     record_assets(record, session_record=session_record)
     state = record_state(record)
-    destination = Path(session_record['repo']) / '.scratch/stewart-runtimes' / f"{session_record['session_uuid']}-recovered-{name}"
+    destination = Path(session_record['audit_dir']) / f"runtime-recovered-{name}"
     if state['identity'] != binding(destination, session_record['runtime']['manifest']):
         raise StewartError('runtime recovery changed the source code identity or destination', reason='binding_mismatch')
     capture = runtime_observations(directory, state, phases={'recovery'})['recovery']

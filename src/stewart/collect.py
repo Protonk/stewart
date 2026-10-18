@@ -354,7 +354,8 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
     # A broken retention ref must not erase a still-readable raw report. Record
     # that failure after preservation; subsequent recovery actions remain gated.
     session, record = load_session(ws, ident, check_retention=False)
-    worktree = contained(session, "worktree")
+    # The recorded checkout, validated against the session identity on load.
+    worktree = Path(record["worktree"])
     name = stamp()
     collection = session / "collections" / name
     collection.mkdir(parents=True, mode=0o700)

@@ -72,7 +72,6 @@ class Scenario:
         self.git("init", "-q", "-b", "review-work")
         self.git("config", "user.name", "Stewart acceptance")
         self.git("config", "user.email", "acceptance@example.invalid")
-        (self.repo / ".git/info/exclude").write_text("/.scratch/stewart/\n/.scratch/stewart-runtimes/\n")
         (self.repo / "input.txt").write_text("a known committed value\n")
         directory = self.repo / self.ws; directory.mkdir(parents=True)
         (directory / "AUDITOR.md").write_text("Read the bounded prompt. Use only its granted operations.\n")
@@ -143,6 +142,7 @@ class Scenario:
         disposition = self.disposition("snapshot", captured["collection"])
         self.action("retain", "--audit-id", "snapshot", "--triage", disposition["triage"], "--report")
         self.check("retained report equals raw capture", (self.repo / meta["report_path"]).read_bytes() == (Path(captured["path"]) / "REPORT.md").read_bytes())
+        (self.repo / ".scratch").mkdir(exist_ok=True)  # a manager-chosen package location
         package = self.action("export", "--audit-id", "snapshot", "--collection", captured["collection"],
                               "--select", "REPORT.md", "--select", "runtime-assets", "--select", "runtime-observation:collection",
                               "--output", ".scratch/transferred-evidence", "--actor", "acceptance driver")

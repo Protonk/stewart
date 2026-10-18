@@ -202,7 +202,7 @@ def test_bad_manifest_refuses_before_reserving_session(checkout, fault):
         "unknown_provenance": "input_manifest", "empty": "input_manifest",
         "self_member": "assignment_schema", "writable_overlap": "input_overlap",
     }[fault]
-    assert not (checkout.repo / checkout.ws.session("one-question")).exists()
+    assert not support.session_path(checkout).exists()
 
 
 @pytest.mark.parametrize("fault,reason", [("inventory", "input_manifest"), ("prompt", "prompt_drift"), ("root", "checkout_root")])
@@ -265,7 +265,7 @@ def test_experiment_membership_is_checked_after_manifest_expansion(tmp_path, run
         with pytest.raises(StewartError) as caught:
             prepare(checkout.ws, revision)
         assert caught.value.reason == "grant_containment"
-        assert not (checkout.repo / checkout.ws.session("one-question")).exists()
+        assert not support.session_path(checkout).exists()
 
 
 @pytest.mark.parametrize("destination,reason", [

@@ -11,7 +11,7 @@ import pytest
 from stewart._bootstrap import StewartError
 from stewart._git import git, git_text
 from stewart._repository import (
-    LOCK_PREFIX, ROLE_MARKER, checkout_identity, maintainer, register_auditor,
+    DEFAULT_CHECKOUT_HOME, REGISTRATION_LOCK, ROLE_MARKER, checkout_identity, maintainer, register_auditor,
     retention_for, retain_commits,
     verify_retention,
 )
@@ -27,8 +27,7 @@ REL = "reviews/example"
 
 @pytest.fixture
 def ready_project(project_repo):
-    exclude = project_repo / ".git/info/exclude"
-    exclude.write_text(exclude.read_text() + "\n/.scratch/stewart/\n/.scratch/stewart-runtimes/\n")
+    """A project as it stands: Stewart's storage needs no ignore rule."""
     return project_repo
 
 
@@ -90,7 +89,7 @@ def test_preparation_accepts_maintainer_roles_independent_of_branch(ready_projec
     assert set(verify_retention(repo, record)["refs"]) == {"prompt", "target", "base"}
     assert "main_before" not in record and "maintainer_before" in record
     view = status(ws, "one-question")
-    assert view["schema"] == "stewart.status/11" and "main" not in view["identities"]
+    assert view["schema"] == "stewart.status/12" and "main" not in view["identities"]
     assert view["identities"]["retention"] == {"status": "verified", "pins": record["retention"]}
     assert git_text(Path(result["worktree"]), "branch", "--show-current") == ""
 
@@ -100,9 +99,12 @@ def test_auditor_role_survives_move_and_unregistered_reserved_root_is_refused(re
     result = prepare(ws, prompt)
     auditor = Path(result["worktree"])
     assert_reason("auditor_worktree", prepare, workspace(auditor, REL), prompt)
-    assert not (auditor / ".scratch/stewart").exists()
+    assert not (auditor / ".git").is_dir(), "the auditor checkout is a linked worktree holding no Stewart storage"
     old_admin = checkout_identity(auditor)["git_admin"]
     moved = tmp_path / "moved-auditor"
+    # The lifetime lock refuses a move until the manager unlocks it on purpose.
+    assert git(ready_project, "worktree", "move", str(auditor), str(moved), check=False).returncode != 0
+    git(ready_project, "worktree", "unlock", str(auditor))
     git(ready_project, "worktree", "move", str(auditor), str(moved))
     assert checkout_identity(moved)["git_admin"] == old_admin
     for operation in (initialize,):
@@ -111,7 +113,8 @@ def test_auditor_role_survives_move_and_unregistered_reserved_root_is_refused(re
     linked = tmp_path / "legitimate-linked"
     git(ready_project, "worktree", "add", "--detach", str(linked), "HEAD")
     assert maintainer(linked)["root"] == str(linked)
-    orphan = ready_project / ".scratch/stewart/orphan/id/worktree"
+    # Backstop: a repository inside the default checkout home is never a maintainer.
+    orphan = Path.home() / DEFAULT_CHECKOUT_HOME / "orphan-key" / "unregistered" / "worktree"
     orphan.mkdir(parents=True)
     git(orphan, "init", "-q")
     assert_reason("auditor_worktree", maintainer, orphan)
@@ -123,13 +126,16 @@ def test_scope_keeps_other_checkouts_and_retired_session_locations_private(ready
     first = prepare(ws, prompt)
     linked = tmp_path / "linked"
     git(ready_project, "worktree", "add", "-b", "other-maintainer", str(linked))
-    git(ready_project, "worktree", "remove", str(first["worktree"]), "--force")
+    git(ready_project, "worktree", "remove", "--force", "--force", str(first["worktree"]))
     other_ws, other_prompt, _ = assigned(linked, ident="second-question")
     second = prepare(other_ws, other_prompt)
     record = json.loads((Path(second["session"]) / "session.json").read_bytes())
     roots = record["auditor_scope"]["private_roots"]
-    assert str(ready_project) in roots and str(linked) in roots
+    # The main checkout holds the Git common directory, so its entries are
+    # denied instead of the checkout itself; the linked maintainer is denied whole.
+    assert str(ready_project) not in roots and str(ready_project / "input.txt") in roots and str(linked) in roots
     assert first["session"] in roots, "removing a checkout must not remove its private session exclusion"
+    assert first["audit_dir"] in roots, "another session's checkout directory stays private"
     denied = claude_settings(record["auditor_scope"])["sandbox"]["filesystem"]["denyRead"]
     assert set(roots).issubset(denied)
     (ready_project / "unrelated.txt").write_text("unrelated change")
@@ -167,17 +173,22 @@ def test_role_registry_fails_closed_but_ignores_unrelated_files(ready_project, t
             row.chmod(0o600)
 
 
-def test_private_storage_exclusion_is_an_explicit_prerequisite(ready_project):
+def test_preparation_needs_no_ignore_rule_and_leaves_no_working_tree_footprint(ready_project):
     ws, prompt, _ = assigned(ready_project)
     exclude = ready_project / ".git/info/exclude"
     exclude.write_text("# existing project configuration\n")
-    assert_reason("private_storage_not_ignored", prepare, ws, prompt)
+    footprint = ["status", "--porcelain=v1", "--ignored", "--untracked-files=all"]
+    before = git_text(ready_project, *footprint)
+    result = prepare(ws, prompt)
+    report = Path(result["worktree"]) / ws.report_path("one-question")
+    report.write_text("a report\n")
+    collect(ws, "one-question", auditor_stopped="finished")
+    assert git_text(ready_project, *footprint) == before, "custody lives outside the working tree"
     assert exclude.read_text() == "# existing project configuration\n"
-    assert not (ready_project / ".scratch").exists()
-    exclude.write_text(exclude.read_text() + "/.scratch/stewart/\n")
-    assert_reason("private_storage_not_ignored", prepare, ws, prompt)
-    exclude.write_text(exclude.read_text() + "/.scratch/stewart-runtimes/\n")
-    assert prepare(ws, prompt)["retention"]["refs"]
+    assert not git(ready_project, "add", "--all", "--dry-run").stdout, "nothing Stewart wrote is stageable"
+    # Control: an ordinary new file in the same checkout does appear.
+    (ready_project / "ordinary.txt").write_text("new\n")
+    assert "?? ordinary.txt" in git_text(ready_project, *footprint)
 
 
 @pytest.mark.parametrize("keep_refs", [True, False])
@@ -193,7 +204,7 @@ def test_prepared_prompt_and_target_survive_gc_only_with_their_refs(ready_projec
     assert git_text(ready_project, "branch", "--contains", prompt) == ""
     result = prepare(ws, prompt)
     _, record = load_session(ws, "one-question")
-    git(ready_project, "worktree", "remove", "--force", result["worktree"])
+    git(ready_project, "worktree", "remove", "--force", "--force", result["worktree"])
     if not keep_refs:
         for entry in record["retention"]["refs"].values():
             git(ready_project, "update-ref", "-d", entry["ref"])
@@ -261,7 +272,7 @@ def test_new_auditor_lifetime_can_reuse_git_administrative_name(ready_project, r
     first = prepare(ws, prompt)
     first_admin = checkout_identity(Path(first["worktree"]))["git_admin"]
     if remove_first:
-        git(ready_project, "worktree", "remove", "--force", first["worktree"])
+        git(ready_project, "worktree", "remove", "--force", "--force", first["worktree"])
     ws, prompt, _ = assigned(ready_project, ident="second")
     second = prepare(ws, prompt)
     second_admin = checkout_identity(Path(second["worktree"]))["git_admin"]
@@ -277,7 +288,7 @@ def test_new_linked_maintainer_does_not_inherit_removed_auditor_role(ready_proje
     ws, prompt, _ = assigned(ready_project)
     first = prepare(ws, prompt)
     old_admin = checkout_identity(Path(first["worktree"]))["git_admin"]
-    git(ready_project, "worktree", "remove", "--force", first["worktree"])
+    git(ready_project, "worktree", "remove", "--force", "--force", first["worktree"])
     linked = tmp_path / basename
     git(ready_project, "worktree", "add", "--detach", str(linked), prompt)
     observed = maintainer(linked)
@@ -296,30 +307,15 @@ def test_failed_role_registration_stays_auditor_after_forced_move(ready_project,
     monkeypatch.setattr(module, "register_auditor", fail)
     assert_reason("prepare_failed", prepare, ws, prompt)
     directory, record = load_session(ws, "one-question")
-    original = directory / "worktree"
+    original = Path(record["worktree"])
     admin = Path(checkout_identity(original)["git_admin"])
-    assert (admin / "locked").read_text().strip() == LOCK_PREFIX + record["session_uuid"]
+    assert (admin / "locked").read_text().strip() == REGISTRATION_LOCK + record["session_uuid"]
     assert not (admin / ROLE_MARKER).exists()
     moved = tmp_path / "failed-auditor-moved"
     git(ready_project, "worktree", "move", "--force", "--force", str(original), str(moved))
     assert_reason("auditor_worktree", maintainer, moved)
     assert maintainer(ready_project)["root"] == str(ready_project)
     assert verify_retention(ready_project, record) == record["retention"]
-
-
-def test_children_ignore_glob_cannot_hide_stageable_private_session(ready_project):
-    ws, prompt, _ = assigned(ready_project)
-    exclude = ready_project / ".git/info/exclude"
-    exclude.write_text(f"/.scratch/stewart/*\n!/.scratch/stewart/{ws.slug}/\n/.scratch/stewart-runtimes/\n")
-    synthetic = ready_project / ".scratch/stewart" / ws.slug / "probe/session.json"
-    synthetic.parent.mkdir(parents=True)
-    synthetic.write_text("synthetic private bytes\n")
-    assert b"session.json" in git(ready_project, "add", "-A", "--dry-run").stdout
-    assert_reason("private_storage_not_ignored", prepare, ws, prompt)
-    assert not (ready_project / ws.session("one-question")).exists()
-    exclude.write_text("/.scratch/stewart/\n/.scratch/stewart-runtimes/\n")
-    assert b"session.json" not in git(ready_project, "add", "-A", "--dry-run").stdout
-    assert prepare(ws, prompt)["retention"]["refs"]
 
 
 def test_retention_refs_reject_symbolic_substitution_and_dangling_collision(ready_project):
@@ -391,6 +387,7 @@ def test_moved_auditor_marker_failures_are_not_unassigned_roles(ready_project, t
     result = prepare(ws, prompt)
     worktree = Path(result["worktree"])
     moved = tmp_path / "moved-marker-case"
+    git(ready_project, "worktree", "unlock", str(worktree))
     git(ready_project, "worktree", "move", str(worktree), str(moved))
     marker = Path(checkout_identity(moved)["git_admin"]) / ROLE_MARKER
     assert_reason("auditor_worktree", maintainer, moved)

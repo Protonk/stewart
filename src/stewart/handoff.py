@@ -21,7 +21,7 @@ from stewart.captured import (
 )
 from stewart.session import (
     ATTEMPT_SCHEMA, COLLECTION_SCHEMA, RELEASE_SCHEMA, capture_receipt, load_session,
-    now, record_name, tool_identity, write_receipt,
+    now, record_name, session_dir, tool_identity, write_receipt,
 )
 from stewart.workspace import Workspace, contained, relative
 
@@ -133,7 +133,7 @@ def export_evidence(ws: Workspace, ident: str, *, collection: str | None = None,
                                 selectors=selectors, output=output, actor=actor)
     except StewartError as exc:
         raise StewartError(str(exc), reason=exc.reason,
-                           retained=exc.retained or [str(ws.repo / ws.session(ident))],
+                           retained=exc.retained or [str(session_dir(ws, ident))],
                            next_steps=exc.next_steps or [
                                'inspect the named source record and select only its available regular captures; '
                                'preserve inconsistent evidence and use a fresh output directory',

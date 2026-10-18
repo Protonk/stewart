@@ -193,10 +193,10 @@ def _resolve_interpreter(ws: Workspace, policy: str) -> str:
     return str(candidate)
 
 
-def _environment(policy: str, worktree: Path, attempt_dir: Path) -> dict[str, str]:
+def _environment(policy: str, worktree: Path, home: Path) -> dict[str, str]:
     return {
         "PATH": os.environ.get("PATH", ""),
-        "HOME": str(attempt_dir / "home"),
+        "HOME": str(home),
         "LC_ALL": "C.UTF-8",
     }
 
@@ -232,7 +232,8 @@ def release(ws: Workspace, ident: str, *, review: dict, actor: str) -> dict:
     runtime = runtime_state(record['runtime'])
     observe_phase(runtime, session / 'releases', 'release', directory=f'runtime-{name}')
     require_match(session / 'releases', runtime, phases={'release'})
-    worktree = contained(session, "worktree")
+    # The recorded checkout, validated against the session identity on load.
+    worktree = Path(record["worktree"])
     if not worktree.is_dir():
         raise StewartError("the worktree is gone; nothing can be released", reason="worktree_missing")
     head = git(worktree, "rev-parse", "HEAD", check=False)
@@ -284,7 +285,10 @@ def release(ws: Workspace, ident: str, *, review: dict, actor: str) -> dict:
         "frozen": frozen,
         "manifest_files": len(manifest),
         "interpreter": interpreter,
-        "environment": _environment(grant["environment"], worktree, attempt_dir),
+        # The child's HOME is written by project code, so it lives with the
+        # checkout rather than in the private session beside the receipts.
+        "environment": _environment(grant["environment"], worktree,
+                                    Path(record["audit_dir"]) / "attempts" / name / "home"),
         "cwd": str(worktree),
         "approved_argv": argv,
         "argv": child["argv"],

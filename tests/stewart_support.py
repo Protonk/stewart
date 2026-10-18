@@ -37,6 +37,12 @@ def assignment_text(meta: dict, *, extra_sections: dict | None = None) -> str:
     return "# Audit assignment\n\n```audit-assignment\n" + json.dumps(meta, indent=2) + "\n```\n\n" + body
 
 
+def session_path(checkout, ident: str = "one-question") -> Path:
+    """The session's repo-wide private directory under the Git common directory."""
+    from stewart.session import session_dir
+    return session_dir(checkout.ws, ident)
+
+
 def read_json(location: Path) -> dict:
     return json.loads(location.read_text(encoding="utf-8"))
 
@@ -52,7 +58,11 @@ def make_checkout(tmp_path: Path, run_cmd, *, ws_rel: str = WS, name: str = "mai
     git("init", "-q", "-b", "main")
     git("config", "user.name", "Stewart test")
     git("config", "user.email", "stewart-test@example.invalid")
+    # The fixture's own areas: ``ignored/`` for supplemental inputs and
+    # ``.scratch/`` for manager-chosen evidence packages. Stewart's storage needs
+    # no ignore rule and writes nothing in either.
     (repo / ".gitignore").write_text(".scratch/\nignored/\n", encoding="utf-8")
+    (repo / ".scratch").mkdir()
     (repo / "input.txt").write_text("committed input\n", encoding="utf-8")
     (repo / "other.txt").write_text("unrelated input\n", encoding="utf-8")
     tasks = repo / ws_rel
@@ -108,7 +118,7 @@ def prepared_session(checkout, *, mode: str = "snapshot", report: str | None = "
     prepared = prepare(checkout.ws, revision, mode=mode, writers_paused=paused,
                        pause_note=PAUSE_NOTE if paused else None)
     session = Path(prepared["session"])
-    worktree = session / "worktree"
+    worktree = Path(prepared["worktree"])
     report_path = worktree / checkout.meta["report_path"]
     if report is not None:
         report_path.write_text(report, encoding="utf-8")
@@ -285,7 +295,7 @@ def prepared_experiment(checkout, **child_kwargs) -> SimpleNamespace:
     revision = checkout.prompt_commit(text=checkout.prompt_text)
     prepared = prepare(checkout.ws, revision)
     session = Path(prepared["session"])
-    worktree = session / "worktree"
+    worktree = Path(prepared["worktree"])
     script = worktree / checkout.grant["script"]
     script.parent.mkdir(parents=True, exist_ok=True)
     script.write_text(child_source(**child_kwargs), encoding="utf-8")

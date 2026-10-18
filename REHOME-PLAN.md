@@ -336,6 +336,18 @@ Only step 4's `<common>` read grant depends on this outcome.
 - **Also observed:** the harness reports that `Write(path)` deny rules are not
   matched by file permission checks, while `Edit(path)` rules cover every
   file-editing tool. Step 4 drops the ineffective `Write` deny.
+- **V3, requalification of the rehomed settings** (`step0/v3` in the
+  scratchpad). This is a second session in the same repository, with a
+  sentinel in the first session's checkout:
+  - the worktree is readable by both tools, and writable;
+  - the runtime is readable, and writes to it are denied;
+  - `git log` and `git status` work;
+  - the session record and `<common>/stewart` are denied to both tools;
+  - a maintainer-checkout file that existed at preparation is denied;
+  - the other audit's checkout is denied;
+  - a maintainer file created *after* preparation is readable: the known gap
+    from denying a snapshot of the checkout's entries;
+  - the harness no longer warns about deny rules.
 
 ### 1. Derive every storage root in one place
 

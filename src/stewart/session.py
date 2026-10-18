@@ -23,9 +23,11 @@ from stewart._util import receipt_json_bytes
 from stewart._bootstrap import EXIT_UNVERIFIED, StewartError, read_regular, write_exclusive
 from stewart._git import git, git_text
 from stewart._json import loads_control
-from stewart.workspace import Workspace, contained
+from stewart.workspace import Workspace
 
-SESSION_SCHEMA = 11
+#: Schema 12 moves the session under the Git common directory and records the
+#: per-user checkout home and the session's checkout directory beside it.
+SESSION_SCHEMA = 12
 #: Captures bind pristine assets and distinguish failed observation operations
 #: from completed observations of a mismatching runtime. Schema 7 records errors
 #: as reason/message objects and names unexpected paths that are supplemental
@@ -151,9 +153,9 @@ def read_receipt(location: Path, *, what: str) -> dict:
 
 
 def session_dir(ws: Workspace, ident: str) -> Path:
-    from stewart._repository import maintainer
-    maintainer(ws.repo)
-    return contained(ws.repo, ws.session(ident))
+    """The session's repo-wide private directory under the Git common directory."""
+    from stewart._repository import maintainer, session_location
+    return session_location(maintainer(ws.repo)["common_dir"], ws, ident)
 
 
 def load_session(ws: Workspace, ident: str, *, check_retention: bool = True) -> tuple[Path, dict]:
@@ -196,16 +198,15 @@ def load_session(ws: Workspace, ident: str, *, check_retention: bool = True) -> 
                            reason="session_identity", retained=[str(session)],
                            next_steps=["preserve the invalid session for manual recovery; do not rewrite it"])
     assignment = record.get("assignment")
-    if (
-        record.get("repo") != str(ws.repo)
-        or record.get("workspace") != ws.rel
-        or not isinstance(assignment, dict)
-        or assignment.get("audit_id") != ident
-    ):
-        raise StewartError(
-            "session does not belong to this maintainer checkout, workspace and audit ID",
-            reason="session_identity",
-        )
+    if record.get("workspace") != ws.rel or not isinstance(assignment, dict) or assignment.get("audit_id") != ident:
+        raise StewartError("session does not belong to this workspace and audit ID", reason="session_identity",
+                           retained=[str(session)])
+    if record.get("repo") != str(ws.repo):
+        # Sessions are repo-wide, but each belongs to the maintainer checkout
+        # that prepared it: operate on it from there.
+        raise StewartError(f"session {ident} belongs to the maintainer checkout {record.get('repo')}",
+                           reason="session_other_maintainer", retained=[str(session)],
+                           next_steps=[f"rerun with --repo {record.get('repo')}"])
     from stewart._repository import maintainer, session_uuid, verify_retention
     identity = maintainer(ws.repo)
     if (record.get("common_dir") != identity["common_dir"]
@@ -220,8 +221,13 @@ def load_session(ws: Workspace, ident: str, *, check_retention: bool = True) -> 
     from stewart.auditor_scope import validate_scope
     runtime = validate_binding(record.get('runtime'))
     validate_assets(record.get('runtime_assets'))
-    expected_root = ws.repo / '.scratch/stewart-runtimes' / record['session_uuid']
-    if runtime['root'] != str(expected_root):
+    from stewart._repository import audit_location
+    home, audit_dir = record.get("checkout_home"), record.get("audit_dir")
+    if (not isinstance(home, str) or not isinstance(audit_dir, str)
+            or str(audit_location(Path(home), record["common_dir"], record["session_uuid"])) != audit_dir
+            or record.get("worktree") != str(Path(audit_dir) / "worktree")):
+        raise StewartError("session checkout locations differ from its identity", reason="session_identity")
+    if runtime['root'] != str(Path(audit_dir) / "runtime"):
         raise StewartError("runtime root differs from this session's supplied directory", reason="runtime_identity")
     scope = validate_scope(record.get('auditor_scope'))
     if any(scope[key] != expected for key, expected in {

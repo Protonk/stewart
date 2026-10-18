@@ -6,11 +6,11 @@ A workspace is a repository-relative directory holding the auditor guidance
 assignment-facing path derives from it; nothing in this package names a
 particular workspace.
 
-Private sessions live under ``.scratch/stewart/<slug>/<audit-id>/`` in the
-maintainer checkout. The slug joins the workspace's last path component to a
-digest of its full relative path, so two workspaces that share an audit ID never
-address each other's evidence, and a human can still read which workspace a
-session belongs to.
+Private sessions live outside the workspace, under the repository's Git common
+directory at ``stewart/sessions/<slug>/<audit-id>/``. The slug joins the
+workspace's last path component to a digest of its full relative path, so two
+workspaces that share an audit ID never address each other's evidence, and a
+human can still read which workspace a session belongs to.
 """
 
 from __future__ import annotations
@@ -22,7 +22,6 @@ from stewart import _util as _hash
 from stewart import _util as path
 from stewart._bootstrap import StewartError
 
-SESSIONS_ROOT = ".scratch/stewart"
 # Roles select policy. Harness entry filenames and launch profiles do not.
 AUDITOR_GUIDANCE = "AUDITOR.md"
 MAINTAINER_GUIDANCE = "MAINTAINER.md"
@@ -96,19 +95,12 @@ class Workspace:
     def slug(self) -> str:
         return f"{Path(self.rel).name}-{_hash.sha256_text(self.rel)[:12]}"
 
-    @property
-    def sessions(self) -> str:
-        return f"{SESSIONS_ROOT}/{self.slug}"
-
-    def session(self, ident: str) -> str:
-        return f"{self.sessions}/{ident}"
-
     def guidance_files(self) -> tuple[str, str, str]:
         """Required role policies and assignment; harness entry files are optional."""
         return (self.auditor_guidance, self.maintainer_guidance, self.prompt)
 
     def to_json(self) -> dict:
-        return {"repo": str(self.repo), "rel": self.rel, "slug": self.slug, "sessions": self.sessions}
+        return {"repo": str(self.repo), "rel": self.rel, "slug": self.slug}
 
 
 def workspace(repo: Path, rel: str) -> Workspace:
@@ -121,6 +113,4 @@ def workspace(repo: Path, rel: str) -> Workspace:
     """
     resolved = Path(repo).resolve()
     relative(rel)
-    if rel == ".scratch" or rel.startswith(".scratch/"):
-        raise StewartError("a workspace cannot live under the private session root", reason="workspace_path")
     return Workspace(resolved, rel)

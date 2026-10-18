@@ -1,9 +1,13 @@
-"""Explicit Git worktree selection, auditor roles, and durable commit refs.
+"""Explicit Git worktree selection, auditor roles, private storage and durable commit refs.
 
-Git administration is manager-owned. A lifetime marker distinguishes linked
-worktrees even after a move or reuse of an old administrative pathname. Neither
-the marker nor its retained registry row defends against someone who can rewrite
-Git administration.
+Git administration is manager-owned. Private custody lives under the Git
+common directory (``<common>/stewart``), which ``git clean`` never touches and
+which every linked worktree shares, so sessions are addressed repo-wide.
+Auditor-facing checkouts live in a per-user checkout home outside every
+working tree, one UUID-named directory per session. A lifetime marker
+distinguishes linked worktrees even after a move or reuse of an old
+administrative pathname. Neither the marker nor its retained registry row
+defends against someone who can rewrite Git administration.
 """
 from __future__ import annotations
 
@@ -15,12 +19,160 @@ import uuid
 from stewart._bootstrap import StewartError, open_directory, read_regular
 from stewart._git import COMMIT_ID, create_refs, git, git_text, resolve_commit
 from stewart._json import loads_control
+from stewart._util import sha256_text
+from stewart.workspace import contained
 
 ROLE_SCHEMA = "stewart.worktree-role/2"
 ROLE_MARKER = "stewart-auditor.json"
-LOCK_PREFIX = "stewart auditor "
+#: Git lock reasons. Preparation locks a new checkout under the first while it
+#: registers the role; a registered auditor checkout then keeps the second for
+#: its lifetime, so ordinary worktree cleanup refuses to remove or move it.
+REGISTRATION_LOCK = "stewart auditor registration "
+LIFETIME_LOCK = "stewart auditor checkout "
 RETENTION_SCHEMA = "stewart.commit-retention/1"
-PRIVATE_ROOTS = (".scratch/stewart", ".scratch/stewart-runtimes")
+#: Private custody below the Git common directory.
+STORAGE = "stewart"
+SESSIONS = f"{STORAGE}/sessions"
+#: The per-user checkout home used when ``prepare`` names none.
+DEFAULT_CHECKOUT_HOME = ".local/state/stewart/checkouts"
+
+
+def private_storage(common: str) -> Path:
+    """``<common>/stewart``, created with mode 0700; a link there is refused."""
+    root = Path(common) / STORAGE
+    if root.is_symlink():
+        raise StewartError(f"private storage cannot be a link: {root}", reason="path_symlink", retained=[str(root)])
+    root.mkdir(mode=0o700, exist_ok=True)
+    return root
+
+
+def session_location(common: str, ws, ident: str) -> Path:
+    """One session's private directory: repo-wide, by workspace slug and audit ID."""
+    return contained(Path(common), f"{SESSIONS}/{ws.slug}/{ident}")
+
+
+def workspace_sessions(common: str, ws) -> list[str]:
+    """Audit IDs with a session directory for this workspace, in name order."""
+    folder = Path(common) / SESSIONS / ws.slug
+    if not folder.is_dir() or folder.is_symlink():
+        return []
+    return sorted(entry.name for entry in folder.iterdir() if entry.is_dir() and not entry.is_symlink())
+
+
+def repo_key(common: str) -> str:
+    """A readable repository name plus a digest of its common directory path."""
+    path = Path(common)
+    name = path.parent.name if path.name == ".git" else path.name
+    return f"{name}-{sha256_text(str(path))[:12]}"
+
+
+def resolve_checkout_home(selected: Path | None = None) -> Path:
+    """The checkout home's path, checked for shape and links; nothing is created.
+
+    The default is ``~/.local/state/stewart/checkouts``; no environment
+    variable selects it.
+    """
+    home = Path(selected) if selected is not None else Path.home() / DEFAULT_CHECKOUT_HOME
+    if not home.is_absolute() or ".." in home.parts or "\0" in str(home):
+        raise StewartError(f"checkout home must be an absolute path: {home}", reason="checkout_home",
+                           next_steps=["pass --checkout-home with an absolute, unlinked directory"])
+    for part in [*reversed(home.parents), home]:
+        if part.is_symlink():
+            raise StewartError(f"checkout home cannot traverse a link: {part}", reason="checkout_home",
+                               next_steps=["choose a checkout home whose every ancestor is a real directory"])
+    return home
+
+
+def checkout_home(selected: Path | None = None) -> Path:
+    """The validated per-user checkout home: absolute, unlinked, private, created if absent.
+
+    Missing directories are created with mode 0700; call this only after the
+    overlap checks in ``require_separate_home`` pass.
+    """
+    home = resolve_checkout_home(selected)
+    for part in [*reversed(home.parents), home]:
+        if not part.exists():
+            part.mkdir(mode=0o700)
+    with open_directory(home) as descriptor:
+        info = os.fstat(descriptor)
+    if info.st_uid != os.getuid() or info.st_mode & 0o077:
+        raise StewartError(f"checkout home must be private to the current user (mode 0700): {home}",
+                           reason="checkout_home", retained=[str(home)],
+                           next_steps=["choose a manager-owned directory with mode 0700"])
+    return home
+
+
+def require_separate_home(home: Path, *, repo: Path, worktrees: list[str], common: str, manager_home: Path,
+                          prefix: Path) -> None:
+    """The checkout home lies outside every working tree and every private or trusted root.
+
+    Auditor checkouts are themselves working trees inside the home, so only a
+    home inside a working tree, or the maintainer checkout inside the home,
+    counts as overlap there.
+    """
+    nested = [(Path(root), "a working tree of this repository") for root in worktrees]
+    if Path(repo) == home or Path(repo).is_relative_to(home):
+        raise StewartError(f"the maintainer checkout {repo} lies inside the checkout home {home}",
+                           reason="checkout_home", next_steps=["choose a checkout home outside the maintainer checkout"])
+    for root, what in nested:
+        if home == root or home.is_relative_to(root):
+            raise StewartError(f"checkout home {home} lies inside {what}: {root}", reason="checkout_home",
+                               next_steps=["choose a checkout home outside every working tree and private root"])
+    for root, what in [(Path(common), "the Git common directory"), (Path(manager_home), "the manager home"),
+                       (Path(prefix), "the interpreter prefix")]:
+        if home == root or home.is_relative_to(root) or root.is_relative_to(home):
+            raise StewartError(f"checkout home {home} overlaps {what}: {root}", reason="checkout_home",
+                               next_steps=["choose a checkout home outside every working tree and private root"])
+
+
+def audit_location(home: Path, common: str, session_identity: str) -> Path:
+    """One session's checkout directory: its worktree, runtime and experiment homes."""
+    return contained(Path(home), f"{repo_key(common)}/{session_identity}")
+
+
+def worktree_roots(repo: Path) -> list[str]:
+    """Every working tree Git lists for this repository."""
+    roots = []
+    for field in git(repo, "worktree", "list", "--porcelain", "-z").stdout.split(b"\0"):
+        if field.startswith(b"worktree "):
+            roots.append(os.fsdecode(field[len(b"worktree "):]))
+    return roots
+
+
+def read_denials(roots: list[str], keep: list[str]) -> list[str]:
+    """Literal read denials that never cover a path the auditor is granted.
+
+    In the qualified harness a broader ``denyRead`` wins over a nested
+    ``allowRead`` (rehome step 0 qualification). A private root that contains
+    a kept path, such as the Git common directory or an interpreter prefix in
+    a project virtual environment, therefore cannot be denied whole: the
+    auditor's Git or helpers would stop working. Such a root is replaced by its
+    entries, descending along each path to a kept one, so everything else
+    under it stays denied. Entry names with pattern syntax cannot be denied
+    literally and are left out, and entries created later are not covered.
+    """
+    targets = [Path(path) for path in keep]
+    denied: set[str] = set()
+    for root in roots:
+        path = Path(root)
+        if any(target != path and target.is_relative_to(path) for target in targets):
+            denied.update(_entries_beside(path, targets))
+        elif not any(path == target for target in targets):
+            denied.add(root)
+    return sorted(denied)
+
+
+def _entries_beside(root: Path, targets: list[Path]) -> list[str]:
+    found = []
+    for name in sorted(os.listdir(root)):
+        entry = root / name
+        if any(entry == target for target in targets):
+            continue
+        if any(target.is_relative_to(entry) for target in targets):
+            found.extend(_entries_beside(entry, targets))
+        elif not any(c in name for c in "*?[]{}()\\\n\r"):
+            found.append(str(entry))
+    return found
 
 
 def checkout_identity(repo: Path) -> dict:
@@ -42,10 +194,10 @@ def checkout_identity(repo: Path) -> dict:
         raise StewartError(f"cannot inspect the selected Git worktree: {exc}", reason="repository_root") from exc
 
 
-def _reserved_auditor_root(root: Path) -> bool:
-    parts = root.parts
-    return any(parts[i:i + 2] == (".scratch", "stewart") and parts[i + 4] == "worktree"
-               for i in range(len(parts) - 4))
+def _inside_auditor_checkout(root: Path, rows: list[dict]) -> bool:
+    """A backstop beside the marker and registry: the default home or a registered checkout directory."""
+    homes = [Path.home() / DEFAULT_CHECKOUT_HOME, *(Path(row["worktree"]).parent for row in rows)]
+    return any(root == home or root.is_relative_to(home) for home in homes)
 
 
 def _registry(common: str) -> Path:
@@ -121,12 +273,11 @@ def custody_roots(repo: Path, common: str) -> list[str]:
     Registry paths keep removed or moved checkouts' private sessions excluded.
     This is operation-time discovery, not a claim about future worktree moves.
     """
-    roots = {str(repo)}
-    for field in git(repo, "worktree", "list", "--porcelain", "-z").stdout.split(b"\0"):
-        if field.startswith(b"worktree "):
-            roots.add(os.fsdecode(field[len(b"worktree "):]))
+    roots = {str(repo), str(Path(common) / STORAGE), *worktree_roots(repo)}
     for row in _role_records(common):
-        roots.update((row["session"], row["worktree"]))
+        # A registered checkout's directory also holds its runtime and
+        # experiment homes; none of another session's material is needed.
+        roots.update((row["session"], row["worktree"], str(Path(row["worktree"]).parent)))
     return sorted(roots)
 
 
@@ -134,10 +285,10 @@ def maintainer(repo: Path) -> dict:
     """Any branch or detached HEAD is valid; a known auditor role is not."""
     identity = checkout_identity(repo)
     root = Path(identity["root"])
-    if _reserved_auditor_root(root):
-        raise StewartError("the selected root is in reserved auditor worktree storage",
-                           reason="auditor_worktree", next_steps=["select the maintainer working tree explicitly"])
     rows = _role_records(identity["common_dir"])
+    if _inside_auditor_checkout(root, rows):
+        raise StewartError("the selected root is inside auditor checkout storage",
+                           reason="auditor_worktree", next_steps=["select the maintainer working tree explicitly"])
     marker = _marker(identity)
     if marker is not None:
         matches = [row for row in rows if row["role_uuid"] == marker["role_uuid"]]
@@ -146,16 +297,49 @@ def maintainer(repo: Path) -> dict:
         raise StewartError("the selected worktree carries an auditor role marker",
                            reason="auditor_worktree", retained=[row["session"] for row in matches],
                            next_steps=["select a maintainer worktree; moving an auditor checkout does not change its role"])
-    # Git creates this lock as part of worktree add. It covers a failure between
-    # creation and exclusive marker/registry publication. Successful preparation
-    # unlocks only after the persistent marker has been published.
-    info, lock = read_regular(Path(identity["git_admin"]) / "locked")
-    if info["kind"] != "missing" and lock is None:
-        raise StewartError("worktree lock is unreadable", reason="worktree_role_registry")
-    if lock is not None and lock.startswith(LOCK_PREFIX.encode()):
+    # Git creates the registration lock as part of worktree add. It covers a
+    # failure between creation and exclusive marker/registry publication.
+    # Successful preparation then replaces it with the lifetime lock.
+    lock = worktree_lock(identity["git_admin"])
+    if lock is not None and lock.startswith(REGISTRATION_LOCK):
         raise StewartError("the selected worktree has an unfinished auditor registration",
                            reason="auditor_worktree", next_steps=["preserve the failed preparation; select its maintainer"])
+    if lock is not None and lock.startswith(LIFETIME_LOCK):
+        raise StewartError("the selected worktree is a locked Stewart auditor checkout",
+                           reason="auditor_worktree", next_steps=["select the maintainer working tree explicitly"])
     return identity
+
+
+def registered_session(common: str, session: Path) -> None:
+    """Refuse an audit ID whose registered session has lost its records.
+
+    A registry row names every prepared session's directory. When the row
+    remains but the directory is gone, the ID already has an evidence chain;
+    preparing it again would put a second one under the same name.
+    """
+    rows = [row for row in _role_records(common) if row["session"] == str(session)]
+    if rows:
+        refs = [f"refs/stewart/sessions/{row['session_uuid']}" for row in rows if row["session_uuid"]]
+        raise StewartError(
+            f"this audit ID was prepared before and its session records are missing: {session}",
+            reason="session_records_missing",
+            retained=[str(_registry(common) / f"{row['role_uuid']}.json") for row in rows] + refs,
+            next_steps=["preserve the registry row and the session's refs; prepare the assignment under a fresh audit ID"])
+
+
+def worktree_lock(git_admin: str) -> str | None:
+    """The worktree's Git lock reason, or None when it is not locked."""
+    info, lock = read_regular(Path(git_admin) / "locked")
+    if info["kind"] == "missing":
+        return None
+    if lock is None:
+        raise StewartError("worktree lock is unreadable", reason="worktree_role_registry")
+    return lock.decode("utf-8", "replace")
+
+
+def lifetime_lock_reason(session_identity: str) -> str:
+    return (f"{LIFETIME_LOCK}{session_identity}: run stewart status before removing; "
+            "close removes it with its session")
 
 
 def _prospective_role(manager: dict, worktree: Path, session: Path) -> dict:
@@ -167,7 +351,8 @@ def _prospective_role(manager: dict, worktree: Path, session: Path) -> dict:
     if data is None:
         raise StewartError("session cannot be read for role registration", reason="worktree_role_identity")
     record = loads_control(data)
-    if (not isinstance(record, dict) or worktree != session / "worktree"
+    if (not isinstance(record, dict) or str(worktree) != record.get("worktree")
+            or Path(str(record.get("audit_dir"))) / "worktree" != worktree
             or record.get("repo") != manager["root"] or record.get("common_dir") != manager["common_dir"]
             or record.get("worktree") != auditor["root"]):
         raise StewartError("session and observed worktree disagree", reason="worktree_role_identity")
@@ -221,55 +406,6 @@ def _publish_role(role: dict) -> dict:
 def register_auditor(repo: Path, worktree: Path, session: Path) -> dict:
     """Publish a role exclusively before handoff, binding the session's bytes."""
     return _publish_role(_prospective_role(maintainer(repo), worktree, session))
-
-
-def _whole_directory_rule(repo: Path, root: str) -> bool:
-    """Require a literal rule for this directory or an ancestor.
-
-    A trailing-slash check alone also matches a children glob, whose negated
-    descendants can still be staged. Refuse such partial rules rather than
-    trying to prove all possible future filenames with a few fixed probes.
-    """
-    result = git(repo, "check-ignore", "--verbose", "-z", "--no-index", "--stdin",
-                 input=(root + "/\0").encode(), check=False)
-    fields = result.stdout.split(b"\0")
-    if result.returncode or len(fields) != 5 or fields[-1] != b"":
-        return False
-    origin, _, pattern, _ = map(os.fsdecode, fields[:-1])
-    if not pattern or any(c in pattern for c in "!*?[\\"):
-        return False
-    literal = pattern.removeprefix("/").removesuffix("/")
-    parts = tuple(literal.split("/"))
-    if any(part in ("", ".", "..") for part in parts):
-        return False
-    origin_path = Path(origin)
-    if not origin_path.is_absolute():
-        origin_path = repo / origin_path
-    scope = ()
-    if origin_path.name == ".gitignore":
-        try:
-            scope = origin_path.parent.relative_to(repo).parts
-        except ValueError:
-            pass  # Global excludes are relative to the repository root.
-    path = Path(root).parts
-    if path[:len(scope)] != scope:
-        return False
-    remainder = path[len(scope):]
-    return (remainder[:len(parts)] == parts if pattern.startswith("/") or "/" in literal
-            else literal in remainder)
-
-
-def require_private_exclusions(repo: Path) -> None:
-    """Private custody/runtime directories need whole-directory Git exclusions."""
-    for root in PRIVATE_ROOTS:
-        if git(repo, "ls-files", "-z", "--", root).stdout:
-            raise StewartError(f"private storage contains tracked paths: {root}", reason="private_storage_tracked")
-        if not _whole_directory_rule(repo, root):
-            raise StewartError(f"private storage needs a literal whole-directory Git exclusion: {root}",
-                               reason="private_storage_not_ignored",
-                               next_steps=["add /.scratch/stewart/ and /.scratch/stewart-runtimes/ to "
-                                           "the project's ignore rules or this repository's info/exclude; "
-                                           "child globs are insufficient. Stewart never changes or stages rules automatically"])
 
 
 def session_uuid(value: object) -> str:

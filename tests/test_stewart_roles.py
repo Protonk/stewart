@@ -85,7 +85,7 @@ def test_harness_entry_files_cannot_substitute_for_missing_role_policy(checkout,
     with pytest.raises(StewartError) as prepare_error:
         prepare(ws, revision)
     assert prepare_error.value.reason == "workspace_guidance" and role_file in str(prepare_error.value)
-    assert not (repo / ".scratch").exists(), "missing committed guidance refuses before allocating a session"
+    assert not (repo / ".git/stewart").exists(), "missing committed guidance refuses before allocating a session"
     git("add", "--", f"{ws.rel}/{role_file}")
     git("commit", "-qm", "Restore explicit role policy")
     checkout.meta["audit_id"] = "restored-question"

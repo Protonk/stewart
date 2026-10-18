@@ -11,17 +11,23 @@ from pathlib import Path
 import pytest
 
 from stewart._bootstrap import StewartError
+from stewart._bootstrap import MANAGER_HOME
+from stewart._repository import read_denials
 from stewart.auditor_scope import claude_settings, scope_for, scoped_argv, validate_command, validate_scope
 
 
 @pytest.fixture
 def scope(tmp_path):
     repo = tmp_path / "project with 'quotes'"
-    return scope_for({"repo": str(repo), "worktree": str(repo / ".scratch/stewart/workspace/audit/worktree"),
-                      "runtime": {"root": str(repo / ".scratch/stewart-runtimes/uuid")},
-                      "common_dir": str(repo / ".git")},
+    (repo / ".git").mkdir(parents=True)
+    (repo / "src").mkdir()
+    (repo / "notes.txt").write_text("maintainer notes\n")
+    audit = tmp_path / "checkouts" / "project-0123456789ab" / "uuid"
+    roots = read_denials([str(repo), str(tmp_path / "other-checkout")], [str(repo / ".git"), str(tmp_path / "interpreter")])
+    return scope_for({"repo": str(repo), "worktree": str(audit / "worktree"),
+                      "runtime": {"root": str(audit / "runtime")}, "common_dir": str(repo / ".git")},
                      manager_home=tmp_path / "manager", interpreter_prefix=tmp_path / "interpreter",
-                     private_roots=[str(tmp_path / "other-checkout")])
+                     private_roots=roots)
 
 
 def test_adapter_separates_file_tools_shell_and_private_paths(scope):
@@ -36,13 +42,19 @@ def test_adapter_separates_file_tools_shell_and_private_paths(scope):
     assert scope["runtime"] in fs["allowRead"] and scope["runtime"] in fs["denyWrite"]
     assert str(Path(scope["runtime"]).parent) not in fs["allowRead"]
     assert str(Path(scope["worktree"]).parent) not in fs["allowRead"]
-    assert scope["repository"] in fs["denyRead"] and scope["manager_home"] in fs["denyRead"]
+    # The maintainer checkout contains the Git common directory, so it is
+    # denied entry by entry: a broader deny would win over the Git grant.
+    assert scope["repository"] not in fs["denyRead"] and scope["git_common"] not in fs["denyRead"]
+    assert {scope["repository"] + "/src", scope["repository"] + "/notes.txt"} <= set(fs["denyRead"])
+    assert scope["git_common"] in fs["allowRead"] and scope["manager_home"] in fs["denyRead"]
     assert scope["git_common"] + "/stewart" in fs["denyRead"]
-    assert str(Path.home() / ".cache/stewart/managers") in fs["denyRead"]
+    assert str(Path.home() / MANAGER_HOME) in fs["denyRead"]
     assert any(root.endswith("other-checkout") for root in fs["denyRead"])
+    for grant in fs["allowRead"]:
+        assert not any(Path(grant).is_relative_to(denied) for denied in fs["denyRead"] if "*" not in denied), grant
     assert settings["sandbox"]["failIfUnavailable"] and not settings["sandbox"]["allowUnsandboxedCommands"]
     assert not settings["sandbox"]["excludedCommands"] and not settings["sandbox"]["network"]["allowedDomains"]
-    assert settings["permissions"]["deny"] == [f"{tool}(/{scope['runtime']}/**)" for tool in ("Edit", "Write")]
+    assert settings["permissions"]["deny"] == [f"Edit(/{scope['runtime']}/**)"], "Edit rules cover every file tool"
     changed = [*command[:-1], "different prompt"]
     assert scoped_argv(changed, scope)[1:-1] == argv[1:-1], "question content must not widen filesystem scope"
 
@@ -89,3 +101,32 @@ def test_profile_values_cannot_be_harness_option_tokens(field):
         validate_profile({**profile, field: "--dangerously-skip-permissions"})
     assert caught.value.reason == "launch_profile"
     assert validate_profile({**profile, field: "ordinary-hyphenated-name"})[field] == "ordinary-hyphenated-name"
+
+
+def test_a_private_root_cannot_contain_a_granted_path(scope):
+    # Control: the fixture's expanded roots validate.
+    assert validate_scope(scope) == scope
+    for grant in ("git_common", "worktree", "runtime", "interpreter_prefix"):
+        widened = sorted({*scope["private_roots"], str(Path(scope[grant]).parent)})
+        with pytest.raises(StewartError) as caught:
+            validate_scope({**scope, "private_roots": widened})
+        assert caught.value.reason == "auditor_scope", grant
+
+
+def test_read_denials_descend_to_kept_paths_and_skip_pattern_names(tmp_path):
+    repo = tmp_path / "repo"
+    (repo / ".git").mkdir(parents=True)
+    (repo / ".venv/lib").mkdir(parents=True)
+    (repo / ".venv/pyvenv.cfg").write_text("home\n")
+    (repo / "src").mkdir()
+    (repo / "odd[1].txt").write_text("glob syntax\n")
+    other = tmp_path / "other"
+    denied = read_denials([str(repo), str(other)], [str(repo / ".git"), str(repo / ".venv")])
+    assert denied == sorted([str(repo / "src"), str(other)])
+    # Invariance: a root that contains no kept path is denied whole, unchanged.
+    assert read_denials([str(other)], [str(repo / ".git")]) == [str(other)]
+    # A kept path deeper down is reached by descending, denying its siblings.
+    (repo / "tools/bin").mkdir(parents=True)
+    (repo / "tools/readme").write_text("r\n")
+    deeper = read_denials([str(repo)], [str(repo / ".git"), str(repo / "tools/bin")])
+    assert str(repo / "tools/readme") in deeper and str(repo / "tools") not in deeper and str(repo / "tools/bin") not in deeper

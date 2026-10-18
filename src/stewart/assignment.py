@@ -336,7 +336,8 @@ def initialize(
                 f"workspace is missing its guidance file {name}; initialize a workspace that carries "
                 "auditor and maintainer guidance", reason="workspace_guidance",
             )
-    session = contained(repo, ws.session(ident))
+    from stewart._repository import maintainer, session_location
+    session = session_location(maintainer(repo)["common_dir"], ws, ident)
     if session.exists() or contained(repo, meta["report_path"]).exists():
         raise StewartError(
             "session or report destination already exists; choose a fresh audit ID",

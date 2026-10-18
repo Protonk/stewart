@@ -107,7 +107,7 @@ def run_cmd(tmp_path):
         count += 1
         checked = kwargs.pop("check", False)
         supplied = kwargs.get("env")
-        kwargs["env"] = {"STEWART_MANAGER_HOME": os.environ["STEWART_MANAGER_HOME"],
+        kwargs["env"] = {"STEWART_MANAGER_HOME": os.environ["STEWART_MANAGER_HOME"], "HOME": os.environ["HOME"],
                          **(dict(os.environ) if supplied is None else supplied)}
         result = _run_cmd(argv, check=False, **kwargs)
         item = directory / f"{count:04d}"
@@ -124,8 +124,19 @@ def run_cmd(tmp_path):
 
 @pytest.fixture(autouse=True)
 def private_manager_storage(tmp_path, monkeypatch):
-    """Callable API commands must never populate the developer's actual cache."""
+    """Commands must never populate the developer's actual manager or checkout homes.
+
+    Stewart's default checkout home and manager home derive from HOME, so each
+    test, and each command it runs through ``run_cmd``, gets a private HOME.
+    Git reads its global configuration there too; a minimal identity keeps
+    commits independent of the developer's own configuration.
+    """
     monkeypatch.setenv("STEWART_MANAGER_HOME", str(tmp_path / "api-manager-home"))
+    # Beside the test's directory, so tests that measure tmp_path see only their own entries.
+    home = tmp_path.with_name(tmp_path.name + "-home")
+    home.mkdir(mode=0o700)
+    (home / ".gitconfig").write_text("[user]\n\tname = Stewart test\n\temail = stewart-test@example.invalid\n")
+    monkeypatch.setenv("HOME", str(home))
 
 
 @pytest.fixture

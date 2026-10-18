@@ -140,7 +140,11 @@ def test_status_launch_suggestions_require_current_runtime(ready_project, damage
     assert view["preparation"]["state"] == ("ready" if ready else "runtime_unavailable")
     assert view["preparation"]["current_runtime"]["matches_expected"] is ready
     assert view["preparation"]["runtime"]["observations"]["preparation"]["matches_expected"]
-    assert view["preparation"]["runtime_recovery"], "private assets remain independently recoverable"
+    # Private assets stay recoverable, but the command is offered only when
+    # the supplied runtime itself fails verification.
+    assert view["preparation"]["pristine_runtime_available"]
+    assert bool(view["preparation"]["runtime_recovery"]) is not ready
+    assert view["exit_code"] == (0 if ready else 3)
     actions = {action["action"] for action in view["next_actions"]}
     assert ({"handoff", "launch"}.issubset(actions) if ready else not {"handoff", "launch"} & actions)
     assert "collect" in actions

@@ -16,7 +16,9 @@ from stewart._git import git
 from stewart.captured import collection_files, runtime_observations
 from stewart.runtime import record_state
 from stewart.collect import custody_gaps
-from stewart._bootstrap import StewartError, capture_regular, read_regular
+from stewart._bootstrap import (
+    EXIT_ATTENTION, EXIT_OK, EXIT_UNVERIFIED, STATE_REASONS, StewartError, capture_regular, combined_code, read_regular,
+)
 from stewart.launch_profile import EXIT_LOG, handoff_prompt, load_profile, read_exit_log, render_command, render_probe
 from stewart.session import (
     ATTEMPT_SCHEMA,
@@ -37,7 +39,11 @@ from stewart.workspace import Workspace, contained
 from stewart.triage import bound_disposition
 
 #: Schema 11 separates failed captures and current launch readiness from custody.
-STATUS_SCHEMA = "stewart.status/11"
+#: Schema 12 adds the exit code and the attention items that set it, the lock
+#: and storage locations, and drops the live report path; a recovery command
+#: appears only when the supplied runtime fails verification.
+STATUS_SCHEMA = "stewart.status/12"
+LIST_SCHEMA = "stewart.status-list/1"
 
 
 def _problem(problems: list[dict], record: str, exc: StewartError) -> None:
@@ -115,6 +121,11 @@ def _collections(session: Path, ident: str, session_record: dict | None) -> tupl
         if not (entry / "STARTED.json").exists():
             view["problems"].append({"record": "STARTED.json", "reason": "record_missing",
                                      "message": "collection directory without a start record"})
+        else:
+            try:
+                view["started_at"] = read_receipt(entry / "STARTED.json", what="collection start").get("collected_at")
+            except StewartError:
+                view["started_at"] = None
         try:
             receipt = read_receipt(entry / "collection.json", what="collection receipt")
         except StewartError as exc:
@@ -156,6 +167,7 @@ def _collections(session: Path, ident: str, session_record: dict | None) -> tupl
                 "movement": summary.get("movement"),
             },
             "gaps": [gap["id"] for gap in custody_gaps(receipt)],
+            "gap_codes": [{"id": gap["id"], "code": gap["code"]} for gap in custody_gaps(receipt)],
         })
         receipts[name] = receipt
         view["runtime"] = _runtime_view(entry, receipt, {"collection"}, view["problems"], session_record)
@@ -311,14 +323,27 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
     instead of the one pinned at preparation, for a session whose pinned recipe
     went stale; the view names both so the departure is visible.
     """
+    from stewart._repository import maintainer, registered_session
+    common = maintainer(ws.repo)["common_dir"]
     session = session_dir(ws, ident)
     if not session.is_dir():
+        # A registry row for this path means the ID was prepared and its
+        # records went missing: that refusal names the row and the refs.
+        registered_session(common, session)
         raise StewartError(
             f"no session for audit {ident} in workspace {ws.rel}: {session}", reason="session_missing",
-            next_steps=["check the audit ID against the committed prompt's audit_id and the session "
-                        "directories under the workspace's session root; a misspelled ID has no session",
+            next_steps=["check the audit ID against the committed prompt's audit_id; status without "
+                        "--audit-id lists this workspace's sessions",
                         "if the ID is right and the assignment was never prepared, prepare the committed prompt"],
         )
+    try:
+        owner = read_receipt(session / "session.json", what="session record").get("repo")
+    except StewartError:
+        owner = None
+    if owner is not None and owner != str(ws.repo):
+        raise StewartError(f"session {ident} belongs to the maintainer checkout {owner}",
+                           reason="session_other_maintainer", retained=[str(session)],
+                           next_steps=[f"rerun with --repo {owner}"])
     viewer = tool_identity()
     view: dict = {
         "schema": STATUS_SCHEMA,
@@ -345,6 +370,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
         "runtime_recoveries": [],
         "preparation": {"state": "unknown"},
         "experiment": {"state": "unknown"},
+        "manager_storage": _manager_storage(common, None),
         "outstanding": [],
         "next_actions": [],
     }
@@ -415,10 +441,9 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
                 "status_changed_since_prepare": None if maintainer_now is None else maintainer_now != record["maintainer_before"],
             },
             "report_destination_exists": destination_exists,
-            # Derive the assigned destination without resolving or reading any
-            # auditor-created entry. Status attributes completion from captures.
-            "live_report_path": str(worktree / meta["report_path"]),
         }
+        view["identities"]["worktree"]["lock"] = _lock_view(worktree)
+        view["manager_storage"] = _manager_storage(common, record)
         private_launch = capture_regular(session / "LAUNCH.md")
         public_launch = worktree / record["handoff"]["path"]
         launch = capture_regular(public_launch)
@@ -466,7 +491,9 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
             "runtime": runtime_preparation,
             "current_runtime": current_runtime,
             "pristine_runtime_available": pristine_available,
-            "runtime_recovery": command(ws, "recover-runtime", "--audit-id", ident, "--actor", "<name>") if pristine_available else None,
+            # Offered only when the supplied runtime itself fails verification.
+            "runtime_recovery": command(ws, "recover-runtime", "--audit-id", ident, "--actor", "<name>")
+            if pristine_available and not current_runtime["matches_expected"] else None,
             "note": "handoff and filesystem observations only; no auditor start or stop is inferred",
         }
         from stewart.captured import runtime_recovery
@@ -576,7 +603,138 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
             "note": "authorization and recorded operations only; neither artifact readiness nor scientific success",
         }
     _derive_actions(ws, ident, view, record, profile)
+    view["attention"] = _attention(view)
+    view["exit_code"] = combined_code(item["code"] for item in view["attention"])
     return view
+
+
+def _lock_view(worktree: Path) -> dict:
+    """The auditor checkout's Git lock, observed; Stewart itself never unlocks it."""
+    from stewart._repository import LIFETIME_LOCK, worktree_lock
+    if not worktree.is_dir():
+        return {"locked": None, "reason": None}
+    admin = git(worktree, "rev-parse", "--absolute-git-dir", check=False)
+    if admin.returncode:
+        return {"locked": None, "reason": None, "error": admin.stderr.decode("utf-8", "replace").strip()}
+    try:
+        reason = worktree_lock(admin.stdout.decode().strip())
+    except StewartError as exc:
+        return {"locked": None, "reason": None, "error": str(exc)}
+    return {"locked": reason is not None, "reason": reason,
+            "lifetime": reason is not None and reason.startswith(LIFETIME_LOCK),
+            "note": "removal goes through close; Stewart prints no unlock or remove commands"}
+
+
+def _manager_storage(common: str, record: dict | None) -> dict:
+    """Where the manager's harness must allow writes for this repository's custody commands."""
+    from stewart._repository import STORAGE, resolve_checkout_home
+    home = record.get("checkout_home") if record else None
+    if home is None:
+        try:
+            home = str(resolve_checkout_home())
+        except StewartError:
+            home = None
+    return {"private": str(Path(common) / STORAGE), "checkout_home": home,
+            "note": "every custody-writing command writes the private location; prepare, recover-runtime "
+                    "and experiment runs also write the checkout home"}
+
+
+def _attention(view: dict) -> list[dict]:
+    """The items that make this view news, each with its exit code.
+
+    Records that do not verify are 3. Recorded partial states (a failed
+    preparation, a partial collection or unresolved attempt that is still the
+    latest word) and gaps that no valid triage has addressed are news within
+    the manager's role (1), as are a nonzero harness exit with no collection
+    and records written by a different build. Routine next steps are not news.
+    """
+    items: list[dict] = []
+
+    def add(code: int, source: str, reason: str, message: str) -> None:
+        items.append({"code": code, "source": source, "reason": reason, "message": message})
+
+    def problem_code(problem: dict) -> int:
+        return EXIT_ATTENTION if problem["reason"] in STATE_REASONS else EXIT_UNVERIFIED
+
+    for problem in view["session"]["problems"]:
+        add(problem_code(problem), f"session {problem['record']}", problem["reason"], problem["message"])
+    complete = [c for c in view["collections"] if c["complete"]]
+    for c in view["collections"]:
+        for problem in c["problems"]:
+            # A complete collection taken after a partial one started supersedes it.
+            superseded = (problem["reason"] == "collection_incomplete" and isinstance(c.get("started_at"), str)
+                          and any((done.get("collected_at") or "") > c["started_at"] for done in complete))
+            if not superseded:
+                add(problem_code(problem), f"collection {c['name']}", problem["reason"], problem["message"])
+    triaged = {d.get("collection") for d in view["dispositions"] if not d["problems"]}
+    if complete and complete[-1]["name"] not in triaged:
+        for gap_id in complete[-1].get("gaps", []):
+            code = next((gap["code"] for gap in complete[-1].get("gap_codes", []) if gap["id"] == gap_id), EXIT_ATTENTION)
+            add(code, f"collection {complete[-1]['name']}", "custody_gap", gap_id)
+    for kind in ("launches", "messages", "dispositions", "retentions", "releases", "runtime_recoveries"):
+        for item in view[kind]:
+            for problem in item.get("problems", []):
+                add(problem_code(problem), f"{kind} {item['name']}", problem["reason"], problem["message"])
+    for release in view["releases"]:
+        # Captured bytes that fail verification at read time do not verify.
+        for problem in release.get("capture_problems", []):
+            add(EXIT_UNVERIFIED, f"release {release['name']} capture {problem['collection']}", problem["reason"],
+                f"{problem['artifact']}: {problem['message']}")
+    attempts = view["attempts"]
+    for index, attempt in enumerate(attempts):
+        for problem in attempt["problems"]:
+            if problem["reason"] == "attempt_unresolved" and index != len(attempts) - 1:
+                continue
+            add(problem_code(problem), f"attempt {attempt['name']}", problem["reason"], problem["message"])
+    if view["preparation"].get("state") == "runtime_unavailable":
+        add(EXIT_UNVERIFIED, "supplied runtime", "runtime_unavailable",
+            "the supplied runtime no longer matches its pinned manifest")
+    exits = view.get("harness_exits") or []
+    if exits and exits[-1]["exit"] != 0 and not complete:
+        add(EXIT_ATTENTION, "harness exit log", "harness_exit_nonzero",
+            f"the launch command's harness exited {exits[-1]['exit']} and no collection exists")
+    if view["session"].get("same_build_as_viewer") is False:
+        add(EXIT_ATTENTION, "session writer", "different_build", "a different Stewart build wrote this session")
+    return items
+
+
+def status_list(ws: Workspace) -> dict:
+    """Every session of this workspace across the repository, one entry each.
+
+    Sessions owned by another maintainer checkout are viewed through it. A
+    registered session whose directory is missing is listed as records that
+    do not verify. The exit code is the highest of any entry's.
+    """
+    from stewart._repository import _role_records, maintainer, session_location, workspace_sessions
+    from stewart.workspace import Workspace as _Workspace
+    common = maintainer(ws.repo)["common_dir"]
+    entries = []
+    for ident in workspace_sessions(common, ws):
+        session = session_location(common, ws, ident)
+        entry: dict = {"audit_id": ident, "session": str(session)}
+        try:
+            owner = read_receipt(session / "session.json", what="session record").get("repo") or str(ws.repo)
+            entry["owner"] = owner
+            view = status(ws if owner == str(ws.repo) else _Workspace(Path(owner), ws.rel), ident)
+            complete = [c for c in view["collections"] if c["complete"]]
+            worktree = view["identities"].get("worktree") or {}
+            entry.update(preparation=view["preparation"]["state"], checkout=worktree.get("path"),
+                         lock=worktree.get("lock"), collections=len(complete), exit_code=view["exit_code"],
+                         attention=view["attention"])
+        except StewartError as exc:
+            entry.update(problem=exc.to_json(), exit_code=EXIT_UNVERIFIED)
+        entries.append(entry)
+    listed = {entry["session"] for entry in entries}
+    prefix = str(Path(common) / "stewart/sessions" / ws.slug) + "/"
+    for row in _role_records(common):
+        if row["session"].startswith(prefix) and row["session"] not in listed and not Path(row["session"]).exists():
+            entries.append({"audit_id": Path(row["session"]).name, "session": row["session"], "owner": None,
+                            "problem": {"reason": "session_records_missing",
+                                        "message": "a registered session's directory is missing"},
+                            "exit_code": EXIT_UNVERIFIED})
+    return {"schema": LIST_SCHEMA, "workspace": ws.to_json(), "sessions": entries,
+            "manager_storage": _manager_storage(common, None),
+            "exit_code": combined_code(entry["exit_code"] for entry in entries)}
 
 
 def _derive_actions(ws: Workspace, ident: str, view: dict, record: dict | None, profile_path: str | None) -> None:

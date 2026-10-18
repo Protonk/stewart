@@ -76,7 +76,9 @@ def test_exit_codes_separate_recorded_errors_from_refusals(checkout, run_cmd):
     assert receipt["errors"] and receipt["report_status"] == "present" and receipt["git_discovery"] == "failed"
     assert "git_discovery_incomplete" in [gap["id"] for gap in envelope["result"]["gaps"]]
     viewed = _run(checkout, run_cmd, "status", "--audit-id", checkout.meta["audit_id"])
-    assert viewed.returncode == EXIT_OK, "inspecting a failed session is itself a success"
+    view = json.loads(viewed.stdout)
+    assert view["error"] is None and view["result"]["collections"], "inspecting a failed session still renders it"
+    assert viewed.returncode == EXIT_ATTENTION == view["exit_code"], "its untriaged gaps are news"
     missing = _run(checkout, run_cmd, "collect", "--audit-id", "never-prepared", "--auditor-stopped", "finished")
     assert missing.returncode == EXIT_REFUSED
     assert json.loads(missing.stdout)["error"]["reason"] == "session_missing"
@@ -172,7 +174,7 @@ def test_status_human_locators_and_pasted_draft_command_work_with_quoted_paths(t
     assert handoff.returncode == EXIT_OK and handoff.stderr == ''
     assert f'Worktree path: {prepared.worktree}' in handoff.stdout
     assert f'Launch handoff path: {prepared.prepared["launch"]}' in handoff.stdout
-    assert f'Live report destination (not captured or read by status): {prepared.report}' in handoff.stdout
+    assert 'Live report destination' not in handoff.stdout and str(prepared.report) not in handoff.stdout
     assert 'handoff: manual, if not already handed off' in handoff.stdout
     assert f'first prompt: Read {prepared.prepared["launch"]} and carry out' in handoff.stdout
     assert 'Stewart: this view by package' in handoff.stdout and '(same build)' in handoff.stdout
@@ -215,7 +217,8 @@ def test_status_human_locators_and_pasted_draft_command_work_with_quoted_paths(t
 def test_help_marks_mutations_and_read_only_commands():
     parser = build_parser()
     help_text = parser.format_help()
-    assert "[read-only]" in help_text and "[writes into the maintainer checkout]" in help_text
+    assert "[no repository or session writes]" in help_text and "[writes into the maintainer checkout]" in help_text
+    assert "[read-only]" not in help_text, "every invocation deploys into the manager home; labels say what is untouched"
     flat = " ".join(help_text.split())
     assert "Exit codes: 0 nothing needs attention; 1 completed, action needed" in flat
     assert "2 refused or invalid usage, nothing done; 3 records or bytes do not verify" in flat
@@ -341,20 +344,21 @@ def test_export_and_import_cli_explain_selection_and_pin_the_package(checkout, r
 
     support.prepared_session(checkout, report='Captured CLI report\n')
     collected = collect(checkout.ws, checkout.meta['audit_id'], auditor_stopped="finished")
+    (checkout.repo / 'ignored').mkdir(exist_ok=True)
     result = _run(checkout, run_cmd, 'export', '--audit-id', checkout.meta['audit_id'],
                   '--collection', collected['collection'], '--select', 'REPORT.md',
-                  '--output', '.scratch/cli-package', '--actor', 'manager', json_mode=False)
+                  '--output', 'ignored/cli-package', '--actor', 'manager', json_mode=False)
     assert result.returncode == EXIT_OK and result.stderr == ''
-    assert 'Evidence package: .scratch/cli-package/manifest.json' in result.stdout
+    assert 'Evidence package: ignored/cli-package/manifest.json' in result.stdout
     assert 'REPORT.md -> files/0000.md' in result.stdout and 'custody' in result.stdout
     initialized = _run(checkout, run_cmd, 'init', '--audit-id', 'receiving',
-                       '--evidence-package', '.scratch/cli-package/manifest.json')
+                       '--evidence-package', 'ignored/cli-package/manifest.json')
     assert initialized.returncode == EXIT_OK
     items = json.loads(initialized.stdout)['result']['assignment']['supplemental_inputs']
     assert len(items) == 3 and all(item['custody']['manifest_sha256'] for item in items)
     refused = _run(checkout, run_cmd, 'export', '--audit-id', checkout.meta['audit_id'],
                    '--collection', collected['collection'], '--select', 'live/path.py',
-                   '--output', '.scratch/bad-selection', '--actor', 'manager')
+                   '--output', 'ignored/bad-selection', '--actor', 'manager')
     error = json.loads(refused.stdout)['error']
     assert refused.returncode == EXIT_REFUSED and refused.stderr == ''
     assert error['reason'] == 'capture_selector' and error['retained'] and error['next_steps']

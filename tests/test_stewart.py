@@ -63,7 +63,7 @@ def test_initializer_pins_inputs_without_summarizing_or_launching_them(checkout)
     assert result["written"] is None, "without replace_prompt nothing is written"
     assert (repo / ws.prompt).read_bytes() == original
     assert git("status", "--porcelain=v1") == before
-    assert not (repo / ".scratch").exists()
+    assert not (repo / ".git/stewart").exists()
     with pytest.raises(StewartError, match="unassigned") as refused:
         prompt_metadata(draft, ws)
     assert refused.value.reason == "unassigned_prompt"
@@ -91,8 +91,8 @@ def test_initializer_pins_inputs_without_summarizing_or_launching_them(checkout)
     git("commit", "--only", "-qm", "Authored initialized assignment", "--", ws.prompt)
     prepared = prepare(ws, git("rev-parse", "HEAD"))
     session = Path(prepared["session"])
-    assert (session / "worktree/input.txt").read_bytes() == b"committed input\n"
-    assert (session / "worktree/ignored/specimen.bin").read_bytes() == selected.read_bytes()
+    assert (Path(prepared["worktree"]) / "input.txt").read_bytes() == b"committed input\n"
+    assert (Path(prepared["worktree"]) / "ignored/specimen.bin").read_bytes() == selected.read_bytes()
     assert git("show", ":input.txt") == "dirty live input, excluded from the audit"
 
 
@@ -117,7 +117,7 @@ def test_initializer_validation_preserves_existing_prompt(checkout, fault):
     with pytest.raises(StewartError):
         initialize(ws, "new-question", "HEAD", **options)
     assert prompt.read_bytes() == before
-    assert not (repo / ".scratch").exists()
+    assert not (repo / ".git/stewart").exists()
 
 
 def test_initializer_cli_preview_and_full_replacement(checkout, run_cmd):
@@ -136,7 +136,7 @@ def test_initializer_cli_preview_and_full_replacement(checkout, run_cmd):
     assert prompt.read_text() == preview.stdout.rstrip("\n") + "\n"
     assert "Earlier assignment" not in prompt.read_text()
     assert git("diff", "--cached", "--name-only") == ""
-    assert not (repo / ".scratch").exists()
+    assert not (repo / ".git/stewart").exists()
 
 
 def test_prepare_uses_committed_inputs_and_leaves_dirty_main_index_alone(checkout):
@@ -150,7 +150,7 @@ def test_prepare_uses_committed_inputs_and_leaves_dirty_main_index_alone(checkou
 
     prepared = prepare(ws, revision)
     session = Path(prepared["session"])
-    worktree = session / "worktree"
+    worktree = Path(prepared["worktree"])
     receipt = read_json(session / "session.json")
     assert (worktree / "input.txt").read_text() == "committed input\n"
     assert not (worktree / "untracked.txt").exists()
@@ -176,7 +176,7 @@ def test_prompt_commit_membership_matters_even_when_prompt_bytes_match(checkout)
     with pytest.raises(StewartError, match="PROMPT.md alone") as refused:
         prepare(ws, mixed)
     assert refused.value.reason == "prompt_commit_shape"
-    assert not (repo / ".scratch").exists()
+    assert not (repo / ".git/stewart").exists()
     # Put identical prompt bytes in a prompt-only commit over the same target.
     prompt_bytes = (repo / ws.prompt).read_bytes()
     git("reset", "--soft", "HEAD^")
@@ -228,7 +228,7 @@ def test_workspace_over_implementation_cannot_pass_changed_inputs_as_audit_mater
     git("add", "--", "lib/notes.md")
     git("commit", "-qm", "Support under the workspace")
     prepared = prepare(ws, checkout.prompt_commit())
-    assert (Path(prepared["session"]) / "worktree/lib/module.py").read_text() == "VALUE = 1\n"
+    assert (Path(prepared["worktree"]) / "lib/module.py").read_text() == "VALUE = 1\n"
 
 
 @pytest.mark.parametrize("fault, message", [
@@ -265,7 +265,7 @@ def test_malformed_assignments_refuse_before_worktree_creation(checkout, fault, 
     git("commit", "--amend", "--no-edit", "-q")
     with pytest.raises(StewartError, match=message):
         prepare(ws, git("rev-parse", "HEAD"))
-    assert not (repo / ".scratch").exists()
+    assert not (repo / ".git/stewart").exists()
 
 
 def test_selected_supplemental_bytes_are_checked_then_copied(checkout):
@@ -282,7 +282,7 @@ def test_selected_supplemental_bytes_are_checked_then_copied(checkout):
         prepare(ws, revision)
     source.write_bytes(expected)
     prepared = prepare(ws, revision)
-    assert (Path(prepared["session"]) / "worktree/ignored/specimen.bin").read_bytes() == expected
+    assert (Path(prepared["worktree"]) / "ignored/specimen.bin").read_bytes() == expected
     collected = collect(ws, meta["audit_id"], auditor_stopped="finished")
     receipt = collected["receipt"]
     assert receipt["errors"] == [] and receipt["unexpected_paths"] == []
@@ -384,7 +384,7 @@ def test_first_party_research_assignment_is_carried_without_fetching(checkout, m
     prepared = prepare(ws, checkout.prompt_commit())
     session = Path(prepared["session"])
     assert read_json(session / "session.json")["assignment"]["external_sources"] == meta["external_sources"]
-    assert prompt_metadata((session / "worktree" / ws.prompt).read_text(), ws)["external_sources"] == meta["external_sources"]
+    assert prompt_metadata((Path(prepared["worktree"]) / ws.prompt).read_text(), ws)["external_sources"] == meta["external_sources"]
 
 
 def test_maintainer_status_signal_is_bounded_and_cannot_certify_dirty_file_bytes(checkout):
@@ -399,7 +399,7 @@ def test_maintainer_status_signal_is_bounded_and_cannot_certify_dirty_file_bytes
     git("add", "input.txt")  # only index membership changes; file bytes stay fixed
     second = collect(ws, meta["audit_id"], auditor_stopped="finished")
     assert second["receipt"]["maintainer_status_changed_since_prepare"]
-    assert (Path(prepared["session"]) / "worktree/input.txt").read_text() == "committed input\n"
+    assert (Path(prepared["worktree"]) / "input.txt").read_text() == "committed input\n"
 
 
 @pytest.mark.parametrize("mode", ["snapshot", "paused"])
@@ -414,7 +414,7 @@ def test_mode_controls_pause_and_resume_without_changing_snapshot_custody(checko
     else:
         with pytest.raises(StewartError, match="--mode paused"):
             prepare(ws, revision, mode=mode, writers_paused=True)
-    assert not (repo / ".scratch").exists()
+    assert not (repo / ".git/stewart").exists()
     prepared = prepare(ws, revision, mode=mode, writers_paused=(mode == "paused"),
                        pause_note=(support.PAUSE_NOTE if mode == "paused" else None))
     session = Path(prepared["session"])
@@ -422,8 +422,9 @@ def test_mode_controls_pause_and_resume_without_changing_snapshot_custody(checko
     assert record["mode"] == mode and record["writers_paused"] == (mode == "paused")
     assert record["writers_paused_acknowledged_by"] == ("maintainer via --writers-paused" if mode == "paused" else None)
     assert record["writers_paused_note"] == (support.PAUSE_NOTE if mode == "paused" else None)
-    assert (session / "worktree/input.txt").read_bytes() == b"committed input\n"
-    assert git("rev-parse", "HEAD", cwd=session / "worktree") == revision
+    worktree = Path(prepared["worktree"])
+    assert (worktree / "input.txt").read_bytes() == b"committed input\n"
+    assert git("rev-parse", "HEAD", cwd=worktree) == revision
     with pytest.raises(StewartError, match="auditor-stopped") as refused:
         collect(ws, meta["audit_id"], auditor_stopped=False)
     assert refused.value.reason == "auditor_not_stopped"
@@ -448,7 +449,7 @@ def test_mode_controls_pause_and_resume_without_changing_snapshot_custody(checko
         with pytest.raises(StewartError) as refused:
             resume(ws, meta["audit_id"], triage=disposition["triage"], reason="Repeated decision")
         assert refused.value.reason == "already_resumed"
-    assert (session / "worktree").exists()
+    assert worktree.exists()
 
 
 def test_main_can_advance_and_collection_delay_does_not_grade_the_audit(checkout, monkeypatch):
@@ -559,9 +560,11 @@ def test_module_cli_and_package_api_agree(checkout, run_cmd):
     collect(ws, meta["audit_id"], auditor_stopped="finished")
     via_api = status(ws, meta["audit_id"])
     result = run_cmd([*cli_base(checkout), "--json", "status", "--audit-id", meta["audit_id"]],
-                     cwd=INSTALLED_LIB, env={"PYTHONPATH": str(INSTALLED_LIB)}, check=True)
+                     cwd=INSTALLED_LIB, env={"PYTHONPATH": str(INSTALLED_LIB)})
     envelope = json.loads(result.stdout)
-    assert envelope["ok"] and envelope["exit_code"] == 0 and envelope["command"] == "status"
+    # The report has no declaration, so an untriaged gap is news on both routes.
+    assert result.returncode == envelope["exit_code"] == via_api["exit_code"] == 1
+    assert envelope["ok"] is False and envelope["error"] is None and envelope["command"] == "status"
     via_cli = envelope["result"]
     invocation = via_cli["tool"].pop("invocation")
     assert invocation["source_package"] == via_api["tool"]["package"]
@@ -574,9 +577,9 @@ def test_module_cli_and_package_api_agree(checkout, run_cmd):
     # location records whether the caller already entered the isolated runtime.
     pairs = [(a["runtime"], b["runtime"]) for a, b in zip(via_cli["next_actions"], via_api["next_actions"])
              if "runtime" in a]
-    pairs.append((via_cli["preparation"]["runtime_recovery"]["runtime"],
-                  via_api["preparation"]["runtime_recovery"]["runtime"]))
-    assert len(pairs) == 3
+    # The recovery command is offered only when the runtime fails verification.
+    assert via_cli["preparation"]["runtime_recovery"] is None is via_api["preparation"]["runtime_recovery"]
+    assert len(pairs) == 2
     for cli_runtime, api_runtime in pairs:
         assert cli_runtime == invocation
         assert api_runtime["loaded_package"] == invocation["source_package"]
@@ -592,7 +595,9 @@ def test_workspace_depth_does_not_matter(tmp_path, run_cmd, ws_rel):
     assert prepared.report.exists()
     collected = collect(checkout.ws, checkout.meta["audit_id"], auditor_stopped="finished")
     assert collected["receipt"]["errors"] == [] and collected["receipt"]["report_status"] == "present"
-    assert checkout.ws.sessions.startswith(".scratch/stewart/ws-")
+    session = support.session_path(checkout)
+    assert session.parent.name.startswith("ws-") and session.parent.parent.name == "sessions"
+    assert session.is_relative_to(checkout.repo / ".git/stewart"), "sessions live under the Git common directory"
 
 
 def test_same_audit_id_in_two_workspaces_cannot_cross_address_evidence(tmp_path, run_cmd):

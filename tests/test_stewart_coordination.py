@@ -163,7 +163,8 @@ def test_launch_and_message_records_are_acknowledgments_that_status_lists(checko
                         "max", "--actor", "cli"]) == EXIT_OK
     assert main(base + ["message", "--audit-id", ident, "--direction", "from-auditor", "--text", "hand-back",
                         "--actor", "cli"]) == EXIT_OK
-    assert main(base + ["status", "--audit-id", ident]) == EXIT_OK
+    # The collected report has no declaration: an untriaged gap is news (exit 1).
+    assert main(base + ["status", "--audit-id", ident]) == 1
     out = capsys.readouterr().out
     assert "Launch recorded:" in out and "observed no auditor" in out
     assert "Message recorded:" in out and "not proof it was read" in out
@@ -327,8 +328,9 @@ def test_release_capture_rechecks_archive_availability_without_rewriting_history
                         "--workspace", checkout.ws.rel, "--json", "status", "--audit-id", ident],
                        cwd=support.INSTALLED_LIB,
                        env={"PYTHONPATH": str(support.INSTALLED_LIB), "PYTHONDONTWRITEBYTECODE": "1"},
-                       check=True, timeout=10)
+                       timeout=10)
     view = json.loads(observed.stdout)["result"]
+    assert observed.returncode == view["exit_code"] == 3, "captured bytes that fail verification are exit 3"
     assert snapshot_tree(exp.session) == before, "verification must not repair or rewrite the historical record"
     item, = view["releases"]
     assert item["captured_in"] == [], f"an archive observed as {change} cannot supply frozen artifact bytes"
@@ -347,10 +349,11 @@ def test_release_capture_rechecks_archive_availability_without_rewriting_history
     assert (package.parent / entry["file"]).read_text() == "Captured construction report.\n", (
         "archive unavailability must not suppress the separately captured report")
     base = ["--repo", str(checkout.repo), "--workspace", checkout.ws.rel]
-    assert main(base + ["status", "--audit-id", ident]) == EXIT_OK
+    # Archive bytes that fail verification at read time keep status at exit 3.
+    assert main(base + ["status", "--audit-id", ident]) == 3
     text = capsys.readouterr().out
     assert "verified recoverable in no collection" in text and reason in text
-    assert main(base + ["--json", "status", "--audit-id", ident]) == EXIT_OK
+    assert main(base + ["--json", "status", "--audit-id", ident]) == 3
     assert json.loads(capsys.readouterr().out)["result"]["releases"][0]["capture_problems"] == item["capture_problems"]
 
 
@@ -447,7 +450,7 @@ def test_pause_note_is_required_recorded_and_shown(checkout, capsys):
     with pytest.raises(StewartError) as refused:
         prepare(checkout.ws, revision, mode="snapshot", pause_note="nobody")
     assert refused.value.reason == "mode", "a pause note without a pause is a contradiction, not a default"
-    assert not (checkout.repo / ".scratch").exists()
+    assert not (checkout.repo / ".git/stewart").exists()
     prepared = prepare(checkout.ws, revision, mode="paused", writers_paused=True, pause_note=support.PAUSE_NOTE)
     assert prepared["writers_paused_note"] == support.PAUSE_NOTE
     assert read_json(Path(prepared["session"]) / "session.json")["writers_paused_note"] == support.PAUSE_NOTE

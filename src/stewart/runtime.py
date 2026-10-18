@@ -301,7 +301,7 @@ def recover_runtime(ws, ident: str, *, actor: str) -> dict:
     if observed != record:
         raise StewartError("session changed before recovery", reason="binding_mismatch")
     name = stamp()
-    destination = contained(ws.repo, f".scratch/stewart-runtimes/{record['session_uuid']}-recovered-{name}")
+    destination = contained(Path(record["audit_dir"]), f"runtime-recovered-{name}")
     recovered = binding(destination, record["runtime"]["manifest"])
     directory = contained(session, f"runtime-recoveries/{name}")
     directory.mkdir(parents=True, mode=0o700, exist_ok=False)

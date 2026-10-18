@@ -25,14 +25,22 @@ from stewart.runtime import helper_argv, retain_runtime, select_runtime
 from stewart.auditor_scope import scope_for
 from stewart._invocation import current
 from stewart.session import SESSION_SCHEMA, maintainer_state, now, tool_identity, write_receipt
-from stewart._repository import LOCK_PREFIX, maintainer, register_auditor, require_private_exclusions, retention_for, retain_commits
+from stewart._repository import (
+    REGISTRATION_LOCK, audit_location, checkout_home, custody_roots, lifetime_lock_reason, maintainer,
+    private_storage, read_denials, register_auditor, registered_session, require_separate_home,
+    resolve_checkout_home, retention_for,
+    retain_commits, session_location, worktree_roots,
+)
 from stewart.workspace import Workspace, contained
 
 
 def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_paused: bool = False,
-            pause_note: str | None = None) -> dict:
+            pause_note: str | None = None, checkout_home_path: Path | None = None) -> dict:
     """Validate a prompt-only commit and build its session; return the session facts.
 
+    The private session lives under the Git common directory; the checkout,
+    its supplied runtime and experiment homes live in a UUID-named directory
+    under the per-user checkout home (``checkout_home_path`` or the default).
     Helpers are supplied from the selected distribution, independently of
     project history. Their pristine private assets and exposed runtime are
     verified before the public handoff is written. Preparation executes no
@@ -43,7 +51,7 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
     """
     repo = ws.repo
     repository = maintainer(repo)
-    require_private_exclusions(repo)
+    common = repository["common_dir"]
     if mode not in {"snapshot", "paused"}:
         raise StewartError("mode must be snapshot or paused", reason="mode")
     if mode == "paused" and not writers_paused:
@@ -117,14 +125,22 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
     # cannot change what this session prints or records. A broken profile is a
     # refusal before any session exists, not a surprise at paste time.
     launch_profile = load_profile(ws)
-    session = contained(repo, ws.session(meta["audit_id"]))
+    manager_root = current().launcher.parent.parent
+    prefix = Path(sys.prefix).resolve()
+    home = resolve_checkout_home(checkout_home_path)
+    require_separate_home(home, repo=repo, worktrees=worktree_roots(repo), common=common, manager_home=manager_root,
+                          prefix=prefix)
+    home = checkout_home(home)
+    session = session_location(common, ws, meta["audit_id"])
     if session.exists():
         raise StewartError(f"session already exists: {session}; choose a fresh audit ID",
                            reason="destination_exists", retained=[str(session)])
-    worktree = session / "worktree"
+    registered_session(common, session)
     session_identity = str(uuid.uuid4())
+    audit_dir = audit_location(home, common, session_identity)
+    worktree = audit_dir / "worktree"
     retention = retention_for(session_identity, prompt_commit, target, meta.get("base_commit"))
-    selected_runtime = select_runtime(contained(repo, f".scratch/stewart-runtimes/{session_identity}"))
+    selected_runtime = select_runtime(audit_dir / "runtime")
     record = {
         "schema_version": SESSION_SCHEMA,
         "session_uuid": session_identity,
@@ -141,6 +157,8 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
         "prompt_sha256": _hash.sha256_bytes(prompt_bytes),
         "launch_token": secrets.token_hex(8),
         "repo": str(repo),
+        "checkout_home": str(home),
+        "audit_dir": str(audit_dir),
         "worktree": str(worktree),
         "prepared_at": now().isoformat(),
         "mode": mode,
@@ -154,32 +172,37 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
         "launch_profile": launch_profile,
         "stewart": tool_identity(),
     }
-    from stewart._repository import custody_roots
-    record["auditor_scope"] = scope_for(record, manager_home=current().launcher.parent.parent,
-                                        interpreter_prefix=Path(sys.prefix).resolve(),
-                                        private_roots=custody_roots(repo, repository["common_dir"]))
+    record["auditor_scope"] = scope_for(record, manager_home=manager_root, interpreter_prefix=prefix,
+                                        private_roots=read_denials(custody_roots(repo, common), [common, str(prefix)]))
     launch = _render_handoff(ws, record)
     record["handoff"] = {"path": f"{ws.rel}/.stewart-handoffs/{session_identity}.md",
                          "sha256": _hash.sha256_bytes(launch.encode("utf-8"))}
+    _make_private_parents(private_storage(common), session.parent)
     try:
-        session.mkdir(parents=True, mode=0o700, exist_ok=False)
+        session.mkdir(mode=0o700, exist_ok=False)
     except FileExistsError:
         raise StewartError(
             f"session already exists: {session}; choose a fresh audit ID", reason="destination_exists",
             retained=[str(session)],
         ) from None
     write_receipt(session / "session.json", record)
-    stage = "retention"
+    stage = "checkout_directory"
     worktree_add_completed = False
     try:
+        _make_private_parents(home, audit_dir.parent)
+        audit_dir.mkdir(mode=0o700, exist_ok=False)
+        stage = "retention"
         retain_commits(repo, retention)
         stage = "worktree"
-        git(repo, "worktree", "add", "--detach", "--lock", "--reason", LOCK_PREFIX + session_identity,
+        git(repo, "worktree", "add", "--detach", "--lock", "--reason", REGISTRATION_LOCK + session_identity,
             str(worktree), prompt_commit)
         worktree_add_completed = True
         stage = "role"
         register_auditor(repo, worktree, session)
+        # Git cannot change a lock's reason in place. The published marker
+        # classifies the checkout during the brief unlocked window.
         git(repo, "worktree", "unlock", str(worktree))
+        git(repo, "worktree", "lock", "--reason", lifetime_lock_reason(session_identity), str(worktree))
         stage = "inputs"
         for item in meta["supplemental_inputs"]:
             _assignment.copy_supplemental(repo, worktree, item)
@@ -211,7 +234,7 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
         })
         raise StewartError(
             f"preparation failed during {stage}: {exc}", reason="prepare_failed",
-            retained=[str(session), str(failure_path)],
+            retained=[str(session), str(failure_path), str(audit_dir)],
             next_steps=[
                 "inspect PREPARE-ERROR.json and preserve any partial worktree; no launch handoff was completed",
                 "correct the reported cause (Git administration writes may require harness authorization)",
@@ -225,6 +248,8 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
         "session_uuid": session_identity,
         "retention": retention,
         "session": str(session),
+        "checkout_home": str(home),
+        "audit_dir": str(audit_dir),
         "worktree": str(worktree),
         "launch": str(worktree / record["handoff"]["path"]),
         "private_launch": str(session / "LAUNCH.md"),
@@ -249,6 +274,18 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
             launch_profile["profile"], worktree=worktree, launch_path=worktree / record["handoff"]["path"], scope=record["auditor_scope"]),
         "exit_log": str(session / EXIT_LOG),
     }
+
+
+def _make_private_parents(root: Path, directory: Path) -> None:
+    """Create ``directory`` below an existing ``root`` with mode 0700, refusing links."""
+    rel = directory.relative_to(root)
+    current = root
+    for part in rel.parts:
+        current = current / part
+        if current.is_symlink():
+            raise StewartError(f"storage path cannot traverse a link: {current}", reason="path_symlink",
+                               retained=[str(current)])
+        current.mkdir(mode=0o700, exist_ok=True)
 
 
 def _render_handoff(ws: Workspace, record: dict) -> str:
@@ -313,17 +350,13 @@ def _render_handoff(ws: Workspace, record: dict) -> str:
         f"\nSupplied runtime (read-only): `{root}`.\n"
         f"Complete runtime SHA-256: `{record['runtime']['sha256']}`.\n"
         f"Helper protocol: `{record['runtime']['protocols']['helpers']}`.\n"
-        "Read this exact subtree, never its parent or the private session directory. "
-        "It contains the complete Stewart distribution, including manager CLI code; "
+        "Read only this subtree. It contains the complete Stewart distribution, including manager CLI code; "
         "only the issued helper operations are authorized. Do not run manager operations.\n"
         f"Bundled question guide: `{root}/stewart/resources/QUESTION-TYPE.md`.\n"
         f"Bundled conditional protocols: `{root}/stewart/resources/AUDIT-PROTOCOLS.md`.\n"
         f"Bundled custody manual: `{root}/stewart/resources/README.md`.\n"
-        "Read only the assigned sections. These documents supply no additional capability grant.\n"
-        "Configure the harness with read-only runtime access, worktree access, and denied access "
-        "to private receipts, role records and manager runtime storage. The manager's scope profile "
-        "supplies the required shell and file-tool restrictions. A manual handoff needs equivalent "
-        "explicit harness configuration. Reading this handoff grants no broader filesystem access.\n"
+        "Read only the assigned sections. These documents supply no additional capability grant, "
+        "and reading this handoff grants no broader filesystem access.\n"
     )
     if meta.get("experiment") is not None:
         launch += (

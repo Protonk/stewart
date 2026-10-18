@@ -553,7 +553,7 @@ def test_project_helper_shape_does_not_select_supplied_runtime(checkout, run_cmd
     result = run_cmd(shlex.split(command)[3:], cwd=prepared["worktree"],
                      env={"PYTHONPATH": prepared["worktree"]}, check=True)
     assert "partial audit=one-question" in result.stdout
-    assert Path(prepared["runtime"]["root"]).is_relative_to(checkout.repo / ".scratch/stewart-runtimes")
+    assert Path(prepared["runtime"]["root"]) == Path(prepared["audit_dir"]) / "runtime"
 
 
 def test_prepare_ignores_a_working_project_helper(checkout, run_cmd):

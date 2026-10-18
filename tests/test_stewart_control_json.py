@@ -78,7 +78,7 @@ def test_profile_uniqueness_is_checked_before_session_allocation(checkout, mutat
         with pytest.raises(StewartError) as caught:
             prepare(checkout.ws, revision)
         assert caught.value.reason == "launch_profile" and "unique keys" in str(caught.value)
-        assert not (checkout.repo / ".scratch").exists(), "reject before allocating custody state"
+        assert not (checkout.repo / ".git/stewart").exists(), "reject before allocating custody state"
     assert location.read_text() == raw
 
 

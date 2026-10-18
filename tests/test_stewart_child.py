@@ -28,7 +28,7 @@ def test_unsupported_script_templates_refuse_before_preparation(tmp_path, run_cm
     with pytest.raises(StewartError) as caught:
         support.prepared_experiment(checkout)
     assert caught.value.reason == "child_argv"
-    assert not (checkout.repo / checkout.ws.session("one-question")).exists()
+    assert not support.session_path(checkout).exists()
 
 
 @pytest.mark.parametrize("where", ["root", "script"])

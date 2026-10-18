@@ -5,7 +5,7 @@ import pytest
 import stewart
 
 HOME = "src/stewart/"
-LITERALS = ("```audit-assignment", "```audit-report", ".scratch/stewart")
+LITERALS = ("```audit-assignment", "```audit-report", "stewart/sessions")
 EXEMPT_PREFIXES = (HOME, "tests/")
 
 
@@ -44,10 +44,10 @@ def test_audit_custody_machinery_has_one_home() -> None:
 def test_ratchet_goes_red_on_a_planted_duplicate_and_ignores_unrelated_text(tmp_path: Path) -> None:
     """Sensitivity and the invariance it must keep: literal present versus words nearby."""
     (tmp_path / "dup.py").write_text('PATTERN = "^```audit-assignment"\n', encoding="utf-8")
-    (tmp_path / "layout.py").write_text('SESSIONS = ".scratch/stewart"\n', encoding="utf-8")
+    (tmp_path / "layout.py").write_text('SESSIONS = "stewart/sessions"\n', encoding="utf-8")
     (tmp_path / "ok.py").write_text('note = "assignments and the stewart tool are discussed"\n', encoding="utf-8")
     assert custody_literal_violations(tmp_path, ["dup.py", "layout.py", "ok.py"]) == [
-        "dup.py: '```audit-assignment'", "layout.py: '.scratch/stewart'",
+        "dup.py: '```audit-assignment'", "layout.py: 'stewart/sessions'",
     ]
     home = tmp_path / "src" / "stewart"
     home.mkdir(parents=True)

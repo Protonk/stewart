@@ -130,13 +130,15 @@ UNVERIFIED_REASONS = frozenset({
     "release_invalidated", "release_schema", "report_binding", "report_unavailable", "runtime_assets",
     "runtime_capture", "runtime_capture_io", "runtime_capture_schema", "runtime_capture_unavailable",
     "runtime_helper", "runtime_identity", "runtime_inventory", "runtime_layout", "runtime_manifest",
-    "runtime_mismatch", "runtime_recovery", "runtime_unreadable", "session_identity", "session_retention",
+    "runtime_mismatch", "runtime_recovery", "runtime_unreadable", "session_identity", "session_records_missing",
+    "session_retention",
     "session_schema_unsupported", "session_unavailable", "support_unavailable", "triage_schema",
     "validation_error", "worktree_missing", "worktree_role_conflict", "worktree_role_identity",
     "worktree_role_registry",
 })
 REFUSED_REASONS = frozenset({
-    "actor_required", "already_resumed", "assignment_schema", "assignment_sections", "attempt_unresolved",
+    "actor_required", "already_resumed", "assignment_schema", "checkout_home", "manager_grant_missing",
+    "session_other_maintainer", "assignment_sections", "attempt_unresolved",
     "audit_id", "audit_id_format", "auditor_not_stopped", "auditor_scope", "auditor_worktree",
     "byte_order_mark", "capture_selector", "checkout_commit", "checkout_detached", "checkout_git_file",
     "checkout_root", "child_argv", "child_layout", "collection_incomplete", "collection_not_found",
@@ -150,13 +152,12 @@ REFUSED_REASONS = frozenset({
     "interpreter_unavailable", "invalid_json", "launch_profile", "launch_profile_missing", "ledger_collision",
     "malformed_fence", "manifest_schema", "missing", "missing_field", "mode", "movement", "nested_block",
     "no_grant", "no_hold", "non_object", "path_escape", "path_noncanonical", "path_symlink",
-    "pause_note_required", "pause_unacknowledged", "prepare_failed", "private_storage_not_ignored",
-    "private_storage_tracked", "prompt_commit_shape", "prompt_digest", "prompt_drift", "reason_required",
+    "pause_note_required", "pause_unacknowledged", "prepare_failed", "prompt_commit_shape", "prompt_digest", "prompt_drift", "reason_required",
     "record_missing", "record_name", "refused", "release_consumed", "report_changed", "report_kind", "report_kind_required",
     "report_unreadable", "report_write", "repository_root", "response_schema", "retain_nothing",
     "review_schema", "runtime_cache", "schema_version", "session_missing", "startup_failed",
     "startup_isolation", "support_unreviewed", "target_ancestry", "target_drift", "unassigned_prompt",
-    "unknown_field", "unterminated_block", "usage", "workspace_guidance", "workspace_path",
+    "unknown_field", "unterminated_block", "usage", "workspace_guidance",
 })
 #: Status problem reasons that describe a recorded, partial state awaiting a
 #: manager action rather than records that fail verification. Only a missing
@@ -521,10 +522,15 @@ def verify_runtime(root: Path, expected: object) -> dict:
     return candidate
 
 
+#: The default manager deployment home, beside the default checkout home; a
+#: retained deployment is state that issued commands depend on, not a cache.
+MANAGER_HOME = ".local/state/stewart/managers"
+
+
 def manager_home(cache: Path | None = None) -> Path:
     """Require an explicit absolute, unlinked private deployment directory."""
     configured = os.environ.get("STEWART_MANAGER_HOME")
-    cache = cache or (Path(configured) if configured else Path.home() / ".cache/stewart/managers")
+    cache = cache or (Path(configured) if configured else Path.home() / MANAGER_HOME)
     if not cache.is_absolute() or ".." in cache.parts:
         raise StewartError("manager storage must be an absolute path", reason="runtime_cache")
     # Check existing ancestors before mkdir, then pin and check the result. Do
