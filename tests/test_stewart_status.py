@@ -217,7 +217,9 @@ def test_status_refuses_a_missing_session_but_succeeds_on_a_failed_one(checkout)
     (prepared.session / "PREPARE-ERROR.json").write_text(json.dumps({"error": "synthetic", "worktree_retained": True}))
     view = status(ws, meta["audit_id"])
     assert {"record": "PREPARE-ERROR.json", "reason": "prepare_failed", "message": "synthetic"} in view["session"]["problems"]
-    assert view["next_actions"][0]["action"] == "fresh_assignment"
+    # Retiring the failed session comes first; a fresh assignment is the fallback.
+    assert [a["action"] for a in view["next_actions"]][:2] == ["close", "fresh_assignment"]
+    assert "--abandon" in view["next_actions"][0]["argv"]
     assert not any(a['action'] == 'handoff' for a in view['next_actions'])
     collect_action = next(a for a in view["next_actions"] if a["action"] == "collect")
     assert "stop the auditor first" in collect_action["external"]

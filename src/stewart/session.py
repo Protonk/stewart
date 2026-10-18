@@ -31,7 +31,8 @@ SESSION_SCHEMA = 12
 #: Captures bind pristine assets and distinguish failed observation operations
 #: from completed observations of a mismatching runtime. Schema 7 records errors
 #: as reason/message objects and names unexpected paths that are supplemental
-#: inputs, so each custody gap carries its exit code.
+#: inputs and pinned supplemental inputs that are missing, so each custody gap
+#: carries its exit code.
 COLLECTION_SCHEMA = 7
 TRIAGE_SCHEMA = 3
 RETENTION_SCHEMA = 1
@@ -51,7 +52,7 @@ MODES = ("snapshot", "paused")
 #: Preparation's stages in order; PREPARE-ERROR.json names the one that failed.
 #: Records a later stage writes were never written, not lost, when an earlier
 #: stage failed.
-PREPARE_STAGES = ("checkout_directory", "retention", "worktree", "role", "inputs", "runtime", "handoff")
+PREPARE_STAGES = ("retention", "worktree", "role", "inputs", "runtime", "handoff")
 
 RECORD_NAME = re.compile(r"[0-9]{8}T[0-9]{6}-[a-f0-9]{8}")
 
@@ -162,13 +163,31 @@ def session_dir(ws: Workspace, ident: str) -> Path:
     return session_location(maintainer(ws.repo)["common_dir"], ws, ident)
 
 
+def owner_refusal(owner: object, session: Path, ident: str) -> StewartError:
+    """Sessions are repo-wide, but each belongs to the maintainer checkout that prepared it.
+
+    Operate on it from there. When that checkout is gone, recreating a linked
+    worktree at the recorded path restores its Git administration's name.
+    """
+    if isinstance(owner, str) and not Path(owner).is_dir():
+        return StewartError(f"session {ident} belongs to the maintainer checkout {owner}, which no longer exists",
+                            reason="session_owner_missing", retained=[str(session)],
+                            next_steps=[f"recreate it with `git worktree add {owner}` from this repository, "
+                                        f"then rerun with --repo {owner}",
+                                        f"or retire the session from here with close --audit-id {ident} --abandon "
+                                        "--reason TEXT; uncollected checkout changes are refused unless discarded"])
+    return StewartError(f"session {ident} belongs to the maintainer checkout {owner}",
+                        reason="session_other_maintainer", retained=[str(session)],
+                        next_steps=[f"rerun with --repo {owner}"])
+
+
 def load_session(ws: Workspace, ident: str, *, check_retention: bool = True) -> tuple[Path, dict]:
     """Load a session this tool can interpret and that belongs to this caller.
 
     An unsupported schema is refused with the session retained: evidence written
     by another version is never rewritten to fit this one.
     """
-    from stewart.report_declaration import SCHEMA_VERSION as declaration_schema
+    from stewart.report_declaration import HANDOFF_DIRECTORY, SCHEMA_VERSION as declaration_schema
 
     session = session_dir(ws, ident)
     if not session.is_dir():
@@ -206,11 +225,7 @@ def load_session(ws: Workspace, ident: str, *, check_retention: bool = True) -> 
         raise StewartError("session does not belong to this workspace and audit ID", reason="session_identity",
                            retained=[str(session)])
     if record.get("repo") != str(ws.repo):
-        # Sessions are repo-wide, but each belongs to the maintainer checkout
-        # that prepared it: operate on it from there.
-        raise StewartError(f"session {ident} belongs to the maintainer checkout {record.get('repo')}",
-                           reason="session_other_maintainer", retained=[str(session)],
-                           next_steps=[f"rerun with --repo {record.get('repo')}"])
+        raise owner_refusal(record.get("repo"), session, ident)
     from stewart._repository import maintainer, session_uuid, verify_retention
     identity = maintainer(ws.repo)
     if (record.get("common_dir") != identity["common_dir"]
@@ -243,7 +258,7 @@ def load_session(ws: Workspace, ident: str, *, check_retention: bool = True) -> 
         raise StewartError("session lacks an explicit helper interpreter", reason="session_identity")
     handoff = record.get('handoff')
     if (not isinstance(handoff, dict) or set(handoff) != {'path', 'sha256'}
-            or handoff['path'] != f"{ws.rel}/.stewart-handoffs/{record['session_uuid']}.md"
+            or handoff['path'] != f"{ws.rel}/{HANDOFF_DIRECTORY}/{record['session_uuid']}.md"
             or not isinstance(handoff['sha256'], str) or re.fullmatch('[0-9a-f]{64}', handoff['sha256']) is None):
         raise StewartError("session lacks its pinned public handoff", reason="session_identity")
     if check_retention:

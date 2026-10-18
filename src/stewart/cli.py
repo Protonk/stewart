@@ -120,11 +120,12 @@ def build_parser() -> argparse.ArgumentParser:
                     "with create-only refs, pin inputs, and create the private session under the Git common "
                     "directory (<common>/stewart/sessions). The detached worktree, its supplied runtime and "
                     "experiment homes go in a UUID-named directory under the per-user checkout home, outside every "
-                    "working tree; the worktree stays locked for its lifetime. Copies supplemental bytes and writes "
+                    "working tree; the worktree stays locked for its lifetime and only close removes it. Copies supplemental bytes and writes "
                     "the launch handoff. Supplies pinned declaration and input-verification helpers from the "
                     "selected Stewart installation independently of project history. The manager's harness must "
-                    "allow writes to <common>/stewart and the checkout home (status names both). Failed "
-                    "preparations are preserved and require a fresh audit ID. Launches nothing.",
+                    "allow writes to <common>/stewart and the checkout home (status names both); an unwritable home is "
+                    "refused before the audit ID is used. A failed preparation is preserved; close --abandon retires "
+                    "it and releases the audit ID only when nothing could have used it. Launches nothing.",
     )
     prep.add_argument("--checkout-home", type=Path, metavar="DIRECTORY",
                       help="absolute, unlinked, private (0700) directory for auditor checkouts, outside every "
@@ -175,7 +176,8 @@ def build_parser() -> argparse.ArgumentParser:
     view = commands.add_parser(
         "status", help="[no repository or session writes] one session's facts and next actions, or every session",
         description="Inspect one session without writing or repairing anything; without --audit-id, list every "
-                    "session of the workspace across the repository with its owner, state, checkout and lock. "
+                    "session of the workspace across the repository with its owner, state, checkout and lock, then its "
+                    "closed audits; finished closes never raise the listing's exit code. "
                     "Problems with records are reported in place. Returns absolute worktree, launch and "
                     "per-collection report locators, conditional manual handoff and collection-specific triage-draft "
                     "commands, the manager's write locations, launch "
@@ -184,7 +186,9 @@ def build_parser() -> argparse.ArgumentParser:
                     "Missing receipts are distinct from invalid or unreadable records; neither is repaired. "
                     "Names the Stewart build that wrote the session and whether it is this one. "
                     "Locators do not certify file availability; auditor activity is unobserved. "
-                    "Exit 0 means nothing needs attention; 1 lists anomalies and unaddressed gaps; 3 means records "
+                    "A closed audit ID shows its closing records instead. "
+                    "Exit 0 means nothing needs attention; 1 lists anomalies, unaddressed gaps and unfinished "
+                    "closes; 2 refuses, including lost session records named by the registry; 3 means records "
                     "or bytes do not verify. The exit code says nothing about the audit's outcome.",
     )
     view.add_argument("--audit-id", help="the session to inspect; omit it to list every session of the workspace")
@@ -330,7 +334,8 @@ def build_parser() -> argparse.ArgumentParser:
                     "existing empty output directory. Its receipt.json is one JSON document with no further "
                     "schema: the keys and digest are recorded, the bytes retained. Retain exact receipt/ledger "
                     "bytes, recompute comparisons and check reviewed case coverage. Exit 1 when the child failed "
-                    "or preservation failed; the attempt record says which. A failed attempt leaves the output "
+                    "or preservation failed; the attempt record says which; 3 when the supplied runtime stopped "
+                    "verifying across the attempt. A failed attempt leaves the output "
                     "area in the worktree; a new release needs it absent.",
     )
     run.add_argument("--audit-id", required=True)
@@ -458,19 +463,22 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
         from stewart.experiment import run
 
         result = run(ws, args.audit_id, release=args.release, timeout=args.timeout)
-        return result, EXIT_ATTENTION if result["errors"] else EXIT_OK
+        return result, result["exit_code"]
     raise StewartError(f"unknown command {args.command}", reason="usage")
 
 
-def _manager_grant(ws: Workspace, exc: PermissionError) -> StewartError:
+def _manager_grant(ws: Workspace, exc: PermissionError, checkout_home: Path | None = None) -> StewartError:
     """A permission failure names the location the manager's harness must allow."""
     from stewart._repository import DEFAULT_CHECKOUT_HOME, STORAGE, maintainer
     target = Path(exc.filename) if exc.filename else None
     roots = [Path.home() / DEFAULT_CHECKOUT_HOME]
+    if checkout_home is not None:
+        roots.insert(0, Path(checkout_home).expanduser())
     try:
         roots.insert(0, Path(maintainer(ws.repo)["common_dir"]) / STORAGE)
     except StewartError:
         pass
+    roots = [root.resolve() for root in roots]
     root = next((r for r in roots if target is not None and (target == r or target.is_relative_to(r))),
                 target.parent if target is not None else None)
     return StewartError(f"permission denied at {target or 'an unnamed path'}: {exc.strerror}",
@@ -932,7 +940,7 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 result, code = dispatch(ws, args)
             except PermissionError as exc:
-                raise _manager_grant(ws, exc) from exc
+                raise _manager_grant(ws, exc, getattr(args, "checkout_home", None)) from exc
         # ``ok`` means exit 0: a result that needs attention still carries its
         # result document, but it is not "ok".
         envelope.update(ok=code == EXIT_OK, exit_code=code, result=result)

@@ -20,7 +20,7 @@ from stewart import assignment as _assignment
 from stewart._bootstrap import StewartError, write_exclusive
 from stewart._git import git, git_text, resolve_commit
 from stewart.launch_profile import EXIT_LOG, load_profile, render_command, render_probe
-from stewart.report_declaration import SCHEMA_VERSION as DECLARATION_SCHEMA
+from stewart.report_declaration import HANDOFF_DIRECTORY, SCHEMA_VERSION as DECLARATION_SCHEMA
 from stewart.runtime import helper_argv, retain_runtime, select_runtime
 from stewart.auditor_scope import scope_for
 from stewart.close import require_fresh_audit_id
@@ -180,23 +180,25 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
     record["auditor_scope"] = scope_for(record, manager_home=manager_root, interpreter_prefix=prefix,
                                         private_roots=read_denials(custody_roots(repo, common), [common, str(prefix)]))
     launch = _render_handoff(ws, record)
-    record["handoff"] = {"path": f"{ws.rel}/.stewart-handoffs/{session_identity}.md",
+    record["handoff"] = {"path": f"{ws.rel}/{HANDOFF_DIRECTORY}/{session_identity}.md",
                          "sha256": _hash.sha256_bytes(launch.encode("utf-8"))}
     _make_private_parents(private_storage(common), session.parent)
+    # The checkout directory comes before the session: a checkout home the
+    # manager's harness cannot write is refused before the audit ID is used.
+    _make_private_parents(home, audit_dir.parent)
+    audit_dir.mkdir(mode=0o700, exist_ok=False)
     try:
         session.mkdir(mode=0o700, exist_ok=False)
     except FileExistsError:
+        audit_dir.rmdir()  # empty, and created by this call
         raise StewartError(
             f"session already exists: {session}; choose a fresh audit ID", reason="destination_exists",
             retained=[str(session)],
         ) from None
     write_receipt(session / "session.json", record)
-    stage = "checkout_directory"
+    stage = "retention"
     worktree_add_completed = False
     try:
-        _make_private_parents(home, audit_dir.parent)
-        audit_dir.mkdir(mode=0o700, exist_ok=False)
-        stage = "retention"
         retain_commits(repo, retention)
         stage = "worktree"
         git(repo, "worktree", "add", "--detach", "--lock", "--reason", REGISTRATION_LOCK + session_identity,

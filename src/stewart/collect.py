@@ -315,6 +315,16 @@ def unexpected_outputs(files: list[dict], meta: dict, handoff_path: str) -> tupl
     return unexpected, [rel for rel in unexpected if rel in supplied]
 
 
+def missing_supplemental(files: list[dict], meta: dict) -> list[str]:
+    """Pinned supplemental inputs Git no longer reports in the checkout.
+
+    Supplied copies are untracked or ignored, so Git lists every one that is
+    present; a deleted one leaves no diff to report and is named here.
+    """
+    present = {item["path"] for item in files}
+    return sorted(item["path"] for item in meta["supplemental_inputs"] if item["path"] not in present)
+
+
 #: Collection error reasons, each with its exit code and whether the auditor's
 #: check can observe the same condition from the checkout alone.
 COLLECTION_ERRORS = {
@@ -458,6 +468,7 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
                 )
         receipt["unexpected_paths"], receipt["unexpected_supplemental"] = unexpected_outputs(
             state["files"], meta, record["handoff"]["path"])
+        receipt["missing_supplemental"] = missing_supplemental(state["files"], meta)
         receipt["checkout_commit_changed"] = state["head"] != record["prompt_commit"]
         # The maintainer can advance during a snapshot audit. This signal is informational;
         # it neither invalidates pinned inputs nor certifies a pause was honored.
@@ -522,6 +533,7 @@ def assess_checkout(worktree: Path, *, meta: dict, prompt_commit: str, handoff_p
     receipt["git_discovery"] = "complete"
     receipt["unexpected_paths"], receipt["unexpected_supplemental"] = unexpected_outputs(
         state["files"], meta, handoff_path)
+    receipt["missing_supplemental"] = missing_supplemental(state["files"], meta)
     receipt["checkout_commit_changed"] = state["head"] != prompt_commit
     from stewart.report_declaration import validate_report_declaration
 
@@ -569,6 +581,9 @@ def custody_gaps(receipt: dict) -> list[dict]:
         else:
             add(f"unexpected_path:{rel}", "a changed, untracked or ignored path outside the assigned outputs",
                 EXIT_ATTENTION, True)
+    for rel in receipt.get("missing_supplemental", []):
+        add(f"supplemental_missing:{rel}", "a pinned supplemental input is missing from the checkout",
+            EXIT_UNVERIFIED, True)
     declaration = receipt.get("declaration") or {"status": "missing"}
     if declaration["status"] == "missing":
         add("declaration_missing", "captured report has no declaration; no completion inferred", EXIT_ATTENTION, True)

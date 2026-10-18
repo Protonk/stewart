@@ -113,16 +113,23 @@ def test_a_private_root_cannot_contain_a_granted_path(scope):
         assert caught.value.reason == "auditor_scope", grant
 
 
-def test_read_denials_descend_to_kept_paths_and_skip_pattern_names(tmp_path):
+def test_read_denials_descend_to_kept_paths_and_refuse_pattern_names(tmp_path):
     repo = tmp_path / "repo"
     (repo / ".git").mkdir(parents=True)
     (repo / ".venv/lib").mkdir(parents=True)
     (repo / ".venv/pyvenv.cfg").write_text("home\n")
     (repo / "src").mkdir()
-    (repo / "odd[1].txt").write_text("glob syntax\n")
     other = tmp_path / "other"
     denied = read_denials([str(repo), str(other)], [str(repo / ".git"), str(repo / ".venv")])
     assert denied == sorted([str(repo / "src"), str(other)])
+    # Measured: a name a literal denial cannot express is refused, not left readable.
+    for name in ("odd[1].txt", "notes (private)"):
+        (repo / name).write_text("pattern syntax\n")
+        with pytest.raises(StewartError) as refused:
+            read_denials([str(repo)], [str(repo / ".git"), str(repo / ".venv")])
+        assert refused.value.reason == "scope_uncovered" and str(repo / name) in refused.value.retained
+        assert refused.value.next_steps
+        (repo / name).unlink()
     # Invariance: a root that contains no kept path is denied whole, unchanged.
     assert read_denials([str(other)], [str(repo / ".git")]) == [str(other)]
     # A kept path deeper down is reached by descending, denying its siblings.
@@ -130,3 +137,17 @@ def test_read_denials_descend_to_kept_paths_and_skip_pattern_names(tmp_path):
     (repo / "tools/readme").write_text("r\n")
     deeper = read_denials([str(repo)], [str(repo / ".git"), str(repo / "tools/bin")])
     assert str(repo / "tools/readme") in deeper and str(repo / "tools") not in deeper and str(repo / "tools/bin") not in deeper
+
+
+def test_a_scope_must_deny_the_maintainer_checkout_entries(scope):
+    assert validate_scope(scope) == scope, "control: the issued scope validates"
+    repository = Path(scope["repository"])
+    stripped = [root for root in scope["private_roots"] if Path(root).parent != repository]
+    with pytest.raises(StewartError) as refused:
+        validate_scope({**scope, "private_roots": stripped})
+    assert refused.value.reason == "auditor_scope" and refused.value.next_steps
+    # Denying the whole repository is no substitute when it contains the Git grant.
+    whole = sorted({*stripped, scope["repository"]})
+    with pytest.raises(StewartError) as refused:
+        validate_scope({**scope, "private_roots": whole})
+    assert "deny a granted path" in str(refused.value), "a whole-repository deny would cover its Git grant"

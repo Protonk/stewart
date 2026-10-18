@@ -367,7 +367,7 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
     recorded inventory.
     """
     from stewart._repository import _role_records, maintainer, private_storage, session_location
-    from stewart.session import capture_receipt, load_session, now, read_receipt, tool_identity, write_receipt
+    from stewart.session import capture_receipt, load_session, now, owner_refusal, tool_identity, write_receipt
     if not isinstance(actor, str) or not actor.strip():
         raise StewartError("a close needs an attributed actor", reason="actor_required")
     if abandon and (not isinstance(reason, str) or not reason.strip()):
@@ -380,7 +380,10 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
         if not entry["complete"] and "problem" not in entry:
             return _finish(ws.repo, Path(entry["path"]), entry["closing"], entry["closing_sha256"], resumed=True)
     session = session_location(common, ws, ident)
-    if not session.is_dir():
+    rows = [row for row in _role_records(common) if row["session"] == str(session)]
+    # A session whose directory is gone can still be abandoned through the
+    # registry row that names its checkout and refs.
+    if not session.is_dir() and not (abandon and rows):
         raise StewartError(f"no live session for audit {ident} in workspace {ws.rel}", reason="session_missing",
                            next_steps=["status without --audit-id lists this workspace's sessions and closed audits"])
     try:
@@ -389,13 +392,16 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
         if not abandon:
             raise
         record, session_digest = None, None
-    if isinstance(record, dict) and record.get("repo") not in (None, str(ws.repo)):
-        raise StewartError(f"session {ident} belongs to the maintainer checkout {record.get('repo')}",
-                           reason="session_other_maintainer", retained=[str(session)],
-                           next_steps=[f"rerun with --repo {record.get('repo')}"])
+    owner = record.get("repo") if isinstance(record, dict) else None
+    if owner not in (None, str(ws.repo)):
+        refusal = owner_refusal(owner, session, ident)
+        # Any maintainer of the repository may abandon a session whose own
+        # maintainer checkout is gone; everything else goes through its owner.
+        if not (abandon and refusal.reason == "session_owner_missing"):
+            raise refusal
     if not abandon:
         load_session(ws, ident)
-    facts = _facts(session, record, [row for row in _role_records(common) if row["session"] == str(session)], ws.repo)
+    facts = _facts(session, record, rows, ws.repo)
     view = _status_view(ws, ident)
     observed: dict = {"triage": None, "collection": None, "retained": [], "release_basis": None,
                       "discarded": [], "checkout": None, "stage": None, "problems": [],

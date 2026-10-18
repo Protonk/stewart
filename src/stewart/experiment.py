@@ -23,7 +23,7 @@ import sys
 
 from stewart import _util as _hash
 from stewart._git import git
-from stewart._bootstrap import StewartError, capture_regular, read_regular
+from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, EXIT_UNVERIFIED, StewartError, capture_regular, read_regular
 from stewart.ledger import POPULATIONS, measurement_problem, parse_rows, prerequisites, summarize
 from stewart.session import (
     ATTEMPT_SCHEMA,
@@ -530,11 +530,13 @@ def run(ws: Workspace, ident: str, *, release: str, timeout: float | None = None
         refusal = exc
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
         errors.append(f"{type(exc).__name__}: {exc}")
+    runtime_verified = True
     try:
         observe_phase(result['runtime'], attempt_dir, 'after')
         require_match(attempt_dir, result['runtime'], phases={'before', 'after'})
     except (StewartError, OSError) as exc:
         errors.append(f'runtime observation: {exc}')
+        runtime_verified = False
     # Capture stream identities even after a handled launch failure. Handoff
     # reads these retained files, never mutable output paths in the worktree.
     result["streams"] = {name: capture_regular(attempt_dir / name) for name in ("stdout.txt", "stderr.txt")}
@@ -543,4 +545,8 @@ def run(ws: Workspace, ident: str, *, release: str, timeout: float | None = None
         raise StewartError(str(refusal), reason=refusal.reason, retained=[str(attempt_dir)],
                            next_steps=["a changed launched assignment needs a fresh audit ID and prompt-only commit; "
                                        "another attempt needs a new release"])
-    return {"audit_id": ident, "attempt": name, "path": str(attempt_dir), "record": result, "errors": errors}
+    # The child's own exit status never sets the code; a supplied runtime
+    # that stopped verifying across the attempt is records that do not verify.
+    code = EXIT_UNVERIFIED if not runtime_verified else EXIT_ATTENTION if errors else EXIT_OK
+    return {"audit_id": ident, "attempt": name, "path": str(attempt_dir), "record": result, "errors": errors,
+            "exit_code": code}

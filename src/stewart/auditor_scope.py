@@ -22,43 +22,48 @@ _PATH_FIELDS = {"repository", "worktree", "runtime", "git_common", "manager_home
 _FIELDS = {"schema", "private_roots", *_PATH_FIELDS}
 
 
+def _refuse(message: str) -> StewartError:
+    return StewartError(message, reason="auditor_scope", next_steps=[
+        "a recorded scope is never rewritten: preserve the session and prepare a fresh assignment",
+        "at prepare, keep the checkout home and interpreter outside the maintainer checkout, "
+        "Git administration and manager storage"])
+
+
 def validate_scope(value: object) -> dict:
     if not isinstance(value, dict) or set(value) != _FIELDS or value["schema"] != SCOPE_SCHEMA:
-        raise StewartError("unsupported auditor filesystem scope", reason="auditor_scope")
+        raise _refuse("unsupported auditor filesystem scope")
     roots = value["private_roots"]
     if (not isinstance(roots, list) or not roots or not all(isinstance(p, str) for p in roots)
             or roots != sorted(set(roots))):
-        raise StewartError("scope requires its sorted private storage exclusions", reason="auditor_scope")
+        raise _refuse("scope requires its sorted private storage exclusions")
     for key, name in [*((key, value[key]) for key in _PATH_FIELDS), *(("private_roots", p) for p in roots)]:
         if (not isinstance(name, str) or not Path(name).is_absolute() or Path(name).as_posix() != name
                 or ".." in Path(name).parts or any(c in name for c in "*?[]{}()\\\n\r\0")):
-            raise StewartError(f"scope {key} must be an absolute literal path without pattern syntax", reason="auditor_scope")
+            raise _refuse(f"scope {key} must be an absolute literal path without pattern syntax")
     repository, common = Path(value["repository"]), Path(value["git_common"])
     # A repository that contains the Git common directory is covered by its
     # entries beside the path to it (see read_denials); any other repository
     # is denied whole.
-    covered = value["repository"] in roots or common.is_relative_to(repository)
+    covered = value["repository"] in roots or (common.is_relative_to(repository)
+                                                and any(Path(root).parent == repository for root in roots))
     if value["manager_home"] not in roots or not covered:
-        raise StewartError("scope omits its repository or manager storage", reason="auditor_scope")
+        raise _refuse("scope omits its repository or manager storage")
     worktree, runtime, manager = (Path(value[key]) for key in ("worktree", "runtime", "manager_home"))
     if worktree.parent != runtime.parent or worktree == runtime:
-        raise StewartError("the worktree and runtime must be siblings in the session's checkout directory",
-                           reason="auditor_scope")
+        raise _refuse("the worktree and runtime must be siblings in the session's checkout directory")
     if (worktree.is_relative_to(repository) or runtime.is_relative_to(repository)
             or worktree.is_relative_to(common) or runtime.is_relative_to(common)):
-        raise StewartError("auditor roots must lie outside the maintainer checkout and Git administration",
-                           reason="auditor_scope")
+        raise _refuse("auditor roots must lie outside the maintainer checkout and Git administration")
     if (manager.is_relative_to(worktree) or manager.is_relative_to(runtime)
             or worktree.is_relative_to(manager) or runtime.is_relative_to(manager)):
-        raise StewartError("auditor roots overlap private manager storage", reason="auditor_scope")
+        raise _refuse("auditor roots overlap private manager storage")
     prefix = Path(value["interpreter_prefix"])
     if worktree.parent.is_relative_to(prefix) or manager.is_relative_to(prefix) or runtime.is_relative_to(prefix):
-        raise StewartError("interpreter read scope would include private custody storage", reason="auditor_scope")
+        raise _refuse("interpreter read scope would include private custody storage")
     if any(Path(root).is_relative_to(grant) for root in roots for grant in (worktree, runtime, prefix)):
-        raise StewartError("auditor read scope would reopen a private root", reason="auditor_scope")
+        raise _refuse("auditor read scope would reopen a private root")
     if any(grant.is_relative_to(root) for root in map(Path, roots) for grant in (worktree, runtime, common, prefix)):
-        raise StewartError("a private root would deny a granted path; the broader deny wins in the qualified harness",
-                           reason="auditor_scope")
+        raise _refuse("a private root would deny a granted path; the broader deny wins in the qualified harness")
     return value
 
 

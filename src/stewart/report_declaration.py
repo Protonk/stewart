@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import sys
 import uuid
@@ -214,7 +215,7 @@ def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_com
     info, working = read_regular(prompt_path)
     if working != prompt:
         raise _refuse("prompt_drift", str(prompt_path), digest, info.get("sha256", info["kind"]),
-                      f"restore the prompt with `git checkout {launch_prompt_commit} -- {ws.prompt}`; "
+                      f"restore the prompt with {restore_command(launch_prompt_commit, ws.prompt)}; "
                       "run check for anything else")
     meta = prompt_metadata(prompt.decode("utf-8"), ws)
     expected = {"audit_id": meta["audit_id"], "target_commit": meta["target_commit"],
@@ -237,6 +238,7 @@ HANDOFF_IDENTITY_LINES = {
     "launch_token": "Launch token: `",
 }
 HANDOFF_DIRECTORY = ".stewart-handoffs"
+HANDOFF_NAME = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.md")
 
 
 def issued_handoff(ws: Workspace, root: Path) -> tuple[str, dict] | None:
@@ -249,7 +251,9 @@ def issued_handoff(ws: Workspace, root: Path) -> tuple[str, dict] | None:
     folder = f"{ws.rel}/{HANDOFF_DIRECTORY}"
     try:
         with open_directory(contained(root, folder)) as directory:
-            names = sorted(os.listdir(directory))
+            # Preparation names the handoff by its session UUID; anything else
+            # in the directory is an ordinary unexpected path.
+            names = sorted(name for name in os.listdir(directory) if HANDOFF_NAME.fullmatch(name))
             if len(names) != 1:
                 return None
             _, data = read_regular(Path(names[0]), dir_fd=directory)
@@ -267,12 +271,17 @@ def issued_handoff(ws: Workspace, root: Path) -> tuple[str, dict] | None:
     return f"{folder}/{names[0]}", found
 
 
-#: What the auditor can do about each checkout-attributable gap family.
+UNREPAIRABLE_TEXT = "not yours to repair: describe it in the report, declare, and stop"
+#: What the auditor can do about each checkout-attributable gap family. Fixes
+#: for files write only the working tree, because the qualified harness denies
+#: writes to Git administration, where the checkout's index lives. Moving HEAD
+#: back or unstaging needs the same kind of Git write that made the change.
 FIXES = {
     "report_": "write the report at the assigned path as a regular file, then run start or set",
     "checkout_commit_changed": "restore HEAD with `git reset --soft {prompt_commit}` (your changes stay in the "
                                "working tree), mention the commit in the report, then run set again",
-    "unexpected_path:": "move this file under a declared scratch path, or remove it",
+    "unexpected_path:": "move this file under a declared scratch path; keep failed work rather than deleting it",
+    "supplemental_missing:": UNREPAIRABLE_TEXT,
     "declaration_missing": "run the issued start command, or set if the report already exists",
     "declaration_invalid:": "repair the declaration block by rerunning the issued set command",
     "declaration_mismatch:": "rerun the issued set command exactly as the handoff prints it",
@@ -285,19 +294,30 @@ FIXES = {
     "command_mismatch:": "copy the issued command from the handoff exactly",
 }
 #: Gaps the auditor cannot repair: describe them in the report and stop.
-UNREPAIRABLE = "not yours to repair: describe it in the report, declare, and stop"
+UNREPAIRABLE = UNREPAIRABLE_TEXT
 
 
-def _fix(gap: dict, prompt_commit: str, tracked: set[str]) -> str:
+def restore_command(prompt_commit: str, rel: str) -> str:
+    """Restore one committed file's bytes without writing Git's index."""
+    return f"`git show {prompt_commit}:{shlex.quote(rel)} > {shlex.quote(rel)}`"
+
+
+def _fix(gap: dict, prompt_commit: str, tracked: set[str], staged: set[str]) -> str:
     if gap["code"] == 3:
         return UNREPAIRABLE
     rel = gap["id"].partition(":")[2]
-    if gap["id"].startswith("unexpected_path:") and rel in tracked:
-        return f"restore it with `git checkout {prompt_commit} -- {rel}`"
+    fix = "inspect and correct this entry"
     for prefix, text in FIXES.items():
         if gap["id"].startswith(prefix):
-            return text.format(prompt_commit=prompt_commit)
-    return "inspect and correct this entry"
+            fix = text.format(prompt_commit=prompt_commit)
+            break
+    if gap["id"].startswith("unexpected_path:"):
+        if rel in tracked:
+            fix = f"restore it with {restore_command(prompt_commit, rel)}"
+        if rel in staged:
+            # A staged change stays reported until the index matches again.
+            fix = f"unstage it with `git reset -q {prompt_commit} -- {shlex.quote(rel)}`, then {fix}"
+    return fix
 
 
 def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_commit: str,
@@ -345,9 +365,11 @@ def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_comm
                       "unavailable" if prompt.returncode else _hash.sha256_bytes(prompt.stdout),
                       "compare the command with the issued handoff and report the mismatch")
     meta = prompt_metadata(prompt.stdout.decode("utf-8"), ws)
+    manifest_verified = True
     try:
         meta = expand_input_manifest(ws, meta)
     except StewartError as exc:
+        manifest_verified = False
         extra.append({"id": "input_manifest_changed", "code": 3, "observable": True,
                       "description": f"the pinned input manifest no longer verifies: {exc}"})
     expected = {"audit_id": meta["audit_id"], "target_commit": issued["target_commit"] or meta["target_commit"],
@@ -357,11 +379,24 @@ def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_comm
     sources["audit_id"] = "committed prompt assignment"
     receipt = assess_checkout(actual, meta=meta, prompt_commit=issued["launch_prompt_commit"],
                               handoff_path=handoff_path, expected=expected, sources=sources)
-    gaps = [gap for gap in custody_gaps(receipt) if gap["observable"]] + extra
+    gaps = [gap for gap in custody_gaps(receipt) if gap["observable"]]
+    if handoff is None:
+        # Without the issued handoff, nothing in its directory can be told
+        # apart from it; never suggest removing what may be the handoff.
+        gaps = [gap for gap in gaps if not gap["id"].startswith(f"unexpected_path:{handoff_path}")]
+    gaps += extra
     tracked = {rel for rel in receipt["unexpected_paths"]
                if git(actual, "cat-file", "-e", f"{issued['launch_prompt_commit']}:{rel}", check=False).returncode == 0}
+    staged = set(os.fsdecode(git(actual, "diff", "--cached", "--name-only", "--no-renames", "-z",
+                                 issued["launch_prompt_commit"]).stdout).split("\0")) - {""}
     for gap in gaps:
-        gap["fix"] = _fix(gap, issued["launch_prompt_commit"], tracked)
+        rel = gap["id"].partition(":")[2]
+        if not manifest_verified and gap["id"].startswith("unexpected_path:") and rel not in tracked:
+            # The changed manifest no longer says which uncommitted files are
+            # supplied inputs; this one may be, so nothing here is a fix.
+            gap.update(code=3, description=gap["description"] + "; while the input manifest does not verify, "
+                       "this may be a supplied input")
+        gap["fix"] = _fix(gap, issued["launch_prompt_commit"], tracked, staged)
     return {"schema": "stewart.auditor-check/1", "audit_id": meta["audit_id"],
             "exit_code": combined_code(gap["code"] for gap in gaps),
             "gaps": gaps, "declaration": receipt["declaration"], "report_path": meta["report_path"],

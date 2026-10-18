@@ -150,29 +150,39 @@ def read_denials(roots: list[str], keep: list[str]) -> list[str]:
     a project virtual environment, therefore cannot be denied whole: the
     auditor's Git or helpers would stop working. Such a root is replaced by its
     entries, descending along each path to a kept one, so everything else
-    under it stays denied. Entry names with pattern syntax cannot be denied
-    literally and are left out, and entries created later are not covered.
+    under it stays denied. Entries created later are not covered.
+
+    An entry whose name holds pattern syntax cannot be denied literally, so
+    preparation refuses rather than leave it readable.
     """
     targets = [Path(path) for path in keep]
     denied: set[str] = set()
+    uncovered: list[str] = []
     for root in roots:
         path = Path(root)
         if any(target != path and target.is_relative_to(path) for target in targets):
-            denied.update(_entries_beside(path, targets))
+            denied.update(_entries_beside(path, targets, uncovered))
         elif not any(path == target for target in targets):
             denied.add(root)
+    if uncovered:
+        raise StewartError("these private entries have names a literal read denial cannot express: "
+                           + ", ".join(uncovered), reason="scope_uncovered", retained=uncovered,
+                           next_steps=["rename or move them so their names hold none of * ? [ ] { } ( ) \\ "
+                                       "or line breaks, then prepare; no session was created"])
     return sorted(denied)
 
 
-def _entries_beside(root: Path, targets: list[Path]) -> list[str]:
+def _entries_beside(root: Path, targets: list[Path], uncovered: list[str]) -> list[str]:
     found = []
     for name in sorted(os.listdir(root)):
         entry = root / name
         if any(entry == target for target in targets):
             continue
         if any(target.is_relative_to(entry) for target in targets):
-            found.extend(_entries_beside(entry, targets))
-        elif not any(c in name for c in "*?[]{}()\\\n\r"):
+            found.extend(_entries_beside(entry, targets, uncovered))
+        elif any(c in name for c in "*?[]{}()\\\n\r"):
+            uncovered.append(str(entry))
+        else:
             found.append(str(entry))
     return found
 
@@ -326,7 +336,9 @@ def registered_session(common: str, session: Path) -> None:
             f"this audit ID was prepared before and its session records are missing: {session}",
             reason="session_records_missing",
             retained=[str(_registry(common) / f"{row['role_uuid']}.json") for row in rows] + refs,
-            next_steps=["preserve the registry row and the session's refs; prepare the assignment under a fresh audit ID"])
+            next_steps=["preserve the registry row and the session's refs; prepare the assignment under a fresh audit ID",
+                        f"close --audit-id {session.name} --abandon --reason TEXT retires what the row names; "
+                        "the ID stays reserved"])
 
 
 def worktree_lock(git_admin: str) -> str | None:

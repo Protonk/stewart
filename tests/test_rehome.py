@@ -16,7 +16,7 @@ import sys
 
 import pytest
 
-from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, EXIT_UNVERIFIED, StewartError
+from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, EXIT_REFUSED, EXIT_UNVERIFIED, StewartError
 from stewart._git import git
 from stewart._repository import DEFAULT_CHECKOUT_HOME, LIFETIME_LOCK, REGISTRATION_LOCK, ROLE_MARKER
 from stewart.collect import collect
@@ -69,6 +69,51 @@ def test_sessions_are_repo_wide_and_bound_to_their_maintainer(checkout, tmp_path
     assert str(checkout.repo) in refused.value.next_steps[0]
     # Control: the owning maintainer still reads its own session.
     assert status(checkout.ws, "one-question")["session"]["supported"] is True
+
+
+def test_a_session_whose_maintainer_checkout_is_gone_says_how_to_restore_it(checkout, tmp_path):
+    from stewart.close import close
+    revision = checkout.prompt_commit()
+    linked = tmp_path / "linked-maintainer"
+    checkout.git("worktree", "add", "-b", "linked-maintainer", str(linked), revision)
+    owner = workspace(linked, WS)
+    prepared = prepare(owner, revision)
+    checkout.git("worktree", "remove", "--force", str(linked))
+    with pytest.raises(StewartError) as refused:
+        status(checkout.ws, "one-question")
+    assert refused.value.reason == "session_owner_missing" and refused.value.exit_code == EXIT_REFUSED
+    assert f"git worktree add {linked}" in refused.value.next_steps[0]
+    with pytest.raises(StewartError) as refused:
+        collect(checkout.ws, "one-question", auditor_stopped="finished")
+    assert refused.value.reason == "session_owner_missing"
+    # The named step works: the recreated checkout owns the session again.
+    checkout.git("worktree", "add", str(linked), "linked-maintainer")
+    assert status(workspace(linked, WS), "one-question")["session"]["supported"] is True
+    checkout.git("worktree", "remove", "--force", str(linked))
+    # Any maintainer of the repository may abandon it while its owner is gone.
+    result = close(checkout.ws, "one-question", actor="manager", abandon=True, reason="owner removed")
+    assert result["closed"] and not Path(prepared["worktree"]).exists()
+
+
+def test_an_unwritable_checkout_home_is_refused_before_any_session(checkout, tmp_path, run_cmd):
+    home = tmp_path / "readonly-home"
+    home.mkdir(mode=0o700)
+    home.chmod(stat.S_IRUSR | stat.S_IXUSR)
+    revision = checkout.prompt_commit()
+    try:
+        import stewart
+        installed = Path(stewart.__file__).parent.parent
+        result = run_cmd([sys.executable, "-I", "-m", "stewart", "--repo", str(checkout.repo), "--workspace", WS,
+                          "--json", "prepare", "--prompt-commit", revision, "--checkout-home", str(home)],
+                         cwd=installed, env={})
+    finally:
+        home.chmod(stat.S_IRWXU)
+    error = json.loads(result.stdout)["error"]
+    assert result.returncode == EXIT_REFUSED and error["reason"] == "manager_grant_missing"
+    assert str(home.resolve()) in error["next_steps"][0]
+    assert not support.session_path(checkout).exists(), "the audit ID is not used up"
+    # Control: the same ID prepares once the home is writable.
+    assert prepare(checkout.ws, revision, checkout_home_path=home)["audit_id"] == "one-question"
 
 
 @pytest.mark.parametrize("place", ["repository", "linked", "common", "manager", "prefix", "link", "mode", "relative"])
@@ -176,11 +221,16 @@ def test_lost_session_records_refuse_reuse_and_say_why(checkout, run_cmd):
     shutil.rmtree(prepared["session"])
     with pytest.raises(StewartError) as refused:
         status(checkout.ws, "one-question")
-    assert refused.value.reason == "session_records_missing" and refused.value.exit_code == EXIT_UNVERIFIED
+    # A targeted view refuses (2); the listing below reports the loss (3).
+    assert refused.value.reason == "session_records_missing" and refused.value.exit_code == EXIT_REFUSED
     assert any(item.endswith(".json") for item in refused.value.retained) and refused.value.next_steps
     with pytest.raises(StewartError) as refused:
         prepare(checkout.ws, revision)
     assert refused.value.reason == "session_records_missing" and "fresh audit ID" in refused.value.next_steps[0]
+    from stewart.assignment import initialize
+    with pytest.raises(StewartError) as refused:
+        initialize(checkout.ws, "one-question", checkout.meta["target_commit"], inputs=["input.txt"])
+    assert refused.value.reason == "session_records_missing", "init drafts no ID that prepare would refuse"
     listing = status_list(checkout.ws)
     assert listing["exit_code"] == EXIT_UNVERIFIED
     assert [entry["problem"]["reason"] for entry in listing["sessions"]] == ["session_records_missing"]
@@ -203,9 +253,9 @@ def test_permission_failures_name_the_write_location(checkout, run_cmd):
     try:
         import stewart
         installed = Path(stewart.__file__).parent.parent
-        result = run_cmd([sys.executable, "-m", "stewart", "--repo", str(checkout.repo), "--workspace", WS, "--json",
-                          "collect", "--audit-id", "one-question", "--auditor-stopped", "finished"],
-                         cwd=installed, env={"PYTHONPATH": str(installed)})
+        result = run_cmd([sys.executable, "-I", "-m", "stewart", "--repo", str(checkout.repo), "--workspace", WS,
+                          "--json", "collect", "--audit-id", "one-question", "--auditor-stopped", "finished"],
+                         cwd=installed, env={})
     finally:
         collections.chmod(stat.S_IRWXU)
     error = json.loads(result.stdout)["error"]

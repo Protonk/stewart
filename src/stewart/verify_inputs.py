@@ -15,7 +15,7 @@ import sys
 from stewart.assignment import expand_input_manifest, expected_inputs, observe_inputs, prompt_metadata
 from stewart._git import git, git_text
 from stewart._bootstrap import EXIT_ATTENTION, EXIT_REFUSED, EXIT_UNVERIFIED, StewartError, combined_code
-from stewart.report_declaration import auditor_context
+from stewart.report_declaration import auditor_context, restore_command
 from stewart.workspace import Workspace, workspace
 
 
@@ -54,7 +54,7 @@ def verify_inputs(ws: Workspace, *, expected_worktree: Path, launch_prompt_commi
     for row in rows:
         row["code"] = 0 if row["matches"] else EXIT_ATTENTION if row["kind"] == "committed" else EXIT_UNVERIFIED
         if not row["matches"]:
-            row["fix"] = (f"restore it with `git checkout {launch_prompt_commit} -- {row['path']}`"
+            row["fix"] = (f"restore it with {restore_command(launch_prompt_commit, row['path'])}"
                           if row["kind"] == "committed" else
                           "not yours to repair: describe it in the report, declare, and stop")
     failed = sum(not row["matches"] for row in rows)

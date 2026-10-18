@@ -226,6 +226,9 @@ def test_interrupted_close_finishes_from_its_recorded_inventory(checkout, monkey
     view = status(checkout.ws, IDENT)
     assert view["audit_id_state"] == "close_incomplete" and view["exit_code"] == EXIT_ATTENTION
     assert [action["action"] for action in view["next_actions"]] == ["close"]
+    listing = status_list(checkout.ws)
+    assert [(entry["audit_id"], entry["audit_id_state"]) for entry in listing["sessions"]] == [(IDENT, "close_incomplete")]
+    assert listing["exit_code"] == EXIT_ATTENTION, "an unfinished close counts in the listing"
     assert _reason(prepare, checkout.ws, prepared.revision).reason == "close_incomplete"
     # Entries that appear after interruption are outside the recorded inventory.
     late_ref = f"refs/stewart/sessions/{uuid}/late"
@@ -281,7 +284,7 @@ def test_each_release_blocker_alone_keeps_the_audit_id_reserved(checkout, monkey
         (session / "launches").mkdir(mode=0o700)
         (session / "launches" / "20260101T000000-deadbeef.json").write_text("{}")
     elif blocker == "exit_record":
-        (session / "HARNESS-EXIT.txt").write_text("exit 0\n")
+        (session / "HARNESS-EXIT.txt").write_text("0 2026-01-01T00:00:00Z\n")
     elif blocker == "collection":
         (session / "collections" / "20260101T000000-deadbeef").mkdir(parents=True)
     elif blocker == "checkout_extra":
@@ -459,3 +462,28 @@ def test_close_help_states_both_modes_and_the_kept_record(capsys):
     for phrase in ("--abandon", "Closing records are never removed", "export first", "tell the writers",
                    "every doubt keeps it reserved"):
         assert phrase in text
+
+
+def test_a_lost_session_is_abandoned_through_its_registry_row(checkout):
+    import shutil
+    prepared = support.prepared_session(checkout, report=None)
+    uuid = prepared.prepared["session_uuid"]
+    shutil.rmtree(prepared.session)
+    refused = _reason(close, checkout.ws, IDENT, actor="manager")
+    assert refused.reason == "session_missing", "control: a concluded close needs the session"
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="session records were lost")
+    assert result["closed"] and result["released"] is False
+    assert not prepared.worktree.exists() and _refs(checkout, uuid) == [] and not _row(checkout, uuid).exists()
+    closing = support.read_json(Path(result["closing"]))
+    assert closing["identity"]["session_sha256"] is None and closing["observed"]["release_basis"]["failure_receipt"]["kind"] == "missing"
+    assert _reason(prepare, checkout.ws, _revised_prompt(checkout)).reason == "audit_id_reserved"
+
+
+def test_finished_closes_never_count_in_the_listing(checkout):
+    prepared, _ = _triaged(checkout)
+    stray = Path(prepared.prepared["audit_dir"]) / "stray.txt"
+    stray.write_text("left behind\n")
+    close(checkout.ws, IDENT, actor="manager")
+    assert status(checkout.ws, IDENT)["exit_code"] == EXIT_ATTENTION, "the targeted view names the leftover"
+    listing = status_list(checkout.ws)
+    assert listing["exit_code"] == EXIT_OK and listing["sessions"][0]["exit_code"] == EXIT_OK

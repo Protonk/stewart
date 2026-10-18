@@ -138,7 +138,7 @@ UNVERIFIED_REASONS = frozenset({
 })
 REFUSED_REASONS = frozenset({
     "actor_required", "already_resumed", "assignment_schema", "checkout_home", "manager_grant_missing",
-    "session_other_maintainer", "assignment_sections", "attempt_unresolved",
+    "session_other_maintainer", "session_owner_missing", "assignment_sections", "attempt_unresolved",
     "audit_id", "audit_id_format", "audit_id_reserved", "checkout_changed", "close_attempt_unresolved",
     "close_hold_outstanding", "close_incomplete", "close_not_concluded", "uncollected_changes", "auditor_not_stopped", "auditor_scope", "auditor_worktree",
     "byte_order_mark", "capture_selector", "checkout_commit", "checkout_detached", "checkout_git_file",
@@ -153,22 +153,33 @@ REFUSED_REASONS = frozenset({
     "interpreter_unavailable", "invalid_json", "launch_profile", "launch_profile_missing", "ledger_collision",
     "malformed_fence", "manifest_schema", "missing", "missing_field", "mode", "movement", "nested_block",
     "no_grant", "no_hold", "non_object", "path_escape", "path_noncanonical", "path_symlink",
-    "pause_note_required", "pause_unacknowledged", "prepare_failed", "prompt_commit_shape", "prompt_digest", "prompt_drift", "reason_required",
+    "pause_note_required", "pause_unacknowledged", "prepare_failed", "close_leftovers", "prompt_commit_shape", "prompt_digest", "prompt_drift", "reason_required",
     "record_missing", "record_name", "refused", "release_consumed", "report_changed", "report_kind", "report_kind_required",
     "report_unreadable", "report_write", "repository_root", "response_schema", "retain_nothing",
-    "review_schema", "runtime_cache", "schema_version", "session_missing", "startup_failed",
+    "review_schema", "runtime_cache", "schema_version", "scope_uncovered", "session_missing", "startup_failed",
     "startup_isolation", "support_unreviewed", "target_ancestry", "target_drift", "unassigned_prompt",
     "unknown_field", "unterminated_block", "usage", "workspace_guidance",
 })
 #: Status problem reasons that describe a recorded, partial state awaiting a
 #: manager action rather than records that fail verification. Only a missing
 #: completion receipt supports these labels; any other problem is unverified.
-STATE_REASONS = frozenset({"attempt_unresolved", "close_incomplete", "collection_incomplete", "prepare_failed"})
+STATE_REASONS = frozenset({"attempt_unresolved", "close_incomplete", "close_leftovers", "collection_incomplete",
+                           "prepare_failed"})
 
 
 def exit_code_for(reason: str) -> int:
     """The exit code a refusal with ``reason`` earns; unclassified reasons refuse."""
     return EXIT_UNVERIFIED if reason in UNVERIFIED_REASONS else EXIT_REFUSED
+
+
+def problem_code(reason: str) -> int:
+    """The one decision whether a recorded problem means records that do not verify.
+
+    A recorded partial state awaiting the manager (``STATE_REASONS``) is 1;
+    any other problem in records that should verify is 3. Status uses it for
+    every problem it lists, and a concluded close refuses wherever it gives 3.
+    """
+    return EXIT_ATTENTION if reason in STATE_REASONS else EXIT_UNVERIFIED
 
 
 def combined_code(codes: Iterable[int]) -> int:

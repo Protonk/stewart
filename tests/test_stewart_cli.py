@@ -38,10 +38,10 @@ def test_command_fixture_preserves_inheritance_and_explicit_environment(run_cmd,
 
 
 def _run(checkout, run_cmd, *args, json_mode: bool = True):
-    argv = [sys.executable, "-m", "stewart", "--repo", str(checkout.repo), "--workspace", WS]
+    argv = [sys.executable, "-I", "-m", "stewart", "--repo", str(checkout.repo), "--workspace", WS]
     if json_mode:
         argv.append("--json")
-    return run_cmd([*argv, *args], cwd=INSTALLED_LIB, env={"PYTHONPATH": str(INSTALLED_LIB)})
+    return run_cmd([*argv, *args], cwd=INSTALLED_LIB, env={})
 
 
 def _break_worktree_git(worktree: Path) -> None:
