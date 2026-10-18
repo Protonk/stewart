@@ -5,7 +5,9 @@ revised the same day for the actor model below.
 
 Status: design and sequence agreed. Step 0 is **not yet approved** and must not
 start until the user approves it; it no longer gates steps 1–8. No
-implementation has started. This document
+implementation has started. [CLOSE-PLAN.md](CLOSE-PLAN.md) runs after steps
+1–6. Steps 7–8 then run together with its documentation and test steps, so
+the manual and tests describe one removal path. This document
 is temporary execution state, not shipped guidance. Update it as work proceeds;
 remove it once its contracts have reached the manual, CLI help and tests.
 
@@ -165,8 +167,9 @@ Decisions 7–9 were added after the actor-model review:
      to run `stewart status` before removing it.
    - `git worktree remove` without `-f -f` and `git worktree move` then refuse,
      and `git worktree prune` keeps the registration and its role marker.
-   - Stewart never unlocks or removes a checkout. `status` prints the
-     unlock-and-remove commands for the manager to run.
+   - Only `close` unlocks and removes a checkout (see
+     [CLOSE-PLAN.md](CLOSE-PLAN.md)). `status` reports the lock and prints no
+     removal commands.
 9. **The manager's write locations are surfaced.**
    - Every custody-writing command writes `<common>/stewart`. `prepare`,
      `recover-runtime` and experiment runs also write the checkout home, which
@@ -387,9 +390,9 @@ Only step 4's `<common>` read grant depends on this outcome.
   refuses with a stable reason, retained paths and next steps, instead of the
   bare `auditor_scope` refusal. Give `validate_scope` refusals next steps too.
 - **Cross-maintainer refusal** from decision 1.
-- **Checkout removal (decision 8).** `status` prints the unlock-and-remove
-  commands as manager-run commands. Note that removing a checkout ends any
-  further auditor work in it, such as the resume of a paused hold.
+- **Checkout lock (decision 8).** `status` reports the lifetime lock and points
+  to `close` (CLOSE-PLAN.md) for removal. It prints no unlock or remove
+  commands.
 - **Manager write locations (decision 9).** `status` reports
   `<common>/stewart` and the checkout home for this repository. Map a
   permission failure under either to a stable reason that names the location
@@ -420,7 +423,8 @@ model, which the user will revise separately. Then update:
     harness needs write authorization for the common directory and the
     checkout home. Point to `status` for the exact locations (decision 9).
   - The worktree-role and reserved-root paragraph, including the lifetime
-    lock. Moving or removing a checkout now requires unlocking it first.
+    lock. Moving a checkout now requires unlocking it first; removal goes
+    through `close`.
   - The ignore-rule paragraph: delete it.
   - The manager home paragraph.
   - Manual terminal launch and sub-agent launch grants.
