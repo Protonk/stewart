@@ -175,6 +175,46 @@ Decisions 7–9 were added after the actor-model review:
    - A permission failure under them refuses with a stable reason that names
      the location the manager's harness must grant.
 
+Decisions 10–14 are trims to user-visible output, agreed the same day. Each is
+carried by a step that already rewrites that output:
+
+10. **Help labels say what they leave untouched.**
+    - Every invocation, including `--help` and `docs`, installs the selected
+      source into the manager home before the CLI runs. That install stays.
+    - Reword the `[read-only]` labels on `status` and `triage-draft`
+      (`cli.py:169,222`) and the `docs` label (`cli.py:80`). The new labels
+      name what the command does not write: the repository and session
+      records.
+11. **The auditor handoff carries only what the auditor needs.**
+    - Remove the harness-configuration paragraph (`prepare.py:319-322`) and
+      the mention of the private session directory (`prepare.py:312`).
+    - The manager already receives the harness requirement from `prepare` and
+      `status`.
+    - The handoff names the worktree, the runtime, the helpers and the
+      auditor's guidance, and nothing private.
+12. **`status` shows the runtime recovery command only when it is needed.**
+    - Today the command appears whenever the backup copy of the runtime
+      (`runtime-pristine`) verifies (`status.py:469`, `cli.py:606-608`), which
+      is nearly always.
+    - Show it only when the runtime the auditor uses fails verification
+      (`current_runtime.matches_expected` is false; state
+      `runtime_unavailable`).
+    - In JSON, `runtime_recovery` is null otherwise.
+13. **`status` drops the live report path.**
+    - Remove `identities.live_report_path` (`status.py:420`), the "Live report
+      destination" line (`cli.py:621`), and the live-report mention in the
+      `status` help description (`cli.py:170-171`).
+    - The auditor learns its report path from the handoff, and the manager
+      reads collected bytes.
+14. **`status` without `--audit-id` lists the workspace's sessions.**
+    - One line per session: audit ID, owning maintainer checkout, preparation
+      state, checkout path, lock state, and whether a collection exists.
+    - Decisions 7 and 8 rely on this. Checkouts are named by UUID and sessions
+      live inside Git's directory, so the manager needs a listing to find them.
+
+Decisions 12–14 change the status JSON, so bump `stewart.status/11` to
+`stewart.status/12`.
+
 ## Target layout
 
 ```
@@ -261,6 +301,8 @@ Only step 4's `<common>` read grant depends on this outcome.
   `mkdir(parents=True)` does not apply the mode to parents.
 - Decision 6: change the default in `manager_home` (`_bootstrap.py:445`) and the
   hard-coded private root in `scope_for` (`auditor_scope.py:51`).
+- Decision 10: reword the help labels while the manager home's location is
+  changing.
 - If a new module is added, update the source inventory (`SOURCE_MODULES` and
   `SOURCE_FILES` in `_bootstrap.py`) and the distribution tests.
 - Keep all Git and filesystem work inside operations, never at import or in
@@ -284,6 +326,10 @@ Only step 4's `<common>` read grant depends on this outcome.
   `audit_dir`.
 - Update the paths and wording in the rendered `LAUNCH.md`, the public handoff
   and the printed launch and probe blocks.
+- Decision 11: in the same rewrite, remove the manager-facing text from the
+  handoff (`_render_handoff`, `prepare.py:312,319-322`). The runtime's parent
+  is now the per-audit checkout directory, so replace "never its parent" with
+  a plain instruction to read only that subtree.
 
 ### 3. Roles
 
@@ -348,6 +394,16 @@ Only step 4's `<common>` read grant depends on this outcome.
   `<common>/stewart` and the checkout home for this repository. Map a
   permission failure under either to a stable reason that names the location
   and the harness grant to add, instead of an unexplained `OSError`.
+- **Recovery command (decision 12).** Condition `runtime_recovery` on the
+  current-runtime check.
+- **Live report path (decision 13).** Remove it from the JSON, the text and the
+  help.
+- **Session listing (decision 14).** Make `--audit-id` optional for `status`
+  (`cli.py:180`). Without it, list every session for the workspace across the
+  repository, each with its owning maintainer. Include unreadable or invalid
+  session records as listed problems, never skip them. A workspace with no
+  sessions lists none and exits 0.
+- Bump the status JSON schema to `stewart.status/12`.
 - Reason identifiers are part of the JSON contract; assert them in tests.
 
 ### 7. Documentation and help
@@ -370,6 +426,9 @@ model, which the user will revise separately. Then update:
   - Manual terminal launch and sub-agent launch grants.
   - Failure and interruption recovery.
   - The evidence handoff examples: replace the `.scratch/` paths.
+  - Static audit lifecycle, step 6, "Inspect" (around line 389): live report
+    destinations (decision 13), the listing mode (decision 14), and the
+    `stewart.status/12` locators.
   - Optional experiment lifecycle: HOME.
   - Records.
   - Coverage and limits. State what can still destroy custody: removing or
@@ -378,6 +437,8 @@ model, which the user will revise separately. Then update:
 - **`README.md:70`.**
 - **`src/stewart/resources/MAINTAINER.md`.**
 - **The `prepare` help** (`cli.py:117`) and the new `--checkout-home` option.
+- **The `status` help** for the optional `--audit-id` and the listing, and the
+  relabeled commands (decision 10).
 - **Module docstrings** in `workspace.py` and `_repository.py`.
 
 ### 8. Tests and checks
@@ -437,6 +498,24 @@ measured property, and an invariance case:
     the new stable reason, naming that location.
   - Control: the writable case succeeds.
   - `status` reports both locations.
+- **The auditor handoff (decision 11).**
+  - Measured: the handoff names no session path, `<common>/stewart`, role
+    registry or manager home, and contains no harness-configuration paragraph.
+  - Control: it names the worktree and runtime paths.
+- **The recovery command (decision 12).**
+  - Measured: it is absent from text and JSON while the runtime verifies, and
+    present after a byte in the runtime changes.
+  - Invariance: the rest of the status view is unchanged.
+- **No live report path (decision 13).** Measured: neither text nor JSON
+  contains the live report destination. Control: collected report locations are
+  still listed.
+- **Session listing (decision 14).**
+  - Measured: with sessions from two maintainer worktrees and one unreadable
+    session record, the listing shows all three. Each has its owner, and the
+    unreadable one is shown as a problem.
+  - Control: `status --audit-id` for one of them gives the same detailed view
+    as before.
+  - Invariance: an empty workspace lists none.
 - **The experiment HOME** is under the checkout directory, and attempt receipts
   are in the session.
 - **Scope settings construction** for the new layout, including the step 0
@@ -452,24 +531,24 @@ overwrite `.scratch/check-result.json` from earlier runs; choose fresh
 ## Observed, outside this plan
 
 Every `python -m stewart` invocation, including `--help`, deploys the selected
-source into the manager home. The `[read-only]` labels in the CLI help describe
-effects on the repository only. This was verified on 2026-10-18 with a fresh
-`STEWART_MANAGER_HOME`; importing the package alone writes nothing. Decide
-separately whether the help should say so.
+source into the manager home. This was verified on 2026-10-18 with a fresh
+`STEWART_MANAGER_HOME`; importing the package alone writes nothing. Decision 10
+fixes the help labels. Making `--help` and `docs` skip the deployment would
+change the bootstrap's run-only-verified-code design and is not part of this
+plan.
 
-The actor-model review also raised three points for the user's documentation
+The actor-model review also raised two points for the user's documentation
 and later design work. None is a storage-location change:
 
 - **Shared refs.** Linked worktrees share every ref. An auditor's `git log
   --all` or `git branch -a` shows other audits' prompt commits (through
   `refs/stewart/sessions/*`) and the maintainer's later work. Hiding these
   needs a different checkout mechanism, such as a dedicated clone.
-- **The full manual in the handoff.** The auditor handoff points to the full
+- **The custody manual in the handoff.** The auditor handoff points to the
   bundled custody manual (`prepare.py:317`), which is mostly manager
-  operations.
-- **A live report path in `status`.** `status` includes `live_report_path`
-  (`status.py:420`), which invites the manager to read the live worktree
-  rather than collected bytes.
+  operations. It does follow that pointer with "Read only the assigned
+  sections" (`prepare.py:318`), so this matters only if assignments leave the
+  sections unnamed.
 
 ## Completion
 
