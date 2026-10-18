@@ -332,12 +332,21 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
     from stewart.close import close_summary, closing_entries
     common = maintainer(ws.repo)["common_dir"]
     session = session_dir(ws, ident)
-    closes = [close_summary(entry) for entry in closing_entries(common, ws, ident)]
+    closes = [close_summary(entry, ws.repo) for entry in closing_entries(common, ws, ident)]
     # Closing records come first: a closed or closing session's removed
     # records are the close's doing, not records that went missing. Every
     # session under one ID shares its directory, and an incomplete close
     # refuses any new preparation, so an incomplete close is this session's.
-    if closes and (not session.is_dir() or any(not item["complete"] and "problem" not in item for item in closes)):
+    unfinished = any(not item["complete"] and "problem" not in item for item in closes)
+    if closes and (unfinished or not session.is_dir()):
+        if not unfinished:
+            # A later session prepared under a released ID may itself have
+            # lost its records; its registry row says so.
+            try:
+                registered_session(common, session)
+            except StewartError as exc:
+                exc.code = EXIT_REFUSED
+                raise
         return _closed_view(ws, ident, closes)
     if not session.is_dir():
         # A registry row for this path means the ID was prepared and its
@@ -808,7 +817,9 @@ def _attention(view: dict) -> list[dict]:
             f"the launch command's harness exited {exits[-1]['exit']} and no collection exists")
     if view["session"].get("same_build_as_viewer") is False:
         add(EXIT_ATTENTION, "session writer", "different_build", "a different Stewart build wrote this session")
-    items.extend(_close_attention(view["closes"]))
+    # Earlier closes are history beside a live session, except records that
+    # do not verify; their leftovers are news only in the closed view.
+    items.extend(item for item in _close_attention(view["closes"]) if item["reason"] != "close_leftovers")
     return items
 
 

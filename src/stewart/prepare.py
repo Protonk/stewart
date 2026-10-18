@@ -189,6 +189,9 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
     audit_dir.mkdir(mode=0o700, exist_ok=False)
     try:
         session.mkdir(mode=0o700, exist_ok=False)
+    except PermissionError:
+        audit_dir.rmdir()  # empty, and created by this call
+        raise
     except FileExistsError:
         audit_dir.rmdir()  # empty, and created by this call
         raise StewartError(
@@ -318,6 +321,7 @@ def _render_handoff(ws: Workspace, record: dict) -> str:
         f"Audited target commit: `{target}`. Differences are confined to audit material.\n"
         f"Prompt SHA-256: `{record['prompt_sha256']}`.\n"
         f"Launch token: `{record['launch_token']}` (agreement with this handoff, not proof of reading or security).\n"
+        f"Handoff file: `{record['session_uuid']}.md` in `{ws.rel}/{HANDOFF_DIRECTORY}`.\n"
         f"Coordination mode: `{mode}`.\n"
         f"Write the report to `{meta['report_path']}` inside that worktree.\n"
         "If your harness did not start inside that worktree, use absolute paths rooted there for "

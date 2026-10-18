@@ -377,11 +377,11 @@ permission. Keep the human evidence map and scope in the prompt.
    runtime beside the worktree, retains pristine assets in the session, and
    writes a public handoff under the worktree's workspace at
    `.stewart-handoffs/<session-uuid>.md`. A pinned private copy remains at
-   `LAUNCH.md` inside the session. The handoff names the worktree and the
-   supplied runtime, prints absolute scratch paths and a read-only input-check
-   command, and names no private session path, manager storage or harness
-   configuration; the conventional declared `notes` directory is created for
-   the auditor.
+   `LAUNCH.md` inside the session. The handoff names the worktree, the
+   supplied runtime and its own file name, prints absolute scratch paths and a
+   read-only input-check command, and names no private session path, manager
+   storage or harness configuration; the conventional declared `notes`
+   directory is created for the auditor.
 
    ```sh
    "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review prepare --mode snapshot
@@ -559,10 +559,14 @@ permission. Keep the human evidence map and scope in the prompt.
     other action is pending. An
     abandon (`--abandon --reason TEXT`) is allowed in any state, including
     failed preparations and records that do not verify. It refuses while the
-    checkout holds changes no collection captured (`uncollected_changes`)
-    unless `--discard-uncollected` is given; the closing record then lists the
-    discarded paths and digests. A session whose directory is gone but whose
-    registry row remains can be abandoned through that row.
+    checkout holds changes no collection captured, or when it cannot observe
+    the checkout at all (`uncollected_changes`), unless `--discard-uncollected`
+    is given; the closing record then lists the discarded paths and digests, or
+    `null` when they could not be observed. A session whose directory is gone
+    but whose registry row remains can be abandoned through that row; one with
+    neither a record nor a row is retired as its session directory alone. The
+    triage decision, if one was recorded, is kept as the manager's attributed
+    decision.
 
     `close` writes `CLOSING.json` exclusively before removing anything:
     identity, the acknowledgment (actor, mode, and an abandon's reason), the
@@ -570,23 +574,35 @@ permission. Keep the human evidence map and scope in the prompt.
     digests, or an abandon's observed stage, problems and release basis), the
     auditor's attributed completion and report kind and the manager's
     attributed decision, and the removal inventory. It then removes, in order,
-    the checkout (unlocked, then `git worktree remove`), its recorded runtimes
-    and experiment homes, the checkout directory if empty, the session's
-    `refs/stewart/sessions/<uuid>/*` (each with its expected value), the role
-    registry row, and the session directory last. Removal stops at the first
-    failure and records the attempt in `CLOSE-ATTEMPT-<stamp>.json`; `status`
+    the checkout (unlocked, then `git worktree remove`; a checkout Git cannot
+    validate is removed as its recorded directory), its recorded runtimes and
+    experiment homes, the checkout directory if empty, the retention refs the
+    session recorded (each with `--no-deref` and its expected commit), the role
+    registry row, and the session directory last. Removal never follows a
+    link: a link in place of a recorded directory is removed or kept, never
+    traversed. Removal stops at the first failure and records the attempt in
+    `CLOSE-ATTEMPT-<stamp>.json`, relocking the checkout if it remains; `status`
     reports the close as incomplete and a rerun of `close` finishes from the
-    recorded inventory, never a wider one. `CLOSED.json` records each removal's
-    outcome once nothing recorded remains. Unrecorded entries in the checkout
-    directory are left in place and named. Closing a paused session releases no
-    hold; tell the writers.
+    recorded inventory, never a wider one. A close interrupted before writing
+    `CLOSING.json` leaves at most an empty directory, which a rerun reuses.
+    `CLOSED.json` records each removal's outcome once nothing recorded remains.
+    Leftovers are kept and named, in `CLOSED.json` and in the closed view, and
+    make `close` exit 1: unrecorded entries in the checkout directory, a link
+    or file where a recorded directory belongs, a ref under the session's
+    namespace that it did not record or that is symbolic or moved, and a
+    checkout Git now registers at another path. Closing a paused session
+    releases no hold; tell the writers. The closed view keeps saying so.
 
     A concluded close keeps the audit ID reserved. An abandon releases it only
     when no chain of evidence can exist under it: `PREPARE-ERROR.json` exists
     and names a stage before the handoff, neither `LAUNCH.md` nor the public
-    handoff exists, the session has no launch record, harness exit record or
-    collection, and the checkout, if created, holds only preparation's
-    footprint. Every doubt keeps the ID reserved. `init` and `prepare` reapply
+    handoff exists, the session holds nothing beyond `session.json`, the
+    failure receipt and the runtime stage's records (no launch, message, exit,
+    collection or other record), and the checkout, if created, was observed
+    and holds only preparation's footprint: the committed tree, the pinned
+    supplemental copies, the report's parent and notes directories and the
+    handoff directory, with HEAD at the prompt commit. Any other file or
+    directory blocks it. Every doubt keeps the ID reserved. `init` and `prepare` reapply
     that rule to every closing record under the ID: a reserved ID is refused
     with `audit_id_reserved`, an unfinished close with `close_incomplete`, and
     an unreadable or unsupported record with `closing_record_invalid` (3). A
@@ -785,8 +801,10 @@ prints the full validated JSON. Exit 0 means the operation validated; exit 2
 names a stable refusal reason and correction step.
 
 `check` reads without writing: make it the last action before stopping. It
-takes the session's identities from the issued handoff, which preparation names
-by its session UUID (other files beside it are ordinary unexpected paths), and
+takes the session's identities from the issued handoff: the one file in the
+handoff directory, named by a session UUID, whose `Handoff file:` line states
+its own name. Other files beside it, including copies, are ordinary unexpected
+paths; a renamed handoff is unavailable (3), as collection finds it changed. It
 runs the same report, inventory, Git discovery, archive and declaration
 observation a collection runs. Its `stewart.auditor-check/1` result lists every
 gap a collection of the unchanged checkout would record that the checkout

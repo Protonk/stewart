@@ -184,6 +184,10 @@ def _mutate(prepared, checkout, change):
         (worktree / SUPPLIED).unlink()
     elif change == "handoff_neighbor":
         (worktree / WS / ".stewart-handoffs" / "notes.md").write_text("an editor's note beside the handoff\n")
+    elif change == "handoff_copy":
+        # A copy under another session-UUID name still states the issued name.
+        handoff = next((worktree / WS / ".stewart-handoffs").iterdir())
+        (handoff.parent / COPY).write_bytes(handoff.read_bytes())
     elif change == "wrong_token":
         data = prepared.report.read_bytes()
         token = prepared.prepared["launch_token"].encode()
@@ -207,14 +211,16 @@ EXPECTED = {
     "supplemental_deleted": {(f"supplemental_missing:{SUPPLIED}", 3)},
     # Another file beside the handoff is ordinary; the handoff itself is never listed.
     "handoff_neighbor": {(f"unexpected_path:{WS}/.stewart-handoffs/notes.md", 1)},
+    "handoff_copy": {(f"unexpected_path:{WS}/.stewart-handoffs/00000000-0000-4000-8000-000000000000.md", 1)},
 }
+COPY = "00000000-0000-4000-8000-000000000000.md"
 
 
 @pytest.mark.heavy
 @pytest.mark.parametrize("change", ["clean", "inside_outputs", "outside_outputs", "tracked_input",
                                     "supplemental_input", "prompt_edit", "commit", "fifo", "unreadable",
                                     "nested_git", "report_deleted", "wrong_token", "supplemental_deleted",
-                                    "handoff_neighbor"])
+                                    "handoff_neighbor", "handoff_copy"])
 def test_check_predicts_every_checkout_attributable_collection_gap(checkout, change):
     prepared = _session(checkout)
     _mutate(prepared, checkout, change)
@@ -306,7 +312,8 @@ def test_input_verifier_names_a_restore_for_committed_inputs_only(checkout, monk
     document = json.loads(capsys.readouterr().out)
     rows = {row["path"]: row for row in document["result"]["inputs"]}
     assert document["ok"] is False and rows[SUPPLIED]["code"] == EXIT_UNVERIFIED
-    assert "git checkout" not in rows[SUPPLIED]["fix"] and rows["input.txt"]["matches"]
+    assert rows[SUPPLIED]["fix"].startswith("not yours to repair") and "git" not in rows[SUPPLIED]["fix"]
+    assert rows["input.txt"]["matches"]
 
 
 def _cli(checkout, run_cmd, *args):
@@ -476,3 +483,17 @@ def test_status_news_is_the_latest_word(checkout):
     partial("29990101T000000-00000000", "2999-01-01T00:00:00+00:00")
     view = status(checkout.ws, "one-question")
     assert {(item["reason"], item["code"]) for item in view["attention"]} == {("collection_incomplete", EXIT_ATTENTION)}
+
+
+@pytest.mark.heavy
+def test_a_renamed_handoff_does_not_verify_for_check_or_collect(checkout):
+    prepared = _session(checkout)
+    handoff = next((prepared.worktree / WS / ".stewart-handoffs").iterdir())
+    assert f"Handoff file: `{handoff.name}`" in handoff.read_text(), "the handoff states its own name"
+    handoff.rename(handoff.with_name(COPY))
+    checked = _check(prepared)
+    collected = collect(checkout.ws, "one-question", auditor_stopped="finished")
+    assert "handoff_unavailable" in {gap["id"] for gap in checked["gaps"]}
+    assert checked["exit_code"] == collected["exit_code"] == EXIT_UNVERIFIED
+    assert not any("remove" in gap["fix"] or "move this file" in gap["fix"] for gap in checked["gaps"]
+                   if COPY in gap["id"]), "never suggest moving what may be the handoff"

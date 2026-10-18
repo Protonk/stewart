@@ -236,6 +236,7 @@ HANDOFF_IDENTITY_LINES = {
     "target_commit": "Audited target commit: `",
     "prompt_sha256": "Prompt SHA-256: `",
     "launch_token": "Launch token: `",
+    "handoff_name": "Handoff file: `",
 }
 HANDOFF_DIRECTORY = ".stewart-handoffs"
 HANDOFF_NAME = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.md")
@@ -249,16 +250,27 @@ def issued_handoff(ws: Workspace, root: Path) -> tuple[str, dict] | None:
     preparation, and the check says so.
     """
     folder = f"{ws.rel}/{HANDOFF_DIRECTORY}"
+    issued = []
     try:
         with open_directory(contained(root, folder)) as directory:
-            # Preparation names the handoff by its session UUID; anything else
-            # in the directory is an ordinary unexpected path.
-            names = sorted(name for name in os.listdir(directory) if HANDOFF_NAME.fullmatch(name))
-            if len(names) != 1:
-                return None
-            _, data = read_regular(Path(names[0]), dir_fd=directory)
+            # Preparation names the handoff by its session UUID and the handoff
+            # states that name, so a copy or a renamed handoff is not it;
+            # anything else in the directory is an ordinary unexpected path.
+            for name in sorted(os.listdir(directory)):
+                if not HANDOFF_NAME.fullmatch(name):
+                    continue
+                _, data = read_regular(Path(name), dir_fd=directory)
+                found = _handoff_identities(data)
+                if found is not None and found["handoff_name"] == name:
+                    issued.append((name, found))
     except (OSError, StewartError):
         return None
+    if len(issued) != 1:
+        return None
+    return f"{folder}/{issued[0][0]}", issued[0][1]
+
+
+def _handoff_identities(data: bytes | None) -> dict | None:
     if data is None:
         return None
     found = {}
@@ -266,9 +278,7 @@ def issued_handoff(ws: Workspace, root: Path) -> tuple[str, dict] | None:
         for field, prefix in HANDOFF_IDENTITY_LINES.items():
             if line.startswith(prefix) and field not in found:
                 found[field] = line[len(prefix):].split("`", 1)[0]
-    if set(found) != set(HANDOFF_IDENTITY_LINES):
-        return None
-    return f"{folder}/{names[0]}", found
+    return found if set(found) == set(HANDOFF_IDENTITY_LINES) else None
 
 
 UNREPAIRABLE_TEXT = "not yours to repair: describe it in the report, declare, and stop"

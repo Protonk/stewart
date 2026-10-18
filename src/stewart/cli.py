@@ -725,8 +725,12 @@ def _render_close(item: dict) -> list[str]:
         lines.append(f"    auditor-declared completion (the auditor's claim): {item['auditor_completion']['value']}")
     for retained in item["retained"]:
         lines.append(f"    retained: {retained['path']} ({str(retained.get('sha256'))[:12]}…)")
-    for discarded in item["discarded"]:
+    if item["discarded"] is None:
+        lines.append("    discarded: the checkout could not be observed; its uncollected changes are unknown")
+    for discarded in item["discarded"] or []:
         lines.append(f"    discarded uncollected: {discarded['path']}")
+    if item.get("hold_outstanding"):
+        lines.append("    paused hold never resumed; the close released none: tell the writers")
     for leftover in item["leftovers"]:
         lines.append(f"    left in place: {leftover}")
     lines.append(f"    record: {item['path']}")

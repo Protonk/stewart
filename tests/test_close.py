@@ -9,6 +9,7 @@ prepare reapply that rule to the recorded basis.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import re
 import stat
@@ -237,7 +238,7 @@ def test_interrupted_close_finishes_from_its_recorded_inventory(checkout, monkey
     late_file.write_text("after interruption\n")
     second = close(checkout.ws, IDENT, actor="someone else")
     assert second["resumed"] is True and second["closed"] and not prepared.session.exists()
-    assert second["leftovers"] == [str(late_file)] and late_file.exists()
+    assert second["leftovers"] == sorted([str(late_file), f"ref {late_ref}"]) and late_file.exists()
     assert _refs(checkout, uuid) == [late_ref], "a rerun never widens the recorded inventory"
     closing = support.read_json(directory / "CLOSING.json")
     assert closing["acknowledged"]["actor"] == "manager", "the rerun keeps the original acknowledgment"
@@ -265,8 +266,9 @@ def test_abandoning_a_clean_failure_releases_the_audit_id(checkout, monkeypatch)
     assert [item["mode"] for item in live["closes"]] == ["abandoned"], "the earlier attempt is listed beside it"
 
 
-BLOCKERS = ["none", "private_handoff", "public_handoff", "launch_record", "exit_record", "collection",
-            "checkout_extra", "failure_receipt_missing"]
+BLOCKERS = ["none", "private_handoff", "public_handoff", "launch_record", "launches_not_a_directory", "message",
+            "exit_record", "collection", "checkout_extra", "checkout_empty_directory", "failure_receipt_missing",
+            "failure_stage_missing", "checkout_unobservable"]
 
 
 @pytest.mark.parametrize("blocker", BLOCKERS)
@@ -283,17 +285,36 @@ def test_each_release_blocker_alone_keeps_the_audit_id_reserved(checkout, monkey
     elif blocker == "launch_record":
         (session / "launches").mkdir(mode=0o700)
         (session / "launches" / "20260101T000000-deadbeef.json").write_text("{}")
+    elif blocker == "launches_not_a_directory":
+        (session / "launches").write_text("not a directory, so its records cannot be counted\n")
+    elif blocker == "message":
+        (session / "messages").mkdir(mode=0o700)
+        (session / "messages" / "20260101T000000-deadbeef.json").write_text("{}")
     elif blocker == "exit_record":
         (session / "HARNESS-EXIT.txt").write_text("0 2026-01-01T00:00:00Z\n")
     elif blocker == "collection":
         (session / "collections" / "20260101T000000-deadbeef").mkdir(parents=True)
     elif blocker == "checkout_extra":
         (worktree / "extra.txt").write_text("not preparation's\n")
+    elif blocker == "checkout_empty_directory":
+        (worktree / "made-by-someone").mkdir()
+    elif blocker == "failure_stage_missing":
+        failure = session / "PREPARE-ERROR.json"
+        document = json.loads(failure.read_text())
+        del document["stage"]
+        failure.chmod(stat.S_IRUSR | stat.S_IWUSR)
+        failure.write_text(json.dumps(document))
+    elif blocker == "checkout_unobservable":
+        (worktree / "input.txt").chmod(0)
     elif blocker == "failure_receipt_missing":
         # A crashed prepare leaves no receipt; it looks like one still running.
         (session / "PREPARE-ERROR.json").rename(checkout.tmp / "moved-aside.json")
-    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason=f"blocker {blocker}",
-                   discard_uncollected=True)
+    try:
+        result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason=f"blocker {blocker}",
+                       discard_uncollected=blocker in ("checkout_extra", "checkout_unobservable"))
+    finally:
+        if blocker == "checkout_unobservable" and (worktree / "input.txt").exists():
+            (worktree / "input.txt").chmod(stat.S_IRUSR | stat.S_IWUSR)
     assert result["released"] is (blocker == "none")
     revision = _revised_prompt(checkout)
     if blocker == "none":
@@ -471,7 +492,11 @@ def test_a_lost_session_is_abandoned_through_its_registry_row(checkout):
     shutil.rmtree(prepared.session)
     refused = _reason(close, checkout.ws, IDENT, actor="manager")
     assert refused.reason == "session_missing", "control: a concluded close needs the session"
-    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="session records were lost")
+    # Without its record there is no prompt commit to compare the checkout with.
+    refused = _reason(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="session records were lost")
+    assert refused.reason == "uncollected_changes" and prepared.worktree.is_dir()
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="session records were lost",
+                   discard_uncollected=True)
     assert result["closed"] and result["released"] is False
     assert not prepared.worktree.exists() and _refs(checkout, uuid) == [] and not _row(checkout, uuid).exists()
     closing = support.read_json(Path(result["closing"]))
@@ -487,3 +512,212 @@ def test_finished_closes_never_count_in_the_listing(checkout):
     assert status(checkout.ws, IDENT)["exit_code"] == EXIT_ATTENTION, "the targeted view names the leftover"
     listing = status_list(checkout.ws)
     assert listing["exit_code"] == EXIT_OK and listing["sessions"][0]["exit_code"] == EXIT_OK
+
+
+def test_close_never_follows_or_removes_refs_it_did_not_record(checkout):
+    prepared = support.prepared_session(checkout, report=None)
+    uuid = prepared.prepared["session_uuid"]
+    main = git_text(checkout.repo, "rev-parse", "refs/heads/main")
+    planted = f"refs/stewart/sessions/{uuid}/notes"
+    git(checkout.repo, "symbolic-ref", planted, "refs/heads/main")
+    unrecorded = f"refs/stewart/sessions/{uuid}/extra"
+    git(checkout.repo, "update-ref", unrecorded, prepared.revision)
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="planted refs")
+    # Measured: the symbolic ref is kept and named, never followed to its target.
+    assert git_text(checkout.repo, "rev-parse", "refs/heads/main") == main
+    assert f"ref {planted}" in result["leftovers"] and f"ref {unrecorded}" in result["leftovers"]
+    assert result["exit_code"] == EXIT_ATTENTION
+    # Control: the recorded retention refs are removed.
+    assert sorted(_refs(checkout, uuid)) == sorted([planted, unrecorded])
+    closing = support.read_json(Path(result["closing"]))
+    assert {entry["ref"] for entry in closing["removal"]["refs"]} == {
+        f"refs/stewart/sessions/{uuid}/prompt", f"refs/stewart/sessions/{uuid}/target"}
+    view = status(checkout.ws, IDENT)
+    assert view["exit_code"] == EXIT_ATTENTION and f"ref {planted}" in view["closes"][0]["leftovers"]
+    git(checkout.repo, "update-ref", "--no-deref", "-d", planted)
+    git(checkout.repo, "update-ref", "-d", unrecorded)
+    assert status(checkout.ws, IDENT)["exit_code"] == EXIT_OK, "leftovers are observed at read time"
+
+
+def test_abandon_refuses_when_the_checkout_cannot_be_observed(checkout):
+    prepared = support.prepared_session(checkout, report="A report nobody collected.\n")
+    (prepared.worktree / "input.txt").chmod(0)
+    try:
+        refused = _reason(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="stopping")
+        assert refused.reason == "uncollected_changes" and "could not be observed" in str(refused)
+        assert prepared.report.exists() and prepared.session.is_dir()
+        result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="stopping", discard_uncollected=True)
+    finally:
+        if (prepared.worktree / "input.txt").exists():
+            (prepared.worktree / "input.txt").chmod(stat.S_IRUSR | stat.S_IWUSR)
+    closing = support.read_json(Path(result["closing"]))
+    assert closing["observed"]["discarded"] is None, "an unobserved discard is recorded as unknown, not as nothing"
+    assert closing["observed"]["checkout"]["observed"] is False and result["released"] is False
+
+
+@pytest.mark.parametrize("damage", ["acknowledged_list", "observed_list", "removal_missing_field", "foreign_audit"])
+def test_closing_records_of_the_wrong_shape_do_not_verify(checkout, monkeypatch, capsys, damage):
+    from stewart import _util
+    from stewart.cli import main
+    _failed(checkout, monkeypatch)
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="clean failure")
+    closing, closed = Path(result["closing"]), Path(result["closed"])
+    document = json.loads(closing.read_bytes())
+    if damage == "acknowledged_list":
+        document["acknowledged"] = []
+    elif damage == "observed_list":
+        document["observed"] = []
+    elif damage == "removal_missing_field":
+        del document["removal"]["session"]
+    else:
+        document["identity"]["audit_id"] = "another-question"
+    data = json.dumps(document).encode()
+    for location in (closing, closed):
+        location.chmod(stat.S_IRUSR | stat.S_IWUSR)
+    closing.write_bytes(data)
+    bound = json.loads(closed.read_bytes())
+    bound["closing_sha256"] = _util.sha256_bytes(data)
+    closed.write_bytes(json.dumps(bound).encode())
+    refused = _reason(prepare, checkout.ws, _revised_prompt(checkout))
+    assert refused.reason == "closing_record_invalid" and refused.exit_code == EXIT_UNVERIFIED
+    argv = ["--repo", str(checkout.repo), "--workspace", checkout.ws.rel, "--json", "status", "--audit-id", IDENT]
+    assert main(argv) == EXIT_UNVERIFIED
+    envelope = json.loads(capsys.readouterr().out)
+    assert envelope["result"]["audit_id_state"] == "unverified"
+
+
+def test_a_checkout_git_cannot_validate_is_still_removed(checkout):
+    prepared, _ = _triaged(checkout)
+    (prepared.worktree / ".git").unlink()
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="the checkout's .git file was lost",
+                   discard_uncollected=True)
+    assert result["closed"] and result["exit_code"] == EXIT_OK and not prepared.worktree.exists()
+    assert str(prepared.worktree) not in git_text(checkout.repo, "worktree", "list", "--porcelain")
+
+
+def test_a_link_in_place_of_the_checkout_is_removed_without_following_it(checkout, tmp_path):
+    import shutil
+    prepared, _ = _triaged(checkout)
+    target = tmp_path / "unrelated"
+    target.mkdir()
+    (target / "keep.txt").write_text("not the session's\n")
+    shutil.rmtree(prepared.worktree)
+    prepared.worktree.symlink_to(target)
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="the checkout was replaced")
+    assert result["closed"] and not os.path.lexists(prepared.worktree)
+    assert (target / "keep.txt").read_text() == "not the session's\n"
+    assert str(prepared.worktree) not in git_text(checkout.repo, "worktree", "list", "--porcelain")
+
+
+def test_a_close_interrupted_before_its_record_can_be_rerun(checkout, monkeypatch):
+    prepared, _ = _triaged(checkout)
+
+    def crash(*args, **kwargs):
+        raise KeyboardInterrupt("synthetic crash")
+
+    import stewart.session as session_module
+    with monkeypatch.context() as patch:
+        patch.setattr(session_module, "write_receipt", crash)
+        with pytest.raises(KeyboardInterrupt):
+            close(checkout.ws, IDENT, actor="manager")
+    directory = closed_location(str(_common(checkout)), checkout.ws, IDENT) / prepared.prepared["session_uuid"]
+    assert directory.is_dir() and not os.listdir(directory), "control: the crash left an empty closing directory"
+    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/12", "an empty closing directory is not a close"
+    result = close(checkout.ws, IDENT, actor="manager")
+    assert result["closed"] and not prepared.session.exists()
+
+
+def test_status_on_a_released_id_names_a_later_session_that_lost_its_records(checkout, monkeypatch):
+    import shutil
+    _failed(checkout, monkeypatch)
+    close(checkout.ws, IDENT, actor="manager", abandon=True, reason="clean failure")
+    again = prepare(checkout.ws, _revised_prompt(checkout))
+    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/12", "control: the live session is shown"
+    shutil.rmtree(again["session"])
+    refused = _reason(status, checkout.ws, IDENT)
+    assert refused.reason == "session_records_missing" and refused.exit_code == EXIT_REFUSED
+
+
+def test_a_link_in_place_of_attempts_is_kept_and_named(checkout, tmp_path):
+    prepared, _ = _triaged(checkout)
+    elsewhere = tmp_path / "elsewhere"
+    (elsewhere / "attempt-a").mkdir(parents=True)
+    attempts = Path(prepared.prepared["audit_dir"]) / "attempts"
+    attempts.symlink_to(elsewhere)
+    result = close(checkout.ws, IDENT, actor="manager")
+    assert str(attempts) in result["leftovers"] and result["exit_code"] == EXIT_ATTENTION
+    assert (elsewhere / "attempt-a").is_dir(), "the link's target is never removed"
+
+
+def test_a_moved_checkout_is_kept_and_named(checkout, tmp_path):
+    prepared = support.prepared_session(checkout, report=None)
+    moved = tmp_path / "moved-checkout"
+    checkout.git("worktree", "move", "--force", "--force", str(prepared.worktree), str(moved))
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="moved away")
+    assert f"checkout registered at {moved}" in result["leftovers"] and result["exit_code"] == EXIT_ATTENTION
+    assert moved.is_dir() and str(moved) in git_text(checkout.repo, "worktree", "list", "--porcelain")
+
+
+def test_an_unidentified_session_can_still_be_abandoned(checkout):
+    session = support.session_path(checkout, IDENT)
+    session.mkdir(parents=True, mode=0o700)
+    refused = _reason(close, checkout.ws, IDENT, actor="manager")
+    assert refused.reason in ("record_missing", "close_unidentified") and refused.exit_code == EXIT_UNVERIFIED
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="crashed before its record")
+    assert result["closed"] and not session.exists() and result["released"] is False
+    assert _reason(prepare, checkout.ws, checkout.prompt_commit()).reason == "audit_id_reserved"
+
+
+def test_a_closed_records_folder_that_is_not_a_directory_keeps_the_id_reserved(checkout):
+    folder = closed_location(str(_common(checkout)), checkout.ws, IDENT)
+    folder.parent.mkdir(parents=True, exist_ok=True)
+    folder.write_text("not a directory\n")
+    refused = _reason(prepare, checkout.ws, checkout.prompt_commit())
+    assert refused.reason == "closing_record_invalid" and refused.exit_code == EXIT_UNVERIFIED
+
+
+def test_a_paused_hold_left_by_an_abandon_is_shown_in_the_closed_view(checkout, capsys):
+    from stewart.cli import main
+    support.prepared_session(checkout, mode="paused", report=None)
+    close(checkout.ws, IDENT, actor="manager", abandon=True, reason="cancelled")
+    view = status(checkout.ws, IDENT)
+    assert view["closes"][0]["hold_outstanding"] is True
+    assert main(["--repo", str(checkout.repo), "--workspace", checkout.ws.rel, "status", "--audit-id", IDENT]) == EXIT_OK
+    assert "tell the writers" in capsys.readouterr().out
+
+
+def test_a_concluded_close_waits_for_the_paused_hold(checkout):
+    from stewart.triage import resume
+    prepared, collected = _triaged(checkout, mode="paused")
+    refused = _reason(close, checkout.ws, IDENT, actor="manager")
+    assert refused.reason == "close_hold_outstanding" and refused.retained and refused.next_steps
+    disposition = status(checkout.ws, IDENT)["dispositions"][-1]["name"]
+    resume(checkout.ws, IDENT, triage=disposition, reason="triaged")
+    result = close(checkout.ws, IDENT, actor="manager")
+    assert result["closed"] and result["hold_outstanding"] is False
+
+
+def test_retained_bytes_are_recorded_in_the_closing_record(checkout):
+    from stewart import _util
+    from stewart.triage import retain
+    prepared, _ = _triaged(checkout)
+    disposition = status(checkout.ws, IDENT)["dispositions"][-1]["name"]
+    retain(checkout.ws, IDENT, triage=disposition, report=True)
+    result = close(checkout.ws, IDENT, actor="manager")
+    retained = support.read_json(Path(result["closing"]))["observed"]["retained"]
+    destination = checkout.repo / checkout.meta["report_path"]
+    assert retained == [{"path": str(destination), "sha256": _util.sha256_bytes(destination.read_bytes()),
+                         "source": "REPORT.md"}]
+    assert status(checkout.ws, IDENT)["closes"][0]["retained"] == retained
+
+
+def test_an_earlier_close_leftover_is_not_news_for_the_live_session(checkout, monkeypatch):
+    failed = _failed(checkout, monkeypatch)
+    stray = failed.worktree.parent / "stray.txt"
+    stray.write_text("left by hand\n")
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="clean failure")
+    assert result["released"] and str(stray) in result["leftovers"]
+    prepare(checkout.ws, _revised_prompt(checkout))
+    view = status(checkout.ws, IDENT)
+    assert view["exit_code"] == EXIT_OK and view["closes"][0]["leftovers"] == [str(stray)]
+    assert status_list(checkout.ws)["exit_code"] == EXIT_OK

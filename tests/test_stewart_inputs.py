@@ -115,7 +115,8 @@ def test_checker_compares_selected_bytes_and_ignores_report_prose_and_other_file
     # A changed committed input can be restored from Git: action needed (1).
     assert main(cli_args(kwargs) + ["--json"]) == 1
     rows = {r["path"]: r for r in json.loads(capsys.readouterr().out)["result"]["inputs"]}
-    assert rows["input.txt"]["code"] == 1 and "git checkout" in rows["input.txt"]["fix"]
+    # The fix writes only the working tree; the qualified harness denies Git administration writes.
+    assert rows["input.txt"]["code"] == 1 and "git show" in rows["input.txt"]["fix"]
     (prepared.worktree / "ignored/supplied.txt").unlink()
     # A missing supplemental input cannot be restored by the auditor: 3 takes precedence.
     assert main(cli_args(kwargs) + ["--json"]) == 3
@@ -125,7 +126,7 @@ def test_checker_compares_selected_bytes_and_ignores_report_prose_and_other_file
     assert rows["input.txt"]["expected_sha256"] == _hash.sha256_bytes(b"committed input\n")
     assert rows["input.txt"]["observed_sha256"] == _hash.sha256_bytes(b"selected change\n")
     assert rows["ignored/supplied.txt"]["observed_kind"] == "missing"
-    assert rows["ignored/supplied.txt"]["code"] == 3 and "git checkout" not in rows["ignored/supplied.txt"]["fix"]
+    assert rows["ignored/supplied.txt"]["code"] == 3 and "git" not in rows["ignored/supplied.txt"]["fix"]
     assert main(cli_args(kwargs)) == 3
     printed = capsys.readouterr().out
     assert "FAIL input.txt" in printed and "FAIL ignored/supplied.txt" in printed and "MATCH" not in printed
