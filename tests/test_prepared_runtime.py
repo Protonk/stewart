@@ -73,7 +73,7 @@ def test_collection_observes_supplied_handoff_even_if_git_has_no_deletion(ready_
     observed = collect(ws, "one-question", auditor_stopped="interrupted")
     assert (Path(observed["path"]) / "REPORT.md").read_bytes() == report.read_bytes()
     damaged = change in {"changed", "missing", "symlink"}
-    assert any("public handoff" in error for error in observed["receipt"]["errors"]) == damaged
+    assert any("public handoff" in error["message"] for error in observed["receipt"]["errors"]) == damaged
     view = status(ws, "one-question")
     assert view["preparation"]["handoff_matches"] == {"private": True, "public": not damaged}
     assert view["preparation"]["state"] == ("incomplete" if damaged else "ready")

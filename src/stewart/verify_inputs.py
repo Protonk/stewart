@@ -14,7 +14,7 @@ import sys
 
 from stewart.assignment import expand_input_manifest, expected_inputs, observe_inputs, prompt_metadata
 from stewart._git import git, git_text
-from stewart._bootstrap import StewartError
+from stewart._bootstrap import EXIT_ATTENTION, EXIT_REFUSED, EXIT_UNVERIFIED, StewartError, combined_code
 from stewart.report_declaration import auditor_context
 from stewart.workspace import Workspace, workspace
 
@@ -31,7 +31,16 @@ def verify_inputs(ws: Workspace, *, expected_worktree: Path, launch_prompt_commi
                         prompt_sha256=prompt_sha256, launch_token=launch_token)
     context = auditor_context(ws, **context_args)
     prompt = git(ws.repo, "show", f"{launch_prompt_commit}:{ws.prompt}").stdout
-    meta = expand_input_manifest(ws, prompt_metadata(prompt.decode("utf-8"), ws))
+    try:
+        meta = expand_input_manifest(ws, prompt_metadata(prompt.decode("utf-8"), ws))
+    except StewartError as exc:
+        # The inventory was copied and verified at preparation; a mismatch now
+        # is a supplemental input changed in this checkout, which the auditor
+        # cannot restore. Collection records the same path with code 3.
+        if exc.reason == "input_manifest":
+            exc.code = EXIT_UNVERIFIED
+            exc.next_steps = ["not yours to repair: describe the changed input inventory in the report, declare, and stop"]
+        raise
     rows = observe_inputs(ws.repo, expected_inputs(ws.repo, meta, meta["target_commit"]))
     if auditor_context(ws, **context_args) != context:
         raise StewartError("checkout/prompt changed during input verification", reason="context_changed")
@@ -39,18 +48,30 @@ def verify_inputs(ws: Workspace, *, expected_worktree: Path, launch_prompt_commi
     # source of replacement expectations during this operation.
     if expand_input_manifest(ws, prompt_metadata(prompt.decode("utf-8"), ws)) != meta:
         raise StewartError("input manifest changed during verification", reason="input_manifest")
+    # Preparation verified every input before handoff, so a failed row changed
+    # inside this checkout. A committed input can be restored from Git (1); a
+    # supplemental input's original bytes are private, so it cannot (3).
+    for row in rows:
+        row["code"] = 0 if row["matches"] else EXIT_ATTENTION if row["kind"] == "committed" else EXIT_UNVERIFIED
+        if not row["matches"]:
+            row["fix"] = (f"restore it with `git checkout {launch_prompt_commit} -- {row['path']}`"
+                          if row["kind"] == "committed" else
+                          "not yours to repair: describe it in the report, declare, and stop")
     failed = sum(not row["matches"] for row in rows)
-    return {"schema": "stewart.input-check/1", "audit_id": meta["audit_id"],
+    return {"schema": "stewart.input-check/2", "audit_id": meta["audit_id"],
             "prompt_sha256": prompt_sha256, "observed_checkout_commit": context[1]["observed_checkout_commit"],
             "selected": len(rows), "matched": len(rows) - failed, "failed": failed, "inputs": rows,
+            "exit_code": combined_code(row["code"] for row in rows),
             "limit": "Byte identity at read time only; not execution provenance, read coverage, permission compliance or scientific sufficiency."}
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Check all supplied input bytes in the prepared audit checkout, without writing or executing inputs.",
-        epilog="Exit 0: all selected files match; 1: completed with failed rows; 2: identity/manifest refusal or invalid usage. "
-               "Default output includes every failed row. Preserve failures and report them; do not repair inputs.")
+        epilog="Exit 0: all selected files match. 1: a committed input you changed; restore it with the printed "
+               "git command and run this again. 2: identity/manifest refusal or invalid usage; nothing done. "
+               "3: a supplemental input differs; you cannot restore it: describe it in the report, declare, and stop. "
+               "Default output includes every failed row.")
     parser.add_argument("--workspace", required=True, help="repo-relative assignment workspace")
     parser.add_argument("--expected-worktree", required=True, type=Path, help="absolute prepared checkout from handoff")
     parser.add_argument("--launch-prompt-commit", required=True, help="handoff commit; checked against detached HEAD")
@@ -71,13 +92,14 @@ def main(argv: list[str] | None = None) -> int:
                                launch_token=args.launch_token)
     except (StewartError, OSError, subprocess.TimeoutExpired) as exc:
         reason = getattr(exc, "reason", "context_unavailable")
+        code = getattr(exc, "exit_code", EXIT_REFUSED)
         next_steps = getattr(exc, "next_steps", []) or ["preserve inputs; compare the issued handoff and report the problem"]
         if args.json:
-            print(json.dumps({"ok": False, "exit_code": 2, "error": {"reason": reason, "message": str(exc), "next_steps": next_steps}}))
+            print(json.dumps({"ok": False, "exit_code": code, "error": {"reason": reason, "message": str(exc), "next_steps": next_steps}}))
         else:
             print(f"Refused ({reason}): {exc} Next: {'; '.join(next_steps)}", file=sys.stderr)
-        return 2
-    code = 1 if result["failed"] else 0
+        return code
+    code = result["exit_code"]
     if args.json:
         print(json.dumps({"ok": code == 0, "exit_code": code, "result": result}, indent=2))
     else:
@@ -88,10 +110,8 @@ def main(argv: list[str] | None = None) -> int:
                 if row["observed_detail"]:
                     observed += ": " + row["observed_detail"]
                 print(f"{'MATCH' if row['matches'] else 'FAIL'} {row['path']}: expected {row['expected_sha256']}; "
-                      f"observed {observed}")
+                      f"observed {observed}" + (f"; fix: {row['fix']}" if not row["matches"] else ""))
         print(result["limit"])
-        if code:
-            print("Next: preserve the failed inputs and report the mismatch; do not repair or omit them.")
     return code
 
 

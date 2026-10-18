@@ -81,7 +81,16 @@ def _paste(run_cmd, command: str, cwd: Path, fills: dict[str, str], *, stage: st
 def test_every_rendered_next_action_runs_as_printed_through_the_lifecycle(tmp_path, run_cmd):
     checkout = support.experiment_checkout(tmp_path, run_cmd)
     exp = support.prepared_experiment(checkout)
-    (exp.worktree / checkout.meta["report_path"]).write_text("Status: complete\nConstructed.\n")
+    # The auditor declares through the issued helper, so the walk stays on the
+    # no-news path: every pasted command exits 0.
+    from stewart.report_declaration import report_declaration
+    from stewart.workspace import workspace
+    report_declaration(workspace(exp.worktree, WS), "start", expected_worktree=exp.worktree,
+                       launch_prompt_commit=exp.revision, prompt_sha256=exp.prepared["prompt_sha256"],
+                       launch_token=exp.prepared["launch_token"])
+    report = exp.worktree / checkout.meta["report_path"]
+    report.write_bytes(report.read_bytes() + b"Constructed.\n")
+    reviewed = report.read_bytes()
     # The foreign directory a manager might paste from, holding a decoy tool
     # package: the isolated startup keeps it from being imported.
     paste = tmp_path / "paste"
@@ -122,7 +131,7 @@ def test_every_rendered_next_action_runs_as_printed_through_the_lifecycle(tmp_pa
     assert final["experiment"]["state"] == "attempt_recorded" and final["retentions"] and final["launches"]
     assert final["attempts"][0]["errors"] == [] and final["attempts"][0]["ledger"]["unmet"] == []
     assert [a for _, a in walked] == ["launch", "collect", "triage-draft", "triage", "release", "retain", "run"]
-    assert (checkout.repo / checkout.meta["report_path"]).read_text() == "Status: complete\nConstructed.\n"
+    assert (checkout.repo / checkout.meta["report_path"]).read_bytes() == reviewed
     # Sensitivity: the same walk is only meaningful if the decoy would have been
     # imported by an ordinary module invocation.
     unsafe = _status_commands(checkout, run_cmd)  # empty now; render one command by hand from the last stage

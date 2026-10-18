@@ -20,15 +20,17 @@ import uuid
 
 from stewart import _util as _hash
 from stewart._util import receipt_json_bytes
-from stewart._bootstrap import StewartError, read_regular, write_exclusive
+from stewart._bootstrap import EXIT_UNVERIFIED, StewartError, read_regular, write_exclusive
 from stewart._git import git, git_text
 from stewart._json import loads_control
 from stewart.workspace import Workspace, contained
 
 SESSION_SCHEMA = 11
 #: Captures bind pristine assets and distinguish failed observation operations
-#: from completed observations of a mismatching runtime.
-COLLECTION_SCHEMA = 6
+#: from completed observations of a mismatching runtime. Schema 7 records errors
+#: as reason/message objects and names unexpected paths that are supplemental
+#: inputs, so each custody gap carries its exit code.
+COLLECTION_SCHEMA = 7
 TRIAGE_SCHEMA = 3
 RETENTION_SCHEMA = 1
 RESUME_SCHEMA = 1
@@ -163,7 +165,17 @@ def load_session(ws: Workspace, ident: str, *, check_retention: bool = True) -> 
     from stewart.report_declaration import SCHEMA_VERSION as declaration_schema
 
     session = session_dir(ws, ident)
-    record = read_receipt(session / "session.json", what="session record")
+    if not session.is_dir():
+        # An absent session is a wrong or unprepared audit ID (refused, 2); a
+        # session directory without its record is evidence that does not verify.
+        raise StewartError(f"no session for audit {ident} in workspace {ws.rel}: {session}", reason="session_missing",
+                           next_steps=["check the audit ID against the committed prompt's audit_id; "
+                                       "prepare the committed prompt if it was never prepared"])
+    try:
+        record = read_receipt(session / "session.json", what="session record")
+    except StewartError as exc:
+        exc.code = EXIT_UNVERIFIED
+        raise
     schema = record.get("schema_version")
     if schema != SESSION_SCHEMA:
         raise StewartError(

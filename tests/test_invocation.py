@@ -114,9 +114,9 @@ def test_issued_command_refuses_runtime_drift_before_import(installation, projec
     else:
         root.rename(root.with_name("missing-runtime"))
     result = execute(action, project_repo, run_cmd)
-    assert result.returncode == 2
+    assert result.returncode == 3, "a changed deployment does not verify"
     value = loads_control(result.stdout)
-    assert value["error"]["reason"] in {"runtime_mismatch", "runtime_inventory"}
+    assert value["error"]["reason"] in {"runtime_mismatch", "runtime_inventory"} and value["exit_code"] == 3
     assert not fired.exists(), "verification must precede importing any selected member"
     assert "fixture" not in value, "a package-side check would already have imported the selected CLI"
 
@@ -172,7 +172,7 @@ def test_matching_inventory_does_not_authorize_an_unsupported_layout(installatio
     action["argv"][action["argv"].index("--code-root") + 1] = str(unsupported)
     action["argv"][action["argv"].index("--runtime-sha256") + 1] = runtime_digest(runtime_manifest(unsupported))
     result = execute(action, tmp_path, run_cmd)
-    assert result.returncode == 2
+    assert result.returncode == 3
     assert loads_control(result.stdout)["error"]["reason"] == "runtime_layout"
 
 
@@ -261,7 +261,7 @@ def test_launcher_survives_missing_deployment_and_accepts_readonly_runtime(insta
     shutil.rmtree(root.parent)
     assert Path(action["runtime"]["launcher"]).is_file()
     refused = execute(action, tmp_path, run_cmd)
-    assert refused.returncode == 2 and loads_control(refused.stdout)["error"]["reason"] == "runtime_inventory"
+    assert refused.returncode == 3 and loads_control(refused.stdout)["error"]["reason"] == "runtime_inventory"
     # Recreate the exact source deployment at its pinned coordinate.
     assert issue(installation, project_repo, tmp_path / "managers", run_cmd) == action
     assert execute(action, tmp_path, run_cmd).returncode == 0

@@ -216,7 +216,7 @@ class Scenario:
         (runtime / ledger).write_text("raise RuntimeError('changed supplied code')\n")
         captured = self.action("collect", "--audit-id", "damaged", "--auditor-stopped", "interrupted", allowed=(1,))
         self.check("runtime damage preserves malformed raw report", (Path(captured["path"]) / "REPORT.md").read_bytes() == expected)
-        self.check("manager independently detects changed supplied code", any("runtime" in error for error in captured["receipt"]["errors"]))
+        self.check("manager independently detects changed supplied code", any("runtime" in error["message"] for error in captured["receipt"]["errors"]))
         partial = session / "collections/20990101T000000-01234567"; partial.mkdir()
         (partial / "STARTED.json").write_text("{}\n")
         view = self.action("status", "--audit-id", "damaged")

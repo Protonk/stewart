@@ -12,7 +12,7 @@ import sys
 # Interpreter startup hooks run before any script and remain a trust root.
 if __name__ == "__main__" and (not sys.flags.isolated or not sys.dont_write_bytecode):
     if "--json" in sys.argv:
-        sys.stdout.write('{"schema":"stewart.result/1","command":null,"ok":false,"exit_code":2,"result":null,"error":{"reason":"startup_isolation","message":"use the complete explicit interpreter -I -B command","retained":[],"next_steps":[]}}\n')
+        sys.stdout.write('{"schema":"stewart.result/2","command":null,"ok":false,"exit_code":2,"result":null,"error":{"reason":"startup_isolation","message":"use the complete explicit interpreter -I -B command","retained":[],"next_steps":[]}}\n')
     else:
         sys.stderr.write("Refused (startup_isolation): use the complete explicit interpreter -I -B command\n")
     raise SystemExit(2)
@@ -103,8 +103,84 @@ def _execute_child(script_bytes: bytes, script_path: Path, arguments: list[str])
     return 0
 
 
+#: Exit codes shared by every Stewart command and auditor helper. Exit 0 means
+#: nothing needs anyone's attention; there is no "succeeded with warnings".
+#: Codes never depend on what an audit says (completion, report kind, prose,
+#: triage outcomes): only on whether the records and checkout are in order.
+EXIT_OK = 0
+#: Action is needed within the caller's role; every message names the change.
+EXIT_ATTENTION = 1
+#: Refused; nothing was done. Fix the command or its preconditions.
+EXIT_REFUSED = 2
+#: Something the caller cannot repair does not verify. Preserve it and report
+#: it; an auditor describes it in the report and stops. Takes precedence over 1.
+EXIT_UNVERIFIED = 3
+
+#: Refusal reasons whose cause is evidence, records or bytes that fail
+#: verification. Every other classified reason refuses with exit 2. A reason
+#: identifier is part of the JSON contract; tests require each literal reason
+#: in the source to appear in exactly one of these two sets.
+UNVERIFIED_REASONS = frozenset({
+    "archive_mismatch", "archive_unreadable", "attempt_schema", "binding_mismatch", "capture_unavailable",
+    "checkout_identity", "child_binding", "child_script_mismatch", "collection_binding", "collection_schema",
+    "coordination_schema", "evidence_tampered", "evidence_unavailable", "exit_log_malformed",
+    "frozen_unavailable", "input_mismatch", "launcher_mismatch", "package_binding", "package_schema",
+    "pinned_input_changed",
+    "protected_baseline_mismatch", "record_corrupt", "record_schema", "record_unreadable",
+    "release_invalidated", "release_schema", "report_binding", "report_unavailable", "runtime_assets",
+    "runtime_capture", "runtime_capture_io", "runtime_capture_schema", "runtime_capture_unavailable",
+    "runtime_helper", "runtime_identity", "runtime_inventory", "runtime_layout", "runtime_manifest",
+    "runtime_mismatch", "runtime_recovery", "runtime_unreadable", "session_identity", "session_retention",
+    "session_schema_unsupported", "session_unavailable", "support_unavailable", "triage_schema",
+    "validation_error", "worktree_missing", "worktree_role_conflict", "worktree_role_identity",
+    "worktree_role_registry",
+})
+REFUSED_REASONS = frozenset({
+    "actor_required", "already_resumed", "assignment_schema", "assignment_sections", "attempt_unresolved",
+    "audit_id", "audit_id_format", "auditor_not_stopped", "auditor_scope", "auditor_worktree",
+    "byte_order_mark", "capture_selector", "checkout_commit", "checkout_detached", "checkout_git_file",
+    "checkout_root", "child_argv", "child_layout", "collection_incomplete", "collection_not_found",
+    "commit_format", "commit_id", "completion", "context_changed", "context_unavailable", "crlf",
+    "custody_gaps", "destination_exists", "documentation", "duplicate_blocks", "duplicate_input_key",
+    "duplicate_key", "execution_not_granted", "expected_worktree", "export_failed", "export_selection",
+    "export_source", "failed", "fence_trailing_space", "field_type", "follow_up_required",
+    "follow_up_unexpected", "git_failed", "git_ref_transaction", "grant_containment", "grant_schema",
+    "handoff_identity", "identity_format", "identity_mismatch", "initialization_failed", "input_collision",
+    "input_drift", "input_file", "input_manifest", "input_missing", "input_overlap",
+    "interpreter_unavailable", "invalid_json", "launch_profile", "launch_profile_missing", "ledger_collision",
+    "malformed_fence", "manifest_schema", "missing", "missing_field", "mode", "movement", "nested_block",
+    "no_grant", "no_hold", "non_object", "path_escape", "path_noncanonical", "path_symlink",
+    "pause_note_required", "pause_unacknowledged", "prepare_failed", "private_storage_not_ignored",
+    "private_storage_tracked", "prompt_commit_shape", "prompt_digest", "prompt_drift", "reason_required",
+    "record_missing", "record_name", "refused", "release_consumed", "report_changed", "report_kind", "report_kind_required",
+    "report_unreadable", "report_write", "repository_root", "response_schema", "retain_nothing",
+    "review_schema", "runtime_cache", "schema_version", "session_missing", "startup_failed",
+    "startup_isolation", "support_unreviewed", "target_ancestry", "target_drift", "unassigned_prompt",
+    "unknown_field", "unterminated_block", "usage", "workspace_guidance", "workspace_path",
+})
+#: Status problem reasons that describe a recorded, partial state awaiting a
+#: manager action rather than records that fail verification. Only a missing
+#: completion receipt supports these labels; any other problem is unverified.
+STATE_REASONS = frozenset({"attempt_unresolved", "collection_incomplete", "prepare_failed"})
+
+
+def exit_code_for(reason: str) -> int:
+    """The exit code a refusal with ``reason`` earns; unclassified reasons refuse."""
+    return EXIT_UNVERIFIED if reason in UNVERIFIED_REASONS else EXIT_REFUSED
+
+
+def combined_code(codes: Iterable[int]) -> int:
+    """Combine attention (1) and unverified (3) findings; 3 takes precedence."""
+    values = set(codes)
+    return EXIT_UNVERIFIED if EXIT_UNVERIFIED in values else EXIT_ATTENTION if EXIT_ATTENTION in values else EXIT_OK
+
+
 class StewartError(ValueError):
-    """A refused or failed custody operation; existing files are never removed."""
+    """A refused or failed custody operation; existing files are never removed.
+
+    ``exit_code`` follows the reason table unless the raise site knows better,
+    for example when a record read inside session validation fails.
+    """
 
     def __init__(
         self,
@@ -113,11 +189,17 @@ class StewartError(ValueError):
         reason: str = "refused",
         retained: Iterable[str] = (),
         next_steps: Iterable[str] = (),
+        code: int | None = None,
     ) -> None:
         super().__init__(message)
         self.reason = reason
         self.retained = [str(item) for item in retained]
         self.next_steps = [str(item) for item in next_steps]
+        self.code = code
+
+    @property
+    def exit_code(self) -> int:
+        return self.code if self.code in (EXIT_REFUSED, EXIT_UNVERIFIED) else exit_code_for(self.reason)
 
     def to_json(self) -> dict:
         return {
@@ -628,12 +710,13 @@ def launch(argv: list[str] | None = None) -> int:
             error = exc.to_json() if isinstance(exc, (StewartError, runtime_error)) else {
                 "reason": "startup_failed", "message": str(exc), "retained": [],
                 "next_steps": ["restore the selected manager deployment and its private cache access"]}
+            code = getattr(exc, "exit_code", EXIT_REFUSED)
             if "--json" in raw:
-                print(json.dumps({"schema": "stewart.result/1", "command": None,
-                                  "ok": False, "exit_code": 2, "result": None, "error": error}, sort_keys=True))
+                print(json.dumps({"schema": "stewart.result/2", "command": None,
+                                  "ok": False, "exit_code": code, "result": None, "error": error}, sort_keys=True))
             else:
                 print(f"Refused ({error['reason']}): {error['message']}", file=sys.stderr)
-            return 2
+            return code
         # Project code runs outside the startup refusal handler. Its OSError,
         # SystemExit, signals and traceback must remain child outcomes.
         return _execute_child(script_bytes, script_path, arguments)

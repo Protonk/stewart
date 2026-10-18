@@ -18,7 +18,7 @@ import sys
 import uuid
 
 from stewart import _util as _hash
-from stewart._bootstrap import StewartError, open_directory, read_regular, write_exclusive
+from stewart._bootstrap import StewartError, combined_code, open_directory, read_regular, write_exclusive
 from stewart._git import COMMIT_ID, git, git_text
 from stewart._json import DuplicateKey, loads_control
 from stewart.assignment import audit_id, prompt_metadata
@@ -190,13 +190,21 @@ def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_com
     info, gitfile = read_regular(actual / ".git")
     if gitfile is None or not gitfile.startswith(b"gitdir: "):
         raise _refuse("checkout_git_file", ".git", "worktree-style regular file", info)
+    handoff = issued_handoff(ws, actual)
+    if handoff is not None:
+        for field, value in (("launch_prompt_commit", launch_prompt_commit), ("prompt_sha256", prompt_sha256),
+                             ("launch_token", launch_token)):
+            if value != handoff[1][field]:
+                raise _refuse("handoff_identity", f"--{field.replace('_', '-')}", handoff[1][field], value,
+                              "copy the issued command from the handoff exactly")
     symbolic = git(actual, "symbolic-ref", "-q", "HEAD", check=False)
     if symbolic.returncode != 1:
-        raise _refuse("checkout_detached", "HEAD", "detached", symbolic.stdout.decode(errors="replace"))
+        raise _refuse("checkout_detached", "HEAD", "detached", symbolic.stdout.decode(errors="replace"),
+                      f"detach HEAD with `git checkout --detach {launch_prompt_commit}`; run check for anything else")
     head = git_text(actual, "rev-parse", "HEAD")
     if head != launch_prompt_commit:
         raise _refuse("checkout_commit", "HEAD", launch_prompt_commit, head,
-                      "report the unexpected commit; do not hide it by resetting HEAD")
+                      "run check: it names the fix and what to say in the report")
     prompt = git(actual, "show", f"{launch_prompt_commit}:{ws.prompt}").stdout
     digest = _hash.sha256_bytes(prompt)
     if digest != prompt_sha256:
@@ -206,7 +214,8 @@ def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_com
     info, working = read_regular(prompt_path)
     if working != prompt:
         raise _refuse("prompt_drift", str(prompt_path), digest, info.get("sha256", info["kind"]),
-                      "report working-prompt drift; do not derive a destination from changed bytes")
+                      f"restore the prompt with `git checkout {launch_prompt_commit} -- {ws.prompt}`; "
+                      "run check for anything else")
     meta = prompt_metadata(prompt.decode("utf-8"), ws)
     expected = {"audit_id": meta["audit_id"], "target_commit": meta["target_commit"],
                 "launch_prompt_commit": launch_prompt_commit, "prompt_sha256": prompt_sha256,
@@ -217,6 +226,148 @@ def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_com
                "launch_token": "handoff argument; only Stewart can verify the issued value",
                "observed_checkout_commit": "local HEAD observed by helper"}
     return contained(actual, meta["report_path"]), expected, sources
+
+
+#: Identity lines in the issued handoff, rendered by preparation from the
+#: session record. The auditor's check reads them as its source of truth.
+HANDOFF_IDENTITY_LINES = {
+    "launch_prompt_commit": "Prompt and checkout commit: `",
+    "target_commit": "Audited target commit: `",
+    "prompt_sha256": "Prompt SHA-256: `",
+    "launch_token": "Launch token: `",
+}
+HANDOFF_DIRECTORY = ".stewart-handoffs"
+
+
+def issued_handoff(ws: Workspace, root: Path) -> tuple[str, dict] | None:
+    """The one issued handoff file and the session-pinned identities it names.
+
+    Returns its repo-relative path and identities, or None when the handoff is
+    absent, ambiguous or unreadable: then no identity can be confirmed against
+    preparation, and the check says so.
+    """
+    folder = f"{ws.rel}/{HANDOFF_DIRECTORY}"
+    try:
+        with open_directory(contained(root, folder)) as directory:
+            names = sorted(os.listdir(directory))
+            if len(names) != 1:
+                return None
+            _, data = read_regular(Path(names[0]), dir_fd=directory)
+    except (OSError, StewartError):
+        return None
+    if data is None:
+        return None
+    found = {}
+    for line in data.decode("utf-8", errors="replace").splitlines():
+        for field, prefix in HANDOFF_IDENTITY_LINES.items():
+            if line.startswith(prefix) and field not in found:
+                found[field] = line[len(prefix):].split("`", 1)[0]
+    if set(found) != set(HANDOFF_IDENTITY_LINES):
+        return None
+    return f"{folder}/{names[0]}", found
+
+
+#: What the auditor can do about each checkout-attributable gap family.
+FIXES = {
+    "report_": "write the report at the assigned path as a regular file, then run start or set",
+    "checkout_commit_changed": "restore HEAD with `git reset --soft {prompt_commit}` (your changes stay in the "
+                               "working tree), mention the commit in the report, then run set again",
+    "unexpected_path:": "move this file under a declared scratch path, or remove it",
+    "declaration_missing": "run the issued start command, or set if the report already exists",
+    "declaration_invalid:": "repair the declaration block by rerunning the issued set command",
+    "declaration_mismatch:": "rerun the issued set command exactly as the handoff prints it",
+    "declaration_stale": "run the issued set command again so the declaration names the current HEAD",
+    "omitted:": "make this entry a readable regular file or link, or remove it",
+    "unreadable:": "make this entry readable, or remove it",
+    "unsupported:": "remove this special entry; it cannot be captured",
+    "boundary:": "remove this nested Git directory; its contents cannot be captured",
+    "collection_error:": "fix the named problem with the report path",
+    "command_mismatch:": "copy the issued command from the handoff exactly",
+}
+#: Gaps the auditor cannot repair: describe them in the report and stop.
+UNREPAIRABLE = "not yours to repair: describe it in the report, declare, and stop"
+
+
+def _fix(gap: dict, prompt_commit: str, tracked: set[str]) -> str:
+    if gap["code"] == 3:
+        return UNREPAIRABLE
+    rel = gap["id"].partition(":")[2]
+    if gap["id"].startswith("unexpected_path:") and rel in tracked:
+        return f"restore it with `git checkout {prompt_commit} -- {rel}`"
+    for prefix, text in FIXES.items():
+        if gap["id"].startswith(prefix):
+            return text.format(prompt_commit=prompt_commit)
+    return "inspect and correct this entry"
+
+
+def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_commit: str,
+                   prompt_sha256: str, launch_token: str) -> dict:
+    """Assess the checkout exactly as a collection would, without writing anything.
+
+    Identities come from the issued handoff, which preparation rendered from
+    the session record, so the declaration is compared with the same values a
+    collection uses. The result lists every checkout-attributable custody gap
+    a collection of this unchanged checkout would record, each with its code
+    and the change that clears it, and its overall exit code. Declared
+    completion and report kind never change the code.
+    """
+    from stewart.assignment import expand_input_manifest
+    from stewart.collect import assess_checkout, custody_gaps
+
+    if not Path(expected_worktree).is_absolute():
+        raise _refuse("expected_worktree", "--expected-worktree", "absolute handoff path", str(expected_worktree))
+    actual = Path(git_text(ws.repo, "rev-parse", "--show-toplevel")).resolve()
+    if actual != Path(expected_worktree).resolve():
+        raise _refuse("checkout_root", "repository root", str(Path(expected_worktree).resolve()), str(actual),
+                      "run the issued command in the prepared checkout")
+    info, gitfile = read_regular(actual / ".git")
+    if gitfile is None or not gitfile.startswith(b"gitdir: "):
+        raise _refuse("checkout_git_file", ".git", "worktree-style regular file", info)
+    arguments = {"launch_prompt_commit": launch_prompt_commit, "prompt_sha256": prompt_sha256,
+                 "launch_token": launch_token}
+    extra = []
+    handoff = issued_handoff(ws, actual)
+    if handoff is None:
+        extra.append({"id": "handoff_unavailable", "code": 3, "observable": True,
+                      "description": "the issued handoff is absent, ambiguous or unreadable, so no identity "
+                                     "can be confirmed against preparation"})
+        handoff_path, issued = f"{ws.rel}/{HANDOFF_DIRECTORY}/", {**arguments, "target_commit": None}
+    else:
+        handoff_path, issued = handoff
+        for field, value in arguments.items():
+            if value != issued[field]:
+                extra.append({"id": f"command_mismatch:{field}", "code": 1, "observable": True,
+                              "description": f"this command's --{field.replace('_', '-')} {value!r} differs "
+                                             f"from the issued handoff's {issued[field]!r}"})
+    prompt = git(actual, "show", f"{issued['launch_prompt_commit']}:{ws.prompt}", check=False)
+    if prompt.returncode or _hash.sha256_bytes(prompt.stdout) != issued["prompt_sha256"]:
+        raise _refuse("prompt_digest", "committed prompt SHA-256", issued["prompt_sha256"],
+                      "unavailable" if prompt.returncode else _hash.sha256_bytes(prompt.stdout),
+                      "compare the command with the issued handoff and report the mismatch")
+    meta = prompt_metadata(prompt.stdout.decode("utf-8"), ws)
+    try:
+        meta = expand_input_manifest(ws, meta)
+    except StewartError as exc:
+        extra.append({"id": "input_manifest_changed", "code": 3, "observable": True,
+                      "description": f"the pinned input manifest no longer verifies: {exc}"})
+    expected = {"audit_id": meta["audit_id"], "target_commit": issued["target_commit"] or meta["target_commit"],
+                "launch_prompt_commit": issued["launch_prompt_commit"], "prompt_sha256": issued["prompt_sha256"],
+                "launch_token": issued["launch_token"]}
+    sources = {field: "issued handoff" for field in expected}
+    sources["audit_id"] = "committed prompt assignment"
+    receipt = assess_checkout(actual, meta=meta, prompt_commit=issued["launch_prompt_commit"],
+                              handoff_path=handoff_path, expected=expected, sources=sources)
+    gaps = [gap for gap in custody_gaps(receipt) if gap["observable"]] + extra
+    tracked = {rel for rel in receipt["unexpected_paths"]
+               if git(actual, "cat-file", "-e", f"{issued['launch_prompt_commit']}:{rel}", check=False).returncode == 0}
+    for gap in gaps:
+        gap["fix"] = _fix(gap, issued["launch_prompt_commit"], tracked)
+    return {"schema": "stewart.auditor-check/1", "audit_id": meta["audit_id"],
+            "exit_code": combined_code(gap["code"] for gap in gaps),
+            "gaps": gaps, "declaration": receipt["declaration"], "report_path": meta["report_path"],
+            "report_status": receipt["report_status"], "observed_checkout_commit": receipt["checkout"]["head"],
+            "limit": "Custody structure only: whether a collection of this unchanged checkout would record "
+                     "gaps you can see. It does not judge the audit, its completion or its report kind."}
 
 
 def _block(declaration: dict) -> bytes:
@@ -263,15 +414,15 @@ def _publish(report: Path, data: bytes, original: bytes | None, signature: tuple
 def _operate(ws: Workspace, operation: str, *, expected_worktree: Path,
                        launch_prompt_commit: str, prompt_sha256: str, launch_token: str,
                        completion: str | None = None, report_kind: str | None = None) -> dict:
-    """Start exclusively, set only the block, or check without writing.
+    """Start exclusively or set only the block.
 
     Returns the validated declaration, comparisons and report path; raises an
     actionable StewartError on refusal. The CLI prints a success line (plus the
     declaration with --print), exits 0 on success and 2 on refusal. Qualification
     and scientific reasoning remain prose. No private session is accessed.
     """
-    if operation not in ("start", "set", "check") or (operation == "set" and completion not in COMPLETIONS):
-        raise _refuse("usage", "operation/completion", "start, set --completion VALUE, or check", (operation, completion))
+    if operation not in ("start", "set") or (operation == "set" and completion not in COMPLETIONS):
+        raise _refuse("usage", "operation/completion", "start, or set --completion VALUE", (operation, completion))
     if report_kind is not None and (operation != "set" or report_kind not in REPORT_KINDS):
         raise _refuse("report_kind", "set --report-kind", REPORT_KINDS, report_kind)
     kwargs = dict(expected_worktree=expected_worktree, launch_prompt_commit=launch_prompt_commit,
@@ -314,24 +465,28 @@ def _operate(ws: Workspace, operation: str, *, expected_worktree: Path,
             data = original[:start] + _block(declaration) + original[end:]
     result = validate_report_declaration(data, expected=expected, sources=sources)
     _require_valid(result)
-    if operation != "check":
-        def verify():
-            if auditor_context(ws, **kwargs) != (report, expected, sources):
-                raise _refuse("context_changed", "checkout context", expected, "changed inputs")
-        _publish(report, data, original, signature, verify)
+    def verify():
+        if auditor_context(ws, **kwargs) != (report, expected, sources):
+            raise _refuse("context_changed", "checkout context", expected, "changed inputs")
+    _publish(report, data, original, signature, verify)
     return {**result, "report_path": str(report), "report_path_source": "committed prompt assignment"}
 
 
 def report_declaration(ws: Workspace, operation: str, *, expected_worktree: Path,
                        launch_prompt_commit: str, prompt_sha256: str, launch_token: str,
                        completion: str | None = None, report_kind: str | None = None) -> dict:
-    """Validate start/set/check and return its declaration, comparisons and path.
+    """Run start, set or check.
 
-    Refusals raise StewartError with retained paths and correction steps. No
-    output is printed here; the CLI prints one success line, --print adds JSON,
-    and exits 0 on success or 2 on refusal. Only start and set publish bytes.
+    Start and set return the validated declaration, comparisons and path. Check
+    returns the gaps a collection of the unchanged checkout would attribute to
+    it, each with its code and fix, and the overall exit code. Refusals raise
+    StewartError with retained paths and correction steps. No output is printed
+    here. Only start and set publish bytes.
     """
     try:
+        if operation == "check":
+            return check_checkout(ws, expected_worktree=expected_worktree, launch_prompt_commit=launch_prompt_commit,
+                                  prompt_sha256=prompt_sha256, launch_token=launch_token)
         return _operate(ws, operation, expected_worktree=expected_worktree,
                         launch_prompt_commit=launch_prompt_commit, prompt_sha256=prompt_sha256,
                         launch_token=launch_token, completion=completion, report_kind=report_kind)
@@ -346,27 +501,54 @@ def report_declaration(ws: Workspace, operation: str, *, expected_worktree: Path
         raise
 
 
+CODE_MEANINGS = {0: "accepted: nothing to change", 1: "action needed: change what is listed, then run check again",
+                 2: "refused: nothing was done", 3: "something you cannot repair does not verify: "
+                 "describe it in the report, declare, and stop"}
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Declare auditor completion and report kind; validates structure and identities only.",
-        epilog="Success prints completion, report kind, audit ID, observed HEAD and report path. --print adds the validated JSON. "
-               "Exit 0: validated success; exit 2: refused or invalid usage. Run check as the last action before stopping.")
+    parser = argparse.ArgumentParser(description="Declare auditor completion and report kind, and check the checkout "
+                                                 "the way collection will; validates structure and identities only.",
+        epilog="Exit 0: nothing to change. 1: change what is listed and run check again. 2: refused, nothing done; "
+               "reread the handoff command. 3: something you cannot repair does not verify; describe it in the report, "
+               "declare, and stop. Completion and report kind never change the code. Run check as the last action "
+               "before stopping: exit 0 means a collection of the unchanged checkout records nothing for you to fix.")
     commands = parser.add_subparsers(dest="operation", required=True)
     for name in ("start", "set", "check"):
         command = commands.add_parser(name, help={"start": "exclusively create a partial report skeleton",
-            "set": "replace only the declaration; preserve all surrounding bytes", "check": "validate without writing"}[name],
+            "set": "replace only the declaration; preserve all surrounding bytes",
+            "check": "report, without writing, what a collection would ask you to fix"}[name],
             epilog=parser.epilog)
         command.add_argument("--workspace", required=True, help="repo-relative assignment workspace")
         command.add_argument("--expected-worktree", required=True, type=Path, help="absolute prepared checkout from handoff")
-        command.add_argument("--launch-prompt-commit", required=True, help="transcribe from handoff; checked against HEAD")
-        command.add_argument("--prompt-sha256", required=True, help="transcribe from handoff; checked against committed prompt")
-        command.add_argument("--launch-token", required=True, help="transcribe from handoff; only Stewart verifies issued token")
+        command.add_argument("--launch-prompt-commit", required=True, help="transcribe from handoff; checked against it and HEAD")
+        command.add_argument("--prompt-sha256", required=True, help="transcribe from handoff; checked against it and the committed prompt")
+        command.add_argument("--launch-token", required=True, help="transcribe from handoff; checked against the issued handoff")
         command.add_argument("--print", dest="print_declaration", action="store_true", help="also print the full validated declaration")
+        if name == "check":
+            command.add_argument("--json", action="store_true", help="print one result document, with no other stdout")
         if name == "set":
             command.add_argument("--completion", required=True, choices=COMPLETIONS)
             command.add_argument("--report-kind", choices=REPORT_KINDS,
                                  help="answer, missing-evidence request, or proposed reframe; omission preserves the current kind. "
                                       "A complete report needs a selected kind. Requests grant no new scope; explain them in prose.")
     return parser
+
+
+def _render_check(result: dict) -> list[str]:
+    code = result["exit_code"]
+    validation = result["declaration"]
+    declared = validation.get("declaration") or {}
+    lines = [f"check exit {code}: {CODE_MEANINGS[code]}",
+             f"audit={result['audit_id']} report={result['report_path']} ({result['report_status']}) "
+             f"HEAD={result['observed_checkout_commit']} "
+             f"declaration={validation['status']}"
+             + (f" completion={declared['completion']} report_kind={declared['report_kind'] or 'unset'}"
+                if declared else "")]
+    for gap in result["gaps"]:
+        lines += [f"[{gap['code']}] {gap['id']}: {gap['description']}", f"    fix: {gap['fix']}"]
+    lines.append(result["limit"])
+    return lines
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -381,8 +563,21 @@ def main(argv: list[str] | None = None) -> int:
         if not isinstance(exc, StewartError):
             exc = _refuse("context_unavailable", "checkout/report", "readable prepared context", str(exc),
                           "preserve the report and report the unavailable input")
-        print(f"Refused ({exc.reason}): {exc} Next: {'; '.join(exc.next_steps) or 'inspect the issued handoff and context'}", file=sys.stderr)
-        return 2
+        if getattr(args, "json", False):
+            print(json.dumps({"ok": False, "exit_code": exc.exit_code, "error": exc.to_json()}, indent=2))
+        else:
+            print(f"Refused ({exc.reason}): {exc} Next: {'; '.join(exc.next_steps) or 'inspect the issued handoff and context'}",
+                  file=sys.stderr)
+        return exc.exit_code
+    if args.operation == "check":
+        code = result["exit_code"]
+        if args.json:
+            print(json.dumps({"ok": code == 0, "exit_code": code, "result": result}, indent=2))
+        else:
+            print("\n".join(_render_check(result)))
+            if args.print_declaration and result["declaration"].get("declaration"):
+                print(json.dumps(result["declaration"]["declaration"], indent=2))
+        return code
     value = result["declaration"]
     print(f"{value['completion']} audit={value['audit_id']} HEAD={value['observed_checkout_commit']} "
           f"report_kind={value['report_kind'] or 'unset'} report={result['report_path']}")

@@ -4,18 +4,21 @@ Rendering is separate from the operations: every command calls a package
 function that returns a structured result, then prints it either as prose or as
 one JSON document. JSON mode never mixes progress chatter into stdout.
 
-Exit codes:
+Exit codes (shared with the auditor helpers):
 
-* ``0`` the custody operation succeeded with no recorded errors.
-* ``1`` the operation completed and recorded errors or incomplete evidence (an
-  incomplete collection, an attempt whose child failed or whose preservation
-  check failed). The records are written; read them.
+* ``0`` nothing needs attention. There is no "succeeded with warnings".
+* ``1`` the operation completed and something needs action within the caller's
+  role: a custody gap to disposition, a capture to repeat, an attempt whose
+  child or preservation check failed. The records are written; read them.
 * ``2`` the operation was refused or failed before completing, or the command
-  line was invalid.
+  line was invalid. Nothing was done.
+* ``3`` evidence, records or bytes the caller cannot repair do not verify. It
+  takes precedence over 1: inspect, then recover or abandon.
 
-A custody operation succeeding is not an audit passing. A child process's exit
-status is recorded in its attempt receipt and never becomes this tool's exit
-code.
+Codes never depend on what the audit says: declared completion, report kind,
+prose and triage outcomes are attributed claims, not tool results. A custody
+operation succeeding is not an audit passing. A child process's exit status is
+recorded in its attempt receipt and never becomes this tool's exit code.
 """
 
 from __future__ import annotations
@@ -29,14 +32,10 @@ import sys
 import tarfile
 
 from stewart._json import DuplicateKey, loads_control
-from stewart._bootstrap import RefusalParser, StewartError
+from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, EXIT_REFUSED, RefusalParser, StewartError
 from stewart.workspace import Workspace, workspace
 
-RESULT_SCHEMA = "stewart.result/1"
-
-EXIT_OK = 0
-EXIT_RECORDED_ERRORS = 1
-EXIT_REFUSED = 2
+RESULT_SCHEMA = "stewart.result/2"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -62,7 +61,8 @@ def build_parser() -> argparse.ArgumentParser:
         ),
         epilog=(
             question_help + "\n\n"
-            "Exit codes: 0 success; 1 completed with recorded errors; 2 refused, failed or invalid usage.\n"
+            "Exit codes: 0 nothing needs attention; 1 completed, action needed (read the output);\n"
+            "2 refused or invalid usage, nothing done; 3 records or bytes do not verify (takes precedence).\n"
             'Example: <venv>/bin/stewart --repo "$PWD" --workspace '
             "path/to/workspace status --audit-id one-bounded-question"
         ),
@@ -369,7 +369,7 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
         from stewart.collect import collect
 
         result = collect(ws, args.audit_id, auditor_stopped=args.auditor_stopped)
-        return result, EXIT_RECORDED_ERRORS if result["receipt"]["errors"] else EXIT_OK
+        return result, result["exit_code"]
     if args.command == "triage":
         from stewart.triage import triage
 
@@ -405,7 +405,7 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
         from stewart.experiment import run
 
         result = run(ws, args.audit_id, release=args.release, timeout=args.timeout)
-        return result, EXIT_RECORDED_ERRORS if result["errors"] else EXIT_OK
+        return result, EXIT_ATTENTION if result["errors"] else EXIT_OK
     raise StewartError(f"unknown command {args.command}", reason="usage")
 
 
@@ -494,14 +494,14 @@ def render(command: str, result: dict) -> str:
             lines.append("Unexpected paths: " + ", ".join(receipt["unexpected_paths"]))
         if receipt.get("checkout_commit_changed"):
             lines.append("The worktree HEAD is not the prompt commit: an unexpected commit is recorded.")
-        gaps = [gap["id"] for gap in result["gaps"]]
+        gaps = [gap["id"] + (" (does not verify)" if gap["code"] == 3 else "") for gap in result["gaps"]]
         lines.append("Custody gaps to disposition in triage: " + (", ".join(gaps) if gaps else "none"))
         if receipt["mode"] == "paused":
             lines.append("Paused session: the writer hold remains until a triage is recorded and resume is run.")
         else:
             lines.append("Snapshot session: triage the report; there is no hold to resume.")
         if receipt["errors"]:
-            lines.append("Collection incomplete: " + "; ".join(receipt["errors"]))
+            lines.append("Collection incomplete: " + "; ".join(error["message"] for error in receipt["errors"]))
             lines.append("Partial evidence and the worktree are retained; inspect, resolve, and collect again.")
         lines.append(f"Next: triage --collection {result['collection']} --response <response.json> --actor <name>")
     elif command == "export":
@@ -769,7 +769,9 @@ def main(argv: list[str] | None = None) -> int:
             repo = Path(args.repo).resolve()
             ws = workspace(repo, args.workspace)
             result, code = dispatch(ws, args)
-        envelope.update(ok=True, exit_code=code, result=result)
+        # ``ok`` means exit 0: a result that needs attention still carries its
+        # result document, but it is not "ok".
+        envelope.update(ok=code == EXIT_OK, exit_code=code, result=result)
         if args.json:
             print(json.dumps(envelope, indent=2, sort_keys=True))
         elif args.command == "docs":
@@ -800,6 +802,7 @@ def main(argv: list[str] | None = None) -> int:
         return code
     except StewartError as exc:
         envelope["error"] = exc.to_json()
+        envelope["exit_code"] = exc.exit_code
     except (OSError, ValueError, subprocess.TimeoutExpired, tarfile.TarError) as exc:
         envelope["error"] = {"reason": "failed", "message": f"{type(exc).__name__}: {exc}",
                              "retained": [], "next_steps": []}
@@ -812,4 +815,4 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Retained: {item}", file=sys.stderr)
         for item in error["next_steps"]:
             print(f"Next: {item}", file=sys.stderr)
-    return EXIT_REFUSED
+    return envelope["exit_code"]

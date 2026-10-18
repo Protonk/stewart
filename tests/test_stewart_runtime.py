@@ -46,7 +46,7 @@ def test_changed_runtime_cannot_suppress_raw_report_or_claim_clean_collection(ch
     directory = Path(collected["path"])
     assert (directory / "REPORT.md").read_bytes() == prepared.report.read_bytes()
     receipt = support.read_json(directory / "collection.json")
-    assert any("runtime" in error for error in receipt["errors"])
+    assert any("runtime" in error["message"] for error in receipt["errors"])
     captures = runtime_observations(directory, receipt["runtime"], phases={"collection"})
     expected_files = sum(row["kind"] == "file" for row in identity["manifest"]["entries"])
     assert not captures["collection"]["matches_expected"]

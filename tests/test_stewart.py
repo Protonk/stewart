@@ -342,7 +342,7 @@ def test_collection_detects_movement_and_retains_partial_archive(checkout, monke
     monkeypatch.setattr(collect_mod, "checkout_state", moving_checkout)
     collected = collect(ws, meta["audit_id"], auditor_stopped="finished")
     receipt = collected["receipt"]
-    assert "changed during collection" in receipt["errors"][0]
+    assert "changed during collection" in receipt["errors"][0]["message"]
     assert receipt["inventory"]["movement"] is True
     directory = Path(collected["path"])
     assert (directory / "files.tar").exists() and (directory / "inventory-after.json").exists()
@@ -364,7 +364,7 @@ def test_broken_git_does_not_prevent_preserving_a_partial_report(checkout, monke
     collected = collect(ws, meta["audit_id"], auditor_stopped="finished")
     receipt = collected["receipt"]
     assert receipt["report_status"] == "present"
-    assert receipt["errors"] == ["Synthetic Git inspection failure"]
+    assert receipt["errors"] == [{"reason": "collection_failed", "message": "Synthetic Git inspection failure"}]
     assert receipt["git_discovery"] == "failed"
     assert (Path(collected["path"]) / "REPORT.md").read_bytes() == prepared.report.read_bytes()
     assert receipt["inventory"]["counts"]["file"] >= 1, "the inventory stands even when Git fails"
@@ -502,7 +502,8 @@ def test_cli_handoff_and_error_exit_codes(checkout, run_cmd, mode):
     prepared = run_cmd([*base, "prepare", *flags], cwd=INSTALLED_LIB, env=env, check=True)
     assert "LAUNCH.md" in prepared.stdout
     collected = run_cmd([*base, "collect", "--audit-id", meta["audit_id"], "--auditor-stopped", "finished"],
-                        cwd=INSTALLED_LIB, env=env, check=True)
+                        cwd=INSTALLED_LIB, env=env)
+    assert collected.returncode == 1, "a missing report is news: the collection needs attention"
     assert "Report: missing" in collected.stdout
     expected = "hold remains" if mode == "paused" else "no hold to resume"
     assert expected in collected.stdout
@@ -544,7 +545,7 @@ def test_import_and_help_perform_no_process_or_filesystem_work(monkeypatch, tmp_
         with pytest.raises(SystemExit) as finished:
             helper.main(argv)
         assert finished.value.code == 0
-    assert "last action before stopping" in capsys.readouterr().out
+    assert "last action before stopping" in " ".join(capsys.readouterr().out.split())
     assert list(tmp_path.iterdir()) == []
     api = importlib.import_module("stewart.api")
     assert "status" in api.__all__

@@ -24,7 +24,7 @@ from support import clean_environment
 def retained(installation, tmp_path, monkeypatch):
     helper = installation / "stewart/verify_inputs.py"
     text = helper.read_text()
-    marker = '    code = 1 if result["failed"] else 0'
+    marker = '    code = result["exit_code"]'
     assert text.count(marker) == 1
     helper.write_text(text.replace(marker, '''    result["runtime_probe"] = {
         "module": __file__, "prefix": sys.prefix, "isolated": sys.flags.isolated,
@@ -133,7 +133,7 @@ def test_helper_startup_refuses_changed_runtime_before_import(retained, auditor,
             helper.symlink_to(target)
     command = runtime.helper_argv(selected["identity"], sys.executable, "inputs", *arguments, "--json")
     result = run_cmd(command, cwd=worktree, check=False)
-    assert result.returncode == 2 and not result.stderr
+    assert result.returncode == 3 and not result.stderr, "a changed supplied runtime does not verify"
     assert loads_control(result.stdout)["error"]["reason"] in {"runtime_inventory", "runtime_mismatch"}
 
 

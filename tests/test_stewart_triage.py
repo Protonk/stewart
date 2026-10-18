@@ -231,7 +231,7 @@ def test_paused_resume_needs_a_bound_triage_and_cancellation_survives_failed_col
     monkeypatch.setattr(collect_mod, "git", broken)
     collected = collect(ws, meta["audit_id"], auditor_stopped="finished")
     monkeypatch.setattr(collect_mod, "git", original)
-    assert collected["receipt"]["errors"] == ["Synthetic Git failure"]
+    assert collected["receipt"]["errors"] == [{"reason": "collection_failed", "message": "Synthetic Git failure"}]
     with pytest.raises(StewartError) as refused:
         resume(ws, meta["audit_id"], triage="20260101T000000-00000000", reason="no triage exists")
     assert refused.value.reason == "record_missing"
@@ -242,7 +242,7 @@ def test_paused_resume_needs_a_bound_triage_and_cancellation_survives_failed_col
                        response=response_for(collected, decision="Cancelled after failed collection."), actor="m")
     released = resume(ws, meta["audit_id"], triage=cancelled["triage"], reason="Cancelled; writers may continue.")
     record = read_json(Path(released["path"]))
-    assert record["collection_errors"] == ["Synthetic Git failure"]
+    assert record["collection_errors"] == [{"reason": "collection_failed", "message": "Synthetic Git failure"}]
     assert record["process_control"].startswith("none")
     assert record["triage"] == cancelled["triage"]
     assert prepared.worktree.exists(), "no cleanup follows cancellation"
@@ -272,7 +272,7 @@ def test_resume_and_status_revalidate_the_same_binding_as_retention(checkout, ch
     directory = Path(collected["path"])
     if change == "receipt":
         receipt = read_json(directory / "collection.json")
-        receipt["errors"].append("new gap after review")
+        receipt["errors"].append({"reason": "collection_failed", "message": "new gap after review"})
         (directory / "collection.json").write_text(json.dumps(receipt))
     elif change == "report":
         (directory / "REPORT.md").write_text("Status: complete\nchanged captured report")

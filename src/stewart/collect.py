@@ -25,7 +25,7 @@ import tarfile
 from stewart import _util as _hash
 from stewart._git import git, git_text
 from stewart import _bootstrap as _files
-from stewart._bootstrap import StewartError
+from stewart._bootstrap import EXIT_ATTENTION, EXIT_UNVERIFIED, StewartError, combined_code
 from stewart.runtime import observe_phase, runtime_state
 from stewart.session import (
     COLLECTION_SCHEMA,
@@ -168,6 +168,28 @@ def checkout_state(worktree: Path, prompt_commit: str) -> tuple[dict, dict[str, 
     return state, raw
 
 
+def _archive_member(worktree: Path, item: dict):
+    """Classify one Git-reported entry exactly as the archive treats it.
+
+    Returns ``("symlink", None)``, ``("file", (fd, stat))`` with an open
+    verified descriptor the caller must consume or close, ``("skip", None)``
+    for a deletion the patches carry, or ``("omit", entry)``. Collection and the
+    auditor's read-only check share this, so both name the same omissions.
+    """
+    rel = item["path"]
+    if item["kind"] == "symlink":
+        return "symlink", None
+    if item["kind"] == "file":
+        try:
+            return "file", _files._open_regular(contained(worktree, rel, leaf_link=True))
+        except _files._Unavailable as unavailable:
+            return "omit", {"path": rel, "kind": unavailable.kind, "detail": unavailable.detail}
+    if item["kind"] == "missing":
+        return "skip", None
+    return "omit", {"path": rel, "kind": item["kind"],
+                    "detail": item.get("detail", "special entries are inventoried, not archived")}
+
+
 def archive_files(archive: Path, worktree: Path, files: list[dict]) -> tuple[list[str], list[dict]]:
     """Archive Git-reported regular files and links; report what could not be archived.
 
@@ -180,18 +202,15 @@ def archive_files(archive: Path, worktree: Path, files: list[dict]) -> tuple[lis
     with tarfile.open(archive, "x", dereference=False) as bundle:
         for item in files:
             rel = item["path"]
-            if item["kind"] == "symlink":
+            kind, value = _archive_member(worktree, item)
+            if kind == "symlink":
                 info = tarfile.TarInfo(rel)
                 info.type = tarfile.SYMTYPE
                 info.linkname = item["target"]
                 bundle.addfile(info)
                 archived.append(rel)
-            elif item["kind"] == "file":
-                try:
-                    fd, st = _files._open_regular(contained(worktree, rel, leaf_link=True))
-                except _files._Unavailable as unavailable:
-                    omitted.append({"path": rel, "kind": unavailable.kind, "detail": unavailable.detail})
-                    continue
+            elif kind == "file":
+                fd, st = value
                 info = tarfile.TarInfo(rel)
                 info.type = tarfile.REGTYPE
                 info.size = st.st_size
@@ -200,14 +219,21 @@ def archive_files(archive: Path, worktree: Path, files: list[dict]) -> tuple[lis
                 with os.fdopen(fd, "rb") as fh:
                     bundle.addfile(info, fh)
                 archived.append(rel)
-            elif item["kind"] == "missing":
-                continue
-            else:
-                omitted.append({
-                    "path": rel, "kind": item["kind"],
-                    "detail": item.get("detail", "special entries are inventoried, not archived"),
-                })
+            elif kind == "omit":
+                omitted.append(value)
     return archived, omitted
+
+
+def probe_archive(worktree: Path, files: list[dict]) -> list[dict]:
+    """The entries ``archive_files`` would omit, found without writing an archive."""
+    omitted = []
+    for item in files:
+        kind, value = _archive_member(worktree, item)
+        if kind == "file":
+            os.close(value[0])
+        elif kind == "omit":
+            omitted.append(value)
+    return omitted
 
 
 def verify_archive(archive: Path, files: list[dict], archived: list[str]) -> None:
@@ -246,6 +272,70 @@ def _inventory_summary(record: dict, archived: list[str], omitted: list[dict], m
         ],
         "movement": movement,
     }
+
+
+def capture_report(worktree: Path, report_path: str) -> tuple[dict, bytes | None]:
+    """Observe the assigned report without following a link; never raises.
+
+    Returns receipt fields (``report_status`` plus its digest or detail, and
+    ``error`` when observation itself failed) and the report bytes, if any. An
+    unassessed report is different from one actually observed to be absent.
+    """
+    try:
+        report = contained(worktree, report_path, leaf_link=True)
+        if report.is_symlink():
+            return {"report_status": "symlink"}, None
+        if not report.exists():
+            return {"report_status": "missing"}, None
+        info, data = _files.read_regular(report)
+        if data is None:
+            return {"report_status": "unsupported", "report_detail": info}, None
+        return {"report_status": "present" if data.strip() else "empty", "report_sha256": info["sha256"]}, data
+    except (StewartError, OSError) as exc:
+        return {"report_status": "unassessed",
+                "error": {"reason": "report_capture", "message": f"report capture: {exc}"}}, None
+
+
+def unexpected_outputs(files: list[dict], meta: dict, handoff_path: str) -> tuple[list[str], list[str]]:
+    """Changed, untracked or ignored paths outside the assigned outputs.
+
+    The report path, declared scratch paths and supplemental inputs whose bytes
+    still match their pins are expected. The issued handoff is never listed:
+    its integrity is checked separately against its preparation digest. The
+    second list names unexpected paths that are supplemental inputs, whose
+    original bytes the auditor cannot restore.
+    """
+    supplied = {item["path"]: item["sha256"] for item in meta["supplemental_inputs"]}
+    unexpected = [
+        item["path"] for item in files
+        if item["path"] not in (meta["report_path"], handoff_path)
+        and not any(item["path"] == p or item["path"].startswith(p + "/") for p in meta["scratch_paths"])
+        and not (item["kind"] == "file" and supplied.get(item["path"]) == item.get("sha256"))
+    ]
+    return unexpected, [rel for rel in unexpected if rel in supplied]
+
+
+#: Collection error reasons, each with its exit code and whether the auditor's
+#: check can observe the same condition from the checkout alone.
+COLLECTION_ERRORS = {
+    "report_capture": (EXIT_ATTENTION, True),
+    "handoff_changed": (EXIT_UNVERIFIED, False),
+    "runtime_changed": (EXIT_UNVERIFIED, False),
+    "runtime_observation": (EXIT_UNVERIFIED, False),
+    "retention_invalid": (EXIT_UNVERIFIED, False),
+    "checkout_identity": (EXIT_UNVERIFIED, False),
+    "archive_mismatch": (EXIT_UNVERIFIED, False),
+    "archive_unreadable": (EXIT_UNVERIFIED, False),
+    "declaration_validation": (EXIT_UNVERIFIED, False),
+    "movement": (EXIT_ATTENTION, False),
+    "collection_failed": (EXIT_ATTENTION, False),
+}
+
+
+def collection_error(exc: BaseException) -> dict:
+    """A structured collection error; unclassified failures ask for another collection."""
+    reason = getattr(exc, "reason", None)
+    return {"reason": reason if reason in COLLECTION_ERRORS else "collection_failed", "message": str(exc)}
 
 
 def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
@@ -291,24 +381,13 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
     write_receipt(collection / "STARTED.json", receipt)
     meta = record["assignment"]
     # Preserve a usable report even if later Git inspection or archiving fails.
-    # An unassessed report is different from one actually observed to be absent.
-    try:
-        report = contained(worktree, meta["report_path"], leaf_link=True)
-        if report.is_symlink():
-            receipt["report_status"] = "symlink"
-        elif not report.exists():
-            receipt["report_status"] = "missing"
-        else:
-            info, data = _files.read_regular(report)
-            if data is None:
-                receipt["report_status"] = "unsupported"
-                receipt["report_detail"] = info
-            else:
-                (collection / "REPORT.md").write_bytes(data)
-                receipt["report_status"] = "present" if data.strip() else "empty"
-                receipt["report_sha256"] = info["sha256"]
-    except (StewartError, OSError) as exc:
-        receipt["errors"].append(f"report capture: {exc}")
+    report_fields, data = capture_report(worktree, meta["report_path"])
+    report_error = report_fields.pop("error", None)
+    receipt.update(report_fields)
+    if data is not None:
+        (collection / "REPORT.md").write_bytes(data)
+    if report_error:
+        receipt["errors"].append(report_error)
     before_inventory = inventory(worktree)
     write_receipt(collection / "inventory.json", before_inventory)
     # An untracked supplied handoff can disappear without a Git diff. Compare
@@ -318,7 +397,8 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
     observed_handoff = next((item for item in before_inventory["entries"] if item["path"] == handoff["path"]), None)
     if (observed_handoff is None or observed_handoff["kind"] != "file"
             or observed_handoff.get("sha256") != handoff["sha256"]):
-        receipt["errors"].append("supplied public handoff is absent, unreadable or differs from preparation")
+        receipt["errors"].append({"reason": "handoff_changed",
+                                  "message": "supplied public handoff is absent, unreadable or differs from preparation"})
     inventory_digest = _hash.sha256_bytes(_hash.receipt_json_bytes(before_inventory))
     archived: list[str] = []
     omitted: list[dict] = []
@@ -330,15 +410,16 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
         from stewart.captured import runtime_observations
         captures = runtime_observations(collection, receipt['runtime'], phases={'collection'})
         if not captures['collection']['matches_expected']:
-            receipt['errors'].append('supplied runtime membership or bytes differ from preparation')
+            receipt['errors'].append({"reason": "runtime_changed",
+                                      "message": "supplied runtime membership or bytes differ from preparation"})
     except (StewartError, OSError) as exc:
-        receipt['errors'].append(f'runtime observation: {exc}')
+        receipt['errors'].append({"reason": "runtime_observation", "message": f"runtime observation: {exc}"})
     from stewart._repository import verify_retention
     try:
         receipt["retention"] = {"status": "verified", "pins": verify_retention(ws.repo, record)}
     except StewartError as exc:
         receipt["retention"] = {"status": "invalid", "error": exc.to_json()}
-        receipt["errors"].append(f"commit retention: {exc}")
+        receipt["errors"].append({"reason": "retention_invalid", "message": f"commit retention: {exc}"})
     try:
         common = git_text(worktree, "rev-parse", "--path-format=absolute", "--git-common-dir")
         if common != record["common_dir"] or git_text(worktree, "rev-parse", "--show-toplevel") != str(worktree):
@@ -374,20 +455,14 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
                     "report changed before archive capture; both versions retained, collect again",
                     reason="movement",
                 )
-        supplied = {item["path"]: item["sha256"] for item in meta["supplemental_inputs"]}
-        supplied[record["handoff"]["path"]] = record["handoff"]["sha256"]
-        receipt["unexpected_paths"] = [
-            item["path"] for item in state["files"]
-            if item["path"] != meta["report_path"]
-            and not any(item["path"] == p or item["path"].startswith(p + "/") for p in meta["scratch_paths"])
-            and not (item["kind"] == "file" and supplied.get(item["path"]) == item.get("sha256"))
-        ]
+        receipt["unexpected_paths"], receipt["unexpected_supplemental"] = unexpected_outputs(
+            state["files"], meta, record["handoff"]["path"])
         receipt["checkout_commit_changed"] = state["head"] != record["prompt_commit"]
         # The maintainer can advance during a snapshot audit. This signal is informational;
         # it neither invalidates pinned inputs nor certifies a pause was honored.
         receipt["maintainer_status_changed_since_prepare"] = maintainer_state(ws.repo) != record["maintainer_before"]
     except (StewartError, OSError, ValueError, tarfile.TarError, subprocess.TimeoutExpired) as exc:
-        receipt["errors"].append(str(exc))
+        receipt["errors"].append(collection_error(exc))
         if receipt["git_discovery"] == "unassessed":
             receipt["git_discovery"] = "failed"
     # Parse only the preserved bytes, after capture and Git observation. Even an
@@ -408,16 +483,52 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
         receipt["declaration"] = {"status": "invalid", "declaration": None, "comparisons": {},
                                   "diagnostics": [{"reason": getattr(exc, "reason", "validation_error"),
                                                    "message": str(exc)}]}
-        receipt["errors"].append(f"declaration validation: {exc}")
+        receipt["errors"].append({"reason": "declaration_validation", "message": f"declaration validation: {exc}"})
     receipt["inventory"] = _inventory_summary(before_inventory, archived, omitted, movement, inventory_digest)
     write_receipt(collection / "collection.json", receipt)
+    gaps = custody_gaps(receipt)
     return {
         "audit_id": ident,
         "collection": name,
         "path": str(collection),
         "receipt": receipt,
-        "gaps": custody_gaps(receipt),
+        "gaps": gaps,
+        "exit_code": combined_code(gap["code"] for gap in gaps),
     }
+
+
+def assess_checkout(worktree: Path, *, meta: dict, prompt_commit: str, handoff_path: str,
+                    expected: dict, sources: dict) -> dict:
+    """A read-only, receipt-shaped observation of a checkout, for the auditor's check.
+
+    It runs the same report observation, inventory, Git discovery, archive
+    classification, output classification and declaration validation that
+    collection runs, but writes and archives nothing. ``custody_gaps`` over the
+    result therefore names the checkout-attributable gaps a collection of the
+    unchanged checkout would record. Git failure raises: without discovery the
+    check cannot speak for the checkout.
+    """
+    receipt: dict = {"errors": [], "auditor_stop_kind": None, "git_discovery": "unassessed"}
+    report_fields, data = capture_report(worktree, meta["report_path"])
+    report_error = report_fields.pop("error", None)
+    receipt.update(report_fields)
+    if report_error:
+        receipt["errors"].append(report_error)
+    before_inventory = inventory(worktree)
+    state, _ = checkout_state(worktree, prompt_commit)
+    receipt["checkout"] = state
+    omitted = probe_archive(worktree, state["files"])
+    receipt["git_discovery"] = "complete"
+    receipt["unexpected_paths"], receipt["unexpected_supplemental"] = unexpected_outputs(
+        state["files"], meta, handoff_path)
+    receipt["checkout_commit_changed"] = state["head"] != prompt_commit
+    from stewart.report_declaration import validate_report_declaration
+
+    wanted = {**expected, "observed_checkout_commit": state["head"]}
+    receipt["declaration"] = validate_report_declaration(data or b"", expected=wanted,
+                                                         sources={**sources, "observed_checkout_commit": "local HEAD"})
+    receipt["inventory"] = _inventory_summary(before_inventory, [], omitted, False, None)
+    return receipt
 
 
 def custody_gaps(receipt: dict) -> list[dict]:
@@ -426,45 +537,65 @@ def custody_gaps(receipt: dict) -> list[dict]:
     The list is derived from the receipt, so a response that addresses each ID is
     bound to this collection's actual coverage rather than to a generic checklist.
     Validating that each gap has a disposition does not validate the reasoning.
+
+    Each gap carries its exit ``code`` (1: action needed; 3: something the
+    auditor cannot repair does not verify) and ``observable``: whether the
+    auditor's check sees the same condition from the checkout alone. Gaps the
+    check cannot observe concern the manager's own actions or private records.
     """
     gaps: list[dict] = []
+
+    def add(gap_id: str, description: str, code: int, observable: bool) -> None:
+        gaps.append({"id": gap_id, "description": description, "code": code, "observable": observable})
+
     for index, error in enumerate(receipt.get("errors", [])):
-        gaps.append({"id": f"collection_error:{index}", "description": error})
+        code, observable = COLLECTION_ERRORS.get(error.get("reason"), (EXIT_UNVERIFIED, False))
+        add(f"collection_error:{index}", error["message"], code, observable)
     status = receipt.get("report_status")
     if status != "present":
-        gaps.append({"id": f"report_{status}", "description": f"no nonempty regular report was captured (status {status})"})
+        add(f"report_{status}", f"no nonempty regular report was captured (status {status})", EXIT_ATTENTION, True)
     if receipt.get("git_discovery") != "complete":
-        gaps.append({"id": "git_discovery_incomplete", "description": "Git discovery did not complete; archive coverage is unknown"})
+        add("git_discovery_incomplete", "Git discovery did not complete; archive coverage is unknown",
+            EXIT_ATTENTION, False)
     if receipt.get("checkout_commit_changed"):
-        gaps.append({"id": "checkout_commit_changed", "description": "the worktree HEAD is not the prompt commit (unexpected commit)"})
+        add("checkout_commit_changed", "the worktree HEAD is not the prompt commit (unexpected commit)",
+            EXIT_ATTENTION, True)
+    supplemental = set(receipt.get("unexpected_supplemental", []))
     for rel in receipt.get("unexpected_paths", []):
-        gaps.append({"id": f"unexpected_path:{rel}", "description": "a changed, untracked or ignored path outside the assigned outputs"})
+        if rel in supplemental:
+            add(f"unexpected_path:{rel}", "a supplemental input no longer matches its pinned bytes",
+                EXIT_UNVERIFIED, True)
+        else:
+            add(f"unexpected_path:{rel}", "a changed, untracked or ignored path outside the assigned outputs",
+                EXIT_ATTENTION, True)
     declaration = receipt.get("declaration") or {"status": "missing"}
     if declaration["status"] == "missing":
-        gaps.append({"id": "declaration_missing", "description": "captured report has no declaration; no completion inferred"})
+        add("declaration_missing", "captured report has no declaration; no completion inferred", EXIT_ATTENTION, True)
     elif declaration["status"] == "invalid":
         for diagnostic in declaration["diagnostics"]:
-            gaps.append({"id": f"declaration_invalid:{diagnostic['reason']}", "description": diagnostic["message"]})
+            add(f"declaration_invalid:{diagnostic['reason']}", diagnostic["message"], EXIT_ATTENTION, True)
     elif declaration["status"] == "mismatch":
         for diagnostic in declaration["diagnostics"]:
             field = diagnostic["field"]
             gap_id = "declaration_stale" if field == "observed_checkout_commit" else f"declaration_mismatch:{field}"
-            gaps.append({"id": gap_id, "description": diagnostic["message"] +
-                         " Identity comparison only; mutation chronology is not established."})
+            add(gap_id, diagnostic["message"] + " Identity comparison only; mutation chronology is not established.",
+                EXIT_ATTENTION, True)
     claim = declaration.get("declaration") or {}
     if claim.get("completion") == "complete" and receipt.get("auditor_stop_kind") == "interrupted":
-        gaps.append({"id": "completion_stop_discrepancy", "description":
-                     "auditor declared complete; maintainer acknowledged interrupted. Explain the discrepancy; "
-                     "completion followed by interruption can make both claims true."})
+        add("completion_stop_discrepancy",
+            "auditor declared complete; maintainer acknowledged interrupted. Explain the discrepancy; "
+            "completion followed by interruption can make both claims true.", EXIT_ATTENTION, False)
     summary = receipt.get("inventory") or {}
     if summary.get("movement"):
-        gaps.append({"id": "movement_detected", "description": "the checkout changed during collection"})
+        add("movement_detected", "the checkout changed during collection", EXIT_ATTENTION, False)
     for item in summary.get("omitted", []):
-        gaps.append({"id": f"omitted:{item['path']}", "description": f"Git-reported entry not archived ({item['kind']}): {item.get('detail', '')}"})
+        add(f"omitted:{item['path']}", f"Git-reported entry not archived ({item['kind']}): {item.get('detail', '')}",
+            EXIT_ATTENTION, True)
     for rel in summary.get("unreadable", []):
-        gaps.append({"id": f"unreadable:{rel}", "description": "inventory entry could not be read"})
+        add(f"unreadable:{rel}", "inventory entry could not be read", EXIT_ATTENTION, True)
     for item in summary.get("unsupported", []):
-        gaps.append({"id": f"unsupported:{item['path']}", "description": f"inventory entry of kind {item['kind']} was recorded, not captured"})
+        add(f"unsupported:{item['path']}", f"inventory entry of kind {item['kind']} was recorded, not captured",
+            EXIT_ATTENTION, True)
     for item in summary.get("boundaries", []):
-        gaps.append({"id": f"boundary:{item['path']}", "description": item["reason"]})
+        add(f"boundary:{item['path']}", item["reason"], EXIT_ATTENTION, True)
     return gaps

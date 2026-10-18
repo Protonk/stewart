@@ -117,7 +117,7 @@ def test_type_replacement_between_discovery_and_archiving_is_incomplete_custody_
     monkeypatch.setattr(collect_mod, "checkout_state", swapping_checkout)
     collected = support.collect_with_deadline(checkout)
     receipt = collected["receipt"]
-    assert any("changed during collection" in error for error in receipt["errors"])
+    assert any("changed during collection" in error["message"] for error in receipt["errors"])
     assert receipt["inventory"]["movement"] is True
     omitted = {item["path"]: item for item in receipt["inventory"]["omitted"]}
     assert omitted["extra.txt"]["kind"] == "replaced" and "fifo" in omitted["extra.txt"]["detail"]

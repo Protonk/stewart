@@ -295,6 +295,42 @@ every command that refuses on that basis: `triage`, `triage-draft`, `resume`,
 - **Final checks:** run with the other plans' final checks, unfiltered on
   Python 3.11 and 3.14, with actual counts reported.
 
+## Implementation notes for part A (2026-10-18)
+
+- **Where the contract lives.** The codes, `exit_code_for`, `combined_code` and
+  the reason sets (`REFUSED_REASONS`, `UNVERIFIED_REASONS`, `STATE_REASONS`)
+  are in `_bootstrap.py`. That is the one module the launcher and helpers can
+  import before runtime verification. `StewartError.exit_code` follows the
+  table unless a raise site sets `code`.
+- **Missing records.** `record_missing` refuses (2), because a missing record
+  the caller named is usually a wrong name. `load_session` raises
+  `session_missing` (2) when the session directory is absent. It marks a
+  missing or unreadable `session.json` inside an existing session as 3.
+- **Two refinements of rule 2.**
+  - `run` still exits 1 when the child failed or preservation failed. That is
+    news about the attempt; the child's own exit status value is recorded,
+    never propagated.
+  - `completion_stop_discrepancy` is the one gap that depends on declared
+    completion. It compares the auditor's claim with the manager's stop
+    acknowledgment, so it is manager-side and never observable by `check`.
+    Content-blind tests use the `finished` acknowledgment.
+- **HEAD moved.** `check` now names `git reset --soft <prompt>` as the fix.
+  This replaces the earlier helper text "do not hide it by resetting HEAD":
+  the soft reset keeps the changes, and the report should mention the commit.
+- **Diagnostics only `check` reports.** `check` takes identities from the
+  issued handoff and reports three conditions collection does not:
+  - `command_mismatch:<field>` (1), when its arguments differ from the handoff;
+  - `handoff_unavailable` (3);
+  - `input_manifest_changed` (3).
+- **Arguments bound to the handoff.** `start` and `set` refuse with
+  `handoff_identity` (2) when their arguments differ from the issued handoff.
+- **Handoff integrity.** Collection no longer lists the issued handoff as an
+  unexpected path. Its integrity is the separate `handoff_changed` error (3).
+- **Schema bumps.** `stewart.result/2` (`ok` means exit 0), collection
+  schema 7 (errors are reason/message objects; unexpected supplemental paths
+  are named), `stewart.input-check/2` (rows carry `code` and `fix`), and the
+  new `stewart.auditor-check/1`.
+
 ## Open questions
 
 - **Acceptance record.** Should an accepting `check` write a digest of the

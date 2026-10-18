@@ -303,6 +303,40 @@ that location.
 
 Only step 4's `<common>` read grant depends on this outcome.
 
+#### Outcome, recorded 2026-10-18
+
+- **Setup:** Claude Code 2.1.302 on macOS 26.7.1, model `sonnet`, through the
+  `claude-code-restricted/1` launch-profile probe of a session prepared by the
+  `76d331c` wheel.
+- **Evidence:** in the session scratchpad (`step0/`): the fixture script, the
+  probe blocks and their outputs. The probe prompt asked for each access
+  exactly once, through the named tool.
+- **V1, today's settings** (settings SHA-256 `d498deec…59c9ad`):
+  - the Read tool reads the worktree sentinel;
+  - **Bash cannot read the worktree** (`cat`: "Operation not permitted");
+  - every `git` command in the worktree fails ("Unable to read current
+    working directory");
+  - `<common>/stewart` and the maintainer checkout are denied to both tools.
+- **V2, the same settings without the maintainer root in `denyRead`**
+  (SHA-256 `e9ada043…38fe2`):
+  - Bash reads the worktree, so the outer sandbox is not the cause;
+  - `git log`, `cat-file` and `status` work;
+  - `<common>/stewart` stays denied to Bash and the Read tool;
+  - a maintainer-checkout file becomes readable from Bash.
+- **Conclusion.** In this harness a broader `denyRead` wins over a nested
+  `allowRead`, and a narrower `denyRead` inside an `allowRead` holds.
+  - Outcome A for private storage: keep the `<common>` read grant with the
+    `<common>/stewart` deny.
+  - The repo-root deny is an existing defect: the qualified adapter's shell
+    cannot read its own checkout or run Git. Rehome alone does not fix it,
+    because `<common>` lives inside the main checkout.
+  - Step 4 therefore replaces each private root that contains `<common>` with
+    denials of everything under it except the path to `<common>`. Requalify the
+    rebuilt settings with the same probe.
+- **Also observed:** the harness reports that `Write(path)` deny rules are not
+  matched by file permission checks, while `Edit(path)` rules cover every
+  file-editing tool. Step 4 drops the ineffective `Write` deny.
+
 ### 1. Derive every storage root in one place
 
 - Replace `PRIVATE_ROOTS` (`_repository.py:23`), `SESSIONS_ROOT`

@@ -102,8 +102,9 @@ def test_helper_requires_explicit_kind_preserves_selection_and_surrounding_bytes
     for key, value in kwargs.items():
         args += ["--" + key.replace("_", "-"), str(value)]
     assert declaration.main(args) == 0
-    line, block = capsys.readouterr().out.split("\n", 1)
-    assert "report_kind=needs-evidence" in line
+    output = capsys.readouterr().out
+    summary, block = output[:output.index("\n{")], output[output.index("\n{") + 1:]
+    assert summary.startswith("check exit 0") and "report_kind=needs-evidence" in summary
     assert json.loads(block)["report_kind"] == "needs-evidence"
 
 

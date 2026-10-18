@@ -112,18 +112,24 @@ def test_checker_compares_selected_bytes_and_ignores_report_prose_and_other_file
     prepared.report.write_text("an unvalidated conclusion\n")
     assert verify_inputs(ws, **kwargs) == baseline, "the checker does not grade or parse report prose"
     (prepared.worktree / "input.txt").write_text("selected change\n")
-    (prepared.worktree / "ignored/supplied.txt").unlink()
+    # A changed committed input can be restored from Git: action needed (1).
     assert main(cli_args(kwargs) + ["--json"]) == 1
+    rows = {r["path"]: r for r in json.loads(capsys.readouterr().out)["result"]["inputs"]}
+    assert rows["input.txt"]["code"] == 1 and "git checkout" in rows["input.txt"]["fix"]
+    (prepared.worktree / "ignored/supplied.txt").unlink()
+    # A missing supplemental input cannot be restored by the auditor: 3 takes precedence.
+    assert main(cli_args(kwargs) + ["--json"]) == 3
     result = json.loads(capsys.readouterr().out)["result"]
     assert (result["selected"], result["matched"], result["failed"]) == (4, 2, 2), "failures stay in denominator"
     rows = {r["path"]: r for r in result["inputs"]}
     assert rows["input.txt"]["expected_sha256"] == _hash.sha256_bytes(b"committed input\n")
     assert rows["input.txt"]["observed_sha256"] == _hash.sha256_bytes(b"selected change\n")
     assert rows["ignored/supplied.txt"]["observed_kind"] == "missing"
-    assert main(cli_args(kwargs)) == 1
+    assert rows["ignored/supplied.txt"]["code"] == 3 and "git checkout" not in rows["ignored/supplied.txt"]["fix"]
+    assert main(cli_args(kwargs)) == 3
     printed = capsys.readouterr().out
     assert "FAIL input.txt" in printed and "FAIL ignored/supplied.txt" in printed and "MATCH" not in printed
-    assert main(cli_args(kwargs) + ["--print"]) == 1
+    assert main(cli_args(kwargs) + ["--print"]) == 3
     assert "MATCH ignored/second.txt" in capsys.readouterr().out
 
 
@@ -147,7 +153,7 @@ def test_unsafe_selected_entries_fail_without_following_or_blocking(checkout, ru
     record = support.read_json(prepared.session / "session.json")
     result = run_cmd(helper_argv(record["runtime"], record["helper_interpreter"], "inputs", *cli_args(kwargs), "--json"),
                      cwd=prepared.worktree, env={"PYTHONPATH": str(prepared.worktree)}, timeout=15)
-    assert result.returncode == 1, result.stderr
+    assert result.returncode == 3, "a supplemental input the auditor cannot restore does not verify"
     output = json.loads(result.stdout)["result"]
     row = next(r for r in output["inputs"] if r["path"] == "ignored/supplied.txt")
     assert not row["matches"] and row["observed_sha256"] is None
@@ -211,7 +217,9 @@ def test_checker_context_and_inventory_faults_refuse_with_actionable_json(checko
         prompt.write_bytes(prompt.read_bytes() + b"\n")
     else:
         kwargs["expected_worktree"] = checkout.repo
-    assert main(cli_args(kwargs) + ["--json"]) == 2
+    # A changed inventory is a supplemental input the auditor cannot restore (3);
+    # a drifted prompt or a wrong root refuses before anything is compared (2).
+    assert main(cli_args(kwargs) + ["--json"]) == (3 if fault == "inventory" else 2)
     error = json.loads(capsys.readouterr().out)["error"]
     assert error["reason"] == reason and error["next_steps"]
     assert not prepared.report.exists()

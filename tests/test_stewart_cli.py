@@ -19,7 +19,7 @@ import pytest
 
 import stewart
 from stewart._bootstrap import StewartError
-from stewart.cli import EXIT_OK, EXIT_RECORDED_ERRORS, EXIT_REFUSED, build_parser
+from stewart.cli import EXIT_ATTENTION, EXIT_OK, EXIT_REFUSED, build_parser
 import stewart_support as support
 from stewart_support import WS, response_for
 
@@ -54,7 +54,7 @@ def test_json_parses_alone_on_success_and_on_refusal(checkout, run_cmd):
     refused = _run(checkout, run_cmd, "prepare", "--mode", "paused")
     assert refused.returncode == EXIT_REFUSED and refused.stderr == ""
     envelope = json.loads(refused.stdout)
-    assert envelope["schema"] == "stewart.result/1" and envelope["command"] == "prepare"
+    assert envelope["schema"] == "stewart.result/2" and envelope["command"] == "prepare"
     assert envelope["ok"] is False and envelope["exit_code"] == EXIT_REFUSED and envelope["result"] is None
     assert envelope["error"]["reason"] == "pause_unacknowledged" and envelope["error"]["message"]
     assert set(envelope["error"]) == {"reason", "message", "retained", "next_steps"}
@@ -69,9 +69,9 @@ def test_exit_codes_separate_recorded_errors_from_refusals(checkout, run_cmd):
     prepared = support.prepared_session(checkout, report="Report survives a broken checkout\n")
     _break_worktree_git(prepared.worktree)
     collected = _run(checkout, run_cmd, "collect", "--audit-id", checkout.meta["audit_id"], "--auditor-stopped", "finished")
-    assert collected.returncode == EXIT_RECORDED_ERRORS and collected.stderr == ""
+    assert collected.returncode == EXIT_ATTENTION and collected.stderr == ""
     envelope = json.loads(collected.stdout)
-    assert envelope["ok"] is True and envelope["exit_code"] == EXIT_RECORDED_ERRORS
+    assert envelope["ok"] is False and envelope["exit_code"] == EXIT_ATTENTION, "ok means exit 0"
     receipt = envelope["result"]["receipt"]
     assert receipt["errors"] and receipt["report_status"] == "present" and receipt["git_discovery"] == "failed"
     assert "git_discovery_incomplete" in [gap["id"] for gap in envelope["result"]["gaps"]]
@@ -79,7 +79,7 @@ def test_exit_codes_separate_recorded_errors_from_refusals(checkout, run_cmd):
     assert viewed.returncode == EXIT_OK, "inspecting a failed session is itself a success"
     missing = _run(checkout, run_cmd, "collect", "--audit-id", "never-prepared", "--auditor-stopped", "finished")
     assert missing.returncode == EXIT_REFUSED
-    assert json.loads(missing.stdout)["error"]["reason"] == "record_missing"
+    assert json.loads(missing.stdout)["error"]["reason"] == "session_missing"
     unacknowledged = _run(checkout, run_cmd, "collect", "--audit-id", checkout.meta["audit_id"])
     assert json.loads(unacknowledged.stdout)["error"]["reason"] == "auditor_not_stopped"
 
@@ -91,7 +91,7 @@ def test_human_output_names_result_limitation_and_recovery(checkout, run_cmd):
     _break_worktree_git(prepared.worktree)
     collected = _run(checkout, run_cmd, "collect", "--audit-id", checkout.meta["audit_id"], "--auditor-stopped", "finished",
                      json_mode=False)
-    assert collected.returncode == EXIT_RECORDED_ERRORS
+    assert collected.returncode == EXIT_ATTENTION
     assert "Collected: " in collected.stdout and "Report: present" in collected.stdout
     assert "Collection incomplete:" in collected.stdout and "retained" in collected.stdout
     assert "Next: triage --collection" in collected.stdout
@@ -216,7 +216,9 @@ def test_help_marks_mutations_and_read_only_commands():
     parser = build_parser()
     help_text = parser.format_help()
     assert "[read-only]" in help_text and "[writes into the maintainer checkout]" in help_text
-    assert "Exit codes: 0 success; 1 completed with recorded errors; 2 refused" in help_text
+    flat = " ".join(help_text.split())
+    assert "Exit codes: 0 nothing needs attention; 1 completed, action needed" in flat
+    assert "2 refused or invalid usage, nothing done; 3 records or bytes do not verify" in flat
     with pytest.raises(StewartError) as finished:
         parser.parse_args(["--workspace", WS, "retain"])
     assert finished.value.reason == "usage"

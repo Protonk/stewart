@@ -331,7 +331,7 @@ def test_cli_release_and_run_distinguish_a_failed_trial_from_failed_custody(tmp_
     name = json.loads(released.stdout)["result"]["release"]
     ran = run_cmd([*base, "run", "--audit-id", "one-question", "--release", name, "--timeout", "60"], cwd=INSTALLED_LIB, env=env)
     envelope = json.loads(ran.stdout)
-    assert ran.returncode == 1 and envelope["ok"] is True and envelope["exit_code"] == 1
+    assert ran.returncode == 1 and envelope["ok"] is False and envelope["exit_code"] == 1
     assert envelope["result"]["record"]["process"]["exit_code"] == 5
     assert "child exited 5" in envelope["result"]["errors"]
     again = run_cmd([*base, "run", "--audit-id", "one-question", "--release", name], cwd=INSTALLED_LIB, env=env)

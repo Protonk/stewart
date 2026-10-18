@@ -72,6 +72,20 @@ def refused(prepared, checkout, monkeypatch, capsys, reason, operation="check", 
     return output.err
 
 
+def flagged(prepared, checkout, monkeypatch, capsys, gaps, code=1, **changes):
+    """Check lists what a collection would ask the auditor to fix; it never changes bytes."""
+    before = fingerprint(prepared.report)
+    monkeypatch.chdir(prepared.worktree)
+    assert declaration.main([*argv(prepared, checkout, "check", **changes), "--json"]) == code
+    document = json.loads(capsys.readouterr().out)
+    assert document["ok"] is False and document["exit_code"] == code
+    listed = {gap["id"] for gap in document["result"]["gaps"]}
+    assert gaps <= listed, f"expected {gaps} among {listed}"
+    assert all(gap["fix"] for gap in document["result"]["gaps"])
+    assert fingerprint(prepared.report) == before, "check must not change report bytes"
+    return document["result"]
+
+
 def test_start_set_check_preserve_prose_and_print_identity(checkout, monkeypatch, capsys):
     prepared = support.prepared_session(checkout, report=None)
     monkeypatch.chdir(prepared.worktree)
@@ -91,7 +105,8 @@ def test_start_set_check_preserve_prose_and_print_identity(checkout, monkeypatch
     assert prepared.report.read_bytes().startswith(prefix) and prepared.report.read_bytes().endswith(suffix)
     before = fingerprint(prepared.report)
     assert declaration.main(argv(prepared, checkout)) == 0
-    assert capsys.readouterr().out.startswith("complete audit=one-question HEAD=")
+    output = capsys.readouterr().out
+    assert output.startswith("check exit 0: accepted") and "completion=complete report_kind=answer" in output
     assert fingerprint(prepared.report) == before
 
 
@@ -105,13 +120,13 @@ def test_each_identity_compares_its_source_and_ignores_prose(checkout, monkeypat
     original = values(prepared, checkout)
     prepared.report.write_bytes(authored({**original, field: replacement}))
     refused(prepared, checkout, monkeypatch, capsys, "identity_mismatch", "set", completion="complete", report_kind="answer")
-    refused(prepared, checkout, monkeypatch, capsys, "identity_mismatch")
+    gap = "declaration_stale" if field == "observed_checkout_commit" else f"declaration_mismatch:{field}"
+    flagged(prepared, checkout, monkeypatch, capsys, {gap})
     collected = collect(checkout.ws, "one-question", auditor_stopped="finished")
     comparison = collected["receipt"]["declaration"]["comparisons"][field]
     assert comparison == {"expected": original[field], "observed": replacement,
         "source": "HEAD observed at collection" if field == "observed_checkout_commit" else "pinned session",
         "matches": False}
-    gap = "declaration_stale" if field == "observed_checkout_commit" else f"declaration_mismatch:{field}"
     assert {g["id"] for g in collected["gaps"]} == {gap}
     prepared.report.write_bytes(authored(original, before=b"Status: complete (a prose claim is ignored)\n"))
     assert declaration.main(argv(prepared, checkout)) == 0
@@ -146,10 +161,10 @@ def test_parse_refusals_are_distinct_and_collection_preserves_bytes(checkout, mo
     bad = corruption(authored(values(prepared, checkout)))
     prepared.report.write_bytes(bad)
     refused(prepared, checkout, monkeypatch, capsys, reason, "set", completion="complete", report_kind="answer")
-    refused(prepared, checkout, monkeypatch, capsys, reason)
+    gap = "declaration_missing" if reason == "missing" else f"declaration_invalid:{reason}"
+    flagged(prepared, checkout, monkeypatch, capsys, {gap})
     captured = collect(checkout.ws, "one-question", auditor_stopped="interrupted")
     assert (Path(captured["path"]) / "REPORT.md").read_bytes() == bad
-    gap = "declaration_missing" if reason == "missing" else f"declaration_invalid:{reason}"
     assert gap in {item["id"] for item in captured["gaps"]}
     assert captured["receipt"]["declaration"]["declaration"] is None
 
@@ -169,9 +184,17 @@ def test_prompt_agreement_precedes_destination_selection(checkout, monkeypatch, 
         text = prompt.read_text()
         text = text.replace('"audit_id": "one-question"', '"audit_id": "substitute"') if change == "audit_id" else text.replace(checkout.meta["report_path"], f"{checkout.ws.reports}/substitute.md")
         prompt.write_text(text)
-    error = refused(prepared, checkout, monkeypatch, capsys,
-                    "prompt_digest" if change == "digest" else "prompt_drift", operation, **extras)
-    assert "expected" in error and "observed" in error
+    if operation == "check":
+        # Check reads the committed assignment, so a changed working prompt is
+        # a gap to restore, never a new destination; a mistyped digest is a
+        # command to copy again.
+        gap = "command_mismatch:prompt_sha256" if change == "digest" else f"unexpected_path:{checkout.ws.prompt}"
+        result = flagged(prepared, checkout, monkeypatch, capsys, {gap}, **extras)
+        assert result["report_path"] == checkout.meta["report_path"]
+    else:
+        error = refused(prepared, checkout, monkeypatch, capsys,
+                        "handoff_identity" if change == "digest" else "prompt_drift", operation, **extras)
+        assert "expected" in error and "observed" in error
     assert not substitute.exists(), "a changed assignment cannot redirect a write"
 
 
@@ -258,7 +281,12 @@ def test_unsafe_or_unavailable_context_never_changes_other_bytes(checkout, monke
     expected = {"report_symlink": "path_symlink", "ancestor_symlink": "path_symlink", "fifo": "report_unreadable",
                 "prompt_symlink": "path_symlink", "attached": "checkout_detached", "missing": "context_unavailable"}[kind]
     before = fingerprint(sentinel)
-    refused(prepared, checkout, monkeypatch, capsys, expected)
+    refused(prepared, checkout, monkeypatch, capsys, expected, "set", completion="partial")
+    # Check never follows the link or writes; it names the gaps a collection would record.
+    gaps = {"report_symlink": {"report_symlink"}, "ancestor_symlink": {"report_unassessed"},
+            "fifo": {"report_unsupported"}, "prompt_symlink": {f"unexpected_path:{checkout.ws.prompt}"},
+            "attached": {"report_missing"}, "missing": {"report_missing"}}[kind]
+    flagged(prepared, checkout, monkeypatch, capsys, gaps)
     assert fingerprint(sentinel) == before
 
 
@@ -349,7 +377,8 @@ def test_launch_commands_execute_in_disposable_prepared_checkout(checkout, run_c
             assert prepared.revision in result.stdout
         else:
             assert "selected=1 matched=1 failed=0" in result.stdout
-    assert json.loads(result.stdout.split("\n", 1)[1])["completion"] == "complete"
+    assert result.stdout.startswith("check exit 0: accepted")
+    assert json.loads(result.stdout[result.stdout.index("\n{") + 1:])["completion"] == "complete"
 
 
 def test_validator_failure_cannot_prevent_raw_capture(checkout, monkeypatch):
@@ -360,17 +389,22 @@ def test_validator_failure_cannot_prevent_raw_capture(checkout, monkeypatch):
     monkeypatch.setattr(declaration, "validate_report_declaration", fail)
     result = collect(checkout.ws, "one-question", auditor_stopped="interrupted")
     assert (Path(result["path"]) / "REPORT.md").read_bytes() == prepared.report.read_bytes()
-    assert result["receipt"]["errors"] == ["declaration validation: injected validator failure"]
+    assert result["receipt"]["errors"] == [{"reason": "declaration_validation",
+                                         "message": "declaration validation: injected validator failure"}]
     assert "declaration_invalid:validation_error" in {g["id"] for g in result["gaps"]}
 
 
-def test_transcribed_token_is_only_verifiable_by_stewart(checkout, monkeypatch, capsys):
+def test_issued_handoff_binds_the_transcribed_token(checkout, monkeypatch, capsys):
     prepared = support.prepared_session(checkout, report=None)
     monkeypatch.chdir(prepared.worktree)
     wrong = "a" * 16 if prepared.prepared["launch_token"] != "a" * 16 else "b" * 16
-    for operation in ("start", "check"):
-        assert declaration.main(argv(prepared, checkout, operation, launch_token=wrong)) == 0
-        capsys.readouterr()
+    refused(prepared, checkout, monkeypatch, capsys, "handoff_identity", "start", launch_token=wrong)
+    flagged(prepared, checkout, monkeypatch, capsys, {"command_mismatch:launch_token", "report_missing"},
+            launch_token=wrong)
+    # A declaration written with a mistyped token (by hand) is caught by check
+    # exactly as collection records it.
+    prepared.report.write_bytes(authored(values(prepared, checkout, launch_token=wrong)))
+    flagged(prepared, checkout, monkeypatch, capsys, {"declaration_mismatch:launch_token"})
     result = collect(checkout.ws, "one-question", auditor_stopped="finished")
     assert {g["id"] for g in result["gaps"]} == {"declaration_mismatch:launch_token"}
 

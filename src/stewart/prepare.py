@@ -289,7 +289,10 @@ def _render_handoff(ws: Workspace, record: dict) -> str:
         "\nVerify supplied input bytes without writing files (not scientific validation or a reading attestation):\n\n```sh\n"
         + helper_command("inputs") + "\n```\n"
         "Add `--print` for every expected/observed digest, or `--json` for one result document. "
-        "A failed row exits 1; identity/manifest refusal exits 2. Preserve and report failures; do not repair supplied inputs.\n"
+        "Each failed row names its fix.\n"
+        "\nEvery helper uses the same exit codes. 0: nothing to change. 1: change what is listed, then run it again. "
+        "2: refused, nothing done; copy the issued command exactly. 3: something you cannot repair does not verify; "
+        "describe it in the report, declare, and stop. Completion and report kind never change the code.\n"
         "\nThe narrow declaration helper commands below, and their --help, are authorized. "
         "The read-only input verifier above and its --help are also authorized. "
         "Other execution requires its own grant. Keep completion qualifications in prose.\n\n"
@@ -301,7 +304,8 @@ def _render_handoff(ws: Workspace, record: dict) -> str:
         "Explain the request or proposal in prose; it grants no new reading, construction or execution scope.\n\n```sh\n"
         + helper_command("declaration", "set", "--completion", "complete",
                          "--report-kind", "answer") + "\n```\n\n"
-        "Run check as the last action before stopping:\n\n```sh\n"
+        "Run check as the last action before stopping. It reports, without writing, everything a collection "
+        "of this checkout would ask you to fix; exit 0 means nothing:\n\n```sh\n"
         + helper_command("declaration", "check", "--print") + "\n```\n"
     )
     root = record["runtime"]["root"]
