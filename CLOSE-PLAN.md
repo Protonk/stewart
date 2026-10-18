@@ -27,20 +27,28 @@ The rehome execution contract applies here too:
 
 - no backward compatibility at 0.1.0;
 - preserve unrelated working-tree changes;
-- no harness requests or wheel downloads without the user's approval;
+- the user approved step 0's harness requests and wheelhouse provisioning on
+  2026-10-18; other real harness requests still need approval;
 - recheck line numbers, which are given at `76d331c`.
 
 This plan deliberately changes two custody rules, listed under "Rule changes".
 Update their statements as facts. Leave the documentation's framing to the
 user.
 
-## Ordering with REHOME-PLAN.md
+## Ordering
 
-1. Execute REHOME-PLAN.md steps 0–6 (step 0 still needs the user's approval
-   and gates nothing).
-2. Then steps 1–5 here.
-3. Then REHOME-PLAN.md steps 7–8 together with steps 6–8 here, so the manual
-   and tests describe one removal path.
+The order across this plan, REHOME-PLAN.md and
+[EXIT-CODES-PLAN.md](EXIT-CODES-PLAN.md) is set in EXIT-CODES-PLAN.md under
+"Recommended order":
+
+1. EXIT-CODES-PLAN.md part A.
+2. REHOME-PLAN.md steps 0–6, with exit-codes part B.
+3. Steps 1–5 here, with exit-codes part C in steps 2–3.
+4. All together: REHOME-PLAN.md steps 7–8, steps 6–8 here, and exit-codes part
+   D. The manual and tests then describe one removal path and one set of exit
+   codes.
+
+`LINUX-CONTAINERS-PLAN.md` runs after all three plans.
 
 ## Why
 
@@ -185,6 +193,8 @@ Receipts remain exclusive. Live records are never rewritten.
   3. the registry row;
   4. the session directory last.
 - Write `CLOSED.json` with each item's outcome.
+- Exit codes follow EXIT-CODES-PLAN.md part C. In particular, a concluded close
+  refuses with 3 wherever `status` would return 3.
 - A rerun after interruption works only from `CLOSING.json`'s inventory and
   never widens it.
 

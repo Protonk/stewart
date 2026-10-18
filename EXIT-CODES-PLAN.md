@@ -26,12 +26,18 @@ rehome execution contract applies here too:
 
 - no backward compatibility at 0.1.0;
 - preserve unrelated working-tree changes;
-- no harness requests or wheel downloads without the user's approval;
+- the user approved step 0's harness requests and wheelhouse provisioning on
+  2026-10-18; other real harness requests still need approval;
 - recheck line numbers, which are given at `76d331c`.
 
 This plan shapes incentives. It adds no defense against meddling and no limit
 on its impact. Its aim is that every path of least resistance for the auditor
 is "use the auditing tool until it accepts".
+
+It relies on behavior already seen in earlier Stewart work: auditors interact
+with the tool, receive information back, and send different updates in
+response. It does not assume they loop on `check` mechanically, and no
+rehearsal is planned.
 
 ## The three rules (agreed)
 
@@ -95,6 +101,9 @@ other two plans at the steps that already rewrite the same code:
 
    One pass over the manual then describes the final behavior.
 
+`LINUX-CONTAINERS-PLAN.md` runs after all four phases. Leave any coordination
+with it to that plan's manager.
+
 The main alternative is to do rehome first and this plan last. That retrofits
 the classification tables onto every reason the other plans add, and delays
 the auditor-side change. I recommend against it.
@@ -149,6 +158,12 @@ The current gap IDs from `custody_gaps` (`collect.py:423`), classified:
   runtime (`runtime_mismatch`), for example, is 3.
   - A completeness test scans the source with `ast` for literal `reason=`
     arguments and fails on any reason missing from the table.
+  - The test must also cover problem entries written as plain dicts, such as
+    `{"reason": "collection_incomplete"}` and `"exit_log_malformed"` in
+    `status.py` (lines 116-129, 256-288, 381, 497). The `reason=` scan misses
+    those, and they are exactly what part B classifies. Either scan dict
+    literals with a `"reason"` key as well, or create those entries through
+    one constructor that the table checks.
   - Reasons added later by REHOME-PLAN.md and CLOSE-PLAN.md must be classified
     when they are written.
 
@@ -176,8 +191,8 @@ The current gap IDs from `custody_gaps` (`collect.py:423`), classified:
 - **What each message carries:** the gap ID the manager would see, the fix,
   and the command to rerun.
 - **Speed and side effects:** `check` must stay fast and write nothing, apart
-  from the optional acceptance record (A6), so looping on it is the cheapest
-  thing the auditor can do.
+  from the optional acceptance record (A6), so checking again after each
+  change is the cheapest thing the auditor can do.
 - **The launch token:** compare it with the issued handoff file in the
   worktree, since the helper can't verify it today
   (`report_declaration.py:217`). A mismatch is a 1: use the issued command.

@@ -3,13 +3,21 @@
 Execution plan prepared 2026-10-18 and agreed with the user the same day, then
 revised the same day for the actor model below.
 
-Status: design and sequence agreed. Step 0 is **not yet approved** and must not
-start until the user approves it; it no longer gates steps 1–8. No
-implementation has started. [CLOSE-PLAN.md](CLOSE-PLAN.md) runs after steps
-1–6. Steps 7–8 then run together with its documentation and test steps, so
-the manual and tests describe one removal path. This document
-is temporary execution state, not shipped guidance. Update it as work proceeds;
-remove it once its contracts have reached the manual, CLI help and tests.
+Status: design and sequence agreed. The user approved step 0 on 2026-10-18; it
+still gates nothing. No implementation has started.
+
+The order across this plan, [CLOSE-PLAN.md](CLOSE-PLAN.md) and
+[EXIT-CODES-PLAN.md](EXIT-CODES-PLAN.md) is set in EXIT-CODES-PLAN.md under
+"Recommended order":
+
+1. Exit-codes part A first.
+2. Steps 0–6 here, with exit-codes part B in step 6.
+3. CLOSE-PLAN.md steps 1–5.
+4. Steps 7–8 here, together with the other plans' documentation and tests.
+
+This document is temporary execution state, not shipped guidance. Update it as
+work proceeds; remove it once its contracts have reached the manual, CLI help
+and tests.
 
 ## Objective
 
@@ -36,9 +44,13 @@ refusal handle old sessions. Add no migration, shims or rewriting of historical
 records.
 
 Preserve unrelated working-tree changes. Untracked `LINUX-CONTAINERS-PLAN.md`
-and `user-report.md` belong to other work. Do not spend real harness requests
-(step 0) or download wheels (step 8) without the user's approval. The line
-numbers below are at `76d331c`; recheck them before editing.
+and `user-report.md` belong to other work. `LINUX-CONTAINERS-PLAN.md` runs
+after this set of plans is complete; leave any coordination with it to that
+plan's manager.
+
+On 2026-10-18 the user approved step 0's harness requests and provisioning the
+wheelhouse from `requirements.lock`. Any other real harness requests still need
+approval. The line numbers below are at `76d331c`; recheck them before editing.
 
 ## Actor model
 
@@ -159,6 +171,8 @@ Decisions 7–9 were added after the actor-model review:
    - The layout is `<checkout-home>/<repo-key>/<session-uuid>/`.
    - Neighboring directories, and `git worktree list` run from any checkout,
      then name no audit ID or workspace.
+   - UUID names also let checkouts be managed mechanically, by `status`,
+     `close` and the session listing, rather than by reading names.
    - Sessions keep readable `<slug>/<audit-id>` paths, because only the manager
      sees them. The manager finds checkouts through `status`.
 8. **Auditor checkouts stay locked for their lifetime.**
@@ -195,6 +209,8 @@ carried by a step that already rewrites that output:
       `status`.
     - The handoff names the worktree, the runtime, the helpers and the
       auditor's guidance, and nothing private.
+    - Its benefit to the auditor's focus is taken on faith; no rehearsal is
+      planned.
 12. **`status` shows the runtime recovery command only when it is needed.**
     - Today the command appears whenever the backup copy of the runtime
       (`runtime-pristine`) verifies (`status.py:469`, `cli.py:606-608`), which
@@ -247,7 +263,7 @@ per-audit checkout directory.
 
 ## Sequence
 
-### 0. Qualify the sandbox boundary (needs user approval; not a gate)
+### 0. Qualify the sandbox boundary (approved 2026-10-18; not a gate)
 
 After the move, keeping sessions out of the auditor's reach depends on
 `denyRead <common>/stewart` nesting inside `allowRead <common>`
@@ -256,8 +272,7 @@ nesting. Under the actor model, the question is whether a fallible auditor
 could come across private material, not whether an attacker could reach it.
 Without the deny, `<common>/stewart` is still reachable only by an absolute
 path into Git internals that nothing in the auditor's context names. So steps
-1–8 proceed with today's settings shape, and this step runs whenever the user
-approves it. Qualify with the current code, since the registry already sits at
+1–8 proceed with today's settings shape, and this step can run at any point. Qualify with the current code, since the registry already sits at
 that location.
 
 - Prepare a session in a throwaway repository with a `claude-code-restricted/1`
@@ -407,6 +422,7 @@ Only step 4's `<common>` read grant depends on this outcome.
   session records as listed problems, never skip them. A workspace with no
   sessions lists none and exits 0.
 - Bump the status JSON schema to `stewart.status/12`.
+- Apply the `status` exit codes from EXIT-CODES-PLAN.md part B in this step.
 - Reason identifiers are part of the JSON contract; assert them in tests.
 
 ### 7. Documentation and help
@@ -525,8 +541,9 @@ measured property, and an invariance case:
 - **Scope settings construction** for the new layout, including the step 0
   outcome.
 
-Provision `requirements.lock` into a wheelhouse; `.scratch/wheelhouse` was
-absent on 2026-10-18, so this needs network access and the user's approval.
+Provision `requirements.lock` into a wheelhouse. `.scratch/wheelhouse` was
+absent on 2026-10-18; the user approved provisioning it, with network access,
+that day.
 Then run `scripts/check.py`, unfiltered, on Python 3.11 and 3.14. Report the
 actual collected, selected and passed counts, and preserve the outputs. Do not
 overwrite `.scratch/check-result.json` from earlier runs; choose fresh
@@ -558,8 +575,7 @@ and later design work. None is a storage-location change:
 
 Done when:
 
-- step 0's outcome is recorded here; if the user has not approved it by then,
-  record that it remains open and what its outcome would change;
+- step 0's outcome is recorded here;
 - steps 1–8 meet the contracts above;
 - the manual, help and tests carry those contracts;
 - full unfiltered checks pass on both interpreters, with the counts reported.
