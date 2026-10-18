@@ -1,9 +1,11 @@
 # Rehome Stewart's storage
 
-Execution plan prepared 2026-10-18 and agreed with the user the same day.
+Execution plan prepared 2026-10-18 and agreed with the user the same day, then
+revised the same day for the actor model below.
 
 Status: design and sequence agreed. Step 0 is **not yet approved** and must not
-start until the user approves it. No implementation has started. This document
+start until the user approves it; it no longer gates steps 1–8. No
+implementation has started. This document
 is temporary execution state, not shipped guidance. Update it as work proceeds;
 remove it once its contracts have reached the manual, CLI help and tests.
 
@@ -35,6 +37,27 @@ Preserve unrelated working-tree changes. Untracked `LINUX-CONTAINERS-PLAN.md`
 and `user-report.md` belong to other work. Do not spend real harness requests
 (step 0) or download wheels (step 8) without the user's approval. The line
 numbers below are at `76d331c`; recheck them before editing.
+
+## Actor model
+
+As stated by the user on 2026-10-18, Stewart is not an adversarial containment
+tool. The auditor and the manager are both fallible, cooperative actors. When a
+machine agent fills either role, "fallible" covers many mistakes a human alone
+would rarely make: tidying worktrees it believes are stale, for example, or
+deleting a directory whose name says scratch. Isolation serves two purposes:
+
+- **The auditor's focus.** Everything that does not help answer the question
+  stays out of the auditor's ambient environment and is available only on a
+  need-to-know basis.
+- **The manager's focus.** Isolating the manager from the auditor routes their
+  exchange through Stewart's question types and its completion/response split.
+  The manager's attention then goes to which question would help, not to
+  whether the right bytes arrived.
+
+Judge each guard in this plan by whether it prevents ordinary mistakes and keeps
+the ambient environment need-to-know, not by its resistance to an attacker.
+The user will revise the documentation's framing separately. This work changes
+behavior and the facts the documentation states, not that framing.
 
 ## Why: evidence gathered on 2026-10-18
 
@@ -69,6 +92,29 @@ A linked maintainer worktree outside the main checkout was verified as an
 interim workaround. Its sessions survive `git clean -fdx` in the main checkout,
 and its prompt commits land on its own branch. This plan makes that workaround
 unnecessary.
+
+The actor model adds reasons for external checkouts:
+
+- An external checkout has no directories of the maintainer repository above
+  it. A harness that loads guidance from parent directories (Claude Code loads
+  `CLAUDE.md` that way outside safe mode) does not pick up the maintainer's
+  guidance during a non-qualified launch.
+- The manager's working tree no longer contains live auditor checkouts.
+
+Two observations shaped the later decisions:
+
+- **Ambient audit names (decision 7).** In the same throwaway repositories,
+  `git worktree list` named every audit's checkout path, for example
+  `…/ws-799a6d0e6cd4/q1/worktree`. The manual's sub-agent section records
+  rehearsals in which other audits' names reached auditors through ambient
+  context.
+- **Git's lock behavior (decision 8).** Verified with Git 2.54.0 on a locked
+  worktree:
+  - `git worktree remove` and `remove -f` refuse and print the lock reason;
+    only `-f -f` overrides.
+  - After the directory is deleted, `git worktree prune` keeps the locked
+    registration.
+  - `git worktree list --porcelain` shows the reason.
 
 ## Decisions (agreed)
 
@@ -105,6 +151,30 @@ unnecessary.
    `--manager-home` remain. All of Stewart's per-user state then shares a
    parent whose name does not suggest it is disposable.
 
+Decisions 7–9 were added after the actor-model review:
+
+7. **Checkout directories are keyed by session UUID.**
+   - The layout is `<checkout-home>/<repo-key>/<session-uuid>/`.
+   - Neighboring directories, and `git worktree list` run from any checkout,
+     then name no audit ID or workspace.
+   - Sessions keep readable `<slug>/<audit-id>` paths, because only the manager
+     sees them. The manager finds checkouts through `status`.
+8. **Auditor checkouts stay locked for their lifetime.**
+   - After registration, Stewart replaces the registration lock with a lifetime
+     lock. Its reason names the checkout as a Stewart auditor checkout and says
+     to run `stewart status` before removing it.
+   - `git worktree remove` without `-f -f` and `git worktree move` then refuse,
+     and `git worktree prune` keeps the registration and its role marker.
+   - Stewart never unlocks or removes a checkout. `status` prints the
+     unlock-and-remove commands for the manager to run.
+9. **The manager's write locations are surfaced.**
+   - Every custody-writing command writes `<common>/stewart`. `prepare`,
+     `recover-runtime` and experiment runs also write the checkout home, which
+     is outside the manager's working directory.
+   - `status` reports these locations for the repository.
+   - A permission failure under them refuses with a stable reason that names
+     the location the manager's harness must grant.
+
 ## Target layout
 
 ```
@@ -117,7 +187,7 @@ unnecessary.
                                            attempts/<name>/ (receipts, stdout, stderr),
                                            HARNESS-EXIT.txt, PREPARE-ERROR.json
 
-<checkout-home>/<repo-key>/<slug>/<audit-id>/      auditor- and process-facing
+<checkout-home>/<repo-key>/<session-uuid>/         auditor- and process-facing
   worktree/                                auditor read-write
   runtime/                                 auditor read-only
   runtime-recovered-<stamp>/
@@ -127,16 +197,25 @@ unnecessary.
 `<repo-key>` is a readable name plus `sha256_text(common_dir)[:12]`, the same
 pattern as the workspace slug. The name is the common directory's parent name
 when the common directory is a `.git` directory, and its own name for a bare
-common directory. One checkout home can serve several repositories.
+common directory. One checkout home can serve several repositories. Below the
+repository key, names are session UUIDs only (decision 7). The session record
+maps each UUID to its workspace and audit ID. Below, `<audit-dir>` means this
+per-audit checkout directory.
 
 ## Sequence
 
-### 0. Qualify the sandbox boundary first (gated: needs user approval)
+### 0. Qualify the sandbox boundary (needs user approval; not a gate)
 
-Session confidentiality would newly depend on `denyRead <common>/stewart`
-nesting inside `allowRead <common>` (`auditor_scope.py:58-80`). Today only the
-role registry depends on that nesting. Qualify it with the current code, since
-the registry already sits at that location.
+After the move, keeping sessions out of the auditor's reach depends on
+`denyRead <common>/stewart` nesting inside `allowRead <common>`
+(`auditor_scope.py:58-80`). Today only the role registry depends on that
+nesting. Under the actor model, the question is whether a fallible auditor
+could come across private material, not whether an attacker could reach it.
+Without the deny, `<common>/stewart` is still reachable only by an absolute
+path into Git internals that nothing in the auditor's context names. So steps
+1–8 proceed with today's settings shape, and this step runs whenever the user
+approves it. Qualify with the current code, since the registry already sits at
+that location.
 
 - Prepare a session in a throwaway repository with a `claude-code-restricted/1`
   launch profile. Also place a maintainer-written sentinel under
@@ -154,10 +233,15 @@ the registry already sits at that location.
   the digest of the settings JSON, the exact prompts and the outcomes.
 - **Outcome A, the deny holds:** keep the `<common>` read grant plus the
   `<common>/stewart` deny.
-- **Outcome B, the deny does not hold:** the registry is exposed today, so
-  report that to the user at once. In step 4, replace the `<common>` read grant
-  with an explicit list of the Git paths the auditor needs (objects, refs,
-  packed-refs, config, info, and its own `worktrees/<name>`), then requalify.
+- **Outcome B, the deny does not hold:** report it to the user as a
+  need-to-know gap.
+  - Try replacing the `<common>` read grant with an explicit list of the Git
+    paths the auditor needs (objects, refs, packed-refs, config, info, and its
+    own `worktrees/<name>`).
+  - Adopt that list only if a set of everyday commands all still work under
+    it: `log`, `show`, `diff`, `blame`, `grep` and `status`. A cooperative
+    auditor's ordinary Git use matters more than a perfect seal.
+  - Otherwise, keep the grant and document the gap.
 
 Only step 4's `<common>` read grant depends on this outcome.
 
@@ -171,7 +255,7 @@ Only step 4's `<common>` read grant depends on this outcome.
   assignment-facing paths; drop `sessions` from `Workspace.to_json` and remove
   the `.scratch` workspace refusal (`workspace.py:124`).
 - Resolve paths with `contained(common, "stewart/sessions/<slug>/<id>")` and
-  `contained(checkout_home, "<repo-key>/<slug>/<id>")`. `relative()` needs no
+  `contained(checkout_home, "<repo-key>/<session-uuid>")`. `relative()` needs no
   change, because these relative paths contain no `.git` component.
 - Create `<common>/stewart` with mode 0700 explicitly, because
   `mkdir(parents=True)` does not apply the mode to parents.
@@ -192,6 +276,10 @@ Only step 4's `<common>` read grant depends on this outcome.
 - Run `git worktree add --detach --lock …` into `<audit-dir>/worktree`
   (`prepare.py:124,177`). Place the runtime at `<audit-dir>/runtime`
   (`prepare.py:127`).
+- Decision 8: once the marker and role are published, replace the registration
+  lock with the lifetime lock (`prepare.py:182` unlocks today). Git cannot
+  change a lock's reason in place, so unlock and lock again immediately. The
+  published marker classifies the checkout during the brief unlocked window.
 - Bump `SESSION_SCHEMA` from 11 to 12, recording `checkout_home` and
   `audit_dir`.
 - Update the paths and wording in the rendered `LAUNCH.md`, the public handoff
@@ -206,6 +294,9 @@ Only step 4's `<common>` read grant depends on this outcome.
   used at `:137`). The new rule refuses a maintainer root inside the default
   checkout home or inside any registered auditor's checkout directory. The
   marker, registry and lock remain the primary mechanism.
+- `maintainer()` treats a lock reason that begins with `LOCK_PREFIX` as an
+  unfinished registration (`_repository.py:152-155`). Give the lifetime lock a
+  reason that cannot be mistaken for it, and keep the marker check first.
 - Bump `ROLE_SCHEMA` only if the registry row's fields change.
 
 ### 4. Auditor scope
@@ -219,7 +310,8 @@ Only step 4's `<common>` read grant depends on this outcome.
   children of the checkout directory, and neither lies under the maintainer
   repository, any registered worktree, the common directory, the manager home
   or the interpreter prefix.
-- Set the `<common>` read grant according to step 0's outcome.
+- Keep today's `<common>` read grant until step 0 reports, then change it only
+  as its outcome directs.
 - Test settings construction separately from real enforcement.
 
 ### 5. Recorded paths and experiments
@@ -235,31 +327,44 @@ Only step 4's `<common>` read grant depends on this outcome.
   `session/attempts/<name>` (`experiment.py:264,366`). Update the
   `output_area_policy` wording.
 
-### 6. Missing and foreign sessions
+### 6. Status and refusals the manager sees
 
-- When no session directory exists, have `status` consult the role registry and
-  `refs/stewart/sessions/*` for this workspace and audit ID. A registered
-  session whose records are missing gets a new stable reason, naming the UUID,
-  the registry row and the refs. Its next step is to preserve them and use a
-  fresh audit ID. Remove the "never prepared, prepare it" hint from that case.
-- Have `prepare` detect a registry row for the same session or checkout path
-  before constructing the scope. It then refuses with a stable reason, retained
-  paths and next steps, instead of the bare `auditor_scope` refusal. Give
-  `validate_scope` refusals next steps too.
-- Add the cross-maintainer refusal from decision 1.
+- **Missing session records.** When no session directory exists, have `status`
+  consult the role registry and `refs/stewart/sessions/*` for this workspace
+  and audit ID. A registered session whose records are missing gets a new
+  stable reason, naming the UUID, the registry row and the refs. Its next step
+  is to preserve them and use a fresh audit ID. Remove the "never prepared,
+  prepare it" hint from that case.
+- **Same-ID re-prepare.** Have `prepare` detect a registry row for the same
+  session path before constructing the scope. With UUID-keyed checkouts
+  (decision 7), the session path is where a same-ID re-prepare now collides. It
+  refuses with a stable reason, retained paths and next steps, instead of the
+  bare `auditor_scope` refusal. Give `validate_scope` refusals next steps too.
+- **Cross-maintainer refusal** from decision 1.
+- **Checkout removal (decision 8).** `status` prints the unlock-and-remove
+  commands as manager-run commands. Note that removing a checkout ends any
+  further auditor work in it, such as the resume of a paused hold.
+- **Manager write locations (decision 9).** `status` reports
+  `<common>/stewart` and the checkout home for this repository. Map a
+  permission failure under either to a stable reason that names the location
+  and the harness grant to add, instead of an unexplained `OSError`.
 - Reason identifiers are part of the JSON contract; assert them in tests.
 
 ### 7. Documentation and help
 
-Write help text and failure messages along with each code change. Then update:
+Write help text and failure messages along with each code change. Update the
+facts the documentation states. Do not rewrite its framing toward the actor
+model, which the user will revise separately. Then update:
 
 - **`src/stewart/resources/README.md`:**
   - Ownership.
   - Manager quick start, step 2: every custody-writing command (`prepare`,
     `launch`, `message`, `collect`, `triage`, `resume`, `recover-runtime`,
     experiment commands) now writes Git administration, so the manager's
-    harness needs write authorization for the common directory.
-  - The worktree-role and reserved-root paragraph.
+    harness needs write authorization for the common directory and the
+    checkout home. Point to `status` for the exact locations (decision 9).
+  - The worktree-role and reserved-root paragraph, including the lifetime
+    lock. Moving or removing a checkout now requires unlocking it first.
   - The ignore-rule paragraph: delete it.
   - The manager home paragraph.
   - Manual terminal launch and sub-agent launch grants.
@@ -314,6 +419,24 @@ measured property, and an invariance case:
   - `status` reports the new missing-records reason.
   - A same-ID `prepare` refuses with retained paths and next steps.
   - Control: a fresh ID succeeds.
+- **UUID-keyed checkouts.**
+  - Measured: neither the checkout path nor `git worktree list` run inside the
+    checkout contains the audit ID or the workspace name. Use distinctive
+    names that cannot occur in a UUID or digest.
+  - Control: the session path does contain both.
+- **The lifetime lock.**
+  - Measured: `git worktree remove` and `remove -f` refuse on an auditor
+    checkout. After its directory is deleted, `git worktree prune` keeps the
+    registration and role marker.
+  - Control: the same commands remove an unlocked plain worktree.
+  - Invariance: the auditor's ordinary Git commands in the checkout behave the
+    same.
+  - The lifetime lock is not reported as an unfinished registration.
+- **Manager write locations.**
+  - Measured: making the checkout home or `<common>/stewart` unwritable gives
+    the new stable reason, naming that location.
+  - Control: the writable case succeeds.
+  - `status` reports both locations.
 - **The experiment HOME** is under the checkout directory, and attempt receipts
   are in the session.
 - **Scope settings construction** for the new layout, including the step 0
@@ -334,11 +457,26 @@ effects on the repository only. This was verified on 2026-10-18 with a fresh
 `STEWART_MANAGER_HOME`; importing the package alone writes nothing. Decide
 separately whether the help should say so.
 
+The actor-model review also raised three points for the user's documentation
+and later design work. None is a storage-location change:
+
+- **Shared refs.** Linked worktrees share every ref. An auditor's `git log
+  --all` or `git branch -a` shows other audits' prompt commits (through
+  `refs/stewart/sessions/*`) and the maintainer's later work. Hiding these
+  needs a different checkout mechanism, such as a dedicated clone.
+- **The full manual in the handoff.** The auditor handoff points to the full
+  bundled custody manual (`prepare.py:317`), which is mostly manager
+  operations.
+- **A live report path in `status`.** `status` includes `live_report_path`
+  (`status.py:420`), which invites the manager to read the live worktree
+  rather than collected bytes.
+
 ## Completion
 
 Done when:
 
-- step 0's outcome is recorded here;
+- step 0's outcome is recorded here; if the user has not approved it by then,
+  record that it remains open and what its outcome would change;
 - steps 1–8 meet the contracts above;
 - the manual, help and tests carry those contracts;
 - full unfiltered checks pass on both interpreters, with the counts reported.
