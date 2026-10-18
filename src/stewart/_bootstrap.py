@@ -122,7 +122,7 @@ EXIT_UNVERIFIED = 3
 #: in the source to appear in exactly one of these two sets.
 UNVERIFIED_REASONS = frozenset({
     "archive_mismatch", "archive_unreadable", "attempt_schema", "binding_mismatch", "capture_unavailable",
-    "checkout_identity", "child_binding", "child_script_mismatch", "collection_binding", "collection_schema",
+    "checkout_identity", "child_binding", "close_unidentified", "close_unverified", "closing_record_invalid", "child_script_mismatch", "collection_binding", "collection_schema",
     "coordination_schema", "evidence_tampered", "evidence_unavailable", "exit_log_malformed",
     "frozen_unavailable", "input_mismatch", "launcher_mismatch", "package_binding", "package_schema",
     "pinned_input_changed",
@@ -139,7 +139,8 @@ UNVERIFIED_REASONS = frozenset({
 REFUSED_REASONS = frozenset({
     "actor_required", "already_resumed", "assignment_schema", "checkout_home", "manager_grant_missing",
     "session_other_maintainer", "assignment_sections", "attempt_unresolved",
-    "audit_id", "audit_id_format", "auditor_not_stopped", "auditor_scope", "auditor_worktree",
+    "audit_id", "audit_id_format", "audit_id_reserved", "checkout_changed", "close_attempt_unresolved",
+    "close_hold_outstanding", "close_incomplete", "close_not_concluded", "uncollected_changes", "auditor_not_stopped", "auditor_scope", "auditor_worktree",
     "byte_order_mark", "capture_selector", "checkout_commit", "checkout_detached", "checkout_git_file",
     "checkout_root", "child_argv", "child_layout", "collection_incomplete", "collection_not_found",
     "commit_format", "commit_id", "completion", "context_changed", "context_unavailable", "crlf",
@@ -162,7 +163,7 @@ REFUSED_REASONS = frozenset({
 #: Status problem reasons that describe a recorded, partial state awaiting a
 #: manager action rather than records that fail verification. Only a missing
 #: completion receipt supports these labels; any other problem is unverified.
-STATE_REASONS = frozenset({"attempt_unresolved", "collection_incomplete", "prepare_failed"})
+STATE_REASONS = frozenset({"attempt_unresolved", "close_incomplete", "collection_incomplete", "prepare_failed"})
 
 
 def exit_code_for(reason: str) -> int:
@@ -377,7 +378,8 @@ MANIFEST_SCHEMA = "stewart.runtime-manifest/1"
 OBSERVATION_SCHEMA = "stewart.runtime-observation/1"
 SOURCE_MODULES = frozenset({
     "__init__.py", "__main__.py", "_bootstrap.py", "_git.py", "_invocation.py", "_json.py",
-    "_repository.py", "_util.py", "api.py", "assignment.py", "auditor_scope.py", "captured.py", "cli.py", "collect.py",
+    "_repository.py", "_util.py", "api.py", "assignment.py", "auditor_scope.py", "captured.py", "cli.py", "close.py",
+    "collect.py",
     "coordination.py", "experiment.py", "handoff.py", "launch_profile.py", "ledger.py",
     "prepare.py", "report_declaration.py", "runtime.py", "session.py", "status.py", "triage.py",
     "verify_inputs.py", "workspace.py", "docs.py", "_version.py",

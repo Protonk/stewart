@@ -33,6 +33,8 @@ RETENTION_SCHEMA = "stewart.commit-retention/1"
 #: Private custody below the Git common directory.
 STORAGE = "stewart"
 SESSIONS = f"{STORAGE}/sessions"
+#: Closing records of retired audits; Stewart never removes them.
+CLOSED = f"{STORAGE}/closed"
 #: The per-user checkout home used when ``prepare`` names none.
 DEFAULT_CHECKOUT_HOME = ".local/state/stewart/checkouts"
 

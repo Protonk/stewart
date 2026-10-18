@@ -23,6 +23,7 @@ from stewart.launch_profile import EXIT_LOG, load_profile, render_command, rende
 from stewart.report_declaration import SCHEMA_VERSION as DECLARATION_SCHEMA
 from stewart.runtime import helper_argv, retain_runtime, select_runtime
 from stewart.auditor_scope import scope_for
+from stewart.close import require_fresh_audit_id
 from stewart._invocation import current
 from stewart.session import SESSION_SCHEMA, maintainer_state, now, tool_identity, write_receipt
 from stewart._repository import (
@@ -132,9 +133,13 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
                           prefix=prefix)
     home = checkout_home(home)
     session = session_location(common, ws, meta["audit_id"])
+    # Closing records first: an unfinished close names itself and its rerun.
+    require_fresh_audit_id(common, ws, meta["audit_id"])
     if session.exists():
         raise StewartError(f"session already exists: {session}; choose a fresh audit ID",
-                           reason="destination_exists", retained=[str(session)])
+                           reason="destination_exists", retained=[str(session)],
+                           next_steps=[f"status --audit-id {meta['audit_id']} shows it; a failed preparation can be "
+                                       f"retired with close --audit-id {meta['audit_id']} --abandon --reason TEXT"])
     registered_session(common, session)
     session_identity = str(uuid.uuid4())
     audit_dir = audit_location(home, common, session_identity)
@@ -238,8 +243,10 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
             next_steps=[
                 "inspect PREPARE-ERROR.json and preserve any partial worktree; no launch handoff was completed",
                 "correct the reported cause (Git administration writes may require harness authorization)",
-                "initialize a fresh audit ID, author and commit its prompt alone, then prepare it; "
-                "this session is retained and cannot be retried in place",
+                f"close --audit-id {meta['audit_id']} --abandon --reason TEXT retires this session; it releases "
+                "the audit ID for another prepare only when no handoff was written, nothing was launched or "
+                "collected and the checkout holds only preparation's footprint",
+                "otherwise initialize a fresh audit ID, author and commit its prompt alone, then prepare it",
                 "a recorded writer pause still needs explicit coordination; preparation failure releases no hold",
             ],
         ) from exc

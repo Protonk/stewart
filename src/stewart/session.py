@@ -48,6 +48,10 @@ LAUNCH_SCHEMA = 2
 MESSAGE_SCHEMA = 1
 
 MODES = ("snapshot", "paused")
+#: Preparation's stages in order; PREPARE-ERROR.json names the one that failed.
+#: Records a later stage writes were never written, not lost, when an earlier
+#: stage failed.
+PREPARE_STAGES = ("checkout_directory", "retention", "worktree", "role", "inputs", "runtime", "handoff")
 
 RECORD_NAME = re.compile(r"[0-9]{8}T[0-9]{6}-[a-f0-9]{8}")
 

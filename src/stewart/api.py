@@ -21,6 +21,7 @@ _EXPORTS = {
     "prompt_metadata": "stewart.assignment",
     "prepare": "stewart.prepare",
     "collect": "stewart.collect",
+    "close": "stewart.close",
     "inventory": "stewart.collect",
     "custody_gaps": "stewart.collect",
     "report_declaration": "stewart.report_declaration",

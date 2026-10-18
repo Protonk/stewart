@@ -56,8 +56,9 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Custody for managed audits: initialize an assignment, prepare a detached\n"
             "worktree, collect evidence, triage and retain it, release a paused hold,\n"
-            "and inspect a session.\n"
-            "Never launches an agent, runs project tests, commits, or deletes a worktree."
+            "inspect a session, and close a finished or abandoned audit.\n"
+            "Never launches an agent, runs project tests or commits; only close deletes,\n"
+            "and only what its session recorded."
         ),
         epilog=(
             question_help + "\n\n"
@@ -277,6 +278,37 @@ def build_parser() -> argparse.ArgumentParser:
     release_hold.add_argument("--triage", required=True, help="triage record name as printed by triage")
     release_hold.add_argument("--reason", required=True, help="triage result or cancellation reason; retained")
 
+    closing = commands.add_parser(
+        "close", help="[writes a closing record; removes the session, its checkout, refs and registry row] "
+                      "retire a finished or abandoned audit",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Retire one audit. Writes CLOSING.json under <git-common-dir>/stewart/closed/ before\n"
+                    "removing anything, then removes only what the session recorded: its checkout and\n"
+                    "runtimes, experiment homes, refs/stewart/sessions/<uuid>/*, its registry row and\n"
+                    "the session directory, and writes CLOSED.json. Closing records are never removed.\n"
+                    "Anything worth keeping beyond retained files goes through export first.\n\n"
+                    "Concluded (default): needs records that verify, a triage bound to a complete\n"
+                    "collection, no outstanding paused hold, no unresolved experiment attempt and a\n"
+                    "checkout unchanged since that collection. The audit ID stays reserved.\n\n"
+                    "--abandon --reason TEXT: any state, including records that do not verify. The ID\n"
+                    "is released only when preparation recorded its failure before writing either\n"
+                    "handoff, nothing was launched, recorded or collected, and the checkout holds only\n"
+                    "preparation's footprint; every doubt keeps it reserved.\n\n"
+                    "A rerun finishes an interrupted close from CLOSING.json's inventory.\n"
+                    "Closing a paused session releases no hold; tell the writers.\n\n"
+                    "Exit codes: 0 closed with nothing left; 1 removal stopped partway or left\n"
+                    "unrecorded entries (rerun or inspect); 2 refused; 3 records do not verify for a\n"
+                    "concluded close (abandon remains available).",
+    )
+    closing.add_argument("--audit-id", required=True)
+    closing.add_argument("--actor", required=True, help="who is closing the audit; recorded as the acknowledgment")
+    closing.add_argument("--abandon", action="store_true",
+                         help="close in any state; the closing record keeps the observed stage and problems")
+    closing.add_argument("--reason", help="with --abandon: why the audit is abandoned; required and recorded")
+    closing.add_argument("--discard-uncollected", action="store_true",
+                         help="with --abandon: remove checkout changes no collection captured; "
+                              "CLOSING.json lists their paths and digests")
+
     release = commands.add_parser(
         "release", help="[writes a session release record] freeze exact experiment artifacts within the grant",
         description="Record the manager's review and freeze the script, declarations, manifest and ledger "
@@ -411,6 +443,12 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
         from stewart.triage import resume
 
         return resume(ws, args.audit_id, triage=args.triage, reason=args.reason), EXIT_OK
+    if args.command == "close":
+        from stewart.close import close
+
+        result = close(ws, args.audit_id, actor=args.actor, abandon=args.abandon, reason=args.reason,
+                       discard_uncollected=args.discard_uncollected)
+        return result, result["exit_code"]
     if args.command == "release":
         from stewart.experiment import release
 
@@ -571,8 +609,23 @@ def render(command: str, result: dict) -> str:
     elif command == "resume":
         lines += [f"Resume recorded: {result['path']}",
                   "Tell the writers; the tool controls no process."]
+    elif command == "close":
+        lines += [("Close resumed" if result["resumed"] else "Closed") + f" ({result['mode']}): audit {result['audit_id']}",
+                  f"Closing record: {result['closing']}"]
+        lines.append(f"Removal record: {result['closed']}" if result["closed"]
+                     else "Close incomplete: a removal failed; rerun close to finish from the recorded inventory")
+        for item in result["results"]:
+            lines.append(f"  {item['outcome']}: {item['kind']} {item['item']}"
+                         + (f" ({item['detail']})" if item.get("detail") else ""))
+        for item in result["leftovers"]:
+            lines.append(f"Left in place (not recorded by this session): {item}")
+        lines.append(f"Audit ID {result['audit_id']}: " + ("released; it may be prepared again" if result["released"]
+                                                             else "reserved; a new audit needs a fresh ID"))
+        if result["hold_outstanding"]:
+            lines.append("This session's paused hold was never resumed and close releases none; tell the writers.")
     elif command == "status":
-        lines += _render_listing(result) if "sessions" in result else _render_status(result)
+        lines += (_render_listing(result) if "sessions" in result else
+                  _render_closed(result) if "audit_id_state" in result else _render_status(result))
     elif command == "release":
         lines += [
             f"Release recorded: {result['path']}",
@@ -630,6 +683,12 @@ def _render_attention(code: int, items: list[dict]) -> list[str]:
 def _render_listing(listing: dict) -> list[str]:
     lines = [f"Sessions of workspace {listing['workspace']['rel']}: {len(listing['sessions'])}"]
     for entry in listing["sessions"]:
+        if entry.get("closed") and "problem" not in entry:
+            lines.append(f"  {entry['audit_id']} [{entry['exit_code']}]: closed; audit ID {entry['audit_id_state']}")
+            for item in entry["closes"]:
+                lines.append(f"    {item['mode']} by {item['actor']} at {item['closed_at']}"
+                             + ("" if item["complete"] else " (close incomplete)"))
+            continue
         if "problem" in entry:
             lines.append(f"  {entry['audit_id']} [{entry['exit_code']}]: {entry['problem']['reason']}: "
                          f"{entry['problem']['message']}")
@@ -641,6 +700,43 @@ def _render_listing(listing: dict) -> list[str]:
     storage = listing["manager_storage"]
     lines.append(f"Manager write locations: {storage['private']}; checkout home {storage['checkout_home']}")
     return [*_render_attention(listing["exit_code"], []), *lines]
+
+
+def _render_close(item: dict) -> list[str]:
+    if "problem" in item:
+        return [f"  close {item['session_uuid']}: does not verify [{item['problem']['reason']}]: "
+                f"{item['problem']['message']}", f"    record: {item['path']}"]
+    lines = [f"  close {item['session_uuid']}: {item['mode']} by {item['actor']} at {item['closed_at']}"
+             + ("" if item["complete"] else "; INCOMPLETE")
+             + ("; audit ID released" if item["released"] else "")]
+    if item["reason"]:
+        lines.append(f"    reason (acknowledged): {item['reason']}")
+    if item["decision"]["value"]:
+        lines.append(f"    triage decision (attributed to {item['decision']['attributed_to']}): {item['decision']['value']}")
+    if item["auditor_completion"]["value"]:
+        lines.append(f"    auditor-declared completion (the auditor's claim): {item['auditor_completion']['value']}")
+    for retained in item["retained"]:
+        lines.append(f"    retained: {retained['path']} ({str(retained.get('sha256'))[:12]}…)")
+    for discarded in item["discarded"]:
+        lines.append(f"    discarded uncollected: {discarded['path']}")
+    for leftover in item["leftovers"]:
+        lines.append(f"    left in place: {leftover}")
+    lines.append(f"    record: {item['path']}")
+    return lines
+
+
+def _render_closed(view: dict) -> list[str]:
+    lines = [*_render_attention(view["exit_code"], view["attention"]),
+             f"Audit {view['audit_id']} in workspace {view['workspace']['rel']}: closed; "
+             f"audit ID {view['audit_id_state']}"]
+    for item in view["closes"]:
+        lines += _render_close(item)
+    if view["next_actions"]:
+        lines.append("Next actions:")
+    for action in view["next_actions"]:
+        lines.append(f"  {action['action']}: {_shell(action)}")
+        lines += [f"    requires: {item}" for item in action.get("prerequisites", [])]
+    return lines
 
 
 def _render_status(view: dict) -> list[str]:
@@ -658,6 +754,10 @@ def _render_status(view: dict) -> list[str]:
               f"Experiment: {view['experiment']['state']} (recorded phase, not a scientific conclusion)"]
     for problem in view["session"]["problems"]:
         lines.append(f"  problem [{problem['reason']}] {problem['record']}: {problem['message']}")
+    if view.get("closes"):
+        lines.append("Earlier closes under this audit ID:")
+        for item in view["closes"]:
+            lines += _render_close(item)
     if "pristine_runtime_available" in view["preparation"]:
         lines.append("Pristine runtime assets: " + ("verified" if view["preparation"]["pristine_runtime_available"] else "unavailable or invalid"))
         recovery = view["preparation"].get("runtime_recovery")

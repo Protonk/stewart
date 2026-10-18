@@ -9,6 +9,7 @@ failures: inspecting a broken session is itself a successful inspection.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from stewart import _util as _hash
@@ -25,6 +26,7 @@ from stewart.session import (
     COLLECTION_SCHEMA,
     LAUNCH_SCHEMA,
     MESSAGE_SCHEMA,
+    PREPARE_STAGES,
     RELEASE_SCHEMA,
     RETENTION_SCHEMA,
     TRIAGE_SCHEMA,
@@ -44,6 +46,7 @@ from stewart.triage import bound_disposition
 #: appears only when the supplied runtime fails verification.
 STATUS_SCHEMA = "stewart.status/12"
 LIST_SCHEMA = "stewart.status-list/1"
+CLOSED_VIEW_SCHEMA = "stewart.status-closed/1"
 
 
 def _problem(problems: list[dict], record: str, exc: StewartError) -> None:
@@ -324,8 +327,16 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
     went stale; the view names both so the departure is visible.
     """
     from stewart._repository import maintainer, registered_session
+    from stewart.close import close_summary, closing_entries
     common = maintainer(ws.repo)["common_dir"]
     session = session_dir(ws, ident)
+    closes = [close_summary(entry) for entry in closing_entries(common, ws, ident)]
+    # Closing records come first: a closed or closing session's removed
+    # records are the close's doing, not records that went missing. Every
+    # session under one ID shares its directory, and an incomplete close
+    # refuses any new preparation, so an incomplete close is this session's.
+    if closes and (not session.is_dir() or any(not item["complete"] and "problem" not in item for item in closes)):
+        return _closed_view(ws, ident, closes)
     if not session.is_dir():
         # A registry row for this path means the ID was prepared and its
         # records went missing: that refusal names the row and the refs.
@@ -371,6 +382,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
         "preparation": {"state": "unknown"},
         "experiment": {"state": "unknown"},
         "manager_storage": _manager_storage(common, None),
+        "closes": closes,
         "outstanding": [],
         "next_actions": [],
     }
@@ -451,17 +463,25 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
         private_matches = private_launch.get("sha256") == pinned_handoff
         public_matches = launch.get("sha256") == pinned_handoff
         runtime_preparation, pristine_available = None, False
-        try:
-            from stewart.captured import pristine_runtime
-            pristine_runtime(session, record)
-            pristine_available = True
-        except StewartError as exc:
-            _problem(problems, "runtime-pristine", exc)
-        try:
-            prepared_runtime = read_receipt(session / "RUNTIME-PREPARED.json", what="runtime preparation")
-            runtime_preparation = _runtime_view(session, prepared_runtime, {"preparation"}, problems, record)
-        except StewartError as exc:
-            _problem(problems, "RUNTIME-PREPARED.json", exc)
+        # A preparation that recorded its failure at or before the runtime
+        # stage may never have written the runtime records; their absence is
+        # that failure, not records that went missing. Anything present is
+        # still verified.
+        stage = failure.get("stage") if isinstance(failure, dict) else None
+        unreached = stage in PREPARE_STAGES[:PREPARE_STAGES.index("runtime") + 1]
+        if not (unreached and not os.path.lexists(session / "runtime-pristine")):
+            try:
+                from stewart.captured import pristine_runtime
+                pristine_runtime(session, record)
+                pristine_available = True
+            except StewartError as exc:
+                _problem(problems, "runtime-pristine", exc)
+        if not (unreached and not os.path.lexists(session / "RUNTIME-PREPARED.json")):
+            try:
+                prepared_runtime = read_receipt(session / "RUNTIME-PREPARED.json", what="runtime preparation")
+                runtime_preparation = _runtime_view(session, prepared_runtime, {"preparation"}, problems, record)
+            except StewartError as exc:
+                _problem(problems, "RUNTIME-PREPARED.json", exc)
         runtime_prepared = (runtime_preparation is not None and pristine_available
                             and runtime_preparation["observations"]["preparation"]["matches_expected"])
         # Historical custody is checked above. Starting another auditor also
@@ -608,6 +628,57 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
     return view
 
 
+def _closed_view(ws: Workspace, ident: str, closes: list[dict]) -> dict:
+    """An audit ID whose session a close retired or is retiring: its closing records, read only.
+
+    The view repeats the records' identity, acknowledgment and attributed
+    claims, and observes at read time whether recorded leftovers remain. It
+    passes no judgment on the audit.
+    """
+    view: dict = {"schema": CLOSED_VIEW_SCHEMA, "audit_id": ident, "workspace": ws.to_json(), "tool": tool_identity(),
+                  "closes": closes, "audit_id_state": "reserved", "next_actions": []}
+    items = _close_attention(closes)
+    if any(item["reason"] == "closing_record_invalid" for item in items):
+        view["audit_id_state"] = "unverified"
+    elif any(item["reason"] == "close_incomplete" for item in items):
+        view["audit_id_state"] = "close_incomplete"
+        view["next_actions"].append({
+            "action": "close",
+            "prerequisites": ["a rerun removes only what CLOSING.json recorded and writes CLOSED.json when done"],
+            **command(ws, "close", "--audit-id", ident, "--actor", "<name>"),
+        })
+    elif closes and all(item["released"] for item in closes):
+        view["audit_id_state"] = "released"
+        latest = closes[-1]
+        view["next_actions"].append({
+            "action": "prepare",
+            "prerequisites": ["correct the cause the abandoned preparation recorded",
+                              "any prompt commit that carries this assignment may be prepared"],
+            **command(ws, "prepare", "--prompt-commit", latest.get("prompt_commit") or "<prompt-commit>"),
+        })
+    view["attention"] = items
+    view["exit_code"] = combined_code(item["code"] for item in items)
+    return view
+
+
+def _close_attention(closes: list[dict]) -> list[dict]:
+    """Closing records are news when they do not verify (3), or a close is unfinished or left entries (1)."""
+    items = []
+    for item in closes:
+        source = f"close {item['session_uuid']}"
+        if "problem" in item:
+            items.append({"code": EXIT_UNVERIFIED, "source": source, "reason": "closing_record_invalid",
+                          "message": item["problem"]["message"]})
+        elif not item["complete"]:
+            items.append({"code": EXIT_ATTENTION, "source": source, "reason": "close_incomplete",
+                          "message": "a removal stopped partway; rerun close to finish from the recorded inventory"})
+        elif item["leftovers"]:
+            items.append({"code": EXIT_ATTENTION, "source": source, "reason": "close_leftovers",
+                          "message": "entries the session did not record remain in its checkout directory: "
+                                     + ", ".join(item["leftovers"])})
+    return items
+
+
 def _lock_view(worktree: Path) -> dict:
     """The auditor checkout's Git lock, observed; Stewart itself never unlocks it."""
     from stewart._repository import LIFETIME_LOCK, worktree_lock
@@ -695,15 +766,17 @@ def _attention(view: dict) -> list[dict]:
             f"the launch command's harness exited {exits[-1]['exit']} and no collection exists")
     if view["session"].get("same_build_as_viewer") is False:
         add(EXIT_ATTENTION, "session writer", "different_build", "a different Stewart build wrote this session")
+    items.extend(_close_attention(view["closes"]))
     return items
 
 
 def status_list(ws: Workspace) -> dict:
-    """Every session of this workspace across the repository, one entry each.
+    """Every session of this workspace across the repository, one entry each, then its closed audits.
 
     Sessions owned by another maintainer checkout are viewed through it. A
     registered session whose directory is missing is listed as records that
-    do not verify. The exit code is the highest of any entry's.
+    do not verify. A closed audit ID without a live session is listed from its
+    closing records. The exit code is the highest of any entry's.
     """
     from stewart._repository import _role_records, maintainer, session_location, workspace_sessions
     from stewart.workspace import Workspace as _Workspace
@@ -724,7 +797,23 @@ def status_list(ws: Workspace) -> dict:
         except StewartError as exc:
             entry.update(problem=exc.to_json(), exit_code=EXIT_UNVERIFIED)
         entries.append(entry)
-    listed = {entry["session"] for entry in entries}
+    from stewart._repository import CLOSED
+    live = {entry["audit_id"] for entry in entries}
+    closed_root = Path(common) / CLOSED / ws.slug
+    for directory in sorted(closed_root.iterdir()) if closed_root.is_dir() and not closed_root.is_symlink() else []:
+        if directory.name in live:
+            continue
+        try:
+            view = status(ws, directory.name)
+        except StewartError as exc:
+            entries.append({"audit_id": directory.name, "closed": True, "problem": exc.to_json(),
+                            "exit_code": EXIT_UNVERIFIED})
+            continue
+        entries.append({"audit_id": directory.name, "closed": True, "audit_id_state": view["audit_id_state"],
+                        "closes": [{key: item.get(key) for key in ("session_uuid", "mode", "actor", "closed_at",
+                                                                  "complete", "released")} for item in view["closes"]],
+                        "exit_code": view["exit_code"], "attention": view["attention"]})
+    listed = {entry["session"] for entry in entries if "session" in entry}
     prefix = str(Path(common) / "stewart/sessions" / ws.slug) + "/"
     for row in _role_records(common):
         if row["session"].startswith(prefix) and row["session"] not in listed and not Path(row["session"]).exists():
@@ -769,7 +858,8 @@ def _derive_actions(ws: Workspace, ident: str, view: dict, record: dict | None, 
     if preparation == "runtime_unavailable":
         outstanding.append("the current supplied runtime is unavailable or changed; preserve it and recover assets for a fresh assignment")
     if preparation in {"failed", "incomplete"}:
-        outstanding.append("preparation did not complete; preserve this session and prepare a fresh assignment")
+        outstanding.append("preparation did not complete; close --abandon retires this session and reports whether "
+                           "the audit ID is released for another prepare; otherwise prepare a fresh assignment")
         if not identities["worktree"]["exists"]:
             outstanding.append("no worktree exists for this incomplete preparation; no completed checkout is inferred")
         meta = record["assignment"]
@@ -789,10 +879,20 @@ def _derive_actions(ws: Workspace, ident: str, view: dict, record: dict | None, 
         for item in meta.get("external_sources", []):
             args += ["--source", item["url"], item["purpose"]]
         actions.append({
+            "action": "close",
+            "prerequisites": [
+                "inspect the retained preparation error or partial state first; close removes them",
+                "the ID is released only when preparation recorded its failure before writing either handoff, "
+                "nothing was launched, recorded or collected, and the checkout holds only preparation's footprint",
+            ],
+            **command(ws, "close", "--audit-id", ident, "--actor", "<name>", "--abandon", "--reason", "<reason>"),
+        })
+        actions.append({
             "action": "fresh_assignment",
             "retained": [view["session"]["path"], *([view["preparation"]["failure_path"]]
                          if view["preparation"].get("failure_path") else [])],
             "prerequisites": [
+                "only when close leaves this audit ID reserved; a released ID is prepared again instead",
                 "inspect the retained preparation error or partial state and correct its cause",
                 "choose a new audit ID; this command prints a draft and never repairs the failed session",
                 "re-author scope, scratch paths and any experiment grant; commit the replacement prompt alone before prepare",
@@ -955,3 +1055,19 @@ def _derive_actions(ws: Workspace, ident: str, view: dict, record: dict | None, 
                                   "author review JSON; release validates byte identities but not scientific merit"],
                 **command(ws, "release", "--audit-id", ident, "--review", "<review.json>", "--actor", "<name>"),
             })
+    hold_outstanding = coordination.get("mode") == "paused" and coordination.get("resumed") is None
+    unresolved = any(problem["reason"] == "attempt_unresolved" for attempt in view["attempts"]
+                     for problem in attempt["problems"])
+    names = {c["name"] for c in complete}
+    if (preparation not in {"failed", "incomplete"} and not hold_outstanding and not unresolved
+            and any(d.get("collection") in names for d in view["dispositions"] if not d["problems"])):
+        actions.append({
+            "action": "close",
+            "prerequisites": [
+                "the auditor has stopped; a checkout changed since the triaged collection is refused",
+                "retain reviewed bytes and export anything else worth keeping first; close removes the session, "
+                "its checkout, refs and registry row and keeps only the closing record",
+                "the audit ID stays reserved",
+            ],
+            **command(ws, "close", "--audit-id", ident, "--actor", "<name>"),
+        })

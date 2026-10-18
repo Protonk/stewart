@@ -260,7 +260,7 @@ def release(ws: Workspace, ident: str, *, review: dict, actor: str) -> dict:
                            reason="destination_exists", retained=[str(output)],
                            next_steps=["collect the worktree so the existing output area is captured, verify the "
                                        "attempt's retained copies, then move or remove that directory by hand; "
-                                       "Stewart never deletes it",
+                                       "only close removes it, with the whole checkout",
                                        "or assign a fresh audit ID whose grant names a new output area"])
     attempt_dir = session / "attempts" / name
     interpreter = _resolve_interpreter(ws, grant["interpreter"])

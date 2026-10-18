@@ -337,7 +337,10 @@ def initialize(
                 "auditor and maintainer guidance", reason="workspace_guidance",
             )
     from stewart._repository import maintainer, session_location
-    session = session_location(maintainer(repo)["common_dir"], ws, ident)
+    from stewart.close import require_fresh_audit_id
+    common = maintainer(repo)["common_dir"]
+    session = session_location(common, ws, ident)
+    require_fresh_audit_id(common, ws, ident)
     if session.exists() or contained(repo, meta["report_path"]).exists():
         raise StewartError(
             "session or report destination already exists; choose a fresh audit ID",
