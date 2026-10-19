@@ -426,8 +426,9 @@ def build_parser() -> argparse.ArgumentParser:
     closing.add_argument("--actor", help="who is closing; recorded as the acknowledgment (required unless --plan)")
     closing.add_argument("--plan", action="store_true",
                          help="print the closeout description (what would be removed, preserved and why) and write "
-                              "nothing. Exits with the refusal's code when a concluded close would refuse, 1 when a "
-                              "resource would stay blocked or missing, else 0")
+                              "nothing. It runs the close's own checks for the mode given (--abandon, "
+                              "--discard-uncollected, --collection) and exits with the refusal's code when that "
+                              "close would refuse, 1 when a resource would stay blocked or missing, else 0")
     closing.add_argument("--dispose", action="append", default=[], metavar="RID",
                          help="explicit decision to remove this recorded export or retained deliverable with the "
                               "retiring resource that contains it; recorded in the claim")
@@ -755,7 +756,9 @@ def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | Non
         from stewart.close import close, close_plan
 
         if args.plan:
-            planned = close_plan(ws, ident, lifetime=lifetime, abandon=args.abandon, dispose=args.dispose)
+            planned = close_plan(ws, ident, lifetime=lifetime, abandon=args.abandon,
+                                 discard_uncollected=args.discard_uncollected, collection=args.collection,
+                                 dispose=args.dispose)
             refusal = planned["audit"]["refusal"]
             # The code the close would earn now: its refusal's, or attention for a resource left blocked or missing.
             return planned, (refusal["exit_code"] if refusal else EXIT_ATTENTION

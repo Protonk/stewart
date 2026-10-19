@@ -228,11 +228,12 @@ def test_a_draft_record_that_does_not_verify_blocks_retirement_until_restored(ch
     # Another audit is registered in the maintainer checkout; its record pins nothing inside the directory.
     _assigned_prompt(checkout, REGISTERED)
     registration = Path(api.register(checkout.ws, REGISTERED, actor="manager")["path"])
-    assert _plan(cli, checkout.repo, WS, HOLDER)[rid]["disposition"] == "remove", "control: nothing doubts it"
+    assert _plan(cli, checkout.repo, WS, HOLDER, "--abandon")[rid]["disposition"] == "remove", \
+        "control: nothing doubts it"
 
     original = _rewrite(registration, b"not a registration record\n")
     # A record that does not verify may name any checkout as its own, wherever it is.
-    planned = _plan(cli, checkout.repo, WS, HOLDER, allowed=(EXIT_ATTENTION,))[rid]
+    planned = _plan(cli, checkout.repo, WS, HOLDER, "--abandon", allowed=(EXIT_ATTENTION,))[rid]
     doubt = f"records that cannot be read may use it: {registration}"
     assert planned["disposition"] == "blocked" and doubt in planned["reasons"]
     closed = _abandon(cli, checkout.repo, WS, HOLDER, allowed=(EXIT_ATTENTION,))

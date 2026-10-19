@@ -230,7 +230,10 @@ def test_continue_select_recover_and_retire_from_the_original_checkout(tmp_path,
     assert Path(prepared_outer["worktree"]).is_dir()
     resumed = stewart(*ref, "--request-key", "close-a", "--resume-request", "close", "--actor", "manager")["result"]
     assert resumed["closed"] and not Path(prepared_outer["worktree"]).exists()
-    left = {item["rid"]: item["disposition"] for item in stewart(*ref, "close", "--plan")["result"]["resources"]}
+    # The plan still accounts for what the closed audit leaves; closing it again would be refused.
+    leftover = stewart(*ref, "close", "--plan", allowed=(EXIT_REFUSED,))["result"]
+    assert leftover["audit"]["refusal"]["reason"] == "session_missing"
+    left = {item["rid"]: item["disposition"] for item in leftover["resources"]}
     assert left[worktree_rid] == "shared" and manager_tree.is_dir() and scratch_dir.is_dir()
 
     # Observation from another directory stays bound to its reference.

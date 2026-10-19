@@ -83,9 +83,20 @@ def _rids(common: Path) -> list[str]:
 
 
 def _claim_files(common: Path, rid: str) -> list[str]:
-    """Claim generations and their endings, without staging leftovers (none may remain)."""
+    """Claim generations and their endings, without staging leftovers (none may remain).
+
+    Removal attempt records (``<n>.ATTEMPT-<stamp>.json`` and their ``.FAILED.json``) are listed by
+    ``_attempt_files``; every removal writes one, so the generations are compared without them.
+    """
     claims = _records(common, rid) / "claims"
-    return sorted(os.listdir(claims)) if claims.is_dir() else []
+    return sorted(name for name in os.listdir(claims) if ".ATTEMPT-" not in name) if claims.is_dir() else []
+
+
+def _attempt_files(common: Path, rid: str, *, failed: bool = False) -> list[str]:
+    """The removal attempts recorded for a resource's claims, or with ``failed`` the failures beside them."""
+    claims = _records(common, rid) / "claims"
+    names = sorted(os.listdir(claims)) if claims.is_dir() else []
+    return [name for name in names if ".ATTEMPT-" in name and name.endswith(".FAILED.json") == failed]
 
 
 def _generations(common: Path, rid: str) -> dict[int, str | None]:
@@ -814,8 +825,10 @@ def test_an_active_claim_refuses_new_uses_and_resumes_the_same_generation(checko
         closed = api.close(checkout.ws, HOLDER, actor="manager", abandon=True, reason="resources done")
     assert failures == [tree_rid], "firing control: the removal failed once"
     assert _by_rid(closed["resources"])[tree_rid]["outcome"] == "failed" and closed["exit_code"] == EXIT_ATTENTION
-    attempts = [name for name in _claim_files(common, tree_rid) if name.startswith("0001.ATTEMPT-")]
-    assert len(attempts) == 1 and _claim_files(common, tree_rid) == sorted(["0001.json", *attempts])
+    # The attempt was recorded before removal began, and its failure beside it; the claim stays active.
+    attempts = _attempt_files(common, tree_rid)
+    assert len(attempts) == 1 and _claim_files(common, tree_rid) == ["0001.json"]
+    assert _attempt_files(common, tree_rid, failed=True) == [attempts[0].removesuffix(".json") + ".FAILED.json"]
     assert tree.is_dir()
     assert cli("--repo", checkout.repo, "resource", "show", "--resource", tree_rid,
                allowed=(EXIT_ATTENTION,))["result"]["disposition"] == "claimed"
@@ -840,8 +853,10 @@ def test_an_active_claim_refuses_new_uses_and_resumes_the_same_generation(checko
     assert [(item["rid"], item["outcome"], item["resumed"]) for item in resumed["results"]] == [
         (tree_rid, "removed", True)]
     assert not tree.exists()
-    # Invariance: the resumed retirement ends the same generation; no new claim was made.
-    assert _claim_files(common, tree_rid) == sorted(["0001.json", *attempts, "0001.RETIRED.json"])
+    # Invariance: the resumed retirement ends the same generation; no new claim was made. It recorded
+    # its own attempt before removing anything, beside the first attempt and its failure.
+    assert _claim_files(common, tree_rid) == ["0001.RETIRED.json", "0001.json"]
+    assert len(_attempt_files(common, tree_rid)) == 2 and attempts[0] in _attempt_files(common, tree_rid)
     assert bystander.is_dir()
 
 

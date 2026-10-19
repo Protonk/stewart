@@ -103,8 +103,10 @@ The custody rules are:
   registrations grant nothing. Freeze what the evaluation judged (identity,
   full inventory, HEAD or tip), never a later re-read. Revalidate frozen
   identities, contents and uses at use; release the claim
-  (`<n>.RELEASED.json`) rather than remove anything that changed. A container
-  retires only with everything recorded inside it. Remove through pinned
+  (`<n>.RELEASED.json`) rather than remove anything that changed. Record each
+  removal attempt before its first removal step. A container retires only with
+  everything recorded inside it, and a disposal decision never overrides
+  another audit's live use. Remove through pinned
   descriptors, only the recorded device and inode, never across filesystems,
   and never let Git delete contents; drop a worktree's administration only
   after its marker names the lifetime. Doubt about a use keeps the resource.
@@ -114,7 +116,8 @@ The custody rules are:
   later lifetime. Aliases stay explicit when ambiguous.
 - **Request keys bind intent; they never replay uncertainty.** Publish the
   exclusive binding before side effects, record planned outputs before the
-  first one and the outcome after; a matching key returns its record. A result
+  first one and the outcome after (plan a new record's identity before writing
+  it); a matching key returns its record. A result
   its operation does not call complete records no outcome. Resume only a
   partial request of a resumable operation, adopting only work its own attempts
   planned. Keep request records beyond retirement. Do not deduplicate unkeyed

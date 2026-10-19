@@ -20,7 +20,7 @@ import shutil
 import pytest
 
 from stewart import _removal, api
-from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK
+from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, StewartError
 import stewart.close as close_module
 import stewart.holdings as holdings
 import stewart_support as support
@@ -38,8 +38,13 @@ PARTNER = base.PARTNER
 
 
 def _plan(cli, repo: Path, ident: str, *, code: int) -> dict[str, dict]:
-    """The closeout plan by resource, asserting the exit code it earns (1 while any resource stays blocked)."""
-    plan = cli("--repo", repo, "--workspace", WS, "close", "--audit-id", ident, "--plan", allowed=(code,))["result"]
+    """The abandon's closeout plan by resource, asserting its exit code (1 while any resource stays blocked).
+
+    These audits exist only as resource contexts, so an abandon is the close they get; a concluded plan would
+    report the refusal (session_missing) that close raises for them.
+    """
+    plan = cli("--repo", repo, "--workspace", WS, "close", "--audit-id", ident, "--plan", "--abandon",
+               allowed=(code,))["result"]
     assert plan["schema"] == "stewart.closeout/1"
     return base._by_rid(plan["resources"])
 
@@ -63,7 +68,8 @@ def _outcomes(items: list[dict]) -> list[tuple[str, str]]:
 
 
 def _attempts(common: Path, rid: str) -> list[str]:
-    return [name for name in base._claim_files(common, rid) if name.startswith("0001.ATTEMPT-")]
+    """Removal attempts of the first claim generation, each recorded before its first removal step."""
+    return [name for name in base._attempt_files(common, rid) if name.startswith("0001.ATTEMPT-")]
 
 
 def _fill(directory: Path) -> None:
@@ -476,9 +482,12 @@ def test_an_interrupted_retirement_resumes_only_over_what_it_froze(checkout, tmp
         assert base._generations(common, rid) == {1: "RETIRED"}
         if admin is not None:
             assert not admin.exists() and str(target) not in base._worktrees(checkout.repo)
-    # Invariance: no new generation; the claim and its attempt record are as they were.
+    # Invariance: no new generation; the claim and the first attempt's records are as they were. A resumed
+    # removal records its own attempt before removing anything; a released claim attempts nothing.
     assert (base._records(common, rid) / "claims/0001.json").read_bytes() == claim_bytes
-    assert _attempts(common, rid) == attempts
+    after = _attempts(common, rid)
+    assert after == attempts if added else (len(after) == 2 and attempts[0] in after)
+    assert base._attempt_files(common, rid, failed=True) == [attempts[0].removesuffix(".json") + ".FAILED.json"]
 
 
 def test_a_worktree_retirement_interrupted_anywhere_never_retires_while_git_registers_it(checkout, tmp_path,
@@ -684,3 +693,171 @@ def test_another_filesystem_inside_a_resource_blocks_it_and_removal_never_enters
     assert (host / "mounted/keep.txt").read_text(encoding="utf-8") == "on another filesystem\n"
     # Control: with the real device, the same tree is removed whole.
     assert _removal.remove_path(host) == "removed" and not host.exists()
+
+
+# --- 10. a disposal decision never overrides another audit's live use (review finding R1) ------------------
+
+
+def _export_inside(checkout, ident: str, container: Path, durable: Path) -> tuple[str, str, dict]:
+    """A managed directory holding a recorded export, beside an export with a durable destination outside it."""
+    collected = api.collect(checkout.ws, ident, auditor_stopped="finished")
+    container_rid = api.create_directory(checkout.ws, ident, path=str(container), actor="manager")["rid"]
+    inside = api.export_evidence(checkout.ws, ident, collection=collected["collection"], selectors=["REPORT.md"],
+                                 output=str(container / "package"), actor="manager")
+    api.export_evidence(checkout.ws, ident, collection=collected["collection"], selectors=["REPORT.md"],
+                        output=str(durable), actor="manager")
+    return container_rid, inside["resource"], snapshot_tree(durable)
+
+
+@pytest.mark.parametrize("shared", [False, True])
+def test_a_disposed_export_another_live_audit_uses_keeps_its_container(checkout, tmp_path, run_cmd, shared):
+    work = tmp_path.resolve()
+    cli = base._cli(run_cmd, work)
+    common = base._common(checkout.repo)
+    ident = checkout.meta["audit_id"]
+    support.prepared_session(checkout)
+    container, durable = work / "container", work / "durable"
+    container_rid, export_rid, outside = _export_inside(checkout, ident, container, durable)
+    package = snapshot_tree(container / "package")
+    if shared:
+        api.associate(checkout.ws, PARTNER, rid=export_rid, actor="manager")
+    # Firing control: the export lies inside the container, and only when shared does another audit use it.
+    users = api.show_resource(checkout.repo, export_rid)["users"]
+    assert any(user["live"] and user["audit"]["audit_id"] == PARTNER for user in users) == shared
+
+    planned = base._by_rid(api.close_plan(checkout.ws, ident, abandon=True, dispose=[export_rid])["resources"])
+    closed = api.close(checkout.ws, ident, actor="manager", abandon=True, reason="done", dispose=[export_rid])
+    evaluation = base._by_rid(closed["closeout"])[container_rid]
+    if not shared:
+        # Differing only in the other audit's use: the recorded disposal decision removes both.
+        assert planned[container_rid]["disposition"] == "remove" and not container.exists()
+        assert base._generations(common, container_rid) == {1: "RETIRED"}
+        assert base._generations(common, export_rid) == {1: "RETIRED"}
+    else:
+        blocker = f"contained export {export_rid} is still used by {WS}:{PARTNER}"
+        for item in (planned[container_rid], evaluation):
+            assert item["disposition"] == "blocked" and blocker in " ".join(item["reasons"])
+        assert snapshot_tree(container / "package") == package
+        assert base._claim_files(common, container_rid) == [] == base._claim_files(common, export_rid)
+        records = snapshot_tree(base._records(common))
+        refused = _refused_close(cli, checkout.repo, container_rid)
+        assert refused["reason"] == "resource_blocked", "the disposal decision does not override the live use"
+        assert snapshot_tree(base._records(common)) == records
+        # Once the other audit's use ends, the same decision retires both under the explicit close.
+        base._abandon(cli, checkout.repo, WS, PARTNER)
+        retired = cli("--repo", checkout.repo, "close", "--actor", "manager", "--resource", container_rid,
+                      "--dispose", export_rid)["result"]
+        assert retired["results"][0]["outcome"] == "removed" and not container.exists()
+        assert base._generations(common, export_rid) == {1: "RETIRED"}
+    # Invariance: the export with a durable destination outside the container is untouched in every case.
+    assert snapshot_tree(durable) == outside
+
+
+def test_a_use_of_a_disposed_export_that_appears_after_the_claim_keeps_the_container(checkout, tmp_path,
+                                                                                    monkeypatch):
+    work = tmp_path.resolve()
+    common = base._common(checkout.repo)
+    ident = checkout.meta["audit_id"]
+    support.prepared_session(checkout)
+    container, durable = work / "container", work / "durable"
+    container_rid, export_rid, outside = _export_inside(checkout, ident, container, durable)
+    package = snapshot_tree(container / "package")
+    real_retire, real_refuse = holdings.retire_claim, holdings.refuse_retiring
+    seen: list[str] = []
+
+    def associate_then_retire(common_, view, claim):
+        if view["rid"] == container_rid and not seen:
+            # An association made now, inside a container being retired, is refused before it is recorded.
+            with pytest.raises(StewartError) as refused:
+                api.associate(checkout.ws, PARTNER, rid=export_rid, actor="manager")
+            seen.append(refused.value.reason)
+            # One that passed that check before the claim existed lands now; revalidation still sees it.
+            holdings.refuse_retiring = lambda *args, **kwargs: None
+            try:
+                api.associate(checkout.ws, PARTNER, rid=export_rid, actor="manager")
+            finally:
+                holdings.refuse_retiring = real_refuse
+        return real_retire(common_, view, claim)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(holdings, "retire_claim", associate_then_retire)
+        closed = api.close(checkout.ws, ident, actor="manager", abandon=True, reason="done", dispose=[export_rid])
+    # Firing control: the container was claimed, and the late association was refused, then forced through.
+    assert seen == ["resource_retiring"]
+    outcome = base._by_rid(closed["resources"])[container_rid]
+    assert outcome["outcome"] == "kept"
+    assert f"contained export {export_rid} is still used by" in " ".join(outcome["reasons"])
+    assert base._generations(common, container_rid) == {1: "RELEASED"} and _attempts(common, container_rid) == []
+    assert snapshot_tree(container / "package") == package and snapshot_tree(durable) == outside
+
+
+# --- 11. a killed remover resumes its own partial removal (review finding R2) ------------------------------
+
+
+class _KilledAfterFirstUnlink:
+    """Stands in for ``os`` inside ``_removal`` in a child process: the first unlink happens, then the process dies."""
+
+    def __getattr__(self, name):
+        return getattr(os, name)
+
+    def listdir(self, path):
+        return sorted(os.listdir(path))
+
+    def unlink(self, path, *, dir_fd=None):
+        os.unlink(path, dir_fd=dir_fd)
+        os._exit(73)
+
+
+@pytest.mark.parametrize("added", [False, True])
+@pytest.mark.parametrize("kind", ["directory", "worktree"])
+def test_a_removal_killed_after_its_first_unlink_resumes_over_what_it_froze(checkout, tmp_path, kind, added):
+    work = tmp_path.resolve()
+    common = base._common(checkout.repo)
+    target = work / "target"
+    if kind == "directory":
+        rid = api.create_directory(checkout.ws, HOLDER, path=str(target), actor="manager")["rid"]
+        _fill(target)
+        admin = None
+    else:
+        made = api.create_worktree(checkout.ws, HOLDER, path=str(target), actor="manager")
+        rid, admin = base._rid(made, "worktree"), Path(made["identity"]["git_admin"])
+    before = snapshot_tree(target)
+    sentinel = work / "untouched.txt"
+    sentinel.write_text("invariant\n", encoding="utf-8")
+    arguments = dict(actor="manager", abandon=True, reason="resources done", request_key="killed-close")
+
+    child = os.fork()
+    if child == 0:  # pragma: no cover - the child process ends at the first unlink, or with 74 if it never comes
+        try:
+            _removal.os = _KilledAfterFirstUnlink()
+            api.close(checkout.ws, HOLDER, **arguments)
+        finally:
+            os._exit(74)
+    _, status = os.waitpid(child, 0)
+    # Firing control: the process died right after one removal step, recording no failure of its own.
+    assert os.waitstatus_to_exitcode(status) == 73
+    remaining = snapshot_tree(target)
+    assert len(remaining) == len(before) - 1 and all(before[path] == digest for path, digest in remaining.items())
+    assert len(_attempts(common, rid)) == 1 and base._attempt_files(common, rid, failed=True) == []
+    assert base._generations(common, rid) == {1: None}
+    assert api.inspect_request(checkout.repo, "killed-close")["state"] == "partial"
+
+    late = target / "added-after-the-kill.txt"
+    if added:
+        late.write_text("not in the frozen inventory\n", encoding="utf-8")
+    resumed = api.close(checkout.ws, HOLDER, resume=True, **arguments)
+    [outcome] = resumed["resources"]
+    if added:
+        # Changed property: an entry the claim never froze ends the claim and keeps everything left.
+        assert outcome["outcome"] == "kept" and late.is_file()
+        assert base._generations(common, rid) == {1: "RELEASED"}
+        assert {path: digest for path, digest in snapshot_tree(target).items() if path != late.name} == remaining
+    else:
+        # The attempt record written before the first unlink makes the partial removal recognizably its own.
+        assert outcome["outcome"] == "removed" and not target.exists()
+        assert base._generations(common, rid) == {1: "RETIRED"}
+        assert resumed["request"]["state"] == "completed"
+        if admin is not None:
+            assert not admin.exists() and str(target) not in base._worktrees(checkout.repo)
+    # Invariance: nothing outside the frozen resource changed.
+    assert sentinel.read_text(encoding="utf-8") == "invariant\n"

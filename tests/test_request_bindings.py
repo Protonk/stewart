@@ -29,7 +29,7 @@ import time
 import pytest
 
 from stewart import api
-from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, EXIT_REFUSED
+from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, EXIT_REFUSED, StewartError
 from stewart.close import closed_location
 from stewart.workspace import workspace
 import stewart_support as support
@@ -597,13 +597,16 @@ def test_close_plan_exits_with_the_refusal_code_then_attention_for_blocked_or_mi
     concluded = plan(allowed=(EXIT_REFUSED,))
     assert concluded["audit"]["refusal"]["reason"] == "close_not_concluded"
     assert dispositions(concluded) == {gone_rid: "missing"}
-    # Changed property: an abandon would not refuse; the missing resource needs attention.
-    abandoned = plan("--abandon", allowed=(EXIT_ATTENTION,))
+    # An abandon runs its own checks: the uncollected report would make it refuse, as the abandon itself does.
+    unready = plan("--abandon", allowed=(EXIT_REFUSED,))
+    assert unready["audit"]["refusal"]["reason"] == "uncollected_changes"
+    # Changed property: an abandon that discards it would not refuse; the missing resource needs attention.
+    abandoned = plan("--abandon", "--discard-uncollected", allowed=(EXIT_ATTENTION,))
     assert abandoned["audit"]["refusal"] is None and dispositions(abandoned) == {gone_rid: "missing"}
     assert _records(checkout) == records, "plans write nothing"
 
     api.acknowledge(checkout.repo, gone_rid, actor="manager", note="removed by hand")
-    clean_abandon = plan("--abandon", allowed=(EXIT_OK,))
+    clean_abandon = plan("--abandon", "--discard-uncollected", allowed=(EXIT_OK,))
     assert dispositions(clean_abandon) == {gone_rid: "acknowledged"}
     assert plan(allowed=(EXIT_REFUSED,))["audit"]["refusal"]["reason"] == "close_not_concluded"
 
@@ -624,3 +627,98 @@ def test_close_plan_exits_with_the_refusal_code_then_attention_for_blocked_or_mi
     assert blocked["audit"]["refusal"] is None
     assert dispositions(blocked) == {gone_rid: "acknowledged", replaced_rid: "blocked"}
     assert _records(checkout) == records and replaced.is_dir(), "the plan wrote and removed nothing"
+
+
+# --- 11. a keyed creation plans its resource identity before writing it (review finding R3) ------------------
+
+
+@pytest.mark.parametrize("moment", ["before_allocation", "after_start_record"])
+def test_an_interrupted_keyed_creation_never_allocates_a_second_resource(checkout, monkeypatch, moment):
+    import stewart.holdings as holdings
+    common = str(_common(checkout))
+    target = (checkout.tmp / "managed-dir").resolve()
+    name = "_allocate" if moment == "before_allocation" else "_start"
+    real = getattr(holdings, name)
+
+    def interrupted(*args, **kwargs):
+        if moment == "after_start_record":
+            real(*args, **kwargs)
+        raise KeyboardInterrupt(f"synthetic interruption at {name}")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(holdings, name, interrupted)
+        with pytest.raises(KeyboardInterrupt):
+            api.create_directory(checkout.ws, IDENT, path=str(target), actor="manager", request_key="create-once")
+    view = api.inspect_request(checkout.repo, "create-once")
+    started = holdings.rids(common)
+    assert not target.exists()
+    if moment == "before_allocation":
+        # Control: nothing was planned or written, so the request is reserved and its retry runs once.
+        assert view["state"] == "reserved" and started == []
+        made = api.create_directory(checkout.ws, IDENT, path=str(target), actor="manager", request_key="create-once")
+        assert made["request"]["state"] == "completed" and holdings.rids(common) == [made["rid"]]
+        assert target.is_dir()
+        replay = api.create_directory(checkout.ws, IDENT, path=str(target), actor="manager",
+                                      request_key="create-once")
+        assert replay["replayed"] and holdings.rids(common) == [made["rid"]]
+        return
+    # Firing control: the start record exists, and the request planned that very identity before writing it.
+    (rid,) = started
+    assert (Path(holdings.load(common, rid)["path"]) / "CREATE.json").is_file()
+    assert view["state"] == "partial" and [item.get("resource") for item in view["outputs"]] == [rid]
+    records = snapshot_tree(_common(checkout) / "stewart")
+    # Measured: the same key never allocates another identity; the uncertainty is returned, never replayed.
+    for _ in range(2):
+        retry = api.create_directory(checkout.ws, IDENT, path=str(target), actor="manager",
+                                     request_key="create-once")
+        assert retry["schema"] == "stewart.request/1" and retry["state"] == "partial" and retry["replayed"]
+    assert holdings.rids(common) == [rid] and not target.exists()
+    assert snapshot_tree(_common(checkout) / "stewart") == records, "a replayed partial request writes nothing"
+
+
+# --- 12. a close plan runs the close's own checks (review finding R4) ------------------------------------------
+
+
+def _agree(checkout, ident: str, **mode) -> str | None:
+    """The plan's refusal for this close mode, asserted equal to the refusal the close itself raises.
+
+    Only refusing modes are closed here; a mode the plan accepts is returned None without closing.
+    """
+    records = snapshot_tree(_common(checkout) / "stewart")
+    planned = api.close_plan(checkout.ws, ident, **{key: value for key, value in mode.items() if key != "reason"})
+    assert snapshot_tree(_common(checkout) / "stewart") == records, "a plan writes nothing"
+    refusal = planned["audit"]["refusal"]
+    if refusal is None:
+        return None
+    with pytest.raises(StewartError) as raised:
+        api.close(checkout.ws, ident, actor="manager", **mode)
+    assert raised.value.reason == refusal["reason"], (refusal, raised.value)
+    assert raised.value.exit_code == refusal["exit_code"]
+    assert snapshot_tree(_common(checkout) / "stewart") == records, "the refused close writes nothing either"
+    return refusal["reason"]
+
+
+def test_a_close_plan_reports_the_refusal_its_close_raises(checkout):
+    # A draft-only audit: a concluded close refuses it; its abandon is planned without refusal.
+    draft = "draft-only-question"
+    api.create_directory(checkout.ws, draft, path=str((checkout.tmp / "draft-dir").resolve()), actor="manager")
+    assert _agree(checkout, draft) == "session_missing"
+    assert _agree(checkout, draft, abandon=True, reason="drafted only") is None
+
+    support.prepared_session(checkout)
+    # Firing control: the prepared checkout holds report bytes no collection captured.
+    assert _agree(checkout, IDENT, abandon=True, reason="stopping") == "uncollected_changes"
+    # Changed property: deciding to discard them, the abandon is planned without refusal.
+    assert _agree(checkout, IDENT, abandon=True, reason="stopping", discard_uncollected=True) is None
+    # A concluded close of the same session refuses until a complete collection is triaged.
+    assert _agree(checkout, IDENT) == "close_not_concluded"
+
+    collected = api.collect(checkout.ws, IDENT, auditor_stopped="finished")
+    # Invariance: once collected, the abandon is planned without refusal and the close itself proceeds.
+    assert _agree(checkout, IDENT, abandon=True, reason="stopping") is None
+    api.triage(checkout.ws, IDENT, collection=collected["collection"], response=response_for(collected),
+               actor="manager")
+    assert _agree(checkout, IDENT, collection="not-the-triaged-collection") == "action_stale"
+    assert _agree(checkout, IDENT) is None
+    closed = api.close(checkout.ws, IDENT, actor="manager")
+    assert closed["closed"] is not None and closed["exit_code"] == EXIT_OK

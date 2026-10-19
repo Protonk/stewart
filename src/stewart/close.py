@@ -854,43 +854,26 @@ def _known_audit(common: str, ws: Workspace, ident: str) -> bool:
     return any(closes <= set(item.get("closed_before") or []) for item in records)
 
 
-def _close(ws: Workspace, ident: str, *, actor: str, abandon: bool, reason: str | None, discard_uncollected: bool,
-           lifetime: str | None, dispose: list[str], collection: str | None, resume: bool, plan) -> dict:
-    from stewart._repository import _role_records, maintainer, private_storage, session_location
+def _resume_preflight(ws: Workspace, ident: str, entry: dict, lifetime: str | None) -> None:
+    """What refuses resuming an unfinished close: another lifetime, or another implementation."""
+    from stewart.implementation import require
+    if lifetime is not None and entry["session_uuid"] != lifetime:
+        raise StewartError(f"the unfinished close belongs to lifetime {entry['session_uuid']}, not {lifetime}",
+                           reason="reference_stale", retained=[entry["path"]])
+    # Resuming removal is a mutation: it runs under the implementation that planned it.
+    require(entry["closing"]["identity"].get("stewart"), record=Path(entry["path"]) / "CLOSING.json",
+            arguments=["--repo", str(ws.repo), "--workspace", ws.rel, "status", "--audit-id", ident])
+
+
+def _preflight(ws: Workspace, ident: str, *, common: str, session: Path, rows: list[dict], abandon: bool,
+               discard_uncollected: bool, lifetime: str | None, collection: str | None) -> dict:
+    """Every check a close makes before writing anything, and the observations its closing record keeps.
+
+    Read-only: ``close`` and ``close --plan`` share it, so a plan reports
+    exactly the refusal the close would raise now.
+    """
     from stewart.implementation import recorded_digest, require
-    from stewart.session import capture_receipt, mutable_session, now, owner_refusal, tool_identity
-    if not isinstance(actor, str) or not actor.strip():
-        raise StewartError("a close needs an attributed actor", reason="actor_required",
-                           next_steps=["rerun with --actor NAME naming who closes the audit"])
-    if abandon and (not isinstance(reason, str) or not reason.strip()):
-        raise StewartError("an abandon needs --reason naming why the audit is abandoned", reason="reason_required",
-                           next_steps=["rerun with --abandon --reason TEXT"])
-    if not abandon and (reason is not None or discard_uncollected):
-        raise StewartError("--reason and --discard-uncollected apply only with --abandon", reason="usage",
-                           next_steps=["add --abandon, or drop --reason and --discard-uncollected"])
-    common = maintainer(ws.repo)["common_dir"]
-    entries = closing_entries(common, ws, ident)
-    for entry in entries:
-        if not entry["complete"] and "problem" not in entry:
-            if lifetime is not None and entry["session_uuid"] != lifetime:
-                raise StewartError(f"the unfinished close belongs to lifetime {entry['session_uuid']}, not {lifetime}",
-                                   reason="reference_stale", retained=[entry["path"]])
-            # Resuming removal is a mutation: it runs under the implementation that planned it.
-            require(entry["closing"]["identity"].get("stewart"), record=Path(entry["path"]) / "CLOSING.json",
-                    arguments=["--repo", str(ws.repo), "--workspace", ws.rel, "status", "--audit-id", ident])
-            plan([{"kind": "closing", "path": str(Path(entry["path"]) / "CLOSED.json")}])
-            return _finish(ws.repo, common, Path(entry["path"]), entry["closing"], entry["closing_sha256"], resumed=True)
-    session = session_location(common, ws, ident)
-    rows = [row for row in _role_records(common) if row["session"] == str(session)]
-    if resume and not session.is_dir() and not rows:
-        from stewart.request_keys import planned
-        ours = {item.get("path") for item in planned() or [] if item.get("kind") == "closing"}
-        done = [entry for entry in entries if entry["complete"] and str(Path(entry["path"]) / "CLOSING.json") in ours
-                and (lifetime is None or entry["session_uuid"] == lifetime)]
-        if done:
-            # The close this request planned was finished by another invocation; report it as it stands,
-            # finishing only the resource claims that name it.
-            return _finished_result(done[-1], common)
+    from stewart.session import capture_receipt, mutable_session, owner_refusal
     # A session whose directory is gone can still be abandoned through the
     # registry row that names its checkout and refs, and an audit recorded only
     # as a draft or resource context through those records.
@@ -978,6 +961,45 @@ def _close(ws: Workspace, ident: str, *, actor: str, abandon: bool, reason: str 
         disposition = concluded.pop("disposition")
         observed.update(concluded)
         attributed.update(decision=disposition["decision"], decision_actor=disposition["actor"])
+    return {"record": record, "session_digest": session_digest, "facts": facts, "observed": observed,
+            "attributed": attributed}
+
+
+def _close(ws: Workspace, ident: str, *, actor: str, abandon: bool, reason: str | None, discard_uncollected: bool,
+           lifetime: str | None, dispose: list[str], collection: str | None, resume: bool, plan) -> dict:
+    from stewart._repository import _role_records, maintainer, private_storage, session_location
+    from stewart.session import capture_receipt, now, tool_identity
+    if not isinstance(actor, str) or not actor.strip():
+        raise StewartError("a close needs an attributed actor", reason="actor_required",
+                           next_steps=["rerun with --actor NAME naming who closes the audit"])
+    if abandon and (not isinstance(reason, str) or not reason.strip()):
+        raise StewartError("an abandon needs --reason naming why the audit is abandoned", reason="reason_required",
+                           next_steps=["rerun with --abandon --reason TEXT"])
+    if not abandon and (reason is not None or discard_uncollected):
+        raise StewartError("--reason and --discard-uncollected apply only with --abandon", reason="usage",
+                           next_steps=["add --abandon, or drop --reason and --discard-uncollected"])
+    common = maintainer(ws.repo)["common_dir"]
+    entries = closing_entries(common, ws, ident)
+    for entry in entries:
+        if not entry["complete"] and "problem" not in entry:
+            _resume_preflight(ws, ident, entry, lifetime)
+            plan([{"kind": "closing", "path": str(Path(entry["path"]) / "CLOSED.json")}])
+            return _finish(ws.repo, common, Path(entry["path"]), entry["closing"], entry["closing_sha256"], resumed=True)
+    session = session_location(common, ws, ident)
+    rows = [row for row in _role_records(common) if row["session"] == str(session)]
+    if resume and not session.is_dir() and not rows:
+        from stewart.request_keys import planned
+        ours = {item.get("path") for item in planned() or [] if item.get("kind") == "closing"}
+        done = [entry for entry in entries if entry["complete"] and str(Path(entry["path"]) / "CLOSING.json") in ours
+                and (lifetime is None or entry["session_uuid"] == lifetime)]
+        if done:
+            # The close this request planned was finished by another invocation; report it as it stands,
+            # finishing only the resource claims that name it.
+            return _finished_result(done[-1], common)
+    pre = _preflight(ws, ident, common=common, session=session, rows=rows, abandon=abandon,
+                     discard_uncollected=discard_uncollected, lifetime=lifetime, collection=collection)
+    record, session_digest, facts = pre["record"], pre["session_digest"], pre["facts"]
+    observed, attributed = pre["observed"], pre["attributed"]
     closing = {
         "schema": CLOSING_SCHEMA,
         "identity": {"session_uuid": facts["session_uuid"], "workspace": ws.rel, "slug": ws.slug, "audit_id": ident,
@@ -1160,18 +1182,19 @@ def _finish(repo: Path, common: str, directory: Path, closing: dict, closing_sha
 
 
 def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abandon: bool = False,
-               dispose: list[str] = ()) -> dict:
+               discard_uncollected: bool = False, collection: str | None = None, dispose: list[str] = ()) -> dict:
     """The closeout description: what close would remove, preserve or leave, and why; writes nothing.
 
     Audit closure (the session's own inventory), retirement of the working
     resources around it, and retention of historical evidence are reported
-    separately. A precondition a concluded close would refuse is reported, not
-    raised; nothing here claims a resource or records a decision.
+    separately. The close's own read-only preflight runs here, so the refusal
+    it would raise now (for either mode) is reported, not raised; nothing here
+    claims a resource or records a decision.
     """
     from stewart._repository import _role_records, maintainer, session_location
     from stewart.holdings import CLOSEOUT_SCHEMA, _closeout, presented
     from stewart.request_keys import request_summaries
-    from stewart.session import capture_receipt, mutable_session
+    from stewart.session import capture_receipt
     common = maintainer(ws.repo)["common_dir"]
     entries = closing_entries(common, ws, ident)
     session = session_location(common, ws, ident)
@@ -1183,24 +1206,22 @@ def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abando
     facts = _facts(session, record, rows, ws.repo, common)
     audit: dict = {"mode": "abandoned" if abandon else "concluded", "refusal": None, "removes": None}
     unfinished = [entry for entry in entries if not entry["complete"] and "problem" not in entry]
-    if unfinished:
-        audit.update(state="close_incomplete", removes=unfinished[-1]["closing"]["removal"],
-                     note="a rerun finishes this recorded inventory and never widens it")
-    elif session.is_dir() or rows:
-        audit["removes"] = _removal_inventory(session, facts, common)
-        audit["state"] = "live"
-        if not abandon:
-            try:
-                mutable_session(ws, ident, lifetime=lifetime)
-                notes = ws.scratch_prefix(ident) + "notes"
-                facts["notes"] = notes if notes in (facts["assignment"].get("scratch_paths") or []) else None
-                _concluded(_status_view(ws, ident), facts, session)
-            except StewartError as exc:
-                audit["refusal"] = {**exc.to_json(), "exit_code": exc.exit_code}
-    elif _known_audit(common, ws, ident):
-        audit.update(state="draft", note="only an abandon retires a draft; the audit ID stays reserved")
-    else:
-        audit["state"] = "closed" if entries else "absent"
+    try:
+        if unfinished:
+            audit.update(state="close_incomplete", removes=unfinished[-1]["closing"]["removal"],
+                         note="a rerun finishes this recorded inventory and never widens it")
+            _resume_preflight(ws, ident, unfinished[-1], lifetime)
+        else:
+            if session.is_dir() or rows:
+                audit.update(state="live", removes=_removal_inventory(session, facts, common))
+            elif _known_audit(common, ws, ident):
+                audit.update(state="draft", note="only an abandon retires a draft; the audit ID stays reserved")
+            else:
+                audit["state"] = "closed" if entries else "absent"
+            _preflight(ws, ident, common=common, session=session, rows=rows, abandon=abandon,
+                       discard_uncollected=discard_uncollected, lifetime=lifetime, collection=collection)
+    except StewartError as exc:
+        audit["refusal"] = {**exc.to_json(), "exit_code": exc.exit_code}
     uuid = facts["session_uuid"] or (unfinished[-1]["session_uuid"] if unfinished else None)
     resources = presented(_closeout(common, ws.slug, ident, lifetime=uuid, dispose=set(dispose),
                                     closing_name=uuid or "<the new closing record>"))

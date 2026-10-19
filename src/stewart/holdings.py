@@ -111,8 +111,13 @@ def _claims(directory: Path) -> list[dict]:
                     if value.get("claim_sha256") != digest:
                         raise StewartError(f"{ended.name} does not bind its claim", reason="resource_record_invalid")
                     entry.update(state=ending.lower(), ended=value)
-            entry["attempts"] = sorted(item for item in os.listdir(directory / "claims")
-                                       if item.startswith(f"{number}.ATTEMPT-"))
+            listed = os.listdir(directory / "claims")
+            # Each removal attempt records its start before its first removal step; a caught failure adds
+            # <attempt>.FAILED.json beside it.
+            entry["attempts"] = sorted(item for item in listed
+                                       if re.fullmatch(rf"{number}\.ATTEMPT-[^.]+\.json", item))
+            entry["failures"] = sorted(item for item in listed
+                                       if re.fullmatch(rf"{number}\.ATTEMPT-[^.]+\.FAILED\.json", item))
         except StewartError as exc:
             entry.update(state="invalid", problem={"reason": "resource_record_invalid", "message": str(exc)})
         claims.append(entry)
@@ -501,13 +506,21 @@ class Index:
 # --- creation, enrollment and association ----------------------------------------------------------------
 
 
-def _new(common: str) -> tuple[str, Path]:
-    from stewart._repository import private_directories, private_storage
+def _allocate(common: str) -> tuple[str, Path]:
+    """A new resource identity and its record location; nothing is written.
+
+    Callers plan the identity with the request before ``_materialize`` writes
+    anything, so an interrupted keyed creation is partial (its records may
+    exist) rather than reserved (and allocated again on retry).
+    """
     rid = str(_uuid.uuid4())
-    directory = location(common, rid)
+    return rid, location(common, rid)
+
+
+def _materialize(common: str, directory: Path) -> None:
+    from stewart._repository import private_directories, private_storage
     private_directories(private_storage(common), directory.parent)
     directory.mkdir(mode=0o700)
-    return rid, directory
 
 
 def _audit_context(ws, ident: str) -> tuple[str, dict]:
@@ -678,19 +691,20 @@ def _create_worktree(ws, ident, path, actor, branch, existing_branch, start, pla
             raise StewartError(f"branch {existing_branch} does not exist", reason="resource_missing")
     refuse_retiring(common, [target], what="a new worktree")
     created = []
-    branch_rid = None
+    branch_rid, branch_dir = _allocate(common) if branch is not None else (None, None)
+    rid, directory = _allocate(common)
+    plan([{"kind": "resource", "resource": item_rid, "path": str(item_dir / "CREATED.json")}
+          for item_rid, item_dir in ((branch_rid, branch_dir), (rid, directory)) if item_rid is not None])
     if branch is not None:
-        branch_rid, branch_dir = _new(common)
+        _materialize(common, branch_dir)
         branch_start = _start(common, branch_dir, branch_rid, "branch", context,
                               {"ref": f"refs/heads/{branch}", "commit": commit, "by": "worktree"}, actor)
         created.append((branch_rid, branch_dir, branch_start))
-    rid, directory = _new(common)
     intended = {"path": str(target), "start": commit, "branch_rid": branch_rid,
                 "branch": f"refs/heads/{branch}" if branch else None,
                 "borrowed_branch": f"refs/heads/{existing_branch}" if existing_branch else None}
+    _materialize(common, directory)
     started = _start(common, directory, rid, "worktree", context, intended, actor)
-    plan([{"kind": "resource", "resource": item[0], "path": str(item[1] / "CREATED.json")}
-          for item in [*created, (rid, directory, started)]])
     arguments = ["worktree", "add", "--lock", "--reason", f"{MANAGED_LOCK}{rid}: retire it with stewart close --resource"]
     arguments += (["-b", branch, str(target), commit] if branch else [str(target), existing_branch] if existing_branch
                   else ["--detach", str(target), commit])
@@ -745,10 +759,11 @@ def _create_branch(ws, ident, branch, actor, start, plan) -> dict:
     ref = f"refs/heads/{branch}"
     if _ref_tip(common, ref)[0] is not None:
         raise StewartError(f"branch {branch} already exists; enroll it instead", reason="destination_exists")
-    rid, directory = _new(common)
+    rid, directory = _allocate(common)
+    plan([{"kind": "resource", "resource": rid, "path": str(directory / "CREATED.json")}])
+    _materialize(common, directory)
     started = _start(common, directory, rid, "branch", context, {"ref": ref, "commit": commit, "by": "create-branch"},
                      actor)
-    plan([{"kind": "resource", "resource": rid, "path": str(directory / "CREATED.json")}])
     try:
         create_refs(Path(common), {ref: commit})
         identity, error = {"ref": ref, "commit": commit, "created_commit": commit}, None
@@ -776,9 +791,10 @@ def _create_directory(ws, ident, path, actor, plan) -> dict:
     common, context = _audit_context(ws, ident)
     _placement(common, target, kind="directory")
     refuse_retiring(common, [target], what="a new directory")
-    rid, directory = _new(common)
-    started = _start(common, directory, rid, "directory", context, {"path": str(target)}, actor)
+    rid, directory = _allocate(common)
     plan([{"kind": "resource", "resource": rid, "path": str(directory / "CREATED.json")}])
+    _materialize(common, directory)
+    started = _start(common, directory, rid, "directory", context, {"path": str(target)}, actor)
     try:
         with _removal.pinned(target.parent) as parent:
             os.mkdir(target.name, mode=0o700, dir_fd=parent)
@@ -813,10 +829,11 @@ def record_output(ws, ident: str, *, kind: str, actor: str | None, identity_for,
         session = record.get("session_uuid")
     except StewartError:
         session = None
-    rid, directory = _new(common)
+    rid, directory = _allocate(common)
+    plan([*plan_outputs, {"kind": "resource", "resource": rid, "path": str(directory / "CREATED.json")}])
+    _materialize(common, directory)
     started = _start(common, directory, rid, kind, context(common, ws, ident, session),
                      {"by": kind, "intended": plan_outputs}, actor)
-    plan([*plan_outputs, {"kind": "resource", "resource": rid, "path": str(directory / "CREATED.json")}])
     try:
         result = perform()
     except BaseException as exc:
@@ -870,8 +887,9 @@ def _enroll(ws, ident, kind, actor, path, branch, note, plan) -> dict:
     else:
         raise StewartError("enroll a worktree, branch or directory", reason="usage")
     refuse_retiring(common, [identity["path"]] if "path" in identity else [], what="an enrollment")
-    rid, directory = _new(common)
+    rid, directory = _allocate(common)
     plan([{"kind": "resource", "resource": rid, "path": str(directory / "ENROLLED.json")}])
+    _materialize(common, directory)
     _record(directory, "ENROLLED.json", {
         "schema": RESOURCE_SCHEMA, "rid": rid, "kind": kind, "origin": "enrolled", "recorded_at": now().isoformat(),
         "context": context, "identity": identity, "actor": actor, "note": note, "stewart": tool_identity(),
@@ -897,6 +915,10 @@ def _associate(ws, ident, rid, actor, plan) -> dict:
             any(claim["state"] == "retired" for claim in view["claims"]):
         raise StewartError(f"resource {rid} is retiring or retired; it can take no new use",
                            reason="resource_retiring", retained=[view["path"]])
+    # A resource inside one that a claim is retiring (an export in a claimed directory) takes no new use either.
+    identity = view.get("identity") or {}
+    refuse_retiring(common, [identity["path"]] if isinstance(identity.get("path"), str) else
+                    [item["path"] for item in identity.get("files") or []], what="an association")
     directory = Path(view["path"]) / "associations"
     directory.mkdir(mode=0o700, exist_ok=True)
     name = stamp()
@@ -1010,8 +1032,29 @@ def _contained(common: str, rid: str, path: str) -> list[dict]:
             [item["path"] for item in identity.get("files") or []]
         if any(_inside(item, path) for item in locations):
             found.append({"rid": other, "kind": inner.get("kind"), "identity": identity, "locations": locations,
-                          "origin": inner.get("origin")})
+                          "origin": inner.get("origin"), "view": inner})
     return found
+
+
+def _dependency_blockers(inner: dict, index: Index, ending) -> list[str]:
+    """Why a recorded export or retained deliverable cannot be removed with its container.
+
+    A disposal decision or a container's retirement never overrides another
+    audit's live use, a claim in progress, or records that do not verify.
+    """
+    view = inner["view"]
+    what = f"{inner['kind']} {inner['rid']}"
+    if view["problems"]:
+        return [f"contained {what} has records that do not verify: "
+                + "; ".join(item["message"] for item in view["problems"])]
+    if any(claim["state"] == "active" for claim in view["claims"]):
+        return [f"contained {what} is being retired under its own claim"]
+    live = [user for user in index.users(view) if user["live"] and not (ending and ending(user["context"]))]
+    if live:
+        return [f"contained {what} is still used by " + "; ".join(
+            f"{user['audit']['workspace']}:{user['audit']['audit_id']} ({user['source']}, {user['state']})"
+            for user in live)]
+    return []
 
 
 def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set[str] = frozenset(),
@@ -1096,13 +1139,22 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
             reasons.append("other checkouts are registered inside it: " + ", ".join(foreign))
         for inner in _contained(common, rid, path):
             if inner["rid"] in dispose and inner["kind"] in ("export", "retained"):
-                disposed.append({key: inner[key] for key in ("rid", "kind", "identity", "locations")})
+                blockers = _dependency_blockers(inner, index, ending)
+                if blockers:
+                    reasons += blockers
+                else:
+                    disposed.append({key: inner[key] for key in ("rid", "kind", "identity", "locations")})
             elif inner["rid"] in inventory:
                 # Retired before this container (deepest first); its entries may be gone when this one retires.
                 inside.append({"rid": inner["rid"], "kind": inner["kind"], "locations": inner["locations"]})
             elif inner["kind"] == "retained" and view.get("kind") == "worktree":
-                # Committed, unchanged files are history (status decides); they retire with their container.
-                contained.append({key: inner[key] for key in ("rid", "kind", "identity")})
+                # Committed, unchanged files are history (status decides); they retire with their container,
+                # unless another audit still uses them.
+                blockers = _dependency_blockers(inner, index, ending)
+                if blockers:
+                    reasons += blockers
+                else:
+                    contained.append({key: inner[key] for key in ("rid", "kind", "identity")})
             elif inner["kind"] in ("export", "retained"):
                 reasons.append(f"it contains recorded {inner['kind']} {inner['rid']}; give it a durable destination "
                                f"or decide its disposal with --dispose {inner['rid']}")
@@ -1163,6 +1215,12 @@ def _inventory_paths(common: str, inventory: set[str]) -> set[str]:
         if view.get("kind") == "worktree" and isinstance((view.get("identity") or {}).get("path"), str):
             paths.add(view["identity"]["path"])
     return paths
+
+
+def _regular(path: Path) -> bool:
+    """Whether ``path`` is a regular file reached through real directories, without following a link."""
+    info, _ = read_regular(path)
+    return info["kind"] == "file"
 
 
 def _worktree_head(path: Path) -> str | None:
@@ -1321,8 +1379,10 @@ def _differences(root: Path, current: list[dict], frozen: list[dict], *, removab
 def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]:
     """Why the claimed resource no longer matches its frozen state or freedom from use; empty when it does.
 
-    A claim that already began removing (it has attempt records) accepts
-    contents that only lost entries; anything added or changed is kept.
+    A claim that already began removing (it has an attempt record, written
+    before the first removal step) accepts contents that only lost entries;
+    anything added or changed is kept. A worktree whose ``.git`` file remains
+    must still be at its frozen HEAD.
     """
     document = claim["claim"]
     frozen = document["frozen"]
@@ -1374,6 +1434,12 @@ def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]
             inner = [item["rid"] for item in _contained(common, view["rid"], str(path)) if item["rid"] not in allowed]
             if inner:
                 findings.append("it still holds recorded resources: " + ", ".join(inner))
+            if kind == "worktree" and started and _regular(path / ".git"):
+                # A partially removed worktree with its gitfile can still report a moved HEAD; without the
+                # gitfile, Git would search the parent directories instead, so nothing is asked.
+                head = _worktree_head(path)
+                if head is not None and head != frozen.get("head"):
+                    findings.append("its HEAD moved after the claim was frozen")
             if kind == "worktree" and not started:
                 if _worktree_head(path) != frozen.get("head"):
                     findings.append("its HEAD moved after the claim was frozen")
@@ -1392,6 +1458,14 @@ def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]
         holders = [item["worktree"] for item in _registrations(common) if item.get("branch") == identity["ref"]]
         if holders:
             findings.append("checked out by " + ", ".join(holders))
+    for item in [*document.get("disposed", []), *document.get("contained", [])]:
+        try:
+            inner_view = load(common, item["rid"])
+        except StewartError as exc:
+            findings.append(f"dependency {item['rid']} cannot be read: {exc}")
+            continue
+        # Uses of a dependency are revalidated like the container's own: the closing audit's have ended.
+        findings += _dependency_blockers({"rid": item["rid"], "kind": item["kind"], "view": inner_view}, index, None)
     for item in document.get("disposed", []):
         inner = item.get("identity") or {}
         if item["kind"] == "export":
@@ -1454,6 +1528,16 @@ def retire_claim(common: str, view: dict, claim: dict) -> dict:
         return {"rid": view["rid"], "kind": view["kind"], "outcome": "kept", "reasons": findings}
     frozen = claim["claim"]["frozen"]
     identity = frozen["identity"]
+    if view["kind"] not in TEMPORARY:
+        raise StewartError(f"a {view['kind']} is retained, not removed", reason="resource_not_managed",
+                           retained=[view["path"]])
+    # Recorded before the first removal step, so a resumption after any interruption, a killed process
+    # included, recognizes a partial removal as this claim's own.
+    attempt = Path(claim["path"]).with_name(f"{claim['number']:04d}.ATTEMPT-{stamp()}.json")
+    write_receipt(attempt, {"schema": ENDED_SCHEMA, "claim_sha256": claim["sha256"], "ending": "attempt",
+                            "phase": "started", "recorded_at": now().isoformat(), "stewart": tool_identity(),
+                            "note": "written before the first removal step; it does not establish that any "
+                                    "removal happened"})
     try:
         if view["kind"] == "worktree":
             outcome = _remove_worktree(common, view["rid"], frozen)
@@ -1461,18 +1545,18 @@ def retire_claim(common: str, view: dict, claim: dict) -> dict:
             recorded = (frozen.get("snapshot") or {}).get("identity") or {}
             outcome = _removal.remove_path(Path(identity["path"]),
                                            identity=(recorded["dev"], recorded["ino"]) if recorded else None)
-        elif view["kind"] == "branch":
+        else:
             if _ref_tip(common, identity["ref"])[0] is None:
                 outcome = "absent"
             else:
                 _git_common(common, "update-ref", "--no-deref", "-d", identity["ref"], frozen["tip"])
                 outcome = "removed"
-        else:
-            raise StewartError(f"a {view['kind']} is retained, not removed", reason="resource_not_managed")
     except (OSError, StewartError, _removal.Substituted, _removal.Replaced) as exc:
-        write_receipt(Path(claim["path"]).with_name(f"{claim['number']:04d}.ATTEMPT-{stamp()}.json"),
-                      {"schema": ENDED_SCHEMA, "claim_sha256": claim["sha256"], "ending": "attempt",
-                       "recorded_at": now().isoformat(), "error": str(exc), "stewart": tool_identity()})
+        _, attempt_digest = _read(attempt, "removal attempt")
+        write_receipt(attempt.with_name(attempt.name.removesuffix(".json") + ".FAILED.json"),
+                      {"schema": ENDED_SCHEMA, "claim_sha256": claim["sha256"], "attempt_sha256": attempt_digest,
+                       "ending": "attempt", "phase": "failed", "recorded_at": now().isoformat(), "error": str(exc),
+                       "stewart": tool_identity()})
         return {"rid": view["rid"], "kind": view["kind"], "outcome": "failed", "detail": str(exc)}
     results = [{"rid": view["rid"], "kind": view["kind"], "outcome": outcome}]
     head = frozen.get("head")
@@ -1674,7 +1758,7 @@ def show(repo: Path, rid: str) -> dict:
     return {"schema": "stewart.resource-view/1", "rid": rid, "kind": view.get("kind"), "origin": view.get("origin"),
             "creation": view.get("creation"), "identity": view.get("identity"), "context": view.get("context"),
             "associations": view["associations"], "claims": [{key: claim.get(key) for key in
-                                                              ("number", "path", "state", "attempts")}
+                                                              ("number", "path", "state", "attempts", "failures")}
                                                              for claim in view["claims"]],
             "acknowledged": _acknowledgment_view(view, common), "observation": evaluation.get("observation"),
             "users": evaluation.get("users", []), "disposition": evaluation["disposition"],

@@ -1304,7 +1304,10 @@ Managed creation is the only route to removal eligibility. `create-worktree`
 borrow one, or neither for a detached worktree), `create-branch` and
 `create-directory` record `CREATE.json` (the audit context and intended
 identity) before any side effect and `CREATED.json` (the observed identity, or
-the failure) after. An interrupted creation leaves a start record without an
+the failure) after. Under a request key, the resource identity is planned with
+the request before anything is written for it, so an interrupted keyed creation
+is `partial` (inspect it) rather than `reserved`, and a retry never allocates a
+second resource for the same key. An interrupted creation leaves a start record without an
 outcome, and a failed one records its failure: either is reported with what is
 observed at its intended location, and grants nothing over whatever is found
 there. Remove what is there by hand if it is not wanted, then acknowledge it. A
@@ -1343,9 +1346,14 @@ records, uses and disposition; `discover` lists them all.
 ```
 
 `close --plan` prints the closeout description (`stewart.closeout/1`) and
-writes nothing. It exits with the refusal's code when a concluded close would
-refuse, 1 when a resource would stay blocked or missing, and 0 otherwise. It separates audit closure (the session's own inventory and any
-precondition a concluded close would refuse), the retirement of working
+writes nothing. It runs the close's own read-only checks for the mode given
+(`--abandon`, `--discard-uncollected`, `--collection`, `--lifetime`), so the
+refusal it reports is the one that close would raise now: a concluded close of
+a draft or closed audit (`session_missing`), an abandon over uncollected changes
+(`uncollected_changes`), a concluded close before triage. It exits with that
+refusal's code, 1 when a resource would stay blocked or missing, and 0
+otherwise. It separates audit closure (the session's own inventory and the
+refusal, if any), the retirement of working
 resources around it, and retained historical evidence (closing records, request
 records, retained deliverables). Each resource the audit uses is `remove`
 (proposed), `shared` (named live users), `manual` (enrolled), `retained`,
@@ -1374,7 +1382,12 @@ first attempt made; anything else is left for `close --resource`):
   inside is retired first (deepest first), a recorded export or retained
   deliverable inside needs a durable destination or a `--dispose` decision
   (a retained file committed in a retiring worktree is history and retires with
-  it), and the running Stewart package or interpreter is not inside it.
+  it), and the running Stewart package or interpreter is not inside it;
+- a disposed or contained export or retained deliverable has no other live use,
+  no claim of its own in progress and records that verify: a disposal decision
+  never overrides another audit's use. This is checked when the close evaluates
+  and again at use, and associating a resource that lies inside one being
+  retired is refused (`resource_retiring`).
 
 The set that retires together is found by elimination: every managed temporary
 resource starts in it, and one that is not removable alongside the rest leaves
@@ -1401,9 +1414,12 @@ following links, removes only the directory with the frozen device and inode,
 never crosses into another filesystem, lets Git delete no contents, removes a
 worktree's marker-verified administration by descriptor, and deletes a branch
 only if it still points at the frozen tip. Git runs from the common directory,
-so a close can retire the manager worktree it was run against. Success writes
-`<n>.RETIRED.json`; a failed removal writes `<n>.ATTEMPT-<stamp>.json` and
-keeps the claim active (a keyed close then stays `partial`). The audit close
+so a close can retire the manager worktree it was run against. Every removal
+attempt first writes `<n>.ATTEMPT-<stamp>.json`, before its first removal step,
+so a retirement interrupted anywhere, a killed process included, resumes as its
+own partial removal. Success writes `<n>.RETIRED.json`; a caught failure adds
+`<n>.ATTEMPT-<stamp>.FAILED.json` and keeps the claim active (a keyed close then
+stays `partial`). The audit close
 completes once its session items are gone; a resource left blocked or missing
 makes its exit 1.
 
@@ -1789,7 +1805,7 @@ closing records under `<git-common-dir>/stewart/closed/`.
 | `resources/<id>/CREATE.json`, `CREATED.json` (`stewart.resource/1`, `stewart.resource-outcome/1`) | A managed resource's audit context, intended identity and intended disposition (`temporary`, or `retained` for exports and retained deliverables), recorded before its side effects, and the observed identity or failure after. A Stewart-recorded creation is necessary for removal eligibility, never sufficient. |
 | `resources/<id>/ENROLLED.json` | An externally created resource's observed identity and enrollment acknowledgment, with disposition `manual`; never removal-eligible. |
 | `resources/<id>/associations/<name>.json` | An audit context that uses the resource; the use ends with that lifetime's closing record. |
-| `resources/<id>/claims/<n>.json`, `<n>.RETIRED.json`, `<n>.RELEASED.json`, `<n>.ATTEMPT-<stamp>.json` | The exclusive claim of one close (frozen identity, complete contents inventory, HEAD or tip, disposal decisions, writer stamp), and how it ended: retired, released with the observation that kept the resource, or a failed removal that leaves the claim active. |
+| `resources/<id>/claims/<n>.json`, `<n>.RETIRED.json`, `<n>.RELEASED.json`, `<n>.ATTEMPT-<stamp>.json`, `<n>.ATTEMPT-<stamp>.FAILED.json` | The exclusive claim of one close (frozen identity, complete contents inventory, HEAD or tip, disposal decisions, writer stamp), and how it ended: retired, or released with the observation that kept the resource. Each removal attempt is recorded before its first removal step; a caught failure is recorded beside it and leaves the claim active. |
 | `resources/<id>/ACKNOWLEDGED.json` | The manager's acknowledgment of an observed absence as retirement outside Stewart, with the observation in its own field; grants nothing. |
 
 Every record above except the raw captures carries `stewart`, the identity of
