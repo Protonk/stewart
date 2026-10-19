@@ -8,11 +8,12 @@ session is required. Preserve unrelated work and the separate Linux plan.
 
 ## Outcome and scope
 
-A fresh agent can enter an explicitly selected repository, discover its audits,
-select one unambiguously, continue it through Stewart's supported operations,
+A fresh agent can enter an explicitly selected repository, discover its recorded
+audits, select one unambiguously, continue it through Stewart's supported operations,
 recover from interruption, and retire its temporary resources without manually
 reconstructing receipt schemas, runtime commands, or filesystem ownership.
-Stewart explains every recorded resource that remains.
+Stewart explains every recorded resource that remains, including enrolled
+external resources that require manual retirement under this plan.
 
 Expand identity resolution, usable state, and resource lifecycle management
 together. Scientific review, automated judgments, and the unrelated ledger
@@ -34,13 +35,33 @@ a second interpretation of custody. Decide the public CLI/API and record shapes
 before expanding mutations; command names and internal layout are implementation
 choices.
 
-Implement repository-wide discovery across manager worktrees and workspaces.
-An explicit selection must carry the repository, workspace, audit identity,
-concrete session lifetime when present, and applicable implementation identity
-through subsequent operations. Include work before preparation, failed
-preparation, live sessions, interrupted closeout, and retained closed history.
-An audit reference must distinguish these stages without inventing a prepared
-session. Keep this state accessible after a disposable manager checkout is gone.
+**Selection is a caller-held reference.** Read-only discovery/selection returns
+a serializable reference to the repository, workspace, recorded audit identity,
+concrete session lifetime when present, and applicable implementation identity.
+Selecting writes no receipt or shared "current audit" setting. Callers may save
+the reference; every operation revalidates it. After losing it, the caller runs
+discovery and explicitly selects again. Stewart recovers operation outcomes from
+their records; it does not infer what the caller intended to work on. Operation
+receipts still record the identities acted upon. A preparation result can return
+a session-bound reference; a draft reference must not silently select a later
+session lifetime.
+
+**Discovery covers recorded audits.** Discover across workspaces and manager
+worktrees using repository-level draft registrations and supported session,
+role, and closing records under the Git common directory. Include failed
+preparation, interrupted closeout, and retained closed history. Do not crawl
+worktrees or guess workspace directories. A never-recorded unprepared workspace
+is absent, not automatically listed as "unregistered".
+
+Mutating initialization must record the draft audit at repository level, with
+start/outcome records for its writes. Preserve default `init` preview as read-only.
+Provide explicit registration of an existing, named workspace through verified
+reads; this records present observations without manufacturing past custody.
+Scoped resource creation must likewise have a recorded audit context before its
+side effects. Existing supported session records remain discovery sources without
+backfilling new draft records or rewriting history. Keep recorded state available
+after a disposable manager checkout disappears; report unavailable draft files
+as unavailable, without claiming their bytes can be recovered from registration.
 
 Human-readable aliases are locators. Resolve and validate their bindings before
 use. Duplicate audit names in different workspaces, reused paths, missing owners,
@@ -97,10 +118,23 @@ retained evidence. A path or registration request alone cannot prove ownership
 or authorize recursive deletion. Existing resources need explicit enrollment
 and verified identity; unknown ownership remains unresolved.
 
+**Removal eligibility requires Stewart-recorded creation in this phase.** Add
+narrow creation operations for managed worktrees, branches, and temporary
+directories. Explicit enrollment of an externally created resource supports
+tracking, association, and closeout explanations only; even an unchanged identity
+and contents snapshot plus an enrollment acknowledgment grants no removal
+eligibility. Such resources require manual retirement. A managed worktree using
+an existing branch does not acquire deletion rights over that branch. Creation
+provenance is necessary, not sufficient: explicit close authorization, current
+identity, shared-use checks, and retained-work checks still apply. A separate
+ownership-transfer/disposal-grant mechanism is deferred beyond this plan.
+
 Support the creation/failure boundary: preserve a start record before managed
 side effects and capture their outcome, so an interrupted creation can be
 inspected without guessing ownership. Do not turn partial creation into a broad
-cleanup grant. One manager worktree or runtime may serve multiple audits.
+cleanup grant: a start record alone does not prove that a subsequently found
+resource was created by that operation. One manager worktree or runtime may
+serve multiple audits.
 
 Reproduce and repair these two existing close failures in disposable fixtures:
 
@@ -157,15 +191,18 @@ is live; close records the failure basis before any authorized retirement.
 
 Exit criterion: Stewart can retire eligible recorded manager worktrees, branches,
 and temporary outputs as well as session resources, explain all remaining items,
-and recover from interruption without a custom cleanup controller.
+and recover from interruption without a custom cleanup controller. Enrolled
+external resources are an explicit manual-retirement remainder, not an unmet
+promise of automatic deletion or a reason to broaden a retry.
 
 ## 5. Validate the complete user journey
 
 Exercise public installed-wheel interfaces in disposable repositories. Create at
 least two audits in different, including nested, workspaces and manager checkouts,
-with shared dependencies and unrelated work. Reuse a display audit ID across
-workspaces. Include a failed preparation and two collections with identical
-report bytes but different receipt identities.
+using Stewart's managed creation path for resources intended for retirement.
+Include shared dependencies, enrolled externally created resources, and unrelated
+work. Reuse a display audit ID across workspaces. Include a failed preparation
+and two collections with identical report bytes but different receipt identities.
 
 Start a fresh process from the original checkout with only the repository and
 shipped guidance. Discover the audits, select one, inspect its actual stage,
@@ -175,6 +212,13 @@ in-memory state/response, and resume from recorded evidence. Confirm that anothe
 audit, shared runtime, unrelated branch/files, retained bytes, and closed history
 survive. Repeat observation from another directory; selection must stay bound.
 The remaining-resource view must account for deliberate retention and blockers.
+
+Verify that selecting alone writes nothing and two callers' references do not
+affect each other. Lose the reference as well as process state, rediscover, and
+explicitly reselect. Verify read-only `init` preview, recorded drafts before
+preparation, absent unrecorded workspaces, and explicit workspace registration.
+Prove healthy managed-resource removal while unchanged enrolled external resources
+and an existing branch used by a managed worktree remain intact and explained.
 
 Test stale actions, foreign/reused identities, changed branch tips and directory
 contents, links, malformed/duplicate-key control records, missing owners, and
@@ -214,7 +258,8 @@ that orchestration is already implemented.
 
 Finish the main acceptance journey with the outflow present in the repository:
 the fresh agent can discover and continue the audits and then find the separate
-plan for starting orchestration. Document the new user workflow, CLI help,
-failure/recovery semantics, and limitations in shipped guidance. Commit the
+plan for starting orchestration. Document the selection, registration, removal
+eligibility, and failure/recovery contracts in shipped guidance and CLI help.
+Commit the
 implementation, tests, documentation, and outflow; remove this completed plan
 once its contracts are represented there. Leave `ORCHESTRATION-PLAN.md` pending.
