@@ -1,0 +1,220 @@
+# Identity, state, and closeout
+
+Implementation has not started. This is a temporary execution plan. Read the
+repository and `AGENTS.md`, then implement the contracts below in cohesive
+increments. Update execution progress here; put lasting behavior in shipped
+documentation and tests. No conversation, audit report, old checkout, or private
+session is required. Preserve unrelated work and the separate Linux plan.
+
+## Outcome and scope
+
+A fresh agent can enter an explicitly selected repository, discover its audits,
+select one unambiguously, continue it through Stewart's supported operations,
+recover from interruption, and retire its temporary resources without manually
+reconstructing receipt schemas, runtime commands, or filesystem ownership.
+Stewart explains every recorded resource that remains.
+
+Expand identity resolution, usable state, and resource lifecycle management
+together. Scientific review, automated judgments, and the unrelated ledger
+operand/case-ID fixes are outside this plan. General orchestration is a follow-on:
+do not implement an agent launcher, scheduler, arbitrary command runner, automatic
+assignment publication, or general command recorder here. Narrow operations
+needed to establish and retire managed resources are in scope.
+
+Completion includes a committed root `ORCHESTRATION-PLAN.md`, written against
+the implemented interfaces. Its preparation is specified below; orchestration
+implementation is not a prerequisite for completing this work.
+
+## 1. Establish the identity and state contract
+
+Start with the existing `Workspace`, repository lifetime records, session
+receipts, `status`/`status_list`, derived actions, triage drafts, pinned manager
+invocations, and callable API. Reuse their validation rather than introducing
+a second interpretation of custody. Decide the public CLI/API and record shapes
+before expanding mutations; command names and internal layout are implementation
+choices.
+
+Implement repository-wide discovery across manager worktrees and workspaces.
+An explicit selection must carry the repository, workspace, audit identity,
+concrete session lifetime when present, and applicable implementation identity
+through subsequent operations. Include work before preparation, failed
+preparation, live sessions, interrupted closeout, and retained closed history.
+An audit reference must distinguish these stages without inventing a prepared
+session. Keep this state accessible after a disposable manager checkout is gone.
+
+Human-readable aliases are locators. Resolve and validate their bindings before
+use. Duplicate audit names in different workspaces, reused paths, missing owners,
+stale references, and unsupported records must remain explicit. Never silently
+select the newest collection, a replacement lifetime, the current working
+directory, or a different installed runtime. Keep existing explicit-coordinate
+operations coherent with the new selection mechanism; add no historical-schema
+compatibility layer.
+
+Expose one read-only view derived from verified records, with understandable
+stage, blockers, selected evidence, resource associations, and available actions.
+Do not maintain a competing mutable status summary. Missing, partial, invalid,
+and unreadable records retain their distinct diagnostics.
+
+Exit criterion: discovery and selection work from the original checkout across
+multiple workspaces, including duplicate display names and broken entries,
+without reading private schemas or modifying records to inspect them.
+
+## 2. Carry verified bindings through operations
+
+Let callers consume supported structured results and action references directly.
+Extend the existing drafts and generated commands so routine continuation does
+not require copying UUIDs, collection names, receipt digests, or long runtime
+paths between unrelated commands. Keep exact identities inspectable.
+
+Bind actions to their actual operands and revalidate at execution. A new
+collection must not retarget an existing review; identical report bytes in two
+collections must not erase collection identity. Status and mutations must use
+the same validation. Selection conveys no new execution or deletion permission.
+Keep observations, actor acknowledgments, auditor declarations, and manager
+judgments separate; the manager still supplies substantive decisions.
+
+Define how a caller determines whether an operation completed after losing its
+response. Retries preserve earlier attempts and distinguish completed, partial,
+refused, and unverifiable outcomes. Read-only inspection cannot repeat a side
+effect. Human output and versioned JSON must describe the same result, with
+stable refusal reasons and usable next steps. Keep public functions in `api.py`.
+
+Exit criterion: an explicit selection can be carried through collection, review
+draft/submission, retention/export, and close eligibility using documented
+interfaces. Stale or conflicting bindings cannot act on different evidence.
+
+## 3. Record resources; repair close before broadening removal
+
+Resource recording may proceed alongside the repairs. Broader deletion must
+wait until both regressions below pass their repaired acceptance conditions.
+
+Record ownership when resources are created or explicitly enrolled. Cover
+manager worktrees and branches, temporary directories, exports and retained
+deliverables, and associations with existing session resources. Record enough
+creation provenance, lifetime identity, dependencies, and intended disposition
+to distinguish exclusive temporary resources, shared/borrowed dependencies, and
+retained evidence. A path or registration request alone cannot prove ownership
+or authorize recursive deletion. Existing resources need explicit enrollment
+and verified identity; unknown ownership remains unresolved.
+
+Support the creation/failure boundary: preserve a start record before managed
+side effects and capture their outcome, so an interrupted creation can be
+inspected without guessing ownership. Do not turn partial creation into a broad
+cleanup grant. One manager worktree or runtime may serve multiple audits.
+
+Reproduce and repair these two existing close failures in disposable fixtures:
+
+- **Checkout ancestor substitution.** Prepare and triage an audit. Rename its
+  UUID-named checkout parent aside and replace that pathname with a link to a
+  decoy containing `worktree/keep.txt`. Discard-authorized abandon currently can
+  delete that outside sentinel. Also interrupt a normal close before worktree
+  removal, substitute the parent, and retry. Both routes must preserve the decoy
+  and report the substitution. Include healthy real-directory removal, links
+  inside the worktree and at its leaf, and an unrelated sibling sentinel. Cover
+  initial concluded removal where applicable and controlled replacement between
+  validation and use. Protect the actual traversal and Git-removal route;
+  checking a pathname earlier or checking only its leaf is insufficient. This
+  substitution requires manager-side access beyond the assigned auditor writes.
+- **Git administrative-name reuse.** Close audit A with a failure injected at
+  retention-ref deletion, after its worktree has actually been removed. Prepare
+  B and verify that Git reused A's administrative pathname. Retry A: B must not
+  be attributed as A's leftover or modified. Compare with no B and with B
+  prepared before A's removal; retain a genuinely moved same-lifetime checkout
+  case. A missing reuse condition is an unfired control, not success. The
+  lifetime marker's identity field is `role_uuid`; a reused pathname alone is
+  insufficient. Existing behavior falsely attributes B but preserves its files.
+
+Use the existing close fixtures and repository lifetime tests as starting points.
+Keep failed attempts and closing inventories unchanged. Add useful diagnostics
+and assert stable reasons for new refusals.
+
+Exit criterion: resource associations survive failed creation and shared use;
+the close regressions discriminate the failures and pass with outside state and
+replacement lifetimes preserved. No widened removal ships before this gate.
+
+## 4. Complete resource closeout
+
+Provide an inspectable closeout description that accounts for each recorded
+resource: proposed removal, deliberate retention, shared use, or a blocking
+condition/decision. Distinguish audit closure from retirement of surrounding
+working resources and from retention of historical evidence. Resolve export or
+retention dependencies before deleting their source or containing directory.
+An export inside a retiring manager tree needs an explicit durable destination
+or an explicit disposal decision; its mere existence does not make it safe.
+
+Keep close as the explicit, gated deletion boundary. Freeze authorized removal
+identities before deletion and revalidate them at use. Record outcomes and resume
+interrupted removal against that inventory without widening it. Preserve work
+added after planning, moved/replaced resources, and unexpected contents. Manager
+branch retirement must account for changed tips and unmerged work; a clean
+worktree alone is insufficient. Never blanket-clean ignored paths.
+
+Run finalization through a runtime and repository context that survive removal
+of disposable manager resources. Preserve shared storage, unrelated worktrees,
+retained deliverables, closing records, and audit-ID reservation rules. Historical
+receipt purging is outside this plan. Preserve failure records while the audit
+is live; close records the failure basis before any authorized retirement.
+
+Exit criterion: Stewart can retire eligible recorded manager worktrees, branches,
+and temporary outputs as well as session resources, explain all remaining items,
+and recover from interruption without a custom cleanup controller.
+
+## 5. Validate the complete user journey
+
+Exercise public installed-wheel interfaces in disposable repositories. Create at
+least two audits in different, including nested, workspaces and manager checkouts,
+with shared dependencies and unrelated work. Reuse a display audit ID across
+workspaces. Include a failed preparation and two collections with identical
+report bytes but different receipt identities.
+
+Start a fresh process from the original checkout with only the repository and
+shipped guidance. Discover the audits, select one, inspect its actual stage,
+continue with an explicitly supplied review, retain/export selected evidence,
+and close its eligible resources. Interrupt an operation, discard the caller's
+in-memory state/response, and resume from recorded evidence. Confirm that another
+audit, shared runtime, unrelated branch/files, retained bytes, and closed history
+survive. Repeat observation from another directory; selection must stay bound.
+The remaining-resource view must account for deliberate retention and blockers.
+
+Test stale actions, foreign/reused identities, changed branch tips and directory
+contents, links, malformed/duplicate-key control records, missing owners, and
+interrupted resource creation/removal. Each measured guarantee needs a firing
+control, a changed-property case, and an invariance case. Keep discovery
+read-only, imports side-effect free, and filesystem access descriptor-safe.
+
+Provision `requirements.lock` into a wheelhouse and use an explicit interpreter
+with `-I -B` to run `scripts/check.py`. Run focused installed-wheel checks during
+implementation and the full suite for final acceptance. Preserve outputs and
+actual collected/selected/deselected counts; do not inherit historical counts.
+This journey needs no real model request or scientific experiment. Synthetic
+handoffs qualify lifecycle behavior only, not real harness enforcement.
+
+## 6. Deliver the orchestration outflow and finish
+
+Before declaring this plan complete, write and commit root
+`ORCHESTRATION-PLAN.md`. Ground it in the finished CLI/API, schemas, failure
+behavior, and acceptance fixtures. It must independently enable a fresh agent
+to begin orchestration work after reading the repository. Include:
+
+- The remaining mechanical work suitable for orchestration, with a bounded
+  first implementation slice and an ordered sequence to expand it.
+- Concrete supported entry points for selecting an audit, consuming actions,
+  registering outputs, checking completion, retrying, and retiring resources;
+  identify any real gaps instead of inventing interface names.
+- How operation outputs and failures will be recorded without parsing human
+  prose, duplicating custody truth, or replaying a completed side effect.
+- Authorization boundaries, explicit human decisions, and failure/restart
+  acceptance cases built on the completed lifecycle tests. Git recording may
+  be a deliberately narrow first use case; collecting every kind of activity
+  is not an automatic requirement.
+
+Use no dependency on this conversation, this plan, deleted audit notes, or old
+private state. The outflow must be actionable, not a placeholder or an assertion
+that orchestration is already implemented.
+
+Finish the main acceptance journey with the outflow present in the repository:
+the fresh agent can discover and continue the audits and then find the separate
+plan for starting orchestration. Document the new user workflow, CLI help,
+failure/recovery semantics, and limitations in shipped guidance. Commit the
+implementation, tests, documentation, and outflow; remove this completed plan
+once its contracts are represented there. Leave `ORCHESTRATION-PLAN.md` pending.
