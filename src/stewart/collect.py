@@ -432,6 +432,12 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
         receipt["retention"] = {"status": "invalid", "error": exc.to_json()}
         receipt["errors"].append({"reason": "retention_invalid", "message": f"commit retention: {exc}"})
     try:
+        # Git run through a .git link would observe, and refresh the index of,
+        # another repository; only the checkout's own gitdir file is followed.
+        _, gitfile = _files.read_regular(worktree / ".git")
+        if gitfile is None or not gitfile.startswith(b"gitdir: "):
+            raise StewartError("the checkout's .git is not its regular gitdir file; refuse to run Git through it",
+                               reason="checkout_identity")
         common = git_text(worktree, "rev-parse", "--path-format=absolute", "--git-common-dir")
         if common != record["common_dir"] or git_text(worktree, "rev-parse", "--show-toplevel") != str(worktree):
             raise StewartError(

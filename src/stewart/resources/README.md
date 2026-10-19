@@ -560,9 +560,11 @@ permission. Keep the human evidence map and scope in the prompt.
     abandon (`--abandon --reason TEXT`) is allowed in any state, including
     failed preparations and records that do not verify. It refuses while the
     checkout holds changes no collection captured, or when it cannot observe
-    the checkout at all (`uncollected_changes`), unless `--discard-uncollected`
-    is given; the closing record then lists the discarded paths and digests, or
-    `null` when they could not be observed. A session whose directory is gone
+    the checkout fully: entries Git cannot list, a commit no complete
+    collection recorded, a checkout Git now registers elsewhere, or a `.git`
+    that is not the checkout's own gitdir file (`uncollected_changes`). With
+    `--discard-uncollected` the closing record lists the discarded paths and
+    digests, or `null` when they could not be observed. A session whose directory is gone
     but whose registry row remains can be abandoned through that row; one with
     neither a record nor a row is retired as its session directory alone. The
     triage decision, if one was recorded, is kept as the manager's attributed
@@ -586,8 +588,14 @@ permission. Keep the human evidence map and scope in the prompt.
     recorded inventory, never a wider one. A close interrupted before writing
     `CLOSING.json` leaves at most an empty directory, which a rerun reuses.
     `CLOSED.json` records each removal's outcome once nothing recorded remains.
-    Leftovers are kept and named, in `CLOSED.json` and in the closed view, and
-    make `close` exit 1: unrecorded entries in the checkout directory, a link
+    Recorded paths are trusted only inside the session layout,
+    `<checkout-home>/<repo-key>/<session-uuid>/`, and only for a canonical
+    session UUID; a record that names anything else directs no removal of a
+    checkout, and a closing record whose inventory points outside its session
+    does not verify (`closing_record_invalid`). Each record is published by
+    linking a complete staged copy to its name, so an interruption never
+    leaves a partial record. Leftovers are kept and named, in `CLOSED.json`
+    and in the closed view, and make `close` exit 1: unrecorded entries in the checkout directory, a link
     or file where a recorded directory belongs, a ref under the session's
     namespace that it did not record or that is symbolic or moved, and a
     checkout Git now registers at another path. Closing a paused session
@@ -1011,7 +1019,8 @@ producer run, scope expansion, or release of a paused hold.
   and unexpected changes are evidence; collection records them.
 - **Collection with errors** exits 1, or 3 when an error means something does
   not verify (a changed handoff or supplied runtime, invalid retention, an
-  archive mismatch), and keeps everything it captured: the
+  archive mismatch, a checkout whose `.git` is not its own gitdir file, which
+  Git is never run through), and keeps everything it captured: the
   report, the inventory, any patches and archive, and the worktree. Read the
   receipt's `errors`, resolve the cause (an unsupported entry, a moving file,
   broken Git state), and collect again. Never extract the archive over a checkout.

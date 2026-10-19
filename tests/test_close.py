@@ -653,7 +653,10 @@ def test_a_moved_checkout_is_kept_and_named(checkout, tmp_path):
     prepared = support.prepared_session(checkout, report=None)
     moved = tmp_path / "moved-checkout"
     checkout.git("worktree", "move", "--force", "--force", str(prepared.worktree), str(moved))
-    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="moved away")
+    # A checkout close cannot see where it was recorded is not observed.
+    assert _reason(close, checkout.ws, IDENT, actor="manager", abandon=True,
+                   reason="moved away").reason == "uncollected_changes"
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="moved away", discard_uncollected=True)
     assert f"checkout registered at {moved}" in result["leftovers"] and result["exit_code"] == EXIT_ATTENTION
     assert moved.is_dir() and str(moved) in git_text(checkout.repo, "worktree", "list", "--porcelain")
 
@@ -721,3 +724,147 @@ def test_an_earlier_close_leftover_is_not_news_for_the_live_session(checkout, mo
     view = status(checkout.ws, IDENT)
     assert view["exit_code"] == EXIT_OK and view["closes"][0]["leftovers"] == [str(stray)]
     assert status_list(checkout.ws)["exit_code"] == EXIT_OK
+
+
+def test_abandon_refuses_when_bytes_sit_where_git_cannot_list_them(checkout):
+    prepared = support.prepared_session(checkout, report=None)
+    hidden = prepared.worktree / checkout.ws.rel / "scratch-notes"
+    hidden.mkdir()
+    (hidden / "findings.md").write_text("uncollected findings\n")
+    hidden.chmod(0)
+    try:
+        refused = _reason(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="stopping")
+        assert refused.reason == "uncollected_changes" and "scratch-notes" in str(refused)
+        assert prepared.session.is_dir(), "nothing was removed"
+    finally:
+        hidden.chmod(stat.S_IRWXU)
+    # Control: once readable, the same bytes are named as uncollected files.
+    refused = _reason(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="stopping")
+    assert refused.reason == "uncollected_changes" and "findings.md" in str(refused)
+
+
+def test_an_uncollected_commit_is_not_discarded_silently(checkout):
+    prepared = support.prepared_session(checkout, report=None)
+    (prepared.worktree / "committed.txt").write_text("only in a commit\n")
+    checkout.git("add", "committed.txt", cwd=prepared.worktree)
+    checkout.git("commit", "-qm", "auditor commit", cwd=prepared.worktree)
+    checkout.git("rm", "-q", "committed.txt", cwd=prepared.worktree)
+    checkout.git("commit", "-qm", "and back", cwd=prepared.worktree)
+    refused = _reason(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="stopping")
+    assert refused.reason == "uncollected_changes" and "HEAD at" in str(refused)
+    collect(checkout.ws, IDENT, auditor_stopped="finished")
+    # Invariance: a collection that recorded that HEAD preserved what it shows.
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="stopping")
+    assert result["closed"]
+
+
+def test_a_moved_checkout_is_found_through_its_git_administration(checkout, tmp_path):
+    prepared = support.prepared_session(checkout, report=None)
+    moved = tmp_path / "moved-unlocked"
+    checkout.git("worktree", "unlock", str(prepared.worktree))
+    checkout.git("worktree", "move", str(prepared.worktree), str(moved))
+    refused = _reason(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="moved away")
+    assert refused.reason == "uncollected_changes" and str(moved) in str(refused)
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="moved away", discard_uncollected=True)
+    assert f"checkout registered at {moved}" in result["leftovers"] and result["exit_code"] == EXIT_ATTENTION
+    assert moved.is_dir() and str(moved) in git_text(checkout.repo, "worktree", "list", "--porcelain")
+
+
+def test_a_planted_git_link_is_never_used_to_run_git(checkout):
+    prepared, _ = _triaged(checkout)
+    index = checkout.repo / ".git" / "index"
+    before = index.read_bytes(), index.stat().st_mtime_ns
+    gitfile = prepared.worktree / ".git"
+    gitfile.unlink()
+    gitfile.symlink_to(checkout.repo / ".git")
+    collected = collect(checkout.ws, IDENT, auditor_stopped="finished")
+    assert any(error["reason"] == "checkout_identity" for error in collected["receipt"]["errors"])
+    assert collected["exit_code"] == EXIT_UNVERIFIED
+    refused = _reason(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="planted link")
+    assert refused.reason == "uncollected_changes"
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="planted link", discard_uncollected=True)
+    assert result["closed"] and not os.path.lexists(prepared.worktree)
+    assert (index.read_bytes(), index.stat().st_mtime_ns) == before, "the maintainer's index was never written"
+    assert (checkout.repo / ".git" / "HEAD").is_file(), "the link's target is untouched"
+
+
+@pytest.mark.parametrize("damage", ["identity_without_uuid", "coordination_text", "member_outside", "prompt_number",
+                                    "session_elsewhere", "ref_elsewhere", "uuid_not_canonical"])
+def test_closing_records_that_would_direct_removal_elsewhere_do_not_verify(checkout, monkeypatch, damage):
+    from stewart import _util
+    from stewart.cli import main
+    _failed(checkout, monkeypatch)
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="clean failure")
+    closing, closed = Path(result["closing"]), Path(result["closed"])
+    document = json.loads(closing.read_bytes())
+    if damage == "identity_without_uuid":
+        del document["identity"]["session_uuid"]
+    elif damage == "coordination_text":
+        document["observed"]["coordination"] = "paused"
+    elif damage == "member_outside":
+        document["removal"]["members"] = [str(checkout.repo)]
+    elif damage == "prompt_number":
+        document["identity"]["prompt_commit"] = 7
+    elif damage == "session_elsewhere":
+        document["removal"]["session"] = str(checkout.repo)
+    elif damage == "ref_elsewhere":
+        document["removal"]["refs"] = [{"ref": "refs/heads/main", "commit": "0" * 40}]
+    else:
+        document["identity"]["session_uuid"] = document["removal"]["session_uuid"] = "../../x"
+    data = json.dumps(document).encode()
+    for location in (closing, closed):
+        location.chmod(stat.S_IRUSR | stat.S_IWUSR)
+    closing.write_bytes(data)
+    bound = json.loads(closed.read_bytes())
+    bound["closing_sha256"] = _util.sha256_bytes(data)
+    closed.write_bytes(json.dumps(bound).encode())
+    assert _reason(prepare, checkout.ws, _revised_prompt(checkout)).reason == "closing_record_invalid"
+    assert main(["--repo", str(checkout.repo), "--workspace", checkout.ws.rel, "status", "--audit-id", IDENT]) \
+        == EXIT_UNVERIFIED
+    assert git_text(checkout.repo, "rev-parse", "refs/heads/main"), "nothing outside the session was touched"
+
+
+def test_a_record_outside_the_session_layout_directs_no_removal(checkout, tmp_path):
+    prepared = support.prepared_session(checkout, report=None)
+    decoy = tmp_path / "decoy"
+    (decoy / "runtime").mkdir(parents=True)
+    record_path = prepared.session / "session.json"
+    record = json.loads(record_path.read_text())
+    record["audit_dir"] = str(decoy)
+    record["worktree"] = str(decoy / "worktree")
+    record_path.chmod(stat.S_IRUSR | stat.S_IWUSR)
+    record_path.write_text(json.dumps(record))
+    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="tampered record")
+    assert (decoy / "runtime").is_dir(), "a path outside the layout is never removed"
+    # The registry row still names the real checkout, which is retired.
+    assert not prepared.worktree.exists() and result["closed"]
+
+
+def test_a_crash_while_publishing_leaves_no_partial_record(checkout, monkeypatch):
+    prepared, _ = _triaged(checkout)
+    real = os.link
+
+    def crash(source, destination, *args, **kwargs):
+        if Path(destination).name == "CLOSING.json":
+            raise KeyboardInterrupt("synthetic crash between staging and publication")
+        return real(source, destination, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(os, "link", crash)
+        with pytest.raises(KeyboardInterrupt):
+            close(checkout.ws, IDENT, actor="manager")
+    directory = closed_location(str(_common(checkout)), checkout.ws, IDENT) / prepared.prepared["session_uuid"]
+    assert not (directory / "CLOSING.json").exists() and [p.name for p in directory.iterdir() if p.name.endswith(".staged")]
+    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/12", "a staged copy is not a close"
+    assert close(checkout.ws, IDENT, actor="manager")["closed"]
+
+
+def test_the_listing_names_a_lost_session_once(checkout, monkeypatch):
+    import shutil
+    _failed(checkout, monkeypatch)
+    close(checkout.ws, IDENT, actor="manager", abandon=True, reason="clean failure")
+    again = prepare(checkout.ws, _revised_prompt(checkout))
+    shutil.rmtree(again["session"])
+    listing = status_list(checkout.ws)
+    assert [entry["audit_id"] for entry in listing["sessions"]] == [IDENT]
+    assert listing["exit_code"] == EXIT_UNVERIFIED

@@ -860,13 +860,14 @@ def status_list(ws: Workspace) -> dict:
     for directory in sorted(closed_root.iterdir()) if closed_root.is_dir() and not closed_root.is_symlink() else []:
         if directory.name in live:
             continue
+        located = {"session": str(session_location(common, ws, directory.name))}
         try:
             view = status(ws, directory.name)
         except StewartError as exc:
             entries.append({"audit_id": directory.name, "closed": True, "problem": exc.to_json(),
-                            "exit_code": EXIT_UNVERIFIED})
+                            "exit_code": EXIT_UNVERIFIED, **located})
             continue
-        entries.append(_closed_entry(directory.name, view))
+        entries.append({**_closed_entry(directory.name, view), **located})
     listed = {entry["session"] for entry in entries if "session" in entry}
     prefix = str(Path(common) / SESSIONS / ws.slug) + "/"
     for row in _role_records(common):

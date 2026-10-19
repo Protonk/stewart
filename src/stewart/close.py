@@ -41,7 +41,8 @@ CLOSING_SCHEMA = "stewart.closing/1"
 CLOSED_SCHEMA = "stewart.closed/1"
 MODES = ("concluded", "abandoned")
 _CLOSING_FIELDS = {"schema", "identity", "acknowledged", "observed", "attributed", "removal"}
-_REMOVAL_FIELDS = {"session_uuid", "worktree", "members", "checkout_dir", "refs", "registry_row", "session"}
+_REMOVAL_FIELDS = {"session_uuid", "worktree", "git_admin", "members", "checkout_dir", "refs", "registry_row",
+                   "session"}
 _BASIS_FIELDS = {"failure_receipt", "private_handoff", "public_handoff", "session_entries", "checkout"}
 #: What a session holds when preparation failed before writing any handoff:
 #: its record, its failure receipt and the runtime records the runtime stage
@@ -83,39 +84,81 @@ def _session_refs(repo: Path, uuid: str) -> list[dict]:
     return refs
 
 
-def _facts(session: Path, record: dict | None, rows: list[dict], repo: Path) -> dict:
+def _canonical(value: object) -> str | None:
+    from stewart._repository import session_uuid
+    try:
+        return session_uuid(value)
+    except StewartError:
+        return None
+
+
+def _in_layout(common: str, uuid: str | None, checkout_dir: object) -> bool:
+    """Whether a recorded checkout directory is ``<home>/<repo-key>/<uuid>``, so removal stays inside it."""
+    from stewart._repository import repo_key
+    if uuid is None or not isinstance(checkout_dir, str):
+        return False
+    path = Path(checkout_dir)
+    return (path.is_absolute() and path.as_posix() == checkout_dir and ".." not in path.parts
+            and path.name == uuid and path.parent.name == repo_key(common))
+
+
+def _member_in_layout(checkout_dir: str, member: object) -> bool:
+    """Runtimes and recoveries are children of the checkout directory; experiment homes are ``attempts/<name>``."""
+    if not isinstance(member, str) or ".." in Path(member).parts:
+        return False
+    try:
+        parts = Path(member).relative_to(checkout_dir).parts
+    except ValueError:
+        return False
+    return len(parts) == 1 or (len(parts) == 2 and parts[0] == "attempts")
+
+
+def _facts(session: Path, record: dict | None, rows: list[dict], repo: Path, common: str) -> dict:
     """What close needs, from the session record or, when it is unreadable, the registry row.
 
     The record names everything in a healthy session, including the exact
-    retention refs and their commits. A row names the session path, its UUID
-    and its worktree, so even an unreadable record can be retired; the checkout
-    directory is the worktree's parent by the session layout, and the refs are
-    the non-symbolic ones Git holds under the UUID. With neither, only the
-    session directory itself is known.
+    retention refs and their commits. A row names the session path, its UUID,
+    its worktree and its Git administration, so even an unreadable record can
+    be retired; the checkout directory is the worktree's parent by the session
+    layout, and the refs are the non-symbolic ones Git holds under the UUID.
+    A UUID that is not canonical, or a checkout path outside the session
+    layout, is not trusted: close then removes no checkout at all.
     """
+    from stewart._git import COMMIT_ID
     record = record if isinstance(record, dict) else {}
     row = rows[0] if rows else {}
-    uuid = record.get("session_uuid") or row.get("session_uuid") or row.get("role_uuid")
-    uuid = uuid if isinstance(uuid, str) else None
-    worktree = record.get("worktree") or row.get("worktree")
-    worktree = worktree if isinstance(worktree, str) else None
+    uuid = _canonical(record.get("session_uuid")) or _canonical(row.get("session_uuid")) or _canonical(row.get("role_uuid"))
+    # The record's checkout, else the row's; only one in the session layout is used.
+    worktree = audit_dir = None
+    for candidate_worktree, candidate_dir in ((record.get("worktree"), record.get("audit_dir")),
+                                              (row.get("worktree"), None)):
+        if candidate_dir is None and isinstance(candidate_worktree, str):
+            candidate_dir = str(Path(candidate_worktree).parent)
+        if _in_layout(common, uuid, candidate_dir) and candidate_worktree == str(Path(candidate_dir) / "worktree"):
+            worktree, audit_dir = candidate_worktree, candidate_dir
+            break
+    git_admin = row.get("git_admin")
+    if not (isinstance(git_admin, str) and Path(git_admin).parent == Path(common) / "worktrees"):
+        git_admin = None
     retention = record.get("retention")
     if isinstance(retention, dict) and isinstance(retention.get("refs"), dict):
         refs = [{"ref": entry["ref"], "commit": entry["commit"]} for entry in retention["refs"].values()
                 if isinstance(entry, dict) and isinstance(entry.get("ref"), str) and isinstance(entry.get("commit"), str)
-                and uuid is not None and entry["ref"].startswith(f"refs/stewart/sessions/{uuid}/")]
+                and uuid is not None and entry["ref"].startswith(f"refs/stewart/sessions/{uuid}/")
+                and COMMIT_ID.fullmatch(entry["commit"])]
     else:
         refs = [{"ref": entry["ref"], "commit": entry["commit"]}
                 for entry in (_session_refs(repo, uuid) if uuid else []) if entry["symref"] is None]
-    audit_dir = record.get("audit_dir") or (str(Path(worktree).parent) if worktree else None)
-    runtime = record.get("runtime").get("root") if isinstance(record.get("runtime"), dict) else None
     assignment = record.get("assignment") if isinstance(record.get("assignment"), dict) else {}
     handoff = record.get("handoff") if isinstance(record.get("handoff"), dict) else {}
-    return {"session_uuid": uuid, "worktree": worktree, "audit_dir": audit_dir,
-            "runtime": runtime or (str(Path(audit_dir) / "runtime") if audit_dir else None),
-            "prompt_commit": record.get("prompt_commit"), "assignment": assignment,
+    prompt = record.get("prompt_commit")
+    return {"session_uuid": uuid, "worktree": worktree, "audit_dir": audit_dir, "git_admin": git_admin,
+            "runtime": str(Path(audit_dir) / "runtime") if audit_dir else None, "repo": repo,
+            "prompt_commit": prompt if isinstance(prompt, str) and COMMIT_ID.fullmatch(prompt) else None,
+            "assignment": assignment,
             "supplemental": [item for item in assignment.get("supplemental_inputs", []) if isinstance(item, dict)],
-            "handoff": handoff.get("path"), "notes": None, "refs": refs, "record": record}
+            "handoff": handoff.get("path") if isinstance(handoff.get("path"), str) else None,
+            "notes": None, "refs": refs, "record": record}
 
 
 def _kind(location: Path) -> str:
@@ -141,23 +184,32 @@ def _observe_checkout(facts: dict) -> dict:
     from stewart._bootstrap import SPECIAL_KINDS
     from stewart.collect import checkout_state, inventory
     if facts["worktree"] is None:
-        return {"observed": False, "exists": None, "extra": [], "files": [],
-                "error": "no record names the session's checkout"}
+        return {"observed": False, "exists": None, "extra": [], "files": [], "unaccounted": [],
+                "error": "no record names a checkout in the session layout"}
     worktree = Path(facts["worktree"])
     if not os.path.lexists(worktree):
-        return {"observed": True, "exists": False, "extra": [], "files": []}
+        moved = _registered_elsewhere(facts["repo"], facts["session_uuid"], facts["git_admin"], worktree)
+        if moved:
+            return {"observed": False, "exists": True, "extra": [], "files": [], "unaccounted": [],
+                    "error": f"the checkout is registered at {', '.join(moved)}"}
+        return {"observed": True, "exists": False, "extra": [], "files": [], "unaccounted": []}
     if worktree.is_symlink() or not worktree.is_dir():
-        return {"observed": True, "exists": True, "extra": [f"{worktree} is not a real directory"], "files": []}
+        return {"observed": True, "exists": True, "extra": [f"{worktree} is not a real directory"], "files": [],
+                "unaccounted": []}
     prompt = facts["prompt_commit"]
     if prompt is None:
-        return {"observed": False, "exists": True, "extra": [], "files": [],
+        return {"observed": False, "exists": True, "extra": [], "files": [], "unaccounted": [],
                 "error": "the session record names no prompt commit to compare against"}
+    if not _gitfile(worktree):
+        # Git run through a planted .git link would observe, and write, another repository.
+        return {"observed": False, "exists": True, "extra": [], "files": [], "unaccounted": [],
+                "error": "the checkout's .git is not its regular gitdir file"}
     try:
         state, _ = checkout_state(worktree, prompt)
         entries = inventory(worktree)["entries"]
         tracked = set(os.fsdecode(git(worktree, "ls-tree", "-r", "-d", "--name-only", "-z", prompt).stdout).split("\0"))
     except (StewartError, OSError, subprocess.TimeoutExpired) as exc:
-        return {"observed": False, "exists": True, "extra": [], "files": [], "error": str(exc)}
+        return {"observed": False, "exists": True, "extra": [], "files": [], "unaccounted": [], "error": str(exc)}
     supplied = {item.get("path"): item.get("sha256") for item in facts["supplemental"]}
     handoff = facts["handoff"]
     report = facts["assignment"].get("report_path")
@@ -175,7 +227,35 @@ def _observe_checkout(facts: dict) -> dict:
                  or (entry["kind"] == "directory" and entry["path"] not in directories))
     if state["head"] != prompt:
         extra.add(f"HEAD at {state['head']}")
-    return {"observed": True, "exists": True, "extra": sorted(extra), "files": files}
+    # Entries whose bytes Git could not list: their contents are unknown.
+    unaccounted = sorted(entry["path"] for entry in entries if entry["kind"] in ("unreadable", "replaced")
+                         or (entry["kind"] == "directory" and entry.get("traversed") is False))
+    return {"observed": True, "exists": True, "extra": sorted(extra), "files": files, "unaccounted": unaccounted,
+            "head": state["head"]}
+
+
+def _gitfile(worktree: Path) -> bool:
+    """Whether the checkout's .git is a regular gitdir file, never a link or directory."""
+    info, data = read_regular(worktree / ".git")
+    return info["kind"] == "file" and data is not None and data.startswith(b"gitdir: ")
+
+
+def _registered_elsewhere(repo: Path, uuid: str | None, git_admin: str | None, worktree: Path) -> list[str]:
+    """Paths where Git registers this session's checkout other than the recorded one.
+
+    A checkout is recognized by its lock reason naming the session UUID, or by
+    the gitdir file in the Git administration its registry row recorded.
+    """
+    found = []
+    registered = _registrations(repo)
+    if uuid:
+        found += [entry["worktree"] for entry in registered if uuid in (entry.get("locked") or "")]
+    if git_admin:
+        _, data = read_regular(Path(git_admin) / "gitdir")
+        if data is not None:
+            location = str(Path(os.fsdecode(data.strip())).parent)
+            found += [entry["worktree"] for entry in registered if entry.get("worktree") == location]
+    return sorted({path for path in found if path and path != str(worktree)})
 
 
 def _session_entries(session: Path) -> list[str]:
@@ -221,35 +301,41 @@ def _recorded_members(session: Path, facts: dict) -> list[str]:
     if facts["audit_dir"] is None:
         return []
     members = [facts["runtime"]]
-    for entry in list_records(session / "runtime-recoveries"):
+    try:
+        recoveries = list_records(session / "runtime-recoveries")
+        releases = list_records(session / "releases", suffix=".json")
+    except OSError:
+        recoveries, releases = [], []
+    for entry in recoveries:
         for name in ("RECOVERY.json", "STARTED.json"):
             try:
                 members.append(read_receipt(entry / name, what="runtime recovery")["runtime"]["identity"]["root"])
                 break
             except (StewartError, KeyError, TypeError):
                 continue
-    for entry in list_records(session / "releases", suffix=".json"):
+    for entry in releases:
         try:
             home = Path(read_receipt(entry, what="release record")["environment"]["HOME"])
         except (StewartError, KeyError, TypeError):
             continue
         members.append(str(home.parent))
-    audit_dir = Path(facts["audit_dir"])
-    return sorted({member for member in members if isinstance(member, str)
-                   and Path(member).is_relative_to(audit_dir) and Path(member) != audit_dir})
+    return sorted({member for member in members if _member_in_layout(facts["audit_dir"], member)})
 
 
 def _removal(session: Path, facts: dict, common: str) -> dict:
     from stewart._repository import _registry
     uuid = facts["session_uuid"]
-    return {"session_uuid": uuid, "worktree": facts["worktree"], "members": _recorded_members(session, facts),
+    return {"session_uuid": uuid, "worktree": facts["worktree"], "git_admin": facts["git_admin"],
+            "members": _recorded_members(session, facts),
             "checkout_dir": facts["audit_dir"], "refs": facts["refs"],
             "registry_row": str(_registry(common) / f"{uuid}.json") if uuid else None, "session": str(session)}
 
 
 def _not_real_between(base: Path, path: Path) -> Path | None:
     """The first of ``base`` and the ancestors of ``path`` below it that is a link or not a directory."""
-    for candidate in [base, *(base / part for part in path.relative_to(base).parent.parts)]:
+    candidate = base
+    for part in ("", *path.relative_to(base).parent.parts):
+        candidate = candidate / part if part else candidate
         if candidate.is_symlink() or (os.path.lexists(candidate) and not candidate.is_dir()):
             return candidate
     return None
@@ -305,33 +391,33 @@ def _remove(removal: dict, repo: Path) -> tuple[list[dict], list[str]]:
     worktree = Path(removal["worktree"]) if removal["worktree"] else None
     checkout_dir = Path(removal["checkout_dir"]) if removal["checkout_dir"] else None
 
+    def registered_here() -> bool:
+        return any(entry.get("worktree") == str(worktree) for entry in _registrations(repo))
+
     def remove_worktree() -> str:
-        registered = _registrations(repo)
-        if not any(entry.get("worktree") == str(worktree) for entry in registered):
-            moved = [entry["worktree"] for entry in registered
-                     if uuid and uuid in (entry.get("locked") or "") and entry.get("worktree")]
-            if moved:
-                kept.extend(f"checkout registered at {path}" for path in moved)
-                return "kept: registered elsewhere"
+        moved = _registered_elsewhere(repo, uuid, removal["git_admin"], worktree)
+        if moved:
+            kept.extend(f"checkout registered at {path}" for path in moved)
+            return "kept: registered elsewhere"
+        if not registered_here():
             return _remove_tree(worktree)
-        # Git never operates through a link standing in for the checkout.
-        unlinked = worktree.is_symlink()
-        if unlinked:
-            worktree.unlink()
         git(repo, "worktree", "unlock", str(worktree), check=False)
-        if not git(repo, "worktree", "remove", "--force", "--force", str(worktree), check=False).returncode:
-            return "removed link and registration" if unlinked else "removed"
-        # Git refuses a checkout it cannot validate, such as one whose .git
-        # file is gone. Remove the recorded directory itself; Git then drops
-        # the registration of the missing checkout.
+        # Git never operates through a link standing in for the checkout, nor
+        # through a .git that is not the checkout's own gitdir file.
+        if (not worktree.is_symlink() and _gitfile(worktree)
+                and not git(repo, "worktree", "remove", "--force", "--force", str(worktree), check=False).returncode):
+            return "removed"
+        # Remove the recorded directory itself; Git then drops the
+        # registration of the missing checkout.
         try:
-            _remove_tree(worktree)
-            git(repo, "worktree", "remove", "--force", "--force", str(worktree))
+            outcome = _remove_tree(worktree)
+            if registered_here():
+                git(repo, "worktree", "remove", "--force", "--force", str(worktree))
         except (OSError, StewartError):
-            if uuid:
+            if uuid and registered_here():
                 git(repo, "worktree", "lock", "--reason", lifetime_lock_reason(uuid), str(worktree), check=False)
             raise
-        return "removed (Git could not validate it)"
+        return f"{outcome}; Git could not remove it itself"
 
     def remove_member(member: Path) -> str:
         blocked = _not_real_between(checkout_dir, member)
@@ -388,7 +474,7 @@ def _remove(removal: dict, repo: Path) -> tuple[list[dict], list[str]]:
     for item, kind, action in steps:
         try:
             results.append({"item": item, "kind": kind, "outcome": action()})
-        except (OSError, StewartError) as exc:
+        except (OSError, StewartError, ValueError, TypeError) as exc:
             results.append({"item": item, "kind": kind, "outcome": "failed", "detail": str(exc)})
             break
     leftovers = list(kept)
@@ -397,7 +483,12 @@ def _remove(removal: dict, repo: Path) -> tuple[list[dict], list[str]]:
         attempts = checkout_dir / "attempts"
         for directory in (checkout_dir, attempts):
             if directory.is_dir() and not directory.is_symlink() and not _not_real_between(checkout_dir, directory):
-                leftovers += [str(directory / name) for name in os.listdir(directory)
+                try:
+                    names = os.listdir(directory)
+                except OSError as exc:
+                    leftovers.append(f"{directory} (unreadable: {exc.strerror})")
+                    continue
+                leftovers += [str(directory / name) for name in names
                               if str(directory / name) not in recorded and directory / name != attempts]
     if uuid:
         # Refs under the session's namespace that it did not record, or that
@@ -407,12 +498,35 @@ def _remove(removal: dict, repo: Path) -> tuple[list[dict], list[str]]:
     return results, sorted(set(leftovers))
 
 
-def closing_entries(common: str, ws: Workspace, ident: str) -> list[dict]:
-    """Every closing record for an audit ID, oldest first, with its completion and validity.
+def _publish(directory: Path, name: str, document: dict) -> None:
+    """Create a record exclusively and never partially: a staged copy, then an exclusive link to its name.
 
-    A closing directory that holds nothing is a close interrupted before its
-    record was written, and is skipped. Anything that cannot be read as a
-    closing record bound to this audit ID is a problem, never an absence.
+    A crash or a full disk leaves at most a ``.staged`` copy, which readers
+    ignore, never a truncated record under the final name.
+    """
+    from stewart.session import stamp, write_receipt
+    staged = directory / f".{name}.{stamp()}.staged"
+    write_receipt(staged, document)
+    try:
+        os.link(staged, directory / name)
+    except FileExistsError:
+        raise StewartError(f"{name} already exists: {directory / name}", reason="destination_exists",
+                           retained=[str(directory / name)],
+                           next_steps=["status shows the existing close; rerun close to finish an incomplete one"]) from None
+    staged.unlink()
+
+
+def _staged(name: str) -> bool:
+    return name.startswith(".") and name.endswith(".staged")
+
+
+def closing_entries(common: str, ws: Workspace, ident: str) -> list[dict]:
+    """Every closing record for an audit ID, oldest first by closing time, with its completion and validity.
+
+    A closing directory that holds nothing but staged copies is a close
+    interrupted before its record was published, and is skipped. Anything that
+    cannot be read as a closing record bound to this audit ID is a problem,
+    never an absence.
     """
     from stewart.session import capture_receipt
     folder = closed_location(common, ws, ident)
@@ -429,11 +543,11 @@ def closing_entries(common: str, ws: Workspace, ident: str) -> list[dict]:
             if directory.is_symlink() or not directory.is_dir():
                 raise StewartError(f"not a real closing directory: {directory}", reason="closing_record_invalid",
                                    retained=[str(directory)])
-            names = os.listdir(directory)
+            names = [name for name in os.listdir(directory) if not _staged(name)]
             if not names:
                 continue
             entry["attempts"] = sum(name.startswith("CLOSE-ATTEMPT-") for name in names)
-            closing, digest = _read(directory / "CLOSING.json", ws=ws, ident=ident, name=directory.name)
+            closing, digest = _read(directory / "CLOSING.json", ws=ws, ident=ident, name=directory.name, common=common)
             entry.update(closing=closing, closing_sha256=digest, mode=closing["acknowledged"]["mode"],
                          complete=False, closed=None,
                          released=closing["acknowledged"]["mode"] == "abandoned"
@@ -453,7 +567,9 @@ def closing_entries(common: str, ws: Workspace, ident: str) -> list[dict]:
             entry.update(problem={"reason": "closing_record_invalid", "message": f"{type(exc).__name__}: {exc}",
                                   "retained": [str(directory)], "next_steps": []}, complete=False, released=False)
         entries.append(entry)
-    return entries
+    # Unreadable records sort first: they keep the ID reserved whatever follows.
+    return sorted(entries, key=lambda item: ("problem" not in item,
+                                             str(((item.get("closing") or {}).get("identity") or {}).get("closed_at"))))
 
 
 def close_summary(entry: dict, repo: Path) -> dict:
@@ -491,8 +607,15 @@ def _still_there(repo: Path, leftover: str) -> bool:
     return os.path.lexists(leftover)
 
 
-def _read(location: Path, *, ws: Workspace, ident: str, name: str) -> tuple[dict, str]:
-    """One closing record, its shape and its binding to this audit and directory checked before use."""
+def _read(location: Path, *, ws: Workspace, ident: str, name: str, common: str) -> tuple[dict, str]:
+    """One closing record, its shape and its binding to this audit and directory checked before use.
+
+    The removal inventory must name this audit's session location, refs under
+    its own UUID and a checkout directory in the session layout, so even a
+    record written by hand can direct removal nowhere else.
+    """
+    from stewart._git import COMMIT_ID
+    from stewart._repository import _registry, session_location
     from stewart.session import capture_receipt
     value, digest = capture_receipt(location, what="closing record")
 
@@ -501,32 +624,52 @@ def _read(location: Path, *, ws: Workspace, ident: str, name: str) -> tuple[dict
                             retained=[str(location)],
                             next_steps=["preserve the closing record; it is never rewritten"])
 
+    def optional(item: object, kind: type) -> bool:
+        return item is None or isinstance(item, kind)
+
     if value.get("schema") != CLOSING_SCHEMA or set(value) != _CLOSING_FIELDS:
         raise invalid("has an unsupported shape")
     if not all(isinstance(value[group], dict) for group in _CLOSING_FIELDS - {"schema"}):
         raise invalid("has a group that is not an object")
     identity, acknowledged, observed, removal = (value[key] for key in ("identity", "acknowledged", "observed",
                                                                           "removal"))
+    uuid = identity.get("session_uuid", "missing")
     if (identity.get("audit_id") != ident or identity.get("slug") != ws.slug
-            or identity.get("session_uuid") not in (None, name)):
+            or not (uuid is None or (_canonical(uuid) == uuid and uuid == name))
+            or not optional(identity.get("prompt_commit"), str) or not optional(identity.get("closed_at"), str)):
         raise invalid("belongs to another audit, workspace or session")
     if (acknowledged.get("mode") not in MODES or not isinstance(acknowledged.get("actor"), str)
-            or not isinstance(acknowledged.get("reason"), (str, type(None)))):
+            or not optional(acknowledged.get("reason"), str)):
         raise invalid("has an unsupported acknowledgment")
-    retained, discarded = observed.get("retained"), observed.get("discarded")
-    if (not isinstance(retained, list) or not all(isinstance(item, dict) and isinstance(item.get("path"), str)
-                                                  for item in retained)
+    retained, discarded, coordination = observed.get("retained"), observed.get("discarded"), observed.get("coordination")
+    if (not isinstance(retained, list)
+            or not all(isinstance(item, dict) and isinstance(item.get("path"), str) for item in retained)
             or not (discarded is None or isinstance(discarded, list)
-                    and all(isinstance(item, dict) and isinstance(item.get("path"), str) for item in discarded))):
+                    and all(isinstance(item, dict) and isinstance(item.get("path"), str) for item in discarded))
+            or not isinstance(coordination, dict) or not optional(coordination.get("mode"), str)
+            or not optional(coordination.get("hold_resumed"), bool)
+            or not optional(observed.get("release_basis"), dict)):
         raise invalid("has unsupported observations")
-    paths = [removal.get(key) for key in ("worktree", "checkout_dir", "registry_row", "session_uuid")]
-    if (set(removal) != _REMOVAL_FIELDS or not isinstance(removal["session"], str)
-            or not all(isinstance(path, (str, type(None))) for path in paths)
-            or not isinstance(removal["members"], list) or not all(isinstance(m, str) for m in removal["members"])
-            or not isinstance(removal["refs"], list)
-            or not all(isinstance(r, dict) and isinstance(r.get("ref"), str) and isinstance(r.get("commit"), str)
-                       for r in removal["refs"])):
-        raise invalid("has an unsupported removal inventory")
+    if (set(removal) != _REMOVAL_FIELDS or removal["session_uuid"] != uuid
+            or removal["session"] != str(session_location(common, ws, ident))):
+        raise invalid("names another session's removal")
+    checkout_dir, worktree, members, refs = (removal[key] for key in ("checkout_dir", "worktree", "members", "refs"))
+    if uuid is None:
+        layout = checkout_dir is None and worktree is None and members == [] and refs == [] \
+            and removal["registry_row"] is None and removal["git_admin"] is None
+    else:
+        layout = ((checkout_dir is None and worktree is None and members == []
+                   or _in_layout(common, uuid, checkout_dir) and worktree == str(Path(checkout_dir) / "worktree")
+                   and isinstance(members, list) and all(_member_in_layout(checkout_dir, m) for m in members))
+                  and removal["registry_row"] == str(_registry(common) / f"{uuid}.json")
+                  and (removal["git_admin"] is None or isinstance(removal["git_admin"], str)
+                       and Path(removal["git_admin"]).parent == Path(common) / "worktrees")
+                  and isinstance(refs, list)
+                  and all(isinstance(r, dict) and set(r) == {"ref", "commit"} and isinstance(r["ref"], str)
+                          and r["ref"].startswith(f"refs/stewart/sessions/{uuid}/") and ".." not in r["ref"]
+                          and isinstance(r["commit"], str) and COMMIT_ID.fullmatch(r["commit"]) for r in refs))
+    if not layout:
+        raise invalid("has a removal inventory outside its session's layout")
     return value, digest
 
 
@@ -552,17 +695,33 @@ def require_fresh_audit_id(common: str, ws: Workspace, ident: str) -> None:
                                next_steps=["choose a fresh audit ID; a closed audit's ID names its evidence"])
 
 
-def _uncollected(checkout: dict, session: Path) -> list[dict]:
-    """Checkout files a collection has not captured: preserved nowhere if the checkout goes."""
+def _uncollected(checkout: dict, session: Path) -> list[dict] | None:
+    """Checkout files a collection has not captured: preserved nowhere if the checkout goes.
+
+    None means they cannot be known: an entry Git could not list (an
+    unreadable or replaced directory, a nested repository) or a moved HEAD
+    that no complete collection recorded.
+    """
     from stewart.session import list_records, read_receipt
     captured: set[tuple[str, str | None]] = set()
-    for entry in list_records(session / "collections"):
+    heads: set[str] = set()
+    try:
+        entries = list_records(session / "collections")
+    except OSError:
+        entries = []
+    for entry in entries:
         try:
             receipt = read_receipt(entry / "collection.json", what="collection receipt")
         except StewartError:
             continue
+        checkout_state = receipt.get("checkout") if isinstance(receipt.get("checkout"), dict) else {}
         if receipt.get("archive_sha256"):
-            captured.update((item.get("path"), item.get("sha256")) for item in receipt.get("checkout", {}).get("files", []))
+            captured.update((item.get("path"), item.get("sha256")) for item in checkout_state.get("files", [])
+                            if isinstance(item, dict))
+            heads.add(checkout_state.get("head"))
+    moved = any(item.startswith("HEAD at ") for item in checkout["extra"])
+    if checkout["unaccounted"] or (moved and checkout.get("head") not in heads):
+        return None
     return [item for item in checkout["files"]
             if item["path"] in checkout["extra"] and (item["path"], item["sha256"]) not in captured]
 
@@ -577,7 +736,7 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
     recorded inventory.
     """
     from stewart._repository import _role_records, maintainer, private_storage, session_location
-    from stewart.session import capture_receipt, load_session, now, owner_refusal, tool_identity, write_receipt
+    from stewart.session import capture_receipt, load_session, now, owner_refusal, tool_identity
     if not isinstance(actor, str) or not actor.strip():
         raise StewartError("a close needs an attributed actor", reason="actor_required",
                            next_steps=["rerun with --actor NAME naming who closes the audit"])
@@ -615,7 +774,7 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
             raise refusal
     if not abandon:
         load_session(ws, ident)
-    facts = _facts(session, record, rows, ws.repo)
+    facts = _facts(session, record, rows, ws.repo, common)
     if facts["session_uuid"] is None and not abandon:
         raise StewartError("no session record or registry row identifies this session", reason="close_unidentified",
                            code=EXIT_UNVERIFIED, retained=[str(session)],
@@ -640,14 +799,16 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
     if abandon:
         checkout = _observe_checkout(facts)
         if checkout["observed"]:
-            uncollected = _uncollected(checkout, session)
+            uncollected = _uncollected(checkout, session) if checkout["exists"] else []
         elif checkout["exists"] is None:
             uncollected = []  # no checkout is known, so none is removed
         else:
             uncollected = None
         if uncollected is None and not discard_uncollected:
-            raise StewartError(f"the checkout could not be observed ({checkout.get('error')}); changes no collection "
-                               "captured cannot be ruled out", reason="uncollected_changes",
+            why = checkout.get("error") or "entries Git cannot list, or a commit no collection recorded: " + ", ".join(
+                checkout["unaccounted"] or [item for item in checkout["extra"] if item.startswith("HEAD at ")])
+            raise StewartError(f"the checkout could not be observed fully ({why}); "
+                               "changes no collection captured cannot be ruled out", reason="uncollected_changes",
                                retained=[facts["worktree"]],
                                next_steps=["make the checkout readable and collect, or rerun with --discard-uncollected"])
         if uncollected and not discard_uncollected:
@@ -689,19 +850,24 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
         if parent.is_symlink():
             raise StewartError(f"closed-record storage cannot traverse a link: {parent}", reason="path_symlink",
                                retained=[str(parent)], next_steps=["preserve and inspect the link; nothing was removed"])
+        if os.path.lexists(parent) and not parent.is_dir():
+            raise StewartError(f"closed-record storage is not a directory: {parent}", reason="closing_record_invalid",
+                               code=EXIT_UNVERIFIED, retained=[str(parent)],
+                               next_steps=["preserve and inspect it; nothing was removed"])
         parent.mkdir(mode=0o700, exist_ok=True)
     # An unidentified session gets a fresh name for its closing directory.
     directory = folder / (facts["session_uuid"] or str(_uuid.uuid4()))
     if os.path.lexists(directory):
-        # Only a close interrupted before writing anything leaves an empty
-        # directory; CLOSING.json itself is the exclusive record.
-        if directory.is_symlink() or not directory.is_dir() or os.listdir(directory):
+        # Only a close interrupted before publishing its record leaves this
+        # directory, holding staged copies at most; CLOSING.json is exclusive.
+        if (directory.is_symlink() or not directory.is_dir()
+                or any(not _staged(name) for name in os.listdir(directory))):
             raise StewartError(f"a closing record already exists for this session: {directory}",
                                reason="destination_exists", retained=[str(directory)],
                                next_steps=["status shows the existing close; rerun close to finish an incomplete one"])
     else:
         directory.mkdir(mode=0o700)
-    write_receipt(directory / "CLOSING.json", closing)
+    _publish(directory, "CLOSING.json", closing)
     _, closing_digest = capture_receipt(directory / "CLOSING.json", what="closing record")
     return _finish(ws.repo, directory, closing, closing_digest, resumed=False)
 
@@ -710,7 +876,7 @@ def _status_view(ws: Workspace, ident: str) -> dict | None:
     from stewart.status import status
     try:
         return status(ws, ident)
-    except StewartError:
+    except (StewartError, OSError):
         return None
 
 
@@ -765,7 +931,7 @@ def _concluded(view: dict | None, facts: dict, session: Path) -> dict:
 
 def _finish(repo: Path, directory: Path, closing: dict, closing_sha256: str, *, resumed: bool) -> dict:
     """Remove the recorded inventory; CLOSED.json only once every recorded item is gone."""
-    from stewart.session import now, stamp, tool_identity, write_receipt
+    from stewart.session import now, stamp, tool_identity
     results, leftovers = _remove(closing["removal"], repo)
     failed = [item for item in results if item["outcome"] == "failed"]
     document = {"schema": CLOSED_SCHEMA, "closing_sha256": closing_sha256, "recorded_at": now().isoformat(),
@@ -773,10 +939,10 @@ def _finish(repo: Path, directory: Path, closing: dict, closing_sha256: str, *, 
     if failed:
         # A failed removal leaves the close incomplete: status says so and a
         # rerun finishes it from CLOSING.json. Each attempt keeps its record.
-        write_receipt(directory / f"CLOSE-ATTEMPT-{stamp()}.json", document)
+        _publish(directory, f"CLOSE-ATTEMPT-{stamp()}.json", document)
         closed = None
     else:
-        write_receipt(directory / "CLOSED.json", document)
+        _publish(directory, "CLOSED.json", document)
         closed = str(directory / "CLOSED.json")
     identity, acknowledged = closing["identity"], closing["acknowledged"]
     coordination = closing["observed"].get("coordination") or {}
