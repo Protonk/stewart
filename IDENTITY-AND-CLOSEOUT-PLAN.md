@@ -496,6 +496,56 @@ retires a resource with no live association under the same discipline.
 Finalization runs Git from the common directory, so removing a manager
 worktree (even the session's owner) does not strand the operation.
 
+### Revisions after design critique
+
+- References carry `owner` (recorded owner or draft checkout) beside the
+  executing `checkout`, and `closes` (closing names known at selection) so a
+  draft reference refuses once any newer close exists. `select` uses the
+  global `--repo`/`--workspace`; drafts in several checkouts need `--repo`
+  naming one of them.
+- Discovery uses `observer()`: the exact maintainer root with marker and lock
+  checks and a per-row tolerant role reader whose bad rows become diagnostics.
+- Request keys: directory `requests/<sha256(key)>/` with the exact key inside;
+  binding excludes the checkout (recorded as `invoked_from`); a key is looked
+  up before any reference, owner or session validation; execution holds
+  `flock` on the request directory. States: completed, refused, in_progress,
+  reserved (no attempt: may execute), partial, unverifiable. A keyed close
+  resumed and found complete records its outcome.
+- `stewart.result/3`: optional `error.handoff`; a replayed request is the
+  `result` document (`stewart.request/1`) with its recorded exit code.
+- Claims are generations `resources/<rid>/claims/<n>.json`, each ended by
+  `<n>.RETIRED.json` or `<n>.RELEASED.json`; a new claim needs every earlier
+  one ended. Liveness is re-evaluated after the claim and before removal on
+  every attempt; operations that would add a use (prepare, init, register,
+  associate, creation inside) refuse `resource_retiring` while a claim is
+  active. Derived uses come from every path a live session or draft pins
+  (owner checkout, checkout home and directory, helper interpreter, recorded
+  invocation, supplied runtime); an unreadable session blocks every worktree or
+  directory claim.
+- Branches: eligible when the tip equals the creation commit or is reachable
+  from a ref outside `refs/stewart/`, itself and other claimed branches, and no
+  remaining worktree checks it out; deletion is compare-and-swap on the frozen
+  tip. A borrowed existing branch is explained as `borrowed`. Worktrees also
+  need HEAD so reachable, no per-worktree refs or in-progress state, a clean
+  status including ignored paths except disposed recorded dependencies, and an
+  unchanged frozen content inventory at use. Directories: unchanged frozen
+  inventory at use. Removal is always pinned; Git never deletes contents; the
+  marker-verified administration is removed by descriptor.
+- `close --resource RID` is resource retirement (close stays the only
+  deleting command); `close --dispose RID` records a disposal decision for a
+  contained export/retained dependency inside the claim; `close --plan`
+  writes nothing. `export --output` may name an absolute new directory outside
+  the owner checkout as a durable destination. `close --abandon` accepts an
+  audit known only from drafts, registrations or resource contexts.
+- Live managed worktrees/directories join the auditor scope's private roots;
+  managed worktrees must lie outside checkout homes and registered checkout
+  directories.
+- Views: `stewart.status/13`, `stewart.status-closed/2`, new
+  `stewart.status-draft/1`; actions for a session written by another build use
+  its verified handoff argv or are withheld with the missing prerequisites.
+- A test checks every command, flag, schema and API name the orchestration
+  outflow cites.
+
 ### Progress
 
-- [ ] F1/F2 repairs with Appendix A regressions adapted
+- [x] F1/F2 repairs with Appendix A regressions adapted (c75cb65)
