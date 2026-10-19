@@ -13,7 +13,8 @@ audits, select one unambiguously, continue it through Stewart's supported operat
 recover from interruption, and retire its temporary resources without manually
 reconstructing receipt schemas, runtime commands, or filesystem ownership.
 Stewart explains every recorded resource that remains, including enrolled
-external resources that require manual retirement under this plan.
+external resources that require manual retirement under this plan. Sharing
+delays a managed resource's retirement but never strands it.
 
 Expand identity resolution, usable state, and resource lifecycle management
 together. Scientific review, automated judgments, and the unrelated ledger
@@ -114,9 +115,12 @@ manager worktrees and branches, temporary directories, exports and retained
 deliverables, and associations with existing session resources. Record enough
 creation provenance, lifetime identity, dependencies, and intended disposition
 to distinguish exclusive temporary resources, shared/borrowed dependencies, and
-retained evidence. A path or registration request alone cannot prove ownership
-or authorize recursive deletion. Existing resources need explicit enrollment
-and verified identity; unknown ownership remains unresolved.
+retained evidence. Keep a managed resource's creation record at repository
+level: the audit context that created it and every later user are associations,
+so its ownership outlives the creating audit's closure. A path or registration
+request alone cannot prove ownership or authorize recursive deletion. Existing
+resources need explicit enrollment and verified identity; unknown ownership
+remains unresolved.
 
 **Removal eligibility requires Stewart-recorded creation in this phase.** Add
 narrow creation operations for managed worktrees, branches, and temporary
@@ -183,6 +187,30 @@ added after planning, moved/replaced resources, and unexpected contents. Manager
 branch retirement must account for changed tips and unmerged work; a clean
 worktree alone is insufficient. Never blanket-clean ignored paths.
 
+**Shared managed resources have a retirement path.** A managed resource with a
+live association is in shared use: every close preserves it and names the audits
+still using it. An association whose audit state is missing, invalid, or
+unreadable counts as live. The close that ends the last live association may
+include the resource in its frozen inventory. A resource left behind once no
+live association remains (blocked at the last close, or omitted from an
+inventory frozen while another association was live) is retired later by an
+explicit, gated close of that named resource with the same discipline: record
+first, freeze identities, revalidate at use, and resume without widening. Never
+reopen or widen a closed audit's inventory to do this. At most one inventory may
+claim a resource; make the claim an exclusively created record so concurrent
+closes cannot both retire it. Update the custody rules in `AGENTS.md` to name
+the records that authorize removal.
+
+**Manual retirement is acknowledged, not inferred.** When a recorded resource is
+absent, report that observation. Let the manager acknowledge an observed absence
+as retirement outside Stewart in a separate record bound to the resource
+identity and that observation; never edit the creation or enrollment record.
+Revalidate the absence when recording, and refuse while the resource is present.
+The view then distinguishes acknowledged manual retirement from an unexplained
+missing resource. An acknowledgment grants no permission and makes no claim
+about how the resource was removed; anything later found at that path is a new
+observation, not the retired resource.
+
 Run finalization through a runtime and repository context that survive removal
 of disposable manager resources. Preserve shared storage, unrelated worktrees,
 retained deliverables, closing records, and audit-ID reservation rules. Historical
@@ -193,7 +221,10 @@ Exit criterion: Stewart can retire eligible recorded manager worktrees, branches
 and temporary outputs as well as session resources, explain all remaining items,
 and recover from interruption without a custom cleanup controller. Enrolled
 external resources are an explicit manual-retirement remainder, not an unmet
-promise of automatic deletion or a reason to broaden a retry.
+promise of automatic deletion or a reason to broaden a retry. Shared use delays
+eligibility but never makes it permanent: once no live association remains,
+Stewart can retire the resource. An acknowledged manual retirement is reported
+as such, not as missing.
 
 ## 5. Validate the complete user journey
 
@@ -219,6 +250,20 @@ explicitly reselect. Verify read-only `init` preview, recorded drafts before
 preparation, absent unrecorded workspaces, and explicit workspace registration.
 Prove healthy managed-resource removal while unchanged enrolled external resources
 and an existing branch used by a managed worktree remain intact and explained.
+
+Close every audit sharing a managed worktree, its branch, and a managed
+temporary directory. Each earlier close preserves them as shared use; Stewart
+retires them after the last association closes. Controls: an associated audit
+that is still live, or changed contents or branch tip, preserves them with an
+explanation; a single-audit resource is removed as before. Leave a shared
+resource blocked at the last close, clear the blocker, and retire it through the
+explicit resource close without changing any closed audit's records. Under a
+controlled interleaving of two final closes, only one inventory claims the
+resource. Manually remove an enrolled external resource and a blocked managed
+resource: before acknowledgment the view reports them missing; afterwards it
+reports acknowledged manual retirement with observation and acknowledgment in
+separate fields. Acknowledging a present resource is refused, and an
+unacknowledged absence keeps its missing diagnostic.
 
 Test stale actions, foreign/reused identities, changed branch tips and directory
 contents, links, malformed/duplicate-key control records, missing owners, and
@@ -259,7 +304,8 @@ that orchestration is already implemented.
 Finish the main acceptance journey with the outflow present in the repository:
 the fresh agent can discover and continue the audits and then find the separate
 plan for starting orchestration. Document the selection, registration, removal
-eligibility, and failure/recovery contracts in shipped guidance and CLI help.
+eligibility, shared-resource retirement, manual-retirement acknowledgment, and
+failure/recovery contracts in shipped guidance and CLI help.
 Commit the
 implementation, tests, documentation, and outflow; remove this completed plan
 once its contracts are represented there. Leave `ORCHESTRATION-PLAN.md` pending.
