@@ -381,3 +381,121 @@ request-key, runtime-handoff, and failure/recovery contracts in shipped guidance
 and CLI help. Commit the implementation, tests, documentation, and outflow;
 remove this completed plan
 once its contracts are represented there. Leave `ORCHESTRATION-PLAN.md` pending.
+
+## Execution state (temporary; remove with this plan)
+
+Increments, in order: (1) close repairs F1/F2; (2) implementation identity,
+drafts/registration, discovery, selection references; (3) request keys;
+(4) recorded resources, closeout, shared/explicit resource close, manual
+retirement acknowledgment; (5) action bindings, journey tests, docs and
+AGENTS.md; (6) ORCHESTRATION-PLAN.md, full suite, removal of this plan.
+
+### Decided shapes
+
+**Repository-level records** live beside the existing ones under
+`<common>/stewart/`: `audits/<slug>/<audit-id>/` (drafts, registrations),
+`requests/<key>/` and `resources/<rid>/`. Sessions, closing records and the
+role registry keep their schemas; `stewart.closing/1` and `stewart.closed/1`
+are unchanged (resource retirement is frozen in per-resource claim records and
+listed in `CLOSED.json`'s free-form `results`).
+
+**Audit identity** is (repository common dir, workspace rel, audit ID). A
+lifetime is a session UUID. A recorded *audit context*
+`{workspace, slug, audit_id, lifetime, closed_before}` is embedded in draft,
+registration, association and resource-creation records. `closed_before` lists
+the closing-directory names that existed when the context was recorded.
+Liveness: a context with lifetime U ends once a valid `CLOSING.json` exists for
+U (closing or closed); a context without a lifetime ends once a valid
+`CLOSING.json` exists for a name outside `closed_before`. An invalid,
+unreadable or unsupported closing record for the audit keeps the context live.
+
+**Drafts.** `init --replace-prompt` writes
+`audits/<slug>/<id>/init/<name>/STARTED.json` (intended writes and digests,
+prior prompt observation, checkout, context) before writing, then
+`OUTCOME.json` (observed results or the failure). Preview writes nothing.
+`register --audit-id ID --actor NAME` records present observations of the
+workspace's guidance files and a prompt whose assignment block names the ID
+(`audits/<slug>/<id>/registrations/<name>.json`); it implies no earlier
+custody. Both refuse reserved IDs and existing live sessions. `close --abandon`
+also accepts an audit with only draft records, writing a closing record with no
+session UUID (the ID stays reserved), which ends draft-stage associations.
+
+**Discovery** (`stewart --repo R discover`) is repository-wide and read-only:
+it enumerates sessions, closing directories, draft/registration records, role
+rows, resource contexts, resources and requests. The discovery envelope is the
+top-level `schema`/`schema_version`, `workspace` (accepted only when its slug
+matches the record's location) and the `stewart` stamp. Unsupported, invalid
+and unreadable records are listed with their location and diagnostics; no
+lifecycle state is inferred from unknown fields.
+
+**Selection reference** `stewart.audit-ref/1`:
+`{schema, repository, checkout, workspace, audit_id, lifetime, implementation}`.
+`select --audit-id ID [--workspace W] [--checkout PATH] [--lifetime U]`
+resolves the alias across workspaces and refuses ambiguity
+(`selection_ambiguous`) or absence (`selection_missing`). It writes nothing
+(no receipt, no deployment, no current-audit setting). `--ref FILE` supplies
+repo/workspace/audit ID to any command; `--lifetime U` binds a session lifetime
+without a file (generated actions carry it). Every operation revalidates: same
+common dir, existing maintainer checkout, matching session UUID (a draft
+reference never selects a later session: `reference_stale`), matching recorded
+implementation.
+
+**Implementation identity** is the stamp's `package_sha256` (location
+independent). Mutations of a session, a close resumption, a resource claim
+resumption and a request retry refuse with `implementation_mismatch` when the
+recorded writer differs from the running package. The handoff is built only
+from a recorded `invocation` that verifies by descriptor reads: route
+`isolated-manager/1`, absolute canonical paths, deployment bytes equal to the
+recorded member manifest and runtime digest, launcher bytes equal to their
+digest and the deployment's bootstrap, interpreter present and executable. The
+result is `{state: verified, argv, env: {}}` or `{state: unresolved, missing:
+[...], diagnostics}`; nothing is executed or imported. Views expose it under
+`implementation.handoff`; refusals name it in `next_steps`.
+
+**Request keys** (`--request-key KEY`, API `request_key=`):
+`requests/<key>/REQUEST.json` is published exclusively (staged copy linked to
+its name) before side effects and binds operation, audit, checkout, lifetime,
+resource IDs, implementation and semantic inputs (decoded control JSON by
+canonical digest; supplied files by byte digest). `attempts/<name>.json`
+records planned output identities immediately before the first side effect;
+`OUTCOME.json` records completion or refusal with output identities. Reuse with
+another binding refuses (`request_key_conflict`); same binding returns
+`stewart.request/1` (completed, refused, partial or unverifiable) without
+executing. `--resume-request` explicitly resumes a partial request only for
+operations with safe resumption (audit close, resource close), appending an
+attempt. Outputs are reported as available, retired or missing at read time.
+`stewart request --key KEY` inspects; discovery lists requests.
+
+**Resources** (`resources/<rid>/`): managed creation writes `CREATE.json`
+(context, intended identity) before side effects and `CREATED.json` (observed
+identity or failure) after; enrollment writes `ENROLLED.json` (observed
+snapshot, acknowledgment; never removal-eligible). Kinds: `worktree` (managed
+ones locked with `stewart managed worktree <rid>` and marked by
+`stewart-resource.json` in their Git administration), `branch`, `directory`,
+`export` and `retained` (deliberate retention; created by `export`/`retain`).
+`associations/<name>.json` adds users. Derived associations: live sessions or
+drafts whose owner checkout, checkout home or checkout directory lie inside a
+worktree/directory resource. Contained exports/retained/other resources are
+dependencies. `CLAIM.json` (exclusive; frozen identity, claimant) is the only
+removal authority beside `CLOSING.json`; `RETIRED.json` or
+`RETIRE-ATTEMPT-<name>.json` record outcomes. `ACKNOWLEDGED.json` records a
+manual retirement bound to a revalidated absence observation.
+
+**Closeout.** An audit close publishes `CLOSING.json`, then (first attempt
+only) evaluates associated resources and claims those whose every other
+association has ended and that pass eligibility (verified identity, real
+ancestors, clean including ignored paths except explicitly disposed recorded
+dependencies, merged or unchanged branch tips, not holding the running
+runtime). Removal: session items (pinned, never following links), then claimed
+resources (worktrees, directories, branches), revalidating frozen identities
+at use. A resume works only from the claims naming its closing directory.
+Everything else is preserved and explained (`shared`, `manual`, `retained`,
+`blocked`, `claimed`, `missing`, `acknowledged`, `retired`). `close --plan`
+prints that description without writing. `resource close --resource RID`
+retires a resource with no live association under the same discipline.
+Finalization runs Git from the common directory, so removing a manager
+worktree (even the session's owner) does not strand the operation.
+
+### Progress
+
+- [ ] F1/F2 repairs with Appendix A regressions adapted
