@@ -1365,3 +1365,640 @@ git show --format=fuller --stat HEAD
 Final transaction: recorded before execution. Actual result: `.scratch/self-audit-commission-20261018/20261019T164817Z-510d62bd.json`; output: `.scratch/self-audit-commission-20261018/20261019T164817Z-510d62bd.log`.
 
 End of the consolidation command inventory. No cleanup operation is included.
+
+## 20261019T165213Z-439b31f0
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git status --short --branch
+```
+
+Exit status: 0. Output SHA-256: `ad63f7703e6ede28ea365e56c2a68a8bc0a12120a9bc02f2ff265e9bec891496`.
+
+Observed output:
+
+    ## rehome
+     M AUDIT-COMMISSION-GIT-COMMANDS.md
+    ?? LINUX-CONTAINERS-PLAN.md
+    ?? SELF-AUDIT-CLOSE-REMOVAL-RESULTS.md
+    ?? SELF-AUDIT-INSTRUMENT-DISCRIMINATION-RESULTS.md
+    ?? SELF-AUDIT-RECEIPT-SUFFICIENCY-RESULTS.md
+    ?? SELF-AUDIT-SNAGS.md
+    ?? user-report.md
+
+## 20261019T165213Z-3e94d95d
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git worktree list --porcelain
+```
+
+Exit status: 0. Output SHA-256: `1fc0b6dc11b832ae06917e5af8de9bd4e53d6c6c84f24b14c51a19b852abdb8e`.
+
+Observed output:
+
+    worktree /Users/raccoon/Desktop/Experiments/stewart
+    HEAD 71ab72cbc60e017f3480a5dc73a6f582061cb94c
+    branch refs/heads/rehome
+
+    worktree /Users/raccoon/.local/state/stewart/checkouts/stewart-a964a1bb21fd/926fc96a-6a57-469a-8dfb-ebe6cf471720/worktree
+    HEAD f73ec0596ebe9410c678b36c8bcb049b4328fbe5
+    detached
+    locked stewart auditor checkout 926fc96a-6a57-469a-8dfb-ebe6cf471720: run stewart status before removing; close removes it with its session
+
+    worktree /Users/raccoon/.local/state/stewart/checkouts/stewart-a964a1bb21fd/a7561b30-eee3-40b4-83c2-e46022566fd1/worktree
+    HEAD fae7659011b503d8166c00f611f2ee58b222285d
+    detached
+    locked stewart auditor checkout a7561b30-eee3-40b4-83c2-e46022566fd1: run stewart status before removing; close removes it with its session
+
+    worktree /Users/raccoon/.local/state/stewart/checkouts/stewart-a964a1bb21fd/e6f345bd-52a5-4702-81e5-0a45c007b08c/worktree
+    HEAD 887a192c02649cd0f323884f86ba5505796ec660
+    detached
+    locked stewart auditor checkout e6f345bd-52a5-4702-81e5-0a45c007b08c: run stewart status before removing; close removes it with its session
+
+    worktree /Users/raccoon/Desktop/Experiments/stewart-close-removal-manager
+    HEAD d2a5779bca324e04e84b60aee5af85ec4f199785
+    branch refs/heads/audit/close-removal-boundary-20261018
+
+    worktree /Users/raccoon/Desktop/Experiments/stewart-ledger-instrument-manager
+    HEAD 3d3107e8ee8e0ddb72f493d60864240772619c61
+    branch refs/heads/audit/ledger-instrument-discrimination-20261019
+
+    worktree /Users/raccoon/Desktop/Experiments/stewart-receipt-sufficiency-manager
+    HEAD 4fe0ab7040c679f1985f95a2c6d443e4eb2c8ccb
+    branch refs/heads/audit/package-receipt-sufficiency-20261019
+
+    worktree /Users/raccoon/Desktop/Experiments/stewart-rehome-scope-manager
+    HEAD c1abfb54b92f48731f2f437f9b37850a467efc8c
+    branch refs/heads/audit/rehome-scope-01
+
+
+## 20261019T165213Z-ebf5dc67
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git for-each-ref '--format=%(refname) %(objectname)' refs/stewart refs/heads/audit
+```
+
+Exit status: 0. Output SHA-256: `79b9a9de3ebe491185343c376cbe817882dbd83f1674b54720cca176c33cf99b`.
+
+Observed output:
+
+    refs/heads/audit/close-removal-boundary-20261018 d2a5779bca324e04e84b60aee5af85ec4f199785
+    refs/heads/audit/ledger-instrument-discrimination-20261019 3d3107e8ee8e0ddb72f493d60864240772619c61
+    refs/heads/audit/package-receipt-sufficiency-20261019 4fe0ab7040c679f1985f95a2c6d443e4eb2c8ccb
+    refs/heads/audit/rehome-scope-01 c1abfb54b92f48731f2f437f9b37850a467efc8c
+    refs/stewart/sessions/926fc96a-6a57-469a-8dfb-ebe6cf471720/prompt f73ec0596ebe9410c678b36c8bcb049b4328fbe5
+    refs/stewart/sessions/926fc96a-6a57-469a-8dfb-ebe6cf471720/target 0aaa6eafa06722add123105da912c906b8608633
+    refs/stewart/sessions/a7561b30-eee3-40b4-83c2-e46022566fd1/prompt fae7659011b503d8166c00f611f2ee58b222285d
+    refs/stewart/sessions/a7561b30-eee3-40b4-83c2-e46022566fd1/target 0aaa6eafa06722add123105da912c906b8608633
+    refs/stewart/sessions/e6f345bd-52a5-4702-81e5-0a45c007b08c/prompt 887a192c02649cd0f323884f86ba5505796ec660
+    refs/stewart/sessions/e6f345bd-52a5-4702-81e5-0a45c007b08c/target 0aaa6eafa06722add123105da912c906b8608633
+
+## Authorized Stewart cleanup — 2026-10-19
+
+The user authorized cleanup after the consolidated report commit. All three normal concluded closing records verify as complete, with no failed removal or leftover. Fresh status and no-follow ancestry/lifetime checks preceded each close; post-close status returned 0. No new preparation was interleaved. These are Stewart operations, not manually issued Git commands.
+
+- `close-removal-boundary-01`: removed its auditor worktree/runtime, two recorded refs, role row and private session; closing record `/Users/raccoon/Desktop/Experiments/stewart/.git/stewart/closed/close-removal-review-e197ab918629/close-removal-boundary-01/e6f345bd-52a5-4702-81e5-0a45c007b08c/CLOSED.json`.
+- `package-receipt-sufficiency-01`: removed its auditor worktree/runtime, two recorded refs, role row and private session; closing record `/Users/raccoon/Desktop/Experiments/stewart/.git/stewart/closed/package-receipt-review-a5d4a352ef9c/package-receipt-sufficiency-01/a7561b30-eee3-40b4-83c2-e46022566fd1/CLOSED.json`.
+- `ledger-instrument-discrimination-01`: removed its auditor worktree/runtime, two recorded refs, role row and private session; closing record `/Users/raccoon/Desktop/Experiments/stewart/.git/stewart/closed/ledger-instrument-review-67a47bcd1447/ledger-instrument-discrimination-01/926fc96a-6a57-469a-8dfb-ebe6cf471720/CLOSED.json`.
+
+The closed histories remain until the separately authorized manual cleanup below. The shared manager deployment and operational interpreter are still available.
+
+Manager-controller corrections: two initial prechecks assumed fields absent from the two-field lifetime marker and stopped before any removal. The first close then completed but emitted plain text, which the controller incorrectly tried to decode as JSON. Its completed record/status were verified without repeating removal; the remaining closes explicitly requested JSON. These were controller errors, not failed Git commands or new Stewart findings.
+
+## 20261019T165440Z-67c66310
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart-close-removal-manager`
+
+```sh
+git status --porcelain=v1 --untracked-files=all
+```
+
+Exit status: 0. Output SHA-256: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## 20261019T165440Z-df95e555
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git diff --name-only 0aaa6eafa06722add123105da912c906b8608633 audit/close-removal-boundary-20261018
+```
+
+Exit status: 0. Output SHA-256: `21187ee20e3eec89cb6ca21d3b4ece547b47b9aa75b61e19ea897d906a78e6ca`.
+
+Observed output:
+
+    audits/close-removal-review/AGENTS.md
+    audits/close-removal-review/AUDITOR.md
+    audits/close-removal-review/CLAUDE.md
+    audits/close-removal-review/LAUNCH-PROFILE.json
+    audits/close-removal-review/MAINTAINER.md
+    audits/close-removal-review/PROMPT.md
+    audits/close-removal-review/reports/close-removal-boundary-01.md
+    audits/close-removal-review/reviews/close-removal-boundary-01.md
+    audits/close-removal-review/scratch/close-removal-boundary-01/notes/01-reading-log.md
+    audits/close-removal-review/scratch/close-removal-boundary-01/notes/02-trace-and-candidates.md
+
+## 20261019T165440Z-4cc5cc73
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git worktree remove /Users/raccoon/Desktop/Experiments/stewart-close-removal-manager
+```
+
+Exit status: 0. Output SHA-256: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## 20261019T165440Z-5a0bff55
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git branch -D audit/close-removal-boundary-20261018
+```
+
+Exit status: 0. Output SHA-256: `4aab3b68d189890c378eeef1a242c91b6e8ce204cd40b4845683aa3a4ffc5c44`.
+
+Observed output:
+
+    Deleted branch audit/close-removal-boundary-20261018 (was d2a5779).
+
+## 20261019T165440Z-9d673040
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart-receipt-sufficiency-manager`
+
+```sh
+git status --porcelain=v1 --untracked-files=all
+```
+
+Exit status: 0. Output SHA-256: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## 20261019T165440Z-9d2b4be2
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git diff --name-only 0aaa6eafa06722add123105da912c906b8608633 audit/package-receipt-sufficiency-20261019
+```
+
+Exit status: 0. Output SHA-256: `1f9d942d63ebeb1817bf3daeea0dba173eb02385c57de44b6e9cc59915eafb4e`.
+
+Observed output:
+
+    audits/package-receipt-review/AGENTS.md
+    audits/package-receipt-review/AUDITOR.md
+    audits/package-receipt-review/CLAUDE.md
+    audits/package-receipt-review/LAUNCH-PROFILE.json
+    audits/package-receipt-review/MAINTAINER.md
+    audits/package-receipt-review/PROMPT.md
+    audits/package-receipt-review/reports/package-receipt-sufficiency-01.md
+    audits/package-receipt-review/reviews/package-receipt-sufficiency-01.md
+    audits/package-receipt-review/scratch/package-receipt-sufficiency-01/notes/01-reading-log.md
+    audits/package-receipt-review/scratch/package-receipt-sufficiency-01/notes/02-binding-crosscheck.md
+
+## 20261019T165440Z-1546ef6d
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git worktree remove /Users/raccoon/Desktop/Experiments/stewart-receipt-sufficiency-manager
+```
+
+Exit status: 0. Output SHA-256: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## 20261019T165440Z-e8ab04f2
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git branch -D audit/package-receipt-sufficiency-20261019
+```
+
+Exit status: 0. Output SHA-256: `7ed1d4a36aeba44e11e686090566fc7d3528eeee56df928467ff18d8962df991`.
+
+Observed output:
+
+    Deleted branch audit/package-receipt-sufficiency-20261019 (was 4fe0ab7).
+
+## 20261019T165440Z-b697ad31
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart-ledger-instrument-manager`
+
+```sh
+git status --porcelain=v1 --untracked-files=all
+```
+
+Exit status: 0. Output SHA-256: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## 20261019T165440Z-6a073405
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git diff --name-only 0aaa6eafa06722add123105da912c906b8608633 audit/ledger-instrument-discrimination-20261019
+```
+
+Exit status: 0. Output SHA-256: `249c44b8c4f13a4f4821fb9ef1e7acef21e3026501d917c911ee31d46151dfa7`.
+
+Observed output:
+
+    audits/ledger-instrument-review/AGENTS.md
+    audits/ledger-instrument-review/AUDITOR.md
+    audits/ledger-instrument-review/CLAUDE.md
+    audits/ledger-instrument-review/LAUNCH-PROFILE.json
+    audits/ledger-instrument-review/MAINTAINER.md
+    audits/ledger-instrument-review/PROMPT.md
+    audits/ledger-instrument-review/reports/ledger-instrument-discrimination-01.md
+    audits/ledger-instrument-review/reviews/ledger-instrument-discrimination-01.md
+    audits/ledger-instrument-review/scratch/ledger-instrument-discrimination-01/notes/01-trace-and-fixtures.md
+    audits/ledger-instrument-review/scratch/ledger-instrument-discrimination-01/notes/02-independent-contrasts.md
+
+## 20261019T165440Z-1b814d6b
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git worktree remove /Users/raccoon/Desktop/Experiments/stewart-ledger-instrument-manager
+```
+
+Exit status: 0. Output SHA-256: `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## 20261019T165440Z-3993b379
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git branch -D audit/ledger-instrument-discrimination-20261019
+```
+
+Exit status: 0. Output SHA-256: `b4e8a76c9d259fe4a28159ab579130485c8750b00ad3e9328528fc4f2ed5ebec`.
+
+Observed output:
+
+    Deleted branch audit/ledger-instrument-discrimination-20261019 (was 3d3107e).
+
+## Authorized manager-tree cleanup
+
+Each of the three manager worktrees had no tracked/untracked changes. Its branch diff from the audited target contained only its assigned audit workspace. Only known owned ignored scratch roots were removed before ordinary Git worktree removal. The three unmerged audit branches were explicitly deleted after their findings/reproductions had been committed in the consolidated report. The preexisting rehome manager and branch were excluded.
+
+## Captured outcomes before raw-artifact removal
+
+The six self-recording commands in consolidation commit 71ab72cbc60e017f3480a5dc73a6f582061cb94c all completed with exit 0. Their verified output digests are preserved here before the raw capture directory is removed. Earlier raw-output paths in this log are historical locations, not claims that those optional files still exist.
+
+| Entry | Exit | Output SHA-256 |
+| --- | ---: | --- |
+| 20261019T164817Z-01d4d52d | 0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 20261019T164817Z-301e42bc | 0 | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
+| 20261019T164817Z-510d62bd | 0 | 57ed3e5ed04ff1f48f75391d07c0d72df3304a3f04bd2e25602f95bb8290c49d |
+| 20261019T164817Z-6e19c11d | 0 | 330bc49f922cb064daca85de3d4b88d9ee4288e6ab12322de1e49ed498c4ae95 |
+| 20261019T164817Z-a301bd5b | 0 | eade7bafe1ffc6d9796aeaf5e398e815635c9c1f09128a0e691fe9f27bdd3f5c |
+| 20261019T164817Z-deb98d62 | 0 | 3676c2a2d0b2f62eb7a73abcd9999bfdad58b7c122966a72e810c4fc0bf426b5 |
+
+## Authorized filesystem cleanup completed
+
+Removed the three completed closing-history subtrees under explicit cleanup authorization, after their complete records/status had been verified. This is manual history removal, not a Stewart abandon or a claim that Stewart mechanically released those IDs. Removed empty owned private-store/repo-key parents where possible, the three superseded manager reports and the four owned root scratch directories. Directory deletion used pinned no-follow descriptors; embedded fixture links were unlinked, not followed.
+
+The consolidated report is byte-for-byte unchanged. Preexisting root documents, scratch entries, .venv, the rehome worktree/branch, shared manager deployment/launcher and global harness/Git history were preserved. No garbage collection, reflog expiry, broad clean/reset/prune, or deletion of shared storage was performed.
+
+## 20261019T165551Z-65a940d1
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git worktree list --porcelain
+```
+
+Exit status: 0. Output SHA-256: `8404f45122e5e9c1d1af5aeca573fca5d21d216e0e2916d4c852ee81369592ee`.
+
+Observed output:
+
+    worktree /Users/raccoon/Desktop/Experiments/stewart
+    HEAD 71ab72cbc60e017f3480a5dc73a6f582061cb94c
+    branch refs/heads/rehome
+
+    worktree /Users/raccoon/Desktop/Experiments/stewart-rehome-scope-manager
+    HEAD c1abfb54b92f48731f2f437f9b37850a467efc8c
+    branch refs/heads/audit/rehome-scope-01
+
+
+## 20261019T165551Z-adb91a02
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git for-each-ref '--format=%(refname) %(objectname)' refs/stewart refs/heads/audit
+```
+
+Exit status: 0. Output SHA-256: `3e67c234584bae9f45b96667e3fa378a0d3db5a16863eac7e84836736b535351`.
+
+Observed output:
+
+    refs/heads/audit/rehome-scope-01 c1abfb54b92f48731f2f437f9b37850a467efc8c
+
+## 20261019T165551Z-43803c90
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git status --short --branch --untracked-files=all
+```
+
+Exit status: 0. Output SHA-256: `86ccb936b6496d7ae3c6256edeadf97bf26146025b0aeb41d70d333e130bb05c`.
+
+Observed output:
+
+    ## rehome
+     M AUDIT-COMMISSION-GIT-COMMANDS.md
+    ?? LINUX-CONTAINERS-PLAN.md
+    ?? SELF-AUDIT-SNAGS.md
+    ?? user-report.md
+
+## Manual Git friction — conclusions from the completed audit workflow
+
+This report covers the three commissioned audits, their reviews, consolidation
+and authorized cleanup. It describes the actions actually taken and their
+observed consequences. It proposes no product changes or solutions. Counts
+include every manager-issued Git command, including discovery, repeated checks,
+logging/commit verification and commands Stewart might already support.
+
+### Counted evidence
+
+At the completed-cleanup boundary there are **110 manager-issued Git commands**:
+92 through the consolidated report commit and 18 during cleanup. Two Git
+invocations disclosed by the package auditor are separately attributed and are
+not included. Git subprocesses issued internally by Stewart or test fixtures
+are also separate. Finalization commands are listed below the report and lie outside this
+110-command cutoff. The first finalization stopped after two commands; its four
+unissued planned commands are marked and excluded. A fresh six-command retry
+brings the completed session total to 118 manager-issued commands.
+
+| Kind of manual action through cleanup | Commands |
+| --- | ---: |
+| Read/verification: status, diff, worktree list, log, show, refs, tracked-file/ancestry/version checks | 78 |
+| Staging (`add`) | 12 |
+| Commit invocations, including one prompt amendment | 11 |
+| Create isolated manager worktrees/branches | 3 |
+| Remove manager worktrees | 3 |
+| Delete manager audit branches | 3 |
+| Total | 110 |
+
+The 78 read/verification calls comprise 28 status, 21 diff, 10 worktree-list,
+8 show, 5 log, 3 for-each-ref, and one each of ls-files, merge-base and version.
+The 18 cleanup calls comprise 12 read/verification calls and six mutations:
+three ordinary worktree removals and three explicit branch deletions. All 18
+cleanup Git commands exited 0. The earlier nonzero Git result was a whitespace
+check (exit 2) caused by the command recorder's trailing blank line; it was
+corrected and the final staged checks passed.
+
+### Observed friction
+
+1. **Repository context was a recurring manual concern.** Commands ran in the
+   original checkout and three separate manager checkouts sharing one Git common
+   directory. The audit preparation contract constrained target-to-prompt changes
+   to one workspace and required a prompt-only commit. This session created
+   three branches/worktrees from the same target and selected working directories
+   explicitly throughout commissioning and review. Worktree and ref inventories
+   were repeated at the cleanup boundary to distinguish the three owned trees
+   from the preexisting rehome manager.
+
+2. **Preparing the assignment included manual Git publication.** Each audit
+   had separate support and prompt commits, followed by a reviewed-outcome
+   commit. There was one prompt amendment during preparation, then the root
+   consolidation commit. Stewart preparation and custody commands did not stage
+   those files or create those manager commits. Explicit file lists kept unrelated
+   root documents out of the commits. One staging command used `-f` to include
+   reviewed notes under an ignored scratch path.
+
+3. **Inspection and verification dominated the command count.** The largest
+   groups were status and diff, followed by worktree listing and inspection of
+   commits/history. These calls established branch/checkout context, prompt
+   ancestry, staged scope, retained commit identity and remaining cleanup
+   resources. The count measures calls made; it does not establish that every
+   repeated call was unavoidable, or assign a time cost to them.
+
+4. **Stewart retirement and Git manager cleanup were distinct operations.**
+   Normal Stewart close removed the three auditor registrations, six session
+   refs and the corresponding custody/role state. The three manager checkouts
+   and their branches remained. Each manager tree then received a clean-tree
+   check and an audit-workspace-only diff check, followed by manual worktree
+   removal and `branch -D`. The branches contained unmerged audit-only material;
+   their substantive handoff had already been consolidated. Owned ignored
+   exports/input packages were removed separately before ordinary worktree
+   removal. No forced worktree removal was needed.
+
+5. **The Git-command log created observable bookkeeping work of its own.**
+   Recording a command before execution modified the tracked log, so root
+   status checks included that modification. The recorder's EOF formatting
+   produced the earlier nonzero whitespace check. Finalization of this cleanup
+   report encountered another whitespace-check refusal: indented blank lines
+   from embedded Git output contained spaces. The formatting was corrected
+   before the successful final transaction. To commit a log that includes
+   its own final Git commands without leaving a modified tail, consolidation
+   recorded its final six commands before execution and captured their outcomes
+   separately. Those outcomes were verified and appended before raw-artifact
+   deletion. This appended report uses the same explicit final-transaction
+   convention. These are logging effects in this session, not audit findings
+   about Git or Stewart.
+
+No merge, rebase, fetch or push command appears in the manager log. The record
+does not measure elapsed effort per command or support claims about alternative
+workflows. Controller field/JSON mistakes described above were non-Git errors
+and are not counted as failed Git operations.
+
+### Cleanup outcome and retained boundary
+
+All three normal Stewart closes are verified complete with no leftovers; their
+post-close statuses returned 0. Manual cleanup removed the three manager
+worktrees/branches and their owned exports, the four owned root scratch trees,
+three superseded reports, the three completed closing-history subtrees and
+empty private-store/repo-key parents. The private `.git/stewart` directory is
+now absent. Manual closing-history removal was explicit cleanup, not a claim
+that Stewart's mechanical abandon rule released these launched audit IDs.
+
+Git now lists only the original checkout and the preexisting rehome manager;
+the only remaining audit-named branch is the preexisting `audit/rehome-scope-01`.
+No session refs remain. The consolidated `SELF-AUDIT-REPORT.md` is unchanged
+from commit 71ab72cbc60e017f3480a5dc73a6f582061cb94c and remains the remediation
+handoff. Its “no cleanup executed” section records the earlier assessment time;
+this appended outcome records the later authorized execution.
+
+Preexisting untracked documents, `.venv`, unrelated scratch trees and the shared
+manager deployment/launcher were preserved. The shared process-cache directory
+was empty at the final filesystem check. Global harness/terminal history,
+Git objects and reflogs were not erased. No broad clean, reset, prune, garbage
+collection or history rewrite was used. The temporary cleanup controller is
+removed after the final commit/verification; it is not a remediation dependency.
+
+### Final cleanup-report commit transaction
+
+The six commands below are recorded before execution so the appended report
+and its own final Git inventory are committed together. They add one staging,
+one commit and four verification calls beyond the completed 110-command cutoff:
+116 manager-issued Git commands in the full session after successful execution,
+with two auditor-reported invocations still separate. Outcomes are not asserted
+in advance. The containing commit establishes that staging, staged validation
+and the commit completed; the final status/commit outputs are reported in the
+tool result. Temporary controller outputs are removed after verification.
+
+## 20261019T165907Z-487e595f
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git add -- AUDIT-COMMISSION-GIT-COMMANDS.md
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+Observed result from the interrupted transaction: exit 0; output SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
+## 20261019T165907Z-17dd9016
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git diff --cached --check
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+Observed result from the interrupted transaction: exit 2; output SHA-256 `257345794df1f5920797c2ded356da2fbbf5f1e374ba6e98cf887270ddd31dcb`.
+
+## 20261019T165907Z-84835334
+
+Planned directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git diff --cached --name-only
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+Not issued: the staged whitespace check stopped this transaction. This planned command is excluded from actual invocation counts.
+
+## 20261019T165907Z-a8e6572c
+
+Planned directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git commit -m 'Record audit cleanup and observed manual Git friction'
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+Not issued: the staged whitespace check stopped this transaction. This planned command is excluded from actual invocation counts.
+
+## 20261019T165907Z-0fe7dd77
+
+Planned directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git status --short --branch
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+Not issued: the staged whitespace check stopped this transaction. This planned command is excluded from actual invocation counts.
+
+## 20261019T165907Z-125b25c4
+
+Planned directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git show --format=fuller --stat HEAD
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+Not issued: the staged whitespace check stopped this transaction. This planned command is excluded from actual invocation counts.
+
+End of the authorized cleanup and manual Git friction report.
+
+## Interrupted cleanup-report finalization
+
+The first finalization issued only git add (exit 0) and git diff --cached
+--check (exit 2). Embedded blank output lines contained trailing indentation.
+No commit was made in that attempt. The four preregistered commands that were
+not reached are explicitly marked above and are not counted as issued. Blank
+line indentation has been removed. The completed-cleanup cutoff remains 110;
+there are 112 actual commands before the fresh six-command finalization, and
+118 after its completion. The initial transaction's conditional total of 116
+did not occur. This is another observed logging-format cost, not a new Stewart
+implementation defect or a cleanup failure.
+
+### Final cleanup-report commit transaction
+
+The six commands below are recorded before execution so the appended report
+and its own final Git inventory are committed together. They add one staging,
+one commit and four verification calls after the interrupted two-command attempt beyond the 110-command cutoff:
+118 manager-issued Git commands in the full session after successful execution,
+with two auditor-reported invocations still separate. Outcomes are not asserted
+in advance. The containing commit establishes that staging, staged validation
+and the commit completed; the final status/commit outputs are reported in the
+tool result. Temporary controller outputs are removed after verification.
+
+## 20261019T170000Z-91bb0dec
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git add -- AUDIT-COMMISSION-GIT-COMMANDS.md
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+## 20261019T170000Z-a518f438
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git diff --cached --check
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+## 20261019T170000Z-6efa15ba
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git diff --cached --name-only
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+## 20261019T170000Z-9e1c16c7
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git commit -m 'Record audit cleanup and observed manual Git friction'
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+## 20261019T170000Z-a1f70343
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git status --short --branch
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+## 20261019T170000Z-d2e1c513
+
+Working directory: `/Users/raccoon/Desktop/Experiments/stewart`
+
+```sh
+git show --format=fuller --stat HEAD
+```
+
+Final transaction: recorded before execution; output and exit status verified by the cleanup controller and reported in the final tool result.
+
+End of the authorized cleanup and manual Git friction report.
