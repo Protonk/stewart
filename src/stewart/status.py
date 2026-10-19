@@ -752,12 +752,29 @@ def _identity_and_holdings(ws: Workspace, ident: str, view: dict, record: dict |
         if action["action"] in _READ_ONLY_ACTIONS:
             actions.append(_rebind(action, None, lifetime) if action.get("argv") else action)
             continue
+        if view["implementation"]["same"] is None and record is not None and not (
+                action["action"] == "close" and "--abandon" in (action.get("argv") or [])):
+            # Mutations refuse a session whose writer is unrecorded (implementation_unrecorded); only an
+            # abandon accepts it, so no other mutation is offered.
+            view["outstanding"].append(f"{action['action']} is withheld: the session record names no verifiable "
+                                       "writing implementation, so mutations refuse it; close --abandon still "
+                                       "retires it")
+            continue
         rebound = _rebind(action, handoff, lifetime)
         if rebound is None:
             view["outstanding"].append(f"{action['action']} needs the implementation that wrote this session, which "
                                        "cannot be offered: missing " + ", ".join(handoff["missing"]))
         else:
             actions.append(rebound)
+    if view["implementation"]["same"] is None and record is not None and not any(
+            action["action"] == "close" and "--abandon" in (action.get("argv") or []) for action in actions):
+        abandon = {"action": "close",
+                   "prerequisites": ["the session record names no verifiable writing implementation; an abandon is "
+                                     "the one mutation that accepts it, and it removes the session's checkout"],
+                   **command(ws, "close", "--audit-id", ident, "--actor", "<name>", "--abandon", "--reason",
+                             "<reason>")}
+        _bind_operands(abandon, view)
+        actions.append(_rebind(abandon, None, lifetime))
     view["next_actions"] = actions
     try:
         view["resources"] = closeout(ws, ident, lifetime=lifetime)

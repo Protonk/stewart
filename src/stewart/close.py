@@ -4,7 +4,9 @@ While an audit is live its records are exclusive and preserved, failures
 included. ``close`` is the only operation that deletes, and it removes only
 what the session's own record names: the session directory, the locked
 checkout with its runtimes and experiment homes, the session's retention refs
-and its role registry row. Before removing anything it writes ``CLOSING.json``
+and its role registry row; after those, the managed resources whose last live
+use it ends, each under an exclusive claim that freezes what was judged and is
+revalidated at use. Before removing anything it writes ``CLOSING.json``
 under ``<common>/stewart/closed/<slug>/<audit-id>/<uuid>/``: identity, the
 manager's acknowledgment, the observations the close rests on, the auditor's
 attributed claims and the removal inventory. ``CLOSED.json`` then records what
@@ -439,9 +441,13 @@ def _changed_since_planning(closing: dict, repo: Path, common: str) -> str | Non
     return "changes written after the close was planned: " + ", ".join(added[:10]) if added else None
 
 
-def _delete_checkout(parent: int, name: str) -> str:
-    """Delete the checkout below its pinned checkout directory; the one step that removes auditor work."""
-    return _removal.remove(parent, name)
+def _delete_checkout(parent: int, name: str, *, identity: tuple[int, int] | None = None) -> str:
+    """Delete the checkout below its pinned checkout directory; the one step that removes auditor work.
+
+    ``identity`` is the entry inspected before planning was rechecked; a
+    different entry at the name is left in place rather than removed instead.
+    """
+    return _removal.remove(parent, name, identity=identity)
 
 
 def _remove(removal: dict, repo: Path, common: str, closing: dict) -> tuple[list[dict], list[str]]:
@@ -492,7 +498,7 @@ def _remove(removal: dict, repo: Path, common: str, closing: dict) -> tuple[list
                 return f"kept: {changed}"
             try:
                 with _removal.pinned(worktree.parent) as parent:
-                    outcome = _delete_checkout(parent, worktree.name)
+                    outcome = _delete_checkout(parent, worktree.name, identity=(found.st_dev, found.st_ino))
             except _removal.Substituted as exc:
                 kept.extend(str(admin) for admin in administrations)
                 return substituted(exc)
@@ -826,6 +832,9 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
                                      discard_uncollected=discard_uncollected, lifetime=lifetime,
                                      dispose=list(dispose), collection=collection, resume=resume, plan=plan),
                  lifetime=lifetime, resume=resume,
+                 # Removal that failed leaves the request partial; close --resume-request finishes it.
+                 complete=lambda result: result["closed"] is not None
+                 and not any(item["outcome"] == "failed" for item in result.get("resources", [])),
                  outputs=lambda result: [{"kind": "closing", "path": result["closing"],
                                           "sha256": read_regular(Path(result["closing"]))[0].get("sha256")},
                                          *({"kind": "resource", "resource": item["rid"]}
@@ -833,10 +842,16 @@ def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reaso
 
 
 def _known_audit(common: str, ws: Workspace, ident: str) -> bool:
-    """Whether a draft, registration or resource context records this audit without any session."""
-    from stewart.audits import draft_records
+    """Whether a draft, registration or resource context recorded after every close names this audit.
+
+    A record that knew fewer closes than exist belongs to a use an earlier
+    close already ended, so it leaves nothing to abandon.
+    """
+    from stewart.audits import closed_names, draft_records
     from stewart.holdings import contexts_for
-    return bool(draft_records(common, ws.slug, ident) or contexts_for(common, ws.slug, ident))
+    closes = set(closed_names(common, ws.slug, ident))
+    records = [*draft_records(common, ws.slug, ident), *contexts_for(common, ws.slug, ident)]
+    return any(closes <= set(item.get("closed_before") or []) for item in records)
 
 
 def _close(ws: Workspace, ident: str, *, actor: str, abandon: bool, reason: str | None, discard_uncollected: bool,
@@ -868,10 +883,14 @@ def _close(ws: Workspace, ident: str, *, actor: str, abandon: bool, reason: str 
     session = session_location(common, ws, ident)
     rows = [row for row in _role_records(common) if row["session"] == str(session)]
     if resume and not session.is_dir() and not rows:
-        done = [entry for entry in entries if entry["complete"] and (lifetime is None or entry["session_uuid"] == lifetime)]
+        from stewart.request_keys import planned
+        ours = {item.get("path") for item in planned() or [] if item.get("kind") == "closing"}
+        done = [entry for entry in entries if entry["complete"] and str(Path(entry["path"]) / "CLOSING.json") in ours
+                and (lifetime is None or entry["session_uuid"] == lifetime)]
         if done:
-            # The close this request started was finished by another invocation; report it as it stands.
-            return _finished_result(done[-1])
+            # The close this request planned was finished by another invocation; report it as it stands,
+            # finishing only the resource claims that name it.
+            return _finished_result(done[-1], common)
     # A session whose directory is gone can still be abandoned through the
     # registry row that names its checkout and refs, and an audit recorded only
     # as a draft or resource context through those records.
@@ -1069,15 +1088,23 @@ def _concluded(view: dict | None, facts: dict, session: Path, *, expected: str |
             "disposition": disposition}
 
 
-def _finished_result(entry: dict) -> dict:
-    """A completed close as a close result, for a request that finds its work already done."""
+def _finished_result(entry: dict, common: str) -> dict:
+    """A completed close as a close result, for a request that finds its work already done.
+
+    Claims naming this closing record that are still active are retired now;
+    nothing new is claimed.
+    """
+    from stewart.holdings import retire_for_close
     closing, closed = entry["closing"], entry["closed"] or {}
     identity, acknowledged = closing["identity"], closing["acknowledged"]
+    resources = retire_for_close(common, Path(entry["path"]))
     return {"audit_id": identity["audit_id"], "session_uuid": identity["session_uuid"], "mode": acknowledged["mode"],
             "closing": str(Path(entry["path"]) / "CLOSING.json"), "closed": str(Path(entry["path"]) / "CLOSED.json"),
             "resumed": True, "hold_outstanding": False, "released": entry["released"],
             "results": closed.get("results") or [], "leftovers": closed.get("leftovers") or [], "failed": [],
-            "resources": [], "exit_code": EXIT_ATTENTION if closed.get("leftovers") else EXIT_OK}
+            "resources": resources, "closeout": [],
+            "exit_code": EXIT_ATTENTION if closed.get("leftovers") or any(item["outcome"] != "removed"
+                                                                          for item in resources) else EXIT_OK}
 
 
 def _finish(repo: Path, common: str, directory: Path, closing: dict, closing_sha256: str, *, resumed: bool,
@@ -1142,7 +1169,7 @@ def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abando
     raised; nothing here claims a resource or records a decision.
     """
     from stewart._repository import _role_records, maintainer, session_location
-    from stewart.holdings import CLOSEOUT_SCHEMA, _closeout
+    from stewart.holdings import CLOSEOUT_SCHEMA, _closeout, presented
     from stewart.request_keys import request_summaries
     from stewart.session import capture_receipt, mutable_session
     common = maintainer(ws.repo)["common_dir"]
@@ -1175,8 +1202,8 @@ def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abando
     else:
         audit["state"] = "closed" if entries else "absent"
     uuid = facts["session_uuid"] or (unfinished[-1]["session_uuid"] if unfinished else None)
-    resources = _closeout(common, ws.slug, ident, lifetime=uuid, dispose=set(dispose),
-                          closing_name=uuid or "<the new closing record>")
+    resources = presented(_closeout(common, ws.slug, ident, lifetime=uuid, dispose=set(dispose),
+                                    closing_name=uuid or "<the new closing record>"))
     requests = [item for item in request_summaries(common, [])
                 if (item.get("audit") or {}).get("audit_id") == ident and (item.get("audit") or {}).get("workspace")
                 == ws.rel]

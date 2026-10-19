@@ -46,6 +46,7 @@ attention, 1 action within the caller's role, 2 refused with nothing done,
 | Describe closeout without writing | `stewart close` with `--plan` | `api.close_plan` | `stewart.closeout/1` |
 | Close an audit | `stewart close` with `--actor` | `api.close` | close result with `closeout` and `resources` |
 | Record and retire resources | `stewart resource` actions `create-worktree`, `create-branch`, `create-directory`, `enroll`, `associate`, `acknowledge`, `show`; `stewart close` with `--resource` and `--dispose` | `api.create_worktree`, `api.create_branch`, `api.create_directory`, `api.enroll`, `api.associate`, `api.acknowledge`, `api.show_resource`, `api.close_resources` | `stewart.resource-view/1` for show |
+| Register deliverables as recorded outputs | `stewart export` with an absolute `--output` (a durable destination), `stewart retain` | `api.export_evidence`, `api.retain` | operation results; the outputs are `export` and `retained` resources that `resource show` and `discover` list |
 | Explain a different writing implementation | `implementation.handoff` in discover, status and refusals | `api.runtime_handoff` | `{state, argv, env}` or `{state, missing, diagnostics}` |
 
 Global options that carry bindings: `--ref` (a saved `stewart.audit-ref/1`),
@@ -82,6 +83,11 @@ These are not implemented and must not be assumed:
 7. **Partial requests other than close need a person.** Only `close` (and
    `close --resource`) resume under the same key; any other `partial` request
    requires an explicit decision and a new key.
+8. **Only Stewart's own outputs are registered.** `export` and `retain` record
+   their outputs as resources; there is no operation that registers a file or
+   directory an orchestrator produced itself as a managed output. Enrolling it
+   tracks it for explanation only and never makes it removable, so such outputs
+   stay the orchestrator's to retire, and a close only reports them.
 
 ## Caller journal
 

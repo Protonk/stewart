@@ -221,7 +221,7 @@ def test_continue_select_recover_and_retire_from_the_original_checkout(tmp_path,
     from stewart.audits import bind, load_reference
     bound = bind(load_reference(reference_outer))
     with monkeypatch.context() as patch:
-        patch.setattr(close_module, "_delete_checkout", lambda parent, name: (_ for _ in ()).throw(
+        patch.setattr(close_module, "_delete_checkout", lambda parent, name, **_: (_ for _ in ()).throw(
             KeyboardInterrupt("synthetic interruption")))
         with pytest.raises(KeyboardInterrupt):
             close_module.close(bound.ws, IDENT, actor="manager", lifetime=bound.lifetime, request_key="close-a")
@@ -290,9 +290,10 @@ def test_continue_select_recover_and_retire_from_the_original_checkout(tmp_path,
     assert shown["acknowledged"]["acknowledged"]["actor"] == "manager"
 
     # A retry after closeout reports the historical request and recreates nothing. The checkout the
-    # key was submitted from was retired with the managed worktree; the key resolves from any checkout.
-    gone = stewart(*ref, "status", allowed=(EXIT_REFUSED,))
-    assert gone["error"]["reason"] == "reference_checkout_missing"
+    # key was submitted from was retired with the managed worktree; the key resolves from any checkout,
+    # and the reference falls back to the repository's main checkout, which is a checkout of its common dir.
+    gone = stewart(*ref, "status", allowed=(EXIT_OK, 1))["result"]
+    assert gone["schema"] == "stewart.status-closed/2" and gone["workspace"]["repo"] == str(origin)
     after = stewart(*outer, "--request-key", "collect-a1", "collect", "--audit-id", IDENT, "--auditor-stopped",
                     "finished", allowed=(1,))["result"]
     rebound = stewart("--repo", origin, *ref, "--request-key", "collect-a1", "collect", "--auditor-stopped",

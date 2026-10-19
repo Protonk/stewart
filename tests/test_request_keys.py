@@ -92,7 +92,7 @@ def _interrupt_close(checkout, monkeypatch, key: str) -> Path:
     """A keyed close interrupted after CLOSING.json and before its checkout's removal; returns its directory."""
     import stewart.close as close_module
 
-    def interrupted(parent, name):
+    def interrupted(parent, name, **_):
         raise KeyboardInterrupt("synthetic interruption before checkout removal")
 
     with monkeypatch.context() as patch:

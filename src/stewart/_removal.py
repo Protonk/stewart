@@ -78,7 +78,10 @@ def _open_child(parent: int, name: str, expected: os.stat_result) -> int:
     return descriptor
 
 
-def _remove_directory(parent: int, name: str, expected: os.stat_result) -> None:
+def _remove_directory(parent: int, name: str, expected: os.stat_result, device: int) -> None:
+    """Remove a directory tree through descriptors, never crossing into another filesystem."""
+    if expected.st_dev != device:
+        raise OSError(errno.EXDEV, f"{name} is on another filesystem; nothing below it was removed")
     descriptor = _open_child(parent, name, expected)
     try:
         try:
@@ -88,7 +91,7 @@ def _remove_directory(parent: int, name: str, expected: os.stat_result) -> None:
         for child in os.listdir(descriptor):
             found = os.stat(child, dir_fd=descriptor, follow_symlinks=False)
             if stat.S_ISDIR(found.st_mode):
-                _remove_directory(descriptor, child, found)
+                _remove_directory(descriptor, child, found, device)
             else:
                 os.unlink(child, dir_fd=descriptor)
     finally:
@@ -96,11 +99,13 @@ def _remove_directory(parent: int, name: str, expected: os.stat_result) -> None:
     os.rmdir(name, dir_fd=parent)
 
 
-def remove(parent: int, name: str) -> str:
+def remove(parent: int, name: str, *, identity: tuple[int, int] | None = None) -> str:
     """Remove one entry below a pinned parent; return what was done.
 
     ``absent`` when nothing is there, ``removed link`` for a link (its target is
-    untouched), ``removed`` for a file or a directory tree.
+    untouched), ``removed`` for a file or a directory tree. With ``identity``
+    (device, inode), an entry that is not that recorded one is left in place
+    (``Replaced``) rather than removed in its stead.
     """
     found = entry(parent, name)
     if found is None:
@@ -108,19 +113,21 @@ def remove(parent: int, name: str) -> str:
     if stat.S_ISLNK(found.st_mode):
         os.unlink(name, dir_fd=parent)
         return "removed link"
+    if identity is not None and (found.st_dev, found.st_ino) != tuple(identity):
+        raise Replaced(f"{name} is not the recorded entry; it was left in place")
     if stat.S_ISDIR(found.st_mode):
-        _remove_directory(parent, name, found)
+        _remove_directory(parent, name, found, found.st_dev)
         return "removed"
     os.unlink(name, dir_fd=parent)
     return "removed"
 
 
-def remove_path(location: Path) -> str:
+def remove_path(location: Path, *, identity: tuple[int, int] | None = None) -> str:
     """Remove ``location`` relative to its pinned parent; an absent parent means an absent entry."""
     location = Path(location)
     try:
         with pinned(location.parent) as parent:
-            return remove(parent, location.name)
+            return remove(parent, location.name, identity=identity)
     except FileNotFoundError:
         return "absent"
 

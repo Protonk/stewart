@@ -210,7 +210,7 @@ def test_interrupted_close_finishes_from_its_recorded_inventory(checkout, monkey
     prepared, _ = _triaged(checkout)
     uuid = prepared.prepared["session_uuid"]
 
-    def interrupt(parent, name):
+    def interrupt(parent, name, **_):
         raise OSError("synthetic interruption of the checkout removal")
 
     with monkeypatch.context() as patch:

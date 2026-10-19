@@ -582,7 +582,10 @@ permission. Keep the human evidence map and scope in the prompt.
     `--discard-uncollected` the closing record lists the discarded paths and
     digests, or `null` when they could not be observed. A session whose directory is gone
     but whose registry row remains can be abandoned through that row; one with
-    neither a record nor a row is retired as its session directory alone. The
+    neither a record nor a row is retired as its session directory alone. An
+    audit recorded only by a draft, registration or resource context recorded
+    after its last close can be abandoned too: the closing record ends those
+    uses, and the audit ID stays reserved. The
     triage decision, if one was recorded, is kept as the manager's attributed
     decision.
 
@@ -688,8 +691,11 @@ Records are read only through a supported discovery envelope: the top-level
 `schema` or `schema_version`, a `workspace` accepted only when its slug matches
 the record's location, and the `stewart` stamp. A session with an unsupported
 schema is listed with its location and envelope; no lifecycle state is inferred
-from its other fields. Invalid and unreadable records, and role rows that do not
-verify, keep their diagnostics instead of hiding the rest. The exit code is 3
+from its other fields. A supported session must also load as status and every
+mutation load it (from its owner checkout, when that still exists); one that
+does not is `unverified` with the loader's reason, and select refuses it.
+Invalid and unreadable records, and role rows that do not verify, keep their
+diagnostics instead of hiding the rest. The exit code is 3
 when a record does not verify, 1 for unfinished work, and 0 otherwise.
 
 ### Selection references
@@ -708,9 +714,9 @@ Git common directory), `checkout` (the maintainer checkout commands run from),
 `lifetime` (the bound session UUID, or null before preparation), `closes` (the
 closing records known at selection) and `implementation` (the writing package
 digest). Prose output is the reference alone, ready to save; JSON wraps it in
-`stewart.selection/1` with the discovery entry. Selecting writes no receipt,
-no deployment and no "current audit" setting; two callers' references never
-affect each other. Ambiguity is refused with `selection_ambiguous` (several
+`stewart.selection/1` with the discovery entry. Selecting writes no record of
+any kind, prepares no runtime and keeps no "current audit" setting; two
+callers' references never affect each other. Ambiguity is refused with `selection_ambiguous` (several
 workspaces, or drafts in several checkouts: run select from the one to
 continue), a missing audit with `selection_missing`, and records this
 implementation cannot read with `selection_unresolved`. Stewart never selects
@@ -719,9 +725,16 @@ different installation.
 
 `--ref FILE` supplies `--repo`, `--workspace`, `--audit-id` and the lifetime to
 any command; explicit values that disagree are refused (`reference_mismatch`).
-Every use revalidates the reference against the records as they are now: the
-same common directory and an existing checkout (`reference_checkout_missing`),
-the same session lifetime, and the same recorded implementation. A reference
+An explicit `--repo` with `--ref` runs from that maintainer checkout instead of
+the reference's own, and must be a checkout of the reference's Git common
+directory (otherwise `reference_mismatch`). When the reference's checkout is
+gone and no `--repo` is given, the session's owner checkout or the repository's
+main checkout is used if it still is a checkout of the same common directory;
+otherwise the command is refused with `reference_checkout_missing`, naming
+`--repo`. Operations that need the session's owner still refuse from any other
+checkout. Every use revalidates the reference against the records as they are
+now: the same common directory from the checkout in use, the same session
+lifetime, and the same recorded implementation. A reference
 taken before preparation never selects the session prepared since, and one
 taken before a close never selects a later draft or lifetime
 (`reference_stale`); select again. `prepare` returns a reference bound to the
@@ -755,27 +768,38 @@ files (supplemental inputs, evidence-package manifests, a launch profile) by
 byte digest. The invoking checkout is recorded beside the binding, not in it.
 The operation records its planned output identities in `attempts/` just before
 its first side effect, and `OUTCOME.json` records completion or refusal with
-the output identities. Execution holds an exclusive lock on the request.
+the output identities. Execution holds an exclusive lock on the request;
+inspection holds a shared one while it reads, so an inspector is never taken
+for a running executor (an executor waits briefly for readers to finish).
 
 A key is resolved before anything else is validated, from any maintainer
 checkout of the repository; a retry needs neither the session, the lifetime, the
 reference's checkout nor the resources to still exist. Reusing a key with a
 different binding is refused (`request_key_conflict`, naming the differing
-fields; under another implementation, `implementation_mismatch`). The same key
-and binding never execute again:
+fields; under another implementation, `implementation_mismatch` with a handoff
+to `request --key KEY`), also while another process is executing the key. A
+reference is revalidated only when the key's request will execute (a new or
+`reserved` key); a retry answered from its records needs nothing else. The
+same key and binding never execute again:
 
 - `completed`: the recorded outcome and its output identities, each reported
-  as `available`, `retired` (its lifetime or resource was retired) or `missing`
-  now. A keyed collect returns the same collection, never a new one.
+  as `available`, `changed`, `retired` (its lifetime or resource was retired or
+  acknowledged) or `missing` now; a resource output is observed through its
+  own records and identity. A keyed collect returns the same collection, never a new one.
 - `refused`: the recorded refusal; correct the cause and use a new key.
 - `in_progress`: another process holds the request now.
 - `reserved`: the binding was recorded but no side effect was planned; the same
   key and inputs run it.
 - `partial`: attempts were planned but no outcome was recorded. A side effect
   may or may not have happened; the planned outputs are shown as observed now,
-  and nothing is replayed. Only `close` (and `close --resource`) resume safely,
-  and only with `--resume-request`, which appends a new attempt and continues
-  from the close's own frozen inventory.
+  and nothing is replayed. A close whose removal failed (a session item or a
+  claimed resource) also stays `partial` instead of recording an outcome. Only
+  `close` (and `close --resource`) resume safely, and only with
+  `--resume-request`, which appends a new attempt and continues from the
+  close's own frozen inventory and claims; it adopts a close finished elsewhere
+  only when that close is the one its own request planned. `--resume-request`
+  on a key with no request is refused (`request_missing`), and on a `reserved`
+  one (`request_not_resumable`): nothing started, so run it without the flag.
 - `unverifiable`: the request's records do not verify.
 
 A replayed request's JSON result is its `stewart.request/1` document with the
@@ -814,9 +838,13 @@ missing, diagnostics}`, naming `invocation` (an in-process writer records
 none), `package_identity`, `runtime`, `launcher` or `interpreter`. Stewart
 never runs, imports or relays recorded command text, never falls back to the
 current installation, and a verified handoff establishes only consistency with
-the recorded pin. Status renders mutation actions for a session written by
-another build with the handoff's argv, or withholds them and names the missing
-prerequisites.
+the recorded pin. The handoff's argv is the recorded launcher invocation
+followed by a read-only `status` (or `request --key`, `resource show`) for the
+record concerned; status, run under it, offers that build's own actions. Status
+renders mutation actions for a session written by another build with the
+handoff's argv, or withholds them and names the missing prerequisites. For a
+session whose writer is unrecorded, status withholds every mutation action
+except an abandon.
 
 ## Manual terminal launch
 
@@ -1248,8 +1276,9 @@ producer run, scope expansion, or release of a paused hold.
   Use that same source for the fresh assignment's subsequent manager commands.
   Recovery does not activate this selection automatically.
 - **Nothing is removed automatically.** `close` is the only deletion. It
-  removes only what the session recorded, and only after writing its closing
-  record. A concluded close refuses a checkout changed since the triaged
+  removes only what the session recorded and, under claims it writes and
+  revalidates at use, the managed resources whose last live use it ends, and
+  only after writing its closing record. A concluded close refuses a checkout changed since the triaged
   collection; an abandon refuses uncollected changes unless told to discard
   them. Do not remove a checkout by hand: its lifetime lock makes Git refuse,
   and a checkout removed before any complete collection takes its evidence
@@ -1276,11 +1305,15 @@ borrow one, or neither for a detached worktree), `create-branch` and
 `create-directory` record `CREATE.json` (the audit context and intended
 identity) before any side effect and `CREATED.json` (the observed identity, or
 the failure) after. An interrupted creation leaves a start record without an
-outcome: it is reported, and grants nothing over whatever is found there. A
+outcome, and a failed one records its failure: either is reported with what is
+observed at its intended location, and grants nothing over whatever is found
+there. Remove what is there by hand if it is not wanted, then acknowledge it. A
 managed worktree is created locked (`stewart managed worktree <id>`) and marked
 by `stewart-resource.json` in its Git administration; it must lie outside the
 Git common directory, checkout homes, the manager home and registered auditor
-checkout directories. A borrowed branch never becomes removal-eligible.
+checkout directories, recorded checkout homes and the running manager home.
+A borrowed branch never becomes removal-eligible. An audit that is closed (or
+whose lifetime is closing) takes no new resource or use (`audit_closed`).
 `export` and `retain` record their package and published files as `export` and
 `retained` resources: deliberate retention.
 
@@ -1308,7 +1341,8 @@ records, uses and disposition; `discover` lists them all.
 ```
 
 `close --plan` prints the closeout description (`stewart.closeout/1`) and
-writes nothing. It separates audit closure (the session's own inventory and any
+writes nothing. It exits with the refusal's code when a concluded close would
+refuse, 1 when a resource would stay blocked or missing, and 0 otherwise. It separates audit closure (the session's own inventory and any
 precondition a concluded close would refuse), the retirement of working
 resources around it, and retained historical evidence (closing records, request
 records, retained deliverables). Each resource the audit uses is `remove`
@@ -1323,40 +1357,60 @@ ended and that passes eligibility (a resumed close retires only the claims its
 first attempt made; anything else is left for `close --resource`):
 
 - its creation was recorded by Stewart and its identity still verifies, through
-  real directories reached without links;
+  real directories reached without links (a directory is the same device and
+  inode it was created as), with no other filesystem mounted inside;
 - a worktree's status is clean, ignored paths included, except paths of
   recorded exports or retained deliverables named with `--dispose`; its HEAD is
-  its creation commit or contained in a ref outside `refs/stewart/`; it holds no
-  per-worktree refs and no rebase, merge, cherry-pick, revert or bisect;
-- a branch's tip is its creation commit or contained in another ref, and no
-  remaining worktree checks it out;
-- nothing it contains is a recorded export or retained deliverable without a
-  durable destination or a `--dispose` decision, and the running Stewart package
-  or interpreter is not inside it.
+  its creation commit or contained in a ref outside `refs/stewart/` and outside
+  the branches retiring in the same close; it holds no per-worktree refs and no
+  rebase, merge, cherry-pick, revert or bisect;
+- a branch's tip is its creation commit or contained in another ref that is not
+  retiring in the same close, and no remaining worktree checks it out;
+- no checkout that Git or the role registry places inside it remains, other
+  than worktrees retiring with it and the closing audit's own checkout;
+- every recorded resource inside it retires with it: a worktree or directory
+  inside is retired first (deepest first), a recorded export or retained
+  deliverable inside needs a durable destination or a `--dispose` decision
+  (a retained file committed in a retiring worktree is history and retires with
+  it), and the running Stewart package or interpreter is not inside it.
+
+The set that retires together is found by elimination: every managed temporary
+resource starts in it, and one that is not removable alongside the rest leaves
+it, until nothing more leaves. A resource that would be removable only because
+another one stays is kept and explained.
 
 A claim is `resources/<id>/claims/<n>.json`, created exclusively, with the
-frozen identity, contents digest, HEAD or tip and any disposal decisions. At
-most one claim is active, and none is created once a resource is retired; two
-closes racing for one resource cannot both claim it. A branch counts as
-checked out by a worktree unless that worktree retires in the same close. The
-close then retires its claims: worktrees, then directories, then branches. At use it revalidates every use,
-the identity, the contents, HEAD and tip; any change, or a use that appeared
-since, ends the claim with `<n>.RELEASED.json` and keeps the resource. Removal
-goes through descriptors pinned without following links, Git never deletes
-contents, a worktree's marker-verified administration is removed by
-descriptor, and a branch is deleted only if it still points at the frozen tip.
-Git runs from the common directory, so a close can retire the manager worktree
-it was run against. Success writes `<n>.RETIRED.json`; a failed removal writes
-`<n>.ATTEMPT-<stamp>.json` and keeps the claim active. The audit close
+frozen identity, the complete contents inventory (every entry with its kind,
+and each file's size and digest), HEAD or tip and any disposal decisions, all
+taken from the evaluation that judged it removable. At most one claim is
+active, and none is created once a resource is retired; two closes racing for
+one resource cannot both claim it. The close then retires its claims, deepest
+paths first and branches last. At use it revalidates every use, the identity,
+the full inventory, HEAD and tip, re-runs the worktree checks, and refuses a
+checkout registered inside since; any change, or a use that appeared since,
+ends the claim with `<n>.RELEASED.json` and keeps the resource. A claim whose
+removal already started (it has an attempt record) accepts only the entries it
+froze, minus what was already removed, and finishes an already-absent path by
+dropping its administration. Removal goes through descriptors pinned without
+following links, removes only the directory with the frozen device and inode,
+never crosses into another filesystem, lets Git delete no contents, removes a
+worktree's marker-verified administration by descriptor, and deletes a branch
+only if it still points at the frozen tip. Git runs from the common directory,
+so a close can retire the manager worktree it was run against. Success writes
+`<n>.RETIRED.json`; a failed removal writes `<n>.ATTEMPT-<stamp>.json` and
+keeps the claim active (a keyed close then stays `partial`). The audit close
 completes once its session items are gone; a resource left blocked or missing
 makes its exit 1.
 
 `close --resource ID --actor NAME` retires a recorded resource that no live use
 holds, under the same discipline: it records its claim first, freezes the
 identity, revalidates at use, and resumes an active claim (including one an
-audit close left unfinished) without widening it. It refuses enrolled,
-retained, shared or blocked resources with `resource_not_managed`,
-`resource_shared` or `resource_blocked`. Closed audits' records are never
+audit close left unfinished) without widening it. Resources named together are
+evaluated as retiring together. It refuses enrolled or retained resources with
+`resource_not_managed`, retired or acknowledged ones with `resource_retired`,
+and shared or blocked ones with `resource_shared` or `resource_blocked`; an
+active claim written by another build is refused with `implementation_mismatch`
+and a handoff to `resource show`. Closed audits' records are never
 reopened. A resource left behind (blocked at the last close, or in use while
 other closes were planned) is retired this way once its blocker is cleared.
 While a claim is active, `prepare`, `init`, `register`, `resource associate` and
@@ -1377,8 +1431,13 @@ history and blocks nothing.
 
 A recorded resource that is gone is reported `missing`. `resource acknowledge`
 revalidates its absence now (a worktree also needs its Git registration gone)
-and records `ACKNOWLEDGED.json`: the observed absence and the manager's
-acknowledgment in separate fields, bound to the resource record's digest. It
+and records `ACKNOWLEDGED.json`. A managed worktree is locked, so retiring one
+by hand needs `git worktree remove -f -f <path>` (or `git worktree unlock`
+then removal); a worktree directory deleted without Git leaves its registration
+until `git worktree prune` after unlocking. The acknowledgment records the observed absence and the manager's
+acknowledgment in separate fields, bound to the resource record's digest.
+Interrupted and failed creations are acknowledged the same way once their
+intended location is empty. It
 is refused while the resource is present (`resource_present`) or claimed. The
 creation or enrollment record is never edited. An acknowledgment grants nothing
 and claims nothing about how the resource was removed; anything found later at
@@ -1722,10 +1781,10 @@ closing records under `<git-common-dir>/stewart/closed/`.
 | `audits/<slug>/<audit-id>/init/<name>/STARTED.json`, `OUTCOME.json` (`stewart.draft/1`) | A mutating `init`'s intended writes and their digests, recorded before writing, and what was written or why it failed. Without an outcome the init was interrupted. |
 | `audits/<slug>/<audit-id>/registrations/<name>.json` (`stewart.registration/1`) | Present observations of an existing workspace's guidance and prompt, attributed to the registering actor; implies no earlier custody. |
 | `requests/<sha256>/REQUEST.json`, `attempts/*.json`, `OUTCOME.json` | A request key's exclusive binding (`stewart.request-binding/1`, with the exact key and invoking checkout), the output identities planned before each side effect, and the recorded completion or refusal with output identities. Never removed by close. |
-| `resources/<id>/CREATE.json`, `CREATED.json` (`stewart.resource/1`, `stewart.resource-outcome/1`) | A managed resource's audit context and intended identity, recorded before its side effects, and the observed identity or failure after. A Stewart-recorded creation is necessary for removal eligibility, never sufficient. |
-| `resources/<id>/ENROLLED.json` | An externally created resource's observed identity and enrollment acknowledgment; never removal-eligible. |
+| `resources/<id>/CREATE.json`, `CREATED.json` (`stewart.resource/1`, `stewart.resource-outcome/1`) | A managed resource's audit context, intended identity and intended disposition (`temporary`, or `retained` for exports and retained deliverables), recorded before its side effects, and the observed identity or failure after. A Stewart-recorded creation is necessary for removal eligibility, never sufficient. |
+| `resources/<id>/ENROLLED.json` | An externally created resource's observed identity and enrollment acknowledgment, with disposition `manual`; never removal-eligible. |
 | `resources/<id>/associations/<name>.json` | An audit context that uses the resource; the use ends with that lifetime's closing record. |
-| `resources/<id>/claims/<n>.json`, `<n>.RETIRED.json`, `<n>.RELEASED.json`, `<n>.ATTEMPT-<stamp>.json` | The exclusive claim of one close (frozen identity, contents, HEAD or tip, disposal decisions), and how it ended: retired, released with the observation that kept the resource, or a failed removal that leaves the claim active. |
+| `resources/<id>/claims/<n>.json`, `<n>.RETIRED.json`, `<n>.RELEASED.json`, `<n>.ATTEMPT-<stamp>.json` | The exclusive claim of one close (frozen identity, complete contents inventory, HEAD or tip, disposal decisions, writer stamp), and how it ended: retired, released with the observation that kept the resource, or a failed removal that leaves the claim active. |
 | `resources/<id>/ACKNOWLEDGED.json` | The manager's acknowledgment of an observed absence as retirement outside Stewart, with the observation in its own field; grants nothing. |
 
 Every record above except the raw captures carries `stewart`, the identity of
@@ -1868,8 +1927,8 @@ could fix it, 3 when nothing the auditor does can) and whether the auditor's
 - Custody survives `git clean` and branch work in the maintainer checkout, but
   not removing or re-cloning the Git directory, deleting a checkout before
   `collect`, or a backup that skips `.git`. `close` is the only deletion
-  Stewart performs; it removes only what its session recorded and keeps the
-  closing record. Anything worth keeping beyond retained files must go through
+  Stewart performs; it removes only what its session recorded and the managed
+  resources its claims froze, and keeps the closing record. Anything worth keeping beyond retained files must go through
   `export` before `close`.
 
 ## Python API
@@ -1953,8 +2012,10 @@ gaps and errors; `status` as described under [Inspect](#assignment-and-custody-s
 does not verify;
 `run` returns 1 when the child failed or preservation failed and 3 when the
 supplied runtime stopped verifying across the attempt; `close` returns 0 for a
-clean close, 1 when removal stopped partway or left unrecorded entries, and 3
-when a concluded close meets records that do not verify; `prepare` refuses a
+clean close, 1 when removal stopped partway, left unrecorded entries, or left a
+resource blocked, missing or unremoved, and 3 when a concluded close meets
+records that do not verify; `close --plan` returns the code that close would
+earn now (a refusal's code, 1 for a resource left blocked or missing, else 0); `prepare` refuses a
 failed preparation with 2 (`prepare_failed`) and keeps its session.
 
 A custody operation succeeding is not an audit passing. A child's exit status

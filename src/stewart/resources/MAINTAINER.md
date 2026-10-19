@@ -19,7 +19,8 @@ evidence supplies custody, not execution permission. Resume paused writers only
 after a recorded disposition and actual communication through your own channel.
 Export anything worth keeping beyond retained files, then close the audit.
 Stewart launches no agent, sends no messages and stages no files. Only `close`
-deletes, and it removes only what its session recorded.
+deletes, and it removes only what its session recorded and the managed
+resources its claims froze.
 
 Exit 0 means nothing needs your attention. 1 lists items within your role:
 rerun, or record a decision in triage. 2 refused and did nothing: fix the

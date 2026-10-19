@@ -694,8 +694,15 @@ def test_a_reference_whose_checkout_is_gone_is_refused(checkout, run_cmd, tmp_pa
     assert cli("--ref", held, "status")["result"]["workspace"]["repo"] == str(linked), "control: it binds"
 
     _remove_linked(checkout, linked)
-    cli.refused("--ref", held, "status", reason="reference_checkout_missing")
-    cli.refused("--repo", repo, "--ref", held, "status", reason="reference_checkout_missing")
+    # The repository's main checkout is still a checkout of the reference's common directory: it is used.
+    assert cli("--ref", held, "status")["result"]["workspace"]["repo"] == str(repo)
+    assert cli("--repo", repo, "--ref", held, "status")["result"]["workspace"]["repo"] == str(repo)
+    # Changed property: no checkout of the reference's repository remains to fall back to.
+    orphan = tmp_path / "orphan-ref.json"
+    orphan.write_text(json.dumps({**reference, "repository": str(tmp_path / "gone-repository/.git")}))
+    refused = cli.refused("--ref", orphan, "status", reason="reference_checkout_missing")
+    assert any("--repo" in step for step in refused["next_steps"])
+    cli.refused("--repo", repo, "--ref", orphan, "status", reason="reference_mismatch")
     # Invariance: selecting again from an existing checkout binds there and still names the draft's owner.
     again = cli("--repo", repo, "--workspace", OUTER, "select", "--audit-id", IDENT)["result"]["reference"]
     assert (again["checkout"], again["owner"]) == (str(repo), str(linked))

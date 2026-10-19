@@ -13,7 +13,10 @@ retired. An operation records its planned output identities in ``attempts/``
 immediately before its first side effect, and ``OUTCOME.json`` records
 completion or refusal with the output identities. Execution holds an exclusive
 lock on the request directory, so a second caller sees ``in_progress`` instead
-of starting the same work.
+of starting the same work; inspection holds a shared lock while it reads, so an
+inspector is never mistaken for an executor. A result its operation does not
+consider complete (a close whose removal failed) records no outcome: the
+request stays ``partial`` and resumes explicitly.
 
 Reusing a key with a different binding is refused. A matching completed or
 refused request returns its recorded outcome without executing again. A
@@ -34,6 +37,7 @@ import fcntl
 import os
 from pathlib import Path
 import re
+import time
 
 from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, EXIT_UNVERIFIED, StewartError, read_regular
 
@@ -49,15 +53,16 @@ _BINDING_FIELDS = {"operation", "repository", "audit", "lifetime", "resources", 
 
 
 class _Active:
-    def __init__(self, directory: Path, attempt: str, key: str):
+    def __init__(self, directory: Path, attempt: str, key: str, previous: list[dict]):
         self.directory, self.attempt, self.key, self.count = directory, attempt, key, 0
+        self.previous = previous
 
     def plan(self, outputs: list[dict]) -> None:
-        from stewart.session import now, write_receipt
+        from stewart.session import now, tool_identity, write_receipt
         self.count += 1
         write_receipt(self.directory / "attempts" / f"{self.attempt}-{self.count}.json", {
             "schema": ATTEMPT_SCHEMA, "key": self.key, "attempt": self.attempt, "recorded_at": now().isoformat(),
-            "planned": outputs,
+            "planned": outputs, "stewart": tool_identity(),
             "note": "recorded immediately before a side effect; it does not establish that the effect happened"})
 
 
@@ -69,6 +74,16 @@ def plan(outputs: list[dict]) -> None:
     active = _active.get()
     if active is not None:
         active.plan(outputs)
+
+
+def planned() -> list[dict] | None:
+    """Outputs earlier attempts of the request being resumed planned; None outside a keyed request.
+
+    A resuming operation adopts only work its own request planned, never work
+    another invocation happened to finish under the same coordinates.
+    """
+    active = _active.get()
+    return None if active is None else list(active.previous)
 
 
 def key_name(value: object) -> str:
@@ -97,18 +112,32 @@ def file_digest(path: Path | str) -> dict:
     return {"kind": info["kind"], "sha256": info.get("sha256")}
 
 
+#: How long an executor waits for inspectors' shared locks to clear before it reports ``in_progress``.
+_READER_GRACE = 2.0
+
+
 @contextmanager
-def _locked(directory: Path):
-    """Hold the request's exclusive lock; yield False when another process holds it."""
+def _locked(directory: Path, *, shared: bool = False):
+    """Hold the request's lock; yield False when it cannot be taken.
+
+    An executor takes it exclusively, retrying briefly because inspectors hold
+    it shared only while they read; an inspector takes it shared, which fails
+    only while an executor holds it.
+    """
     descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0))
+    deadline = time.monotonic() + (0 if shared else _READER_GRACE)
     try:
-        try:
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError as exc:
-            if exc.errno in (errno.EWOULDBLOCK, errno.EAGAIN):
-                yield False
-                return
-            raise
+        while True:
+            try:
+                fcntl.flock(descriptor, (fcntl.LOCK_SH if shared else fcntl.LOCK_EX) | fcntl.LOCK_NB)
+                break
+            except OSError as exc:
+                if exc.errno not in (errno.EWOULDBLOCK, errno.EAGAIN):
+                    raise
+                if time.monotonic() >= deadline:
+                    yield False
+                    return
+                time.sleep(0.05)
         yield True
     finally:
         os.close(descriptor)
@@ -141,14 +170,16 @@ def _read(directory: Path, key: str | None = None) -> tuple[dict, str]:
 
 def keyed(ws, ident: str | None, operation: str, inputs: dict, request_key: str | None, execute, *,
           outputs, lifetime: str | None = None, resources: list[str] = (), resume: bool = False,
-          common: str | None = None, repo: Path | None = None) -> dict:
+          common: str | None = None, repo: Path | None = None, complete=None) -> dict:
     """Run ``execute(plan)`` once per key, or return the key's recorded state without executing.
 
     ``ws`` and ``ident`` name the selected audit (None for repository
     operations, which pass ``common`` and ``repo``); ``lifetime`` is the
     lifetime the caller selected. The key is resolved before the operation
     validates anything else. ``outputs(result)`` lists the output identities a
-    completed request records.
+    completed request records; ``complete(result)``, when given, says whether
+    the result finishes the request or leaves it ``partial`` for an explicit
+    resumption.
     """
     if request_key is None:
         if resume:
@@ -169,30 +200,43 @@ def keyed(ws, ident: str | None, operation: str, inputs: dict, request_key: str 
     private_directories(private_storage(common), directory.parent)
     directory.mkdir(mode=0o700, exist_ok=True)
     (directory / "attempts").mkdir(mode=0o700, exist_ok=True)
+    retry = ["--repo", str(checkout), "request", "--key", key]
+
+    def compare() -> None:
+        try:
+            recorded, _ = _read(directory, key)
+        except StewartError as exc:
+            raise StewartError(f"request {key} has a binding record that does not verify: {exc}",
+                               reason="request_record_invalid", retained=[str(directory)], code=EXIT_UNVERIFIED,
+                               next_steps=["preserve the request record; use a new key for new work"]) from exc
+        if recorded["binding"]["implementation"] != binding["implementation"]:
+            require(recorded.get("stewart"), record=directory / "REQUEST.json", arguments=retry)
+        differing = sorted(field for field in _BINDING_FIELDS if recorded["binding"][field] != binding[field])
+        if differing:
+            raise StewartError(f"request key {key} is bound to different work (differs in: {', '.join(differing)})",
+                               reason="request_key_conflict", retained=[str(directory)],
+                               next_steps=["reuse a key only for the identical request; use a new key for new work",
+                                           f"request --key {key} shows what the key is bound to"])
+
     with _locked(directory) as held:
         if not held:
-            # Another caller is executing this key now; report that, never a guess from partial records.
+            # Another caller is executing this key now. A different request under it is still a conflict;
+            # the same one is reported as running, never guessed from partial records.
+            if os.path.lexists(directory / "REQUEST.json"):
+                compare()
             view = inspect(common, key)
             view["replayed"] = True
             return view
+        if resume and not os.path.lexists(directory / "REQUEST.json"):
+            raise StewartError(f"no request is recorded under key {key}; there is nothing to resume",
+                               reason="request_missing", retained=[str(directory)],
+                               next_steps=["run the request without --resume-request to start it"])
         fresh = _publish(directory, {"schema": BINDING_SCHEMA, "key": key, "binding": binding,
                                      "invoked_from": str(checkout), "recorded_at": now().isoformat(),
                                      "stewart": current})
+        previous: list[dict] = []
         if not fresh:
-            try:
-                recorded, _ = _read(directory, key)
-            except StewartError as exc:
-                raise StewartError(f"request {key} has a binding record that does not verify: {exc}",
-                                   reason="request_record_invalid", retained=[str(directory)], code=EXIT_UNVERIFIED,
-                                   next_steps=["preserve the request record; use a new key for new work"]) from exc
-            if recorded["binding"]["implementation"] != binding["implementation"]:
-                require(recorded.get("stewart"), record=directory / "REQUEST.json", arguments=[])
-            differing = sorted(field for field in _BINDING_FIELDS if recorded["binding"][field] != binding[field])
-            if differing:
-                raise StewartError(f"request key {key} is bound to different work (differs in: {', '.join(differing)})",
-                                   reason="request_key_conflict", retained=[str(directory)],
-                                   next_steps=["reuse a key only for the identical request; use a new key for new work",
-                                               f"request --key {key} shows what the key is bound to"])
+            compare()
             view = inspect(common, key, locked=True)
             if view["state"] in ("completed", "refused", "unverifiable") or (view["state"] == "partial"
                                                                              and not resume):
@@ -203,29 +247,56 @@ def keyed(ws, ident: str | None, operation: str, inputs: dict, request_key: str 
                                    reason="request_not_resumable", retained=[str(directory)],
                                    next_steps=["inspect the planned outputs request --key shows, then decide "
                                                "explicitly; new work needs a new key"])
+            if view["state"] == "reserved" and resume:
+                raise StewartError(f"request {key} was reserved but planned nothing; there is nothing to resume",
+                                   reason="request_not_resumable", retained=[str(directory)],
+                                   next_steps=["rerun the same request without --resume-request; nothing started"])
+            previous = [item for attempt in view["attempts"] for item in attempt.get("planned") or []
+                        if isinstance(item, dict)]
         attempt = stamp()
-        token = _active.set(_Active(directory, attempt, key))
+        token = _active.set(_Active(directory, attempt, key, previous))
         try:
             result = execute(plan)
         except StewartError as exc:
             write_receipt(directory / "OUTCOME.json", {
                 "schema": OUTCOME_SCHEMA, "key": key, "attempt": attempt, "recorded_at": now().isoformat(),
-                "status": "refused", "exit_code": exc.exit_code, "error": exc.to_json(), "outputs": []})
+                "status": "refused", "exit_code": exc.exit_code, "error": exc.to_json(), "outputs": [],
+                "stewart": current})
             raise
         finally:
             _active.reset(token)
+        if complete is not None and not complete(result):
+            # The operation's own records say what remains; the request stays partial and resumes explicitly.
+            result["request"] = {"key": key, "state": "partial", "path": str(directory), "replayed": False,
+                                 "next_steps": [f"resume it with --request-key {key} --resume-request"]}
+            return result
         produced = outputs(result)
         write_receipt(directory / "OUTCOME.json", {
             "schema": OUTCOME_SCHEMA, "key": key, "attempt": attempt, "recorded_at": now().isoformat(),
             "status": "completed", "exit_code": result.get("exit_code", EXIT_OK), "error": None,
-            "outputs": produced})
+            "outputs": produced, "stewart": current})
     result["request"] = {"key": key, "state": "completed", "path": str(directory), "replayed": False}
     return result
 
 
 def _observe(common: str, output: dict) -> dict:
-    """Whether a recorded output is available now, retired with its lifetime or resource, missing or changed."""
+    """Whether a recorded output is available now, retired with its lifetime or resource, missing or changed.
+
+    A resource output is observed through its own records first: retired or
+    acknowledged resources are retired, others are observed at their identity.
+    """
     observed = dict(output)
+    if output.get("resource"):
+        from stewart import holdings
+        try:
+            view = holdings.load(common, output["resource"])
+        except StewartError:
+            return {**observed, "availability": "unknown"}
+        if any(claim["state"] == "retired" for claim in view["claims"]) or view.get("acknowledged"):
+            return {**observed, "availability": "retired"}
+        state = holdings.observe(common, view)["state"]
+        return {**observed, "availability": "available" if state == "present" else
+                "missing" if state == "absent" else "changed"}
     path = output.get("path")
     if not isinstance(path, str):
         return {**observed, "availability": "unknown"}
@@ -247,9 +318,6 @@ def _observe(common: str, output: dict) -> dict:
                           for entry in closing_entries(common, Located(audit.get("slug")), audit.get("audit_id")))
         except (StewartError, TypeError):
             retired = False
-    if output.get("resource"):
-        from stewart.holdings import retired as resource_retired
-        retired = retired or resource_retired(common, output["resource"])
     return {**observed, "availability": "retired" if retired else "missing"}
 
 
@@ -267,10 +335,14 @@ def inspect(common: str, key: str, *, locked: bool = False) -> dict:
     if not os.path.lexists(directory):
         raise StewartError(f"no request is recorded under key {key}", reason="request_missing",
                            next_steps=["discover lists every recorded request key"])
-    running = False
     if not locked:
-        with _locked(directory) as held:
-            running = not held
+        with _locked(directory, shared=True) as held:
+            return _inspect(common, key, directory, view, running=not held)
+    return _inspect(common, key, directory, view, running=False)
+
+
+def _inspect(common: str, key: str, directory: Path, view: dict, *, running: bool) -> dict:
+    from stewart.session import capture_receipt
     try:
         recorded, _ = _read(directory, key)
         view.update(binding=recorded["binding"], invoked_from=recorded.get("invoked_from"),
@@ -353,6 +425,15 @@ def request_summaries(common: str, problems: list[dict]) -> list[dict]:
             recorded, _ = _read(root / name)
             view = inspect(common, recorded["key"])
         except StewartError as exc:
+            if exc.reason == "record_missing" and not os.path.lexists(root / name / "REQUEST.json"):
+                # A reservation interrupted before its binding was published recorded nothing; while a
+                # caller holds it, it is that caller's request in progress.
+                with _locked(root / name, shared=True) as held:
+                    if held:
+                        continue
+                summaries.append({"key": None, "path": str(root / name), "state": "in_progress", "problems": [],
+                                  "exit_code": EXIT_ATTENTION})
+                continue
             summaries.append({"key": None, "path": str(root / name), "state": "unverifiable",
                               "problems": [exc.to_json()], "exit_code": EXIT_UNVERIFIED})
             continue

@@ -163,8 +163,14 @@ def _abandon(cli: Stewart, repo: Path, rel: str, ident: str, *extra, allowed=(EX
 
 
 def _plan(cli: Stewart, repo: Path, rel: str, ident: str, *extra) -> dict[str, dict]:
-    plan = cli("--repo", repo, "--workspace", rel, "close", "--audit-id", ident, "--plan", *extra)["result"]
+    envelope = cli("--repo", repo, "--workspace", rel, "close", "--audit-id", ident, "--plan", *extra,
+                   allowed=(EXIT_OK, EXIT_ATTENTION, EXIT_REFUSED))
+    plan = envelope["result"]
     assert plan["schema"] == "stewart.closeout/1"
+    # The plan exits with the code the close would earn now.
+    refusal = plan["audit"]["refusal"]
+    assert envelope["exit_code"] == (refusal["exit_code"] if refusal else EXIT_ATTENTION if any(
+        item.get("disposition") in ("blocked", "missing") for item in plan["resources"]) else EXIT_OK)
     return _by_rid(plan["resources"])
 
 
@@ -226,14 +232,18 @@ def test_interrupted_creation_keeps_its_start_record_and_grants_no_removal(check
     (interrupted / "found-later.txt").write_text("found at the recorded path\n", encoding="utf-8")
     found = snapshot_tree(interrupted)
 
-    for rid in (interrupted_rid, interrupted_branch):
+    # What an interrupted creation's intended location holds is observed: something there blocks; nothing
+    # there (the branch before Git ran) is missing, for a person to acknowledge.
+    branch_found = "blocked" if moment == "after_add" else "missing"
+    for rid, expected in ((interrupted_rid, "blocked"), (interrupted_branch, branch_found)):
         shown = cli("--repo", checkout.repo, "resource", "show", "--resource", rid, allowed=(EXIT_ATTENTION,))["result"]
-        assert shown["creation"] == "unresolved" and shown["disposition"] == "blocked"
+        assert shown["creation"] == "unresolved" and shown["disposition"] == expected
         assert any("creation was interrupted" in reason for reason in shown["reasons"])
 
     closed = _abandon(cli, checkout.repo, WS, HOLDER, allowed=(EXIT_ATTENTION,))
     closeout = _by_rid(closed["closeout"])
-    assert closeout[interrupted_rid]["disposition"] == closeout[interrupted_branch]["disposition"] == "blocked"
+    assert (closeout[interrupted_rid]["disposition"], closeout[interrupted_branch]["disposition"]) == (
+        "blocked", branch_found)
     assert {item["rid"]: item["outcome"] for item in closed["resources"]} == {
         complete_rid: "removed", complete_branch: "removed"}, "control: the completed creation retires"
     assert not complete.exists() and not _ref(checkout.repo, "refs/heads/audit/complete")

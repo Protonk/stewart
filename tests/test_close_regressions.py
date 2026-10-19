@@ -24,7 +24,7 @@ pytestmark = pytest.mark.system
 
 def _interrupt_before_checkout_removal(checkout, monkeypatch) -> dict:
     """A concluded close that wrote its inventory and stopped before deleting the checkout."""
-    def interrupt(parent, name):
+    def interrupt(parent, name, **_):
         raise OSError("synthetic interruption before checkout removal")
 
     with monkeypatch.context() as patch:
@@ -113,11 +113,11 @@ def test_a_replacement_between_validation_and_use_cannot_redirect_removal(checko
     real = closing._delete_checkout
     substituted = []
 
-    def substitute_then_delete(parent, name):
+    def substitute_then_delete(parent, name, **kwargs):
         audit_dir.rename(held)
         audit_dir.symlink_to(decoy, target_is_directory=True)
         substituted.append(True)
-        return real(parent, name)
+        return real(parent, name, **kwargs)
 
     with monkeypatch.context() as patch:
         patch.setattr(closing, "_delete_checkout", substitute_then_delete)
@@ -154,7 +154,7 @@ def test_an_abandon_keeps_changes_written_after_its_plan(checkout, monkeypatch):
     prepared = support.prepared_session(checkout)
     (prepared.worktree / "planned.txt").write_text("discarded by decision\n")
 
-    def interrupt(parent, name):
+    def interrupt(parent, name, **_):
         raise OSError("synthetic interruption before checkout removal")
 
     with monkeypatch.context() as patch:
@@ -172,7 +172,7 @@ def test_an_abandon_keeps_changes_written_after_its_plan(checkout, monkeypatch):
 def test_an_abandon_resume_keeps_an_addition_the_plan_did_not_list(checkout, monkeypatch):
     prepared = support.prepared_session(checkout)
 
-    def interrupt(parent, name):
+    def interrupt(parent, name, **_):
         raise OSError("synthetic interruption before checkout removal")
 
     with monkeypatch.context() as patch:

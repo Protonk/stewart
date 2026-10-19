@@ -15,10 +15,11 @@ pin a path inside a worktree or directory resource are derived users. A use
 ends only when a closing record verifies for its lifetime; any doubt keeps it.
 
 Only ``close`` retires. A claim ``claims/<n>.json`` is created exclusively with
-the resource's frozen identity and contents; a new claim needs every earlier
-one ended by ``<n>.RETIRED.json`` or ``<n>.RELEASED.json``. At use, uses,
-identity and contents are revalidated; any change releases the claim and keeps
-the resource. Removal runs through pinned descriptors and Git runs from the
+the identity, full contents inventory, HEAD or tip that the evaluation judged
+removable; a new claim needs every earlier one released, and none follows a
+retirement. A container retires only with every recorded resource inside it,
+deepest first. At use, uses, identity and contents are revalidated; any change
+releases the claim and keeps the resource. Removal runs through pinned descriptors and Git runs from the
 common directory, so retiring a manager worktree never needs that worktree.
 ``ACKNOWLEDGED.json`` records the manager's acknowledgment of an observed
 absence as retirement outside Stewart; it grants nothing.
@@ -218,19 +219,67 @@ def contexts_for(common: str, slug: str, ident: str) -> list[dict]:
 # --- observations ---------------------------------------------------------------------------------------
 
 
-def _contents_digest(path: Path) -> str | None:
-    """A no-follow inventory digest of everything below a resource path, read through pinned descriptors."""
+def _snapshot(path: Path) -> dict | None:
+    """Every entry below a resource path, read through descriptors pinned without following links.
+
+    Nothing is excluded: a worktree's ``.git`` file and nested repositories are
+    contents like any other. A directory on another filesystem is listed as
+    ``foreign`` and not entered. None when the path is not a real directory
+    reached without links.
+    """
     from stewart import _util
-    from stewart.collect import inventory
+    from stewart._bootstrap import capture_regular, entry_kind
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | getattr(os, "O_CLOEXEC", 0)
+    entries: list[dict] = []
+    foreign: list[str] = []
     try:
-        with _removal.pinned(path):
-            pass
-    except (FileNotFoundError, _removal.Substituted):
+        with _removal.pinned(path.parent) as parent:
+            top = os.stat(path.name, dir_fd=parent, follow_symlinks=False)
+            if not stat.S_ISDIR(top.st_mode):
+                return None
+            root = os.open(path.name, flags, dir_fd=parent)
+    except (FileNotFoundError, _removal.Substituted, OSError):
         return None
-    observed = inventory(path)
-    if any(entry["kind"] in ("unreadable", "replaced") for entry in observed["entries"]):
-        return None
-    return _util.sha256_bytes(_util.receipt_json_bytes(observed))
+
+    def visit(descriptor: int, prefix: str) -> None:
+        try:
+            names = sorted(os.listdir(descriptor))
+        except OSError as exc:
+            entries.append({"path": prefix or ".", "kind": "unreadable", "detail": exc.strerror})
+            return
+        for name in names:
+            rel = f"{prefix}/{name}" if prefix else name
+            try:
+                found = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+                kind = entry_kind(found.st_mode)
+                item: dict = {"path": rel, "kind": kind}
+                if kind == "directory":
+                    if found.st_dev != top.st_dev:
+                        foreign.append(rel)
+                    else:
+                        child = os.open(name, flags, dir_fd=descriptor)
+                        try:
+                            visit(child, rel)
+                        finally:
+                            os.close(child)
+                elif kind == "file":
+                    item.update({key: value for key, value in capture_regular(Path(name), dir_fd=descriptor).items()
+                                 if key != "mode"})
+                elif kind == "symlink":
+                    item["target"] = os.readlink(name, dir_fd=descriptor)
+                entries.append(item)
+            except OSError as exc:
+                entries.append({"path": rel, "kind": "unreadable", "detail": exc.strerror})
+
+    try:
+        opened = os.fstat(root)
+        if (opened.st_dev, opened.st_ino) != (top.st_dev, top.st_ino):
+            return None
+        visit(root, "")
+    finally:
+        os.close(root)
+    return {"identity": {"dev": top.st_dev, "ino": top.st_ino}, "entries": entries, "foreign": foreign,
+            "sha256": _util.sha256_bytes(_util.receipt_json_bytes(entries))}
 
 
 def _directory_identity(path: Path) -> dict | None:
@@ -274,9 +323,22 @@ def _registrations(common: str) -> list[dict]:
     return registered(Path(common))
 
 
+def _admin_worktree(admin: Path) -> str | None:
+    from stewart.close import _admin_worktree as named
+    return named(admin)
+
+
+def _location(view: dict) -> dict:
+    """The identity to observe: the recorded one, or the intended one of an unfinished or failed creation."""
+    if view.get("identity"):
+        return view["identity"]
+    return ((view.get("record") or {}).get("intended") or {}) if view.get("creation") in ("unresolved", "failed") \
+        else {}
+
+
 def observe(common: str, view: dict) -> dict:
-    """What is at the resource's recorded location now: present, absent or changed, per kind."""
-    identity = view.get("identity") or {}
+    """What is at the resource's recorded location now: present, absent, moved or changed, per kind."""
+    identity = _location(view)
     kind = view.get("kind")
     if kind == "branch":
         commit, symbolic = _ref_tip(common, identity.get("ref", ""))
@@ -299,6 +361,10 @@ def observe(common: str, view: dict) -> dict:
         admin = _admin_for(common, view["rid"])
         registered = [item for item in _registrations(common) if item.get("worktree") == path]
         observation.update(administration=str(admin) if admin else None, registered=bool(registered))
+        moved = _admin_worktree(admin) if admin is not None else None
+        if moved and moved != path:
+            # Git moved the same lifetime (its marker names this resource): reported, never removed.
+            return {**observation, "state": "moved", "registered_at": moved}
         if not present and admin is None and not registered:
             return {**observation, "state": "absent"}
         if not present:
@@ -345,8 +411,17 @@ class Index:
         self.unverifiable: list[dict] = []
         self._live: dict[tuple, dict] = {}
         root = Path(common) / SESSIONS
-        for slug in _names(root) or []:
-            for ident in _names(root / slug) or []:
+
+        def listed(directory: Path) -> list[str]:
+            # Storage that cannot be listed hides its uses; that doubt blocks retirement like an unreadable record.
+            names = _names(directory)
+            if names is None:
+                self.unverifiable.append({"session": str(directory), "reason": "record_unreadable",
+                                          "message": "storage is not a real directory; its uses cannot be read"})
+            return names or []
+
+        for slug in listed(root):
+            for ident in listed(root / slug):
                 session = root / slug / ident
                 try:
                     record, _ = capture_receipt(session / "session.json", what="session record")
@@ -362,10 +437,13 @@ class Index:
                 self.uses.append({"source": f"session {slug}/{ident}", "context": context,
                                   "paths": _session_paths(record), "live": self.live(context)})
         from stewart.audits import AUDITS
-        for slug in _names(Path(common) / AUDITS) or []:
-            for ident in _names(Path(common) / AUDITS / slug) or []:
+        for slug in listed(Path(common) / AUDITS):
+            for ident in listed(Path(common) / AUDITS / slug):
                 for draft in draft_records(common, slug, ident):
                     if draft.get("state") == "invalid" or not draft.get("checkout"):
+                        # A draft or registration that does not verify may name any checkout as its own.
+                        self.unverifiable.append({"session": draft["path"], "reason": "draft_record_invalid",
+                                                  "message": (draft.get("problem") or {}).get("message", "")})
                         continue
                     context = {"workspace": draft["workspace"], "slug": slug, "audit_id": ident, "lifetime": None,
                                "closed_before": draft.get("closed_before", [])}
@@ -449,7 +527,29 @@ def _audit_context(ws, ident: str) -> tuple[str, dict]:
     if lifetime is not None and lifetime in [str(entry["session_uuid"]) for entry in entries]:
         raise StewartError(f"audit {ident}'s lifetime {lifetime} is closing; it can take no new resource",
                            reason="audit_closed")
+    if lifetime is None and entries and not all(entry.get("released") for entry in entries):
+        # A closed audit uses nothing more; a use recorded now could only end by abandoning it again.
+        raise StewartError(f"audit {ident} is closed and its ID reserved; it can take no new resource",
+                           reason="audit_closed", retained=[entry["path"] for entry in entries],
+                           next_steps=["record the resource for a live or freshly drafted audit"])
     return common, value
+
+
+def _recorded_checkout_homes(common: str) -> list[str]:
+    from stewart._repository import SESSIONS
+    from stewart.audits import _names
+    from stewart.session import capture_receipt
+    homes = set()
+    root = Path(common) / SESSIONS
+    for slug in _names(root) or []:
+        for ident in _names(root / slug) or []:
+            try:
+                record, _ = capture_receipt(root / slug / ident / "session.json", what="session record")
+            except StewartError:
+                continue
+            if isinstance(record.get("checkout_home"), str) and record["checkout_home"].startswith("/"):
+                homes.add(record["checkout_home"])
+    return sorted(homes)
 
 
 def refuse_retiring(common: str, paths: list[str | Path], *, what: str) -> None:
@@ -472,11 +572,17 @@ def _placement(common: str, path: Path, *, kind: str) -> None:
     """A managed path lies outside Stewart's own storage and every registered auditor checkout."""
     from stewart._bootstrap import MANAGER_HOME
     from stewart._repository import DEFAULT_CHECKOUT_HOME, _role_records
+    from stewart._invocation import verified_invocation
     configured = os.environ.get("STEWART_MANAGER_HOME")
     forbidden = [(Path(common), "the Git common directory"), (Path.home() / DEFAULT_CHECKOUT_HOME, "the checkout home"),
                  (Path(configured) if configured else Path.home() / MANAGER_HOME, "the manager home")]
+    running = verified_invocation()
+    if running is not None:
+        forbidden.append((running.launcher.parent.parent, "the running manager home"))
     forbidden += [(Path(row["worktree"]).parent, "a registered auditor checkout directory")
                   for row in _role_records(common)]
+    # Checkout homes named by recorded sessions, not only the default one.
+    forbidden += [(Path(home), "a recorded checkout home") for home in _recorded_checkout_homes(common)]
     for root, what in forbidden:
         if _inside(path, root) or _inside(root, path):
             raise StewartError(f"a managed {kind} cannot overlap {what}: {root}", reason="resource_location",
@@ -499,11 +605,18 @@ def _record(directory: Path, name: str, value: dict) -> str:
     return capture_receipt(directory / name, what="resource record")[1]
 
 
+#: The disposition each kind is created for: temporary resources may retire once no use remains;
+#: exports and retained deliverables are evidence kept on purpose.
+DISPOSITIONS = {"worktree": "temporary", "branch": "temporary", "directory": "temporary", "export": "retained",
+                "retained": "retained"}
+
+
 def _start(common: str, directory: Path, rid: str, kind: str, context: dict, intended: dict, actor: str | None) -> str:
     from stewart.session import now, tool_identity
     return _record(directory, "CREATE.json", {
         "schema": RESOURCE_SCHEMA, "rid": rid, "kind": kind, "origin": "managed", "recorded_at": now().isoformat(),
-        "context": context, "intended": intended, "actor": actor, "stewart": tool_identity(),
+        "context": context, "intended": {**intended, "disposition": DISPOSITIONS[kind]}, "actor": actor,
+        "stewart": tool_identity(),
         "note": "recorded before the creation's side effects; CREATED.json records what happened"})
 
 
@@ -745,7 +858,7 @@ def _enroll(ws, ident, kind, actor, path, branch, note, plan) -> dict:
         found = _directory_identity(target)
         if found is None:
             raise StewartError(f"{target} is not a real directory reached without links", reason="resource_missing")
-        identity = {"path": str(target), **found, "contents_sha256": _contents_digest(target)}
+        identity = {"path": str(target), **found, "contents_sha256": (_snapshot(target) or {}).get("sha256")}
         if kind == "worktree":
             registered = [item for item in _registrations(common) if item.get("worktree") == str(target)]
             if not registered:
@@ -760,6 +873,7 @@ def _enroll(ws, ident, kind, actor, path, branch, note, plan) -> dict:
     _record(directory, "ENROLLED.json", {
         "schema": RESOURCE_SCHEMA, "rid": rid, "kind": kind, "origin": "enrolled", "recorded_at": now().isoformat(),
         "context": context, "identity": identity, "actor": actor, "note": note, "stewart": tool_identity(),
+        "disposition": "manual",
         "acknowledgment": "tracked for association and closeout explanations only; Stewart never removes it"})
     return {"audit_id": ident, "rid": rid, "record": str(directory), "identity": identity}
 
@@ -824,8 +938,10 @@ def _worktree_findings(common: str, identity: dict, rid: str, disposed_paths: li
     if unexplained:
         findings.append("uncommitted, untracked or ignored content (never cleaned by Stewart): "
                         + ", ".join(sorted(unexplained)[:10]))
-    head = git(path, "rev-parse", "HEAD", check=False).stdout.decode().strip()
-    if head != identity.get("head") and not _reachable_elsewhere(common, head, excluded):
+    head = _worktree_head(path)
+    if head is None:
+        findings.append("its HEAD cannot be read")
+    elif head != identity.get("head") and not _reachable_elsewhere(common, head, excluded):
         findings.append(f"HEAD {head[:12]} carries commits no other ref contains")
     local = git(path, "for-each-ref", "--format=%(refname)", "refs/worktree", "refs/bisect", check=False)
     if local.stdout.strip():
@@ -846,6 +962,56 @@ def _running_paths() -> list[Path]:
     return paths
 
 
+def _foreign_inside(common: str, path: str, excluded: set[str]) -> list[str]:
+    """Checkouts Git or the role registry places at or below ``path``, other than ``excluded`` ones.
+
+    A registry row that cannot be read might place one there, so it is named too.
+    """
+    from stewart._repository import role_rows
+    found = [item["worktree"] for item in _registrations(common)
+             if item.get("worktree") and _inside(item["worktree"], path) and item["worktree"] not in excluded]
+    rows, problems = role_rows(common)
+    found += [row["worktree"] for row in rows if _inside(row["worktree"], path) and row["worktree"] not in excluded]
+    found += [f"(unreadable role registry row {item['location']})" for item in problems]
+    return sorted(set(found))
+
+
+def _branch_refs(common: str, rids_: set[str]) -> set[str]:
+    """The refs of managed branches among ``rids_`` and of branches whose claims are active."""
+    refs = set()
+    for rid in rids(common):
+        try:
+            view = load(common, rid)
+        except StewartError:
+            continue
+        ref = (view.get("identity") or {}).get("ref")
+        if view.get("kind") == "branch" and ref and (rid in rids_ or any(claim["state"] == "active"
+                                                                          for claim in view["claims"])):
+            refs.add(ref)
+    return refs
+
+
+def _contained(common: str, rid: str, path: str) -> list[dict]:
+    """Recorded resources at or below ``path`` that are neither retired nor acknowledged."""
+    found = []
+    for other in rids(common):
+        if other == rid:
+            continue
+        try:
+            inner = load(common, other)
+        except StewartError:
+            continue
+        if any(claim["state"] == "retired" for claim in inner["claims"]) or inner.get("acknowledged"):
+            continue
+        identity = inner.get("identity") or {}
+        locations = [identity["path"]] if isinstance(identity.get("path"), str) else \
+            [item["path"] for item in identity.get("files") or []]
+        if any(_inside(item, path) for item in locations):
+            found.append({"rid": other, "kind": inner.get("kind"), "identity": identity, "locations": locations,
+                          "origin": inner.get("origin")})
+    return found
+
+
 def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set[str] = frozenset(),
              inventory: set[str] = frozenset()) -> dict:
     """One resource's closeout disposition now, with every reason; nothing is written.
@@ -853,7 +1019,9 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
     ``ending(context)`` says which uses the calling close ends (its own audit
     lifetime); ``dispose`` names contained exports or retained deliverables the
     manager decided to remove with their container; ``inventory`` names the
-    other resources the same close would retire.
+    other resources the same close removes (only those whose own evaluation is
+    ``remove``). A removable resource's evaluation carries the frozen state a
+    claim records, taken now, so nothing judged here differs from what is frozen.
     """
     rid = view["rid"]
     result: dict = {"rid": rid, "kind": view.get("kind"), "origin": view.get("origin"),
@@ -872,23 +1040,30 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
     active = [claim for claim in claims if claim["state"] == "active"]
     if active:
         return {**result, "disposition": "claimed", "claim": active[-1]["path"],
-                "reasons": ["an unfinished claim holds it; its close finishes the retirement"]}
-    if view.get("creation") == "unresolved":
-        return {**result, "disposition": "blocked",
-                "reasons": ["its creation was interrupted: the start record exists without an outcome, so ownership "
-                            "of whatever is found there is not established"]}
-    if view.get("creation") == "failed":
-        return {**result, "disposition": "blocked", "reasons": ["its recorded creation failed"]}
+                "reasons": ["an unfinished claim holds it; close --resource finishes the retirement"]}
+    observation = observe(common, view)
+    result["observation"] = observation
+    if view.get("creation") in ("unresolved", "failed"):
+        # Stewart never owns what an interrupted or failed creation left; a person clears it and acknowledges.
+        state = observation["state"]
+        what = ("its creation was interrupted: the start record exists without an outcome"
+                if view["creation"] == "unresolved" else "its recorded creation failed")
+        return {**result, "disposition": "missing" if state == "absent" else "blocked",
+                "reasons": [what + ", so ownership of whatever is found at its intended location is not established"
+                            + ("; nothing is there now: acknowledge it if that is final" if state == "absent" else
+                               "; remove what is there by hand if it is not wanted, then acknowledge it")]}
     users = index.users(view)
     result["users"] = [{**user, "ended_by_this_close": bool(ending and ending(user["context"]))} for user in users]
     live = [user for user in result["users"] if user["live"] and not user["ended_by_this_close"]]
-    observation = observe(common, view)
-    result["observation"] = observation
     if observation["state"] in ("absent", "registration_remains"):
+        remedy = ("; Git still registers it: `git worktree remove -f -f <path>` drops a locked registration"
+                  if observation["state"] == "registration_remains" else "")
         return {**result, "disposition": "missing",
                 "reasons": ["the recorded resource is absent; acknowledge its retirement outside Stewart if that is "
-                            "what happened" + ("; Git still registers it" if observation["state"] ==
-                                               "registration_remains" else "")]}
+                            "what happened" + remedy]}
+    if observation["state"] == "moved":
+        return {**result, "disposition": "blocked",
+                "reasons": [f"Git moved it to {observation['registered_at']}; it is kept where it is"]}
     if view.get("origin") == "enrolled":
         return {**result, "disposition": "manual",
                 "reasons": ["enrolled external resource: tracked and explained, retired by hand and acknowledged"]}
@@ -904,60 +1079,73 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
     if observation["state"] != "present":
         reasons.append(f"what is at its location is {observation['state']}")
     if index.unverifiable and view.get("kind") in ("worktree", "directory"):
-        reasons.append("a session record cannot be read, so its uses cannot be ruled out: "
+        reasons.append("records that cannot be read may use it: "
                        + ", ".join(item["session"] for item in index.unverifiable))
     path = identity.get("path")
-    if isinstance(path, str) and any(_inside(item, path) for item in _running_paths()):
-        reasons.append("the running Stewart package or interpreter lies inside it")
-    contained, disposed = [], []
+    disposed, contained = [], []
     if isinstance(path, str):
-        for other in rids(common):
-            if other == rid:
+        if any(_inside(item, path) for item in _running_paths()):
+            reasons.append("the running Stewart package or interpreter lies inside it")
+        # Its own registration, the worktrees retiring with it, and the checkouts of the uses this close
+        # ends (removed before any claim) are not foreign.
+        ended = {pinned for use in index.uses if ending and ending(use["context"]) for pinned in use["paths"]}
+        foreign = _foreign_inside(common, path, {path} | _inventory_paths(common, inventory) | ended)
+        if foreign:
+            reasons.append("other checkouts are registered inside it: " + ", ".join(foreign))
+        for inner in _contained(common, rid, path):
+            if inner["rid"] in dispose and inner["kind"] in ("export", "retained"):
+                disposed.append({key: inner[key] for key in ("rid", "kind", "identity", "locations")})
+            elif inner["rid"] in inventory:
                 continue
-            try:
-                inner = load(common, other)
-            except StewartError:
-                continue
-            inner_path = (inner.get("identity") or {}).get("path")
-            files = (inner.get("identity") or {}).get("files") or []
-            locations = [inner_path] if isinstance(inner_path, str) else [item["path"] for item in files]
-            if not any(_inside(item, path) for item in locations) or any(c["state"] == "retired" for c in inner["claims"]):
-                continue
-            if inner.get("acknowledged"):
-                continue
-            if other in dispose and inner.get("kind") in ("export", "retained"):
-                disposed.append({"rid": other, "kind": inner["kind"], "identity": inner.get("identity"),
-                                 "locations": locations})
-            elif other in inventory:
-                continue
-            elif inner.get("kind") == "retained" and view.get("kind") == "worktree":
+            elif inner["kind"] == "retained" and view.get("kind") == "worktree":
                 # Committed, unchanged files are history (status decides); they retire with their container.
-                contained.append({"rid": other, "kind": "retained", "identity": inner.get("identity")})
+                contained.append({key: inner[key] for key in ("rid", "kind", "identity")})
+            elif inner["kind"] in ("export", "retained"):
+                reasons.append(f"it contains recorded {inner['kind']} {inner['rid']}; give it a durable destination "
+                               f"or decide its disposal with --dispose {inner['rid']}")
             else:
-                reasons.append(f"it contains recorded {inner.get('kind')} {other}; give it a durable destination or "
-                               f"--dispose {other}")
+                reasons.append(f"it contains recorded {inner['kind']} {inner['rid']}; retire that one first "
+                               f"(close --resource {inner['rid']}, or by hand and acknowledged)")
     result["disposed"] = disposed
     retiring = _inventory_paths(common, inventory)
+    retiring_refs = _branch_refs(common, inventory)
+    snapshot = None
+    if view.get("kind") in ("worktree", "directory") and isinstance(path, str):
+        snapshot = _snapshot(Path(path))
+        if snapshot is None:
+            reasons.append("it cannot be read through real directories")
+        elif snapshot["foreign"]:
+            reasons.append("another filesystem is mounted inside it: " + ", ".join(snapshot["foreign"]))
+        elif identity.get("dev") is not None and (snapshot["identity"]["dev"], snapshot["identity"]["ino"]) != \
+                (identity["dev"], identity["ino"]):
+            reasons.append("the directory at its path is not the one created")
     if view.get("kind") == "worktree":
-        # The worktree's own branch counts as holding its commits unless it retires in the same inventory.
-        excluded = {identity["branch"]} if identity.get("branch") and identity.get("branch_rid") in inventory else set()
+        # Its branch, and every branch retiring with it, cannot vouch for its commits.
         reasons += _worktree_findings(common, identity, rid, [loc for item in disposed for loc in item["locations"]],
-                                      excluded)
+                                      retiring_refs | ({identity["branch"]} if identity.get("branch_rid") in inventory
+                                                       else set()))
+    tip = None
     if view.get("kind") == "branch":
-        commit, symbolic = _ref_tip(common, identity["ref"])
+        tip, symbolic = _ref_tip(common, identity["ref"])
         if symbolic:
             reasons.append("the branch ref is symbolic")
-        elif commit is not None and commit != identity.get("created_commit") and \
-                not _reachable_elsewhere(common, commit, {identity["ref"]}):
-            reasons.append(f"its tip {commit[:12]} carries commits no other ref contains (unmerged work)")
+        elif tip is not None and tip != identity.get("created_commit") and \
+                not _reachable_elsewhere(common, tip, {identity["ref"]} | retiring_refs):
+            reasons.append(f"its tip {tip[:12]} carries commits no other ref contains (unmerged work)")
         holders = [item["worktree"] for item in _registrations(common)
                    if item.get("branch") == identity["ref"] and item["worktree"] not in retiring]
         if holders:
             reasons.append("checked out by " + ", ".join(holders))
-        result["tip"] = commit
     if reasons:
         return {**result, "disposition": "blocked", "reasons": reasons}
-    return {**result, "disposition": "remove", "contained_retained": contained}
+    frozen = {"identity": dict(identity)}
+    if snapshot is not None:
+        frozen.update(snapshot={key: snapshot[key] for key in ("identity", "entries", "sha256")})
+    if view.get("kind") == "worktree":
+        frozen["head"] = _worktree_head(Path(path))
+    if view.get("kind") == "branch":
+        frozen["tip"] = tip
+    return {**result, "disposition": "remove", "contained_retained": contained, "frozen": frozen}
 
 
 def _inventory_paths(common: str, inventory: set[str]) -> set[str]:
@@ -982,24 +1170,17 @@ def _worktree_head(path: Path) -> str | None:
     return os.fsdecode(found.stdout).strip() if not found.returncode else None
 
 
-def _frozen(common: str, view: dict, evaluation: dict) -> dict:
-    identity = dict(view.get("identity") or {})
-    frozen = {"identity": identity}
-    if view["kind"] in ("worktree", "directory"):
-        frozen["contents_sha256"] = _contents_digest(Path(identity["path"]))
-        frozen["directory"] = _directory_identity(Path(identity["path"]))
-    if view["kind"] == "worktree":
-        frozen["head"] = _worktree_head(Path(identity["path"]))
-    if view["kind"] == "branch":
-        frozen["tip"] = evaluation.get("tip")
-    return frozen
-
-
 def closeout(ws, ident: str, *, lifetime: str | None, dispose: list[str] = (), closing_name: str | None = None) -> list[dict]:
     """How every resource this audit uses would be disposed of by its close; writes nothing."""
     from stewart._repository import maintainer
     common = maintainer(ws.repo)["common_dir"]
-    return _closeout(common, ws.slug, ident, lifetime=lifetime, dispose=set(dispose), closing_name=closing_name)
+    return presented(_closeout(common, ws.slug, ident, lifetime=lifetime, dispose=set(dispose),
+                               closing_name=closing_name))
+
+
+def presented(evaluations: list[dict]) -> list[dict]:
+    """Evaluations as views show them: the frozen inventory a claim would record stays in the claim."""
+    return [{key: value for key, value in item.items() if key != "frozen"} for item in evaluations]
 
 
 def _ending(slug: str, ident: str, lifetime: str | None, closing_name: str | None):
@@ -1030,7 +1211,13 @@ def used_by(common: str, slug: str, ident: str) -> list[str]:
 
 def _closeout(common: str, slug: str, ident: str, *, lifetime, dispose: set[str], closing_name,
               used: list[str] | None = None) -> list[dict]:
-    """Evaluate the resources this audit uses (``used``, when the close fixed them before its own removal)."""
+    """Evaluate the resources this audit uses (``used``, when the close fixed them before its own removal).
+
+    The removable set is found by fixpoint: start from every managed temporary
+    resource, evaluate each against the others it would retire with, and drop
+    any that is not removable until the set no longer shrinks. A container is
+    removable only if everything recorded inside it is removed with it.
+    """
     index = Index(common)
     ending = _ending(slug, ident, lifetime, closing_name or lifetime)
     views = []
@@ -1039,14 +1226,26 @@ def _closeout(common: str, slug: str, ident: str, *, lifetime, dispose: set[str]
             views.append(load(common, rid))
         except StewartError as exc:
             views.append({"rid": rid, "disposition": "blocked", "reasons": [str(exc)]})
-    candidates = {view["rid"] for view in views if view.get("origin") == "managed" and view.get("kind") in TEMPORARY}
-    # Worktrees and directories first, assuming their branches retire too (the conservative reading of
-    # reachability); branches then, counting as retired only the worktrees that will actually be removed.
-    evaluated = {view["rid"]: evaluate(common, view, index, ending=ending, dispose=dispose, inventory=candidates)
-                 for view in views if "claims" in view and view.get("kind") != "branch"}
-    removed = {rid for rid, item in evaluated.items() if item["disposition"] == "remove"}
-    evaluated.update({view["rid"]: evaluate(common, view, index, ending=ending, dispose=dispose, inventory=removed)
-                      for view in views if "claims" in view and view.get("kind") == "branch"})
+    loaded = [view for view in views if "claims" in view]
+    removable = {view["rid"] for view in loaded if view.get("origin") == "managed" and view.get("kind") in TEMPORARY}
+    dropped: dict[str, list[str]] = {}
+    while True:
+        evaluated = {view["rid"]: evaluate(common, view, index, ending=ending, dispose=dispose,
+                                           inventory=removable - {view["rid"]}) for view in loaded}
+        # The set only shrinks, so the loop ends; each resource keeps the reasons it was first dropped for.
+        settled = {rid for rid in removable if evaluated[rid]["disposition"] == "remove"}
+        for rid in removable - settled:
+            dropped.setdefault(rid, evaluated[rid].get("reasons") or [])
+        if settled == removable:
+            break
+        removable = settled
+    for rid, item in evaluated.items():
+        if item["disposition"] == "remove" and rid not in removable:
+            # Removable alone only because resources this close keeps were evaluated as staying.
+            evaluated[rid] = {**item, "disposition": "blocked", "frozen": None,
+                              "reasons": dropped.get(rid, []) + ["it is removable only while resources retiring "
+                                                                 "with it are kept; retire it with close --resource "
+                                                                 "once that is settled"]}
     return [evaluated.get(view["rid"], view) for view in views]
 
 
@@ -1067,7 +1266,7 @@ def resources_for_audit(common: str, slug: str, ident: str) -> list[dict]:
 
 
 def _claim(common: str, view: dict, evaluation: dict, claimant: dict) -> dict | None:
-    """Create the next claim generation exclusively; None when another claimant won it."""
+    """Create the next claim generation exclusively; None when another claimant won it or it is retired."""
     from stewart.session import now, stamp, tool_identity, write_receipt
     directory = Path(view["path"]) / "claims"
     directory.mkdir(mode=0o700, exist_ok=True)
@@ -1078,7 +1277,7 @@ def _claim(common: str, view: dict, evaluation: dict, claimant: dict) -> dict | 
         return None
     number = len(claims) + 1
     document = {"schema": CLAIM_SCHEMA, "rid": view["rid"], "number": number, "recorded_at": now().isoformat(),
-                "claimant": claimant, "frozen": _frozen(common, view, evaluation),
+                "claimant": claimant, "frozen": evaluation.get("frozen") or {"identity": view.get("identity")},
                 "disposed": [{**item, "frozen": {"identity": item["identity"]}} for item in evaluation.get("disposed", [])],
                 "contained": evaluation.get("contained_retained", []), "stewart": tool_identity()}
     staged = directory / f".{number:04d}.json.{stamp()}.staged"
@@ -1099,36 +1298,81 @@ def _end(claim: dict, ending: str, value: dict) -> None:
                               "recorded_at": now().isoformat(), **value, "stewart": tool_identity()})
 
 
+def _subset(current: list[dict], frozen: list[dict]) -> list[str]:
+    """Entries present now that the frozen inventory does not hold exactly; empty when only removals happened."""
+    recorded = {item["path"]: item for item in frozen}
+    return sorted(item["path"] for item in current if recorded.get(item["path"]) != item)
+
+
 def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]:
-    """Why the claimed resource no longer matches its frozen identity, contents or freedom from use."""
-    frozen = claim["claim"]["frozen"]
+    """Why the claimed resource no longer matches its frozen state or freedom from use; empty when it does.
+
+    A claim that already began removing (it has attempt records) accepts
+    contents that only lost entries; anything added or changed is kept.
+    """
+    document = claim["claim"]
+    frozen = document["frozen"]
     identity = frozen["identity"]
+    started = bool(claim.get("attempts"))
     findings = []
     live = [user for user in index.users(view) if user["live"]]
     if live:
         findings.append("a live use appeared: " + "; ".join(f"{user['audit']['audit_id']} ({user['source']})"
                                                            for user in live))
+    if index.unverifiable and view["kind"] in ("worktree", "directory"):
+        findings.append("records that cannot be read may use it: "
+                        + ", ".join(item["session"] for item in index.unverifiable))
     kind = view["kind"]
     if kind in ("worktree", "directory"):
         path = Path(identity["path"])
-        if _directory_identity(path) != frozen.get("directory"):
-            findings.append("the directory at its path is not the one frozen in the claim")
-        elif _contents_digest(path) != frozen.get("contents_sha256"):
-            findings.append("its contents changed after the claim was frozen")
-        elif kind == "worktree" and _worktree_head(path) != frozen.get("head"):
-            findings.append("its HEAD moved after the claim was frozen")
+        snapshot = _snapshot(path)
+        recorded = frozen.get("snapshot") or {}
+        if snapshot is None:
+            if not (started and not os.path.lexists(path)):
+                findings.append("its directory cannot be read through real directories")
+        else:
+            if snapshot["identity"] != recorded.get("identity"):
+                findings.append("the directory at its path is not the one frozen in the claim")
+            elif snapshot["foreign"]:
+                findings.append("another filesystem is mounted inside it: " + ", ".join(snapshot["foreign"]))
+            elif started:
+                added = _subset(snapshot["entries"], recorded.get("entries") or [])
+                if added:
+                    findings.append("contents were added or changed after the claim was frozen: "
+                                    + ", ".join(added[:10]))
+            elif snapshot["sha256"] != recorded.get("sha256"):
+                findings.append("its contents changed after the claim was frozen")
+            foreign = _foreign_inside(common, str(path), {str(path)})
+            if foreign:
+                findings.append("other checkouts are registered inside it: " + ", ".join(foreign))
+            allowed = {item["rid"] for item in document.get("disposed", [])} | \
+                {item["rid"] for item in document.get("contained", [])}
+            inner = [item["rid"] for item in _contained(common, view["rid"], str(path)) if item["rid"] not in allowed]
+            if inner:
+                findings.append("it still holds recorded resources: " + ", ".join(inner))
+            if kind == "worktree" and not started:
+                if _worktree_head(path) != frozen.get("head"):
+                    findings.append("its HEAD moved after the claim was frozen")
+                # Branches whose claims are active are being retired too; they cannot vouch for its commits.
+                findings += _worktree_findings(common, identity, view["rid"],
+                                               [loc for item in document.get("disposed", [])
+                                                for loc in item.get("locations", [])],
+                                               _branch_refs(common, set()))
     if kind == "branch":
         commit, symbolic = _ref_tip(common, identity["ref"])
-        if commit != frozen.get("tip") or symbolic:
+        if commit is not None and (commit != frozen.get("tip") or symbolic):
             findings.append(f"its tip moved after the claim was frozen ({frozen.get('tip')} -> {commit})")
+        elif commit is not None and commit != identity.get("created_commit") and \
+                not _reachable_elsewhere(common, commit, _branch_refs(common, set())):
+            findings.append(f"its tip {commit[:12]} carries commits no other ref contains (unmerged work)")
         holders = [item["worktree"] for item in _registrations(common) if item.get("branch") == identity["ref"]]
         if holders:
             findings.append("checked out by " + ", ".join(holders))
-    for item in claim["claim"].get("disposed", []):
+    for item in document.get("disposed", []):
         inner = item.get("identity") or {}
         if item["kind"] == "export":
             info, _ = read_regular(Path(inner.get("path", "/")) / "manifest.json")
-            if info.get("sha256") != inner.get("manifest_sha256"):
+            if info.get("sha256") != inner.get("manifest_sha256") and info["kind"] != "missing":
                 findings.append(f"disposed export {item['rid']} changed after the decision")
         if item["kind"] == "retained":
             for entry in inner.get("files", []):
@@ -1138,11 +1382,12 @@ def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]
     return findings
 
 
-def _remove_worktree(common: str, rid: str, identity: dict) -> str:
-    path = Path(identity["path"])
+def _remove_worktree(common: str, rid: str, frozen: dict) -> str:
+    """Remove the frozen worktree directory, then the administration this resource's marker names."""
+    path = Path(frozen["identity"]["path"])
+    recorded = (frozen.get("snapshot") or {}).get("identity") or {}
     admin = _admin_for(common, rid)
-    with _removal.pinned(path.parent) as parent:
-        outcome = _removal.remove(parent, path.name)
+    outcome = _removal.remove_path(path, identity=(recorded["dev"], recorded["ino"]) if recorded else None)
     if admin is not None:
         _removal.remove_path(admin)
     return outcome
@@ -1150,30 +1395,36 @@ def _remove_worktree(common: str, rid: str, identity: dict) -> str:
 
 def retire_claim(common: str, view: dict, claim: dict) -> dict:
     """Remove one claimed resource after revalidating it; release the claim when anything changed."""
-    from stewart.session import now, stamp, write_receipt
+    from stewart.session import now, stamp, tool_identity, write_receipt
     index = Index(common)
     findings = _revalidate(common, view, claim, index)
     if findings:
         _end(claim, "RELEASED", {"observation": findings})
         return {"rid": view["rid"], "kind": view["kind"], "outcome": "kept", "reasons": findings}
-    identity = claim["claim"]["frozen"]["identity"]
+    frozen = claim["claim"]["frozen"]
+    identity = frozen["identity"]
     try:
         if view["kind"] == "worktree":
-            outcome = _remove_worktree(common, view["rid"], identity)
+            outcome = _remove_worktree(common, view["rid"], frozen)
         elif view["kind"] == "directory":
-            outcome = _removal.remove_path(Path(identity["path"]))
+            recorded = (frozen.get("snapshot") or {}).get("identity") or {}
+            outcome = _removal.remove_path(Path(identity["path"]),
+                                           identity=(recorded["dev"], recorded["ino"]) if recorded else None)
         elif view["kind"] == "branch":
-            _git_common(common, "update-ref", "--no-deref", "-d", identity["ref"], claim["claim"]["frozen"]["tip"])
-            outcome = "removed"
+            if _ref_tip(common, identity["ref"])[0] is None:
+                outcome = "absent"
+            else:
+                _git_common(common, "update-ref", "--no-deref", "-d", identity["ref"], frozen["tip"])
+                outcome = "removed"
         else:
             raise StewartError(f"a {view['kind']} is retained, not removed", reason="resource_not_managed")
     except (OSError, StewartError, _removal.Substituted, _removal.Replaced) as exc:
         write_receipt(Path(claim["path"]).with_name(f"{claim['number']:04d}.ATTEMPT-{stamp()}.json"),
                       {"schema": ENDED_SCHEMA, "claim_sha256": claim["sha256"], "ending": "attempt",
-                       "recorded_at": now().isoformat(), "error": str(exc)})
+                       "recorded_at": now().isoformat(), "error": str(exc), "stewart": tool_identity()})
         return {"rid": view["rid"], "kind": view["kind"], "outcome": "failed", "detail": str(exc)}
     results = [{"rid": view["rid"], "kind": view["kind"], "outcome": outcome}]
-    head = claim["claim"]["frozen"].get("head")
+    head = frozen.get("head")
     dependents = [(item, "removed with its container by the recorded disposal decision")
                   for item in claim["claim"].get("disposed", [])]
     dependents += [(item, f"retired with its container; its committed bytes remain in Git history at {head}")
@@ -1191,7 +1442,10 @@ def retire_claim(common: str, view: dict, claim: dict) -> dict:
     return {"rid": view["rid"], "kind": view["kind"], "outcome": outcome, "results": results}
 
 
-_ORDER = {"worktree": 0, "directory": 1, "branch": 2}
+def _retirement_order(view: dict) -> tuple:
+    """Deepest worktrees and directories first, branches last, so nothing is removed inside a removed container."""
+    path = (view.get("identity") or {}).get("path") or ""
+    return (1 if view.get("kind") == "branch" else 0, -len(Path(path).parts), path)
 
 
 def claim_for_close(common: str, slug: str, ident: str, *, lifetime: str | None, closing: Path,
@@ -1208,7 +1462,7 @@ def claim_for_close(common: str, slug: str, ident: str, *, lifetime: str | None,
                             used=used)
     claimant = {"kind": "audit-close", "closing": str(closing / "CLOSING.json"), "slug": slug, "audit_id": ident,
                 "lifetime": lifetime}
-    for evaluation in sorted(evaluations, key=lambda item: _ORDER.get(item.get("kind"), 9)):
+    for evaluation in sorted(evaluations, key=_retirement_order):
         if evaluation.get("disposition") != "remove":
             continue
         claim = _claim(common, load(common, evaluation["rid"]), evaluation, claimant)
@@ -1216,11 +1470,11 @@ def claim_for_close(common: str, slug: str, ident: str, *, lifetime: str | None,
             evaluation.update(disposition="claimed", reasons=["another close claimed it first"])
         else:
             evaluation.update(disposition="claimed by this close", claim=claim["path"])
-    return evaluations
+    return presented(evaluations)
 
 
 def retire_for_close(common: str, closing: Path) -> list[dict]:
-    """Retire every active claim naming this closing record, worktrees before directories before branches."""
+    """Retire every active claim naming this closing record: deepest paths first, branches last."""
     results = []
     pending = []
     for rid in rids(common):
@@ -1232,7 +1486,7 @@ def retire_for_close(common: str, closing: Path) -> list[dict]:
             if claim["state"] == "active" and (claim["claim"].get("claimant") or {}).get("closing") == \
                     str(closing / "CLOSING.json"):
                 pending.append((view, claim))
-    for view, claim in sorted(pending, key=lambda item: _ORDER.get(item[0].get("kind"), 9)):
+    for view, claim in sorted(pending, key=lambda item: _retirement_order(item[0])):
         results.append(retire_claim(common, load(common, view["rid"]), claim))
     return results
 
@@ -1247,28 +1501,36 @@ def close_resources(repo: Path, rids_: list[str], *, actor: str, reason: str | N
         resource_id(rid)
     inputs = {"resources": sorted(rids_), "actor": actor, "reason": reason, "dispose": sorted(dispose)}
     return keyed(None, None, "resource-close", inputs, request_key,
-                 lambda plan: _close_resources(common, list(rids_), actor, reason, list(dispose), plan),
+                 lambda plan: _close_resources(common, list(rids_), actor, reason, list(dispose), plan,
+                                               resume=resume, repo=Path(repo)),
                  resources=list(rids_), resume=resume, common=common, repo=Path(repo),
+                 complete=lambda result: not any(item["outcome"] == "failed" for item in result["results"]),
                  outputs=lambda result: [{"kind": "resource", "resource": item["rid"], "path": item.get("record")}
                                          for item in result["results"]])
 
 
-def _close_resources(common: str, names: list[str], actor: str, reason: str | None, dispose: list[str], plan) -> dict:
+def _close_resources(common: str, names: list[str], actor: str, reason: str | None, dispose: list[str], plan, *,
+                     resume: bool = False, repo: Path | None = None) -> dict:
     from stewart.implementation import require
     _actor(actor)
     if not names:
         raise StewartError("name at least one resource with --resource", reason="usage")
     index = Index(common)
     views = {rid: load(common, rid) for rid in names}
-    resumed, evaluations = {}, {}
+    resumed, evaluations, done = {}, {}, set()
     for rid, view in views.items():
         active = [claim for claim in view["claims"] if claim["state"] == "active"]
         if active:
-            require(active[-1]["claim"].get("stewart"), record=Path(active[-1]["path"]), arguments=[])
+            require(active[-1]["claim"].get("stewart"), record=Path(active[-1]["path"]),
+                    arguments=["--repo", str(repo or ""), "resource", "show", "--resource", rid])
             resumed[rid] = active[-1]
             continue
-        evaluation = evaluate(common, view, index, dispose=set(dispose), inventory=set(names))
-        evaluations[rid] = evaluation
+        if resume and any(claim["state"] == "retired" for claim in view["claims"]):
+            # Resuming this request: a resource its interrupted attempt already retired is done.
+            done.add(rid)
+            continue
+        evaluations[rid] = evaluate(common, view, index, dispose=set(dispose),
+                                    inventory=set(names) - {rid})
     refused = {rid: item for rid, item in evaluations.items() if item["disposition"] != "remove"}
     if refused:
         dispositions = {item["disposition"] for item in refused.values()}
@@ -1286,15 +1548,16 @@ def _close_resources(common: str, names: list[str], actor: str, reason: str | No
         raise StewartError(message, reason="resource_blocked", **details)
     plan([{"kind": "resource", "resource": rid, "path": views[rid]["path"]} for rid in names])
     claimant = {"kind": "resource-close", "actor": actor, "reason": reason}
-    results = []
-    for rid in sorted(names, key=lambda item: _ORDER.get(views[item].get("kind"), 9)):
+    results = [{"rid": rid, "kind": views[rid].get("kind"), "outcome": "retired earlier under this request",
+                "record": views[rid]["path"]} for rid in sorted(done)]
+    for rid in sorted((rid for rid in names if rid not in done), key=lambda item: _retirement_order(views[item])):
         if rid in resumed:
             claim = resumed[rid]
         else:
             claim = _claim(common, load(common, rid), evaluations[rid], claimant)
             if claim is None:
                 results.append({"rid": rid, "kind": views[rid].get("kind"), "outcome": "kept",
-                                "reasons": ["another close claimed it first"], "record": views[rid]["path"]})
+                                "reasons": ["another close claimed or retired it first"], "record": views[rid]["path"]})
                 continue
         outcome = retire_claim(common, load(common, rid), claim)
         results.append({**outcome, "record": views[rid]["path"], "resumed": rid in resumed})
@@ -1332,8 +1595,9 @@ def _acknowledge(common: str, rid: str, actor: str, note: str | None, plan) -> d
     if observation["state"] != "absent":
         raise StewartError(f"resource {rid} is not absent ({observation['state']}); an acknowledgment needs an "
                            "observed absence", reason="resource_present", retained=[view["path"]],
-                           next_steps=["retire it by hand first; for a worktree also drop its Git registration with "
-                                       "`git worktree remove --force <path>`"])
+                           next_steps=["retire it by hand first; a managed worktree is locked, so drop its Git "
+                                       "registration with `git worktree remove -f -f <path>` (or unlock it, then "
+                                       "`git worktree prune`)"])
     location_ = Path(view["path"]) / "ACKNOWLEDGED.json"
     plan([{"kind": "acknowledgment", "resource": rid, "path": str(location_)}])
     _record(Path(view["path"]), "ACKNOWLEDGED.json", {

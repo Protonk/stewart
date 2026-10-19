@@ -8,7 +8,7 @@ anything and an outcome record after, and ``register`` records present
 observations of an existing workspace without implying any earlier custody.
 
 Discovery reads every repository-level record under the Git common directory
-and writes nothing: no receipt, no deployment and no "current audit" setting.
+and writes nothing: no record of any kind, no runtime and no "current audit" setting.
 Selection turns one discovered audit into a reference the caller keeps; every
 operation revalidates it. Aliases are locators: an audit ID shared by several
 workspaces, several draft checkouts, a lost owner, a replaced lifetime or an
@@ -496,6 +496,19 @@ def _audit_entry(common: str, repo: Path, slug: str, ident: str, families: set[s
             entry["problems"].append({"reason": "session_owner_missing", "message": message})
         else:
             entry["problems"].append({"reason": "draft_checkout_missing", "message": message})
+    if session is not None and session.get("supported") and stage != "closing" and entry["workspace"] \
+            and checkout and entry["checkout_available"]:
+        # The envelope alone does not make a session usable: it must load as status and mutations load it.
+        from stewart.session import load_session
+        from stewart.workspace import workspace as _workspace
+        try:
+            load_session(_workspace(Path(checkout), entry["workspace"]), ident, check_retention=False)
+        except StewartError as exc:
+            # A registry row that does not verify is a repository-level problem discovery reports once;
+            # it does not make this session's own records unverified.
+            if exc.reason != "worktree_role_registry":
+                entry["problems"].append({"reason": exc.reason, "message": str(exc)})
+                stage = entry["stage"] = "unverified"
     for draft in drafts:
         if draft.get("state") == "partial":
             entry["problems"].append({"reason": "draft_incomplete", "message": f"init {draft['name']} recorded its "
@@ -674,22 +687,24 @@ class Binding:
     stage: str
 
 
-def bind(reference: dict) -> Binding:
+def bind(reference: dict, *, checkout: Path | None = None) -> Binding:
     """Revalidate a kept reference against the records as they are now.
 
-    The repository and checkout must still be the same maintainer checkout of
-    the same Git common directory. A reference bound to a lifetime refuses a
+    The checkout (the reference's own, or ``checkout`` when the caller runs
+    from another maintainer checkout) must be a maintainer checkout of the
+    reference's Git common directory. A reference bound to a lifetime refuses a
     replacement lifetime; one taken before any session refuses the session
     prepared since. A different recorded implementation makes it stale.
     """
     from stewart._repository import maintainer
     from stewart.workspace import workspace as _workspace
     reference = validate_reference(reference)
-    checkout = Path(reference["checkout"])
+    checkout = Path(checkout if checkout is not None else reference["checkout"])
     if not checkout.is_dir():
         raise StewartError(f"the reference's checkout is gone: {checkout}", reason="reference_checkout_missing",
                            retained=[str(checkout)],
-                           next_steps=["discover from an existing maintainer checkout and select the audit again"])
+                           next_steps=["pass --repo naming another maintainer checkout of the same repository, or "
+                                       "discover from one and select the audit again"])
     identity = maintainer(checkout)
     if identity["common_dir"] != reference["repository"]:
         raise StewartError("the reference names another repository than its checkout's", reason="reference_mismatch",

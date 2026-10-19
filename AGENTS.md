@@ -100,19 +100,25 @@ The custody rules are:
   creation (`CREATE.json` with `CREATED.json`), no live use and every
   eligibility check; it never names an enrolled resource. Start records,
   enrollments, registrations, associations, acknowledgments, paths and Git
-  registrations grant nothing. Revalidate frozen identities, contents and uses
-  at use; release the claim (`<n>.RELEASED.json`) rather than remove anything
-  that changed. Remove through pinned descriptors and never let Git delete
-  contents; drop a worktree's administration only after its marker names the
-  lifetime. Doubt about a use keeps the resource.
+  registrations grant nothing. Freeze what the evaluation judged (identity,
+  full inventory, HEAD or tip), never a later re-read. Revalidate frozen
+  identities, contents and uses at use; release the claim
+  (`<n>.RELEASED.json`) rather than remove anything that changed. A container
+  retires only with everything recorded inside it. Remove through pinned
+  descriptors, only the recorded device and inode, never across filesystems,
+  and never let Git delete contents; drop a worktree's administration only
+  after its marker names the lifetime. Doubt about a use keeps the resource.
 - **Selection is a reference the caller keeps.** Discovery and selection write
   nothing and choose nothing by recency, current directory or installation.
   Every operation revalidates a reference; a draft reference never selects a
   later lifetime. Aliases stay explicit when ambiguous.
 - **Request keys bind intent; they never replay uncertainty.** Publish the
   exclusive binding before side effects, record planned outputs before the
-  first one and the outcome after; a matching key returns its record. Keep
-  request records beyond retirement. Do not deduplicate unkeyed requests.
+  first one and the outcome after; a matching key returns its record. A result
+  its operation does not call complete records no outcome. Resume only a
+  partial request of a resumable operation, adopting only work its own attempts
+  planned. Keep request records beyond retirement. Do not deduplicate unkeyed
+  requests.
 - **Runtime handoff is explicit.** A mutation under an implementation other
   than the record's writer is refused; offer only a handoff verified by
   descriptor reads of the recorded deployment, launcher and interpreter. Never

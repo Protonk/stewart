@@ -383,8 +383,8 @@ def build_parser() -> argparse.ArgumentParser:
     release_hold.add_argument("--reason", required=True, help="triage result or cancellation reason; retained")
 
     closing = commands.add_parser(
-        "close", help="[writes a closing record; removes the session, its checkout, refs and registry row] "
-                      "retire a finished or abandoned audit",
+        "close", help="[writes a closing record; removes the session, its checkout, refs and registry row, "
+                      "then claimed resources whose last use it ends] retire a finished or abandoned audit",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description="Retire one audit. Writes CLOSING.json under <git-common-dir>/stewart/closed/ before\n"
                     "removing anything, then removes only what the session recorded: its checkout and\n"
@@ -397,19 +397,22 @@ def build_parser() -> argparse.ArgumentParser:
                     "--abandon --reason TEXT: any state, including records that do not verify. The ID\n"
                     "is released only when preparation recorded its failure before writing either\n"
                     "handoff, nothing was launched, recorded or collected, and the checkout holds only\n"
-                    "preparation's footprint; every doubt keeps it reserved.\n\n"
+                    "preparation's footprint; every doubt keeps it reserved. An audit recorded only by a\n"
+                    "draft, registration or resource context can be abandoned too; its ID stays reserved.\n\n"
                     "A rerun finishes an interrupted close from CLOSING.json's inventory.\n"
                     "Closing a paused session releases no hold; tell the writers.\n\n"
                     "Recorded resources: after CLOSING.json a close claims each Stewart-created\n"
                     "worktree, branch or directory whose last live use it ends and that passes its\n"
-                    "checks (clean including ignored paths, merged or unchanged tips, unchanged\n"
-                    "contents), and retires the claims after the session's own items. Shared,\n"
+                    "checks (clean including ignored paths, merged or unchanged tips, nothing else\n"
+                    "registered or recorded inside), freezes its full inventory in the claim, and retires\n"
+                    "the claims after the session's own items, revalidating each at use. Shared,\n"
                     "enrolled, retained and blocked resources are kept and explained. --plan prints\n"
                     "that description and writes nothing; --resource RID retires a left-behind\n"
                     "resource under the same discipline; --dispose RID records the decision to\n"
                     "remove a contained export or retained deliverable with its container.\n"
                     "With --request-key a retry returns the recorded close; --resume-request\n"
                     "continues a partial one from its frozen inventory.\n\n"
+                    "--plan exits with the code the close would earn now.\n\n"
                     "Exit codes: 0 closed with nothing left; 1 removal stopped partway, left\n"
                     "unrecorded entries, or left a resource blocked or missing (rerun or inspect);\n"
                     "2 refused; 3 records do not verify for a concluded close (abandon remains\n"
@@ -423,7 +426,8 @@ def build_parser() -> argparse.ArgumentParser:
     closing.add_argument("--actor", help="who is closing; recorded as the acknowledgment (required unless --plan)")
     closing.add_argument("--plan", action="store_true",
                          help="print the closeout description (what would be removed, preserved and why) and write "
-                              "nothing")
+                              "nothing. Exits with the refusal's code when a concluded close would refuse, 1 when a "
+                              "resource would stay blocked or missing, else 0")
     closing.add_argument("--dispose", action="append", default=[], metavar="RID",
                          help="explicit decision to remove this recorded export or retained deliverable with the "
                               "retiring resource that contains it; recorded in the claim")
@@ -515,10 +519,14 @@ def _coordinates(args: argparse.Namespace, parser: argparse.ArgumentParser) -> t
     """The repository context, workspace and kept reference a command runs with; explicit values must agree.
 
     A reference supplies the repository, workspace, audit ID and lifetime. Its
-    checkout is where the command runs; when that checkout is gone, ``--repo``
-    names another maintainer checkout of the same repository, which serves
-    only request-key lookups and inspection.
+    checkout is where the command runs. ``--repo`` names another maintainer
+    checkout of the same repository (its Git common directory must be the
+    reference's); when the reference's checkout is gone and ``--repo`` is
+    absent, the session's owner checkout or the repository's main checkout is
+    used if it still is one. Operations that need the session's owner refuse
+    elsewhere on their own.
     """
+    from stewart._repository import checkout_identity
     from stewart.audits import load_reference
     reference = load_reference(args.ref) if args.ref is not None else None
     if reference is not None:
@@ -530,13 +538,30 @@ def _coordinates(args: argparse.Namespace, parser: argparse.ArgumentParser) -> t
                                    reason="reference_mismatch", next_steps=["drop the explicit value or select again"])
             if hasattr(args, flag) or flag == "workspace":
                 setattr(args, flag, value)
+        def same_repository(candidate: Path) -> bool:
+            try:
+                return checkout_identity(candidate)["common_dir"] == reference["repository"]
+            except (StewartError, OSError):
+                return False
+
+        if args.repo is not None:
+            chosen = Path(args.repo).resolve()
+            if not same_repository(chosen):
+                raise StewartError(f"--repo {chosen} is not a checkout of the reference's repository "
+                                   f"({reference['repository']})", reason="reference_mismatch",
+                                   retained=[str(chosen)],
+                                   next_steps=["name a maintainer checkout of the same repository, or drop --repo"])
+            return chosen, args.workspace, reference
         checkout = Path(reference["checkout"])
         if checkout.is_dir():
             return checkout, args.workspace, reference
-        if args.repo is None:
-            raise StewartError(f"the reference's checkout is gone: {checkout}", reason="reference_checkout_missing",
-                               next_steps=["discover from an existing maintainer checkout and select the audit again"])
-        return Path(args.repo).resolve(), args.workspace, reference
+        for candidate in (reference.get("owner"), str(Path(reference["repository"]).parent)):
+            if isinstance(candidate, str) and Path(candidate).is_dir() and same_repository(Path(candidate)):
+                return Path(candidate), args.workspace, reference
+        raise StewartError(f"the reference's checkout is gone: {checkout}", reason="reference_checkout_missing",
+                           retained=[str(checkout)],
+                           next_steps=["pass --repo naming another maintainer checkout of the same repository, or "
+                                       "discover from one and select the audit again"])
     if args.repo is None:
         parser.error("the following arguments are required: --repo (or --ref)")
     if args.workspace is None and not _repository_only(args) and args.command != "select":
@@ -552,21 +577,30 @@ def _audit(args: argparse.Namespace) -> str:
     return ident
 
 
-def _revalidate(ws: Workspace | None, args: argparse.Namespace, reference: dict | None) -> None:
-    """Revalidate a kept reference, unless a recorded request under the given key answers first.
+def _revalidate(ws: Workspace | None, args: argparse.Namespace, reference: dict | None, repo: Path) -> None:
+    """Revalidate a kept reference, unless the given key's recorded request answers without executing.
 
-    A same-key retry is answered from its request record before anything else
-    is required to exist: not the session, lifetime, reference checkout or resources.
+    A same-key retry whose request is completed, refused, unverifiable, running
+    or partial is answered from its records (a partial close resumes from its
+    own closing record) before anything else is required to exist: not the
+    session, lifetime, reference checkout or resources. A reserved request
+    executes, so its reference is revalidated like a fresh one.
     """
     if reference is None:
         return
-    if args.request_key is not None and ws is not None:
-        from stewart._repository import maintainer
-        from stewart.request_keys import location
-        if (location(maintainer(ws.repo)["common_dir"], args.request_key) / "REQUEST.json").exists():
-            return
+    if args.request_key is not None:
+        from stewart._repository import checkout_identity
+        from stewart.request_keys import inspect, location
+        common = checkout_identity(repo)["common_dir"]
+        if (location(common, args.request_key) / "REQUEST.json").exists():
+            try:
+                state = inspect(common, args.request_key)["state"]
+            except StewartError:
+                state = "unverifiable"
+            if state != "reserved":
+                return
     from stewart.audits import bind
-    bind(reference)
+    bind(reference, checkout=repo)
 
 
 def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | None = None,
@@ -589,7 +623,7 @@ def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | Non
         observer(repo)
     else:
         maintainer(repo)
-    _revalidate(ws, args, reference)
+    _revalidate(ws, args, reference, repo)
     keyed = {"request_key": key}
     if args.command == "discover":
         from stewart.audits import discover
@@ -721,7 +755,12 @@ def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | Non
         from stewart.close import close, close_plan
 
         if args.plan:
-            return close_plan(ws, ident, lifetime=lifetime, abandon=args.abandon, dispose=args.dispose), EXIT_OK
+            planned = close_plan(ws, ident, lifetime=lifetime, abandon=args.abandon, dispose=args.dispose)
+            refusal = planned["audit"]["refusal"]
+            # The code the close would earn now: its refusal's, or attention for a resource left blocked or missing.
+            return planned, (refusal["exit_code"] if refusal else EXIT_ATTENTION
+                             if any(item.get("disposition") in ("blocked", "missing") for item in planned["resources"])
+                             else EXIT_OK)
         if args.actor is None:
             raise StewartError("a close needs an attributed actor", reason="actor_required",
                                next_steps=["rerun with --actor NAME naming who closes the audit"])
