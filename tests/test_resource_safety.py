@@ -625,3 +625,62 @@ def test_a_session_checkout_swapped_before_deletion_is_left_in_place(checkout, m
     assert str(worktree) in rerun["leftovers"]
     assert (worktree / "impostor.txt").read_text(encoding="utf-8") == "not the recorded checkout\n"
     assert held.is_dir() and (held / ".git").is_file()
+
+
+# --- 9. another filesystem inside a resource (simulated device boundary) ----------------------------------
+
+
+def _foreign_device(monkeypatch, name: str) -> list[str]:
+    """Report a different device for directory entries called ``name``, as a mount point inside would.
+
+    This simulates the device boundary with ``os.stat`` results only; no filesystem is mounted, so it qualifies
+    how Stewart treats a device change, not any particular mount type.
+    """
+    real_stat = os.stat
+    seen: list[str] = []
+
+    def stat(path, *args, **kwargs):
+        found = real_stat(path, *args, **kwargs)
+        if os.fspath(path) == name and kwargs.get("dir_fd") is not None:
+            seen.append(name)
+            fields = list(found[:10])
+            fields[2] = found.st_dev + 1
+            return os.stat_result(fields)
+        return found
+
+    monkeypatch.setattr(os, "stat", stat)
+    return seen
+
+
+def test_another_filesystem_inside_a_resource_blocks_it_and_removal_never_enters_it(checkout, tmp_path,
+                                                                                   monkeypatch):
+    work = tmp_path.resolve()
+    host, steady = work / "host-dir", work / "steady-dir"
+    host_rid = api.create_directory(checkout.ws, HOLDER, path=str(host), actor="manager")["rid"]
+    steady_rid = api.create_directory(checkout.ws, HOLDER, path=str(steady), actor="manager")["rid"]
+    (host / "mounted").mkdir()
+    (host / "mounted/keep.txt").write_text("on another filesystem\n", encoding="utf-8")
+    common = base._common(checkout.repo)
+    records = snapshot_tree(base._records(common))
+
+    with monkeypatch.context() as patch:
+        seen = _foreign_device(patch, "mounted")
+        first = base._by_rid(api.close_plan(checkout.ws, HOLDER, abandon=True)["resources"])
+        again = base._by_rid(api.close_plan(checkout.ws, HOLDER, abandon=True)["resources"])
+    assert seen, "firing control: the entry inside reported another device"
+    assert first[host_rid]["disposition"] == "blocked"
+    assert "another filesystem is mounted inside it: mounted" in " ".join(first[host_rid]["reasons"])
+    # Differing only in the device: the sibling directory without a boundary is removable.
+    assert first[steady_rid]["disposition"] == "remove"
+    # Invariance: planning again reports the same and writes nothing.
+    assert again == first and snapshot_tree(base._records(common)) == records
+
+    # Removal itself never descends across a device change, even when asked to remove the tree directly.
+    with monkeypatch.context() as patch:
+        _foreign_device(patch, "mounted")
+        with pytest.raises(OSError) as raised:
+            _removal.remove_path(host)
+    assert raised.value.errno == errno.EXDEV
+    assert (host / "mounted/keep.txt").read_text(encoding="utf-8") == "on another filesystem\n"
+    # Control: with the real device, the same tree is removed whole.
+    assert _removal.remove_path(host) == "removed" and not host.exists()
