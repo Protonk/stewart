@@ -1036,18 +1036,26 @@ def _contained(common: str, rid: str, path: str) -> list[dict]:
     return found
 
 
-def _dependency_blockers(inner: dict, index: Index, ending) -> list[str]:
+def _container_claims(view: dict, container: str) -> list[dict]:
+    """Active claims a container's retirement made on a dependency, before an interruption ended them."""
+    return [claim for claim in view["claims"] if claim["state"] == "active"
+            and (claim["claim"].get("claimant") or {}) == {"kind": "container", "rid": container}]
+
+
+def _dependency_blockers(inner: dict, index: Index, ending, *, container: str | None = None) -> list[str]:
     """Why a recorded export or retained deliverable cannot be removed with its container.
 
     A disposal decision or a container's retirement never overrides another
-    audit's live use, a claim in progress, or records that do not verify.
+    audit's live use, a claim in progress, or records that do not verify. A
+    claim the container's own interrupted retirement made is not another's.
     """
     view = inner["view"]
     what = f"{inner['kind']} {inner['rid']}"
     if view["problems"]:
         return [f"contained {what} has records that do not verify: "
                 + "; ".join(item["message"] for item in view["problems"])]
-    if any(claim["state"] == "active" for claim in view["claims"]):
+    own = _container_claims(view, container) if container else []
+    if any(claim["state"] == "active" and claim not in own for claim in view["claims"]):
         return [f"contained {what} is being retired under its own claim"]
     live = [user for user in index.users(view) if user["live"] and not (ending and ending(user["context"]))]
     if live:
@@ -1465,7 +1473,8 @@ def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]
             findings.append(f"dependency {item['rid']} cannot be read: {exc}")
             continue
         # Uses of a dependency are revalidated like the container's own: the closing audit's have ended.
-        findings += _dependency_blockers({"rid": item["rid"], "kind": item["kind"], "view": inner_view}, index, None)
+        findings += _dependency_blockers({"rid": item["rid"], "kind": item["kind"], "view": inner_view}, index, None,
+                                         container=view["rid"])
     for item in document.get("disposed", []):
         inner = item.get("identity") or {}
         if item["kind"] == "export":
@@ -1568,7 +1577,10 @@ def retire_claim(common: str, view: dict, claim: dict) -> dict:
         results.append({"rid": item["rid"], "kind": item["kind"], "outcome": what})
         try:
             inner = load(common, item["rid"])
-            inner_claim = _claim(common, inner, {"disposed": []}, {"kind": "container", "rid": view["rid"]})
+            # A resumed retirement ends the claim its interrupted attempt made, never a second one.
+            own = _container_claims(inner, view["rid"])
+            inner_claim = own[-1] if own else _claim(common, inner, {"disposed": []},
+                                                     {"kind": "container", "rid": view["rid"]})
             if inner_claim is not None:
                 _end(inner_claim, "RETIRED", {"results": [results[-1]]})
         except StewartError:

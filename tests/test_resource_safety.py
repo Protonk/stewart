@@ -861,3 +861,45 @@ def test_a_removal_killed_after_its_first_unlink_resumes_over_what_it_froze(chec
             assert not admin.exists() and str(target) not in base._worktrees(checkout.repo)
     # Invariance: nothing outside the frozen resource changed.
     assert sentinel.read_text(encoding="utf-8") == "invariant\n"
+
+
+@pytest.mark.parametrize("interrupted", [False, True])
+def test_a_retirement_interrupted_while_ending_a_disposed_dependency_finishes_that_claim(checkout, tmp_path,
+                                                                                      monkeypatch, interrupted):
+    work = tmp_path.resolve()
+    common = base._common(checkout.repo)
+    ident = checkout.meta["audit_id"]
+    support.prepared_session(checkout)
+    container, durable = work / "container", work / "durable"
+    container_rid, export_rid, outside = _export_inside(checkout, ident, container, durable)
+    arguments = dict(actor="manager", abandon=True, reason="done", dispose=[export_rid], request_key="dispose-close")
+    real_end = holdings._end
+    stopped: list[str] = []
+
+    def stop_before_the_dependency_ends(claim, ending, value):
+        if interrupted and not stopped and Path(claim["path"]).parent.parent.name == export_rid:
+            stopped.append(claim["path"])
+            raise KeyboardInterrupt("synthetic interruption after the dependency was claimed, before it ended")
+        return real_end(claim, ending, value)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(holdings, "_end", stop_before_the_dependency_ends)
+        if interrupted:
+            with pytest.raises(KeyboardInterrupt):
+                api.close(checkout.ws, ident, **arguments)
+        else:
+            api.close(checkout.ws, ident, **arguments)
+    if interrupted:
+        # Firing control: the container is gone and the export holds an active claim its container made.
+        assert stopped and not container.exists()
+        assert base._generations(common, export_rid) == {1: None} and base._generations(common, container_rid) == {
+            1: None}
+        assert api.inspect_request(checkout.repo, "dispose-close")["state"] == "partial"
+        resumed = api.close(checkout.ws, ident, resume=True, **arguments)
+        assert resumed["request"]["state"] == "completed"
+    # Measured: the resumed retirement ends that same claim instead of releasing the container's; the
+    # uninterrupted close (control) ends in the same records.
+    assert base._generations(common, container_rid) == {1: "RETIRED"}
+    assert base._generations(common, export_rid) == {1: "RETIRED"}
+    # Invariance: the export with a durable destination outside the container is untouched.
+    assert snapshot_tree(durable) == outside
