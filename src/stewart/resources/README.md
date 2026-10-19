@@ -1312,6 +1312,8 @@ managed worktree is created locked (`stewart managed worktree <id>`) and marked
 by `stewart-resource.json` in its Git administration; it must lie outside the
 Git common directory, checkout homes, the manager home and registered auditor
 checkout directories, recorded checkout homes and the running manager home.
+A `--path` must be absolute (`resource_location`) and spelled canonically
+(`path_noncanonical`).
 A borrowed branch never becomes removal-eligible. An audit that is closed (or
 whose lifetime is closing) takes no new resource or use (`audit_closed`).
 `export` and `retain` record their package and published files as `export` and
@@ -1391,7 +1393,10 @@ checkout registered inside since; any change, or a use that appeared since,
 ends the claim with `<n>.RELEASED.json` and keeps the resource. A claim whose
 removal already started (it has an attempt record) accepts only the entries it
 froze, minus what was already removed, and finishes an already-absent path by
-dropping its administration. Removal goes through descriptors pinned without
+dropping its administration, whose resource marker is removed last so an
+interrupted removal is found again; a worktree is not retired while Git still
+registers it. A container's frozen entries may also disappear below resources
+retired first inside it in the same close, and nowhere else. Removal goes through descriptors pinned without
 following links, removes only the directory with the frozen device and inode,
 never crosses into another filesystem, lets Git delete no contents, removes a
 worktree's marker-verified administration by descriptor, and deletes a branch

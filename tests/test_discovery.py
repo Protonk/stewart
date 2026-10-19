@@ -682,7 +682,7 @@ def test_a_mismatched_lifetime_refuses_status_and_collect(checkout, run_cmd):
     assert count() == 1
 
 
-def test_a_reference_whose_checkout_is_gone_is_refused(checkout, run_cmd, tmp_path):
+def test_a_reference_whose_checkout_is_gone_falls_back_or_is_refused(checkout, run_cmd, tmp_path):
     cli = Stewart(run_cmd, checkout.tmp)
     repo = checkout.repo
     linked = _linked(checkout, "linked")

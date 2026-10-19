@@ -65,9 +65,11 @@ def location(common: str, rid: str) -> Path:
 
 
 def _absolute(value: object, what: str) -> Path:
-    if (not isinstance(value, (str, Path)) or not str(value).startswith("/") or "\0" in str(value)
-            or ".." in PurePosixPath(str(value)).parts or PurePosixPath(str(value)).as_posix() != str(value)):
-        raise StewartError(f"{what} must be an absolute canonical path: {value}", reason="resource_location")
+    if not isinstance(value, (str, Path)) or not str(value).startswith("/") or "\0" in str(value):
+        raise StewartError(f"{what} must be an absolute path: {value}", reason="resource_location")
+    if ".." in PurePosixPath(str(value)).parts or PurePosixPath(str(value)).as_posix() != str(value):
+        raise StewartError(f"{what} must be spelled canonically (no '..', repeated or trailing '/'): {value}",
+                           reason="path_noncanonical")
     return Path(str(value))
 
 
@@ -1082,7 +1084,7 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
         reasons.append("records that cannot be read may use it: "
                        + ", ".join(item["session"] for item in index.unverifiable))
     path = identity.get("path")
-    disposed, contained = [], []
+    disposed, contained, inside = [], [], []
     if isinstance(path, str):
         if any(_inside(item, path) for item in _running_paths()):
             reasons.append("the running Stewart package or interpreter lies inside it")
@@ -1096,7 +1098,8 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
             if inner["rid"] in dispose and inner["kind"] in ("export", "retained"):
                 disposed.append({key: inner[key] for key in ("rid", "kind", "identity", "locations")})
             elif inner["rid"] in inventory:
-                continue
+                # Retired before this container (deepest first); its entries may be gone when this one retires.
+                inside.append({"rid": inner["rid"], "kind": inner["kind"], "locations": inner["locations"]})
             elif inner["kind"] == "retained" and view.get("kind") == "worktree":
                 # Committed, unchanged files are history (status decides); they retire with their container.
                 contained.append({key: inner[key] for key in ("rid", "kind", "identity")})
@@ -1145,7 +1148,8 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
         frozen["head"] = _worktree_head(Path(path))
     if view.get("kind") == "branch":
         frozen["tip"] = tip
-    return {**result, "disposition": "remove", "contained_retained": contained, "frozen": frozen}
+    return {**result, "disposition": "remove", "contained_retained": contained, "retiring_inside": inside,
+            "frozen": frozen}
 
 
 def _inventory_paths(common: str, inventory: set[str]) -> set[str]:
@@ -1279,7 +1283,8 @@ def _claim(common: str, view: dict, evaluation: dict, claimant: dict) -> dict | 
     document = {"schema": CLAIM_SCHEMA, "rid": view["rid"], "number": number, "recorded_at": now().isoformat(),
                 "claimant": claimant, "frozen": evaluation.get("frozen") or {"identity": view.get("identity")},
                 "disposed": [{**item, "frozen": {"identity": item["identity"]}} for item in evaluation.get("disposed", [])],
-                "contained": evaluation.get("contained_retained", []), "stewart": tool_identity()}
+                "contained": evaluation.get("contained_retained", []),
+                "inside": evaluation.get("retiring_inside", []), "stewart": tool_identity()}
     staged = directory / f".{number:04d}.json.{stamp()}.staged"
     write_receipt(staged, document)
     try:
@@ -1298,10 +1303,19 @@ def _end(claim: dict, ending: str, value: dict) -> None:
                               "recorded_at": now().isoformat(), **value, "stewart": tool_identity()})
 
 
-def _subset(current: list[dict], frozen: list[dict]) -> list[str]:
-    """Entries present now that the frozen inventory does not hold exactly; empty when only removals happened."""
+def _differences(root: Path, current: list[dict], frozen: list[dict], *, removable: list[str],
+                 started: bool) -> tuple[list[str], list[str]]:
+    """Entries added or changed since the freeze, and frozen entries gone that nothing authorized to go.
+
+    Entries may disappear only below ``removable`` paths (resources retired
+    first, inside this one) or anywhere once this claim's own removal started.
+    """
     recorded = {item["path"]: item for item in frozen}
-    return sorted(item["path"] for item in current if recorded.get(item["path"]) != item)
+    added = sorted(item["path"] for item in current if recorded.get(item["path"]) != item)
+    present = {item["path"] for item in current}
+    gone = sorted(entry for entry in recorded if entry not in present and not started
+                  and not any(_inside(root / entry, prefix) for prefix in removable))
+    return added, gone
 
 
 def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]:
@@ -1335,13 +1349,23 @@ def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]
                 findings.append("the directory at its path is not the one frozen in the claim")
             elif snapshot["foreign"]:
                 findings.append("another filesystem is mounted inside it: " + ", ".join(snapshot["foreign"]))
-            elif started:
-                added = _subset(snapshot["entries"], recorded.get("entries") or [])
+            else:
+                removable = []
+                for item in document.get("inside", []):
+                    try:
+                        inner_view = load(common, item["rid"])
+                    except StewartError:
+                        continue
+                    if any(claim["state"] == "retired" for claim in inner_view["claims"]):
+                        removable += item.get("locations") or []
+                added, gone = _differences(path, snapshot["entries"], recorded.get("entries") or [],
+                                           removable=removable, started=started)
                 if added:
-                    findings.append("contents were added or changed after the claim was frozen: "
-                                    + ", ".join(added[:10]))
-            elif snapshot["sha256"] != recorded.get("sha256"):
-                findings.append("its contents changed after the claim was frozen")
+                    findings.append("its contents changed after the claim was frozen (added or changed: "
+                                    + ", ".join(added[:10]) + ")")
+                if gone:
+                    findings.append("its contents changed after the claim was frozen (removed: "
+                                    + ", ".join(gone[:10]) + ")")
             foreign = _foreign_inside(common, str(path), {str(path)})
             if foreign:
                 findings.append("other checkouts are registered inside it: " + ", ".join(foreign))
@@ -1382,14 +1406,41 @@ def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]
     return findings
 
 
+def _remove_administration(admin: Path) -> None:
+    """Remove a worktree administration with this resource's marker last.
+
+    An interruption anywhere before the marker goes leaves an administration a
+    resumed retirement still recognizes by its marker.
+    """
+    try:
+        with _removal.pinned(admin) as directory:
+            for name in sorted(os.listdir(directory)):
+                if name != MARKER:
+                    _removal.remove(directory, name)
+            _removal.remove(directory, MARKER)
+    except FileNotFoundError:
+        return
+    _removal.remove_empty(admin)
+
+
 def _remove_worktree(common: str, rid: str, frozen: dict) -> str:
-    """Remove the frozen worktree directory, then the administration this resource's marker names."""
+    """Remove the frozen worktree directory, then the administration this resource's marker names.
+
+    Retirement is complete only once Git no longer registers the path; an
+    administration left without its marker by an interruption after the marker
+    went is empty, and only an empty one at the recorded location is removed.
+    """
     path = Path(frozen["identity"]["path"])
     recorded = (frozen.get("snapshot") or {}).get("identity") or {}
     admin = _admin_for(common, rid)
     outcome = _removal.remove_path(path, identity=(recorded["dev"], recorded["ino"]) if recorded else None)
     if admin is not None:
-        _removal.remove_path(admin)
+        _remove_administration(admin)
+    elif isinstance(frozen["identity"].get("git_admin"), str):
+        _removal.remove_empty(Path(frozen["identity"]["git_admin"]))
+    if any(item.get("worktree") == str(path) for item in _registrations(common)):
+        raise StewartError(f"Git still registers {path} after its removal; the claim stays active",
+                           reason="resource_identity", retained=[str(path)])
     return outcome
 
 
@@ -1646,6 +1697,9 @@ def _acknowledgment_view(view: dict, common: str) -> dict | None:
 def _code(evaluation: dict, view: dict) -> int:
     if view["problems"]:
         return EXIT_UNVERIFIED
+    if evaluation["disposition"] in ("acknowledged", "retired"):
+        # Settled: an acknowledged interrupted creation can never gain its outcome record, and needs nothing.
+        return EXIT_OK
     if evaluation["disposition"] in ("missing", "claimed") or view.get("creation") == "unresolved":
         return EXIT_ATTENTION
     return EXIT_OK
