@@ -35,7 +35,11 @@ from stewart._json import DuplicateKey, loads_control
 from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, EXIT_REFUSED, RefusalParser, StewartError
 from stewart.workspace import Workspace, workspace
 
-RESULT_SCHEMA = "stewart.result/2"
+#: Schema 3 lets a refusal carry a structured ``handoff`` and a keyed replay
+#: return its ``stewart.request/1`` document as the result.
+RESULT_SCHEMA = "stewart.result/3"
+#: Commands that address a repository rather than one workspace.
+_REPOSITORY_COMMANDS = frozenset({"discover", "request", "select"})
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -57,8 +61,11 @@ def build_parser() -> argparse.ArgumentParser:
             "Custody for managed audits: initialize an assignment, prepare a detached\n"
             "worktree, collect evidence, triage and retain it, release a paused hold,\n"
             "inspect a session, and close a finished or abandoned audit.\n"
+            "discover and select find recorded audits and print a reference to keep (--ref);\n"
+            "--request-key makes a mutation's retry return its recorded outcome; resource\n"
+            "records the worktrees, branches and directories an audit depends on.\n"
             "Never launches an agent, runs project tests or commits; only close deletes,\n"
-            "and only what its session recorded."
+            "and only what its closing record or a resource claim it wrote authorizes."
         ),
         epilog=(
             question_help + "\n\n"
@@ -75,12 +82,103 @@ def build_parser() -> argparse.ArgumentParser:
                              "roles are independent of the model or harness")
     parser.add_argument("--json", action="store_true",
                         help="print one JSON result document on stdout instead of prose")
+    parser.add_argument("--ref", type=Path, metavar="FILE",
+                        help="a kept audit reference from select or a prepare/status result; supplies --repo, "
+                             "--workspace, --audit-id and the bound lifetime, and is revalidated before use")
+    parser.add_argument("--lifetime", metavar="SESSION-UUID",
+                        help="bind the command to this session lifetime; another lifetime under the same audit ID "
+                             "is refused (reference_stale). Generated actions carry it")
+    parser.add_argument("--request-key", metavar="KEY",
+                        help="caller-chosen key for a mutation, persisted by the caller before submission; a retry "
+                             "with the same key and inputs returns the recorded outcome instead of executing again")
+    parser.add_argument("--resume-request", action="store_true",
+                        help="with --request-key: explicitly continue a partial request; only close supports it")
     commands = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
     from stewart.docs import DOCUMENTS
     documentation = commands.add_parser(
         "docs", help="[no repository or session writes] print a bundled document or role template; no repository needed")
     documentation.add_argument("document", choices=sorted(DOCUMENTS))
+
+    commands.add_parser(
+        "discover", help="[no repository or session writes] every recorded audit, resource and request in the repository",
+        description="List every audit the repository's records name, across workspaces and maintainer checkouts: "
+                    "sessions, closing records, draft and registration records, role rows and resource contexts, "
+                    "with each audit's stage, owner checkout, writing implementation (and a verified handoff when "
+                    "it differs), problems and resources; then every recorded resource with its disposition, and "
+                    "every request key with its state. Unsupported, invalid and unreadable records are listed with "
+                    "their location and diagnostics. A workspace that was never recorded is absent. Needs --repo "
+                    "only; writes nothing and selects nothing.")
+
+    choose = commands.add_parser(
+        "select", help="[no repository or session writes] resolve an audit to a reference you keep",
+        description="Resolve an audit ID (and --workspace when several workspaces share it) to a reference: the "
+                    "repository, the checkout to operate from, the workspace, audit ID, the bound session lifetime "
+                    "(none before preparation), the closes known at selection and the writing implementation. "
+                    "Ambiguity is refused (selection_ambiguous), never resolved by recency. Prose output is the "
+                    "reference JSON alone, ready to save; pass it back with --ref. Writes nothing.")
+    choose.add_argument("--audit-id", required=True, help="the audit ID to resolve")
+
+    registration = commands.add_parser(
+        "register", help="[writes a repository-level registration record] record an existing workspace's draft audit",
+        description="Record present observations of an existing workspace (AUDITOR.md, MAINTAINER.md and a PROMPT.md "
+                    "whose assignment block names the audit ID) so discovery lists the audit before preparation. "
+                    "No earlier custody of those bytes is implied.")
+    registration.add_argument("--audit-id")
+    registration.add_argument("--actor", required=True, help="who registers the workspace")
+
+    inspect_request = commands.add_parser(
+        "request", help="[no repository or session writes] inspect one request key's recorded state",
+        description="Show a request key's binding, attempts with their planned outputs, and outcome: completed, "
+                    "refused, in_progress, reserved, partial or unverifiable, with each output available, retired "
+                    "or missing now. Inspection never executes or resumes anything.")
+    inspect_request.add_argument("--key", required=True)
+
+    holding = commands.add_parser(
+        "resource", help="[writes repository-level resource records] create, enroll, associate, acknowledge or show",
+        description="Record resources an audit's work depends on beyond its session. Managed creation records its "
+                    "start before any side effect and its outcome after; only Stewart-recorded creation can make a "
+                    "resource removal-eligible, and only close removes. Enrollment tracks an external resource for "
+                    "association and explanation; it is retired by hand and acknowledged.")
+    resources = holding.add_subparsers(dest="resource_command", required=True, metavar="ACTION")
+    worktree = resources.add_parser("create-worktree", help="create a managed manager worktree for an audit")
+    worktree.add_argument("--audit-id")
+    worktree.add_argument("--path", required=True, help="new absolute path outside Stewart's storage")
+    which = worktree.add_mutually_exclusive_group()
+    which.add_argument("--branch", help="create this new managed branch for the worktree")
+    which.add_argument("--existing-branch", help="borrow an existing branch; it never becomes removal-eligible")
+    worktree.add_argument("--start", default="HEAD", help="start commit for a new branch or a detached worktree")
+    worktree.add_argument("--actor", required=True)
+    branch = resources.add_parser("create-branch", help="create a managed branch for an audit")
+    branch.add_argument("--audit-id")
+    branch.add_argument("--branch", required=True)
+    branch.add_argument("--start", default="HEAD")
+    branch.add_argument("--actor", required=True)
+    directory = resources.add_parser("create-directory", help="create a managed temporary directory for an audit")
+    directory.add_argument("--audit-id")
+    directory.add_argument("--path", required=True, help="new absolute directory; its parent must exist")
+    directory.add_argument("--actor", required=True)
+    enrolled = resources.add_parser("enroll", help="track an externally created worktree, branch or directory")
+    enrolled.add_argument("--audit-id")
+    enrolled.add_argument("--kind", required=True, choices=("worktree", "branch", "directory"))
+    enrolled.add_argument("--path")
+    enrolled.add_argument("--branch")
+    enrolled.add_argument("--actor", required=True)
+    enrolled.add_argument("--note")
+    associated = resources.add_parser("associate", help="record that an audit uses a recorded resource")
+    associated.add_argument("--audit-id")
+    associated.add_argument("--resource", required=True)
+    associated.add_argument("--actor", required=True)
+    acknowledged = resources.add_parser(
+        "acknowledge", help="acknowledge an observed absence as retirement outside Stewart",
+        description="Record, in a separate record, that the manager acknowledges a recorded resource's observed "
+                    "absence as retirement outside Stewart. The absence is revalidated now; a present resource is "
+                    "refused. Grants nothing and claims nothing about how it was removed.")
+    acknowledged.add_argument("--resource", required=True)
+    acknowledged.add_argument("--actor", required=True)
+    acknowledged.add_argument("--note")
+    shown = resources.add_parser("show", help="[no writes] one resource's records, uses and disposition")
+    shown.add_argument("--resource", required=True)
 
     init = commands.add_parser(
         "init", help="[writes only with --replace-prompt] draft a prompt and optional pinned input manifest",
@@ -147,7 +245,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "rendered command; explicit flags override single values. Stewart launches nothing and "
                     "observes no auditor; this is an attributed claim bound to the session's launch token.",
     )
-    launch.add_argument("--audit-id", required=True)
+    launch.add_argument("--audit-id", help="the audit; or give --ref")
     launch.add_argument("--from-profile", action="store_true",
                         help="take style, model, effort, actor and note from the session's pinned LAUNCH-PROFILE.json")
     launch.add_argument("--profile", metavar="PATH", default=None,
@@ -167,7 +265,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "ruling given to a stopped auditor, or a hand-back received outside the report. The record is "
                     "the manager's transcription; it authenticates nothing and does not establish that it was read.",
     )
-    message.add_argument("--audit-id", required=True)
+    message.add_argument("--audit-id", help="the audit; or give --ref")
     message.add_argument("--direction", required=True, choices=("to-auditor", "from-auditor"))
     message.add_argument("--text", required=True, help="the message text as sent or received")
     message.add_argument("--channel", default=None, help="how it travelled (harness message, chat paste); optional")
@@ -201,7 +299,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Capture the report first, then an independent no-follow inventory, then Git patches and an "
                     "archive of changed, untracked and ignored files. Partial evidence is retained on failure.",
     )
-    grab.add_argument("--audit-id", required=True)
+    grab.add_argument("--audit-id", help="the audit; or give --ref")
     grab.add_argument("--auditor-stopped", choices=("finished", "interrupted", "blocked"),
                       help="attribute the stop kind to the maintainer; the tool cannot observe process exit")
 
@@ -210,7 +308,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Verify the session's private pristine assets, materialize a new runtime directory and retain "
                     "a recovery observation. Existing runtime paths, commands, scopes and releases are unchanged; "
                     "activating recovered code requires a fresh assignment. No replacement bytes are downloaded.")
-    recovery.add_argument("--audit-id", required=True)
+    recovery.add_argument("--audit-id", help="the audit; or give --ref")
     recovery.add_argument("--actor", required=True, help="who requested asset recovery")
 
     export = commands.add_parser(
@@ -219,7 +317,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "package with their source receipt and digests. Reads no live worktree bytes. "
                     "Selection records custody, not claim acceptance. Existing destinations are refused.",
     )
-    export.add_argument("--audit-id", required=True)
+    export.add_argument("--audit-id", help="the audit; or give --ref")
     source = export.add_mutually_exclusive_group(required=True)
     source.add_argument("--collection", help="collection record name")
     source.add_argument("--attempt", help="resolved attempt record name")
@@ -229,7 +327,9 @@ def build_parser() -> argparse.ArgumentParser:
                              "either source: runtime-assets or runtime-observation:<collection|before|after> "
                              "for a complete captured runtime group")
     export.add_argument("--output", required=True, metavar="DIRECTORY",
-                        help="new repo-relative package directory; parent must already exist; partial failures are kept")
+                        help="new repo-relative package directory in the maintainer checkout, or a new absolute "
+                             "directory outside it as a durable destination; parent must already exist; partial "
+                             "failures are kept. The package is recorded as a retained resource")
     export.add_argument("--actor", required=True, help="who selected this evidence")
 
     draft = commands.add_parser(
@@ -243,7 +343,7 @@ def build_parser() -> argparse.ArgumentParser:
                'Fill decision, every custody_gaps value, and any follow_up (accept|decline|defer plus reason). '
                'Follow-up is a manager decision, not an execution grant. Submit the response object alone with triage --response FILE.',
     )
-    draft.add_argument("--audit-id", required=True)
+    draft.add_argument("--audit-id", help="the audit; or give --ref")
     draft.add_argument("--collection", required=True, help="collection name as printed by collect")
 
     triage = commands.add_parser(
@@ -251,7 +351,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Record accepted, rejected and unresolved claims, custody-gap dispositions and the decision, "
                     "bound to a named collection's receipt and captured report digests.",
     )
-    triage.add_argument("--audit-id", required=True)
+    triage.add_argument("--audit-id", help="the audit; or give --ref")
     triage.add_argument("--collection", required=True, help="collection name as printed by collect, not a path")
     triage.add_argument("--response", required=True, type=Path, metavar="FILE",
                         help="JSON response: collection and collection_sha256 from triage-draft, "
@@ -266,7 +366,7 @@ def build_parser() -> argparse.ArgumentParser:
         description="Publish the captured report and/or reviewed support artifacts from the immutable capture "
                     "into the maintainer checkout. Destinations are created exclusively; nothing is staged or committed.",
     )
-    retain.add_argument("--audit-id", required=True)
+    retain.add_argument("--audit-id", help="the audit; or give --ref")
     retain.add_argument("--triage", required=True, help="triage record name as printed by triage")
     retain.add_argument("--report", action="store_true", help="publish the captured report to its assigned path")
     retain.add_argument("--support", action="append", default=[], metavar="PATH",
@@ -278,7 +378,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "Revalidate the reviewed collection and report digests; changed evidence needs fresh review. "
                     "Snapshot sessions have no hold. The tool controls no writer process.",
     )
-    release_hold.add_argument("--audit-id", required=True)
+    release_hold.add_argument("--audit-id", help="the audit; or give --ref")
     release_hold.add_argument("--triage", required=True, help="triage record name as printed by triage")
     release_hold.add_argument("--reason", required=True, help="triage result or cancellation reason; retained")
 
@@ -300,12 +400,36 @@ def build_parser() -> argparse.ArgumentParser:
                     "preparation's footprint; every doubt keeps it reserved.\n\n"
                     "A rerun finishes an interrupted close from CLOSING.json's inventory.\n"
                     "Closing a paused session releases no hold; tell the writers.\n\n"
-                    "Exit codes: 0 closed with nothing left; 1 removal stopped partway or left\n"
-                    "unrecorded entries (rerun or inspect); 2 refused; 3 records do not verify for a\n"
-                    "concluded close (abandon remains available).",
+                    "Recorded resources: after CLOSING.json a close claims each Stewart-created\n"
+                    "worktree, branch or directory whose last live use it ends and that passes its\n"
+                    "checks (clean including ignored paths, merged or unchanged tips, unchanged\n"
+                    "contents), and retires the claims after the session's own items. Shared,\n"
+                    "enrolled, retained and blocked resources are kept and explained. --plan prints\n"
+                    "that description and writes nothing; --resource RID retires a left-behind\n"
+                    "resource under the same discipline; --dispose RID records the decision to\n"
+                    "remove a contained export or retained deliverable with its container.\n"
+                    "With --request-key a retry returns the recorded close; --resume-request\n"
+                    "continues a partial one from its frozen inventory.\n\n"
+                    "Exit codes: 0 closed with nothing left; 1 removal stopped partway, left\n"
+                    "unrecorded entries, or left a resource blocked or missing (rerun or inspect);\n"
+                    "2 refused; 3 records do not verify for a concluded close (abandon remains\n"
+                    "available).",
     )
-    closing.add_argument("--audit-id", required=True)
-    closing.add_argument("--actor", required=True, help="who is closing the audit; recorded as the acknowledgment")
+    closing.add_argument("--audit-id", help="the audit; or give --ref")
+    closing.add_argument("--resource", action="append", default=[], metavar="RID",
+                         help="retire this recorded resource instead of an audit; repeat for several. Allowed only "
+                              "when no live use remains and it passes the same checks; a claim it left unfinished "
+                              "is resumed, never widened")
+    closing.add_argument("--actor", help="who is closing; recorded as the acknowledgment (required unless --plan)")
+    closing.add_argument("--plan", action="store_true",
+                         help="print the closeout description (what would be removed, preserved and why) and write "
+                              "nothing")
+    closing.add_argument("--dispose", action="append", default=[], metavar="RID",
+                         help="explicit decision to remove this recorded export or retained deliverable with the "
+                              "retiring resource that contains it; recorded in the claim")
+    closing.add_argument("--collection", metavar="NAME",
+                         help="the triaged collection a concluded close was offered for; another one is refused "
+                              "(action_stale)")
     closing.add_argument("--abandon", action="store_true",
                          help="close in any state; the closing record keeps the observed stage and problems")
     closing.add_argument("--reason", help="with --abandon: why the audit is abandoned; required and recorded")
@@ -319,7 +443,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "identities plus the resolved command. Pinned inputs must still match preparation, "
                     "and protected files must match that manifest. Authorizes exactly one invocation.",
     )
-    release.add_argument("--audit-id", required=True)
+    release.add_argument("--audit-id", help="the audit; or give --ref")
     release.add_argument("--review", required=True, type=Path, metavar="FILE",
                          help="JSON review: cases with expected admission, population, role, prediction and measurement IDs; "
                               "admissibility_reasoning; static_review; limits; object keys must be unique "
@@ -338,7 +462,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "verifying across the attempt. A failed attempt leaves the output "
                     "area in the worktree; a new release needs it absent.",
     )
-    run.add_argument("--audit-id", required=True)
+    run.add_argument("--audit-id", help="the audit; or give --ref")
     run.add_argument("--release", required=True, help="release record name as printed by release")
     run.add_argument("--timeout", type=float, default=None,
                      help="child-process time limit in seconds; custody duration is separate; special outputs never block reading")
@@ -375,10 +499,134 @@ def _read_json_file(location: Path, what: str) -> dict:
     return document
 
 
-def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
+_READ_ONLY = frozenset({"discover", "select", "request", "status", "triage-draft", "docs"})
+
+
+def _repository_only(args: argparse.Namespace) -> bool:
+    """Commands that address the repository alone, never one workspace."""
+    if args.command in _REPOSITORY_COMMANDS:
+        return True
+    if args.command == "resource":
+        return args.resource_command in ("acknowledge", "show")
+    return args.command == "close" and bool(args.resource)
+
+
+def _coordinates(args: argparse.Namespace, parser: argparse.ArgumentParser) -> tuple[Path, str | None, dict | None]:
+    """The repository context, workspace and kept reference a command runs with; explicit values must agree.
+
+    A reference supplies the repository, workspace, audit ID and lifetime. Its
+    checkout is where the command runs; when that checkout is gone, ``--repo``
+    names another maintainer checkout of the same repository, which serves
+    only request-key lookups and inspection.
+    """
+    from stewart.audits import load_reference
+    reference = load_reference(args.ref) if args.ref is not None else None
+    if reference is not None:
+        for flag, value in (("workspace", reference["workspace"]), ("audit_id", reference["audit_id"]),
+                            ("lifetime", reference["lifetime"])):
+            given = getattr(args, flag, None)
+            if given is not None and given != value:
+                raise StewartError(f"--{flag.replace('_', '-')} {given} disagrees with the reference ({value})",
+                                   reason="reference_mismatch", next_steps=["drop the explicit value or select again"])
+            if hasattr(args, flag) or flag == "workspace":
+                setattr(args, flag, value)
+        checkout = Path(reference["checkout"])
+        if checkout.is_dir():
+            return checkout, args.workspace, reference
+        if args.repo is None:
+            raise StewartError(f"the reference's checkout is gone: {checkout}", reason="reference_checkout_missing",
+                               next_steps=["discover from an existing maintainer checkout and select the audit again"])
+        return Path(args.repo).resolve(), args.workspace, reference
+    if args.repo is None:
+        parser.error("the following arguments are required: --repo (or --ref)")
+    if args.workspace is None and not _repository_only(args) and args.command != "select":
+        parser.error("the following arguments are required: --workspace (or --ref)")
+    return Path(args.repo).resolve(), args.workspace, None
+
+
+def _audit(args: argparse.Namespace) -> str:
+    ident = getattr(args, "audit_id", None)
+    if ident is None:
+        raise StewartError(f"{args.command} needs --audit-id or --ref", reason="usage",
+                           next_steps=["consult --help for the complete command"])
+    return ident
+
+
+def _revalidate(ws: Workspace | None, args: argparse.Namespace, reference: dict | None) -> None:
+    """Revalidate a kept reference, unless a recorded request under the given key answers first.
+
+    A same-key retry is answered from its request record before anything else
+    is required to exist: not the session, lifetime, reference checkout or resources.
+    """
+    if reference is None:
+        return
+    if args.request_key is not None and ws is not None:
+        from stewart._repository import maintainer
+        from stewart.request_keys import location
+        if (location(maintainer(ws.repo)["common_dir"], args.request_key) / "REQUEST.json").exists():
+            return
+    from stewart.audits import bind
+    bind(reference)
+
+
+def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | None = None,
+             reference: dict | None = None) -> tuple[dict, int]:
     """Run one command; return its structured result and the exit code it earns."""
-    from stewart._repository import maintainer
-    maintainer(ws.repo)
+    from stewart._repository import maintainer, observer
+    repo = repo or ws.repo
+    key, lifetime = args.request_key, args.lifetime
+    if key is not None and (args.command in _READ_ONLY or (args.command == "close" and args.plan)
+                            or (args.command == "resource" and args.resource_command == "show")):
+        raise StewartError(f"{args.command} only reads; a request key applies to mutations", reason="usage")
+    if args.resume_request and key is None:
+        raise StewartError("--resume-request needs the --request-key it resumes", reason="usage")
+    if args.resume_request and args.command != "close":
+        raise StewartError(f"{args.command} has no safe resumption; its uncertain outcome is never replayed",
+                           reason="request_not_resumable",
+                           next_steps=[f"request --key {key} shows the planned outputs; decide explicitly and use a "
+                                       "new key for new work"])
+    if args.command in _READ_ONLY or (args.command == "resource" and args.resource_command == "show"):
+        observer(repo)
+    else:
+        maintainer(repo)
+    _revalidate(ws, args, reference)
+    keyed = {"request_key": key}
+    if args.command == "discover":
+        from stewart.audits import discover
+        result = discover(repo)
+        return result, result["exit_code"]
+    if args.command == "select":
+        from stewart.audits import select
+        return select(repo, audit_id=args.audit_id, workspace=args.workspace, lifetime=lifetime), EXIT_OK
+    if args.command == "request":
+        from stewart.request_keys import show
+        result = show(repo, args.key)
+        return result, result["exit_code"]
+    if args.command == "register":
+        from stewart.audits import register
+        return register(ws, _audit(args), actor=args.actor, **keyed), EXIT_OK
+    if args.command == "resource":
+        from stewart import holdings
+        action = args.resource_command
+        if action == "show":
+            result = holdings.show(repo, args.resource)
+            return result, result["exit_code"]
+        if action == "acknowledge":
+            return holdings.acknowledge(repo, args.resource, actor=args.actor, note=args.note, **keyed), EXIT_OK
+        ident = _audit(args)
+        if action == "create-worktree":
+            return holdings.create_worktree(ws, ident, path=args.path, actor=args.actor, branch=args.branch,
+                                            existing_branch=args.existing_branch, start=args.start, **keyed), EXIT_OK
+        if action == "create-branch":
+            return holdings.create_branch(ws, ident, branch=args.branch, actor=args.actor, start=args.start,
+                                          **keyed), EXIT_OK
+        if action == "create-directory":
+            return holdings.create_directory(ws, ident, path=args.path, actor=args.actor, **keyed), EXIT_OK
+        if action == "enroll":
+            return holdings.enroll(ws, ident, kind=args.kind, actor=args.actor, path=args.path, branch=args.branch,
+                                   note=args.note, **keyed), EXIT_OK
+        if action == "associate":
+            return holdings.associate(ws, ident, rid=args.resource, actor=args.actor, **keyed), EXIT_OK
     if args.command == "init":
         from stewart.assignment import initialize
 
@@ -389,24 +637,16 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
             supplemental=[tuple(item) for item in args.supplemental],
             evidence_packages=args.evidence_package,
             scratch=args.scratch, experiment=grant, replace_prompt=args.replace_prompt, input_manifest=args.input_manifest,
+            **keyed,
         )
-        return result, EXIT_OK
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "prepare":
         from stewart.prepare import prepare
 
-        return prepare(ws, args.prompt_commit, mode=args.mode, writers_paused=args.writers_paused,
-                       pause_note=args.pause_note, checkout_home_path=args.checkout_home), EXIT_OK
-    if args.command == "launch":
-        from stewart.coordination import record_launch
-
-        return record_launch(ws, args.audit_id, style=args.style, model=args.model, effort=args.effort,
-                             actor=args.actor, note=args.note, from_profile=args.from_profile,
-                             profile_path=args.profile), EXIT_OK
-    if args.command == "message":
-        from stewart.coordination import record_message
-
-        return record_message(ws, args.audit_id, direction=args.direction, text=args.text,
-                              actor=args.actor, channel=args.channel), EXIT_OK
+        result = prepare(ws, args.prompt_commit, mode=args.mode, writers_paused=args.writers_paused,
+                         pause_note=args.pause_note, checkout_home_path=args.checkout_home, lifetime=lifetime,
+                         audit_id=reference["audit_id"] if reference is not None else None, **keyed)
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "status":
         from stewart.status import status, status_list
 
@@ -415,59 +655,95 @@ def dispatch(ws: Workspace, args: argparse.Namespace) -> tuple[dict, int]:
                 raise StewartError("--profile needs --audit-id", reason="usage")
             listing = status_list(ws)
             return listing, listing["exit_code"]
-        view = status(ws, args.audit_id, profile=args.profile)
+        view = status(ws, args.audit_id, profile=args.profile, lifetime=lifetime)
         return view, view["exit_code"]
+    if args.command == "close" and args.resource:
+        from stewart.holdings import close_resources
+        if args.audit_id is not None or args.plan:
+            raise StewartError("close --resource retires resources; it takes no --audit-id or --plan", reason="usage")
+        if args.actor is None:
+            raise StewartError("close --resource needs --actor", reason="actor_required")
+        result = close_resources(repo, args.resource, actor=args.actor, reason=args.reason, dispose=args.dispose,
+                                 resume=args.resume_request, **keyed)
+        return result, result["exit_code"]
+    ident = _audit(args)
+    bound = {"lifetime": lifetime, **keyed}
+    if args.command == "launch":
+        from stewart.coordination import record_launch
+
+        result = record_launch(ws, ident, style=args.style, model=args.model, effort=args.effort,
+                               actor=args.actor, note=args.note, from_profile=args.from_profile,
+                               profile_path=args.profile, **bound)
+        return result, result.get("exit_code", EXIT_OK)
+    if args.command == "message":
+        from stewart.coordination import record_message
+
+        result = record_message(ws, ident, direction=args.direction, text=args.text,
+                                actor=args.actor, channel=args.channel, **bound)
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "collect":
         from stewart.collect import collect
 
-        result = collect(ws, args.audit_id, auditor_stopped=args.auditor_stopped)
+        result = collect(ws, ident, auditor_stopped=args.auditor_stopped, **bound)
         return result, result["exit_code"]
     if args.command == "triage":
         from stewart.triage import triage
 
         response = _read_json_file(args.response, "response")
-        return triage(ws, args.audit_id, collection=args.collection, response=response, actor=args.actor), EXIT_OK
+        result = triage(ws, ident, collection=args.collection, response=response, actor=args.actor, **bound)
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "triage-draft":
         from stewart.triage import triage_draft
 
-        return triage_draft(ws, args.audit_id, collection=args.collection), EXIT_OK
+        return triage_draft(ws, ident, collection=args.collection, lifetime=lifetime), EXIT_OK
     if args.command == "export":
         from stewart.handoff import export_evidence
 
-        return export_evidence(ws, args.audit_id, collection=args.collection, attempt=args.attempt,
-                               selectors=args.select, output=args.output, actor=args.actor), EXIT_OK
+        result = export_evidence(ws, ident, collection=args.collection, attempt=args.attempt,
+                                 selectors=args.select, output=args.output, actor=args.actor, **bound)
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "recover-runtime":
         from stewart.runtime import recover_runtime
 
-        return recover_runtime(ws, args.audit_id, actor=args.actor), EXIT_OK
+        result = recover_runtime(ws, ident, actor=args.actor, **bound)
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "retain":
         from stewart.triage import retain
 
-        return retain(ws, args.audit_id, triage=args.triage, report=args.report, support=args.support), EXIT_OK
+        result = retain(ws, ident, triage=args.triage, report=args.report, support=args.support, **bound)
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "resume":
         from stewart.triage import resume
 
-        return resume(ws, args.audit_id, triage=args.triage, reason=args.reason), EXIT_OK
+        result = resume(ws, ident, triage=args.triage, reason=args.reason, **bound)
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "close":
-        from stewart.close import close
+        from stewart.close import close, close_plan
 
-        result = close(ws, args.audit_id, actor=args.actor, abandon=args.abandon, reason=args.reason,
-                       discard_uncollected=args.discard_uncollected)
+        if args.plan:
+            return close_plan(ws, ident, lifetime=lifetime, abandon=args.abandon, dispose=args.dispose), EXIT_OK
+        if args.actor is None:
+            raise StewartError("a close needs an attributed actor", reason="actor_required",
+                               next_steps=["rerun with --actor NAME naming who closes the audit"])
+        result = close(ws, ident, actor=args.actor, abandon=args.abandon, reason=args.reason,
+                       discard_uncollected=args.discard_uncollected, dispose=args.dispose,
+                       collection=args.collection, resume=args.resume_request, **bound)
         return result, result["exit_code"]
     if args.command == "release":
         from stewart.experiment import release
 
         review = _read_json_file(args.review, "review")
-        return release(ws, args.audit_id, review=review, actor=args.actor), EXIT_OK
+        result = release(ws, ident, review=review, actor=args.actor, **bound)
+        return result, result.get("exit_code", EXIT_OK)
     if args.command == "run":
         from stewart.experiment import run
 
-        result = run(ws, args.audit_id, release=args.release, timeout=args.timeout)
+        result = run(ws, ident, release=args.release, timeout=args.timeout, **bound)
         return result, result["exit_code"]
     raise StewartError(f"unknown command {args.command}", reason="usage")
 
 
-def _manager_grant(ws: Workspace, exc: PermissionError, checkout_home: Path | None = None) -> StewartError:
+def _manager_grant(repo: Path, exc: PermissionError, checkout_home: Path | None = None) -> StewartError:
     """A permission failure names the location the manager's harness must allow."""
     from stewart._repository import DEFAULT_CHECKOUT_HOME, STORAGE, maintainer
     target = Path(exc.filename) if exc.filename else None
@@ -475,7 +751,7 @@ def _manager_grant(ws: Workspace, exc: PermissionError, checkout_home: Path | No
     if checkout_home is not None:
         roots.insert(0, Path(checkout_home).expanduser())
     try:
-        roots.insert(0, Path(maintainer(ws.repo)["common_dir"]) / STORAGE)
+        roots.insert(0, Path(maintainer(repo)["common_dir"]) / STORAGE)
     except StewartError:
         pass
     roots = [root.resolve() for root in roots]
@@ -492,9 +768,127 @@ def _shell(action: dict) -> str:
     return (env + " " if env else "") + " ".join(shlex.quote(token) for token in action["argv"])
 
 
+def _render_request(view: dict) -> list[str]:
+    binding = view.get("binding") or {}
+    audit = binding.get("audit") or {}
+    lines = [f"Request {view['key']}: {view['state']}" + (" (recorded; nothing was executed again)"
+                                                         if view.get("replayed") else ""),
+             f"  operation {binding.get('operation')}"
+             + (f" on {audit.get('workspace')}:{audit.get('audit_id')}" if audit else "")
+             + (f", lifetime {binding['lifetime']}" if binding.get("lifetime") else "")
+             + (f"; invoked from {view['invoked_from']}" if view.get("invoked_from") else "")]
+    outcome = view.get("outcome") or {}
+    if outcome.get("error"):
+        lines.append(f"  refused ({outcome['error'].get('reason')}): {outcome['error'].get('message')}")
+    for item in view.get("outputs") or []:
+        lines.append(f"  output {item.get('kind')}: {item.get('path')} ({item.get('availability')})")
+    for attempt in view.get("attempts") or []:
+        lines.append(f"  attempt {attempt['name']} planned {len(attempt.get('planned') or [])} output(s)")
+    for problem in view.get("problems") or []:
+        lines.append(f"  problem [{problem['reason']}]: {problem['message']}")
+    lines += [f"Next: {step}" for step in view.get("next_steps") or []]
+    return lines
+
+
+def _render_discovery(found: dict) -> list[str]:
+    lines = [f"Repository {found['repository']} (viewed by {found['viewer']['package_sha256'][:12]}…)",
+             f"Audits: {len(found['audits'])}"]
+    for entry in found["audits"]:
+        where = entry["workspace"] or f"[workspace unresolved: {entry['slug']}]"
+        lines.append(f"  {where}:{entry['audit_id']} [{entry['exit_code']}]: {entry['stage']}"
+                     + (f"; lifetime {entry['lifetime']}" if entry.get("lifetime") else "")
+                     + (f"; checkout {entry['checkout']}" + ("" if entry.get("checkout_available") else " (gone)")
+                        if entry.get("checkout") else ""))
+        if entry.get("shares_audit_id_with"):
+            lines.append("    the same audit ID is also recorded in: " + ", ".join(entry["shares_audit_id_with"]))
+        implementation = entry.get("implementation") or {}
+        if implementation.get("same") is False:
+            handoff = implementation.get("handoff") or {}
+            lines.append(f"    written by implementation {implementation['recorded'][:12]}…; handoff "
+                         f"{handoff.get('state')}" + (": " + " ".join(shlex.quote(token) for token in handoff["argv"])
+                                                      if handoff.get("state") == "verified" else
+                                                      f" (missing {', '.join(handoff.get('missing', []))})"))
+        for problem in entry["problems"]:
+            lines.append(f"    problem [{problem.get('reason')}]: {problem.get('message')}")
+    lines.append(f"Resources: {len(found['resources'])}")
+    for item in found["resources"]:
+        lines.append(f"  {item['rid']} {item.get('origin')} {item.get('kind')} [{item['exit_code']}]: "
+                     f"{item['disposition']}" + (f" ({'; '.join(item['reasons'])})" if item.get("reasons") else ""))
+    lines.append(f"Requests: {len(found['requests'])}")
+    for item in found["requests"]:
+        audit = item.get("audit") or {}
+        lines.append(f"  {item.get('key')}: {item.get('operation')} {audit.get('workspace', '')}:"
+                     f"{audit.get('audit_id', '')} {item['state']}")
+    for problem in found["problems"]:
+        lines.append(f"Problem [{problem['reason']}] {problem.get('location', '')}: {problem['message']}")
+    return [*_render_attention(found["exit_code"], []), *lines]
+
+
+def _render_resource(item: dict) -> list[str]:
+    lines = [f"  {item['rid']} {item.get('kind')}: {item.get('disposition') or item.get('outcome')}"]
+    lines += [f"    {reason}" for reason in item.get("reasons") or []]
+    lines += [f"    note: {note}" for note in item.get("notes") or []]
+    for user in item.get("users") or []:
+        lines.append(f"    used by {user['audit']['workspace']}:{user['audit']['audit_id']} via {user['source']}: "
+                     + ("live" if user["live"] else "ended") + (" (ended by this close)"
+                                                               if user.get("ended_by_this_close") else ""))
+    return lines
+
+
+def _render_closeout(plan: dict) -> list[str]:
+    audit = plan["audit"]
+    lines = [f"Closeout plan for {plan['workspace']}:{plan['audit_id']} ({audit['mode']}); nothing was written",
+             f"Audit closure: {audit.get('state')}"]
+    if audit.get("refusal"):
+        lines.append(f"  would be refused ({audit['refusal']['reason']}): {audit['refusal']['message']}")
+    removes = audit.get("removes") or {}
+    for key in ("worktree", "checkout_dir", "session", "registry_row"):
+        if removes.get(key):
+            lines.append(f"  removes {key.replace('_', ' ')}: {removes[key]}")
+    for entry in removes.get("refs") or []:
+        lines.append(f"  removes ref {entry['ref']}")
+    lines.append(f"Working resources: {len(plan['resources'])}")
+    for item in plan["resources"]:
+        lines += _render_resource(item)
+    retained = plan["retained"]
+    lines.append(f"Historical evidence kept: {len(retained['closing_records'])} earlier closing record(s), "
+                 f"{len(retained['requests'])} request record(s), {len(retained['deliverables'])} retained "
+                 "deliverable(s); the new closing record is kept too")
+    return lines
+
+
 def render(command: str, result: dict) -> str:
     """Prose for one successful or error-recording result."""
     lines: list[str] = []
+    if result.get("schema") == "stewart.request/1":
+        return "\n".join(_render_request(result))
+    if command == "discover":
+        lines += _render_discovery(result)
+    elif command == "request":
+        lines += _render_request(result)
+    elif command == "register":
+        lines += [f"Registered: {result['path']}",
+                  "Present observations only: " + ", ".join(f"{item['path']} {item['sha256'][:12]}…" for key, item in
+                                                           result["observed"].items() if key != "head"),
+                  "No earlier custody of these bytes is implied."]
+    elif command == "resource":
+        if "resources" in result:
+            lines += [f"Created {item['kind']} {item['rid']} ({item['record']})" for item in result["resources"]]
+        elif result.get("schema") == "stewart.resource-view/1":
+            lines += [f"Resource {result['rid']}: {result.get('origin')} {result.get('kind')}, creation "
+                      f"{result.get('creation')}; observed {(result.get('observation') or {}).get('state')}",
+                      *_render_resource(result)[1:]]
+            if result.get("acknowledged"):
+                acknowledged = result["acknowledged"]
+                lines.append(f"  manual retirement acknowledged by {acknowledged['acknowledged']['actor']}; observed "
+                             f"then: {acknowledged['observed_at_acknowledgment']['state']}; now: "
+                             f"{acknowledged['observed_now']['state']}")
+        elif "observed" in result and "rid" in result and "path" in result:
+            lines += [f"Manual retirement acknowledged for {result['rid']}: {result['path']}",
+                      f"Observed: {result['observed']['state']}; this grants nothing and claims nothing about how "
+                      "it was removed."]
+        else:
+            lines.append(f"Recorded {result.get('rid')}: {result.get('path') or result.get('record')}")
     if command == "init":
         if result["written"]:
             lines += [f"Unassigned draft written: {result['written']}",
@@ -507,7 +901,7 @@ def render(command: str, result: dict) -> str:
             lines.append(result["draft"].rstrip("\n"))
     elif command == "prepare":
         lines += [
-            f"Prepared: {result['session']}",
+            f"Prepared: {result['session']} (lifetime {result['session_uuid']})",
             f"Worktree: {result['worktree']}",
             f"Launch instructions: {result['launch']}",
             f"Prompt commit: {result['prompt_commit']}",
@@ -617,9 +1011,21 @@ def render(command: str, result: dict) -> str:
     elif command == "resume":
         lines += [f"Resume recorded: {result['path']}",
                   "Tell the writers; the tool controls no process."]
+    elif command == "close" and result.get("schema") == "stewart.closeout/1":
+        lines += _render_closeout(result)
+    elif command == "close" and "audit_id" not in result:
+        lines.append("Resource close:")
+        for item in result["results"]:
+            lines.append(f"  {item['rid']} {item.get('kind')}: {item['outcome']}"
+                         + (" (resumed its unfinished claim)" if item.get("resumed") else "")
+                         + (f": {item.get('detail')}" if item.get("detail") else "")
+                         + (f": {'; '.join(item['reasons'])}" if item.get("reasons") else ""))
     elif command == "close":
         lines += [("Close resumed" if result["resumed"] else "Closed") + f" ({result['mode']}): audit {result['audit_id']}",
                   f"Closing record: {result['closing']}"]
+        for item in result.get("closeout") or []:
+            if item.get("disposition") != "claimed by this close":
+                lines += _render_resource(item)
         lines.append(f"Removal record: {result['closed']}" if result["closed"]
                      else "Close incomplete: a removal failed; rerun close to finish from the recorded inventory")
         for item in result["results"]:
@@ -627,13 +1033,17 @@ def render(command: str, result: dict) -> str:
                          + (f" ({item['detail']})" if item.get("detail") else ""))
         for item in result["leftovers"]:
             lines.append(f"Left in place (not recorded by this session): {item}")
+        for item in result.get("resources") or []:
+            lines.append(f"  resource {item['rid']} {item['kind']}: {item['outcome']}"
+                         + (f" ({'; '.join(item['reasons'])})" if item.get("reasons") else ""))
         lines.append(f"Audit ID {result['audit_id']}: " + ("released; it may be prepared again" if result["released"]
                                                              else "reserved; a new audit needs a fresh ID"))
         if result["hold_outstanding"]:
             lines.append("This session's paused hold was never resumed and close releases none; tell the writers.")
     elif command == "status":
         lines += (_render_listing(result) if "sessions" in result else
-                  _render_closed(result) if "audit_id_state" in result else _render_status(result))
+                  _render_closed(result) if "audit_id_state" in result else
+                  _render_draft(result) if result.get("schema") == "stewart.status-draft/1" else _render_status(result))
     elif command == "release":
         lines += [
             f"Release recorded: {result['path']}",
@@ -666,6 +1076,8 @@ def render(command: str, result: dict) -> str:
         if record["errors"]:
             lines.append("Attempt errors: " + "; ".join(record["errors"]))
         lines.append("A completed attempt is not a scientific conclusion; triage the retained rows and receipts.")
+    if isinstance(result.get("request"), dict):
+        lines.append(f"Request {result['request']['key']}: completed and recorded ({result['request']['path']})")
     return "\n".join(lines)
 
 
@@ -734,6 +1146,23 @@ def _render_close(item: dict) -> list[str]:
     for leftover in item["leftovers"]:
         lines.append(f"    left in place: {leftover}")
     lines.append(f"    record: {item['path']}")
+    return lines
+
+
+def _render_draft(view: dict) -> list[str]:
+    lines = [*_render_attention(view["exit_code"], view["attention"]),
+             f"Audit {view['audit_id']} in workspace {view['workspace']['rel']}: {view['stage']} (no session yet)"]
+    for item in view["drafts"]:
+        lines.append(f"  {item['kind']} {item['name']}: {item.get('state')} in {item.get('checkout')}")
+        for entry in item.get("files") or []:
+            lines.append(f"    {entry['path']}: {entry['state']}")
+    for item in view["resources"]:
+        lines += _render_resource(item)
+    if view["outstanding"]:
+        lines += ["Outstanding:", *[f"  - {item}" for item in view["outstanding"]]]
+    for action in view["next_actions"]:
+        lines.append(f"  {action['action']}: {_shell(action)}")
+        lines += [f"    requires: {item}" for item in action.get("prerequisites", [])]
     return lines
 
 
@@ -936,15 +1365,17 @@ def main(argv: list[str] | None = None) -> int:
             from stewart.docs import document
             result, code = document(args.document), EXIT_OK
         else:
-            missing = [flag for flag in ("repo", "workspace") if getattr(args, flag) is None]
-            if missing:
-                parser.error("the following arguments are required: " + ", ".join("--" + flag for flag in missing))
-            repo = Path(args.repo).resolve()
-            ws = workspace(repo, args.workspace)
+            repo, rel, reference = _coordinates(args, parser)
+            ws = workspace(repo, rel) if rel is not None else None
             try:
-                result, code = dispatch(ws, args)
+                result, code = dispatch(ws, args, repo=repo, reference=reference)
             except PermissionError as exc:
-                raise _manager_grant(ws, exc, getattr(args, "checkout_home", None)) from exc
+                raise _manager_grant(repo, exc, getattr(args, "checkout_home", None)) from exc
+            if isinstance(result, dict) and result.get("schema") == "stewart.request/1":
+                # A replayed request: its recorded exit code, and its recorded refusal as the error.
+                code = result["exit_code"]
+                if result["state"] == "refused":
+                    envelope["error"] = (result["outcome"] or {}).get("error")
         # ``ok`` means exit 0: a result that needs attention still carries its
         # result document, but it is not "ok".
         envelope.update(ok=code == EXIT_OK, exit_code=code, result=result)
@@ -952,6 +1383,11 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(envelope, indent=2, sort_keys=True))
         elif args.command == "docs":
             print(result["text"], end="")
+        elif args.command == "select":
+            print(json.dumps(result["reference"], indent=2, sort_keys=True))
+            audit = result["audit"]
+            print(f"Selected {audit['workspace']}:{audit['audit_id']} ({result['stage']}); nothing was written. "
+                  "Save the reference above and pass it back with --ref.", file=sys.stderr)
         elif args.command == "triage-draft":
             print(json.dumps(result["response"], indent=2))
             context = result["context"]

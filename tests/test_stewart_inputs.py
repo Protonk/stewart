@@ -294,8 +294,17 @@ def test_failed_prompt_write_names_preserved_inventory(checkout, monkeypatch):
         assignment.initialize(checkout.ws, "one-question", "HEAD", inputs=["input.txt"],
                               input_manifest=MANIFEST, replace_prompt=True)
     assert caught.value.reason == "initialization_failed"
-    assert caught.value.retained == [str(checkout.repo / MANIFEST)] and caught.value.next_steps
+    record, manifest = caught.value.retained
+    assert manifest == str(checkout.repo / MANIFEST) and caught.value.next_steps
     assert (checkout.repo / MANIFEST).is_file()
+    # The draft record keeps the failed write's intent and its observed outcome.
+    outcome = json.loads((Path(record) / "OUTCOME.json").read_text())
+    assert outcome["status"] == "failed" and outcome["error"]["message"].endswith("injected prompt write failure")
+    started = json.loads((Path(record) / "STARTED.json").read_text())
+    intended = {item["role"]: item["sha256"] for item in started["intended"]}
+    observed = {item["role"]: item["sha256"] for item in outcome["written"]}
+    assert observed["input_manifest"] == intended["input_manifest"], "the manifest was written as intended"
+    assert observed["prompt"] != intended["prompt"], "the prompt kept its earlier bytes"
 
 
 def test_initializer_cli_manifest_preview_and_write_are_explicit(checkout, capsys):

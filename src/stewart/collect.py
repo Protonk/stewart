@@ -29,8 +29,8 @@ from stewart._bootstrap import EXIT_ATTENTION, EXIT_UNVERIFIED, StewartError, co
 from stewart.runtime import observe_phase, runtime_state
 from stewart.session import (
     COLLECTION_SCHEMA,
-    load_session,
     maintainer_state,
+    mutable_session,
     now,
     stamp,
     tool_identity,
@@ -348,13 +348,25 @@ def collection_error(exc: BaseException) -> dict:
     return {"reason": reason if reason in COLLECTION_ERRORS else "collection_failed", "message": str(exc)}
 
 
-def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
+def collect(ws: Workspace, ident: str, *, auditor_stopped: str, lifetime: str | None = None,
+            request_key: str | None = None) -> dict:
     """Preserve a fresh capture; acknowledge finished, interrupted, or blocked.
 
     The stop kind is the maintainer's claim, not an observed process exit. Raw
     report capture precedes declaration validation; invalid declarations become
-    custody gaps and never prevent preservation.
+    custody gaps and never prevent preservation. Every call without a request
+    key is a new collection; a completed keyed request returns its recorded
+    collection instead of capturing again.
     """
+    from stewart.request_keys import keyed
+    from stewart.session import output
+    return keyed(ws, ident, "collect", {"auditor_stopped": auditor_stopped}, request_key,
+                 lambda plan: _collect(ws, ident, auditor_stopped, lifetime, plan), lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]) / "collection.json", "collection", ws, ident,
+                                                result["session_uuid"], name=result["collection"])])
+
+
+def _collect(ws: Workspace, ident: str, auditor_stopped: str, lifetime: str | None, plan) -> dict:
     if auditor_stopped not in ("finished", "interrupted", "blocked"):
         raise StewartError(
             "stop the auditor, then pass --auditor-stopped finished|interrupted|blocked before collection",
@@ -363,11 +375,14 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
         )
     # A broken retention ref must not erase a still-readable raw report. Record
     # that failure after preservation; subsequent recovery actions remain gated.
-    session, record = load_session(ws, ident, check_retention=False)
+    session, record = mutable_session(ws, ident, lifetime=lifetime, check_retention=False)
     # The recorded checkout, validated against the session identity on load.
     worktree = Path(record["worktree"])
     name = stamp()
     collection = session / "collections" / name
+    plan([{"kind": "collection", "name": name, "path": str(collection / "collection.json"),
+           "audit": {"workspace": ws.rel, "slug": ws.slug, "audit_id": ident},
+           "lifetime": record["session_uuid"]}])
     collection.mkdir(parents=True, mode=0o700)
     receipt: dict = {
         "schema_version": COLLECTION_SCHEMA,
@@ -507,7 +522,9 @@ def collect(ws: Workspace, ident: str, *, auditor_stopped: str) -> dict:
     gaps = custody_gaps(receipt)
     return {
         "audit_id": ident,
+        "session_uuid": record["session_uuid"],
         "collection": name,
+        "collection_sha256": _files.read_regular(collection / "collection.json")[0].get("sha256"),
         "path": str(collection),
         "receipt": receipt,
         "gaps": gaps,

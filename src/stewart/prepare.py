@@ -37,7 +37,40 @@ from stewart.workspace import Workspace, contained
 
 
 def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_paused: bool = False,
-            pause_note: str | None = None, checkout_home_path: Path | None = None) -> dict:
+            pause_note: str | None = None, checkout_home_path: Path | None = None, lifetime: str | None = None,
+            audit_id: str | None = None, request_key: str | None = None) -> dict:
+    """Validate a prompt-only commit and build its session; see ``_prepare``.
+
+    A request key binds the resolved prompt commit, the audit ID it carries,
+    the mode, the pause acknowledgment and the resolved checkout home. The
+    result carries a reference bound to the new session lifetime. ``audit_id``
+    is the audit the caller selected; a prompt naming another one is refused.
+    """
+    from stewart.request_keys import keyed
+    from stewart.session import output
+    prompt_commit = resolve_commit(ws.repo, revision, exact=False)
+    try:
+        ident = _assignment.prompt_metadata(git(ws.repo, "show", f"{prompt_commit}:{ws.prompt}").stdout.decode(
+            "utf-8"), ws)["audit_id"]
+    except (StewartError, UnicodeDecodeError):
+        ident = None
+    if lifetime is not None:
+        raise StewartError("prepare creates a lifetime; a reference bound to one cannot prepare another",
+                           reason="reference_stale", next_steps=["select the audit again"])
+    if audit_id is not None and ident != audit_id:
+        raise StewartError(f"the prompt commit assigns audit {ident!r}, not the selected audit {audit_id!r}",
+                           reason="reference_mismatch",
+                           next_steps=["select the audit the prompt names, or prepare without the reference"])
+    inputs = {"prompt_commit": prompt_commit, "mode": mode, "writers_paused": writers_paused, "pause_note": pause_note,
+              "checkout_home": None if request_key is None else str(resolve_checkout_home(checkout_home_path))}
+    return keyed(ws, ident, "prepare", inputs, request_key,
+                 lambda plan: _prepare(ws, prompt_commit, mode, writers_paused, pause_note, checkout_home_path, plan),
+                 outputs=lambda result: [output(Path(result["session"]) / "session.json", "session", ws,
+                                                result["audit_id"], result["session_uuid"])])
+
+
+def _prepare(ws: Workspace, revision: str, mode: str, writers_paused: bool, pause_note: str | None,
+             checkout_home_path: Path | None, plan) -> dict:
     """Validate a prompt-only commit and build its session; return the session facts.
 
     The private session lives under the Git common directory; the checkout,
@@ -132,7 +165,6 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
     home = resolve_checkout_home(checkout_home_path)
     require_separate_home(home, repo=repo, worktrees=worktree_roots(repo), common=common, manager_home=manager_root,
                           prefix=prefix)
-    home = checkout_home(home)
     session = session_location(common, ws, meta["audit_id"])
     # Closing records first: an unfinished close names itself and its rerun.
     require_fresh_audit_id(common, ws, meta["audit_id"])
@@ -144,6 +176,12 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
     registered_session(common, session)
     session_identity = str(uuid.uuid4())
     audit_dir = audit_location(home, common, session_identity)
+    from stewart.holdings import refuse_retiring
+    refuse_retiring(common, [repo, home, audit_dir, sys.executable, manager_root], what="a preparation")
+    plan([{"kind": "session", "path": str(session / "session.json"), "lifetime": session_identity,
+           "audit": {"workspace": ws.rel, "slug": ws.slug, "audit_id": meta["audit_id"]}},
+          {"kind": "checkout", "path": str(audit_dir)}])
+    home = checkout_home(home)
     worktree = audit_dir / "worktree"
     retention = retention_for(session_identity, prompt_commit, target, meta.get("base_commit"))
     selected_runtime = select_runtime(audit_dir / "runtime")
@@ -179,7 +217,7 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
         "stewart": tool_identity(),
     }
     record["auditor_scope"] = scope_for(record, manager_home=manager_root, interpreter_prefix=prefix,
-                                        private_roots=read_denials(custody_roots(repo, common), [common, str(prefix)]))
+                                        private_roots=read_denials(custody_roots(repo, common), [common, str(prefix), str(audit_dir)]))
     launch = _render_handoff(ws, record)
     record["handoff"] = {"path": f"{ws.rel}/{HANDOFF_DIRECTORY}/{session_identity}.md",
                          "sha256": _hash.sha256_bytes(launch.encode("utf-8"))}
@@ -256,8 +294,12 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
                 "a recorded writer pause still needs explicit coordination; preparation failure releases no hold",
             ],
         ) from exc
+    from stewart.audits import reference
+    from stewart.implementation import recorded_digest
     return {
         "audit_id": meta["audit_id"],
+        "reference": reference(common, ws, meta["audit_id"], session_identity,
+                               implementation=recorded_digest(record["stewart"])),
         "session_uuid": session_identity,
         "retention": retention,
         "session": str(session),

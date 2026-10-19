@@ -5,9 +5,12 @@ assignment, preparing a disposable detached checkout, collecting evidence from a
 stopped auditor, recording collection-bound maintainer dispositions, publishing
 reviewed bytes, exporting selected captures for another assignment, releasing a
 paused hold, inspecting a session, and closing a finished or abandoned audit.
-It never launches an agent, runs project tests, commits or imports
-implementation changes. Only `close` deletes, and only what its session
-recorded.
+It also lets a caller discover the audits a repository records, select one by
+a reference it keeps, retry mutations under request keys, and record the
+manager worktrees, branches and directories an audit depends on so that close
+can retire them. It never launches an agent, runs project tests, commits or
+imports implementation changes. Only `close` deletes, and only what a closing
+record or a resource claim it wrote authorizes.
 
 The managing agent or maintainer owns everything the tool does not: the
 question, the decision it informs, source selection, admissibility reasoning,
@@ -52,6 +55,12 @@ grant permissions or add question types to the assignment schema.
 - **Closing records**: `close` retires an audit and keeps one record under
   `<git-common-dir>/stewart/closed/<slug>/<audit-id>/<session-uuid>/`. Stewart
   never removes closing records.
+- **Repository-level records** live beside them and outlive every session:
+  draft and registration records under `stewart/audits/<slug>/<audit-id>/`,
+  request keys under `stewart/requests/<sha256-of-key>/`, and recorded resources
+  under `stewart/resources/<resource-id>/`. See
+  [discovery and continuation](#discovery-selection-and-continuation) and
+  [recorded resources](#recorded-resources-and-closeout).
 
 ## Manager quick start
 
@@ -455,9 +464,13 @@ permission. Keep the human evidence map and scope in the prompt.
    the listing reports that loss as 3. The listing's code is the highest of its
    live entries; finished closes never count.
 
-   JSON uses `stewart.status/12`: `identities.worktree.path`,
+   JSON uses `stewart.status/13`: `identities.worktree.path`,
    `preparation.launch_path` and `collections[].report_path` are the locators;
-   `manager_storage` names the private and checkout-home write locations. The
+   `manager_storage` names the private and checkout-home write locations;
+   `stage` names the observed stage, `reference` a kept reference for the
+   lifetime shown, `implementation` the writing and viewing builds (with a
+   handoff when they differ), `resources` each recorded resource's closeout
+   disposition and `requests` the request keys bound to the audit. The
    listing uses `stewart.status-list/1`. The asset recovery command appears only
    while the supplied runtime fails verification. A ready checkout with no
    collections offers a conditional manual `handoff` action carrying `cwd`,
@@ -543,6 +556,9 @@ permission. Keep the human evidence map and scope in the prompt.
 10. **Close.** Once the audit's durable outcome has left Stewart, through
     retention or `export`, `close` retires it. Export anything else worth
     keeping first: closing keeps no report bytes, patches or inventories.
+    `close --plan` describes everything close would remove, preserve or leave
+    and writes nothing; after its closing record a close also retires the
+    [recorded resources](#recorded-resources-and-closeout) whose last use it ends.
 
     ```sh
     "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review close --audit-id one-bounded-question --actor "maintainer"
@@ -615,11 +631,192 @@ permission. Keep the human evidence map and scope in the prompt.
     with `audit_id_reserved`, an unfinished close with `close_incomplete`, and
     an unreadable or unsupported record with `closing_record_invalid` (3). A
     released ID may be prepared again from any prompt commit that carries it.
-    `status` on a closed ID shows the closed view (`stewart.status-closed/1`):
+    `status` on a closed ID shows the closed view (`stewart.status-closed/2`, which adds
+    the reference and what remains of the audit's resources):
     when and by whom it closed, the mode, the decision or reason, what was
     retained, and whether the ID is `reserved`, `released`, `close_incomplete`
     or `unverified`. Earlier closes are listed beside a live session for the
     same ID.
+
+## Discovery, selection and continuation
+
+An audit is a workspace and an audit ID within one repository; a lifetime is
+one prepared session, named by its UUID. A released audit ID can be prepared
+again, so one audit may have several lifetimes over time; at most one is live.
+
+### Recorded audits and drafts
+
+`init` without `--replace-prompt` still writes nothing. With it, `init` first
+writes `stewart/audits/<slug>/<audit-id>/init/<name>/STARTED.json` (the
+checkout, the intended writes and their digests, the prompt it replaces, the
+closes already recorded) and then `OUTCOME.json` (what was written, or the
+failure). An interrupted init leaves a start record without an outcome; status
+reports it as `draft_incomplete`.
+
+`register --audit-id ID --actor NAME` records an existing workspace whose
+`PROMPT.md` assignment block names the ID: it reads `AUDITOR.md`,
+`MAINTAINER.md` and `PROMPT.md` through verified descriptors and records their
+present digests in `registrations/<name>.json`. It states what was observed at
+registration and implies no earlier custody. Both refuse a reserved ID and an
+ID whose session already exists. A workspace no record names is absent from
+discovery; Stewart never guesses workspace directories.
+
+`status --audit-id ID` on a recorded audit with no session prints the draft
+view (`stewart.status-draft/1`): its draft records, whether each recorded file
+is unchanged, changed, missing or unavailable in its checkout now, and the
+`prepare` step. When the checkout that held a draft is gone, its files are
+unavailable; the record keeps only their digests, never their bytes.
+
+### Discovery
+
+```sh
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" discover
+```
+
+`discover` needs only `--repo` and writes nothing. It reads every
+repository-level record under the Git common directory (sessions, closing
+records, draft and registration records, role rows, resource contexts,
+resources and request keys) and lists each audit across workspaces and
+maintainer checkouts with its workspace, observed stage (`draft`, `context`,
+`prepared`, `preparation_failed`, `preparation_incomplete`, `closing`,
+`closed`, `records_missing`, `unsupported` or `unverified`), present lifetime, owner checkout
+and whether it still exists, every closing record, draft record, problem and
+resource, and the audit IDs it shares with other workspaces. JSON uses
+`stewart.discovery/1`.
+
+Records are read only through a supported discovery envelope: the top-level
+`schema` or `schema_version`, a `workspace` accepted only when its slug matches
+the record's location, and the `stewart` stamp. A session with an unsupported
+schema is listed with its location and envelope; no lifecycle state is inferred
+from its other fields. Invalid and unreadable records, and role rows that do not
+verify, keep their diagnostics instead of hiding the rest. The exit code is 3
+when a record does not verify, 1 for unfinished work, and 0 otherwise.
+
+### Selection references
+
+```sh
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" select --audit-id ID
+"$STEWART_PYTHON" -I -m stewart --ref audit-ref.json status
+```
+
+Save the first command's output (the reference alone) as `audit-ref.json`.
+
+`select` resolves an audit ID (with the global `--workspace` when several
+workspaces share it) to a reference, `stewart.audit-ref/1`: `repository` (the
+Git common directory), `checkout` (the maintainer checkout commands run from),
+`owner` (the session's owner or the draft's checkout), `workspace`, `audit_id`,
+`lifetime` (the bound session UUID, or null before preparation), `closes` (the
+closing records known at selection) and `implementation` (the writing package
+digest). Prose output is the reference alone, ready to save; JSON wraps it in
+`stewart.selection/1` with the discovery entry. Selecting writes no receipt,
+no deployment and no "current audit" setting; two callers' references never
+affect each other. Ambiguity is refused with `selection_ambiguous` (several
+workspaces, or drafts in several checkouts: run select from the one to
+continue), a missing audit with `selection_missing`, and records this
+implementation cannot read with `selection_unresolved`. Stewart never selects
+the newest collection, a replacement lifetime, the current directory or a
+different installation.
+
+`--ref FILE` supplies `--repo`, `--workspace`, `--audit-id` and the lifetime to
+any command; explicit values that disagree are refused (`reference_mismatch`).
+Every use revalidates the reference against the records as they are now: the
+same common directory and an existing checkout (`reference_checkout_missing`),
+the same session lifetime, and the same recorded implementation. A reference
+taken before preparation never selects the session prepared since, and one
+taken before a close never selects a later draft or lifetime
+(`reference_stale`); select again. `prepare` returns a reference bound to the
+new lifetime, and `status` includes the reference for the lifetime it shows.
+`--lifetime UUID` binds a lifetime without a file; every command status
+generates carries it, so an action never reaches a replacement lifetime.
+
+Status actions name their API `operation` and their `operands` with the
+digests read for the view (collection and triage receipt digests). The `close`
+action names the collection it was offered for, and a close that would rest on
+another one is refused (`action_stale`). Triage responses keep binding the
+collection name and receipt digest. Selection conveys no permission to execute
+or delete anything.
+
+### Request keys
+
+```sh
+"$STEWART_PYTHON" -I -m stewart --ref audit-ref.json --request-key collect-7f3a collect --auditor-stopped finished
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" request --key collect-7f3a
+```
+
+Every mutation accepts `--request-key KEY` (API `request_key=`): 1-128
+letters, digits, `.`, `_` or `-`, starting with a letter or digit. Persist the
+key before submitting. The key's records live in
+`stewart/requests/<sha256 of the key>/` with the exact key inside, so keys
+differing only in case never share a record. `REQUEST.json` is published
+exclusively before any side effect. It binds the operation, the selected audit,
+lifetime and resources, the implementation and the semantic inputs: decoded
+control documents (responses, reviews, grants) by canonical digest and supplied
+files (supplemental inputs, evidence-package manifests, a launch profile) by
+byte digest. The invoking checkout is recorded beside the binding, not in it.
+The operation records its planned output identities in `attempts/` just before
+its first side effect, and `OUTCOME.json` records completion or refusal with
+the output identities. Execution holds an exclusive lock on the request.
+
+A key is resolved before anything else is validated, from any maintainer
+checkout of the repository; a retry needs neither the session, the lifetime, the
+reference's checkout nor the resources to still exist. Reusing a key with a
+different binding is refused (`request_key_conflict`, naming the differing
+fields; under another implementation, `implementation_mismatch`). The same key
+and binding never execute again:
+
+- `completed`: the recorded outcome and its output identities, each reported
+  as `available`, `retired` (its lifetime or resource was retired) or `missing`
+  now. A keyed collect returns the same collection, never a new one.
+- `refused`: the recorded refusal; correct the cause and use a new key.
+- `in_progress`: another process holds the request now.
+- `reserved`: the binding was recorded but no side effect was planned; the same
+  key and inputs run it.
+- `partial`: attempts were planned but no outcome was recorded. A side effect
+  may or may not have happened; the planned outputs are shown as observed now,
+  and nothing is replayed. Only `close` (and `close --resource`) resume safely,
+  and only with `--resume-request`, which appends a new attempt and continues
+  from the close's own frozen inventory.
+- `unverifiable`: the request's records do not verify.
+
+A replayed request's JSON result is its `stewart.request/1` document with the
+recorded exit code (`error` carries a recorded refusal). `request --key KEY`
+inspects without executing. Without a key every call is a new request; Stewart
+never deduplicates by payload, time or recency, and distinct keys can
+intentionally produce separate collections of identical report bytes. If the
+caller loses its key, `discover` lists every recorded request with its exact
+key, operation, audit, lifetime and state for explicit inspection; Stewart
+cannot tell which request carried the lost intent. Request records outlive the
+sessions and resources they name, so a retry after closeout reports the
+historical outcome and never recreates retired work. A key reserves intent; it
+does not make a side effect happen exactly once.
+
+### Implementation identity and runtime handoff
+
+Every record's `stewart` stamp names the writing package by `package_sha256`,
+the digest of its complete member inventory, which does not depend on where it
+is installed: the same bytes at another location are the same implementation.
+Reading is allowed under any build whose schemas are supported. A mutation of a
+session, the resumption of a close or a claim, and a request retry under a
+different implementation are refused with `implementation_mismatch`. A record
+with no verifiable stamp is refused with `implementation_unrecorded` (3), except
+that an abandon of an unreadable session stays possible.
+
+When the writer's recorded invocation verifies by descriptor reads alone, the
+refusal, `discover` and `status` offer it as a structured handoff
+(`implementation.handoff`, and `error.handoff` in `stewart.result/3`): the
+deployment at `<manager home>/deployments/<digest>/runtime` must hold exactly
+the recorded members under the recorded runtime digest, the launcher at
+`<manager home>/launchers/<digest>.py` must have the recorded bytes (the
+deployment's bootstrap), and the interpreter must be an executable file. The
+handoff is `{state: verified, argv, env: {}}`: the supported isolated-manager
+argv with the operation's arguments. Otherwise it is `{state: unresolved,
+missing, diagnostics}`, naming `invocation` (an in-process writer records
+none), `package_identity`, `runtime`, `launcher` or `interpreter`. Stewart
+never runs, imports or relays recorded command text, never falls back to the
+current installation, and a verified handoff establishes only consistency with
+the recorded pin. Status renders mutation actions for a session written by
+another build with the handoff's argv, or withholds them and names the missing
+prerequisites.
 
 ## Manual terminal launch
 
@@ -1058,6 +1255,135 @@ producer run, scope expansion, or release of a paused hold.
   and a checkout removed before any complete collection takes its evidence
   with it.
 
+## Recorded resources and closeout
+
+Audit work depends on more than its session: manager worktrees and branches,
+temporary directories, exported packages and retained deliverables. Stewart
+records them under `stewart/resources/<resource-id>/`, at repository level, so
+a resource's records outlive every audit that used it.
+
+### Creation, enrollment and uses
+
+```sh
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review resource create-worktree --audit-id ID --path /absolute/manager-tree --branch audit/ID --actor manager
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review resource create-directory --audit-id ID --path /absolute/scratch-dir --actor manager
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review resource enroll --audit-id ID --kind worktree --path /absolute/existing-tree --actor manager
+```
+
+Managed creation is the only route to removal eligibility. `create-worktree`
+(with `--branch NEW` for a new managed branch, `--existing-branch NAME` to
+borrow one, or neither for a detached worktree), `create-branch` and
+`create-directory` record `CREATE.json` (the audit context and intended
+identity) before any side effect and `CREATED.json` (the observed identity, or
+the failure) after. An interrupted creation leaves a start record without an
+outcome: it is reported, and grants nothing over whatever is found there. A
+managed worktree is created locked (`stewart managed worktree <id>`) and marked
+by `stewart-resource.json` in its Git administration; it must lie outside the
+Git common directory, checkout homes, the manager home and registered auditor
+checkout directories. A borrowed branch never becomes removal-eligible.
+`export` and `retain` record their package and published files as `export` and
+`retained` resources: deliberate retention.
+
+`resource enroll` tracks an externally created worktree, branch or directory
+from verified observations (`ENROLLED.json`) for association and explanation
+only. Even an unchanged identity and contents with an enrollment
+acknowledgment grant no removal: enrolled resources are retired by hand and
+acknowledged. `resource associate --resource ID` records that another audit
+uses a resource. Stewart also derives uses: a live session or draft whose owner
+checkout, checkout home or directory, helper interpreter, recorded invocation or
+supplied runtime lies inside a worktree or directory resource uses it, and the
+users of a managed worktree use the branch created with it. A use ends only
+when a closing record verifies for its lifetime (closing or closed); a use
+recorded before any session ends with the next closing record of that audit.
+A closing record that does not verify, or a session record that cannot be
+read, keeps uses live. Creation and recorded resources join the private roots
+of later auditor scopes. `resource show --resource ID` prints one resource's
+records, uses and disposition; `discover` lists them all.
+
+### Closeout
+
+```sh
+"$STEWART_PYTHON" -I -m stewart --ref audit-ref.json close --plan
+"$STEWART_PYTHON" -I -m stewart --ref audit-ref.json close --actor manager --dispose EXPORT-ID
+```
+
+`close --plan` prints the closeout description (`stewart.closeout/1`) and
+writes nothing. It separates audit closure (the session's own inventory and any
+precondition a concluded close would refuse), the retirement of working
+resources around it, and retained historical evidence (closing records, request
+records, retained deliverables). Each resource the audit uses is `remove`
+(proposed), `shared` (named live users), `manual` (enrolled), `retained`,
+`blocked` (with every reason), `claimed`, `missing`, `acknowledged` or
+`retired`.
+
+A close publishes `CLOSING.json` first, which ends the audit lifetime's uses.
+After removing the session's own items, and only in its first attempt, it
+evaluates the resources it used and claims each one whose every other use has
+ended and that passes eligibility (a resumed close retires only the claims its
+first attempt made; anything else is left for `close --resource`):
+
+- its creation was recorded by Stewart and its identity still verifies, through
+  real directories reached without links;
+- a worktree's status is clean, ignored paths included, except paths of
+  recorded exports or retained deliverables named with `--dispose`; its HEAD is
+  its creation commit or contained in a ref outside `refs/stewart/`; it holds no
+  per-worktree refs and no rebase, merge, cherry-pick, revert or bisect;
+- a branch's tip is its creation commit or contained in another ref, and no
+  remaining worktree checks it out;
+- nothing it contains is a recorded export or retained deliverable without a
+  durable destination or a `--dispose` decision, and the running Stewart package
+  or interpreter is not inside it.
+
+A claim is `resources/<id>/claims/<n>.json`, created exclusively, with the
+frozen identity, contents digest, HEAD or tip and any disposal decisions. At
+most one claim is active, and none is created once a resource is retired; two
+closes racing for one resource cannot both claim it. A branch counts as
+checked out by a worktree unless that worktree retires in the same close. The
+close then retires its claims: worktrees, then directories, then branches. At use it revalidates every use,
+the identity, the contents, HEAD and tip; any change, or a use that appeared
+since, ends the claim with `<n>.RELEASED.json` and keeps the resource. Removal
+goes through descriptors pinned without following links, Git never deletes
+contents, a worktree's marker-verified administration is removed by
+descriptor, and a branch is deleted only if it still points at the frozen tip.
+Git runs from the common directory, so a close can retire the manager worktree
+it was run against. Success writes `<n>.RETIRED.json`; a failed removal writes
+`<n>.ATTEMPT-<stamp>.json` and keeps the claim active. The audit close
+completes once its session items are gone; a resource left blocked or missing
+makes its exit 1.
+
+`close --resource ID --actor NAME` retires a recorded resource that no live use
+holds, under the same discipline: it records its claim first, freezes the
+identity, revalidates at use, and resumes an active claim (including one an
+audit close left unfinished) without widening it. It refuses enrolled,
+retained, shared or blocked resources with `resource_not_managed`,
+`resource_shared` or `resource_blocked`. Closed audits' records are never
+reopened. A resource left behind (blocked at the last close, or in use while
+other closes were planned) is retired this way once its blocker is cleared.
+While a claim is active, `prepare`, `init`, `register`, `resource associate` and
+creation inside the resource are refused with `resource_retiring`.
+
+An export placed inside a retiring tree needs a durable destination or a
+disposal decision: `export --output /absolute/new-directory` writes the package
+outside the maintainer checkout, and `close --dispose ID` records the decision
+to remove a contained export or retained deliverable with its container. A
+retained report committed to a branch that is merged elsewhere is already
+history and blocks nothing.
+
+### Manual retirement acknowledgment
+
+```sh
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" resource acknowledge --resource ID --actor manager --note "removed by hand after review"
+```
+
+A recorded resource that is gone is reported `missing`. `resource acknowledge`
+revalidates its absence now (a worktree also needs its Git registration gone)
+and records `ACKNOWLEDGED.json`: the observed absence and the manager's
+acknowledgment in separate fields, bound to the resource record's digest. It
+is refused while the resource is present (`resource_present`) or claimed. The
+creation or enrollment record is never edited. An acknowledgment grants nothing
+and claims nothing about how the resource was removed; anything found later at
+its location is a new observation, not the retired resource.
+
 ## Handing captured evidence to another assignment
 
 `export` selects exact captured bytes and keeps their source receipt in a new
@@ -1090,7 +1416,10 @@ group is refused, and importing code grants no permission to execute it.
 
 `--output` names a directory of the manager's choosing in the maintainer
 checkout, such as `audit-packages/` above; keep it uncommitted, for example
-under a path the project ignores. The output directory must be new and its parent must exist. Publication is
+under a path the project ignores. An absolute `--output` names a durable
+destination outside the checkout instead, for a package that must survive the
+retirement of a manager worktree. The output directory must be new and its parent must exist.
+Each package is recorded as an `export` resource. Publication is
 exclusive, with `manifest.json` written last. Partial failure retains its output
 and requires a fresh directory. The `stewart.evidence-package/5` manifest records
 the selecting actor, source workspace/audit/record and receipt SHA-256, the
@@ -1390,6 +1719,14 @@ closing records under `<git-common-dir>/stewart/closed/`.
 | `attempts/<name>/ledger.jsonl`, `child-receipt.json` | Exact readable child output bytes used by the wrapper; created exclusively. Unavailable outputs leave an explicit capture observation instead. |
 | `closed/<slug>/<audit-id>/<uuid>/CLOSING.json` (`stewart.closing/1`) | Written before `close` removes anything: identity (session UUID, workspace, audit ID, commits, `session.json` digest, prepared and closed times, tool), the acknowledgment (actor, mode, abandon reason), observations (triage and collection digests, retained paths and digests, discarded paths and digests, an abandon's stage, problems and release basis, coordination mode), attributed claims (the manager's decision, the auditor's completion and report kind) and the removal inventory. Never removed. |
 | `closed/<slug>/<audit-id>/<uuid>/CLOSED.json` (`stewart.closed/1`), `CLOSE-ATTEMPT-<stamp>.json` | Each removal's outcome and the unrecorded entries left in place, bound to `CLOSING.json`'s digest. `CLOSED.json` is written only once nothing recorded remains; an attempt that stopped partway writes `CLOSE-ATTEMPT-*`. |
+| `audits/<slug>/<audit-id>/init/<name>/STARTED.json`, `OUTCOME.json` (`stewart.draft/1`) | A mutating `init`'s intended writes and their digests, recorded before writing, and what was written or why it failed. Without an outcome the init was interrupted. |
+| `audits/<slug>/<audit-id>/registrations/<name>.json` (`stewart.registration/1`) | Present observations of an existing workspace's guidance and prompt, attributed to the registering actor; implies no earlier custody. |
+| `requests/<sha256>/REQUEST.json`, `attempts/*.json`, `OUTCOME.json` | A request key's exclusive binding (`stewart.request-binding/1`, with the exact key and invoking checkout), the output identities planned before each side effect, and the recorded completion or refusal with output identities. Never removed by close. |
+| `resources/<id>/CREATE.json`, `CREATED.json` (`stewart.resource/1`, `stewart.resource-outcome/1`) | A managed resource's audit context and intended identity, recorded before its side effects, and the observed identity or failure after. A Stewart-recorded creation is necessary for removal eligibility, never sufficient. |
+| `resources/<id>/ENROLLED.json` | An externally created resource's observed identity and enrollment acknowledgment; never removal-eligible. |
+| `resources/<id>/associations/<name>.json` | An audit context that uses the resource; the use ends with that lifetime's closing record. |
+| `resources/<id>/claims/<n>.json`, `<n>.RETIRED.json`, `<n>.RELEASED.json`, `<n>.ATTEMPT-<stamp>.json` | The exclusive claim of one close (frozen identity, contents, HEAD or tip, disposal decisions), and how it ended: retired, released with the observation that kept the resource, or a failed removal that leaves the claim active. |
+| `resources/<id>/ACKNOWLEDGED.json` | The manager's acknowledgment of an observed absence as retirement outside Stewart, with the observation in its own field; grants nothing. |
 
 Every record above except the raw captures carries `stewart`, the identity of
 the tool build that wrote it: its distribution version, complete member
@@ -1555,10 +1892,32 @@ view = status(ws, audit_id)                                     # the same docum
 closed = close(ws, audit_id, actor="me")                         # keeps CLOSING.json/CLOSED.json; removes the session
 ```
 
+Discovery, selection and keyed continuation use the same functions:
+
+```python
+from stewart.api import discover, select, bind, collect, close, inspect_request
+
+found = discover(repo_root)                                      # stewart.discovery/1; writes nothing
+reference = select(repo_root, audit_id="one-bounded-question")["reference"]   # keep it; it is plain JSON
+bound = bind(reference)                                          # revalidates; bound.ws, bound.audit_id, bound.lifetime
+collected = collect(bound.ws, bound.audit_id, auditor_stopped="finished", lifetime=bound.lifetime,
+                    request_key="collect-7f3a")                  # a retry with the same key returns this collection
+view = inspect_request(repo_root, "collect-7f3a")                 # stewart.request/1; never executes
+```
+
+Every mutation takes `request_key=` and every session operation `lifetime=`.
+`register`, `create_worktree`, `create_branch`, `create_directory`, `enroll`,
+`associate`, `acknowledge`, `show_resource`, `close_resources` (the API of
+`close --resource`), `close_plan`, `closeout` and `runtime_handoff` cover
+registration, resources and handoffs; `load_reference` reads a saved reference
+file. A same-key retry returns the request's `stewart.request/1` document
+instead of the operation's result.
+
 Operations return structured results and raise `StewartError` with a stable
-`reason`, `retained` paths and `next_steps`; `collect`, `status`, `run` and
-`close` results and every refusal carry the exit code the CLI would return.
-Importing the package performs no repository, process or network work.
+`reason`, `retained` paths and `next_steps` (and `handoff` for
+`implementation_mismatch`); `collect`, `status`, `run` and `close` results and
+every refusal carry the exit code the CLI would return. Importing the package
+performs no repository, process or network work.
 
 ## Exit codes
 
@@ -1600,10 +1959,11 @@ failed preparation with 2 (`prepare_failed`) and keeps its session.
 
 A custody operation succeeding is not an audit passing. A child's exit status
 is recorded in its attempt and never becomes the tool's exit code. In `--json`
-mode the `stewart.result/2` envelope carries `ok`, which is true exactly when
-the exit code is 0, `exit_code`, `result` (present for exits 1 and 3 too) and
-`error` (with `reason`, `message`, `retained`, `next_steps`), and nothing else
-is written to stdout.
+mode the `stewart.result/3` envelope carries `ok`, which is true exactly when
+the exit code is 0, `exit_code`, `result` (present for exits 1 and 3 too, and a
+`stewart.request/1` document for a replayed request) and `error` (with
+`reason`, `message`, `retained`, `next_steps`, and `handoff` for
+`implementation_mismatch`), and nothing else is written to stdout.
 
 ## Development checks
 

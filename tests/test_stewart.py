@@ -136,7 +136,13 @@ def test_initializer_cli_preview_and_full_replacement(checkout, run_cmd):
     assert prompt.read_text() == preview.stdout.rstrip("\n") + "\n"
     assert "Earlier assignment" not in prompt.read_text()
     assert git("diff", "--cached", "--name-only") == ""
-    assert not (repo / ".git/stewart").exists()
+    # The draft is recorded at repository level: its intent before the write, its outcome after.
+    records = list((repo / ".git/stewart/audits").glob("*/fresh-question/init/*"))
+    assert len(records) == 1 and {path.name for path in records[0].iterdir()} == {"STARTED.json", "OUTCOME.json"}
+    started = read_json(records[0] / "STARTED.json")
+    assert started["intended"][0]["sha256"] == _hash.sha256_bytes(prompt.read_bytes())
+    assert started["prompt_before"]["sha256"] == _hash.sha256_bytes(before)
+    assert read_json(records[0] / "OUTCOME.json")["status"] == "completed"
 
 
 def test_prepare_uses_committed_inputs_and_leaves_dirty_main_index_alone(checkout):

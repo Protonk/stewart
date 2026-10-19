@@ -23,7 +23,10 @@ from stewart.session import (
     RESUME_SCHEMA,
     RETENTION_SCHEMA,
     TRIAGE_SCHEMA,
+    bind_lifetime,
     load_session,
+    mutable_session,
+    output,
     capture_receipt,
     now,
     record_name,
@@ -54,7 +57,7 @@ def _report_kind(declaration: dict) -> str | None:
     return declaration["declaration"]["report_kind"] if declaration["status"] == "valid" else None
 
 
-def triage_draft(ws: Workspace, ident: str, *, collection: str) -> dict:
+def triage_draft(ws: Workspace, ident: str, *, collection: str, lifetime: str | None = None) -> dict:
     """Return an unanswered response and separate context; write no record.
 
     The response carries the collection name and receipt digest through submission.
@@ -63,6 +66,7 @@ def triage_draft(ws: Workspace, ident: str, *, collection: str) -> dict:
     Captured report bytes must still match their receipt, including empty ones.
     """
     session, session_record = load_session(ws, ident)
+    bind_lifetime(session_record, lifetime, session)
     directory, receipt, digest = load_collection(session, ident, collection, session_record=session_record)
     if receipt.get("workspace") != ws.rel:
         raise StewartError("collection belongs to another workspace", reason="collection_schema")
@@ -281,9 +285,24 @@ def bound_disposition(session: Path, ident: str, name: str, workspace: str, *,
     return disposition, digest, directory, receipt
 
 
-def triage(ws: Workspace, ident: str, *, collection: str, response: dict, actor: str) -> dict:
-    """Record one maintainer response bound to one named collection."""
-    session, session_record = load_session(ws, ident)
+def triage(ws: Workspace, ident: str, *, collection: str, response: dict, actor: str, lifetime: str | None = None,
+           request_key: str | None = None) -> dict:
+    """Record one maintainer response bound to one named collection.
+
+    The request binding carries the response's canonical digest, so a retry
+    with different judgments under the same key is refused.
+    """
+    from stewart.request_keys import input_digest, keyed
+    inputs = {"collection": collection, "response_sha256": input_digest(response), "actor": actor}
+    return keyed(ws, ident, "triage", inputs, request_key,
+                 lambda plan: _triage(ws, ident, collection, response, actor, lifetime, plan), lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]), "triage", ws, ident, result["session_uuid"],
+                                                name=result["triage"])])
+
+
+def _triage(ws: Workspace, ident: str, collection: str, response: dict, actor: str, lifetime: str | None,
+            plan) -> dict:
+    session, session_record = mutable_session(ws, ident, lifetime=lifetime)
     name = record_name(collection, what="collection")
     directory, receipt, collection_digest = load_collection(session, ident, name, session_record=session_record)
     if not isinstance(actor, str) or not actor.strip():
@@ -311,22 +330,41 @@ def triage(ws: Workspace, ident: str, *, collection: str, response: dict, actor:
         "counts": {bucket: len(validated[bucket]) for bucket in ("accepted", "rejected", "unresolved")},
         "stewart": tool_identity(),
     }
-    (session / "triage").mkdir(mode=0o700, exist_ok=True)
     location = session / "triage" / f"{triage_name}.json"
+    plan([{"kind": "triage", "name": triage_name, "path": str(location),
+           "audit": {"workspace": ws.rel, "slug": ws.slug, "audit_id": ident},
+           "lifetime": session_record["session_uuid"]}])
+    (session / "triage").mkdir(mode=0o700, exist_ok=True)
     write_receipt(location, record)
-    return {"audit_id": ident, "triage": triage_name, "path": str(location), "collection": name, "record": record,
-            "mode": session_record["mode"]}
+    return {"audit_id": ident, "session_uuid": session_record["session_uuid"], "triage": triage_name,
+            "triage_sha256": read_regular(location)[0].get("sha256"), "path": str(location), "collection": name,
+            "record": record, "mode": session_record["mode"]}
 
 
 def retain(ws: Workspace, ident: str, *, triage: str, report: bool = False,
-           support: Sequence[str] = ()) -> dict:
+           support: Sequence[str] = (), lifetime: str | None = None, request_key: str | None = None) -> dict:
     """Publish reviewed bytes from the triaged collection into the maintainer checkout.
 
     Sources are the immutable capture; every byte is re-hashed against the
     receipt and the triage binding before anything is written, and every
-    destination is created exclusively. This neither stages nor commits.
+    destination is created exclusively. This neither stages nor commits. The
+    published files are recorded as a retained resource beside the retention
+    record, so a retiring manager worktree accounts for them.
     """
-    session, record = load_session(ws, ident)
+    from stewart.request_keys import keyed
+    inputs = {"triage": triage, "report": bool(report), "support": sorted(support)}
+    return keyed(ws, ident, "retain", inputs, request_key,
+                 lambda plan: _retain(ws, ident, triage, report, support, lifetime), lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]), "retention", ws, ident, result["session_uuid"],
+                                                name=result["retention"]),
+                                         *({"kind": "published", "path": item["path"], "sha256": item["sha256"]}
+                                           for item in result["published"])])
+
+
+def _retain(ws: Workspace, ident: str, triage: str, report: bool, support: Sequence[str],
+            lifetime: str | None) -> dict:
+    from stewart.holdings import record_output
+    session, record = mutable_session(ws, ident, lifetime=lifetime)
     triage_name = record_name(triage, what="triage")
     disposition, triage_digest, directory, receipt = bound_disposition(session, ident, triage_name, ws.rel,
                                                                     session_record=record)
@@ -352,13 +390,27 @@ def retain(ws: Workspace, ident: str, *, triage: str, report: bool = False,
                 f"destination already exists and is never overwritten: {destination}", reason="destination_exists",
             )
     published = []
-    for destination, data, source, digest in planned:
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        # Exclusive creation also refuses dangling links and repeat publication.
-        with destination.open("xb") as stream:
-            stream.write(data)
-        published.append({"path": str(destination), "sha256": digest, "source": source})
+
+    def publish() -> list[dict]:
+        for destination, data, source, digest in planned:
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            # Exclusive creation also refuses dangling links and repeat publication.
+            with destination.open("xb") as stream:
+                stream.write(data)
+            published.append({"path": str(destination), "sha256": digest, "source": source})
+        return published
+
     retention_name = stamp()
+    _, rid = record_output(ws, ident, kind="retained", actor=None,
+                           identity_for=lambda files: {"files": [{"path": item["path"], "sha256": item["sha256"]}
+                                                                 for item in files], "checkout": str(ws.repo)},
+                           perform=publish,
+                           plan_outputs=[{"kind": "published", "path": str(destination), "sha256": digest}
+                                         for destination, _, _, digest in planned]
+                           + [{"kind": "retention", "name": retention_name,
+                               "path": str(session / "retention" / f"{retention_name}.json"),
+                               "audit": {"workspace": ws.rel, "slug": ws.slug, "audit_id": ident},
+                               "lifetime": record["session_uuid"]}])
     retention = {
         "schema_version": RETENTION_SCHEMA,
         "name": retention_name,
@@ -369,18 +421,28 @@ def retain(ws: Workspace, ident: str, *, triage: str, report: bool = False,
         "triage_sha256": triage_digest,
         "collection": disposition["collection"],
         "published": published,
+        "resource": rid,
         "staged_or_committed": False,
         "stewart": tool_identity(),
     }
     (session / "retention").mkdir(mode=0o700, exist_ok=True)
     location = session / "retention" / f"{retention_name}.json"
     write_receipt(location, retention)
-    return {"audit_id": ident, "retention": retention_name, "path": str(location), "published": published}
+    return {"audit_id": ident, "session_uuid": record["session_uuid"], "retention": retention_name,
+            "path": str(location), "published": published, "resource": rid}
 
 
-def resume(ws: Workspace, ident: str, *, triage: str, reason: str) -> dict:
+def resume(ws: Workspace, ident: str, *, triage: str, reason: str, lifetime: str | None = None,
+           request_key: str | None = None) -> dict:
     """Record the release of a paused hold, bound to a triage and its evidence."""
-    session, record = load_session(ws, ident)
+    from stewart.request_keys import keyed
+    return keyed(ws, ident, "resume", {"triage": triage, "reason": reason}, request_key,
+                 lambda plan: _resume(ws, ident, triage, reason, lifetime, plan), lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]), "resume", ws, ident, result["session_uuid"])])
+
+
+def _resume(ws: Workspace, ident: str, triage: str, reason: str, lifetime: str | None, plan) -> dict:
+    session, record = mutable_session(ws, ident, lifetime=lifetime)
     if record["mode"] != "paused":
         raise StewartError(
             "snapshot audits have no writer pause to resume; collect and triage the report", reason="no_hold",
@@ -412,5 +474,7 @@ def resume(ws: Workspace, ident: str, *, triage: str, reason: str) -> dict:
         "process_control": "none; the maintainer tells the writers",
         "stewart": tool_identity(),
     }
+    plan([{"kind": "resume", "path": str(resumed), "audit": {"workspace": ws.rel, "slug": ws.slug, "audit_id": ident},
+           "lifetime": record["session_uuid"]}])
     write_receipt(resumed, payload)
-    return {"audit_id": ident, "path": str(resumed), "record": payload}
+    return {"audit_id": ident, "session_uuid": record["session_uuid"], "path": str(resumed), "record": payload}

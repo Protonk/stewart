@@ -50,13 +50,18 @@ of that plan.
 From the final adversarial review of `close`; each was judged lower risk than
 the defects fixed in the same pass.
 
-- **No lock between concurrent closes, or between close and prepare.** A
-  rerun resumes any incomplete close, including one still running elsewhere.
-  Exclusive record creation keeps the records consistent, but two removals
-  could interleave.
-- **A rerun removes whatever now sits at the recorded worktree path** when Git
-  no longer registers a checkout there. The path is the session's own,
-  UUID-named, under the checkout home.
+- **No lock between unkeyed concurrent closes, or between close and prepare.**
+  An unkeyed rerun resumes any incomplete close, including one still running
+  elsewhere. Exclusive record creation keeps the records consistent, but two
+  removals could interleave. Keyed closes hold their request's lock, resource
+  claims are exclusive, and an active claim refuses a prepare that would use the
+  claimed resource.
+- **A blind discard removes a replacement at the recorded worktree path.**
+  Removal now runs through descriptors pinned from the filesystem root and
+  keeps a checkout that changed after the close was planned, but an abandon
+  that authorized discarding unobservable changes (`discarded: null`) has no
+  list to compare, so a real directory substituted at the session's own
+  UUID-named path is removed with it.
 - **One problem classifier is shared by status and a concluded close only.**
   `triage`, `triage-draft`, `resume`, `export` and retention still take their
   codes from the reason table; a refusal on a missing record they expected is
@@ -68,9 +73,10 @@ the defects fixed in the same pass.
   attempt reserved but never resolved.
 - **`validate_scope`** accepts a scope that denies any one entry of the
   maintainer checkout; it has no filesystem access to check the full set.
-- **A resumed close does not rerun the discard guard** or the
-  unchanged-checkout check: writes made after the first attempt are removed
-  with the checkout.
+- **Closing records written before the frozen-plan revalidation** carry no
+  extra fields, but a resumed concluded close compares the checkout with the
+  triaged collection's receipt still in the session; an older close whose
+  session is already gone has nothing left to compare.
 - **Two self-named handoff copies.** A copy whose `Handoff file:` line was
   edited to name the copy makes `check` find two handoffs (3) while
   `collect` sees an unexpected path (1).

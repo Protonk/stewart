@@ -19,7 +19,7 @@ import pytest
 
 import stewart
 from stewart._bootstrap import StewartError
-from stewart.cli import EXIT_ATTENTION, EXIT_OK, EXIT_REFUSED, build_parser
+from stewart.cli import EXIT_ATTENTION, EXIT_OK, EXIT_REFUSED, _repository_only, build_parser
 import stewart_support as support
 from stewart_support import WS, response_for
 
@@ -54,7 +54,7 @@ def test_json_parses_alone_on_success_and_on_refusal(checkout, run_cmd):
     refused = _run(checkout, run_cmd, "prepare", "--mode", "paused")
     assert refused.returncode == EXIT_REFUSED and refused.stderr == ""
     envelope = json.loads(refused.stdout)
-    assert envelope["schema"] == "stewart.result/2" and envelope["command"] == "prepare"
+    assert envelope["schema"] == "stewart.result/3" and envelope["command"] == "prepare"
     assert envelope["ok"] is False and envelope["exit_code"] == EXIT_REFUSED and envelope["result"] is None
     assert envelope["error"]["reason"] == "pause_unacknowledged" and envelope["error"]["message"]
     assert set(envelope["error"]) == {"reason", "message", "retained", "next_steps"}
@@ -139,7 +139,8 @@ def test_documented_examples_exercise_the_real_parser():
         assert tokens[0] == '$STEWART_PYTHON', line
         assert tokens[1:4] == ['-I', '-m', 'stewart'], line
         namespace = parser.parse_args(tokens[4:])
-        assert namespace.command and namespace.repo and namespace.workspace, line
+        # Repository commands (discover, select, request, resource acknowledge/show, close --resource) need no workspace.
+        assert namespace.command and namespace.repo and (namespace.workspace or _repository_only(namespace)), line
 
 
 def test_documented_isolated_commands_set_no_ignored_import_path():

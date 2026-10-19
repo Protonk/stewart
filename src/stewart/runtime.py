@@ -284,7 +284,18 @@ def require_match(parent: Path, state: dict, *, phases: set[str]) -> None:
                            next_steps=["preserve the changed runtime and captured observations; do not substitute current tool bytes"])
 
 
-def recover_runtime(ws, ident: str, *, actor: str) -> dict:
+def recover_runtime(ws, ident: str, *, actor: str, lifetime: str | None = None,
+                    request_key: str | None = None) -> dict:
+    """Materialize retained code at a fresh path; see ``_recover_runtime``."""
+    from stewart.request_keys import keyed
+    from stewart.session import output
+    return keyed(ws, ident, "recover-runtime", {"actor": actor}, request_key,
+                 lambda plan: _recover_runtime(ws, ident, actor, lifetime, plan), lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]), "runtime-recovery", ws, ident,
+                                                result["session_uuid"], name=result["recovery"])])
+
+
+def _recover_runtime(ws, ident: str, actor: str, lifetime: str | None, plan) -> dict:
     """Materialize retained code at a fresh path without changing session grants.
 
     Recovery preserves assets for inspection or a separately authorized fresh
@@ -292,11 +303,11 @@ def recover_runtime(ws, ident: str, *, actor: str) -> dict:
     release. Its own capture survives loss of the materialized directory.
     """
     from stewart.captured import pristine_runtime
-    from stewart.session import capture_receipt, load_session, stamp, tool_identity
+    from stewart.session import capture_receipt, mutable_session, stamp, tool_identity
     from stewart.workspace import contained
     if not isinstance(actor, str) or not actor.strip():
         raise StewartError("runtime recovery needs an attributed actor", reason="actor_required")
-    session, record = load_session(ws, ident, check_retention=False)
+    session, record = mutable_session(ws, ident, lifetime=lifetime, check_retention=False)
     observed, session_digest = capture_receipt(session / "session.json", what="session record")
     if observed != record:
         raise StewartError("session changed before recovery", reason="binding_mismatch")
@@ -304,6 +315,9 @@ def recover_runtime(ws, ident: str, *, actor: str) -> dict:
     destination = contained(Path(record["audit_dir"]), f"runtime-recovered-{name}")
     recovered = binding(destination, record["runtime"]["manifest"])
     directory = contained(session, f"runtime-recoveries/{name}")
+    plan([{"kind": "runtime-recovery", "path": str(directory / "RECOVERY.json"),
+           "audit": {"workspace": ws.rel, "slug": ws.slug, "audit_id": ident}, "lifetime": record["session_uuid"]},
+          {"kind": "runtime", "path": str(destination)}])
     directory.mkdir(parents=True, mode=0o700, exist_ok=False)
     document = {"schema_version": RECOVERY_SCHEMA, "name": name, "recorded_at": now().isoformat(),
                 "audit_id": ident, "workspace": ws.rel, "session_sha256": session_digest,
@@ -331,6 +345,7 @@ def recover_runtime(ws, ident: str, *, actor: str) -> dict:
         raise StewartError(f"runtime recovery failed: {failure}", reason=getattr(failure, "reason", "runtime_recovery"),
                            retained=[str(directory), str(destination)],
                            next_steps=["preserve the failed recovery and its source assets; no current installation is substituted"]) from failure
-    return {"audit_id": ident, "recovery": name, "path": str(directory / "RECOVERY.json"),
+    return {"audit_id": ident, "session_uuid": record["session_uuid"], "recovery": name,
+            "path": str(directory / "RECOVERY.json"),
             "runtime": recovered, "record": document,
             "next_steps": ["inspect the recovered assets; execution requires a separately authorized fresh assignment"]}

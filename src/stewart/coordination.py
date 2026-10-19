@@ -18,8 +18,9 @@ from stewart.launch_profile import EXIT_LOG, load_profile, render_command
 from stewart.session import (
     LAUNCH_SCHEMA,
     MESSAGE_SCHEMA,
-    load_session,
+    mutable_session,
     now,
+    output,
     stamp,
     tool_identity,
     write_receipt,
@@ -43,7 +44,8 @@ def _text(value: object, what: str, *, required: bool = True) -> str:
 
 def record_launch(ws: Workspace, ident: str, *, style: str | None = None, model: str | None = None,
                   effort: str | None = None, actor: str | None = None, note: str | None = None,
-                  from_profile: bool = False, profile_path: str | None = None) -> dict:
+                  from_profile: bool = False, profile_path: str | None = None, lifetime: str | None = None,
+                  request_key: str | None = None) -> dict:
     """Record the manager's acknowledgment of one handoff; Stewart observed none of it.
 
     ``style``, ``model`` and ``effort`` are what the manager requested of the
@@ -55,7 +57,18 @@ def record_launch(ws: Workspace, ident: str, *, style: str | None = None, model:
     ``profile_path`` names a working-tree profile to use instead, for a session
     whose pinned recipe went stale; the record then carries both digests.
     """
-    session, record = load_session(ws, ident)
+    from stewart.request_keys import file_digest, keyed
+    inputs = {"style": style, "model": model, "effort": effort, "actor": actor, "note": note,
+              "from_profile": from_profile, "profile_path": profile_path,
+              "profile": None if profile_path is None else file_digest(ws.repo / profile_path)}
+    return keyed(ws, ident, "launch", inputs, request_key,
+                 lambda plan: _record_launch(ws, ident, style, model, effort, actor, note, from_profile, profile_path,
+                                             lifetime, plan), lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]), "launch", ws, ident, result["session_uuid"])])
+
+
+def _record_launch(ws, ident, style, model, effort, actor, note, from_profile, profile_path, lifetime, plan) -> dict:
+    session, record = mutable_session(ws, ident, lifetime=lifetime)
     bound: dict = {}
     if from_profile or profile_path is not None:
         pinned = record.get("launch_profile")
@@ -105,14 +118,17 @@ def record_launch(ws: Workspace, ident: str, *, style: str | None = None, model:
                    "Stewart launched nothing and observed no auditor",
         "stewart": tool_identity(),
     }
-    (session / "launches").mkdir(mode=0o700, exist_ok=True)
     location = session / "launches" / f"{document['name']}.json"
+    plan([{"kind": "launch", "path": str(location), "audit": {"workspace": ws.rel, "slug": ws.slug,
+                                                              "audit_id": ident}, "lifetime": record["session_uuid"]}])
+    (session / "launches").mkdir(mode=0o700, exist_ok=True)
     write_receipt(location, document)
-    return {"audit_id": ident, "launch": document["name"], "path": str(location), "record": document}
+    return {"audit_id": ident, "session_uuid": record["session_uuid"], "launch": document["name"],
+            "path": str(location), "record": document}
 
 
 def record_message(ws: Workspace, ident: str, *, direction: str, text: str, actor: str,
-                   channel: str | None = None) -> dict:
+                   channel: str | None = None, lifetime: str | None = None, request_key: str | None = None) -> dict:
     """Record one message exchanged with the auditor after launch, as the manager relays it.
 
     A ruling the manager gives a stopped auditor, or a hand-back the auditor
@@ -120,9 +136,18 @@ def record_message(ws: Workspace, ident: str, *, direction: str, text: str, acto
     record carries the manager's transcription; it does not authenticate the
     auditor's words or establish that they were read.
     """
+    from stewart.request_keys import keyed
+    inputs = {"direction": direction, "text": text, "actor": actor, "channel": channel}
+    return keyed(ws, ident, "message", inputs, request_key,
+                 lambda plan: _record_message(ws, ident, direction, text, actor, channel, lifetime, plan),
+                 lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]), "message", ws, ident, result["session_uuid"])])
+
+
+def _record_message(ws, ident, direction, text, actor, channel, lifetime, plan) -> dict:
     if direction not in MESSAGE_DIRECTIONS:
         raise StewartError(f"message direction must be one of {MESSAGE_DIRECTIONS}", reason="coordination_schema")
-    session, record = load_session(ws, ident)
+    session, record = mutable_session(ws, ident, lifetime=lifetime)
     document = {
         "schema_version": MESSAGE_SCHEMA,
         "name": stamp(),
@@ -137,7 +162,10 @@ def record_message(ws: Workspace, ident: str, *, direction: str, text: str, acto
         "meaning": "a message as the manager relays it; not authenticated and not proof it was read",
         "stewart": tool_identity(),
     }
-    (session / "messages").mkdir(mode=0o700, exist_ok=True)
     location = session / "messages" / f"{document['name']}.json"
+    plan([{"kind": "message", "path": str(location), "audit": {"workspace": ws.rel, "slug": ws.slug,
+                                                               "audit_id": ident}, "lifetime": record["session_uuid"]}])
+    (session / "messages").mkdir(mode=0o700, exist_ok=True)
     write_receipt(location, document)
-    return {"audit_id": ident, "message": document["name"], "path": str(location), "record": document}
+    return {"audit_id": ident, "session_uuid": record["session_uuid"], "message": document["name"],
+            "path": str(location), "record": document}

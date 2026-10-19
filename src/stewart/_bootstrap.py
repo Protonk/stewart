@@ -12,7 +12,7 @@ import sys
 # Interpreter startup hooks run before any script and remain a trust root.
 if __name__ == "__main__" and (not sys.flags.isolated or not sys.dont_write_bytecode):
     if "--json" in sys.argv:
-        sys.stdout.write('{"schema":"stewart.result/2","command":null,"ok":false,"exit_code":2,"result":null,"error":{"reason":"startup_isolation","message":"use the complete explicit interpreter -I -B command","retained":[],"next_steps":[]}}\n')
+        sys.stdout.write('{"schema":"stewart.result/3","command":null,"ok":false,"exit_code":2,"result":null,"error":{"reason":"startup_isolation","message":"use the complete explicit interpreter -I -B command","retained":[],"next_steps":[]}}\n')
     else:
         sys.stderr.write("Refused (startup_isolation): use the complete explicit interpreter -I -B command\n")
     raise SystemExit(2)
@@ -136,6 +136,9 @@ UNVERIFIED_REASONS = frozenset({
     "session_schema_unsupported", "session_unavailable", "support_unavailable", "triage_schema",
     "validation_error", "worktree_missing", "worktree_role_conflict", "worktree_role_identity",
     "worktree_role_registry",
+    # Identity, request and resource records that do not verify.
+    "draft_record_invalid", "request_record_invalid", "resource_identity", "resource_record_invalid",
+    "selection_unresolved",
 })
 REFUSED_REASONS = frozenset({
     "actor_required", "already_resumed", "assignment_schema", "checkout_home", "manager_grant_missing",
@@ -161,12 +164,19 @@ REFUSED_REASONS = frozenset({
     "review_schema", "runtime_cache", "schema_version", "scope_uncovered", "session_missing", "startup_failed",
     "startup_isolation", "support_unreviewed", "target_ancestry", "target_drift", "unassigned_prompt",
     "unknown_field", "unterminated_block", "usage", "workspace_guidance",
+    # Selection, references, request keys and recorded resources.
+    "action_stale", "audit_closed", "audit_recorded", "draft_checkout_missing", "draft_incomplete",
+    "reference_checkout_missing",
+    "reference_mismatch", "reference_schema", "reference_stale", "request_key_conflict", "request_key_format",
+    "request_missing", "request_not_resumable", "resource_blocked", "resource_claimed", "resource_creation",
+    "resource_location", "resource_missing", "resource_not_managed", "resource_present", "resource_retired",
+    "resource_retiring", "resource_shared", "selection_ambiguous", "selection_missing",
 })
 #: Status problem reasons that describe a recorded, partial state awaiting a
 #: manager action rather than records that fail verification. Only a missing
 #: completion receipt supports these labels; any other problem is unverified.
 STATE_REASONS = frozenset({"attempt_unresolved", "close_incomplete", "close_leftovers", "collection_incomplete",
-                           "prepare_failed"})
+                           "draft_checkout_missing", "draft_incomplete", "prepare_failed", "session_owner_missing"})
 
 
 def exit_code_for(reason: str) -> int:
@@ -217,12 +227,16 @@ class StewartError(ValueError):
         return self.code if self.code in (EXIT_REFUSED, EXIT_UNVERIFIED) else exit_code_for(self.reason)
 
     def to_json(self) -> dict:
-        return {
+        document = {
             "reason": self.reason,
             "message": str(self),
             "retained": list(self.retained),
             "next_steps": list(self.next_steps),
         }
+        # A refusal under a mismatched implementation names the recorded one, never runs it.
+        if getattr(self, "handoff", None) is not None:
+            document["handoff"] = self.handoff
+        return document
 
 
 class RefusalParser(argparse.ArgumentParser):
@@ -391,7 +405,8 @@ MANIFEST_SCHEMA = "stewart.runtime-manifest/1"
 OBSERVATION_SCHEMA = "stewart.runtime-observation/1"
 SOURCE_MODULES = frozenset({
     "__init__.py", "__main__.py", "_bootstrap.py", "_git.py", "_invocation.py", "_json.py",
-    "_removal.py", "_repository.py", "_util.py", "api.py", "assignment.py", "auditor_scope.py", "captured.py", "cli.py", "close.py",
+    "_removal.py", "_repository.py", "_util.py", "api.py", "assignment.py", "audits.py", "auditor_scope.py", "captured.py",
+    "cli.py", "close.py", "holdings.py", "request_keys.py",
     "collect.py",
     "coordination.py", "experiment.py", "handoff.py", "implementation.py", "launch_profile.py", "ledger.py",
     "prepare.py", "report_declaration.py", "runtime.py", "session.py", "status.py", "triage.py",
@@ -733,7 +748,7 @@ def launch(argv: list[str] | None = None) -> int:
                 "next_steps": ["restore the selected manager deployment and its private cache access"]}
             code = getattr(exc, "exit_code", EXIT_REFUSED)
             if "--json" in raw:
-                print(json.dumps({"schema": "stewart.result/2", "command": None,
+                print(json.dumps({"schema": "stewart.result/3", "command": None,
                                   "ok": False, "exit_code": code, "result": None, "error": error}, sort_keys=True))
             else:
                 print(f"Refused ({error['reason']}): {error['message']}", file=sys.stderr)

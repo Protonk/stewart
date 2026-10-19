@@ -45,9 +45,13 @@ from stewart.triage import bound_disposition
 #: Schema 12 adds the exit code and the attention items that set it, the lock
 #: and storage locations, and drops the live report path; a recovery command
 #: appears only when the supplied runtime fails verification.
-STATUS_SCHEMA = "stewart.status/12"
+#: Schema 13 adds the observed stage, a reference for the lifetime, the
+#: writing and viewing implementations with any handoff, resource dispositions
+#: and request records, and binds each action to its operands and lifetime.
+STATUS_SCHEMA = "stewart.status/13"
 LIST_SCHEMA = "stewart.status-list/1"
-CLOSED_VIEW_SCHEMA = "stewart.status-closed/1"
+CLOSED_VIEW_SCHEMA = "stewart.status-closed/2"
+DRAFT_VIEW_SCHEMA = "stewart.status-draft/1"
 
 
 def _problem(problems: list[dict], record: str, exc: StewartError) -> None:
@@ -321,18 +325,38 @@ def _attempts(session: Path, ident: str, session_record: dict | None) -> list[di
     return views
 
 
-def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
+def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: str | None = None) -> dict:
     """Build the session view without writing, repairing or acknowledging anything.
 
     ``profile`` names a working-tree launch profile to render the handoff from
     instead of the one pinned at preparation, for a session whose pinned recipe
-    went stale; the view names both so the departure is visible.
+    went stale; the view names both so the departure is visible. ``lifetime``
+    binds the view to one session lifetime; another one is refused.
     """
     from stewart._repository import maintainer, registered_session
     from stewart.close import close_summary, closing_entries
     common = maintainer(ws.repo)["common_dir"]
     session = session_dir(ws, ident)
     closes = [close_summary(entry, ws.repo) for entry in closing_entries(common, ws, ident)]
+    if lifetime is not None and not session.is_dir() and lifetime not in [item["session_uuid"] for item in closes]:
+        raise StewartError(f"audit {ident} has no lifetime {lifetime}", reason="reference_stale",
+                           next_steps=["discover and select the audit again"])
+    finished = closes and all(item["complete"] and "problem" not in item for item in closes)
+    if not session.is_dir() and (not closes or finished):
+        from stewart.audits import draft_records
+        from stewart.holdings import contexts_for
+        drafts = draft_records(common, ws.slug, ident)
+        known = {str(item["session_uuid"]) for item in closes}
+        # A draft recorded after every close (a released ID drafted again) is the present stage.
+        later = [item for item in drafts if item.get("state") != "invalid" and known <= set(item.get("closed_before", []))]
+        if (later if closes else (drafts or contexts_for(common, ws.slug, ident))):
+            # A registry row means a session existed and lost its records; that comes first.
+            try:
+                registered_session(common, session)
+            except StewartError as exc:
+                exc.code = EXIT_REFUSED
+                raise
+            return _draft_view(ws, ident, common, closes)
     # Closing records come first: a closed or closing session's removed
     # records are the close's doing, not records that went missing. Every
     # session under one ID shares its directory, and an incomplete close
@@ -347,7 +371,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
             except StewartError as exc:
                 exc.code = EXIT_REFUSED
                 raise
-        return _closed_view(ws, ident, closes)
+        return _closed_view(ws, ident, closes, common)
     if not session.is_dir():
         # A registry row for this path means the ID was prepared and its
         # records went missing: that refusal names the row and the refs. A
@@ -645,9 +669,158 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None) -> dict:
                       "records_invalid" if view["releases"] else "awaiting_review"),
             "note": "authorization and recorded operations only; neither artifact readiness nor scientific success",
         }
+    if record is not None:
+        from stewart.session import bind_lifetime
+        bind_lifetime(record, lifetime, session)
     _derive_actions(ws, ident, view, record, profile)
+    _identity_and_holdings(ws, ident, view, record, common, raw_stamp=view["session"]["stewart"])
     view["attention"] = _attention(view)
     view["exit_code"] = combined_code(item["code"] for item in view["attention"])
+    return view
+
+
+#: Status actions that only read; every other action is a mutation bound to the session's writer.
+_READ_ONLY_ACTIONS = frozenset({"triage-draft", "handoff"})
+
+
+def _rebind(action: dict, handoff: dict, lifetime: str | None) -> dict | None:
+    """The same operation arguments under another invocation prefix, bound to the session lifetime."""
+    argv = action.get("argv")
+    if not argv or "--" not in argv:
+        return action
+    arguments = argv[argv.index("--") + 1:]
+    if lifetime is not None and "--lifetime" not in arguments and arguments[:1] == ["--repo"]:
+        arguments = [*arguments[:4], "--lifetime", lifetime, *arguments[4:]]
+    if handoff is None:
+        return {**action, "argv": [*argv[:argv.index("--") + 1], *arguments]}
+    if handoff["state"] != "verified":
+        return None
+    return {**action, "argv": [*handoff["argv"][:handoff["argv"].index("--") + 1], *arguments], "env": {},
+            "runtime": handoff["runtime"], "handoff": "the recorded implementation; run it explicitly"}
+
+
+_OPERATIONS = {"handoff": None, "launch": "record_launch", "collect": "collect", "triage-draft": "triage_draft",
+               "triage": "triage", "retain": "retain", "resume": "resume", "run": "run", "release": "release",
+               "close": "close", "fresh_assignment": "initialize", "recover-runtime": "recover_runtime",
+               "prepare": "prepare"}
+
+
+def _flag(action: dict, name: str) -> str | None:
+    argv = action.get("argv") or []
+    return argv[argv.index(name) + 1] if name in argv[:-1] else None
+
+
+def _bind_operands(action: dict, view: dict) -> None:
+    """Name the API operation and the exact records an action acts on, with the digests read for this view."""
+    action["operation"] = _OPERATIONS.get(action["action"], action["action"])
+    operands: dict = {}
+    def digest(items: list[dict], name: str, record: str | None) -> str | None:
+        found = next((item for item in items if item["name"] == name), None)
+        if found is None:
+            return None
+        return read_regular(Path(found["path"]) / record if record else Path(found["path"]))[0].get("sha256")
+
+    collection = _flag(action, "--collection")
+    if collection is not None:
+        operands.update(collection=collection,
+                        collection_sha256=digest(view["collections"], collection, "collection.json"))
+    triage = _flag(action, "--triage")
+    if triage is not None:
+        operands.update(triage=triage, triage_sha256=digest(view["dispositions"], triage, None))
+    release = _flag(action, "--release")
+    if release is not None:
+        operands.update(release=release, release_sha256=digest(view["releases"], release, None))
+    action["operands"] = operands
+
+
+def _identity_and_holdings(ws: Workspace, ident: str, view: dict, record: dict | None, common: str, *,
+                           raw_stamp: dict | None) -> None:
+    """Stage, reference, implementation, resources and requests; mutation actions follow the writer."""
+    from stewart.audits import reference
+    from stewart.implementation import compare, recorded_digest
+    from stewart.request_keys import request_summaries
+    from stewart.holdings import closeout
+    lifetime = record["session_uuid"] if record is not None else None
+    view["implementation"] = compare(raw_stamp, ["--repo", str(ws.repo), "--workspace", ws.rel, "status",
+                                                 "--audit-id", ident], current=view["tool"])
+    view["reference"] = reference(common, ws, ident, lifetime, implementation=recorded_digest(raw_stamp)) \
+        if record is not None else None
+    handoff = view["implementation"].get("handoff") if view["implementation"]["same"] is False else None
+    actions = []
+    for action in view["next_actions"]:
+        _bind_operands(action, view)
+        if action["action"] in _READ_ONLY_ACTIONS:
+            actions.append(_rebind(action, None, lifetime) if action.get("argv") else action)
+            continue
+        rebound = _rebind(action, handoff, lifetime)
+        if rebound is None:
+            view["outstanding"].append(f"{action['action']} needs the implementation that wrote this session, which "
+                                       "cannot be offered: missing " + ", ".join(handoff["missing"]))
+        else:
+            actions.append(rebound)
+    view["next_actions"] = actions
+    try:
+        view["resources"] = closeout(ws, ident, lifetime=lifetime)
+    except StewartError as exc:
+        view["resources"] = []
+        view["session"]["problems"].append({"record": "resources", "reason": exc.reason, "message": str(exc)})
+    view["requests"] = [{key: item.get(key) for key in ("key", "operation", "state", "lifetime", "recorded_at")}
+                        for item in request_summaries(common, [])
+                        if (item.get("audit") or {}).get("audit_id") == ident
+                        and (item.get("audit") or {}).get("workspace") == ws.rel]
+    preparation = view["preparation"].get("state")
+    complete = [c for c in view["collections"] if c["complete"]]
+    triaged = {d.get("collection") for d in view["dispositions"] if not d["problems"]}
+    view["stage"] = ("unverified" if record is None else
+                     "closing" if any(not item["complete"] and "problem" not in item for item in view["closes"]) else
+                     "preparation_failed" if preparation == "failed" else
+                     "preparation_incomplete" if preparation == "incomplete" else
+                     "triaged" if complete and complete[-1]["name"] in triaged else
+                     "collected" if complete else "prepared")
+
+
+def _draft_view(ws: Workspace, ident: str, common: str, closes: list[dict]) -> dict:
+    """An audit recorded before any session: its draft records, their files now, and what comes next.
+
+    Earlier closes of a released audit ID are history beside the new draft.
+    """
+    from stewart.audits import closed_names, draft_files, draft_records, reference
+    from stewart.holdings import contexts_for, closeout
+    from stewart.request_keys import request_summaries
+    drafts = draft_records(common, ws.slug, ident)
+    view: dict = {"schema": DRAFT_VIEW_SCHEMA, "audit_id": ident, "workspace": ws.to_json(), "tool": tool_identity(),
+                  "stage": "draft" if drafts else "context",
+                  "drafts": [{**item, "files": draft_files(item)} if item.get("state") != "invalid" else item
+                             for item in drafts],
+                  "contexts": contexts_for(common, ws.slug, ident),
+                  "reference": {**reference(common, ws, ident, None, implementation=None),
+                                "closes": closed_names(common, ws.slug, ident)},
+                  "closes": closes, "outstanding": [], "next_actions": []}
+    view["resources"] = closeout(ws, ident, lifetime=None)
+    view["requests"] = [{key: item.get(key) for key in ("key", "operation", "state", "recorded_at")}
+                        for item in request_summaries(common, [])
+                        if (item.get("audit") or {}).get("audit_id") == ident
+                        and (item.get("audit") or {}).get("workspace") == ws.rel]
+    here = [item for item in drafts if item.get("checkout") == str(ws.repo) and item.get("state") != "invalid"]
+    if not here:
+        view["outstanding"].append("no draft of this audit was recorded in this checkout; select it from the checkout "
+                                   "that holds its prompt")
+    else:
+        view["next_actions"].append({
+            "action": "prepare", "operation": "prepare", "operands": {},
+            "prerequisites": ["author the five sections and remove UNASSIGNED; commit PROMPT.md alone",
+                              "the committed prompt commit is what prepare pins"],
+            **command(ws, "prepare", "--prompt-commit", "<prompt-commit>")})
+    items = []
+    for item in drafts:
+        if item.get("state") == "invalid":
+            items.append({"code": EXIT_UNVERIFIED, "source": f"draft {item['name']}", "reason": "draft_record_invalid",
+                          "message": item["problem"]["message"]})
+        elif item.get("state") == "partial":
+            items.append({"code": EXIT_ATTENTION, "source": f"draft {item['name']}", "reason": "draft_incomplete",
+                          "message": "an init started but recorded no outcome; inspect the prompt it intended"})
+    view["attention"] = items
+    view["exit_code"] = combined_code(item["code"] for item in items)
     return view
 
 
@@ -660,7 +833,7 @@ def _unchanged_since(worktree: Path, collection: dict) -> bool:
     return recorded is not None and _hash.sha256_bytes(_hash.receipt_json_bytes(inventory(worktree))) == recorded
 
 
-def _closed_view(ws: Workspace, ident: str, closes: list[dict]) -> dict:
+def _closed_view(ws: Workspace, ident: str, closes: list[dict], common: str) -> dict:
     """An audit ID whose session a close retired or is retiring: its closing records, read only.
 
     The view repeats the records' identity, acknowledgment and attributed
@@ -688,6 +861,12 @@ def _closed_view(ws: Workspace, ident: str, closes: list[dict]) -> dict:
                               "any prompt commit that carries this assignment may be prepared"],
             **command(ws, "prepare", "--prompt-commit", latest.get("prompt_commit") or "<prompt-commit>"),
         })
+    from stewart.audits import closed_names, reference
+    from stewart.holdings import closeout
+    view["reference"] = {**reference(common, ws, ident, None, implementation=None),
+                         "closes": closed_names(common, ws.slug, ident)}
+    # A closed audit uses nothing; what remains of the resources it used is explained here.
+    view["resources"] = [item for item in closeout(ws, ident, lifetime=None)]
     view["attention"] = items
     view["exit_code"] = combined_code(item["code"] for item in items)
     return view
@@ -1139,5 +1318,5 @@ def _derive_actions(ws: Workspace, ident: str, view: dict, record: dict | None, 
                 "its checkout, refs and registry row and keeps only the closing record",
                 "the audit ID stays reserved",
             ],
-            **command(ws, "close", "--audit-id", ident, "--actor", "<name>"),
+            **command(ws, "close", "--audit-id", ident, "--actor", "<name>", "--collection", latest["name"]),
         })

@@ -89,7 +89,7 @@ def test_preparation_accepts_maintainer_roles_independent_of_branch(ready_projec
     assert set(verify_retention(repo, record)["refs"]) == {"prompt", "target", "base"}
     assert "main_before" not in record and "maintainer_before" in record
     view = status(ws, "one-question")
-    assert view["schema"] == "stewart.status/12" and "main" not in view["identities"]
+    assert view["schema"] == "stewart.status/13" and "main" not in view["identities"]
     assert view["identities"]["retention"] == {"status": "verified", "pins": record["retention"]}
     assert git_text(Path(result["worktree"]), "branch", "--show-current") == ""
 

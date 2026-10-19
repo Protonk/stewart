@@ -23,12 +23,19 @@ from stewart_support import read_json, response_for, snapshot_tree
 pytestmark = pytest.mark.system
 
 
+
+def _without_digests(view: dict) -> dict:
+    """The view's facts; action operand digests name record bytes, which a reformatting changes by design."""
+    actions = [{**action, "operands": {key: value for key, value in (action.get("operands") or {}).items()
+                                       if not key.endswith("_sha256")}} for action in view["next_actions"]]
+    return {**view, "next_actions": actions}
+
 def test_handoff_locations_do_not_infer_activity_from_live_report(checkout):
     prepared = support.prepared_session(checkout, report=None)
     before = snapshot_tree(prepared.session)
     view = status(checkout.ws, checkout.meta['audit_id'])
     assert snapshot_tree(prepared.session) == before, 'discovering a handoff must write nothing'
-    assert view['schema'] == 'stewart.status/12'
+    assert view['schema'] == 'stewart.status/13'
     assert view['identities']['worktree']['path'] == str(prepared.worktree)
     assert 'live_report_path' not in view['identities'], 'the manager reads collected bytes, not the live report'
     assert view['exit_code'] == 0 and view['attention'] == [], 'a ready, unlaunched session is no news'
@@ -403,7 +410,7 @@ def test_release_read_failures_keep_status_usable_and_healthy_releases_visible(t
     offered = [a['argv'][-1] for a in view['next_actions'] if a['action'] == 'run']
     assert healthy['release'] in offered, 'a bad neighbor must not hide a usable release'
     if variant in {'unique', 'reformatted'}:
-        assert view == baseline, 'unique object key order and whitespace do not change the status facts'
+        assert _without_digests(view) == _without_digests(baseline), 'unique object key order and whitespace do not change the status facts'
         assert first['release'] in offered
     elif variant == 'missing':
         assert first['release'] not in rows and first['release'] not in offered
@@ -453,7 +460,7 @@ def test_status_distinguishes_absent_receipts_from_present_invalid_receipts(tmp_
     else:
         assert not any(a['action'] == 'run' for a in view['next_actions']), 'a consumed release stays consumed'
     if variant in {'unique', 'reformatted'}:
-        assert view == baseline, 'format-only changes must leave receipt interpretation unchanged'
+        assert _without_digests(view) == _without_digests(baseline), 'format-only changes must leave receipt interpretation unchanged'
         return
     if variant == 'missing':
         expected = 'collection_incomplete' if kind == 'collection' else 'attempt_unresolved'

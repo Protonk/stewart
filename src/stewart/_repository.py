@@ -229,35 +229,42 @@ def _registry(common: str) -> Path:
     return Path(common) / "stewart/worktree-roles"
 
 
+_ROLE_FIELDS = {"schema_version", "role", "role_uuid", "common_dir", "git_admin", "worktree", "session",
+                "session_sha256", "session_uuid"}
+
+
+def _role_row(name: str, info: dict, data: bytes | None, common: str) -> dict:
+    """Validate one registry row; ValueError names what makes it unusable."""
+    if data is None:
+        raise ValueError(f"unreadable role entry {name}: {info}")
+    value = loads_control(data)
+    if not isinstance(value, dict) or set(value) != _ROLE_FIELDS:
+        raise ValueError(f"invalid role entry {name}")
+    if value["schema_version"] != ROLE_SCHEMA or value["role"] != "auditor" or value["common_dir"] != common:
+        raise ValueError(f"conflicting role entry {name}")
+    for key in ("common_dir", "git_admin", "worktree", "session"):
+        path = value[key]
+        if (not isinstance(path, str) or not Path(path).is_absolute()
+                or Path(path).as_posix() != path or ".." in Path(path).parts):
+            raise ValueError(f"invalid {key} in {name}")
+    if (name != session_uuid(value["role_uuid"]) + ".json"
+            or not isinstance(value["session_sha256"], str)
+            or re.fullmatch(r"[0-9a-f]{64}", value["session_sha256"]) is None):
+        raise ValueError(f"invalid role identity in {name}")
+    if value["session_uuid"] is not None:
+        session_uuid(value["session_uuid"])
+    return value
+
+
 def _role_records(common: str) -> list[dict]:
-    """Read the complete registry through pinned no-follow descriptors."""
+    """Read the complete registry through pinned no-follow descriptors; any bad row refuses."""
     root = _registry(common)
     records = []
     try:
         with open_directory(root) as directory:
             for name in sorted(os.listdir(directory)):
                 info, data = read_regular(Path(name), dir_fd=directory)
-                if data is None:
-                    raise ValueError(f"unreadable role entry {name}: {info}")
-                value = loads_control(data)
-                fields = {"schema_version", "role", "role_uuid", "common_dir", "git_admin", "worktree",
-                          "session", "session_sha256", "session_uuid"}
-                if not isinstance(value, dict) or set(value) != fields:
-                    raise ValueError(f"invalid role entry {name}")
-                if value["schema_version"] != ROLE_SCHEMA or value["role"] != "auditor" or value["common_dir"] != common:
-                    raise ValueError(f"conflicting role entry {name}")
-                for key in ("common_dir", "git_admin", "worktree", "session"):
-                    path = value[key]
-                    if (not isinstance(path, str) or not Path(path).is_absolute()
-                            or Path(path).as_posix() != path or ".." in Path(path).parts):
-                        raise ValueError(f"invalid {key} in {name}")
-                if (name != session_uuid(value["role_uuid"]) + ".json"
-                        or not isinstance(value["session_sha256"], str)
-                        or re.fullmatch(r"[0-9a-f]{64}", value["session_sha256"]) is None):
-                    raise ValueError(f"invalid role identity in {name}")
-                if value["session_uuid"] is not None:
-                    session_uuid(value["session_uuid"])
-                records.append(value)
+                records.append(_role_row(name, info, data, common))
     except FileNotFoundError:
         return []
     except (OSError, ValueError, RecursionError) as exc:
@@ -265,6 +272,31 @@ def _role_records(common: str) -> list[dict]:
                            reason="worktree_role_registry", retained=[str(root)],
                            next_steps=["preserve the registry and resolve its conflicting or unreadable records"]) from exc
     return records
+
+
+def role_rows(common: str) -> tuple[list[dict], list[dict]]:
+    """Every usable registry row, and a located diagnostic for each row that is not.
+
+    Read-only views list an unsupported, invalid or unreadable row instead of
+    refusing; mutations keep the all-or-nothing reader.
+    """
+    root = _registry(common)
+    rows, problems = [], []
+    try:
+        with open_directory(root) as directory:
+            for name in sorted(os.listdir(directory)):
+                info, data = read_regular(Path(name), dir_fd=directory)
+                try:
+                    rows.append(_role_row(name, info, data, common))
+                except (ValueError, RecursionError) as exc:
+                    problems.append({"reason": "worktree_role_registry", "location": str(root / name),
+                                     "message": str(exc)})
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        problems.append({"reason": "worktree_role_registry", "location": str(root),
+                         "message": f"the registry cannot be listed: {exc}"})
+    return rows, problems
 
 
 def _marker(identity: dict) -> dict | None:
@@ -298,7 +330,9 @@ def custody_roots(repo: Path, common: str) -> list[str]:
     Registry paths keep removed or moved checkouts' private sessions excluded.
     This is operation-time discovery, not a claim about future worktree moves.
     """
-    roots = {str(repo), str(Path(common) / STORAGE), *worktree_roots(repo)}
+    from stewart.holdings import private_roots
+    # Live managed and enrolled worktrees and directories hold manager work an auditor has no grant to read.
+    roots = {str(repo), str(Path(common) / STORAGE), *worktree_roots(repo), *private_roots(common)}
     for row in _role_records(common):
         # A registered checkout's directory also holds its runtime and
         # experiment homes; none of another session's material is needed.
@@ -333,6 +367,29 @@ def maintainer(repo: Path) -> dict:
         raise StewartError("the selected worktree is a locked Stewart auditor checkout",
                            reason="auditor_worktree", next_steps=["select the maintainer working tree explicitly"])
     return identity
+
+
+def observer(repo: Path) -> dict:
+    """The exact maintainer root for read-only views, with registry rows that do not verify as diagnostics.
+
+    Auditor checkouts are refused as for any manager operation. Unlike
+    ``maintainer``, one unusable registry row does not hide the rest.
+    """
+    identity = checkout_identity(repo)
+    root = Path(identity["root"])
+    rows, problems = role_rows(identity["common_dir"])
+    if _inside_auditor_checkout(root, rows):
+        raise StewartError("the selected root is inside auditor checkout storage",
+                           reason="auditor_worktree", next_steps=["select the maintainer working tree explicitly"])
+    marker = _marker(identity)
+    if marker is not None:
+        raise StewartError("the selected worktree carries an auditor role marker", reason="auditor_worktree",
+                           next_steps=["select a maintainer worktree; moving an auditor checkout does not change its role"])
+    lock = worktree_lock(identity["git_admin"])
+    if lock is not None and lock.startswith((REGISTRATION_LOCK, LIFETIME_LOCK)):
+        raise StewartError("the selected worktree is a Stewart auditor checkout", reason="auditor_worktree",
+                           next_steps=["select the maintainer working tree explicitly"])
+    return {**identity, "rows": rows, "registry_problems": problems}
 
 
 def registered_session(common: str, session: Path) -> None:

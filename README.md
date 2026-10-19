@@ -66,6 +66,15 @@ git commit -m "Assign parser field audit"
 ```
 
 Follow the printed handoff and the manual's collection, triage and close steps.
+To continue later, or from another maintainer checkout, `stewart --repo "$PWD"
+discover` lists every audit, resource and request key the repository records,
+and `select --audit-id ID` prints a reference to keep and pass back with
+`--ref`; mutations accept `--request-key` so a retry returns the recorded
+outcome instead of repeating it. `resource create-worktree` and
+`create-directory` record the manager worktrees, branches and directories an
+audit uses so that `close` can retire them once no audit uses them.
+Orchestration on top of these interfaces is planned in
+[ORCHESTRATION-PLAN.md](ORCHESTRATION-PLAN.md) and not implemented yet.
 `--repo` must be the exact maintainer worktree root; subdirectories and
 registered auditor worktrees are refused. Sessions live under the repository's
 Git common directory at `stewart/sessions/`, outside every working tree, so no

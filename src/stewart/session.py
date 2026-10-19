@@ -266,6 +266,36 @@ def load_session(ws: Workspace, ident: str, *, check_retention: bool = True) -> 
     return session, record
 
 
+def bind_lifetime(record: dict, lifetime: str | None, session: Path) -> None:
+    """Refuse when a caller bound to one session lifetime reaches another under the same audit ID."""
+    if lifetime is not None and record.get("session_uuid") != lifetime:
+        raise StewartError(f"the audit's present session is {record.get('session_uuid')}, not the bound lifetime "
+                           f"{lifetime}", reason="reference_stale", retained=[str(session)],
+                           next_steps=["select the audit again; a replacement lifetime is never chosen silently"])
+
+
+def mutable_session(ws: Workspace, ident: str, *, lifetime: str | None = None,
+                    check_retention: bool = True) -> tuple[Path, dict]:
+    """Load a session for a mutation: the bound lifetime, and the implementation that wrote it.
+
+    A different implementation is refused with the verified handoff to the
+    recorded one, never silently continued by this installation.
+    """
+    from stewart.implementation import require
+    session, record = load_session(ws, ident, check_retention=check_retention)
+    bind_lifetime(record, lifetime, session)
+    require(record.get("stewart"), record=session / "session.json",
+            arguments=["--repo", str(ws.repo), "--workspace", ws.rel, "status", "--audit-id", ident])
+    return session, record
+
+
+def output(path: Path, kind: str, ws: Workspace, ident: str, lifetime: str | None, **extra) -> dict:
+    """An output identity a request records: the record's path and digest, and the lifetime that retires it."""
+    info, _ = read_regular(Path(path))
+    return {"kind": kind, "path": str(path), "sha256": info.get("sha256"),
+            "audit": {"workspace": ws.rel, "slug": ws.slug, "audit_id": ident}, "lifetime": lifetime, **extra}
+
+
 def maintainer_state(repo: Path) -> dict:
     """HEAD plus porcelain status: a coordination signal, not a byte baseline.
 

@@ -8,7 +8,9 @@ contracts; never import a containing repository's helpers or configuration.
 
 Preserve unrelated working-tree changes. Record execution state in temporary
 local plans, keep durable guidance stateless, and remove completed plans after
-their contracts reach documentation and tests. Do not add compatibility shims
+their contracts reach documentation and tests. `ORCHESTRATION-PLAN.md` is the
+pending plan for orchestration over the shipped interfaces;
+`tests/test_orchestration_plan.py` keeps its citations real. Do not add compatibility shims
 or rewrite historical receipts to fit a newer schema.
 
 Use an explicit interpreter with isolated startup (`-I`, plus `-B` where
@@ -83,13 +85,39 @@ The custody rules are:
 - **Recovery preserves failure.** While an audit is live, a failed preparation
   keeps its session and every failure record. `close` is the only deletion: it
   is explicit and gated, writes its closing record first, and removes only what
-  the session recorded. An abandoned audit ID is released only under the
+  the session recorded or its resource claims froze. An abandoned audit ID is released only under the
   mechanical rule that `init` and `prepare` reapply; otherwise a fresh
   assignment is needed. Status names the observed stage and prerequisites,
   without inferring auditor completion or experiment readiness. Only a missing
   completed receipt supports a partial/unresolved label; an invalid or unreadable
   record keeps its diagnostics. Failed release reads must not require success-only
   fields or produce capture associations and run suggestions.
+- **Removal is authorized by two records only.** A session's `CLOSING.json`
+  authorizes its recorded inventory. A resource's exclusive
+  `resources/<id>/claims/<n>.json`, created by a gated close (audit close after
+  its `CLOSING.json`, or `close --resource`), authorizes that resource and the
+  dependencies it names as disposed. A claim requires a Stewart-recorded
+  creation (`CREATE.json` with `CREATED.json`), no live use and every
+  eligibility check; it never names an enrolled resource. Start records,
+  enrollments, registrations, associations, acknowledgments, paths and Git
+  registrations grant nothing. Revalidate frozen identities, contents and uses
+  at use; release the claim (`<n>.RELEASED.json`) rather than remove anything
+  that changed. Remove through pinned descriptors and never let Git delete
+  contents; drop a worktree's administration only after its marker names the
+  lifetime. Doubt about a use keeps the resource.
+- **Selection is a reference the caller keeps.** Discovery and selection write
+  nothing and choose nothing by recency, current directory or installation.
+  Every operation revalidates a reference; a draft reference never selects a
+  later lifetime. Aliases stay explicit when ambiguous.
+- **Request keys bind intent; they never replay uncertainty.** Publish the
+  exclusive binding before side effects, record planned outputs before the
+  first one and the outcome after; a matching key returns its record. Keep
+  request records beyond retirement. Do not deduplicate unkeyed requests.
+- **Runtime handoff is explicit.** A mutation under an implementation other
+  than the record's writer is refused; offer only a handoff verified by
+  descriptor reads of the recorded deployment, launcher and interpreter. Never
+  import, execute or relay recorded code, and never fall back to the current
+  installation.
 - **Child ledger loading is independent of project imports.** `ledger.py`
   depends on the standard library only. The private launcher preloads its pinned
   bytes as `_stewart_ledger_v1` before admitting the script directory and project

@@ -20,8 +20,8 @@ from stewart.captured import (
     runtime_assets_payloads, runtime_capture_files, runtime_observations, verified_bytes, verify_runtime_capture,
 )
 from stewart.session import (
-    ATTEMPT_SCHEMA, COLLECTION_SCHEMA, RELEASE_SCHEMA, capture_receipt, load_session,
-    now, record_name, session_dir, tool_identity, write_receipt,
+    ATTEMPT_SCHEMA, COLLECTION_SCHEMA, RELEASE_SCHEMA, capture_receipt, mutable_session,
+    now, output as request_output, record_name, session_dir, tool_identity, write_receipt,
 )
 from stewart.workspace import Workspace, contained, relative
 
@@ -118,7 +118,8 @@ def _verify_runtime_selections(receipt: dict, payloads: dict[str, bytes]) -> Non
 
 
 def export_evidence(ws: Workspace, ident: str, *, collection: str | None = None, attempt: str | None = None,
-                    selectors: list[str], output: str, actor: str) -> dict:
+                    selectors: list[str], output: str, actor: str, lifetime: str | None = None,
+                    request_key: str | None = None) -> dict:
     """Export selected captured files exclusively; output is a new repo-relative directory.
 
     Collections use REPORT.md or files.tar:<repo-relative-path> selectors.
@@ -127,10 +128,24 @@ def export_evidence(ws: Workspace, ident: str, *, collection: str | None = None,
     which include the complete verification material. Including a file does not
     accept any claim in it. The manifest is
     written last; a failed publication is retained and requires a fresh output.
+    ``output`` is a new repo-relative directory in the maintainer checkout, or
+    a new absolute directory elsewhere as a durable destination. The package is
+    recorded as a retained resource.
     """
+    from stewart.request_keys import keyed
+    inputs = {"collection": collection, "attempt": attempt, "selectors": list(selectors), "output": output,
+              "actor": actor}
+    return keyed(ws, ident, "export", inputs, request_key,
+                 lambda plan: _export_checked(ws, ident, collection, attempt, selectors, output, actor, lifetime),
+                 lifetime=lifetime,
+                 outputs=lambda result: [request_output(Path(result["manifest"]), "export", ws, ident, None,
+                                                        resource=result["resource"])])
+
+
+def _export_checked(ws, ident, collection, attempt, selectors, output, actor, lifetime) -> dict:
     try:
         return _export_evidence(ws, ident, collection=collection, attempt=attempt,
-                                selectors=selectors, output=output, actor=actor)
+                                selectors=selectors, output=output, actor=actor, lifetime=lifetime)
     except StewartError as exc:
         raise StewartError(str(exc), reason=exc.reason,
                            retained=exc.retained or [str(session_dir(ws, ident))],
@@ -140,8 +155,18 @@ def export_evidence(ws: Workspace, ident: str, *, collection: str | None = None,
                            ]) from exc
 
 
+def _destination(ws: Workspace, output: str) -> Path:
+    """A new package directory: repo-relative inside the checkout, or an absolute durable destination."""
+    if isinstance(output, str) and output.startswith("/"):
+        from pathlib import PurePosixPath
+        if "\0" in output or ".." in PurePosixPath(output).parts or PurePosixPath(output).as_posix() != output:
+            raise StewartError(f"export destination must be canonical: {output}", reason="path_noncanonical")
+        return Path(output)
+    return contained(ws.repo, output)
+
+
 def _export_evidence(ws: Workspace, ident: str, *, collection: str | None, attempt: str | None,
-                     selectors: list[str], output: str, actor: str) -> dict:
+                     selectors: list[str], output: str, actor: str, lifetime: str | None = None) -> dict:
     """Validate all selections before exclusively publishing their package."""
     if (collection is None) == (attempt is None):
         raise StewartError('select exactly one collection or attempt', reason='export_source')
@@ -150,7 +175,7 @@ def _export_evidence(ws: Workspace, ident: str, *, collection: str | None, attem
         raise StewartError('select one or more distinct captured files explicitly', reason='export_selection')
     if not isinstance(actor, str) or not actor.strip():
         raise StewartError('export needs an attributed actor', reason='actor_required')
-    session, session_record = load_session(ws, ident)
+    session, session_record = mutable_session(ws, ident, lifetime=lifetime)
     ordinary = [selector for selector in selectors if selector != 'runtime-assets'
                 and not selector.startswith('runtime-observation:')]
     kind = 'collection' if collection is not None else 'attempt'
@@ -194,7 +219,7 @@ def _export_evidence(ws: Workspace, ident: str, *, collection: str | None, attem
     source = {'kind': kind, 'workspace': ws.rel, 'audit_id': ident, 'record': name, 'receipt_sha256': digest}
     _source_identity(source, receipt)
     source_bytes = verified_bytes(source_path, digest)
-    destination = contained(ws.repo, output)
+    destination = _destination(ws, output)
     manifest = {'schema': PACKAGE_SCHEMA, 'actor': actor, 'exported_at': now().isoformat(),
                 'source': source, 'entries': [], 'stewart': tool_identity(), 'runtime': _source_runtime(receipt),
                 'runtime_assets': assets}
@@ -204,25 +229,41 @@ def _export_evidence(ws: Workspace, ident: str, *, collection: str | None, attem
                                     'sha256': _hash.sha256_bytes(data), 'size': len(data)})
     # The chosen parent must exist. Pin it before creating anything, then keep
     # the new directory pinned so ancestor substitution cannot redirect writes.
-    try:
-        with open_directory(destination.parent) as parent:
-            os.mkdir(destination.name, mode=0o700, dir_fd=parent)
-            with open_directory(Path(destination.name), dir_fd=parent) as package:
-                os.mkdir('files', mode=0o700, dir_fd=package)
-                write_exclusive(Path('source.json'), source_bytes, dir_fd=package)
-                for entry in manifest['entries']:
-                    write_exclusive(Path(entry['file']), files[entry['selector']], dir_fd=package)
-                write_receipt(Path('manifest.json'), manifest, dir_fd=package)
-    except FileExistsError as exc:
-        raise StewartError('export destination or member exists; nothing is overwritten', reason='destination_exists',
-                           retained=[str(destination)], next_steps=['choose a fresh package directory']) from exc
-    except OSError as exc:
-        raise StewartError(f'cannot publish evidence package: {exc}', reason='export_failed',
-                           retained=[str(destination)],
-                           next_steps=['retain partial output; ensure the parent directory exists and choose a fresh output']) from exc
-    return {'audit_id': ident, 'package': path.rel(destination / 'manifest.json', ws.repo),
+    def publish() -> Path:
+        try:
+            with open_directory(destination.parent) as parent:
+                os.mkdir(destination.name, mode=0o700, dir_fd=parent)
+                with open_directory(Path(destination.name), dir_fd=parent) as package:
+                    os.mkdir('files', mode=0o700, dir_fd=package)
+                    write_exclusive(Path('source.json'), source_bytes, dir_fd=package)
+                    for entry in manifest['entries']:
+                        write_exclusive(Path(entry['file']), files[entry['selector']], dir_fd=package)
+                    write_receipt(Path('manifest.json'), manifest, dir_fd=package)
+        except FileExistsError as exc:
+            raise StewartError('export destination or member exists; nothing is overwritten',
+                               reason='destination_exists', retained=[str(destination)],
+                               next_steps=['choose a fresh package directory']) from exc
+        except OSError as exc:
+            raise StewartError(f'cannot publish evidence package: {exc}', reason='export_failed',
+                               retained=[str(destination)],
+                               next_steps=['retain partial output; ensure the parent directory exists and choose a '
+                                           'fresh output']) from exc
+        return destination / 'manifest.json'
+
+    from stewart.holdings import record_output
+    from stewart._bootstrap import read_regular as _read_regular
+    manifest_path, rid = record_output(
+        ws, ident, kind='export', actor=actor, perform=publish,
+        identity_for=lambda location: {'path': str(destination),
+                                       'manifest_sha256': _read_regular(location)[0].get('sha256')},
+        plan_outputs=[{'kind': 'export', 'path': str(destination / 'manifest.json')}])
+    package = path.rel(manifest_path, ws.repo)
+    return {'audit_id': ident, 'package': package, 'manifest': str(manifest_path), 'resource': rid,
             'source': source, 'entries': manifest['entries'],
-            'next_steps': ['initialize the receiving assignment with --evidence-package <package>; author its scope separately']}
+            'next_steps': ['initialize the receiving assignment with --evidence-package <package>; author its scope '
+                           'separately'] if not package.startswith('/') else
+            ['the package lies outside the maintainer checkout as a durable destination; copy it into a checkout '
+             'before init --evidence-package']}
 
 
 def package_inputs(repo: Path, manifest_path: str, *, expected_digest: str | None = None) -> list[dict]:

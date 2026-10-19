@@ -216,9 +216,20 @@ def _verify_pinned_inputs(worktree: Path, record: dict, *, reason: str) -> None:
         )
 
 
-def release(ws: Workspace, ident: str, *, review: dict, actor: str) -> dict:
+def release(ws: Workspace, ident: str, *, review: dict, actor: str, lifetime: str | None = None,
+            request_key: str | None = None) -> dict:
     """Freeze exact artifacts within the grant and record the manager's review."""
-    session, record = load_session(ws, ident)
+    from stewart.request_keys import input_digest, keyed
+    from stewart.session import output
+    return keyed(ws, ident, "release", {"review_sha256": input_digest(review), "actor": actor}, request_key,
+                 lambda plan: _release(ws, ident, review, actor, lifetime, plan), lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]), "release", ws, ident, result["session_uuid"],
+                                                name=result["release"])])
+
+
+def _release(ws: Workspace, ident: str, review: dict, actor: str, lifetime: str | None, plan) -> dict:
+    from stewart.session import mutable_session
+    session, record = mutable_session(ws, ident, lifetime=lifetime)
     grant = record["assignment"].get("experiment")
     if grant is None:
         raise StewartError("the assignment grants no experiment", reason="no_grant")
@@ -304,10 +315,13 @@ def release(ws: Workspace, ident: str, *, review: dict, actor: str) -> dict:
                               "the child must accept an existing empty directory",
         "stewart": tool_identity(),
     }
-    (session / "releases").mkdir(mode=0o700, exist_ok=True)
     location = session / "releases" / f"{name}.json"
+    plan([{"kind": "release", "path": str(location), "audit": {"workspace": ws.rel, "slug": ws.slug,
+                                                               "audit_id": ident}, "lifetime": record["session_uuid"]}])
+    (session / "releases").mkdir(mode=0o700, exist_ok=True)
     write_receipt(location, document)
-    return {"audit_id": ident, "release": name, "path": str(location), "record": document}
+    return {"audit_id": ident, "session_uuid": record["session_uuid"], "release": name, "path": str(location),
+            "record": document}
 
 
 def _stop(process: subprocess.Popen) -> None:
@@ -353,9 +367,20 @@ def _capture_output(worktree: Path, rel: str, destination: Path) -> tuple[dict, 
     return captured, data
 
 
-def run(ws: Workspace, ident: str, *, release: str, timeout: float | None = None) -> dict:
+def run(ws: Workspace, ident: str, *, release: str, timeout: float | None = None, lifetime: str | None = None,
+        request_key: str | None = None) -> dict:
     """Consume one release exactly once; record launch, outcome, endpoints and rows independently."""
-    session, record = load_session(ws, ident)
+    from stewart.request_keys import keyed
+    from stewart.session import output
+    return keyed(ws, ident, "run", {"release": release, "timeout": timeout}, request_key,
+                 lambda plan: _run(ws, ident, release, timeout, lifetime, plan), lifetime=lifetime,
+                 outputs=lambda result: [output(Path(result["path"]) / "ATTEMPT.json", "attempt", ws, ident,
+                                                result["session_uuid"], name=result["attempt"])])
+
+
+def _run(ws: Workspace, ident: str, release: str, timeout: float | None, lifetime: str | None, plan) -> dict:
+    from stewart.session import mutable_session
+    session, record = mutable_session(ws, ident, lifetime=lifetime)
     name = record_name(release, what="release")
     location = contained(session, f"releases/{name}.json")
     document, release_digest = capture_receipt(location, what="release record")
@@ -368,6 +393,8 @@ def run(ws: Workspace, ident: str, *, release: str, timeout: float | None = None
             or not all(isinstance(token, str) for token in document["approved_argv"])):
         raise StewartError("release lacks its child invocation binding", reason="release_schema", retained=[str(location)])
     attempts = session / "attempts"
+    plan([{"kind": "attempt", "path": str(attempts / name / "ATTEMPT.json"),
+           "audit": {"workspace": ws.rel, "slug": ws.slug, "audit_id": ident}, "lifetime": record["session_uuid"]}])
     attempts.mkdir(mode=0o700, exist_ok=True)
     attempt_dir = attempts / name
     try:
@@ -548,5 +575,5 @@ def run(ws: Workspace, ident: str, *, release: str, timeout: float | None = None
     # The child's own exit status never sets the code; a supplied runtime
     # that stopped verifying across the attempt is records that do not verify.
     code = EXIT_UNVERIFIED if not runtime_verified else EXIT_ATTENTION if errors else EXIT_OK
-    return {"audit_id": ident, "attempt": name, "path": str(attempt_dir), "record": result, "errors": errors,
-            "exit_code": code}
+    return {"audit_id": ident, "session_uuid": record["session_uuid"], "attempt": name, "path": str(attempt_dir),
+            "record": result, "errors": errors, "exit_code": code}

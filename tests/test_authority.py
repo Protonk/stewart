@@ -258,7 +258,7 @@ def test_control_json_has_one_decoder_and_raw_evidence_stays_separate():
     sources = runtime_sources(package)
     assert len(sources) >= 25, "the parser guard must select the runtime package"
     sites, hooks = json_decoder_sites(sources)
-    assert sites == [("_json.py", "loads_control"), ("experiment.py", "run"), ("ledger.py", "parse_rows")], (
+    assert sites == [("_json.py", "loads_control"), ("experiment.py", "_run"), ("ledger.py", "parse_rows")], (
         "control readers must share _json.loads_control; only raw child receipt and ledger decoding stay permissive. "
         "Exact nonempty site counts also detect removal or duplication inside an allowed function."
     )

@@ -619,7 +619,7 @@ def test_a_close_interrupted_before_its_record_can_be_rerun(checkout, monkeypatc
             close(checkout.ws, IDENT, actor="manager")
     directory = closed_location(str(_common(checkout)), checkout.ws, IDENT) / prepared.prepared["session_uuid"]
     assert directory.is_dir() and not os.listdir(directory), "control: the crash left an empty closing directory"
-    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/12", "an empty closing directory is not a close"
+    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/13", "an empty closing directory is not a close"
     result = close(checkout.ws, IDENT, actor="manager")
     assert result["closed"] and not prepared.session.exists()
 
@@ -629,7 +629,7 @@ def test_status_on_a_released_id_names_a_later_session_that_lost_its_records(che
     _failed(checkout, monkeypatch)
     close(checkout.ws, IDENT, actor="manager", abandon=True, reason="clean failure")
     again = prepare(checkout.ws, _revised_prompt(checkout))
-    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/12", "control: the live session is shown"
+    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/13", "control: the live session is shown"
     shutil.rmtree(again["session"])
     refused = _reason(status, checkout.ws, IDENT)
     assert refused.reason == "session_records_missing" and refused.exit_code == EXIT_REFUSED
@@ -852,7 +852,7 @@ def test_a_crash_while_publishing_leaves_no_partial_record(checkout, monkeypatch
             close(checkout.ws, IDENT, actor="manager")
     directory = closed_location(str(_common(checkout)), checkout.ws, IDENT) / prepared.prepared["session_uuid"]
     assert not (directory / "CLOSING.json").exists() and [p.name for p in directory.iterdir() if p.name.endswith(".staged")]
-    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/12", "a staged copy is not a close"
+    assert status(checkout.ws, IDENT)["schema"] == "stewart.status/13", "a staged copy is not a close"
     assert close(checkout.ws, IDENT, actor="manager")["closed"]
 
 

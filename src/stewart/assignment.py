@@ -289,13 +289,44 @@ def initialize(
     experiment: dict | None = None,
     input_manifest: str | None = None,
     replace_prompt: bool = False,
+    request_key: str | None = None,
 ) -> dict:
     """Generate clerical fields; leave the question unassigned for human authoring.
 
     Every selected input is resolved and validated before an existing prompt is
     replaced. Without ``replace_prompt`` nothing is written, so the result can be
-    inspected first.
+    inspected first. With it, a repository-level draft record states the
+    intended writes before they happen and their outcome after.
     """
+    from stewart._repository import maintainer
+    from stewart.request_keys import file_digest, input_digest, keyed
+    maintainer(ws.repo)
+    if request_key is not None and not replace_prompt:
+        raise StewartError("a preview writes nothing; a request key applies only with --replace-prompt", reason="usage")
+    # Supplied bytes are bound by digest, and revisions as the commits they resolve to now.
+    requested = {} if request_key is None else {
+        "audit_id": ident, "target": resolve_commit(ws.repo, target, exact=False),
+        "base": None if base is None else resolve_commit(ws.repo, base, exact=False),
+        "inputs": list(inputs), "sources": [list(item) for item in sources],
+        "supplemental": [[rel, provenance, file_digest(contained(ws.repo, rel))] for rel, provenance in supplemental],
+        "evidence_packages": [[rel, file_digest(contained(ws.repo, rel))] for rel in evidence_packages],
+        "scratch": list(scratch), "experiment": None if experiment is None else input_digest(experiment),
+        "input_manifest": input_manifest, "replace_prompt": replace_prompt}
+    selected = list(inputs)
+    return keyed(ws, ident, "init", requested, request_key,
+                 lambda plan: _initialize(ws, ident, target, inputs=selected, base=base, sources=sources,
+                                          supplemental=supplemental, evidence_packages=evidence_packages,
+                                          scratch=scratch, experiment=experiment, input_manifest=input_manifest,
+                                          replace_prompt=replace_prompt, request_key=request_key, plan=plan),
+                 outputs=lambda result: [{"kind": "draft-record", "path": result["draft_record"]},
+                                         *({"kind": "written", "path": item["path"], "sha256": item["sha256"]}
+                                           for item in result["written_files"])])
+
+
+def _initialize(ws: Workspace, ident: str, target: str, *, inputs: Sequence[str], base: str | None,
+                sources: Sequence[tuple[str, str]], supplemental: Sequence[tuple[str, str]],
+                evidence_packages: Sequence[str], scratch: Sequence[str], experiment: dict | None,
+                input_manifest: str | None, replace_prompt: bool, request_key: str | None, plan) -> dict:
     from stewart._repository import maintainer
     maintainer(ws.repo)
     repo = ws.repo
@@ -368,24 +399,52 @@ def initialize(
         meta.pop("supplemental_inputs", None)
     text = draft(meta)
     written = None
+    record = None
+    written_files: list[dict] = []
     if replace_prompt:
+        from stewart.audits import begin_init, finish_init
+        from stewart.holdings import refuse_retiring
+        refuse_retiring(common, [repo], what="a draft")
         destination = contained(repo, ws.prompt)
         if destination.exists() and not destination.is_file():
             raise StewartError("PROMPT.md destination is not a regular file", reason="destination_exists")
+        before, _ = read_regular(destination)
+        intended = [{"path": ws.prompt, "role": "prompt", "sha256": _hash.sha256_text(text)}]
         if manifest:
-            location.parent.mkdir(parents=True, exist_ok=True)
-            write_exclusive(location, payload)
-            manifest["written"] = str(location)
+            intended.append({"path": input_manifest, "role": "input_manifest", "sha256": manifest["sha256"]})
+        plan([{"kind": "written", "path": str(repo / item["path"]), "sha256": item["sha256"]} for item in intended])
+        record = begin_init(ws, ident, intended=intended, prompt_before={"kind": before["kind"],
+                                                                         "sha256": before.get("sha256")},
+                            target=meta["target_commit"], request_key=request_key)
+
+        def observed() -> list[dict]:
+            found = []
+            for item in intended:
+                info, _ = read_regular(repo / item["path"])
+                found.append({"path": item["path"], "role": item["role"], "kind": info["kind"],
+                              "sha256": info.get("sha256")})
+            return found
+
         try:
+            if manifest:
+                location.parent.mkdir(parents=True, exist_ok=True)
+                write_exclusive(location, payload)
+                manifest["written"] = str(location)
             destination.write_text(text, encoding="utf-8")
-        except OSError as exc:
+        except (OSError, StewartError) as exc:
+            finish_init(record, written=observed(), error={"reason": getattr(exc, "reason", "initialization_failed"),
+                                                           "message": str(exc)})
             raise StewartError(
                 f"could not replace prompt at {destination}: {exc}", reason="initialization_failed",
-                retained=[str(location)] if manifest else [],
-                next_steps=["inspect the prompt and any retained inventory; preserve failed writes and use a fresh inventory path"],
+                retained=[str(record)] + ([str(location)] if manifest else []),
+                next_steps=["inspect the prompt, the draft record and any retained inventory; preserve failed writes "
+                            "and use a fresh inventory path"],
             ) from exc
+        written_files = [{"path": str(repo / item["path"]), "sha256": item["sha256"]} for item in observed()]
+        finish_init(record, written=observed(), error=None)
         written = str(destination)
-    return {"audit_id": ident, "draft": text, "written": written, "assignment": meta, "input_manifest": manifest}
+    return {"audit_id": ident, "draft": text, "written": written, "assignment": meta, "input_manifest": manifest,
+            "draft_record": None if record is None else str(record), "written_files": written_files}
 
 
 def copy_supplemental(repo: Path, worktree: Path, item: dict) -> None:
