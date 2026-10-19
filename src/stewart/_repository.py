@@ -48,6 +48,19 @@ def private_storage(common: str) -> Path:
     return root
 
 
+def private_directories(root: Path, directory: Path) -> Path:
+    """Create ``directory`` below an existing ``root`` with mode 0700, refusing links; return it."""
+    rel = directory.relative_to(root)
+    current = root
+    for part in rel.parts:
+        current = current / part
+        if current.is_symlink():
+            raise StewartError(f"storage path cannot traverse a link: {current}", reason="path_symlink",
+                               retained=[str(current)])
+        current.mkdir(mode=0o700, exist_ok=True)
+    return directory
+
+
 def session_location(common: str, ws, ident: str) -> Path:
     """One session's private directory: repo-wide, by workspace slug and audit ID."""
     return contained(Path(common), f"{SESSIONS}/{ws.slug}/{ident}")

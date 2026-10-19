@@ -209,15 +209,12 @@ def test_interrupted_close_finishes_from_its_recorded_inventory(checkout, monkey
     import stewart.close as close_module
     prepared, _ = _triaged(checkout)
     uuid = prepared.prepared["session_uuid"]
-    real = close_module.git
 
-    def interrupt(repo, *args, **kwargs):
-        if args[:2] == ("worktree", "remove"):
-            raise StewartError("synthetic interruption of the checkout removal", reason="git_failed")
-        return real(repo, *args, **kwargs)
+    def interrupt(parent, name):
+        raise OSError("synthetic interruption of the checkout removal")
 
     with monkeypatch.context() as patch:
-        patch.setattr(close_module, "git", interrupt)
+        patch.setattr(close_module, "_delete_checkout", interrupt)
         first = close(checkout.ws, IDENT, actor="manager")
     directory = Path(first["closing"]).parent
     assert first["closed"] is None and first["exit_code"] == EXIT_ATTENTION

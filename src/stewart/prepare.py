@@ -28,7 +28,8 @@ from stewart._invocation import current
 from stewart.session import SESSION_SCHEMA, maintainer_state, now, tool_identity, write_receipt
 from stewart._repository import (
     REGISTRATION_LOCK, audit_location, checkout_home, custody_roots, lifetime_lock_reason, maintainer,
-    private_storage, read_denials, register_auditor, registered_session, require_separate_home,
+    private_directories, private_storage, read_denials, register_auditor, registered_session,
+    require_separate_home,
     resolve_checkout_home, retention_for,
     retain_commits, session_location, worktree_roots,
 )
@@ -182,10 +183,10 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
     launch = _render_handoff(ws, record)
     record["handoff"] = {"path": f"{ws.rel}/{HANDOFF_DIRECTORY}/{session_identity}.md",
                          "sha256": _hash.sha256_bytes(launch.encode("utf-8"))}
-    _make_private_parents(private_storage(common), session.parent)
+    private_directories(private_storage(common), session.parent)
     # The checkout directory comes before the session: a checkout home the
     # manager's harness cannot write is refused before the audit ID is used.
-    _make_private_parents(home, audit_dir.parent)
+    private_directories(home, audit_dir.parent)
     audit_dir.mkdir(mode=0o700, exist_ok=False)
     try:
         session.mkdir(mode=0o700, exist_ok=False)
@@ -286,18 +287,6 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
             launch_profile["profile"], worktree=worktree, launch_path=worktree / record["handoff"]["path"], scope=record["auditor_scope"]),
         "exit_log": str(session / EXIT_LOG),
     }
-
-
-def _make_private_parents(root: Path, directory: Path) -> None:
-    """Create ``directory`` below an existing ``root`` with mode 0700, refusing links."""
-    rel = directory.relative_to(root)
-    current = root
-    for part in rel.parts:
-        current = current / part
-        if current.is_symlink():
-            raise StewartError(f"storage path cannot traverse a link: {current}", reason="path_symlink",
-                               retained=[str(current)])
-        current.mkdir(mode=0o700, exist_ok=True)
 
 
 def _render_handoff(ws: Workspace, record: dict) -> str:

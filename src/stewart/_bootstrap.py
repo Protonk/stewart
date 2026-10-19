@@ -124,7 +124,8 @@ UNVERIFIED_REASONS = frozenset({
     "archive_mismatch", "archive_unreadable", "attempt_schema", "binding_mismatch", "capture_unavailable",
     "checkout_identity", "child_binding", "close_unidentified", "close_unverified", "closing_record_invalid", "child_script_mismatch", "collection_binding", "collection_schema",
     "coordination_schema", "evidence_tampered", "evidence_unavailable", "exit_log_malformed",
-    "frozen_unavailable", "input_mismatch", "launcher_mismatch", "package_binding", "package_schema",
+    "frozen_unavailable", "implementation_unrecorded", "input_mismatch", "launcher_mismatch", "package_binding",
+    "package_schema",
     "pinned_input_changed",
     "protected_baseline_mismatch", "record_corrupt", "record_schema", "record_unreadable",
     "release_invalidated", "release_schema", "report_binding", "report_unavailable", "runtime_assets",
@@ -148,7 +149,8 @@ REFUSED_REASONS = frozenset({
     "duplicate_key", "execution_not_granted", "expected_worktree", "export_failed", "export_selection",
     "export_source", "failed", "fence_trailing_space", "field_type", "follow_up_required",
     "follow_up_unexpected", "git_failed", "git_ref_transaction", "grant_containment", "grant_schema",
-    "handoff_identity", "identity_format", "identity_mismatch", "initialization_failed", "input_collision",
+    "handoff_identity", "identity_format", "identity_mismatch", "implementation_mismatch", "initialization_failed",
+    "input_collision",
     "input_drift", "input_file", "input_manifest", "input_missing", "input_overlap",
     "interpreter_unavailable", "invalid_json", "launch_profile", "launch_profile_missing", "ledger_collision",
     "malformed_fence", "manifest_schema", "missing", "missing_field", "mode", "movement", "nested_block",
@@ -389,9 +391,9 @@ MANIFEST_SCHEMA = "stewart.runtime-manifest/1"
 OBSERVATION_SCHEMA = "stewart.runtime-observation/1"
 SOURCE_MODULES = frozenset({
     "__init__.py", "__main__.py", "_bootstrap.py", "_git.py", "_invocation.py", "_json.py",
-    "_repository.py", "_util.py", "api.py", "assignment.py", "auditor_scope.py", "captured.py", "cli.py", "close.py",
+    "_removal.py", "_repository.py", "_util.py", "api.py", "assignment.py", "auditor_scope.py", "captured.py", "cli.py", "close.py",
     "collect.py",
-    "coordination.py", "experiment.py", "handoff.py", "launch_profile.py", "ledger.py",
+    "coordination.py", "experiment.py", "handoff.py", "implementation.py", "launch_profile.py", "ledger.py",
     "prepare.py", "report_declaration.py", "runtime.py", "session.py", "status.py", "triage.py",
     "verify_inputs.py", "workspace.py", "docs.py", "_version.py",
 })
