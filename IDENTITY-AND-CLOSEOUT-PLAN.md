@@ -72,6 +72,30 @@ directory, or a different installed runtime. Keep existing explicit-coordinate
 operations coherent with the new selection mechanism; add no historical-schema
 compatibility layer.
 
+**Runtime changes require an explicit caller handoff.** Compare verified
+implementation byte identities and invocation prerequisites, not installation
+paths or version labels alone. A different location alone is not a different
+implementation. Refuse a mutation or its resumption under a mismatched
+implementation with a stable reason. When the recorded pinned invocation can be
+verified through supported metadata and descriptor-safe reads, return its
+structured invocation as a next step for the caller to execute explicitly.
+Construct only the supported launcher form; never execute or import recorded
+code to inspect it, relay arbitrary recorded command text, or auto-dispatch to
+another installation. Verification establishes consistency with the recorded
+pin, not independent authenticity or permission to execute. If its runtime,
+launcher, or interpreter prerequisites cannot be verified, retain the diagnostic
+and name the missing prerequisite; never fall back to the current installation.
+
+Discovery includes located unsupported records rather than hiding them. Separate
+schema support, record validity, and implementation identity: a different build
+with a supported schema can still receive a verified read-only view. For an
+unsupported schema, report the location and only metadata readable through a
+supported discovery envelope; do not infer lifecycle state from unknown fields.
+Offer a pinned invocation only when that metadata and its bytes can actually be
+validated. Otherwise explain that the reader/runtime is unresolved. Invalid and
+unreadable records keep their diagnostics. This requires no schema migration or
+compatibility shim, and discovery launches no other installation.
+
 Expose one read-only view derived from verified records, with understandable
 stage, blockers, selected evidence, resource associations, and available actions.
 Do not maintain a competing mutable status summary. Missing, partial, invalid,
@@ -95,11 +119,38 @@ the same validation. Selection conveys no new execution or deletion permission.
 Keep observations, actor acknowledgments, auditor declarations, and manager
 judgments separate; the manager still supplies substantive decisions.
 
-Define how a caller determines whether an operation completed after losing its
-response. Retries preserve earlier attempts and distinguish completed, partial,
-refused, and unverifiable outcomes. Read-only inspection cannot repeat a side
-effect. Human output and versioned JSON must describe the same result, with
-stable refusal reasons and usable next steps. Keep public functions in `api.py`.
+**Mutations accept an optional caller-chosen request key.** The caller persists
+the key before submission. Within the explicitly selected repository, reserve
+the key exclusively before side effects and bind it to the operation kind,
+selected audit/resource and lifetime identities, implementation identity, and
+semantic inputs, including supplied input bytes rather than just their paths.
+Reuse with different bindings is a stable refusal. Concurrent identical requests
+must admit only one execution. This key identifies intended work; unlike an audit
+reference, that intent cannot be reconstructed from matching output bytes.
+
+A matching completed request returns its recorded outcome and original output
+identities without executing again or creating another collection. A matching
+partial/unresolved request returns that state without replaying uncertain side
+effects. A key does not prove whether an unrecorded side effect occurred. Where
+an operation supports explicit safe resumption, append fresh attempt records
+under the same request and retain its frozen operands/inventory; otherwise a
+new execution needs a new key and record names. Same-key inspection is not a new
+execution attempt and never overwrites a receipt. Preserve the request binding
+and completion/uncertainty evidence beyond session/resource retirement, so retry
+cannot recreate closed work. A historical outcome must distinguish subsequently
+retired outputs from currently available evidence.
+
+Keys are optional for direct manual use and required for retry-capable
+orchestration. Without a key, normal operation-specific safety gates still apply,
+but a repeated submission is a new request; do not deduplicate by payload, time,
+or "latest". Distinct keys can intentionally produce separate collections of
+identical report bytes. If the caller loses its durable key too, discovery can
+show recorded requests for explicit inspection/selection, but Stewart cannot
+choose which request represented the lost intent or promise automatic deduplication.
+
+Human output and versioned JSON must distinguish completed, partial, refused,
+and unverifiable outcomes, with stable reasons and usable next steps. Read-only
+inspection never repeats a side effect. Keep public functions in `api.py`.
 
 Exit criterion: an explicit selection can be carried through collection, review
 draft/submission, retention/export, and close eligibility using documented
@@ -238,9 +289,10 @@ and two collections with identical report bytes but different receipt identities
 Start a fresh process from the original checkout with only the repository and
 shipped guidance. Discover the audits, select one, inspect its actual stage,
 continue with an explicitly supplied review, retain/export selected evidence,
-and close its eligible resources. Interrupt an operation, discard the caller's
-in-memory state/response, and resume from recorded evidence. Confirm that another
-audit, shared runtime, unrelated branch/files, retained bytes, and closed history
+and close its eligible resources. Persist a request key before calling, interrupt
+an operation, discard the caller's in-memory state/response, and recover using
+the saved key and recorded evidence. Confirm that another audit, shared runtime,
+unrelated branch/files, retained bytes, and closed history
 survive. Repeat observation from another directory; selection must stay bound.
 The remaining-resource view must account for deliberate retention and blockers.
 
@@ -250,6 +302,22 @@ explicitly reselect. Verify read-only `init` preview, recorded drafts before
 preparation, absent unrecorded workspaces, and explicit workspace registration.
 Prove healthy managed-resource removal while unchanged enrolled external resources
 and an existing branch used by a managed worktree remain intact and explained.
+
+Complete a keyed collection but lose its response: same-key retry returns the
+same collection identity. A different key with identical report bytes produces
+a distinct collection. Test same-key/different-input refusal, concurrent same-key
+submission, and interruption before/after a side effect but before its completion
+record. An uncertain result must not be silently replayed. Retry after closeout
+must report the historical request without recreating retired resources. Lose
+the durable key separately and verify that discovery exposes requests without
+guessing intent. Do not claim exactly-once side effects from request reservation.
+
+Use two implementations with supported schemas but different byte identities:
+discovery can inspect, mutations refuse, and any verified next-step invocation
+remains unexecuted. A matching implementation at another location is invariant
+subject to invocation prerequisites. Include unsupported schemas, missing/tampered
+runtime or launcher bytes, and untrusted invocation fields. Listing must preserve
+diagnostics, avoid guessing a command, and never import or execute the other code.
 
 Close every audit sharing a managed worktree, its branch, and a managed
 temporary directory. Each earlier close preserves them as shared use; Stewart
@@ -292,6 +360,10 @@ to begin orchestration work after reading the repository. Include:
   identify any real gaps instead of inventing interface names.
 - How operation outputs and failures will be recorded without parsing human
   prose, duplicating custody truth, or replaying a completed side effect.
+- A caller journal that durably records each request key and intended inputs
+  before submission, reuses that key on retry, and obtains explicit decisions
+  for uncertain outcomes or lost intent. Selection references remain re-derivable.
+  Runtime handoff is explicit; a recorded invocation is not execution permission.
 - Authorization boundaries, explicit human decisions, and failure/restart
   acceptance cases built on the completed lifecycle tests. Git recording may
   be a deliberately narrow first use case; collecting every kind of activity
@@ -304,8 +376,8 @@ that orchestration is already implemented.
 Finish the main acceptance journey with the outflow present in the repository:
 the fresh agent can discover and continue the audits and then find the separate
 plan for starting orchestration. Document the selection, registration, removal
-eligibility, shared-resource retirement, manual-retirement acknowledgment, and
-failure/recovery contracts in shipped guidance and CLI help.
-Commit the
-implementation, tests, documentation, and outflow; remove this completed plan
+eligibility, shared-resource retirement, manual-retirement acknowledgment,
+request-key, runtime-handoff, and failure/recovery contracts in shipped guidance
+and CLI help. Commit the implementation, tests, documentation, and outflow;
+remove this completed plan
 once its contracts are represented there. Leave `ORCHESTRATION-PLAN.md` pending.
