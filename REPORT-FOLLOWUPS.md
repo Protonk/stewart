@@ -48,15 +48,15 @@ project rules apply.
 the manual tell managers to route project rules through the workspace's
 `AUDITOR.md`.
 
-## 3. Observations the current plans answer
+## 3. Observations the rehome, close and exit-code work answered
 
-- **Storage under `.scratch/` and the hand-added ignore rule:** REHOME-PLAN.md
-  decisions 1–3.
+- **Storage under `.scratch/` and the hand-added ignore rule:** sessions now
+  live under `<git-common-dir>/stewart/`; no ignore rule is needed.
 - **The full checkout nested in the maintainer tree (observation 4):**
-  REHOME-PLAN.md decision 2.
+  checkouts now live under the per-user checkout home.
 - **History footprint (observation 5):**
   - One prompt-only commit per audit remains.
-  - CLOSE-PLAN.md removes a session's refs when it is closed.
+  - `close` removes a session's refs.
   - Released audit IDs spare a new prompt commit after a failed preparation.
 - **Ignored evidence must be pinned with `--supplemental` (observation 3):**
   already documented; no change planned.
