@@ -1,7 +1,9 @@
 # Test speed and evidence retention plan
 
-Status: WP0 to WP3 done (`TEST-SPEED-FINDINGS.md`); WP4 and WP5 await the
-user's decision. Start with bounded measurements and improvements to the
+Status: WP0 to WP3 done; the three approved follow-ups are done (provisioning
+without rustc, a targeted WP5 change to `checkout_identity`, and the
+concurrency probe; `TEST-SPEED-FINDINGS.md`); WP4 and any further WP5 work
+await the user's decision. Start with bounded measurements and improvements to the
 test harness, then investigate the remaining costs. This file sets the
 order, evidence and acceptance of each work package;
 `TEST-SPEED-DESIGN-CHOICES.md` sets out the mechanisms and the constraints
@@ -499,9 +501,10 @@ other worktrees remain untouched.
 
 ### WP3. Reassess the remaining cost
 
-Status: done; the gate ran on the final source as `wp3/gate-314` (after the
-evidence review's documentation fixes superseded the first gate run), and
-the recommendation on WP4 and WP5 awaits the user (`TEST-SPEED-FINDINGS.md`).
+Status: done; the gate ran as `wp3/gate-314` (after the evidence review's
+documentation fixes superseded the first gate run). The user approved its
+three recommendations; they are done, and the final gate is
+`final/gate-314` (`TEST-SPEED-FINDINGS.md`).
 
 After WP1 and WP2, repeat the WP0 selections three times each and take one
 full 3.14 run under the reference conditions. The full run also supplies WP2's
@@ -528,7 +531,8 @@ written, completes the initial work. WP6 is independent follow-up.
 
 ### WP4. Sharding, if the user approves it after WP3
 
-Status: not started; requires the user's approval.
+Status: not started; the concurrency probe WP3 asked for ran (about twice the
+throughput with four concurrent invocations); requires the user's approval.
 
 Audit shared state before adding parallel workers: fixed paths/ports, HOME,
 environment changes, artifact readers and subprocess lifetime. Temporary
@@ -559,7 +563,10 @@ worker count from core count alone.
 
 ### WP5. Investigate specific runtime Git observations, if the user approves
 
-Status: not started; requires the user's approval.
+Status: the user approved one targeted change, done: `checkout_identity`
+answers its four queries with one `rev-parse` and replays them otherwise
+(`c762b26`). The instrumentation below and other operations have not been
+started; further work requires the user's approval.
 
 Start with operations implicated by WP3. Fix the instrumentation before
 extending it:

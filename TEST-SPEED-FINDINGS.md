@@ -685,3 +685,195 @@ the separate calls preserve. Regressions must cover both.
    at `--help`'s start cost if every CLI start moved (an estimate; real
    commands probably cost more per start, but only an uncounted subset would
    move).
+
+## Approved after WP3: provisioning PATH, `checkout_identity`, concurrency probe
+
+The user approved WP3's three recommendations. All runs on Python 3.14 in
+the default context. The two before/after comparisons, the probe and the
+final gate ran in one window during which the user paused PolicyWitness and
+a Codex agent's test runs (recorded in `final/gate-314.provenance.json`'s
+note). Foreign load remained (`followup-foreign-load.out`): Safari WebKit over
+100% in a few samples of each group (1 of 36 in the rustup comparison, 3 of 39
+in the identity comparison, 2 of 75 in the gate) and, in the probe, more
+often in the four-way batches of repetitions 2 and 3 (mean WebKit 72% and
+65%, against 19–36% elsewhere); another session's Python tests
+(`construction-broker-v2/broker_tests.py`) appear in a few probe and gate
+samples. Both before/after comparisons applied their patch to `e9353fc`, so
+each measures its change alone; the commit messages of `1d17cd8` and
+`c762b26` misstate their populations as "1021/1023 collected", which should
+read 1019 (old) and 1021 (new).
+
+### Provisioning without rustc (`1d17cd8`; evidence under `rustup/`)
+
+`check.py` runs `ensurepip` itself (venv's own `ensurepip` inherited
+`os.environ`) and gives every provisioning command (ensurepip, both pip
+installs, the build and any `--parity-output` run) the inherited PATH minus
+each entry in which `rustc` resolves. The removed entries go to the `.log`
+and to the result as `provisioning_path_removed`; the tests keep the
+inherited PATH. The console test's own venv and pip install use the same
+filtered PATH (`support.path_without_rustc`).
+
+| Comparison (interleaved 3x; `rustup/compare/`) | Old phase sum, median (range) | New, median (range) | Verdict |
+| --- | --- | --- | --- |
+| `nested-check` (7 of 1019 old / 1021 new collected; each one nested `check.py`) | 27.515 s (27.129–27.698) | 14.618 s (14.353–14.698) | new faster in every repetition (−46.9%) |
+| `no-git` (10) | 1.168 s (1.150–1.207) | 1.165 s (1.149–1.199) | invariance shown |
+
+The saving is about 1.8 s per nested run, more than WP3's 1.6 s estimate.
+With all artifacts kept, the outer tests' private HOMEs holding `.rustup`
+went from 7 of 7 to 0 of 7 in every repetition, so the network toolchain
+downloads stopped (`rustup/compare/summary.out`). `no-git`'s
+`total_seconds` also fell from 4.802 to 4.402 s, probably because the outer
+`check.py`'s own pip calls no longer start the proxy (a hypothesis). Regressions: `test_runner_withholds_rustc_from_provisioning`
+(one nested run: a logging `rustc` stub first on PATH is never started
+before the tests, while pip under the tests' PATH still starts it once, the
+firing control, and the tests still reach it) and
+`test_provisioning_path_drops_each_entry_that_supplies_rustc` (unit,
+`smoke`). Against the unchanged `check.py` both fail, the nested one with
+three `rustc --version` starts, one per pip process (`demo-old-check.out`);
+venv's own ensurepip restored, `run()` inheriting PATH, or only the first
+supplying entry removed each fails its targeted test
+(`demo-env-builder-with-pip.out`, `demo-run-inherits-path.out`,
+`demo-first-entry-only.out`; `mutations/`).
+
+### WP5, targeted: one `rev-parse` for `checkout_identity` (`c762b26`; evidence under `wp5/`)
+
+`checkout_identity` (`src/stewart/_repository.py`) asks `rev-parse
+--is-bare-repository --show-toplevel --absolute-git-dir --path-format=absolute
+--git-common-dir` in one process and decides from that answer only a clean
+root: exit status 0, exactly four newline-terminated lines, `false`, three
+absolute paths and a top level that resolves to the selected root. Every
+other outcome, a refusal, a path holding a line break, an older Git, a
+timeout or an `OSError`, replays `_separate_identity`, the previous four
+queries unchanged, which make every refusal and raise every exception as
+before. A clean root takes one Git process instead of four; any other
+selection takes one more than before.
+
+Observation and revalidation: each of the four queries discovered the
+repository in its own process; now one process discovers it once and works
+out each answer in turn, so a rename during the call can still give
+disagreeing answers, as it could across four processes. Nothing is kept for
+a later call: each call and each replay observes again, and callers receive
+the same dictionary and revalidate as before. Rejected: deciding refusals
+from the merged call's partial output (it exits 128 after at most the first
+answer in a bare repository, inside `.git` and outside any repository;
+`residual/gitcount/revparse-merged.out`) and splitting an answer whose path
+holds a line break; both replay. Also rejected: re-raising a merged timeout
+(it would name the merged argv), so a hung Git now waits out two 120 s
+timeouts before the previous exception. By reasoning only, an older Git
+(before 2.31 it echoes `--path-format=absolute`; before 2.25 it printed
+nothing for `--show-toplevel` without a work tree) gives another line count
+or a relative line and replays.
+
+| Comparison (interleaved 3x; `wp5/compare/`) | Old phase sum, median (range) | New, median (range) | Verdict |
+| --- | --- | --- | --- |
+| `git-heavy` (5 of 1019 old / 1021 new) | 31.791 s (31.377–32.061) | 24.011 s (23.806–24.303) | new faster in every repetition (−24.5%) |
+| `no-git` (10) | 1.188 s (1.188–1.312) | 1.209 s (1.188–1.270) | invariance shown |
+
+The saving, 7.8 s, exceeds an estimate at WP3's 3.29 ms per process start
+for these tests (555 sequences, 1,665 starts, ≈ 5.5 s;
+`residual/gitcount/git-heavy-identity.out`) and the isolated benchmark's
+8.35–8.76 ms per clean call (≈ 4.6–4.9 s over 555; `wp5/identity/bench.out`).
+The excess is unexplained; repository discovery, the wrapper's cost and load
+are candidates no comparison separates.
+
+Regressions (`tests/test_repository.py`):
+`test_checkout_identity_decides_only_a_clean_root_from_one_query` compares
+14 real selections (main and linked roots, a subdirectory, bare, `.git`,
+outside, missing, line breaks, trailing spaces, selections through links)
+and a linked root re-created from a bare clone (the differing case) beside
+the unchanged main root (invariance) with `_separate_identity`'s outcome,
+and lists every Git process started; `test_checkout_identity_decides_only_clean_substituted_answers`
+substitutes the real answer (the firing control), answers that each fail one
+condition, and a timeout. Through `check.py`: against the unchanged module
+both fail (`demo-old-repository.out`, a missing helper); with the merged
+query removed both fail on their process lists, showing the four separate
+queries (`demo-no-merged-query.out`); dropping the line count, accepting a
+nonzero exit, or skipping the root comparison each fails its targeted test
+(`demo-no-line-count.out`, `demo-accept-nonzero-exit.out`,
+`demo-no-root-comparison.out`). A wider mutation table from the drafting
+agent's pytest-free harness (14 of 16 mutations killed; the survivors,
+accepting any first line but `true` and dropping `.resolve()` on Git's
+paths, are test gaps the current substitutions do not exercise) and an
+isolated benchmark (2.85–3.10 ms
+against 11.20–11.86 ms per clean call) are in `wp5/identity/`
+(`README.txt`), not run through `check.py`.
+
+Open, outside this change (pre-existing; old and new code agree,
+`wp5/identity/trailing.out`): `git_text` strips whitespace from both ends of
+Git's answers, so a worktree root ending in a space, tab or carriage return
+is refused as a subdirectory naming a path that does not exist, and a Git
+directory at `<w>/admin ` is recorded as `<w>/admin`. A fix would strip only
+Git's terminating newline in both decodings together and refuse such paths
+with their own reason. Also by reasoning only: with Git before 2.31 the
+separate `--path-format=absolute --git-common-dir` query answers the echoed
+option and a relative directory, which `.resolve()` places under Stewart's
+working directory.
+
+The plan's WP5 instrumentation (wrapping `Popen` with timings and call sites)
+was not built: this one candidate was identified from the logging wrapper's
+counts (`residual/gitcount/verbs.out`), and `checkout_identity` is the only
+runtime caller of `--is-bare-repository` (`wp5/callers.out`, `git grep` at
+`e9353fc`). Other operations' repeated queries were not investigated.
+
+### Concurrency probe (`probe/`)
+
+Four disjoint file sets of about 60 s each (`probe/sets.json`, chosen from
+the WP3 gate's per-file times by `probe/choose_sets.py`; 14 of 46 files,
+239 s of its 849.5 s; `tests/test_runner.py` and `tests/test_foundations.py`
+excluded) ran as separate `check.py` invocations, each with its own
+provisioning and build: alone, two at a time and all four at once, in a
+rotating order over three repetitions at `c762b26` (`probe/drive_probe.py`,
+`probe/batches.jsonl`, `probe/analysis.out`). Membership and outcomes were
+identical to the alone runs in every condition, so no interference failure
+appeared in these files.
+
+| Condition | Per-set slowdown against the same repetition's alone run (medians) | Throughput gain: alone total wall / condition total wall, median (range) |
+| --- | --- | --- |
+| two at a time | 1.28–1.34 | 1.56 (1.49–1.59) |
+| four at a time | 1.82–2.04 | 2.00 (1.99–2.14) |
+
+Each repetition's alone runs were faster when they came first (repetition
+1: 45.7–50.6 s per set) than after concurrent batches (up to 57.6 s). Thermal
+limits on this fanless machine are one explanation; foreign load is a rival,
+since the alone runs of repetitions 2 and 3 carried another session's tests
+and repetition 1's did not (`followup-foreign-load.out`); no comparison
+separates them. The four-way gains of the more loaded repetitions 2 and 3
+(1.99, 2.14) bracket repetition 1's 2.00. The probe answers WP3's caveat:
+contention is real, and four concurrent invocations roughly double
+throughput, not quadruple it.
+
+### Final gate (`final/gate-314`)
+
+`final/gate-314` at `c762b26` (clean, `project_git` not dirty): no
+selector; 1023 collected, 1023 selected, 0 deselected; 1022 passed, 1
+skipped; `total_seconds` 728.9, wall 737.9 s; node list equal to
+`wp3/gate-314`'s plus exactly the four new regressions
+(`final/per-node-vs-wp3-gate.out`); the outer run withheld
+`/opt/homebrew/opt/rustup/bin` from provisioning; Git through the `dash`
+wrapper; retention removed 2,044 directories and 506 links in 8.8 s and kept
+nothing. Foreign load was present: Safari WebKit over 10% in 25 of 75
+samples (over 100% in 2), WindowServer, `duetexpertd` 97% (one sample), `mds`
+up to 66% (five), among others, and brief samples of another session's
+Python tests (`construction-broker-v2/broker_tests.py`, a `pytest`
+of `integration/tests/contracts`; `final/load-notes.out`); `fseventsd` stayed
+at or below 52% until retention. Against the previous gate the 1019 shared
+nodes took 849.5 s and now 721.1 s (−128.3 s, −15.1%; 724 faster, 295
+slower; no outcome changed); against `reference/full-314` the 992 shared
+nodes took 1358.7 s and now 680.8 s (−49.9%; `final/per-node-vs-reference.out`).
+How much of the −128.3 s each change contributed is an attribution, not a
+measurement, given the gate's foreground load; the interleaved comparisons
+above are the measurements.
+
+### Recommendation on WP4, updated
+
+The probe puts WP4's benefit at about twice the throughput with four
+workers on this machine (1.56 times with two), measured as separate
+invocations over 28% of the suite's time; a sharded run of the current
+suite would take roughly half of `final/gate-314`'s 729 s plus
+orchestration and the serial phase (an estimate). Whether that justifies
+the plan's membership and merge machinery is the user's decision; if
+approved, measure 2, 3 and 4 workers on the full suite, keep the default at
+one worker, and expect little beyond four (4 performance cores, thermal
+limits). Further WP5 work (other operations' repeated queries) remains
+uninvestigated; `checkout_identity` was the largest candidate identified
+(44.0% of the runtime's Git calls).
