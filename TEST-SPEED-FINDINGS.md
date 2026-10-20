@@ -513,29 +513,36 @@ The space this saves on a full run is measured by WP3's full run.
 
 ## WP3. Reassess the remaining cost
 
-All runs on Python 3.14 at `5e41acf` (clean), default context, after the user
-stopped PolicyWitness and closed a Storage settings scan; evidence under
-`wp3/`. Load: the full run's samples show `fseventsd` up to 236% CPU in 29
-of 88 samples (probably the run's own file churn) and WindowServer up to 39%;
-max 1-minute load 2.64 (`full-314.provenance.json`).
+All runs on Python 3.14 in the default context; evidence under `wp3/`. For
+the timed window the user stopped PolicyWitness and closed a Storage
+settings scan (`wp3/load-notes.txt`). The full run's samples show
+WindowServer up to 39% and brief samples of `duetexpertd` (100%, one
+sample), Sublime Text (28%, two) and a Codex session, among others; max
+1-minute load 2.64 (`full-314.provenance.json`). `fseventsd` stayed at or
+below 32% while tests ran and peaked at 236% only in the last two samples,
+during retention's removal and at exit (`fseventsd-timeline.out`). The
+reference also had foreground load (WP0).
 
-**Gate.** `wp3/full-314`: no selector; 1019 collected, 1019 selected, 0
-deselected; 1018 passed, 1 skipped (the opt-in real-harness probe);
-`total_seconds` 855.7; Git through the `dash` wrapper (changed names
-`["git"]`). No source changed after it, so it is the gate run; with the
-project now 3.14-only there is no second interpreter leg.
+**Gate.** `wp3/full-314` at `5e41acf` (clean): no selector; 1019 collected,
+1019 selected, 0 deselected; 1018 passed, 1 skipped (the opt-in real-harness
+probe); `total_seconds` 855.7; Git through the `dash` wrapper (changed names
+`["git"]`). An evidence review then corrected help, messages and
+documentation (`cb8eed7`), which changes `check.py` and the shipped manual,
+so the gate was rerun on the final source: `wp3/gate-314` at `e45824a` (code `cb8eed7`; clean, `project_git` not dirty): 1019 collected, 1019 selected, 0 deselected; 1018 passed, 1 skipped; `total_seconds` 853.8, wall 861.0 s; node list identical to `wp3/full-314`'s; retention removed 2,036 directories and 503 links in 7.0 s and kept nothing; load samples show WindowServer up to 39%, Safari WebKit up to 52% (9 samples), `talagentd` up to 43% (5) and `duetexpertd` 99% (1), among others, with `fseventsd` at or below 21% during the tests and 197% only at exit (`fseventsd-timeline.out`); max 1-minute load 3.41 (`gate-314.provenance.json`). PolicyWitness, including cases a Codex agent had started, was paused by the user (`load-notes.txt`). The project is 3.14-only,
+so there is no second interpreter leg.
 
-**Space (WP2).** Retention removed 2,036 owned directories and 503 `current`
-links in 7.3 s and kept nothing, because every node passed and the skipped
-node had no directories. Retained artifacts went from 204,184 entries and
-3.559 GB allocated (`reference/full-314`) to 0 entries; the receipt grew
-from 0.6 MB to 2.3 MB; `.scratch` grew by 9 entries over the run
+**Space (WP2).** In `wp3/full-314` retention removed 2,036 owned directories
+and 503 `current` links in 7.3 s and kept nothing: every node passed, and the
+skipped node had no directories. Retained artifacts went from 204,184
+entries and 3.559 GB allocated (`reference/full-314`) to 0 entries; the
+receipt grew from 0.6 MB to 2.3 MB; `.scratch` grew by 9 entries over the run
 (`space.out`, `full-314.provenance.json`). Outcome and membership evidence
 remain in the receipt (`phase_outcomes`, `owned_paths`, `markers`,
 `retention`).
 
-**Selections against the WP0 3.14 baselines** (three round-robin
-repetitions; `selections-vs-wp0.out`, `compare-*.out`):
+**Selections against the WP0 3.14 baselines** (selectors as in
+`selections.json`, 1019 collected; three round-robin repetitions at
+`5e41acf`; `selections-vs-wp0.out`, `compare-*.out`):
 
 | Selection | WP0 phase sum, median (range) | WP3 phase sum, median (range) | Verdict |
 | --- | --- | --- | --- |
@@ -545,82 +552,136 @@ repetitions; `selections-vs-wp0.out`, `compare-*.out`):
 | `smoke`, 25 shared nodes | 9.851 s (9.776–9.987) | 1.693 s (1.595–1.707) | faster in every repetition, same outcomes |
 
 `smoke` now selects 38 nodes; the 13 new ones (WP1.2 and WP1.3 unit
-regressions) take 0.087 s together. `no-git`'s `total_seconds` rose from
-4.629 to 4.981 s in every repetition: WP1.3's probes and WP2's digests,
-project status and stream relay add about 0.35 s to every `check.py`
-invocation, nested ones included.
+regressions; membership in `wp3/collect-fast.json`) take 0.087 s together
+(`selections-vs-wp0.out`). Each selection's non-test time (`total_seconds`
+minus the phase sum, per run) rose by a median 0.22 to 0.45 s (walkers 0.45,
+git-heavy 0.22, no-git 0.31, smoke 0.36), separated in every repetition
+except for the walkers (`nontest-time.out`). WP1.3's probes and WP2's
+digests, project status and stream relay are the likely sources, a
+hypothesis: no comparison separates them from the larger collection (1019
+against 992 nodes) and the larger `.scratch` (about 892,000 against 630,000
+entries).
 
 **Full run, node by node, against `reference/full-314`**
 (`per-node-vs-reference.out`, `totals.out`): the 992 shared nodes took
 1358.7 s and now 790.0 s (−568.7 s, −41.9%); 881 were faster and 111
-slower (the largest increases, +0.07 to +0.33 s, are nested-`check.py`
-tests paying the per-invocation overhead above; the rest are small); no
-shared node's outcome changed. The walkers account for 7.35 s of the saving (authority 4.97 →
-0.00 s, sdist 2.84 → 0.46 s at this `.scratch` size). The remaining 561 s
-is spread over the Git-using nodes; the selections establish the Git
-saving, but its share of the full-run saving is an attribution, not a
-measurement: the reference ran with interactive foreground load, and the
-3.11 A/A pair showed conditions alone moving a full run by about 10%.
+slower; no shared node's outcome changed. The largest increases, +0.07 to
++0.33 s per node (0.07 to 0.25 s per nested run), are nested-`check.py`
+tests, of the same order as the top-level rise above; the rest are small. The
+walkers account for 7.35 s of the saving (authority 4.97 → 0.00 s, sdist
+2.84 → 0.46 s). The other 561.3 s falls in the Git-using nodes: −461.3 s in
+the in-process API tests and −100.9 s in the CLI-starting tests, against
+−0.6 s for tests without Git or the CLI and +1.5 s for the nested-`check.py`
+tests (`saving-by-group.out`, grouped as in `residual/gitcount/residual.out`).
+At the measured per-call costs the Git change predicts 96,030 × (7.99 − 3.29)
+ms ≈ 451 s, about 80% of that (an estimate; the rest lies within the roughly
+10% that conditions alone moved a full run in WP0's A/A pair, and the
+reference ran with foreground load). The same model reproduces the in-suite
+`git-heavy` difference: 3,840 calls (the five nodes' logged calls,
+`selection/count-a.counts.out` and `residual/gitcount/residual.out`) × 4.70 ms
+= 18.0 s predicted, 19.1 s measured
+(`levers/git/compare-confirm-git-heavy-shim-vs-wrapper-dash.out`).
 New nodes, reported separately (27 nodes, 61.7 s): WP1.1 9 nodes 35.8 s,
 WP1.2 2 nodes 0.0 s, WP1.3 13 nodes 4.4 s, WP2 3 nodes 21.6 s.
 
-Marker tiers from the receipt (a node counts under each of its tier markers):
-`system` 719 nodes 690.4 s; `heavy` 62 nodes 107.1 s; unmarked 265 nodes
-159.5 s; `smoke` 38 nodes 2.0 s, all of them also `--fast` (`smoke and not
-heavy`); `not heavy` 957 nodes 744.6 s. `--fast` is now 2.0 s of tests, where
-the authority walk once dominated it.
+Marker tiers from the receipt (a node counts under each of its tier markers;
+`unmarked` means none of `system`, `heavy`, `smoke`): `system` 719 nodes
+690.4 s; `heavy` 62 nodes 107.1 s; unmarked 265 nodes 159.5 s; `smoke` 38
+nodes 2.0 s, all of them also `--fast` (`smoke and not heavy`); `not heavy`
+957 nodes 744.6 s. `--fast` is now 2.0 s of tests, where the authority walk
+once dominated it.
 
 **Where the remaining time goes** (`residual/gitcount/residual.out`: Git
 calls per node from a full counting run with the logging wrapper,
-`residual/gitcount/full-count`, 1015 passed and 1 skipped at `7787b96`,
-counts only; `run_cmd` spawns from that run's retained artifacts; time from
-`wp3/full-314`; 1016 joined nodes, 830.2 s; the 3 WP2 nodes are not in the
-counting run). Measured time and counted spawns are kept apart from the
-estimates, which multiply counts by per-call costs measured in isolation
-(`levers/git/spawn_bench.out`, `residual/bench/spawn_costs.out`):
+`residual/gitcount/full-count`, 1016 collected, 1015 passed, 1 skipped at
+`7787b96`, counts only; `run_cmd` spawns from that run's retained artifacts;
+time from `wp3/full-314`; 1016 joined nodes, 830.2 s; the 3 WP2 nodes,
+21.6 s, postdate the counting run). Measured time and counted spawns are
+kept apart from estimates, which multiply counts by per-call costs measured
+in isolation (`levers/git/spawn_bench.out`, `git --version` process starts;
+`residual/bench/spawn_costs.out`):
 
-| Rank | Subject | Nodes | Measured | Counted | Estimate (not measured in the suite) | Unexplained |
+| Rank | Subject | Nodes | Measured (of 830.2 s) | Counted | Estimate (not measured in the suite) | Not decomposed |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | in-process API tests that use Git | 661 | 543.1 s (65.4%) | 79,218 git calls | Git spawns ≈ 261 s at 3.29 ms/call | ≈ 282 s: Python work, file I/O and other subprocesses, not decomposed |
-| 2 | tests that start the `stewart` CLI | 103 | 192.0 s (23.1%) | 535 CLI starts, 16,810 git calls | CLI start ≈ 57 s at 106 ms (bare interpreter 13 ms); Git ≈ 55 s | ≈ 80 s |
-| 3 | tests that run a nested `check.py` | 17 + 3 (WP2) | 86.4 + 21.6 s (12.7%) | 26 nested runs | pip's `rustc` probe ≈ 42 s: 3 pip calls per run at +535 ms each in an empty HOME with rustup on PATH (693 vs 158 ms) | venv, lock install, wheel build and pytest start for the rest |
+| 1 | in-process API tests that use Git | 661 | 543.1 s (65.4%) | 79,218 Git calls | Git process starts ≈ 261 s at 3.29 ms | ≈ 282 s: Git's own work after starting, Python work, file I/O, other subprocesses |
+| 2 | tests that start the `stewart` CLI | 103 | 192.0 s (23.1%) | 535 CLI starts, 16,810 Git calls | CLI starts ≈ 57 s at `--help`'s 106 ms (bare interpreter 13 ms; real commands probably cost more); Git starts ≈ 55 s | ≈ 80 s, same contents |
+| 3 | tests that run a nested `check.py` | 17 | 86.4 s (10.4%) | 21 nested runs (+5 in the 3 WP2 nodes, by construction: `tests/test_runner.py` lines 582, 655, 671, 702, 730 at `5e41acf`; 21.6 s outside the base) | pip's `rustc` probe ≈ 40 s: 25 provisioning runs (one counted run is refused before provisioning, `tests/test_runner.py` lines 431-435) × 3 pip processes (observed on 3.11 at `77711f7`, `residual/rustup/proxy-calls.log`; still the venv's ensurepip plus two installs in `scripts/check.py`) × +535 ms (693 vs 158 ms with rustup removed from PATH, each in a fresh empty HOME, whereas a test's runs share one HOME) | venv creation, lock install, wheel build, pytest start |
 | 4 | static or in-process tests without Git or CLI | 233 | 8.3 s (1.0%) | | | |
-| 5 | the walkers | 2 | 0.5 s | | | |
+| 5 | the walkers | 2 | 0.5 s (0.1%) | | | |
 
-The wrapper logged 96,632 Git calls: 96,030 attributed to nodes, 601
-without `PYTEST_CURRENT_TEST` (nested runs and rebuilt environments), and 1
-naming an unselected node; tests that build PATH without the inherited value
-are not counted. That is 13.7 times the 7,078 `run_cmd` git records of the
-same run. At the
-`dash` wrapper's 3.29 ms per call, Git process starts are an estimated
-316 s, 38% of the measured time; through the shim (7.99 ms) they would have
-been about 772 s, which matches the order of the saving observed.
+Outside the nodes: provisioning, build and collection (`total_seconds` 855.7
+minus the 851.8 s phase sum) and 7.3 s of retention after `total_seconds`;
+wall time 863.2 s (`full-314.provenance.json`).
 
-**Recommendation on WP4 and WP5.**
+The wrapper logged 96,632 Git calls: 96,030 attributed to nodes, 601 without
+`PYTEST_CURRENT_TEST` (nested runs, rebuilt environments and `check.py`'s
+own Git probes), and 1 naming an unselected node; tests that build PATH
+without the inherited value bypass it and are not counted. Attributed calls
+are 13.6 times the 7,078 `run_cmd` git records of the same nodes. By origin
+(`residual/gitcount/verbs.out`): 89,511 carry Stewart's `-c core.hooksPath`
+prefix (the runtime's own calls; 55,529 of them `rev-parse`) and 7,121 are
+fixture and test calls (add 1585, commit 1584, config 1526, rev-parse 1520,
+init 768). Starting the runtime's processes costs an estimated 294 s at
+3.29 ms; what each call does after starting is unmeasured, so that is
+neither Git's whole cost nor a ceiling on removing calls. Through the shim
+the attributed calls would have cost about 767 s (an estimate).
 
-- *WP4 (sharding): recommended next, if wall time matters.* The suite is a
-  single process for 14 minutes on a 10-core machine, and its nodes are
-  already isolated (private `tmp_path`, HOME and manager home). The largest
-  file takes 56 s and the largest node 15.5 s, so file-level packing into 4
-  workers could plausibly reach about 4 minutes of wall time (852 s / 4,
-  plus about 4 s of provisioning per worker and packing skew; an estimate).
-  The cost is the plan's membership and merge machinery, a serial phase, an
-  independence audit (`/tmp` users such as the socket test), and noisier
-  timing evidence under parallel load. Measure 2, 3 and 4 workers before
-  choosing a default.
-- *WP5 (Git observations in the runtime): lower priority, and only targeted.*
-  Git starts remain the largest identified CPU cost (≈ 316 s, an estimate),
-  which bounds WP5's benefit. The historical samples showed about 37% of
-  `prepare()`'s and 47% of `collect()`'s spawns repeating an argv, a ceiling
-  on candidates, not proof of redundancy; if a third of all calls proved
-  removable the saving would be about 100 s (≈ 12%), and each removal needs a
-  custody revalidation argument and regressions. If approved, start with the
-  plan's instrumentation for the top operations only.
-- *Smaller, outside WP4 and WP5, for the user to decide:* (a) keep rustup's
-  proxies away from pip in `check.py`'s provisioning (for example a
-  provisioning PATH without them, or `RUSTUP_AUTO_INSTALL=0`): ≈ 42 s per
-  full run (estimate) and no more network downloads into tests' private
-  HOMEs; (b) the directory insertion would save about 0.85 ms more per Git
-  call, ≈ 82 s per run (estimate), at the cost of the 110 extra names the
-  user declined; (c) moving CLI-start tests whose subject is not the CLI to
-  `stewart.api` (WP6 territory) bounds at ≈ 57 s.
+**A concrete WP5 candidate** (counts measured, time estimated;
+`residual/gitcount/verbs.out`): 9,857 complete `checkout_identity`
+sequences, the four `rev-parse` queries `--is-bare-repository`,
+`--show-toplevel`, `--absolute-git-dir` and `--path-format=absolute
+--git-common-dir` issued in turn by one node in one directory
+(`src/stewart/_repository.py:203-219`), account for 39,428 calls, 44.0% of the
+runtime's (108 of the sequences come from unattributed lines). Asking all
+four in one `rev-parse` process would avoid three process starts per check,
+about 97 s (an estimate), plus repeated repository discovery (unmeasured),
+with no observation reused across time. It needs WP5's custody argument: in
+a bare repository, inside a `.git` directory and outside any repository the
+merged call exits 128 after at most the first answer
+(`residual/gitcount/revparse-merged.out`), so the
+`repository_root` refusals must be decided from partial output, and its
+newline-separated output cannot carry a path containing a line break, which
+the separate calls preserve. Regressions must cover both.
+
+**Recommendation on WP4 and WP5**, with expected benefit and uncertainty:
+
+1. *First, outside WP4 and WP5 (small, for the user to approve):* keep
+   rustup's proxies away from pip in `check.py`'s provisioning (a
+   provisioning PATH without them, or `RUSTUP_AUTO_INSTALL=0`). Expected
+   ≈ 40 s per full run for the PATH option (an estimate from isolated pip
+   calls; `RUSTUP_AUTO_INSTALL=0` still starts the proxy for every pip call
+   and is unmeasured), and no more network toolchain downloads into tests'
+   private HOMEs. Measure it on the nested-`check.py` nodes before and
+   after.
+2. *WP5, targeted (approve if the total work per run matters; in the
+   single-process suite it also shortens wall time):* start with
+   `checkout_identity` (≈ 97 s, about 12% of the 830.2 s joined node time,
+   an estimate) and the plan's instrumentation for the operations that issue
+   it most; every removal needs a custody revalidation argument and
+   regressions that change identity between checking and acting. The
+   runtime's process starts are an estimated ≈ 294 s in all; merging calls
+   also saves repeated discovery and configuration reads, which are
+   unmeasured, so that figure is not a bound.
+3. *WP4 (approve if wall time matters, after a probe):* file-level
+   longest-first packing of WP3's per-file times gives 425.9 / 284.9 /
+   213.1 s for 2 / 3 / 4 workers against ideals of 425.9 / 283.9 / 212.9 s
+   (`wp3/packing.out`; the largest file is `tests/test_runner.py` at 77.3 s,
+   the largest node 15.5 s), so packing does not limit 4 workers. That is a
+   lower bound: it assumes no contention, and the only concurrent
+   observation, the historical sandboxed shim-era 3.11/3.14 pair, ran each
+   process at 1.63–1.83 times its solo non-walker time (`wp3/historical-pair.out`,
+   confounded). The machine has 4 performance and 6 efficiency cores; how
+   the file-event daemon and Git's own I/O behave under several workers is
+   unmeasured (with one worker `fseventsd` stayed at or below 0.32 cores
+   during tests). Before building
+   WP4's membership machinery, measure two concurrent `check.py` invocations
+   over disjoint file sets against the same sets run alone (this needs a
+   deliberate exception to one check run at a time). The default stays one
+   worker (plan WP4).
+4. *Not recommended now:* the directory insertion would save about 0.85 ms
+   more per Git call, ≈ 82 s per run (an estimate), at the cost of the 110
+   extra names the user declined; moving CLI-start tests whose subject is
+   not the CLI to `stewart.api` (WP6 territory) would save at most ≈ 57 s
+   at `--help`'s start cost if every CLI start moved (an estimate; real
+   commands probably cost more per start, but only an uncounted subset would
+   move).

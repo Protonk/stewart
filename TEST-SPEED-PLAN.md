@@ -499,8 +499,9 @@ other worktrees remain untouched.
 
 ### WP3. Reassess the remaining cost
 
-Status: done; the gate ran as WP3's full 3.14 run, and the recommendation on
-WP4 and WP5 awaits the user (`TEST-SPEED-FINDINGS.md`).
+Status: done; the gate ran on the final source as `wp3/gate-314` (after the
+evidence review's documentation fixes superseded the first gate run), and
+the recommendation on WP4 and WP5 awaits the user (`TEST-SPEED-FINDINGS.md`).
 
 After WP1 and WP2, repeat the WP0 selections three times each and take one
 full 3.14 run under the reference conditions. The full run also supplies WP2's
