@@ -10,11 +10,12 @@ their own population and source, including test/harness changes outside the
 wheel. Evidence paths such as `plan-review/...` are relative to
 `.scratch/test-speed/`.
 
-Git process startup is a promising large cost. A full run sends 10,422 (966
-tests) or 10,677 (992 tests) git commands through the `run_cmd` fixture
-alone, and the old sample measured
-six checkout spawns, three prompt-commit spawns, and at least 41 in
-`prepare()` and 36 in `collect()`. Repeated argv identifies candidates, not
+Git process startup is a promising large cost. A full run sends 6,860 (966
+tests) or 7,076 (992 tests) git commands through the `run_cmd` fixture
+alone (`plan-review/receipt_summary_corrected.out`; the earlier 10,422 and
+10,677 counted records twice through pytest's `current` links), and the old
+sample measured six checkout spawns, three prompt-commit spawns, and at least
+41 in `prepare()` and 36 in `collect()`. Repeated argv identifies candidates, not
 redundant checks. The recorded runs had competing load, so neither a complete
 attribution of suite time nor a suite-wide speedup is established.
 
@@ -397,7 +398,8 @@ passing artifacts have no evidentiary value.
 - One interpreter in the developer loop; both interpreters at the gate, one
   after the other whether or not sharding exists.
 - Historical CLI spawns cost about 0.18 s of startup each, and the 992-test
-  run started 1,009 of them through `run_cmd`. Keep subprocess tests where
+  run started 535 of them through `run_cmd`
+  (`plan-review/receipt_summary_corrected.out`). Keep subprocess tests where
   the CLI contract is the subject and let the rest use `stewart.api`. This is
   a small lever on its own and follows naturally from section 5.
 - Add the targeted performance and revalidation guards from section 4 before

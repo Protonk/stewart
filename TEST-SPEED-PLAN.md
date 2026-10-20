@@ -122,8 +122,13 @@ prerequisites for the inexpensive harness improvements.
 
 `plan-review/receipt_summary.py` reproduces the receipt-derived figures below
 (output `plan-review/receipt_summary.out`) and inventories the artifact
-directories the receipts name. In each pair the 3.11 and 3.14 invocations ran
-at the same time, so contention affected their timings by an unknown amount.
+directories the receipts name. Its `run_cmd` counts also followed pytest's
+`<prefix>current` symlinks and counted those tests' records twice; the
+`run_cmd` rows below come from `plan-review/receipt_summary_corrected.py`
+(output `receipt_summary_corrected.out`), which differs only in that count
+(`pickup/run-cmd-count/count_records.out`). In each pair the 3.11 and 3.14
+invocations ran at the same time, so contention affected their timings by an
+unknown amount.
 The change in elapsed time from 966 to 992 tests cannot be attributed:
 source, population and load all differ.
 
@@ -136,16 +141,17 @@ source, population and load all differ.
 | Call time on 3.11: median, p75, p90, p99 (inclusive quantiles) | 1.53, 2.58, 4.12, 8.94 s | 1.90, 2.99, 4.58, 9.43 s |
 | Tests over 0.5 s of setup + call + teardown, 3.11 / 3.14 | 714 / 725 | 758 / 758 |
 | Largest tests, 3.11 | authority 81.1 s, sdist 58.0, journey 25.4, runner 19.9 | authority 65.4 s, sdist 44.6, journey 28.1, resource safety 19.3 |
-| Commands through `run_cmd` per run | 11,912: 10,422 git, 1,003 `python -I -B -m stewart`, 440 other python, 47 other | 12,173: 10,677 git, 1,009 `python -I -B -m stewart`, 440 other python, 47 other |
-| git verbs through `run_cmd` | add 2326, commit 2324, config 2242, rev-parse 2231, init 1131, worktree 95 | add 2380, commit 2378, config 2304, rev-parse 2285, init 1162, worktree 95 |
+| Commands through `run_cmd` per run | 7,680: 6,860 git, 530 `python -I -B -m stewart`, 262 other python, 28 other | 7,901: 7,076 git, 535 `python -I -B -m stewart`, 262 other python, 28 other |
+| git verbs through `run_cmd` | add 1539, commit 1538, config 1474, rev-parse 1474, init 742, worktree 54 | add 1585, commit 1584, config 1526, rev-parse 1520, init 768, worktree 54 |
 | Retained artifacts per run, 3.11 | 3.61 GB allocated (3.24 GB apparent), 202,719 entries; 2,414 top-level: 965 private HOMEs, 965 test directories beside them, 484 pytest `*current` links | 3.58 GB allocated (3.21 GB apparent), 207,540 entries; 2,471 top-level: 991, 991, 489 links |
 
 `run_cmd` counts cover only commands a test ran through that fixture. Git
 spawned in-process by `stewart.api` calls, or by a CLI child, is not recorded
-there. The previous revision's figures of 767 tests over 0.5 s, a p99 of
-9.08 s, and 7,680 fixture subprocesses (6,860 git; 1,539 add, 742 init, 54
-worktree) do not reproduce from these receipts or artifacts and have no
-retained source; do not use them.
+there. The previous revision's figures of 767 tests over 0.5 s and a p99 of
+9.08 s do not reproduce from these receipts and have no retained source; do
+not use them (`pickup/run-cmd-count/other_old_figures.out`). Its 7,680 fixture
+subprocesses (6,860 git; 1,539 add, 742 init, 54 worktree) do reproduce from
+the 966-test artifacts once the `current` links are not followed.
 
 The following were observed with the scripts under `tools/` or by hand while
 another session had five test processes running. Their outputs were not
