@@ -57,10 +57,13 @@ reports the same `--version` as the shim, and its `--exec-path` is an
 existing directory under the same developer directory. Then insert the
 candidate's directory into the tests' PATH immediately before the PATH entry
 that supplied the shim, so entries earlier on PATH keep precedence. On this
-machine the insertion changes 24 names whose `/usr/bin` entry is that same
-shim (they now reach the tool the shim would exec) and 24 developer tools
-whose `/usr/bin` entry is a different file (`actool` through `xed`); record
-every changed name rather than assume the change is harmless.
+machine the insertion changes 111 names, not the 48 first reported: 22 whose
+`/usr/bin` entry is that same shim, 24 developer tools whose `/usr/bin` entry
+is a different file (`actool` through `xed`), and 65 that resolved nowhere
+before, among them `python3.9`, `pip3.9`, `pydoc3.9`, `2to3` and `scalar`
+(`levers/git/changed_names.out`; `plan-review/git_direct_path.sh` counted only
+names with a `/usr/bin` entry). The experiment launcher forwards them to
+auditor children.
 
 Provide `--git-executable auto|path|<absolute path>`, default `auto`. `path`
 leaves PATH untouched. An absolute path inserts that executable's directory
@@ -73,10 +76,13 @@ names in the receipt and the `.log`. This is harness environment; Stewart
 continues invoking `git` by name. Homebrew Git was not measured and is not
 installed here.
 
-If the changed names prove unacceptable, a private directory holding only a
-`git` script that `exec`s the direct binary by absolute path keeps the exec
-path correct and changes nothing else, at the cost of one shell start per
-call. Measure it as its own condition before choosing it.
+A private directory holding only a `git` script that `exec`s the direct
+binary by absolute path keeps the exec path correct and changes nothing else,
+at the cost of one shell start per call. Given the 65 newly resolvable names,
+the user chose (2026-10-19) to measure it as a third condition and prefer it:
+`auto` creates the wrapper in `check.py`'s private directory when its saving
+is established; the directory insertion needs an established advantage over
+the wrapper and the user's agreement.
 
 Pinned by: nothing yet. `tests/acceptance.py` names `/usr/bin/git` explicitly
 but is not collected by pytest. Tests that construct PATH themselves bypass
@@ -136,7 +142,7 @@ shard loop, with `--workers` defaulting to one, after WP4's independence
 audit. Assign files using compatible duration evidence or a deterministic
 fallback. Each worker needs its own result path, streams and `--basetemp`; no
 worker overwrites the aggregate or another worker's evidence. Measure useful
-worker counts under comparable load. Run interpreters sequentially.
+worker counts under comparable load.
 
 Establish the invocation's expected collected and selected node sets before
 dispatch. Workers must execute each selected node exactly once, or identify
@@ -395,8 +401,8 @@ passing artifacts have no evidentiary value.
   tier was about 1794 s versus 84 s for smoke, and most of smoke's 84 s was
   the authority walk that section 2 removes. If a broader developer tier is
   useful, name and measure it separately; do not silently expand `--fast`.
-- One interpreter in the developer loop; both interpreters at the gate, one
-  after the other whether or not sharding exists.
+- Python 3.14 only, in the developer loop and at the gate, whether or not
+  sharding exists (the project dropped 3.11 at `db61a8d`).
 - Historical CLI spawns cost about 0.18 s of startup each, and the 992-test
   run started 535 of them through `run_cmd`
   (`plan-review/receipt_summary_corrected.out`). Keep subprocess tests where

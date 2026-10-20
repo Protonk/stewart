@@ -8,13 +8,14 @@ constraints they must satisfy. Update a work package's status line when it
 lands. Remove both files when their contracts have reached documentation and
 tests; keep unresolved work explicit.
 
-The `test-speed` branch is `main` at `764d97e` plus planning commits.
-`rehome` has merged; there is no merge dependency to wait for. The current
-population is 992 tests: the repair validation of `764d97e` collected 992
-(`baseline/repair-followups/full-311.json`). The 966-test measurements below
-are a historical baseline of an earlier source, not the current population.
-Do not rewrite those receipts or combine their timings with a different
-population as though they measured the same suite.
+The `test-speed` branch is `main` at `764d97e` plus planning commits and,
+since 2026-10-19, the commit that drops Python 3.11 (`db61a8d`): the project
+supports Python 3.14 only. `rehome` has merged; there is no merge dependency
+to wait for. The current population is 992 tests: the repair validation of
+`764d97e` collected 992 (`baseline/repair-followups/full-311.json`). The
+966-test measurements below are a historical baseline of an earlier source,
+not the current population. Do not rewrite those receipts or combine their
+timings with a different population as though they measured the same suite.
 
 The question is which changes reduce elapsed time and retained bulk while
 preserving independent tests, custody checks and the evidence needed to
@@ -44,12 +45,14 @@ prerequisites for the inexpensive harness improvements.
   never modify, move or delete them. If any of this evidence is missing, mark
   the dependent figures unavailable and make bounded new comparisons; do not
   invent missing provenance or require another worktree's trees.
-- Supported interpreters: `/opt/homebrew/bin/python3.11` (3.11.17) and
-  `/opt/homebrew/bin/python3.14` (3.14.8). Confirm both at pickup. Use 3.11 in
-  the development loop and run both, one after the other, at the gate.
+- Supported interpreter: `/opt/homebrew/bin/python3.14` (3.14.8), in the
+  development loop and for the single gate run. The WP0 runs made on 3.11
+  before the 3.14-only decision are historical evidence; never combine their
+  timings with 3.14 runs.
 - During investigation use focused selections and keep each run to about two
-  minutes of tests. A full run takes about 40 minutes; use full runs for the
-  WP0 reference, the WP3 reassessment and the final gate, not to rank ideas.
+  minutes of tests. A full run takes about 21–24 minutes on this machine
+  (`reference/`); use full runs for the WP0 reference, the WP3 reassessment
+  and the final gate, not to rank ideas.
   Run one interpreter and one check invocation at a time. Check for competing
   processes with `ps aux | rg '[p]ytest|[c]heck\.py'` as a command of its own,
   because a longer command line can match itself. A full run outlasts ordinary
@@ -77,7 +80,7 @@ prerequisites for the inexpensive harness improvements.
   the result directory first and use a fresh result name per run):
 
   ```
-  /opt/homebrew/bin/python3.11 -I -B scripts/check.py --result .scratch/test-speed/<topic>/<name>.json -k "<expression>" > .scratch/test-speed/<topic>/<name>.out 2>&1
+  /opt/homebrew/bin/python3.14 -I -B scripts/check.py --result .scratch/test-speed/<topic>/<name>.json -k "<expression>" > .scratch/test-speed/<topic>/<name>.out 2>&1
   ```
 
   `check.py` writes `<name>.json` and `<name>.log` and creates
@@ -227,9 +230,9 @@ that output; a regression that cannot fail is not a firing control.
 
 ### WP0. Pickup, provenance and reference
 
-Status: done. Two pre-change references (the second because the first
-overlapped a busy system daemon), named selections and baselines; see
-`TEST-SPEED-FINDINGS.md`.
+Status: 3.14 baselines pending. Named selections; two 3.11 references and
+3.11 baselines, historical since the 3.14-only decision; a 3.14 reference on
+`db61a8d`, which WP1 to WP3 use. See `TEST-SPEED-FINDINGS.md`.
 
 1. Confirm state: the worktree is clean on `test-speed` at or after the
    commit that added this revision (ignored `.scratch` content does not
@@ -273,12 +276,12 @@ overlapped a busy system daemon), named selections and baselines; see
      `tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names`,
      and confirm with the logging wrapper that no line names them.
    - `smoke`: `--fast`.
-5. Take one pre-change reference full run on 3.11 with the gate's permission
+5. Take one pre-change reference full run on 3.14 with the gate's permission
    context and no competing load, under `.scratch/test-speed/reference/`. WP1
    checks the unfiltered node list against it and WP3 compares against it
    node by node. Record the `.scratch` entry count before and after; its
    retained artifacts become part of the tree the walkers traverse.
-6. Then run each named selection three times on 3.11 under the same
+6. Then run each named selection three times on 3.14 under the same
    conditions, recording counts and timings. These runs are the baseline
    that WP1's comparisons start from and that WP3 repeats.
 
@@ -339,9 +342,8 @@ unfiltered node-list comparison from step 1.
 #### WP1.2. Prune the two walkers
 
 1. In `tests/test_authority.py`, replace `rglob` plus filter with `os.walk`
-   (3.11 has no `Path.walk`) and remove the top-level names `.scratch`,
-   `.git`, `dist` and `build` from `dirnames` before descending. Keep the
-   current semantics exactly: exclusion only at the top level (the filter
+   and remove the top-level names `.scratch`, `.git`, `dist` and `build` from
+   `dirnames` before descending. Keep the current semantics exactly: exclusion only at the top level (the filter
    tests `parts[0]`), no descent through symlinked directories, and the same
    treatment of entries named `*.py` that are not regular files. The new name
    list must equal the old one.
@@ -374,7 +376,8 @@ unfiltered node-list comparison from step 1.
      included; nothing under the symlinked directory is listed, as with
      `rglob`) and, recording visited directories by wrapping `os.scandir`,
      never enters `.scratch`. Show the old `rglob` walk entering `.scratch`
-     on 3.11.
+     (an `os.scandir` wrapper observes pathlib's `rglob` on 3.14 too;
+     `levers/pruning/rglob-scandir-probe.out`).
    - Copy the project's `pyproject.toml` into a temporary project with a
      planted `.scratch` subtree, run the pinned hatchling's `SdistBuilder`
      in-process with its directory walk wrapped as
@@ -390,18 +393,23 @@ unchanged.
 #### WP1.3. Git executable selection in the harness
 
 1. Compare before implementing. `check.py` passes its PATH through to the
-   tests, so run `git-heavy` and `no-git` interleaved under the inherited
-   PATH (shim) and with the directory of `xcrun --find git` inserted
-   immediately before `/usr/bin` (direct). `git-heavy` is the firing and
-   differing case; `no-git` is the invariance case, already confirmed Git-free
-   with the WP0 logging wrapper. Give both conditions as explicit PATH values
-   through the helper's override, so the inserted entry is their only
-   difference.
-2. If the saving is established, implement `--git-executable` as design
-   choices section 1 specifies: insert the verified directory immediately
-   before the PATH entry that supplied the shim, never first and never as a
-   symlink or copy. Record the requested mode, the inserted entry or none,
-   the resolved executable and its realpath, `git --version`,
+   tests, so run `git-heavy` and `no-git` interleaved under three conditions:
+   the inherited PATH (shim); the directory of `xcrun --find git` inserted
+   immediately before `/usr/bin` (directory); and a private directory holding
+   only a `git` script that `exec`s that binary by absolute path, inserted at
+   the same place (wrapper). `git-heavy` is the firing and differing case;
+   `no-git` is the invariance case, already confirmed Git-free with the WP0
+   logging wrapper. Give every condition as an explicit PATH value through the
+   helper's override, so the inserted entry is the only difference.
+2. The directory insertion changes 111 names on this machine, 65 of which
+   resolved nowhere before (among them `python3.9` and `pip3.9`;
+   `levers/git/changed_names.out`), so the user chose the wrapper: implement
+   `--git-executable` with the wrapper if its saving is established. Consider
+   the directory insertion only if it is established faster than the wrapper,
+   and then ask the user first. Insert immediately before the PATH entry that
+   supplied the shim, never first; never link or copy the Git binary. Record
+   the requested mode, the inserted entry or none, the wrapper and the binary
+   it runs, the resolved executable and its realpath, `git --version`,
    `git --exec-path`, any fallback reason, and every name whose PATH
    resolution changed, in the receipt and the `.log`.
 3. Leave Stewart's runtime Git invocation alone (`_git.py` runs `git` by
@@ -483,9 +491,9 @@ other worktrees remain untouched.
 Status: pending.
 
 After WP1 and WP2, repeat the WP0 selections three times each and take one
-full 3.11 run under the reference conditions. The full run also supplies WP2's
-space measurement and, if no source change follows it, the gate's 3.11 leg;
-run the gate's 3.14 leg after it. Compare per node on the node set shared
+full 3.14 run under the reference conditions. The full run also supplies WP2's
+space measurement and, if no source change follows it, is the gate run.
+Compare per node on the node set shared
 with the reference, and report new regression tests separately rather than
 folding them into a suite total. Recompute marker tiers from the receipt. Keep
 `--fast` as the small smoke selection; a broader tier needs a separate name
@@ -608,9 +616,9 @@ a measured rejection explains a candidate), WP3 has assessed the residual
 cost and recommended next steps, and any WP4/WP5 work the user approved meets
 its contract. Deferred investigations or consolidation need not block
 delivery. Run focused checks as changes land. At the implementation gate run
-the full installed-wheel suite on 3.11 and then on 3.14, sequentially, with
-the reference permission context and no competing load; WP3's full run is
-the 3.11 leg unless the source changed after it. Report failures,
+the full installed-wheel suite on 3.14 with the reference permission context
+and no competing load; WP3's full run is the gate unless the source changed
+after it. Report failures,
 permission constraints and opt-in harness skips as observed, with separate
 reruns when needed. Do not convert a changed test population into a claimed
 speedup.
