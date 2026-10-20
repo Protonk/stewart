@@ -441,10 +441,11 @@ permission. Keep the human evidence map and scope in the prompt.
    identity comparisons, including after triage. Unavailable completion is
    labeled explicitly; triage does not erase the underlying observation.
    Status runs Git in the auditor checkout only through the administration
-   its own `.git` file names, under the repository's worktrees and naming the
-   checkout back. A link or a file naming another repository or checkout is
-   not followed: the checkout's HEAD stays unobserved (`null`) and its lock
-   carries an `error` saying why.
+   its own `.git` file names: one of the repository's worktrees, naming the
+   checkout back and belonging to this session's lifetime. A link, or a file
+   naming another repository or another checkout's administration, is not
+   followed: the checkout's HEAD stays unobserved (`null`), its lock carries an
+   `error` saying why, and no handoff is offered until it is observed.
    Without `--audit-id`, `status` lists every session of the workspace across
    the repository, with its owning maintainer checkout, preparation state,
    checkout, lock, complete collections and exit code, then the workspace's

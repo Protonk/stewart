@@ -465,7 +465,8 @@ def checkout_git_admin(worktree: Path, common_dir: str) -> str:
     info, data = read_regular(location)
     named = _git_pointer(data, b"gitdir: ")
     if named is None:
-        found = info["kind"] if data is None else "a file without one gitdir line"
+        found = (f"{info['kind']}: {info['detail']}" if info.get("detail") else info["kind"]) if data is None \
+            else "a file without one gitdir line"
         raise StewartError(f"the checkout's .git is not its gitdir file ({found}); Git is not run through it",
                            reason="checkout_identity", retained=[str(location)])
     admin = Path(os.path.normpath(worktree / named))

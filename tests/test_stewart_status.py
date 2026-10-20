@@ -15,6 +15,7 @@ import pytest
 from stewart import session as session_mod
 from stewart.collect import collect
 from stewart._bootstrap import StewartError
+from stewart._repository import checkout_git_admin
 from stewart.status import status
 from stewart.triage import retain, triage
 import stewart_support as support
@@ -198,7 +199,8 @@ def test_observation_time_does_not_enter_the_view(checkout, monkeypatch):
 
 
 @pytest.mark.parametrize("pointer", ["a link", "a file naming the main repository",
-                                     "a file naming another checkout's administration"])
+                                     "a file naming another checkout's administration",
+                                     "another checkout's administration that Git's repair points here"])
 def test_status_runs_no_git_through_a_checkout_git_that_names_another_repository(checkout, monkeypatch, pointer):
     """A substituted ``.git`` in the auditor checkout is never followed: HEAD and the lock stay unobserved."""
     prepared = support.prepared_session(checkout, report=None)
@@ -224,6 +226,14 @@ def test_status_runs_no_git_through_a_checkout_git_that_names_another_repository
         other = checkout.tmp / "other-checkout"
         checkout.git("worktree", "add", "-q", "--detach", str(other))
         gitfile.write_text(f"gitdir: {admin.parent / other.name}\n")
+        if pointer.endswith("points here"):
+            # Repair points the other administration back at this checkout. Depending on the order Git
+            # visits administrations it leaves this .git naming its own or the other one; planted again,
+            # the substitute then passes the back-pointer check alone.
+            checkout.git("worktree", "repair", str(worktree))
+            assert (admin.parent / other.name / "gitdir").read_text().strip() == str(gitfile)
+            gitfile.write_text(f"gitdir: {admin.parent / other.name}\n")
+            assert checkout_git_admin(worktree, str(admin.parent.parent)) == str(admin.parent / other.name)
     # The substitute redirects Git: asked in the checkout, Git names another Git directory.
     assert checkout.git("rev-parse", "--absolute-git-dir", cwd=worktree) != str(admin)
     after, places = support.git_working_directories(monkeypatch, status, checkout.ws, ident)
@@ -231,6 +241,8 @@ def test_status_runs_no_git_through_a_checkout_git_that_names_another_repository
     unobserved = after["identities"]["worktree"]
     assert unobserved["head"] is None and unobserved["head_matches_prompt"] is None
     assert unobserved["lock"]["locked"] is None and "Git is not run through it" in unobserved["lock"]["error"]
+    assert any(item.startswith("the worktree's HEAD is not observed") for item in after["outstanding"]), \
+        "status says why no handoff is offered"
     assert after["exit_code"] == before["exit_code"], "an unobserved checkout adds no problem of its own"
     # Invariance: the genuine gitfile restored, the same observation returns.
     gitfile.unlink()

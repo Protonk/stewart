@@ -1145,9 +1145,9 @@ def _render_attention(code: int, items: list[dict]) -> list[str]:
 
 
 def _lock_text(lock: dict) -> str:
-    """The checkout lock as observed; a lock that could not be read is never shown as absent."""
-    if lock.get("error"):
-        return f"not observed ({lock['error']})"
+    """The checkout lock as observed; a lock that was not read is never shown as absent."""
+    if lock.get("locked") is None:
+        return f"not observed ({lock.get('error') or 'no checkout directory'})"
     return lock.get("reason") or "not locked"
 
 

@@ -335,7 +335,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
     binds the view to one session lifetime; another one is refused.
     """
     from stewart._repository import checkout_git_admin, maintainer, registered_session
-    from stewart.close import close_summary, closing_entries
+    from stewart.close import _admin_lifetime, close_summary, closing_entries
     common = maintainer(ws.repo)["common_dir"]
     session = session_dir(ws, ident)
     closes = [close_summary(entry, ws.repo) for entry in closing_entries(common, ws, ident)]
@@ -478,14 +478,19 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
         meta = record["assignment"]
         view["assignment"] = meta
         worktree = Path(record["worktree"])
-        # Git runs in the auditor checkout only through the administration its own .git
-        # names: a planted link or pointer would answer for another repository.
+        present = worktree.is_dir()
+        # Git runs in the auditor checkout only through the administration its own .git names
+        # and this session's lifetime owns: a planted link or pointer would answer for another
+        # repository or another session's checkout.
         git_admin = admin_error = None
-        if worktree.is_dir():
+        if present:
             try:
                 git_admin = checkout_git_admin(worktree, record["common_dir"])
+                if _admin_lifetime(Path(git_admin)) != record["session_uuid"]:
+                    raise StewartError(f"the Git administration {git_admin} belongs to another session's lifetime; "
+                                       "Git is not run through it", reason="checkout_identity", retained=[git_admin])
             except StewartError as exc:
-                admin_error = str(exc)
+                git_admin, admin_error = None, str(exc)
         worktree_head = _git_head(worktree, git_admin) if git_admin else None
         try:
             destination_exists = contained(ws.repo, meta["report_path"]).exists()
@@ -506,7 +511,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
             "prepared_at": record["prepared_at"],
             "worktree": {
                 "path": str(worktree),
-                "exists": worktree.is_dir(),
+                "exists": present,
                 "head": worktree_head,
                 "head_matches_prompt": None if worktree_head is None else worktree_head == record["prompt_commit"],
             },
@@ -516,7 +521,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
             },
             "report_destination_exists": destination_exists,
         }
-        view["identities"]["worktree"]["lock"] = _lock_view(worktree, git_admin, admin_error)
+        view["identities"]["worktree"]["lock"] = _lock_view(present, git_admin, admin_error, record["session_uuid"])
         view["manager_storage"] = _manager_storage(common, record)
         private_launch = capture_regular(session / "LAUNCH.md")
         public_launch = worktree / record["handoff"]["path"]
@@ -916,10 +921,13 @@ def _close_attention(closes: list[dict]) -> list[dict]:
     return items
 
 
-def _lock_view(worktree: Path, git_admin: str | None, admin_error: str | None) -> dict:
-    """The auditor checkout's Git lock, read in the administration its verified .git names; Stewart never unlocks it."""
+def _lock_view(present: bool, git_admin: str | None, admin_error: str | None, lifetime: str) -> dict:
+    """The auditor checkout's Git lock, read in the administration its verified .git names; Stewart never unlocks it.
+
+    ``lifetime`` marks only this session's own lifetime lock; ``locked`` is None whenever the lock was not read.
+    """
     from stewart._repository import LIFETIME_LOCK, worktree_lock
-    if not worktree.is_dir():
+    if not present:
         return {"locked": None, "reason": None}
     if git_admin is None:
         return {"locked": None, "reason": None, "error": admin_error}
@@ -928,7 +936,7 @@ def _lock_view(worktree: Path, git_admin: str | None, admin_error: str | None) -
     except StewartError as exc:
         return {"locked": None, "reason": None, "error": str(exc)}
     return {"locked": reason is not None, "reason": reason,
-            "lifetime": reason is not None and reason.startswith(LIFETIME_LOCK),
+            "lifetime": reason is not None and reason.startswith(f"{LIFETIME_LOCK}{lifetime}:"),
             "note": "removal goes through close; Stewart prints no unlock or remove commands"}
 
 
@@ -1170,6 +1178,9 @@ def _derive_actions(ws: Workspace, ident: str, view: dict, record: dict | None, 
         })
     if identities["worktree"]["head_matches_prompt"] is False:
         outstanding.append("worktree HEAD differs from the prompt commit; a collection records the unexpected commit")
+    if identities["worktree"]["exists"] and identities["worktree"]["head"] is None:
+        why = (identities["worktree"].get("lock") or {}).get("error") or "Git cannot read it"
+        outstanding.append(f"the worktree's HEAD is not observed ({why}); no handoff is offered until it is")
     if not identities["worktree"]["exists"] and preparation not in {"failed", "incomplete"}:
         outstanding.append("the worktree is gone; only existing collections remain as evidence")
     good_launches = [item for item in view["launches"] if not item["problems"]]
