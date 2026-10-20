@@ -13,7 +13,8 @@ import pytest
 from stewart._bootstrap import StewartError
 from stewart._git import git, git_text
 from stewart._repository import (
-    DEFAULT_CHECKOUT_HOME, REGISTRATION_LOCK, ROLE_MARKER, checkout_identity, maintainer, register_auditor,
+    DEFAULT_CHECKOUT_HOME, REGISTRATION_LOCK, ROLE_MARKER, checkout_git_admin, checkout_identity, maintainer,
+    register_auditor,
     retention_for, retain_commits,
     verify_retention,
 )
@@ -230,6 +231,58 @@ def test_checkout_identity_decides_only_clean_substituted_answers(project_repo, 
     assert outcomes["an older Git inside .git"][:2] == (StewartError, "git_failed")
     assert outcomes["complete with exit status 128"][:2] == (StewartError, "git_failed")
     assert outcomes["bare with exit status 0"][:2] == (StewartError, "repository_root")
+
+
+def test_git_runs_in_a_linked_checkout_only_through_its_own_administration(project_repo, tmp_path, run_cmd,
+                                                                         monkeypatch):
+    """A substitute ``.git`` redirects Git elsewhere, so only the checkout's own gitdir file is followed.
+
+    Each substitute is shown to redirect Git (asked in the checkout, Git no longer reaches the
+    checkout's administration) and is refused. The genuine file is accepted, also spelled with the
+    relative paths ``worktree.useRelativePaths`` writes, and is accepted again once restored.
+    """
+    base = tmp_path.resolve()
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(base))  # the test directory may lie inside a checkout
+    checkout, other = base / "checkout", base / "other"
+    for worktree in (checkout, other):
+        run_cmd(["git", "worktree", "add", "-q", "--detach", worktree], cwd=project_repo, check=True)
+    common = git_text(project_repo, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    gitfile, admin = checkout / ".git", str(Path(common) / "worktrees" / "checkout")
+    genuine = gitfile.read_bytes()
+    assert genuine == f"gitdir: {admin}\n".encode(), "Git names the administration by its absolute path"
+
+    def answered() -> str:
+        return run_cmd(["git", "rev-parse", "--absolute-git-dir"], cwd=checkout).stdout.strip()
+
+    assert answered() == admin and checkout_git_admin(checkout, common) == admin
+    substitutes = {
+        "a link to the main repository": lambda: gitfile.symlink_to(Path(common), target_is_directory=True),
+        "a file naming the main repository": lambda: gitfile.write_text(f"gitdir: {common}\n"),
+        "a file naming another checkout's administration":
+            lambda: gitfile.write_text(f"gitdir: {Path(common) / 'worktrees' / 'other'}\n"),
+        "a file naming nothing": lambda: gitfile.write_text(f"gitdir: {base / 'nowhere'}\n"),
+        "a file with a second line": lambda: gitfile.write_bytes(genuine + b"gitdir: " + common.encode() + b"\n"),
+    }
+    for name, plant in substitutes.items():
+        gitfile.unlink()
+        plant()
+        if name != "a file with a second line":
+            assert answered() != admin, f"{name}: Git in the checkout no longer reaches its own administration"
+        assert_reason("checkout_identity", checkout_git_admin, checkout, common)
+    # As worktree.useRelativePaths writes them: each path relative to the directory holding its file.
+    gitfile.unlink()
+    gitfile.write_text(f"gitdir: {os.path.relpath(admin, checkout)}\n")
+    back = Path(admin) / "gitdir"
+    absolute_back = back.read_bytes()
+    back.write_text(os.path.relpath(gitfile, admin) + "\n")
+    assert answered() == admin and checkout_git_admin(checkout, common) == admin
+    # Differing only in where the administration points back: another checkout's .git is refused.
+    back.write_text(os.path.relpath(other / ".git", admin) + "\n")
+    assert_reason("checkout_identity", checkout_git_admin, checkout, common)
+    # Invariance: the genuine files restored are accepted again.
+    back.write_bytes(absolute_back)
+    gitfile.write_bytes(genuine)
+    assert answered() == admin and checkout_git_admin(checkout, common) == admin
 
 
 @pytest.mark.parametrize("selection", ["main", "other-branch", "linked", "detached"])

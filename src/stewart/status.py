@@ -58,8 +58,9 @@ def _problem(problems: list[dict], record: str, exc: StewartError) -> None:
     problems.append({"record": record, "reason": exc.reason, "message": str(exc)})
 
 
-def _git_head(location: Path) -> str | None:
-    result = git(location, "rev-parse", "HEAD", check=False)
+def _git_head(location: Path, git_admin: str) -> str | None:
+    """HEAD of the checkout at ``location``, asked of the administration its verified .git names."""
+    result = git(location, f"--git-dir={git_admin}", "rev-parse", "HEAD", check=False)
     return result.stdout.decode("utf-8", "replace").strip() if result.returncode == 0 else None
 
 
@@ -333,7 +334,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
     went stale; the view names both so the departure is visible. ``lifetime``
     binds the view to one session lifetime; another one is refused.
     """
-    from stewart._repository import maintainer, registered_session
+    from stewart._repository import checkout_git_admin, maintainer, registered_session
     from stewart.close import close_summary, closing_entries
     common = maintainer(ws.repo)["common_dir"]
     session = session_dir(ws, ident)
@@ -477,7 +478,15 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
         meta = record["assignment"]
         view["assignment"] = meta
         worktree = Path(record["worktree"])
-        worktree_head = _git_head(worktree) if worktree.is_dir() else None
+        # Git runs in the auditor checkout only through the administration its own .git
+        # names: a planted link or pointer would answer for another repository.
+        git_admin = admin_error = None
+        if worktree.is_dir():
+            try:
+                git_admin = checkout_git_admin(worktree, record["common_dir"])
+            except StewartError as exc:
+                admin_error = str(exc)
+        worktree_head = _git_head(worktree, git_admin) if git_admin else None
         try:
             destination_exists = contained(ws.repo, meta["report_path"]).exists()
         except StewartError as exc:
@@ -507,7 +516,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
             },
             "report_destination_exists": destination_exists,
         }
-        view["identities"]["worktree"]["lock"] = _lock_view(worktree)
+        view["identities"]["worktree"]["lock"] = _lock_view(worktree, git_admin, admin_error)
         view["manager_storage"] = _manager_storage(common, record)
         private_launch = capture_regular(session / "LAUNCH.md")
         public_launch = worktree / record["handoff"]["path"]
@@ -907,16 +916,15 @@ def _close_attention(closes: list[dict]) -> list[dict]:
     return items
 
 
-def _lock_view(worktree: Path) -> dict:
-    """The auditor checkout's Git lock, observed; Stewart itself never unlocks it."""
+def _lock_view(worktree: Path, git_admin: str | None, admin_error: str | None) -> dict:
+    """The auditor checkout's Git lock, read in the administration its verified .git names; Stewart never unlocks it."""
     from stewart._repository import LIFETIME_LOCK, worktree_lock
     if not worktree.is_dir():
         return {"locked": None, "reason": None}
-    admin = git(worktree, "rev-parse", "--absolute-git-dir", check=False)
-    if admin.returncode:
-        return {"locked": None, "reason": None, "error": admin.stderr.decode("utf-8", "replace").strip()}
+    if git_admin is None:
+        return {"locked": None, "reason": None, "error": admin_error}
     try:
-        reason = worktree_lock(admin.stdout.decode().strip())
+        reason = worktree_lock(git_admin)
     except StewartError as exc:
         return {"locked": None, "reason": None, "error": str(exc)}
     return {"locked": reason is not None, "reason": reason,

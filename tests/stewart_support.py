@@ -43,6 +43,29 @@ def session_path(checkout, ident: str = "one-question") -> Path:
     return session_dir(checkout.ws, ident)
 
 
+def git_working_directories(monkeypatch, function, *args, **kwargs):
+    """``function(*args, **kwargs)``'s result and the working directory of each Git process it started.
+
+    Every process goes through ``subprocess.Popen`` (``subprocess.run`` uses it), which is
+    replaced process-wide while ``function`` runs.
+    """
+    import os
+    import subprocess
+    real, places = subprocess.Popen, []
+
+    class Started(real):
+        def __init__(self, *args, **options):
+            argv = args[0] if args else options["args"]  # Stewart's git() passes args= by keyword
+            program = argv[0] if isinstance(argv, (list, tuple)) else argv
+            if os.path.basename(os.fsdecode(program)) == "git":
+                places.append(Path(options.get("cwd") or os.getcwd()))
+            super().__init__(*args, **options)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(subprocess, "Popen", Started)
+        return function(*args, **kwargs), places
+
+
 def read_json(location: Path) -> dict:
     return json.loads(location.read_text(encoding="utf-8"))
 

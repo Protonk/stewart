@@ -197,6 +197,48 @@ def test_observation_time_does_not_enter_the_view(checkout, monkeypatch):
     assert status(ws, meta["audit_id"]) == first
 
 
+@pytest.mark.parametrize("pointer", ["a link", "a file naming the main repository",
+                                     "a file naming another checkout's administration"])
+def test_status_runs_no_git_through_a_checkout_git_that_names_another_repository(checkout, monkeypatch, pointer):
+    """A substituted ``.git`` in the auditor checkout is never followed: HEAD and the lock stay unobserved."""
+    prepared = support.prepared_session(checkout, report=None)
+    ident, worktree, gitfile = checkout.meta["audit_id"], prepared.worktree, prepared.worktree / ".git"
+    # Main moves on, so an answer through a substitute would differ from the prompt commit.
+    (checkout.repo / "input.txt").write_text("main moved on\n")
+    checkout.git("add", "input.txt")
+    checkout.git("commit", "-qm", "Unrelated development on main")
+    genuine = gitfile.read_bytes()
+    admin = Path(genuine.decode().removeprefix("gitdir: ").strip())
+    before, places = support.git_working_directories(monkeypatch, status, checkout.ws, ident)
+    observed = before["identities"]["worktree"]
+    # Firing control: through its own gitfile the checkout is observed, at the prompt and locked.
+    assert worktree in places
+    assert observed["head"] == before["identities"]["prompt_commit"] and observed["head_matches_prompt"] is True
+    assert observed["lock"]["locked"] is True and "error" not in observed["lock"]
+    gitfile.unlink()
+    if pointer == "a link":
+        gitfile.symlink_to(checkout.repo / ".git", target_is_directory=True)
+    elif pointer == "a file naming the main repository":
+        gitfile.write_text(f"gitdir: {checkout.repo / '.git'}\n")
+    else:
+        other = checkout.tmp / "other-checkout"
+        checkout.git("worktree", "add", "-q", "--detach", str(other))
+        gitfile.write_text(f"gitdir: {admin.parent / other.name}\n")
+    # The substitute redirects Git: asked in the checkout, Git names another Git directory.
+    assert checkout.git("rev-parse", "--absolute-git-dir", cwd=worktree) != str(admin)
+    after, places = support.git_working_directories(monkeypatch, status, checkout.ws, ident)
+    assert worktree not in places, "no Git process ran in the checkout through the substitute"
+    unobserved = after["identities"]["worktree"]
+    assert unobserved["head"] is None and unobserved["head_matches_prompt"] is None
+    assert unobserved["lock"]["locked"] is None and "Git is not run through it" in unobserved["lock"]["error"]
+    assert after["exit_code"] == before["exit_code"], "an unobserved checkout adds no problem of its own"
+    # Invariance: the genuine gitfile restored, the same observation returns.
+    gitfile.unlink()
+    gitfile.write_bytes(genuine)
+    again, places = support.git_working_directories(monkeypatch, status, checkout.ws, ident)
+    assert worktree in places and again["identities"]["worktree"] == observed
+
+
 def test_irrelevant_main_advancement_leaves_pinned_evidence_usable(checkout):
     repo, ws, meta, git = checkout.repo, checkout.ws, checkout.meta, checkout.git
     support.prepared_session(checkout, report="Report A\n")

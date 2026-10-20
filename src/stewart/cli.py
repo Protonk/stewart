@@ -1144,6 +1144,13 @@ def _render_attention(code: int, items: list[dict]) -> list[str]:
     return lines
 
 
+def _lock_text(lock: dict) -> str:
+    """The checkout lock as observed; a lock that could not be read is never shown as absent."""
+    if lock.get("error"):
+        return f"not observed ({lock['error']})"
+    return lock.get("reason") or "not locked"
+
+
 def _render_listing(listing: dict) -> list[str]:
     lines = [f"Sessions of workspace {listing['workspace']['rel']}: {len(listing['sessions'])}"]
     for entry in listing["sessions"]:
@@ -1260,7 +1267,7 @@ def _render_status(view: dict) -> list[str]:
             f"Worktree: {'present' if worktree['exists'] else 'absent'}; HEAD matches prompt: {worktree['head_matches_prompt']}",
             f"Worktree path: {worktree['path']}",
             f"Launch handoff path: {view['preparation']['launch_path']} ({view['preparation']['launch_handoff']['kind']})",
-            f"Checkout lock: {(worktree.get('lock') or {}).get('reason') or 'not locked'} "
+            f"Checkout lock: {_lock_text(worktree.get('lock') or {})} "
             "(removal goes through close; Stewart prints no unlock or remove commands)",
             f"Maintainer status changed since prepare: {identities['maintainer']['status_changed_since_prepare']}; "
             f"report destination exists in maintainer checkout: {identities['report_destination_exists']}",

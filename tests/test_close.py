@@ -767,20 +767,32 @@ def test_a_moved_checkout_is_found_through_its_git_administration(checkout, tmp_
     assert moved.is_dir() and str(moved) in git_text(checkout.repo, "worktree", "list", "--porcelain")
 
 
-def test_a_planted_git_link_is_never_used_to_run_git(checkout):
+def test_a_planted_git_link_is_never_used_to_run_git(checkout, monkeypatch):
     prepared, _ = _triaged(checkout)
     index = checkout.repo / ".git" / "index"
     before = index.read_bytes(), index.stat().st_mtime_ns
-    gitfile = prepared.worktree / ".git"
+    worktree = prepared.worktree
+    gitfile = worktree / ".git"
     gitfile.unlink()
     gitfile.symlink_to(checkout.repo / ".git")
-    collected = collect(checkout.ws, IDENT, auditor_stopped="finished")
+    places = []
+
+    def run(function, *args, **kwargs):
+        result, started = support.git_working_directories(monkeypatch, function, *args, **kwargs)
+        places.extend(started)
+        return result
+
+    collected = run(collect, checkout.ws, IDENT, auditor_stopped="finished")
     assert any(error["reason"] == "checkout_identity" for error in collected["receipt"]["errors"])
     assert collected["exit_code"] == EXIT_UNVERIFIED
-    refused = _reason(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="planted link")
+    refused = run(_reason, close, checkout.ws, IDENT, actor="manager", abandon=True, reason="planted link")
     assert refused.reason == "uncollected_changes"
-    result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason="planted link", discard_uncollected=True)
+    result = run(close, checkout.ws, IDENT, actor="manager", abandon=True, reason="planted link",
+                 discard_uncollected=True)
     assert result["closed"] and not os.path.lexists(prepared.worktree)
+    assert places, "firing control: the operations ran Git, in the maintainer's checkout"
+    assert not [place for place in places if place == worktree or worktree in place.parents], \
+        "no Git process ran in the checkout through the link (status's view inside close included)"
     assert (index.read_bytes(), index.stat().st_mtime_ns) == before, "the maintainer's index was never written"
     assert (checkout.repo / ".git" / "HEAD").is_file(), "the link's target is untouched"
 

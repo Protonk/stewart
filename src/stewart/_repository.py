@@ -449,6 +449,46 @@ def worktree_lock(git_admin: str) -> str | None:
     return lock.decode("utf-8", "replace")
 
 
+def checkout_git_admin(worktree: Path, common_dir: str) -> str:
+    """The Git administration a linked checkout's own ``.git`` file names; Git runs through nothing else.
+
+    Git follows whatever ``.git`` names. Through a link, or through a regular
+    file naming another repository's directory or another checkout's
+    administration, every query in the checkout answers for that one instead.
+    Only a regular ``.git`` file naming a directory directly under the recorded
+    common directory's ``worktrees``, whose ``gitdir`` file names this
+    checkout's ``.git`` in return, is accepted. Both files are read through
+    verified descriptors; a relative path (``worktree.useRelativePaths``) is
+    resolved from the directory holding its file, as Git resolves it.
+    """
+    location = worktree / ".git"
+    info, data = read_regular(location)
+    named = _git_pointer(data, b"gitdir: ")
+    if named is None:
+        found = info["kind"] if data is None else "a file without one gitdir line"
+        raise StewartError(f"the checkout's .git is not its gitdir file ({found}); Git is not run through it",
+                           reason="checkout_identity", retained=[str(location)])
+    admin = Path(os.path.normpath(worktree / named))
+    if admin.parent != Path(common_dir) / "worktrees":
+        raise StewartError(f"the checkout's .git names {admin}, not one of its repository's worktree "
+                           "administrations; Git is not run through it", reason="checkout_identity",
+                           retained=[str(location)])
+    _, back = read_regular(admin / "gitdir")
+    named_back = _git_pointer(back, b"")
+    if named_back is None or Path(os.path.normpath(admin / named_back)) != location:
+        raise StewartError(f"the Git administration {admin} does not name this checkout; Git is not run through it",
+                           reason="checkout_identity", retained=[str(location), str(admin / "gitdir")])
+    return str(admin)
+
+
+def _git_pointer(data: bytes | None, prefix: bytes) -> str | None:
+    """The one path a Git pointer file holds after ``prefix``; only Git's terminating newline is removed."""
+    if data is None or not data.startswith(prefix):
+        return None
+    line = data[len(prefix):].removesuffix(b"\n")
+    return os.fsdecode(line) if line and b"\n" not in line and b"\0" not in line else None
+
+
 def lifetime_lock_reason(session_identity: str) -> str:
     return (f"{LIFETIME_LOCK}{session_identity}: run stewart status before removing; "
             "close removes it with its session")
