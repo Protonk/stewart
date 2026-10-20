@@ -27,7 +27,13 @@ def positive_seconds(value):
 
 def main():
     started = time.monotonic()
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, epilog=(
+        "Arguments check.py does not recognize go to pytest unchanged. Name tests relative to the "
+        "staged suite root, which mirrors the project root: tests/test_runner.py or "
+        "tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names. Without a "
+        "positional argument pytest collects the configured testpaths. A selection that collects a "
+        "node more than once, or a test outside the staged tests directory, is refused, and a run that "
+        "exits without writing its receipt fails."))
     project = Path(__file__).resolve().parents[1]
     parser.add_argument("--wheelhouse", type=Path, default=os.environ.get("STEWART_WHEELHOUSE"))
     parser.add_argument("--parity-output", type=Path, help="write byte-contract vectors from the installed wheel")
@@ -90,24 +96,34 @@ def main():
             environment["STEWART_TEST_BUDGET_SECONDS"] = str(args.test_budget_seconds)
         artifacts = Path(tempfile.mkdtemp(prefix=result.stem + "-artifacts-", dir=result.parent))
         environment["STEWART_TEST_ARTIFACTS"] = str(artifacts)
+        # No suite directory argument: pytest falls back to testpaths, and naming
+        # it beside a caller's path would collect that path's tests twice.
         command = [str(python), "-I", "-B", "-m", "pytest", "-c", str(suite / "pyproject.toml"),
-                   f"--confcutdir={suite}", f"--basetemp={artifacts}", str(suite / "tests"), *tests]
+                   f"--confcutdir={suite}", f"--basetemp={artifacts}", *tests]
         print(f"[stewart] wheel {wheel.name} sha256={digest}; Python {sys.version.split()[0]}", flush=True)
         outcome = subprocess.run(command, cwd=suite, env=environment)
         elapsed = time.monotonic() - started
         over_budget = args.total_budget_seconds is not None and elapsed > args.total_budget_seconds
         # Only augment this invocation's receipt; a failed startup must not
         # relabel a result left by a previous invocation at the same path.
-        if result.is_file():
-            observed = json.loads(result.read_text())
-            if observed.get("artifacts") == str(artifacts):
-                observed.update(total_seconds=elapsed, total_budget_seconds=args.total_budget_seconds,
-                                total_budget_exceeded=over_budget, fast=args.fast,
-                                runner_exit_status=outcome.returncode or int(over_budget))
-                result.write_text(json.dumps(observed, sort_keys=True, indent=2) + "\n")
+        observed = json.loads(result.read_text()) if result.is_file() else {}
+        receipted = observed.get("artifacts") == str(artifacts)
+        if receipted:
+            observed.update(total_seconds=elapsed, total_budget_seconds=args.total_budget_seconds,
+                            total_budget_exceeded=over_budget, fast=args.fast,
+                            runner_exit_status=outcome.returncode or int(over_budget))
+            result.write_text(json.dumps(observed, sort_keys=True, indent=2) + "\n")
         print(f"[stewart] total wall time {elapsed:.3f}s (including provisioning and build)", flush=True)
         if over_budget:
             print(f"[stewart] total budget exceeded: {elapsed:.3f}s > {args.total_budget_seconds}s", file=sys.stderr)
+        if not receipted and not outcome.returncode:
+            # Pytest loads the staged conftest only for paths under the suite: a
+            # selection naming only tests elsewhere runs them without its boundary
+            # checks and refusals, and writes no receipt.
+            print(f"[stewart] pytest exited 0 without writing this invocation's receipt to {result}, so the staged "
+                  "suite's conftest did not run; name tests relative to the suite root, as tests/<file>.py or "
+                  "tests/<file>.py::<test>", file=sys.stderr)
+            return 1
         return outcome.returncode or int(over_budget)
 
 

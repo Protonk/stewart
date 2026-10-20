@@ -405,7 +405,6 @@ def changed(argv, **kwargs):
     elif change == 'suite':
         argv[argv.index(str(suite / 'pyproject.toml'))] = str(pathlib.Path(project) / 'pyproject.toml')
         argv[argv.index('--confcutdir=' + str(suite))] = '--confcutdir=' + project
-        argv[argv.index(str(suite / 'tests'))] = str(pathlib.Path(project) / 'tests')
         kwargs['cwd'] = project
     return original(argv, **kwargs)
 subprocess.run = changed

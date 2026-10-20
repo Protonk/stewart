@@ -138,6 +138,25 @@ def stage_runtime(destination: Path) -> Path:
     return destination
 
 
+def reduced_project(source: Path, destination: Path, probes: dict[str, str]) -> Path:
+    """Copy the project with only the harness modules and the given probe files under tests/.
+
+    A full copy would run the whole suite whenever a harness regression shows
+    the old behavior. Each check.py invocation over the copy still provisions an
+    environment and builds a wheel, so callers group their invocations.
+    """
+    harness = {"conftest.py", "support.py"}
+
+    def ignore(directory, names):
+        skipped = {"__pycache__", ".pytest_cache", ".scratch", ".git", "dist", "build"}.intersection(names)
+        return skipped | set(names) - harness if Path(directory) == source / "tests" else skipped
+
+    shutil.copytree(source, destination, ignore=ignore)
+    for name, text in probes.items():
+        (destination / "tests" / name).write_text(text)
+    return destination
+
+
 def clean_environment() -> dict[str, str]:
     """Remove inherited pytest selection/plugin settings; isolate Python at startup."""
     env = {key: value for key, value in os.environ.items()

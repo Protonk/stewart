@@ -174,3 +174,66 @@ until pip kills it. Each nested `check.py` makes three such pip calls
 (`residual/rustup/proxy-calls.log`); eight reference tests left `.rustup`
 trees of up to 34 MB, two with a partial `stable-aarch64-apple-darwin`
 toolchain (`residual/rustup/README.txt`). Not changed; see WP3.
+
+## WP1.1. Positional selection without duplicates
+
+Implemented (Python 3.14, default context; evidence under `levers/selection/`):
+
+- `scripts/check.py` no longer passes the staged `tests` directory, so pytest
+  falls back to `testpaths` without a positional argument and collects a
+  named file once. Arguments still reach pytest unchanged; `--help` and the
+  README describe the `tests/<file>.py[::<test>]` form (`check-help.out`).
+- `tests/conftest.py` refuses, with `pytest.UsageError`, tests outside the
+  staged `tests` directory (named by path, because pytest gives a module
+  outside its rootdir a node ID relative to the argument that named it, so
+  such IDs can collide) and then any node collected more than once.
+- pytest 7.4.3 calls `pytest_collection_finish` in a `finally` around
+  `pytest_collection_modifyitems`, so the core change alone would have let a
+  refused selection record every collected node as selected, and the
+  empty-selection refusal already replaced pytest's own errors ("file or
+  directory not found", an unparsable `-k`). A selection now counts as
+  selected only after pytest's selection hooks finish; a refused or failed
+  one records its collected nodes, nothing selected and 0 deselected, and
+  pytest's error reaches the caller.
+- Gap closed by the user's choice: with only paths outside the suite pytest
+  never loads the staged conftest (its initial conftests anchor on the named
+  paths), so no boundary check, refusal or receipt happens and pytest exits
+  0. `check.py` now fails such an invocation (exit 1) and names the
+  `tests/<file>.py` form. Side effect: pytest options that never start a
+  session (`--version`, `--markers`) passed through `check.py` also exit
+  nonzero.
+- The `suite` case of `test_runner_measures_each_selected_boundary` no longer
+  replaces the removed argument and still refuses with "wrong staged test
+  suite".
+
+Evidence:
+
+| Run | Selector | Collected / selected | Outcome |
+| --- | --- | --- | --- |
+| `before-path-k` (3.11, `77711f7`) | `tests/test_runner.py -k test_budget_charges…` | 995 / 2 (the same node twice) | 2 passed |
+| `before-path-k-314` (old `check.py` and conftest, current tests) | same | 1013 / 2 (the same node twice) | 2 passed |
+| `after-path-k` | same | 12 / 1 | 1 passed |
+| `collect-unfiltered` | `--collect-only -q` | 1001 / 1001 | equals `reference/full-314`'s 992 in the same order plus exactly the 9 new nodes, none repeated (`collect-unfiltered-vs-reference.out`) |
+| `regressions-old-harness` (old `check.py` and conftest) | `-k` the four new tests | 1001 / 9 | 6 failed, 3 passed |
+| `harness-files-new` | `tests/test_runner.py tests/test_foundations.py` | 54 / 54 | 54 passed |
+
+Regressions (9 nodes in `tests/test_runner.py`, each one `check.py`
+invocation over `support.reduced_project`): a file plus a node ID from another
+file runs each once; `-k` with `--deselect`, and `--fast`, select and deselect
+as before; a file plus one of its node IDs is refused with the repeat named;
+an empty selection is still refused; a missing path and an unparsable `-k`
+report pytest's own error with nothing selected; tests named by absolute
+paths outside the suite are refused by path; an outside path alone fails the
+invocation. Against the unchanged harness the six firing cases fail for the
+intended reasons (exit 0 without refusal, every probe collected twice, the
+empty-selection message instead of pytest's, all collected nodes recorded as
+selected); the keyword, fast and empty cases pass on both, as controls
+(`regressions-old-harness.out`).
+
+Cost: each new node is one nested `check.py` run of about 3.9 s, 35.0 s for
+the nine (`wp11-cost.out`), about 2.6% of `reference/full-314`'s 1362.6 s.
+Part of every nested run is pip's `rustc --version` probe (see WP0's
+residual note), so the WP3 rustup finding grows with these tests.
+PolicyWitness testing had resumed during the `harness-files-new`,
+`after-path-k` and `collect-unfiltered` runs; none of them is a timing
+comparison.

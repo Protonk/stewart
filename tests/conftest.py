@@ -39,9 +39,32 @@ def pytest_configure(config):
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_collection_modifyitems(session, config, items):
-    """Count discovered nodes before pytest's marker and keyword deselection."""
+    """Count discovered nodes before pytest's marker and keyword deselection.
+
+    Overlapping arguments (a file and one of its node IDs) make pytest collect
+    and run a node twice, so a repeated node or a test outside this staged
+    suite's tests directory refuses the selection instead of being deduplicated.
+    Outside tests are refused first and named by path: pytest names a module
+    outside the rootdir relative to the argument that named it, so their node
+    IDs can repeat one another or a staged node's.
+    """
     config.stewart_collected_nodes = [item.nodeid for item in items]
-    yield
+    tests = Path(__file__).resolve().parent
+    outside = [f"{item.nodeid} ({item.path})" for item in items if not item.path.resolve().is_relative_to(tests)]
+    if outside:
+        raise pytest.UsageError(f"Stewart test selection names tests outside the staged suite's tests "
+                                f"directory {tests}: {outside}; name tests relative to the suite root, "
+                                "as tests/<file>.py or tests/<file>.py::<test>")
+    repeated = sorted(node for node, count in Counter(config.stewart_collected_nodes).items() if count > 1)
+    if repeated:
+        raise pytest.UsageError(f"Stewart test selection collects a node more than once: {repeated}; "
+                                "name each test file or node ID once")
+    outcome = yield
+    try:
+        outcome.get_result()
+    except BaseException:
+        return  # pytest could not parse -k or -m; pluggy raises that error after this wrapper
+    config.stewart_selection_finished = True
 
 
 def pytest_collection_finish(session):
@@ -49,6 +72,12 @@ def pytest_collection_finish(session):
     # instead of naming one containing project's known plugin.
     session.config.stewart_plugins = plugin_origins(
         session.config.pluginmanager.list_name_plugin(), Path(_pytest.__file__).parent, Path(__file__))
+    # Pytest also calls this hook after a refused or failed collection (a
+    # repeated node, a path it cannot find, an unparsable -k). Nothing was
+    # selected then, and that error must reach the caller unmasked.
+    if not getattr(session.config, "stewart_selection_finished", False):
+        session.config.stewart_nodes = []
+        return
     session.config.stewart_nodes = [item.nodeid for item in session.items]
     reporter = session.config.pluginmanager.getplugin("terminalreporter")
     if reporter:
@@ -79,9 +108,13 @@ def pytest_sessionfinish(session, exitstatus):
     if destination:
         collected = getattr(session.config, "stewart_collected_nodes", [])
         selected = getattr(session.config, "stewart_nodes", [])
+        # Deselection counts only for a selection pytest finished; a refused or
+        # failed one runs nothing, whatever it collected.
+        finished = getattr(session.config, "stewart_selection_finished", False)
         value = {"nodes": selected, "collected_nodes": collected,
                  "collected": len(collected), "selected": len(selected),
-                 "deselected": len(collected) - len(selected), "exit_status": int(session.exitstatus),
+                 "deselected": len(collected) - len(selected) if finished else 0,
+                 "exit_status": int(session.exitstatus),
                  "plugins": getattr(session.config, "stewart_plugins", {}),
                  "durations": session.config.stewart_durations,
                  "test_budget_seconds": float(budget) if budget else None, "budget_overruns": overruns,

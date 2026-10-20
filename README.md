@@ -95,14 +95,21 @@ Run the standalone suite against a fresh wheel with Python 3.14:
 ```
 
 For a short development check, add `--fast` to select only `smoke and not
-heavy`. Full validation omits that flag. Add `--test-budget-seconds 4` to fail
-on any test whose setup, call and teardown exceed four seconds; add
-`--total-budget-seconds 120` to bound the complete invocation, including the
-private environment and wheel build. Choose budgets appropriate to the host.
-The result records all collected and selected nodes, outcomes, plugin origins,
-per-phase durations and budget overruns. Test success does not erase a budget
-failure. Only the selected pytest's built-in plugins and the staged suite's
-own conftest are admitted; containing-project and third-party plugins refuse.
+heavy`. Full validation omits that flag. Other arguments go to pytest
+unchanged: `-k` expressions, or test files and node IDs named relative to the
+staged suite root, which mirrors the project root
+(`tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names`).
+A selection that collects a node more than once, such as a file together with
+one of its node IDs, or a test outside the staged `tests` directory, is
+refused, and a run that exits without writing its receipt fails. Add
+`--test-budget-seconds 4` to fail on any test whose setup, call and teardown
+exceed four seconds; add `--total-budget-seconds 120` to bound the complete
+invocation, including the private environment and wheel build. Choose budgets
+appropriate to the host. The result records all collected and selected nodes,
+outcomes, plugin origins, per-phase durations and budget overruns. Test
+success does not erase a budget failure. Only the selected pytest's built-in
+plugins and the staged suite's own conftest are admitted; containing-project
+and third-party plugins refuse.
 
 Development and acceptance target Apple Silicon macOS with Python 3.14.
 POSIX APIs alone do not establish Linux or other-host support; qualify those
