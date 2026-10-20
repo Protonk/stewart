@@ -1,8 +1,13 @@
 """The runner must measure its test population, plugin origins and elapsed work."""
+import argparse
+import importlib.util
 import json
 import os
 from pathlib import Path
+import re
+import shlex
 import shutil
+import subprocess
 import sys
 import types
 
@@ -177,3 +182,253 @@ def test_runner_refuses_tests_outside_the_staged_suite(tmp_path, run_cmd):
         f"expected the staged file's two nodes and both outside probes: {receipt['collected_nodes']}")
     assert (receipt["nodes"], receipt["deselected"]) == ([], 0), f"a refused selection selected {receipt['nodes']}"
     assert receipt["outcomes"] == {}, f"a refused selection ran tests: {receipt['node_outcomes']}"
+
+
+def load_check(tmp_path, monkeypatch):
+    """Load a copy of scripts/check.py as a module; main() does not run and import starts no process."""
+    script = tmp_path / "copy/scripts/check.py"
+    script.parent.mkdir(parents=True)
+    shutil.copyfile(Path(os.environ["STEWART_TEST_PROJECT"]) / "scripts/check.py", script)
+    spec = importlib.util.spec_from_file_location("check_under_test", script)
+    module = importlib.util.module_from_spec(spec)
+    def spawn(*args, **kwargs):
+        raise AssertionError(f"importing {script} started a process: {args!r}")
+    with monkeypatch.context() as patch:
+        patch.setattr(subprocess, "Popen", spawn)
+        spec.loader.exec_module(module)
+    return module
+
+
+def executable(path, text="#!/bin/sh\nexit 0\n"):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+    path.chmod(0o755)
+    return path
+
+
+def git_layout(tmp_path):
+    """Fake Apple layout: an earlier PATH entry, a shim directory and a developer directory.
+
+    The probe records each command with the PATH it ran under and answers the
+    commands the selection runs; any other command is reported as unable to
+    start, as a missing xcrun would be.
+    """
+    fake = types.SimpleNamespace(early=tmp_path / "early", shims=tmp_path / "usr/bin", developer=tmp_path / "Developer",
+                                 version="git version 2.54.0 (Apple Git-157)", calls=[])
+    fake.tools, fake.core = fake.developer / "usr/bin", fake.developer / "usr/libexec/git-core"
+    fake.core.mkdir(parents=True)
+    fake.shim = executable(fake.shims / "git")
+    os.link(fake.shim, fake.shims / "actool")  # another name served by the same shim
+    executable(fake.shims / "xed", "#!/bin/sh\nexit 1\n")  # a different file
+    executable(fake.early / "python3")
+    for name in ("git", "actool", "xed", "python3", "newtool"):
+        executable(fake.tools / name)
+    candidate = str(fake.tools / "git")
+    fake.responses = {(str(fake.shims / "xcrun"), "--find", "git"): (0, candidate),
+                      (str(fake.shims / "xcode-select"), "-p"): (0, str(fake.developer)),
+                      (str(fake.shim), "--version"): (0, fake.version), (str(fake.shim), "--exec-path"): (0, str(fake.core)),
+                      (candidate, "--version"): (0, fake.version), (candidate, "--exec-path"): (0, str(fake.core))}
+    def probe(argv, path):
+        fake.calls.append((tuple(argv), path))
+        return fake.responses.get(tuple(argv), (None, f"[Errno 2] No such file or directory: {argv[0]!r}"))
+    fake.probe = probe
+    return fake
+
+
+@pytest.mark.smoke
+def test_git_selection_inserts_a_wrapper_for_the_verified_direct_git_before_the_shim(tmp_path, monkeypatch):
+    """auto exposes only a git script that execs the verified binary, not the developer directory."""
+    check = load_check(tmp_path, monkeypatch)
+    fake = git_layout(tmp_path)
+    later = str(tmp_path / "later")
+    inherited = os.pathsep.join([str(fake.early), str(fake.shims), later])
+    wrapper_dir = tmp_path / "private/git-selection"
+    wrapper, target = wrapper_dir / "git", str(fake.tools / "git")
+    fake.responses.update({(str(wrapper), "--version"): (0, fake.version), (str(wrapper), "--exec-path"): (0, str(fake.core))})
+    selected, record = check.select_git("auto", inherited, "darwin", fake.probe, wrapper_dir, "/bin/dash", shim=fake.shim)
+    assert selected.split(os.pathsep) == [str(fake.early), str(wrapper_dir), str(fake.shims), later], (
+        f"the wrapper's directory belongs immediately before the shim's entry: {selected}")
+    assert wrapper.read_text() == f"#!/bin/dash\nexec {shlex.quote(target)} \"$@\"\n" and os.access(wrapper, os.X_OK), (
+        f"the wrapper must exec the verified binary by absolute path: {wrapper.read_text()!r}")
+    # Only git changes: actool, xed, newtool and python3 keep their old resolution.
+    assert record == {"requested": "auto", "inserted": str(wrapper_dir), "before": str(fake.shims),
+                      "wrapper": {"path": str(wrapper), "shell": "/bin/dash", "target": target},
+                      "executable": str(wrapper), "realpath": os.path.realpath(wrapper), "version": fake.version,
+                      "exec_path": str(fake.core), "fallback": None,
+                      "changed": {"git": {"old": str(fake.shim), "new": str(wrapper)}}}, record
+    assert json.loads(json.dumps(record)) == record
+    # Verification runs the binary under the inherited PATH; the recorded version and exec
+    # path come from the git the tests reach, the wrapper, run under their PATH.
+    assert sorted(call for call in fake.calls if call[0][0] in (target, str(wrapper))) == sorted([
+        ((target, "--version"), inherited), ((target, "--exec-path"), inherited),
+        ((str(wrapper), "--version"), selected), ((str(wrapper), "--exec-path"), selected)]), fake.calls
+
+
+@pytest.mark.smoke
+@pytest.mark.parametrize("case, fallback", [
+    ("direct", "not the xcrun shim"),
+    ("platform", "only on darwin, not linux"),
+    ("no-xcrun", "xcrun --find git failed (None)"),
+    ("xcrun-fails", "xcrun --find git failed (1)"),
+    ("link", "not an absolute executable regular file named git"),
+    ("version", "--version reports"),
+    ("outside", "outside the developer directory"),
+    ("exec-path", "--exec-path reports"),
+    ("path", None),
+])
+def test_git_selection_leaves_path_unchanged_without_a_verified_candidate(tmp_path, monkeypatch, case, fallback):
+    check = load_check(tmp_path, monkeypatch)
+    fake = git_layout(tmp_path)
+    entries, platform, requested = [fake.early, fake.shims], "darwin", "auto"
+    candidate, xcrun = str(fake.tools / "git"), (str(fake.shims / "xcrun"), "--find", "git")
+    if case == "direct":
+        entries = [fake.early, fake.tools, fake.shims]
+    elif case == "platform":
+        platform = "linux"
+    elif case == "no-xcrun":
+        del fake.responses[xcrun]
+    elif case == "xcrun-fails":
+        fake.responses[xcrun] = (1, "")
+    elif case == "link":
+        # Like Apple's Git, the link reports the same version and derives a missing
+        # exec path from its own location; the link itself must already be refused.
+        link = tmp_path / "linked/bin/git"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(candidate)
+        fake.responses.update({xcrun: (0, str(link)), (str(link), "--version"): (0, fake.version),
+                               (str(link), "--exec-path"): (0, str(tmp_path / "linked/libexec/git-core"))})
+    elif case == "version":
+        fake.responses[(candidate, "--version")] = (0, "git version 2.39.5")
+    elif case == "outside":
+        fake.responses[(str(fake.shims / "xcode-select"), "-p")] = (0, str(tmp_path / "Other"))
+    elif case == "exec-path":
+        fake.responses[(candidate, "--exec-path")] = (0, str(fake.developer / "libexec/git-core"))
+    elif case == "path":
+        requested = "path"
+    inherited = os.pathsep.join(map(str, entries))
+    wrapper_dir = tmp_path / "private/git-selection"
+    selected, record = check.select_git(requested, inherited, platform, fake.probe, wrapper_dir, "/bin/dash", shim=fake.shim)
+    assert selected == inherited, f"{case}: PATH changed to {selected}"
+    assert record["inserted"] is None and record["before"] is None and record["changed"] == {}, record
+    assert record["wrapper"] is None and not wrapper_dir.exists(), f"{case}: a wrapper was written: {record}"
+    assert record["executable"] == shutil.which("git", path=inherited) and record["requested"] == requested, record
+    if fallback is None:
+        assert record["fallback"] is None, record
+    else:
+        assert fallback in (record["fallback"] or ""), f"{case}: expected {fallback!r} in {record['fallback']!r}"
+
+
+@pytest.mark.smoke
+def test_git_selection_inserts_an_explicit_executable_by_the_path_it_was_given(tmp_path, monkeypatch):
+    check = load_check(tmp_path, monkeypatch)
+    fake = git_layout(tmp_path)
+    wrapper = executable(tmp_path / "wrapped/git")
+    fake.responses[(str(wrapper), "--version")] = (0, fake.version)
+    inherited = os.pathsep.join([str(fake.early), str(fake.shims)])
+    selected, record = check.select_git(str(wrapper), inherited, "darwin", fake.probe, tmp_path / "unused", "/bin/dash", shim=fake.shim)
+    assert selected.split(os.pathsep) == [str(fake.early), str(wrapper.parent), str(fake.shims)], selected
+    assert record["inserted"] == str(wrapper.parent) and record["before"] == str(fake.shims), record
+    assert record["executable"] == str(wrapper) and record["version"] == fake.version and record["fallback"] is None, record
+    assert record["wrapper"] is None and not (tmp_path / "unused").exists(), "an explicit executable needs no wrapper"
+    assert record["changed"] == {"git": {"old": str(fake.shim), "new": str(wrapper)}}, record
+    # A link on PATH to the same file is another invocation path, from which Apple's Git
+    # would derive a missing exec path, so the requested directory still goes before it.
+    linked = tmp_path / "linked"
+    linked.mkdir()
+    (linked / "git").symlink_to(wrapper)
+    through_link = os.pathsep.join([str(fake.early), str(linked), str(fake.shims)])
+    selected, record = check.select_git(str(wrapper), through_link, "darwin", fake.probe, tmp_path / "unused", "/bin/dash", shim=fake.shim)
+    assert selected.split(os.pathsep) == [str(fake.early), str(wrapper.parent), str(linked), str(fake.shims)], (
+        f"PATH reached {linked / 'git'}, a link to {wrapper}, and kept it: {record}")
+    assert record["before"] == str(linked) and record["changed"] == {
+        "git": {"old": str(linked / "git"), "new": str(wrapper)}}, record
+    # A wrapper that execs git by name passes under the inherited PATH but finds itself, and
+    # loops until the probe times out, under the tests' PATH; the record must show the latter.
+    looping = executable(tmp_path / "looping/git")
+    def probe(argv, path):
+        if argv[0] == str(looping):
+            return (0, fake.version) if path == inherited else (None, "timed out after 60 seconds")
+        return fake.probe(argv, path)
+    selected, record = check.select_git(str(looping), inherited, "darwin", probe, tmp_path / "unused", "/bin/dash", shim=fake.shim)
+    assert record["inserted"] == str(looping.parent) and record["executable"] == str(looping), record
+    assert record["version"] is None and record["exec_path"] is None, (
+        f"the version and exec path must be probed under the tests' PATH {selected}: {record}")
+    # With no git on PATH the directory goes last, so every name that resolved still does.
+    selected, record = check.select_git(str(wrapper), str(fake.early), "linux", fake.probe, tmp_path / "unused", "/bin/dash", shim=fake.shim)
+    assert selected.split(os.pathsep) == [str(fake.early), str(wrapper.parent)] and record["before"] is None, record
+    selected, record = check.select_git(str(fake.shim), inherited, "darwin", fake.probe, tmp_path / "unused", "/bin/dash", shim=fake.shim)
+    assert selected == inherited and record["inserted"] is None, record
+    assert "already resolves" in record["fallback"], record
+    # An explicit executable the insertion does not reach (here, gone since validation) is
+    # refused rather than replaced by whatever git PATH reaches.
+    vanished = tmp_path / "vanished/git"
+    with pytest.raises(RuntimeError, match=re.escape(f"not {vanished}; refused")):
+        check.select_git(str(vanished), inherited, "darwin", fake.probe, tmp_path / "unused", "/bin/dash", shim=fake.shim)
+
+
+@pytest.mark.smoke
+def test_git_option_refusals_and_probe_failures_name_their_cause(tmp_path, monkeypatch):
+    check = load_check(tmp_path, monkeypatch)
+    wrapper = executable(tmp_path / "wrapped/git")
+    assert [check.git_executable(value) for value in ("auto", "path", str(wrapper))] == ["auto", "path", str(wrapper)]
+    plain = tmp_path / "plain/git"
+    plain.parent.mkdir()
+    plain.write_text("")
+    for value in ("git", "wrapped/git", str(tmp_path / "missing/git"), str(executable(tmp_path / "bin/python3")),
+                  str(plain), str(tmp_path)):
+        with pytest.raises(argparse.ArgumentTypeError, match="auto, path or the absolute path of an executable file named git"):
+            check.git_executable(value)
+    # PATH would split this directory into two entries and reach some other git.
+    split = executable(tmp_path / f"a{os.pathsep}b/git")
+    with pytest.raises(argparse.ArgumentTypeError, match=re.escape(f"{split.parent} contains {os.pathsep!r}")):
+        check.git_executable(str(split))
+    # A failing tool explains itself on stderr (an unaccepted licence, say), and
+    # undecodable output must not escape as an error.
+    python = [sys.executable, "-I", "-B", "-c"]
+    failure = check.run_probe([*python, "import sys; sys.exit('licence not accepted')"], clean_environment())
+    assert failure == (1, "licence not accepted"), f"a failing tool's stderr must become the probe output: {failure}"
+    status, output = check.run_probe([*python, "import sys; sys.stdout.buffer.write(b'git \\xff')"], clean_environment())
+    assert status == 0 and output.startswith("git "), (status, output)
+    status, output = check.run_probe([tmp_path / "missing/xcrun", "--find", "git"], clean_environment())
+    assert status is None and str(tmp_path / "missing/xcrun") in output, output
+
+
+def test_runner_gives_the_tests_the_selected_git(tmp_path, run_cmd):
+    git = shutil.which("git")
+    assert git, "the end-to-end selection needs a git on this test's PATH"
+    version = run_cmd([git, "--version"], check=True).stdout.strip()
+    exec_path = run_cmd([git, "--exec-path"], check=True).stdout.strip()
+    # The wrapper execs this test's git by absolute path, which keeps that git's exec
+    # path and makes the outcome independent of the selection the outer run made.
+    wrapper = executable(tmp_path / "wrapped/git", f"#!/bin/sh\nexec {shlex.quote(git)} \"$@\"\n")
+    seen = tmp_path / "seen.json"
+    probe = ("import json, shutil, subprocess\nfrom pathlib import Path\n\n\ndef test_git_probe():\n"
+             "    git = shutil.which('git')\n"
+             "    exec_path = subprocess.run([git, '--exec-path'], capture_output=True, text=True, check=True).stdout.strip()\n"
+             f"    Path({str(seen)!r}).write_text(json.dumps({{'git': git, 'exec_path': exec_path}}))\n")
+    project = reduced_project(Path(os.environ["STEWART_TEST_PROJECT"]), tmp_path / "project", {"test_git_probe.py": probe})
+    result_path = tmp_path / "git.json"
+    result = run_cmd([sys.executable, "-I", "-B", project / "scripts/check.py", "--result", result_path,
+                      "--git-executable", wrapper, "-q"], env=clean_environment(), cwd=tmp_path)
+    assert result.returncode == 0, result.stdout + result.stderr
+    observed = json.loads(result_path.read_text())
+    assert observed["selected"] == 1 and observed["outcomes"] == {"passed": 1}, observed["node_outcomes"]
+    record = observed["git_selection"]
+    assert record["requested"] == str(wrapper) and record["inserted"] == str(wrapper.parent), record
+    assert record["wrapper"] is None, record
+    assert os.path.join(record["before"], "git") == git and record["fallback"] is None, (
+        f"the wrapper belongs immediately before the entry that supplied {git}: {record}")
+    assert record["executable"] == str(wrapper) and record["realpath"] == os.path.realpath(wrapper), record
+    assert record["version"] == version and record["exec_path"] == exec_path, record
+    assert record["changed"] == {"git": {"old": git, "new": str(wrapper)}}, record
+    assert json.loads(seen.read_text()) == {"git": str(wrapper), "exec_path": exec_path}, (
+        "the probe test did not reach the selected git and its exec path")
+    transcript = result_path.with_suffix(".log").read_text().splitlines()
+    assert [json.loads(line) for line in transcript if line.startswith('{"git_selection"')] == [{"git_selection": record}], (
+        "the .log must carry the receipt's selection record once")
+    assert f"[stewart] git {wrapper} ({version}): inserted {wrapper.parent}" in result.stdout, result.stdout
+    # The option parser refuses a malformed request before any environment is provisioned.
+    refused = run_cmd([sys.executable, "-I", "-B", project / "scripts/check.py", "--result", tmp_path / "refused.json",
+                       "--git-executable", "git"], env=clean_environment(), cwd=tmp_path)
+    assert refused.returncode == 2 and "argument --git-executable: expected auto, path" in refused.stderr, refused.stderr
+    assert not result_path.with_name("refused.log").exists(), "a refused request opened a transcript"

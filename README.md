@@ -111,6 +111,32 @@ success does not erase a budget failure. Only the selected pytest's built-in
 plugins and the staged suite's own conftest are admitted; containing-project
 and third-party plugins refuse.
 
+The tests reach Git through PATH. On macOS `/usr/bin/git` is Apple's shim,
+which locates the developer tools' Git on every call. By default
+(`--git-executable auto`) the check resolves `xcrun --find git` once, requires
+a regular executable that reports the shim's `--version` and an existing
+`--exec-path`, both inside the `xcode-select -p` developer directory, and
+writes a private `git` script that `exec`s that binary by absolute path
+(`/bin/dash`, or `/bin/sh` without it). It inserts the script's directory
+immediately before the PATH entry that supplied the shim, so earlier entries
+keep precedence and only `git` changes: Apple's Git derives its exec path and
+templates from the path it was invoked by, so a link or copy would break
+them, and the developer directory itself holds other tools, `python3.9` among
+them. On other platforms, or without a verified binary, PATH is unchanged and
+the reason is recorded. `--git-executable path` leaves PATH alone.
+`--git-executable /absolute/dir/git`, such as a wrapper that logs each call,
+inserts that executable's directory the same way, or appends it when no Git
+resolves. A different path to the same file, such as a link, does not count
+as already selected; a request the insertion cannot reach is refused. The
+check prints the selection, writes it to the `.log` and records it as
+`git_selection` in the result, with the version and exec path that Git
+reports under the tests' PATH and every name whose resolution changed.
+Stewart itself still runs `git` by name, so inside the tests it reaches the
+selected Git, and the experiment launcher passes that PATH to auditor
+children. Tests that build PATH without the inherited value (for example from
+`os.defpath`) do not see the selection; those that extend the inherited PATH
+do.
+
 Development and acceptance target Apple Silicon macOS with Python 3.14.
 POSIX APIs alone do not establish Linux or other-host support; qualify those
 hosts separately. Harness enforcement also needs its own explicit qualification.

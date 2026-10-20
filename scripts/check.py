@@ -10,7 +10,9 @@ import json
 import math
 import os
 from pathlib import Path
+import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -23,6 +25,157 @@ def positive_seconds(value):
     if not math.isfinite(seconds) or seconds <= 0:
         raise argparse.ArgumentTypeError("budget must be finite and greater than zero")
     return seconds
+
+
+GIT_SHIM = Path("/usr/bin/git")
+
+
+def git_executable(value):
+    """Validate --git-executable: auto, path, or the absolute path of an executable file named git."""
+    if value in ("auto", "path"):
+        return value
+    candidate = Path(value)
+    if not (candidate.is_absolute() and candidate.name == "git" and candidate.is_file() and os.access(candidate, os.X_OK)):
+        raise argparse.ArgumentTypeError(
+            f"expected auto, path or the absolute path of an executable file named git, not {value!r}")
+    if os.pathsep in str(candidate.parent):
+        raise argparse.ArgumentTypeError(
+            f"{candidate.parent} contains {os.pathsep!r}, so PATH would split it; use a git in another directory")
+    return value
+
+
+def run_probe(argv, environment):
+    """Return a command's exit status and stripped output, or None and the error if it cannot start.
+
+    The output is stdout, or stderr when a failing command printed nothing else, so a
+    fallback reason carries the tool's own message (an unaccepted Xcode licence, missing
+    command line tools). Undecodable bytes are replaced rather than aborting the check.
+    """
+    try:
+        completed = subprocess.run(list(map(str, argv)), env=environment, stdin=subprocess.DEVNULL,
+                                   capture_output=True, text=True, errors="replace", timeout=60)
+    except (OSError, subprocess.SubprocessError) as error:
+        return None, str(error)
+    output = completed.stdout.strip()
+    if completed.returncode and not output:
+        output = completed.stderr.strip()
+    return completed.returncode, output
+
+
+def direct_git(current, platform, ask, shim):
+    """Return the verified binary behind Apple's git shim, or None and why it is not used.
+
+    The developer directory comes from xcode-select -p, which honours DEVELOPER_DIR
+    and the system selection as the shim does, so it is evidence independent of the
+    candidate's own location. Apple's Git derives its exec path and templates from
+    the path it was invoked by, so an existing exec path inside that directory shows
+    the candidate runs from its installed place; a link or copy names a missing one.
+    """
+    if platform != "darwin":
+        return None, f"auto selection applies only on darwin, not {platform}"
+    if current is None:
+        return None, "git does not resolve on PATH"
+    try:
+        shimmed = os.path.samefile(current, shim)
+    except OSError:
+        shimmed = False
+    if not shimmed:
+        return None, f"git resolves to {current}, not the xcrun shim {shim}"
+    status, found = ask(shim.parent / "xcrun", "--find", "git")
+    if status != 0 or not found:
+        return None, f"xcrun --find git failed ({status}): {found}"
+    candidate = Path(found)
+    try:
+        regular = stat.S_ISREG(os.lstat(candidate).st_mode) and os.access(candidate, os.X_OK)
+    except OSError:
+        regular = False
+    if not (candidate.is_absolute() and candidate.name == "git" and regular):
+        return None, f"xcrun names {found}, not an absolute executable regular file named git"
+    expected, observed = ask(current, "--version"), ask(candidate, "--version")
+    if expected[0] != 0 or observed != expected:
+        return None, f"{candidate} --version reports {observed[1]!r}, but the shim reports {expected[1]!r}"
+    status, developer = ask(shim.parent / "xcode-select", "-p")
+    if status != 0 or not Path(developer).is_absolute():
+        return None, f"xcode-select -p failed ({status}): {developer}"
+    def inside(value):
+        return Path(value).is_absolute() and Path(value).resolve().is_relative_to(Path(developer).resolve())
+    if not inside(candidate):
+        return None, f"{candidate} is outside the developer directory {developer}"
+    status, exec_path = ask(candidate, "--exec-path")
+    if status != 0 or not inside(exec_path) or not Path(exec_path).is_dir():
+        return None, f"{candidate} --exec-path reports {exec_path!r}, not an existing directory under {developer}"
+    return candidate, None
+
+
+def select_git(requested, path_value, platform, probe, wrapper_dir, shell, shim=GIT_SHIM):
+    """Choose the tests' PATH for a validated --git-executable and record how git resolves under it.
+
+    probe(argv, path) runs argv with PATH set to path and returns (exit status, output),
+    or None and the error for a command that cannot start; tests substitute it. auto
+    verifies the binary behind Apple's shim on darwin and writes wrapper_dir/git, a
+    script for shell that execs that binary by absolute path: Apple's Git derives its
+    exec path and templates from the path it was invoked by, so a link or copy would
+    break them, and inserting the binary's own directory would also expose every other
+    developer tool there (python3.9 among them). path changes nothing, and an explicit
+    executable is used as given. Only the chosen executable's directory is inserted,
+    immediately before the PATH entry that supplied the current git so earlier entries
+    keep precedence; when no git resolves it is appended, which leaves every name that
+    already resolved alone. git counts as already selected only when PATH reaches that
+    same path, not another path to the same file. auto falls back to the unchanged
+    PATH and records why; an explicit executable that the insertion does not reach is
+    refused. Every name whose resolution changed is recorded with its old and new
+    executable, and the version and exec path come from the git the tests reach, run
+    under their PATH.
+    """
+    results = {}
+    def ask(*argv, path=path_value):
+        key = (path, *map(str, argv))
+        if key not in results:
+            results[key] = probe(list(key[1:]), path)
+        return results[key]
+    current = shutil.which("git", path=path_value)
+    candidate = fallback = wrapper = None
+    if requested == "auto":
+        target, fallback = direct_git(current, platform, ask, shim)
+        if target is not None:
+            candidate = Path(wrapper_dir) / "git"
+            candidate.parent.mkdir(parents=True, exist_ok=True)
+            candidate.write_text(f"#!{shell}\nexec {shlex.quote(str(target))} \"$@\"\n")
+            candidate.chmod(0o755)
+            wrapper = {"path": str(candidate), "shell": shell, "target": str(target)}
+    elif requested != "path":
+        candidate = Path(requested)
+    entries = path_value.split(os.pathsep) if path_value else []
+    selected_path, inserted, before = path_value, None, None
+    if candidate is not None and current == str(candidate):
+        fallback = f"git already resolves to {candidate}"
+    elif candidate is not None:
+        # shutil.which returns the first entry joined with the name, which identifies the supplier.
+        suppliers = [index for index, entry in enumerate(entries) if os.path.join(entry, "git") == current]
+        index = suppliers[0] if suppliers else len(entries)
+        trial = os.pathsep.join([*entries[:index], str(candidate.parent), *entries[index:]])
+        reached = shutil.which("git", path=trial)
+        if reached != str(candidate):
+            fallback = f"inserting {candidate.parent} would resolve git to {reached}, not {candidate}"
+            if requested != "auto":
+                raise RuntimeError(f"--git-executable {requested}: {fallback}; refused before provisioning")
+            wrapper = None
+        else:
+            selected_path, inserted, before = trial, str(candidate.parent), entries[index] if suppliers else None
+    changed = {}
+    for name in sorted(os.listdir(inserted)) if inserted else ():
+        old, new = shutil.which(name, path=path_value), shutil.which(name, path=selected_path)
+        if old != new:
+            changed[name] = {"old": old, "new": new}
+    executable = shutil.which("git", path=selected_path)
+    def reported(option):
+        # Under the tests' PATH: a wrapper that execs git by name finds itself there.
+        status, output = ask(executable, option, path=selected_path) if executable else (None, None)
+        return output if status == 0 else None
+    return selected_path, {"requested": requested, "inserted": inserted, "before": before, "wrapper": wrapper,
+                           "executable": executable, "realpath": executable and os.path.realpath(executable),
+                           "version": reported("--version"), "exec_path": reported("--exec-path"),
+                           "fallback": fallback, "changed": changed}
 
 
 def main():
@@ -43,6 +196,17 @@ def main():
                         help="fail when any test's setup, call and teardown exceed this wall time")
     parser.add_argument("--total-budget-seconds", type=positive_seconds,
                         help="fail when provisioning, build and tests together exceed this wall time")
+    parser.add_argument("--git-executable", type=git_executable, default="auto", metavar="{auto,path,/ABSOLUTE/git}", help=(
+        "the git the tests reach through PATH. auto (default): on macOS, when git resolves to Apple's "
+        "/usr/bin/git shim, verify the binary `xcrun --find git` names (the shim's version, an existing "
+        "exec path, both inside the `xcode-select -p` developer directory), write a private git script "
+        "that execs it by absolute path (/bin/dash, else /bin/sh), and insert that script's directory "
+        "immediately before the PATH entry that supplied the shim, so only git changes; otherwise leave "
+        "PATH unchanged and record why. path: leave PATH unchanged. An absolute path to an executable "
+        "named git: insert its directory the same way, appending it when no git resolves, unless PATH "
+        "already reaches that exact path; refused when the inserted directory would not reach it. The "
+        "choice, the resolved git, its version and exec path under the tests' PATH, and every name whose "
+        "resolution changed go to the .log and the result"))
     args, tests = parser.parse_known_args()
     if args.fast:
         if any(arg.startswith("-m") for arg in tests):
@@ -61,6 +225,21 @@ def main():
     transcript = result.with_suffix(".log")
     with tempfile.TemporaryDirectory(prefix="stewart-wheel-check-") as temporary, transcript.open("w") as log:
         root = Path(temporary).resolve()
+        # Decided once, before provisioning; only the tests' environment receives the PATH.
+        shell = "/bin/dash" if os.access("/bin/dash", os.X_OK) else "/bin/sh"
+        tests_path, git_selection = select_git(args.git_executable, environment.get("PATH", os.defpath), sys.platform,
+                                               lambda argv, path: run_probe(argv, {**environment, "PATH": path}),
+                                               root / "git-selection", shell)
+        log.write(json.dumps({"git_selection": git_selection}) + "\n"); log.flush()
+        if git_selection["inserted"]:
+            placed = (f"inserted {git_selection['inserted']} before {git_selection['before']}" if git_selection["before"]
+                      else f"appended {git_selection['inserted']}")
+            detail = f"{placed}; changed names: {', '.join(git_selection['changed']) or 'none'}"
+        else:
+            detail = f"PATH unchanged ({git_selection['fallback'] or '--git-executable ' + args.git_executable})"
+        found = (f"git {git_selection['executable']} ({git_selection['version']})" if git_selection["executable"]
+                 else "no git on PATH")
+        print(f"[stewart] {found}: {detail}", flush=True)
         prefix = root / "environment"
         venv.EnvBuilder(with_pip=True).create(prefix)
         python = prefix / "bin/python"
@@ -92,6 +271,8 @@ def main():
         environment.update(STEWART_TEST_RUNTIME=runtime, STEWART_TEST_PROJECT=str(project),
                            STEWART_TEST_SUITE=str(suite), STEWART_TEST_RESULT=str(result),
                            STEWART_TEST_WHEEL_SHA256=digest, STEWART_TEST_WHEEL=str(retained))
+        if git_selection["inserted"]:
+            environment["PATH"] = tests_path
         if args.test_budget_seconds is not None:
             environment["STEWART_TEST_BUDGET_SECONDS"] = str(args.test_budget_seconds)
         artifacts = Path(tempfile.mkdtemp(prefix=result.stem + "-artifacts-", dir=result.parent))
@@ -110,7 +291,7 @@ def main():
         receipted = observed.get("artifacts") == str(artifacts)
         if receipted:
             observed.update(total_seconds=elapsed, total_budget_seconds=args.total_budget_seconds,
-                            total_budget_exceeded=over_budget, fast=args.fast,
+                            total_budget_exceeded=over_budget, fast=args.fast, git_selection=git_selection,
                             runner_exit_status=outcome.returncode or int(over_budget))
             result.write_text(json.dumps(observed, sort_keys=True, indent=2) + "\n")
         print(f"[stewart] total wall time {elapsed:.3f}s (including provisioning and build)", flush=True)

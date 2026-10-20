@@ -302,3 +302,91 @@ module marked `smoke`, so `--fast` now selects 26 nodes (25 at WP0); the sdist
 regression is unmarked. Extrapolation, not measured: the saving grows with
 the running checkout's `.scratch`; the main checkout's (about 2.7 million
 entries) made these two tests take 65 s and 45 s historically.
+
+## WP1.3. Git executable selection in the harness
+
+**Comparison before implementing** (3.14, default context, PolicyWitness
+stopped; each condition an explicit PATH through the helper, Latin-square
+order over three repetitions; `levers/git/`, `conditions.out` shows every
+condition reaching Apple Git 2.54.0 with the developer exec path and
+templates):
+
+| `git-heavy` (5 of 1003) | Phase sum, median (range) | Change vs shim | Verdict |
+| --- | --- | --- | --- |
+| shim (inherited PATH, `/usr/bin/git`) | 49.702 s (49.517–49.704) | | |
+| directory (`xcrun --find git`'s directory before `/usr/bin`) | 26.957 s (26.910–26.984) | −45.8% | established (`compare-git-heavy-shim-vs-directory.out`) |
+| wrapper (`#!/bin/sh` git script before `/usr/bin`) | 35.347 s (35.178–35.578) | −28.9% | established (`compare-git-heavy-shim-vs-wrapper.out`) |
+
+The directory was also established faster than the `sh` wrapper
+(`compare-git-heavy-directory-vs-wrapper.out`). `no-git` showed invariance
+for every pair (medians 1.158–1.172 s; `compare-no-git-*.out`). Per call
+(`spawn_bench.out`, 200 interleaved `git --version` calls each): shim
+7.99 ms, direct binary 2.44, `sh` wrapper 4.46, `dash` wrapper 3.29, `zsh -f`
+wrapper 4.35. The five `git-heavy` tests make at least 3,840 Git calls
+(WP0 counts), so the shim-to-directory saving is about 5.9 ms a call.
+
+The directory insertion changes 111 names, so per the user's rule I asked
+before choosing; the user chose a `dash` wrapper after a confirmation run
+(`confirm-*`, shim vs `dash` wrapper, alternating order):
+
+| Confirmation | Phase sum, median (range) | Verdict |
+| --- | --- | --- |
+| `git-heavy` shim | 49.584 s (49.309–49.731) | |
+| `git-heavy` `dash` wrapper | 30.523 s (30.498–30.674), −38.4% | established (`compare-confirm-git-heavy-shim-vs-wrapper-dash.out`) |
+| `no-git` shim vs `dash` wrapper | 1.166 vs 1.170 s | invariance shown (`compare-confirm-no-git-shim-vs-wrapper-dash.out`) |
+
+Against the earlier session's directory result the `dash` wrapper recovers
+about 84% of the directory's saving (different sessions; an estimate),
+matching the per-call figures (85%).
+
+One aborted series is kept, not used: `ABORTED-zsh-splitting.txt` (a zsh
+loop passed an empty PATH: `git-heavy` failed 5/5, `no-git` passed).
+
+**Implemented**: `scripts/check.py --git-executable auto|path|/ABSOLUTE/git`,
+default `auto`. `auto`, on darwin when git resolves to `/usr/bin/git`,
+verifies the binary `xcrun --find git` names (a regular executable named
+git, the shim's `--version`, an existing `--exec-path`, both inside
+`xcode-select -p`), writes `<private dir>/git-selection/git`, a script for
+`/bin/dash` (else `/bin/sh`) that `exec`s that binary by absolute path, and
+inserts its directory immediately before the PATH entry that supplied the
+shim. Otherwise PATH is unchanged and the reason recorded. `path` changes
+nothing; an absolute path inserts that executable's directory by the same
+rule (the logging wrapper goes in this way). Only the tests' environment gets
+the PATH; provisioning and the build keep the inherited one. The record
+(requested mode, inserted entry, the entry it precedes, wrapper path, shell
+and target, resolved executable and realpath, version and exec path probed
+under the tests' PATH, fallback, every changed name) goes to the `.log`, the
+receipt (`git_selection`) and a one-line summary. Validation is an argparse
+`type=`; an explicit executable the insertion cannot reach is refused. The
+helper `tools/run_check.py` now copies `git_selection` into provenance and
+labels its own Git field as the inherited PATH's.
+
+Real `auto` through `check.py` (`auto-git-heavy`, single run, no PATH
+override): the wrapper targets the Xcode Git, changed names `["git"]`, exec
+path the developer `git-core`; `git-heavy` 31.540 s, 5 passed.
+
+Regressions (13 nodes in `tests/test_runner.py`, 12 marked `smoke`): `auto`
+writes the wrapper and inserts it before the shim's entry with only `git`
+changed; nine fallback cases leave PATH unchanged and write no wrapper (git
+already elsewhere, not darwin, no xcrun, xcrun failing, a symlinked
+candidate, a version mismatch, outside the developer directory, a missing
+exec path, `path` mode); explicit executables (insertion, a link on PATH,
+probes under the tests' PATH, appending, already selected, refusal); option
+validation and probe diagnostics; one end-to-end `check.py` run with an
+explicit wrapper whose probe test sees the selected Git and exec path.
+Firing (`demo-*.out`): against the old `check.py` all 13 fail; with `auto`
+inserting the developer directory, the tests keeping the inherited PATH, no
+`.log` record, or the entry inserted first, the targeted tests fail (1, 1, 1
+and 2 of 13); restored, 13 pass (`wp13-nodes-new`). Focused run:
+`tests/test_runner.py tests/test_foundations.py`, 67 collected and selected,
+67 passed, on the committed state (`harness-files-final`; `harness-files-new`
+passed the same before a one-line change to the summary wording).
+
+Bypasses (read at `8e968bf`): `tests/test_auditor_runtime.py:125` builds
+`PATH` from `os.defpath` and so reaches the shim; `tests/test_invocation.py`
+sets `PATH=/absent` on purpose (lines 193, 196, 199);
+`tests/test_stewart_launch_profile.py` (lines 56, 361, 385) prepends a stub
+directory to the inherited PATH and so sees the selection;
+`src/stewart/experiment.py:198` forwards PATH to auditor children, which now
+see only the extra `git`. Stewart's runtime still runs `git` by name.
+The README change moved the wheel digest again (METADATA only; `8de99b31…`).
