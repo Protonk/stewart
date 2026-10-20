@@ -1347,10 +1347,12 @@ records, uses and disposition; `discover` lists them all.
 
 `close --plan` prints the closeout description (`stewart.closeout/1`) and
 writes nothing. It runs the close's own read-only checks for the mode given
-(`--abandon`, `--discard-uncollected`, `--collection`, `--lifetime`), so the
+(`--abandon`, `--reason`, `--discard-uncollected`, `--collection`, `--lifetime`), so the
 refusal it reports is the one that close would raise now: a concluded close of
 a draft or closed audit (`session_missing`), an abandon over uncollected changes
-(`uncollected_changes`), a concluded close before triage. It exits with that
+(`uncollected_changes`), a concluded close before triage, or `--reason` or
+`--discard-uncollected` without `--abandon` (`usage`). Planning requires neither
+an actor nor an abandonment rationale. It exits with that
 refusal's code, 1 when a resource would stay blocked or missing, and 0
 otherwise. It separates audit closure (the session's own inventory and the
 refusal, if any), the retirement of working
@@ -1388,6 +1390,17 @@ first attempt made; anything else is left for `close --resource`):
   never overrides another audit's use. This is checked when the close evaluates
   and again at use, and associating a resource that lies inside one being
   retired is refused (`resource_retiring`).
+
+Containment never drops a resource because its outcome cannot be read. A
+readable creation start's intended paths can establish that it might be inside
+a container, but grant no authority to dispose of it. Missing, failed or invalid
+outcomes keep that container; a reliable intended location outside it does not
+block unrelated retirement. When neither verified identity nor readable intended
+locations can locate a resource, every worktree or directory container is kept
+with a diagnostic naming the uncertain record. The same check runs again before
+removal. Invalid retirement endings or acknowledgments do not exclude a resource
+from these checks. Preserve the records for inspection; Stewart never rewrites
+them to make retirement possible.
 
 The set that retires together is found by elimination: every managed temporary
 resource starts in it, and one that is not removable alongside the rest leaves

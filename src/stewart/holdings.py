@@ -101,14 +101,16 @@ def _claims(directory: Path) -> list[dict]:
         entry: dict = {"number": int(number), "path": str(directory / "claims" / name), "state": "active"}
         try:
             claim, digest = _read(directory / "claims" / name, "resource claim")
-            if claim.get("schema") != CLAIM_SCHEMA:
+            if (claim.get("schema") != CLAIM_SCHEMA or claim.get("rid") != directory.name
+                    or claim.get("number") != int(number)):
                 raise StewartError("unsupported claim schema", reason="resource_record_invalid")
             entry.update(claim=claim, sha256=digest)
             for ending in ("RETIRED", "RELEASED"):
                 ended = directory / "claims" / f"{number}.{ending}.json"
                 if os.path.lexists(ended):
                     value, _ = _read(ended, "claim outcome")
-                    if value.get("claim_sha256") != digest:
+                    if (value.get("schema") != ENDED_SCHEMA or value.get("ending") != ending.lower()
+                            or value.get("claim_sha256") != digest or entry["state"] != "active"):
                         raise StewartError(f"{ended.name} does not bind its claim", reason="resource_record_invalid")
                     entry.update(state=ending.lower(), ended=value)
             listed = os.listdir(directory / "claims")
@@ -178,7 +180,17 @@ def load(common: str, rid: str) -> dict:
     view["problems"] += [claim["problem"] for claim in view["claims"] if "problem" in claim]
     if os.path.lexists(directory / "ACKNOWLEDGED.json"):
         try:
-            view["acknowledged"], _ = _read(directory / "ACKNOWLEDGED.json", "retirement acknowledgment")
+            acknowledgment, _ = _read(directory / "ACKNOWLEDGED.json", "retirement acknowledgment")
+            observed, attributed = acknowledgment.get("observed"), acknowledgment.get("acknowledged")
+            if (acknowledgment.get("schema") != ACKNOWLEDGMENT_SCHEMA or acknowledgment.get("rid") != rid
+                    or not view.get("record_sha256")
+                    or acknowledgment.get("resource_record_sha256") != view["record_sha256"]
+                    or not isinstance(observed, dict) or observed.get("state") != "absent"
+                    or not isinstance(attributed, dict) or attributed.get("claim") != "retired outside Stewart"
+                    or not isinstance(attributed.get("actor"), str) or not attributed["actor"].strip()):
+                raise StewartError("retirement acknowledgment does not bind an observed absence to this resource",
+                                   reason="resource_record_invalid")
+            view["acknowledged"] = acknowledgment
         except StewartError as exc:
             view["problems"].append({"reason": "resource_record_invalid", "message": str(exc)})
     return view
@@ -1015,24 +1027,82 @@ def _branch_refs(common: str, rids_: set[str]) -> set[str]:
     return refs
 
 
+def _containment_locations(view: dict) -> list[str] | None:
+    """Locations usable to keep a container, never to authorize removal; None means unlocatable.
+
+    A readable start can locate an interrupted or invalid outcome's possible
+    effects. Output starts name their planned files rather than their final
+    identity. Read no payload and follow no path to derive these blockers.
+    """
+    kind = view.get("kind")
+    if kind == "branch":
+        return []
+    identity = view.get("identity")
+    if isinstance(identity, dict) and identity:
+        paths = ([item.get("path") if isinstance(item, dict) else None for item in identity.get("files", [])]
+                 if kind == "retained" and isinstance(identity.get("files"), list) else [identity.get("path")])
+    else:
+        intended = (view.get("record") or {}).get("intended")
+        if not isinstance(intended, dict):
+            return None
+        if kind in ("directory", "worktree"):
+            paths = [intended.get("path")]
+        elif kind in ("export", "retained"):
+            outputs = intended.get("intended")
+            if not isinstance(outputs, list) or not all(isinstance(item, dict) for item in outputs):
+                return None
+            paths = [item.get("path") for item in outputs
+                     if item.get("kind") == ("export" if kind == "export" else "published")]
+        else:
+            return None
+    try:
+        locations = [str(_absolute(item, "recorded resource location")) for item in paths]
+    except StewartError:
+        return None
+    if not locations:
+        return None
+    if not identity and kind == "export":
+        # The planned manifest belongs to the whole export directory.
+        if len(locations) != 1 or Path(locations[0]).name != "manifest.json":
+            return None
+        locations = [str(Path(locations[0]).parent)]
+    return locations
+
+
+def _containment_blocker(view: dict) -> str | None:
+    """Unverified records can block a container but cannot become its disposal inventory."""
+    what = f"resource {view['rid']}"
+    if view["problems"]:
+        return f"{what} has records that do not verify: " + "; ".join(item["message"] for item in view["problems"])
+    if view.get("creation") not in ("created", "enrolled") or not view.get("identity"):
+        return (f"{what} has no verified creation or enrollment identity ({view.get('creation', 'unknown')}); "
+                "its intended location only blocks removal and grants no disposal authority")
+    return None
+
+
 def _contained(common: str, rid: str, path: str) -> list[dict]:
-    """Recorded resources at or below ``path`` that are neither retired nor acknowledged."""
+    """Resources inside ``path``, plus uncertainty that prevents excluding a resource from it."""
     found = []
     for other in rids(common):
         if other == rid:
             continue
         try:
             inner = load(common, other)
-        except StewartError:
-            continue
-        if any(claim["state"] == "retired" for claim in inner["claims"]) or inner.get("acknowledged"):
+        except StewartError as exc:
+            inner = {"rid": other, "claims": [], "problems": [{"message": str(exc)}]}
+        if not inner["problems"] and (any(claim["state"] == "retired" for claim in inner["claims"])
+                                      or inner.get("acknowledged")):
             continue
         identity = inner.get("identity") or {}
-        locations = [identity["path"]] if isinstance(identity.get("path"), str) else \
-            [item["path"] for item in identity.get("files") or []]
-        if any(_inside(item, path) for item in locations):
+        locations = _containment_locations(inner)
+        blocker = _containment_blocker(inner)
+        if locations is None:
+            blocker = (f"resource {other} cannot be located from verified identity or readable intended locations; "
+                       "it may lie inside this container; preserve its records and inspect it"
+                       + (f" ({blocker})" if blocker else ""))
+        if locations is None or any(_inside(item, path) for item in locations):
             found.append({"rid": other, "kind": inner.get("kind"), "identity": identity, "locations": locations,
-                          "origin": inner.get("origin"), "view": inner})
+                          "origin": inner.get("origin"), "view": inner, "blocker": blocker})
     return found
 
 
@@ -1051,9 +1121,9 @@ def _dependency_blockers(inner: dict, index: Index, ending, *, container: str | 
     """
     view = inner["view"]
     what = f"{inner['kind']} {inner['rid']}"
-    if view["problems"]:
-        return [f"contained {what} has records that do not verify: "
-                + "; ".join(item["message"] for item in view["problems"])]
+    blocker = _containment_blocker(view)
+    if blocker:
+        return [f"contained {what}: {blocker}"]
     own = _container_claims(view, container) if container else []
     if any(claim["state"] == "active" and claim not in own for claim in view["claims"]):
         return [f"contained {what} is being retired under its own claim"]
@@ -1146,7 +1216,9 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
         if foreign:
             reasons.append("other checkouts are registered inside it: " + ", ".join(foreign))
         for inner in _contained(common, rid, path):
-            if inner["rid"] in dispose and inner["kind"] in ("export", "retained"):
+            if inner["blocker"]:
+                reasons.append(inner["blocker"])
+            elif inner["rid"] in dispose and inner["kind"] in ("export", "retained"):
                 blockers = _dependency_blockers(inner, index, ending)
                 if blockers:
                     reasons += blockers
@@ -1439,7 +1511,9 @@ def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]
                 findings.append("other checkouts are registered inside it: " + ", ".join(foreign))
             allowed = {item["rid"] for item in document.get("disposed", [])} | \
                 {item["rid"] for item in document.get("contained", [])}
-            inner = [item["rid"] for item in _contained(common, view["rid"], str(path)) if item["rid"] not in allowed]
+            candidates = _contained(common, view["rid"], str(path))
+            findings += [item["blocker"] for item in candidates if item["blocker"]]
+            inner = [item["rid"] for item in candidates if item["rid"] not in allowed and not item["blocker"]]
             if inner:
                 findings.append("it still holds recorded resources: " + ", ".join(inner))
             if kind == "worktree" and started and _regular(path / ".git"):

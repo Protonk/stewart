@@ -106,7 +106,9 @@ The custody rules are:
   (`<n>.RELEASED.json`) rather than remove anything that changed. Record each
   removal attempt before its first removal step. A container retires only with
   everything recorded inside it, and a disposal decision never overrides
-  another audit's live use. Remove through pinned
+  another audit's live use. Intended locations of unverified resources can only
+  block removal; an unlocatable resource keeps every path container. Invalid
+  retirement endings or acknowledgments never hide a dependency. Remove through pinned
   descriptors, only the recorded device and inode, never across filesystems,
   and never let Git delete contents; drop a worktree's administration only
   after its marker names the lifetime. Doubt about a use keeps the resource.

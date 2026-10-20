@@ -722,3 +722,33 @@ def test_a_close_plan_reports_the_refusal_its_close_raises(checkout):
     assert _agree(checkout, IDENT) is None
     closed = api.close(checkout.ws, IDENT, actor="manager")
     assert closed["closed"] is not None and closed["exit_code"] == EXIT_OK
+
+
+@pytest.mark.parametrize("abandon,discard,reason", [(False, False, None), (False, True, None),
+                                                   (False, False, "done"), (True, True, None),
+                                                   (True, False, "done")])
+def test_close_plan_checks_mode_without_requiring_actor_or_rationale(checkout, run_cmd, abandon, discard, reason):
+    _triaged(checkout)
+    records = snapshot_tree(_common(checkout) / "stewart")
+    mode = {"abandon": abandon, "discard_uncollected": discard, "reason": reason}
+    plan = api.close_plan(checkout.ws, IDENT, **mode)
+    flags = (["--abandon"] if abandon else []) + (["--discard-uncollected"] if discard else [])
+    flags += ["--reason", reason] if reason is not None else []
+    incompatible = not abandon and (discard or reason is not None)
+    expected = EXIT_REFUSED if incompatible else EXIT_OK
+    shown = _cli(run_cmd, checkout, "--workspace", WS, "close", "--audit-id", IDENT, "--plan", *flags,
+                 allowed=(expected,))["result"]
+    assert shown["audit"]["refusal"] == plan["audit"]["refusal"]
+    assert shown["audit"]["state"] == plan["audit"]["state"] == "live"
+    assert snapshot_tree(_common(checkout) / "stewart") == records, "both plans are read-only"
+    if incompatible:
+        assert plan["audit"]["refusal"]["reason"] == "usage"
+        with pytest.raises(StewartError) as raised:
+            api.close(checkout.ws, IDENT, actor="manager", **mode)
+        assert raised.value.reason == "usage" and raised.value.exit_code == expected
+        assert snapshot_tree(_common(checkout) / "stewart") == records
+    else:
+        # Dropping discard or choosing abandon is enough; planning never needed actor or rationale.
+        assert plan["audit"]["refusal"] is None
+        result = api.close(checkout.ws, IDENT, actor="manager", **{**mode, "reason": "done" if abandon else None})
+        assert result["closed"] and result["exit_code"] == EXIT_OK

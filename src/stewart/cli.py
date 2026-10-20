@@ -412,7 +412,9 @@ def build_parser() -> argparse.ArgumentParser:
                     "remove a contained export or retained deliverable with its container.\n"
                     "With --request-key a retry returns the recorded close; --resume-request\n"
                     "continues a partial one from its frozen inventory.\n\n"
-                    "--plan exits with the code the close would earn now.\n\n"
+                    "--plan exits with the code the close would earn now, including incompatible\n"
+                    "--reason or --discard-uncollected without --abandon. Planning needs no actor\n"
+                    "or abandonment rationale. Unverifiable resource locations keep containers.\n\n"
                     "Exit codes: 0 closed with nothing left; 1 removal stopped partway, left\n"
                     "unrecorded entries, or left a resource blocked or missing (rerun or inspect);\n"
                     "2 refused; 3 records do not verify for a concluded close (abandon remains\n"
@@ -758,7 +760,7 @@ def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | Non
         if args.plan:
             planned = close_plan(ws, ident, lifetime=lifetime, abandon=args.abandon,
                                  discard_uncollected=args.discard_uncollected, collection=args.collection,
-                                 dispose=args.dispose)
+                                 dispose=args.dispose, reason=args.reason)
             refusal = planned["audit"]["refusal"]
             # The code the close would earn now: its refusal's, or attention for a resource left blocked or missing.
             return planned, (refusal["exit_code"] if refusal else EXIT_ATTENTION

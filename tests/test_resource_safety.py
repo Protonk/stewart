@@ -13,6 +13,7 @@ case. Every repository, home and manager store is a disposable fixture.
 from __future__ import annotations
 
 import errno
+import json
 import os
 from pathlib import Path
 import shutil
@@ -789,6 +790,147 @@ def test_a_use_of_a_disposed_export_that_appears_after_the_claim_keeps_the_conta
     assert f"contained export {export_rid} is still used by" in " ".join(outcome["reasons"])
     assert base._generations(common, container_rid) == {1: "RELEASED"} and _attempts(common, container_rid) == []
     assert snapshot_tree(container / "package") == package and snapshot_tree(durable) == outside
+
+
+def _damage_creation(common: Path, rid: str, state: str) -> None:
+    """Inject missing or invalid historical evidence in a disposable fixture; product code never repairs it."""
+    record = base._records(common, rid)
+    outcome = record / "CREATED.json"
+    if state == "malformed":
+        outcome.write_bytes(b'{"interrupted":')
+    elif state == "missing":
+        outcome.unlink()
+    elif state == "failed":
+        value = support.read_json(outcome)
+        value.update(status="failed", identity=None, error={"reason": "resource_creation", "message": "failed"})
+        outcome.write_text(json.dumps(value) + "\n", encoding="utf-8")
+    elif state == "unlocatable":
+        (record / "CREATE.json").write_bytes(b'{"interrupted":')
+
+
+@pytest.mark.parametrize("shared", [False, True])
+@pytest.mark.parametrize("state", ["valid", "malformed", "missing", "failed", "unlocatable"])
+def test_a_contained_export_without_verified_creation_never_gains_disposal_authority(checkout, tmp_path,
+                                                                                     shared, state):
+    common, ident = base._common(checkout.repo), checkout.meta["audit_id"]
+    support.prepared_session(checkout)
+    container, durable = tmp_path.resolve() / "container", tmp_path.resolve() / "durable"
+    container_rid, export_rid, outside = _export_inside(checkout, ident, container, durable)
+    package = snapshot_tree(container / "package")
+    if shared:
+        api.associate(checkout.ws, PARTNER, rid=export_rid, actor="manager")
+    _damage_creation(common, export_rid, state)
+    record = snapshot_tree(base._records(common, export_rid))
+    # Firing control: the outcome's identity disappears, though the payload and any other audit's use remain.
+    shown = api.show_resource(checkout.repo, export_rid)
+    assert bool(shown["identity"]) == (state == "valid")
+    assert snapshot_tree(container / "package") == package
+    plan = base._by_rid(api.close_plan(checkout.ws, ident, abandon=True, dispose=[export_rid])["resources"])
+    closed = api.close(checkout.ws, ident, actor="manager", abandon=True, reason="done", dispose=[export_rid])
+    if state == "valid" and not shared:
+        # Changing only the record's validity permits the otherwise eligible, unshared disposal.
+        assert plan[container_rid]["disposition"] == "remove" and not container.exists()
+        assert base._generations(common, export_rid) == {1: "RETIRED"}
+    else:
+        assert plan[container_rid]["disposition"] == "blocked"
+        assert base._by_rid(closed["closeout"])[container_rid]["disposition"] == "blocked"
+        assert snapshot_tree(container / "package") == package
+        assert snapshot_tree(base._records(common, export_rid)) == record
+        assert base._claim_files(common, container_rid) == [], "uncertainty never grants a removal claim"
+        if state == "unlocatable":
+            assert "cannot be located" in " ".join(plan[container_rid]["reasons"])
+        elif state in ("missing", "failed"):
+            assert "intended location only blocks removal" in " ".join(plan[container_rid]["reasons"])
+    # Invariance: the independent durable export is untouched, including when uncertainty is unlocatable.
+    assert snapshot_tree(durable) == outside
+
+
+@pytest.mark.parametrize("inside", [False, True])
+def test_an_unresolved_intended_location_only_blocks_containers_it_can_intersect(checkout, tmp_path, inside):
+    common, work = base._common(checkout.repo), tmp_path.resolve()
+    container = work / "container"
+    container_rid = api.create_directory(checkout.ws, HOLDER, path=str(container), actor="manager")["rid"]
+    uncertain = (container if inside else work) / "uncertain"
+    rid = api.create_directory(checkout.ws, HOLDER, path=str(uncertain), actor="manager")["rid"]
+    _fill(uncertain)
+    _damage_creation(common, rid, "missing")
+    record, payload = snapshot_tree(base._records(common, rid)), snapshot_tree(uncertain)
+    assert api.show_resource(checkout.repo, rid)["creation"] == "unresolved"
+    planned = base._by_rid(api.close_plan(checkout.ws, HOLDER, abandon=True)["resources"])
+    assert planned[container_rid]["disposition"] == ("blocked" if inside else "remove")
+    api.close(checkout.ws, HOLDER, actor="manager", abandon=True, reason="done")
+    assert container.exists() == inside
+    # The intended location can establish exclusion; it never grants authority over the uncertain payload.
+    assert snapshot_tree(uncertain) == payload and snapshot_tree(base._records(common, rid)) == record
+
+
+@pytest.mark.parametrize("state", ["valid", "malformed", "missing", "unlocatable", "unlocatable-outside"])
+def test_a_dependency_losing_its_identity_after_the_claim_keeps_the_container(checkout, tmp_path, monkeypatch,
+                                                                            state):
+    common, ident = base._common(checkout.repo), checkout.meta["audit_id"]
+    support.prepared_session(checkout)
+    container, durable = tmp_path.resolve() / "container", tmp_path.resolve() / "durable"
+    container_rid, export_rid, outside = _export_inside(checkout, ident, container, durable)
+    package = snapshot_tree(container / "package")
+    victim = (next(rid for rid in holdings.rids(str(common))
+                   if (holdings.load(str(common), rid).get("identity") or {}).get("path") == str(durable))
+              if state == "unlocatable-outside" else export_rid)
+    real_retire, seen = holdings.retire_claim, []
+
+    def damage_then_retire(common_, view, claim):
+        if view["rid"] == container_rid and not seen:
+            assert [item["rid"] for item in claim["claim"]["disposed"]] == [export_rid]
+            _damage_creation(common, victim, "unlocatable" if state == "unlocatable-outside" else state)
+            seen.append(snapshot_tree(base._records(common, victim)))
+        return real_retire(common_, view, claim)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(holdings, "retire_claim", damage_then_retire)
+        closed = api.close(checkout.ws, ident, actor="manager", abandon=True, reason="done", dispose=[export_rid])
+    assert len(seen) == 1, "the dependency changed after a claim froze its valid identity"
+    outcome = base._by_rid(closed["resources"])[container_rid]
+    assert outcome["outcome"] == ("removed" if state == "valid" else "kept")
+    if state != "valid":
+        assert base._generations(common, container_rid) == {1: "RELEASED"}
+        assert _attempts(common, container_rid) == [], "revalidation refuses before a removal attempt"
+        assert snapshot_tree(container / "package") == package
+        assert snapshot_tree(base._records(common, victim)) == seen[0]
+    assert snapshot_tree(durable) == outside
+
+
+@pytest.mark.parametrize("invalid", [False, True])
+@pytest.mark.parametrize("ending", ["acknowledged", "retired"])
+def test_only_verified_resource_endings_exclude_a_dependency_from_containment(checkout, tmp_path, ending,
+                                                                             invalid):
+    common, work = base._common(checkout.repo), tmp_path.resolve()
+    container, child = work / "container", work / "container/child"
+    outer = api.create_directory(checkout.ws, HOLDER, path=str(container), actor="manager")["rid"]
+    inner = api.create_directory(checkout.ws, PARTNER, path=str(child), actor="manager")["rid"]
+    if ending == "acknowledged":
+        child.rmdir()
+        api.acknowledge(checkout.repo, inner, actor="manager")
+        ended = base._records(common, inner) / "ACKNOWLEDGED.json"
+    else:
+        api.close(checkout.ws, PARTNER, actor="manager", abandon=True, reason="done")
+        ended = base._records(common, inner) / "claims/0001.RETIRED.json"
+    child.mkdir()
+    _fill(child)
+    if invalid:
+        # Keep the digest and every other field: a matching binding alone cannot validate an unsupported record.
+        value = support.read_json(ended)
+        value["schema"] = "unsupported/1"
+        ended.write_text(json.dumps(value) + "\n", encoding="utf-8")
+    shown = api.show_resource(checkout.repo, inner)
+    assert bool(shown["problems"]) == invalid
+    assert shown["disposition"] == ("blocked" if invalid else ending)
+    record, payload = snapshot_tree(base._records(common, inner)), snapshot_tree(child)
+    plan = base._by_rid(api.close_plan(checkout.ws, HOLDER, abandon=True)["resources"])
+    assert plan[outer]["disposition"] == ("blocked" if invalid else "remove")
+    api.close(checkout.ws, HOLDER, actor="manager", abandon=True, reason="done")
+    assert container.exists() == invalid
+    if invalid:
+        assert snapshot_tree(child) == payload
+    assert snapshot_tree(base._records(common, inner)) == record
 
 
 # --- 11. a killed remover resumes its own partial removal (review finding R2) ------------------------------

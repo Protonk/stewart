@@ -965,6 +965,13 @@ def _preflight(ws: Workspace, ident: str, *, common: str, session: Path, rows: l
             "attributed": attributed}
 
 
+def _validate_mode(*, abandon: bool, discard_uncollected: bool, reason: str | None = None) -> None:
+    """Mode compatibility shared with planning; attribution and rationale are required only for mutation."""
+    if not abandon and (reason is not None or discard_uncollected):
+        raise StewartError("--reason and --discard-uncollected apply only with --abandon", reason="usage",
+                           next_steps=["add --abandon, or drop --reason and --discard-uncollected"])
+
+
 def _close(ws: Workspace, ident: str, *, actor: str, abandon: bool, reason: str | None, discard_uncollected: bool,
            lifetime: str | None, dispose: list[str], collection: str | None, resume: bool, plan) -> dict:
     from stewart._repository import _role_records, maintainer, private_storage, session_location
@@ -975,9 +982,7 @@ def _close(ws: Workspace, ident: str, *, actor: str, abandon: bool, reason: str 
     if abandon and (not isinstance(reason, str) or not reason.strip()):
         raise StewartError("an abandon needs --reason naming why the audit is abandoned", reason="reason_required",
                            next_steps=["rerun with --abandon --reason TEXT"])
-    if not abandon and (reason is not None or discard_uncollected):
-        raise StewartError("--reason and --discard-uncollected apply only with --abandon", reason="usage",
-                           next_steps=["add --abandon, or drop --reason and --discard-uncollected"])
+    _validate_mode(abandon=abandon, discard_uncollected=discard_uncollected, reason=reason)
     common = maintainer(ws.repo)["common_dir"]
     entries = closing_entries(common, ws, ident)
     for entry in entries:
@@ -1182,7 +1187,8 @@ def _finish(repo: Path, common: str, directory: Path, closing: dict, closing_sha
 
 
 def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abandon: bool = False,
-               discard_uncollected: bool = False, collection: str | None = None, dispose: list[str] = ()) -> dict:
+               discard_uncollected: bool = False, collection: str | None = None, dispose: list[str] = (),
+               reason: str | None = None) -> dict:
     """The closeout description: what close would remove, preserve or leave, and why; writes nothing.
 
     Audit closure (the session's own inventory), retirement of the working
@@ -1210,14 +1216,16 @@ def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abando
         if unfinished:
             audit.update(state="close_incomplete", removes=unfinished[-1]["closing"]["removal"],
                          note="a rerun finishes this recorded inventory and never widens it")
+        elif session.is_dir() or rows:
+            audit.update(state="live", removes=_removal_inventory(session, facts, common))
+        elif _known_audit(common, ws, ident):
+            audit.update(state="draft", note="only an abandon retires a draft; the audit ID stays reserved")
+        else:
+            audit["state"] = "closed" if entries else "absent"
+        _validate_mode(abandon=abandon, discard_uncollected=discard_uncollected, reason=reason)
+        if unfinished:
             _resume_preflight(ws, ident, unfinished[-1], lifetime)
         else:
-            if session.is_dir() or rows:
-                audit.update(state="live", removes=_removal_inventory(session, facts, common))
-            elif _known_audit(common, ws, ident):
-                audit.update(state="draft", note="only an abandon retires a draft; the audit ID stays reserved")
-            else:
-                audit["state"] = "closed" if entries else "absent"
             _preflight(ws, ident, common=common, session=session, rows=rows, abandon=abandon,
                        discard_uncollected=discard_uncollected, lifetime=lifetime, collection=collection)
     except StewartError as exc:
