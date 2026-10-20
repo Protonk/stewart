@@ -145,8 +145,18 @@ children. Tests that build PATH without the inherited value (for example from
 `os.defpath`) do not see the selection; those that extend the inherited PATH
 do.
 
-Beside `<name>.json` (the `--result` path) a run keeps `<name>.log`
-(provisioning, build and the Git selection), `<name>.pytest.log` (pytest's
+The provisioning commands (`ensurepip`, both pip installs, the wheel build and
+any `--parity-output` run) get the inherited PATH minus every entry in which
+`rustc` resolves: pip runs `rustc --version` for its user-agent string even
+with `--no-index`, and under a test's empty HOME a rustup proxy would start
+installing a toolchain from the network. The check records those entries in
+the `.log` and as `provisioning_path_removed` in the result. The tests keep
+the inherited PATH; a test that starts pip itself gives it
+`path_without_rustc` from `tests/support.py`.
+
+Beside `<name>.json` (the `--result` path) a run keeps `<name>.log` (the Git
+selection, the PATH entries withheld from provisioning, then provisioning and
+build), `<name>.pytest.log` (pytest's
 argv and cwd, then its stdout and stderr with each line labelled by stream,
 kept even when pytest stops before writing a result), `<name>-dist/` (the
 tested wheel) and `<name>-artifacts-*/`, pytest's base temporary directory.

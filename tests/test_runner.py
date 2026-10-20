@@ -14,7 +14,7 @@ import types
 
 import pytest
 
-from support import budget_overruns, clean_environment, plugin_origins, reduced_project
+from support import budget_overruns, clean_environment, path_without_rustc, plugin_origins, reduced_project, rustc_stub
 
 
 @pytest.mark.smoke
@@ -433,6 +433,85 @@ def test_runner_gives_the_tests_the_selected_git(tmp_path, run_cmd):
                        "--git-executable", "git"], env=clean_environment(), cwd=tmp_path)
     assert refused.returncode == 2 and "argument --git-executable: expected auto, path" in refused.stderr, refused.stderr
     assert not result_path.with_name("refused.log").exists(), "a refused request opened a transcript"
+
+
+@pytest.mark.smoke
+def test_provisioning_path_drops_each_entry_that_supplies_rustc(tmp_path, monkeypatch):
+    """Only entries where shutil.which, pip's own lookup, finds rustc go; the rest keep their order.
+
+    support.path_without_rustc, which the suite's own pip starts use, agrees on every case.
+    """
+    check = load_check(tmp_path, monkeypatch)
+    supplier, other, plain, directory = (tmp_path / name for name in ("supplier", "other", "plain", "directory"))
+    executable(supplier / "rustc")
+    executable(other / "cargo")
+    (plain / "rustc").parent.mkdir()
+    (plain / "rustc").write_text("")  # not executable, so pip cannot run it either
+    (directory / "rustc").mkdir(parents=True)
+    entries = [str(other), str(supplier), str(plain), str(directory), str(supplier)]
+    kept, removed = check.provisioning_path(os.pathsep.join(entries))
+    assert removed == [str(supplier), str(supplier)], removed
+    assert kept.split(os.pathsep) == [str(other), str(plain), str(directory)], kept
+    assert shutil.which("rustc", path=kept) is None and shutil.which("cargo", path=kept) == str(other / "cargo")
+    unchanged = os.pathsep.join([str(other), str(plain)])
+    assert check.provisioning_path(unchanged) == (unchanged, []) and check.provisioning_path("") == ("", [])
+    # shutil.which finds nothing in path='', so an empty entry stays; a relative entry is
+    # judged in check.py's working directory.
+    empty_first = os.pathsep.join(["", str(other)])
+    assert check.provisioning_path(empty_first) == (empty_first, [])
+    monkeypatch.chdir(tmp_path)
+    assert check.provisioning_path("supplier") == ("", ["supplier"])
+    # The suite's own pip starts get the same PATH.
+    for value in (os.pathsep.join(entries), unchanged, "", empty_first, "supplier"):
+        assert path_without_rustc(value) == check.provisioning_path(value)[0], value
+
+
+def test_runner_withholds_rustc_from_provisioning(tmp_path, run_cmd):
+    """Provisioning starts no rustc, while the tests' PATH still reaches it.
+
+    pip runs `rustc --version` for its user agent wherever rustc resolves, and under a
+    test's empty HOME a rustup proxy would start installing a toolchain. The stub comes
+    first on PATH and shadows any proxy. Its probe test reads the stub's log before
+    anything else, then starts pip under the tests' PATH (the firing control: the
+    installed pip still probes) and the stub by name.
+    """
+    calls = tmp_path / "rustc-calls.log"
+    calls.write_text("")
+    stub = rustc_stub(tmp_path / "rustc-stub", calls)
+    seen = tmp_path / "rustc-seen.json"
+    probe = ("import json, shutil, subprocess, sys\nfrom pathlib import Path\n\n\ndef test_rustc_probe(tmp_path):\n"
+             f"    calls = Path({str(calls)!r})\n"
+             "    before = calls.read_text()\n"
+             "    pip = subprocess.run([sys.executable, '-I', '-B', '-m', 'pip', 'install', '--no-index', '--no-deps',\n"
+             "                          '--dry-run', '--find-links', str(tmp_path), 'absent-package']).returncode\n"
+             "    after_pip = calls.read_text()\n"
+             "    status = subprocess.run(['rustc', '--probe']).returncode\n"
+             f"    Path({str(seen)!r}).write_text(json.dumps({{'rustc': shutil.which('rustc'), 'before': before, "
+             "'pip': pip, 'after_pip': after_pip, 'status': status}))\n")
+    project = reduced_project(Path(os.environ["STEWART_TEST_PROJECT"]), tmp_path / "project", {"test_rustc_probe.py": probe})
+    env = clean_environment()
+    env["PATH"] = os.pathsep.join([str(stub.parent), env.get("PATH", os.defpath)])
+    result_path = tmp_path / "rustc.json"
+    result = run_cmd([sys.executable, "-I", "-B", project / "scripts/check.py", "--result", result_path, "-q"],
+                     env=env, cwd=tmp_path)
+    assert result.returncode == 0, result.stdout + result.stderr
+    observed = json.loads(result_path.read_text())
+    assert observed["selected"] == 1 and observed["outcomes"] == {"passed": 1}, observed["node_outcomes"]
+    probed = json.loads(seen.read_text())
+    assert probed["before"] == "", (
+        f"rustc started before the tests (ensurepip, the pip installs or the build): {probed['before'].splitlines()}")
+    assert probed["pip"] == 1 and probed["after_pip"] == "--version\n", (
+        f"pip under the tests' PATH must start {stub} once for its user agent, or the empty log shows nothing: {probed}")
+    assert probed["rustc"] == str(stub) and probed["status"] == 1, f"the tests' PATH must still reach {stub}: {probed}"
+    assert calls.read_text() == "--version\n--probe\n", f"only the probe test starts {stub}: {calls.read_text().splitlines()}"
+    removed = [entry for entry in env["PATH"].split(os.pathsep) if shutil.which("rustc", path=entry)]
+    assert removed[0] == str(stub.parent) and observed["provisioning_path_removed"] == removed, (
+        f"the result must name every PATH entry withheld from provisioning, {removed}: "
+        f"{observed.get('provisioning_path_removed')}")
+    transcript = result_path.with_suffix(".log").read_text().splitlines()
+    assert [json.loads(line) for line in transcript if line.startswith('{"provisioning_path_removed"')] == [
+        {"provisioning_path_removed": removed}], "the .log must carry the result's removed entries once"
+    assert f"[stewart] provisioning PATH omits {os.pathsep.join(removed)}" in result.stdout, result.stdout
 
 
 PROBE = "tests/test_retention_probe.py::"

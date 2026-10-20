@@ -12,6 +12,7 @@ import pytest
 import stewart
 from stewart._bootstrap import SOURCE_FILES, SOURCE_MODULES, SOURCE_RESOURCES, StewartError
 from stewart.session import package_identity
+from support import path_without_rustc
 
 
 def require_wheel_members(names):
@@ -110,11 +111,14 @@ def test_templates_route_roles_without_selecting_a_harness():
 
 
 def test_console_preserves_quoted_installation_paths(tmp_path, run_cmd):
+    # venv's ensurepip and the install run pip, which starts `rustc --version` wherever rustc
+    # resolves; under this test's empty HOME a rustup proxy would start a toolchain download.
+    provisioning = dict(os.environ, PATH=path_without_rustc(os.environ.get("PATH", os.defpath)))
     prefix = tmp_path / "Stewart's installed environment"
-    run_cmd([sys.executable, "-I", "-B", "-m", "venv", prefix], check=True)
+    run_cmd([sys.executable, "-I", "-B", "-m", "venv", prefix], env=provisioning, check=True)
     python = prefix / "bin/python"
     run_cmd([python, "-I", "-B", "-m", "pip", "install", "--no-index", "--no-deps", "--no-compile",
-             os.environ["STEWART_TEST_WHEEL"]], check=True)
+             os.environ["STEWART_TEST_WHEEL"]], env=provisioning, check=True)
     result = run_cmd([prefix / "bin/stewart", "--json", "docs", "questions"], cwd=tmp_path,
                      env=dict(os.environ, PYTHONHOME="/nonexistent/stewart-home"), check=True)
     value = json.loads(result.stdout)["result"]

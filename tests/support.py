@@ -6,6 +6,7 @@ import inspect
 from importlib.util import resolve_name
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import sys
@@ -163,6 +164,29 @@ def clean_environment() -> dict[str, str]:
            if not key.startswith(("PYTEST_", "STEWART_TEST_"))}
     env["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
     return env
+
+
+def path_without_rustc(path_value: str) -> str:
+    """path_value without every entry in which rustc resolves, as scripts/check.py provisions.
+
+    pip runs `rustc --version` for its user agent wherever shutil.which finds rustc,
+    and under a test's empty HOME a rustup proxy would start installing a toolchain
+    from the network. Tests that start pip give it this PATH; tests/test_runner.py
+    keeps it in step with check.py's provisioning_path.
+    """
+    return os.pathsep.join(entry for entry in path_value.split(os.pathsep) if not shutil.which("rustc", path=entry))
+
+
+def rustc_stub(directory: Path, calls: Path) -> Path:
+    """Write directory/rustc, which appends its arguments to calls and fails, as pip tolerates.
+
+    First on PATH it records every start and shadows any rustup proxy behind it.
+    """
+    directory.mkdir(parents=True)
+    stub = directory / "rustc"
+    stub.write_text(f"#!/bin/sh\nprintf '%s\\n' \"$*\" >> {shlex.quote(str(calls))}\nexit 1\n")
+    stub.chmod(0o755)
+    return stub
 
 
 def run_cmd(argv, *, cwd=None, env=None, check=False, timeout=60):

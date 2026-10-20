@@ -181,6 +181,22 @@ def select_git(requested, path_value, platform, probe, wrapper_dir, shell, shim=
                            "fallback": fallback, "changed": changed}
 
 
+def provisioning_path(path_value):
+    """Return path_value without every entry in which rustc resolves, and the entries removed.
+
+    pip runs `rustc --version` for its user-agent string whenever shutil.which finds
+    rustc, even with --no-index; under a test's empty HOME a rustup proxy then starts
+    installing a toolchain from the network until pip's timeout kills it. Testing each
+    entry with shutil.which, pip's own lookup, leaves pip nothing to find. A relative
+    entry is judged in check.py's working directory and an empty one is always kept;
+    the commands run in the fresh private directory, which holds no rustc, so neither
+    can supply one there.
+    """
+    entries = path_value.split(os.pathsep) if path_value else []
+    removed = [entry for entry in entries if shutil.which("rustc", path=entry)]
+    return os.pathsep.join(entry for entry in entries if entry not in removed), removed
+
+
 def file_digests(root):
     """SHA-256 of every file under root, keyed by its relative POSIX path."""
     return {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
@@ -450,9 +466,13 @@ def main():
         "node more than once is refused, and so is a test outside the staged tests directory named beside "
         "a staged path. pytest loads the staged conftest only for staged paths, so a selection naming only "
         "outside paths runs them without the suite's checks and then fails for want of a receipt, as do "
-        "options that end pytest before a session (--version, --markers). NAME is the --result stem. "
-        "Beside the result a run keeps NAME.log (provisioning, build and the Git selection), NAME.pytest.log "
-        "(pytest's argv, then its stdout and stderr, each line labelled with its stream), "
+        "options that end pytest before a session (--version, --markers). The provisioning commands "
+        "(ensurepip, both pip installs, the build and any --parity-output run) get PATH minus every entry in "
+        "which rustc resolves, because pip runs `rustc --version` for its user agent and a rustup proxy would "
+        "start installing a toolchain; the tests keep the inherited PATH. NAME is the --result stem. Beside "
+        "the result a run keeps NAME.log (the Git selection, the PATH entries withheld from provisioning, then "
+        "provisioning and build), NAME.pytest.log (pytest's argv, then its stdout and stderr, each line "
+        "labelled with its stream), "
         "NAME-dist/ (the tested wheel) and NAME-artifacts-*/ (pytest's base temporary directory, reduced "
         "as --keep-artifacts says once this invocation's receipt is written; without that receipt nothing "
         "is removed)."))
@@ -513,7 +533,8 @@ def main():
         root = Path(temporary).resolve()
         # Decided once, before provisioning; only the tests' environment receives the PATH.
         shell = "/bin/dash" if os.access("/bin/dash", os.X_OK) else "/bin/sh"
-        tests_path, git_selection = select_git(args.git_executable, environment.get("PATH", os.defpath), sys.platform,
+        inherited = environment.get("PATH", os.defpath)
+        tests_path, git_selection = select_git(args.git_executable, inherited, sys.platform,
                                                lambda argv, path: run_probe(argv, {**environment, "PATH": path}),
                                                root / "git-selection", shell)
         log.write(json.dumps({"git_selection": git_selection}) + "\n"); log.flush()
@@ -526,15 +547,23 @@ def main():
         found = (f"git {git_selection['executable']} ({git_selection['version']})" if git_selection["executable"]
                  else "no git on PATH")
         print(f"[stewart] {found}: {detail}", flush=True)
+        # Every command run() starts goes without rustc; the tests keep the inherited PATH.
+        kept_path, withheld_path = provisioning_path(inherited)
+        provisioning = {**environment, "PATH": kept_path} if withheld_path else dict(environment)
+        log.write(json.dumps({"provisioning_path_removed": withheld_path}) + "\n"); log.flush()
+        if withheld_path:
+            print(f"[stewart] provisioning PATH omits {os.pathsep.join(withheld_path)}, where rustc resolves", flush=True)
         prefix = root / "environment"
-        venv.EnvBuilder(with_pip=True).create(prefix)
+        # EnvBuilder's own ensurepip would inherit os.environ, PATH included.
+        venv.EnvBuilder(with_pip=False).create(prefix)
         python = prefix / "bin/python"
         def run(arguments, *, cwd=root):
             command = [str(python), "-I", "-B", *map(str, arguments)]
             log.write(json.dumps({"argv": command, "cwd": str(cwd)}) + "\n"); log.flush()
-            completed = subprocess.run(command, cwd=cwd, env=environment, stdout=log, stderr=subprocess.STDOUT)
+            completed = subprocess.run(command, cwd=cwd, env=provisioning, stdout=log, stderr=subprocess.STDOUT)
             if completed.returncode:
                 raise RuntimeError(f"command failed ({completed.returncode}); see {transcript}")
+        run(["-m", "ensurepip", "--upgrade", "--default-pip"])
         run(["-m", "pip", "install", "--no-index", "--no-compile", "--find-links", wheels,
              "--require-hashes", "-r", project / "requirements.lock"])
         run(["-m", "build", "--no-isolation", "--wheel", "--outdir", root / "dist", project])
@@ -594,7 +623,7 @@ def main():
         if receipted:
             observed.update(total_seconds=elapsed, total_budget_seconds=args.total_budget_seconds,
                             total_budget_exceeded=over_budget, fast=args.fast, git_selection=git_selection,
-                            runner_exit_status=status)
+                            provisioning_path_removed=withheld_path, runner_exit_status=status)
             observed.update(identity, retention=plan)
             # The plan is on record before the first removal; each result follows.
             write_result(result, observed)
