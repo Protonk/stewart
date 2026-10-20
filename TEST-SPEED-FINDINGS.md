@@ -1094,7 +1094,8 @@ Rulings these depend on:
 None is caused by WP5. I checked items 1–7 in the code at `fb532fa`. They
 are reported, not fixed.
 
-1. **Status runs Git through a planted `.git` link.** `_git_head`
+1. **Status runs Git through a planted `.git` link** (fixed; see
+   "Correctness fixes from the WP5 review" below). `_git_head`
    (`status.py:61-63`, called at `:480` and gated only by `is_dir()`) and
    `_lock_view` (`:913-919`) run `rev-parse` in the auditor worktree
    without the regular-gitfile check that `close` (`close.py:205-207`) and
@@ -1109,7 +1110,7 @@ are reported, not fixed.
    unchanged, holds, but its name claims more. As an operation, status can
    report `head`, `head_matches_prompt` (which gates the run and release
    offers) and the lock from the other repository.
-2. **The frozen HEAD is a later re-read.** `evaluate` judges the HEAD read
+2. **The frozen HEAD is a later re-read** (fixed; see below). `evaluate` judges the HEAD read
    at `holdings.py:977` but freezes the one read at `:1280`, against "Freeze
    what the evaluation judged … never a later re-read" and its own
    docstring (`:1144-1147`). At use, the not-started path compares HEAD and
@@ -1178,3 +1179,232 @@ rest is small: 13 of the 25 A and B patterns are under 200 calls (≤ 1 s
 each). Every change needs its own regression and, for B, a comparison
 against real Git. Deviations 1 and 2 are custody defects independent of
 speed.
+
+## Correctness fixes from the WP5 review: deviations 1 and 2
+
+The user asked for deviations 1 and 2 to be fixed and moved the work's
+focus from test time to the correctness problems it uncovered. Evidence:
+`correctness/` (`README.txt` maps each run to the commit that cites it).
+Every run used Python 3.14.8 and Git 2.54.0 through the `dash` wrapper, in the default
+context (`unsandboxed`, socket bind allowed).
+
+### 1. Status runs Git only through the checkout's own administration (`74ce365`, `ac451e2`, `28514bc`)
+
+Real Git shows the hole is wider than the review said. In a linked
+checkout, a **regular** `.git` file reading `gitdir: <main>/.git` makes Git
+answer for the main repository exactly as a link does: same common
+directory, top level and HEAD (`experiments/gitfile_pointers.out`, part
+1). Close's `_gitfile`, collect's gate and the declaration helper all
+accept any regular file beginning with `gitdir: `. Collect's later
+common-directory comparison still refuses another repository, but not
+another administration of the same repository.
+
+`checkout_git_admin` (`_repository.py`) accepts only a regular `.git`
+file that meets three conditions:
+
+- it holds one gitdir line, read with an 8 KiB limit, so a huge file is
+  never read whole (`read_regular`'s new `limit`);
+- the line names a directory directly under the recorded common
+  directory's `worktrees`;
+- that directory's `gitdir` file names this checkout's `.git` in return.
+
+Relative paths, which `worktree.useRelativePaths` writes (part 2), are
+resolved as Git resolves them. Status also requires the administration to
+belong to this session's lifetime: its role marker, or else its
+registration lock, as close establishes it. One `git worktree repair` after
+an auditor's substituted `.git` can point another checkout's
+administration back at this checkout. In the suite, Git then left this
+`.git` naming that other administration, depending on the order in which
+it visited them (part 3, and the suite's run record). The back-pointer
+check alone would then accept it.
+
+Status asks for HEAD with `--git-dir` set to the verified administration,
+so Git never reads the checkout's `.git` itself, and reads the lock from
+that administration. Otherwise HEAD stays `null` and the lock records why
+in `error`. An outstanding line says why no handoff is offered, and the CLI
+prints an unread lock as "not observed (…)", never "not locked". The lock
+counts as the lifetime lock only when it names this session. No problem is
+added, so exit codes are unchanged. Status already reported a broken
+`.git` that way:
+`test_exit_codes_separate_recorded_errors_from_refusals` pins exit 1 for a
+gitfile naming nothing. The manual says what status follows.
+
+Close and collect keep their weaker gate. Changing it changes that
+tested contract: a gitfile naming nothing is "Git discovery failed",
+exit 1, while one naming another repository is an identity failure,
+exit 3. It is listed below for the user's decision.
+
+### 2. A claim freezes and compares the HEAD its judgment read (`7e4c5dd`, `c96075a`)
+
+`_worktree_findings` hands back the HEAD it judged, and `evaluate` freezes
+that value instead of re-reading HEAD. `_revalidate`'s not-started path
+compares the frozen HEAD with the HEAD its own judgment reads, after the
+gitfile and administration checks. It no longer uses a separate read taken
+before those checks, which also ran Git through an unverified `.git`.
+Under the old code, a worktree whose HEAD moved during that judgment was
+**removed** (`demos-1/old-holdings.out`).
+
+### Regressions
+
+- `test_git_runs_in_a_linked_checkout_only_through_its_own_administration`
+  (real Git): each substitute is first shown to redirect Git (a link; files
+  naming the main repository, another checkout's administration or
+  nothing; a second line; an oversized file), then refused. The genuine
+  file is accepted, also with relative paths, and is accepted again once
+  restored.
+- `test_status_runs_no_git_through_a_checkout_git_that_names_another_repository`:
+  four substitutes after main moved on, the last made by Git's own
+  `repair`. For each, no Git process runs in the checkout, HEAD and the
+  lock stay unobserved, the outstanding line is present and the exit code
+  is unchanged. The genuine file before and after serves as firing control
+  and invariance.
+- `test_a_planted_git_link_is_never_used_to_run_git` now asserts what its
+  name says.
+- `tests/test_resource_safety.py` section 12 has three regressions, all on
+  two commits holding the same tree, so only a HEAD check can tell them
+  apart:
+  - HEAD moved inside the claimed evaluation just after its judgment;
+  - HEAD moved inside the claim's revalidation just before its judgment;
+  - a link planted in place of `.git` between claim and use: no Git runs in
+    the worktree, and the claim is released on the gitfile finding.
+
+  In each, the close's other worktree retires (the differing case), and a
+  later generation retires the kept one (invariance).
+
+### Validation
+
+- Targeted `check.py -k` runs: `targeted-2` (15 passed), `targeted-4` (15
+  passed), `targeted-5` (14 passed, 1017 deselected, sdist test included).
+  `targeted-1` and `targeted-3` failed through test mistakes, a process
+  recorder that read argv positionally and a repair case that assumed
+  Git's visiting order; both were fixed before the passing runs.
+- Firing controls (`demos.out`, over the final source; earlier runs in
+  `demos-1/`, `demos-2/`): nine mutations each failed exactly their
+  expected nodes, and the source was restored and verified by digest each
+  time.
+  - status as at `b8a457d`: four status cases and the planted-link close
+    test;
+  - the gate without containment, without its back-pointer check, or
+    without its size limit: the gate test only, since status's lifetime
+    binding still refuses every substitute;
+  - without the lifetime binding: the repair case;
+  - without the outstanding line: the four status cases;
+  - holdings as at `b8a457d`: all three section-12 regressions;
+  - only the re-read freeze: the freeze regression;
+  - only the early comparison: the revalidation and planted-link
+    regressions.
+- Full gates, no selector:
+  - `gate` at `7e4c5dd`: 1029 collected and selected, 1028 passed, 1
+    skipped (the opt-in real-harness probe), 1075 s under heavy foreign
+    load (max 1-minute load 10.7: a Swift build, a Rust toolchain, WebKit).
+  - `gate-2` at `c96075a`: 1031 collected, 1029 passed, 1 skipped, 1
+    failed. The failure, `test_sdist_builds_same_wheel_without_git_or_network`,
+    was caused by me: I edited `_bootstrap.py` in the worktree during the
+    run, and the sdist it built from the live source then differed from the
+    wheel in exactly that member.
+  - `gate-3` at `28514bc`, run with no edits: 1031 collected and selected, 1030 passed, 1 skipped, 1054 s (max 1-minute load 9.8); every node shared with `gate` kept its outcome.
+
+### Review of the fixes (`correctness/review/`)
+
+Three read-only lenses ran, each followed by a skeptic. Confirmed findings
+against the fixes:
+
+- the administration was not bound to the session (now bound);
+- an unobserved lock could still print "not locked", and presence was read
+  three times (fixed);
+- the refusal survived only as prose, with no outstanding line (line
+  added; the reason identifier is still prose);
+- the unbounded `.git` read (limited);
+- the first HEAD-move test's outcome assertion did not discriminate
+  (same-tree commits now);
+- the use path's "no Git before verification" property was untested (new
+  regression).
+
+One gap remains: no test pins that the judged HEAD is read after `git
+status`. The watcher's audit found no agent tool call outside the
+worktree, Xcode and temporary directories (`review/audit-run.out`); two
+earlier stops were false alarms.
+
+### Correctness problems found by this work, not fixed
+
+Ranked by impact on custody. "Run" means shown with real Git in a scratch
+directory (`experiments/`); "code" means read at `28514bc`; "reasoning"
+means not checked.
+
+1. **Code from auditor-written Git config runs as the maintainer**
+   (adversarial auditor). A clean filter named by a repository the auditor
+   wrote ran under Stewart's own checkout queries (run,
+   `filter_execution.out`), in two ways:
+   - Through the top-level `.git`: close's gate accepts a gitfile naming
+     the auditor's repository, so `close --abandon`, and `close --plan`
+     (documented to write nothing), run `git diff <prompt>`, which ran the
+     command twice. Collect refuses this case, since the common directory
+     differs.
+   - Through a submodule's `.git` at a gitlink path: even with a genuine
+     top-level `.git`, `git diff <prompt>`, `git status` and `git diff
+     --name-only` each ran it; with `--ignore-submodules=all` none did.
+
+   This contradicts `_git.py`'s "inspecting a checkout never executes code
+   from it". Fix: the strict gate (with `--git-dir`/`--work-tree`) in close
+   and collect, `--ignore-submodules=all` on every status and diff, and
+   nested `.git` entries treated as boundaries.
+2. **Close and collect record, or decide from, another administration of
+   the same repository** (adversarial auditor; code, run for the
+   redirection, reasoning for the assume-unchanged blinding): a gitfile
+   naming `<common>` or another checkout's administration passes both
+   gates. Collect then attributes that administration's HEAD, index and
+   status to the auditor. An administration the auditor wrote, with an
+   assume-unchanged index, can hide a modified file from close's
+   uncollected check, and the checkout is then deleted. The fix is the
+   strict gate. It needs the user's ruling on the exit-code split between
+   "names nothing" (1) and "names another repository" (3).
+3. **Files under an unpopulated gitlink path are never collected, and
+   abandon deletes them** (no adversary; repositories with submodules;
+   run, `gitlink_listing.out`): `status` and `ls-files --others` list a new
+   top-level file but not `vendor/lib/new.txt`. Collect's inventory sees
+   it, but nothing compares the inventory with what was archived.
+4. **`git branch --show-current` fails on porcelain configuration** (no
+   adversary; run, `gitfile_pointers.out` part 4): a valueless
+   `branch.sort`, an invalid `color.branch.<slot>` or `column.branch`
+   makes it exit 128, while `rev-parse` and `symbolic-ref -q HEAD` are
+   unaffected. Preparation then fails at its role stage, and collect,
+   close and check record Git failures. This is R3.
+5. **A hung or interrupted package Git can leave a directory without its
+   start record** (no adversary; code): `collect`, `run` and
+   `recover_runtime` create a directory, or for `run` also
+   `RESERVED.json`, before `tool_identity()`. `package_identity` catches
+   only `OSError`, so a timeout or interruption there leaves a
+   `record_missing` entry (exit 3), and every concluded close then
+   refuses. This affects the documented `-m stewart` commands and API
+   callers, not the trusted launcher. This is R2.
+6. **`worktree.useRelativePaths=true`** (no adversary; code by the
+   reviewers, the relative format run): close removes an auditor checkout
+   but leaves its locked administration behind, and managed worktrees are
+   permanently blocked as "moved or replaced".
+7. Smaller items:
+   - a failed ref listing reads as absence (`close.py:80-81`);
+   - `_git.py` passes `GIT_OBJECT_DIRECTORY`,
+     `GIT_ALTERNATE_OBJECT_DIRECTORIES`, `GIT_CONFIG_PARAMETERS` and the
+     replace-ref variables through, and nothing neutralizes replace refs
+     (R4);
+   - collect writes `REPORT.md` and the raw captures by overwrite;
+   - `worktree_role_identity` is untested;
+   - a Git timeout escapes `close_plan`;
+   - release and run judge HEAD with plain `rev-parse HEAD` in the
+     auditor checkout and no `.git` check (`experiment.py:247-253`,
+     `446-450`);
+   - holdings' worktree checks re-resolve `.git` after verifying it (a
+     race), and its started path runs Git through any regular `.git`;
+   - removal unlinks entries created after revalidation (a short window,
+     partly caught by `rmdir`);
+   - later re-reads recorded in place of the judged read:
+     - collect's inventory digest against its archive reads;
+     - the experiment's protected manifest;
+     - `CLOSING.json`'s collection and triage digests;
+     - enrollment's `git_admin`;
+   - `git_text` strips both ends of Git's answers;
+   - `--fast` misses a clustered `-qm`;
+   - `_prospective_role` does not compare the recorded maintainer
+     administration;
+   - by reasoning only: collect's `rev-parse HEAD` without `--verify`, the
+     None frozen tip, and the recognition of attempt-named entries.

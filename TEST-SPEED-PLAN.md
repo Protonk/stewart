@@ -572,7 +572,9 @@ answers its four queries with one `rev-parse` and replays them otherwise
 custody review are done, with no runtime change ("WP5 census" in
 `TEST-SPEED-FINDINGS.md`): the candidates are ranked and classified, four
 rulings (R1–R4) are open, and seven pre-existing custody deviations are
-reported. Further runtime changes require the user's rulings and approval.
+reported. Deviations 1 and 2 are fixed (status's gate and the frozen HEAD), and
+the remaining correctness problems are listed in the findings; further runtime
+changes require the user's rulings and approval.
 
 Start with operations implicated by WP3. Fix the instrumentation before
 extending it:
