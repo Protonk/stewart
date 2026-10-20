@@ -1,55 +1,64 @@
 # Test speed: design choices for implementation
 
-Status: options, not decisions. Written for the agent who inherits
-`TEST-SPEED-PLAN.md` and its findings and moves to implementation. Each
-section states the choice, what the evidence says, a recommendation, and what
-pins the current behavior. Where the plan's work packages would change a
-number here, the findings win. The three questions the user asked are
-answered in sections 5, 6 and 7.
+Status: companion to `TEST-SPEED-PLAN.md`. The correctness and evidence
+requirements below constrain implementation; mechanisms and savings remain
+proposals to verify. The branch includes `main` at `764d97e` and no longer
+waits for `rehome`. The historical figures describe 966 tests; the latest
+repair validation collected 992. New comparisons must identify their own
+population and source, including test/harness changes outside the wheel.
 
-Orientation. Nearly all suite time is git process spawns: about 100 per test
-at 17 ms each on this Mac, split between fixtures (9 per test), the tool's
-operations (41 in `prepare()`, 36 in `collect()`, with a third of each
-duplicated), and CLI spawns that repeat the operation's git behind 0.18 s of
-interpreter startup. Four tests account for 184 s; everything else is a long
-tail. Any plan that does not reduce either the cost per spawn or the number
-of spawns is working on the margins.
+Git process startup is a promising large cost: the old sample measured six
+checkout spawns, three prompt-commit spawns, 41 in `prepare()` and 36 in
+`collect()`. Repeated argv identifies candidates, not redundant checks.
+The recorded runs had competing load, so neither a complete attribution of
+suite time nor a suite-wide speedup is established.
+
+Sequence: Git executable selection, directory pruning and collection repair
+(plan WP1), bounded retention (WP2), then reassess (WP3). Sharding (WP4) and
+runtime observation reuse (WP5) need evidence that the remaining cost warrants
+them. Exhaustive decomposition and test removal are not entry requirements;
+consolidation can be a separate follow-up (WP6).
 
 ## 1. Which git binary the harness runs
 
 Choice: leave `git` resolution to PATH, or have `scripts/check.py` resolve a
 non-shim binary for the test environment.
 
-Evidence: Apple's `/usr/bin/git` is a shim that costs 17 ms per spawn versus
-7 ms for the binary it execs, found with `xcrun --find git`. Three git-heavy
-tests halved through the real harness. Expected effect on the suite: 34
-minutes to roughly 18, as an extrapolation from spawn counts.
+Evidence: the historical sample measured about 17 ms per spawn through
+Apple's `/usr/bin/git` shim versus 7 ms through the binary found with
+`xcrun --find git`. Three Git-heavy tests improved substantially. The old
+34-to-18-minute suite estimate was an extrapolation from spawn counts, not a
+measured result. Repeat interleaved comparisons before relying on it.
 
 Recommendation: the check script builds the pytest environment already, so on
 macOS, when `shutil.which("git")` resolves to the shim, it should prepend the
-directory from `xcrun --find git` to PATH for the subprocesses and print the
-binary it chose. Keep a `--git-dir` override for other machines and for the
-comparison runs. This is harness environment, not tool logic; the tool keeps
-invoking `git` by name. Homebrew git should perform the same but was not
-measured.
+directory from `xcrun --find git` to PATH for the subprocesses after verifying
+the candidate. Keep an explicit executable override for comparisons; choose
+a name such as `--git-executable` to avoid confusion with Git's `--git-dir`.
+Preserve normal PATH selection on other platforms and when no usable direct
+binary is available. Record the requested choice, actual executable and
+version, and any fallback. This is harness environment; Stewart continues
+invoking `git` by name. Homebrew Git was not measured.
 
 Pinned by: nothing. `tests/acceptance.py` names `/usr/bin/git` explicitly but
 is not collected by pytest.
 
 ## 2. The two tests that walk `.scratch`
 
-Choice: fix the walkers, prune the directory, or both.
+Choice: prune traversal, limit future artifact growth, or both.
 
-Evidence: 81 s and 58 s today, growing with every retained run. A pruned walk
+Evidence: 81 s and 58 s in the historical run. A pruned walk
 in `source_python` takes 0.04 s. Hatchling prunes directories named in the
 sdist `exclude` before descending.
 
 Recommendation: both. Prune excluded top-level names before `rglob` in
 `tests/test_authority.py`, and add `.scratch` and `.venv` to the sdist
 `exclude` in `pyproject.toml`, keeping `ignore-vcs = true` because the
-distribution test's point is that the build needs no Git. The directory
-cleanup is the user's decision, covered in section 7. The firing control is
-in the plan's WP5.
+distribution test's point is that the build needs no Git. Limit future
+artifact growth through section 7; cleanup of historical artifacts remains
+the user's decision. The firing comparison, clean-tree invariance and
+unchanged file/member sets are in plan WP1. Retention limits future growth but does not replace
+correct pruning.
 
 Pinned by: `test_sdist_builds_same_wheel_without_git_or_network` asserts the
 sdist member set; an `exclude` of directories that were never included does
@@ -59,58 +68,75 @@ not change it.
 
 Choice: pytest-xdist, a shard loop in `scripts/check.py`, or nothing.
 
-Evidence: ten cores, of which four are performance cores, and other sessions
-keep the load near 4 to 5. The conftest's `plugin_origins` assertion admits
-only pytest's own plugins and the local conftest, and the wheelhouse is
-hash-locked, so xdist means two new locked wheels plus a widened assertion.
+Evidence: the original machine had ten cores, four of them performance
+cores, with competing load. That is no basis for a fixed worker count. The
+conftest's `plugin_origins` assertion admits only pytest's own plugins and
+the local conftest, and the wheelhouse is hash-locked, so xdist would require
+new locked dependencies plus a widened assertion.
 The `serial` marker is declared and unused. Each test already has a private
 `tmp_path`, HOME and manager home.
 
-Recommendation: a shard loop in the check script. Split test files across N
-pytest subprocesses, packed by the previous receipt's durations when one is
-given and round-robin otherwise, each with its own `--basetemp` under the
-artifacts directory, then merge the receipts: `collected` and `selected` as
-sums, `nodes` and `durations` as unions, `exit_status` as the maximum. Add
-`--workers`, default 1 so nothing changes unless asked, and document 3 as the
-working number on a shared machine. Files carrying `serial` go to shard 0.
-Budgets apply per shard. The plugin population is untouched. Once this
-exists, run the two interpreters one after another, never together.
+Recommendation, if WP3 warrants it: prefer an opt-in shard loop, with
+`--workers` defaulting to one, after WP4's independence audit. Assign files
+using compatible duration evidence or a deterministic fallback. Each worker
+needs its own result path, streams and `--basetemp`; no worker overwrites the
+aggregate or another worker's evidence. Measure useful worker counts under
+comparable load. Run interpreters sequentially.
 
-Pinned by: `tests/test_runner.py` lines 58 to 60 and
-`tests/test_foundations.py` lines 430 to 432 assert the receipt's `selected`,
-`collected`, `collected_nodes`, `deselected`, `outcomes`, `durations` and
-`nodes`. The merged receipt must keep those meanings, and the plan's
-independence audit must come back clean first.
+Establish the invocation's expected collected and selected node sets before
+dispatch. Workers must execute each selected node exactly once, or identify
+it as incomplete. Reject duplicate, missing and foreign nodes before merging
+maps or counts; a union can conceal duplicates. Preserve collection and
+deselection meanings even if workers receive already-selected node IDs.
+Document aggregate outcome/exit semantics and keep every worker's raw result;
+numeric maximum of exit codes alone cannot explain collection errors,
+interruptions, missing/stale receipts or an incomplete worker.
+
+A planned empty shard may be omitted explicitly; an unexpectedly empty
+worker or whole selection must not silently pass. Tests marked `serial` need
+an exclusive phase after all concurrent workers have stopped, or before any
+start. Assigning them to shard zero does not provide exclusivity. Preserve
+the per-test phase budget and the end-to-end total budget, including all
+setup and orchestration. Optional worker limits are additional.
+
+Pinned by: collection/outcome recording in `tests/conftest.py`, receipt
+assertions in `tests/test_foundations.py`, and budget/selection checks in
+`tests/test_runner.py`. Add focused tests for membership corruption, worker
+failure/interruption, serial exclusivity and aggregate budgets before relying
+on parallel results. Preserve the plugin boundary and installed-wheel checks.
 
 ## 4. Deduplicating git inside operations
 
-Choice: leave the tool alone, or remove repeated identical git calls within a
-single operation.
+Choice: retain fresh Git observations, or reuse a verified observation where
+the custody boundary permits it.
 
-Evidence: `checkout_identity` costs four spawns and runs three times per
-`prepare()` and twice per `collect()`; the same commit is resolved five times
-per `prepare()`; `status --porcelain` runs three times per `collect()`. About
-35 to 40% of in-process git is repeats of a query the same operation already
-made.
+Evidence: historical `prepare()` repeated the identity quartet three times
+and resolved the same commit five times; `collect()` repeated several
+identity, status and diff commands. The raw argv-only grouping did not
+establish equivalent cwd, inputs or observation boundaries. The calls are
+candidates to inspect, not a measured fraction that can safely be removed.
 
-Recommendation: defer until `rehome` has merged, because the call sites are in
-`_repository.py`, `prepare.py`, `collect.py` and `assignment.py`. When taken
-up, pass the identity dictionary down from the operation that first verified
-it rather than adding a cache with a lifetime, so that re-validation at use
-stays where the custody rules put it and nothing survives across operations.
-Before changing anything, add a regression guard: a test per operation that
-counts spawns through the same wrapper the plan's WP1 used and asserts an
-upper bound. That turns profligacy into a measured contract and catches the
-next accidental triple lookup.
+Recommendation: investigate only the operations implicated after the early
+fixes. For each proposed reuse, record the original check, its later consumer,
+intervening side effects or possible external changes, and why the consumer
+does not require a fresh observation. Passing an identity dictionary down
+within one call can still skip required revalidation. Keep repeated calls
+where that boundary matters; do not introduce a cross-operation cache.
 
-Pinned by: the custody rules in `AGENTS.md` on revalidating frozen identities
-at use. A within-operation pass-down does not weaken them; a cross-operation
-cache would.
+WP5's instrumentation must retain raw argv, cwd, relevant configuration and
+inputs, phase and call sites. Bound spawn counts for stable representative
+paths before changing them, but pair performance checks with regressions that
+change identity, contents or uses between checking and acting and with
+unchanged controls. A low spawn count cannot establish safe custody.
+
+Pinned by: `AGENTS.md` requires revalidation at use, including frozen resource
+identity/inventory and uncertain dependencies. Preserve the current
+`test_resource_safety.py` and close/request-binding regression behaviors.
 
 ## 5. Should fixtures be centralized?
 
-Short answer: centralize the invocation layer, not the state. For speed it is
-a minor lever; for the rest of this work it is the enabling one.
+Centralize invocation mechanics while keeping state independent. This can
+improve consistency even where the measured speed benefit is small.
 
 What exists: `conftest.py` holds `run_cmd`, the autouse private HOME, the
 `checkout` and `project_repo` fixtures and `installation`;
@@ -124,52 +150,49 @@ test files define their own CLI or git wrapper: `_cli` in
 `run_block` in `test_stewart_launch_profile.py`. They differ in how they parse
 the JSON envelope, which exit codes they allow, and whether they pass `-I -B`.
 
-What speed it buys: fixture work is about 9 git spawns per test, roughly 150 s
-of the suite, 60 s once git is the direct binary. Building the checkout once
-per session and copying the directory into each test's `tmp_path` would save
-most of that. Git repositories without worktrees are relocatable, and the
-template's HEAD commit is fixed once, so `meta["target_commit"]` stays
-correct. That is about a minute. Nothing larger is available from fixtures
-because the expensive spawns happen inside the operations, not around them.
+Potential saving: the historical checkout and prompt setup measured nine
+Git spawns together. Extrapolating that to every test is only an estimate;
+actual fixture use varies. A pristine checkout template copied into each
+test's own directory might save some of this cost. Measure copying, verify
+that no mutable state is shared, and check paths/configuration and commit
+identity before adopting it. Do not treat every Git repository as relocatable
+merely because it currently has no linked worktrees.
 
 What it buys otherwise: one `stewart` fixture replacing the ten wrappers
-gives a single place to choose the git binary, count spawns, enforce
-timeouts, decode the envelope with `loads_control`, and declare allowed exit
-codes. The plan's WP2 and WP3 signatures become reliable when every test
-calls the tool the same way, and a spawn budget per operation can be asserted
-in one fixture rather than ten.
+gives a single place to observe the harness's Git selection, count spawns,
+enforce timeouts, decode the envelope with `loads_control`, and declare
+allowed exit codes. It also makes later cost and overlap analysis easier. Preserve each
+caller's intended allowed exits, envelope assertions and isolated startup;
+centralizing must not silently broaden successful outcomes.
 
 What not to do: do not share prepared sessions across tests at module or
 session scope. Nearly every test mutates its repository, the conftest's first
 line promises test independence, and the custody semantics under test are
-about what one operation sees. A class-scoped prepared session shared by a
-handful of read-only `status` and `discover` assertions is the only safe form,
-and it is worth doing only where WP2 shows setup dominating.
+about what one operation sees. Even nominally read-only assertions need an
+independence argument before sharing setup. Prefer independent copies; do not
+introduce a shared prepared session as part of a mechanical helper refactor.
 
-Sequencing: a mechanical refactor across fifteen files will collide with
-`rehome` wherever it touches `test_resource_safety.py` or the `test_close*`
-files. Do it per file after `rehome` merges, or start with the files `rehome`
-has not touched.
+Sequencing: `rehome` is merged. Refactor per file when it supports measured
+work; avoid a suite-wide prerequisite before the narrow harness fixes.
 
 ## 6. Should tests be deleted wholesale, and how?
 
-Short answer: some, but for maintainability more than speed, and never on
-suspicion. Deleting a fifth of the tests saves a fifth of the time at best;
-the git levers save more and lose nothing. Treat deletion as a separate
-decision from speed, made on evidence, one cluster at a time.
+Treat deletion as a separate maintainability decision, made on evidence one
+cluster at a time. Removing a fraction of tests does not imply the same
+fraction of elapsed time. No deletion is required for the initial speed work.
 
-Why there are candidates: several files are layered by review cycle rather
-than by subject. `test_close.py` has 65 tests, `test_close_regressions.py` 17
-and `test_closeout_doubt.py` 21; `test_stewart_status.py` has 38 and
-`test_exit_codes.py` 34; the request-key, request-binding and action-binding
-files overlap by name. Each repair added tests and retired none. The 966 tests
-occupy 17,855 lines against 14,939 lines of source.
+Where to look: `test_close.py`, `test_close_regressions.py` and
+`test_closeout_doubt.py`; status/exit-code tests; and the request-key,
+request-binding and action-binding families. Similar names or a review-cycle
+history suggest places to inspect, not equivalent coverage. Use current
+source counts if they help; the historical 966-test population is superseded.
 
 Criteria that justify removal:
 
-- No unique failure mode. Under every mutation tried in the plan's WP3, the
-  test fired only when a cheaper retained test also fired. This is the main
-  criterion and the only one that is evidence rather than taste.
+- No identified unique behavior after inspecting the assertions and cases,
+  supported by discriminating mutations in plan WP6 for which a retained
+  test fires. Finite mutation agreement is evidence of overlap within that
+  comparison, not proof that no unique failure mode exists.
 - A parametrized case that does not differ in the measured property from a
   sibling case. The sweep stays; the duplicate parameter goes.
 - A CLI subprocess test whose subject is API behavior already covered through
@@ -183,86 +206,105 @@ Criteria that do not justify removal:
 - The test checks the harness or the measurement discipline
   (`test_foundations.py`, `test_runner.py`, `test_authority.py`). Those exist
   because the project values them; make them cheap instead.
-- The test is the only one asserting a reason identifier. The identifiers are
-  part of the JSON contract and 24 of 153 are already asserted nowhere.
+- The test is the only one asserting a reason identifier, lifecycle boundary
+  or race behavior. Identifiers are part of the JSON contract; reason counts
+  alone do not describe all the coverage worth keeping.
 - The test is one leg of a firing-control, differing-case, invariance-case
   triplet. Fold the triplet into one test with shared setup if the setup
   dominates; do not drop a leg.
 
 Process:
 
-1. Take clusters and mutation results from WP3; do not generate new
-   candidates during implementation.
+1. Take candidates and mutation results from WP6. A new candidate needs the
+   same analysis before removal.
 2. For each candidate, name the retained test that covers the same failure and
    the mutation that showed it, in the commit message.
 3. One commit per cluster, so any cluster can be reverted alone.
-4. Prefer folding to deleting where the tests share a prepared session and
-   differ only in assertions.
+4. Prefer folding repeated assertions within a case when it preserves the
+   behavioral distinctions and control roles. Keep state independent across
+   cases that depend on different observations or lifecycle histories.
 5. Present the list to the user before deleting anything. The user decides.
 6. After each cluster, re-run the cluster's files with the mutation that
    justified it and confirm something still fires.
 
-## 7. What to spin up, test, and throw away without logging
+## 7. Retention without losing the run's evidence
 
-Short answer: keep the run's receipt and the trees of failing tests; throw
-away the trees of passing tests. Re-running one test costs seconds, so an
-archive of its passing-state scratch tree is reproducible at any time and
-holds no evidence the receipt lacks. The custody rules in `AGENTS.md` govern
-audits, not the test suite's own output; retaining every test's checkout as
-if it were a receipt is the conflation to undo.
+Default to keeping evidence and removing bulky fixtures of known passing
+tests. A rerun is a new observation; it cannot recover the original command
+streams, timing conditions or passing controls. Allow evidence runs to retain
+selected passing artifacts, and keep incomplete outcomes conservatively.
 
-What one full run retains today: 3.4 GB and 2414 entries, spread thinly over
+What the historical full run retained: 3.4 GB and 2414 entries, spread over
 about 1200 test directories, each holding a checkout, a worktree, a private
 HOME with a gitconfig, `commands/NNNN/` records with both streams, and for
 some tests a staged runtime copy or a nested venv. The largest single
-directory is 62 MB. About fifteen such runs are what the 36 GB in the main
-checkout's `.scratch` is.
+directory was 62 MB. About fifteen retained runs accounted for the observed
+36 GB in the main checkout's `.scratch`; neither size is a current inventory.
 
-What is not reproducible by re-running, and so must be kept:
+What to retain for every run or selected evidence case:
 
-- The receipt: `durations`, `outcomes`, `node_outcomes`, `collected_nodes`,
-  `plugins`, the wheel digest, the interpreter. About 580 KB.
-- The transcript `.log` and the retained wheel under `-dist`. About 1 MB.
-- A failing or erroring test's tree, because the failure may not recur and
-  its `commands/` records show what the tool said at the time.
-- Timings taken as evidence for a comparison, which belong in the receipt
-  anyway.
+- The receipt: actual membership, phase outcomes and durations, plugins,
+  interpreter, wheel digest and configuration. Add test/harness source
+  identity, Git executable/version, selector, workers and permission context;
+  a runtime wheel does not identify the test source.
+- Actual pytest stdout/stderr as well as `.log` (currently only provisioning
+  and build output), the retained wheel under `-dist`, and per-worker records
+  if sharding is used. Capture startup/collection failures even without a
+  completed pytest receipt.
+- Failure artifacts for setup, call or teardown, plus artifacts of interrupted
+  or unresolved tests. Include the sibling private HOME and command records.
+- Selected passing evidence: for example a comparison's firing/control cases
+  and the `commands/` streams on which its explanation relies. Copy evidence
+  out of disposable directories before cleanup or explicitly retain them.
+- Raw comparison timings and provenance, not just aggregate summaries.
 
-What is reproducible and should go after a passing test: its checkout,
-worktree, HOME, `commands/` records and staged copies. For the runner test,
-its three nested venvs.
+The bulky checkout, worktree, HOME, staged copies and nested environments of
+a known passing test may go after that evidence decision. Unselected command
+records may go with them; never claim the receipt necessarily contains all
+their evidence. Record the retention policy and what was kept or discarded.
 
-Mechanism: set `tmp_path_retention_policy = "failed"` in the pytest options
-in `pyproject.toml`; pytest 7.4.3 honors it. The private HOME that
-`private_manager_storage` creates beside `tmp_path` is outside that policy,
-so its fixture must remove the directory on teardown when the test passed,
-using the outcome the conftest's `pytest_runtest_makereport` already sees.
-Keep `--basetemp` so failures land in a known place. Give the check script
-`--keep-artifacts all|failed|none`, default `failed`, with `all` for the rare
-run whose scratch trees someone wants to read. Expected result: tens of
-megabytes per run instead of gigabytes, and the two walkers in section 2 stop
-degrading even before their fix.
+Mechanism: keep `--basetemp` and map artifacts, including sibling HOME, to
+their owning tests. Decide cleanup only after setup, call and teardown reports
+are complete, preferably in a runner-owned post-test pass. Missing phase
+information or interrupted finalization must retain the affected artifacts.
+Pytest 7.4.3's `tmp_path_retention_policy = "failed"` is insufficient by itself:
+its `tmp_path` teardown checks the call outcome, defaults a missing call to
+success for cleanup, and cannot see a later teardown failure. Do not enable
+that early deletion beneath a policy that promises to keep such failures.
+
+Provide `--keep-artifacts failed|all` (default `failed`) and a repeatable
+node selection for retaining passing evidence. Define treatment of skipped
+or otherwise non-passing cases explicitly; absent a completed pass, retain.
+No `none` mode is needed for this work. Verify each phase failure, interruption,
+ordinary passing cleanup and selected passing retention. Measure the resulting
+space rather than promise a fixed reduction.
 
 The existing pile: the main checkout's retained runs are the user's evidence
 for past review cycles and the user's to delete. A reasonable policy is to
-keep every run's receipt, log and wheel, and keep artifact directories only
-for runs still under review.
+inventory each run's receipt, streams, wheel and cited evidence before deciding
+which remaining artifact directories to delete. The new default does not
+authorize retroactive cleanup.
 
-Pinned by: nothing asserts on the retained trees. `tests/test_runner.py` and
-`tests/test_foundations.py` assert on the receipt, which stays.
+Pinned by: receipts in `tests/test_runner.py` and `tests/test_foundations.py`,
+command evidence and private HOME in `tests/conftest.py`. Add retention tests
+for the new contract; a lack of old retention assertions is not proof that
+passing artifacts have no evidentiary value.
 
 ## 8. Smaller choices
 
 - Fix the duplicate collection in `scripts/check.py`: when a positional test
   path is given, do not also append the suite's `tests` directory, or resolve
-  the given path into the staged suite and pass only that.
-- Make the tiers mean something: mark the authority, distribution and runner
-  tests `heavy` so `-m "not heavy"` is a usable developer tier, and let
-  `--fast` select it instead of the 25 `smoke` tests.
+  the given path into the staged suite and pass only that. Handle overlapping
+  explicit paths/node IDs without duplicate execution; test actual membership.
+- Keep `--fast` as the existing smoke selection. The historical `not heavy`
+  tier was about 1794 s versus 84 s for smoke. If a broader developer tier is
+  useful, name and measure it separately; do not silently expand `--fast`.
 - One interpreter in the developer loop; both interpreters at the gate, one
-  after the other once sharding exists.
-- CLI spawns cost 0.18 s of startup each, 585 per run. Keep subprocess tests
-  where the CLI contract is the subject and let the rest use `stewart.api`.
+  after the other whether or not sharding exists.
+- Historical CLI spawns cost about 0.18 s of startup each, 585 per run. Keep
+  subprocess tests where the CLI contract is the subject and let the rest
+  use `stewart.api`.
   This is a small lever on its own and follows naturally from section 5.
-- Add the spawn budget tests from section 4 before any of the tool's git
-  calls change, so the guard exists while `rehome` is still landing.
+- Add the targeted performance and revalidation guards from section 4 before
+  changing runtime observations. The number of commands is a separate claim
+  from their behavioral adequacy.
