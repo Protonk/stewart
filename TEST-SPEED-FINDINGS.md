@@ -1532,3 +1532,41 @@ unsandboxed context):
   for two mutations: a manager-side mutation also runs, failing, Git through
   a `.git` naming nothing, and the swap test's hook is the gate itself.
 - Full gate `gate` at `e3db068`: 1043 collected and selected, 0 deselected; 1042 passed, 1 skipped (the opt-in real-harness probe); 756 s (max 1-minute load 8.2); every node shared with `correctness/gate-4` kept its outcome.
+
+### Unit A's external review (`3af53fc`)
+
+An external reviewer reported two findings, both reproduced with its own
+probes against the `e3db068` wheel. It found the lock binding sound within the
+helper's stated trust limits, and noted that this does not establish live
+harness enforcement.
+
+1. **The input verifier reopened `.git` after verification.**
+   `verify_inputs.py` and `expected_inputs` ran plain Git after
+   `auditor_context` had verified the administration. The reviewer swapped in
+   an administration whose replace ref substituted the changed input, and
+   restored the genuine `.git` before revalidation; a changed input then
+   reported matched, exit 0.
+   - Fixed: `auditor_context` returns the administration it verified, and its
+     revalidation compares it. The verifier asks every question of it, and
+     `expected_inputs` takes Git's global options.
+2. **Collection rewrote `checkout_git_missing` to `collection_failed`.** The
+   reason was absent from `COLLECTION_ERRORS`, so the receipt contradicted the
+   written classification.
+   - Fixed: the reason is listed as `(EXIT_ATTENTION, False)`. The receipt
+     keeps it and the exit stays 1.
+
+New regressions:
+- the verifier under that swap returns the same result as with the genuine
+  `.git`;
+- the helper reads the lock, never the role marker, and refuses a lock naming
+  another session;
+- the substitute test asserts the reason.
+
+Validation:
+- `review-fixes-1`: 202 passed over the gate, inputs, declaration,
+  repository, CLI and exit-code test files.
+- `demos.out`: nine mutations, each failing exactly its expected nodes. The
+  three new ones remove each fix in turn. `demos-2/` and `demos-3/` hold
+  earlier runs; the latter had two expected lists that omitted the new lock
+  test.
+- Full gate `gate-2` at `3af53fc`: 1045 collected and selected, 0 deselected; 1044 passed, 1 skipped (the opt-in real-harness probe); 1092 s under heavy foreign load (max 1-minute load 15.7); every node shared with `gate` kept its outcome.
