@@ -2072,8 +2072,17 @@ The runner builds a wheel, installs it into a private venv, and copies tests to
 an unrelated directory. It selects that copy's pytest configuration explicitly,
 disables inherited plugins and options, and records collected/selected nodes,
 per-node outcomes, the installed member population, wheel digest and interpreter.
-It retains command streams and fixture artifacts beside the result. An empty
-selection is an error. Run it with Python 3.14, the qualified interpreter.
+Beside the result it keeps the pytest output (`<name>.pytest.log`), the tested
+wheel, and the fixture artifacts and command streams of failed, skipped,
+interrupted and over-budget tests; the result records what it removed. Add
+`--keep-node NODEID` to keep a passing test's artifacts, or
+`--keep-artifacts all` to keep everything. Name tests relative to the project
+root (`tests/<file>.py` or `tests/<file>.py::<test>`); a selection that would
+run a node twice, names a test outside the staged suite, or is empty is
+refused. On macOS the tests reach Git through a private wrapper for the
+developer tools' binary instead of the `/usr/bin/git` shim;
+`--git-executable path` leaves PATH as it is. Run it with Python 3.14, the
+qualified interpreter.
 Socket checks require a host that permits a local Unix socket; unreadable-file
 controls require an unprivileged user. No dependency downloads occur in this
 runner. Its nested boundary tests reuse the same provisioned wheelhouse.
