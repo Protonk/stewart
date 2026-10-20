@@ -122,6 +122,50 @@ sampled 1-minute load 2.2. Each run retains its artifacts, so `.scratch` grew
 from 418,623 to 425,798 entries across these runs. The authority walk is 3.84
 of `smoke`'s 5.63 s.
 
+**Move to Python 3.14 only.** After the 3.11 baselines the user decided to
+drop Python 3.11. `db61a8d` sets `requires-python = ">=3.14"` and updates the
+README, the bundled guidance, the distribution test's metadata assertion and
+`LINUX-CONTAINERS-PLAN.md`. Under 3.11, `check.py` now stops at wheel
+install with pip's "requires a different Python: 3.11.17 not in '>=3.14'"
+(`support-314/refused-311.out`); on 3.14 the metadata and sdist tests pass
+(`support-314/focused-314.json`: 2 of 992 selected, 2 passed). Everything
+above is 3.11 and now historical; the rows below are the baselines WP1 to WP3
+use, and the two sets are never combined.
+
+**3.14 reference** (`reference/full-314`, `db61a8d`): 992 collected and
+selected, 991 passed, 1 skipped; wheel `ac7d4271…`; `total_seconds` 1362.6;
+node list identical to the 3.11 references (`reference/nodes-r2-vs-314.out`).
+Load sampled every 10 s, max 1-minute load 3.52; interactive foreground load
+was present: a Safari WebKit process up to 81% CPU in 52 of 137 samples and
+WindowServer up to 42% in 87 (`load_during` in its provenance). `.scratch`
+grew from 426,259 to 630,454 entries.
+
+**3.14 baseline selections** (three round-robin rounds, default context,
+`db61a8d` source; `baseline-wp0-314/summary.out`):
+
+| Selection | Phase sum median (range), s | `total_seconds` median (range) | Walkers inside |
+| --- | --- | --- | --- |
+| `walkers` | 12.085 (12.004–12.102) | 15.364 (15.174–15.858) | authority 7.90–8.03 s, sdist 4.05–4.16 s |
+| `git-heavy` | 50.129 (49.784–50.287) | 53.453 (53.166–53.642) | |
+| `no-git` | 1.169 (1.155–1.172) | 4.629 (4.451–4.757) | |
+| `smoke` | 9.851 (9.776–9.987) | 13.114 (12.917–13.299) | authority 7.94–8.08 s |
+
+All with expected counts and identical outcomes; `.scratch` at 630,459 to
+637,633 entries; maximum sampled 1-minute load 2.72; Safari WebKit and
+WindowServer appear among busy foreign processes in several runs (each run's
+`.load.jsonl`). On 3.14 the authority walk costs about 1.3 s per 100,000
+entries at this size.
+
+**Second plan correction (WP1.3).** Design choices section 1 said inserting
+xcrun's Git directory before `/usr/bin` changes 48 names (24 shim, 24 other
+files). It changes 111: 22 shim (Homebrew's `python3`, `pip3` and `pydoc3`
+come earlier and stay), 24 other files, and 65 that resolved nowhere before,
+among them `python3.9`, `pip3.9`, `pydoc3.9`, `2to3` and `scalar`
+(`levers/git/changed_names.out`); the plan-review probe counted only names
+with a `/usr/bin` entry. The user chose to time a third condition, a
+directory holding only a `git` wrapper script, and to prefer it. The plan
+and design choices were corrected in `b7985c9`.
+
 **Residual cost found on the way (for WP3).** pip runs `rustc --version`
 whenever `rustc` is on PATH (its user-agent string; 0.5 s timeout), even with
 `--no-index`. Homebrew's rustup proxies are on PATH here, so in a test's empty

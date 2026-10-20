@@ -230,9 +230,9 @@ that output; a regression that cannot fail is not a firing control.
 
 ### WP0. Pickup, provenance and reference
 
-Status: 3.14 baselines pending. Named selections; two 3.11 references and
-3.11 baselines, historical since the 3.14-only decision; a 3.14 reference on
-`db61a8d`, which WP1 to WP3 use. See `TEST-SPEED-FINDINGS.md`.
+Status: done. Named selections; two 3.11 references and 3.11 baselines,
+historical since the 3.14-only decision; a 3.14 reference and 3.14 baselines
+on `db61a8d`, which WP1 to WP3 use. See `TEST-SPEED-FINDINGS.md`.
 
 1. Confirm state: the worktree is clean on `test-speed` at or after the
    commit that added this revision (ignored `.scratch` content does not
