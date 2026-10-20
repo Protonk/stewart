@@ -1,10 +1,11 @@
 # Test speed and evidence retention plan
 
-Status: in progress; WP0 to WP2 done (`TEST-SPEED-FINDINGS.md`). Start with bounded
-measurements and improvements to the test harness, then investigate the
-remaining costs. This file sets the order, evidence and acceptance of each
-work package; `TEST-SPEED-DESIGN-CHOICES.md` sets out the mechanisms and the
-constraints they must satisfy. Update a work package's status line when it
+Status: WP0 to WP3 done (`TEST-SPEED-FINDINGS.md`); WP4 and WP5 await the
+user's decision. Start with bounded measurements and improvements to the
+test harness, then investigate the remaining costs. This file sets the
+order, evidence and acceptance of each work package;
+`TEST-SPEED-DESIGN-CHOICES.md` sets out the mechanisms and the constraints
+they must satisfy. Update a work package's status line when it
 lands. Remove both files when their contracts have reached documentation and
 tests; keep unresolved work explicit.
 
@@ -128,8 +129,9 @@ prerequisites for the inexpensive harness improvements.
 directories the receipts name. Its `run_cmd` counts also followed pytest's
 `<prefix>current` symlinks and counted those tests' records twice; the
 `run_cmd` rows below come from `plan-review/receipt_summary_corrected.py`
-(output `receipt_summary_corrected.out`), which differs only in that count
-(`pickup/run-cmd-count/count_records.out`). In each pair the 3.11 and 3.14
+(output `receipt_summary_corrected.out`), whose output differs only in the
+`run_cmd` record and git-verb lines (`pickup/run-cmd-count/count_records.out`).
+The pytest session times come from the runs' `.out` streams in `baseline/`. In each pair the 3.11 and 3.14
 invocations ran at the same time, so contention affected their timings by an
 unknown amount.
 The change in elapsed time from 966 to 992 tests cannot be attributed:
@@ -497,7 +499,8 @@ other worktrees remain untouched.
 
 ### WP3. Reassess the remaining cost
 
-Status: pending.
+Status: done; the gate ran as WP3's full 3.14 run, and the recommendation on
+WP4 and WP5 awaits the user (`TEST-SPEED-FINDINGS.md`).
 
 After WP1 and WP2, repeat the WP0 selections three times each and take one
 full 3.14 run under the reference conditions. The full run also supplies WP2's

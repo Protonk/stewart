@@ -82,7 +82,12 @@ at the cost of one shell start per call. Given the 65 newly resolvable names,
 the user chose (2026-10-19) to measure it as a third condition and prefer it:
 `auto` creates the wrapper in `check.py`'s private directory when its saving
 is established; the directory insertion needs an established advantage over
-the wrapper and the user's agreement.
+the wrapper and the user's agreement. The comparison (`levers/git/`)
+established the directory faster than a `/bin/sh` wrapper (26.96 s against
+35.35 s for `git-heavy`; shim 49.70 s), so the user was asked again and chose
+(2026-10-20), after a confirmation run (shim 49.58 s, `dash` wrapper 30.52 s),
+a wrapper for `/bin/dash`, falling back to `/bin/sh` where `/bin/dash` is
+missing. That is what `--git-executable auto` implements.
 
 Pinned by: nothing yet. `tests/acceptance.py` names `/usr/bin/git` explicitly
 but is not collected by pytest. Tests that construct PATH themselves bypass
