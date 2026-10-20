@@ -18,7 +18,7 @@ from pathlib import Path
 from stewart import _util as _hash
 from stewart import assignment as _assignment
 from stewart._bootstrap import StewartError, write_exclusive
-from stewart._git import git, git_text, resolve_commit
+from stewart._git import git, git_text, gitlinks, resolve_commit
 from stewart.launch_profile import EXIT_LOG, load_profile, render_command, render_probe
 from stewart.report_declaration import HANDOFF_DIRECTORY, SCHEMA_VERSION as DECLARATION_SCHEMA
 from stewart.runtime import helper_argv, retain_runtime, select_runtime
@@ -38,7 +38,8 @@ from stewart.workspace import Workspace, contained
 
 def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_paused: bool = False,
             pause_note: str | None = None, checkout_home_path: Path | None = None, lifetime: str | None = None,
-            audit_id: str | None = None, request_key: str | None = None) -> dict:
+            audit_id: str | None = None, request_key: str | None = None,
+            submodules_acknowledged: bool = False) -> dict:
     """Validate a prompt-only commit and build its session; see ``_prepare``.
 
     A request key binds the resolved prompt commit, the audit ID it carries,
@@ -62,15 +63,17 @@ def prepare(ws: Workspace, revision: str, *, mode: str = "snapshot", writers_pau
                            reason="reference_mismatch",
                            next_steps=["select the audit the prompt names, or prepare without the reference"])
     inputs = {"prompt_commit": prompt_commit, "mode": mode, "writers_paused": writers_paused, "pause_note": pause_note,
-              "checkout_home": None if request_key is None else str(resolve_checkout_home(checkout_home_path))}
+              "checkout_home": None if request_key is None else str(resolve_checkout_home(checkout_home_path)),
+              "submodules_acknowledged": submodules_acknowledged}
     return keyed(ws, ident, "prepare", inputs, request_key,
-                 lambda plan: _prepare(ws, prompt_commit, mode, writers_paused, pause_note, checkout_home_path, plan),
+                 lambda plan: _prepare(ws, prompt_commit, mode, writers_paused, pause_note, checkout_home_path, plan,
+                                       submodules_acknowledged),
                  outputs=lambda result: [output(Path(result["session"]) / "session.json", "session", ws,
                                                 result["audit_id"], result["session_uuid"])])
 
 
 def _prepare(ws: Workspace, revision: str, mode: str, writers_paused: bool, pause_note: str | None,
-             checkout_home_path: Path | None, plan) -> dict:
+             checkout_home_path: Path | None, plan, submodules_acknowledged: bool = False) -> dict:
     """Validate a prompt-only commit and build its session; return the session facts.
 
     The private session lives under the Git common directory; the checkout,
@@ -95,6 +98,17 @@ def _prepare(ws: Workspace, revision: str, mode: str, writers_paused: bool, paus
         )
     if mode == "snapshot" and (writers_paused or pause_note is not None):
         raise StewartError("--writers-paused and --pause-note require --mode paused", reason="mode")
+    # Stewart neither populates nor audits submodules: their paths are empty in the auditor's checkout,
+    # and Git lists nothing written below them. The maintainer acknowledges that before preparing.
+    submodules = gitlinks(repo, revision)
+    if submodules and not submodules_acknowledged:
+        raise StewartError(
+            "the prompt commit holds submodules, which Stewart does not populate or audit: "
+            + ", ".join(item["path"] for item in submodules[:10]),
+            reason="submodules_present",
+            next_steps=["supply any submodule code the audit needs as supplemental inputs or committed copies; "
+                        "then acknowledge with --submodules-acknowledged (README, 'Submodules')"],
+        )
     if mode == "paused" and (not isinstance(pause_note, str) or not pause_note.strip()):
         raise StewartError(
             "paused mode requires --pause-note naming which writers were paused and how the pause was arranged",
@@ -214,6 +228,8 @@ def _prepare(ws: Workspace, revision: str, mode: str, writers_paused: bool, paus
         "common_dir": repository["common_dir"],
         "maintainer_git_admin": repository["git_admin"],
         "launch_profile": launch_profile,
+        "submodules": {"gitlinks": submodules, "acknowledged_by": "maintainer via --submodules-acknowledged"}
+        if submodules else None,
         "stewart": tool_identity(),
     }
     record["auditor_scope"] = scope_for(record, manager_home=manager_root, interpreter_prefix=prefix,
@@ -358,6 +374,13 @@ def _render_handoff(ws: Workspace, record: dict) -> str:
         "If your harness did not start inside that worktree, use absolute paths rooted there for "
         "every project read, search and write. The separately supplied runtime below is the only extra code-reading scope.\n"
     )
+    if record.get("submodules"):
+        launch += (
+            "\nSubmodule paths (empty in this checkout; Stewart does not populate or audit them):\n"
+            + "".join(f"- `{contained(worktree, item['path'])}`\n" for item in record["submodules"]["gitlinks"])
+            + "Write nothing under them and do not populate them. Collection archives what Stewart's own walk "
+            "finds there and names it as a gap. If the question needs their code, report needs-evidence.\n"
+        )
     launch += (
         "\nDeclared writable scratch paths (absolute; create files only within the assigned scope):\n"
         + ("".join(f"- `{contained(worktree, rel)}`\n" for rel in meta["scratch_paths"]) or "- None declared.\n")

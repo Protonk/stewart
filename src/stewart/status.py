@@ -1178,6 +1178,9 @@ def _derive_actions(ws: Workspace, ident: str, view: dict, record: dict | None, 
         })
     if identities["worktree"]["head_matches_prompt"] is False:
         outstanding.append("worktree HEAD differs from the prompt commit; a collection records the unexpected commit")
+    if (record or {}).get("submodules"):
+        outstanding.append("the prompt commit holds submodules, which Stewart does not populate or audit: "
+                           + ", ".join(item["path"] for item in record["submodules"]["gitlinks"][:10]))
     if identities["worktree"]["exists"] and identities["worktree"]["head"] is None:
         why = (identities["worktree"].get("lock") or {}).get("error") or "Git cannot read it"
         outstanding.append(f"the worktree's HEAD is not observed ({why}); no handoff is offered until it is")

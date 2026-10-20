@@ -233,6 +233,9 @@ def build_parser() -> argparse.ArgumentParser:
                       help="snapshot lets development continue (default); paused records a writer hold")
     prep.add_argument("--writers-paused", action="store_true",
                       help="acknowledge an actual, already-arranged writer pause; required only for paused mode")
+    prep.add_argument("--submodules-acknowledged", action="store_true",
+                      help="acknowledge that the prompt commit holds submodules, which Stewart does not populate "
+                           "or audit; their paths are listed in the handoff and gaps name anything written there")
     prep.add_argument("--pause-note", metavar="TEXT",
                       help="who was paused and how the pause was arranged; required with --writers-paused, "
                            "recorded verbatim, never verified")
@@ -682,6 +685,7 @@ def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | Non
 
         result = prepare(ws, args.prompt_commit, mode=args.mode, writers_paused=args.writers_paused,
                          pause_note=args.pause_note, checkout_home_path=args.checkout_home, lifetime=lifetime,
+                         submodules_acknowledged=args.submodules_acknowledged,
                          audit_id=reference["audit_id"] if reference is not None else None, **keyed)
         return result, result.get("exit_code", EXIT_OK)
     if args.command == "status":
@@ -934,6 +938,9 @@ def render(command: str, result: dict) -> str:
         else:
             lines.append(f"Recorded {result.get('rid')}: {result.get('path') or result.get('record')}")
     if command == "init":
+        if result.get("submodules"):
+            lines.append("Warning: the target commit holds submodules, which Stewart does not populate or audit: "
+                         + ", ".join(result["submodules"]) + ". Prepare requires --submodules-acknowledged.")
         if result["written"]:
             lines += [f"Unassigned draft written: {result['written']}",
                       "Next: author the five sections, remove the UNASSIGNED line, commit PROMPT.md alone, then prepare."]

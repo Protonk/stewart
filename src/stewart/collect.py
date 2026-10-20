@@ -20,10 +20,12 @@ import os
 from pathlib import Path
 import stat
 import subprocess
+import sys
 import tarfile
+import unicodedata
 
 from stewart import _util as _hash
-from stewart._git import git, git_text
+from stewart._git import git, git_text, tree_entries
 from stewart import _bootstrap as _files
 from stewart._bootstrap import EXIT_ATTENTION, EXIT_UNVERIFIED, StewartError, combined_code
 from stewart.runtime import observe_phase, runtime_state
@@ -138,8 +140,13 @@ def checkout_state(worktree: Path, prompt_commit: str) -> tuple[dict, dict[str, 
     ):
         names.update(os.fsdecode(git(worktree, *args).stdout).split("\0"))
     names.discard("")
+    # Git lists nothing below a submodule path or inside a nested repository, so Stewart's own
+    # no-follow walk adds every regular file and link that is neither committed nor Git-reported.
+    entries = tree_entries(worktree, prompt_commit)
+    known = {_spelling(path) for _, _, path in entries} | {_spelling(rel) for rel in names}
+    unlisted = {rel for rel in _walk(worktree) if _spelling(rel) not in known}
     files = []
-    for rel in sorted(names):
+    for rel in sorted(names | unlisted):
         try:
             candidate = contained(worktree, rel, leaf_link=True)
         except StewartError as exc:
@@ -159,13 +166,46 @@ def checkout_state(worktree: Path, prompt_commit: str) -> tuple[dict, dict[str, 
             files.append({"path": rel, **_files.capture_regular(candidate)})
         else:
             files.append({"path": rel, "kind": _files.entry_kind(mode), "mode": stat.S_IMODE(mode)})
+        if rel in unlisted:
+            files[-1]["listed_by_git"] = False
     state = {
         "head": git_text(worktree, "rev-parse", "HEAD"),
         "branch": git_text(worktree, "branch", "--show-current"),
         "files": files,
         "receipts": {name: _hash.sha256_bytes(data) for name, data in raw.items()},
     }
+    submodules = sorted(path for mode, _, path in entries if mode == "160000")
+    if submodules:
+        state["gitlinks"] = submodules
     return state, raw
+
+
+def _spelling(rel: str) -> str:
+    """A path as Git reports it: on macOS Git precomposes Unicode names (core.precomposeUnicode)."""
+    return unicodedata.normalize("NFC", rel) if sys.platform == "darwin" else rel
+
+
+def _walk(worktree: Path) -> list[str]:
+    """Regular files and links below the worktree, without following links or entering a ``.git`` directory.
+
+    Only names are listed here; every entry is opened again through ``contained`` and a verified
+    descriptor before its bytes are read. The inventory records what cannot be listed.
+    """
+    found, pending = [], [""]
+    while pending:
+        rel = pending.pop()
+        try:
+            with os.scandir(worktree / rel if rel else worktree) as listing:
+                for entry in listing:
+                    child = f"{rel}/{entry.name}" if rel else entry.name
+                    if entry.is_symlink() or entry.is_file(follow_symlinks=False):
+                        if child != ".git":
+                            found.append(child)
+                    elif entry.is_dir(follow_symlinks=False) and entry.name != ".git":
+                        pending.append(child)
+        except OSError:
+            continue
+    return found
 
 
 def _archive_member(worktree: Path, item: dict):
@@ -637,4 +677,10 @@ def custody_gaps(receipt: dict) -> list[dict]:
             EXIT_ATTENTION, True)
     for item in summary.get("boundaries", []):
         add(f"boundary:{item['path']}", item["reason"], EXIT_ATTENTION, True)
+    checkout = receipt.get("checkout") or {}
+    for link in checkout.get("gitlinks", []):
+        inside = [item["path"] for item in checkout.get("files", []) if item["path"].startswith(link + "/")]
+        if inside:
+            add(f"gitlink_contents:{link}", f"entries under a submodule path, which Git does not list (archived "
+                f"from Stewart's own walk): {', '.join(inside[:10])}", EXIT_ATTENTION, True)
     return gaps

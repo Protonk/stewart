@@ -12,7 +12,8 @@ permission alone grants no trial execution. Keep original evidence and report
 partial work when blocked or interrupted; do not infer scientific success from
 matching hashes, row counts or a control firing.
 
-Write the report and declared scratch outputs only in the assigned checkout.
+Write the report and declared scratch outputs only in the assigned checkout,
+never under a submodule path the handoff lists.
 Preserve unexpected changes and failed work. Never read private manager/session
 storage, rewrite receipts or dispose of the checkout. Return control to the
 maintainer for collection and review.

@@ -30,6 +30,22 @@ def _invocation(repo: Path, *args: str) -> dict:
             "cwd": repo, "env": env}
 
 
+def tree_entries(repo: Path, commit: str) -> list[tuple[str, str, str]]:
+    """Every entry of a commit's tree, recursively, as (mode, object ID, path); paths verbatim."""
+    entries = []
+    for record in git(repo, "ls-tree", "-r", "-z", "--full-tree", commit).stdout.split(b"\0"):
+        if record:
+            meta, _, path = record.partition(b"\t")
+            mode, _, rest = meta.partition(b" ")
+            entries.append((mode.decode("ascii"), rest.partition(b" ")[2].decode("ascii"), os.fsdecode(path)))
+    return entries
+
+
+def gitlinks(repo: Path, commit: str) -> list[dict]:
+    """The commit's submodule entries (mode 160000): Git lists nothing below these paths in a checkout."""
+    return [{"path": path, "commit": oid} for mode, oid, path in tree_entries(repo, commit) if mode == "160000"]
+
+
 def git(repo: Path, *args: str, check: bool = True, timeout: int = 120,
         input: bytes | None = None) -> subprocess.CompletedProcess:
     """Run one Git command in ``repo`` with hooks and redirections neutralized."""

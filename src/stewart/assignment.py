@@ -443,8 +443,10 @@ def _initialize(ws: Workspace, ident: str, target: str, *, inputs: Sequence[str]
         written_files = [{"path": str(repo / item["path"]), "sha256": item["sha256"]} for item in observed()]
         finish_init(record, written=observed(), error=None)
         written = str(destination)
+    from stewart._git import gitlinks
     return {"audit_id": ident, "draft": text, "written": written, "assignment": meta, "input_manifest": manifest,
-            "draft_record": None if record is None else str(record), "written_files": written_files}
+            "draft_record": None if record is None else str(record), "written_files": written_files,
+            "submodules": [item["path"] for item in gitlinks(repo, meta["target_commit"])]}
 
 
 def copy_supplemental(repo: Path, worktree: Path, item: dict) -> None:

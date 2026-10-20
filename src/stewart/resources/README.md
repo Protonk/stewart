@@ -1955,13 +1955,27 @@ could fix it, 3 when nothing the auditor does can) and whether the auditor's
   FIFOs, sockets and devices are never read. A nested `.git` is listed as a
   boundary and not traversed. These observations do not certify continuous
   pathname or byte stability between endpoints.
-- The archive holds Git-reported regular files and links. Special entries are
-  inventoried but not archived; a Git-reported entry that could not be archived
-  appears under `omitted`.
+- The archive holds Git-reported regular files and links, and every other
+  regular file and link Stewart's own no-follow walk finds that is neither
+  committed nor Git-reported: Git lists nothing below a submodule path or
+  inside a nested repository. Those entries carry `listed_by_git: false` and
+  count as unexpected paths outside the assigned outputs. Special entries are
+  inventoried but not archived; an entry that could not be archived appears
+  under `omitted`.
+- Submodules: Stewart does not populate or audit them. Their paths (mode
+  `160000` entries of the committed tree) are empty in the auditor's checkout.
+  `init` warns when the target commit holds any; `prepare` refuses a prompt
+  commit holding any (`submodules_present`) until `--submodules-acknowledged`,
+  records the paths and the acknowledgment, and lists them in the handoff.
+  Anything written below them is archived from Stewart's walk and named by a
+  `gitlink_contents` gap, and `status` keeps an outstanding line naming them.
+  Supply submodule code an audit needs as supplemental inputs or committed
+  copies.
 - Preservation claims cover recorded file bytes and metadata only. Extended
   attributes, other mounts, shared caches, host services and transient effects
   are outside them. A successful Git command does not establish full coverage;
-  the inventory does, within the boundaries it names.
+  the inventory records every entry within the boundaries it names, and the
+  archive holds the regular files and links among them that changed or are new.
 - Acknowledgments are attributed to the maintainer's flags. `auditor stopped:
   acknowledged` is not an observed process exit. The validated reserved declaration records the auditor's completion claim,
   never a verdict. Prose status lines are not interpreted.

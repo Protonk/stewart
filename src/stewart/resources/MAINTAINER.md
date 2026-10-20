@@ -10,7 +10,9 @@ for each fresh audit ID and commit the prompt alone, after committing support
 material. Use an explicit maintainer repository root. Arrange real writer
 coordination before acknowledging a paused session. Handoff scope must protect
 private receipts and manager code; supplying a command does not configure an
-unqualified harness automatically.
+unqualified harness automatically. Stewart does not populate or audit
+submodules: supply submodule code an audit needs as supplemental inputs or
+committed copies before acknowledging them at prepare.
 
 Stop the auditor before collection, preserve raw reports and failure evidence,
 then fill the collection-bound triage deliberately. Publish only reviewed

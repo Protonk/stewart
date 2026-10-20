@@ -300,6 +300,8 @@ FIXES = {
     "unreadable:": "make this entry readable, or remove it",
     "unsupported:": "remove this special entry; it cannot be captured",
     "boundary:": "remove this nested Git directory; its contents cannot be captured",
+    "gitlink_contents:": "move these files under a declared scratch path: Stewart does not populate or audit "
+                         "submodules; if the question needs this code, report needs-evidence",
     "collection_error:": "fix the named problem with the report path",
     "command_mismatch:": "copy the issued command from the handoff exactly",
 }

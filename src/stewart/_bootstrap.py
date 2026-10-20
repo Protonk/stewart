@@ -160,7 +160,7 @@ REFUSED_REASONS = frozenset({
     "no_grant", "no_hold", "non_object", "path_escape", "path_noncanonical", "path_symlink",
     "pause_note_required", "pause_unacknowledged", "prepare_failed", "close_leftovers", "prompt_commit_shape", "prompt_digest", "prompt_drift", "reason_required",
     "record_missing", "record_name", "refused", "release_consumed", "report_changed", "report_kind", "report_kind_required",
-    "report_unreadable", "report_write", "repository_root", "response_schema", "retain_nothing",
+    "report_unreadable", "report_write", "repository_root", "response_schema", "retain_nothing", "submodules_present",
     "review_schema", "runtime_cache", "schema_version", "scope_uncovered", "session_missing", "startup_failed",
     "startup_isolation", "support_unreviewed", "target_ancestry", "target_drift", "unassigned_prompt",
     "unknown_field", "unterminated_block", "usage", "workspace_guidance",
