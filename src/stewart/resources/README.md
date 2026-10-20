@@ -1419,7 +1419,8 @@ taken from the evaluation that judged it removable. At most one claim is
 active, and none is created once a resource is retired; two closes racing for
 one resource cannot both claim it. The close then retires its claims, deepest
 paths first and branches last. At use it revalidates every use, the identity,
-the full inventory, HEAD and tip, re-runs the worktree checks, and refuses a
+the full inventory and the tip, re-runs the worktree checks and compares the
+HEAD they read with the frozen one, and refuses a
 checkout registered inside since; any change, or a use that appeared since,
 ends the claim with `<n>.RELEASED.json` and keeps the resource. A claim whose
 removal already started (it has an attempt record) accepts only the entries it

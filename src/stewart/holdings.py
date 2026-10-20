@@ -951,8 +951,14 @@ def _reachable_elsewhere(common: str, commit: str, excluded: set[str]) -> list[s
             if not ref.startswith("refs/stewart/") and ref not in excluded]
 
 
-def _worktree_findings(common: str, identity: dict, rid: str, disposed_paths: list[str], excluded: set[str]) -> list[str]:
-    """Why a managed worktree cannot be removed now; empty when it can."""
+def _worktree_findings(common: str, identity: dict, rid: str, disposed_paths: list[str], excluded: set[str],
+                       judged: dict | None = None) -> list[str]:
+    """Why a managed worktree cannot be removed now; empty when it can.
+
+    ``judged`` receives the HEAD this judgment read, once its gitfile and
+    administration are verified: the value a claim freezes, and the value its
+    use compares with the frozen one, so no other read stands in for it.
+    """
     from stewart._git import git
     path = Path(identity["path"])
     admin = _admin_for(common, rid)
@@ -975,6 +981,8 @@ def _worktree_findings(common: str, identity: dict, rid: str, disposed_paths: li
         findings.append("uncommitted, untracked or ignored content (never cleaned by Stewart): "
                         + ", ".join(sorted(unexplained)[:10]))
     head = _worktree_head(path)
+    if judged is not None:
+        judged["head"] = head
     if head is None:
         findings.append("its HEAD cannot be read")
     elif head != identity.get("head") and not _reachable_elsewhere(common, head, excluded):
@@ -1254,11 +1262,12 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
         elif identity.get("dev") is not None and (snapshot["identity"]["dev"], snapshot["identity"]["ino"]) != \
                 (identity["dev"], identity["ino"]):
             reasons.append("the directory at its path is not the one created")
+    judged: dict = {}
     if view.get("kind") == "worktree":
         # Its branch, and every branch retiring with it, cannot vouch for its commits.
         reasons += _worktree_findings(common, identity, rid, [loc for item in disposed for loc in item["locations"]],
                                       retiring_refs | ({identity["branch"]} if identity.get("branch_rid") in inventory
-                                                       else set()))
+                                                       else set()), judged=judged)
     tip = None
     if view.get("kind") == "branch":
         tip, symbolic = _ref_tip(common, identity["ref"])
@@ -1277,7 +1286,7 @@ def evaluate(common: str, view: dict, index: Index, *, ending=None, dispose: set
     if snapshot is not None:
         frozen.update(snapshot={key: snapshot[key] for key in ("identity", "entries", "sha256")})
     if view.get("kind") == "worktree":
-        frozen["head"] = _worktree_head(Path(path))
+        frozen["head"] = judged.get("head")  # the HEAD judged above, never a later re-read
     if view.get("kind") == "branch":
         frozen["tip"] = tip
     return {**result, "disposition": "remove", "contained_retained": contained, "retiring_inside": inside,
@@ -1523,13 +1532,17 @@ def _revalidate(common: str, view: dict, claim: dict, index: Index) -> list[str]
                 if head is not None and head != frozen.get("head"):
                     findings.append("its HEAD moved after the claim was frozen")
             if kind == "worktree" and not started:
-                if _worktree_head(path) != frozen.get("head"):
-                    findings.append("its HEAD moved after the claim was frozen")
                 # Branches whose claims are active are being retired too; they cannot vouch for its commits.
-                findings += _worktree_findings(common, identity, view["rid"],
-                                               [loc for item in document.get("disposed", [])
-                                                for loc in item.get("locations", [])],
-                                               _branch_refs(common, set()))
+                # The frozen HEAD is compared with the HEAD this judgment reads, after its gitfile and
+                # administration are verified, so a move during the judgment cannot pass unseen.
+                judged = {}
+                judgment = _worktree_findings(common, identity, view["rid"],
+                                              [loc for item in document.get("disposed", [])
+                                               for loc in item.get("locations", [])],
+                                              _branch_refs(common, set()), judged=judged)
+                if "head" in judged and judged["head"] != frozen.get("head"):
+                    findings.append("its HEAD moved after the claim was frozen")
+                findings += judgment
     if kind == "branch":
         commit, symbolic = _ref_tip(common, identity["ref"])
         if commit is not None and (commit != frozen.get("tip") or symbolic):

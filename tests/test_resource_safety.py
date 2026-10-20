@@ -22,6 +22,7 @@ import pytest
 
 from stewart import _removal, api
 from stewart._bootstrap import EXIT_ATTENTION, EXIT_OK, StewartError
+from stewart._git import git, git_text
 import stewart.close as close_module
 import stewart.holdings as holdings
 import stewart_support as support
@@ -1045,3 +1046,103 @@ def test_a_retirement_interrupted_while_ending_a_disposed_dependency_finishes_th
     assert base._generations(common, export_rid) == {1: "RETIRED"}
     # Invariance: the export with a durable destination outside the container is untouched.
     assert snapshot_tree(durable) == outside
+
+
+# --- 12. a worktree HEAD that moves while it is judged ------------------------------------------------------------
+
+
+def _worktrees_past_a_contained_commit(checkout, tmp_path):
+    """Two managed worktrees at a new main commit, and the commit before it, which main still contains."""
+    work = tmp_path.resolve()
+    elsewhere = git_text(checkout.repo, "rev-parse", "HEAD")
+    (checkout.repo / "later.txt").write_text("main moves on before the worktrees are made\n", encoding="utf-8")
+    checkout.git("add", "later.txt")
+    checkout.git("commit", "-qm", "A later main commit")
+    moved, steady = work / "moved-tree", work / "steady-tree"
+    moved_rid = base._rid(api.create_worktree(checkout.ws, HOLDER, path=str(moved), actor="manager"), "worktree")
+    steady_rid = base._rid(api.create_worktree(checkout.ws, HOLDER, path=str(steady), actor="manager"), "worktree")
+    judged = git_text(moved, "rev-parse", "HEAD")
+    assert judged != elsewhere and "refs/heads/main" in git_text(
+        checkout.repo, "for-each-ref", "--contains", elsewhere, "--format=%(refname)").split(), \
+        "alone, the worktree checks accept a HEAD moved to this commit"
+    return moved, steady, moved_rid, steady_rid, judged, elsewhere
+
+
+def test_a_worktree_claim_freezes_the_head_its_evaluation_judged(checkout, tmp_path, monkeypatch):
+    """A HEAD moved inside the claim's own evaluation, after its judgment, is caught at use and kept."""
+    common = base._common(checkout.repo)
+    moved, steady, moved_rid, steady_rid, judged, elsewhere = _worktrees_past_a_contained_commit(checkout, tmp_path)
+    real_claim_for_close, real_findings = holdings.claim_for_close, holdings._worktree_findings
+    claiming, fired = [], []
+
+    def claim_for_close(*args, **kwargs):
+        claiming.append(True)
+        try:
+            return real_claim_for_close(*args, **kwargs)
+        finally:
+            claiming.pop()
+
+    def judge_then_move(common_, identity, rid, *rest, **options):
+        findings = real_findings(common_, identity, rid, *rest, **options)
+        if claiming and rid == moved_rid and not fired:
+            assert findings == [], "the claimed evaluation judged the worktree removable"
+            git(moved, "checkout", "-q", "--detach", elsewhere)
+            fired.append(rid)
+        return findings
+
+    with monkeypatch.context() as patch:
+        patch.setattr(holdings, "claim_for_close", claim_for_close)
+        patch.setattr(holdings, "_worktree_findings", judge_then_move)
+        closed = api.close(checkout.ws, HOLDER, actor="manager", abandon=True, reason="resources done")
+    assert fired == [moved_rid], "firing control: HEAD moved inside the claimed evaluation, after its judgment"
+    claim = support.read_json(base._records(common, moved_rid) / "claims/0001.json")
+    assert claim["frozen"]["head"] == judged, "the claim freezes the HEAD the evaluation judged, not a later read"
+    outcomes = base._by_rid(closed["resources"])
+    assert outcomes[moved_rid]["outcome"] == "kept" and moved.is_dir()
+    assert "its HEAD moved after the claim was frozen" in outcomes[moved_rid]["reasons"]
+    assert base._generations(common, moved_rid) == {1: "RELEASED"}
+    # Differing only in the move: the other worktree claimed by the same close retires.
+    assert outcomes[steady_rid]["outcome"] == "removed" and not steady.exists()
+    # Invariance: at a commit main contains, a new generation judges, freezes and retires it.
+    retired = api.close_resources(checkout.repo, [moved_rid], actor="manager")
+    assert _outcomes(retired["results"]) == [(moved_rid, "removed")] and not moved.exists()
+    assert base._generations(common, moved_rid) == {1: "RELEASED", 2: "RETIRED"}
+    assert support.read_json(base._records(common, moved_rid) / "claims/0002.json")["frozen"]["head"] == elsewhere
+
+
+def test_a_head_moved_while_a_worktree_claim_is_revalidated_releases_it(checkout, tmp_path, monkeypatch):
+    """The frozen HEAD is compared with the HEAD the use-time judgment reads, not with a read taken before it."""
+    common = base._common(checkout.repo)
+    moved, steady, moved_rid, steady_rid, judged, elsewhere = _worktrees_past_a_contained_commit(checkout, tmp_path)
+    real_revalidate, real_findings = holdings._revalidate, holdings._worktree_findings
+    revalidating, fired = [], []
+
+    def revalidate(common_, view, claim, index):
+        revalidating.append(view["rid"])
+        try:
+            return real_revalidate(common_, view, claim, index)
+        finally:
+            revalidating.pop()
+
+    def move_then_judge(common_, identity, rid, *rest, **options):
+        if revalidating and rid == moved_rid and not fired:
+            git(moved, "checkout", "-q", "--detach", elsewhere)
+            fired.append(rid)
+        return real_findings(common_, identity, rid, *rest, **options)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(holdings, "_revalidate", revalidate)
+        patch.setattr(holdings, "_worktree_findings", move_then_judge)
+        closed = api.close(checkout.ws, HOLDER, actor="manager", abandon=True, reason="resources done")
+    assert fired == [moved_rid], "firing control: HEAD moved during the claim's revalidation, before its judgment"
+    assert support.read_json(base._records(common, moved_rid) / "claims/0001.json")["frozen"]["head"] == judged
+    outcomes = base._by_rid(closed["resources"])
+    assert outcomes[moved_rid]["outcome"] == "kept" and moved.is_dir()
+    assert "its HEAD moved after the claim was frozen" in outcomes[moved_rid]["reasons"]
+    assert base._generations(common, moved_rid) == {1: "RELEASED"}
+    # Differing only in the move: the other worktree claimed by the same close retires.
+    assert outcomes[steady_rid]["outcome"] == "removed" and not steady.exists()
+    # Invariance: at a commit main contains, a new generation judges, freezes and retires it.
+    retired = api.close_resources(checkout.repo, [moved_rid], actor="manager")
+    assert _outcomes(retired["results"]) == [(moved_rid, "removed")] and not moved.exists()
+    assert base._generations(common, moved_rid) == {1: "RELEASED", 2: "RETIRED"}
