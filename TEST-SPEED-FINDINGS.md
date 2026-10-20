@@ -1349,7 +1349,8 @@ means not checked.
    and collect, `--ignore-submodules=all` on every status and diff, and
    nested `.git` entries treated as boundaries.
 2. **Close and collect record, or decide from, another administration of
-   the same repository** (adversarial auditor; code, run for the
+   the same repository** (fixed by unit A, `e3db068`, below; the concluded-close
+   hole it widens is unit B) (adversarial auditor; code, run for the
    redirection, reasoning for the assume-unchanged blinding): a gitfile
    naming `<common>` or another checkout's administration passes both
    gates. Collect then attributes that administration's HEAD, index and
@@ -1461,3 +1462,73 @@ Minor:
   enforcement as fact. Both are corrected in the plan.
 - Several manual table rows (`files.tar`, `session.json`, the gap families)
   and `prepare`'s docstring were not updated.
+
+## Unit A: one verified administration for every checkout query (`e3db068`)
+
+The first unit of item 2's agreed recommendations. It is on branch
+`checkout-gate`, layered on `main` at `99bf884` and not merged; evidence is
+under `.scratch/checkout-gate/` in that worktree. Units B (a concluded close
+requires complete Git discovery and an archive), C (R2), D (R3) and E (R1)
+follow.
+
+**Contract.** Stewart runs Git in an auditor checkout only through the
+administration its own `.git` names. That administration must lie directly
+under the recorded common directory's `worktrees` and name the checkout back,
+and, where the session is known, belong to its lifetime. Every query names the
+administration and the checkout with `--git-dir` and `--work-tree`.
+
+**Gated operations:**
+- status, which applied the gate already;
+- collect: the gate, both `checkout_state` calls, and the receipt's
+  `checkout.git_admin`;
+- close's `_observe_checkout`, which serves abandon, plan and the re-check
+  before removal;
+- the auditor's helper (`auditor_context`, `check_checkout`, `assess_checkout`);
+- release and run.
+
+`_prospective_role`, which runs during `prepare` in the fresh checkout before
+any auditor, is unchanged; unit D replaces its porcelain query.
+
+**Classification (the user's ruling).**
+
+| `.git` in the checkout | Recorded as | Exit |
+| --- | --- | --- |
+| names a directory that does not exist | `checkout_git_missing`, a Git discovery failure (as before) | 1 |
+| anything else that is not the checkout's own administration | `checkout_identity` | 3 |
+
+For both, close records the checkout as unobserved, so abandon refuses
+without `--discard-uncollected`. The helper refuses with `checkout_git_file`.
+It cannot read the role marker in its scope, so it binds the session lifetime
+through the checkout's lock, and only when the issued handoff names the
+session. It also takes the common directory from Git's own answer, so it cannot
+tell an administration fabricated entirely inside the checkout from a genuine
+one, but that misleads only the auditor's own helper; collection uses the
+recorded common directory.
+
+**Item 1's top-level route is closed.** Close no longer runs a filter from a
+repository the auditor wrote, because the gate refuses that `.git`. Item 1's
+submodule route remains, as tabled.
+
+**Regressions** (`tests/test_checkout_gate.py`):
+- Six substitutes: a link, a file naming the main repository, another
+  checkout's administration, one that Git's repair points back here, an
+  administration written inside the checkout, and a file naming nothing. Each
+  is first shown to redirect Git. Then collect records it (reason, exit code,
+  no checkout state, report preserved), `check` refuses, and close's plan and
+  abandon refuse until discarding. No manager Git process runs in the
+  checkout.
+- The genuine checkout, absolute and relative, as invariance.
+- A `.git` swapped right after verification, which collection ignores.
+- Release and run refusing a file naming the main repository, whose HEAD equals
+  the prompt.
+- The gate test expects `checkout_git_missing` for a file naming nothing.
+
+**Validation** (Python 3.14.8, Git 2.54.0 through the `dash` wrapper, default
+unsandboxed context):
+- `targeted-2`: 353 of the gated operations' existing tests passed.
+- `gate-tests-1`: 10 passed.
+- `demos.out`: six mutations, one per call site, each failing exactly its
+  expected nodes. `demos-1/` holds a first run whose expected lists were wrong
+  for two mutations: a manager-side mutation also runs, failing, Git through
+  a `.git` naming nothing, and the swap test's hook is the gate itself.
+- Full gate `gate` at `e3db068`: 1043 collected and selected, 0 deselected; 1042 passed, 1 skipped (the opt-in real-harness probe); 756 s (max 1-minute load 8.2); every node shared with `correctness/gate-4` kept its outcome.
