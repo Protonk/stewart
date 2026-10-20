@@ -1,64 +1,115 @@
 # Test speed and evidence retention plan
 
-Status: pending. Start with bounded measurements and improvements to the test
-harness, then investigate the remaining costs. `TEST-SPEED-DESIGN-CHOICES.md`
-sets out the implementation constraints. Remove both files when their
-contracts have reached documentation and tests; keep unresolved work explicit.
+Status: pending; no work package has started. Start with bounded
+measurements and improvements to the test harness, then investigate the
+remaining costs. This file sets the order, evidence and acceptance of each
+work package; `TEST-SPEED-DESIGN-CHOICES.md` sets out the mechanisms and the
+constraints they must satisfy. Update a work package's status line when it
+lands. Remove both files when their contracts have reached documentation and
+tests; keep unresolved work explicit.
 
-The `test-speed` branch now includes `main` at `764d97e`, including the last
-resource-containment and close-plan repairs. `rehome` has merged. There is no
-merge dependency to wait for. The repair validation collected 992 tests;
-the 966-test measurements below are a historical baseline, not the current
-population. Do not rewrite those receipts or combine their timings with a
-different population as though they measured the same suite.
+The `test-speed` branch is `main` at `764d97e` plus planning commits.
+`rehome` has merged; there is no merge dependency to wait for. The current
+population is 992 tests: the repair validation of `764d97e` collected 992
+(`baseline/repair-followups/full-311.json`). The 966-test measurements below
+are a historical baseline of an earlier source, not the current population.
+Do not rewrite those receipts or combine their timings with a different
+population as though they measured the same suite.
 
 The question is which changes reduce elapsed time and retained bulk while
 preserving independent tests, custody checks and the evidence needed to
-understand a run. An exhaustive census and test deletion are not prerequisites
-for the inexpensive harness improvements.
+understand a run. An exhaustive census and test deletion are not
+prerequisites for the inexpensive harness improvements.
 
 ## Ground rules
 
-- Work in this worktree. Leave sibling branches, files and historical
-  artifacts alone. The main checkout is on `main`; check actual branch and
-  process state at pickup instead of assuming another session is idle.
-- Local evidence is under `.scratch/test-speed/baseline/` and
-  `.scratch/test-speed/tools/`; `.scratch/wheelhouse` holds the locked wheels.
-  These ignored files may be absent in a fresh checkout. If so, mark the old
-  measurements unavailable and make bounded new comparisons; do not invent
-  missing provenance or require another worktree's retained trees.
+- Work in this worktree (`stewart-test-speed`, branch `test-speed`). Leave
+  sibling branches, worktrees, files and historical artifacts alone. The main
+  checkout is on `main` and other sessions may use it; check actual branch,
+  worktree and process state at pickup instead of assuming it is idle.
+- Local evidence, ignored by Git and possibly absent in a fresh checkout.
+  Paths below are relative to `.scratch/test-speed/` unless they say
+  otherwise:
+  - `baseline/`: the 966-test receipts, streams and logs (`repair-311.*`,
+    `repair-314.*`) and, under `repair-followups/`, copies of the 992-test
+    receipts, streams and logs with `SOURCES.sha256`.
+  - `plan-review/`: the probes behind this revision's corrections; its README
+    lists them.
+  - `tools/`: the historical spawn-counting scripts. Their README is stale;
+    read WP5 before reusing them.
+  - `.scratch/wheelhouse` (at the worktree root): the locked wheels.
+
+  The historical runs' artifact directories remain in the main checkout's
+  `.scratch/identity/` and `.scratch/repair-followups/`. Read them if useful;
+  never modify, move or delete them. If any of this evidence is missing, mark
+  the dependent figures unavailable and make bounded new comparisons; do not
+  invent missing provenance or require another worktree's trees.
+- Supported interpreters: `/opt/homebrew/bin/python3.11` (3.11.17) and
+  `/opt/homebrew/bin/python3.14` (3.14.8). Confirm both at pickup. Use 3.11 in
+  the development loop and run both, one after the other, at the gate.
 - During investigation use focused selections and keep each run to about two
-  minutes of tests. One interpreter and one check invocation at a time; check
-  for competing processes with `ps aux | rg '[p]ytest|[c]heck.py'`. Use full
-  runs for the final implementation gate, not repeatedly to rank ideas. Run
-  the two supported interpreters sequentially. Parallel workers are a later,
-  explicitly measured option within one invocation.
-- Do not pass a test file path to `scripts/check.py`. It appends its own
-  `tests` path as well, so pytest collects and runs every selected test twice
-  (observed: 6 passed for 3 selected). Use `-k` until that is fixed.
-- Commands use an explicit interpreter in isolated mode, for example
-  (create the result directory first and use a fresh result name per run):
+  minutes of tests. A full run takes about 40 minutes; use full runs for the
+  WP0 reference, the WP3 reassessment and the final gate, not to rank ideas.
+  Run one interpreter and one check invocation at a time. Check for competing
+  processes with `ps aux | rg '[p]ytest|[c]heck\.py'` as a command of its own,
+  because a longer command line can match itself. A full run outlasts ordinary
+  tool timeouts: start it as a background job and wait for its completion
+  instead of polling it or starting other check work.
+- Permission context changes outcomes.
+  `tests/test_foundations.py::test_socket_and_empty_runtime_refuse` binds an
+  AF_UNIX socket under `/tmp`. The default sandbox refuses the bind with
+  `PermissionError`, so both 992-test full runs reported 1 failed, while the
+  unchanged test and wheel passed with permissions enabled
+  (`baseline/repair-followups/socket-check.*`, `socket-unsandboxed-311.*`,
+  `socket-unsandboxed-314.*`, `validation.json`). Run the reference, timed
+  comparisons and gate with permissions that allow the bind (ask the user to
+  approve running outside the sandbox), and keep the permission context the
+  same within a comparison. If a run is refused anyway, preserve its original
+  outcome, run the separate comparison and report both; do not relabel the
+  failed run.
+- Until WP1.1 lands, do not pass a test path or node ID to `scripts/check.py`.
+  It also passes its own `tests` directory, so pytest runs the whole suite and
+  then the named tests a second time; under a `-k` filter only the filtered
+  tests run, twice (observed: 6 passed for 3 selected;
+  `plan-review/pytest_selection.out` reproduces the mechanism). Use `-k`
+  alone, and add a path only together with `-k` when showing the defect.
+- Commands use an explicit interpreter in isolated mode, for example (create
+  the result directory first and use a fresh result name per run):
 
   ```
   /opt/homebrew/bin/python3.11 -I -B scripts/check.py --result .scratch/test-speed/<topic>/<name>.json -k "<expression>" > .scratch/test-speed/<topic>/<name>.out 2>&1
   ```
 
+  `check.py` writes `<name>.json` and `<name>.log` and creates
+  `<name>-artifacts-*` and `<name>-dist` beside the result. The WP0 helper adds
+  `<name>.out` and `<name>.provenance.json`; WP2 adds `<name>.pytest.log`. Do
+  not reuse these names for anything else. Until WP2, `check.py` keeps every
+  test directory: about 3.6 GB allocated and 207,000 entries per full run.
+  That bulk lands inside the tree two tests walk (see "Two outliers"), so
+  record the `.scratch` entry count before every run.
 - Measurement discipline, from `AGENTS.md`: a clean result needs a firing
   control, a case differing in the measured property, and an invariance case.
   An explanation stays a hypothesis until a comparison distinguishes it from
   its rivals. Preserve command outputs, name the selector, and report actual
-  collected, selected and deselected counts. Repeat comparisons in interleaved
-  order under comparable load; retain individual timings and their spread.
-- For every comparison record the actual Git executable and version,
-  interpreter, wheel digest, test/harness/configuration source identity
-  (commit plus changed-file digests when dirty), full argv and cwd, selector,
-  worker count, permission context and competing load. The wheel alone does
-  not identify the tests. Keep pytest stdout/stderr: today's `.log` contains
-  provisioning and build output, not the inherited pytest streams.
-- Separate environmental refusals from measured behavior. The latest repair
-  runs failed at an AF_UNIX socket bind under the default sandbox, while the
-  unchanged test passed with permissions enabled. Preserve each original
-  outcome and the separate comparison; do not relabel a failed full run.
+  collected, selected and deselected counts. For a timing comparison run at
+  least three repetitions per condition in interleaved order (A B A B A B)
+  under comparable load, retain every timing, and report median and range.
+  The primary timing is the selected nodes' summed setup + call + teardown
+  from the receipt's `durations`; keep the run's `total_seconds` as well,
+  since it adds about seven seconds of provisioning, build and collection.
+  Call a difference established only when every repetition of one condition
+  is faster than every repetition of the other and their outcomes are
+  identical. Call invariance shown when the conditions' ranges overlap and
+  their medians differ by less than the larger range. Report anything else
+  as not distinguished, and investigate before relying on it.
+- Record provenance for every run (WP0 provides the helper): the Git
+  executable the harness environment resolves, with its realpath, version and
+  exec path; the interpreter; the wheel digest; test/harness/configuration
+  source identity (commit plus digests of changed and untracked files); full
+  argv and cwd; selector; worker count; permission context; competing load
+  (load averages and matching processes); and the `.scratch` entry count. The
+  wheel alone does not identify the tests. Keep pytest stdout/stderr: today's
+  `.log` contains provisioning and build output, not the pytest streams.
 - Keep evidence under `.scratch/test-speed/<topic>/`. Write findings to
   `TEST-SPEED-FINDINGS.md` at the worktree root with every number traceable
   to a file under `.scratch/test-speed/`.
@@ -69,34 +120,52 @@ for the inexpensive harness improvements.
 
 ## Historical observations and limits
 
-Source for the suite numbers: `.scratch/test-speed/baseline/repair-311.json`
-(Python 3.11.17) and `repair-314.json` (Python 3.14.8). Both runs ran at the
-same time, so contention may have affected their timings by an unknown amount.
-Per-operation numbers come from in-process counting with the scripts under
-`.scratch/test-speed/tools/`, taken while another session had five test
-processes running. Treat the table as observations under those conditions and
-leads to validate, not an attribution of the entire current suite's runtime.
+`plan-review/receipt_summary.py` reproduces the receipt-derived figures below
+(output `plan-review/receipt_summary.out`) and inventories the artifact
+directories the receipts name. In each pair the 3.11 and 3.14 invocations ran
+at the same time, so contention affected their timings by an unknown amount.
+The change in elapsed time from 966 to 992 tests cannot be attributed:
+source, population and load all differ.
 
-| Fact | Value |
+| Fact | 966 tests (earlier source) | 992 tests (`764d97e`) |
+| --- | --- | --- |
+| Receipts | `baseline/repair-311.json`, `repair-314.json` | `baseline/repair-followups/full-311.json`, `full-314.json` |
+| Wheel SHA-256 | `86d61eaf…` | `ce003ae9…` |
+| Outcome | 965 passed, 1 skipped | 990 passed, 1 failed (sandbox socket refusal), 1 skipped |
+| pytest session time, 3.11 / 3.14 | 2045.04 s / 2103.48 s | 2407.30 s / 2474.03 s |
+| Call time on 3.11: median, p75, p90, p99 (inclusive quantiles) | 1.53, 2.58, 4.12, 8.94 s | 1.90, 2.99, 4.58, 9.43 s |
+| Tests over 0.5 s of setup + call + teardown, 3.11 / 3.14 | 714 / 725 | 758 / 758 |
+| Largest tests, 3.11 | authority 81.1 s, sdist 58.0, journey 25.4, runner 19.9 | authority 65.4 s, sdist 44.6, journey 28.1, resource safety 19.3 |
+| Commands through `run_cmd` per run | 11,912: 10,422 git, 1,003 `python -I -B -m stewart`, 440 other python, 47 other | 12,173: 10,677 git, 1,009 `python -I -B -m stewart`, 440 other python, 47 other |
+| git verbs through `run_cmd` | add 2326, commit 2324, config 2242, rev-parse 2231, init 1131, worktree 95 | add 2380, commit 2378, config 2304, rev-parse 2285, init 1162, worktree 95 |
+| Retained artifacts per run, 3.11 | 3.61 GB allocated (3.24 GB apparent), 202,719 entries; 2,414 top-level: 965 private HOMEs, 965 test directories beside them, 484 pytest `*current` links | 3.58 GB allocated (3.21 GB apparent), 207,540 entries; 2,471 top-level: 991, 991, 489 links |
+
+`run_cmd` counts cover only commands a test ran through that fixture. Git
+spawned in-process by `stewart.api` calls, or by a CLI child, is not recorded
+there. The previous revision's figures of 767 tests over 0.5 s, a p99 of
+9.08 s, and 7,680 fixture subprocesses (6,860 git; 1,539 add, 742 init, 54
+worktree) do not reproduce from these receipts or artifacts and have no
+retained source; do not use them.
+
+The following were observed with the scripts under `tools/` or by hand while
+another session had five test processes running. Their outputs were not
+retained. Treat them as leads to validate, not as attributions of the current
+suite's runtime:
+
+| Observation | Value |
 | --- | --- |
-| Suite | 966 tests, 2045 s on 3.11, 2103 s on 3.14, 965 passed 1 skipped |
-| Per-test call time | median 1.53 s, p75 2.58 s, p90 4.12 s, p99 9.08 s |
-| Per-test setup time | median 0.17 s; separately measured checkout setup includes six git spawns |
-| Four largest tests | authority 81.1 s, distribution 58.0 s, journey 25.4 s, runner 19.9 s; 184 s together |
-| Everything else | a long tail; 767 of 966 tests exceed 0.5 s |
-| Subprocesses through the `run_cmd` fixture | 7680 in one run, including 6860 git, 585 `python -m stewart`, 199 other python |
-| git through the fixture | 1539 add, 1537 commit, 1474 config, 1474 rev-parse, 742 init, 54 worktree |
-| git inside `prepare()` | 41 spawns, 26 distinct argv, about 0.9 s |
-| git inside `collect()` | 36 spawns, 19 distinct argv, about 0.8 s |
+| Marker coverage of the 966-test time | `system` 628 tests 1466 s; `heavy` 62 tests 249 s; unmarked 251 tests 244 s; `smoke` 25 tests 84 s; `serial` unused |
+| Selections | `--fast` (`smoke and not heavy`) about 84 s; `-m "not heavy"` about 1794 s. `tests/test_authority.py` is module-marked `smoke`, so its 81 s walk was nearly all of `--fast` |
+| git inside `prepare()` | 41 spawns, 26 distinct argv, about 0.9 s; a lower bound (WP5) |
+| git inside `collect()` | 36 spawns, 19 distinct argv, about 0.8 s; a lower bound |
 | Fixture `make_checkout` | 6 git spawns, 0.15 s; `prompt_commit` 3 spawns, 0.07 s |
 | One `python -I -B -m stewart` spawn | 0.18 s before any git work; bare interpreter 0.02 s |
 | git spawn cost | 17 ms through Apple's `/usr/bin/git` shim, 7 ms for the binary it execs, 3 ms for `/usr/bin/true` |
-| Three resource tests through the harness, shim vs direct binary | 10.9, 10.7, 7.9 s vs 4.9, 5.0, 5.0 s |
+| Three unnamed resource tests, shim vs direct binary | 10.9, 10.7, 7.9 s vs 4.9, 5.0, 5.0 s |
 | Collection alone through the harness | about 3 s after roughly 4 s of provisioning and build |
-| Marker coverage of recorded time | `system` 628 tests 1466 s; `heavy` 62 tests 249 s; unmarked 251 tests 244 s; `smoke` 25 tests 84 s; `serial` unused |
-| `--fast` selects | about 84 s of tests; `-m "not heavy"` still about 1794 s |
-| Retained output per full run | 3.4 GB and 2414 entries; largest single test directory 62 MB |
-| Main checkout `.scratch` | 36 GB, 2.68 million entries, 612k `.py` files, about 15 retained full runs |
+| Main checkout `.scratch` | 36 GB, 2.68 million entries, 612k `.py` files, about 15 retained full runs; not re-measured |
+
+Receipts do not record markers; WP2 adds them so WP3 can recompute tier costs.
 
 Repeated Git argv inside one operation (candidates for investigation, not
 proof of redundant observations):
@@ -110,17 +179,27 @@ proof of redundant observations):
   `status --porcelain` three times; `rev-parse HEAD` three times; the four
   diff forms, `ls-files --error-unmatch` and `branch --show-current` twice each.
 
-Two outliers have identified traversal costs:
+Two outliers have identified traversal costs. Both walk
+`STEWART_TEST_PROJECT`, the checkout running `check.py`, so their cost grows
+with that checkout's `.scratch`, including the artifacts of this plan's own
+runs:
 
 - `tests/test_authority.py::test_audit_custody_machinery_has_one_home` calls
   `source_python`, whose `rglob("*.py")` walks every entry under `.scratch`
   before the filter discards them. A walk that prunes the excluded top-level
-  names first takes 0.04 s on the same tree.
+  names first took 0.04 s on the same tree. The module is marked `smoke`, so
+  `--fast` also pays for this walk.
 - `tests/test_distribution.py::test_sdist_builds_same_wheel_without_git_or_network`
-  builds an sdist from the project root. The sdist target sets
-  `ignore-vcs = true`, lists `include` rather than `only-include`, and excludes
-  no scratch directory, so hatchling's `recurse_project_files` walks
-  `.scratch`. Hatchling prunes directories named in `exclude` before descending.
+  builds an sdist from the project root. `[tool.hatch.build]` sets
+  `ignore-vcs = true` and the sdist target lists `include` rather than
+  `only-include`, so hatchling's `recurse_project_files` walks every directory
+  it does not prune. Hatchling 1.27.0 prunes a directory only when the directory is in
+  its built-in list (which includes `.git` and `.venv`) or, with
+  `skip-excluded-dirs = true`, when it matches `exclude`. That setting
+  defaults to false, so adding `/.scratch` to `exclude` alone leaves the walk
+  in place (`plan-review/hatchling_walk.out`: all 401 synthetic scratch
+  directories still entered; none with `skip-excluded-dirs`; identical
+  members).
 
 Not supported under the measured conditions:
 
@@ -134,59 +213,275 @@ Revisit these only when a changed environment or new evidence justifies it.
 
 ## Work packages, in order
 
+Each work package ends with its evidence under `.scratch/test-speed/<topic>/`,
+its regressions passing in a focused run, an entry in
+`TEST-SPEED-FINDINGS.md`, an updated status line here, and a focused commit.
+Show each new regression failing against the unchanged harness once and keep
+that output; a regression that cannot fail is not a firing control.
+
+### WP0. Pickup, provenance and reference
+
+Status: pending.
+
+1. Confirm state: the worktree is clean on `test-speed` at or after the
+   commit that added this revision (ignored `.scratch` content does not
+   count); `git worktree list`; no competing check or pytest processes; both
+   interpreters; the wheelhouse; which local evidence above is present.
+2. Write the run helper as `.scratch/test-speed/tools/run_check.py` (ignored
+   by Git; leave the historical scripts beside it unchanged). It wraps one
+   `check.py` invocation without changing `check.py`'s behavior:
+   - it takes the interpreter, the result path, the `check.py` arguments, an
+     explicit `--permission sandboxed|unsandboxed` label and optional
+     environment overrides (WP1.3 needs a different PATH);
+   - it refuses a result name that already exists;
+   - before the run it records the ground rules' provenance fields and the
+     result of a socket probe that binds an AF_UNIX socket under `/tmp` as the
+     socket test does, so the permission label is checked rather than assumed;
+   - it captures combined stdout/stderr as `<name>.out`, and after the run
+     adds the exit status, wall time, the receipt's collected, selected and
+     deselected counts and its wheel digest to `<name>.provenance.json`.
+   Use it for every run in this plan.
+3. Write the logging Git wrapper: a directory such as
+   `.scratch/test-speed/tools/git-log/bin/` holding only an executable `git`
+   script. It appends a timestamp, `$PYTEST_CURRENT_TEST` and its arguments
+   to a log named by an environment variable, then `exec`s the Git it wraps
+   by absolute path (record which). Pytest sets `PYTEST_CURRENT_TEST` for the
+   running node and child processes inherit it, so attribute only lines that
+   name a selected node; lines without it come from provisioning or other
+   processes. Insert the directory before `/usr/bin` through the helper's
+   PATH override. Tests that build their own PATH bypass it (WP1.3 names
+   them). The wrapper adds a process start per call, so use it for counts,
+   never for timings.
+4. Define named selections in `.scratch/test-speed/selections.json`, each with
+   its selector, expected selected count and role:
+   - `walkers`: `-k "test_audit_custody_machinery_has_one_home or test_sdist_builds_same_wheel_without_git_or_network"`.
+   - `git-heavy`: three to five tests, about two minutes together, with the
+     most Git work per test. Rank candidates by git `command.json` records per
+     top-level directory in a retained full run's artifacts, and confirm each
+     directory's owning test by name. Record counts are lower bounds; confirm
+     the chosen tests' Git use with the logging wrapper.
+   - `no-git`: tests that start no Git process, for invariance. Choose static
+     or pure-Python tests that use neither `checkout` nor `run_cmd`, such as
+     `tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names`,
+     and confirm with the logging wrapper that no line names them.
+   - `smoke`: `--fast`.
+5. Take one pre-change reference full run on 3.11 with the gate's permission
+   context and no competing load, under `.scratch/test-speed/reference/`. WP1
+   checks the unfiltered node list against it and WP3 compares against it
+   node by node. Record the `.scratch` entry count before and after; its
+   retained artifacts become part of the tree the walkers traverse.
+6. Then run each named selection three times on 3.11 under the same
+   conditions, recording counts and timings. These runs are the baseline
+   that WP1's comparisons start from and that WP3 repeats.
+
 ### WP1. Validate and implement the inexpensive fixes
 
-Start with three narrow changes, recording before/after selections under the
-measurement contract above:
+Status: pending. Do the three items in this order. The selection fix makes
+node-ID selections usable for the later comparisons. Pruning removes the
+walkers' dependence on accumulating artifacts before the Git comparison.
 
-1. Compare Apple's Git shim with the executable found by `xcrun --find git`.
-   Use Git-heavy tests as the firing/differing cases and a no-Git case for
-   invariance. If the saving holds, add harness-local executable selection
-   and record what actually ran; leave Stewart's runtime Git invocation alone.
-2. Prune excluded directories before the authority test's source traversal
-   and exclude scratch/venv directories from sdist traversal. Use bounded
-   synthetic bloat in this worktree for the firing comparison, a clean tree
-   for invariance, and verify unchanged source/member sets. Keep the build's
-   independence from Git. Remove only the synthetic bloat created for this run.
-3. Fix positional test selection so `scripts/check.py` does not also pass the
-   whole tests root. Resolve paths/node IDs against the staged suite. Verify
-   unique selected nodes, including overlapping paths, correct `-k`/`-m`
-   filtering, and unchanged default and smoke selections.
+#### WP1.1. Positional selection without duplicates
 
-Deliverable: focused harness/configuration changes, their regression coverage,
-and comparisons under `.scratch/test-speed/levers/`. Do not infer suite-wide
-savings from a small sample; identify extrapolations explicitly.
+`scripts/check.py:94` passes `str(suite / "tests")` before the caller's
+arguments, and the pinned pytest collects an explicitly named file again
+after its directory. Pytest also runs overlapping arguments twice (a file and
+one of its node IDs: 3 run for 2 tests; the same file twice: 4 for 2) and
+deduplicates only identical node IDs (`plan-review/pytest_selection.out`).
+
+1. Stop passing the suite directory. With no positional argument, the pinned
+   pytest uses `testpaths` when the invocation directory is the rootdir.
+   `check.py` runs pytest with `cwd=suite` and `-c suite/pyproject.toml`,
+   which makes the suite the rootdir, and the conftest already asserts
+   `testpaths == ["tests"]`. Without a positional argument pytest still loads
+   `tests/conftest.py` from the invocation directory before collection, so the
+   boundary assertions keep running first. Check the unfiltered collection
+   with `check.py --collect-only -q`. Its node list must equal the WP0
+   reference's plus exactly the node IDs this change adds, with the shared
+   nodes in the same order and none repeated.
+2. Update the `suite` case of `test_runner_measures_each_selected_boundary`.
+   At `tests/test_foundations.py:408` it looks up `str(suite / 'tests')` in the
+   pytest argv, which would raise `ValueError` once the argument is gone. Drop
+   that replacement: pointing `-c`, `--confcutdir` and `cwd` at the project
+   still makes pytest load the project's conftest, which must still refuse
+   with "wrong staged test suite". Keep the test's diagnostic assertion.
+   `test_runner_applies_config_contents_and_reports_selection` should pass
+   unchanged.
+3. Positional paths and node IDs are interpreted relative to the staged suite
+   root, which mirrors the project root (`tests/test_runner.py::<name>`). Do
+   not rewrite arguments in `check.py`: option values such as `-k`
+   expressions and `--deselect` prefixes must reach pytest unchanged.
+   Document the form in `--help` and the README.
+4. In the conftest, refuse at collection when two collected items share a
+   node ID or an item lies outside the staged suite's `tests` directory. Use
+   `pytest.UsageError` as the empty-selection refusal does, and name the
+   offending nodes. Do not deduplicate silently.
+
+Regressions run `check.py` over a reduced copy of the project: the project as
+`tests/test_runner.py` copies it, but with `tests/` holding only `conftest.py`,
+`support.py` (which imports only the standard library) and small probe test
+files. A full copy would run the whole suite whenever the old harness is shown
+failing. Each `check.py` invocation still costs several seconds of
+provisioning and build, so group invocations. Cover: a file argument runs
+each of its nodes once; a file plus one of its node IDs is refused with the
+duplicate named; `-k` and `--fast` select and deselect as before; the
+empty-selection refusal still fires. Evidence under `levers/selection/`:
+before/after counts for a path combined with `-k` on the real suite, and the
+unfiltered node-list comparison from step 1.
+
+#### WP1.2. Prune the two walkers
+
+1. In `tests/test_authority.py`, replace `rglob` plus filter with `os.walk`
+   (3.11 has no `Path.walk`) and remove the top-level names `.scratch`,
+   `.git`, `dist` and `build` from `dirnames` before descending. Keep the
+   current semantics exactly: exclusion only at the top level (the filter
+   tests `parts[0]`), no descent through symlinked directories, and the same
+   treatment of entries named `*.py` that are not regular files. The new name
+   list must equal the old one.
+2. In `pyproject.toml`, add `"/.scratch"` to `[tool.hatch.build] exclude` and
+   set `skip-excluded-dirs = true` under `[tool.hatch.build.targets.sdist]`.
+   Do not add an `exclude` key under the sdist target: a target-level
+   `exclude` replaces the global list. `.venv` needs nothing. Keep
+   `ignore-vcs = true`; the build's independence from Git is the distribution
+   test's point.
+3. Measure `walkers` at two levels of excluded content: the existing tree
+   (record its entry count) and the existing tree plus synthetic bloat of
+   about 200,000 entries under `levers/pruning/bloat/`, comparable to one
+   retained full run. At each level interleave the old and new source three
+   times each, applying and reverting the change as a patch and recording the
+   source digests in provenance. Firing: before the change, bloat raises both
+   tests' times. Invariance: after the change, their times do not depend on
+   bloat. Populations: the authority name list and the sdist member list are
+   identical across all four conditions. Save both lists, not only the
+   assertions' outcome: provision a venv under `levers/pruning/` from the
+   wheelhouse (`requirements.lock`) plus the built wheel, load
+   `tests/test_authority.py` from each source version and call
+   `source_python` on the project root, and build the sdist there with
+   `python -I -B -m build --no-isolation --sdist` and list its members.
+   Remove only the bloat and the venv you created and record their removal.
+4. Regressions that fail without the change:
+   - Split the walk from `source_python`'s population assertion (at least 29
+     runtime sources) so the walk can run on a planted tree. On a temporary
+     tree with `.scratch/x.py`, `dist/y.py`, `pkg/build/z.py` and a symlinked
+     directory, it returns exactly the expected names (the nested `build` stays
+     included; nothing under the symlinked directory is listed, as with
+     `rglob`) and, recording visited directories by wrapping `os.scandir`,
+     never enters `.scratch`. Show the old `rglob` walk entering `.scratch`
+     on 3.11.
+   - Copy the project's `pyproject.toml` into a temporary project with a
+     planted `.scratch` subtree, run the pinned hatchling's `SdistBuilder`
+     in-process with its directory walk wrapped as
+     `plan-review/hatchling_walk.py` does, and assert that `.scratch` is never
+     entered and the members match the planted sources. Hatchling is in the
+     check environment because the wheel build uses it. This relies on
+     internals of the pinned version; if it proves brittle, assert the two
+     configuration keys instead and keep the behavior in the evidence.
+
+Evidence under `levers/pruning/`; the sdist and wheel member sets are
+unchanged.
+
+#### WP1.3. Git executable selection in the harness
+
+1. Compare before implementing. `check.py` passes its PATH through to the
+   tests, so run `git-heavy` and `no-git` interleaved under the inherited
+   PATH (shim) and with the directory of `xcrun --find git` inserted
+   immediately before `/usr/bin` (direct). `git-heavy` is the firing and
+   differing case; `no-git` is the invariance case, already confirmed Git-free
+   with the WP0 logging wrapper. Give both conditions as explicit PATH values
+   through the helper's override, so the inserted entry is their only
+   difference.
+2. If the saving is established, implement `--git-executable` as design
+   choices section 1 specifies: insert the verified directory immediately
+   before the PATH entry that supplied the shim, never first and never as a
+   symlink or copy. Record the requested mode, the inserted entry or none,
+   the resolved executable and its realpath, `git --version`,
+   `git --exec-path`, any fallback reason, and every name whose PATH
+   resolution changed, in the receipt and the `.log`.
+3. Leave Stewart's runtime Git invocation alone (`_git.py` runs `git` by
+   name). Tests that build their own PATH bypass the selection:
+   `tests/test_auditor_runtime.py:125` uses `os.defpath`, while
+   `tests/test_stewart_launch_profile.py` prepends to the inherited PATH. The
+   experiment launcher forwards PATH to auditor children
+   (`src/stewart/experiment.py:198`). Name these in the findings.
+
+Regressions: the selection decision is a function of PATH, platform and the
+probes, exercised by loading `scripts/check.py` from a copied project (its
+import has no side effects). Cover a shim on PATH, an already direct PATH, no
+`xcrun` or a candidate failing verification (PATH unchanged, fallback
+recorded), `path`, and an explicit executable. One end-to-end invocation
+asserts the receipt's record and that a probe test sees the selected Git and
+its exec path. Evidence under `levers/git/`, with each timing.
+
+Deliverable for WP1: focused harness/configuration changes, their regression
+coverage, and comparisons under `.scratch/test-speed/levers/`. Do not infer
+suite-wide savings from a small sample; identify extrapolations explicitly.
 
 ### WP2. Bound retention while preserving evidence
 
-Inventory one available run by category: checkout/worktree, private HOME,
-command records, staged runtime and nested environments. Use the retention
-contract in design choices section 7 when implementing cleanup. Always
-retain the run receipt, actual pytest streams, provisioning/build log, wheel,
-test-source identity and comparison data. Allow selected passing controls and
-their command records to be retained for evidence runs.
+Status: pending.
 
-Cleanup may remove bulky artifacts of known passing tests only after setup,
-call and teardown outcomes are known. Preserve failures in any phase and
-interrupted or unresolved tests, including their sibling HOME directories.
-The pinned pytest's `tmp_path_retention_policy = "failed"` alone does not
-provide this contract: its fixture cleanup uses the call outcome and can run
-before a teardown failure is known. A rerun is a new observation, not recovery
-of the original evidence.
+Inventory one available run by category first: checkout/worktree, private
+HOME, command records, staged runtime and nested environments. The retained
+historical trees can be read for this. Then implement design choices section
+7:
 
-Deliverable: bounded default retention, an explicit way to retain selected
-passing evidence or all artifacts, and focused regressions for passing
-cleanup, each failure phase, interruption and selected retention. Show the
-space difference and that outcome/membership evidence remains available.
-Historical artifacts in other worktrees remain untouched.
+1. Receipt additions, leaving the meaning of `node_outcomes` and `outcomes`
+   unchanged because tests assert them: every phase outcome per node,
+   including passing setup and teardown (today a passing teardown and a
+   teardown that never reported look the same); the paths each node owns
+   (its `tmp_path` and the sibling `-home` the autouse fixture creates); each
+   node's markers; per-file digests of the staged suite and of `check.py`;
+   and the project commit and dirty state when Git can report them, recorded
+   as absent otherwise.
+2. `check.py` tees pytest stdout/stderr to `<name>.pytest.log` beside the
+   receipt while still printing them, so startup and collection failures are
+   kept even without a receipt.
+3. After pytest exits, `check.py` plans retention from this invocation's
+   receipt. It removes a node's owned paths only when setup, call and
+   teardown are all recorded as passed and the node was not selected for
+   retention. It keeps everything else, including skipped nodes, nodes with a
+   missing phase, and top-level entries no node owns. Without this
+   invocation's receipt it removes nothing. Write the plan into the receipt,
+   remove, then record each path's result, including pytest's `*current`
+   links left dangling by a removal. Removal failures are recorded and
+   printed and never change test outcomes.
+4. Options: `--keep-artifacts failed|all` (default `failed`; `all` is today's
+   behavior) and a repeatable `--keep-node NODEID`. A requested node that did
+   not execute is an error recorded in the receipt, and the runner exits
+   nonzero: an evidence run that lost its control is not evidence.
+5. Do not enable pytest's `tmp_path_retention_policy = "failed"`.
+
+Regressions, grouped into few `check.py` invocations over a reduced project
+copy with probe tests, as in WP1.1:
+
+- a passing node's `tmp_path` and HOME are removed;
+- call, setup and teardown failures are each retained with their HOME and
+  command records;
+- an unowned directory is retained;
+- `--keep-node` retains a passing node, and a missing `--keep-node` target
+  is refused;
+- `--keep-artifacts all` retains everything;
+- an interrupted run (a probe that interrupts the session) retains its
+  incomplete node;
+- a run killed before writing its receipt removes nothing.
+
+Deliverable: bounded default retention, explicit retention of selected
+passing evidence or of all artifacts, and the regressions above. WP3's full
+run supplies the retained space, measured against the WP0 reference; show
+there that outcome and membership evidence remain. Historical artifacts in
+other worktrees remain untouched.
 
 ### WP3. Reassess the remaining cost
 
-After WP1 and WP2, repeat the same bounded selections under the same source
-population, Git, permissions and load conditions. Identify the largest
-remaining costs and choose the next useful work. Keep `--fast` as the small
-smoke selection. The historical `not heavy` selection took about 1794 s
-against smoke's 84 s; a broader tier needs a separate name and measured cost.
+Status: pending.
+
+After WP1 and WP2, repeat the WP0 selections three times each and take one
+full 3.11 run under the reference conditions. The full run also supplies WP2's
+space measurement and, if no source change follows it, the gate's 3.11 leg;
+run the gate's 3.14 leg after it. Compare per node on the node set shared
+with the reference, and report new regression tests separately rather than
+folding them into a suite total. Recompute marker tiers from the receipt. Keep
+`--fast` as the small smoke selection; a broader tier needs a separate name
+and measured cost.
 
 Use a representative per-file or per-subject decomposition where it changes
 the decision. Separate measured time from estimates based on static call
@@ -196,10 +491,15 @@ Centralizing invocation helpers can improve consistency; do not share mutable
 prepared sessions to make the numbers smaller.
 
 Deliverable: a ranked residual-cost table in `TEST-SPEED-FINDINGS.md`, with
-measured savings, estimates and uncertainties separated. Decide whether WP4
-or WP5 is warranted, and state what is deferred. WP6 is independent follow-up.
+measured savings, estimates and uncertainties separated, and a
+recommendation on WP4 and WP5 with the expected benefit of each. Then stop
+and present it. WP4 and WP5 start only after the user agrees. Stopping here,
+with WP0 to WP2 delivered, both gate legs run and the recommendation
+written, completes the initial work. WP6 is independent follow-up.
 
-### WP4. Sharding, if remaining wall time warrants it
+### WP4. Sharding, if the user approves it after WP3
+
+Status: not started; requires the user's approval.
 
 Audit shared state before adding parallel workers: fixed paths/ports, HOME,
 environment changes, artifact readers and subprocess lifetime. Temporary
@@ -220,21 +520,36 @@ Tests marked `serial` require a separate exclusive phase with no overlapping
 workers. Merely placing them in shard zero is insufficient. Keep per-test
 setup/call/teardown budgets and the end-to-end total budget, including
 provisioning, build, collection, scheduling, serial work, workers and merge.
-Per-worker limits may be additional limits, never a replacement.
+Per-worker limits may be additional limits, never a replacement. WP2's
+retention runs once over the merged membership.
 
 Deliverable: if adopted, opt-in workers (default one), documented aggregate
 receipt semantics and regressions that inject membership errors and worker
 failures as well as compare serial/parallel outcomes. Do not select a default
 worker count from core count alone.
 
-### WP5. Investigate specific runtime Git observations
+### WP5. Investigate specific runtime Git observations, if the user approves
 
-Start with operations implicated by WP3. Inspect the instrumentation before
-extending it: `measure2.py` currently wraps `subprocess.run` only, despite its
-README; `measure.py` also wraps `Popen`. Account for both without double
-counting and distinguish in-process calls from child processes whose internal
-spawns the wrapper cannot see. Use isolated fixtures in the state appropriate
-to each operation; an exhaustive API census is optional.
+Status: not started; requires the user's approval.
+
+Start with operations implicated by WP3. Fix the instrumentation before
+extending it:
+
+- `tools/measure2.py` wraps `subprocess.run` only, although `tools/README.md`
+  says both scripts wrap `Popen`. `tools/measure.py` also wraps `Popen` but
+  records a 0.0 s duration for a direct `Popen`. Every `prepare()` reaches a
+  direct `Popen`: `prepare.py:244` calls `retain_commits`
+  (`_repository.py:520`), which calls `create_refs` (`_git.py:63`,
+  `git update-ref --stdin`). The historical `prepare()`/`collect()` counts are
+  therefore lower bounds. The README's "extend `measure2.py` for WP1" refers
+  to an earlier plan's numbering.
+- Wrap `Popen` once (`run` uses it internally), time each process until it
+  is waited for, and distinguish in-process calls from child processes whose
+  internal spawns the wrapper cannot see. For counts across processes, use
+  the WP1.3 logging wrapper; it adds an exec per call, so use it for counts,
+  not timings.
+- Use isolated fixtures in the state appropriate to each operation; an
+  exhaustive API census is optional.
 
 Retain raw argv, cwd, relevant configuration/inputs, operation phase, observed
 identities, elapsed time and call sites. Elide paths only in presentation.
@@ -253,6 +568,8 @@ edits with the corresponding safety regressions. Record rejected candidates
 and the revalidation they must preserve. No cross-operation identity cache.
 
 ### WP6. Optional follow-up: overlap and consolidation
+
+Status: not started; optional.
 
 Use static signatures (operations, refusal reasons, fixtures, markers and
 written files) to find candidates, then inspect their behavioral differences.
@@ -278,16 +595,42 @@ report actual populations and outcomes, separate historical observations from
 new measurements, and name implemented, rejected and deferred changes. Keep
 raw scripts, receipts and comparisons under `.scratch/test-speed/`.
 
-The initial work is complete when WP1/WP2 changes are implemented and verified
-(or a measured rejection explains a candidate), WP3 assesses the residual
-cost, and any chosen WP4/WP5 work meets its contract. Deferred investigations
-or consolidation need not block delivery. Run focused checks as changes land;
-at the implementation gate run the full installed-wheel suite with both
-supported explicit interpreters sequentially. Report failures, permission
-constraints and opt-in harness skips as observed, with separate reruns when
-needed. Do not convert a changed test population into a claimed speedup.
+The initial work is complete when WP0 to WP2 are implemented and verified (or
+a measured rejection explains a candidate), WP3 has assessed the residual
+cost and recommended next steps, and any WP4/WP5 work the user approved meets
+its contract. Deferred investigations or consolidation need not block
+delivery. Run focused checks as changes land. At the implementation gate run
+the full installed-wheel suite on 3.11 and then on 3.14, sequentially, with
+the reference permission context and no competing load; WP3's full run is
+the 3.11 leg unless the source changed after it. Report failures,
+permission constraints and opt-in harness skips as observed, with separate
+reruns when needed. Do not convert a changed test population into a claimed
+speedup.
 
-Carry the accepted contracts into help, durable documentation and regression
-tests, retain any pending work in a concise handoff, and remove the completed
-planning files. Use focused commits so harness changes, runtime optimizations
-and any later test consolidation remain separately reviewable.
+Carry the accepted contracts into `scripts/check.py --help`, the README's
+"Run the standalone suite" section (selection form, `--git-executable`,
+`--keep-artifacts`, `--keep-node`, and the files a run keeps), the
+development paragraph of `AGENTS.md` if the documented commands change, and
+regression tests. Commit `TEST-SPEED-FINDINGS.md` with each work package.
+Keep both planning files, with updated status lines, while WP4 or WP5 awaits
+the user's decision. When nothing in them is pending, remove them together
+with `TEST-SPEED-FINDINGS.md` (unless the user asks to keep it), leaving any
+deferred work in a concise handoff; the evidence stays under
+`.scratch/test-speed/`. Use focused commits so the selection fix, pruning,
+Git selection, retention, any runtime optimization and any later test
+consolidation remain separately reviewable. Each commit message states its
+validation (selector, counts, interpreter, permission context), as recent
+commits do.
+
+The work will be reviewed for:
+
+- every number in `TEST-SPEED-FINDINGS.md` naming a file under
+  `.scratch/test-speed/`, with population, selector, counts and provenance;
+- each adopted change having a firing control, a differing case and an
+  invariance case, with every repetition's timing retained;
+- each contract above having a regression shown to fail without its change;
+- unfiltered membership equal to the reference plus exactly the added
+  nodes, and no node executed twice;
+- historical receipts and artifacts, including the main checkout's, left
+  unchanged;
+- help text, README and failure messages describing the new behavior.
