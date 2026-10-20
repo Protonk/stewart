@@ -262,13 +262,16 @@ def test_git_runs_in_a_linked_checkout_only_through_its_own_administration(proje
             lambda: gitfile.write_text(f"gitdir: {Path(common) / 'worktrees' / 'other'}\n"),
         "a file naming nothing": lambda: gitfile.write_text(f"gitdir: {base / 'nowhere'}\n"),
         "a file with a second line": lambda: gitfile.write_bytes(genuine + b"gitdir: " + common.encode() + b"\n"),
+        "an oversized file": lambda: gitfile.write_bytes(genuine + b" " * (1 << 16)),
     }
     for name, plant in substitutes.items():
         gitfile.unlink()
         plant()
-        if name != "a file with a second line":
+        if name not in ("a file with a second line", "an oversized file"):
             assert answered() != admin, f"{name}: Git in the checkout no longer reaches its own administration"
         assert_reason("checkout_identity", checkout_git_admin, checkout, common)
+    with pytest.raises(StewartError, match="oversized"):  # never read whole: the auditor can write .git
+        checkout_git_admin(checkout, common)
     # As worktree.useRelativePaths writes them: each path relative to the directory holding its file.
     gitfile.unlink()
     gitfile.write_text(f"gitdir: {os.path.relpath(admin, checkout)}\n")

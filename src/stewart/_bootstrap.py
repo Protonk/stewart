@@ -358,17 +358,24 @@ def _open_regular(location: Path, *, dir_fd: int | None = None) -> tuple[int, os
     return fd, st
 
 
-def read_regular(location: Path, *, dir_fd: int | None = None) -> tuple[dict, bytes | None]:
-    """Read a regular file's bytes through a verified descriptor, or say why not."""
+def read_regular(location: Path, *, dir_fd: int | None = None, limit: int | None = None) -> tuple[dict, bytes | None]:
+    """Read a regular file's bytes through a verified descriptor, or say why not.
+
+    With ``limit``, a file holding more than ``limit`` bytes is never read whole ("oversized").
+    """
     try:
         fd, st = _open_regular(location, dir_fd=dir_fd)
     except _Unavailable as unavailable:
         return {"kind": unavailable.kind, "detail": unavailable.detail}, None
     with os.fdopen(fd, "rb") as fh:
+        if limit is not None and st.st_size > limit:
+            return {"kind": "oversized", "detail": f"{st.st_size} bytes, more than {limit}"}, None
         try:
-            data = fh.read()
+            data = fh.read() if limit is None else fh.read(limit + 1)
         except OSError as exc:
             return {"kind": "unreadable", "detail": f"{exc.strerror} (read)"}, None
+        if limit is not None and len(data) > limit:
+            return {"kind": "oversized", "detail": f"more than {limit} bytes"}, None
     info = {"kind": "file", "mode": stat.S_IMODE(st.st_mode), "size": len(data),
             "sha256": hashlib.sha256(data).hexdigest()}
     return info, data

@@ -462,7 +462,7 @@ def checkout_git_admin(worktree: Path, common_dir: str) -> str:
     resolved from the directory holding its file, as Git resolves it.
     """
     location = worktree / ".git"
-    info, data = read_regular(location)
+    info, data = read_regular(location, limit=_POINTER_LIMIT)
     named = _git_pointer(data, b"gitdir: ")
     if named is None:
         found = (f"{info['kind']}: {info['detail']}" if info.get("detail") else info["kind"]) if data is None \
@@ -474,12 +474,16 @@ def checkout_git_admin(worktree: Path, common_dir: str) -> str:
         raise StewartError(f"the checkout's .git names {admin}, not one of its repository's worktree "
                            "administrations; Git is not run through it", reason="checkout_identity",
                            retained=[str(location)])
-    _, back = read_regular(admin / "gitdir")
+    _, back = read_regular(admin / "gitdir", limit=_POINTER_LIMIT)
     named_back = _git_pointer(back, b"")
     if named_back is None or Path(os.path.normpath(admin / named_back)) != location:
         raise StewartError(f"the Git administration {admin} does not name this checkout; Git is not run through it",
                            reason="checkout_identity", retained=[str(location), str(admin / "gitdir")])
     return str(admin)
+
+
+#: A Git pointer file holds one path; anything larger is not read (the checkout's .git is auditor-writable).
+_POINTER_LIMIT = 8192
 
 
 def _git_pointer(data: bytes | None, prefix: bytes) -> str | None:
