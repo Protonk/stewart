@@ -17,11 +17,13 @@ import pytest
 
 import stewart._repository as repository
 from stewart import report_declaration as declaration
+import stewart.verify_inputs as verifier
 from stewart._bootstrap import EXIT_ATTENTION, EXIT_UNVERIFIED, StewartError
-from stewart._git import git
+from stewart._git import git, git_text
 from stewart.close import close, close_plan
 from stewart.collect import collect
 from stewart.experiment import release, run
+from stewart.workspace import workspace
 import stewart_support as support
 from stewart_support import read_json
 
@@ -112,7 +114,7 @@ def test_no_operation_runs_git_through_a_substituted_checkout_git(checkout, monk
     receipt = collected["receipt"]
     reasons = [error["reason"] for error in receipt["errors"]]
     # A .git naming nothing is a Git discovery failure (exit 1, collect again); any other substitute is identity.
-    assert ("collection_failed" if missing else "checkout_identity") in reasons
+    assert ("checkout_git_missing" if missing else "checkout_identity") in reasons
     assert "checkout" not in receipt and receipt["git_discovery"] == "failed"
     assert collected["exit_code"] == (EXIT_ATTENTION if missing else EXIT_UNVERIFIED)
     assert (Path(collected["path"]) / "REPORT.md").read_text() == "A partial report.\n", "the report is preserved"
@@ -205,3 +207,69 @@ def test_release_and_run_judge_head_only_through_the_verified_administration(tmp
     assert refused.reason == "release_invalidated" and "cannot be verified" in str(refused)
     attempt = read_json(Path(refused.retained[0]) / "ATTEMPT.json")
     assert attempt["process"]["launched"] is False, "nothing ran"
+
+
+def _helper_arguments(prepared) -> dict:
+    return dict(expected_worktree=prepared.worktree, launch_prompt_commit=prepared.revision,
+                prompt_sha256=prepared.prepared["prompt_sha256"], launch_token=prepared.prepared["launch_token"])
+
+
+def test_input_verification_asks_only_the_administration_its_context_verified(checkout, monkeypatch):
+    prepared = support.prepared_session(checkout)
+    local, arguments = workspace(prepared.worktree, checkout.ws.rel), _helper_arguments(prepared)
+    selected, gitfile = prepared.worktree / "input.txt", prepared.worktree / ".git"
+    assert verifier.verify_inputs(local, **arguments)["failed"] == 0, "invariance: unchanged input matches"
+    selected.write_bytes(b"changed after preparation\n")
+    changed = verifier.verify_inputs(local, **arguments)
+    assert changed["failed"] == 1 and changed["exit_code"] == 1, "differing case: the changed input is reported"
+    # An administration written elsewhere whose replace ref makes the committed input read as the changed bytes.
+    forged = checkout.tmp / "forged-admin.git"
+    git(checkout.repo, "clone", "-q", "--bare", "--no-hardlinks", str(checkout.repo), str(forged))
+    committed = git_text(checkout.repo, "rev-parse", f"{checkout.meta['target_commit']}:input.txt")
+    substitute = git(checkout.repo, f"--git-dir={forged}", "hash-object", "-w", "--stdin",
+                     input=selected.read_bytes()).stdout.decode().strip()
+    git(checkout.repo, f"--git-dir={forged}", "replace", committed, substitute)
+    genuine, real, contexts = gitfile.read_bytes(), verifier.auditor_context, []
+
+    def verify_then_swap(*args, **kwargs):
+        if contexts:  # the genuine .git is back for the revalidation
+            gitfile.write_bytes(genuine)
+        context = real(*args, **kwargs)
+        contexts.append(context)
+        if len(contexts) == 1:
+            gitfile.write_text(f"gitdir: {forged}\n")
+        return context
+
+    with monkeypatch.context() as patch:
+        patch.setattr(verifier, "auditor_context", verify_then_swap)
+        swapped = verifier.verify_inputs(local, **arguments)
+    assert len(contexts) == 2 and contexts[0] == contexts[1], "firing control: verified, swapped, restored"
+    gitfile.write_text(f"gitdir: {forged}\n")
+    assert git(prepared.worktree, "show", f"{checkout.meta['target_commit']}:input.txt").stdout == \
+        selected.read_bytes(), "through the swapped .git, plain Git reads the changed bytes as committed"
+    gitfile.write_bytes(genuine)
+    assert swapped == changed, "the input queries kept to the verified administration"
+
+
+def test_the_helper_binds_the_session_through_the_lock_and_never_reads_the_marker(checkout, monkeypatch):
+    prepared = support.prepared_session(checkout)
+    local, arguments = workspace(prepared.worktree, checkout.ws.rel), _helper_arguments(prepared)
+    real, reads = repository.read_regular, []
+
+    def recorded(location, **kwargs):
+        reads.append(Path(location).name)
+        return real(location, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(repository, "read_regular", recorded)
+        assert verifier.verify_inputs(local, **arguments)["failed"] == 0
+    assert "locked" in reads and repository.ROLE_MARKER not in reads, "the auditor's scope cannot read the marker"
+    lock = _administration(prepared.worktree) / "locked"
+    genuine = lock.read_bytes()
+    session = prepared.prepared["session_uuid"]
+    other = ("0" if session[0] != "0" else "1") + session[1:]
+    lock.write_bytes(genuine.replace(session.encode(), other.encode()))
+    refused = _reason(verifier.verify_inputs, local, **arguments)
+    assert refused.reason == "checkout_git_file" and "another session's lifetime" in str(refused)
+    lock.write_bytes(genuine)
+    assert verifier.verify_inputs(local, **arguments)["failed"] == 0, "invariance: the genuine lock again"

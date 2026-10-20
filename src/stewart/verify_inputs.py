@@ -29,8 +29,11 @@ def verify_inputs(ws: Workspace, *, expected_worktree: Path, launch_prompt_commi
     """
     context_args = dict(expected_worktree=expected_worktree, launch_prompt_commit=launch_prompt_commit,
                         prompt_sha256=prompt_sha256, launch_token=launch_token)
+    from stewart._repository import checkout_git
     context = auditor_context(ws, **context_args)
-    prompt = git(ws.repo, "show", f"{launch_prompt_commit}:{ws.prompt}").stdout
+    # Every question goes to the administration the context verified, never to whatever .git names now.
+    options = checkout_git(ws.repo, context[3])
+    prompt = git(ws.repo, *options, "show", f"{launch_prompt_commit}:{ws.prompt}").stdout
     try:
         meta = expand_input_manifest(ws, prompt_metadata(prompt.decode("utf-8"), ws))
     except StewartError as exc:
@@ -41,7 +44,7 @@ def verify_inputs(ws: Workspace, *, expected_worktree: Path, launch_prompt_commi
             exc.code = EXIT_UNVERIFIED
             exc.next_steps = ["not yours to repair: describe the changed input inventory in the report, declare, and stop"]
         raise
-    rows = observe_inputs(ws.repo, expected_inputs(ws.repo, meta, meta["target_commit"]))
+    rows = observe_inputs(ws.repo, expected_inputs(ws.repo, meta, meta["target_commit"], options=options))
     if auditor_context(ws, **context_args) != context:
         raise StewartError("checkout/prompt changed during input verification", reason="context_changed")
     # Recheck the inventory binding after reading files; it is not a mutable

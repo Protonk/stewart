@@ -386,6 +386,8 @@ COLLECTION_ERRORS = {
     "runtime_observation": (EXIT_UNVERIFIED, False),
     "retention_invalid": (EXIT_UNVERIFIED, False),
     "checkout_identity": (EXIT_UNVERIFIED, False),
+    # A .git naming a directory that does not exist: Git discovery could not run (collect again once it is fixed).
+    "checkout_git_missing": (EXIT_ATTENTION, False),
     "archive_mismatch": (EXIT_UNVERIFIED, False),
     "archive_unreadable": (EXIT_UNVERIFIED, False),
     "declaration_validation": (EXIT_UNVERIFIED, False),

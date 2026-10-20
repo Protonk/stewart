@@ -150,22 +150,23 @@ def assignment_metadata(meta: object, ws: Workspace, *, manifest_expanded: bool 
     return meta
 
 
-def expected_inputs(repo: Path, meta: dict, revision: str) -> list[dict]:
+def expected_inputs(repo: Path, meta: dict, revision: str, *, options: tuple[str, ...] = ()) -> list[dict]:
     """Resolve expected digests from Git and the assignment, never from live inputs.
 
     Both preparation and the auditor verifier use this population. Observing
     working bytes is a separate operation so a missing input cannot disappear
-    from the verifier's denominator.
+    from the verifier's denominator. ``options`` are Git's global options, such
+    as a verified administration's ``--git-dir``.
     """
     receipts = []
     for rel in meta["input_files"]:
-        entry = git_text(repo, "ls-tree", revision, "--", rel)
+        entry = git_text(repo, *options, "ls-tree", revision, "--", rel)
         if not entry.startswith(("100644 blob ", "100755 blob ")):
             raise StewartError(f"input_files must name committed regular files: {rel}", reason="input_missing")
-        data = git(repo, "show", f"{revision}:{rel}").stdout
+        data = git(repo, *options, "show", f"{revision}:{rel}").stdout
         receipts.append({"path": rel, "sha256": _hash.sha256_bytes(data), "kind": "committed"})
     for item in meta["supplemental_inputs"]:
-        if git(repo, "cat-file", "-e", f"{revision}:{item['path']}", check=False).returncode == 0:
+        if git(repo, *options, "cat-file", "-e", f"{revision}:{item['path']}", check=False).returncode == 0:
             raise StewartError(
                 f"supplemental input collides with a committed path: {item['path']}", reason="input_collision",
             )

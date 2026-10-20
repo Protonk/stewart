@@ -179,8 +179,13 @@ def _require_valid(result: dict) -> dict:
 
 
 def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_commit: str,
-             prompt_sha256: str, launch_token: str) -> tuple[Path, dict, dict]:
-    """Shared checkout/prompt binding for narrow auditor helpers; no report read or session access."""
+             prompt_sha256: str, launch_token: str) -> tuple[Path, dict, dict, str]:
+    """Shared checkout/prompt binding for narrow auditor helpers; no report read or session access.
+
+    Returns the report path, the expected identities and their sources, and the
+    checkout's verified Git administration: callers ask every later question of
+    that administration, and a revalidation compares it too.
+    """
     from stewart._repository import checkout_git
     if not Path(expected_worktree).is_absolute():
         raise _refuse("expected_worktree", "--expected-worktree", "absolute handoff path", str(expected_worktree))
@@ -190,7 +195,8 @@ def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_com
         raise _refuse("checkout_root", "repository root", str(expected_root), str(actual),
                       "run the issued command in the prepared checkout")
     handoff = issued_handoff(ws, actual)
-    options = checkout_git(actual, _own_administration(actual, handoff))
+    git_admin = _own_administration(actual, handoff)
+    options = checkout_git(actual, git_admin)
     if handoff is not None:
         for field, value in (("launch_prompt_commit", launch_prompt_commit), ("prompt_sha256", prompt_sha256),
                              ("launch_token", launch_token)):
@@ -225,7 +231,7 @@ def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_com
                "prompt_sha256": "handoff argument checked against committed prompt bytes",
                "launch_token": "handoff argument; only Stewart can verify the issued value",
                "observed_checkout_commit": "local HEAD observed by helper"}
-    return contained(actual, meta["report_path"]), expected, sources
+    return contained(actual, meta["report_path"]), expected, sources, git_admin
 
 
 #: Identity lines in the issued handoff, rendered by preparation from the
@@ -491,7 +497,7 @@ def _operate(ws: Workspace, operation: str, *, expected_worktree: Path,
         raise _refuse("report_kind", "set --report-kind", REPORT_KINDS, report_kind)
     kwargs = dict(expected_worktree=expected_worktree, launch_prompt_commit=launch_prompt_commit,
                   prompt_sha256=prompt_sha256, launch_token=launch_token)
-    report, expected, sources = auditor_context(ws, **kwargs)
+    report, expected, sources, git_admin = auditor_context(ws, **kwargs)
     original = None
     signature = None
     if operation == "start":
@@ -530,7 +536,7 @@ def _operate(ws: Workspace, operation: str, *, expected_worktree: Path,
     result = validate_report_declaration(data, expected=expected, sources=sources)
     _require_valid(result)
     def verify():
-        if auditor_context(ws, **kwargs) != (report, expected, sources):
+        if auditor_context(ws, **kwargs) != (report, expected, sources, git_admin):
             raise _refuse("context_changed", "checkout context", expected, "changed inputs")
     _publish(report, data, original, signature, verify)
     return {**result, "report_path": str(report), "report_path_source": "committed prompt assignment"}
