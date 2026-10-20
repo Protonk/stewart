@@ -100,8 +100,12 @@ unchanged: `-k` expressions, or test files and node IDs named relative to the
 staged suite root, which mirrors the project root
 (`tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names`).
 A selection that collects a node more than once, such as a file together with
-one of its node IDs, or a test outside the staged `tests` directory, is
-refused, and a run that exits without writing its receipt fails. Add
+one of its node IDs, is refused, and so is a test outside the staged `tests`
+directory named beside a staged path. pytest loads the staged conftest only
+for staged paths: a selection naming only outside paths runs those tests
+without the suite's boundary checks or private HOME, and the invocation then
+fails because it wrote no receipt. Options that end pytest before a session
+(`--version`, `--markers`) fail the same way. Add
 `--test-budget-seconds 4` to fail on any test whose setup, call and teardown
 exceed four seconds; add `--total-budget-seconds 120` to bound the complete
 invocation, including the private environment and wheel build. Choose budgets
@@ -113,7 +117,8 @@ and third-party plugins refuse.
 
 The tests reach Git through PATH. On macOS `/usr/bin/git` is Apple's shim,
 which locates the developer tools' Git on every call. By default
-(`--git-executable auto`) the check resolves `xcrun --find git` once, requires
+(`--git-executable auto`), when git on PATH is that shim, the check resolves
+`xcrun --find git` once, requires
 a regular executable that reports the shim's `--version` and an existing
 `--exec-path`, both inside the `xcode-select -p` developer directory, and
 writes a private `git` script that `exec`s that binary by absolute path
@@ -121,12 +126,15 @@ writes a private `git` script that `exec`s that binary by absolute path
 immediately before the PATH entry that supplied the shim, so earlier entries
 keep precedence and only `git` changes: Apple's Git derives its exec path and
 templates from the path it was invoked by, so a link or copy would break
-them, and the developer directory itself holds other tools, `python3.9` among
-them. On other platforms, or without a verified binary, PATH is unchanged and
-the reason is recorded. `--git-executable path` leaves PATH alone.
+them, and the binary's own directory (`<developer>/usr/bin`) holds other
+tools, `python3.9` among them. On other platforms, when git resolves
+elsewhere, or without a verified binary, PATH is unchanged and the reason is
+recorded. `--git-executable path` leaves PATH alone.
 `--git-executable /absolute/dir/git`, such as a wrapper that logs each call,
-inserts that executable's directory the same way, or appends it when no Git
-resolves. A different path to the same file, such as a link, does not count
+inserts that executable's whole directory at the same place, or appends it
+when no Git resolves, so use a directory holding only `git`, and make a
+wrapper `exec` the real Git by absolute path: under the tests' PATH a wrapper
+that runs `git` by name finds itself. A different path to the same file, such as a link, does not count
 as already selected; a request the insertion cannot reach is refused. The
 check prints the selection, writes it to the `.log` and records it as
 `git_selection` in the result, with the version and exec path that Git
@@ -137,11 +145,14 @@ children. Tests that build PATH without the inherited value (for example from
 `os.defpath`) do not see the selection; those that extend the inherited PATH
 do.
 
-Beside `<name>.json` a run keeps `<name>.log` (provisioning and build output),
-`<name>.pytest.log` (pytest's stdout and stderr, each line labelled with its
-stream, kept even when pytest stops before writing a result), `<name>-dist/`
-(the tested wheel) and `<name>-artifacts-*/`, pytest's base temporary
-directory. The result also records every phase outcome, the markers and the
+Beside `<name>.json` (the `--result` path) a run keeps `<name>.log`
+(provisioning, build and the Git selection), `<name>.pytest.log` (pytest's
+argv and cwd, then its stdout and stderr with each line labelled by stream,
+kept even when pytest stops before writing a result), `<name>-dist/` (the
+tested wheel) and `<name>-artifacts-*/`, pytest's base temporary directory.
+Each invocation replaces the two logs and adds an artifacts directory; a run
+that writes no result leaves an earlier `<name>.json` in place, so use a fresh
+result name per run. The result also records every phase outcome, the markers and the
 owned test directory and private HOME of each node, digests of the staged
 suite and of `check.py`, and the project's commit and `git status` when the
 project is the top of its own Git work tree. Once pytest has written this
@@ -151,10 +162,10 @@ recording its plan in the result before the first removal and each path's
 outcome after it. Failed, skipped, interrupted and over-budget nodes and
 entries no node owns stay, and a run that leaves no result of its own keeps
 everything. Add `--keep-node NODEID`, repeatable, to keep passing evidence
-such as a comparison's controls; a named node that did not execute (it has no
-call phase, or a skipped one, which is how pytest reports skips and expected
-failures) fails the invocation and nothing is removed, because an evidence run
-that lost its control is not evidence. `--keep-artifacts all` removes
+such as a comparison's controls; a named node with no executed call on record
+(no call phase, or a skipped one, which is how pytest reports skips and
+expected failures, or no usable result) fails the invocation and nothing is
+removed, because an evidence run that lost its control is not evidence. `--keep-artifacts all` removes
 nothing. Removal failures are printed and recorded but change neither the
 exit status nor any test outcome.
 

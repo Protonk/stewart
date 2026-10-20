@@ -2072,16 +2072,20 @@ The runner builds a wheel, installs it into a private venv, and copies tests to
 an unrelated directory. It selects that copy's pytest configuration explicitly,
 disables inherited plugins and options, and records collected/selected nodes,
 per-node outcomes, the installed member population, wheel digest and interpreter.
-Beside the result it keeps the pytest output (`<name>.pytest.log`), the tested
-wheel, and the fixture artifacts and command streams of failed, skipped,
-interrupted and over-budget tests; the result records what it removed. Add
-`--keep-node NODEID` to keep a passing test's artifacts, or
+Beside the result it keeps the provisioning log (`<name>.log`), the pytest
+output (`<name>.pytest.log`), the tested wheel, and the fixture artifacts and
+command streams of failed, skipped, interrupted and over-budget tests; it
+removes the rest only after this run's result is written, and records what it
+removed. Add `--keep-node NODEID` to keep a passing test's artifacts (a named
+node with no executed call fails the run and nothing is removed), or
 `--keep-artifacts all` to keep everything. Name tests relative to the project
 root (`tests/<file>.py` or `tests/<file>.py::<test>`); a selection that would
-run a node twice, names a test outside the staged suite, or is empty is
-refused. On macOS the tests reach Git through a private wrapper for the
-developer tools' binary instead of the `/usr/bin/git` shim;
-`--git-executable path` leaves PATH as it is. Run it with Python 3.14, the
+run a node twice, or is empty, is refused, and so is a test outside the staged
+suite named beside a staged one; a run naming only outside paths fails for
+want of a result. On macOS, when git on PATH is the `/usr/bin/git` shim and
+the developer tools' binary verifies, the tests reach Git through a private
+wrapper for that binary; otherwise PATH is unchanged and the reason recorded,
+and `--git-executable path` keeps it unchanged. Run it with Python 3.14, the
 qualified interpreter.
 Socket checks require a host that permits a local Unix socket; unreadable-file
 controls require an unprivileged user. No dependency downloads occur in this

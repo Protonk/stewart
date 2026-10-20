@@ -319,7 +319,7 @@ def plan_retention(receipt, artifacts, policy, keep_nodes):
     if plan["missing_keep_nodes"]:
         # An evidence run that lost its control is not evidence; a mistyped
         # node ID must not cost the evidence the caller meant to keep.
-        plan["withheld"] = "--keep-node named nodes that did not execute"
+        plan["withheld"] = "--keep-node named nodes with no executed call on record"
         return plan, {}
     if policy == "all":
         plan["withheld"] = "--keep-artifacts all keeps every artifact"
@@ -447,17 +447,23 @@ def main():
         "staged suite root, which mirrors the project root: tests/test_runner.py or "
         "tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names. Without a "
         "positional argument pytest collects the configured testpaths. A selection that collects a "
-        "node more than once, or a test outside the staged tests directory, is refused, and a run that "
-        "exits without writing its receipt fails. Beside the result a run keeps NAME.log (provisioning and "
-        "build), NAME.pytest.log (pytest's stdout and stderr, each line labelled with its stream), "
+        "node more than once is refused, and so is a test outside the staged tests directory named beside "
+        "a staged path. pytest loads the staged conftest only for staged paths, so a selection naming only "
+        "outside paths runs them without the suite's checks and then fails for want of a receipt, as do "
+        "options that end pytest before a session (--version, --markers). NAME is the --result stem. "
+        "Beside the result a run keeps NAME.log (provisioning, build and the Git selection), NAME.pytest.log "
+        "(pytest's argv, then its stdout and stderr, each line labelled with its stream), "
         "NAME-dist/ (the tested wheel) and NAME-artifacts-*/ (pytest's base temporary directory, reduced "
         "as --keep-artifacts says once this invocation's receipt is written; without that receipt nothing "
         "is removed)."))
     project = Path(__file__).resolve().parents[1]
-    parser.add_argument("--wheelhouse", type=Path, default=os.environ.get("STEWART_WHEELHOUSE"))
+    parser.add_argument("--wheelhouse", type=Path, default=os.environ.get("STEWART_WHEELHOUSE"),
+                        help="the hash-locked wheelhouse (default: $STEWART_WHEELHOUSE, else <project>/.scratch/wheelhouse)")
     parser.add_argument("--parity-output", type=Path, help="write byte-contract vectors from the installed wheel")
-    parser.add_argument("--result", type=Path, default=project / ".scratch/check-result.json")
-    parser.add_argument("--fast", action="store_true", help="select smoke checks only; full coverage requires an unfiltered run")
+    parser.add_argument("--result", type=Path, default=project / ".scratch/check-result.json",
+                        help="the receipt path (default <project>/.scratch/check-result.json); use a fresh name per run")
+    parser.add_argument("--fast", action="store_true",
+                        help="select only `smoke and not heavy`; full coverage requires an unfiltered run")
     parser.add_argument("--test-budget-seconds", type=positive_seconds,
                         help="fail when any test's setup, call and teardown exceed this wall time")
     parser.add_argument("--total-budget-seconds", type=positive_seconds,
@@ -469,7 +475,8 @@ def main():
         "that execs it by absolute path (/bin/dash, else /bin/sh), and insert that script's directory "
         "immediately before the PATH entry that supplied the shim, so only git changes; otherwise leave "
         "PATH unchanged and record why. path: leave PATH unchanged. An absolute path to an executable "
-        "named git: insert its directory the same way, appending it when no git resolves, unless PATH "
+        "named git: insert its whole directory at the same place (so use a directory holding only git, and "
+        "have a wrapper exec the real git by absolute path), appending it when no git resolves, unless PATH "
         "already reaches that exact path; refused when the inserted directory would not reach it. The "
         "choice, the resolved git, its version and exec path under the tests' PATH, and every name whose "
         "resolution changed go to the .log and the result"))
@@ -480,8 +487,9 @@ def main():
                              "all: remove nothing")
     parser.add_argument("--keep-node", action="append", default=[], metavar="NODEID",
                         help="also keep this passing node's directories, named as the result names nodes "
-                             "(repeatable); a named node that did not execute (no call phase, or a skipped one, as "
-                             "pytest reports skips and xfails) fails the invocation and nothing is removed")
+                             "(repeatable); a named node with no executed call on record (no call phase, or a "
+                             "skipped one, as pytest reports skips and xfails) fails the invocation and nothing "
+                             "is removed")
     args, tests = parser.parse_known_args()
     if args.fast:
         if any(arg.startswith("-m") for arg in tests):
@@ -490,7 +498,10 @@ def main():
     result = args.result.resolve()
     wheels = (args.wheelhouse or project / ".scratch/wheelhouse").resolve()
     if not wheels.is_dir():
-        parser.error("provision the hash-locked wheelhouse before running tests; no downloads are attempted")
+        source = "--wheelhouse" if args.wheelhouse else ("$STEWART_WHEELHOUSE" if os.environ.get("STEWART_WHEELHOUSE")
+                                                          else "the default")
+        parser.error(f"no wheelhouse at {wheels} (from {source}); provision the hash-locked wheelhouse "
+                     "before running tests; no downloads are attempted")
     result.parent.mkdir(parents=True, exist_ok=True)
     environment = {key: value for key, value in os.environ.items()
                    if not key.startswith(("PYTEST_", "STEWART_TEST_", "PYTHON"))}
@@ -611,7 +622,7 @@ def main():
                     print(f"[stewart] could not remove {path}: {value}", file=sys.stderr, flush=True)
         if missing:
             refused = "; ".join(f"{node} ({describe_phases(phases)})" for node, phases in missing.items())
-            print(f"[stewart] --keep-node targets that did not execute: {refused}; nothing was removed",
+            print(f"[stewart] --keep-node targets with no executed call on record: {refused}; nothing was removed",
                   file=sys.stderr, flush=True)
         if over_budget:
             print(f"[stewart] total budget exceeded: {elapsed:.3f}s > {args.total_budget_seconds}s", file=sys.stderr)
@@ -619,9 +630,10 @@ def main():
             # Pytest loads the staged conftest only for paths under the suite: a
             # selection naming only tests elsewhere runs them without its boundary
             # checks and refusals, and writes no receipt.
-            print(f"[stewart] pytest exited 0 without writing this invocation's receipt to {result}, so the staged "
-                  "suite's conftest did not run; name tests relative to the suite root, as tests/<file>.py or "
-                  "tests/<file>.py::<test>", file=sys.stderr)
+            print(f"[stewart] pytest exited 0 without writing this invocation's receipt to {result}: either the "
+                  "selection named only paths outside the staged suite, so its conftest and checks never ran (name "
+                  "tests as tests/<file>.py or tests/<file>.py::<test>), or an option ended pytest before a session "
+                  "(--version, --markers)", file=sys.stderr)
             return 1
         return status
 
