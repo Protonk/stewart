@@ -335,7 +335,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
     binds the view to one session lifetime; another one is refused.
     """
     from stewart._repository import checkout_git_admin, maintainer, registered_session
-    from stewart.close import _admin_lifetime, close_summary, closing_entries
+    from stewart.close import close_summary, closing_entries
     common = maintainer(ws.repo)["common_dir"]
     session = session_dir(ws, ident)
     closes = [close_summary(entry, ws.repo) for entry in closing_entries(common, ws, ident)]
@@ -485,10 +485,7 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
         git_admin = admin_error = None
         if present:
             try:
-                git_admin = checkout_git_admin(worktree, record["common_dir"])
-                if _admin_lifetime(Path(git_admin)) != record["session_uuid"]:
-                    raise StewartError(f"the Git administration {git_admin} belongs to another session's lifetime; "
-                                       "Git is not run through it", reason="checkout_identity", retained=[git_admin])
+                git_admin = checkout_git_admin(worktree, record["common_dir"], record["session_uuid"])
             except StewartError as exc:
                 git_admin, admin_error = None, str(exc)
         worktree_head = _git_head(worktree, git_admin) if git_admin else None

@@ -269,7 +269,9 @@ def test_git_runs_in_a_linked_checkout_only_through_its_own_administration(proje
         plant()
         if name not in ("a file with a second line", "an oversized file"):
             assert answered() != admin, f"{name}: Git in the checkout no longer reaches its own administration"
-        assert_reason("checkout_identity", checkout_git_admin, checkout, common)
+        # A .git naming nothing is a discovery failure, as Git's own answer is; every other substitute is identity.
+        assert_reason("checkout_git_missing" if name == "a file naming nothing" else "checkout_identity",
+                      checkout_git_admin, checkout, common)
     with pytest.raises(StewartError, match="oversized"):  # never read whole: the auditor can write .git
         checkout_git_admin(checkout, common)
     # As worktree.useRelativePaths writes them: each path relative to the directory holding its file.

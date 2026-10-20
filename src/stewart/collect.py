@@ -117,19 +117,30 @@ def inventory(root: Path) -> dict:
     }
 
 
-def checkout_state(worktree: Path, prompt_commit: str) -> tuple[dict, dict[str, bytes]]:
+def checkout_state(worktree: Path, prompt_commit: str, git_admin: str) -> tuple[dict, dict[str, bytes]]:
     """Capture index and worktree separately, including ignored and untracked bytes.
 
     Diffs use the assigned commit, not HEAD: an unexpected auditor commit must
     not make its changes disappear. NUL delimiters preserve unusual filenames.
     Entries Git reports that are not regular files or links are recorded, not
-    refused; the inventory and the receipt make them visible.
+    refused; the inventory and the receipt make them visible. Every query names
+    ``git_admin``, the administration ``checkout_git_admin`` verified, so Git
+    never resolves the checkout's ``.git`` itself; the state records it.
     """
+    from stewart._repository import checkout_git
+    options = checkout_git(worktree, git_admin)
+
+    def ask(*args: str):
+        return git(worktree, *options, *args)
+
+    def ask_text(*args: str) -> str:
+        return git_text(worktree, *options, *args)
+
     diff = ("--no-ext-diff", "--no-textconv", "--no-renames", "--binary", "--full-index")
     raw = {
-        "working.patch": git(worktree, "diff", *diff, prompt_commit).stdout,
-        "index.patch": git(worktree, "diff", "--cached", *diff, prompt_commit).stdout,
-        "status.z": git(worktree, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout,
+        "working.patch": ask("diff", *diff, prompt_commit).stdout,
+        "index.patch": ask("diff", "--cached", *diff, prompt_commit).stdout,
+        "status.z": ask("status", "--porcelain=v1", "-z", "--untracked-files=all").stdout,
     }
     names: set[str] = set()
     for args in (
@@ -138,11 +149,11 @@ def checkout_state(worktree: Path, prompt_commit: str) -> tuple[dict, dict[str, 
         # Intentionally omit --exclude-standard: ignored files are recovery data.
         ("ls-files", "--others", "-z"),
     ):
-        names.update(os.fsdecode(git(worktree, *args).stdout).split("\0"))
+        names.update(os.fsdecode(ask(*args).stdout).split("\0"))
     names.discard("")
     # Git lists nothing below a submodule path or inside a nested repository, so Stewart's own
     # no-follow walk adds every regular file and link that is neither committed nor Git-reported.
-    entries = tree_entries(worktree, prompt_commit)
+    entries = tree_entries(worktree, prompt_commit, *options)
     known = {_spelling(path) for _, _, path in entries} | {_spelling(rel) for rel in names}
     unlisted = {rel for rel in _walk(worktree) if _spelling(rel) not in known}
     files = []
@@ -169,10 +180,11 @@ def checkout_state(worktree: Path, prompt_commit: str) -> tuple[dict, dict[str, 
         if rel in unlisted:
             files[-1]["listed_by_git"] = False
     state = {
-        "head": git_text(worktree, "rev-parse", "HEAD"),
-        "branch": git_text(worktree, "branch", "--show-current"),
+        "head": ask_text("rev-parse", "HEAD"),
+        "branch": ask_text("branch", "--show-current"),
         "files": files,
         "receipts": {name: _hash.sha256_bytes(data) for name, data in raw.items()},
+        "git_admin": git_admin,
     }
     submodules = sorted(path for mode, _, path in entries if mode == "160000")
     if submodules:
@@ -487,26 +499,26 @@ def _collect(ws: Workspace, ident: str, auditor_stopped: str, lifetime: str | No
         receipt["retention"] = {"status": "invalid", "error": exc.to_json()}
         receipt["errors"].append({"reason": "retention_invalid", "message": f"commit retention: {exc}"})
     try:
-        # Git run through a .git link would observe, and refresh the index of,
-        # another repository; only the checkout's own gitdir file is followed.
-        _, gitfile = _files.read_regular(worktree / ".git")
-        if gitfile is None or not gitfile.startswith(b"gitdir: "):
-            raise StewartError("the checkout's .git is not its regular gitdir file; refuse to run Git through it",
-                               reason="checkout_identity")
-        common = git_text(worktree, "rev-parse", "--path-format=absolute", "--git-common-dir")
-        if common != record["common_dir"] or git_text(worktree, "rev-parse", "--show-toplevel") != str(worktree):
+        # Git run through a planted .git, a link or a file naming another administration, would observe,
+        # and refresh the index of, another checkout or repository: only this session's own
+        # administration is used, named explicitly to every query.
+        from stewart._repository import checkout_git, checkout_git_admin
+        git_admin = checkout_git_admin(worktree, record["common_dir"], record["session_uuid"])
+        options = checkout_git(worktree, git_admin)
+        common = git_text(worktree, *options, "rev-parse", "--path-format=absolute", "--git-common-dir")
+        if common != record["common_dir"] or git_text(worktree, *options, "rev-parse", "--show-toplevel") != str(worktree):
             raise StewartError(
                 "audit checkout identity changed; refuse to collect another repository",
                 reason="checkout_identity",
             )
-        state, raw = checkout_state(worktree, record["prompt_commit"])
+        state, raw = checkout_state(worktree, record["prompt_commit"], git_admin)
         receipt["checkout"] = state
         for raw_name, data in raw.items():
             (collection / raw_name).write_bytes(data)
         archive = collection / "files.tar"
         archived, omitted = archive_files(archive, worktree, state["files"])
         verify_archive(archive, state["files"], archived)
-        after, _ = checkout_state(worktree, record["prompt_commit"])
+        after, _ = checkout_state(worktree, record["prompt_commit"], git_admin)
         after_inventory = inventory(worktree)
         movement = after != state or after_inventory["entries"] != before_inventory["entries"]
         receipt["git_discovery"] = "complete"
@@ -573,7 +585,7 @@ def _collect(ws: Workspace, ident: str, auditor_stopped: str, lifetime: str | No
 
 
 def assess_checkout(worktree: Path, *, meta: dict, prompt_commit: str, handoff_path: str,
-                    expected: dict, sources: dict) -> dict:
+                    expected: dict, sources: dict, git_admin: str) -> dict:
     """A read-only, receipt-shaped observation of a checkout, for the auditor's check.
 
     It runs the same report observation, inventory, Git discovery, archive
@@ -590,7 +602,7 @@ def assess_checkout(worktree: Path, *, meta: dict, prompt_commit: str, handoff_p
     if report_error:
         receipt["errors"].append(report_error)
     before_inventory = inventory(worktree)
-    state, _ = checkout_state(worktree, prompt_commit)
+    state, _ = checkout_state(worktree, prompt_commit, git_admin)
     receipt["checkout"] = state
     omitted = probe_archive(worktree, state["files"])
     receipt["git_discovery"] = "complete"

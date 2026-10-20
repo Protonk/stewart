@@ -440,12 +440,17 @@ permission. Keep the human evidence map and scope in the prompt.
    Human output includes attributed stop kinds and declaration diagnostics with
    identity comparisons, including after triage. Unavailable completion is
    labeled explicitly; triage does not erase the underlying observation.
-   Status runs Git in the auditor checkout only through the administration
+   Stewart runs Git in the auditor checkout only through the administration
    its own `.git` file names: one of the repository's worktrees, naming the
-   checkout back and belonging to this session's lifetime. A link, or a file
-   naming another repository or another checkout's administration, is not
-   followed: the checkout's HEAD stays unobserved (`null`), its lock carries an
-   `error` saying why, and no handoff is offered until it is observed.
+   checkout back and belonging to this session's lifetime. Every query then
+   names that administration and the checkout with `--git-dir` and
+   `--work-tree`, so a `.git` replaced after the check is never consulted.
+   Status, collect, close, the auditor's helper, release and run all apply it.
+   A link, or a file naming another repository, another checkout's
+   administration or an administration written inside the checkout, is not
+   followed. In status the checkout's HEAD stays unobserved (`null`), its lock
+   carries an `error` saying why, and no handoff is offered until it is
+   observed.
    Without `--audit-id`, `status` lists every session of the workspace across
    the repository, with its owning maintainer checkout, preparation state,
    checkout, lock, complete collections and exit code, then the workspace's
@@ -1097,8 +1102,11 @@ an explicit diagnostic; no completion is inferred from prose.
 The helper derives audit ID, target and report path only from committed prompt
 bytes, verifies the transcribed prompt digest, and requires the working prompt
 to be byte-identical on every operation. It requires a detached HEAD at the
-transcribed launch commit, a worktree-style `.git` file, and an absolute
-`--expected-worktree` from the handoff matching the actual canonical Git root.
+transcribed launch commit, the checkout's own `.git` file (refused as
+`checkout_git_file` otherwise, checked as collection checks it except that the
+session lifetime comes from the checkout's lock, since the auditor's scope
+cannot read the role marker), and an absolute `--expected-worktree` from the
+handoff matching the actual canonical Git root.
 An unexpected commit is reported; `check` names `git reset --soft` as its fix,
 which keeps the changes, and the report should mention the commit. Two detached
 worktrees at the same commit remain different destinations.
@@ -1251,7 +1259,9 @@ producer run, scope expansion, or release of a paused hold.
 - **Collection with errors** exits 1, or 3 when an error means something does
   not verify (a changed handoff or supplied runtime, invalid retention, an
   archive mismatch, a checkout whose `.git` is not its own gitdir file, which
-  Git is never run through), and keeps everything it captured: the
+  Git is never run through; a `.git` naming a directory that does not exist
+  is a Git discovery failure, 1, as Git's own answer would be), and keeps
+  everything it captured: the
   report, the inventory, any patches and archive, and the worktree. Read the
   receipt's `errors`, resolve the cause (an unsupported entry, a moving file,
   broken Git state), and collect again. Never extract the archive over a checkout.
@@ -1808,8 +1818,8 @@ closing records under `<git-common-dir>/stewart/closed/`.
 | `collections/<name>/STARTED.json` | A collection began; without `collection.json` it is a partial attempt. |
 | `collections/<name>/REPORT.md` | The captured report bytes, taken before Git work. |
 | `collections/<name>/inventory.json` | The no-follow inventory taken before Git discovery; `inventory-after.json` appears only on movement. |
-| `collections/<name>/working.patch`, `index.patch`, `status.z`, `files.tar` | Git patches against the prompt commit, porcelain status, and the archive of Git-reported files and links. |
-| `collections/<name>/collection.json` (schema 7) | Report status and digest, captured declaration validation and identity comparisons, Git discovery outcome, archive digest, unexpected paths (naming those that are supplemental inputs) and missing supplemental inputs, inventory summary and digest, supplied runtime observation and pristine asset pins, errors as reason/message objects, attributed stop kind. |
+| `collections/<name>/working.patch`, `index.patch`, `status.z`, `files.tar` | Git patches against the prompt commit, porcelain status, and the archive of changed and new files and links: those Git reports and those Stewart's own walk finds that Git neither tracks nor reports. |
+| `collections/<name>/collection.json` (schema 7) | Report status and digest, captured declaration validation and identity comparisons, Git discovery outcome, the checkout observation (HEAD, branch, files, and in `checkout.git_admin` the verified Git administration every query named), archive digest, unexpected paths (naming those that are supplemental inputs) and missing supplemental inputs, inventory summary and digest, supplied runtime observation and pristine asset pins, errors as reason/message objects, attributed stop kind. |
 | `triage/<name>.json` (schema 3) | A maintainer response carrying and validating the collection name and receipt digest, report digest or gap, and any kind-bound follow-up disposition. Earlier disposition schemas are unsupported and preserved unchanged; use their pinned tool version. |
 | `retention/<name>.json` | What was published, from which capture, with digests. |
 | `RESUMED.json` | The release of a paused hold, bound to a triage. |

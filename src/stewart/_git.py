@@ -30,10 +30,13 @@ def _invocation(repo: Path, *args: str) -> dict:
             "cwd": repo, "env": env}
 
 
-def tree_entries(repo: Path, commit: str) -> list[tuple[str, str, str]]:
-    """Every entry of a commit's tree, recursively, as (mode, object ID, path); paths verbatim."""
+def tree_entries(repo: Path, commit: str, *options: str) -> list[tuple[str, str, str]]:
+    """Every entry of a commit's tree, recursively, as (mode, object ID, path); paths verbatim.
+
+    ``options`` are Git's global options, such as a verified ``--git-dir``.
+    """
     entries = []
-    for record in git(repo, "ls-tree", "-r", "-z", "--full-tree", commit).stdout.split(b"\0"):
+    for record in git(repo, *options, "ls-tree", "-r", "-z", "--full-tree", commit).stdout.split(b"\0"):
         if record:
             meta, _, path = record.partition(b"\t")
             mode, _, rest = meta.partition(b" ")

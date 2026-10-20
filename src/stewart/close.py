@@ -154,7 +154,7 @@ def _facts(session: Path, record: dict | None, rows: list[dict], repo: Path, com
     assignment = record.get("assignment") if isinstance(record.get("assignment"), dict) else {}
     handoff = record.get("handoff") if isinstance(record.get("handoff"), dict) else {}
     prompt = record.get("prompt_commit")
-    return {"session_uuid": uuid, "worktree": worktree, "audit_dir": audit_dir, "git_admin": git_admin,
+    return {"session_uuid": uuid, "worktree": worktree, "audit_dir": audit_dir, "git_admin": git_admin, "common": common,
             "runtime": str(Path(audit_dir) / "runtime") if audit_dir else None, "repo": repo,
             "prompt_commit": prompt if isinstance(prompt, str) and COMMIT_ID.fullmatch(prompt) else None,
             "assignment": assignment,
@@ -202,14 +202,18 @@ def _observe_checkout(facts: dict) -> dict:
     if prompt is None:
         return {"observed": False, "exists": True, "extra": [], "files": [], "unaccounted": [],
                 "error": "the session record names no prompt commit to compare against"}
-    if not _gitfile(worktree):
-        # Git run through a planted .git link would observe, and write, another repository.
-        return {"observed": False, "exists": True, "extra": [], "files": [], "unaccounted": [],
-                "error": "the checkout's .git is not its regular gitdir file"}
+    from stewart._repository import checkout_git, checkout_git_admin
     try:
-        state, _ = checkout_state(worktree, prompt)
+        # Git run through a planted .git, a link or a file naming another administration, would observe,
+        # and write, another checkout or repository; only this session's own administration is used.
+        git_admin = checkout_git_admin(worktree, facts["common"], facts["session_uuid"])
+    except StewartError as exc:
+        return {"observed": False, "exists": True, "extra": [], "files": [], "unaccounted": [], "error": str(exc)}
+    try:
+        state, _ = checkout_state(worktree, prompt, git_admin)
         entries = inventory(worktree)["entries"]
-        tracked = set(os.fsdecode(git(worktree, "ls-tree", "-r", "-d", "--name-only", "-z", prompt).stdout).split("\0"))
+        tracked = set(os.fsdecode(git(worktree, *checkout_git(worktree, git_admin), "ls-tree", "-r", "-d",
+                                      "--name-only", "-z", prompt).stdout).split("\0"))
     except (StewartError, OSError, subprocess.TimeoutExpired) as exc:
         return {"observed": False, "exists": True, "extra": [], "files": [], "unaccounted": [], "error": str(exc)}
     supplied = {item.get("path"): item.get("sha256") for item in facts["supplemental"]}
@@ -236,35 +240,6 @@ def _observe_checkout(facts: dict) -> dict:
             "head": state["head"]}
 
 
-def _gitfile(worktree: Path) -> bool:
-    """Whether the checkout's .git is a regular gitdir file, never a link or directory."""
-    info, data = read_regular(worktree / ".git")
-    return info["kind"] == "file" and data is not None and data.startswith(b"gitdir: ")
-
-
-def _admin_lifetime(git_admin: Path) -> str | None:
-    """The session lifetime a worktree's Git administration belongs to, or None when it cannot be established.
-
-    Git reuses an administrative directory's name once a checkout is removed,
-    so the pathname alone never identifies a lifetime. The role marker names
-    it; before the marker is published, the registration lock does.
-    """
-    from stewart._repository import LIFETIME_LOCK, REGISTRATION_LOCK, ROLE_MARKER
-    info, data = read_regular(git_admin / ROLE_MARKER)
-    if info["kind"] != "missing":
-        try:
-            value = loads_control(data) if data is not None else None
-        except (ValueError, RecursionError):
-            return None
-        return _canonical(value.get("role_uuid")) if isinstance(value, dict) else None
-    _, lock = read_regular(git_admin / "locked")
-    reason = lock.decode("utf-8", "replace") if lock is not None else ""
-    for prefix in (REGISTRATION_LOCK, LIFETIME_LOCK):
-        if reason.startswith(prefix):
-            return _canonical(reason[len(prefix):].split(":", 1)[0].strip())
-    return None
-
-
 def _admin_worktree(git_admin: Path) -> str | None:
     """The checkout path a worktree's Git administration names in its gitdir file."""
     _, data = read_regular(git_admin / "gitdir")
@@ -275,6 +250,7 @@ def _admin_worktree(git_admin: Path) -> str | None:
 
 def _own_administrations(common: str, uuid: str | None, worktree: Path) -> list[Path]:
     """Git administrations that name the recorded checkout path and belong to this lifetime."""
+    from stewart._repository import admin_lifetime
     root = Path(common) / "worktrees"
     if uuid is None:
         return []
@@ -284,7 +260,7 @@ def _own_administrations(common: str, uuid: str | None, worktree: Path) -> list[
     except (FileNotFoundError, _removal.Substituted):
         return []
     return [root / name for name in names
-            if _admin_worktree(root / name) == str(worktree) and _admin_lifetime(root / name) == uuid]
+            if _admin_worktree(root / name) == str(worktree) and admin_lifetime(root / name) == uuid]
 
 
 def _registered_elsewhere(repo: Path, uuid: str | None, git_admin: str | None, worktree: Path) -> list[str]:
@@ -295,11 +271,12 @@ def _registered_elsewhere(repo: Path, uuid: str | None, git_admin: str | None, w
     that administration still belongs to this lifetime. A later checkout that
     reused the administrative name is another lifetime and is never claimed.
     """
+    from stewart._repository import admin_lifetime
     found = []
     registered = _registrations(repo)
     if uuid:
         found += [entry["worktree"] for entry in registered if uuid in (entry.get("locked") or "")]
-        if git_admin and _admin_lifetime(Path(git_admin)) == uuid:
+        if git_admin and admin_lifetime(Path(git_admin)) == uuid:
             location = _admin_worktree(Path(git_admin))
             found += [entry["worktree"] for entry in registered if location and entry.get("worktree") == location]
     return sorted({path for path in found if path and path != str(worktree)})

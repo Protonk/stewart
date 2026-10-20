@@ -181,6 +181,7 @@ def _require_valid(result: dict) -> dict:
 def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_commit: str,
              prompt_sha256: str, launch_token: str) -> tuple[Path, dict, dict]:
     """Shared checkout/prompt binding for narrow auditor helpers; no report read or session access."""
+    from stewart._repository import checkout_git
     if not Path(expected_worktree).is_absolute():
         raise _refuse("expected_worktree", "--expected-worktree", "absolute handoff path", str(expected_worktree))
     actual = Path(git_text(ws.repo, "rev-parse", "--show-toplevel")).resolve()
@@ -188,25 +189,23 @@ def auditor_context(ws: Workspace, *, expected_worktree: Path, launch_prompt_com
     if actual != expected_root:
         raise _refuse("checkout_root", "repository root", str(expected_root), str(actual),
                       "run the issued command in the prepared checkout")
-    info, gitfile = read_regular(actual / ".git")
-    if gitfile is None or not gitfile.startswith(b"gitdir: "):
-        raise _refuse("checkout_git_file", ".git", "worktree-style regular file", info)
     handoff = issued_handoff(ws, actual)
+    options = checkout_git(actual, _own_administration(actual, handoff))
     if handoff is not None:
         for field, value in (("launch_prompt_commit", launch_prompt_commit), ("prompt_sha256", prompt_sha256),
                              ("launch_token", launch_token)):
             if value != handoff[1][field]:
                 raise _refuse("handoff_identity", f"--{field.replace('_', '-')}", handoff[1][field], value,
                               "copy the issued command from the handoff exactly")
-    symbolic = git(actual, "symbolic-ref", "-q", "HEAD", check=False)
+    symbolic = git(actual, *options, "symbolic-ref", "-q", "HEAD", check=False)
     if symbolic.returncode != 1:
         raise _refuse("checkout_detached", "HEAD", "detached", symbolic.stdout.decode(errors="replace"),
                       f"detach HEAD with `git checkout --detach {launch_prompt_commit}`; run check for anything else")
-    head = git_text(actual, "rev-parse", "HEAD")
+    head = git_text(actual, *options, "rev-parse", "HEAD")
     if head != launch_prompt_commit:
         raise _refuse("checkout_commit", "HEAD", launch_prompt_commit, head,
                       "run check: it names the fix and what to say in the report")
-    prompt = git(actual, "show", f"{launch_prompt_commit}:{ws.prompt}").stdout
+    prompt = git(actual, *options, "show", f"{launch_prompt_commit}:{ws.prompt}").stdout
     digest = _hash.sha256_bytes(prompt)
     if digest != prompt_sha256:
         raise _refuse("prompt_digest", "committed prompt SHA-256", prompt_sha256, digest,
@@ -240,6 +239,23 @@ HANDOFF_IDENTITY_LINES = {
 }
 HANDOFF_DIRECTORY = ".stewart-handoffs"
 HANDOFF_NAME = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.md")
+
+
+def _own_administration(root: Path, handoff: tuple[str, dict] | None) -> str:
+    """The checkout's own Git administration, verified as collection verifies it, or a refusal.
+
+    The auditor's scope cannot read the role marker, so the session lifetime is
+    taken from the administration's lock, and only when the issued handoff
+    names the session. Collection binds the lifetime through the marker too.
+    """
+    from stewart._repository import checkout_git_admin
+    common = git_text(root, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    lifetime = handoff[1]["handoff_name"].removesuffix(".md") if handoff is not None else None
+    try:
+        return checkout_git_admin(root, common, lifetime, marker=False)
+    except StewartError as exc:
+        raise _refuse("checkout_git_file", ".git", "this checkout's own gitdir file", str(exc),
+                      "restore the checkout's own .git; Git is not run through anything else") from exc
 
 
 def issued_handoff(ws: Workspace, root: Path) -> tuple[str, dict] | None:
@@ -345,6 +361,7 @@ def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_comm
     """
     from stewart.assignment import expand_input_manifest
     from stewart.collect import assess_checkout, custody_gaps
+    from stewart._repository import checkout_git
 
     if not Path(expected_worktree).is_absolute():
         raise _refuse("expected_worktree", "--expected-worktree", "absolute handoff path", str(expected_worktree))
@@ -352,9 +369,7 @@ def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_comm
     if actual != Path(expected_worktree).resolve():
         raise _refuse("checkout_root", "repository root", str(Path(expected_worktree).resolve()), str(actual),
                       "run the issued command in the prepared checkout")
-    info, gitfile = read_regular(actual / ".git")
-    if gitfile is None or not gitfile.startswith(b"gitdir: "):
-        raise _refuse("checkout_git_file", ".git", "worktree-style regular file", info)
+    git_admin = _own_administration(actual, issued_handoff(ws, actual))
     arguments = {"launch_prompt_commit": launch_prompt_commit, "prompt_sha256": prompt_sha256,
                  "launch_token": launch_token}
     extra = []
@@ -371,7 +386,8 @@ def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_comm
                 extra.append({"id": f"command_mismatch:{field}", "code": 1, "observable": True,
                               "description": f"this command's --{field.replace('_', '-')} {value!r} differs "
                                              f"from the issued handoff's {issued[field]!r}"})
-    prompt = git(actual, "show", f"{issued['launch_prompt_commit']}:{ws.prompt}", check=False)
+    options = checkout_git(actual, git_admin)
+    prompt = git(actual, *options, "show", f"{issued['launch_prompt_commit']}:{ws.prompt}", check=False)
     if prompt.returncode or _hash.sha256_bytes(prompt.stdout) != issued["prompt_sha256"]:
         raise _refuse("prompt_digest", "committed prompt SHA-256", issued["prompt_sha256"],
                       "unavailable" if prompt.returncode else _hash.sha256_bytes(prompt.stdout),
@@ -390,7 +406,7 @@ def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_comm
     sources = {field: "issued handoff" for field in expected}
     sources["audit_id"] = "committed prompt assignment"
     receipt = assess_checkout(actual, meta=meta, prompt_commit=issued["launch_prompt_commit"],
-                              handoff_path=handoff_path, expected=expected, sources=sources)
+                              handoff_path=handoff_path, expected=expected, sources=sources, git_admin=git_admin)
     gaps = [gap for gap in custody_gaps(receipt) if gap["observable"]]
     if handoff is None:
         # Without the issued handoff, nothing in its directory can be told
@@ -398,8 +414,9 @@ def check_checkout(ws: Workspace, *, expected_worktree: Path, launch_prompt_comm
         gaps = [gap for gap in gaps if not gap["id"].startswith(f"unexpected_path:{handoff_path}")]
     gaps += extra
     tracked = {rel for rel in receipt["unexpected_paths"]
-               if git(actual, "cat-file", "-e", f"{issued['launch_prompt_commit']}:{rel}", check=False).returncode == 0}
-    staged = set(os.fsdecode(git(actual, "diff", "--cached", "--name-only", "--no-renames", "-z",
+               if git(actual, *options, "cat-file", "-e", f"{issued['launch_prompt_commit']}:{rel}",
+                      check=False).returncode == 0}
+    staged = set(os.fsdecode(git(actual, *options, "diff", "--cached", "--name-only", "--no-renames", "-z",
                                  issued["launch_prompt_commit"]).stdout).split("\0")) - {""}
     for gap in gaps:
         rel = gap["id"].partition(":")[2]

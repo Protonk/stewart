@@ -449,7 +449,8 @@ def worktree_lock(git_admin: str) -> str | None:
     return lock.decode("utf-8", "replace")
 
 
-def checkout_git_admin(worktree: Path, common_dir: str) -> str:
+def checkout_git_admin(worktree: Path, common_dir: str, lifetime: str | None = None, *,
+                       marker: bool = True) -> str:
     """The Git administration a linked checkout's own ``.git`` file names; Git runs through nothing else.
 
     Git follows whatever ``.git`` names. Through a link, or through a regular
@@ -459,7 +460,14 @@ def checkout_git_admin(worktree: Path, common_dir: str) -> str:
     common directory's ``worktrees``, whose ``gitdir`` file names this
     checkout's ``.git`` in return, is accepted. Both files are read through
     verified descriptors; a relative path (``worktree.useRelativePaths``) is
-    resolved from the directory holding its file, as Git resolves it.
+    resolved from the directory holding its file, as Git resolves it. With
+    ``lifetime``, the administration must also belong to that session lifetime
+    (``admin_lifetime``; ``marker=False`` reads only its lock, for callers that
+    cannot read the role marker). A ``.git`` naming a directory that does not
+    exist is ``checkout_git_missing``: Git could not discover anything through
+    it either. Every other refusal is ``checkout_identity``. Callers then run
+    Git with ``--git-dir`` naming the returned administration, so Git never
+    resolves the checkout's ``.git`` again.
     """
     location = worktree / ".git"
     info, data = read_regular(location, limit=_POINTER_LIMIT)
@@ -470,6 +478,9 @@ def checkout_git_admin(worktree: Path, common_dir: str) -> str:
         raise StewartError(f"the checkout's .git is not its gitdir file ({found}); Git is not run through it",
                            reason="checkout_identity", retained=[str(location)])
     admin = Path(os.path.normpath(worktree / named))
+    if not os.path.lexists(admin):
+        raise StewartError(f"the checkout's .git names {admin}, which does not exist; Git cannot discover the "
+                           "checkout through it", reason="checkout_git_missing", retained=[str(location)])
     if admin.parent != Path(common_dir) / "worktrees":
         raise StewartError(f"the checkout's .git names {admin}, not one of its repository's worktree "
                            "administrations; Git is not run through it", reason="checkout_identity",
@@ -479,7 +490,46 @@ def checkout_git_admin(worktree: Path, common_dir: str) -> str:
     if named_back is None or Path(os.path.normpath(admin / named_back)) != location:
         raise StewartError(f"the Git administration {admin} does not name this checkout; Git is not run through it",
                            reason="checkout_identity", retained=[str(location), str(admin / "gitdir")])
+    if lifetime is not None and admin_lifetime(admin, marker=marker) != lifetime:
+        raise StewartError(f"the Git administration {admin} belongs to another session's lifetime; "
+                           "Git is not run through it", reason="checkout_identity", retained=[str(admin)])
     return str(admin)
+
+
+def checkout_git(worktree: Path, git_admin: str) -> tuple[str, str]:
+    """Git's global options that address a verified administration and its checkout, never ``.git``."""
+    return f"--git-dir={git_admin}", f"--work-tree={worktree}"
+
+
+def admin_lifetime(git_admin: Path, *, marker: bool = True) -> str | None:
+    """The session lifetime a worktree's Git administration belongs to, or None when it cannot be established.
+
+    Git reuses an administrative directory's name once a checkout is removed,
+    so the pathname alone never identifies a lifetime. The role marker names
+    it; before the marker is published, the registration lock does. With
+    ``marker=False`` only the lock is read: the auditor's own scope denies reads
+    of the marker, and after preparation the lifetime lock names the session.
+    """
+    info, data = read_regular(Path(git_admin) / ROLE_MARKER) if marker else ({"kind": "missing"}, None)
+    if info["kind"] != "missing":
+        try:
+            value = loads_control(data) if data is not None else None
+        except (ValueError, RecursionError):
+            return None
+        return _canonical_uuid(value.get("role_uuid")) if isinstance(value, dict) else None
+    _, lock = read_regular(Path(git_admin) / "locked")
+    reason = lock.decode("utf-8", "replace") if lock is not None else ""
+    for prefix in (REGISTRATION_LOCK, LIFETIME_LOCK):
+        if reason.startswith(prefix):
+            return _canonical_uuid(reason[len(prefix):].split(":", 1)[0].strip())
+    return None
+
+
+def _canonical_uuid(value: object) -> str | None:
+    try:
+        return session_uuid(value)
+    except StewartError:
+        return None
 
 
 #: A Git pointer file holds one path; anything larger is not read (the checkout's .git is auditor-writable).

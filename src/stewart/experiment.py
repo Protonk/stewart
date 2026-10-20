@@ -216,6 +216,16 @@ def _verify_pinned_inputs(worktree: Path, record: dict, *, reason: str) -> None:
         )
 
 
+def _own_checkout_git(worktree: Path, record: dict, *, reason: str) -> tuple[str, str]:
+    """Git options addressing the session's own verified administration; HEAD is judged through nothing else."""
+    from stewart._repository import checkout_git, checkout_git_admin
+    try:
+        return checkout_git(worktree, checkout_git_admin(worktree, record["common_dir"], record["session_uuid"]))
+    except StewartError as exc:
+        raise StewartError(f"the checkout cannot be verified: {exc}", reason=reason,
+                           retained=exc.retained) from exc
+
+
 def release(ws: Workspace, ident: str, *, review: dict, actor: str, lifetime: str | None = None,
             request_key: str | None = None) -> dict:
     """Freeze exact artifacts within the grant and record the manager's review."""
@@ -247,7 +257,8 @@ def _release(ws: Workspace, ident: str, review: dict, actor: str, lifetime: str 
     worktree = Path(record["worktree"])
     if not worktree.is_dir():
         raise StewartError("the worktree is gone; nothing can be released", reason="worktree_missing")
-    head = git(worktree, "rev-parse", "HEAD", check=False)
+    head = git(worktree, *_own_checkout_git(worktree, record, reason="checkout_identity"), "rev-parse", "HEAD",
+               check=False)
     if head.returncode or head.stdout.decode().strip() != record["prompt_commit"]:
         raise StewartError("the worktree HEAD is not the prompt commit; collect the unexpected commit first",
                            reason="checkout_identity")
@@ -445,7 +456,8 @@ def _run(ws: Workspace, ident: str, release: str, timeout: float | None, lifetim
         require_match(attempt_dir, result['runtime'], phases={'before'})
         if not worktree.is_dir():
             raise StewartError("the worktree is gone; the release cannot run", reason="worktree_missing")
-        head = git(worktree, "rev-parse", "HEAD", check=False)
+        head = git(worktree, *_own_checkout_git(worktree, record, reason="release_invalidated"), "rev-parse", "HEAD",
+                   check=False)
         if head.returncode or head.stdout.decode().strip() != record["prompt_commit"]:
             raise StewartError("the worktree HEAD is not the prompt commit", reason="release_invalidated")
         grant = record["assignment"].get("experiment")
