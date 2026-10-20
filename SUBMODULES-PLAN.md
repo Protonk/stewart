@@ -29,17 +29,17 @@ those files as uncollected. See the README's "Submodules" item under
 
 ## Constraints that apply
 
-- The custody rules in `AGENTS.md`, in particular: never run Git through a
-  `.git` the auditor could have planted, nested ones included; receipts are
-  exclusive; freeze what was judged and revalidate it at use; removal is
-  authorized only by the recorded closing record or claim.
+- The custody rules in `AGENTS.md`, among them: never follow a link the
+  auditor could have planted; receipts are exclusive; freeze what was judged
+  and revalidate it at use; removal is authorized only by the recorded
+  closing record or claim.
 - Inspecting a checkout must never execute code from it. Submodule
   configuration is repository configuration (see `TEST-SPEED-FINDINGS.md`,
   "Correctness problems found by this work, not fixed", item 1).
 - Retention keeps the commits a session depends on reachable; a submodule's
   commits live in another repository.
-- The auditor harness denies writes to Git administration and has no
-  network access.
+- The auditor harness settings deny writes to Git administration and network
+  access; real enforcement of those settings has not been qualified.
 - Every guarantee needs a regression with a firing control, a case differing
   in the measured property and an invariance case; real harness enforcement
   is qualified separately from settings construction.

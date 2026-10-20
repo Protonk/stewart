@@ -1408,3 +1408,56 @@ means not checked.
      administration;
    - by reasoning only: collect's `rev-parse HEAD` without `--verify`, the
      None frozen tip, and the recognition of attempt-named entries.
+
+## Submodules made loud, and what Git does not list (`8bf03a0`)
+
+The user agreed to the recommendations for item 3: make submodules loud and
+archive what Git does not list ("level 2"), and defer reading submodule code
+and working in populated submodules to `SUBMODULES-PLAN.md`. Item 2's and
+R1–R3's recommendations are agreed but not implemented. Items 1 and 4 are
+tabled.
+
+- `checkout_state` adds every regular file and link that Stewart's own
+  no-follow walk finds and Git neither tracks nor reports
+  (`listed_by_git: false`). Collect archives them and flags them as
+  unexpected paths, and close counts them as uncollected.
+- `init` warns about gitlinks in the target commit. `prepare` refuses
+  (`submodules_present`) until `--submodules-acknowledged`, records the paths
+  and the acknowledgment, and lists them in the handoff.
+- Collect and check raise `gitlink_contents`, and `status` keeps an
+  outstanding line. The README, MAINTAINER.md and AUDITOR.md say so.
+
+Validation, on Python 3.14.8 and Git 2.54.0 through the `dash` wrapper, in the
+default unsandboxed context:
+
+- `correctness/submodules-2`: 154 passed, over `tests/test_submodules.py` and
+  the inventory, status, close and exit-code test files.
+- Full gate `correctness/gate-4` at `8bf03a0`: 1033 collected and selected, 0 deselected; 1032 passed, 1 skipped (the opt-in real-harness probe); 702 s; every node shared with `gate-3` kept its outcome.
+- The new tests carry their own firing controls (Git's listing omits the
+  file), a Git-reported entry as the differing case, and a repository without
+  submodules as invariance. No separate mutation runs were made.
+
+A two-lens review (`correctness/submodule-review/`) found nothing
+that blocks merging. Open, to fix soon:
+
+1. The walk lists directories by path (`collect.py` `_walk`), not through
+   pinned descriptors as `inventory()` does. A directory swapped for a link
+   during the walk is followed: its names are listed, but no bytes are read
+   through it. This breaks `AGENTS.md`'s descriptor-relative traversal rule.
+   It needs a process racing in the checkout.
+2. A pinned supplemental input placed below a gitlink path raises
+   `gitlink_contents`, and the gap's fix text tells the auditor to move it,
+   which would turn the gap into `supplemental_missing`. The handoff calls
+   such a path empty.
+
+Minor:
+
+- Spellings are compared after Unicode normalization but not case-folded.
+- A read error partway through a directory drops the rest of that directory
+  silently.
+- The `omitted` text calls a walk entry "Git-reported".
+- `init`'s gitlink scan runs after its writes.
+- The plan cited `AGENTS.md` for a rule it does not state, and stated harness
+  enforcement as fact. Both are corrected in the plan.
+- Several manual table rows (`files.tar`, `session.json`, the gap families)
+  and `prepare`'s docstring were not updated.
