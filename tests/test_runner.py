@@ -1,5 +1,6 @@
 """The runner must measure its test population, plugin origins and elapsed work."""
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -432,3 +433,317 @@ def test_runner_gives_the_tests_the_selected_git(tmp_path, run_cmd):
                        "--git-executable", "git"], env=clean_environment(), cwd=tmp_path)
     assert refused.returncode == 2 and "argument --git-executable: expected auto, path" in refused.stderr, refused.stderr
     assert not result_path.with_name("refused.log").exists(), "a refused request opened a transcript"
+
+
+PROBE = "tests/test_retention_probe.py::"
+# Every way a node can end, each leaving command records and a HOME to retain or remove.
+# Pytest runs these in file order: test_interrupts ends the session, so only test_killed follows it.
+RETENTION_PROBE = """\
+import os
+import signal
+import sys
+import time
+
+import pytest
+
+
+def record(run_cmd, label):
+    run_cmd([sys.executable, "-I", "-B", "-c", f"print({label!r})"], check=True)
+
+
+@pytest.fixture
+def failing_setup(run_cmd):
+    record(run_cmd, "setup")
+    raise RuntimeError("probe setup failure")
+
+
+@pytest.fixture
+def failing_teardown(run_cmd):
+    yield
+    record(run_cmd, "teardown")
+    raise RuntimeError("probe teardown failure")
+
+
+def test_passes(run_cmd):
+    record(run_cmd, "passes")
+
+
+@pytest.mark.smoke
+def test_kept(run_cmd):
+    record(run_cmd, "kept")
+
+
+def test_locks_its_tree(tmp_path):
+    sealed = tmp_path / "locked/sealed"
+    sealed.mkdir(parents=True)
+    (sealed / "inner.txt").write_text("inner\\n")
+    sealed.chmod(0)
+    sealed.parent.chmod(0o500)
+
+
+def test_leaves_unowned_entry(tmp_path_factory):
+    (tmp_path_factory.getbasetemp() / "unowned-probe").mkdir()
+
+
+def test_leaves_unremovable(tmp_path):
+    (tmp_path / "stuck").mkdir()
+    (tmp_path / "stuck/retention-probe-unremovable").write_text("refused only where a test injects the fault\\n")
+
+
+def test_overruns_budget(run_cmd):
+    record(run_cmd, "overruns")
+    time.sleep(1.5)
+
+
+def test_skips():
+    pytest.skip("probe skip")
+
+
+@pytest.mark.skip(reason="probe skip mark")
+def test_skip_marked():
+    pass
+
+
+def test_setup_fails(failing_setup):
+    pass
+
+
+def test_call_fails(run_cmd):
+    record(run_cmd, "call")
+    raise AssertionError("probe call failure")
+
+
+def test_teardown_fails(failing_teardown):
+    pass
+
+
+def test_interrupts(run_cmd):
+    record(run_cmd, "interrupts")
+    raise KeyboardInterrupt
+
+
+def test_killed(run_cmd):
+    record(run_cmd, "killed")
+    print("probe killed next", file=sys.stderr, flush=True)
+    os.kill(os.getpid(), signal.SIGKILL)
+"""
+# check.py with one probe file's removal refused, as a filesystem can refuse it. shutil
+# is imported first, so rmtree keeps the descriptor-based walk it chose for the real unlink.
+REFUSING_UNLINK = """\
+import os, runpy, shutil, sys
+original = os.unlink
+def unlink(path, *arguments, **options):
+    if os.path.basename(os.fsdecode(path)) == "retention-probe-unremovable":
+        raise PermissionError(1, "removal refused by the retention probe", os.fsdecode(path))
+    return original(path, *arguments, **options)
+os.unlink = unlink
+sys.argv = sys.argv[1:]
+runpy.run_path(sys.argv[0], run_name="__main__")
+"""
+
+
+def retention_project(tmp_path):
+    return reduced_project(Path(os.environ["STEWART_TEST_PROJECT"]), tmp_path / "project",
+                           {"test_retention_probe.py": RETENTION_PROBE})
+
+
+def run_check(run_cmd, project, result_path, *arguments, launcher=()):
+    """Probes that fail by design make the invocation exit nonzero; callers assert on the result."""
+    return run_cmd([sys.executable, "-I", "-B", *launcher, project / "scripts/check.py", "--result", result_path,
+                    *arguments], env=clean_environment(), cwd=result_path.parent)
+
+
+def retention_receipt(result, result_path):
+    """The invocation's result; when pytest or check.py stopped before completing it, their streams say why."""
+    assert result_path.is_file(), f"no result at {result_path}\n" + result.stdout + result.stderr
+    observed = json.loads(result_path.read_text())
+    assert "retention" in observed, f"{result_path} records no retention plan\n" + result.stdout + result.stderr
+    return observed
+
+
+def logged(streams, label, text):
+    """Whether the pytest stream log holds a line of this stream containing text."""
+    return any(line.startswith(label + ": ") and text in line for line in streams.read_text().splitlines())
+
+
+def test_runner_removes_only_unselected_passing_artifacts(tmp_path, run_cmd):
+    """Only a node whose setup, call and teardown all passed loses its directories, and only with this run's receipt.
+
+    The first run ends in a KeyboardInterrupt after every other probe, so it
+    also shows that an interrupted session still removes what passed and
+    keeps its incomplete node. The second keeps everything under
+    --keep-artifacts all and records a real commit and dirty state. The third
+    is killed before pytest writes a receipt, beside another invocation's
+    result, and must remove nothing and leave that result unrelabelled.
+    """
+    project = retention_project(tmp_path)
+    result_path = tmp_path / "interrupted.json"
+    try:
+        result = run_check(run_cmd, project, result_path, "--keep-node", PROBE + "test_kept",
+                           "--test-budget-seconds", "1", "-q", "-k", "not killed")
+        assert result.returncode == 2, "test_interrupts interrupts the session\n" + result.stdout + result.stderr
+        observed = retention_receipt(result, result_path)
+        artifacts, owned, retention = Path(observed["artifacts"]), observed["owned_paths"], observed["retention"]
+        phases = observed["phase_outcomes"]
+        assert observed["exit_status"] == 2, f"the receipt records the interrupted session: {observed['exit_status']}"
+        assert retention["policy"] == "failed", retention
+        assert retention["keep_nodes"] == [PROBE + "test_kept"], retention
+        assert retention["withheld"] is None and not retention["missing_keep_nodes"], retention
+        passed = dict.fromkeys(("setup", "call", "teardown"), "passed")
+        # test_locks_its_tree also needs owner access restored inside its tree.
+        for name in ("test_passes", "test_locks_its_tree", "test_leaves_unowned_entry", "test_leaves_unremovable"):
+            assert phases[PROBE + name] == passed, f"{PROBE + name}: {phases.get(PROBE + name)}"
+            for path in owned[PROBE + name]:
+                assert retention["results"].get(path) == "removed", (
+                    f"{name} passed every phase and was not kept, so {path} goes: "
+                    f"result {retention['results'].get(path)}, kept as {retention['kept'].get(path)}")
+                assert not os.path.lexists(path), f"{path} is recorded as removed but remains"
+        link = artifacts / "test_passescurrent"
+        assert retention["results"].get(str(link)) == "removed", f"{link}: {retention['results'].get(str(link))}"
+        assert not os.path.lexists(link), f"{link} is recorded as removed but remains"
+        for name, label in (("test_kept", "kept"), ("test_skips", None), ("test_overruns_budget", "overruns"),
+                            ("test_setup_fails", "setup"), ("test_call_fails", "call"),
+                            ("test_teardown_fails", "teardown"), ("test_interrupts", "interrupts")):
+            tmp, home = owned[PROBE + name]
+            for path in (tmp, home):
+                assert path in retention["kept"], f"{name} must keep {path}: result {retention['results'].get(path)}"
+            assert (Path(home) / ".gitconfig").is_file(), f"{name} lost its private HOME {home}"
+            if label:
+                record = Path(tmp) / "commands/0001"
+                assert (record / "command.json").is_file(), f"{name} lost its command record {record}"
+                assert (record / "stdout.txt").read_text() == label + "\n", f"{name} lost its command streams {record}"
+        overrun, overrun_tmp = PROBE + "test_overruns_budget", owned[PROBE + "test_overruns_budget"][0]
+        assert overrun in observed["budget_overruns"], (
+            f"{overrun} sleeps past the 1 s budget: {observed['budget_overruns']}")
+        assert "over --test-budget-seconds" in retention["kept"][overrun_tmp], retention["kept"][overrun_tmp]
+        assert phases[PROBE + "test_setup_fails"] == {"setup": "failed", "teardown": "passed"}, phases
+        assert observed["node_outcomes"][PROBE + "test_setup_fails"] == {"setup": "failed"}, (
+            "node_outcomes keeps its meaning: passing setup and teardown stay out of it")
+        assert phases[PROBE + "test_teardown_fails"]["teardown"] == "failed", phases[PROBE + "test_teardown_fails"]
+        assert phases[PROBE + "test_skips"]["call"] == "skipped", phases[PROBE + "test_skips"]
+        # The interrupt left no call or teardown report; a missing phase is not a passing one.
+        assert phases[PROBE + "test_interrupts"] == {"setup": "passed"}, phases[PROBE + "test_interrupts"]
+        unowned = artifacts / "unowned-probe"
+        assert retention["kept"].get(str(unowned)) == "no node owns this entry", retention["kept"].get(str(unowned))
+        assert unowned.is_dir(), f"{unowned} is not owned by any node and stays"
+        failed_link = artifacts / "test_call_failscurrent"
+        assert failed_link.is_symlink(), f"{failed_link} names a kept directory and stays"
+        markers = observed["markers"]
+        assert markers[PROBE + "test_kept"] == ["smoke"], markers
+        assert markers[PROBE + "test_passes"] == [], markers
+        check_sha256 = hashlib.sha256((project / "scripts/check.py").read_bytes()).hexdigest()
+        assert observed["check_sha256"] == check_sha256, f"check_sha256 {observed['check_sha256']} != {check_sha256}"
+        suite = observed["suite_sha256"]
+        assert suite.get("tests/test_retention_probe.py") == hashlib.sha256(RETENTION_PROBE.encode()).hexdigest(), suite
+        assert {"pyproject.toml", "tests/conftest.py", "tests/support.py"} <= set(suite), suite
+        # The copy has no repository of its own; a containing checkout must not describe it.
+        assert observed["project_git"]["commit"] is None and observed["project_git"]["absent"], observed["project_git"]
+        streams = tmp_path / "interrupted.pytest.log"
+        assert logged(streams, "stdout", "probe call failure"), f"{streams}:\n{streams.read_text()}"
+    finally:
+        # A failed removal leaves the probe's locked tree; unlock it so the retained run stays deletable.
+        for locked in tmp_path.glob("interrupted-artifacts-*/test_locks_its_tree*/locked"):
+            locked.chmod(0o700)
+            if (locked / "sealed").exists():
+                (locked / "sealed").chmod(0o700)
+
+    for argv in (["git", "init", "-q"], ["git", "add", "-A"], ["git", "commit", "-qm", "retention probe"]):
+        run_cmd(argv, cwd=project, check=True)
+    head = run_cmd(["git", "rev-parse", "HEAD"], cwd=project, check=True).stdout.strip()
+    (project / "probe-untracked.txt").write_text("untracked\n")
+    result_path = tmp_path / "all.json"
+    result = run_check(run_cmd, project, result_path, "--keep-artifacts", "all", "-q", "-k", "test_passes")
+    assert result.returncode == 0, result.stdout + result.stderr
+    observed = retention_receipt(result, result_path)
+    retention = observed["retention"]
+    for path in observed["owned_paths"][PROBE + "test_passes"]:
+        assert os.path.isdir(path), f"--keep-artifacts all removes nothing, yet {path} is gone: {retention}"
+    assert retention["policy"] == "all" and retention["withheld"], retention
+    assert not retention["planned"] and not retention["results"], retention
+    git = observed["project_git"]
+    assert git["commit"] == head and git["dirty"] and "?? probe-untracked.txt" in git["status"], git
+
+    # SIGKILL ends pytest before its receipt, leaving another invocation's result at the
+    # path; -s lets the probe's own stderr reach the pytest log.
+    result_path = tmp_path / "killed.json"
+    stale = (tmp_path / "interrupted.json").read_bytes()
+    result_path.write_bytes(stale)
+    result = run_check(run_cmd, project, result_path, "-s", "-q", "-k", "test_passes or test_killed")
+    assert result.returncode, "pytest was killed\n" + result.stdout + result.stderr
+    assert result_path.read_bytes() == stale, f"{result_path} belongs to another invocation and must not be relabelled"
+    assert "was not written by this invocation" in result.stdout, result.stdout
+    assert "retention: removed nothing" in result.stdout, result.stdout
+    (artifacts,) = tmp_path.glob("killed-artifacts-*")
+    remaining = {path.name for path in artifacts.iterdir()}
+    assert {"test_passes0", "test_passes0-home", "test_killed0", "test_killed0-home"} <= remaining, (
+        f"a run without its own receipt removes nothing: {artifacts} holds {sorted(remaining)}")
+    killed_streams = artifacts / "test_killed0/commands/0001/stdout.txt"
+    assert killed_streams.read_text() == "killed\n", f"{killed_streams} holds the killed node's command streams"
+    streams = tmp_path / "killed.pytest.log"
+    assert logged(streams, "stdout", "Stewart selected tests: 2"), f"{streams}:\n{streams.read_text()}"
+    assert logged(streams, "stderr", "probe killed next"), f"{streams}:\n{streams.read_text()}"
+    assert "probe killed next" in result.stderr, f"pytest's stderr reaches check.py's stderr:\n{result.stderr}"
+    assert "probe killed next" not in result.stdout, f"pytest's stderr stays off check.py's stdout:\n{result.stdout}"
+
+
+def test_runner_refuses_keep_node_that_did_not_execute(tmp_path, run_cmd):
+    """A --keep-node target that did not execute fails the run and nothing is removed.
+
+    An evidence run that lost its control is not evidence. Deselected and
+    nonexistent IDs never report; pytest reports a skip mark as a skipped
+    setup without a call, and pytest.skip() in a test as a skipped call.
+    """
+    project = retention_project(tmp_path)
+    result_path = tmp_path / "missing.json"
+    # Deselected, nonexistent, skipped in its call, and skipped by a mark before its fixtures.
+    deselected, absent = PROBE + "test_kept", PROBE + "test_absent"
+    skipped, skip_marked = PROBE + "test_skips", PROBE + "test_skip_marked"
+    options = [option for node in (deselected, absent, skipped, skip_marked) for option in ("--keep-node", node)]
+    result = run_check(run_cmd, project, result_path, *options, "-q", "-k", "test_passes or test_skip")
+    assert result.returncode, (
+        "a --keep-node target that did not execute fails the invocation\n" + result.stdout + result.stderr)
+    observed = retention_receipt(result, result_path)
+    assert observed["exit_status"] == 0, f"pytest itself passed: exit status {observed['exit_status']}"
+    assert observed["outcomes"] == {"passed": 1, "skipped": 2}, observed["outcomes"]
+    assert observed["runner_exit_status"] == result.returncode, (observed["runner_exit_status"], result.returncode)
+    retention = observed["retention"]
+    assert retention["missing_keep_nodes"] == {
+        deselected: {}, absent: {}, skipped: {"setup": "passed", "call": "skipped", "teardown": "passed"},
+        skip_marked: {"setup": "skipped", "teardown": "passed"}}, retention["missing_keep_nodes"]
+    assert retention["withheld"], retention
+    for node in (deselected, absent, skipped, skip_marked):
+        assert node in result.stderr, f"stderr names the refused --keep-node {node}:\n{result.stderr}"
+    assert not retention["planned"] and not retention["results"], retention
+    for path in observed["owned_paths"][PROBE + "test_passes"]:
+        assert os.path.isdir(path), f"a refused evidence run removes nothing, not even the passing {path}"
+
+
+def test_runner_records_removal_failures_without_changing_outcomes(tmp_path, run_cmd):
+    """A removal the filesystem refuses is recorded and printed, and the run still exits 0.
+
+    The wrapper refuses one file's unlink inside check.py, as a filesystem can;
+    the rest of that node's tree, its HOME and the other passing node still go,
+    and its current link stays because its target remains.
+    """
+    project = retention_project(tmp_path)
+    result_path = tmp_path / "refused.json"
+    result = run_check(run_cmd, project, result_path, "-q", "-k", "test_passes or unremovable",
+                       launcher=("-c", REFUSING_UNLINK))
+    assert result.returncode == 0, "a removal failure changes no outcome\n" + result.stdout + result.stderr
+    observed = retention_receipt(result, result_path)
+    assert observed["exit_status"] == 0 == observed["runner_exit_status"], (
+        observed["exit_status"], observed["runner_exit_status"])
+    assert observed["outcomes"] == {"passed": 2}, observed["outcomes"]
+    retention, owned, artifacts = observed["retention"], observed["owned_paths"], Path(observed["artifacts"])
+    tmp, home = owned[PROBE + "test_leaves_unremovable"]
+    failure = retention["results"].get(tmp, "")
+    assert failure.startswith("failed:") and "retention-probe-unremovable" in failure, f"{tmp}: {failure!r}"
+    assert (Path(tmp) / "stuck/retention-probe-unremovable").is_file(), f"{tmp} keeps what could not be removed"
+    assert f"could not remove {tmp}" in result.stderr, result.stderr
+    assert retention["results"].get(home) == "removed", f"{home}: {retention['results'].get(home)}"
+    link = artifacts / "test_leaves_unremovablecurrent"
+    assert retention["results"].get(str(link)) == f"kept: {tmp} was not removed", retention["results"].get(str(link))
+    assert link.is_symlink(), f"{link} names a directory that remains and stays"
+    for path in owned[PROBE + "test_passes"]:
+        assert retention["results"].get(path) == "removed", f"{path}: {retention['results'].get(path)}"
+        assert not os.path.lexists(path), f"{path} is recorded as removed but remains"

@@ -16,8 +16,11 @@ import stat
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import venv
+
+PHASES = ("setup", "call", "teardown")
 
 
 def positive_seconds(value):
@@ -178,6 +181,265 @@ def select_git(requested, path_value, platform, probe, wrapper_dir, shell, shim=
                            "fallback": fallback, "changed": changed}
 
 
+def file_digests(root):
+    """SHA-256 of every file under root, keyed by its relative POSIX path."""
+    return {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(root.rglob("*")) if path.is_file()}
+
+
+def project_git(project, environment):
+    """The project's commit and status, or why Git could not report them.
+
+    Only a project at the top of its own work tree is described: a copy inside
+    another checkout would otherwise report the containing checkout's commit.
+    """
+    git = shutil.which("git", path=environment.get("PATH", os.defpath))
+    record = {"git": git, "commit": None, "status": None, "dirty": None, "absent": None}
+    if git is None:
+        record["absent"] = "no git executable on PATH"
+        return record
+    # Discover the project itself, and never refresh its index while observing it.
+    env = {key: value for key, value in environment.items() if not key.startswith("GIT_")}
+    env["GIT_OPTIONAL_LOCKS"] = "0"
+    def ask(*arguments):
+        # Observation must not stall the run: no terminal input, and a bounded wait.
+        completed = subprocess.run([git, "-C", str(project), *arguments], env=env, stdin=subprocess.DEVNULL,
+                                   capture_output=True, text=True, errors="replace", timeout=60)
+        if completed.returncode:
+            raise RuntimeError(f"git {' '.join(arguments)} exited {completed.returncode}: {completed.stderr.strip()}")
+        return completed.stdout
+    try:
+        top = Path(ask("rev-parse", "--show-toplevel").strip()).resolve()
+        if top != project:
+            record["absent"] = f"the project is inside the Git work tree {top}, not at its top"
+            return record
+        commit = ask("rev-parse", "--verify", "HEAD").strip()
+        status = ask("status", "--porcelain=v1", "--untracked-files=all").splitlines()
+    except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+        record["absent"] = str(error)
+        return record
+    record.update(commit=commit, status=status, dirty=bool(status))
+    return record
+
+
+def run_logged(command, log, **options):
+    """Run a command whose stdout and stderr reach both the console and log.
+
+    Each log line carries the stream it was written to; lines of the two
+    streams interleave in the order the relays read them. The relays keep
+    draining when a write fails, because a full pipe would stall pytest.
+    """
+    lock = threading.Lock()
+    def record(data):
+        with lock:
+            try:
+                log.write(data)
+                log.flush()
+            except (OSError, ValueError):
+                pass
+    def relay(source, console, label):
+        pending = b""
+        with open(source, "rb", buffering=0) as stream:
+            while chunk := stream.read(65536):
+                try:
+                    console.write(chunk)
+                    console.flush()
+                except (OSError, ValueError):
+                    pass
+                *lines, pending = (pending + chunk).split(b"\n")
+                record(b"".join(label + line + b"\n" for line in lines))
+        if pending:
+            record(label + pending + b"\n")
+    ends, relays = [], []
+    for console, label in ((sys.stdout.buffer, b"stdout: "), (sys.stderr.buffer, b"stderr: ")):
+        read, write = os.pipe()
+        ends.append(write)
+        relays.append(threading.Thread(target=relay, args=(read, console, label), daemon=True))
+        relays[-1].start()
+    try:
+        return subprocess.run(command, stdout=ends[0], stderr=ends[1], **options)
+    finally:
+        for end in ends:
+            os.close(end)
+        for thread in relays:
+            thread.join(timeout=10)
+        if any(thread.is_alive() for thread in relays):
+            print("[stewart] a process pytest started still holds its output streams; "
+                  "the pytest log may be incomplete", file=sys.stderr, flush=True)
+
+
+def unique_keys(pairs):
+    """Refuse a JSON object that repeats a key rather than let the last one decide."""
+    keys = [key for key, _ in pairs]
+    if len(set(keys)) != len(keys):
+        raise ValueError(f"repeated keys {sorted({key for key in keys if keys.count(key) > 1})}")
+    return dict(pairs)
+
+
+def this_receipt(result, artifacts):
+    """This invocation's receipt, or None and the reason it cannot be used."""
+    if not result.is_file():
+        return None, f"pytest wrote no receipt at {result}"
+    try:
+        observed = json.loads(result.read_bytes(), object_pairs_hook=unique_keys)
+    except (OSError, ValueError) as error:
+        return None, f"the receipt at {result} cannot be read: {error}"
+    # A failed startup must not relabel a result left by a previous invocation.
+    if not isinstance(observed, dict) or observed.get("artifacts") != str(artifacts):
+        return None, f"{result} was not written by this invocation"
+    return observed, None
+
+
+def write_result(result, value):
+    result.write_text(json.dumps(value, sort_keys=True, indent=2) + "\n")
+
+
+def plan_retention(receipt, artifacts, policy, keep_nodes):
+    """Plan removal of the owned paths of unselected nodes that passed every phase.
+
+    Returns the plan recorded in the receipt and, for each planned path, the
+    device and inode it had when planned. Entries no node owns, nodes with a
+    phase that did not pass or was never recorded, nodes over the test budget,
+    and anything that is not a directory stay. A pytest ``<prefix>current``
+    link goes only with its target.
+    """
+    plan = {"policy": policy, "keep_nodes": keep_nodes, "missing_keep_nodes": {}, "withheld": None,
+            "planned": [], "links": {}, "kept": {}, "results": {}, "seconds": None}
+    phases, owners, overruns = (receipt.get(key) for key in ("phase_outcomes", "owned_paths", "budget_overruns"))
+    if not all(isinstance(value, dict) for value in (phases, owners, overruns)):
+        # Nothing shows what any node owns or that a requested node executed.
+        plan["missing_keep_nodes"] = dict.fromkeys(keep_nodes)
+        plan["withheld"] = "the receipt records no phase outcomes, owned paths or budget overruns"
+        return plan, {}
+    # A node executed only if its call ran: a skip mark ends it in setup, a
+    # failed setup leaves no call, and pytest reports skips and xfails in the
+    # call as "skipped". Each refused node keeps the phases that were observed.
+    plan["missing_keep_nodes"] = {node: phases.get(node, {}) for node in keep_nodes
+                                  if phases.get(node, {}).get("call") in (None, "skipped")}
+    if plan["missing_keep_nodes"]:
+        # An evidence run that lost its control is not evidence; a mistyped
+        # node ID must not cost the evidence the caller meant to keep.
+        plan["withheld"] = "--keep-node named nodes that did not execute"
+        return plan, {}
+    if policy == "all":
+        plan["withheld"] = "--keep-artifacts all keeps every artifact"
+        return plan, {}
+    claims = {}
+    for node, paths in owners.items():
+        for path in paths:
+            claims.setdefault(path, []).append(node)
+    try:
+        with os.scandir(artifacts) as entries:
+            children = sorted(entry.path for entry in entries)
+    except OSError as error:
+        plan["withheld"] = f"the artifacts directory cannot be listed: {error}"
+        return plan, {}
+    identities, links = {}, []
+    for path in children:
+        try:
+            observed = os.lstat(path)
+        except OSError as error:
+            plan["kept"][path] = f"cannot be inspected: {error}"
+            continue
+        nodes = claims.get(path, [])
+        if not nodes and stat.S_ISLNK(observed.st_mode):
+            links.append(path)
+            continue
+        if len(nodes) != 1:
+            plan["kept"][path] = f"claimed by several nodes: {nodes}" if nodes else "no node owns this entry"
+            continue
+        node, = nodes
+        outcomes = phases.get(node, {})
+        if node in keep_nodes:
+            plan["kept"][path] = f"--keep-node {node}"
+        elif any(outcomes.get(phase) != "passed" for phase in PHASES):
+            plan["kept"][path] = f"{node}: " + ", ".join(
+                f"{phase} {outcomes.get(phase, 'not recorded')}" for phase in PHASES)
+        elif node in overruns:
+            # The run fails on this node; its command records show what the slow node ran.
+            plan["kept"][path] = f"{node}: over --test-budget-seconds ({overruns[node]}s for setup, call and teardown)"
+        elif not stat.S_ISDIR(observed.st_mode):
+            plan["kept"][path] = "not a directory"
+        else:
+            plan["planned"].append(path)
+            identities[path] = (observed.st_dev, observed.st_ino)
+    for path in links:
+        try:
+            target = os.path.normpath(os.path.join(artifacts, os.readlink(path)))
+        except OSError as error:
+            plan["kept"][path] = f"cannot be inspected: {error}"
+            continue
+        if path.endswith("current") and target in identities:
+            plan["links"][path] = target
+        else:
+            plan["kept"][path] = f"link to {target}, which this pass does not remove"
+    return plan, identities
+
+
+def remove_tree(top):
+    """Remove one artifact directory, restoring owner access a test took away.
+
+    shutil.rmtree's descriptor-based walk does not follow links inside the
+    tree. A path refused for permission gets one retry after it and its parent
+    regain owner read, write and search permission; what still fails is raised.
+    """
+    failures, retried = [], set()
+    def handle(function, path, error):
+        if isinstance(error, PermissionError) and path not in retried:
+            retried.add(path)
+            try:
+                for directory in (os.path.dirname(path), path):
+                    if directory == top or directory.startswith(top + os.sep):
+                        mode = os.lstat(directory).st_mode
+                        if stat.S_ISDIR(mode):
+                            os.chmod(directory, stat.S_IMODE(mode) | stat.S_IRWXU)
+                if function in (os.unlink, os.rmdir):
+                    function(path)
+                else:
+                    rmtree(path)
+                return
+            except OSError as retry:
+                error = retry
+        if not isinstance(error, FileNotFoundError):
+            failures.append(f"{path}: {error}")
+    def rmtree(path):
+        shutil.rmtree(path, onexc=handle)
+    rmtree(top)
+    if failures:
+        raise OSError(f"{len(failures)} entries remain; first {failures[0]}")
+
+
+def remove_planned(plan, identities, artifacts):
+    """Remove the planned directories, then links whose target went, recording each result."""
+    for path in plan["planned"]:
+        try:
+            observed = os.lstat(path)
+            if not stat.S_ISDIR(observed.st_mode) or (observed.st_dev, observed.st_ino) != identities[path]:
+                raise OSError("replaced after planning")
+            remove_tree(path)
+            plan["results"][path] = "removed"
+        except OSError as error:
+            plan["results"][path] = f"failed: {error}"
+    for link, target in plan["links"].items():
+        if plan["results"].get(target) != "removed":
+            plan["results"][link] = f"kept: {target} was not removed"
+            continue
+        try:
+            if os.path.normpath(os.path.join(artifacts, os.readlink(link))) != target:
+                raise OSError("changed after planning")
+            os.unlink(link)
+            plan["results"][link] = "removed"
+        except OSError as error:
+            plan["results"][link] = f"failed: {error}"
+
+
+def describe_phases(phases):
+    """Name the phase outcomes a result recorded for a node, for a refusal message."""
+    if phases is None:
+        return "no usable result records its phases"
+    return ", ".join(f"{phase} {outcome}" for phase, outcome in phases.items()) or "no phase recorded"
+
+
 def main():
     started = time.monotonic()
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
@@ -186,7 +448,11 @@ def main():
         "tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names. Without a "
         "positional argument pytest collects the configured testpaths. A selection that collects a "
         "node more than once, or a test outside the staged tests directory, is refused, and a run that "
-        "exits without writing its receipt fails."))
+        "exits without writing its receipt fails. Beside the result a run keeps NAME.log (provisioning and "
+        "build), NAME.pytest.log (pytest's stdout and stderr, each line labelled with its stream), "
+        "NAME-dist/ (the tested wheel) and NAME-artifacts-*/ (pytest's base temporary directory, reduced "
+        "as --keep-artifacts says once this invocation's receipt is written; without that receipt nothing "
+        "is removed)."))
     project = Path(__file__).resolve().parents[1]
     parser.add_argument("--wheelhouse", type=Path, default=os.environ.get("STEWART_WHEELHOUSE"))
     parser.add_argument("--parity-output", type=Path, help="write byte-contract vectors from the installed wheel")
@@ -207,6 +473,15 @@ def main():
         "already reaches that exact path; refused when the inserted directory would not reach it. The "
         "choice, the resolved git, its version and exec path under the tests' PATH, and every name whose "
         "resolution changed go to the .log and the result"))
+    parser.add_argument("--keep-artifacts", choices=("failed", "all"), default="failed",
+                        help="failed (default): after the run, remove the test directory and private HOME of each "
+                             "node whose setup, call and teardown all passed within any --test-budget-seconds, "
+                             "keeping failed, skipped, interrupted and over-budget nodes and entries no node owns; "
+                             "all: remove nothing")
+    parser.add_argument("--keep-node", action="append", default=[], metavar="NODEID",
+                        help="also keep this passing node's directories, named as the result names nodes "
+                             "(repeatable); a named node that did not execute (no call phase, or a skipped one, as "
+                             "pytest reports skips and xfails) fails the invocation and nothing is removed")
     args, tests = parser.parse_known_args()
     if args.fast:
         if any(arg.startswith("-m") for arg in tests):
@@ -281,20 +556,63 @@ def main():
         # it beside a caller's path would collect that path's tests twice.
         command = [str(python), "-I", "-B", "-m", "pytest", "-c", str(suite / "pyproject.toml"),
                    f"--confcutdir={suite}", f"--basetemp={artifacts}", *tests]
+        # The wheel does not identify the tests: record the staged suite, this script and
+        # the project's Git state as pytest is about to see them, with the tests' environment.
+        identity = {"suite_sha256": file_digests(suite),
+                    "check_sha256": hashlib.sha256(Path(__file__).resolve().read_bytes()).hexdigest(),
+                    "project_git": project_git(project, environment)}
         print(f"[stewart] wheel {wheel.name} sha256={digest}; Python {sys.version.split()[0]}", flush=True)
-        outcome = subprocess.run(command, cwd=suite, env=environment)
+        # A pytest that stops before its session starts writes no receipt; its streams stay here regardless.
+        with (result.parent / (result.stem + ".pytest.log")).open("wb") as streams:
+            streams.write(json.dumps({"argv": command, "cwd": str(suite)}).encode() + b"\n")
+            outcome = run_logged(command, streams, cwd=suite, env=environment)
         elapsed = time.monotonic() - started
         over_budget = args.total_budget_seconds is not None and elapsed > args.total_budget_seconds
         # Only augment this invocation's receipt; a failed startup must not
         # relabel a result left by a previous invocation at the same path.
-        observed = json.loads(result.read_text()) if result.is_file() else {}
-        receipted = observed.get("artifacts") == str(artifacts)
+        observed, unusable = this_receipt(result, artifacts)
+        receipted = observed is not None
+        keep_nodes = list(dict.fromkeys(args.keep_node))
+        if receipted:
+            plan, identities = plan_retention(observed, artifacts, args.keep_artifacts, keep_nodes)
+            missing = plan["missing_keep_nodes"]
+        else:
+            # Nothing attributes any directory to a node, and nothing shows a requested node executed.
+            plan, identities, missing = None, {}, dict.fromkeys(keep_nodes)
+        status = outcome.returncode or int(over_budget) or int(bool(missing))
         if receipted:
             observed.update(total_seconds=elapsed, total_budget_seconds=args.total_budget_seconds,
                             total_budget_exceeded=over_budget, fast=args.fast, git_selection=git_selection,
-                            runner_exit_status=outcome.returncode or int(over_budget))
-            result.write_text(json.dumps(observed, sort_keys=True, indent=2) + "\n")
+                            runner_exit_status=status)
+            observed.update(identity, retention=plan)
+            # The plan is on record before the first removal; each result follows.
+            write_result(result, observed)
+            removal_started = time.monotonic()
+            try:
+                remove_planned(plan, identities, artifacts)
+            finally:
+                # An interrupted pass keeps what it recorded and marks the rest rather than guess.
+                for path in [*plan["planned"], *plan["links"]]:
+                    plan["results"].setdefault(path, "interrupted before a result was recorded")
+                plan["seconds"] = time.monotonic() - removal_started
+                write_result(result, observed)
         print(f"[stewart] total wall time {elapsed:.3f}s (including provisioning and build)", flush=True)
+        if not receipted:
+            print(f"[stewart] retention: removed nothing; {unusable}", flush=True)
+        elif plan["withheld"]:
+            print(f"[stewart] retention ({args.keep_artifacts}): removed nothing; {plan['withheld']}", flush=True)
+        else:
+            removed = sum(value == "removed" for value in plan["results"].values())
+            print(f"[stewart] retention ({args.keep_artifacts}): removed {removed} of "
+                  f"{len(plan['planned']) + len(plan['links'])} planned paths, kept {len(plan['kept'])} "
+                  f"entries; the result's retention field lists each", flush=True)
+            for path, value in plan["results"].items():
+                if value.startswith("failed"):
+                    print(f"[stewart] could not remove {path}: {value}", file=sys.stderr, flush=True)
+        if missing:
+            refused = "; ".join(f"{node} ({describe_phases(phases)})" for node, phases in missing.items())
+            print(f"[stewart] --keep-node targets that did not execute: {refused}; nothing was removed",
+                  file=sys.stderr, flush=True)
         if over_budget:
             print(f"[stewart] total budget exceeded: {elapsed:.3f}s > {args.total_budget_seconds}s", file=sys.stderr)
         if not receipted and not outcome.returncode:
@@ -305,7 +623,7 @@ def main():
                   "suite's conftest did not run; name tests relative to the suite root, as tests/<file>.py or "
                   "tests/<file>.py::<test>", file=sys.stderr)
             return 1
-        return outcome.returncode or int(over_budget)
+        return status
 
 
 if __name__ == "__main__":

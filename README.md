@@ -137,6 +137,27 @@ children. Tests that build PATH without the inherited value (for example from
 `os.defpath`) do not see the selection; those that extend the inherited PATH
 do.
 
+Beside `<name>.json` a run keeps `<name>.log` (provisioning and build output),
+`<name>.pytest.log` (pytest's stdout and stderr, each line labelled with its
+stream, kept even when pytest stops before writing a result), `<name>-dist/`
+(the tested wheel) and `<name>-artifacts-*/`, pytest's base temporary
+directory. The result also records every phase outcome, the markers and the
+owned test directory and private HOME of each node, digests of the staged
+suite and of `check.py`, and the project's commit and `git status` when the
+project is the top of its own Git work tree. Once pytest has written this
+invocation's result, `check.py` removes the directories of each node whose
+setup, call and teardown all passed within any `--test-budget-seconds`,
+recording its plan in the result before the first removal and each path's
+outcome after it. Failed, skipped, interrupted and over-budget nodes and
+entries no node owns stay, and a run that leaves no result of its own keeps
+everything. Add `--keep-node NODEID`, repeatable, to keep passing evidence
+such as a comparison's controls; a named node that did not execute (it has no
+call phase, or a skipped one, which is how pytest reports skips and expected
+failures) fails the invocation and nothing is removed, because an evidence run
+that lost its control is not evidence. `--keep-artifacts all` removes
+nothing. Removal failures are printed and recorded but change neither the
+exit status nor any test outcome.
+
 Development and acceptance target Apple Silicon macOS with Python 3.14.
 POSIX APIs alone do not establish Linux or other-host support; qualify those
 hosts separately. Harness enforcement also needs its own explicit qualification.

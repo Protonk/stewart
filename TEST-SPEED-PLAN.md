@@ -1,6 +1,6 @@
 # Test speed and evidence retention plan
 
-Status: in progress; WP0 and WP1 done (`TEST-SPEED-FINDINGS.md`). Start with bounded
+Status: in progress; WP0 to WP2 done (`TEST-SPEED-FINDINGS.md`). Start with bounded
 measurements and improvements to the test harness, then investigate the
 remaining costs. This file sets the order, evidence and acceptance of each
 work package; `TEST-SPEED-DESIGN-CHOICES.md` sets out the mechanisms and the
@@ -442,7 +442,7 @@ suite-wide savings from a small sample; identify extrapolations explicitly.
 
 ### WP2. Bound retention while preserving evidence
 
-Status: pending.
+Status: done; WP3's full run measures the space (`TEST-SPEED-FINDINGS.md`).
 
 Inventory one available run by category first: checkout/worktree, private
 HOME, command records, staged runtime and nested environments. The retained

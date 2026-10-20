@@ -390,3 +390,72 @@ directory to the inherited PATH and so sees the selection;
 `src/stewart/experiment.py:198` forwards PATH to auditor children, which now
 see only the extra `git`. Stewart's runtime still runs `git` by name.
 The README change moved the wheel digest again (METADATA only; `8de99b31…`).
+
+## WP2. Bound retention while preserving evidence
+
+**Inventory first** (`retention/inventory.py`; `inventory-reference-314.out`,
+3.14 reference, and `inventory-reference.out`, the 3.11 reference, agree):
+a full run retains 3.56 GB allocated in 204,184 entries; 991 test
+directories, 991 private HOMEs and 489 pytest `current` links (the skipped
+node has neither). By allocated bytes: Git checkouts and worktrees 54.1%,
+other test-directory content 25.9% (chiefly `api-manager-home` and `project`
+trees; `retention/inventory-reference-other.out`), private HOMEs 16.3%,
+staged runtimes 2.0%, `run_cmd` records 1.3% (but 15.5% of entries), nested
+virtual environments 0.4%. Nearly all bulk sits in the two paths each node
+owns.
+
+**Implemented** (ported onto WP1.3 by a subagent, then reviewed and run here):
+
+- Receipt additions, leaving `node_outcomes` and `outcomes` unchanged:
+  `phase_outcomes` (every phase, including passing setup and teardown),
+  `owned_paths` (each node's `tmp_path` and sibling `-home`, recorded by the
+  autouse fixture), `markers` (all of a node's marker names, so WP3 must
+  filter for the tier markers), `suite_sha256` (every staged file),
+  `check_sha256`, and `project_git` (commit, `git status` lines and dirty
+  state when the project is the top of its own work tree, else `absent` with
+  the reason).
+- `check.py` relays pytest's stdout and stderr to the console and to
+  `<name>.pytest.log`, each line labelled with its stream, so startup and
+  collection failures are kept without a receipt. pytest no longer sees a
+  terminal (no colour, width 80).
+- After pytest exits, retention is planned from this invocation's receipt
+  only (matched by its artifacts path; repeated keys refused). A node's owned
+  paths go only when setup, call and teardown all passed, it is not named by
+  `--keep-node`, and it did not exceed `--test-budget-seconds` (a conservative
+  choice the plan neither requires nor forbids). Everything else stays:
+  failed, skipped, interrupted and over-budget nodes, entries no node owns,
+  anything not a directory. The plan is written into the receipt before the
+  first removal; each path's result follows. Removal takes only verified
+  direct children (device and inode re-checked), never a link, with
+  `shutil.rmtree(onexc=…)` restoring owner permissions once; a `current` link
+  goes only with its target. Removal failures are printed and recorded and
+  change neither the exit status nor any outcome. Without this invocation's
+  receipt nothing is removed.
+- `--keep-artifacts failed|all` (default `failed`) and repeatable
+  `--keep-node NODEID`. A named node that did not execute (no call phase, or
+  a skipped one, which is how pytest reports skips and xfails) is recorded,
+  fails the invocation and withholds all removal: an evidence run that lost
+  its control is not evidence, and a mistyped ID must not cost the evidence
+  meant to be kept. pytest's `tmp_path_retention_policy` is not used.
+
+Regressions (3 nodes in `tests/test_runner.py`, 5 nested `check.py` runs over
+`support.reduced_project`): a passing node's `tmp_path` and HOME are removed;
+setup, call and teardown failures each keep their HOME and command records;
+an unowned directory stays; `--keep-node` keeps a passing node; a missing,
+deselected, skipped or skip-marked `--keep-node` target is refused and
+nothing is removed; `--keep-artifacts all` keeps everything; an interrupted
+session keeps its incomplete node; a run killed before writing its receipt
+removes nothing and leaves a stale receipt at the same path untouched; an
+over-budget node stays; an injected removal failure is recorded without
+changing the exit. Firing (`retention/`): against the old `check.py` and
+conftest all 3 fail (`demo-old-harness.out`: `--keep-node` unknown, no
+result, no retention plan); each of six single mutations (skipped
+`--keep-node` accepted, a removal failure changing the exit, an unrecorded
+removal failure, a stale receipt relabelled, an over-budget node removed, a
+missing phase counted as passed) fails exactly its targeted test, 1 of 3
+(`demo-*.out`). New harness: `regressions-new`, 3 of 3 passed; focused
+`tests/test_runner.py tests/test_foundations.py`, 70 collected and selected,
+70 passed, its own retention removing 140 directories and 34 links in 0.15 s
+(`harness-files-new`).
+
+The space this saves on a full run is measured by WP3's full run.

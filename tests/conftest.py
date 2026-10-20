@@ -16,6 +16,8 @@ from support import run_cmd as _run_cmd, stage_runtime, plugin_origins, budget_o
 def pytest_configure(config):
     config.stewart_outcomes = Counter()
     config.stewart_node_outcomes = {}
+    config.stewart_phase_outcomes = {}
+    config.stewart_owned_paths = {}
     config.stewart_durations = {}
     project = Path(__file__).resolve().parents[1]
     assert config.inipath == project / "pyproject.toml", f"wrong pytest configuration: {config.inipath}"
@@ -79,6 +81,8 @@ def pytest_collection_finish(session):
         session.config.stewart_nodes = []
         return
     session.config.stewart_nodes = [item.nodeid for item in session.items]
+    session.config.stewart_markers = {item.nodeid: sorted({mark.name for mark in item.iter_markers()})
+                                      for item in session.items}
     reporter = session.config.pluginmanager.getplugin("terminalreporter")
     if reporter:
         reporter.write_line(f"Stewart selected tests: {len(session.items)}")
@@ -91,6 +95,9 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
     item.config.stewart_durations.setdefault(item.nodeid, {})[report.when] = report.duration
+    # Every phase, including passing setup and teardown: check.py removes a
+    # node's directories only when all three are recorded as passed.
+    item.config.stewart_phase_outcomes.setdefault(item.nodeid, {})[report.when] = report.outcome
     if report.when == "call" or (report.when in {"setup", "teardown"} and report.outcome != "passed"):
         item.config.stewart_outcomes[report.outcome] += 1
         item.config.stewart_node_outcomes.setdefault(item.nodeid, {})[report.when] = report.outcome
@@ -120,6 +127,9 @@ def pytest_sessionfinish(session, exitstatus):
                  "test_budget_seconds": float(budget) if budget else None, "budget_overruns": overruns,
                  "outcomes": dict(session.config.stewart_outcomes),
                  "node_outcomes": session.config.stewart_node_outcomes,
+                 "phase_outcomes": session.config.stewart_phase_outcomes,
+                 "owned_paths": session.config.stewart_owned_paths,
+                 "markers": getattr(session.config, "stewart_markers", {}),
                  "source_members": getattr(session.config, "stewart_source_members", []),
                  "wheel": os.environ["STEWART_TEST_WHEEL"],
                  "wheel_sha256": os.environ["STEWART_TEST_WHEEL_SHA256"],
@@ -156,7 +166,7 @@ def run_cmd(tmp_path):
 
 
 @pytest.fixture(autouse=True)
-def private_manager_storage(tmp_path, monkeypatch):
+def private_manager_storage(request, tmp_path, monkeypatch):
     """Commands must never populate the developer's actual manager or checkout homes.
 
     Stewart's default checkout home and manager home derive from HOME, so each
@@ -167,6 +177,9 @@ def private_manager_storage(tmp_path, monkeypatch):
     monkeypatch.setenv("STEWART_MANAGER_HOME", str(tmp_path / "api-manager-home"))
     # Beside the test's directory, so tests that measure tmp_path see only their own entries.
     home = tmp_path.with_name(tmp_path.name + "-home")
+    # The receipt names these as the node's own: check.py removes them once
+    # every phase of the node passed, and never removes an unclaimed entry.
+    request.config.stewart_owned_paths[request.node.nodeid] = [str(tmp_path), str(home)]
     home.mkdir(mode=0o700)
     (home / ".gitconfig").write_text("[user]\n\tname = Stewart test\n\temail = stewart-test@example.invalid\n")
     monkeypatch.setenv("HOME", str(home))
