@@ -1,6 +1,6 @@
 # Test speed and evidence retention plan
 
-Status: pending; no work package has started. Start with bounded
+Status: in progress; WP0 done (`TEST-SPEED-FINDINGS.md`). Start with bounded
 measurements and improvements to the test harness, then investigate the
 remaining costs. This file sets the order, evidence and acceptance of each
 work package; `TEST-SPEED-DESIGN-CHOICES.md` sets out the mechanisms and the
@@ -227,7 +227,9 @@ that output; a regression that cannot fail is not a firing control.
 
 ### WP0. Pickup, provenance and reference
 
-Status: pending.
+Status: done. Two pre-change references (the second because the first
+overlapped a busy system daemon), named selections and baselines; see
+`TEST-SPEED-FINDINGS.md`.
 
 1. Confirm state: the worktree is clean on `test-speed` at or after the
    commit that added this revision (ignored `.scratch` content does not
