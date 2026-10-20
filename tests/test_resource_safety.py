@@ -1052,12 +1052,14 @@ def test_a_retirement_interrupted_while_ending_a_disposed_dependency_finishes_th
 
 
 def _worktrees_past_a_contained_commit(checkout, tmp_path):
-    """Two managed worktrees at a new main commit, and the commit before it, which main still contains."""
+    """Two managed worktrees at a new main commit, and the commit before it, which main still contains.
+
+    The two commits hold the same tree, so moving HEAD between them changes no file: only a HEAD
+    check can tell the moved worktree from the one its evaluation judged.
+    """
     work = tmp_path.resolve()
     elsewhere = git_text(checkout.repo, "rev-parse", "HEAD")
-    (checkout.repo / "later.txt").write_text("main moves on before the worktrees are made\n", encoding="utf-8")
-    checkout.git("add", "later.txt")
-    checkout.git("commit", "-qm", "A later main commit")
+    checkout.git("commit", "-q", "--allow-empty", "-m", "A later main commit with the same tree")
     moved, steady = work / "moved-tree", work / "steady-tree"
     moved_rid = base._rid(api.create_worktree(checkout.ws, HOLDER, path=str(moved), actor="manager"), "worktree")
     steady_rid = base._rid(api.create_worktree(checkout.ws, HOLDER, path=str(steady), actor="manager"), "worktree")
@@ -1143,6 +1145,45 @@ def test_a_head_moved_while_a_worktree_claim_is_revalidated_releases_it(checkout
     # Differing only in the move: the other worktree claimed by the same close retires.
     assert outcomes[steady_rid]["outcome"] == "removed" and not steady.exists()
     # Invariance: at a commit main contains, a new generation judges, freezes and retires it.
+    retired = api.close_resources(checkout.repo, [moved_rid], actor="manager")
+    assert _outcomes(retired["results"]) == [(moved_rid, "removed")] and not moved.exists()
+    assert base._generations(common, moved_rid) == {1: "RELEASED", 2: "RETIRED"}
+
+
+def test_a_link_planted_for_a_claimed_worktree_s_git_is_never_used_to_run_git(checkout, tmp_path, monkeypatch):
+    """At use, the claimed worktree's gitfile and administration are verified before any Git runs in it."""
+    common = base._common(checkout.repo)
+    moved, steady, moved_rid, steady_rid, judged, elsewhere = _worktrees_past_a_contained_commit(checkout, tmp_path)
+    gitfile = moved / ".git"
+    genuine = gitfile.read_bytes()
+    real_revalidate = holdings._revalidate
+    fired, places = [], []
+
+    def plant_then_revalidate(common_, view, claim, index):
+        if view["rid"] != moved_rid or fired:
+            return real_revalidate(common_, view, claim, index)
+        gitfile.unlink()
+        gitfile.symlink_to(checkout.repo / ".git", target_is_directory=True)
+        fired.append(moved_rid)
+        findings, started = support.git_working_directories(monkeypatch, real_revalidate, common_, view, claim, index)
+        places.extend(started)
+        return findings
+
+    with monkeypatch.context() as patch:
+        patch.setattr(holdings, "_revalidate", plant_then_revalidate)
+        closed = api.close(checkout.ws, HOLDER, actor="manager", abandon=True, reason="resources done")
+    assert fired == [moved_rid], "firing control: the claimed worktree's revalidation ran with the link in place"
+    assert not [place for place in places if place == moved or moved in place.parents], \
+        "no Git process ran in the worktree through the planted link"
+    outcomes = base._by_rid(closed["resources"])
+    assert outcomes[moved_rid]["outcome"] == "kept" and moved.is_dir()
+    assert any(".git is not the regular gitdir file" in reason for reason in outcomes[moved_rid]["reasons"])
+    assert base._generations(common, moved_rid) == {1: "RELEASED"}
+    # Differing only in the link: the other worktree claimed by the same close retires.
+    assert outcomes[steady_rid]["outcome"] == "removed" and not steady.exists()
+    # Invariance: with its own gitfile back, a new generation retires it.
+    gitfile.unlink()
+    gitfile.write_bytes(genuine)
     retired = api.close_resources(checkout.repo, [moved_rid], actor="manager")
     assert _outcomes(retired["results"]) == [(moved_rid, "removed")] and not moved.exists()
     assert base._generations(common, moved_rid) == {1: "RELEASED", 2: "RETIRED"}
