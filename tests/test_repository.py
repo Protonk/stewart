@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import shutil
+import subprocess
 import uuid
 
 import pytest
@@ -68,6 +70,166 @@ def test_exact_repository_root_and_symlink_spelling(project_repo, tmp_path, run_
     assert_reason("repository_root", initialize, Workspace(project_repo / REL, "nested"),
                   "one-question", "HEAD", inputs=["input.txt"])
     assert not (project_repo / REL / "nested").exists()
+
+
+#: The merged identity query, spelled here so that a change to it is a test change.
+MERGED = ("rev-parse", "--is-bare-repository", "--show-toplevel", "--absolute-git-dir", "--path-format=absolute",
+          "--git-common-dir")
+
+
+def identity_trace(monkeypatch, function, path, answer=None):
+    """``function(path)``'s outcome and the argv of each process it asked ``subprocess.Popen`` to start.
+
+    Git's argv is listed after Stewart's ``-c`` settings. The outcome is the identity, or a refusal's
+    type, reason and message. An ``answer`` stands in for the merged query's ``subprocess.run``: a
+    (returncode, stdout) pair, or an exception to raise. It starts no process but is listed; every
+    other query runs Git. Both patches replace ``subprocess`` attributes process-wide while
+    ``function`` runs.
+    """
+    real_run, real_popen, calls = subprocess.run, subprocess.Popen, []
+
+    def query(argv):
+        argv = [str(arg) for arg in argv]
+        if argv[:1] != ["git"]:
+            return tuple(argv)
+        argv = argv[1:]
+        while argv[:1] == ["-c"]:
+            argv = argv[2:]
+        return tuple(argv)
+
+    class Started(real_popen):
+        def __init__(self, args, *rest, **kwargs):
+            calls.append(query(args))
+            super().__init__(args, *rest, **kwargs)
+
+    def run(*args, **kwargs):
+        argv = kwargs["args"] if "args" in kwargs else args[0]
+        if answer is None or query(argv) != MERGED:
+            return real_run(*args, **kwargs)  # starts its process through the recording Popen
+        calls.append(MERGED)
+        if isinstance(answer, BaseException):
+            raise answer
+        return subprocess.CompletedProcess(argv, answer[0], answer[1], b"")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(subprocess, "Popen", Started)
+        patch.setattr(subprocess, "run", run)
+        try:
+            outcome = function(path)
+        except StewartError as exc:
+            outcome = (type(exc), exc.reason, str(exc))
+    return outcome, calls
+
+
+def assert_identity_replays(monkeypatch, cases, answers=None):
+    """Each selection's outcome is the separate queries' own; the merged answer alone decides only a clean root.
+
+    A decided selection starts the merged query only. Any other starts it and then exactly the
+    queries ``_separate_identity`` starts on its own for the resolved selection.
+    """
+    import stewart._repository as repository  # private: a rename fails these tests, not importers' collection
+    outcomes = {}
+    for name, (path, decided) in cases.items():
+        outcome, calls = identity_trace(monkeypatch, checkout_identity, path, (answers or {}).get(name))
+        expected, queries = identity_trace(monkeypatch, repository._separate_identity, path.resolve())
+        assert outcome == expected, f"{name}: the merged query answered {outcome}, the separate queries {expected}"
+        wanted = [MERGED, *([] if decided else queries)]
+        assert calls == wanted, f"{name}: started {calls}, expected {wanted}"
+        outcomes[name] = outcome
+    return outcomes
+
+
+def test_checkout_identity_decides_only_a_clean_root_from_one_query(project_repo, tmp_path, run_cmd, monkeypatch):
+    base = tmp_path.resolve()
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(base))  # the test directory may lie inside a checkout
+    linked, broken, bare, outside = base / "linked", base / "line\nbreak", base / "bare.git", base / "outside"
+    # The separate queries trim both ends of Git's answers, so the merged decoding must too: a root
+    # ending in a space is refused, and an administration ending in one is recorded trimmed.
+    trailing, separate = base / "trail ", base / "separate"
+    for worktree in (linked, broken, trailing):
+        run_cmd(["git", "worktree", "add", "-q", "--detach", worktree], cwd=project_repo, check=True)
+    run_cmd(["git", "init", "-q", "--separate-git-dir", base / "admin ", separate], check=True)
+    run_cmd(["git", "clone", "-q", "--bare", project_repo, bare], check=True)
+    # Below "held\n/" every piece of a split answer is an absolute path; only the line count tells.
+    held, beside = base / "held\n" / "repo", base / "beside-held"
+    held.mkdir(parents=True)
+    run_cmd(["git", "init", "-q"], cwd=held, check=True)
+    run_cmd(["git", "commit", "-q", "--allow-empty", "-m", "held"], cwd=held, check=True)
+    run_cmd(["git", "worktree", "add", "-q", "--detach", beside], cwd=held, check=True)
+    link, broken_link = base / "link", base / "line-break-link"  # selections spelled through a symlink
+    link.symlink_to(project_repo, target_is_directory=True)
+    broken_link.symlink_to(broken, target_is_directory=True)
+    outside.mkdir()
+    assert run_cmd(["git", "rev-parse", "--git-dir"], cwd=outside).returncode == 128, "outside lies in a repository"
+    cases = {  # selection: (path, decided by the merged answer alone)
+        "main root": (project_repo, True), "linked root": (linked, True), "root through a link": (link, True),
+        "subdirectory": (project_repo / REL, False), "bare repository": (bare, False),
+        ".git directory": (project_repo / ".git", False),
+        "worktree administration": (project_repo / ".git/worktrees/linked", False),
+        "outside any repository": (outside, False), "missing directory": (base / "missing", False),
+        "root holding a line break": (broken, False), "line-break root through a link": (broken_link, False),
+        "administration holding a line break": (beside, False),
+        "root ending in a space": (trailing, False), "administration ending in a space": (separate, True),
+    }
+    outcomes = assert_identity_replays(monkeypatch, cases)
+    # Each selection is what its name says, by the separate queries' own answers.
+    for name in ("main root", "linked root", "root holding a line break", "administration holding a line break",
+                 "administration ending in a space"):
+        assert outcomes[name]["root"] == str(cases[name][0]), name
+    assert outcomes["root through a link"] == outcomes["main root"]
+    assert outcomes["line-break root through a link"] == outcomes["root holding a line break"]
+    assert outcomes["linked root"]["common_dir"] == outcomes["main root"]["common_dir"] == str(project_repo / ".git")
+    assert "\n" in outcomes["administration holding a line break"]["git_admin"]
+    assert outcomes["subdirectory"] == (StewartError, "repository_root", f"select the worktree root explicitly: "
+                                        f"{project_repo}; subdirectories are refused")
+    assert (outcomes["bare repository"] == outcomes["outside any repository"]
+            == (StewartError, "repository_root", "repository must be a non-bare Git working tree"))
+    assert outcomes[".git directory"][:2] == outcomes["worktree administration"][:2] == (StewartError, "git_failed")
+    assert outcomes["missing directory"][:2] == (StewartError, "repository_root")
+    assert outcomes["missing directory"][2].startswith("cannot inspect the selected Git worktree: ")
+    # Each call observes again: the linked root, re-created from the bare clone, is another repository's.
+    run_cmd(["git", "worktree", "remove", linked], cwd=project_repo, check=True)
+    run_cmd(["git", "worktree", "add", "-q", "--detach", linked], cwd=bare, check=True)
+    again = assert_identity_replays(monkeypatch, {"re-created linked root": (linked, True),
+                                                  "unchanged main root": (project_repo, True)})
+    assert again["re-created linked root"]["common_dir"] == str(bare)
+    assert again["unchanged main root"] == outcomes["main root"]
+
+
+def test_checkout_identity_decides_only_clean_substituted_answers(project_repo, tmp_path, run_cmd, monkeypatch):
+    """Substituted merged answers; the separate queries still run real Git.
+
+    The real answer, substituted unchanged, is the decided control. Each other answer fails one
+    condition, and a timeout gives none. Git before 2.25 printed nothing for --show-toplevel without
+    a work tree, and Git before 2.31 does not know --path-format and echoes it as it echoes any
+    unknown option, so inside a .git directory such a Git answers four lines: false, that directory,
+    the echoed option and a relative common directory.
+    """
+    bare = tmp_path.resolve() / "bare.git"
+    run_cmd(["git", "clone", "-q", "--bare", project_repo, bare], check=True)
+    admin = project_repo / ".git"
+    real = git(project_repo, *MERGED).stdout
+
+    def lines(*values):
+        return b"".join(os.fsencode(value) + b"\n" for value in values)
+
+    answers = {
+        "the real answer": (0, real),
+        "an older Git inside .git": (0, lines("false", admin, "--path-format=absolute", ".git")),
+        "bare with exit status 0": (0, lines("true", bare, bare, bare)),
+        "complete with exit status 128": (128, lines("false", admin, admin, admin)),
+        "an unterminated fifth line": (0, real + b"/unterminated"),
+        "the merged query timing out": subprocess.TimeoutExpired(["git", *MERGED], 120),
+    }
+    cases = {"the real answer": (project_repo, True), "an older Git inside .git": (admin, False),
+             "bare with exit status 0": (bare, False), "complete with exit status 128": (admin, False),
+             "an unterminated fifth line": (project_repo, False), "the merged query timing out": (project_repo, False)}
+    outcomes = assert_identity_replays(monkeypatch, cases, answers)
+    assert (outcomes["the real answer"] == outcomes["an unterminated fifth line"]
+            == outcomes["the merged query timing out"] == checkout_identity(project_repo))
+    assert outcomes["an older Git inside .git"][:2] == (StewartError, "git_failed")
+    assert outcomes["complete with exit status 128"][:2] == (StewartError, "git_failed")
+    assert outcomes["bare with exit status 0"][:2] == (StewartError, "repository_root")
 
 
 @pytest.mark.parametrize("selection", ["main", "other-branch", "linked", "detached"])

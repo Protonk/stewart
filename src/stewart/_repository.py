@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import re
+import subprocess
 import uuid
 
 from stewart._bootstrap import StewartError, open_directory, read_regular
@@ -201,8 +202,35 @@ def _entries_beside(root: Path, targets: list[Path], uncovered: list[str]) -> li
 
 
 def checkout_identity(repo: Path) -> dict:
-    """Require exactly an explicitly selected non-bare Git worktree root."""
+    """Require exactly an explicitly selected non-bare Git worktree root.
+
+    One ``rev-parse`` process answers the four queries ``_separate_identity``
+    makes, from one repository discovery, with nothing kept for a later call.
+    Its answer decides only a clean root: exit status 0, exactly four lines
+    (``false`` and three absolute paths) and a top level that resolves to the
+    selected root. Every other outcome, a timeout or an ``OSError`` included,
+    replays the separate queries, which make every refusal and raise their own
+    exceptions (so a hung Git waits out two timeouts). Among those outcomes are
+    a path holding a line break and an older Git that echoes an option it does
+    not know or prints nothing for ``--show-toplevel`` without a work tree.
+    """
     root = Path(repo).resolve()
+    try:
+        answer = git(root, "rev-parse", "--is-bare-repository", "--show-toplevel", "--absolute-git-dir",
+                     "--path-format=absolute", "--git-common-dir", check=False)
+        lines = answer.stdout.split(b"\n")
+        # Trimmed as git_text trims: the separate queries' refusals and recorded paths depend on it.
+        paths = [Path(os.fsdecode(line).strip()) for line in lines[1:4]]
+        if (not answer.returncode and len(lines) == 5 and not lines[-1] and lines[0] == b"false"
+                and all(path.is_absolute() for path in paths) and paths[0].resolve() == root):
+            return {"root": str(root), "git_admin": str(paths[1].resolve()), "common_dir": str(paths[2].resolve())}
+    except (OSError, subprocess.SubprocessError):
+        pass  # the separate queries observe again, so a refusal or timeout is their own
+    return _separate_identity(root)
+
+
+def _separate_identity(root: Path) -> dict:
+    """The four queries in turn, one Git process each: the authority for every selection but a clean root."""
     try:
         bare = git(root, "rev-parse", "--is-bare-repository", check=False)
         if bare.returncode or bare.stdout.strip() != b"false":
