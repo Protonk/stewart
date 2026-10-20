@@ -38,7 +38,7 @@ def test_wheel_members_version_and_guidance_are_complete():
         metadata = archive.read(next(name for name in names if name.endswith(".dist-info/METADATA"))).decode()
     identity = package_identity(Path(stewart.__file__).parent)
     assert identity["version"] == importlib.metadata.version("stewart") == "0.1.0"
-    assert "Requires-Python: >=3.11" in metadata and "Requires-Dist:" not in metadata
+    assert "Requires-Python: >=3.14" in metadata and "Requires-Dist:" not in metadata
     assert identity["commit"] is None and identity["dirty"] is None
 
 

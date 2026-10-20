@@ -2,7 +2,7 @@
 
 Stewart keeps local custody records for bounded audits of Git projects. The
 installation, maintainer checkout and auditor checkout are separate locations.
-Its runtime uses Python 3.11 or newer, Git and a POSIX shell. Harness profiles
+Its runtime uses Python 3.14 or newer, Git and a POSIX shell. Harness profiles
 are optional and require their explicitly named harness executable.
 
 Install a locally built wheel into a dedicated virtual environment, then use
@@ -27,7 +27,7 @@ network access is available. Use absolute paths for these variables:
 
 ```sh
 STEWART_SOURCE=/absolute/stewart-project
-STEWART_BASE_PYTHON=/absolute/python3.11
+STEWART_BASE_PYTHON=/absolute/python3.14
 STEWART_BUILD=/absolute/stewart-build-venv
 STEWART_WHEELS=/absolute/stewart-wheelhouse
 "$STEWART_BASE_PYTHON" -I -m venv "$STEWART_BUILD"
@@ -88,7 +88,7 @@ auditor grants. `close` retires a finished or abandoned audit, keeping one
 closing record. Historical schemas require their creating installation; new
 versions never rewrite old records for compatibility.
 
-Run the standalone suite against a fresh wheel with either supported interpreter:
+Run the standalone suite against a fresh wheel with Python 3.14:
 
 ```sh
 "$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/check.py" --wheelhouse "$STEWART_WHEELS" --result /absolute/stewart-results.json
@@ -104,7 +104,7 @@ per-phase durations and budget overruns. Test success does not erase a budget
 failure. Only the selected pytest's built-in plugins and the staged suite's
 own conftest are admitted; containing-project and third-party plugins refuse.
 
-Development and acceptance target Apple Silicon macOS with Python 3.11 and 3.14.
+Development and acceptance target Apple Silicon macOS with Python 3.14.
 POSIX APIs alone do not establish Linux or other-host support; qualify those
 hosts separately. Harness enforcement also needs its own explicit qualification.
 The installed interpreter and its environment hooks remain trusted: isolated

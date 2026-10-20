@@ -2073,7 +2073,7 @@ an unrelated directory. It selects that copy's pytest configuration explicitly,
 disables inherited plugins and options, and records collected/selected nodes,
 per-node outcomes, the installed member population, wheel digest and interpreter.
 It retains command streams and fixture artifacts beside the result. An empty
-selection is an error. Repeat with Python 3.11 and a newer supported interpreter.
+selection is an error. Run it with Python 3.14, the qualified interpreter.
 Socket checks require a host that permits a local Unix socket; unreadable-file
 controls require an unprivileged user. No dependency downloads occur in this
 runner. Its nested boundary tests reuse the same provisioned wheelhouse.

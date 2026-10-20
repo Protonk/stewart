@@ -7,7 +7,7 @@ name = "stewart"
 dynamic = ["version"]
 description = "Local custody for bounded audits of Git projects"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 license = {file = "LICENSE"}
 dependencies = []
 

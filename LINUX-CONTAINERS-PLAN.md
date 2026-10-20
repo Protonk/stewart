@@ -49,9 +49,10 @@ before raising an external activation dependency.
   `/usr/local/bin/container` and `/opt/homebrew/bin/container`.
 - `/opt/homebrew/bin/python3.11` and `/opt/homebrew/bin/python3.14` were available.
   Resolve actual interpreters again and record versions at execution time.
-- [README.md](README.md) currently qualifies Apple Silicon macOS with Python
-  3.11 and 3.14 only. Runtime dependencies are the standard library, Git, and a
-  POSIX shell. Build and test dependencies are in [requirements.lock](requirements.lock).
+- [README.md](README.md) then qualified Apple Silicon macOS with Python
+  3.11 and 3.14 only; support has since narrowed to Python 3.14 (2026-10-19),
+  so the stages below qualify 3.14 alone. Runtime dependencies are the
+  standard library, Git, and a POSIX shell. Build and test dependencies are in [requirements.lock](requirements.lock).
 - The existing `.scratch/check-result.json` was a Python 3.14 smoke result:
   691 collected, 20 selected, 671 deselected, 20 passed. It is historical local
   evidence, not a current full-suite result. Do not overwrite it or bake these
@@ -86,7 +87,7 @@ after execution; it is not a hard process timeout.
 ## Architecture to implement
 
 Use standard OCI images with a Debian/glibc baseline, native arm64 locally, and
-Python 3.11 and 3.14 variants. Keep one shared guest-side check entrypoint usable
+Python 3.14. Keep one shared guest-side check entrypoint usable
 under Apple container and a native Linux engine. Avoid a general container-engine
 abstraction unless actual differences require it.
 
@@ -173,7 +174,7 @@ Example guest invocation shape (paths are illustrative container coordinates,
 not constants to introduce into Stewart runtime logic):
 
 ```sh
-STEWART_GUEST_PYTHON=/usr/local/bin/python3.11
+STEWART_GUEST_PYTHON=/usr/local/bin/python3.14
 "$STEWART_GUEST_PYTHON" -I -B /work/source/scripts/check.py \
   --wheelhouse /opt/stewart/wheelhouse \
   --result /work/runs/unique-run/result.json
@@ -237,7 +238,7 @@ resource cleanup that leaves evidence and unrelated resources intact.
 ## Stage 3: reproduce, explain, and fix Linux failures
 
 1. Capture full baseline runs for the same source snapshot on macOS and native
-   Linux arm64, each with Python 3.11 and 3.14. Use the provisioned wheelhouse and
+   Linux arm64, each with Python 3.14. Use the provisioned wheelhouse and
    existing runner on both hosts. Compare actual node sets, per-node outcomes,
    skip reasons, and configuration/plugin observations. Different Python patch,
    Git, and shell versions are recorded variables, not automatically OS effects.
@@ -282,7 +283,7 @@ and an explicit statement of what remains unqualified.
 
 1. Recheck the GitHub remote and repository CI settings that are accessible.
    Prepare `.github/workflows/linux.yml` with a native amd64 Linux runner and
-   Python 3.11/3.14 image variants. Use the same image recipe, guest command,
+   a Python 3.14 image. Use the same image recipe, guest command,
    non-root account, and output contract as local Apple-container runs. Pin
    action revisions and base images, retain test artifacts on failure, and keep
    workflow permissions narrow. No public image registry is required: CI can
