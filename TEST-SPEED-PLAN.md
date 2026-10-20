@@ -1,6 +1,6 @@
 # Test speed and evidence retention plan
 
-Status: in progress; WP0 and WP1.1 done (`TEST-SPEED-FINDINGS.md`). Start with bounded
+Status: in progress; WP0, WP1.1 and WP1.2 done (`TEST-SPEED-FINDINGS.md`). Start with bounded
 measurements and improvements to the test harness, then investigate the
 remaining costs. This file sets the order, evidence and acceptance of each
 work package; `TEST-SPEED-DESIGN-CHOICES.md` sets out the mechanisms and the
@@ -287,7 +287,7 @@ on `db61a8d`, which WP1 to WP3 use. See `TEST-SPEED-FINDINGS.md`.
 
 ### WP1. Validate and implement the inexpensive fixes
 
-Status: in progress; WP1.1 done. Do the three items in this order. The selection fix makes
+Status: in progress; WP1.1 and WP1.2 done. Do the three items in this order. The selection fix makes
 node-ID selections usable for the later comparisons. Pruning removes the
 walkers' dependence on accumulating artifacts before the Git comparison.
 
@@ -344,6 +344,8 @@ before/after counts for a path combined with `-k` on the real suite, and the
 unfiltered node-list comparison from step 1.
 
 #### WP1.2. Prune the two walkers
+
+Status: done (`TEST-SPEED-FINDINGS.md`).
 
 1. In `tests/test_authority.py`, replace `rglob` plus filter with `os.walk`
    and remove the top-level names `.scratch`, `.git`, `dist` and `build` from

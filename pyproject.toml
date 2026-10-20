@@ -16,7 +16,7 @@ path = "src/stewart/_version.py"
 
 [tool.hatch.build]
 ignore-vcs = true
-exclude = ["**/__pycache__", "**/*.pyc", "**/.pytest_cache"]
+exclude = ["**/__pycache__", "**/*.pyc", "**/.pytest_cache", "/.scratch"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/stewart"]
@@ -27,6 +27,8 @@ packages = ["src/stewart"]
 
 [tool.hatch.build.targets.sdist]
 include = ["/src", "/tests", "/scripts", "/pyproject.toml", "/README.md", "/AGENTS.md", "/LICENSE", "/requirements.lock", "/.gitignore"]
+# Prune excluded directories instead of walking them; retained runs under .scratch are large.
+skip-excluded-dirs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

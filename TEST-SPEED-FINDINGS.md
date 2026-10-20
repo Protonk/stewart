@@ -237,3 +237,68 @@ residual note), so the WP3 rustup finding grows with these tests.
 PolicyWitness testing had resumed during the `harness-files-new`,
 `after-path-k` and `collect-unfiltered` runs; none of them is a timing
 comparison.
+
+Addendum: README.md is the package's long description, so WP1.1's README
+edit changed the wheel's `METADATA` and digest (`ac7d4271…` at `db61a8d`,
+`f44ee152…` from `22d9d88` on); the package modules are byte-identical
+(`levers/selection/harness-files-new.json`, `levers/pruning/files-new.json`).
+
+## WP1.2. Prune the two walkers
+
+Implemented: `tests/test_authority.py` walks with `os.walk` and removes the
+top-level names `.scratch`, `.git`, `dist` and `build` from `dirnames` before
+descending (`python_names`); `pyproject.toml` adds `/.scratch` to the global
+hatch `exclude` and sets `skip-excluded-dirs = true` on the sdist target. The
+authority test also records `os.scandir` at its real call site and fails if
+the walk enters an excluded tree. The wheel is unchanged by WP1.2
+(`f44ee152…` before and after).
+
+Comparison (3.14, default context, PolicyWitness stopped; `walkers`
+selection, old and new source interleaved three times at each level by
+applying and reverting `levers/pruning/wp12.patch`; `levers/pruning/`):
+
+| Level (`.scratch` entries) | Old phase sum, median (range) | New phase sum, median (range) | Verdict |
+| --- | --- | --- | --- |
+| existing tree (644,251–644,946) | 12.393 s (12.329–12.451) | 0.448 s (0.448–0.453) | new faster in every repetition (`compare-existing314-old-vs-existing314-new.out`) |
+| plus 201,001 synthetic entries (846,204–846,899) | 16.745 s (16.694–16.890) | 0.453 s (0.448–0.455) | new faster in every repetition (`compare-bloat314-old-vs-bloat314-new.out`) |
+
+- Firing: on the old source the bloat raised the walkers from 12.393 to
+  16.745 s, every repetition (`compare-existing314-old-vs-bloat314-old.out`).
+- Invariance: on the new source the walkers do not depend on the bloat
+  (0.448 vs 0.453 s; ranges overlap; `compare-existing314-new-vs-bloat314-new.out`).
+- Per walker (`per-walker.out`): authority 8.188 → 0.003 s and sdist 4.206 →
+  0.445 s at the existing tree; 10.541 → 0.003 s and 6.188 → 0.449 s with
+  the bloat. `total_seconds` medians 15.594 → 3.707 and 20.036 → 3.720.
+- Populations: the authority name list (87 names) and the sdist member list
+  (103 members) are identical across all four conditions, computed in a venv
+  provisioned from the wheelhouse plus the built wheel
+  (`pop-*.authority-names.txt`, `pop-*.sdist-members.txt`, `pop-*.json`).
+  The bloat (201,001 entries) and the venv (1,562 entries) were removed
+  afterwards (`bloat-remove.out`, `venv-remove.out`).
+- A first attempt (`walkers-existing-old-1`, `ABORTED-existing.txt`) failed
+  because the driver still named the 3.11 interpreter; it is kept and the
+  series was rerun under new names.
+
+Regressions, each shown failing against the old behavior on 3.14
+(`demo-i-old-walk.out`, `demo-ii-old-pyproject.out`):
+
+- `test_walk_prunes_excluded_top_level_trees_and_lists_what_rglob_listed`: on
+  a planted tree (`.scratch/x.py`, `.git/g.py`, `dist/y.py`, `build/w.py`,
+  `pkg/build/z.py`, a symlinked directory, a symlink to a directory named
+  `alias.py`, a dangling `dangling.py`, a directory `odd.py`) `python_names`
+  returns rglob's names, never enters an excluded tree and equals the old
+  filter's output. With the old rglob walk it fails: "entered excluded
+  top-level trees ['.git', '.scratch', 'build', 'dist']".
+- `test_audit_custody_machinery_has_one_home` (changed): the old walk entered
+  191,448 directories under `.scratch` on the real tree.
+- `test_sdist_walk_never_enters_scratch_and_keeps_the_planted_members`: drives
+  the pinned hatchling's `SdistBuilder` in-process with `safe_walk` recorded;
+  with the old `pyproject.toml` the walk entered the planted `.scratch`
+  directories. It also pins the two configuration keys.
+
+Focused run: `tests/test_authority.py tests/test_distribution.py`, 22
+collected and selected, 22 passed (`files-new`). The walk regression is in a
+module marked `smoke`, so `--fast` now selects 26 nodes (25 at WP0); the sdist
+regression is unmarked. Extrapolation, not measured: the saving grows with
+the running checkout's `.scratch`; the main checkout's (about 2.7 million
+entries) made these two tests take 65 s and 45 s historically.

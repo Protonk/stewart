@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import sys
 import tarfile
+import tomllib
 import zipfile
 
 import pytest
@@ -147,3 +148,62 @@ def test_sdist_builds_same_wheel_without_git_or_network(tmp_path, run_cmd):
     with zipfile.ZipFile(rebuilt) as actual, zipfile.ZipFile(os.environ["STEWART_TEST_WHEEL"]) as expected:
         assert set(actual.namelist()) == set(expected.namelist())
         assert {name: actual.read(name) for name in actual.namelist()} == {name: expected.read(name) for name in expected.namelist()}
+
+
+def test_sdist_walk_never_enters_scratch_and_keeps_the_planted_members(tmp_path, monkeypatch):
+    """The project's sdist configuration prunes .scratch before hatchling descends into it.
+
+    Retained check runs live under the running checkout's .scratch, so an unpruned walk costs
+    time in proportion to them while contributing no member. This drives hatchling's own walk,
+    which the check environment provides for the wheel build: ``recurse_included_files`` reaches
+    ``recurse_project_files``, which calls ``safe_walk`` as a global of its interface module.
+    The walk is asserted before the configuration keys because the old configuration, or either
+    key alone, still yields the right members and differs only in entering ``.scratch``; the
+    keys then pin how the pruning is achieved.
+    """
+    from hatchling.builders.plugin import interface
+    from hatchling.builders.sdist import SdistBuilder
+
+    moved = (f"the wrapper was derived from hatchling 1.27.0's interface.safe_walk and hatchling "
+             f"{importlib.metadata.version('hatchling')} is running; if that version walks differently, "
+             "re-derive the wrapper for it, or assert only the configuration keys and keep the walk's "
+             "behavior in recorded evidence")
+    assert hasattr(interface, "safe_walk"), moved
+
+    project = Path(os.environ["STEWART_TEST_PROJECT"])
+    config = tomllib.loads((project / "pyproject.toml").read_text())
+    build = config["tool"]["hatch"]["build"]
+    sdist = build["targets"]["sdist"]
+    root = tmp_path / "project"
+    # One member per include entry, plus the version file; real files are copied so the
+    # configuration and metadata hatchling reads are the project's own.
+    members = [config["tool"]["hatch"]["version"]["path"]]
+    members.extend(name if (project / name).is_file() else f"{name}/planted.py"
+                   for name in (pattern.removeprefix("/") for pattern in sdist["include"]))
+    for name in members:
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_bytes((project / name).read_bytes() if (project / name).is_file() else b"")
+    for run in range(3):
+        (root / f".scratch/run{run}/deep").mkdir(parents=True)
+        (root / f".scratch/run{run}/deep/f.py").write_text("")
+    (root / ".scratch/stray.py").write_text("")
+    entered, real_walk = [], interface.safe_walk
+
+    def recording(path):
+        for directory, dirnames, filenames in real_walk(path):
+            entered.append(Path(os.path.relpath(directory, root)))
+            yield directory, dirnames, filenames
+
+    monkeypatch.setattr(interface, "safe_walk", recording)
+    listed = sorted(item.relative_path for item in SdistBuilder(str(root)).recurse_included_files())
+    scratch = sorted(str(directory) for directory in entered if directory.parts[:1] == (".scratch",))
+    assert scratch == [], (
+        f"hatchling's sdist walk entered {scratch}; pyproject.toml must exclude /.scratch globally "
+        "and set skip-excluded-dirs = true for the sdist target")
+    assert listed == sorted(members), f"sdist members differ from the planted sources: {sorted(set(listed) ^ set(members))}"
+    walked = {Path(".")} | {parent for name in members for parent in Path(name).parents}
+    assert set(entered) == walked, (
+        f"the safe_walk recorder saw {sorted(map(str, set(entered)))}, expected {sorted(map(str, walked))}; {moved}")
+    assert "/.scratch" in build.get("exclude", []), "[tool.hatch.build] exclude must name /.scratch"
+    assert sdist.get("skip-excluded-dirs") is True, "the sdist target must prune excluded directories before descending"
+    assert "exclude" not in sdist, "a target-level exclude replaces the global list in hatchling 1.27.0"

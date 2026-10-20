@@ -1,4 +1,5 @@
 """Standalone authority guards with measured populations and paired controls."""
+from fnmatch import fnmatchcase
 from pathlib import Path
 import os
 import pytest
@@ -7,16 +8,56 @@ import stewart
 HOME = "src/stewart/"
 LITERALS = ("```audit-assignment", "```audit-report", "stewart/sessions")
 EXEMPT_PREFIXES = (HOME, "tests/")
+EXCLUDED_TOP_LEVEL = {".scratch", ".git", "dist", "build"}
 
 
 pytestmark = pytest.mark.smoke
 
 
+def python_names(root):
+    """Every entry named ``*.py`` under root, as rglob would list it, minus excluded top-level trees.
+
+    Excluded top-level directories are pruned before descending, so retained
+    run artifacts under ``.scratch`` cost nothing. Exclusion applies only at the
+    top level; symlinked directories are not entered; non-regular entries named
+    ``*.py`` are listed, as rglob lists them.
+    """
+    names = []
+    for directory, dirnames, filenames in os.walk(root):
+        relative = Path(directory).relative_to(root)
+        if relative == Path("."):
+            dirnames[:] = [name for name in dirnames if name not in EXCLUDED_TOP_LEVEL]
+        names.extend(str(relative / name) for name in (*dirnames, *filenames) if fnmatchcase(name, "*.py"))
+    return sorted(names)
+
+
 def source_python(root):
-    names = sorted(str(p.relative_to(root)) for p in root.rglob("*.py")
-                   if p.relative_to(root).parts[0] not in {".scratch", ".git", "dist", "build"})
+    names = python_names(root)
     assert len([name for name in names if name.startswith(HOME)]) >= 29, "runtime source population vanished"
     return names
+
+
+def walk_entering(monkeypatch, walk, root):
+    """``walk(root)``'s result and the directories it opened through ``os.scandir``, relative to root.
+
+    os.walk and the rglob filter it replaced both look ``os.scandir`` up at call time, so the
+    recorder sees either walker descend. Relative paths keep a tmp_path that sits in the running
+    checkout's ``.scratch`` from reading as an entered excluded tree.
+    """
+    entered, real_scandir = [], os.scandir
+
+    def recording(path="."):
+        entered.append(os.path.relpath(path, root))
+        return real_scandir(path)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(os, "scandir", recording)
+        result = walk(root)
+    return result, sorted(set(entered))
+
+
+def excluded_entered(entered):
+    return sorted({directory for directory in entered if directory.split(os.sep)[0] in EXCLUDED_TOP_LEVEL})
 
 
 def custody_literal_violations(repo_root: Path, population: list[str]) -> list[str]:
@@ -33,12 +74,55 @@ def custody_literal_violations(repo_root: Path, population: list[str]) -> list[s
     return violations
 
 
-def test_audit_custody_machinery_has_one_home() -> None:
+def test_audit_custody_machinery_has_one_home(monkeypatch) -> None:
+    """The ratchet's population comes from a walk that never enters the excluded top-level trees.
+
+    The walk is recorded at this call site because an unpruned one costs time in proportion to
+    the checkout's retained runs. check.py's default result and basetemp live in ``.scratch``, so
+    an excluded tree is normally present to be entered; the planted-tree test below covers a
+    checkout that has none.
+    """
     repo_root = Path(os.environ["STEWART_TEST_PROJECT"])
-    assert custody_literal_violations(repo_root, source_python(repo_root)) == [], (
+    population, entered = walk_entering(monkeypatch, source_python, repo_root)
+    assert custody_literal_violations(repo_root, population) == [], (
         "a second assignment parser or session layout appeared outside src/stewart; "
         "route callers to the package instead of adding a helper beside the workspace"
     )
+    home = HOME.rstrip("/")
+    assert home in entered, (
+        f"the os.scandir recorder never saw {home} walked ({len(entered)} directories recorded); "
+        "source_python must walk through os.scandir for this pruning guard to observe it")
+    pruned = excluded_entered(entered)
+    assert pruned == [], (
+        f"source_python entered {len(pruned)} directories in excluded top-level trees, starting {pruned[:5]}; "
+        "walk with python_names, which prunes them before descending")
+
+
+def test_walk_prunes_excluded_top_level_trees_and_lists_what_rglob_listed(tmp_path: Path, monkeypatch) -> None:
+    """Pruning is the measured property; the former rglob filter's name list is the invariant.
+
+    The planted tree covers each semantic the old filter had: exclusion only at the top level,
+    symlinked directories listed by name but never entered, and non-regular ``*.py`` entries listed.
+    """
+    root = tmp_path / "tree"
+    for name in (".scratch/x.py", ".git/g.py", "dist/y.py", "build/w.py",
+                 "a.py", "pkg/b.py", "pkg/build/z.py", "odd.py/inner.py"):
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_text("")
+    (root / "linked").symlink_to("pkg", target_is_directory=True)
+    (root / "alias.py").symlink_to("pkg", target_is_directory=True)
+    (root / "dangling.py").symlink_to("missing")
+    names, entered = walk_entering(monkeypatch, python_names, root)
+    assert names == ["a.py", "alias.py", "dangling.py", "odd.py", "odd.py/inner.py", "pkg/b.py", "pkg/build/z.py"], (
+        "python_names must keep rglob's population (top-level-only exclusion, symlinked directories listed "
+        f"but not entered, non-regular *.py entries listed); got {names}")
+    pruned = excluded_entered(entered)
+    assert pruned == [], f"the walk entered excluded top-level trees {pruned}; prune them before descending"
+    assert entered == [".", "odd.py", "pkg", "pkg/build"], (
+        f"the walk must enter every real unexcluded directory and no symlinked one; it entered {entered}")
+    old_filter = sorted(str(p.relative_to(root)) for p in root.rglob("*.py")
+                        if p.relative_to(root).parts[0] not in {".scratch", ".git", "dist", "build"})
+    assert names == old_filter, f"the walk's population differs from the rglob filter's: {sorted(set(names) ^ set(old_filter))}"
 
 
 def test_ratchet_goes_red_on_a_planted_duplicate_and_ignores_unrelated_text(tmp_path: Path) -> None:
