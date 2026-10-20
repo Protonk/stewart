@@ -810,10 +810,11 @@ option and a relative directory, which `.resolve()` places under Stewart's
 working directory.
 
 The plan's WP5 instrumentation (wrapping `Popen` with timings and call sites)
-was not built: this one candidate was identified from the logging wrapper's
-counts (`residual/gitcount/verbs.out`), and `checkout_identity` is the only
-runtime caller of `--is-bare-repository` (`wp5/callers.out`, `git grep` at
-`e9353fc`). Other operations' repeated queries were not investigated.
+was not built for this change: this one candidate was identified from the
+logging wrapper's counts (`residual/gitcount/verbs.out`), and
+`checkout_identity` is the only runtime caller of `--is-bare-repository`
+(`wp5/callers.out`, `git grep` at `e9353fc`). The instrumentation and other
+operations' repeated queries came later; see "WP5 census" below.
 
 ### Concurrency probe (`probe/`)
 
@@ -876,4 +877,304 @@ approved, measure 2, 3 and 4 workers on the full suite, keep the default at
 one worker, and expect little beyond four (4 performance cores, thermal
 limits). Further WP5 work (other operations' repeated queries) remains
 uninvestigated; `checkout_identity` was the largest candidate identified
-(44.0% of the runtime's Git calls).
+(44.0% of the runtime's Git calls). The user then declined WP4 (no
+sharding); the other operations are covered by "WP5 census" below.
+
+## WP5 census: where the runtime's Git calls go (instrumentation only)
+
+After the follow-ups the user declined WP4 ("We'll pass on WP4: no
+sharding") and asked for WP5's instrumentation only: record each Git call's
+operation, call site, duration and arguments over a full run, rank what
+remains, and separate a question asked twice in one observation from a
+re-check at a later boundary. No runtime code changed. Evidence:
+`wp5/census/` (probe, runs, tables) and `wp5/review/` (custody review).
+
+### Probe (`wp5/census/_wp5_git_census.py`, sha256 `66bdeccf…`)
+
+A `.pth` line in the check venv's site-packages installs it in every
+interpreter of that venv, including the `python -I -m stewart` CLI
+children (isolated mode still processes `.pth` files). The hook lived only
+in a scratch copy of `scripts/check.py` (`census-hook.diff`); the copy's
+tree is `fb532fa`'s (`0abefa4e…`). It wraps `subprocess.Popen` once (`run`
+uses it) and writes one record per Git process: argv, cwd, process,
+`PYTEST_CURRENT_TEST`, the Python stack, an invocation token, the time from
+spawn until the process is waited for, the exit status, and the sha256 and
+length of stdout and stderr. This fixes both faults the plan names in
+`tools/measure.py` and `tools/measure2.py` (left untouched): all 648 direct
+`update-ref --stdin` processes from `create_refs` carry durations (median
+15.30 ms; `measure.py` recorded 0.0 s), and the CLI children's own spawns
+are recorded.
+
+The first run (`full/`, probe `55eadf62…`) keyed an invocation by the id of
+the outermost Stewart frame. Python reuses a freed frame's id, so separate
+calls in the pytest process merged: of 950 in-process keys, 561 span more
+than one (node, caller frame) and 542 more than one node (`full/NOTE.txt`).
+Its per-invocation figures are superseded; its counts, sites and durations
+stand. The probe now counts activations with a local `sys.monitoring`
+PY_START event on the outermost frame's code. Self-test
+(`probe_selftest.out`): five calls in a loop give five activations, where
+the id token gave one; recursion splits an activation (repeats undercount,
+never merge); without a free tool id each record says
+`activation_counted: false`. In `full2/`, 97 records lack a counted
+activation, none of them with a Stewart frame.
+
+Departures from the plan's method: it suggested isolated fixtures in the
+states each operation needs, with an exhaustive census optional; I ran the
+full suite, so the counts describe the states the tests build, not
+production use. Environment and Git configuration were not recorded, and
+answers only as digests.
+
+### Runs
+
+Both in the default context (`unsandboxed`: no Claude Code sandbox
+configured; socket bind allowed), Python 3.14.8, Git 2.54.0 (Apple Git-157)
+through the `dash` wrapper, no selector: 1023 collected, 1023 selected,
+0 deselected; 1022 passed, 1 skipped, each node's outcome equal to
+`final/gate-314`'s.
+
+| Run | Probe | `total_seconds` | Wall | Max 1-min load |
+| --- | --- | --- | --- | --- |
+| `full` | `55eadf62…` (frame-id token) | 678.2 s | 685.5 s | 2.96 |
+| `full2` | `66bdeccf…` (activation token) | 676.8 s | 684.2 s | 3.19 |
+
+Repeatability (`reliability.py`, `full2/reliability.out`): both runs
+recorded 68,652 processes, 61,460 of them runtime, with identical counts for
+every one of 104 runtime (call site, verb) keys and every one of 736 nodes.
+An earlier inline comparison that reported 206 of 207 keys differing keyed
+on unnormalized paths, which contain each run's private directories; it is
+kept, with the outputs the review read, in `full2/as-reviewed/` (`NOTE.txt`).
+`analyze.py` then took a module's name after the first `/stewart/`, which
+misplaced 195 records from a runtime deployed under
+`<home>/stewart/checkouts/…`. The outputs in `full2/` were regenerated with
+the last `/stewart/`; totals and repeat classes are unchanged.
+
+Against the WP3 logging wrapper (`reconcile.py`, `full2/reconcile.out`;
+counting run at `7787b96`, before `c762b26`): over 1016 shared nodes the
+prediction (wrapper lines, minus 3 per complete `checkout_identity`
+sequence, plus 1 per incomplete one) is 66,819 calls and the census
+recorded 66,691. 1,007 nodes agree exactly; 9 are lower, each by exactly 4
+per incomplete sequence, and all 9 are concurrency tests. The likely cause
+is that concurrent processes interleave their sequences in the wrapper's
+log, but no comparison distinguishes that from other explanations. No node
+is higher. 3 records lack a duration, all fixture calls in
+`test_checkout_identity_decides_only_a_clean_root_from_one_query`.
+
+### Where the calls go (`full2/analysis.out`, `full2/candidates.out`)
+
+Durations are spawn-to-wait times from one run on a shared machine:
+indicative, not a timing comparison.
+
+- 68,652 Git processes: runtime 61,460 (325.6 s; 5,974 of them in CLI
+  children), fixture and test 7,191 (53.4 s), nested `check.py` 1. Median
+  runtime call 4.89 ms.
+- By operation (calls, invocations, median per invocation, seconds):
+  `prepare` 22,583 / 751 / 33 / 125.0 s; `collect` 11,290 / 449 / 30 /
+  58.5 s; `close` 7,036 / 281 / 25 / 34.3 s; `status` 5,802 / 426 / 16 /
+  29.2 s; every other operation under 1,620 calls.
+- By call site: `checkout_identity` (`_repository.py:219`) 10,245 (52.6 s);
+  `package_identity` (`session.py:83`, `ls-files`) 4,492 (21.0 s);
+  `verify_retention` (`_repository.py:561/565/570`) 9,508 (47.0 s);
+  `checkout_state` (`collect.py:139`) 2,931 (15.7 s); `_prepare`
+  (`prepare.py:145`, `ls-tree`) 2,124 (10.8 s); `retain_commits`
+  (`_repository.py:548`) 1,950 (17.7 s); `maintainer_state`
+  (`session.py:307/309`) 3,074 (16.0 s).
+- The same argv and cwd asked again within one invocation: 16,235 times
+  with the same answer and no write between (81.2 s), 800 after a write
+  (4.0 s), 330 with a different answer (1.7 s). Identical argv does not
+  establish an equivalent query (plan WP5), so these are candidates, not
+  savings.
+- Distinct consecutive queries from one caller frame: 38 groups of 20 or
+  more cover 15,948 of 25,238 avoidable process starts. This is a candidate
+  list; the census cannot tell one call from two consecutive ones at one
+  line.
+
+### Custody review (`wp5/review/`, `wp5/review/round2/`)
+
+Two read-only rounds of sub-agents, judged against `AGENTS.md`'s custody
+rules and plan WP5. Round 1 had an analyst and a skeptic for each of nine
+scopes (c1–c9) built from the largest groups, plus a coverage critic.
+Round 2 had five resolvers, each applying one standard to an inconsistency
+the critic found across scopes, and five independent refuters of the
+largest A and B claims. Classes: **A**, the same question twice in one
+observation (pass the first answer along within the call); **B**, distinct
+questions one Git process can answer, decided only on clean answers with
+replay otherwise (the `checkout_identity` precedent); **C**, a re-check at a
+later boundary; **D**, a fresh observation recorded by design; **E**,
+unclear. `round2/reconcile.py` merges the rounds: round 2 overrides round 1,
+and a round-2 disagreement keeps the stricter class (`round2/final.json`,
+`round2/final.out`).
+
+Counts are the reviewers' tallies of `full2` and are not deduplicated
+across patterns. Seconds are an estimate at the 4.89 ms median call.
+
+| Class | Patterns | Avoidable under the stated conditions | Estimate |
+| --- | --- | --- | --- |
+| A | 14 (1 subsumed by a B) | 4,932 calls | 24.1 s |
+| B | 11 | 11,213 calls (5,083 in patterns rated low confidence) | 54.8 s |
+| E | 14 | 0 now; 4,336 after rulings R1–R3 below | (21.2 s) |
+| C | 13 | must stay | |
+| D | 7 | must stay | |
+
+A, largest first: re-identification within the status view (1,723;
+inside `close`, 182 more are C while that view is close's last role check
+before it writes); `load_session`'s two `maintainer()` calls (1,582); the
+CLI gate's identity reused by the operation (514, only with a root guard:
+use it only when its root equals the operation's resolved `ws.repo`, and
+never for request-key bindings or the identities `prepare` and
+`register` record); close's nested view (297, through a private parameter
+only); `initialize`'s unkeyed gates (193); `record_output` after its load
+(122, keeping `maintainer()`'s role checks before `CREATE.json`);
+`initialize`'s second `expected_inputs` (120); the declaration helper's
+root (112); registrations listed twice in one evaluation (84); staged names
+in `check` (78); the frozen HEAD (58, which also fixes deviation 2 below);
+`bind` then `status` (27, root guard); `discover`'s first load (22).
+
+B, largest first: `verify_retention`'s commit checks in one `rev-parse`
+(1,592) and its value reads joined to them (3,158 more, low confidence;
+4,750 together, the by-name alternative to the rejected listing); an empty
+patch deciding the name list in `checkout_state` (1,925, low); the three
+guidance `ls-tree` calls (1,415); `maintainer_state` from one
+`status --porcelain=v2 --branch`, decided only when it lists no entries
+(1,355); retained commits in one `rev-parse` (655); the status view's HEAD
+and Git directory (489, only after deviation 1 is fixed); collect's
+identity pair (369, replaying on any mismatch); the auditor context's HEAD
+pair (151); expected inputs in one `ls-tree` (104, replaying when a name
+begins with `:` or two names collide after Unicode normalization, and on
+`OSError`). Every B also needs a comparison against real Git in the states
+where the lookups could differ, and a substituted-answer regression with a
+firing control.
+
+Rejected, with what they must preserve:
+
+- One `for-each-ref` listing in place of `verify_retention`'s by-name reads
+  (round 1 B, 4,755; now E). Iteration and by-name lookup differ. On this
+  case-insensitive volume with the files backend, a loose case variant over
+  a packed ref can make them disagree; that is reasoned from the
+  documentation, with no Git run. The by-name merges above replace it.
+- Branch and HEAD in one `rev-parse` (c5, B 975; c4, E). `git branch
+  --show-current` has configuration and version failures of its own, which
+  a clean `rev-parse` cannot vouch for. The proposal also accepted attached
+  branches through rules that fall back to other refs.
+- Skipping the package identity's Git context in `require` (A 1,157) and in
+  close's view (A 218, disputed): a hung Git (`TimeoutExpired`) would
+  surface later. In `collect`, `run` and `recover_runtime` that is after a
+  directory has been created (`collect.py:386` before `:405`,
+  `experiment.py:399-408` before `:435`, `runtime.py:321` before `:326`;
+  `package_identity` catches only `OSError`, `session.py:92`), leaving
+  records that make every concluded close refuse.
+- `prepare` re-resolving the prompt (A 723), the target diff equal to the
+  parent diff (A 655), and the prompt bytes read again (A 707, now C).
+  Replace refs, which `_git.py` does not neutralize, and prunes between the
+  reads change refusals and recorded fields for particular interleavings;
+  the prompt read also crosses the binding's publication and the checkout's
+  validation.
+- C and D patterns, kept as they are: `round2/final.out`.
+
+Rulings these depend on:
+
+- **R1.** The standard for A. Most reviewers accept a drop when every
+  outcome the change can produce is one the current code produces if the
+  change lands just after the later read. That is the tolerance the
+  `checkout_identity` merge accepted for a rename during the call. The c3
+  refuter required the same outcome for every interleaving. Under that
+  reading no A or B survives, the precedent included. R1 alone releases
+  723 calls, and with R4 another 655.
+- **R2.** Whether a hung package Git may surface later, or whether
+  `package_identity` should catch `TimeoutExpired` (a separate change).
+  Releases 1,375 calls.
+- **R3.** Whether `git branch`'s own failures must still refuse at
+  preparation's role stage and in `collect`. Releases 1,583 calls with a
+  detached-only shape.
+- **R4.** Whether to neutralize replace refs (`GIT_NO_REPLACE_OBJECTS`) in
+  `_git.py`. It is a behaviour change in its own right, and it also bears on
+  deviations 2 and 4.
+
+### Pre-existing deviations from `AGENTS.md` found by the review
+
+None is caused by WP5. I checked items 1–7 in the code at `fb532fa`. They
+are reported, not fixed.
+
+1. **Status runs Git through a planted `.git` link.** `_git_head`
+   (`status.py:61-63`, called at `:480` and gated only by `is_dir()`) and
+   `_lock_view` (`:913-919`) run `rev-parse` in the auditor worktree
+   without the regular-gitfile check that `close` (`close.py:205-207`) and
+   `collect` apply. In the census, after
+   `test_a_planted_git_link_is_never_used_to_run_git` replaces `.git` with
+   a link to the maintainer's, both of its `close` calls ran `status.py:62`
+   and `:915` in the worktree with exit 0. The `--absolute-git-dir` answer's
+   digest (`788fb9ef…`) equals the earlier `--git-common-dir` answer, the
+   maintainer's `.git`; a genuine linked worktree would name
+   `<common>/worktrees/<id>`. Git was read-only (`GIT_OPTIONAL_LOCKS=0`),
+   so the test's assertion, that the maintainer's index and HEAD are
+   unchanged, holds, but its name claims more. As an operation, status can
+   report `head`, `head_matches_prompt` (which gates the run and release
+   offers) and the lock from the other repository.
+2. **The frozen HEAD is a later re-read.** `evaluate` judges the HEAD read
+   at `holdings.py:977` but freezes the one read at `:1280`, against "Freeze
+   what the evaluation judged … never a later re-read" and its own
+   docstring (`:1144-1147`). At use, the not-started path compares HEAD and
+   judges again before the attempt record (`:1525-1532`). That limits the
+   damage, but a HEAD that moves inside the evaluation is absorbed and the
+   worktree is removed instead of the claim being released. The use path
+   also compares at `:1526` but judges at `:977` after `git status`, and
+   `:1526` runs Git before the gitfile checks (it fails closed).
+3. **A failed ref listing reads as absence.** `_session_refs`
+   (`close.py:80-81`) runs `for-each-ref` with `check=False` and never
+   checks the exit status. `remove_ref` then reports "absent", and the
+   inventory and the leftover scan come out empty.
+4. **Inherited Git environment.** `_invocation` (`_git.py:24-30`) removes
+   only `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE` and `GIT_COMMON_DIR`,
+   although the module docstring says inherited redirections are dropped;
+   `GIT_OBJECT_DIRECTORY`, `GIT_ALTERNATE_OBJECT_DIRECTORIES`,
+   `GIT_CONFIG_PARAMETERS` and the replace-ref variables pass through.
+   Nothing in `src/` neutralizes replace refs (`grep`). The reviewers add,
+   from `git(1)`, that lazy fetch from a promisor remote stays enabled.
+5. **Session files written by overwrite.** `collect.py:414` and `:465`
+   write `REPORT.md` and the raw captures with `Path.write_bytes` (truncating
+   and following links) instead of `write_receipt`. The impact is low: the
+   collection directory is created exclusively, with mode 0o700, just
+   before (`:386`).
+6. **Untested refusals.** No test asserts `worktree_role_identity`
+   (`_repository.py:461-473`).
+7. **Exceptions without a reason escape `close_plan`.** `_status_view`
+   catches only `StewartError` and `OSError` (`close.py:1060`), and
+   `close_plan`, documented to report rather than raise its refusal
+   (`:1196-1198`), catches only `StewartError` (`:1231`). A Git timeout
+   inside the view therefore escapes.
+
+The reviewers also report the following by reasoning alone; none was
+checked:
+
+- `collect.py:163`'s plain `rev-parse HEAD` can record a fallback ref's
+  commit when HEAD is unborn.
+- A branch ref that vanishes between `observe` and `evaluate` freezes a tip
+  of None, and its removal can then end with an attempt record but no
+  failure record (`holdings.py:1264-1282`, `:1635`).
+- An attempt-named entry that `retire_claim` did not write sends
+  revalidation down the started path, which judges no HEAD.
+- A planted loose-ref symlink can pass `verify_retention`'s by-name reads.
+
+### Review process
+
+Round 2's first attempt was stopped after one agent ran `find /` looking for
+Git's source, which raised macOS privacy prompts that the user denied
+(`round2/stopped-attempt/audit.out`). The relaunch limited every agent to the
+worktree and Xcode's Git manual pages, with no network. A watcher
+(`round2/audit.py`) found no tool call outside those places
+(`round2/audit-run.out`). The round-1 coverage critic once ran `git status
+--short` in the worktree, which can refresh the index's stat cache; no
+tracked content changed. No reviewer ran tests, Stewart, or a Git command
+that writes.
+
+### What this leaves
+
+The runtime's Git calls take 325.6 s of a 676.8 s run (spawn to wait).
+The reviewed A and B candidates come to about 79 s if every one lands with
+its conditions (an estimate), with about 21 s more behind R1–R3. Five items
+make up about half of that: the status view's re-identification, the two
+lookups in `load_session`, `verify_retention`'s commit checks,
+`maintainer_state` and the guidance `ls-tree` (7,667 calls, ≈ 37 s). The
+rest is small: 13 of the 25 A and B patterns are under 200 calls (≤ 1 s
+each). Every change needs its own regression and, for B, a comparison
+against real Git. Deviations 1 and 2 are custody defects independent of
+speed.

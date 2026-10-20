@@ -2,9 +2,11 @@
 
 Status: WP0 to WP3 done; the three approved follow-ups are done (provisioning
 without rustc, a targeted WP5 change to `checkout_identity`, and the
-concurrency probe; `TEST-SPEED-FINDINGS.md`); WP4 and any further WP5 work
-await the user's decision. Start with bounded measurements and improvements to the
-test harness, then investigate the remaining costs. This file sets the
+concurrency probe; `TEST-SPEED-FINDINGS.md`). The user declined WP4. WP5's
+instrumentation and census are done without runtime changes; further WP5
+changes await the user's rulings and approval. Start with bounded
+measurements and improvements to the test harness, then investigate the
+remaining costs. This file sets the
 order, evidence and acceptance of each work package;
 `TEST-SPEED-DESIGN-CHOICES.md` sets out the mechanisms and the constraints
 they must satisfy. Update a work package's status line when it
@@ -531,8 +533,9 @@ written, completes the initial work. WP6 is independent follow-up.
 
 ### WP4. Sharding, if the user approves it after WP3
 
-Status: not started; the concurrency probe WP3 asked for ran (about twice the
-throughput with four concurrent invocations); requires the user's approval.
+Status: declined by the user ("no sharding") after the concurrency probe
+WP3 asked for (about twice the throughput with four concurrent
+invocations); not started.
 
 Audit shared state before adding parallel workers: fixed paths/ports, HOME,
 environment changes, artifact readers and subprocess lifetime. Temporary
@@ -565,8 +568,11 @@ worker count from core count alone.
 
 Status: the user approved one targeted change, done: `checkout_identity`
 answers its four queries with one `rev-parse` and replays them otherwise
-(`c762b26`). The instrumentation below and other operations have not been
-started; further work requires the user's approval.
+(`c762b26`). The instrumentation below is built and a full-suite census and
+custody review are done, with no runtime change ("WP5 census" in
+`TEST-SPEED-FINDINGS.md`): the candidates are ranked and classified, four
+rulings (R1–R4) are open, and seven pre-existing custody deviations are
+reported. Further runtime changes require the user's rulings and approval.
 
 Start with operations implicated by WP3. Fix the instrumentation before
 extending it:
