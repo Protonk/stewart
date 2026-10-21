@@ -49,11 +49,19 @@ def test_explicit_path_display(tmp_path):
             _util.require_rel(value)
 
 
+#: The one external import: Click, only in the module that parses delegated commands.
+CLICK_ONLY = {"click_commands.py": {"click"}}
+
+
 @pytest.mark.smoke
 def test_package_dependency_boundary(installation):
     sources = {p.name: p.read_text() for p in (installation / "stewart").glob("*.py")}
     assert len(sources) >= 23, "source population unexpectedly lost the custody implementation"
-    assert package_import_violations(sources) == []
+    assert package_import_violations(sources, CLICK_ONLY) == []
+    # Firing controls: the allowance is what admits Click, and only in its module.
+    assert [item.split(":")[0] for item in package_import_violations(sources)] == ["click_commands.py"]
+    assert package_import_violations({**sources, "cli.py": sources["cli.py"] + "import click\n"}, CLICK_ONLY)
+    assert package_import_violations({"click_commands.py": "import requests\n"}, CLICK_ONLY)
     assert package_import_violations({"added.py": "from tools import hash\n"})
     assert package_import_violations({"added.py": "from .. import hash\n"})
     assert package_import_violations({"added.py": "import importlib; importlib.import_module('pawl.structure')\n"})

@@ -33,13 +33,16 @@ def budget_overruns(durations, limit):
     return {node: sum(phases.values()) for node, phases in durations.items() if sum(phases.values()) > limit}
 
 
-def package_import_violations(sources: dict[str, str]) -> list[str]:
+def package_import_violations(sources: dict[str, str], allowed: dict[str, set[str]] | None = None) -> list[str]:
     """Reject nonstdlib dependencies in statements and literal dynamic imports.
 
-    Direct and simple assigned aliases are tracked, without general reassignment
-    or scope dataflow. Computed targets and arbitrary reflection are outside this
-    guard; cold imports separately exercise every module without project paths.
+    ``allowed`` names, per module, the external top-level packages it may
+    import; nothing else is admitted anywhere. Direct and simple assigned
+    aliases are tracked, without general reassignment or scope dataflow.
+    Computed targets and arbitrary reflection are outside this guard; cold
+    imports separately exercise every module without project paths.
     """
+    allowed = allowed or {}
     violations = []
     for name, source in sources.items():
         tree = ast.parse(source, filename=name)
@@ -117,7 +120,8 @@ def package_import_violations(sources: dict[str, str]) -> list[str]:
             for target in targets:
                 if target == namespace or target.startswith(namespace + "."):
                     continue
-                if target.split(".")[0] not in sys.stdlib_module_names:
+                top = target.split(".")[0]
+                if top not in sys.stdlib_module_names and top not in allowed.get(name, ()):
                     violations.append(f"{name}:{node.lineno}: external import {target}")
     return violations
 

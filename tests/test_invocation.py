@@ -188,6 +188,39 @@ def test_venv_interpreter_spelling_survives(installation, project_repo, tmp_path
     assert loads_control(result.stdout)["prefix"] == str(venv)
 
 
+def test_click_leaves_refuse_without_click_while_every_other_command_runs(installation, project_repo, tmp_path,
+                                                                          run_cmd):
+    """A pin does not make an interpreter supply Click: its absence is a structured refusal of its leaves only."""
+    venv = tmp_path / "venv"
+    run_cmd([sys.executable, "-I", "-B", "-m", "venv", "--without-pip", venv], check=True)
+    interpreter = venv / "bin/python"
+    # Firing control: this interpreter cannot import Click, while the suite's can.
+    assert run_cmd([interpreter, "-I", "-B", "-c", "import click"]).returncode != 0
+    assert run_cmd([sys.executable, "-I", "-B", "-c", "import click"]).returncode == 0
+    for arguments in (["--json", "docs", "auditor"], ["--json", "docs", "--help"],
+                      ["--json", "request", "--key", "never-used"]):
+        action = issue(installation, project_repo, tmp_path / "managers", run_cmd, interpreter=interpreter,
+                       arguments=arguments)
+        result = execute(action, tmp_path, run_cmd)
+        assert result.returncode == 2 and result.stderr == "", (arguments, result.stderr)
+        envelope = loads_control(result.stdout)
+        assert envelope["command"] is None and envelope["error"]["reason"] == "dependency_missing", envelope
+        assert str(interpreter) in envelope["error"]["message"] and envelope["error"]["next_steps"]
+    prose = execute(issue(installation, project_repo, tmp_path / "managers", run_cmd, interpreter=interpreter,
+                          arguments=["docs", "auditor"]), tmp_path, run_cmd)
+    assert prose.returncode == 2 and prose.stdout == ""
+    assert prose.stderr.startswith("Refused (dependency_missing): ") and "Traceback" not in prose.stderr
+    # Invariance: the root listing and the commands argparse parses need no Click.
+    listing = execute(issue(installation, project_repo, tmp_path / "managers", run_cmd, interpreter=interpreter,
+                            arguments=["--help"]), tmp_path, run_cmd)
+    assert listing.returncode == 0 and " docs " in listing.stdout and " request " in listing.stdout
+    for arguments in (["--json", "status"], ["--json", "init", "--audit-id", "one-question", "--input", "input.txt"]):
+        result = execute(issue(installation, project_repo, tmp_path / "managers", run_cmd, interpreter=interpreter,
+                               arguments=arguments), tmp_path, run_cmd)
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert loads_control(result.stdout)["ok"] is True
+
+
 def test_repo_is_required_but_help_needs_no_git(installation, tmp_path, run_cmd):
     action = issue(installation, tmp_path / "absent", tmp_path / "managers", run_cmd, arguments=["--help"])
     assert execute(action, tmp_path, run_cmd, PATH="/absent").returncode == 0

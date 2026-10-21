@@ -149,7 +149,7 @@ REFUSED_REASONS = frozenset({
     "byte_order_mark", "capture_selector", "checkout_commit", "checkout_detached", "checkout_git_file",
     "checkout_root", "child_argv", "child_layout", "collection_incomplete", "collection_not_found",
     "commit_format", "commit_id", "completion", "context_changed", "context_unavailable", "crlf",
-    "custody_gaps", "destination_exists", "documentation", "duplicate_blocks", "duplicate_input_key",
+    "custody_gaps", "dependency_missing", "destination_exists", "documentation", "duplicate_blocks", "duplicate_input_key",
     "duplicate_key", "execution_not_granted", "expected_worktree", "export_failed", "export_selection",
     "export_source", "failed", "fence_trailing_space", "field_type", "follow_up_required",
     "follow_up_unexpected", "git_failed", "git_ref_transaction", "grant_containment", "grant_schema",
@@ -415,7 +415,7 @@ OBSERVATION_SCHEMA = "stewart.runtime-observation/1"
 SOURCE_MODULES = frozenset({
     "__init__.py", "__main__.py", "_bootstrap.py", "_git.py", "_invocation.py", "_json.py",
     "_removal.py", "_repository.py", "_util.py", "api.py", "assignment.py", "audits.py", "auditor_scope.py", "captured.py",
-    "cli.py", "close.py", "holdings.py", "request_keys.py",
+    "cli.py", "click_commands.py", "close.py", "holdings.py", "request_keys.py",
     "collect.py", "coverage.py",
     "coordination.py", "experiment.py", "handoff.py", "implementation.py", "launch_profile.py", "ledger.py",
     "prepare.py", "report_declaration.py", "runtime.py", "session.py", "status.py", "triage.py",

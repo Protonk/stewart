@@ -32,7 +32,7 @@ def test_wheel_members_version_and_guidance_are_complete():
         require_wheel_members(names)
         selected = {name.removeprefix("stewart/") for name in names if name.startswith("stewart/")}
         assert selected == set(SOURCE_FILES)
-        assert len(SOURCE_MODULES) == 36 and len(SOURCE_RESOURCES) == 9
+        assert len(SOURCE_MODULES) == 37 and len(SOURCE_RESOURCES) == 9
         scripts = [name for name in names if ".data/scripts/" in name]
         assert {name.rsplit("/", 1)[-1] for name in scripts} == {"stewart", "_stewart-python"}
         for name in selected:

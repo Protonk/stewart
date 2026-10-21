@@ -175,6 +175,41 @@ a profile's probe through the real harness and is skipped otherwise because it
 spends a request. Socket checks require a host that permits a local Unix
 socket, and unreadable-file controls require an unprivileged user.
 
+## Command-line structure
+
+`stewart.cli` is the command line. Its root parser (`build_parser`) is the only
+command registry. It lists every command, in one order, and owns the global
+options, which are accepted only before the command. `main()` resolves the
+repository, reference and request-key context, renders every result and
+chooses every exit code.
+
+Most commands are argparse subparsers. A delegated command is still listed by
+the root parser, but its own arguments, options and help belong to a Click
+command in `stewart.click_commands`; `COMMANDS` there names the delegated
+commands. That module is the only one that imports Click. A delegated command's
+callback calls the existing operation and returns its result and exit code; refusal
+policy, Git work and rendering stay out of it. For any command: the root parser
+recognizes it, its subparser or Click command parses its arguments, the
+operation module does the work, and `cli.main` decides what is printed and the
+exit status.
+
+Click is entered through `Command.make_context` and `Command.invoke` only.
+`Command.main` would answer a `_STEWART_COMPLETE` completion request found in
+the environment, turn an interrupt into `Abort` and exit 1 on a broken pipe,
+even outside standalone mode. Click usage errors become the `usage` refusal,
+and `--help`/`-h` exit as argparse's do. Click is imported only when a
+delegated command runs: without it those commands refuse with
+`dependency_missing`, and the other commands, the API and the auditor helpers
+still work. The launcher, the auditor helpers and experiment children never
+import it.
+
+Delegating a command must keep its grammar, because other implementations
+replay recorded argv (`status` actions, runtime handoffs, request retries).
+What changes is Click's own presentation: help layout, usage-error wording,
+and no abbreviated options. Test a delegated command through the installed
+entry point in a subprocess. Click's `CliRunner` enters through `Command.main`,
+so it does not exercise the production path.
+
 ## Running from source
 
 The source bootstrap runs Stewart from a source checkout without installing
@@ -187,7 +222,10 @@ it:
 Do not use `PYTHONPATH` to select a source installation; isolated mode ignores
 it. The installed interpreter and its environment hooks remain trusted:
 isolated mode ignores caller Python variables and the user site, but
-environment `.pth` files and `sitecustomize` can still execute. The manual's
+environment `.pth` files and `sitecustomize` can still execute. The
+interpreter's environment must supply Click (`requirements-runtime.lock`) for
+the commands Click parses; without it they refuse with `dependency_missing` and
+the others still run. The manual's
 [manager quick start](src/stewart/resources/README.md#manager-quick-start)
 describes the private deployment the source launcher makes under
 `~/.local/state/stewart/managers`.

@@ -136,7 +136,10 @@ def test_documented_examples_exercise_the_real_parser():
                 for name, text in documents.items()}
     assert len(examples["manual"]) >= 8, "the manual must exercise the lifecycle through isolated installed startup"
     assert len(examples["project README"]) >= 8, "the README quick start must carry an audit from init to close"
+    from stewart.click_commands import parse
+
     parser = build_parser()
+    delegated = 0
     for line in examples["manual"] + examples["project README"]:
         tokens = shlex.split(line)
         assert tokens[0] == '$STEWART_PYTHON', line
@@ -144,6 +147,10 @@ def test_documented_examples_exercise_the_real_parser():
         namespace = parser.parse_args(tokens[4:])
         # Repository commands (discover, select, request, resource acknowledge/show, close --resource) need no workspace.
         assert namespace.command and namespace.repo and (namespace.workspace or _repository_only(namespace)), line
+        if getattr(namespace, "leaf_tokens", None) is not None:
+            parse(namespace.command, namespace.leaf_tokens)  # a delegated command's own grammar is Click's
+            delegated += 1
+    assert delegated, "the manual's request --key example must exercise a delegated command's own parser"
 
 
 def test_documented_isolated_commands_set_no_ignored_import_path():

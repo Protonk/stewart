@@ -138,3 +138,12 @@ The custody rules are:
   root. Project `tools` and `stewart` remain legitimate names. Check the reserved
   ledger namespace at release, prelaunch and startup; never catch project
   exceptions as bootstrap refusals.
+- **Click parses delegated leaves; Stewart decides outcomes.** `cli.build_parser`
+  is the only command registry and owns the global options and context.
+  A delegated command's own grammar lives in `click_commands.py`, the only
+  module that imports Click, entered through `make_context`/`invoke` and never
+  `Command.main`. Callbacks call operations and return their results; refusal
+  policy, Git work and rendering never move into Click. Keep the launcher,
+  auditor helpers and experiment children free of Click, and keep every
+  replayed argv parsing. [DEVELOPMENT.md](DEVELOPMENT.md#command-line-structure)
+  describes the seam.

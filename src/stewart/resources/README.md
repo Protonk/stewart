@@ -219,6 +219,12 @@ planted bytecode. `-I` ignores caller paths, `PYTHON*` variables and user site
 packages. The interpreter, retained bootstrap and environment site-packages
 hooks remain trusted. Inventory those hooks in the provisioned environment;
 this is not protection against a compromised manager installation.
+Click, which parses the `docs` and `request` commands, is imported from that
+same environment and is trusted the same way: neither the runtime digest nor the
+implementation identity covers its bytes or version, and Stewart does not check
+which version it loads. Install it from the source project's hash-locked
+`requirements-runtime.lock`. Without it those two commands refuse with
+`dependency_missing` (exit 2), and every other command still runs.
 An incomplete command that removes `-I` or `-B` is refused before the bootstrap's
 imports, but interpreter startup hooks can already have run without `-I`.
 
@@ -1882,8 +1888,8 @@ the tool build that wrote it: its distribution version, complete member
 inventory and digest, and separate resource digests. Commit and dirty state are
 optional source-checkout context; installed deployments do not borrow those
 coordinates from their storage directory. Installed entrypoint scripts, the
-interpreter, site-packages `.pth` files and `sitecustomize` are startup trust
-roots outside this identity. It does not attest to in-memory code or host state. An evidence package manifest
+interpreter, site-packages `.pth` files, `sitecustomize` and Click, the
+command line's one runtime dependency, are trust roots outside this identity. It does not attest to in-memory code or host state. An evidence package manifest
 (`stewart.evidence-package/5`) carries the same field.
 
 `report_status` distinguishes `present`, `empty`, `missing`, `symlink`,

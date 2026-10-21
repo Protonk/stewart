@@ -42,6 +42,29 @@ RESULT_SCHEMA = "stewart.result/3"
 _REPOSITORY_COMMANDS = frozenset({"discover", "request", "select"})
 
 
+class _CommandParser(RefusalParser):
+    """The root parser and its subparsers; a delegated subparser keeps its tokens for Click.
+
+    argparse hands every token after a command name to that command's
+    ``parse_known_args``. A delegated command returns them unparsed as
+    ``leaf_tokens``; its Click leaf in ``stewart.click_commands`` parses them.
+    """
+
+    delegated = False
+
+    def parse_known_args(self, args=None, namespace=None):
+        if not self.delegated:
+            return super().parse_known_args(args, namespace)
+        namespace = argparse.Namespace() if namespace is None else namespace
+        namespace.leaf_tokens = list(args)
+        return namespace, []
+
+
+def _delegate(commands, name: str, *, summary: str) -> None:
+    """List a command whose own arguments, options and help belong to its Click leaf."""
+    commands.add_parser(name, help=summary, add_help=False).delegated = True
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the parser; building it performs no repository or session work."""
     # Keep guide paths on their own lines so help never splits a filename at a
@@ -54,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
         "  Read only for assigned construction, execution or research.\n"
         "  Recipes and protocols grant no permissions."
     )
-    parser = RefusalParser(
+    parser = _CommandParser(
         prog="stewart",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
@@ -95,10 +118,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="with --request-key: explicitly continue a partial request; only close supports it")
     commands = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
-    from stewart.docs import DOCUMENTS
-    documentation = commands.add_parser(
-        "docs", help="[no repository or session writes] print a bundled document or role template; no repository needed")
-    documentation.add_argument("document", choices=sorted(DOCUMENTS))
+    # This parser lists every command. docs and request are delegated: their own
+    # grammar and help live in stewart.click_commands.
+    _delegate(commands, "docs", summary="[no repository or session writes] print a bundled document or role "
+                                        "template; no repository needed")
 
     commands.add_parser(
         "discover", help="[no repository or session writes] every recorded audit, resource and request in the repository",
@@ -127,12 +150,7 @@ def build_parser() -> argparse.ArgumentParser:
     registration.add_argument("--audit-id")
     registration.add_argument("--actor", required=True, help="who registers the workspace")
 
-    inspect_request = commands.add_parser(
-        "request", help="[no repository or session writes] inspect one request key's recorded state",
-        description="Show a request key's binding, attempts with their planned outputs, and outcome: completed, "
-                    "refused, in_progress, reserved, partial or unverifiable, with each output available, retired "
-                    "or missing now. Inspection never executes or resumes anything.")
-    inspect_request.add_argument("--key", required=True)
+    _delegate(commands, "request", summary="[no repository or session writes] inspect one request key's recorded state")
 
     holding = commands.add_parser(
         "resource", help="[writes repository-level resource records] create, enroll, associate, acknowledge or show",
@@ -614,8 +632,12 @@ def _revalidate(ws: Workspace | None, args: argparse.Namespace, reference: dict 
 
 
 def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | None = None,
-             reference: dict | None = None) -> tuple[dict, int]:
-    """Run one command; return its structured result and the exit code it earns."""
+             reference: dict | None = None, leaf=None) -> tuple[dict, int]:
+    """Run one command; return its structured result and the exit code it earns.
+
+    ``leaf`` is a delegated command's parsed Click context; it runs after the
+    same context checks as every other command.
+    """
     from stewart._repository import maintainer, observer
     repo = repo or ws.repo
     key, lifetime = args.request_key, args.lifetime
@@ -643,9 +665,8 @@ def dispatch(ws: Workspace | None, args: argparse.Namespace, *, repo: Path | Non
         from stewart.audits import select
         return select(repo, audit_id=args.audit_id, workspace=args.workspace, lifetime=lifetime), EXIT_OK
     if args.command == "request":
-        from stewart.request_keys import show
-        result = show(repo, args.key)
-        return result, result["exit_code"]
+        from stewart.click_commands import invoke
+        return invoke(leaf, repo=repo)
     if args.command == "register":
         from stewart.audits import register
         return register(ws, _audit(args), actor=args.actor, **keyed), EXIT_OK
@@ -1415,6 +1436,29 @@ def _render_status(view: dict) -> list[str]:
     return lines
 
 
+def _leaf(args: argparse.Namespace):
+    """A delegated command's parsed Click context, or None for a command argparse parsed.
+
+    Click is imported here, only when a delegated command runs, so every other
+    command, the API and the auditor helpers keep working without it. A missing
+    Click is a structured refusal, never a traceback.
+    """
+    tokens = getattr(args, "leaf_tokens", None)
+    if tokens is None:
+        return None
+    try:
+        from stewart.click_commands import parse
+    except ImportError as exc:
+        if (exc.name or "").partition(".")[0] != "click":
+            raise
+        raise StewartError(
+            f"{args.command} needs Click, a declared runtime dependency, and {sys.executable} cannot import it: {exc}",
+            reason="dependency_missing",
+            next_steps=["install requirements-runtime.lock into this interpreter's environment from the hash-locked "
+                        "wheelhouse; commands outside Click run without it"]) from exc
+    return parse(args.command, tokens)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     raw = list(sys.argv[1:] if argv is None else argv)
@@ -1422,15 +1466,17 @@ def main(argv: list[str] | None = None) -> int:
                       "exit_code": EXIT_REFUSED, "result": None, "error": None}
     try:
         args = parser.parse_args(raw)
+        # A delegated command's own tokens parse before the command is named, as argparse's did.
+        leaf = _leaf(args)
         envelope["command"] = args.command
         if args.command == "docs":
-            from stewart.docs import document
-            result, code = document(args.document), EXIT_OK
+            from stewart.click_commands import invoke
+            result, code = invoke(leaf)
         else:
             repo, rel, reference = _coordinates(args, parser)
             ws = workspace(repo, rel) if rel is not None else None
             try:
-                result, code = dispatch(ws, args, repo=repo, reference=reference)
+                result, code = dispatch(ws, args, repo=repo, reference=reference, leaf=leaf)
             except PermissionError as exc:
                 raise _manager_grant(repo, exc, getattr(args, "checkout_home", None)) from exc
             if isinstance(result, dict) and result.get("schema") == "stewart.request/1":

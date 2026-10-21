@@ -210,6 +210,9 @@ Its present limits:
 - **Trusted interpreter.** The installed interpreter and its environment hooks
   remain trusted: isolated mode ignores caller Python variables and the user
   site, but environment `.pth` files and `sitecustomize` can still execute.
+  Click is loaded from that environment too. Its exact pin records intent;
+  Stewart does not verify the version it loads, and its bytes are outside the
+  implementation identity.
 
 ## Documentation, development and license
 

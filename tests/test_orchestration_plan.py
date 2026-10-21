@@ -23,9 +23,13 @@ def _plan() -> str:
 
 
 def _parser_surface() -> tuple[set[str], set[str], set[str]]:
-    """Every subcommand, resource action and option string the installed parser accepts."""
+    """Every subcommand, resource action and option string the installed CLI accepts.
+
+    A delegated command's options belong to its Click leaf, not to the root parser.
+    """
     import argparse
     from stewart.cli import build_parser
+    from stewart.click_commands import COMMANDS
     commands, actions, options = set(), set(), set()
 
     def walk(parser: argparse.ArgumentParser, top: bool) -> None:
@@ -34,7 +38,11 @@ def _parser_surface() -> tuple[set[str], set[str], set[str]]:
             if isinstance(action, argparse._SubParsersAction):
                 for name, child in action.choices.items():
                     (commands if top else actions).add(name)
-                    walk(child, False)
+                    if child.delegated:
+                        options.update(item for param in COMMANDS[name].params for item in param.opts
+                                       if item.startswith("--"))
+                    else:
+                        walk(child, False)
 
     walk(build_parser(), True)
     return commands, actions, options
