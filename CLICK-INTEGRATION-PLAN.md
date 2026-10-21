@@ -11,6 +11,10 @@ tests that pin it from outside the Python process.
 Work happens on the `click-integration` branch. When the contracts below reach
 DEVELOPMENT.md, AGENTS.md and the tests, remove this plan.
 
+**Status:** the first slice (`docs`, `request`) is implemented; §11 records the
+decisions taken, the changes, the evidence and the actual change ledger.
+§1–§10 are the investigation as written before implementation.
+
 The investigation behind it ran on 2026-10-21 against `main` at `2c4c706`:
 
 - **Environment:** Python 3.14.8 and Git 2.54.0 (Apple). Click 8.5.0 was
@@ -375,7 +379,7 @@ decision.
 - Ctrl-C and EPIPE behaviour must not change (guaranteed by never calling
   `Command.main()`).
 
-## 8. Open decisions
+## 8. Decisions (taken; see §11)
 
 1. **D1: runtime install of Click.**
    - **(a) Recommended:** a separate hash-locked runtime requirement (e.g.
@@ -411,3 +415,200 @@ Migrate `message` as the first Click-backed **mutation**. Design how Click-parse
 `--audit-id` takes part in `--ref` agreement (`_coordinates` reads `args.audit_id`
 today) in one place, then apply the same pattern to `select`, `register` and
 `launch`. Leave `status`, `close` and `run` outside Click.
+
+## 11. First slice as implemented
+
+### Decisions taken
+
+- **D1 (runtime install):** `requirements-runtime.lock` holds Click's
+  hash-locked line alone. Runtime venvs install it from the wheelhouse before
+  the wheel, which keeps `--no-deps`. `requirements.lock` repeats the line, so
+  the wheelhouse and `check.py`'s test environment carry it.
+- **D2 (pin):** `click==8.5.0`, exact, in `pyproject.toml` and both locks. A
+  test requires them to agree.
+- **D3 (missing Click):** a new refusal reason `dependency_missing` in
+  `REFUSED_REASONS` (exit 2).
+- **D4 (module):** `src/stewart/click_commands.py`. It holds `docs`, `request`,
+  `COMMANDS`, and `parse`/`invoke`, the only functions through which Click is
+  entered.
+- **D5 (B1–B3):** not fixed. They are carried forward unchanged (§3), and the
+  comparison below shows each behaves exactly as at baseline.
+
+### Commits
+
+1. `b28cefb` Pin the docs and request command-line contract before delegating
+   them. Subprocess contract tests, written against argparse and passing there
+   (3 of 3 targeted).
+2. `f3dfa38` Declare Click as the one pinned runtime dependency. Pins, locks,
+   install steps, the distribution tests and the provisioned-version check;
+   nothing imports Click yet (35 of 35 targeted).
+3. `3e39c12` Delegate docs and request to Click leaves behind the argparse
+   root. The seam and the two Click leaves, with their tests and the
+   documentation of the boundary and of the trust assumption.
+4. This plan update; then its removal, with the open items moved to a
+   follow-ups note.
+
+### What changed
+
+- **`cli.py`:**
+  - `_CommandParser` (a `RefusalParser`) returns a delegated subparser's tokens
+    unparsed as `leaf_tokens`.
+  - `_delegate()` lists `docs` and `request` at their old positions with their
+    old one-line summaries, so the root help is unchanged.
+  - `_leaf()` imports `stewart.click_commands` lazily and parses the leaf
+    before the envelope names the command. A command line that does not parse
+    keeps `"command": null`, as with argparse.
+  - An `ImportError` of `click` itself becomes `dependency_missing`; any other
+    import error stays an error.
+  - `docs` is invoked where `main()` used to call `docs.document`, and
+    `request` inside `dispatch()` after the unchanged prelude (request-key
+    policy, observer role, `_revalidate`).
+- **`click_commands.py`:**
+  - The commands use `help_option_names=["-h", "--help"]`.
+  - `docs` has a `DOCUMENT` metavar with a help line naming the choices. Without
+    it Click wraps the usage line inside a document name.
+  - The callbacks import and call the existing operations (`docs.document`,
+    `request_keys.show`) and return `(result, exit_code)`.
+  - `parse()` turns `click.UsageError` into the `usage` refusal (same
+    `next_steps`) and help's `Exit` into `SystemExit(0)`.
+  - `Command.main` is never called.
+- **`_bootstrap.py`:** `click_commands.py` joins `SOURCE_MODULES` (now 37), and
+  `dependency_missing` joins `REFUSED_REASONS`.
+- **Documentation:**
+  - README: installation, and the trusted-interpreter limit.
+  - DEVELOPMENT.md: provisioning; a new "Command-line structure" section, the
+    durable boundary rule; running from source.
+  - AGENTS.md: the runtime dependency; a "Click parses delegated leaves; Stewart
+    decides outcomes" rule.
+  - The manual: the trust note beside the interpreter, and Click among the trust
+    roots outside the implementation identity.
+
+### Tests
+
+| Test | What it pins |
+| --- | --- |
+| `test_stewart_cli.py::test_root_listing_names_docs_and_request_in_registry_order` | root registry order and both summaries (before and after) |
+| `test_stewart_cli.py::test_docs_prints_bundled_text_alone_and_refuses_bad_usage_structurally` | stdout purity, `--json`, `--help`/`-h` without Git, usage refusals with `command: null` |
+| `test_stewart_cli.py::test_request_keeps_the_replayed_grammar_and_the_global_context` | the replayed `--repo R request --key K` argv, `--key=K`, `--ref`, help without a repository, the `usage`, `request_missing` and read-only key refusals |
+| `test_stewart_cli.py::test_documented_examples_exercise_the_real_parser` | now also parses delegated leaves (the manual's `request --key` example) |
+| `test_distribution.py::test_runtime_pin_agrees_everywhere_and_the_provisioned_environment_supplies_it` | one exact pin in metadata and both locks, with planted drift as firing cases; the test environment loads 8.5.0 from that distribution's files |
+| `test_distribution.py::test_console_preserves_quoted_installation_paths` | a README-style runtime venv (runtime lock, then wheel `--no-deps`) supplies Click 8.5.0 and runs `docs` |
+| `test_distribution.py` (members, sdist) | exactly `Requires-Dist: click==8.5.0`; 37 modules; the sdist carries the runtime lock |
+| `test_invocation.py::test_click_leaves_refuse_without_click_while_every_other_command_runs` | under a venv without Click: `docs`, `docs --help` and `request` refuse `dependency_missing` (JSON and prose, no traceback); root help, `status` and `init` still run; control: that venv cannot import Click |
+| `test_click_boundary.py` (6 tests) | delegated subparsers equal `COMMANDS`; only the leaf module loads Click; `_STEWART_COMPLETE` ignored (control: `Command.main` emits a completion script); `KeyboardInterrupt` propagates (control: `Command.main` raises `Abort`); leaf usage and help behave as refusals and `SystemExit(0)`; only Click's own import failure is `dependency_missing` |
+| `test_foundations.py::test_package_dependency_boundary` | Click is admitted only in `click_commands.py` (controls: without the allowance it is flagged; planted in `cli.py`, or another package there, flagged) |
+| `test_orchestration_plan.py` | the cited-flag walk includes delegated options (`--key`) |
+
+Results:
+
+- **Targeted run** over the boundary, CLI, invocation, foundations,
+  distribution, orchestration-plan, exit-code, request-binding and
+  implementation-handoff files, plus the import-surface test: 171 selected,
+  171 passed.
+- **First full run** (wheel `d868dc7f…`, the code of `3e39c12`): 1080
+  selected, 1078 passed, 1 skipped (the opt-in real-harness probe, skipped
+  by design), 1 failed. The failure was
+  `test_stewart_coordination.py::test_package_identity_reads_distribution_bytes_and_git_state`,
+  which hard-codes the identity stamp's module count (36) in two places. It
+  was missed when `SOURCE_MODULES` grew and is fixed in `3e39c12` (that
+  file: 18 of 18).
+- **Full validation suite on `3e39c12`** (`scripts/check.py` with no selection, the same wheel
+  `d868dc7f…` used for the black-box comparison): 1080 selected, 1079 passed,
+  1 skipped (the opt-in real-harness probe), 0 failed, `check.py` exit 0,
+  753 s. The logs are in `.tmp/click-boundary/evidence/after/full-*.stdout.log`.
+
+### Black-box comparison with the baseline
+
+`compare_cases.py` runs the 92 baseline cases plus 23 new `docs`/`request`
+cases (115 in all) against the pre-Click wheel and against the new wheel
+installed per README. Paths, digests, UUIDs, record stamps and times are
+normalized out. The scripts and results are in `.tmp/click-boundary/evidence/after/`.
+**86 of 115 are identical.** The 29 that differ:
+
+| Cases | Difference | Classification |
+| --- | --- | --- |
+| `docs.help`, `docs.h`, `docs.help.narrow`, `docs.no-path`, `request.help`, `request.h`, `request.help.no-repo-no-git` | Click help layout ("Usage: stewart docs [OPTIONS] DOCUMENT", a Positional arguments section; request's description rewrapped and `--key` now has help) | presentation |
+| `docs.missing-arg`, `docs.bad-choice(.json)`, `docs.extra-arg`, `docs.abbrev-dash`, `request.missing-key(.json)`, `request.key-without-value`, `request.extra`, `usage.json-after-command`, `usage.json-at-end`, `docs.json-after` | usage message wording (Click's); reason `usage`, exit 2, stream and `command: null` unchanged. `Missing argument 'DOCUMENT'` lists choices on tab-indented lines | presentation |
+| `request.abbrev` (`request --ke nope`) | was accepted as `--key` (then `request_missing`); now a `usage` refusal ("Did you mean …"); exit 2 both | grammar change, disclosed (P1) |
+| `request.dash-value(.json)` (`request --key -x`) | was `usage` ("expected one argument", `command: null`); now reaches the operation and refuses `request_key_format` (`command: "request"`); exit 2 both | grammar change, disclosed (P2) |
+| `docs.manual`, `docs.double-dash` | the manual's new trust paragraphs | documentation |
+| `prepare.snapshot.json`, `status.one.json`, `collect.again.json`, `triage-draft.json` | runtime inventories list `click_commands.py` and new sizes. One captured handoff is 4 bytes shorter because it embeds the interpreter path four times, and the scratch venvs' directory names differ by one character | implementation identity, expected |
+| `signal.SIGINT.status` | traceback line numbers; still dies by SIGINT (-2) | none |
+
+These cases are identical after normalization, confirming invariance:
+- root `--help` for all four entry forms, colour and width;
+- every argparse command's success and refusal;
+- `request` success via `--repo`, `--ref`, `--key=K` and from a subdirectory,
+  and its read-only and missing-`--repo` refusals;
+- `_STEWART_COMPLETE` ignored;
+- the B1 broken-pipe cases (still `Refused (failed)` with exit 0, or exit 120)
+  and the B2/B3 cases;
+- SIGTERM;
+- the full lifecycle through `close --abandon`.
+
+**Cross-implementation handoffs** (`crossover.py`, both installs sharing one
+repository and manager home):
+
+- A keyed retry by the other implementation refuses `implementation_mismatch`
+  with a verified handoff whose arguments are exactly `--repo R request --key K`.
+- Executing it works in both directions: the Click install hands the pre-Click
+  deployment its argparse `request`, and the pre-Click install hands the Click
+  deployment its Click leaf. Both print `Request K: completed` with exit 0.
+- Each install also reads the other's request records directly.
+- `status` binds the other writer's generated actions to that writer's
+  deployment.
+
+### Actual change ledger
+
+- **Presentation (Click's):**
+  - help layout and wording for `docs` and `request`;
+  - usage-error wording;
+  - "Did you mean" suggestions;
+  - help width bounded and uncoloured.
+- **Grammar changes with a compatibility cost, disclosed:**
+  - abbreviated options are not accepted by `docs` and `request`;
+  - an option value beginning with `-` is taken as the value
+    (`request --key -x` → `request_key_format`).
+  - The argparse commands are unchanged on both counts, so the CLI now has two
+    rules until P1 and P2 are decided.
+- **New contract:**
+  - the `dependency_missing` reason (exit 2), for delegated commands
+    (including their `--help`) under an interpreter without Click;
+  - `Requires-Dist: click==8.5.0`;
+  - `requirements-runtime.lock`;
+  - the install step it needs.
+- **Intentional bug fixes:** none (D5).
+- **Unintended regressions:** none found. One presentation regression was
+  caught before commit: Click split the `docs` usage line inside a document
+  name. A named metavar fixes it.
+- **API proposals:** P1–P6 as in §7, unimplemented.
+
+### Deviations from the plan
+
+- The contract tests went into the existing `test_stewart_cli.py`, the seam
+  tests into a new `test_click_boundary.py`, and the missing-Click test into
+  `test_invocation.py`, beside the bare-venv test it mirrors. The plan had
+  left placement open.
+- `request`'s help was reworded into Click's paragraph form, and `--key`
+  gained a help line.
+- Provisioning added Click to the project's `.scratch/wheelhouse` and to the
+  `.venv` build environment, as the README's steps now say.
+- `LINUX-CONTAINERS-PLAN.md` (lines 55 and 158) still describes a
+  standard-library-only runtime and a single lock. It belongs to another plan
+  and was left untouched.
+
+### Unresolved concerns
+
+- **The trust assumption.** Click is loaded from the interpreter's environment.
+  The exact pin records intent, and tests verify only the environments they
+  provision. Stewart does not check the loaded version at runtime, and the
+  implementation identity and runtime handoff verification do not cover
+  Click's bytes. This is documented (README limits, manual, DEVELOPMENT.md);
+  P6 would record the version, and nothing here attests it.
+- **Delegated help needs Click.** Without it, `docs --help` and
+  `request --help` refuse with `dependency_missing`, where argparse help
+  needed nothing.
+- **Experiment children can import Click.** Children released with the
+  `tool-interpreter` policy now see Click in the manager's venv.
+- **Two option grammars coexist** (abbreviations and hyphen values) until P1
+  and P2 are decided.
