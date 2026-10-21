@@ -19,7 +19,9 @@ bytecode must stay unwritten) in development commands. Isolated mode ignores
 Stewart installation through it. Provision `requirements.lock`
 into a wheelhouse, then run `scripts/check.py` with the selected interpreter.
 It builds and tests an installed wheel with explicit pytest configuration and
-no parent plugins. Preserve command outputs and report actual selector counts.
+no parent plugins; [DEVELOPMENT.md](DEVELOPMENT.md) gives its commands, test
+selection and retained evidence. Preserve command outputs and report actual
+selector counts.
 A clean result needs a firing control, a case differing in the measured
 property and an invariance case. An explanation remains a hypothesis until a
 comparison distinguishes it from its rivals. Qualify real harness enforcement

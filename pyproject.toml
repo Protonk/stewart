@@ -26,7 +26,7 @@ packages = ["src/stewart"]
 "src/stewart/resources/_stewart-python" = "_stewart-python"
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/tests", "/scripts", "/pyproject.toml", "/README.md", "/AGENTS.md", "/LICENSE", "/requirements.lock", "/.gitignore"]
+include = ["/src", "/tests", "/scripts", "/pyproject.toml", "/README.md", "/AGENTS.md", "/DEVELOPMENT.md", "/LICENSE", "/requirements.lock", "/.gitignore"]
 # Prune excluded directories instead of walking them; retained runs under .scratch are large.
 skip-excluded-dirs = true
 

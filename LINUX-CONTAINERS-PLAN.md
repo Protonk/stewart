@@ -122,7 +122,7 @@ Suggested deliverables:
 - `.github/workflows/linux.yml`: native Linux validation using the same recipe.
 - A development-image target or `containers/Containerfile.dev`, plus a small
   creation/entry/backup workflow for the persistent environment.
-- Durable instructions in README and a dedicated development document if useful.
+- Durable instructions in [DEVELOPMENT.md](DEVELOPMENT.md), with a pointer from the README.
 
 Keep container tooling out of the runtime wheel. Decide explicitly whether the
 source distribution supports the container workflow; if it does, include the

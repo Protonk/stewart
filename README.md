@@ -1,29 +1,90 @@
 # Stewart
 
-Stewart keeps local custody records for bounded audits of Git projects. The
-installation, maintainer checkout and auditor checkout are separate locations.
-Its runtime uses Python 3.14 or newer, Git and a POSIX shell. Harness profiles
-are optional and require their explicitly named harness executable.
+Stewart is a command-line tool and Python library for running bounded audits
+of Git projects under local custody. It prepares an auditor's checkout, records
+each step of the audit, captures what the auditor produces and retires the
+audit when it is done.
 
-Install a locally built wheel into a dedicated virtual environment, then use
-`<venv>/bin/stewart --help` or `<venv>/bin/python -I -m stewart --help`.
-Custody commands require explicit `--repo` and `--workspace` arguments.
-`<venv>/bin/stewart docs manual` prints the bundled manual outside any repository.
+## Mission
 
-The [manual](src/stewart/resources/README.md),
-[question guide](src/stewart/resources/QUESTION-TYPE.md) and
-[conditional protocols](src/stewart/resources/AUDIT-PROTOCOLS.md) ship in the
-wheel. `stewart docs auditor`, `maintainer`, `agents` and `claude` print generic
-role templates for a new workspace such as `audits/parser-review`.
+Stewart provides custody for bounded inquiries into material held in Git. It organizes cooperation between distinct roles: a manager who commissions, observes, and disposes of inquiries, and an auditor who investigates and reports.
 
-Build and test dependencies are hash-locked in `requirements.lock`. Provision
-their wheelhouse before running `scripts/check.py`; the runner performs no
-network downloads and tests an installed wheel in a private environment.
-Builds use Hatchling's [wheel builder](https://hatch.pypa.io/1.13/plugins/builder/wheel/)
-and [version-file selection](https://hatch.pypa.io/1.13/version/), without Git metadata.
+Stewart maintains the working boundaries of each inquiry, including its subject, permissions, records, and transitions. Its arrangements give the auditor a defined assignment and the manager a means of following the work without continually renegotiating their relationship.
 
-For a source checkout, provision the build environment and wheelhouse while
-network access is available. Use absolute paths for these variables:
+Audits can yield findings, unresolved questions, incomplete work, or accounts of missing evidence. Stewart makes their circumstances and products available for inspection, while the conduct and interpretation of an inquiry remain matters of judgment.
+
+## How an audit works
+
+An audit has two roles. The manager chooses the question, prepares the
+assignment, starts the auditor, reviews what comes back and closes the audit.
+The auditor, typically an agent working in its own checkout, investigates and
+writes a report. The current implementation also calls the manager the
+*maintainer*: `MAINTAINER.md` is the manager's role guidance, and the
+*maintainer checkout* is the repository worktree the manager runs Stewart from.
+
+Each audit belongs to a *workspace*, a directory in the audited repository such
+as `audits/parser-review`. It holds the role guidance (`AUDITOR.md` and
+`MAINTAINER.md`), the assignment (`PROMPT.md`) and the audit's `reports/` and
+`scratch/` areas. An audit moves through five stages:
+
+1. **Assign.** The manager selects one bounded question and the decision it
+   informs. `init` pins the inputs and drafts `PROMPT.md`; the manager writes
+   its five sections (question, decision, scope and exclusions, evidence and
+   stop condition), then commits the prompt by itself. That commit is the
+   assignment.
+2. **Prepare.** `prepare` opens a session for the assignment. It creates a
+   locked, detached checkout of the prompt commit for the auditor, supplies a
+   Stewart runtime beside it for the auditor's helper commands, and writes a
+   launch handoff naming the checkout, the role guidance, the prompt and the
+   report path. In the default snapshot mode development continues and the
+   answer applies to the audited revision; a paused audit instead records a
+   hold on the project's writers, which `resume` releases after review.
+3. **Investigate.** The manager starts a fresh auditor through an agent
+   harness with the handoff and records the handoff with `launch`; a workspace
+   launch profile can supply the exact harness command. The auditor works in
+   its checkout, writes its report and declared scratch outputs there, and ends
+   the report with a declaration of its completion and report kind using the
+   helper commands the handoff supplies. Rulings and other messages relayed
+   between the two are recorded with `message`.
+4. **Collect and review.** When the auditor stops, `collect` captures the
+   report, an inventory of the checkout, Git patches and an archive of changed
+   files as a new collection. `status` shows the session's stage, its records
+   and the commands available next. The manager reviews a collection with
+   `triage-draft`, then records with `triage` which claims it accepts, rejects
+   or leaves unresolved, a disposition for each custody gap and a decision.
+   `retain` copies the reviewed report and support files into the maintainer
+   checkout, and `export` packages captured evidence for a later assignment.
+5. **Close.** `close` writes a closing record, then removes the session, the
+   auditor's checkout and the Git refs and registry entry the session kept.
+   `close --abandon` retires an audit that will not be completed.
+
+Assignments, checkouts, records and reports each have their own place. The
+assignment is a commit in the audited repository, and the auditor's checkout is
+made from that commit. That checkout is a separate Git worktree, kept with its
+supplied runtime in a per-session directory under the checkout home
+(`~/.local/state/stewart/checkouts` unless `prepare --checkout-home` names
+another). Stewart's records live in the repository's Git administration under
+`<git-common-dir>/stewart/`, outside every working tree, so no ignore rule is
+needed; while an audit is live, each step adds new records rather than
+rewriting earlier ones. The report is the auditor's product: it is written in
+the checkout, enters the records when a collection captures it, and reaches the
+project when the manager retains it.
+
+The [manual](src/stewart/resources/README.md) covers every command, record and
+refusal; its [static audit lifecycle](src/stewart/resources/README.md#static-audit-lifecycle)
+follows these stages step by step.
+
+## Installation
+
+Stewart needs Python 3.14 or newer, Git and a POSIX shell. Its runtime uses
+only the Python standard library. Launch profiles are optional and require
+their explicitly named harness executable.
+
+Stewart is installed from a locally built wheel into a dedicated virtual
+environment. Its build and test dependencies are hash-locked in
+[`requirements.lock`](requirements.lock). From a source checkout, provision a
+build environment and wheelhouse while network access is available. Use
+absolute paths for these variables:
 
 ```sh
 STEWART_SOURCE=/absolute/stewart-project
@@ -48,8 +109,18 @@ STEWART_PYTHON="$STEWART_ENV/bin/python"
 "$STEWART_PYTHON" -I -m stewart docs manual
 ```
 
-In an ordinary Git project, create and customize role guidance before preparing
-an assignment. The project needs neither Stewart source nor its own venv:
+The installed `<venv>/bin/stewart` entry point starts the venv's interpreter in
+isolated mode; the equivalent module form is `<venv>/bin/python -I -m stewart`,
+and it must retain `-I`. Both work outside the source tree. `--help` lists the
+commands, and `stewart docs manual` prints the bundled manual outside any
+repository. To run Stewart from a source checkout without installing it, see
+[Running from source](DEVELOPMENT.md#running-from-source).
+
+## Quick start
+
+In an ordinary Git project, create and customize the role guidance before
+preparing an assignment. The project needs neither Stewart's source nor its own
+venv:
 
 ```sh
 cd /absolute/audited-project
@@ -59,131 +130,102 @@ mkdir -p audits/parser-review
 git add -- audits/parser-review/AUDITOR.md audits/parser-review/MAINTAINER.md
 git commit -m "Define audit roles"
 "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review init --audit-id parser-fields --input path/to/parser.py --replace-prompt
-# Complete PROMPT.md's question, evidence, scope and stop condition, then commit it alone.
+# Complete PROMPT.md's five sections and remove its UNASSIGNED line, then commit it alone.
 git add -- audits/parser-review/PROMPT.md
 git commit -m "Assign parser field audit"
 "$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review prepare --mode snapshot
 ```
 
-Follow the printed handoff and the manual's collection, triage and close steps.
+Custody commands take explicit `--repo` and `--workspace` arguments. `--repo`
+must be the exact maintainer worktree root; subdirectories and registered
+auditor worktrees are refused. The manager's harness needs write access to
+both custody locations, `<git-common-dir>/stewart` and the checkout home, which
+`status` names, and to the private manager deployments `status` creates under
+`~/.local/state/stewart/managers`. Keep `<git-common-dir>/stewart` and the
+manager deployments out of the auditor's grants.
+
+Give the auditor the handoff `prepare` printed, following the manual's
+[terminal launch](src/stewart/resources/README.md#manual-terminal-launch)
+recipe, which lists the access an auditor's harness needs, and carry the audit
+through to its close. Capitalized placeholders come from earlier output:
+`status` names each collection, and `triage` prints the name of its record.
+
+```sh
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review launch --audit-id parser-fields --style terminal --model MODEL --effort EFFORT --actor maintainer
+# After the auditor stops:
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review collect --audit-id parser-fields --auditor-stopped finished
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review status --audit-id parser-fields
+# Save the printed response as response.json and fill in every null before recording it.
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review triage-draft --audit-id parser-fields --collection COLLECTION
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review triage --audit-id parser-fields --collection COLLECTION --response response.json --actor maintainer
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review retain --audit-id parser-fields --triage TRIAGE --report
+"$STEWART_PYTHON" -I -m stewart --repo "$PWD" --workspace audits/parser-review close --audit-id parser-fields --actor maintainer
+```
+
 To continue later, or from another maintainer checkout, `stewart --repo "$PWD"
 discover` lists every audit, resource and request key the repository records,
 and `select --audit-id ID` prints a reference to keep and pass back with
-`--ref`; mutations accept `--request-key` so a retry returns the recorded
-outcome instead of repeating it. `resource create-worktree` and
-`create-directory` record the manager worktrees, branches and directories an
-audit uses so that `close` can retire them once no audit uses them.
-Orchestration on top of these interfaces is planned in
-[ORCHESTRATION-PLAN.md](ORCHESTRATION-PLAN.md) and not implemented yet.
-`--repo` must be the exact maintainer worktree root; subdirectories and
-registered auditor worktrees are refused. Sessions live under the repository's
-Git common directory at `stewart/sessions/`, outside every working tree, so no
-ignore rule is needed. Each auditor checkout and its supplied runtime live in
-a per-session directory under the checkout home
-(`~/.local/state/stewart/checkouts` unless `prepare --checkout-home` names
-another); private manager deployments live under
-`~/.local/state/stewart/managers`. The manager's harness needs write access to
-both custody locations, which `status` names. Keep private storage out of
-auditor grants. `close` retires a finished or abandoned audit, keeping one
-closing record. Historical schemas require their creating installation; new
-versions never rewrite old records for compatibility.
+`--ref`. Mutations accept `--request-key`, so a retry returns the recorded
+outcome instead of repeating the operation.
 
-Run the standalone suite against a fresh wheel with Python 3.14:
+## Current implementation
+
+The mission describes what Stewart is for; this section describes release
+0.1.0. It implements the audit lifecycle above through the `stewart` command
+and the `stewart.api` Python API, together with:
+
+- discovery, kept selection references and request keys, with which a caller
+  can resume an audit later and retry a mutation without repeating it;
+- recorded resources: `resource create-worktree`, `create-branch` and
+  `create-directory` record the manager worktrees, branches and directories an
+  audit uses, so that `close` can retire them once no audit uses them;
+- evidence packages, through which `export` carries selected captured bytes
+  into a new assignment;
+- an optional experiment lifecycle, in which an assignment grants construction
+  and execution, `release` freezes the reviewed artifacts and `run` executes
+  one released invocation;
+- launch profiles that render a Claude Code command through the
+  `claude-code-restricted/1` scope adapter.
+
+Its present limits:
+
+- **Platforms.** Development and acceptance target Apple Silicon macOS with
+  Python 3.14. Linux and other hosts are not yet qualified; POSIX APIs alone do
+  not establish support there.
+- **Harnesses.** Stewart launches no agent, sends no messages and stages no
+  files. The harness enforces the auditor's filesystem boundary. Another
+  harness needs a separately qualified adapter or an explicitly configured
+  equivalent boundary, and real harness enforcement is qualified separately
+  from the settings an adapter constructs.
+- **Orchestration.** No orchestrator exists yet. Discovery, selection, request
+  keys and recorded resources are the interfaces it would build on;
+  [ORCHESTRATION-PLAN.md](ORCHESTRATION-PLAN.md) describes the pending work.
+- **Submodules.** Stewart neither populates nor audits submodules; `prepare`
+  refuses a prompt commit holding them until they are acknowledged.
+- **Historical records.** Historical schemas require their creating
+  installation; new versions never rewrite old records for compatibility.
+- **Trusted interpreter.** The installed interpreter and its environment hooks
+  remain trusted: isolated mode ignores caller Python variables and the user
+  site, but environment `.pth` files and `sitecustomize` can still execute.
+
+## Documentation, development and license
+
+The [manual](src/stewart/resources/README.md),
+[question guide](src/stewart/resources/QUESTION-TYPE.md) and
+[conditional protocols](src/stewart/resources/AUDIT-PROTOCOLS.md) ship in the
+wheel; `stewart docs manual`, `questions` and `protocols` print them.
+`stewart docs auditor`, `maintainer`, `agents` and `claude` print generic role
+templates for a new workspace such as `audits/parser-review`.
+
+[DEVELOPMENT.md](DEVELOPMENT.md) covers provisioning, the test runner and the
+evidence it keeps, and [AGENTS.md](AGENTS.md) states the rules and custody
+contracts that changes must keep. With the build environment and wheelhouse
+from [Installation](#installation), run the full suite against a fresh wheel:
 
 ```sh
 "$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/check.py" --wheelhouse "$STEWART_WHEELS" --result /absolute/stewart-results.json
 ```
 
-For a short development check, add `--fast` to select only `smoke and not
-heavy`. Full validation omits that flag. Other arguments go to pytest
-unchanged: `-k` expressions, or test files and node IDs named relative to the
-staged suite root, which mirrors the project root
-(`tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names`).
-A selection that collects a node more than once, such as a file together with
-one of its node IDs, is refused, and so is a test outside the staged `tests`
-directory named beside a staged path. pytest loads the staged conftest only
-for staged paths: a selection naming only outside paths runs those tests
-without the suite's boundary checks or private HOME, and the invocation then
-fails because it wrote no receipt. Options that end pytest before a session
-(`--version`, `--markers`) fail the same way. Add
-`--test-budget-seconds 4` to fail on any test whose setup, call and teardown
-exceed four seconds; add `--total-budget-seconds 120` to bound the complete
-invocation, including the private environment and wheel build. Choose budgets
-appropriate to the host. The result records all collected and selected nodes,
-outcomes, plugin origins, per-phase durations and budget overruns. Test
-success does not erase a budget failure. Only the selected pytest's built-in
-plugins and the staged suite's own conftest are admitted; containing-project
-and third-party plugins refuse.
+Add `--fast` for a short smoke selection; full validation omits it.
 
-The tests reach Git through PATH. On macOS `/usr/bin/git` is Apple's shim,
-which locates the developer tools' Git on every call. By default
-(`--git-executable auto`), when git on PATH is that shim, the check resolves
-`xcrun --find git` once, requires
-a regular executable that reports the shim's `--version` and an existing
-`--exec-path`, both inside the `xcode-select -p` developer directory, and
-writes a private `git` script that `exec`s that binary by absolute path
-(`/bin/dash`, or `/bin/sh` without it). It inserts the script's directory
-immediately before the PATH entry that supplied the shim, so earlier entries
-keep precedence and only `git` changes: Apple's Git derives its exec path and
-templates from the path it was invoked by, so a link or copy would break
-them, and the binary's own directory (`<developer>/usr/bin`) holds other
-tools, `python3.9` among them. On other platforms, when git resolves
-elsewhere, or without a verified binary, PATH is unchanged and the reason is
-recorded. `--git-executable path` leaves PATH alone.
-`--git-executable /absolute/dir/git`, such as a wrapper that logs each call,
-inserts that executable's whole directory at the same place, or appends it
-when no Git resolves, so use a directory holding only `git`, and make a
-wrapper `exec` the real Git by absolute path: under the tests' PATH a wrapper
-that runs `git` by name finds itself. A different path to the same file, such as a link, does not count
-as already selected; a request the insertion cannot reach is refused. The
-check prints the selection, writes it to the `.log` and records it as
-`git_selection` in the result, with the version and exec path that Git
-reports under the tests' PATH and every name whose resolution changed.
-Stewart itself still runs `git` by name, so inside the tests it reaches the
-selected Git, and the experiment launcher passes that PATH to auditor
-children. Tests that build PATH without the inherited value (for example from
-`os.defpath`) do not see the selection; those that extend the inherited PATH
-do.
-
-The provisioning commands (`ensurepip`, both pip installs, the wheel build and
-any `--parity-output` run) get the inherited PATH minus every entry in which
-`rustc` resolves: pip runs `rustc --version` for its user-agent string even
-with `--no-index`, and under a test's empty HOME a rustup proxy would start
-installing a toolchain from the network. The check records those entries in
-the `.log` and as `provisioning_path_removed` in the result. The tests keep
-the inherited PATH; a test that starts pip itself gives it
-`path_without_rustc` from `tests/support.py`.
-
-Beside `<name>.json` (the `--result` path) a run keeps `<name>.log` (the Git
-selection, the PATH entries withheld from provisioning, then provisioning and
-build), `<name>.pytest.log` (pytest's
-argv and cwd, then its stdout and stderr with each line labelled by stream,
-kept even when pytest stops before writing a result), `<name>-dist/` (the
-tested wheel) and `<name>-artifacts-*/`, pytest's base temporary directory.
-Each invocation replaces the two logs and adds an artifacts directory; a run
-that writes no result leaves an earlier `<name>.json` in place, so use a fresh
-result name per run. The result also records every phase outcome, the markers and the
-owned test directory and private HOME of each node, digests of the staged
-suite and of `check.py`, and the project's commit and `git status` when the
-project is the top of its own Git work tree. Once pytest has written this
-invocation's result, `check.py` removes the directories of each node whose
-setup, call and teardown all passed within any `--test-budget-seconds`,
-recording its plan in the result before the first removal and each path's
-outcome after it. Failed, skipped, interrupted and over-budget nodes and
-entries no node owns stay, and a run that leaves no result of its own keeps
-everything. Add `--keep-node NODEID`, repeatable, to keep passing evidence
-such as a comparison's controls; a named node with no executed call on record
-(no call phase, or a skipped one, which is how pytest reports skips and
-expected failures, or no usable result) fails the invocation and nothing is
-removed, because an evidence run that lost its control is not evidence. `--keep-artifacts all` removes
-nothing. Removal failures are printed and recorded but change neither the
-exit status nor any test outcome.
-
-Development and acceptance target Apple Silicon macOS with Python 3.14.
-POSIX APIs alone do not establish Linux or other-host support; qualify those
-hosts separately. Harness enforcement also needs its own explicit qualification.
-The installed interpreter and its environment hooks remain trusted: isolated
-mode ignores caller Python variables and the user site, but environment `.pth`
-files and `sitecustomize` can still execute. The source bootstrap is available
-as `<python> -I -B /absolute/project/src/stewart/_bootstrap.py source -- ...`;
-do not use `PYTHONPATH` to select a source installation.
+Stewart is released under the [MIT License](LICENSE).

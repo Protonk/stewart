@@ -127,14 +127,17 @@ def test_human_output_names_result_limitation_and_recovery(checkout, run_cmd):
 
 
 def test_documented_examples_exercise_the_real_parser():
-    """Every command line in the README parses with the shipped parser."""
-    text = README.read_text(encoding="utf-8")
-    blocks = re.findall(r"```sh\n(.*?)```", text, re.S)
-    examples = [line.strip() for block in blocks for line in block.splitlines()
-                if '"$STEWART_PYTHON" -I -m stewart --repo' in line and "--help" not in line]
-    assert len(examples) >= 8, "the manual must exercise the lifecycle through isolated installed startup"
+    """Every command line in the manual and the project README's quick start parses with the shipped parser."""
+    documents = {"manual": README.read_text(encoding="utf-8"),
+                 "project README": (Path(os.environ["STEWART_TEST_PROJECT"]) / "README.md").read_text(encoding="utf-8")}
+    examples = {name: [line.strip() for block in re.findall(r"```sh\n(.*?)```", text, re.S)
+                       for line in block.splitlines()
+                       if '"$STEWART_PYTHON" -I -m stewart --repo' in line and "--help" not in line]
+                for name, text in documents.items()}
+    assert len(examples["manual"]) >= 8, "the manual must exercise the lifecycle through isolated installed startup"
+    assert len(examples["project README"]) >= 8, "the README quick start must carry an audit from init to close"
     parser = build_parser()
-    for line in examples:
+    for line in examples["manual"] + examples["project README"]:
         tokens = shlex.split(line)
         assert tokens[0] == '$STEWART_PYTHON', line
         assert tokens[1:4] == ['-I', '-m', 'stewart'], line
@@ -146,15 +149,19 @@ def test_documented_examples_exercise_the_real_parser():
 def test_documented_isolated_commands_set_no_ignored_import_path():
     """Isolated startup ignores PYTHONPATH, so a documented prefix would only mislead.
 
-    Both the shipped manual and the source project's README are read. A command
-    line counts when it passes -I; prose naming the variable is not a command.
+    The shipped manual and the source project's README and DEVELOPMENT.md are
+    read. A command line counts when it passes -I; prose naming the variable is
+    not a command.
     """
+    project = Path(os.environ["STEWART_TEST_PROJECT"])
     documents = {"manual": README.read_text(encoding="utf-8"),
-                 "project README": (Path(os.environ["STEWART_TEST_PROJECT"]) / "README.md").read_text(encoding="utf-8")}
+                 "project README": (project / "README.md").read_text(encoding="utf-8"),
+                 "development guide": (project / "DEVELOPMENT.md").read_text(encoding="utf-8")}
     isolated = {name: [line for block in re.findall(r"```sh\n(.*?)```", text, re.S)
                        for line in block.splitlines() if " -I " in line]
                 for name, text in documents.items()}
-    assert all(len(lines) >= 8 for lines in isolated.values()), "documented isolated command population vanished"
+    minimum = {"manual": 8, "project README": 8, "development guide": 3}
+    assert all(len(isolated[name]) >= minimum[name] for name in documents), "documented isolated command population vanished"
 
     def prefixed(lines):
         return [line for line in lines if any(token.startswith("PYTHONPATH=") for token in shlex.split(line))]

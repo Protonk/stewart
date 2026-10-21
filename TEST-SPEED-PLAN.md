@@ -651,9 +651,9 @@ permission constraints and opt-in harness skips as observed, with separate
 reruns when needed. Do not convert a changed test population into a claimed
 speedup.
 
-Carry the accepted contracts into `scripts/check.py --help`, the README's
-"Run the standalone suite" section (selection form, `--git-executable`,
-`--keep-artifacts`, `--keep-node`, and the files a run keeps), the
+Carry the accepted contracts into `scripts/check.py --help`, `DEVELOPMENT.md`
+(selection form, `--git-executable`, `--keep-artifacts`, `--keep-node`, and
+the files a run keeps; these moved there from the README), the
 development paragraph of `AGENTS.md` if the documented commands change, and
 regression tests. Commit `TEST-SPEED-FINDINGS.md` with each work package.
 Keep both planning files, with updated status lines, while WP4 or WP5 awaits
@@ -677,4 +677,4 @@ The work will be reviewed for:
   nodes, and no node executed twice;
 - historical receipts and artifacts, including the main checkout's, left
   unchanged;
-- help text, README and failure messages describing the new behavior.
+- help text, `DEVELOPMENT.md` and failure messages describing the new behavior.
