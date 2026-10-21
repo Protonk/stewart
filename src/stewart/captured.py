@@ -80,6 +80,58 @@ def verified_bytes(location: Path, digest: str) -> bytes:
     return data
 
 
+def entry_identity(entry: dict) -> tuple[str, str] | None:
+    """An entry's kind and content: a regular file's SHA-256 or a link's target text; None without either."""
+    if entry.get('kind') == 'file' and isinstance(entry.get('sha256'), str):
+        return 'file', entry['sha256']
+    if entry.get('kind') == 'symlink' and isinstance(entry.get('target'), str):
+        return 'symlink', entry['target']
+    return None
+
+
+def archive_identities(directory: Path, receipt: dict) -> dict[str, tuple[str, str]]:
+    """Verify a collection's complete archive against its receipt; each member's kind and content by path.
+
+    The bytes must match the receipt's archive digest, and the members must be
+    exactly the entries the receipt says were archived: regular files with the
+    recorded digest and links with the recorded target. Nothing is extracted.
+    """
+    digest = receipt.get('archive_sha256')
+    if not isinstance(digest, str):
+        raise StewartError('the collection has no complete verified archive', reason='support_unavailable')
+    data = verified_bytes(directory / 'files.tar', digest)
+    summary = receipt.get('inventory') if isinstance(receipt.get('inventory'), dict) else {}
+    checkout = receipt.get('checkout') if isinstance(receipt.get('checkout'), dict) else {}
+    names, files = summary.get('archived'), checkout.get('files')
+    if (not isinstance(names, list) or not all(isinstance(rel, str) for rel in names) or len(set(names)) != len(names)
+            or not isinstance(files, list) or not all(isinstance(item, dict) for item in files)):
+        raise StewartError('the receipt does not name what its archive holds', reason='collection_schema')
+    expected = {item.get('path'): entry_identity(item) for item in files if item.get('path') in set(names)}
+    if set(expected) != set(names) or None in expected.values():
+        raise StewartError('the receipt names archived entries it does not identify', reason='collection_schema')
+    found: dict[str, tuple[str, str]] = {}
+    try:
+        with tarfile.open(fileobj=io.BytesIO(data), mode='r') as bundle:
+            for member in bundle.getmembers():
+                if member.name in found:
+                    raise StewartError(f'the archive repeats {member.name}', reason='evidence_tampered')
+                if member.isreg():
+                    with bundle.extractfile(member) as stream:
+                        found[member.name] = ('file', _hash.sha256_bytes(stream.read()))
+                elif member.issym():
+                    found[member.name] = ('symlink', member.linkname)
+                else:
+                    raise StewartError(f'the archive holds a {member.type!r} member: {member.name}',
+                                       reason='evidence_tampered')
+    except tarfile.TarError as exc:
+        raise StewartError(f'cannot read captured archive: {exc}', reason='evidence_tampered') from exc
+    if found != expected:
+        differing = sorted(rel for rel in set(found) | set(expected) if found.get(rel) != expected.get(rel))
+        raise StewartError('archive members differ from the receipt: ' + ', '.join(differing[:10]),
+                           reason='evidence_tampered')
+    return found
+
+
 def collection_files(directory: Path, receipt: dict, selectors: list[str]) -> dict[str, bytes]:
     """Verify report/archive/member identities before returning selected file bytes.
 

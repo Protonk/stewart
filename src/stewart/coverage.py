@@ -13,27 +13,17 @@ traversed, an unknown kind) is unresolved and never counts as preserved.
 """
 from __future__ import annotations
 
-import io
 import os
 from pathlib import Path
-import tarfile
 
 from stewart import _util as _hash
 from stewart._bootstrap import StewartError
+from stewart.captured import archive_identities, entry_identity as identity
 
 #: Entry kinds that hold no bytes: the inventory records them, nothing reads them, and no archive needs them.
 CONTENTLESS = frozenset({"fifo", "socket", "chardev", "blockdev"})
 
 _PROMPT_KINDS = {"100644": "file", "100755": "file", "120000": "symlink"}
-
-
-def identity(entry: dict) -> tuple[str, str] | None:
-    """An entry's kind and content: a regular file's SHA-256 or a link's target text; None without either."""
-    if entry.get("kind") == "file" and isinstance(entry.get("sha256"), str):
-        return "file", entry["sha256"]
-    if entry.get("kind") == "symlink" and isinstance(entry.get("target"), str):
-        return "symlink", entry["target"]
-    return None
 
 
 def classify(entries: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -116,50 +106,19 @@ def archived(directory: Path, receipt: dict, *, retained: list[str] = ()) -> dic
     the receipt says were archived, with their kinds and contents. A movement
     collection's partial archive has no digest and is never promoted.
     """
-    from stewart.captured import verified_bytes
     name, retained = directory.name, [str(directory), *retained]
     if receipt.get("git_discovery") != "complete":
         raise _refuse("capture_not_recorded", name, "Git discovery did not complete, so archive coverage is unknown",
-                       retained)
-    digest = receipt.get("archive_sha256")
+                      retained)
     summary = receipt.get("inventory") if isinstance(receipt.get("inventory"), dict) else {}
-    if not isinstance(digest, str):
+    if not isinstance(receipt.get("archive_sha256"), str):
         raise _refuse("capture_not_recorded", name,
-                       "the checkout changed during collection; its partial archive is preserved evidence, not a capture"
-                       if summary.get("movement") else "the collection recorded no verified archive", retained)
+                      "the checkout changed during collection; its partial archive is preserved evidence, not a capture"
+                      if summary.get("movement") else "the collection recorded no verified archive", retained)
     try:
-        data = verified_bytes(directory / "files.tar", digest)
+        found = archive_identities(directory, receipt)
     except StewartError as exc:
         raise _refuse("capture_unverified", name, str(exc), retained) from None
-    names = summary.get("archived")
-    files = (receipt.get("checkout") or {}).get("files") if isinstance(receipt.get("checkout"), dict) else None
-    if (not isinstance(names, list) or not all(isinstance(rel, str) for rel in names) or len(set(names)) != len(names)
-            or not isinstance(files, list) or not all(isinstance(item, dict) for item in files)):
-        raise _refuse("capture_unverified", name, "the receipt does not name what its archive holds", retained)
-    listed = set(names)
-    expected = {item.get("path"): identity(item) for item in files if item.get("path") in listed}
-    if set(expected) != listed or None in expected.values():
-        raise _refuse("capture_unverified", name, "the receipt names archived entries it does not identify", retained)
-    found: dict[str, tuple[str, str]] = {}
-    try:
-        with tarfile.open(fileobj=io.BytesIO(data), mode="r") as bundle:
-            for member in bundle.getmembers():
-                if member.name in found:
-                    raise _refuse("capture_unverified", name, f"the archive repeats {member.name}", retained)
-                if member.isreg():
-                    with bundle.extractfile(member) as stream:
-                        found[member.name] = ("file", _hash.sha256_bytes(stream.read()))
-                elif member.issym():
-                    found[member.name] = ("symlink", member.linkname)
-                else:
-                    raise _refuse("capture_unverified", name, f"the archive holds a {member.type!r} member: "
-                                   f"{member.name}", retained)
-    except tarfile.TarError as exc:
-        raise _refuse("capture_unverified", name, f"the archive cannot be read: {exc}", retained) from None
-    if found != expected:
-        differing = sorted(rel for rel in set(found) | set(expected) if found.get(rel) != expected.get(rel))
-        raise _refuse("capture_unverified", name, "archive members differ from the receipt: "
-                       + ", ".join(differing[:10]), retained)
     return {_key(rel): value for rel, value in found.items()}
 
 

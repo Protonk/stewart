@@ -38,7 +38,7 @@ pytestmark = pytest.mark.system
 def test_package_identity_reads_distribution_bytes_and_git_state(installation, tmp_path, run_cmd):
     package = installation / "stewart"
     outside = package_identity(package)
-    assert outside["modules"] == 35 and len(outside["package_sha256"]) == 64
+    assert outside["modules"] == 36 and len(outside["package_sha256"]) == 64
     assert outside["version"] == "0.1.0" and len(outside["resources"]) == 9
     assert outside["commit"] is None and outside["dirty"] is None
     (installation / "NOTE-PLAN.md").write_text("ephemeral note\n")
@@ -65,7 +65,7 @@ def test_package_identity_reads_distribution_bytes_and_git_state(installation, t
     assert modified["dirty"] is True and modified["package_sha256"] != committed["package_sha256"]
     assert modified["resources"] != committed["resources"]
     me = tool_identity()
-    assert me["package"].endswith("stewart") and me["modules"] == 35
+    assert me["package"].endswith("stewart") and me["modules"] == 36
 
 
 def test_every_record_names_the_build_that_wrote_it(tmp_path, run_cmd):
