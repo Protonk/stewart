@@ -370,3 +370,93 @@ def test_export_and_import_cli_explain_selection_and_pin_the_package(checkout, r
     error = json.loads(refused.stdout)['error']
     assert refused.returncode == EXIT_REFUSED and refused.stderr == ''
     assert error['reason'] == 'capture_selector' and error['retained'] and error['next_steps']
+
+
+def _stewart(run_cmd, *args, env: dict | None = None):
+    """The installed module entry point with exactly ``args``, from outside any project."""
+    return run_cmd([sys.executable, "-I", "-m", "stewart", *map(str, args)], cwd=INSTALLED_LIB,
+                   env={} if env is None else env)
+
+
+def _refused(result, reason: str, *, json_mode: bool) -> dict | None:
+    """A refusal is one envelope on stdout under --json, else prose on stderr alone; both exit 2."""
+    assert result.returncode == EXIT_REFUSED, result.stdout + result.stderr
+    if not json_mode:
+        assert result.stdout == "" and result.stderr.startswith(f"Refused ({reason}): "), result.stderr
+        return None
+    assert result.stderr == "", result.stderr
+    envelope = json.loads(result.stdout)
+    assert envelope["ok"] is False and envelope["exit_code"] == EXIT_REFUSED and envelope["result"] is None
+    assert envelope["error"]["reason"] == reason, envelope["error"]
+    return envelope
+
+
+def test_root_listing_names_docs_and_request_in_registry_order():
+    """The root parser lists every command once, in one order; docs and request keep their summaries."""
+    import argparse
+
+    parser = build_parser()
+    (commands,) = [action for action in parser._actions if isinstance(action, argparse._SubParsersAction)]
+    assert list(commands.choices) == [
+        "docs", "discover", "select", "register", "request", "resource", "init", "prepare", "launch", "message",
+        "status", "collect", "recover-runtime", "export", "triage-draft", "triage", "retain", "resume", "close",
+        "release", "run"]
+    flat = " ".join(parser.format_help().split())
+    assert ("docs [no repository or session writes] print a bundled document or role template; "
+            "no repository needed") in flat
+    assert "request [no repository or session writes] inspect one request key's recorded state" in flat
+
+
+def test_docs_prints_bundled_text_alone_and_refuses_bad_usage_structurally(run_cmd):
+    """docs needs no repository or Git; help goes to stdout; usage errors are refusals, never tracebacks."""
+    from stewart.docs import DOCUMENTS
+
+    packaged = (INSTALLED_LIB / "stewart/resources/AUDITOR.md").read_text(encoding="utf-8")
+    for argv in (["docs", "auditor"], ["docs", "--", "auditor"], ["--", "docs", "auditor"]):
+        shown = _stewart(run_cmd, *argv)
+        assert shown.returncode == EXIT_OK and shown.stdout == packaged and shown.stderr == "", argv
+    envelope = json.loads(_stewart(run_cmd, "--json", "docs", "auditor").stdout)
+    assert envelope["ok"] is True and envelope["command"] == "docs" and envelope["error"] is None
+    assert envelope["result"]["name"] == "auditor" and envelope["result"]["text"] == packaged
+    for flag in ("--help", "-h"):
+        helped = _stewart(run_cmd, "docs", flag, env={"PATH": "/nonexistent"})
+        assert helped.returncode == EXIT_OK and helped.stderr == "", (flag, helped.stderr)
+        assert all(name in helped.stdout for name in DOCUMENTS), helped.stdout
+    for argv in (["docs"], ["docs", "nosuch"], ["docs", "auditor", "extra"], ["docs", "--nosuch", "auditor"]):
+        _refused(_stewart(run_cmd, *argv), "usage", json_mode=False)
+        envelope = _refused(_stewart(run_cmd, "--json", *argv), "usage", json_mode=True)
+        assert envelope["command"] is None, "a command line that does not parse names no command"
+        assert envelope["error"]["next_steps"] == ["consult --help for the complete command"]
+
+
+def test_request_keeps_the_replayed_grammar_and_the_global_context(checkout, run_cmd):
+    """request is reached by --repo or --ref, refuses request keys, and accepts the argv handoffs replay.
+
+    ``request_keys`` hands ``--repo CHECKOUT request --key KEY`` to other
+    implementations, so that exact form, and ``--key=KEY``, must keep parsing.
+    """
+    recorded = _run(checkout, run_cmd, "--request-key", "init-1", "init", "--audit-id", "one-question",
+                    "--input", "input.txt", "--replace-prompt")
+    assert recorded.returncode == EXIT_OK, recorded.stdout + recorded.stderr
+    repo = str(checkout.repo)
+    shown = _stewart(run_cmd, "--repo", repo, "request", "--key", "init-1")
+    assert shown.returncode == EXIT_OK and shown.stderr == "", shown.stderr
+    assert shown.stdout.startswith("Request init-1: completed")
+    assert _stewart(run_cmd, "--repo", repo, "request", "--key=init-1").stdout == shown.stdout
+    envelope = json.loads(_stewart(run_cmd, "--repo", repo, "--json", "request", "--key", "init-1").stdout)
+    assert envelope["ok"] is True and envelope["command"] == "request" and envelope["error"] is None
+    assert envelope["result"]["schema"] == "stewart.request/1" and envelope["result"]["state"] == "completed"
+    reference = checkout.tmp / "ref.json"
+    reference.write_text(_stewart(run_cmd, "--repo", repo, "select", "--audit-id", "one-question").stdout)
+    assert _stewart(run_cmd, "--ref", reference, "request", "--key", "init-1").stdout == shown.stdout
+    for flag in ("--help", "-h"):
+        helped = _stewart(run_cmd, "request", flag, env={"PATH": "/nonexistent"})
+        assert helped.returncode == EXIT_OK and helped.stderr == "" and "--key" in helped.stdout, flag
+    for json_mode in (False, True):
+        mode = ["--json"] if json_mode else []
+        _refused(_stewart(run_cmd, "--repo", repo, *mode, "request"), "usage", json_mode=json_mode)
+        _refused(_stewart(run_cmd, *mode, "request", "--key", "init-1"), "usage", json_mode=json_mode)
+        _refused(_stewart(run_cmd, "--repo", repo, *mode, "--request-key", "again", "request", "--key", "init-1"),
+                 "usage", json_mode=json_mode)
+        _refused(_stewart(run_cmd, "--repo", repo, *mode, "request", "--key", "never-used"),
+                 "request_missing", json_mode=json_mode)
