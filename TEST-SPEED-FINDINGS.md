@@ -1653,9 +1653,10 @@ checkout rerun in `test_resource_safety.py`, which now stops with
   archive reading into `captured.py` and counts the module. `targeted-4`:
   225 of 226; the one failure was a second pinned count, fixed in the same
   commit.
-- `demos.out`: nine mutations, one per guard, each failing exactly its
-  expected nodes, rerun on `35e30bc`'s code; `superseded/demos-1*` holds the
-  run on `1d3ab16`'s, also all as expected.
+- `superseded/demos-2.out`: nine mutations, one per guard, each failing
+  exactly its expected nodes, rerun on `35e30bc`'s code;
+  `superseded/demos-1*` holds the run on `1d3ab16`'s, also all as expected.
+  (Both were moved aside when the review's fixes reran the set.)
 - Full gate `gate-2` at `35e30bc`: 1061 collected and selected, 0 deselected; 1060 passed, 1 skipped (the opt-in real-harness probe); 1281 s, awake throughout (no load-sample gap over 11 s), under heavy foreign load (max 1-minute load 17.3); every node shared with unit A's `gate-2` kept its outcome, and the 16 new nodes are this unit's.
 
 **Left as found or decided here, for review.**
@@ -1663,6 +1664,7 @@ checkout rerun in `test_resource_safety.py`, which now stops with
    whatever it holds, as before this change. A byte rule would list an
    auditor's change to it; making that change refused a release-blocker test
    in which a failed preparation leaves a handoff, so it was reverted.
+   *Fixed in `26617ae` after the review below confirmed the loss.*
 2. Status reports a failed capture only by withholding close and naming the
    prerequisite in `outstanding`. It adds no attention item, so a damaged
    archive does not raise status's exit code to 3, and the check runs only
@@ -1686,3 +1688,58 @@ checkout rerun in `test_resource_safety.py`, which now stops with
    Stewart's other Git reads still honour them.
 9. A mode change Git is told not to see, with unchanged bytes, is not
    uncovered: the kind is the file type, not its mode.
+
+### Unit B's external review (`26617ae`, `94f31d0`)
+
+An external reviewer reported five findings against `b780bbf`, each with a
+reproduction in its own copy (`stewart-verified-capture-review.QGKJwQ` under
+`/private/tmp`). All five are fixed.
+
+1. **[P1] Abandon deleted changed handoff bytes silently** (known item 1
+   below). An auditor's work written over the issued handoff was deleted
+   with exit 0 and `discarded: []`; the same change to `input.txt` refused.
+   - Fixed in `26617ae`, its own commit: the handoff counts as preparation's
+     own only while its bytes match its pin, as supplemental copies did. The
+     release-blocker test whose failed preparation leaves a stand-in handoff
+     now passes `--discard-uncollected` for that case; its release basis is
+     unchanged.
+2. **[P2] A report changed after its capture still allowed a concluded
+   close.** Collection recorded a `movement` error but had already made the
+   archive claim, with `inventory.movement: false`.
+   - Fixed: the report check precedes the claim and marks the inventory as
+     moved, and the capture check refuses any receipt that records movement.
+3. **[P2] A close-attempt record that did not verify lost its diagnostic.**
+   Status reported `close_incomplete` (1) and offered a rerun.
+   - Fixed: such a record makes the close's records fail verification
+     (`closing_record_invalid`, 3), as an invalid `CLOSED.json` does, and a
+     rerun refuses. A probe of the fixed state (`probes/attempt-actions.out`)
+     showed status still offering a concluded close that would refuse
+     (`close_unverified`); status now withholds a concluded close wherever it
+     reports records that do not verify.
+4. **[P2] Planning and close disagreed on a stop's exit code** (3 against 1
+   for a capture that stopped verifying).
+   - Fixed: a stop earns 3 when its reason is `capture_unverified`, else 1,
+     in both.
+5. **[P2] The tests did not establish three protections:** reading the
+   prompt commit without replacement objects, comparing archive members
+   beyond the archive digest, and comparing the inventory record with the
+   receipt's digest. The reviewer removed each in a copy and all 16 tests
+   still passed.
+   - New regressions for each, with the replacement case run twice: a
+     replaced blob, and a replaced commit that the checkout's index agrees
+     with.
+
+Validation:
+- `review-fixes-1`: 299 of 299, before the status withholding;
+  `review-fixes-2`: 300 of 300 over eleven close, capture, status and
+  inventory test files.
+- `demos.out`: nineteen mutations, the earlier nine plus one per fix and one
+  for the withholding, each failing exactly its expected nodes, with six of
+  the earlier expected lists widened to the new regressions. The
+  inventory-record mutation's first text broke the module's syntax and
+  failed 41 tests (`superseded/inventory-record-trusted-syntax-error*`);
+  its rerun was refused by the run helper because the failed run's folders
+  remained (`superseded/inventory-record-trusted-refused-rerun/`); the
+  third run, `demos-inventory-record-trusted.out`, is as expected. The run
+  the entry above cites as `demos.out` is now `superseded/demos-2.out`.
+- Full gate `gate-3` at `94f31d0`: 1069 collected and selected, 0 deselected; 1068 passed, 1 skipped (the opt-in real-harness probe); 1122 s, awake throughout, under heavy foreign load (max 1-minute load 12.7); every node shared with `gate-2` kept its outcome, and the 8 new nodes are the review's regressions.
