@@ -9,7 +9,13 @@ isolated startup (`-I`, plus `-B` where bytecode must stay unwritten).
 ## Build and provisioning
 
 Build and test dependencies are hash-locked in
-[`requirements.lock`](requirements.lock). Builds use Hatchling's
+[`requirements.lock`](requirements.lock), together with Click, the one runtime
+dependency, so the wheelhouse and the test environment hold it.
+[`requirements-runtime.lock`](requirements-runtime.lock) repeats Click's line
+alone for runtime venvs, which install it before the wheel because the wheel
+itself installs with `--no-deps`. The pin in `pyproject.toml`, the two lock lines
+and the provisioned version are checked to agree; the pin records intent and
+does not by itself verify what an interpreter loads. Builds use Hatchling's
 [wheel builder](https://hatch.pypa.io/1.13/plugins/builder/wheel/) and
 [version-file selection](https://hatch.pypa.io/1.13/version/), without Git
 metadata: the version comes from `src/stewart/_version.py`, and no `.git`

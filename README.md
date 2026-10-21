@@ -77,11 +77,12 @@ follows these stages step by step.
 ## Installation
 
 Stewart needs Python 3.14 or newer, Git and a POSIX shell. Its runtime uses
-only the Python standard library. Launch profiles are optional and require
-their explicitly named harness executable.
+the Python standard library and one package, [Click](https://click.palletsprojects.com/),
+pinned in [`requirements-runtime.lock`](requirements-runtime.lock). Launch profiles
+are optional and require their explicitly named harness executable.
 
 Stewart is installed from a locally built wheel into a dedicated virtual
-environment. Its build and test dependencies are hash-locked in
+environment. Its build and test dependencies, and Click, are hash-locked in
 [`requirements.lock`](requirements.lock). From a source checkout, provision a
 build environment and wheelhouse while network access is available. Use
 absolute paths for these variables:
@@ -96,14 +97,16 @@ STEWART_WHEELS=/absolute/stewart-wheelhouse
 "$STEWART_BUILD/bin/python" -I -m pip install --no-index --find-links "$STEWART_WHEELS" --require-hashes -r "$STEWART_SOURCE/requirements.lock"
 ```
 
-Build both archives offline, including the wheel from the source archive, then
-install that wheel in a fresh runtime venv. The version comes from
-`src/stewart/_version.py`; no `.git` directory or VCS plugin is needed.
+Build both archives offline, including the wheel from the source archive. In a
+fresh runtime venv, install the hash-locked runtime requirement from the
+wheelhouse, then the wheel without dependency resolution. The version comes
+from `src/stewart/_version.py`; no `.git` directory or VCS plugin is needed.
 
 ```sh
 "$STEWART_BUILD/bin/python" -I -m build --no-isolation --outdir "$STEWART_SOURCE/dist" "$STEWART_SOURCE"
 STEWART_ENV=/absolute/stewart-venv
 "$STEWART_BASE_PYTHON" -I -m venv "$STEWART_ENV"
+"$STEWART_ENV/bin/python" -I -m pip install --no-index --find-links "$STEWART_WHEELS" --require-hashes -r "$STEWART_SOURCE/requirements-runtime.lock"
 "$STEWART_ENV/bin/python" -I -m pip install --no-index --no-deps "$STEWART_SOURCE/dist/stewart-0.1.0-py3-none-any.whl"
 STEWART_PYTHON="$STEWART_ENV/bin/python"
 "$STEWART_PYTHON" -I -m stewart docs manual

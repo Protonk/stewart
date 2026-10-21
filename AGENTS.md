@@ -2,8 +2,9 @@
 
 This project is independently buildable: runtime code lives in `src/stewart`,
 bundled guidance and launcher templates in `src/stewart/resources`, and tests
-in `tests`. Runtime dependencies are the Python standard library plus the
-declared external Git/shell prerequisites. Use the distribution's `_util` byte
+in `tests`. Runtime dependencies are the Python standard library, Click (pinned
+exactly in `pyproject.toml`, `requirements.lock` and `requirements-runtime.lock`,
+which must agree), and the declared external Git/shell prerequisites. Use the distribution's `_util` byte
 contracts; never import a containing repository's helpers or configuration.
 
 Preserve unrelated working-tree changes. Record execution state in temporary

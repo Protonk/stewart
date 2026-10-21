@@ -40,8 +40,59 @@ def test_wheel_members_version_and_guidance_are_complete():
         metadata = archive.read(next(name for name in names if name.endswith(".dist-info/METADATA"))).decode()
     identity = package_identity(Path(stewart.__file__).parent)
     assert identity["version"] == importlib.metadata.version("stewart") == "0.1.0"
-    assert "Requires-Python: >=3.14" in metadata and "Requires-Dist:" not in metadata
+    assert "Requires-Python: >=3.14" in metadata
+    assert [line for line in metadata.splitlines() if line.startswith("Requires-Dist:")] == [
+        "Requires-Dist: click==8.5.0"], "Click is the one runtime dependency, pinned exactly"
     assert identity["commit"] is None and identity["dirty"] is None
+
+
+def _lock_requirements(text: str) -> list[str]:
+    """Requirement lines of a pip requirements file, without comments or blank lines."""
+    return [line for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")]
+
+
+def pin_disagreements(declared: list[str], runtime_lock: str, full_lock: str) -> list[str]:
+    """How the metadata pins and the two hash locks disagree; empty when they say the same thing."""
+    runtime = _lock_requirements(runtime_lock)
+    problems = []
+    if not all("==" in item and ";" not in item for item in declared):
+        problems.append(f"metadata dependencies must be exact pins: {declared}")
+    if [line.split()[0] for line in runtime] != declared:
+        problems.append(f"runtime lock requirements {[line.split()[0] for line in runtime]} differ from {declared}")
+    if not all("--hash=sha256:" in line for line in runtime):
+        problems.append("every runtime lock line needs its sha256")
+    missing = sorted(set(runtime) - set(_lock_requirements(full_lock)))
+    if missing:
+        problems.append(f"requirements.lock must repeat the runtime lines verbatim: {missing}")
+    return problems
+
+
+@pytest.mark.smoke
+def test_runtime_pin_agrees_everywhere_and_the_provisioned_environment_supplies_it():
+    """One exact Click pin in the metadata and both locks, and the test environment loads that version.
+
+    A pin records intent; it does not verify what an interpreter imports. This
+    checks the environment check.py provisioned, and that ``import click``
+    resolves inside that distribution's installed files. It is no attestation
+    of other environments.
+    """
+    project = Path(os.environ["STEWART_TEST_PROJECT"])
+    declared = tomllib.loads((project / "pyproject.toml").read_text(encoding="utf-8"))["project"]["dependencies"]
+    runtime = (project / "requirements-runtime.lock").read_text(encoding="utf-8")
+    full = (project / "requirements.lock").read_text(encoding="utf-8")
+    assert declared == ["click==8.5.0"]
+    assert pin_disagreements(declared, runtime, full) == []
+    # Changed property: each kind of drift is reported.
+    line = _lock_requirements(runtime)[0]
+    assert pin_disagreements(["click==8.4.2"], runtime, full)
+    assert pin_disagreements(["click>=8.5"], runtime, full)
+    assert pin_disagreements(declared, line.split()[0] + "\n", full + line.split()[0] + "\n")
+    assert pin_disagreements(declared, runtime, full.replace(line + "\n", ""))
+    pinned = declared[0].split("==", 1)[1]
+    distribution = importlib.metadata.distribution("click")
+    assert distribution.version == pinned
+    import click
+    assert Path(click.__file__).resolve() == Path(distribution.locate_file("click/__init__.py")).resolve()
 
 
 @pytest.mark.smoke
@@ -117,8 +168,15 @@ def test_console_preserves_quoted_installation_paths(tmp_path, run_cmd):
     prefix = tmp_path / "Stewart's installed environment"
     run_cmd([sys.executable, "-I", "-B", "-m", "venv", prefix], env=provisioning, check=True)
     python = prefix / "bin/python"
+    # README's runtime install: the hash-locked runtime requirement from the wheelhouse, then the wheel alone.
+    run_cmd([python, "-I", "-B", "-m", "pip", "install", "--no-index", "--no-compile",
+             "--find-links", os.environ["STEWART_WHEELHOUSE"], "--require-hashes",
+             "-r", Path(os.environ["STEWART_TEST_PROJECT"]) / "requirements-runtime.lock"], env=provisioning, check=True)
     run_cmd([python, "-I", "-B", "-m", "pip", "install", "--no-index", "--no-deps", "--no-compile",
              os.environ["STEWART_TEST_WHEEL"]], env=provisioning, check=True)
+    supplied = run_cmd([python, "-I", "-B", "-c", "import importlib.metadata as m; print(m.version('click'))"],
+                       check=True)
+    assert supplied.stdout.strip() == "8.5.0"
     result = run_cmd([prefix / "bin/stewart", "--json", "docs", "questions"], cwd=tmp_path,
                      env=dict(os.environ, PYTHONHOME="/nonexistent/stewart-home"), check=True)
     value = json.loads(result.stdout)["result"]
@@ -139,7 +197,7 @@ def test_sdist_builds_same_wheel_without_git_or_network(tmp_path, run_cmd):
         assert all(member.isfile() or member.isdir() for member in members)
         assert {name.removeprefix("src/stewart/") for name in names if name.startswith("src/stewart/")}
         assert {name for name in names if name.startswith("src/stewart/")} == {"src/stewart/" + name for name in SOURCE_FILES}
-        assert {"LICENSE", "README.md", "AGENTS.md", "DEVELOPMENT.md", "pyproject.toml", "requirements.lock", "scripts/check.py", "tests/conftest.py", "tests/acceptance.py"} <= names
+        assert {"LICENSE", "README.md", "AGENTS.md", "DEVELOPMENT.md", "pyproject.toml", "requirements.lock", "requirements-runtime.lock", "scripts/check.py", "tests/conftest.py", "tests/acceptance.py"} <= names
         assert all(not {".scratch", ".git", "__pycache__"}.intersection(Path(name).parts)
                    and not name.endswith("-PLAN.md") for name in names)
         assert archive.extractfile("stewart-0.1.0/.gitignore").read() == (project / ".gitignore").read_bytes()
