@@ -1,0 +1,1 @@
+This folder is for temporary gitignored storage. It has no backup requirement and no cleanup procedure. Do not link into this folder from persisitent files. Links from `*-PLAN.md` files are acceptable.
