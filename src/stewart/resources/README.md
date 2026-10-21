@@ -639,7 +639,11 @@ permission. Keep the human evidence map and scope in the prompt.
     and the checkout, its runtimes, refs, registry row and session all stay. A
     rerun checks again and stops again until the checkout is what the close
     judged and its capture verifies; `close --plan` reports whether it would,
-    and `status` names why the last attempt stopped. Nothing cancels or
+    with the code the stop earns (3 when its reason is `capture_unverified`,
+    else 1), and `status` names why the last attempt stopped. An attempt
+    record that cannot be read or does not bind `CLOSING.json` makes the
+    close's records fail verification (`closing_record_invalid`, 3), and a
+    rerun refuses rather than finishing past it. Nothing cancels or
     supersedes a stopped close. Removal stops at the first failure and records the attempt in
     `CLOSE-ATTEMPT-<stamp>.json`, relocking the checkout if it remains; `status`
     reports the close as incomplete and a rerun of `close` finishes from the
@@ -1294,7 +1298,9 @@ producer run, scope expansion, or release of a paused hold.
   receipt's `errors`, resolve the cause (an unsupported entry, a moving file,
   broken Git state), and collect again. Never extract the archive over a checkout.
 - **Movement during collection** is recorded with both inventories retained;
-  no full-capture claim (`archive_sha256`) is made.
+  no full-capture claim (`archive_sha256`) is made. A report that changes
+  after its capture is movement too: both versions are kept. A collection
+  whose receipt records movement anywhere is never a verified capture.
 - **A partial attempt** (a collection directory with `STARTED.json` and no
   `collection.json`) is visible in `status` and cannot be triaged.
 - **Invalid or unreadable receipts** remain distinct from missing receipts.
@@ -2116,7 +2122,8 @@ does not verify;
 supplied runtime stopped verifying across the attempt; `close` returns 0 for a
 clean close, 1 when removal stopped partway, left unrecorded entries, or left a
 resource blocked, missing or unremoved, and 3 when a concluded close meets
-records that do not verify; `close --plan` returns the code that close would
+records that do not verify or removal stopped because a capture no longer
+verifies; `close --plan` returns the code that close would
 earn now (a refusal's code, 1 for a resource left blocked or missing, else 0); `prepare` refuses a
 failed preparation with 2 (`prepare_failed`) and keeps its session.
 

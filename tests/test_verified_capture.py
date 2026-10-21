@@ -11,6 +11,7 @@ property and an invariance case.
 """
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -210,10 +211,12 @@ def test_a_resumed_close_rechecks_its_capture_and_stops_keeping_everything(check
     archive = Path(collected["path"]) / "files.tar"
     original = archive.read_bytes()
     archive.write_bytes(b"damaged after planning\n")
-    assert close_plan(checkout.ws, ident)["audit"]["refusal"]["reason"] == "capture_unverified"
+    planned = close_plan(checkout.ws, ident)["audit"]["refusal"]
+    assert planned["reason"] == "capture_unverified" and planned["exit_code"] == 3
     rerun = close(checkout.ws, ident, actor="manager")
     step = rerun["results"][0]
     assert step["outcome"] == "failed" and step["reason"] == "capture_unverified" and rerun["closed"] is None
+    assert rerun["exit_code"] == planned["exit_code"], "the plan reports the code the close earns"
     assert [item["kind"] for item in rerun["results"]] == ["worktree"], "nothing after the checkout is removed"
     assert note.read_bytes() == NOTE and prepared.session.is_dir() and archive.is_file()
     view = status(checkout.ws, ident)
@@ -260,3 +263,144 @@ def test_an_abandon_counts_a_changed_handoff_as_uncollected(checkout):
     closed = close(checkout.ws, ident, actor="manager", abandon=True, reason="handoff overwritten",
                    discard_uncollected=True)
     assert rel in [item["path"] for item in read_json(Path(closed["closing"]))["observed"]["discarded"]]
+
+
+@pytest.mark.parametrize("window", ["report changed after its capture", "movement error after the archive claim"])
+def test_every_collection_that_records_movement_is_not_a_capture(checkout, monkeypatch, window):
+    prepared = support.prepared_session(checkout)
+    ident = checkout.meta["audit_id"]
+    real_report, real_outputs = collector.capture_report, collector.unexpected_outputs
+
+    def report_then_change(*args, **kwargs):
+        result = real_report(*args, **kwargs)
+        prepared.report.write_text("A report changed after its capture.\n")
+        return result
+
+    def movement_after_claim(*args, **kwargs):
+        raise StewartError("a writer moved the checkout after the archive claim", reason="movement")
+
+    with monkeypatch.context() as patch:
+        if window == "report changed after its capture":
+            patch.setattr(collector, "capture_report", report_then_change)
+        else:
+            patch.setattr(collector, "unexpected_outputs", movement_after_claim)
+        collected = collector.collect(checkout.ws, ident, auditor_stopped="finished")
+    receipt = collected["receipt"]
+    assert "movement" in [error["reason"] for error in receipt["errors"]], "firing control: movement is recorded"
+    if window == "report changed after its capture":
+        # Both report versions are kept, and the receipt makes no full-capture claim.
+        assert "archive_sha256" not in receipt and receipt["inventory"]["movement"] is True
+    else:
+        assert receipt["archive_sha256"], "control: this receipt claims an archive and still records movement"
+    _triage_and_retain(checkout, collected)
+    assert not _offers_close(status(checkout.ws, ident))
+    assert close_plan(checkout.ws, ident)["audit"]["refusal"]["reason"] == "capture_not_recorded"
+
+
+@pytest.mark.parametrize("replaced", ["blob", "commit"])
+def test_replacement_objects_cannot_make_a_change_look_committed(checkout, replaced):
+    import subprocess
+    prepared = support.prepared_session(checkout)
+    ident, worktree, prompt = checkout.meta["audit_id"], prepared.worktree, prepared.revision
+    changed = b"changed where Git does not look\n"
+    (worktree / "input.txt").write_bytes(changed)
+    original = git(checkout.repo, "rev-parse", f"{prompt}:input.txt").stdout.decode().strip()
+    forged = git(checkout.repo, "hash-object", "-w", "--stdin", input=changed).stdout.decode().strip()
+    if replaced == "blob":
+        git(checkout.repo, "replace", original, forged)
+    else:
+        # A stand-in prompt commit whose tree holds the changed bytes; the checkout's index agrees with it.
+        index = {**os.environ, "GIT_INDEX_FILE": str(checkout.tmp / "forged.index")}
+        subprocess.run(["git", "read-tree", prompt], cwd=checkout.repo, env=index, check=True)
+        subprocess.run(["git", "update-index", "--cacheinfo", f"100644,{forged},input.txt"], cwd=checkout.repo,
+                       env=index, check=True)
+        tree = subprocess.run(["git", "write-tree"], cwd=checkout.repo, env=index, check=True,
+                              capture_output=True).stdout.decode().strip()
+        fake = git(checkout.repo, "commit-tree", tree, "-m", "a stand-in for the prompt").stdout.decode().strip()
+        git(checkout.repo, "replace", prompt, fake)
+        git(worktree, "update-index", "--cacheinfo", f"100644,{forged},input.txt")
+    git(worktree, "update-index", "--skip-worktree", "input.txt")
+    # Firing controls: Git reports nothing, and with replacements honoured the prompt appears to hold the change.
+    assert "input.txt" not in os.fsdecode(git(worktree, "status", "--porcelain=v1", "-z").stdout)
+    assert git(checkout.repo, "cat-file", "-p", f"{prompt}:input.txt").stdout == changed
+    assert git(checkout.repo, "--no-replace-objects", "cat-file", "-p", f"{prompt}:input.txt").stdout != changed
+    collected = collector.collect(checkout.ws, ident, auditor_stopped="finished")
+    assert "input.txt" not in collected["receipt"]["inventory"]["archived"], "control: the change is not archived"
+    _triage_and_retain(checkout, collected)
+    refusal = close_plan(checkout.ws, ident)["audit"]["refusal"]
+    assert refusal["reason"] == "capture_uncovered" and "input.txt" in refusal["message"]
+    assert close_plan(checkout.ws, ident, abandon=True)["audit"]["refusal"]["reason"] == "uncollected_changes"
+
+
+def test_archive_members_are_verified_beyond_the_archive_digest(checkout, monkeypatch):
+    prepared = support.prepared_session(checkout)
+    ident = checkout.meta["audit_id"]
+    note = _note(checkout, prepared.worktree)
+    real = collector.archive_files
+
+    def archive_other_bytes(*args, **kwargs):
+        # The archive is written while the note briefly holds other bytes, then the note is restored.
+        note.write_bytes(b"bytes the receipt never recorded\n")
+        try:
+            return real(*args, **kwargs)
+        finally:
+            note.write_bytes(NOTE)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(collector, "archive_files", archive_other_bytes)
+        patch.setattr(collector, "verify_archive", lambda *args, **kwargs: None)
+        collected = collector.collect(checkout.ws, ident, auditor_stopped="finished")
+    receipt, archive = collected["receipt"], Path(collected["path"]) / "files.tar"
+    # Firing control: the archive's digest is the receipt's, but its member is not the recorded file.
+    import hashlib, tarfile
+    assert hashlib.sha256(archive.read_bytes()).hexdigest() == receipt["archive_sha256"]
+    with tarfile.open(archive) as bundle:
+        assert bundle.extractfile(note.relative_to(prepared.worktree).as_posix()).read() != NOTE
+    _triage_and_retain(checkout, collected)
+    refusal = close_plan(checkout.ws, ident)["audit"]["refusal"]
+    assert refusal["reason"] == "capture_unverified" and "archive members differ" in refusal["message"]
+    rel = note.relative_to(prepared.worktree).as_posix()
+    assert rel in close_plan(checkout.ws, ident, abandon=True)["audit"]["refusal"]["message"]
+
+
+def test_the_inventory_record_must_be_the_one_the_receipt_names(checkout):
+    prepared = support.prepared_session(checkout)
+    ident = checkout.meta["audit_id"]
+    locked = prepared.worktree / checkout.ws.scratch_prefix(ident) / "notes" / "locked"
+    locked.mkdir(parents=True)
+    (locked / "inside.txt").write_bytes(b"inside an unreadable directory\n")
+    locked.chmod(0)
+    try:
+        collected = collector.collect(checkout.ws, ident, auditor_stopped="finished")
+        _triage_and_retain(checkout, collected)
+        assert close_plan(checkout.ws, ident)["audit"]["refusal"]["reason"] == "capture_uncovered", "control"
+        record = Path(collected["path"]) / "inventory.json"
+        document = read_json(record)
+        document["entries"] = [entry for entry in document["entries"] if entry["kind"] != "unreadable"]
+        record.chmod(0o600)
+        record.write_text(json.dumps(document))
+        # Firing control: the rewritten record hides the unreadable entry and is not the one the receipt names.
+        assert all(entry["kind"] != "unreadable" for entry in read_json(record)["entries"])
+        refusal = close_plan(checkout.ws, ident)["audit"]["refusal"]
+        assert refusal["reason"] == "capture_unverified" and "inventory record" in refusal["message"]
+    finally:
+        locked.chmod(0o700)
+
+
+def test_an_attempt_record_that_does_not_verify_keeps_its_diagnostic(checkout, monkeypatch):
+    prepared = support.prepared_session(checkout)
+    ident = checkout.meta["audit_id"]
+    collected = collector.collect(checkout.ws, ident, auditor_stopped="finished")
+    _triage_and_retain(checkout, collected)
+    first = _interrupted_close(checkout, monkeypatch)
+    # Control: an intact attempt record reports an ordinary incomplete close.
+    assert [item["reason"] for item in status(checkout.ws, ident)["attention"]] == ["close_incomplete"]
+    [attempt] = sorted(Path(first["closing"]).parent.glob("CLOSE-ATTEMPT-*.json"))
+    attempt.chmod(0o600)
+    attempt.write_bytes(attempt.read_bytes()[:20])
+    view = status(checkout.ws, ident)
+    invalid = [item for item in view["attention"] if item["reason"] == "closing_record_invalid"]
+    assert view["exit_code"] == 3 and invalid and attempt.name in invalid[0]["message"]
+    assert not _offers_close(view), "a concluded close that would refuse is not offered"
+    refused = _reason(close, checkout.ws, ident, actor="manager")
+    assert refused.exit_code == 3 and prepared.worktree.is_dir() and prepared.session.is_dir()

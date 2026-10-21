@@ -101,20 +101,24 @@ def _refuse(reason: str, name: str, why: str, retained: list[str]) -> StewartErr
 def archived(directory: Path, receipt: dict, *, retained: list[str] = ()) -> dict[str, tuple[str, str]]:
     """What a collection's archive verifiably holds, as identities by path; refuses unless its claim verifies.
 
-    The claim is a completed Git discovery and a recorded archive digest. The
-    bytes must match that digest, and the members must be exactly the entries
-    the receipt says were archived, with their kinds and contents. A movement
-    collection's partial archive has no digest and is never promoted.
+    The claim is a completed Git discovery and a recorded archive digest, with
+    no movement recorded anywhere in the receipt. The bytes must match that
+    digest, and the members must be exactly the entries the receipt says were
+    archived, with their kinds and contents. A movement collection's archive
+    is preserved evidence and is never promoted.
     """
     name, retained = directory.name, [str(directory), *retained]
     if receipt.get("git_discovery") != "complete":
         raise _refuse("capture_not_recorded", name, "Git discovery did not complete, so archive coverage is unknown",
                       retained)
     summary = receipt.get("inventory") if isinstance(receipt.get("inventory"), dict) else {}
-    if not isinstance(receipt.get("archive_sha256"), str):
+    errors = receipt.get("errors") if isinstance(receipt.get("errors"), list) else []
+    moved = summary.get("movement") is True or any(
+        isinstance(error, dict) and error.get("reason") == "movement" for error in errors)
+    if moved or not isinstance(summary.get("movement"), bool) or not isinstance(receipt.get("archive_sha256"), str):
         raise _refuse("capture_not_recorded", name,
-                      "the checkout changed during collection; its partial archive is preserved evidence, not a capture"
-                      if summary.get("movement") else "the collection recorded no verified archive", retained)
+                      "the checkout changed during collection; its archive is preserved evidence, not a capture"
+                      if moved else "the collection recorded no verified archive", retained)
     try:
         found = archive_identities(directory, receipt)
     except StewartError as exc:

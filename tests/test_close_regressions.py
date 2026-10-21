@@ -148,6 +148,7 @@ def test_work_written_after_an_interrupted_close_is_kept(checkout, monkeypatch):
     late.write_text("written after the close was planned\n")
     plan = closing.close_plan(checkout.ws, baseline.IDENT)["audit"]
     assert plan["refusal"]["reason"] == "checkout_changed", "the plan reports that a rerun would stop"
+    assert plan["refusal"]["exit_code"] == EXIT_ATTENTION, "with the code the stopped close earns"
     result = closing.close(checkout.ws, baseline.IDENT, actor="manager")
     # Removal stops at the checkout: the late work and the session's records that explain it stay together.
     assert [(item["kind"], item["outcome"], item.get("reason")) for item in result["results"]] == [

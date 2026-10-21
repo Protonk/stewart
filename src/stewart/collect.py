@@ -530,17 +530,20 @@ def _collect(ws: Workspace, ident: str, auditor_stopped: str, lifetime: str | No
                 "checkout changed during collection; partial archive retained, collect again after stopping writers",
                 reason="movement",
             )
-        archive_info = _files.capture_regular(archive)
-        if archive_info["kind"] != "file":
-            raise StewartError(f"collection archive is unreadable: {archive_info}", reason="archive_unreadable")
-        receipt["archive_sha256"] = archive_info["sha256"]
+        # A report that changed after its capture is movement too: both versions are kept, and no
+        # full-capture claim is made.
         report_entry = next((item for item in state["files"] if item["path"] == meta["report_path"]), None)
         if report_entry and report_entry["kind"] == "file":
             if receipt.get("report_sha256") != report_entry["sha256"]:
+                movement = True
                 raise StewartError(
                     "report changed before archive capture; both versions retained, collect again",
                     reason="movement",
                 )
+        archive_info = _files.capture_regular(archive)
+        if archive_info["kind"] != "file":
+            raise StewartError(f"collection archive is unreadable: {archive_info}", reason="archive_unreadable")
+        receipt["archive_sha256"] = archive_info["sha256"]
         receipt["unexpected_paths"], receipt["unexpected_supplemental"] = unexpected_outputs(
             state["files"], meta, record["handoff"]["path"])
         receipt["missing_supplemental"] = missing_supplemental(state["files"], meta)

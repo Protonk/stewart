@@ -687,6 +687,15 @@ def status(ws: Workspace, ident: str, *, profile: str | None = None, lifetime: s
     _identity_and_holdings(ws, ident, view, record, common, raw_stamp=view["session"]["stewart"])
     view["attention"] = _attention(view)
     view["exit_code"] = combined_code(item["code"] for item in view["attention"])
+    if view["exit_code"] == EXIT_UNVERIFIED:
+        # A concluded close refuses wherever this view reports records that do not verify (close_unverified).
+        concluded = [action for action in view["next_actions"]
+                     if action["action"] == "close" and "--abandon" not in (action.get("argv") or [])]
+        if concluded:
+            view["next_actions"] = [action for action in view["next_actions"] if action not in concluded]
+            view["outstanding"].append("a concluded close is not offered: records listed under attention do not "
+                                       "verify, so it would refuse (close_unverified); close --abandon --reason TEXT "
+                                       "retires the session")
     return view
 
 

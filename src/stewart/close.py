@@ -656,24 +656,23 @@ JUDGMENT_STOPS = frozenset({"checkout_changed", "uncollected_changes", "capture_
 
 
 def _last_attempt(directory: Path, names: list[str], closing_sha256: str) -> dict:
-    """Where and why the latest removal attempt stopped, as its record says; a record that does not bind is named.
+    """Where and why the latest removal attempt stopped, as its record says.
 
-    Attempts are ordered by their recorded time: a name's random suffix orders nothing within one second.
+    Attempts are ordered by their recorded time: a name's random suffix orders
+    nothing within one second. An attempt record that cannot be read or does
+    not bind its closing record makes the close's records fail verification,
+    as an invalid CLOSED.json does.
     """
     from stewart.session import capture_receipt
     attempts = []
     for name in names:
         location = directory / name
-        try:
-            attempt, _ = capture_receipt(location, what="close attempt record")
-            failed = [item for item in attempt.get("results") or []
-                      if isinstance(item, dict) and item.get("outcome") == "failed"]
-            if (attempt.get("schema") != CLOSED_SCHEMA or attempt.get("closing_sha256") != closing_sha256 or not failed
-                    or not isinstance(attempt.get("recorded_at"), str)):
-                raise StewartError(f"close attempt record does not bind its closing record: {location}",
-                                   reason="closing_record_invalid")
-        except StewartError as exc:
-            return {"attempt": str(location), "problem": str(exc)}
+        attempt, _ = capture_receipt(location, what="close attempt record")
+        failed = [item for item in attempt.get("results") or [] if isinstance(item, dict) and item.get("outcome") == "failed"]
+        if (attempt.get("schema") != CLOSED_SCHEMA or attempt.get("closing_sha256") != closing_sha256 or not failed
+                or not isinstance(attempt.get("recorded_at"), str)):
+            raise StewartError(f"close attempt record does not bind its closing record: {location}",
+                               reason="closing_record_invalid", retained=[str(location)])
         attempts.append((attempt["recorded_at"], name, location, failed[-1]))
     _, _, location, stop = max(attempts)
     return {"attempt": str(location), "item": stop.get("item"), "kind": stop.get("kind"),
@@ -1220,10 +1219,18 @@ def _finish(repo: Path, common: str, directory: Path, closing: dict, closing_sha
             "released": acknowledged["mode"] == "abandoned" and releasable(closing["observed"].get("release_basis")),
             "results": results, "leftovers": leftovers, "failed": failed, "resources": resources,
             "closeout": evaluations,
-            # A resource this close leaves blocked or missing needs the manager; shared use is routine.
-            "exit_code": EXIT_ATTENTION if failed or leftovers or any(item["outcome"] != "removed"
-                                                                      for item in resources)
+            # A stop because a capture no longer verifies is 3; any other stop, leftover, or resource this close
+            # leaves blocked or missing needs the manager; shared use is routine.
+            "exit_code": _stop_code(failed) if failed else EXIT_ATTENTION if leftovers or any(
+                item["outcome"] != "removed" for item in resources)
             or any(item.get("disposition") in ("blocked", "missing") for item in evaluations) else EXIT_OK}
+
+
+def _stop_code(failed: list[dict]) -> int:
+    """The code a stopped removal earns: 3 when its reason means records that do not verify, else 1."""
+    from stewart._bootstrap import exit_code_for
+    return EXIT_UNVERIFIED if any(item.get("reason") and exit_code_for(item["reason"]) == EXIT_UNVERIFIED
+                                  for item in failed) else EXIT_ATTENTION
 
 
 def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abandon: bool = False,
@@ -1268,8 +1275,12 @@ def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abando
             _resume_preflight(ws, ident, unfinished[-1], lifetime)
             worktree = unfinished[-1]["closing"]["removal"]["worktree"]
             if worktree is not None and os.path.isdir(worktree) and not os.path.islink(worktree):
-                # The check a rerun makes before removing the checkout: whether it would stop again.
-                _revalidate_plan(unfinished[-1]["closing"], ws.repo, common)
+                # The check a rerun makes before removing the checkout: whether it would stop again, with the
+                # code that stop earns.
+                try:
+                    _revalidate_plan(unfinished[-1]["closing"], ws.repo, common)
+                except StewartError as exc:
+                    audit["refusal"] = {**exc.to_json(), "exit_code": _stop_code([{"reason": exc.reason}])}
         else:
             _preflight(ws, ident, common=common, session=session, rows=rows, abandon=abandon,
                        discard_uncollected=discard_uncollected, lifetime=lifetime, collection=collection)
