@@ -1349,8 +1349,8 @@ means not checked.
    and collect, `--ignore-submodules=all` on every status and diff, and
    nested `.git` entries treated as boundaries.
 2. **Close and collect record, or decide from, another administration of
-   the same repository** (fixed by unit A, `e3db068`, below; the concluded-close
-   hole it widens is unit B) (adversarial auditor; code, run for the
+   the same repository** (fixed by unit A, `e3db068`, and unit B, `1d3ab16` and
+   `35e30bc`, below) (adversarial auditor; code, run for the
    redirection, reasoning for the assume-unchanged blinding): a gitfile
    naming `<common>` or another checkout's administration passes both
    gates. Collect then attributes that administration's HEAD, index and
@@ -1570,3 +1570,119 @@ Validation:
   earlier runs; the latter had two expected lists that omitted the new lock
   test.
 - Full gate `gate-2` at `3af53fc`: 1045 collected and selected, 0 deselected; 1044 passed, 1 skipped (the opt-in real-harness probe); 1092 s under heavy foreign load (max 1-minute load 15.7); every node shared with `gate` kept its outcome.
+
+## Unit B: a close removes a checkout only when its bytes are preserved (`1d3ab16`, `35e30bc`)
+
+Item 2's concluded-close hole, on branch `checkout-gate` after `b3e78f0`; evidence is
+under `.scratch/verified-capture/` in that worktree. It carries out the
+external reviewer's contract for concluded close (their reproduction: a
+broken `.git`, triage, then a concluded close deleted an uncaptured note and
+recorded `discarded: []`), with the coverage rule settled in the exchange
+that followed and the user's two decisions: a stopped close stays stopped
+(nothing cancels it yet), and a checkout that no longer matches its close
+stops removal instead of being kept while the session is deleted.
+Backward compatibility was not wanted; sessions written by earlier builds
+were not considered.
+
+**Contract.**
+- A concluded close needs its triaged collection to be a verified capture:
+  Git discovery completed and an archive digest was recorded
+  (`capture_not_recorded`, 2, otherwise, including every movement
+  collection); the archive and inventory record are present and match the
+  receipt, member by member (`capture_unverified`, 3); and every entry of the
+  recorded inventory is contentless (FIFO, socket, device, traversed
+  directory) or held with the same kind and content by that archive or the
+  prompt commit (`capture_uncovered`, 2). A triage does not discharge this.
+- Coverage is decided from bytes. An entry whose content was not observed
+  (unreadable, replaced, a directory not traversed, an unknown kind) is
+  unresolved and blocks. The prompt commit's blobs are read with
+  `--no-replace-objects`, no filter, and hashed by Stewart.
+- One check (`coverage.py`, with the archive reading in
+  `captured.archive_identities`) serves status's close offer, close planning,
+  close, and the recheck before removing the checkout.
+- An abandon counts as collected only what a verified archive holds; a
+  missing, damaged or partial archive saves nothing, and a change Git is told
+  not to see is uncollected. The discard list keeps link targets.
+- Just before removing the checkout, every attempt rechecks the judgment:
+  the capture still verifies and the checkout still equals the collection
+  (concluded), or the uncollected changes are exactly those listed (abandon).
+  Otherwise removal stops there: the attempt's failed result carries the
+  reason, the checkout, runtimes, refs, registry row and session stay, status
+  names why, and `close --plan` reports whether a rerun would stop.
+
+**What the reviewer's six cases do now** (`test_a_concluded_close_needs_a_verified_capture_whatever_the_triage_says`):
+
+| Case | Before | Now |
+| --- | --- | --- |
+| verified capture | closes | closes |
+| `.git` naming a missing administration | closes, note deleted | `capture_not_recorded` |
+| `.git` naming another checkout's | closes, note deleted | `capture_not_recorded` |
+| movement, then the checkout restored | closes | `capture_not_recorded` |
+| archive missing (digest kept) | closes; abandon trusts the digest | `capture_unverified`; abandon discards the note only with `--discard-uncollected` |
+| archive damaged (digest kept) | as above | as above |
+
+**Entry kinds** (`test_coverage_is_decided_by_bytes_not_by_what_git_reports`),
+each with an archive claim that verifies: unchanged tracked files, a FIFO and
+a link close (the FIFO is the differing case against the blanket rule the
+reviewer's probe showed); an unreadable directory, a nested repository, a
+nested `.git` file, a change to a file Git is told to skip
+(`update-index --skip-worktree`) and a link replacing such a file refuse
+with `capture_uncovered`, and abandon refuses them as uncollected. The two
+skip-worktree cases are new: Git reports nothing, so before this change
+neither close nor abandon saw them. They stand in for item 2's
+assume-unchanged blinding, which was not run separately.
+
+**Regressions changed** (the old keep-and-continue behaviour): an
+interrupted close with work written afterwards; an abandon resume with an
+addition; the retry with a link planted inside the checkout; and the swapped
+checkout rerun in `test_resource_safety.py`, which now stops with
+`uncollected_changes`. A resume that meets a damaged archive stops with
+`capture_unverified` and finishes once the bytes are restored.
+
+**Validation** (Python 3.14.8, Git 2.54.0, default unsandboxed context):
+- `targeted-1` failed at setup (the new module was missing from
+  `SOURCE_MODULES`); `targeted-2` failed three tests, each a defect fixed
+  before `1d3ab16` (the discard list dropped link targets; attempts ordered
+  by random name suffix; the handoff exemption, see below); `targeted-3`:
+  186 of 186 passed.
+- Full gate `gate` at `1d3ab16` ran across about ten hours of machine sleep
+  (load samples missing between 04:21 and 14:35 UTC; the helper's
+  1185 s is monotonic time) and failed three tests, all caused by the
+  commit: `coverage.py` read archives itself, against the single custody
+  validator rule, and two tests pin the module count. `35e30bc` moves the
+  archive reading into `captured.py` and counts the module. `targeted-4`:
+  225 of 226; the one failure was a second pinned count, fixed in the same
+  commit.
+- `demos.out`: nine mutations, one per guard, each failing exactly its
+  expected nodes, rerun on `35e30bc`'s code; `superseded/demos-1*` holds the
+  run on `1d3ab16`'s, also all as expected.
+- Full gate `gate-2` at `35e30bc`: 1061 collected and selected, 0 deselected; 1060 passed, 1 skipped (the opt-in real-harness probe); 1281 s, awake throughout (no load-sample gap over 11 s), under heavy foreign load (max 1-minute load 17.3); every node shared with unit A's `gate-2` kept its outcome, and the 16 new nodes are this unit's.
+
+**Left as found or decided here, for review.**
+1. The issued handoff's path is excluded from abandon's uncollected changes
+   whatever it holds, as before this change. A byte rule would list an
+   auditor's change to it; making that change refused a release-blocker test
+   in which a failed preparation leaves a handoff, so it was reverted.
+2. Status reports a failed capture only by withholding close and naming the
+   prerequisite in `outstanding`. It adds no attention item, so a damaged
+   archive does not raise status's exit code to 3, and the check runs only
+   where close would otherwise be offered.
+3. Collection records no coverage of its own, so a change Git is told to
+   skip yields no custody gap: the triage cannot see it, and only close and
+   abandon refuse.
+4. Other kept-and-continue paths remain: a link standing in for the
+   checkout directory, a checkout Git registers elsewhere, and a moved or
+   symbolic ref are kept while removal goes on and deletes the session.
+5. The recheck runs while the checkout remains. Once a resumed close has
+   removed the checkout, it removes the rest without rechecking the capture,
+   whose job, covering the checkout's bytes, is done.
+6. A stopped close has no way out other than restoring what it judged: an
+   archive damaged after planning leaves the close unfinished and the audit
+   ID blocked (the agreed lean).
+7. Concluded close and status's close offer now read the triaged archive and
+   every prompt-commit blob it does not hold, so their cost grows with the
+   repository's size.
+8. Only this check reads the prompt commit without replacement objects;
+   Stewart's other Git reads still honour them.
+9. A mode change Git is told not to see, with unchanged bytes, is not
+   uncovered: the kind is the file type, not its mode.
