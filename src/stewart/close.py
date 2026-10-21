@@ -811,8 +811,8 @@ def _uncollected(checkout: dict, session: Path, facts: dict) -> list[dict] | Non
     An entry counts as collected only when a collection's verified archive
     holds the same kind and content at its path; a partial, missing or damaged
     archive saves nothing, and Git's report of what changed decides nothing.
-    The issued handoff's path is preparation's own, and supplemental copies
-    are preserved while they match their pins. None means the answer cannot be known:
+    The issued handoff and supplemental copies are preparation's own while
+    their bytes match their pins. None means the answer cannot be known:
     an entry whose content was not observed, or a moved HEAD that no verified
     capture recorded.
     """
@@ -837,10 +837,12 @@ def _uncollected(checkout: dict, session: Path, facts: dict) -> list[dict] | Non
     if checkout["unaccounted"] or (moved and checkout.get("head") not in heads):
         return None
     from stewart.collect import _spelling
-    exempt = {_spelling(item["path"]): ("file", item["sha256"]) for item in facts["supplemental"]
+    handoff = facts["record"].get("handoff") if isinstance(facts["record"].get("handoff"), dict) else {}
+    pins = [handoff, *facts["supplemental"]]
+    exempt = {_spelling(item["path"]): ("file", item["sha256"]) for item in pins
               if isinstance(item.get("path"), str) and isinstance(item.get("sha256"), str)}
-    entries = [entry for entry in checkout.get("entries", []) if entry["path"] != facts["handoff"]]
-    missing, unresolved = unpreserved(entries, held, facts["repo"], facts["prompt_commit"], exempt=exempt)
+    missing, unresolved = unpreserved(checkout.get("entries", []), held, facts["repo"], facts["prompt_commit"],
+                                      exempt=exempt)
     if unresolved:
         return None
     return [{"path": item["path"], "sha256": item.get("sha256"),

@@ -245,3 +245,18 @@ def test_an_abandon_counts_only_verified_captures_as_collected(checkout):
                    discard_uncollected=True)
     discarded = read_json(Path(closed["closing"]))["observed"]["discarded"]
     assert rel in [item["path"] for item in discarded] and not prepared.worktree.exists()
+
+
+def test_an_abandon_counts_a_changed_handoff_as_uncollected(checkout):
+    prepared = support.prepared_session(checkout, report=None)
+    ident = checkout.meta["audit_id"]
+    handoff = prepared.worktree / read_json(prepared.session / "session.json")["handoff"]["path"]
+    # Invariance: the handoff exactly as issued is preparation's own, so nothing is uncollected.
+    assert handoff.is_file() and close_plan(checkout.ws, ident, abandon=True)["audit"]["refusal"] is None
+    rel = handoff.relative_to(prepared.worktree).as_posix()
+    handoff.write_text("the auditor's own work, written over the handoff\n")
+    refusal = close_plan(checkout.ws, ident, abandon=True)["audit"]["refusal"]
+    assert refusal["reason"] == "uncollected_changes" and rel in refusal["message"]
+    closed = close(checkout.ws, ident, actor="manager", abandon=True, reason="handoff overwritten",
+                   discard_uncollected=True)
+    assert rel in [item["path"] for item in read_json(Path(closed["closing"]))["observed"]["discarded"]]

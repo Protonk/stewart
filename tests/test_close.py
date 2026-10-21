@@ -308,7 +308,8 @@ def test_each_release_blocker_alone_keeps_the_audit_id_reserved(checkout, monkey
         (session / "PREPARE-ERROR.json").rename(checkout.tmp / "moved-aside.json")
     try:
         result = close(checkout.ws, IDENT, actor="manager", abandon=True, reason=f"blocker {blocker}",
-                       discard_uncollected=blocker in ("checkout_extra", "checkout_unobservable"))
+                       # A public handoff whose bytes are not the issued ones is a change no capture holds.
+                       discard_uncollected=blocker in ("public_handoff", "checkout_extra", "checkout_unobservable"))
     finally:
         if blocker == "checkout_unobservable" and (worktree / "input.txt").exists():
             (worktree / "input.txt").chmod(stat.S_IRUSR | stat.S_IWUSR)
