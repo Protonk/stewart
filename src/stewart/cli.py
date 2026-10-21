@@ -395,14 +395,18 @@ def build_parser() -> argparse.ArgumentParser:
                     "the session directory, and writes CLOSED.json. Closing records are never removed.\n"
                     "Anything worth keeping beyond retained files goes through export first.\n\n"
                     "Concluded (default): needs records that verify, a triage bound to a complete\n"
-                    "collection, no outstanding paused hold, no unresolved experiment attempt and a\n"
-                    "checkout unchanged since that collection. The audit ID stays reserved.\n\n"
+                    "collection that is a verified capture (its archive verifies, and it or the prompt\n"
+                    "commit holds every byte its inventory recorded, by kind and content), no outstanding\n"
+                    "paused hold, no unresolved experiment attempt and a checkout unchanged since that\n"
+                    "collection. The audit ID stays reserved.\n\n"
                     "--abandon --reason TEXT: any state, including records that do not verify. The ID\n"
                     "is released only when preparation recorded its failure before writing either\n"
                     "handoff, nothing was launched, recorded or collected, and the checkout holds only\n"
                     "preparation's footprint; every doubt keeps it reserved. An audit recorded only by a\n"
                     "draft, registration or resource context can be abandoned too; its ID stays reserved.\n\n"
-                    "A rerun finishes an interrupted close from CLOSING.json's inventory.\n"
+                    "A rerun finishes an interrupted close from CLOSING.json's inventory. Before removing\n"
+                    "the checkout every attempt checks that what the close judged still holds; if not, it\n"
+                    "stops there and keeps the checkout and the session (status and --plan say why).\n"
                     "Closing a paused session releases no hold; tell the writers.\n\n"
                     "Recorded resources: after CLOSING.json a close claims each Stewart-created\n"
                     "worktree, branch or directory whose last live use it ends and that passes its\n"
@@ -444,8 +448,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="close in any state; the closing record keeps the observed stage and problems")
     closing.add_argument("--reason", help="with --abandon: why the audit is abandoned; required and recorded")
     closing.add_argument("--discard-uncollected", action="store_true",
-                         help="with --abandon: remove checkout changes no collection captured; "
-                              "CLOSING.json lists their paths and digests")
+                         help="with --abandon: remove checkout changes that no verified collection archive "
+                              "or the prompt commit holds; CLOSING.json lists their paths and digests")
 
     release = commands.add_parser(
         "release", help="[writes a session release record] freeze exact experiment artifacts within the grant",

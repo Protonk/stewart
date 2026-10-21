@@ -861,6 +861,19 @@ def _unchanged_since(worktree: Path, collection: dict) -> bool:
     return recorded is not None and _hash.sha256_bytes(_hash.receipt_json_bytes(inventory(worktree))) == recorded
 
 
+def _verified_capture(ws: Workspace, collection: dict, outstanding: list[str]) -> bool:
+    """Whether a concluded close's collection is a verified capture; when it is not, say which prerequisite fails."""
+    from stewart.coverage import require_capture
+    try:
+        receipt = read_receipt(Path(collection["path"]) / "collection.json", what="collection receipt")
+        require_capture(ws.repo, Path(collection["path"]), receipt)
+    except StewartError as exc:
+        outstanding.append(f"a concluded close is not offered ({exc.reason}): {exc}; "
+                           + "; ".join(exc.next_steps))
+        return False
+    return True
+
+
 def _closed_view(ws: Workspace, ident: str, closes: list[dict], common: str) -> dict:
     """An audit ID whose session a close retired or is retiring: its closing records, read only.
 
@@ -875,9 +888,18 @@ def _closed_view(ws: Workspace, ident: str, closes: list[dict], common: str) -> 
         view["audit_id_state"] = "unverified"
     elif any(item["reason"] == "close_incomplete" for item in items):
         view["audit_id_state"] = "close_incomplete"
+        stopped = next(((item.get("stopped") or {}) for item in closes if not item["complete"] and "problem" not in item),
+                       {})
+        prerequisites = ["a rerun removes only what CLOSING.json recorded and writes CLOSED.json when done"]
+        if stopped.get("judgment"):
+            prerequisites = [f"the last attempt stopped before removing the checkout ({stopped['reason']}): "
+                             f"{stopped['detail']}; everything that remained is kept",
+                             "a rerun checks again and stops again unless the checkout is what the close judged "
+                             "and its capture verifies; close --plan reports whether it would stop",
+                             "no command cancels or supersedes a stopped close"]
         view["next_actions"].append({
             "action": "close",
-            "prerequisites": ["a rerun removes only what CLOSING.json recorded and writes CLOSED.json when done"],
+            "prerequisites": prerequisites,
             **command(ws, "close", "--audit-id", ident, "--actor", "<name>"),
         })
     elif closes and all(item["released"] for item in closes):
@@ -908,6 +930,11 @@ def _close_attention(closes: list[dict]) -> list[dict]:
         if "problem" in item:
             items.append({"code": EXIT_UNVERIFIED, "source": source, "reason": "closing_record_invalid",
                           "message": item["problem"]["message"]})
+        elif not item["complete"] and (item.get("stopped") or {}).get("judgment"):
+            items.append({"code": EXIT_ATTENTION, "source": source, "reason": "close_incomplete",
+                          "message": "removal stopped before the checkout because what the close judged no longer "
+                                     f"holds ({item['stopped']['reason']}): {item['stopped']['detail']}; the "
+                                     "checkout and the session's records are kept"})
         elif not item["complete"]:
             items.append({"code": EXIT_ATTENTION, "source": source, "reason": "close_incomplete",
                           "message": "a removal stopped partway; rerun close to finish from the recorded inventory"})
@@ -1345,7 +1372,8 @@ def _derive_actions(ws: Workspace, ident: str, view: dict, record: dict | None, 
     if (not actions and preparation not in {"failed", "incomplete"} and not hold_outstanding and not unresolved
             and view["experiment"].get("state") not in ("awaiting_review", "released")
             and latest is not None and latest["name"] in triaged
-            and _unchanged_since(Path(identities["worktree"]["path"]), latest)):
+            and _unchanged_since(Path(identities["worktree"]["path"]), latest)
+            and _verified_capture(ws, latest, outstanding)):
         actions.append({
             "action": "close",
             "prerequisites": [

@@ -233,11 +233,11 @@ def _observe_checkout(facts: dict) -> dict:
                  or (entry["kind"] == "directory" and entry["path"] not in directories))
     if state["head"] != prompt:
         extra.add(f"HEAD at {state['head']}")
-    # Entries whose bytes Git could not list: their contents are unknown.
-    unaccounted = sorted(entry["path"] for entry in entries if entry["kind"] in ("unreadable", "replaced")
-                         or (entry["kind"] == "directory" and entry.get("traversed") is False))
+    # Entries whose content was not observed (unreadable, replaced, not traversed, of unknown kind) are unknown.
+    from stewart.coverage import classify
+    unaccounted = sorted(entry["path"] for entry in classify(entries)[1])
     return {"observed": True, "exists": True, "extra": sorted(extra), "files": files, "unaccounted": unaccounted,
-            "head": state["head"]}
+            "head": state["head"], "entries": entries}
 
 
 def _admin_worktree(git_admin: Path) -> str | None:
@@ -369,34 +369,43 @@ def _registrations(repo: Path) -> list[dict]:
     return blocks
 
 
-def _changed_since_planning(closing: dict, repo: Path, common: str) -> str | None:
-    """Why the checkout no longer matches what the close planned to remove, or None.
+def _revalidate_plan(closing: dict, repo: Path, common: str) -> None:
+    """Refuse to remove the checkout unless what the close judged still holds; raises with the reason.
 
-    A concluded close planned removal of a checkout equal to its triaged
-    collection; an abandon planned to discard exactly the uncollected changes
-    it listed. Work written after planning, including after an interruption,
-    is kept rather than removed with the checkout. An abandon that authorized
-    discarding unobservable changes (``discarded`` is null) planned no list.
+    A concluded close judged a checkout equal to its triaged collection, and
+    that collection a verified capture; an abandon judged exactly the
+    uncollected changes it listed. Work written after planning, including
+    after an interruption, or a capture that no longer verifies, stops removal
+    there, so the checkout and the session's records stay together. An
+    abandon that authorized discarding unobservable changes (``discarded`` is
+    null) planned no list.
     """
     from stewart.collect import inventory
+    from stewart.coverage import require_capture
     from stewart.session import capture_receipt
     removal, observed = closing["removal"], closing["observed"]
     worktree, session = Path(removal["worktree"]), Path(removal["session"])
+    retained = [str(worktree), str(session)]
     if closing["acknowledged"]["mode"] == "concluded":
         frozen = observed.get("collection") if isinstance(observed.get("collection"), dict) else {}
         try:
-            receipt, digest = capture_receipt(contained(session, f"collections/{frozen.get('name')}") / "collection.json",
-                                              what="triaged collection receipt")
+            directory = contained(session, f"collections/{frozen.get('name')}")
+            receipt, digest = capture_receipt(directory / "collection.json", what="triaged collection receipt")
         except StewartError as exc:
-            return f"the triaged collection cannot be read to compare the checkout with it ({exc.reason})"
+            raise StewartError(f"the triaged collection cannot be read to compare the checkout with it ({exc.reason})",
+                               reason="capture_unverified", retained=retained) from None
         if digest != frozen.get("sha256"):
-            return "the triaged collection's receipt changed; the checkout cannot be compared with it"
+            raise StewartError("the triaged collection's receipt changed; the checkout cannot be compared with it",
+                               reason="capture_unverified", retained=retained)
+        require_capture(repo, directory, receipt, retained=retained)
         current = _hash.sha256_bytes(_hash.receipt_json_bytes(inventory(worktree)))
-        return None if current == (receipt.get("inventory") or {}).get("sha256") else \
-            "the checkout changed after the close was planned"
+        if current != (receipt.get("inventory") or {}).get("sha256"):
+            raise StewartError("the checkout changed after the close was planned", reason="checkout_changed",
+                               retained=retained)
+        return
     discarded = observed.get("discarded")
     if discarded is None:
-        return None
+        return
     from stewart._repository import _role_records
     record = None
     try:
@@ -409,13 +418,17 @@ def _changed_since_planning(closing: dict, repo: Path, common: str) -> str | Non
     notes = f"{identity['workspace']}/scratch/{identity['audit_id']}/notes"
     facts["notes"] = notes if notes in (facts["assignment"].get("scratch_paths") or []) else None
     checkout = _observe_checkout(facts)
-    uncollected = _uncollected(checkout, session) if checkout["observed"] and checkout["exists"] else (
+    uncollected = _uncollected(checkout, session, facts) if checkout["observed"] and checkout["exists"] else (
         [] if checkout["observed"] else None)
     if uncollected is None:
-        return "the checkout can no longer be observed fully; changes made after planning cannot be ruled out"
-    planned = {(item.get("path"), item.get("sha256")) for item in discarded if isinstance(item, dict)}
-    added = sorted(item["path"] for item in uncollected if (item["path"], item["sha256"]) not in planned)
-    return "changes written after the close was planned: " + ", ".join(added[:10]) if added else None
+        raise StewartError("the checkout can no longer be observed fully; changes made after planning cannot be "
+                           "ruled out", reason="uncollected_changes", retained=retained)
+    planned = {(item.get("path"), item.get("sha256"), item.get("target")) for item in discarded if isinstance(item, dict)}
+    added = sorted(item["path"] for item in uncollected
+                   if (item["path"], item["sha256"], item.get("target")) not in planned)
+    if added:
+        raise StewartError("changes written after the close was planned: " + ", ".join(added[:10]),
+                           reason="checkout_changed", retained=retained)
 
 
 def _delete_checkout(parent: int, name: str, *, identity: tuple[int, int] | None = None) -> str:
@@ -436,10 +449,11 @@ def _remove(removal: dict, repo: Path, common: str, closing: dict) -> tuple[list
     links from the filesystem root, so a link standing in for a recorded
     directory or any of its ancestors is kept and named, never traversed. The
     checkout's Git administration is removed only when it names the recorded
-    path and belongs to this lifetime. What is kept rather than removed (a
-    substituted directory, a ref that is symbolic or moved, a checkout
-    registered elsewhere or changed after planning) and entries no record
-    names are reported as leftovers.
+    path and belongs to this lifetime. A checkout that no longer matches what
+    the close judged (``_revalidate_plan``) stops removal before anything is
+    removed after it. What is kept rather than removed (a substituted
+    directory, a ref that is symbolic or moved, a checkout registered
+    elsewhere) and entries no record names are reported as leftovers.
     """
     results: list[dict] = []
     kept: list[str] = []
@@ -467,12 +481,10 @@ def _remove(removal: dict, repo: Path, common: str, closing: dict) -> tuple[list
             return substituted(exc)
         if found is not None:
             # A link standing in for the checkout holds no auditor work; it is
-            # removed without being followed.
-            changed = None if stat.S_ISLNK(found.st_mode) else _changed_since_planning(closing, repo, common)
-            if changed:
-                kept.append(str(worktree))
-                kept.extend(str(admin) for admin in administrations)
-                return f"kept: {changed}"
+            # removed without being followed. Otherwise removal stops here,
+            # before anything else goes, unless what the close judged holds.
+            if not stat.S_ISLNK(found.st_mode):
+                _revalidate_plan(closing, repo, common)
             try:
                 with _removal.pinned(worktree.parent) as parent:
                     outcome = _delete_checkout(parent, worktree.name, identity=(found.st_dev, found.st_ino))
@@ -535,7 +547,8 @@ def _remove(removal: dict, repo: Path, common: str, closing: dict) -> tuple[list
         try:
             results.append({"item": item, "kind": kind, "outcome": action()})
         except (OSError, StewartError, ValueError, TypeError, _removal.Replaced) as exc:
-            results.append({"item": item, "kind": kind, "outcome": "failed", "detail": str(exc)})
+            results.append({"item": item, "kind": kind, "outcome": "failed", "detail": str(exc),
+                            **({"reason": exc.reason} if isinstance(exc, StewartError) else {})})
             break
     leftovers = list(kept)
     recorded = {removal["worktree"], *removal["members"], *kept}
@@ -623,6 +636,9 @@ def closing_entries(common: str, ws: Workspace, ident: str) -> list[dict]:
                     raise StewartError(f"closed record does not bind its closing record: {done}",
                                        reason="closing_record_invalid", retained=[str(done)])
                 entry.update(complete=True, closed=closed)
+            elif entry["attempts"]:
+                entry["stopped"] = _last_attempt(directory, [name for name in names if name.startswith("CLOSE-ATTEMPT-")],
+                                                 digest)
         except StewartError as exc:
             entry.update(problem={**exc.to_json(), "reason": "closing_record_invalid"}, complete=False, released=False)
         except (OSError, KeyError, TypeError, AttributeError, ValueError) as exc:
@@ -634,10 +650,42 @@ def closing_entries(common: str, ws: Workspace, ident: str) -> list[dict]:
                                              str(((item.get("closing") or {}).get("identity") or {}).get("closed_at"))))
 
 
+#: Reasons a removal attempt stops because what its close judged no longer holds, rather than because a removal failed.
+JUDGMENT_STOPS = frozenset({"checkout_changed", "uncollected_changes", "capture_not_recorded", "capture_unverified",
+                            "capture_uncovered"})
+
+
+def _last_attempt(directory: Path, names: list[str], closing_sha256: str) -> dict:
+    """Where and why the latest removal attempt stopped, as its record says; a record that does not bind is named.
+
+    Attempts are ordered by their recorded time: a name's random suffix orders nothing within one second.
+    """
+    from stewart.session import capture_receipt
+    attempts = []
+    for name in names:
+        location = directory / name
+        try:
+            attempt, _ = capture_receipt(location, what="close attempt record")
+            failed = [item for item in attempt.get("results") or []
+                      if isinstance(item, dict) and item.get("outcome") == "failed"]
+            if (attempt.get("schema") != CLOSED_SCHEMA or attempt.get("closing_sha256") != closing_sha256 or not failed
+                    or not isinstance(attempt.get("recorded_at"), str)):
+                raise StewartError(f"close attempt record does not bind its closing record: {location}",
+                                   reason="closing_record_invalid")
+        except StewartError as exc:
+            return {"attempt": str(location), "problem": str(exc)}
+        attempts.append((attempt["recorded_at"], name, location, failed[-1]))
+    _, _, location, stop = max(attempts)
+    return {"attempt": str(location), "item": stop.get("item"), "kind": stop.get("kind"),
+            "reason": stop.get("reason"), "detail": stop.get("detail"),
+            "judgment": stop.get("reason") in JUDGMENT_STOPS}
+
+
 def close_summary(entry: dict, repo: Path) -> dict:
     """One closing record as status shows it; leftovers are observed now, at read time."""
     summary = {"session_uuid": entry["session_uuid"], "path": entry["path"], "complete": entry["complete"],
-               "released": entry["released"], "attempts": entry["attempts"]}
+               "released": entry["released"], "attempts": entry["attempts"],
+               **({"stopped": entry["stopped"]} if "stopped" in entry else {})}
     if "problem" in entry:
         return {**summary, "problem": entry["problem"]}
     closing = entry["closing"]
@@ -757,15 +805,20 @@ def require_fresh_audit_id(common: str, ws: Workspace, ident: str) -> None:
                                next_steps=["choose a fresh audit ID; a closed audit's ID names its evidence"])
 
 
-def _uncollected(checkout: dict, session: Path) -> list[dict] | None:
-    """Checkout files a collection has not captured: preserved nowhere if the checkout goes.
+def _uncollected(checkout: dict, session: Path, facts: dict) -> list[dict] | None:
+    """Checkout entries whose bytes neither a verified capture nor the prompt commit preserves.
 
-    None means they cannot be known: an entry Git could not list (an
-    unreadable or replaced directory, a nested repository) or a moved HEAD
-    that no complete collection recorded.
+    An entry counts as collected only when a collection's verified archive
+    holds the same kind and content at its path; a partial, missing or damaged
+    archive saves nothing, and Git's report of what changed decides nothing.
+    The issued handoff's path is preparation's own, and supplemental copies
+    are preserved while they match their pins. None means the answer cannot be known:
+    an entry whose content was not observed, or a moved HEAD that no verified
+    capture recorded.
     """
+    from stewart.coverage import archived, unpreserved
     from stewart.session import list_records, read_receipt
-    captured: set[tuple[str, str | None]] = set()
+    held: dict[str, set] = {}
     heads: set[str] = set()
     try:
         entries = list_records(session / "collections")
@@ -774,18 +827,24 @@ def _uncollected(checkout: dict, session: Path) -> list[dict] | None:
     for entry in entries:
         try:
             receipt = read_receipt(entry / "collection.json", what="collection receipt")
+            members = archived(entry, receipt)
         except StewartError:
             continue
-        checkout_state = receipt.get("checkout") if isinstance(receipt.get("checkout"), dict) else {}
-        if receipt.get("archive_sha256"):
-            captured.update((item.get("path"), item.get("sha256")) for item in checkout_state.get("files", [])
-                            if isinstance(item, dict))
-            heads.add(checkout_state.get("head"))
+        for key, value in members.items():
+            held.setdefault(key, set()).add(value)
+        heads.add((receipt.get("checkout") or {}).get("head"))
     moved = any(item.startswith("HEAD at ") for item in checkout["extra"])
     if checkout["unaccounted"] or (moved and checkout.get("head") not in heads):
         return None
-    return [item for item in checkout["files"]
-            if item["path"] in checkout["extra"] and (item["path"], item["sha256"]) not in captured]
+    from stewart.collect import _spelling
+    exempt = {_spelling(item["path"]): ("file", item["sha256"]) for item in facts["supplemental"]
+              if isinstance(item.get("path"), str) and isinstance(item.get("sha256"), str)}
+    entries = [entry for entry in checkout.get("entries", []) if entry["path"] != facts["handoff"]]
+    missing, unresolved = unpreserved(entries, held, facts["repo"], facts["prompt_commit"], exempt=exempt)
+    if unresolved:
+        return None
+    return [{"path": item["path"], "sha256": item.get("sha256"),
+             **({"target": item["target"]} if item["kind"] == "symlink" else {})} for item in missing]
 
 
 def close(ws: Workspace, ident: str, *, actor: str, abandon: bool = False, reason: str | None = None,
@@ -906,7 +965,7 @@ def _preflight(ws: Workspace, ident: str, *, common: str, session: Path, rows: l
     if abandon:
         checkout = _observe_checkout(facts)
         if checkout["observed"]:
-            uncollected = _uncollected(checkout, session) if checkout["exists"] else []
+            uncollected = _uncollected(checkout, session, facts) if checkout["exists"] else []
         elif checkout["exists"] is None:
             uncollected = []  # no checkout is known, so none is removed
         else:
@@ -924,8 +983,7 @@ def _preflight(ws: Workspace, ident: str, *, common: str, session: Path, rows: l
                                reason="uncollected_changes", retained=[facts["worktree"]],
                                next_steps=["collect first to preserve them, or rerun with --discard-uncollected"])
         # None records a discard that could not be observed.
-        observed["discarded"] = (None if uncollected is None else
-                                 [{"path": item["path"], "sha256": item["sha256"]} for item in uncollected])
+        observed["discarded"] = None if uncollected is None else [dict(item) for item in uncollected]
         observed["release_basis"] = _release_basis(session, facts, checkout)
         observed["checkout"] = {"observed": checkout["observed"], "exists": checkout.get("exists"),
                                 "extra": checkout["extra"], "error": checkout.get("error")}
@@ -1042,6 +1100,7 @@ def _status_view(ws: Workspace, ident: str) -> dict | None:
 def _concluded(view: dict | None, facts: dict, session: Path, *, expected: str | None = None) -> dict:
     """The preconditions of a concluded close and the observations it rests on."""
     from stewart.collect import inventory
+    from stewart.coverage import require_capture
     from stewart.session import capture_receipt
     if view is None:
         raise StewartError("status cannot read this session", reason="close_unverified", code=EXIT_UNVERIFIED,
@@ -1077,6 +1136,8 @@ def _concluded(view: dict | None, facts: dict, session: Path, *, expected: str |
     receipt, collection_digest = capture_receipt(Path(collection["path"]) / "collection.json", what="collection receipt")
     _, triage_digest = capture_receipt(Path(disposition["path"]), what="triage record")
     worktree = Path(facts["worktree"])
+    # A complete receipt is not a verified capture, and a triage does not make it one.
+    require_capture(facts["repo"], Path(collection["path"]), receipt, retained=[str(session), str(worktree)])
     unchanged = None
     if worktree.is_dir():
         current = _hash.sha256_bytes(_hash.receipt_json_bytes(inventory(worktree)))
@@ -1192,7 +1253,8 @@ def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abando
     try:
         if unfinished:
             audit.update(state="close_incomplete", removes=unfinished[-1]["closing"]["removal"],
-                         note="a rerun finishes this recorded inventory and never widens it")
+                         note="a rerun finishes this recorded inventory and never widens it",
+                         stopped=unfinished[-1].get("stopped"))
         elif session.is_dir() or rows:
             audit.update(state="live", removes=_removal_inventory(session, facts, common))
         elif _known_audit(common, ws, ident):
@@ -1202,6 +1264,10 @@ def close_plan(ws: Workspace, ident: str, *, lifetime: str | None = None, abando
         _validate_mode(abandon=abandon, discard_uncollected=discard_uncollected, reason=reason)
         if unfinished:
             _resume_preflight(ws, ident, unfinished[-1], lifetime)
+            worktree = unfinished[-1]["closing"]["removal"]["worktree"]
+            if worktree is not None and os.path.isdir(worktree) and not os.path.islink(worktree):
+                # The check a rerun makes before removing the checkout: whether it would stop again.
+                _revalidate_plan(unfinished[-1]["closing"], ws.repo, common)
         else:
             _preflight(ws, ident, common=common, session=session, rows=rows, abandon=abandon,
                        discard_uncollected=discard_uncollected, lifetime=lifetime, collection=collection)

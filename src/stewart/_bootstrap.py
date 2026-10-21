@@ -122,6 +122,7 @@ EXIT_UNVERIFIED = 3
 #: in the source to appear in exactly one of these two sets.
 UNVERIFIED_REASONS = frozenset({
     "archive_mismatch", "archive_unreadable", "attempt_schema", "binding_mismatch", "capture_unavailable",
+    "capture_unverified",
     "checkout_identity", "child_binding", "close_unidentified", "close_unverified", "closing_record_invalid", "child_script_mismatch", "collection_binding", "collection_schema",
     "coordination_schema", "evidence_tampered", "evidence_unavailable", "exit_log_malformed",
     "frozen_unavailable", "implementation_unrecorded", "input_mismatch", "launcher_mismatch", "package_binding",
@@ -161,7 +162,7 @@ REFUSED_REASONS = frozenset({
     "pause_note_required", "pause_unacknowledged", "prepare_failed", "close_leftovers", "prompt_commit_shape", "prompt_digest", "prompt_drift", "reason_required",
     "record_missing", "record_name", "refused", "release_consumed", "report_changed", "report_kind", "report_kind_required",
     "report_unreadable", "report_write", "repository_root", "response_schema", "retain_nothing", "submodules_present",
-    "checkout_git_missing",
+    "checkout_git_missing", "capture_not_recorded", "capture_uncovered",
     "review_schema", "runtime_cache", "schema_version", "scope_uncovered", "session_missing", "startup_failed",
     "startup_isolation", "support_unreviewed", "target_ancestry", "target_drift", "unassigned_prompt",
     "unknown_field", "unterminated_block", "usage", "workspace_guidance",
@@ -415,7 +416,7 @@ SOURCE_MODULES = frozenset({
     "__init__.py", "__main__.py", "_bootstrap.py", "_git.py", "_invocation.py", "_json.py",
     "_removal.py", "_repository.py", "_util.py", "api.py", "assignment.py", "audits.py", "auditor_scope.py", "captured.py",
     "cli.py", "close.py", "holdings.py", "request_keys.py",
-    "collect.py",
+    "collect.py", "coverage.py",
     "coordination.py", "experiment.py", "handoff.py", "implementation.py", "launch_profile.py", "ledger.py",
     "prepare.py", "report_declaration.py", "runtime.py", "session.py", "status.py", "triage.py",
     "verify_inputs.py", "workspace.py", "docs.py", "_version.py",

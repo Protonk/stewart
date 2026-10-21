@@ -630,10 +630,12 @@ def test_a_session_checkout_swapped_before_deletion_is_left_in_place(checkout, m
     assert held.is_dir() and (held / ".git").is_file(), "the recorded checkout moved aside is untouched"
     assert prepared.session.is_dir(), "removal stopped at the failure; the session's records remain"
 
-    # Invariance: rerunning the close keeps the impostor and names it as a leftover.
+    # Invariance: a rerun cannot observe the impostor as the checkout it planned to discard, so it stops there
+    # again and keeps the impostor, the moved checkout and the session's records.
     rerun = close_module.close(checkout.ws, "one-question", actor="manager")
-    assert rerun["results"][0]["kind"] == "worktree" and rerun["results"][0]["outcome"].startswith("kept: ")
-    assert str(worktree) in rerun["leftovers"]
+    assert [(item["kind"], item["outcome"], item.get("reason")) for item in rerun["results"]] == [
+        ("worktree", "failed", "uncollected_changes")]
+    assert rerun["closed"] is None and prepared.session.is_dir()
     assert (worktree / "impostor.txt").read_text(encoding="utf-8") == "not the recorded checkout\n"
     assert held.is_dir() and (held / ".git").is_file()
 

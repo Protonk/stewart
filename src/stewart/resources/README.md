@@ -580,18 +580,36 @@ permission. Keep the human evidence map and scope in the prompt.
     `close_unverified`, 3), a triage bound to a complete collection
     (`close_not_concluded`), no outstanding paused hold
     (`close_hold_outstanding`), no unresolved experiment attempt
-    (`close_attempt_unresolved`) and a checkout unchanged since that collection
-    (`checkout_changed`; collect and triage again, or abandon). `status` offers
-    `close` only when these hold for the latest complete collection and no
-    other action is pending. An
+    (`close_attempt_unresolved`), a verified capture in that collection, and a
+    checkout unchanged since it (`checkout_changed`; collect and triage again,
+    or abandon). A complete receipt is not a verified capture, and a triage
+    does not make it one. The collection must have completed Git discovery and
+    recorded an archive digest (otherwise `capture_not_recorded`, as after
+    movement during collection); its archive and inventory record must be
+    present and match the receipt, member by member (otherwise
+    `capture_unverified`, 3); and every entry its inventory recorded must hold
+    no content (a FIFO, socket or device, never read, or a traversed directory)
+    or be held with the same kind and content (a file's bytes, a link's target)
+    by that archive or the prompt commit (otherwise `capture_uncovered`).
+    Coverage is decided from bytes, never from Git's report of what changed:
+    an unreadable or replaced entry, a nested repository's `.git`, a `.git`
+    file Stewart declines to read, or a tracked file whose bytes differ from
+    the prompt commit and were not archived (Git can be told not to look)
+    blocks conclusion. `status` offers `close` only when all of these hold for
+    the latest complete collection and no other action is pending; when the
+    capture is what fails, its `outstanding` names the prerequisite. An
     abandon (`--abandon --reason TEXT`) is allowed in any state, including
     failed preparations and records that do not verify. It refuses while the
-    checkout holds changes no collection captured, or when it cannot observe
-    the checkout fully: entries Git cannot list, a commit no complete
-    collection recorded, a checkout Git now registers elsewhere, or a `.git`
-    that is not the checkout's own gitdir file (`uncollected_changes`). With
-    `--discard-uncollected` the closing record lists the discarded paths and
-    digests, or `null` when they could not be observed. A session whose directory is gone
+    checkout holds bytes that neither a verified collection archive nor the
+    prompt commit holds with the same kind and content (a missing, damaged or
+    partial archive saves nothing; the issued handoff and supplemental copies
+    that match their pins are preparation's own), or when it cannot observe the
+    checkout fully: an entry whose content was not observed, a commit no
+    verified capture recorded, a checkout Git now registers elsewhere, or a
+    `.git` that is not the checkout's own gitdir file (`uncollected_changes`).
+    With `--discard-uncollected` the closing record lists the discarded paths
+    with their digests or link targets, or `null` when they could not be
+    observed. A session whose directory is gone
     but whose registry row remains can be abandoned through that row; one with
     neither a record nor a row is retired as its session directory alone. An
     audit recorded only by a draft, registration or resource context recorded
@@ -612,7 +630,17 @@ permission. Keep the human evidence map and scope in the prompt.
     session recorded (each with `--no-deref` and its expected commit), the role
     registry row, and the session directory last. Removal never follows a
     link: a link in place of a recorded directory is removed or kept, never
-    traversed. Removal stops at the first failure and records the attempt in
+    traversed. Just before removing the checkout, close checks again that what
+    it judged still holds: for a concluded close, that the collection is still
+    a verified capture and the checkout still equals it; for an abandon, that
+    the checkout's uncollected changes are exactly those it listed. If not,
+    removal stops there with the reason (`checkout_changed`,
+    `uncollected_changes` or a capture reason in the attempt's failed result),
+    and the checkout, its runtimes, refs, registry row and session all stay. A
+    rerun checks again and stops again until the checkout is what the close
+    judged and its capture verifies; `close --plan` reports whether it would,
+    and `status` names why the last attempt stopped. Nothing cancels or
+    supersedes a stopped close. Removal stops at the first failure and records the attempt in
     `CLOSE-ATTEMPT-<stamp>.json`, relocking the checkout if it remains; `status`
     reports the close as incomplete and a rerun of `close` finishes from the
     recorded inventory, never a wider one. A close interrupted before writing
@@ -1295,8 +1323,9 @@ producer run, scope expansion, or release of a paused hold.
   removes only what the session recorded and, under claims it writes and
   revalidates at use, the managed resources whose last live use it ends, and
   only after writing its closing record. A concluded close refuses a checkout changed since the triaged
-  collection; an abandon refuses uncollected changes unless told to discard
-  them. Do not remove a checkout by hand: its lifetime lock makes Git refuse,
+  collection or a collection that is not a verified capture; an abandon
+  refuses uncollected changes unless told to discard them, and a close whose
+  judgment no longer holds when it reaches the checkout stops there. Do not remove a checkout by hand: its lifetime lock makes Git refuse,
   and a checkout removed before any complete collection takes its evidence
   with it.
 
@@ -1366,8 +1395,12 @@ writes nothing. It runs the close's own read-only checks for the mode given
 (`--abandon`, `--reason`, `--discard-uncollected`, `--collection`, `--lifetime`), so the
 refusal it reports is the one that close would raise now: a concluded close of
 a draft or closed audit (`session_missing`), an abandon over uncollected changes
-(`uncollected_changes`), a concluded close before triage, or `--reason` or
-`--discard-uncollected` without `--abandon` (`usage`). Planning requires neither
+(`uncollected_changes`), a concluded close before triage or over a collection
+that is not a verified capture (`capture_not_recorded`, `capture_unverified`,
+`capture_uncovered`), or `--reason` or
+`--discard-uncollected` without `--abandon` (`usage`). For an unfinished close it
+reports the stop a rerun would meet before removing the checkout, and the
+`stopped` attempt, if one stopped there. Planning requires neither
 an actor nor an abandonment rationale. It exits with that
 refusal's code, 1 when a resource would stay blocked or missing, and 0
 otherwise. It separates audit closure (the session's own inventory and the
@@ -1828,7 +1861,7 @@ closing records under `<git-common-dir>/stewart/closed/`.
 | `attempts/<name>/ATTEMPT.json` (schema 8), `stdout.txt`, `stderr.txt` | Prompt and target commits, launch outcome, raw exit or signal, endpoint comparison, supplied runtime observations and pristine asset pins, output-area creation, output capture paths and digests (including streams), measurement verification with mismatching cases beside anomalies, and errors, with process output beside them. Historical attempts require the version that wrote them. |
 | `attempts/<name>/ledger.jsonl`, `child-receipt.json` | Exact readable child output bytes used by the wrapper; created exclusively. Unavailable outputs leave an explicit capture observation instead. |
 | `closed/<slug>/<audit-id>/<uuid>/CLOSING.json` (`stewart.closing/1`) | Written before `close` removes anything: identity (session UUID, workspace, audit ID, commits, `session.json` digest, prepared and closed times, tool), the acknowledgment (actor, mode, abandon reason), observations (triage and collection digests, retained paths and digests, discarded paths and digests, an abandon's stage, problems and release basis, coordination mode), attributed claims (the manager's decision, the auditor's completion and report kind) and the removal inventory. Never removed. |
-| `closed/<slug>/<audit-id>/<uuid>/CLOSED.json` (`stewart.closed/1`), `CLOSE-ATTEMPT-<stamp>.json` | Each removal's outcome and the unrecorded entries left in place, bound to `CLOSING.json`'s digest. `CLOSED.json` is written only once nothing recorded remains; an attempt that stopped partway writes `CLOSE-ATTEMPT-*`. |
+| `closed/<slug>/<audit-id>/<uuid>/CLOSED.json` (`stewart.closed/1`), `CLOSE-ATTEMPT-<stamp>.json` | Each removal's outcome and the unrecorded entries left in place, bound to `CLOSING.json`'s digest. `CLOSED.json` is written only once nothing recorded remains; an attempt that stopped partway writes `CLOSE-ATTEMPT-*`, whose failed result carries a `reason` when removal stopped because what the close judged no longer holds. |
 | `audits/<slug>/<audit-id>/init/<name>/STARTED.json`, `OUTCOME.json` (`stewart.draft/1`) | A mutating `init`'s intended writes and their digests, recorded before writing, and what was written or why it failed. Without an outcome the init was interrupted. |
 | `audits/<slug>/<audit-id>/registrations/<name>.json` (`stewart.registration/1`) | Present observations of an existing workspace's guidance and prompt, attributed to the registering actor; implies no earlier custody. |
 | `requests/<sha256>/REQUEST.json`, `attempts/*.json`, `OUTCOME.json` | A request key's exclusive binding (`stewart.request-binding/1`, with the exact key and invoking checkout), the output identities planned before each side effect, and the recorded completion or refusal with output identities. Never removed by close. |
@@ -1986,6 +2019,10 @@ could fix it, 3 when nothing the auditor does can) and whether the auditor's
   are outside them. A successful Git command does not establish full coverage;
   the inventory records every entry within the boundaries it names, and the
   archive holds the regular files and links among them that changed or are new.
+  Close counts an entry as preserved only when a verified archive or the
+  prompt commit holds it with the same kind and content; the prompt commit's
+  blobs are read without replacement objects or filters and hashed by
+  Stewart.
 - Acknowledgments are attributed to the maintainer's flags. `auditor stopped:
   acknowledged` is not an observed process exit. The validated reserved declaration records the auditor's completion claim,
   never a verdict. Prose status lines are not interpreted.

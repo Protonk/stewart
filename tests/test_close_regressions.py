@@ -76,9 +76,15 @@ def test_removal_never_traverses_a_substituted_checkout_ancestor(checkout, monke
                                reason="disposable link-position comparison", discard_uncollected=True)
     else:
         result = closing.close(checkout.ws, baseline.IDENT, actor="manager")
-    assert result["closed"] is not None and result["failed"] == []
     assert unrelated.read_text() == "invariant sibling\n", "an unrelated sibling is never touched"
     worktree_step = result["results"][0]
+    if route == "retry" and position == "inside_link":
+        # A link written after the close was planned is new work: removal stops at the checkout, not traversed.
+        assert worktree_step["outcome"] == "failed" and worktree_step["reason"] == "checkout_changed"
+        assert (prepared.worktree / "linked-decoy").is_symlink() and prepared.session.is_dir()
+        assert sentinel.read_text() == "outside recorded checkout\n", "the decoy is never removed"
+        return
+    assert result["closed"] is not None and result["failed"] == []
     if position == "none":
         # Healthy control: the real recorded checkout and its registration are removed.
         assert worktree_step["outcome"] == "removed" and not prepared.worktree.exists()
@@ -93,10 +99,6 @@ def test_removal_never_traverses_a_substituted_checkout_ancestor(checkout, monke
         assert (held / "worktree").is_dir(), "the real checkout moved aside is not reached through the link"
     elif position == "leaf_link":
         assert worktree_step["outcome"] == "removed link"
-    elif route == "retry":
-        # A link written after the close was planned is new work; the checkout is kept, not traversed.
-        assert worktree_step["outcome"] == "kept: the checkout changed after the close was planned"
-        assert (prepared.worktree / "linked-decoy").is_symlink()
     else:
         assert worktree_step["outcome"] == "removed" and not prepared.worktree.exists()
 
@@ -144,10 +146,20 @@ def test_work_written_after_an_interrupted_close_is_kept(checkout, monkeypatch):
     _interrupt_before_checkout_removal(checkout, monkeypatch)
     late = prepared.worktree / "after-interruption.txt"
     late.write_text("written after the close was planned\n")
+    plan = closing.close_plan(checkout.ws, baseline.IDENT)["audit"]
+    assert plan["refusal"]["reason"] == "checkout_changed", "the plan reports that a rerun would stop"
     result = closing.close(checkout.ws, baseline.IDENT, actor="manager")
-    assert result["results"][0]["outcome"] == "kept: the checkout changed after the close was planned"
-    assert late.read_text() == "written after the close was planned\n"
-    assert str(prepared.worktree) in result["leftovers"] and result["exit_code"] == EXIT_ATTENTION
+    # Removal stops at the checkout: the late work and the session's records that explain it stay together.
+    assert [(item["kind"], item["outcome"], item.get("reason")) for item in result["results"]] == [
+        ("worktree", "failed", "checkout_changed")]
+    assert result["closed"] is None and result["exit_code"] == EXIT_ATTENTION
+    assert late.read_text() == "written after the close was planned\n" and prepared.session.is_dir()
+    summary = [item for item in status(checkout.ws, baseline.IDENT)["closes"] if not item["complete"]][0]
+    assert summary["stopped"]["reason"] == "checkout_changed" and summary["stopped"]["judgment"] is True
+    # Invariance: once the checkout is again what the close judged, the rerun finishes.
+    late.unlink()
+    finished = closing.close(checkout.ws, baseline.IDENT, actor="manager")
+    assert finished["closed"] and not prepared.worktree.exists() and not prepared.session.exists()
 
 
 def test_an_abandon_keeps_changes_written_after_its_plan(checkout, monkeypatch):
@@ -182,8 +194,10 @@ def test_an_abandon_resume_keeps_an_addition_the_plan_did_not_list(checkout, mon
     added = prepared.worktree / "added-after-plan.txt"
     added.write_text("not in the planned discard\n")
     result = closing.close(checkout.ws, baseline.IDENT, actor="manager")
-    assert result["results"][0]["outcome"].startswith("kept: changes written after the close was planned")
-    assert added.read_text() == "not in the planned discard\n"
+    step = result["results"][0]
+    assert step["outcome"] == "failed" and step["reason"] == "checkout_changed"
+    assert step["detail"].startswith("changes written after the close was planned") and result["closed"] is None
+    assert added.read_text() == "not in the planned discard\n" and prepared.session.is_dir()
 
 
 @pytest.mark.parametrize("interleave", ["none", "before_close", "after_removal", "moved"])
