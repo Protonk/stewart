@@ -4,7 +4,16 @@ Status: WP0 to WP3 done; the three approved follow-ups are done (provisioning
 without rustc, a targeted WP5 change to `checkout_identity`, and the
 concurrency probe; `TEST-SPEED-FINDINGS.md`). The user declined WP4. WP5's
 instrumentation and census are done without runtime changes; further WP5
-changes await the user's rulings and approval. Start with bounded
+changes await the user's rulings and approval. On 2026-10-22 the user
+decided the historical artifacts: `scripts/prune.py` removed the artifacts
+directories of the main checkout's eleven retained runs (`.scratch/identity/`,
+`.scratch/repair-followups/` and the top-level smoke runs) under the policy
+`DEVELOPMENT.md` now states, recorded in
+`.scratch/pruned/20261022T215751Z-81893.json`. The 3.14 runs' receipts,
+streams, logs and wheels stay in place; the Python 3.11 runs' records
+(`repair-311`, `full-311`, `socket-unsandboxed-311`) were removed by hand on
+the user's instruction the same day, so their figures survive only in this
+file and `TEST-SPEED-FINDINGS.md`. Start with bounded
 measurements and improvements to the test harness, then investigate the
 remaining costs. This file sets the
 order, evidence and acceptance of each work package;
