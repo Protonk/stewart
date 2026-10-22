@@ -9,11 +9,14 @@ decided the historical artifacts: `scripts/prune.py` removed the artifacts
 directories of the main checkout's eleven retained runs (`.scratch/identity/`,
 `.scratch/repair-followups/` and the top-level smoke runs) under the policy
 `DEVELOPMENT.md` now states, recorded in
-`.scratch/pruned/20261022T215751Z-81893.json`. The 3.14 runs' receipts,
-streams, logs and wheels stay in place; the Python 3.11 runs' records
-(`repair-311`, `full-311`, `socket-unsandboxed-311`) were removed by hand on
-the user's instruction the same day, so their figures survive only in this
-file and `TEST-SPEED-FINDINGS.md`. Start with bounded
+`.scratch/pruned/20261022T215751Z-81893.json`. Later that day, on the user's
+instruction, every older record went too: the Python 3.11 runs first, then
+the 3.14 baselines (`repair-314`, `full-314`, the focused and socket runs) and
+the 2026-10-17 to 10-18 smoke runs, so their figures survive only in this
+file, `TEST-SPEED-FINDINGS.md` and the self-audit report. The current
+reference is `.scratch/reference/bd83b3b` (`bd83b3b`, clean: 1,071
+collected and selected, 1,070 passed, 1 skipped, `total_seconds` 824.1;
+retention removed 2,671 paths and kept nothing). Start with bounded
 measurements and improvements to the test harness, then investigate the
 remaining costs. This file sets the
 order, evidence and acceptance of each work package;
