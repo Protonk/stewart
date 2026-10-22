@@ -163,6 +163,60 @@ and nothing is removed, because an evidence run that lost its control is not
 evidence. `--keep-artifacts all` removes nothing. Removal failures are printed
 and recorded but change neither the exit status nor any test outcome.
 
+## Retained runs and their removal
+
+A run is what `check.py` leaves beside `<name>.json`. Its **record** is the
+receipt, `<name>.log`, `<name>.pytest.log`, the tested wheel under
+`<name>-dist/` and whatever the caller put beside them, such as an `.out`
+stream. Its **artifacts directory**, `<name>-artifacts-*/`, is working state:
+the test directories and private HOMEs the receipt describes. Left whole, a
+full run's artifacts hold about 3.6 GB in 200,000 entries, nearly half of it
+runtime capture archives and a third copies of the package, so two rules bound
+them and nothing else is deleted:
+
+1. **Each invocation reduces its own run.** The default `--keep-artifacts
+   failed` removes the directories of every node that passed within budget
+   once the receipt is written, as the previous section describes. A run made
+   with `--keep-artifacts all` or `--keep-node` is an evidence run; the plan
+   or report that needs it names it.
+2. **An artifacts directory leaves when the run's purpose is served; the
+   record stays.** `scripts/prune.py` is the only mechanism, and it never
+   removes a record. Records stay beside the plan or report that cites them
+   and are removed by hand with that plan, as [AGENTS.md](AGENTS.md) says of
+   completed plans; they are never rewritten. Prune once a plan's findings are
+   recorded, and before removing the plan.
+
+```sh
+"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/prune.py"
+"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/prune.py" --apply
+"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/prune.py" --run identity/repair-314 --orphans --apply
+```
+
+Without `--apply` the script prints the plan and writes nothing. It walks
+`--root` (default `<project>/.scratch`) without entering any run's
+directories. Only a receipt binds an artifacts directory: the directory it
+names must be a real directory beside it named `<name>-artifacts-*`. The
+default plan takes every bound run whose outcomes all passed or were skipped,
+with pytest and the runner exiting 0 and no budget exceeded, that selected no
+evidence, and whose stem no tracked file of the project names (`git grep`,
+which requires the project to be the top of its own Git work tree; the default
+stem `check-result` is always named by this document). Everything else is kept
+and its reason printed: a failed, over-budget or cited run, an evidence run, a
+receipt naming a directory elsewhere or a link, a directory a running process
+names, and an orphan no receipt binds. `--run NAME` plans the named run
+whatever its outcomes and citations, where NAME is the receipt's path relative
+to the root without `.json` or its bare stem when unique; a name matching no
+receipt, an unbound run or one a running process names refuses the whole
+invocation, and nothing is removed. `--orphans` plans unbound directories no
+running process names.
+
+With `--apply` the plan goes to `<root>/pruned/<timestamp>-<pid>.json` before
+the first removal and each directory's result after it, and
+`<name>.pruned.json` beside each pruned receipt names that record. Removal
+checks each directory's device and inode against the plan, follows no links,
+and restores owner permissions a test took away, as the retention pass does; a
+refused removal is recorded, printed and fails the invocation.
+
 ## Qualification
 
 Development and acceptance target Apple Silicon macOS with Python 3.14.
