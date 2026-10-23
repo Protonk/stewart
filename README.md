@@ -228,4 +228,8 @@ from [Installation](#installation), run the full suite against a fresh wheel:
 
 Add `--fast` for a short smoke selection; full validation omits it.
 
+For help from Riker, use the [user-relayed exchange](riker/RIKER.md).
+The guide includes an opening-message template and explains how to provide
+context and return the reply to the local agent.
+
 Stewart is released under the [MIT License](LICENSE).

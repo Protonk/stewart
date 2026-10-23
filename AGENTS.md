@@ -6,6 +6,10 @@ in `tests`. Runtime dependencies are the Python standard library plus the
 declared external Git/shell prerequisites. Use the distribution's `_util` byte
 contracts; never import a containing repository's helpers or configuration.
 
+“Ask Riker for help” means prepare a request for the user to relay to a separate
+Project conversation. `riker/RIKER.md` describes the exchange and links the
+opening-message template.
+
 Preserve unrelated working-tree changes. Record execution state in temporary
 local plans, keep durable guidance stateless, and remove completed plans after
 their contracts reach documentation and tests. `ORCHESTRATION-PLAN.md` is the
