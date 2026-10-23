@@ -10,12 +10,34 @@ contracts; never import a containing repository's helpers or configuration.
 Project conversation. `riker/RIKER.md` describes the exchange and links the
 opening-message template.
 
-Preserve unrelated working-tree changes. Record execution state in temporary
-local plans, keep durable guidance stateless, and remove completed plans after
-their contracts reach documentation and tests. `ORCHESTRATION-PLAN.md` is the
-pending plan for orchestration over the shipped interfaces;
-`tests/test_orchestration_plan.py` keeps its citations real. Do not add compatibility shims
-or rewrite historical receipts to fit a newer schema.
+Preserve unrelated working-tree changes. Active plans are ordinary tracked
+working documents with stable paths; discover them by the `*-PLAN.md` naming
+convention. Update their current account as work changes; Git preserves history.
+At completion or abandonment, give unfinished work an explicit disposition,
+move enduring contracts and explanations into documentation and tests, and
+delete the plan. There is no obligation to retain every planning paragraph.
+Keep durable guidance stateless: maintained AGENTS and README files must not
+route readers to particular plans, and product code and tests must stand without
+them. Explain mechanisms and reasons without temporary planning coordinates.
+Preserve captured historical documents. Do not add compatibility shims or
+rewrite historical receipts to fit a newer schema.
+
+For a fleet approach, one coordinating agent owns the coherent result. It
+investigates the intended outcome, protected obligations, changeable behavior
+and consequential decisions for the user; chooses useful concurrency, complete
+worker assignments, edit ownership, integration order and verification; and
+makes a bounded first wave ready to dispatch. Later assignments can remain
+provisional. Preparing an approach does not itself start implementation.
+Within authorized execution, the coordinator may revise assignments, resolve
+ordinary disagreements, integrate changes and arrange independent review without
+repeated permission requests. The user retains authority over purpose, scope
+and changes to protected obligations. Use the harness's delegation and workspace
+facilities, with Codex or Claude as appropriate; no fixed staffing, provider split
+or development orchestration framework is required. Development workers do not
+inherit Stewart's manager/auditor workflow. Keep worker returns compact and
+verify the combined result. Shared check-ins normally cover stage outcomes,
+semantic decisions, evidence and unresolved questions in human-readable docs;
+the coordinator manages internal logistics.
 
 Use an explicit interpreter with isolated startup (`-I`, plus `-B` where
 bytecode must stay unwritten) in development commands. Isolated mode ignores

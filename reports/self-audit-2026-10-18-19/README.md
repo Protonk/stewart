@@ -17,5 +17,7 @@ intermediate audit state.
 Historical paths and audit identifiers are retained as provenance. The
 consolidated report and current repository state provide the remediation
 handoff without requiring recovery of the deleted intermediate audit state.
-The separately committed Linux container plan remains at
-[the repository root](../../LINUX-CONTAINERS-PLAN.md).
+The Linux container implementation proposal mentioned in these historical
+documents has been retired. Linux and WSL qualification are acceptance goals
+for the future Rust implementation; current platform support is described in
+the root README and DEVELOPMENT.md.

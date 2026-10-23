@@ -198,8 +198,9 @@ Its present limits:
   equivalent boundary, and real harness enforcement is qualified separately
   from the settings an adapter constructs.
 - **Orchestration.** No orchestrator exists yet. Discovery, selection, request
-  keys and recorded resources are the interfaces it would build on;
-  [ORCHESTRATION-PLAN.md](ORCHESTRATION-PLAN.md) describes the pending work.
+  keys and recorded resources provide interfaces for callers that coordinate
+  audits. Stewart's development coordination uses the agent harness's own
+  facilities.
 - **Submodules.** Stewart neither populates nor audits submodules; `prepare`
   refuses a prompt commit holding them until they are acknowledged.
 - **Historical records.** Historical schemas require their creating
