@@ -6,6 +6,9 @@ in `tests`. Runtime dependencies are the Python standard library plus the
 declared external Git/shell prerequisites. Use the distribution's `_util` byte
 contracts; never import a containing repository's helpers or configuration.
 
+[The coordinator handoff](COORDINATOR-HANDOFF.md) records the user's working
+expectations for agents taking the coordinating role across harnesses.
+
 “Ask Riker for help” means prepare a request for the user to relay to a separate
 Project conversation. `riker/RIKER.md` describes the exchange and links the
 opening-message template.
