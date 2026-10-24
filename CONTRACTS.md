@@ -56,7 +56,8 @@ claims, such as requiring a disposition before publication under its custody
 claims. A refusal whose next step cannot be performed inside Stewart is suspect
 unless it names the external authority or commitment it honors. Stewart treats
 the commission as authorizing the manager to receive the auditor's return;
-adjudicating a right to receive is outside its model and would be an addition.
+adjudicating a right to receive is outside its model, and was considered as an
+addition and declined.
 
 **Close offers opportunity, not preservation.** Close deliberately ends private
 custody; retention and export decide what survives it. Close guarantees that
@@ -83,9 +84,10 @@ Releasing a resource claim when the resource changed concerns the scope of the
 authorized act, not a promise to the manager's earlier self. Human auditors,
 principals, material providers and later readers acquire no retention rights
 from their roles; any they hold come from promises, authority limits or
-reliance actually recorded. Stewart has no record of a manager's delegation
-limits or a provider's conditions today; that is a candidate addition, not a
-veto to imagine. Stewart's promises to the auditor are process promises: raw
+reliance actually recorded. A provider's condition or a manager's delegation
+limit is recorded as a hold on a recorded resource, below; it is a record the
+manager makes, not a veto to imagine. Stewart's promises to the auditor are
+process promises: raw
 capture before interpretation, a disposition of every gap, and attribution
 that is never turned into a verdict.
 
@@ -579,6 +581,13 @@ record then carries it as surrendered, never as discarded by default. Today
 close does not consult request state and `retain` has no safe resumption, so
 the exits are a fresh retention or abandon naming it.
 
+**Supplied-file copies at abandon.** Decided 2026-10-24. A worktree copy of a
+supplied file is removed at abandon only if the original it duplicates still
+exists and matches its pin; a copy whose original is absent or differs is
+treated as uncollected. Today the copy is exempt on its pin alone and is not
+named among discards. This is a disposal check on a pinned input whose
+duplicate close is about to remove, not a live check on a published output.
+
 **Advice stays separate from preconditions.** Status's offered close is
 narrower than direct close's preconditions: it requires newest-collection
 triage and no pending retention, release or run. Those remain advice and are
@@ -629,14 +638,15 @@ surrounding evidence.
 
 ## Supplemental inputs below gitlinks
 
-Decided 2026-10-24. **Decided, departure; contingent on the submodule
-decision.** A supplemental destination below a gitlink is refused before
+Decided 2026-10-24. **Decided, departure.** A supplemental destination below
+a gitlink is refused before
 allocation, with the instruction to pin the supplied copy at an ordinary path.
 This removes the contradictory contract in which preparation admits such a
 descendant and the `gitlink_contents` remedy then says to move it. Populated
-submodules remain unsupported. If submodule support is adopted, this contract
-is revisited with it; captured contents and historical assignments are never
-rewritten either way.
+submodules remain unsupported. The submodule decision is made: pinned
+submodule copies, below, are the one thing preparation places below a gitlink,
+and nothing else may be supplied there, materialized or not. Captured contents
+and historical assignments are never rewritten.
 
 ## Launch acknowledgments by people
 
@@ -646,6 +656,122 @@ apply only to an agent arrangement and are neither required nor invented for a
 human one. The change is representational. It establishes no delivery service,
 requires no watcher, transfers no responsibility after human approval, and does
 not make a recorded acknowledgment proof of activity.
+
+## Pinned submodule copies
+
+Decided 2026-10-24. **Decided, departure.** Preparation materializes a
+gitlink's pinned tree as plain files below the gitlink path, as preparation's
+own pinned copies: per-file digests, commit, tree and source recorded in the
+session record; one level only; objects taken only from the maintainer
+checkout's own submodule administration; no network; no Git administration
+created; a changed copy is a verification failure like a changed supplemental
+input. This is an effectful preparation step: it reads a second object store,
+writes files into the checkout, requires parsing `.gitmodules`, and adds a
+refusal when the objects are unavailable locally. Collection archives the
+materialized tree with the rest of the checkout. At abandon without a
+collection the copies are accounted for only if the maintainer's submodule
+administration still holds the objects they duplicate; the pin-only exemption
+is not extended to them. The auditor may rely on the copies being the
+submodule's pinned revision; nobody may rely on them being a Git checkout or on
+recursive submodules being present. Work inside populated submodules is
+declined; see Declined.
+
+## Return arrangements and the human auditor
+
+Decided 2026-10-24. Nothing the auditor does reaches Stewart before
+collection: the issued helpers write only the report path, the scope denies
+session reads and common-directory writes, and auditor bytes are read once, at
+collection, after the manager's stop claim. The decisions below respect that.
+
+**A manager-declared return arrangement.** **Decided, departure.** The
+manager may record, as attributed free text bound to the session, how it
+expects the return to arrive. Status lists it under coordination. It carries
+no time, outcome or current field, is never paired with an absent collection
+as attention, describes how the manager expects the return rather than who is
+entitled to receive it, and establishes no delivery, watcher or callback duty.
+
+**A stop note on collect.** **Decided, departure.** `collect` accepts an
+optional note stating the basis of the manager's stop acknowledgment,
+mirroring the pause note. It is attributed text, not a verdict.
+
+**What the structured return already is.** **Documentation.** The auditor's
+structured return is the collection-bound captured report with its
+declaration; the manager's disposition with its kind-bound follow-up is a
+structured reply that never leaves private custody. Neither reaches the other
+party through Stewart today.
+
+**The handoff is complete without the helpers.** **Decided, departure.** The
+issued handoff carries a pasteable declaration block, manual remedies for each
+gap, and labels on the parts bound to the issuing host: the helper argv names
+the manager process's interpreter, and the launch block's exit trailer appends
+into the private session. A human auditor can therefore return a valid report
+without the helpers. The auditor acquires no further standing: no channel, no
+notification, no retention right, no role transfer.
+
+**Delivery.** **Deferred.** Stewart describing, requiring or performing
+delivery of the return waits on a receiving endpoint and real-harness
+evidence. Delivery is not placed outside Stewart by this deferral.
+
+**A capture receipt for the auditor.** **Deferred.** A read-only projection or
+receipt an auditor could see, confirming their return was captured raw, is
+decided with the successor's status rendering. It serves Stewart's first
+process promise to a human auditor.
+
+## External sources and the constructed network grant
+
+Decided 2026-10-24. **Decided, departure.** An assignment's external sources
+are recorded beside the network grant the launch adapter constructs, and the
+handoff tells the auditor both. When an assignment names sources that the
+selected launch style constructs no route to, Stewart records a neutral limit
+in the same way it records gitlinks; it never refuses and raises no attention
+item, since an offline construction is the ordinary case and the style is
+known at prepare only when a profile is pinned. Wording says constructed, not
+observed: a manager may rely on knowing what was constructed, and nobody may
+rely on a fetch having been permitted or having happened. **Deferred:**
+constructing the allowed domains from the assignment waits on a real-harness
+network qualification; a permitted domain would make the auditor's readable
+Git object store transmissible, which that qualification must weigh. Stewart
+fetching and pinning external bytes itself is declined; see Declined.
+
+## Project commands as experiments
+
+Decided 2026-10-24. **Decided, departure.** The supported route for running a
+project's own build or test commands is a reviewed Python script that invokes
+them through a subprocess, with the command literal in the frozen script so
+that the manager's byte review is the command review, the child's command
+claims in its receipt, and controls designed to discriminate the instrument.
+The costs are stated: the attempt environment is the manager's PATH with HOME
+redirected, toolchains are unpinned, and residue inside the worktree is
+archived as gaps. The access-limits statement that this route may not serve a
+project's real system checks remains true where those checks need an
+environment the shim cannot provide. A separate command experiment kind is
+declined; see Declined.
+
+## Holds on recorded resources
+
+Decided 2026-10-24. **Decided, departure.** A manager may record a
+repository-level, attributed, blocking-only hold on any recorded resource.
+Close honors it exactly as a live use: the resource is never claimed, the hold
+is shown in `close --plan`, show, closeout and the closing record, and it is
+released only by an explicit attributed release record, never by a close flag,
+a container's retirement or a dispose option. The record carries the actor,
+the condition's text and a required limit stating what the hold does and does
+not do; its wording says "not destroyed by Stewart", never "returned" or
+"preserved against the manager", because Stewart can promise the first and
+neither of the others. For an enrolled resource this presents a condition
+enrollment already honors, and the enrollment note becomes visible wherever
+the hold is. For a Stewart-created resource it is a new commitment: a hold
+blocks the manager's own disposal until an attributed release. It leaves
+"removal is authorized by two records only" intact, since a hold grants
+nothing and is one more reason no claim is created. Release never requires the
+named provider, and no close flag acknowledges past a hold; the provider is
+named in a record and cannot invoke Stewart.
+
+## Attribution of retention
+
+Decided 2026-10-24. **Decided, departure.** `retain` records its actor as
+export and every resource-writing operation do, so that publication of the
+deliverable is not the least attributed step.
 
 ## Writer continuity into the successor
 
@@ -671,8 +797,25 @@ valid while the supplied adapter permits no network domains; the Python
 minimal-environment experiment route may not serve a project's real system
 checks; project rules reach the auditor only through supplied accessible
 guidance. Eliminating the coordination duty needs a different access
-arrangement and real harness qualification. Real external retrieval and
-system-project experiments are capability candidates, not promises.
+arrangement and real harness qualification. External retrieval and project
+commands as experiments are decided above in their narrowed forms.
+
+Further limits established by the additions inquiry, stated as facts of the
+frozen baseline: the constructed scope grants the auditor read access to the
+whole Git common directory except Stewart's private storage and the role
+markers, which includes a maintainer's absorbed submodule object stores and
+other sessions' worktree administration; only the scope's precedence rule is
+harness-qualified. An assignment's external sources are validated and then
+consumed by nothing, and the adapter's empty allowed-domain list is an adapter
+constant rather than a scope field; the manual and sub-agent launch styles
+construct no network boundary at all. The experiment environment is the
+manager's PATH with HOME redirected and no sandbox. Collection's walk lists
+nested `.git` files and skips nested `.git` directories, so an absorbed
+populated submodule is predicted to be captured file by file while an old-form
+one is a boundary; the capture half is unexecuted. The human-ferry entry point
+is bound to the issuing host in the helper interpreter path and the launch
+trailer's private-session append; that a ferried launch misreports is
+predicted, not executed.
 
 ## Previously accepted corrections
 
@@ -729,3 +872,33 @@ Each entry records why, so later readers recover intent rather than infer it.
 - **Charging an acknowledgment for a nonempty experiment HOME.** The
   acknowledgment would be of a nominal opportunity; the identity record serves
   the later reader without the step.
+- **Work inside populated submodules.** It would make Stewart create, verify,
+  configure, inventory and dispose of a second Git administration per gitlink,
+  extend coverage, declarations and the closing schema, and decide the fate
+  of auditor commits, in an area Git's own documentation calls incomplete for
+  linked worktrees; pinned copies plus an ordinary experiment grant serve
+  path-based checks and captured edits. Git-aware tooling inside a submodule
+  is a fresh candidate, not a residue of this one.
+- **An auditor-attributed acceptance of the commission.** No auditor channel
+  reaches Stewart before collection; the `start` declaration skeleton is
+  already the earliest auditor-attributed artifact; a session channel would
+  produce exactly the activity signal status refuses to infer.
+- **Further standing for a human auditor.** No channel, notification,
+  retention right or role transfer follows from human authorship; the
+  handoff's completeness is the whole accommodation.
+- **Stewart fetching and pinning external bytes.** Supplemental inputs already
+  carry retrieved bytes with attributed provenance; making Stewart a network
+  client would gain attribution only.
+- **A command experiment kind.** It drops membership review and the firing
+  control and makes the project at HEAD plus an unpinned toolchain the
+  executed identity; reopen only on a fielded failure of the shim route that
+  is not merely a cost.
+- **Condition records on supplemental inputs or workspace declarations.** The
+  hold on recorded resources is the one form; these would duplicate it with
+  weaker attribution.
+- **A right to receive distinct from the commission.** The manager owns the
+  workspace and the disk the report is written to; Stewart cannot withhold
+  what the manager reads without it, cannot deliver to anyone else, and
+  segregating at capture would break raw capture before interpretation. The
+  only truthful residue, an auditor-declared claim that the commission does
+  not authorize receipt of something, is a declaration-schema question.

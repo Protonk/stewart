@@ -1,11 +1,13 @@
 # Custody additions: stage-3 first-wave account
 
-Status: first wave complete. Four source investigations ran under the stage-3
-commission of 2026-10-24; independent review of this integrated account is
-recorded at the end. Everything here is a recommendation for the user's
-decision, not a decision. No production code, test or comparison ran; Python
-remains the frozen reference baseline at `6582df2`. `DEVELOPMENT-PLAN.md` owns
-the commission and sequence; `CONTRACTS.md` owns decided behavior.
+Status: decided. Four source investigations ran under the stage-3 commission
+of 2026-10-24; independent review of this integrated account is recorded at
+the end; the user then agreed to the account as recommended, and `CONTRACTS.md`
+carries every acceptance, decline and deferral. This document is retained for
+its anchors and open questions until the successor's implementation of these
+contracts has its own evidence. No production code, test or comparison ran;
+Python remains the frozen reference baseline at `6582df2`. `DEVELOPMENT-PLAN.md`
+owns the sequence.
 
 Each investigation wrote a full account with file:line anchors under
 `.scratch/custody-additions/` (working material, untracked, about 2,200 lines
