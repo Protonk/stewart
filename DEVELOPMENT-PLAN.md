@@ -6,8 +6,9 @@ recorded in [CONTRACTS.md](CONTRACTS.md) with their implementation status; the
 findings documents and their run records remain until Rust acceptance evidence
 supersedes them, because a run's record leaves with the document that cites
 it. Python is frozen as the reference baseline; decided departures are
-implemented in Rust. Stage 2 closes when the four proposed completions in
-`CONTRACTS.md` are confirmed or revised.
+implemented in Rust. Stage 2 closes when the proposed completions in
+`CONTRACTS.md` and the proposed principle revisions below are confirmed or
+revised.
 This document owns the current sequence, stage outcomes and consequential
 decisions. Internal assignments and execution details belong to the coordinating
 agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
@@ -27,7 +28,11 @@ source finding; the resulting rule is a fourth proposed completion. Its
 evidence was independently reviewed and its artifacts pruned. `CONTRACTS.md`
 is linked from AGENTS.md and shipped in the source distribution, validated by
 `.scratch/contracts-link/distribution-01` (10 of 10 passed, wheel digest
-unchanged). Pending for stage-2 closure: confirmation of those four.
+unchanged). Riker's reply on the two general commitments arrived and is
+retained at `riker/CLOSE-COMMITMENTS-REPLY.txt`; it adds a fifth proposed
+completion and three proposed revisions to the principles, recorded in stage 2.
+Pending for stage-2 closure: confirmation of the five completions and the
+principle revisions.
 
 Checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
 contract, concrete examples, observation/consumer map, preservation-first
@@ -432,11 +437,79 @@ review required are recorded as proposed in `CONTRACTS.md`: the kept-checkout
 exit, the enumerated live checks with the public handoff treated like the
 runtime, and the closing record as a new schema.
 
+Riker consultation, 2026-10-24: the user relayed
+`riker/CLOSE-COMMITMENTS-REQUEST.txt` and returned the reply retained at
+`riker/CLOSE-COMMITMENTS-REPLY.txt`. It is advisory, not authority. It retains
+the D2 decision and does not defeat opportunity-over-preservation, but it
+establishes limits the coordinator accepts as correct: the false-claim test is
+one ground for refusal, not the only one; the party hierarchy should give way
+to default manager control plus obligations Stewart has actually undertaken;
+and "opportunity" must mean a working preservation path, with three outcomes
+kept distinct (available and surrendered, declared and unexamined, lost despite
+an undertaking). Several of its scenarios are already met by Stewart's
+mechanisms, which the revisions below make explicit: enrolled resources are
+never claimed for disposal; retention and export copy bytes and never reference
+the session; uncollected auditor work is not destroyed without an explicit
+discard naming it. Two scenarios lie outside the present model and are carried
+to stage 3 rather than decided: a manager not authorized to receive part of the
+auditor's return, and limits on a manager's delegated authority to destroy. One
+scenario named a real gap: a keyed `retain` records planned outputs before
+writing, a failed one leaves a partial request that cannot be resumed, and
+close does not consult request state; that is the fifth proposed completion.
+The experiment HOME is not the auditor's workspace, so the reply's
+restricted-environment auditor case bears on the checkout, which collection
+captures and abandon protects, not on the HOME rule.
+
+Proposed revisions to the principles in `CONTRACTS.md`, for the user's
+approval as written:
+
+1. Refusals. Replace the two sentences stating the false-claim test with: "A
+   refusal is justified by one of three grounds: a specific false custody claim
+   Stewart would make by proceeding; an act Stewart may not perform, such as
+   following a planted link, overwriting an exclusive destination, or
+   destroying material it holds no right to dispose of; or an obligation
+   Stewart has undertaken and not discharged. Discomfort with incomplete
+   evidence is not a ground; it warrants qualification. A refusal whose next
+   step cannot be performed inside Stewart is suspect unless it names the
+   external authority or commitment it honors. Stewart treats the commission
+   as authorizing the manager to receive the auditor's return; adjudicating a
+   right to receive is outside its model and would be an addition."
+2. Promises. Replace the sentences from "Stewart makes outcome promises about
+   records" through "over the deciding manager" with: "The authorized manager
+   controls by default what survives close. That control does not extinguish
+   obligations Stewart has undertaken concerning particular material: a
+   resource Stewart did not create is never claimed for disposal; another
+   audit's live use keeps a resource; retention and export copy bytes to their
+   destinations and never reference the session, so a retained outcome's
+   promise of inspection does not depend on the session surviving; uncollected
+   auditor work is not destroyed without an explicit discard naming it; and a
+   preservation the manager began and Stewart recorded is completed or
+   explicitly surrendered before conclusion. Releasing a resource claim when
+   the resource changed concerns the scope of the authorized act, not a promise
+   to the manager's earlier self. Human auditors, principals, material
+   providers and later readers acquire no retention rights from their roles;
+   any they hold come from promises, authority limits or reliance actually
+   recorded. Stewart has no record of a manager's delegation limits or a
+   provider's conditions today; that is a stage-3 question, not a veto to
+   imagine."
+3. Opportunity. Replace the sentence beginning "Close guarantees that the
+   manager had the opportunity" through "closing record freezes." with: "Close
+   guarantees that the manager had a working opportunity to keep what it
+   removes, not a nominal one: each removed surface matches a capture that
+   retention or export could have kept, duplicates session-held material that
+   could have been kept the same way, belongs to a category declared disposable
+   in advance whose identity the closing record freezes and never describes as
+   reviewed or declined, or is surrendered by name. Where the only preservation
+   path failed, the loss is recorded as a loss despite an undertaking, never as
+   a decline. Regenerability is never a ground: a digest proves what bytes to
+   expect, not the ability to produce them."
+
 **Exit:** reached in substance on 2026-10-24: the decisions above are recorded
 in `CONTRACTS.md` with reasons and declines, and the independent review of
-that decision set is resolved above. The stage closes when the four proposed
-completions in `CONTRACTS.md` are confirmed or revised. Implementing decisions
-in Python is not a condition; Python is frozen.
+that decision set is resolved above. The stage closes when the five proposed
+completions in `CONTRACTS.md` and the three principle revisions above are
+confirmed or revised. Implementing decisions in Python is not a condition;
+Python is frozen.
 
 ## 3. Consider additions to custody
 

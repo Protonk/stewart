@@ -455,8 +455,12 @@ either mode, each recorded runtime recovery is compared with the capture
 recovery made of its materialized directory. A match means the directory is
 still what that capture records; it is removed without acknowledgment and the
 closing record notes that it matched its materialization capture (this does
-not re-verify the pristine assets it was made from). A mismatch is content the
-manager never judged: conclusion refuses with reason `recovery_changed` and
+not re-verify the pristine assets it was made from). Removing it loses nothing
+the session's own runtime capture does not hold, and that capture is what
+retention and export can keep; the ground is duplication of held material, not
+a claim that the recovery could be regenerated after close. A mismatch is
+content the manager never judged: conclusion refuses with reason
+`recovery_changed` and
 names the recovery, abandon's discard must name it, and the closing record
 freezes its identity. A recovery whose materialization or capture failed has
 nothing to match and is treated as unjudged. Recovery captures once, at
@@ -528,12 +532,30 @@ render a command is covered above.
 
 **Proposed: the closing record is a new schema.** A closing record that
 freezes discard identities, recovery verifications and kept-checkout
-acknowledgments is a new closing schema. Its `observed.stage` is close's own
-operational preparation classification, not the public status milestone.
-Existing `stewart.closing/1` records remain readable as written and are never
-rewritten. The close basis under the public contract's `receipt_state`
-vocabulary is a collection whose receipt is recorded, whose capture verifies,
-and which a valid bound disposition addresses.
+acknowledgments is a new closing schema. Each removed item carries the ground
+on which it was removed, and the grounds are not interchangeable: it matched a
+reviewed capture; it duplicated session-held material (a matching recovery);
+it was removed under a declared category without examination (an attempt
+directory with its HOME); it was surrendered by an explicit discard that named
+it; or it was lost despite a recorded preservation undertaking that did not
+complete. An item removed without examination, or without a working
+preservation path, is never described as declined or reviewed. The record's
+`observed.stage` is close's own operational preparation classification, not
+the public status milestone. Existing `stewart.closing/1` records remain
+readable as written and are never rewritten. The close basis under the public
+contract's `receipt_state` vocabulary is a collection whose receipt is
+recorded, whose capture verifies, and which a valid bound disposition
+addresses.
+
+**Proposed: a recorded preservation undertaking gates conclusion.** A retain or
+export the manager began and Stewart recorded as planned, whether as a keyed
+request with attempts and no outcome or as a retention record carrying
+problems, is an undertaking, not advice. Conclusion refuses while such an
+undertaking of this lifetime is neither completed by a later retention covering
+its selection nor explicitly surrendered through abandon naming it; the closing
+record then carries it as surrendered, never as discarded by default. Today
+close does not consult request state and `retain` has no safe resumption, so
+the exits are a fresh retention or abandon naming it.
 
 **Advice stays separate from preconditions.** Status's offered close is
 narrower than direct close's preconditions: it requires newest-collection

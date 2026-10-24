@@ -27,15 +27,17 @@ as the first Rust operation, read-only against Python-written sessions with
 Python status as the control, and close last. The findings documents and their
 run records stay until Rust acceptance evidence supersedes them.
 
-Four entries in CONTRACTS.md are marked **Proposed**: completions an
+Five entries in CONTRACTS.md are marked **Proposed**: completions an
 independent review showed were missing (the kept-checkout exit, the enumerated
-live checks of conclusion, a new closing schema) and the later-return rule
-grounded in an executed comparison. They are not decided until the user says
-so. Do not treat them as decided, and do not reopen decided items without a
-new reason. The user relayed a Riker request on the two general commitments
-(`riker/CLOSE-COMMITMENTS-REQUEST.txt`); its reply belongs beside it as
-`CLOSE-COMMITMENTS-REPLY.txt` and is advisory. When the four are confirmed or
-revised, stage 2 closes in the plan and stage 3 is the next commission to
+live checks of conclusion, a new closing schema), the later-return rule
+grounded in an executed comparison, and a rule that a recorded preservation
+undertaking gates conclusion, which came from Riker's reply. The plan also
+records three proposed revisions to the principles from that reply, with
+replacement text. None is decided until the user says so. Do not treat them as
+decided, and do not reopen decided items without a new reason. The Riker
+exchange is retained at `riker/CLOSE-COMMITMENTS-REQUEST.txt` and
+`CLOSE-COMMITMENTS-REPLY.txt`; it is advisory. When the proposals are confirmed
+or revised, stage 2 closes in the plan and stage 3 is the next commission to
 prepare. It does not start automatically.
 
 ## What was decided about close, and why
@@ -163,8 +165,8 @@ disabled.
 Riker is a separately situated helper, not a superior authority. Requests and
 replies are user-relayed under [riker/RIKER.md](riker/RIKER.md). Two exchanges
 are retained: the status-delegation exchange, which sharpened the commitments
-boundary, and the close-commitments request, whose reply may be pending when
-you read this. Consultation is optional, with no prescribed place in the
+boundary, and the close-commitments exchange, whose reply produced the
+proposals the plan records. Consultation is optional, with no prescribed place in the
 sequence; repository claims still need evidence.
 
 This engagement had no fieldwork recording assignment; a predecessor's did not
