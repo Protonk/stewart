@@ -32,8 +32,10 @@ unchanged). Riker's reply on the two general commitments arrived and is
 retained at `riker/CLOSE-COMMITMENTS-REPLY.txt`; it adds a fifth proposed
 completion and three proposed revisions to the principles, recorded in stage 2.
 The user confirmed the five completions and the principle revisions;
-`CONTRACTS.md` records them as decided and stage 2 is closed. Stage 3's
-proposed commission is in its section.
+`CONTRACTS.md` records them as decided and stage 2 is closed. Stage 3 was
+commissioned the same day; its first wave is complete and integrated in
+`CUSTODY-ADDITIONS-FINDINGS.md`, with independent review in progress and the
+recommendations awaiting the user.
 
 Checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
 contract, concrete examples, observation/consumer map, preservation-first
@@ -519,8 +521,16 @@ populated submodules kept separate); delivery and return route with
 human-auditor participation, including an auditor-attributed acceptance;
 external retrieval and system-project experiments; and authority and
 conditions on material, combining the delegation-limits and right-to-receive
-candidates. The integrated account goes to `CUSTODY-ADDITIONS-FINDINGS.md`
-when results are reconciled; independent review follows integration.
+candidates. All four returned on 2026-10-24; the integrated account is
+`CUSTODY-ADDITIONS-FINDINGS.md`, with thirteen recommendations (six narrowed
+acceptances, five declines, one deferral, one narrowing of a mixed candidate),
+eight findings that bear on decided contracts rather than additions, and a
+proposed second wave of four cheap baseline comparisons. Independent review of
+that account was dispatched on integration; its outcome is recorded in the
+account. Two decided contracts would each take one clause if the related
+acceptance is adopted: the gitlink-input contract (nothing else may be supplied
+below a gitlink, materialized or not) and the retention-undertaking rule's
+template (a hold released only by an attributed record).
 
 **Exit:** a coherent desired custody arrangement, with additions accepted,
 declined, narrowed or deferred. Separate semantics ready for implementation
