@@ -494,11 +494,12 @@ system-project experiment capability (D6's candidates); and, if submodule
 support is adopted, revisiting the narrow D3 contract. Stage 2's declines are
 recorded in `CONTRACTS.md` and are not reopened here without a new reason.
 
-**Proposed commission, awaiting the user's instruction to proceed:** examine
-each candidate addition and produce the coherent desired custody arrangement
-this stage's exit describes, with every candidate accepted, declined, narrowed
-or deferred and with semantics ready for implementation separated from
-exploratory ideas. Candidates: submodule support, from the captured note;
+**Commission, 2026-10-24:** the user's instruction to dispatch the first wave
+commissions this investigation on the following terms. Examine each candidate
+addition and produce the coherent desired custody arrangement this stage's
+exit describes, with every candidate accepted, declined, narrowed or deferred
+and with semantics ready for implementation separated from exploratory
+ideas. Candidates: submodule support, from the captured note;
 delivery and return-route responsibilities with human-auditor participation,
 including an auditor-attributed acceptance of the commission; real external
 retrieval and system-project experiment capability; a record of a manager's
@@ -510,6 +511,16 @@ settle a question, arrange a fresh independent reviewer over the integrated
 account, and consult Riker at the coordinator's or user's discretion. No
 production change; Python stays frozen; accepted additions become contracts in
 `CONTRACTS.md` for Rust. The commission does not authorize implementation.
+
+First wave, dispatched 2026-10-24: four source investigations, each returning
+a compact summary and writing its full account under
+`.scratch/custody-additions/`: submodules (reading pinned code and working in
+populated submodules kept separate); delivery and return route with
+human-auditor participation, including an auditor-attributed acceptance;
+external retrieval and system-project experiments; and authority and
+conditions on material, combining the delegation-limits and right-to-receive
+candidates. The integrated account goes to `CUSTODY-ADDITIONS-FINDINGS.md`
+when results are reconciled; independent review follows integration.
 
 **Exit:** a coherent desired custody arrangement, with additions accepted,
 declined, narrowed or deferred. Separate semantics ready for implementation

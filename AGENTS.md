@@ -7,7 +7,13 @@ declared external Git/shell prerequisites. Use the distribution's `_util` byte
 contracts; never import a containing repository's helpers or configuration.
 
 [The coordinator handoff](COORDINATOR-HANDOFF.md) records the user's working
-expectations for agents taking the coordinating role across harnesses.
+expectations for agents taking the coordinating role across harnesses. It is
+written for the next coordinator, not for the user, who generally does not
+read it. Keep it short enough to begin from and complete enough that nothing
+critical must be re-learned; no handoff resolves that tension. When replacing
+it, neither carry elements forward mechanically, which blesses past decisions
+without attention, nor regenerate it wholesale, which loses good guidance.
+Re-examine what you carry.
 [CONTRACTS.md](CONTRACTS.md) states the behavior Stewart is decided to have,
 with each contract's implementation status and the reasons for declined
 changes; changes to Stewart's intended responsibilities are recorded there.
