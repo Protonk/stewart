@@ -1,16 +1,29 @@
 # Stewart's five-stage development plan
 
 Status: the five-stage sequence is agreed; Click integration is dropped.
-The status inquiry is complete under delegated contract authority. Its contract
-and evidence are recorded; Python implementation is not commissioned. The user
-has commissioned stage 2, the audit of existing custody responsibilities. Its
-investigation and independent review are complete; the user's custody decisions
-remain open.
+Stages 1 and 2 are decided. The status contract and the custody decisions are
+recorded in [CONTRACTS.md](CONTRACTS.md) with their implementation status; the
+findings documents remain for their evidence until that evidence has been cited
+from there. Python is frozen as the reference baseline; decided departures are
+implemented in Rust. Stage 2 closes when the later-return comparison is
+recorded here and three review-required completions are confirmed.
 This document owns the current sequence, stage outcomes and consequential
 decisions. Internal assignments and execution details belong to the coordinating
 agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
 
-Current checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
+Current checkpoint, 2026-10-24: the user decided D1 as six close rules plus
+abandon parity, decided D2, D3 (contingent on stage 3's submodule decision) and
+D4, deferred D5 to stage 4, took D6 as documentation, declined seven optional
+changes with recorded reasons, and chose to freeze Python and carry every
+departure into Rust with status as the first Rust operation. The decisions,
+the principles behind them and the declines are in `CONTRACTS.md`. The inquiry
+materials were committed at `356dc58`. The independent review of the decision
+set returned fourteen findings, none blocking; the corrections are applied and
+three completions it required are recorded in `CONTRACTS.md` as proposed,
+awaiting confirmation. Pending for stage-2 closure: the later-return comparison
+(`.scratch/custody-audit/later-return-01`) and confirmation of those three.
+
+Checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
 contract, concrete examples, observation/consumer map, preservation-first
 implementation outline and limitations. Two source researchers and independent
 review contributed; every review finding is resolved. Installed-wheel runs
@@ -65,6 +78,18 @@ Exceptional records retain their diagnoses. Close will own its existing
 operational checks and conditional construction-failure consequences before
 the public view stops making them. The findings contain the full decided
 contract; its implementation and any reserved obligation changes remain separate.
+
+**Implementation decision, 2026-10-24:** Python implementation is declined.
+Status is the first operation the Rust implementation realizes, read-only
+against Python-written sessions, with Python status as the control. The
+findings' preservation-first extraction order applied to a Python
+implementation and is not required. The four reserved questions are disposed:
+concluded-close readiness obligations under stage 2's D1 rules; offer versus
+direct-close basis as advice kept separate from preconditions, with the
+later-return rule pending; proof of preparation completion declined; delivery
+and human participation carried to stage 3. The decided contract now lives in
+`CONTRACTS.md`; the findings retire once their evidence has been cited from
+there.
 
 Determine what status should establish between preparation and collection,
 and which live validations belong to operations such as collection and close.
@@ -252,35 +277,46 @@ and recommendations. It does not commission runtime changes or stage-3 additions
 The prior status-contract grant is not blanket authority to revise custody,
 closure, removal or execution responsibilities.
 
-**Current outcome:** `CUSTODY-AUDIT-FINDINGS.md` maps existing responsibility
-families, costs and recovery; separates prior accepted but unimplemented fixes
-from new recommendations; and records controls, outcomes and limitations. The
-coordinator recommends retaining identity, attribution, raw capture, exact review
-binding, explicit execution permission, no uncertain replay and bounded removal.
-The following proposals remain for the user's assessment, not implementation:
+**Outcome, decided 2026-10-24:** `CUSTODY-AUDIT-FINDINGS.md` maps existing
+responsibility families, costs and recovery; separates prior accepted but
+unimplemented fixes from new recommendations; and records controls, outcomes
+and limitations. The user decided its recommendations as follows, and
+`CONTRACTS.md` states each decided contract with its implementation status:
 
-- D1: account for relevant contents before close discards them; distinguish
-  captured runtime damage from new drift, define the treatment of recovery/HOME
-  contents, and decide later-return and kept-checkout dependencies. Remove
-  command-rendering success as a closure precondition while keeping independent
-  writer and custody checks.
-- D2: allow independently verified report export with explicit surrounding
-  capture damage, without claiming the whole collection is sound.
-- D3: refuse supplemental destinations below gitlinks before preparation,
-  directing supplied copies to ordinary paths; allowing pinned descendants is
-  an alternative requiring its own explicit contract.
-- D4: allow human launch acknowledgments without invented model/effort values;
-  leave delivery and watcher responsibilities open.
-- D5: initially service old Python lifetimes through retained writers; decide
-  successor authority explicitly before Rust mutates them.
-- D6: retain access/effect protections and make their actual capability and
-  coordination limits explicit; qualify proposed replacements separately.
+- D1 is decided as close rules: runtime coverage by the triaged collection
+  replaces equality with preparation; a recovery is disposable while it matches
+  its own capture and otherwise is unjudged; experiment HOME is declared
+  disposable with its identity recorded; the closing record freezes the
+  identity of everything discarded; abandon follows the same rule; a kept
+  checkout stops cleanup; command rendering is not a closure precondition. The
+  reframing that settled it: these extend the existing act-only-on-what-was-judged
+  promise, and close offers the manager opportunity, not preservation. The
+  later-return rule awaits the executed comparison below.
+- D2 is decided: a verified selected report is exportable despite a damaged
+  sibling capture, carrying the damage explicitly and preserving the original.
+  Export only; closure keeps full-capture.
+- D3 is decided in its narrow form, contingent on stage 3's submodule decision.
+- D4 is decided.
+- D5 is deferred to stage 4 as the conservative default, with cross-writer
+  read-only export expected to be permitted under the refusal principle.
+- D6 is documentation of retained obligations and their limits.
+- Declined with recorded reasons: mandatory retention before close, a universal
+  final preparation receipt, splitting issuance from preparation, a manager
+  accepted-answer receipt, live checks on retained published files, capture of
+  recovery contents, and an acknowledgment charge for a nonempty HOME.
+
+Two general commitments were reached and recorded as principles: Stewart's
+refusals are limited to its own claims and safety, tested by what claim it
+would make falsely by proceeding; and Stewart's promises to the auditor are
+process promises, with no material-preservation promise to the auditor or to
+the manager's principal over the deciding manager.
 
 Configured Git-filter execution during preparation and inconsistent replacement
 views during input-pin construction versus capture coverage were demonstrated.
-They are implementation issues under retained trust commitments. The broader
-Git environment policy is not qualified by those narrow probes. No production
-change was made and no real harness enforcement was tested.
+They are implementation issues under retained trust commitments, listed in
+`CONTRACTS.md` as successor obligations. The broader Git environment policy is
+not qualified by those narrow probes. No production change was made and no real
+harness enforcement was tested.
 
 Evidence runs are `.scratch/custody-audit/comparisons-01.json` and
 `.scratch/custody-audit/git-filter-02.json`; the report owns their exact selectors,
@@ -309,31 +345,48 @@ of consequential recommendations and comparison evidence. The current account is
 served, transferring enduring guidance and active decisions and following the
 run-retention rules in `DEVELOPMENT.md`.
 
-Leads carried from the status inquiry, not decisions to change obligations:
+Dispositions of the leads carried from the status inquiry:
 
-- Concluded close currently inherits live-runtime and handoff-integrity effects
-  from status, including preparation-state precedence. The runtime-only
-  comparison in `STATUS-INQUIRY-FINDINGS.md` demonstrates the coupling. A separate
-  comparison also shows cached manager-launcher damage failing command generation
-  and therefore close despite matching loaded writer bytes. Examine
-  whether these conditions independently protect conclusion after sound capture
-  and triage; preserve them until a decision changes them.
-- Status's offered close is stricter than direct close's preconditions. Examine
-  whether newest-collection triage and pending retention/release/run belong to
-  advice or mandatory closure. Source: `status.py:1373–1395` and
-  `close.py:1115–1136`; no refusal change has been commissioned.
-- Private handoff retention precedes public publication; unkeyed preparation
-  has no universal final success receipt. A new completion requirement is an
-  open custody question, not a license to reinterpret or rewrite historical
-  records. Optional keyed outcomes cannot become an implicit requirement.
+- Concluded close's inherited live-runtime and command-rendering effects are
+  decided under D1: runtime coverage replaces the preparation-equality gate and
+  rendering is not a precondition. Damaged retained records that conclusion
+  relies on still refuse conclusion; that is retained, not re-decided.
+- Status's stricter offered close remains advice; newest-collection triage and
+  pending retention/release/run are not migrated into mandatory refusals.
+  Whether later consequential evidence must be addressed is the one open rule,
+  decided after the later-return comparison under
+  `.scratch/custody-audit/later-return-01` (firing, differing and invariance
+  cases, `close --plan` only, no removal).
+- Proof of preparation completion is declined in both forms; `CONTRACTS.md`
+  records the reasons.
 
-The inquiry also leaves delivery responsibilities and human-auditor interaction
-open. Consider them with the relevant custody question or stage-3 addition;
+Delivery responsibilities and human-auditor interaction, including an
+auditor-attributed acceptance of the commission, are carried to stage 3;
 neither an external-only delivery boundary nor a watcher requirement was chosen.
 
-**Exit:** a reasoned account of what to retain, revise or abandon, with explicit
-decisions and unresolved questions. Implementing every decision in Python is
-not a condition of completing this stage.
+Independent review of the decision set, 2026-10-24: a fresh reviewer applied
+the two reliance tests to `CONTRACTS.md` and this section and verified the
+factual claims against the frozen source. Fourteen findings, none blocking.
+Corrected: the opportunity principle now names the declared-disposable category
+HOME uses; the preparation-receipt decline's reason; the export chain claim
+(the receipt does pin the runtime group's capture digest, and the report's
+verification does not depend on that group's present readability); recovery's
+capture wording, since it captures once at materialization; the HOME member,
+which is the attempt directory; the reason identifiers `runtime_changed`,
+`recovery_changed` and `checkout_kept`; the runtime rule's treatment of
+movement and failed capture; freeze-and-revalidate for every comparison; which
+mode carries a discard acknowledgment; the open later-return variant; and the
+frozen-Python statement in the former-plans disposition. Three completions the
+review required are recorded as proposed in `CONTRACTS.md`: the kept-checkout
+exit, the enumerated live checks with the public handoff treated like the
+runtime, and the closing record as a new schema.
+
+**Exit:** reached in substance on 2026-10-24: the decisions above are recorded
+in `CONTRACTS.md` with reasons and declines, and the independent review of
+that decision set is resolved above. The stage closes when the later-return
+comparison is recorded here and the three proposed completions are confirmed
+or revised. Implementing decisions in Python is not a condition; Python is
+frozen.
 
 ## 3. Consider additions to custody
 
@@ -348,6 +401,13 @@ The [candidate note](planning/inputs/submodules.md) keeps the substantive
 questions. Consider object availability, scope, commit retention, capture and
 cleanup before choosing a mechanism.
 
+Carried from stage 2 for consideration here: delivery and return-route
+responsibilities and human-auditor participation, including an
+auditor-attributed acceptance of the commission; real external retrieval and
+system-project experiment capability (D6's candidates); and, if submodule
+support is adopted, revisiting the narrow D3 contract. Stage 2's declines are
+recorded in `CONTRACTS.md` and are not reopened here without a new reason.
+
 **Exit:** a coherent desired custody arrangement, with additions accepted,
 declined, narrowed or deferred. Separate semantics ready for implementation
 from exploratory ideas; inclusion as a candidate grants no implementation
@@ -360,6 +420,15 @@ the deliberate departures authorized in the preceding stages. Choose a
 migration sequence and verification strategy that assess the integrated
 system. Carry meaningful behavioral comparisons across implementations;
 reproducing every Python behavior is not the acceptance criterion.
+
+The Python implementation is frozen as the reference baseline: no further
+behavior changes, so that one stable baseline is the control for acceptance.
+`CONTRACTS.md` lists every decided departure and the previously accepted
+corrections the Rust implementation realizes. Sequence read-only operations
+first, beginning with status against the existing corpus of Python-written
+sessions, then the write path, then close; write the acceptance suite against
+the contracts and drive the CLI so it is language-agnostic. Close every live
+Python audit under Python before Rust closes anything.
 
 Make any intended behavior awaiting the optional final stage explicit. Avoid
 requiring all newly accepted responsibilities to be implemented in Python
@@ -402,8 +471,9 @@ intended invariants. Unimplemented decisions receive an explicit disposition.
   warrants that intermediate migration. The archived `docs`/`request` work and
   `CLICK-FOLLOWUPS.md` remain at `archive/2026-10-23/click-integration`
   (`56686e9`) as possible reference material, not an integration or repair queue.
-  There is no replacement preparatory parser-migration stage. A bounded Python
-  change may still be commissioned for an independently justified benefit.
+  There is no replacement preparatory parser-migration stage. Python is now
+  frozen as the reference baseline; a bounded Python change would be an
+  explicit exception recorded here, reopening that baseline.
 - Linux container installation is dropped; Linux and WSL acceptance belongs
   to stage 4.
 - The test-speed execution schedule and speculative design companion are
