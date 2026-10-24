@@ -40,6 +40,12 @@ Without `--wheelhouse` the runner uses `$STEWART_WHEELHOUSE`, else
 `<project>/.scratch/check-result.json`. `scripts/check.py --help` describes
 every option.
 
+A shell sandbox that refuses creating `.gitconfig` under the project tree stops
+every node at fixture setup, because the staged conftest writes one into each
+node's private HOME under the run's artifacts directory. Run the checker outside
+such a sandbox or permit that write; the receipt of a run stopped this way
+records errors at setup and no executed test body.
+
 For a short development check, add `--fast` to select only `smoke and not
 heavy`. Full validation omits that flag. `--fast` owns the marker selection,
 so it cannot be combined with `-m`.

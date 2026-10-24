@@ -540,16 +540,27 @@ narrower than direct close's preconditions: it requires newest-collection
 triage and no pending retention, release or run. Those remain advice and are
 not migrated into mandatory refusal conditions.
 
-**Later returns: not yet decided.** Direct close can rest on an older triaged
-collection when a later untriaged collection recorded different runtime
-observations with identical checkout bytes. The coverage rule above resolves
-the variant in which the runtime still differs: it refuses. The variant that
-stays open is where the later collection recorded a changed runtime that has
-since been restored, so the current runtime matches the triaged collection and
-the later record is unaddressed. The decided direction is that consequential
-later evidence must be addressed in the closing account, without making every
-optional follow-up mandatory. The precise rule awaits an executed comparison of
-the current behavior and is recorded here when decided.
+**Later returns.** An executed comparison of the frozen Python close
+(`.scratch/custody-audit/later-return-03`, six cases, all passed) refined the
+source finding. When the latest complete collection is untriaged and records a
+verification-level custody gap, such as `runtime_changed`, conclusion refuses
+today, because status surfaces that collection's gaps and close refuses on any
+code-3 item; triaging it moves the basis to it. That protection is incidental
+to status and reaches only the latest collection: once a later clean
+collection follows the one that recorded the change, conclusion rests on the
+older triaged collection and the recorded runtime change is addressed by no
+check. A later return whose report or checkout bytes differ is caught by the
+checkout comparison, so the evidence the checkout rule misses is exactly the
+custody gaps. **Proposed** rule: conclusion may rest on an older triaged
+collection only if every later complete collection either has a valid bound
+disposition or records no verification-level custody gap. A later collection
+recording such a gap must be triaged before conclusion, whichever position it
+holds in the sequence; the exits are triage or abandon. A later collection
+whose only gaps are review gaps, such as a missing declaration, remains advice
+and does not block. This belongs to close's own assessment, not to the public
+attention list. `close --plan` names the collection and disposition the close
+would rest on and every later collection with its gap level; today the plan
+discards that information and only an executed close records it.
 
 ## Export of selected custody with surrounding damage
 

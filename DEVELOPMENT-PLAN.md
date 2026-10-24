@@ -5,8 +5,8 @@ Stages 1 and 2 are decided. The status contract and the custody decisions are
 recorded in [CONTRACTS.md](CONTRACTS.md) with their implementation status; the
 findings documents remain for their evidence until that evidence has been cited
 from there. Python is frozen as the reference baseline; decided departures are
-implemented in Rust. Stage 2 closes when the later-return comparison is
-recorded here and three review-required completions are confirmed.
+implemented in Rust. Stage 2 closes when the four proposed completions in
+`CONTRACTS.md` are confirmed or revised.
 This document owns the current sequence, stage outcomes and consequential
 decisions. Internal assignments and execution details belong to the coordinating
 agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
@@ -20,8 +20,10 @@ the principles behind them and the declines are in `CONTRACTS.md`. The inquiry
 materials were committed at `356dc58`. The independent review of the decision
 set returned fourteen findings, none blocking; the corrections are applied and
 three completions it required are recorded in `CONTRACTS.md` as proposed,
-awaiting confirmation. Pending for stage-2 closure: the later-return comparison
-(`.scratch/custody-audit/later-return-01`) and confirmation of those three.
+awaiting confirmation. The later-return comparison then executed
+(`.scratch/custody-audit/later-return-03`, 6 of 6 passed) and refined the
+source finding; the resulting rule is a fourth proposed completion. Pending for
+stage-2 closure: confirmation of those four.
 
 Checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
 contract, concrete examples, observation/consumer map, preservation-first
@@ -324,6 +326,25 @@ failure/correction account, tested-source hashes and compact evidence manifests.
 Retirement/pruning follows DEVELOPMENT.md. Stage 2's investigation can conclude
 with explicit reserved choices; stage-3 additions do not start automatically.
 
+The later-return comparison ran as `.scratch/custody-audit/later-return-03.json`
+with `tests/test_custody_later_return_inquiry.py`: 6 collected, 6 selected,
+6 passed, 0 failed, 0 skipped, 0 deselected; pytest and runner exit 0;
+pytest 9.94 s, total 12.5 s;
+the same wheel digest as the earlier runs. Two earlier receipts are kept.
+`later-return-01` recorded 5 errors at fixture setup and no executed test body:
+the harness sandbox refused creating `.gitconfig` in the private HOMEs under the
+artifacts directory. `later-return-02` recorded 1 passed and 4 failed: the
+hypotheses the first results contradicted, kept as evidence of what was
+expected. Runs 02 and 03 executed with that sandbox disabled for those commands.
+Seventy verified entries are retained in `later-return-03-evidence/`. No close
+was executed; `close_plan` and the read-only preflight were observed, with
+session snapshots confirming no writes. Baseline and identical-later-collection
+cases rest on the triaged collection; a changed-then-restored runtime refuses
+on the later collection's `runtime_changed` gap while it is the latest; an
+unrestored runtime refuses and restoration alone no longer suffices; a changed
+checkout refuses `checkout_changed`; and a changed runtime followed by a clean
+later collection concludes on the older triage with the change unaddressed.
+
 Examine what each restriction protects, which obligations it creates, its
 costs, and the consequences of retaining, hardening, softening or removing it.
 Use [prior custody questions](planning/inputs/custody-questions.md) as leads to
@@ -353,10 +374,13 @@ Dispositions of the leads carried from the status inquiry:
   relies on still refuse conclusion; that is retained, not re-decided.
 - Status's stricter offered close remains advice; newest-collection triage and
   pending retention/release/run are not migrated into mandatory refusals.
-  Whether later consequential evidence must be addressed is the one open rule,
-  decided after the later-return comparison under
-  `.scratch/custody-audit/later-return-01` (firing, differing and invariance
-  cases, `close --plan` only, no removal).
+  Whether later consequential evidence must be addressed was examined by the
+  later-return comparison below. Today conclusion refuses only while the
+  latest complete collection is untriaged with a verification-level gap, and
+  only because status surfaces that gap; a later clean collection hides it and
+  conclusion rests on the older triage. The proposed rule in `CONTRACTS.md`
+  requires every later collection with such a gap to be triaged before
+  conclusion and keeps review-only gaps as advice.
 - Proof of preparation completion is declined in both forms; `CONTRACTS.md`
   records the reasons.
 
@@ -383,10 +407,9 @@ runtime, and the closing record as a new schema.
 
 **Exit:** reached in substance on 2026-10-24: the decisions above are recorded
 in `CONTRACTS.md` with reasons and declines, and the independent review of
-that decision set is resolved above. The stage closes when the later-return
-comparison is recorded here and the three proposed completions are confirmed
-or revised. Implementing decisions in Python is not a condition; Python is
-frozen.
+that decision set is resolved above. The stage closes when the four proposed
+completions in `CONTRACTS.md` are confirmed or revised. Implementing decisions
+in Python is not a condition; Python is frozen.
 
 ## 3. Consider additions to custody
 
