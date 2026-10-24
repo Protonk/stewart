@@ -554,6 +554,14 @@ sessions, then the write path, then close; write the acceptance suite against
 the contracts and drive the CLI so it is language-agnostic. Close every live
 Python audit under Python before Rust closes anything.
 
+The user has also asked for `GIT-ENVIRONMENT-NEEDS.md`, a user-facing document
+stating how to prepare material held in Git for Stewart and what Stewart does
+not support: a narrative introduction, a mechanically generated table of the
+Git opinions Stewart holds, and an interpretation guide. The coordinator
+handoff describes the request. The decisions it produces are recorded in
+`CONTRACTS.md`, and the Rust implementation honors or deliberately changes each
+decided opinion.
+
 Make any intended behavior awaiting the optional final stage explicit. Avoid
 requiring all newly accepted responsibilities to be implemented in Python
 first. Preserve historical evidence and specify treatment of writer-bound
