@@ -522,15 +522,15 @@ human-auditor participation, including an auditor-attributed acceptance;
 external retrieval and system-project experiments; and authority and
 conditions on material, combining the delegation-limits and right-to-receive
 candidates. All four returned on 2026-10-24; the integrated account is
-`CUSTODY-ADDITIONS-FINDINGS.md`, with thirteen recommendations (six narrowed
-acceptances, five declines, one deferral, one narrowing of a mixed candidate),
+`CUSTODY-ADDITIONS-FINDINGS.md`, with fourteen recommendations (six narrowed
+acceptances, five declines, two deferrals, one narrowing of a mixed candidate),
 eight findings that bear on decided contracts rather than additions, and a
-proposed second wave of four cheap baseline comparisons. Independent review of
-that account was dispatched on integration; its outcome is recorded in the
-account. Two decided contracts would each take one clause if the related
-acceptance is adopted: the gitlink-input contract (nothing else may be supplied
-below a gitlink, materialized or not) and the retention-undertaking rule's
-template (a hold released only by an attributed record).
+proposed second wave of nine baseline comparisons needing no harness, network
+or human. Independent review found every anchor sound and seven corrections,
+applied and recorded in the account. If adopted, submodule (i) adds a clause to
+the gitlink-input contract and reaches close's abandon exemption, and a hold on
+a Stewart-created resource is a new commitment beside the retention-undertaking
+rule.
 
 **Exit:** a coherent desired custody arrangement, with additions accepted,
 declined, narrowed or deferred. Separate semantics ready for implementation

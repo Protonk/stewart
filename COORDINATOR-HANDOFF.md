@@ -24,15 +24,14 @@ substitute a recipe or Linux results for executed WSL evidence.
 
 Stage 3 is commissioned and its first wave is complete.
 [CUSTODY-ADDITIONS-FINDINGS.md](CUSTODY-ADDITIONS-FINDINGS.md) integrates four
-source investigations into thirteen recommendations: six narrowed acceptances,
-five declines, one deferral, one mixed narrowing. **None is decided.** The user
+source investigations into fourteen recommendations: six narrowed acceptances,
+five declines, two deferrals, one mixed narrowing. **None is decided.** The user
 decides each; declining is a valid outcome, and the reasons for declines are
 written to be read later. The account also lists eight findings that bear on
-decided contracts rather than additions, and proposes a second wave of four
-cheap baseline comparisons before decisions on the narrowed acceptances.
-Independent review of the account is recorded in it. Two decided contracts
-would each take one clause if the related acceptance is adopted; the plan
-names them. When stage 3 exits with a coherent arrangement, stage 4 is next;
+decided contracts rather than additions, and proposes a second wave of nine
+baseline comparisons, needing no harness, network or human, before decisions
+on the narrowed acceptances. Independent review of the account is recorded in
+it. Two acceptances reach decided contracts if adopted; the plan names how. When stage 3 exits with a coherent arrangement, stage 4 is next;
 the plan's stage-4 section states the state to be in before Rust starts.
 
 ## Requested next: a human-facing Git environment document

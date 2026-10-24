@@ -21,13 +21,13 @@ stated here; **decline** with the reason a later coordinator should read;
 
 | Candidate | Recommendation | Reason in one line |
 | --- | --- | --- |
-| Submodules (i): readable pinned code | Accept, narrowed | Preparation materializes the pinned tree as its own pinned copies, one level, local objects only, no Git administration |
+| Submodules (i): readable pinned code | Accept, narrowed | Preparation materializes the pinned tree as its own pinned copies, one level, local objects only, no Git administration created; an effectful step whose costs are stated below |
 | Submodules (ii): work inside populated submodules | Decline | A second Git administration per gitlink, inside an area Git documents as unsupported for linked worktrees; an experiment grant over (i) serves path-based checks |
 | Return arrangement declared by the manager | Accept, narrowed | Attributed free text under coordination; no time, outcome or current field; never paired with absence as attention |
 | Auditor-attributed acceptance of the commission | Decline | No auditor channel reaches Stewart before collection; the `start` skeleton is already the earliest auditor artifact |
 | Structured return beyond collect | Narrow | An optional stop note on collect; name the existing two-way structured reply; defer delivery with its dependency stated |
-| Human auditor as first-class participant | Narrow | Make the handoff complete without the helpers; no further standing |
-| External retrieval A1: record named sources beside the constructed grant | Accept, narrowed | Attention, never refusal, when an assignment names sources the launch style constructs no route to; wording says constructed, not observed |
+| Human auditor as first-class participant | Narrow | Make the handoff complete without the helpers; no further standing; a capture receipt the auditor could see is deferred to the successor's status rendering |
+| External retrieval A1: record named sources beside the constructed grant | Accept, narrowed | A neutral recorded limit, never a refusal, when an assignment names sources the launch style constructs no route to; wording says constructed, not observed |
 | External retrieval A2: adapter constructs allowed domains from the assignment | Defer | Needs a real-harness network qualification first |
 | External retrieval A3: Stewart fetches and pins bytes | Decline | Supplemental inputs already carry retrieved bytes with attributed provenance |
 | System-project experiments B1: the reviewed shim route | Accept, narrowed | State the shim as the supported route with the command literal in the frozen script, so byte review is command review |
@@ -41,14 +41,17 @@ stated here; **decline** with the reason a later coordinator should read;
 does not populate them. Committed files below a gitlink are refused as inputs
 (`assignment.py:163–165`). Collection's walk lists nested `.git` *files* and
 skips nested `.git` *directories* (`collect.py:213–216`, verified), so an
-absorbed-form populated submodule is captured file by file, pointer included,
-and can conclude, while an old-form one is a boundary that blocks conclusion;
-the manual states only the directory case. Nothing parses `.gitmodules`, so
+absorbed-form populated submodule would be captured file by file, pointer
+included, and could conclude after triage, while an old-form one is a boundary
+that blocks conclusion; the capture half is a prediction (Q3 below), the
+boundary half is source, and the manual states only the directory case. Nothing parses `.gitmodules`, so
 the submodule name needed to locate `modules/<name>` is unknown to Stewart.
 The auditor's read grant covers the whole Git common directory except
 `common/stewart` and the role markers (`auditor_scope.py:85–88,103`;
-`_repository.py:158–175,355–368`), so a maintainer's absorbed submodule object
-store is readable from the auditor's shell today, recorded nowhere. Close
+`_repository.py:158–175,355–368`), so the constructed scope grants the auditor
+read access to a maintainer's absorbed submodule object store and to other
+sessions' worktree administration, recorded nowhere; only that scope's
+precedence rule is harness-qualified. Close
 removes each own worktree administration recursively (`close.py:498`,
 `_removal.py:81–99`); if Git places a submodule administration initialized in
 the linked worktree under that administration, close would remove it with no
@@ -62,14 +65,27 @@ own pinned copies: per-file digests, commit, tree and source recorded in the
 session record; one level only; objects taken only from the maintainer
 checkout's own submodule administration; no network; no Git administration
 created; a changed copy is a verification failure like a changed supplemental.
-It touches one assignment field, the session record, the handoff text, the
-expected-output rule at `collect.py:351–367`, the remedy text and the status
-limit. Close is untouched. The decided gitlink-input contract needs one added
-clause, that nothing else may be supplied below a gitlink, materialized or not,
-rather than reopening. A zero-contract version exists today: a generator that
-emits an inputs manifest at an ordinary path. Reliance: an auditor may rely on
-the pinned copies being the submodule's pinned revision; nobody may rely on
-them being a Git checkout or on recursive submodules being present.
+This is an effectful preparation step, not a text change: preparation reads a
+second object store, writes files into the checkout, needs Stewart's first
+`.gitmodules` parser (nothing in the source reads that file today), and adds a
+refusal. It touches one assignment field, the session record, the handoff
+text, the expected-output rule at `collect.py:351–367`, the remedy text and
+the status limit. It also touches close: at abandon without a collection the
+uncollected check exempts only handoff and supplemental pins
+(`close.py:839–842`, `coverage.py:79–86`), materialized files lie below a
+gitlink where the prompt commit never holds them, so abandon would refuse
+`uncollected_changes` unless the copies are accounted for, and extending the
+pin-only exemption is what finding 1 below calls unsound; the sound form checks
+that the maintainer's submodule administration still holds the objects the
+copies duplicate. The decided gitlink-input contract needs one added clause,
+that nothing else may be supplied below a gitlink, materialized or not. Every
+collection archives the whole materialized tree, a per-collection cost
+proportional to the submodule. The investigation calls the second-store read
+the one new commitment, small but real. A zero-contract version exists today:
+a generator that emits an inputs manifest at an ordinary path. Reliance: an
+auditor may rely on the pinned copies being the submodule's pinned revision;
+nobody may rely on them being a Git checkout or on recursive submodules being
+present.
 
 **(ii) Work inside populated submodules, declined.** It would make Stewart
 create, verify, configure, inventory and dispose of a second Git
@@ -111,9 +127,10 @@ auditor's hand-back, and it never leaves private custody
 the manual does not say: the helper argv names the manager process's own
 interpreter (`prepare.py:207`; `_invocation.py:66`), and the launch block's
 trailer appends into the private session and converts an unwritable log into
-exit 1 (`launch_profile.py:205–207`, verified; `prepare.py:341–343`). A
-ferried command run by another user or host therefore reports a failed launch
-that may have succeeded and leaves no exit line. A human can write a valid
+exit 1 (`launch_profile.py:205–207`, verified; `prepare.py:341–343`). The
+investigation predicts, without executing it, that a ferried command run by
+another user or host reports a failed launch that may have succeeded and leaves
+no exit line; that is one of the comparisons below. A human can write a valid
 declaration by hand, but every gap remedy presumes the helper and the fence
 rules make a paste fragile.
 
@@ -131,16 +148,22 @@ to produce exactly the activity signal the status contract refuses to infer.
 
 **(c) Structured return beyond collect, narrowed.** Accept an optional stop
 note on `collect`, the basis of the stop acknowledgment, mirroring the pause
-note. Name in the contracts that the structured reply already exists in both
-directions: the collection-bound captured report with its declaration one way,
-the manager's disposition with its kind-bound follow-up the other. Defer
+note. Name in the contracts what already exists: the auditor's structured return is
+the collection-bound captured report with its declaration, and the manager's
+disposition with its kind-bound follow-up is a structured reply that never
+leaves private custody. Neither statement implies the reply reaches the
+auditor. Defer
 delivery with its dependency stated, a receiving endpoint and real-harness
 evidence, rather than placing it outside Stewart.
 
 **(d) Human auditor, narrowed.** Make the handoff complete without the
 helpers: a pasteable declaration block, manual remedies, and labels on the
 host-bound parts. Decline any further standing: no channel, notification,
-retention right or role transfer.
+retention right or role transfer. One sub-item is deferred rather than
+declined: a read-only projection or capture receipt an auditor could see,
+confirming that their return was captured raw. It serves Stewart's first
+process promise to a human auditor and is decidable with the successor's
+status rendering.
 
 **Open questions.** Does the rendered launch block misreport a ferried launch
 (stub harness exiting 0, writable versus unwritable session log)? Does a
@@ -154,8 +177,9 @@ is deferred rather than designed.
 **A gap in the decided record.** The status contract's "Participants and
 entry points" table was not among the sections incorporated into
 `CONTRACTS.md`. If (a) or (d) is adopted, the table comes in with them; it is
-the only tracked statement of those four relationship distinctions once the
-stage-1 findings retire.
+the fullest tracked statement of those four relationship distinctions, which
+otherwise survive only partially in the contracts once the stage-1 findings
+retire.
 
 ## External retrieval and system-project experiments
 
@@ -183,9 +207,13 @@ the whole Git object store, so readable becomes transmissible.
 
 **A1, accepted narrowly.** Record the hostnames the assignment names beside
 the network grant the adapter constructs; tell the auditor both in the
-handoff; raise attention, never refuse, when an assignment names sources that
-the selected launch style constructs no route to. Wording says constructed,
-not observed. Reliance: a manager may rely on knowing what was constructed;
+handoff; never refuse. The investigation proposed an attention item when an
+assignment names sources the launch style constructs no route to; under the
+status contract attention is a coded exceptional condition with exit 1, and an
+offline construction is the ordinary, documented case, so the coordinator
+narrows this to a neutral recorded limit, treated as recorded gitlinks are,
+and notes that the style is known at prepare only when a profile is pinned.
+Wording says constructed, not observed. Reliance: a manager may rely on knowing what was constructed;
 nobody may rely on a fetch having been permitted or having happened.
 
 **A2, deferred.** Constructing allowed domains from the assignment waits for a
@@ -200,7 +228,11 @@ commands through a subprocess as the supported route, with the command literal
 in the frozen script so that the manager's byte review is the command review,
 the child's command claims in its receipt, controls designed as instrument
 discrimination, and the costs stated: the environment is the manager's PATH,
-toolchains are unpinned, and residue is archived as gaps.
+toolchains are unpinned, and residue is archived as gaps. The access-limits
+documentation's statement that this route may not serve a project's real
+system checks remains true where those checks need an environment the shim
+cannot provide; the second wave's build-cost comparison decides whether the
+route is proportionate for ordinary projects.
 
 **B3, declined.** A command experiment kind drops membership review and the
 firing control and makes the project at HEAD plus an unpinned toolchain the
@@ -218,10 +250,11 @@ real need, which decides whether A3 stays declined?
 ## Authority and conditions on material
 
 **What exists.** Enrollment already implements the core of a provider
-condition and is tested with control, differing and invariance cases: an
-enrolled resource is never claimed, is `manual` before the live-use test
-(`holdings.py:1198–1200`), blocks a managed container it sits inside
-(`:1249–1251`), and its roots are denied to auditors (`:1913–1926`). But the
+condition: an enrolled resource is never claimed and is `manual` before the
+live-use test (`holdings.py:1198–1200`), which the tests establish with
+control, differing and invariance cases; by source reading it also blocks a
+managed container it sits inside (`:1249–1251`), untested and an open question
+below; and its roots are denied to auditors (`:1913–1926`). But the
 enrollment note is write-only: recorded (`holdings.py:907`, verified) and read
 by nothing in show, summaries, status or close, so a provider's condition typed
 today is preserved and invisible at close planning. Supplied files are never
@@ -245,14 +278,20 @@ repository-level, attributed, blocking-only hold on any recorded resource,
 honored exactly as a live use: never claimed, shown in `close --plan`, show,
 closeout and the closing record, released only by an explicit attributed
 release record, never by a close flag, a container's retirement or a dispose
-option. Enrollment gains the same structured condition plus presentation;
-nothing else about enrollment changes. The supplemental-input and
-workspace-declaration forms are declined. This leaves "removal is authorized
-by two records only" intact, since a hold grants nothing and is one more
-reason no claim is created, and follows the retention-undertaking template
-already decided. Veto creep enters only if release ever required the named
-provider or a close flag could acknowledge past a hold; the contract forbids
-both. The provider is named in a record and cannot invoke Stewart.
+option. The record carries the actor, the condition's text and a required
+`limit` stating what the hold does and does not do; its wording says "not
+destroyed by Stewart", never "returned" or "preserved against the manager",
+because Stewart can promise the first and neither of the others. For enrolled
+resources this is presentation of a condition enrollment already honors;
+nothing else about enrollment changes. For a Stewart-created resource it is a
+new commitment, a hold that blocks the manager's own disposal until an
+attributed release, and that is exactly the decision this stage asks the user
+to make. The supplemental-input and workspace-declaration forms are declined.
+It leaves "removal is authorized by two records only" intact, since a hold
+grants nothing and is one more reason no claim is created. Veto creep enters
+only if release ever required the named provider or a close flag could
+acknowledge past a hold; the contract forbids both. The provider is named in a
+record and cannot invoke Stewart.
 
 **Right to receive, declined.** Stewart cannot withhold what the manager
 reads on its own disk, cannot deliver to anyone else, and would have to
@@ -280,7 +319,9 @@ contracts, or to the manual, whatever the user decides about the additions.
    it duplicates still exists, and is not named among discards. Under the
    decided principle that a removed surface must duplicate held material or
    be surrendered by name, a copy whose original is absent or differs should
-   be treated as uncollected. This needs no condition record.
+   be treated as uncollected. This needs no condition record. It is a disposal
+   check on a pinned input whose duplicate close is about to remove, not the
+   declined policing of a published output after publication.
 2. **Retain records no actor** (`triage.py` retain, verified) while export and
    every resource-writing operation require one. Publication of the
    deliverable is the least attributed step.
@@ -304,11 +345,13 @@ contracts, or to the manual, whatever the user decides about the additions.
 
 The declines fit together: the auditor's only channel is the return, so there
 is no acceptance to record and no right to receive to adjudicate, while the
-manager's expectations are attributed text and nothing more. The narrowed
-acceptances all add records or text and no new operation with effects: pinned
-copies at preparation, a return-arrangement line, a stop note, handoff
-completeness, recorded hostnames beside a constructed grant, a stated shim
-route, and a blocking hold that behaves as a live use. None lets status infer
+manager's expectations are attributed text and nothing more. Most narrowed
+acceptances add records or text and no new operation with effects: a
+return-arrangement line, a stop note, handoff completeness, recorded hostnames
+beside a constructed grant, and a stated shim route. Two do more and are
+stated as such: pinned submodule copies are an effectful preparation step that
+reaches close's abandon exemption, and a hold on a Stewart-created resource is
+a new commitment. None lets status infer
 activity, delivery or publication, none transfers launch or callback
 responsibility, and none creates a party who can invoke Stewart. Submodule
 (i) and the hold each require one clause in an already decided contract; the
@@ -316,23 +359,49 @@ plan names which.
 
 ## Proposed second wave
 
-Before decisions on the narrowed acceptances, four comparisons of baseline
-behavior are cheap and would settle facts the recommendations rest on: whether
-abandon destroys the last copy of a supplied file; what collection records for
-a populated absorbed submodule, clean and modified (Q3); whether the rendered
-launch block misreports a ferried launch; and whether a hand-written
-declaration collects cleanly. Two more decide design points rather than facts
-and can wait for implementation: where a submodule administration lands (Q1)
-and which object-transfer route executes configured commands (Q5). Everything
-that needs a real harness, a real fetch or a real human stays out of scope and
-is the stated dependency of the deferrals. Independent review of this account
-precedes the second wave.
+Before decisions on the narrowed acceptances, these comparisons of baseline
+behavior need no harness, network or human and would settle facts the
+recommendations rest on: whether abandon destroys the last copy of a supplied
+file; what collection records for a populated absorbed submodule, clean,
+modified and with `submodule.<name>.ignore=all` (Q3 and Q4, one fixture);
+whether maintainer `submodule.recurse=true` makes `worktree add` populate
+gitlinks (Q2, a premise of "no Git administration created" and the stage-2
+unqualified item); whether a submodule administration initialized in the
+auditor worktree is removed by close unrecorded today (the baseline half of
+Q1); whether the rendered launch block misreports a ferried launch; whether a
+hand-written declaration collects cleanly; whether the enrollment note is
+visible anywhere; whether an enrolled resource nested in a managed directory
+blocks retirement; and what a representative build costs at collection, which
+decides whether the shim route is proportionate. Design points wait for
+implementation: where a new administration should land, which object-transfer
+route executes configured commands (Q5), daemon containment and toolchain
+breakage under the attempt environment. Everything that needs a real harness,
+a real fetch or a real human stays out of scope and is the stated dependency
+of the deferrals.
 
 ## Evidence, review and disposition
 
 Source investigation only; no installed-wheel run and no production change.
 The four working accounts under `.scratch/custody-additions/` carry the full
-anchors and alternatives. Independent review of this account: see below. The
+anchors and alternatives.
+
+Independent review of this account, 2026-10-24: a fresh reviewer checked
+fidelity to the four investigations, every anchor marked verified and sixteen
+more, the reliance tests on each narrowed acceptance and the deferral,
+consistency with the contracts, and the second wave. All anchors held and
+every recommendation matched its investigation. Seven corrections were made:
+submodule (i) is now stated as an effectful preparation step that reaches
+close's abandon exemption and carries a per-collection archive cost, rather
+than "one clause, close untouched"; the hold carries its `limit` field and
+no-return wording, and the managed-resource hold is named as the new
+commitment it is; a deferred capture-receipt sub-item is recorded under the
+human auditor; the structured-reply sentence no longer implies the disposition
+reaches the auditor; four claims stated as fact are marked as predictions or
+constructed scope; the second wave carries the comparisons it had dropped; and
+A1 is narrowed from an attention item to a neutral recorded limit. Nothing
+blocks presenting the account for decision.
+
+The
 recommendations await the user's decision; stage 3's exit is a coherent
 desired custody arrangement, and this account is its first wave. Accepted
 additions become contracts in `CONTRACTS.md` for the Rust implementation;
