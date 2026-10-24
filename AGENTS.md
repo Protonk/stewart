@@ -41,6 +41,11 @@ Commit verified changes in coherent layers whose messages record what changed
 and how it was validated. Keep history linear on `main` unless parallel work
 needs isolation. There is no CI; pushing is permitted.
 
+"The user" in development guidance is the development principal. Stewart's
+users are the people who hold material in Git and operate it; today they are
+the same person, who then acts as their proxy and decides on their behalf. A
+document for Stewart's users must serve them, not the proxy.
+
 For a fleet approach, one coordinating agent owns the coherent result. It
 investigates the intended outcome, protected obligations, changeable behavior
 and consequential decisions for the user; chooses useful concurrency, complete
