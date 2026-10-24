@@ -1,17 +1,36 @@
 # Stewart's five-stage development plan
 
 Status: the five-stage sequence is agreed; Click integration is dropped.
-The status inquiry is next, with its initial commission under discussion.
+The status inquiry is complete under delegated contract authority. Its contract
+and evidence are recorded; Python implementation is not commissioned. The user
+has commissioned stage 2, the audit of existing custody responsibilities. Its
+investigation and independent review are complete; the user's custody decisions
+remain open.
 This document owns the current sequence, stage outcomes and consequential
 decisions. Internal assignments and execution details belong to the coordinating
 agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
 
-Handover checkpoint, 2026-10-23: program assessment and documentation updates
-are complete. The user requested a successor handoff and standby before the
-status inquiry began. The commission recommendations below remain labelled as
-proposals. No inquiry findings, runtime changes, investigative tests or evidence
-runs have been produced; preliminary source reading informed the assessment
-only. The next commission must be recorded here when established.
+Current checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
+contract, concrete examples, observation/consumer map, preservation-first
+implementation outline and limitations. Two source researchers and independent
+review contributed; every review finding is resolved. Installed-wheel runs
+`.scratch/status-inquiry/baseline-01.json` and `render-boundary-01.json` selected
+30 and 1 nodes respectively, all passed: 31 total, 0 failed, 0 skipped,
+0 deselected. Forty-two verified JSON/prose evidence copies, logs, receipts and
+wheels are retained with the findings; only working artifacts were pruned via
+`scripts/prune.py`. No production behavior changed. Stage 2's account is in
+`CUSTODY-AUDIT-FINDINGS.md`: three source investigations, four investigative
+test files and coordinator synthesis cover closure/recovery, commission/execution,
+evidence/identity and Git trust. Its first installed-wheel run selected 26 nodes:
+25 passed and one probe-configuration error failed before the intended operation.
+The corrected probe's three controls all passed in a fresh run. Thus 26 distinct
+nodes now have passing evidence; neither the failed run nor its cause is hidden.
+Independent review verified the outcomes, all retained copies and their hashes;
+its findings are resolved. Ninety observation/fixture files and eight staged
+inquiry-source copies remain with the receipts/logs/wheels. Only working artifacts
+were pruned through `scripts/prune.py`; the report cites both removal records.
+Changes to custody obligations and production
+implementation remain reserved.
 
 ## Purpose and authority
 
@@ -39,13 +58,21 @@ coordination choices remain with the coordinator inside that commission.
 
 ## 1. Investigate custody-focused status
 
+**Outcome:** normal status will describe and verify recorded custody, with
+neutral absence and no default pre-collection launch/probe/collect options.
+Private handoff retention does not certify publication, activity or delivery.
+Exceptional records retain their diagnoses. Close will own its existing
+operational checks and conditional construction-failure consequences before
+the public view stops making them. The findings contain the full decided
+contract; its implementation and any reserved obligation changes remain separate.
+
 Determine what status should establish between preparation and collection,
 and which live validations belong to operations such as collection and close.
 Use [the retained CLI-reduction inquiry](planning/inputs/cli-reduction.md) as
 source material. Its old branch instructions are historical; this program
 sets the sequence and authority.
 
-The first useful result is a proposed public contract with concrete prose and
+The first useful result is a decided public contract with concrete prose and
 JSON examples, an observation/consumer map, diagnostic ownership, an ordered
 implementation proposal and discriminating validation. Keep the investigation
 bounded; run focused comparisons where source inspection cannot settle a
@@ -58,23 +85,126 @@ actions, exit codes and operation callers. Necessary custody checks must have
 explicit owners; reducing status output must not silently weaken close.
 Preserve access to the issued handoff without inferring auditor activity.
 
-**Exit:** the user has reviewed the recommendation and decided the intended
-status contract, remaining uncertainty and whether to implement it in Python
-now or defer it. Investigation does not itself authorize the proposed runtime
-changes. Its decisions can be reconsidered during the wider refusal audit.
+### Agreed product direction
 
-### Points to settle in the initial commission
+The user wants Stewart to answer a status question about an unclosed audit,
+while checking status is not part of the manager's ordinary job. The manager
+should treat a handed-over audit as a promise of an eventual structured return.
+Audit duration can vary for many reasons; ordinary absence of a return does
+not create a recurring responsibility to inspect progress or intervene.
+An explicit request for status should receive a useful account of what Stewart
+can establish, without treating the passage of time as evidence of a problem.
 
-The following are coordinator recommendations for discussion, not an
-authorization to start the inquiry or change runtime behavior:
+This is a product design preference. The user's motivation includes giving
+persistent managers an answer so they need not devise ways to inspect a live
+audit. Whether the design actually discourages that behavior remains an
+untested hypothesis; no agent-behavior study is requested. The user accepted
+assessing the product's output, offered actions and manager guidance against
+this preferred relationship, with custody-focused status as a candidate means
+of expressing it. The inquiry can recommend retaining justified observations.
+
+Stewart should abstract the connection between manager and auditor as far as
+practicable, handling as much of their interaction as possible through the
+promise of a structured reply. The ideal should accommodate a human auditor.
+No fixed division placing delivery outside Stewart has been selected. The
+inquiry should identify how existing handoff and return arrangements support
+this direction and expose gaps, without assuming one execution mechanism.
+
+Entry points can differ. A manager's harness may prohibit starting the auditor,
+so a human may need to ferry the launch command. It may instead pause for user
+approval and then let the same manager resume its launch and watcher flow.
+User involvement in approval does not by itself transfer execution or callback
+responsibility. The user's experience of that pause may differ substantially
+from the manager's continuation. When a manager starts an audit, the user
+expects it to arrange a watcher and own how it is called back. Stewart should
+remain agnostic about these arrangements; its status design need not determine
+the surrounding harness's approval flow. These are relationship examples, not
+executed qualifications of any harness.
+
+The policy for pre-return intervention remains open; the coordinator's
+suggested list of exceptions has not been adopted as an exhaustive rule.
+A substantive answer, incomplete work and a failure can all need an intelligible
+return, but precise delivery responsibilities and supported mechanisms remain
+open. If a report or scenario makes the manager/auditor/user boundary confusing,
+the user offers optional, fallible help. Consult them when useful; this is not
+a required review step or a reason to hand back routine coordination.
+
+The inquiry includes whether Stewart exposes enough of the commission, handoff
+and return relationship to answer an occasional inquiry without reconstructing
+it from the auditor's execution environment. The user identified this question
+as potentially amenable to empirical investigation. Use focused comparisons to
+resolve concrete uncertainties; do not infer improved agent behavior from them.
+
+### Approved commission and delegated authority
+
+The user approved this commission on 2026-10-23:
+
+> Investigate and decide the public status contract, including truthful
+> treatment of uncertainty, ordinary and exceptional attention, and
+> already-authorized actions, against our agreed product direction. Explain
+> consequential assumptions and investigate dependencies. Preserve existing
+> custody and closure commitments. Bring back separately any necessary new
+> obligation, transfer of authority, delivery guarantee, execution responsibility,
+> removal power, or loss of evidence. Implementation remains separately
+> commissioned.
+
+The user relayed Riker's reply to the consultation at
+`riker/STATUS-DELEGATION-REQUEST.txt`; the supplied reply is preserved at
+`riker/STATUS-DELEGATION-REPLY.txt`. This is advisory reasoning, not repository
+evidence or the source of authority; authority comes from the user's approval
+above. The coordinator accepts its correction: status wording and attention
+semantics can create commitments even without a change to operational code.
+Presentation versus implementation is not a sufficient boundary for delegation.
+
+The grant includes substantive decisions about attention and actionability,
+with investigated dependencies and reasons; it does not require approval for
+every classification or field. The boundary concerns commitments: what might
+a manager, auditor or consumer reasonably rely on as permission, instruction,
+assurance or a reason not to act, and does that reliance follow from the agreed
+product relationship and existing authority? A new independent duty, transfer
+of authority, delivery guarantee, execution responsibility, removal power,
+evidence loss, or changed
+custody or closure requirement remains a user decision. Such a dependency can
+be investigated and presented separately while independent contract decisions
+proceed within the granted scope. Delivery is not presumed to belong outside
+Stewart. Implementation remains separately commissioned.
+
+Concrete implications for the inquiry:
+
+- Ordinary absence alone can be treated as creating no new managerial task;
+  it cannot establish that work is active, healthy, guaranteed to return, or
+  free of every other obligation. Recorded failures and invalid or unreadable
+  records need their own account. A global interruption policy remains open.
+- Preserving access to a diagnostic does not by itself preserve a safeguard.
+  Trace its consumers, automatic or optional execution, timing, required
+  transitions and consequences of omission. Any relocation must preserve the
+  relevant commitments or expose the responsibility change for decision.
+- Describing a known return arrangement differs from requiring, validating,
+  establishing, supervising or guaranteeing one. A truthful answer that falls
+  short of the desired abstraction can expose a substantive gap; wording must
+  not invent the missing arrangement.
+
+Consultation supplies no approval gate. The commission does not authorize
+runtime changes or implementation of monitoring, notification or orchestration
+features.
+
+**Exit:** the coordinator has decided and explained the status contract within
+the grant, with concrete examples, dependency evidence, important alternatives,
+remaining uncertainty and any reserved responsibility decisions presented
+separately. A reserved dependency stays explicitly unresolved and does not
+invalidate independent decisions. The user assesses the integrated result and
+decides any reserved changes and Python implementation or deferral; individual
+in-scope contract choices do not await another approval. The contract can be
+reconsidered during the wider refusal audit.
+
+### Operating terms
 
 1. **Design latitude.** Use custody-focused status as the preferred direction
    to investigate, with the manager's actual inspection and decision needs as
-   the criterion. Allow the inquiry to recommend retaining a justified live
-   observation or rejecting a proposed reduction. A smaller field or command
-   count, preparation for Click, and reduced code or test volume are not success
-   criteria. Record the chosen latitude and intended benefit in this stage's
-   commission; the findings must explain the alternatives and their costs.
+   the criterion. The coordinator may retain a justified live observation or
+   reject a proposed reduction. A smaller field or command count, preparation
+   for Click, and reduced code or test volume are not success
+   criteria. The findings must explain the alternatives and their costs.
 2. **Boundary with the wider custody audit.** Trace status's consumers and
    affected fields through all stages, especially collection and close. Allow
    recommendations about their preconditions when needed to resolve the status
@@ -82,26 +212,26 @@ authorization to start the inquiry or change runtime behavior:
    Existing obligations remain operative until the user decides otherwise.
    Carry questions independent of that contract into stage 2 with their source,
    significance and unresolved decision, without investigating all refusals now.
-   Record the boundary here and the check ownership and proposed changes in the
-   findings; add deferred questions to stage 2 when they arise.
-3. **Evidence and stopping point.** Stop when the recommendation is sufficient
-   for the user to choose a status contract and Python implementation or
-   deferral, with consequential uncertainty explicit. Use source tracing and
-   focused installed-wheel comparisons where competing explanations remain;
-   allow focused investigative tests and instrumentation within the inquiry,
+   Record check ownership and proposed obligation changes in the findings;
+   add deferred questions to stage 2 when they arise.
+3. **Evidence and stopping point.** Stop when the contract decision is supported
+   and explained sufficiently to assess its consequences and decide on Python
+   implementation or deferral, with consequential uncertainty explicit.
+   Use source tracing and focused installed-wheel comparisons where competing
+   explanations remain; allow focused investigative tests and instrumentation
+   within the inquiry,
    while production behavior stays unchanged. Include a firing
    control, a changed case and an invariance case where a comparison is needed.
    Do not infer improved agent behavior from output or unit tests, or include
-   an agent-behavior study by default. Record the agreed evidence scope here;
-   findings distinguish observations, interpretations and untested hypotheses.
+   an agent-behavior study. Findings distinguish observations, interpretations
+   and untested hypotheses.
 
 ### Repository record of the inquiry
 
-This stage owns the agreed commission, current progress, user decisions and
-remaining questions. The coordinator will create `STATUS-INQUIRY-FINDINGS.md`
-at the repository root when inquiry work begins, containing the recommendation,
-prose and JSON examples, observation/consumer map, diagnostic ownership,
-implementation outline, evidence and limitations. These are the current
+This stage owns the agreed commission, outcome, user decisions and remaining
+questions. `STATUS-INQUIRY-FINDINGS.md` contains the decision, prose and JSON
+examples, observation/consumer map, diagnostic ownership, implementation outline,
+evidence and limitations. These are the current
 destinations; the retained input's old branch, findings filename and plan-update
 instructions are historical. Do not edit that captured input to reconcile it.
 
@@ -117,6 +247,47 @@ plan, and disposing of cited runs under the retention rules.
 
 ## 2. Audit refusals and existing custody responsibilities
 
+**Commission:** the user's instruction to proceed commissions this investigation
+and recommendations. It does not commission runtime changes or stage-3 additions.
+The prior status-contract grant is not blanket authority to revise custody,
+closure, removal or execution responsibilities.
+
+**Current outcome:** `CUSTODY-AUDIT-FINDINGS.md` maps existing responsibility
+families, costs and recovery; separates prior accepted but unimplemented fixes
+from new recommendations; and records controls, outcomes and limitations. The
+coordinator recommends retaining identity, attribution, raw capture, exact review
+binding, explicit execution permission, no uncertain replay and bounded removal.
+The following proposals remain for the user's assessment, not implementation:
+
+- D1: account for relevant contents before close discards them; distinguish
+  captured runtime damage from new drift, define the treatment of recovery/HOME
+  contents, and decide later-return and kept-checkout dependencies. Remove
+  command-rendering success as a closure precondition while keeping independent
+  writer and custody checks.
+- D2: allow independently verified report export with explicit surrounding
+  capture damage, without claiming the whole collection is sound.
+- D3: refuse supplemental destinations below gitlinks before preparation,
+  directing supplied copies to ordinary paths; allowing pinned descendants is
+  an alternative requiring its own explicit contract.
+- D4: allow human launch acknowledgments without invented model/effort values;
+  leave delivery and watcher responsibilities open.
+- D5: initially service old Python lifetimes through retained writers; decide
+  successor authority explicitly before Rust mutates them.
+- D6: retain access/effect protections and make their actual capability and
+  coordination limits explicit; qualify proposed replacements separately.
+
+Configured Git-filter execution during preparation and inconsistent replacement
+views during input-pin construction versus capture coverage were demonstrated.
+They are implementation issues under retained trust commitments. The broader
+Git environment policy is not qualified by those narrow probes. No production
+change was made and no real harness enforcement was tested.
+
+Evidence runs are `.scratch/custody-audit/comparisons-01.json` and
+`.scratch/custody-audit/git-filter-02.json`; the report owns their exact selectors,
+failure/correction account, tested-source hashes and compact evidence manifests.
+Retirement/pruning follows DEVELOPMENT.md. Stage 2's investigation can conclude
+with explicit reserved choices; stage-3 additions do not start automatically.
+
 Examine what each restriction protects, which obligations it creates, its
 costs, and the consequences of retaining, hardening, softening or removing it.
 Use [prior custody questions](planning/inputs/custody-questions.md) as leads to
@@ -127,6 +298,38 @@ Independent inquiry is useful where it can challenge a consequential premise.
 The coordinator recommends; the user decides changes to Stewart's intended
 responsibilities. Neither current implementation nor simplicity alone settles
 the answer.
+
+Organize the account by responsibility families rather than treating each reason
+identifier as a separate product choice. Use source inspection, historical
+decision reconciliation and focused installed-wheel comparisons to distinguish
+protected commitments from incidental couplings. Retain fresh runs under
+`.scratch/custody-audit/` with their actual outcomes. Arrange independent review
+of consequential recommendations and comparison evidence. The current account is
+`CUSTODY-AUDIT-FINDINGS.md`; retire it after its decision/implementation purpose is
+served, transferring enduring guidance and active decisions and following the
+run-retention rules in `DEVELOPMENT.md`.
+
+Leads carried from the status inquiry, not decisions to change obligations:
+
+- Concluded close currently inherits live-runtime and handoff-integrity effects
+  from status, including preparation-state precedence. The runtime-only
+  comparison in `STATUS-INQUIRY-FINDINGS.md` demonstrates the coupling. A separate
+  comparison also shows cached manager-launcher damage failing command generation
+  and therefore close despite matching loaded writer bytes. Examine
+  whether these conditions independently protect conclusion after sound capture
+  and triage; preserve them until a decision changes them.
+- Status's offered close is stricter than direct close's preconditions. Examine
+  whether newest-collection triage and pending retention/release/run belong to
+  advice or mandatory closure. Source: `status.py:1373–1395` and
+  `close.py:1115–1136`; no refusal change has been commissioned.
+- Private handoff retention precedes public publication; unkeyed preparation
+  has no universal final success receipt. A new completion requirement is an
+  open custody question, not a license to reinterpret or rewrite historical
+  records. Optional keyed outcomes cannot become an implicit requirement.
+
+The inquiry also leaves delivery responsibilities and human-auditor interaction
+open. Consider them with the relevant custody question or stage-3 addition;
+neither an external-only delivery boundary nor a watcher requirement was chosen.
 
 **Exit:** a reasoned account of what to retain, revise or abandon, with explicit
 decisions and unresolved questions. Implementing every decision in Python is

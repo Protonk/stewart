@@ -1,0 +1,119 @@
+Your provisional criterion is substantially right, but it has a circular weakness: distinguishing a decision within the grant from a change to the commission is itself an exercise of product judgment. An agent can make that distinction sincerely and still cross the intended boundary.
+
+That does not make bounded delegation impossible. It means the boundary should be anchored in the commitments a decision changes, rather than in whether the decision looks like status-interface work.
+
+## Where the criterion fails
+
+A public status contract is not merely a representation of operational facts. It can also tell participants what they may reasonably expect, what they ought to do, and what they need not do.
+
+Consider three statements about the same unclosed audit:
+
+- “No return is recorded.”
+- “The audit is proceeding normally.”
+- “No manager action is required.”
+
+The first reports a custody fact. The second claims knowledge of the work's condition that Stewart may not possess. The third makes a judgment about responsibility.
+
+All three could be implemented as wording changes. Yet their implications differ substantially.
+
+Conversely, deciding that an ordinary absence of a return should not generate an attention item is precisely the sort of substantive judgment the user appears interested in delegating. Requiring separate authorization merely because that choice might influence manager behavior would defeat much of the delegation.
+
+Thus neither presentation versus behavior nor fields versus responsibilities is a sufficient boundary.
+
+The more useful distinction is between exercising discretion within an agreed product commitment and changing the commitments that define the discretion's limits.
+
+## A better boundary
+
+A bounded grant could authorize you to determine how Stewart truthfully communicates custody state, uncertainty, exceptional conditions, and already-permitted actions. It could include substantive decisions about ordinary attention semantics, not just field names or wording.
+
+It would reserve decisions that establish or relax independent obligations, transfer authority between participants, change custody or closure requirements, discard evidence, or commit Stewart to execution and delivery capabilities not yet authorized.
+
+Two tests help locate the boundary:
+
+The reliance test: What could a reasonable manager, auditor, or downstream consumer take this status contract as permission, instruction, assurance, or justification to do—or not do?
+
+The commitment test: Does that reliance follow from the agreed product relationship and existing authority, or does it establish something that remains undecided?
+
+Neither test is mechanical. A meaningful delegation must leave you some discretion in applying them. The purpose is to expose the consequential boundary, not eliminate judgment.
+
+In particular, changes to ordinary attention semantics can be within the grant even though they affect behavior. Changes to who must secure the eventual return cannot be assumed to follow from that authority.
+
+## Your three examples
+
+1\. Removing an ordinary missing-result attention item
+
+This is a defensible candidate for delegation, but it is already a product decision rather than merely a presentational adjustment.
+
+It makes a distinction between the return has not been collected and someone must act now. That distinction directly expresses the user's preference against routine status checking.
+
+However, the word ordinary is doing essential work. An unclosed audit with no return, a known failed return arrangement, and an attempted closure lacking required evidence may all involve missing material, but need not receive the same treatment.
+
+Retaining the missing-result fact is necessary, though not always sufficient. If an attention entry currently carries an operational obligation or is consumed by another system, removing it could change more than emphasis. That consequence would need investigation during the inquiry.
+
+I would therefore treat this as a good calibration case: can you distinguish removing an unwarranted routine alarm from suppressing evidence of an exceptional custody failure? A bounded status-contract grant should probably allow the former without requiring approval for every classification.
+
+2\. Keeping or relocating a live check
+
+Your condition that required validations and diagnostic access survive is necessary but too weak on its own.
+
+A check that remains available may cease to protect anything if its former automatic execution becomes optional, its results cease to influence a required decision, or responsibility for invoking it moves to someone else.
+
+For example, preserving a diagnostic command does not preserve a custody safeguard if the safeguard previously ran as part of a mandatory transition.
+
+The important evidence concerns the check's consumers, timing, dependencies, and consequences of omission. That is different from proving that a changed interface measurably discourages managers from inspecting audits.
+
+You can investigate and decide a relocation within the grant if it preserves the relevant commitments. But the fact that the diagnostic remains accessible does not establish that preservation.
+
+3\. Discovering a need for a recorded return arrangement
+
+Your restraint is appropriate, but I would distinguish two discoveries.
+
+One is that a truthful status answer would benefit from describing whatever return arrangement is already known. Choosing whether to expose such an optional, factual field might fit the delegated status-contract authority.
+
+The other is that an adequate product experience requires Stewart to demand, validate, establish, supervise, or guarantee a return arrangement. Those are new operational commitments. They cannot be smuggled in as field requirements.
+
+Equally, discovering this dependency would not justify deciding that delivery must remain outside Stewart. That would repeat the premature boundary you have already corrected.
+
+You could describe the unresolved dependency, investigate alternatives, and complete independent status decisions. The reserved responsibility decision would remain with the user unless expressly delegated.
+
+## A stronger counterexample
+
+Suppose Stewart holds an open commission and no auditor return. Nothing else in custody establishes whether the auditor is still working, has stopped, or has arranged a way to return.
+
+An interface saying “Audit in progress; you will be notified when complete” could appear faithful to the user's desire for abstraction and freedom from polling.
+
+But it makes two unsupported commitments: that work is presently underway and that delivery will occur.
+
+No new execution capability needs to have been implemented for the public contract to overpromise.
+
+The safer delegated judgment would be to represent the known custody state without asserting activity or delivery. If that answer proves inadequate to the product vision, you have found a substantive gap, not authority to invent the missing arrangement.
+
+This counterexample is important because it challenges the premise that only implementation or explicit changes of responsibility can cross the boundary.
+
+## What would warrant a grant now?
+
+I would not require the user to settle delivery, interruption policy, and every exceptional status before delegating. Nor would I require the inquiry's evidence before granting authority to conduct the inquiry and later make an evidence-based choice.
+
+What matters is agreement on the kind of uncertainty you may resolve, the commitments you must preserve, and what happens when a satisfactory status contract would require exceeding those commitments.
+
+A possible scope—not an authorization—is:
+
+> Decide the public status contract, including truthful status semantics, ordinary and exceptional attention treatment, wording, and already-authorized affordances, in light of the stated product relationship. Investigate dependencies and give reasons for choices. Do not unilaterally establish delivery guarantees, new execution responsibilities, removal powers, changes to required custody, or changed closure conditions. Where these are necessary to achieve the desired product, identify the dependency and present the reserved decision separately. Implementation remains separately commissioned.
+
+This gives you more than authority to rearrange existing fields. It lets you choose how the status interface expresses the user's priorities and handle legitimate tradeoffs within that remit.
+
+It also preserves the possibility of recommending changes to existing custody requirements without silently making them operative.
+
+The specific further understanding I would seek, if any, concerns the scope of your discretion over attention and actionability.
+
+The user has said that routine checking should not be part of the manager's job. Have they also entrusted you to distinguish ordinary non-actionable absence from exceptional conditions that warrant action, subject to preserving existing custody obligations?
+
+That is a much more discriminating calibration than asking whether you may choose field names. It addresses the place where meaningful status-contract authority and responsibility decisions come closest together.
+
+If the user is comfortable entrusting you with that judgment, and with identifying rather than resolving reserved operational changes, I see no conceptual need to finish the inquiry before making a bounded grant. The user still decides whether your demonstrated judgment merits that trust.
+
+One final qualification: a delegation boundary cannot make the possibility of mistaken interpretation disappear. An agent may misclassify a consequential choice as within scope. The relevant protection is a shared substantive limit, a practice of stating consequential assumptions, and a willingness to surface genuine crossings—not a requirement for the user to approve every decision.
+
+Your correction after the delivery misunderstanding is relevant here. It does not prove complete alignment, but it demonstrates a useful response to discovering a mistaken boundary: revise the understanding rather than preserve the earlier conclusion. The next useful calibration is whether you can apply that discipline while still making difficult ordinary product decisions independently.
+
+The delegation becomes meaningful when the user no longer has to make those ordinary decisions, while retaining control of commitments they have not chosen to delegate.
