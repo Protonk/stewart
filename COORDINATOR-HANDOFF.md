@@ -13,8 +13,8 @@ rather than copying or regenerating it. Earlier versions remain in Git.
 
 The five-stage sequence remains: status inquiry, audit of existing custody,
 consideration of additions, Rust transition, and optional implementation of the
-revised arrangement. Stages 1 and 2 are closed and decided; their contracts,
-principles and declines are in CONTRACTS.md. **Click integration was dropped**,
+revised arrangement. Stages 1, 2 and 3 are closed and decided; their contracts,
+principles, declines and deferrals are in CONTRACTS.md. **Click integration was dropped**,
 not deferred. **Python is frozen as the reference baseline**: production source
 is unchanged since `6582df2`, every decided departure is implemented in Rust,
 status first (read-only against Python-written sessions, with Python status as
@@ -22,17 +22,16 @@ the control) and close last. Rust acceptance includes executed Linux and WSL
 qualification; the user plans to ask a friend to run WSL checks. Do not
 substitute a recipe or Linux results for executed WSL evidence.
 
-Stage 3 is commissioned and its first wave is complete.
-[CUSTODY-ADDITIONS-FINDINGS.md](CUSTODY-ADDITIONS-FINDINGS.md) integrates four
-source investigations into fourteen recommendations: six narrowed acceptances,
-five declines, two deferrals, one mixed narrowing. **None is decided.** The user
-decides each; declining is a valid outcome, and the reasons for declines are
-written to be read later. The account also lists eight findings that bear on
-decided contracts rather than additions, and proposes a second wave of nine
-baseline comparisons, needing no harness, network or human, before decisions
-on the narrowed acceptances. Independent review of the account is recorded in
-it. Two acceptances reach decided contracts if adopted; the plan names how. When stage 3 exits with a coherent arrangement, stage 4 is next;
-the plan's stage-4 section states the state to be in before Rust starts.
+Stage 3 is decided. The user agreed to
+[CUSTODY-ADDITIONS-FINDINGS.md](CUSTODY-ADDITIONS-FINDINGS.md) as recommended
+after independent review; CONTRACTS.md carries its acceptances, declines and
+deferrals, and the findings document stays for its anchors. Its second wave of
+nine baseline comparisons, needing no harness, network or human, was not run
+before the decision; the record marks as predictions the facts they would
+establish, and they are available as verification at implementation. **Stage 4
+is next.** Prepare its commission against the plan's stage-4 section, which
+states the state to be in before Rust starts, and the Git environment document
+requested below; neither starts without the user's instruction.
 
 ## Requested next: a human-facing Git environment document
 

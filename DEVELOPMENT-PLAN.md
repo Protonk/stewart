@@ -6,9 +6,9 @@ recorded in [CONTRACTS.md](CONTRACTS.md) with their implementation status; the
 findings documents and their run records remain until Rust acceptance evidence
 supersedes them, because a run's record leaves with the document that cites
 it. Python is frozen as the reference baseline; decided departures are
-implemented in Rust. Stage 2 closed on 2026-10-24. Stage 3, consideration of
-additions, is the next commission; its proposed terms are in its section and
-await the user's instruction to proceed.
+implemented in Rust. Stages 2 and 3 closed on 2026-10-24. Stage 4, the Rust
+transition, is the next commission to prepare, with the Git environment
+document requested alongside it.
 This document owns the current sequence, stage outcomes and consequential
 decisions. Internal assignments and execution details belong to the coordinating
 agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
@@ -33,9 +33,9 @@ retained at `riker/CLOSE-COMMITMENTS-REPLY.txt`; it adds a fifth proposed
 completion and three proposed revisions to the principles, recorded in stage 2.
 The user confirmed the five completions and the principle revisions;
 `CONTRACTS.md` records them as decided and stage 2 is closed. Stage 3 was
-commissioned the same day; its first wave is complete and integrated in
-`CUSTODY-ADDITIONS-FINDINGS.md`, with independent review in progress and the
-recommendations awaiting the user.
+commissioned, investigated, reviewed and decided the same day: the user agreed
+to `CUSTODY-ADDITIONS-FINDINGS.md` as recommended, and `CONTRACTS.md` carries
+its acceptances, declines and deferrals. Stage 4 is next.
 
 Checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
 contract, concrete examples, observation/consumer map, preservation-first
@@ -532,10 +532,22 @@ the gitlink-input contract and reaches close's abandon exemption, and a hold on
 a Stewart-created resource is a new commitment beside the retention-undertaking
 rule.
 
+**Decided, 2026-10-24:** the user agreed to the account as recommended.
+`CONTRACTS.md` records the accepted additions as contracts (pinned submodule
+copies; a manager-declared return arrangement; a stop note on collect; the
+handoff complete without the helpers; external sources recorded beside the
+constructed grant as a neutral limit; project commands through the reviewed
+shim; holds on recorded resources; and the close correction for supplied-file
+copies and attribution of retention that came out of the same findings), the
+seven declines with their reasons, and the three deferrals with their
+dependencies. The second wave's comparisons were not run before the decision;
+they remain available as baseline verification at implementation, and the
+record marks as predictions the facts they would establish.
+
 **Exit:** a coherent desired custody arrangement, with additions accepted,
 declined, narrowed or deferred. Separate semantics ready for implementation
 from exploratory ideas; inclusion as a candidate grants no implementation
-authority.
+authority. Reached 2026-10-24.
 
 ## 4. Transition to Rust
 
