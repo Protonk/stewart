@@ -1,9 +1,17 @@
-# Stewart's six-stage development plan
+# Stewart's five-stage development plan
 
-Status: program agreed; the status inquiry is next. This document owns the
-current sequence, stage outcomes and consequential decisions. Internal
-assignments and execution details belong to the coordinating agent. The
-[longer-term vision](VISION-PLAN.md) describes the working relationship.
+Status: the five-stage sequence is agreed; Click integration is dropped.
+The status inquiry is next, with its initial commission under discussion.
+This document owns the current sequence, stage outcomes and consequential
+decisions. Internal assignments and execution details belong to the coordinating
+agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
+
+Handover checkpoint, 2026-10-23: program assessment and documentation updates
+are complete. The user requested a successor handoff and standby before the
+status inquiry began. The commission recommendations below remain labelled as
+proposals. No inquiry findings, runtime changes, investigative tests or evidence
+runs have been produced; preliminary source reading informed the assessment
+only. The next commission must be recorded here when established.
 
 ## Purpose and authority
 
@@ -55,25 +63,59 @@ status contract, remaining uncertainty and whether to implement it in Python
 now or defer it. Investigation does not itself authorize the proposed runtime
 changes. Its decisions can be reconsidered during the wider refusal audit.
 
-## 2. Move selectively to Click
+### Points to settle in the initial commission
 
-Review the existing `docs` and `request` implementation, preserved at
-`archive/2026-10-23/click-integration` (`56686e9`). Its
-`CLICK-FOLLOWUPS.md` describes remaining grammar, dependency and identity
-questions. Review and integrate useful work against the selected status
-contract, then choose a bounded further slice if warranted.
+The following are coordinator recommendations for discussion, not an
+authorization to start the inquiry or change runtime behavior:
 
-Separate generic CLI infrastructure from Stewart-specific behavior. Preserve
-intended external contracts and disclose deliberate grammar changes. Set a
-stopping point based on useful simplification and the coming Rust transition;
-the stage does not require migrating every command. This is a further exercise
-of delegated implementation and integration after the inquiry.
+1. **Design latitude.** Use custody-focused status as the preferred direction
+   to investigate, with the manager's actual inspection and decision needs as
+   the criterion. Allow the inquiry to recommend retaining a justified live
+   observation or rejecting a proposed reduction. A smaller field or command
+   count, preparation for Click, and reduced code or test volume are not success
+   criteria. Record the chosen latitude and intended benefit in this stage's
+   commission; the findings must explain the alternatives and their costs.
+2. **Boundary with the wider custody audit.** Trace status's consumers and
+   affected fields through all stages, especially collection and close. Allow
+   recommendations about their preconditions when needed to resolve the status
+   contract, with each proposed obligation change and consequence explicit.
+   Existing obligations remain operative until the user decides otherwise.
+   Carry questions independent of that contract into stage 2 with their source,
+   significance and unresolved decision, without investigating all refusals now.
+   Record the boundary here and the check ownership and proposed changes in the
+   findings; add deferred questions to stage 2 when they arise.
+3. **Evidence and stopping point.** Stop when the recommendation is sufficient
+   for the user to choose a status contract and Python implementation or
+   deferral, with consequential uncertainty explicit. Use source tracing and
+   focused installed-wheel comparisons where competing explanations remain;
+   allow focused investigative tests and instrumentation within the inquiry,
+   while production behavior stays unchanged. Include a firing
+   control, a changed case and an invariance case where a comparison is needed.
+   Do not infer improved agent behavior from output or unit tests, or include
+   an agent-behavior study by default. Record the agreed evidence scope here;
+   findings distinguish observations, interpretations and untested hypotheses.
 
-**Exit:** a reviewed and verified integration, an explicit disposition of
-remaining Click proposals, and a decision that further Python parser work
-does or does not justify its cost.
+### Repository record of the inquiry
 
-## 3. Audit refusals and existing custody responsibilities
+This stage owns the agreed commission, current progress, user decisions and
+remaining questions. The coordinator will create `STATUS-INQUIRY-FINDINGS.md`
+at the repository root when inquiry work begins, containing the recommendation,
+prose and JSON examples, observation/consumer map, diagnostic ownership,
+implementation outline, evidence and limitations. These are the current
+destinations; the retained input's old branch, findings filename and plan-update
+instructions are historical. Do not edit that captured input to reconcile it.
+
+Investigative tests belong under `tests/`. Executed comparisons use fresh result
+names under `.scratch/status-inquiry/` and the installed-wheel workflow in
+`DEVELOPMENT.md`, with command output and actual selector/outcome counts retained
+and cited in the findings. That document's retention and pruning rules apply.
+Accepted behavior belongs in maintained documentation and tests when implemented;
+the plan and findings do not become runtime dependencies. Retire the findings
+when their review and implementation purpose is served, first moving enduring
+decisions into maintained guidance and any still-active decisions into this
+plan, and disposing of cited runs under the retention rules.
+
+## 2. Audit refusals and existing custody responsibilities
 
 Examine what each restriction protects, which obligations it creates, its
 costs, and the consequences of retaining, hardening, softening or removing it.
@@ -90,7 +132,7 @@ the answer.
 decisions and unresolved questions. Implementing every decision in Python is
 not a condition of completing this stage.
 
-## 4. Consider additions to custody
+## 3. Consider additions to custody
 
 Examine responsibilities Stewart might reasonably assume, informed by the
 refusal audit. For each candidate, describe the responsibility, required
@@ -108,7 +150,7 @@ declined, narrowed or deferred. Separate semantics ready for implementation
 from exploratory ideas; inclusion as a candidate grants no implementation
 authority.
 
-## 5. Transition to Rust
+## 4. Transition to Rust
 
 Build a new implementation against the contracts selected for continuity and
 the deliberate departures authorized in the preceding stages. Choose a
@@ -133,7 +175,7 @@ project is retired.
 **Exit:** an integrated Rust system verified against the selected contracts,
 with platform evidence and explicit disposition of any unmet acceptance item.
 
-## 6. Optionally implement the revised custody arrangement in Rust
+## 5. Optionally implement the revised custody arrangement in Rust
 
 The user chooses which authorized semantic changes and additions merit
 implementation, and may narrow, postpone or decline any of them. The Rust
@@ -152,14 +194,21 @@ intended invariants. Unimplemented decisions receive an explicit disposition.
   interfaces remain; no code or test depends on its former plan.
 - CLI reduction supplies stage 1 inquiry material. Its old findings and
   implementation schedule have not been executed.
+- Click integration is dropped. Its earlier role was to discipline parts of
+  the Python implementation before Rust; the coordinated transition no longer
+  warrants that intermediate migration. The archived `docs`/`request` work and
+  `CLICK-FOLLOWUPS.md` remain at `archive/2026-10-23/click-integration`
+  (`56686e9`) as possible reference material, not an integration or repair queue.
+  There is no replacement preparatory parser-migration stage. A bounded Python
+  change may still be commissioned for an independently justified benefit.
 - Linux container installation is dropped; Linux and WSL acceptance belongs
-  to stage 5.
+  to stage 4.
 - The test-speed execution schedule and speculative design companion are
   retired. Existing harness improvements remain. Sharding stays declined;
   no new performance or test-consolidation project is commissioned. Historical
   findings are preserved under `reports/development-history/`, with substantive
-  custody leads summarized for stage 3.
-- Submodule support is retained as the stage 4 candidate above.
+  custody leads summarized for stage 2.
+- Submodule support is retained as the stage 3 candidate above.
 - Unmerged branch work is preserved under `archive/2026-10-23/` tags. Archived
   commits and notes supply context, not active worker assignments. Linked
   worktree contents and Stewart custody records are outside this cleanup.

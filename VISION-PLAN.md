@@ -9,21 +9,21 @@ Use a recurring pattern when it fits the work:
 
 1. **Inquiry:** establish a concrete question, investigate the implementation
    and propose the behavior worth pursuing.
-2. **Tool transition:** make a bounded implementation change that supports
-   the work and exposes useful boundaries.
-3. **Semantic audit:** examine existing responsibilities and decide which
+2. **Semantic audit:** examine existing responsibilities and decide which
    should survive, change or end.
-4. **Optional addition:** consider new responsibilities, including the
+3. **Optional addition:** consider new responsibilities, including the
    possibility that none is justified.
-5. **Tool transition:** establish the implementation foundation appropriate
+4. **Tool transition:** establish the implementation foundation appropriate
    to the selected semantics.
-6. **Optional implementation:** realize the changes the user chooses to
+5. **Optional implementation:** realize the changes the user chooses to
    commission, with evidence that they meet their intended responsibilities.
 
 This pattern can evolve. A stage can end in a decision, a reframed question or
 a reason to stop. Inquiry and semantic decisions need not force immediate
 implementation, and a technical migration does not automatically authorize a
-larger custody role.
+larger custody role. A bounded implementation change may support an inquiry
+when independently useful; an intermediate tool migration is not a required
+disciplining exercise before the selected transition.
 
 Human-readable documents are our shared account of direction and progress.
 Usually we check in at the level of stage purpose, intended behavior,

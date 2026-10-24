@@ -1,10 +1,40 @@
-# Working with the user as Stewart's coordinator
+# Handoff to Stewart's next coordinator
 
-These expectations apply to any agent taking the coordinating role, regardless
-of provider or access to earlier conversations. Read them alongside
-[AGENTS.md](AGENTS.md), discover the active root `*-PLAN.md` documents, and
-inspect the repository before treating historical descriptions as current.
-Keep changing program state in the active plan.
+Read [AGENTS.md](AGENTS.md) and the active root `*-PLAN.md` documents, then
+inspect the working tree. The expectations below apply regardless of provider
+or access to earlier conversations. The active plan owns current program state;
+this handoff carries the working relationship and reasons a successor should
+not lose. It is selective, not a complete account of earlier conversations.
+Revise its handover context when replacing it; do not accumulate dated addenda.
+Earlier tracked versions remain in Git, including the predecessor at the HEAD
+named below.
+
+## Where this handover leaves you
+
+The user has settled the five-stage sequence in
+[DEVELOPMENT-PLAN.md](DEVELOPMENT-PLAN.md): status inquiry, audit of existing
+custody, consideration of additions, Rust transition, and optional implementation
+of the revised custody arrangement. **No Click integration.** Click previously
+served as a disciplining migration for the Python repository before Rust. The
+user judged that it had much less value with the transition now coordinated by
+an agent. This is a decision to drop that stage, not merely to reconsider its
+size. Archived Click work remains reference material.
+
+The status inquiry has not begun. Stage 1 records three proposed commission
+terms: latitude to retain justified live observations, the boundary with the
+wider custody audit, and sufficient evidence and a stopping point. They remain
+labelled recommendations; no runtime change is authorized. The user's latest
+instruction was to write this handoff and stand by. Resume from the recorded
+commission discussion when the user gives the next instruction, rather than
+treating the program's existence as a dispatch instruction.
+
+The plan also records where the findings and evidence will go. The user
+specifically asked that decisions and outstanding questions be recoverable
+from the repository, not conversation or memory. Preserve that property.
+The current documentation changes are uncommitted against initial HEAD
+`97c44d1aba9197395a4b193b29682752798eb5a4`; inspect the diff rather than relying
+on this snapshot. No runtime code or tests changed, no project tests ran,
+and no workers were dispatched during this engagement.
 
 ## Carry the investigative judgment
 
@@ -19,7 +49,8 @@ A question may call for a regression test, a comparison, a source investigation,
 or a semantic decision. Choose evidence that can distinguish plausible
 explanations. Explain what was established, what alternatives were challenged,
 and what uncertainty remains. Completion of an assignment is not by itself
-resolution of its motivating question.
+resolution of its motivating question. For status, clearer output does not by
+itself demonstrate better agent behavior.
 
 There is no target test-to-application ratio. The user's observations about
 test-heavy projects were reflections on their development practice, not a
@@ -53,10 +84,13 @@ evidence to examine, and simpler behavior is a proposal to justify. Preserve
 foundational distinctions while making contested responsibilities explicit.
 
 The status inquiry concerns what inspection should establish and which checks
-belong to subsequent operations. Treat changes to recommendations, field
-provenance and operation preconditions as contract questions. A quieter display
-alone does not settle them. The active plan carries the inquiry's scope and
-the decision about any implementation.
+belong to subsequent operations. Treat recommendations, field provenance and
+operation preconditions as contract questions. A quieter display alone does
+not settle them. Preliminary source reading found that `close._concluded`
+consumes status attention items; it did not establish which resulting refusals
+are necessary. Moving a check out of inspection needs an explicit account of
+its remaining owner or a proposed change in responsibility. The active plan
+carries the inquiry's scope and the decision about any implementation.
 
 Archived plans, notes and commits provide context and possible evidence.
 They do not form a dormant assignment queue. Recheck their claims and preserve
