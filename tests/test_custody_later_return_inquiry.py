@@ -23,6 +23,12 @@ observed behavior. The sixth case follows the mechanism one step further: a
 later identical collection after the changed one leaves only its own gaps in
 attention, so the concluded close again rests on A with the differing
 observation unaddressed.
+
+The hypothesis-framed run also expected status to offer close for A. Status
+offers close only when no other action is pending, and the fixture always
+leaves ``retain`` pending for the triaged collection, so every case asserts
+that close is not offered. This docstring was extended after the recorded run
+without changing any assertion.
 """
 from __future__ import annotations
 

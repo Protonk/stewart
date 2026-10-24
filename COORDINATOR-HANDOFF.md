@@ -1,11 +1,12 @@
 # Handoff to Stewart's next coordinator
 
-Read [AGENTS.md](AGENTS.md), the active root `*-PLAN.md` documents and the working
-tree. This handoff carries the working relationship and the context needed to
-resume discussion. [DEVELOPMENT-PLAN.md](DEVELOPMENT-PLAN.md) owns current program
-state; [VISION-PLAN.md](VISION-PLAN.md) owns the longer-term approach. Replace
-this handover context when passing the role onward rather than accumulating
-dated addenda. Earlier versions remain in Git.
+Read [AGENTS.md](AGENTS.md), [CONTRACTS.md](CONTRACTS.md), the active root
+`*-PLAN.md` documents and the working tree. This handoff carries the working
+relationship and the context needed to resume. [DEVELOPMENT-PLAN.md](DEVELOPMENT-PLAN.md)
+owns current program state; [VISION-PLAN.md](VISION-PLAN.md) owns the
+longer-term approach; CONTRACTS.md states decided behavior with its
+implementation status. Replace this handover context when passing the role
+onward rather than accumulating dated addenda. Earlier versions remain in Git.
 
 ## Where this handover leaves you
 
@@ -16,86 +17,55 @@ support is an explicit stage-3 candidate. Rust acceptance includes executed
 Linux and WSL qualification; the user plans to ask a friend to run WSL checks.
 Do not substitute a recipe or Linux results for executed WSL evidence.
 
-Two inquiries have finished, with independent review resolved:
+Stages 1 and 2 are decided. CONTRACTS.md is maintained guidance stating every
+decided contract with its implementation status, the principles behind them
+and the declines with their reasons; it incorporates the status/14 contract
+verbatim from the stage-1 findings. **Python is frozen as the reference
+baseline.** Production source is unchanged since `6582df2` and receives no
+behavior changes; every decided departure is implemented in Rust, with status
+as the first Rust operation, read-only against Python-written sessions with
+Python status as the control, and close last. The findings documents and their
+run records stay until Rust acceptance evidence supersedes them.
 
-- [STATUS-INQUIRY-FINDINGS.md](STATUS-INQUIRY-FINDINGS.md) records a **decided
-  public status contract**, exercised under the user's bounded delegation.
-  Normal status describes verified recorded custody, treats ordinary absence
-  neutrally, and offers no default pre-collection launch/probe/collect tasks.
-  It does not infer activity, completion, publication or delivery. Operational
-  checks must acquire explicit owners before status stops making them.
-  Implementation was not commissioned.
-- [CUSTODY-AUDIT-FINDINGS.md](CUSTODY-AUDIT-FINDINGS.md) records the completed
-  stage-2 investigation: responsibility families, costs, recovery, comparisons,
-  historical reconciliation and recommendations D1–D6. **These recommendations
-  are not user decisions.** Existing custody obligations remain operative.
+Four entries in CONTRACTS.md are marked **Proposed**: completions an
+independent review showed were missing (the kept-checkout exit, the enumerated
+live checks of conclusion, a new closing schema) and the later-return rule
+grounded in an executed comparison. They are not decided until the user says
+so. Do not treat them as decided, and do not reopen decided items without a
+new reason. The user relayed a Riker request on the two general commitments
+(`riker/CLOSE-COMMITMENTS-REQUEST.txt`); its reply belongs beside it as
+`CLOSE-COMMITMENTS-REPLY.txt` and is advisory. When the four are confirmed or
+revised, stage 2 closes in the plan and stage 3 is the next commission to
+prepare. It does not start automatically.
 
-The outgoing coordinator recommended discussing **what close must account for
-before discarding material** first. The user's latest request was to update this
-same handoff so you can take up that discussion. Begin there with the user;
-this handoff does not commission implementation or start stage 3. Do not reopen
-the settled status grant as if the earlier conversation had not occurred.
+## What was decided about close, and why
 
-## Begin with the meaning of close
+The discussion the previous handoff asked for took place. The question of what
+close must account for before discarding was settled by a reframing rather
+than a list of disposable categories: **close offers the manager opportunity,
+not preservation.** Close ends private custody deliberately; retention and
+export decide what survives; close guarantees that each removed surface matches
+a reviewable capture, is verifiably regenerable, is discarded by name, or
+belongs to a declared category whose identity the closing record freezes. This
+extends the existing rule that Stewart acts only on what the closing evaluation
+judged. Two general commitments came with it and are recorded as principles:
+Stewart's refusals are limited to its own claims and safety, tested by what
+claim it would make falsely by proceeding; and Stewart makes no
+material-preservation promise to anyone over the deciding manager, keeping its
+process promises to the auditor. The user holds both as commitments and
+rejected mandatory retention before close as invasive to the manager's flow.
+The user's reason generalizes: most conditions under which Stewart could
+withhold a report trace to how the manager constructed the audit, which is the
+manager's to judge, not Stewart's.
 
-Explain the concrete tension before proposing mechanics. The current original
-runtime check requires equality with preparation. Our comparison introduced the
-same change before versus after collection: the first was captured and triaged,
-the second was not in that capture, yet both blocked concluded close. Restoring
-the original bytes allowed it without changing the receipts. This is a causal
-fixture probe, not advice to overwrite uncollected changes during recovery.
-
-Other removable directories have a different boundary. Modified recovered
-runtimes and nonempty experiment HOME directories still entered an actual
-CLOSING removal plan. Those probes intercepted execution before removal or
-resource claims; HOME writes were synthetic. The source supplies the subsequent
-recursive-removal behavior. We did not observe deletion or run a child/harness.
-A directory's membership in a removal plan does not establish that its current
-contents were captured or considered.
-
-Crucially, close also removes the private session and its captures. **Captured
-and triaged does not mean retained after close.** The manager currently exports
-or retains what should survive. The proposal is to account for relevant contents
-before deliberate disposal, not to archive everything forever.
-
-A useful opening question is what a manager should be entitled to rely on close
-having accounted for. Ground it in three examples: the supplied runtime whose
-damage may explain an audit; a recovery copy that is regenerable until someone
-adds new inspection work; and an experiment HOME that can hold cache files or
-unique child-written material. Discuss whether categories can be declared
-disposable in advance, which changes need capture/review, and when an explicit
-discard acknowledgment suffices. These are design choices, not established
-requirements to present as a compliance checklist.
-
-The outgoing recommendation, D1, favors distinguishing accounted-for damage
-from new unaccounted contents. Extending that duty to arbitrary HOME/recovery
-contents would broaden the custody boundary and needs a user decision. Preserve
-this distinction from implementation corrections under existing obligations.
-Two related questions are source findings, not newly executed comparisons:
-
-- Direct close can use an older triaged collection despite a later untriaged
-  return with different runtime observations and identical checkout bytes.
-  Optional follow-up actions need not all be mandatory, but later consequential
-  evidence cannot be dismissed merely by calling those actions optional.
-- A checkout reported as kept can permit later session cleanup, whereas failed
-  checkout revalidation stops cleanup. Whether associated evidence must remain
-  until that kept checkout's disposition is settled is still open.
-
-A separate stage-1 comparison showed cached manager-launcher damage blocking
-close through status command rendering despite matching loaded writer bytes.
-We recommend removing rendering success as a closure precondition while retaining
-writer authority and required evidence checks. Do not remove the whole status
-failure boundary merely because one dependency is incidental.
-
-The report is ready to support discussion; there is no need to restart the audit
-or request blanket approval of all six recommendations. The other proposals can
-be assessed independently: selected report export with explicit surrounding
-capture damage (D2), supplemental paths below gitlinks (D3), human-compatible
-launch acknowledgments (D4), writer continuity into Rust (D5), and qualified
-access/experiment capabilities (D6). Their alternatives and reliance effects
-are in the report. Git-filter execution and inconsistent replacement-object
-views are demonstrated implementation issues under retained trust commitments;
-the narrow probes do not qualify a complete Git hardening policy.
+Two lessons from how it went. The independent review of the decision set
+caught a real error: the kept-checkout rule as first stated had no exit and
+would have retained sessions forever by silence, failing the refusal principle
+beside it. Name every rule's exit. And the later-return comparison contradicted
+the source reading usefully: the current close does refuse on a later
+collection's runtime gap, but only through status and only while that
+collection is the latest; a later clean collection hides it. Read the plan's
+account and the retained evidence before choosing further comparisons.
 
 ## Preserve the product relationship and delegation boundary
 
@@ -133,10 +103,13 @@ When a consequential crossing is real, state it and complete independent work.
 ## Carry the investigative and coordinating judgment
 
 The user expects actual use of sub-agents and explicitly objected to a conception
-of coordination that would use none. In this engagement, two source researchers
+of coordination that would use none. In the stage-1 and stage-2 engagement, two source researchers
 and an independent reviewer supported stage 1; three source researchers and a
 fresh independent reviewer supported stage 2. The coordinator authored additional
 comparisons, reconciled reports, owned integrated execution and resolved review.
+The decision engagement used one comparison worker and two fresh independent
+reviewers, one over the decision set and one over the comparison's evidence;
+both found corrections worth making.
 Use the next harness's available facilities and useful assignments; worker IDs,
 a fixed staffing split and a development orchestration framework are unnecessary.
 Development workers do not inherit Stewart's product manager/auditor workflow.
@@ -163,47 +136,38 @@ distinction and the captured historical documents.
 
 ## Working tree and evidence
 
-Initial and current HEAD for this engagement is
-`6582df2c0fd9f27941b933336f6150d83b3a53fa`. No commits or production changes were
-made. At this handoff, DEVELOPMENT-PLAN.md and this file are modified; both
-findings documents, the two `riker/STATUS-DELEGATION-*.txt` exchange files,
-`tests/test_status_inquiry.py` and four `tests/test_custody_*_inquiry.py` files
-are untracked. Inspect the actual tree and preserve it. In particular, the user
-edited the Riker request wrapper; do not restore a presumed generated version.
+Initial HEAD for this engagement was `6582df2`; its commits follow on `main`
+and are pushed. The coordinator owns version control (AGENTS.md): the user
+discusses actions effected and does not want to be asked about Git logistics.
+Commit verified work in layers with messages that record validation.
 
-Stage 1 selected 30 plus 1 installed-wheel nodes, all passing. Stage 2 selected
-26 nodes: 25 passed and one Git probe failed because its required filter lacked
-a clean half. After correcting the fixture, all three filter controls passed in
-a fresh run. Thus 26 distinct stage-2 nodes have passing evidence, while the
-historical totals remain 29 executions, 28 passed and one fixture failure.
-No full-suite or real harness qualification is claimed. All runs used the same
-production wheel on Python 3.14.8 and Apple Git 2.54.0.
-
-The findings cite receipts, logs, wheels and compact evidence under
-`.scratch/status-inquiry/` and `.scratch/custody-audit/`. Stage 1 retains 42
-observation copies; stage 2 retains 90 observation/fixture files and eight
-staged inquiry-source copies, with verified manifests. Independent review checked
-the evidence. Working artifacts were pruned only through `scripts/prune.py`;
-printed fixture paths no longer name recoverable sessions. Read the reports and
-retained observations before choosing any additional comparisons. Fresh work
-uses the installed-wheel procedure and fresh result names in DEVELOPMENT.md.
-The new tests characterize the baseline; later implementation must deliberately
-revise or retire expectations of behavior being changed.
+Stage-1 and stage-2 evidence is as the findings describe. The later-return
+comparison added `tests/test_custody_later_return_inquiry.py` and three receipts
+under `.scratch/custody-audit/`: `later-return-01` (five setup failures, since
+the harness shell sandbox refused creating `.gitconfig` in the private HOMEs;
+no test body ran), `later-return-02` (one passed, four failed hypothesis-framed
+assertions; its staged source survives as the receipt's hash and the failing
+lines in its pytest log) and `later-return-03` (six passed), with seventy
+verified evidence copies in `later-return-03-evidence/`. After independent
+review, all three artifacts directories were pruned through `scripts/prune.py`;
+the plan names the removal records. The distribution test was rerun after
+CONTRACTS.md was added to the source distribution
+(`.scratch/contracts-link/distribution-01`, ten passed). Every run used Python
+3.14.8, Apple Git 2.54.0 and the same production wheel digest as the earlier
+stages. DEVELOPMENT.md records that the harness shell sandbox stops the suite
+at fixture setup and blocks pruning; those commands executed with the sandbox
+disabled.
 
 ## Consultation and engagement records
 
 Riker is a separately situated helper, not a superior authority. Requests and
-replies are user-relayed under [riker/RIKER.md](riker/RIKER.md). The retained
-status-delegation exchange helped sharpen the commitments boundary. Consultation
-is optional, with no prescribed place in the sequence; repository claims still
-need evidence.
+replies are user-relayed under [riker/RIKER.md](riker/RIKER.md). Two exchanges
+are retained: the status-delegation exchange, which sharpened the commitments
+boundary, and the close-commitments request, whose reply may be pending when
+you read this. Consultation is optional, with no prescribed place in the
+sequence; repository claims still need evidence.
 
-This engagement also had a separate fieldwork recording assignment. Ordinary
-Stewart development materials remain at their project paths. Accounts of work
-in progress were written under
-`/Users/raccoon/Desktop/Experiments/stewart-fieldwork/run-008/notes/` according to
-that run's INSTRUCTIONS.md. They are not project contracts or prerequisites for
-resuming this discussion. If your engagement carries its own recording
-instructions, follow those; do not assume authority to explore other runs or
-restricted neighboring projects. This file is the ordinary Stewart handoff the
-user requested.
+This engagement had no fieldwork recording assignment; a predecessor's did not
+imply one. If your engagement carries its own recording instructions, follow
+those; do not assume authority to explore other runs or restricted neighboring
+projects. This file is the ordinary Stewart handoff.

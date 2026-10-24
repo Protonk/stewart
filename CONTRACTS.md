@@ -549,9 +549,10 @@ code-3 item; triaging it moves the basis to it. That protection is incidental
 to status and reaches only the latest collection: once a later clean
 collection follows the one that recorded the change, conclusion rests on the
 older triaged collection and the recorded runtime change is addressed by no
-check. A later return whose report or checkout bytes differ is caught by the
-checkout comparison, so the evidence the checkout rule misses is exactly the
-custody gaps. **Proposed** rule: conclusion may rest on an older triaged
+check. A later return whose checkout bytes differ is caught by the checkout
+comparison, as exercised; a differing report lies in the worktree and is covered
+by the same inventory, by source reading. The evidence the checkout rule misses
+is therefore the custody gaps. **Proposed** rule: conclusion may rest on an older triaged
 collection only if every later complete collection either has a valid bound
 disposition or records no verification-level custody gap. A later collection
 recording such a gap must be triaged before conclusion, whichever position it

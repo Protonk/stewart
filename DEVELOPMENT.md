@@ -40,11 +40,14 @@ Without `--wheelhouse` the runner uses `$STEWART_WHEELHOUSE`, else
 `<project>/.scratch/check-result.json`. `scripts/check.py --help` describes
 every option.
 
-A shell sandbox that refuses creating `.gitconfig` under the project tree stops
-every node at fixture setup, because the staged conftest writes one into each
-node's private HOME under the run's artifacts directory. Run the checker outside
-such a sandbox or permit that write; the receipt of a run stopped this way
-records errors at setup and no executed test body.
+A shell sandbox that refuses creating `.gitconfig` files in the run's artifacts
+directory stops every node at fixture setup, because the staged conftest writes
+one into each node's private HOME there. Such a sandbox also refuses unlinking
+those files, so `scripts/prune.py` cannot remove the artifacts directory from
+inside it. Run the checker and the prune outside such a sandbox or permit those
+operations; the receipt of a run stopped this way records setup failures and no
+executed test body, and a refused prune records the failure and leaves the
+remaining entries.
 
 For a short development check, add `--fast` to select only `smoke and not
 heavy`. Full validation omits that flag. `--fast` owns the marker selection,

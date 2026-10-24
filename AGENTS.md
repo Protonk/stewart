@@ -8,6 +8,9 @@ contracts; never import a containing repository's helpers or configuration.
 
 [The coordinator handoff](COORDINATOR-HANDOFF.md) records the user's working
 expectations for agents taking the coordinating role across harnesses.
+[CONTRACTS.md](CONTRACTS.md) states the behavior Stewart is decided to have,
+with each contract's implementation status and the reasons for declined
+changes; changes to Stewart's intended responsibilities are recorded there.
 
 “Ask Riker for help” means prepare a request for the user to relay to a separate
 Project conversation. `riker/RIKER.md` describes the exchange and links the

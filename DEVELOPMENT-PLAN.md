@@ -3,8 +3,9 @@
 Status: the five-stage sequence is agreed; Click integration is dropped.
 Stages 1 and 2 are decided. The status contract and the custody decisions are
 recorded in [CONTRACTS.md](CONTRACTS.md) with their implementation status; the
-findings documents remain for their evidence until that evidence has been cited
-from there. Python is frozen as the reference baseline; decided departures are
+findings documents and their run records remain until Rust acceptance evidence
+supersedes them, because a run's record leaves with the document that cites
+it. Python is frozen as the reference baseline; decided departures are
 implemented in Rust. Stage 2 closes when the four proposed completions in
 `CONTRACTS.md` are confirmed or revised.
 This document owns the current sequence, stage outcomes and consequential
@@ -22,8 +23,11 @@ set returned fourteen findings, none blocking; the corrections are applied and
 three completions it required are recorded in `CONTRACTS.md` as proposed,
 awaiting confirmation. The later-return comparison then executed
 (`.scratch/custody-audit/later-return-03`, 6 of 6 passed) and refined the
-source finding; the resulting rule is a fourth proposed completion. Pending for
-stage-2 closure: confirmation of those four.
+source finding; the resulting rule is a fourth proposed completion. Its
+evidence was independently reviewed and its artifacts pruned. `CONTRACTS.md`
+is linked from AGENTS.md and shipped in the source distribution, validated by
+`.scratch/contracts-link/distribution-01` (10 of 10 passed, wheel digest
+unchanged). Pending for stage-2 closure: confirmation of those four.
 
 Checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
 contract, concrete examples, observation/consumer map, preservation-first
@@ -90,8 +94,8 @@ concluded-close readiness obligations under stage 2's D1 rules; offer versus
 direct-close basis as advice kept separate from preconditions, with the
 later-return rule pending; proof of preparation completion declined; delivery
 and human participation carried to stage 3. The decided contract now lives in
-`CONTRACTS.md`; the findings retire once their evidence has been cited from
-there.
+`CONTRACTS.md`; the findings retire when the Rust acceptance evidence
+supersedes theirs.
 
 Determine what status should establish between preparation and collection,
 and which live validations belong to operations such as collection and close.
@@ -329,21 +333,44 @@ with explicit reserved choices; stage-3 additions do not start automatically.
 The later-return comparison ran as `.scratch/custody-audit/later-return-03.json`
 with `tests/test_custody_later_return_inquiry.py`: 6 collected, 6 selected,
 6 passed, 0 failed, 0 skipped, 0 deselected; pytest and runner exit 0;
-pytest 9.94 s, total 12.5 s;
-the same wheel digest as the earlier runs. Two earlier receipts are kept.
-`later-return-01` recorded 5 errors at fixture setup and no executed test body:
-the harness sandbox refused creating `.gitconfig` in the private HOMEs under the
-artifacts directory. `later-return-02` recorded 1 passed and 4 failed: the
-hypotheses the first results contradicted, kept as evidence of what was
-expected. Runs 02 and 03 executed with that sandbox disabled for those commands.
+pytest 9.94 s, total 12.5 s; the same wheel digest as the earlier runs. Two
+earlier receipts are kept. `later-return-01` recorded five setup failures,
+which pytest reports as errors, and no executed test body: the harness shell
+sandbox refused creating `.gitconfig` in the private HOMEs under the artifacts
+directory. `later-return-02` recorded 1 passed and 4 failed: hypothesis-framed
+assertions the observed behavior contradicted. Its staged test source survives
+as the receipt's hash and the failing assertion lines in its pytest log, not as
+a file. Runs 02 and 03 executed with that sandbox disabled for those commands.
 Seventy verified entries are retained in `later-return-03-evidence/`. No close
 was executed; `close_plan` and the read-only preflight were observed, with
-session snapshots confirming no writes. Baseline and identical-later-collection
-cases rest on the triaged collection; a changed-then-restored runtime refuses
-on the later collection's `runtime_changed` gap while it is the latest; an
-unrestored runtime refuses and restoration alone no longer suffices; a changed
-checkout refuses `checkout_changed`; and a changed runtime followed by a clean
-later collection concludes on the older triage with the change unaddressed.
+session-directory snapshots confirming no session writes and source reading
+confirming the plan path writes nowhere else. Baseline and
+identical-later-collection cases rest on the triaged collection; a
+changed-then-restored runtime refuses on the later collection's
+`runtime_changed` gap while it is the latest; an unrestored runtime refuses and
+restoration alone no longer suffices; a changed checkout refuses
+`checkout_changed`; and a changed runtime followed by a clean later collection
+concludes on the older triage with the change unaddressed. In every case status
+offered `retain` rather than close, since it offers close only when nothing
+else is pending; the hypothesis-framed run had expected a close offer, and the
+test's docstring now says so. Only the checkout variant of a differing later
+return was exercised; that a differing report is caught the same way follows
+from the inventory covering the worktree, by source reading.
+
+A second independent reviewer checked this comparison: receipt counts, all
+seventy evidence digests and the test-source hash against the receipt, the case
+design against the firing/differing/invariance rule, the stated mechanism
+against `status.py` and `close.py`, and the sandbox claim against the conftest
+and the run-01 log. Nothing blocked the record; the two inference points above
+were made explicit at its suggestion. The three artifacts directories were then
+pruned through `scripts/prune.py --run custody-audit/<stem> --apply`. The
+sandbox also refused unlinking the `.gitconfig` files, so runs 02 and 03 took
+two attempts each; the `*-prune.out` streams carry both. Removal records under
+`.scratch/pruned/`: `20261024T152616Z-13139` (run 01, together with the already
+reduced `contracts-link/distribution-01` directory), `20261024T152617Z-13156`
+and `20261024T152929Z-13207` (run 02, refused then completed), and
+`20261024T152617Z-13173` and `20261024T152929Z-13224` (run 03, refused then
+completed). Each run's `*.pruned.json` names its first record.
 
 Examine what each restriction protects, which obligations it creates, its
 costs, and the consequences of retaining, hardening, softening or removing it.
