@@ -27,18 +27,13 @@ as the first Rust operation, read-only against Python-written sessions with
 Python status as the control, and close last. The findings documents and their
 run records stay until Rust acceptance evidence supersedes them.
 
-Five entries in CONTRACTS.md are marked **Proposed**: completions an
-independent review showed were missing (the kept-checkout exit, the enumerated
-live checks of conclusion, a new closing schema), the later-return rule
-grounded in an executed comparison, and a rule that a recorded preservation
-undertaking gates conclusion, which came from Riker's reply. The plan also
-records three proposed revisions to the principles from that reply, with
-replacement text. None is decided until the user says so. Do not treat them as
-decided, and do not reopen decided items without a new reason. The Riker
-exchange is retained at `riker/CLOSE-COMMITMENTS-REQUEST.txt` and
-`CLOSE-COMMITMENTS-REPLY.txt`; it is advisory. When the proposals are confirmed
-or revised, stage 2 closes in the plan and stage 3 is the next commission to
-prepare. It does not start automatically.
+Stage 2 closed on 2026-10-24 with every completion and principle revision
+decided; nothing in CONTRACTS.md is marked proposed. Do not reopen decided
+items without a new reason. The Riker exchange that produced the final
+revisions is retained at `riker/CLOSE-COMMITMENTS-REQUEST.txt` and
+`CLOSE-COMMITMENTS-REPLY.txt`; it is advisory. The plan's stage-3 section
+holds a proposed commission for the additions inquiry, awaiting the user's
+instruction to proceed. It does not start automatically.
 
 ## What was decided about close, and why
 

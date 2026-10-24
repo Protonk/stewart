@@ -6,9 +6,9 @@ recorded in [CONTRACTS.md](CONTRACTS.md) with their implementation status; the
 findings documents and their run records remain until Rust acceptance evidence
 supersedes them, because a run's record leaves with the document that cites
 it. Python is frozen as the reference baseline; decided departures are
-implemented in Rust. Stage 2 closes when the proposed completions in
-`CONTRACTS.md` and the proposed principle revisions below are confirmed or
-revised.
+implemented in Rust. Stage 2 closed on 2026-10-24. Stage 3, consideration of
+additions, is the next commission; its proposed terms are in its section and
+await the user's instruction to proceed.
 This document owns the current sequence, stage outcomes and consequential
 decisions. Internal assignments and execution details belong to the coordinating
 agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
@@ -31,8 +31,9 @@ is linked from AGENTS.md and shipped in the source distribution, validated by
 unchanged). Riker's reply on the two general commitments arrived and is
 retained at `riker/CLOSE-COMMITMENTS-REPLY.txt`; it adds a fifth proposed
 completion and three proposed revisions to the principles, recorded in stage 2.
-Pending for stage-2 closure: confirmation of the five completions and the
-principle revisions.
+The user confirmed the five completions and the principle revisions;
+`CONTRACTS.md` records them as decided and stage 2 is closed. Stage 3's
+proposed commission is in its section.
 
 Checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
 contract, concrete examples, observation/consumer map, preservation-first
@@ -460,56 +461,18 @@ The experiment HOME is not the auditor's workspace, so the reply's
 restricted-environment auditor case bears on the checkout, which collection
 captures and abandon protects, not on the HOME rule.
 
-Proposed revisions to the principles in `CONTRACTS.md`, for the user's
-approval as written:
-
-1. Refusals. Replace the two sentences stating the false-claim test with: "A
-   refusal is justified by one of three grounds: a specific false custody claim
-   Stewart would make by proceeding; an act Stewart may not perform, such as
-   following a planted link, overwriting an exclusive destination, or
-   destroying material it holds no right to dispose of; or an obligation
-   Stewart has undertaken and not discharged. Discomfort with incomplete
-   evidence is not a ground; it warrants qualification. A refusal whose next
-   step cannot be performed inside Stewart is suspect unless it names the
-   external authority or commitment it honors. Stewart treats the commission
-   as authorizing the manager to receive the auditor's return; adjudicating a
-   right to receive is outside its model and would be an addition."
-2. Promises. Replace the sentences from "Stewart makes outcome promises about
-   records" through "over the deciding manager" with: "The authorized manager
-   controls by default what survives close. That control does not extinguish
-   obligations Stewart has undertaken concerning particular material: a
-   resource Stewart did not create is never claimed for disposal; another
-   audit's live use keeps a resource; retention and export copy bytes to their
-   destinations and never reference the session, so a retained outcome's
-   promise of inspection does not depend on the session surviving; uncollected
-   auditor work is not destroyed without an explicit discard naming it; and a
-   preservation the manager began and Stewart recorded is completed or
-   explicitly surrendered before conclusion. Releasing a resource claim when
-   the resource changed concerns the scope of the authorized act, not a promise
-   to the manager's earlier self. Human auditors, principals, material
-   providers and later readers acquire no retention rights from their roles;
-   any they hold come from promises, authority limits or reliance actually
-   recorded. Stewart has no record of a manager's delegation limits or a
-   provider's conditions today; that is a stage-3 question, not a veto to
-   imagine."
-3. Opportunity. Replace the sentence beginning "Close guarantees that the
-   manager had the opportunity" through "closing record freezes." with: "Close
-   guarantees that the manager had a working opportunity to keep what it
-   removes, not a nominal one: each removed surface matches a capture that
-   retention or export could have kept, duplicates session-held material that
-   could have been kept the same way, belongs to a category declared disposable
-   in advance whose identity the closing record freezes and never describes as
-   reviewed or declined, or is surrendered by name. Where the only preservation
-   path failed, the loss is recorded as a loss despite an undertaking, never as
-   a decline. Regenerability is never a ground: a digest proves what bytes to
-   expect, not the ability to produce them."
+On 2026-10-24 the user approved the five completions and three revisions to
+the principles drawn from that reply: refusals rest on three grounds rather
+than the false-claim test alone; default manager control plus undertaken
+obligations replaces the party hierarchy; and opportunity means a working
+preservation path, with regenerability never a ground. `CONTRACTS.md` carries
+the approved text; its history holds the proposal wording.
 
 **Exit:** reached in substance on 2026-10-24: the decisions above are recorded
 in `CONTRACTS.md` with reasons and declines, and the independent review of
-that decision set is resolved above. The stage closes when the five proposed
-completions in `CONTRACTS.md` and the three principle revisions above are
-confirmed or revised. Implementing decisions in Python is not a condition;
-Python is frozen.
+that decision set is resolved above, as is the Riker consultation. Stage 2
+closed on 2026-10-24 with every completion and revision decided. Implementing
+decisions in Python is not a condition; Python is frozen.
 
 ## 3. Consider additions to custody
 
@@ -530,6 +493,23 @@ auditor-attributed acceptance of the commission; real external retrieval and
 system-project experiment capability (D6's candidates); and, if submodule
 support is adopted, revisiting the narrow D3 contract. Stage 2's declines are
 recorded in `CONTRACTS.md` and are not reopened here without a new reason.
+
+**Proposed commission, awaiting the user's instruction to proceed:** examine
+each candidate addition and produce the coherent desired custody arrangement
+this stage's exit describes, with every candidate accepted, declined, narrowed
+or deferred and with semantics ready for implementation separated from
+exploratory ideas. Candidates: submodule support, from the captured note;
+delivery and return-route responsibilities with human-auditor participation,
+including an auditor-attributed acceptance of the commission; real external
+retrieval and system-project experiment capability; a record of a manager's
+delegation limits or a material provider's conditions; and a right to receive
+distinct from the commission. Declining is a valid outcome for each. The
+coordinator would assign one source investigation per candidate to workers
+with compact returns, run a controlled comparison only where source cannot
+settle a question, arrange a fresh independent reviewer over the integrated
+account, and consult Riker at the coordinator's or user's discretion. No
+production change; Python stays frozen; accepted additions become contracts in
+`CONTRACTS.md` for Rust. The commission does not authorize implementation.
 
 **Exit:** a coherent desired custody arrangement, with additions accepted,
 declined, narrowed or deferred. Separate semantics ready for implementation

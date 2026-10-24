@@ -41,31 +41,53 @@ evaluation did not judge is not removed on the strength of the command that
 started it. This has always governed the checkout and claimed resources; the
 close rules below apply it to every surface close removes.
 
-**Refusals are limited to Stewart's own claims and safety.** The test for a
-refusal is what claim Stewart would make falsely by proceeding. If the answer
-is none, Stewart does not refuse. The legitimate refusals are: declining to
-vouch for bytes it cannot verify, while still saying where they are; declining
-to follow a planted link or read a special file; declining to destroy an
-exclusive destination, another audit's live use, or material the closing
-evaluation did not judge; and conditioning Stewart's own claims, such as
-requiring a disposition before publication under its custody claims. A refusal
-whose next step cannot be performed inside Stewart is suspect, because it
-pushes the manager out of custody to resolve it.
+**Refusals are limited to Stewart's own claims, the acts it may perform, and
+the obligations it has undertaken.** A refusal is justified by one of three
+grounds: a specific false custody claim Stewart would make by proceeding; an
+act Stewart may not perform, such as following a planted link, overwriting an
+exclusive destination, or destroying material it holds no right to dispose of;
+or an obligation Stewart has undertaken and not discharged. Discomfort with
+incomplete evidence is not a ground; it warrants qualification. The legitimate
+refusals are: declining to vouch for bytes it cannot verify, while still saying
+where they are; declining to follow a planted link or read a special file;
+declining to destroy an exclusive destination, another audit's live use, or
+material the closing evaluation did not judge; and conditioning Stewart's own
+claims, such as requiring a disposition before publication under its custody
+claims. A refusal whose next step cannot be performed inside Stewart is suspect
+unless it names the external authority or commitment it honors. Stewart treats
+the commission as authorizing the manager to receive the auditor's return;
+adjudicating a right to receive is outside its model and would be an addition.
 
 **Close offers opportunity, not preservation.** Close deliberately ends private
 custody; retention and export decide what survives it. Close guarantees that
-the manager had the opportunity to keep what it removes: each removed surface
-matches a capture the manager could have reviewed, is verifiably regenerable
-from retained records, is discarded by name in the closing acknowledgment, or
-belongs to a category declared disposable in advance whose identity the
-closing record freezes.
-Stewart makes outcome promises about records, to readers who were party to
-nothing, and about material only toward another audit's live use and the
-manager's own frozen judgment. It makes no material-preservation promise to
-the manager's principal or to the auditor over the deciding manager. Its
-promises to the auditor are process promises: raw capture before
-interpretation, a disposition of every gap, and attribution that is never
-turned into a verdict.
+the manager had a working opportunity to keep what it removes, not a nominal
+one: each removed surface matches a capture that retention or export could
+have kept, duplicates session-held material that could have been kept the same
+way, belongs to a category declared disposable in advance whose identity the
+closing record freezes and never describes as reviewed or declined, or is
+surrendered by name. Where the only preservation path failed, the loss is
+recorded as a loss despite an undertaking, never as a decline. Regenerability
+is never a ground: a digest proves what bytes to expect, not the ability to
+produce them.
+
+**The manager controls what survives by default; undertaken obligations
+survive the manager's close.** That control does not extinguish obligations
+Stewart has undertaken concerning particular material: a resource Stewart did
+not create is never claimed for disposal; another audit's live use keeps a
+resource; retention and export copy bytes to their destinations and never
+reference the session, so a retained outcome's promise of inspection does not
+depend on the session surviving; uncollected auditor work is not destroyed
+without an explicit discard naming it; and a preservation the manager began
+and Stewart recorded is completed or explicitly surrendered before conclusion.
+Releasing a resource claim when the resource changed concerns the scope of the
+authorized act, not a promise to the manager's earlier self. Human auditors,
+principals, material providers and later readers acquire no retention rights
+from their roles; any they hold come from promises, authority limits or
+reliance actually recorded. Stewart has no record of a manager's delegation
+limits or a provider's conditions today; that is a candidate addition, not a
+veto to imagine. Stewart's promises to the auditor are process promises: raw
+capture before interpretation, a disposition of every gap, and attribution
+that is never turned into a verdict.
 
 **Liberal in handing over, conservative in destroying.** Stewart gives the
 manager verified material with its qualifications attached, and withholds
@@ -501,8 +523,8 @@ it is registered elsewhere or was substituted, the remaining removal steps do
 not proceed, as they already do not after a failed checkout revalidation.
 Removing the session would leave the kept checkout without the captures and
 receipts that verify or recover its custody context; the closing record names
-its identity but cannot substitute for them. **Proposed** completion: the stop
-is recorded in the closing record with outcome `checkout_kept` and the
+its identity but cannot substitute for them. The stop is recorded in the
+closing record with outcome `checkout_kept` and the
 condition observed; the exits are restoring the judged state and resuming the
 close, or resuming with an explicit acknowledgment that names the kept checkout
 and which the closing record freezes. No session is retained indefinitely by
@@ -519,7 +541,7 @@ on, such as a mismatched private handoff or a capture that no longer verifies,
 still refuses conclusion, because conclusion deletes the originals. The exit
 is abandon with explicit discard, naming the damaged record.
 
-**Proposed: which live checks conclusion makes.** Conclusion's live checks are
+**Which live checks conclusion makes.** Conclusion's live checks are
 exactly: writer identity; the checkout inventory against the triaged
 collection's receipt; runtime coverage; each recovery against its capture; and
 the frozen resource evaluation. A public handoff differing from preparation is
@@ -530,7 +552,7 @@ the maintainer checkout's HEAD and dirtiness or a destination's presence, are
 recorded as unavailable when they cannot be made and do not refuse. Failure to
 render a command is covered above.
 
-**Proposed: the closing record is a new schema.** A closing record that
+**The closing record is a new schema.** A closing record that
 freezes discard identities, recovery verifications and kept-checkout
 acknowledgments is a new closing schema. Each removed item carries the ground
 on which it was removed, and the grounds are not interchangeable: it matched a
@@ -547,7 +569,7 @@ contract's `receipt_state` vocabulary is a collection whose receipt is
 recorded, whose capture verifies, and which a valid bound disposition
 addresses.
 
-**Proposed: a recorded preservation undertaking gates conclusion.** A retain or
+**A recorded preservation undertaking gates conclusion.** A retain or
 export the manager began and Stewart recorded as planned, whether as a keyed
 request with attempts and no outcome or as a retention record carrying
 problems, is an undertaking, not advice. Conclusion refuses while such an
@@ -574,7 +596,7 @@ older triaged collection and the recorded runtime change is addressed by no
 check. A later return whose checkout bytes differ is caught by the checkout
 comparison, as exercised; a differing report lies in the worktree and is covered
 by the same inventory, by source reading. The evidence the checkout rule misses
-is therefore the custody gaps. **Proposed** rule: conclusion may rest on an older triaged
+is therefore the custody gaps. Decided rule: conclusion may rest on an older triaged
 collection only if every later complete collection either has a valid bound
 disposition or records no verification-level custody gap. A later collection
 recording such a gap must be triaged before conclusion, whichever position it
