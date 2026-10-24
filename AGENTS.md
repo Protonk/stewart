@@ -25,6 +25,13 @@ them. Explain mechanisms and reasons without temporary planning coordinates.
 Preserve captured historical documents. Do not add compatibility shims or
 rewrite historical receipts to fit a newer schema.
 
+The coordinator owns version-control logistics: when to commit, how to layer
+commits, branching, worktrees and pushing to the remote. The user discusses
+actions effected, not Git mechanics, and does not want to be asked about them.
+Commit verified changes in coherent layers whose messages record what changed
+and how it was validated. Keep history linear on `main` unless parallel work
+needs isolation. There is no CI; pushing is permitted.
+
 For a fleet approach, one coordinating agent owns the coherent result. It
 investigates the intended outcome, protected obligations, changeable behavior
 and consequential decisions for the user; chooses useful concurrency, complete
