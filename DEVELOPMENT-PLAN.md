@@ -684,8 +684,17 @@ selecting 23 nodes, all passed, wheel `43da134c…`) and the Git-only
 history-view probe (`probe-05`). The account for decision is
 `CUSTODIAL-CORE-FINDINGS.md`, recommending a disposition for each of A to F;
 `GIT-ENVIRONMENT-NEEDS.md` holds the generated table, the narrative and the
-proposed status of each class of rows. Both go to a fresh independent reviewer
-before the user decides.
+proposed status of each class of rows. A fresh independent reviewer returned
+32 findings, 3 blocking; all three are resolved and the account records the
+disposition of the rest. Generator runs after review: `git-opinions-02` and
+`-03` failed on test-helper naming (kept as records), `-04` and `-05` passed
+20 of 20.
+
+Awaiting the user: decisions A to F; the two proposed completions under B
+(refusing an unrepresentable tree, one name normalization in capture); the
+leads on a concluded close over a failed preparation and on the recorded
+pause; the guide's statuses; and whether Rust status starts alongside. Nothing
+is in flight.
 
 ## 5. Optionally implement the revised custody arrangement in Rust
 
