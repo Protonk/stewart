@@ -2,30 +2,99 @@
 
 Stewart's users keep their material in Git. GIT-ENVIRONMENT-NEEDS.md tells
 them how to prepare it; its generated region lists what Stewart's code does
-with Git, found by parsing the source under src/stewart with ``ast``. Nothing
-is imported or run, so each row is something the code does rather than
-something someone remembered. A hand-written guide cites rows by ID.
+with Git. Rows are selected by parsing the source under src/stewart with
+``ast``; nothing is imported or run. Each row's description is composed from
+fixed glosses of Git's commands and options and of what the code does with a
+path, so a row says what the code does in words this script supplies. A
+hand-written guide cites rows by ID.
 
-Five classes of row are found, each by the rule the generated output prints
-above its table:
+Modes. With no flag the generated Markdown is printed. --write replaces only
+the bytes between the git-opinions markers in the document; --check exits 1
+when they differ from what would be generated. --coverage compares the call
+sites found with a raw textual scan for Git invocations and exits 1 when
+anything is unaccounted for (see "Coverage" below).
 
-  1. configuration common to every Git call, read from ``_git._invocation``;
-  2. Git invocations, found by following every call that reaches
-     ``_invocation`` through the helpers and the wrappers discovered around it;
-  3. refs Stewart names, creates or deletes (string templates under ``refs/``);
-  4. Git administration paths Stewart reads or writes;
-  5. refusals about repository shape (``StewartError`` reasons raised where
-     Git or its administration is observed).
+Rules, by class.
 
-Row IDs come from row content, never from line numbers, so prose can cite
-them across regenerations; the output states how each class forms them. Two
-rows with one ID stop generation rather than receive a silent suffix.
+  1. Configuration. Read from _git._invocation, the one function that builds
+     every Git argument vector and environment, and from the process launches
+     given **_invocation(...). The returned "args" list supplies the program
+     and each -c setting; dict(os.environ, NAME=value) supplies inheritance and
+     each variable set; env.pop(NAME), directly or over a literal tuple, each
+     variable removed. The working directory row classifies the first argument
+     of every call to a Git helper (the primitive, a wrapper or a function of
+     _git), outside _git itself: the common directory (names or record keys
+     common, common_dir, git_common), the process's current directory
+     (Path.cwd(), os.getcwd()) or a checkout or repository root. A launch's
+     keywords and its function's timeout default supply process handling.
 
-With no flag the generated Markdown is printed. --write replaces only the
-region between the git-opinions markers in the document; --check exits 1 when
-that region differs from what would be generated. --coverage compares the call
-sites found with a raw textual scan of the source for Git invocations and lists
-everything the extraction did not account for.
+  2. Invocations. Every call that reaches _git._invocation. A wrapper is any
+     function that passes one of its own parameters, starred, after the
+     repository argument to such a call (searched until nothing changes);
+     calls to a wrapper are followed into it with their arguments bound. A
+     function whose Git call takes its parameters only as values (such as
+     status._git_head or _git.resolve_commit) is not a wrapper: its row is
+     where that call is written, and for helpers of _git the row counts their
+     callers. An option builder is a function whose every return is a tuple of
+     options starting with "-" (such as _repository.checkout_git); it renders
+     as the options it builds. Within a function, local assignments, list +=,
+     conditional expressions and loops over literal tuples are followed. A
+     run of unknown arguments before the command, or a list changed by a
+     method call after its assignment, makes the call unresolved: no row is
+     made and --coverage fails. One row per distinct global options, command,
+     flag set and operand shape. The launch wrapper (the wrapper whose
+     template is the primitive inside a process launch) decides the Reason:
+     the refusal it raises when its check parameter holds.
+
+  3. Refs. String literals and f-strings starting with refs/, outside
+     docstrings, grouped by namespace (the literal text up to the last "/"
+     before the first run-time value). Each use is classified where the name
+     is written, following a local variable to its uses. A namespace recorded
+     in a module (stored under a "ref" key, or listed by a function that
+     stores "ref" records) also lists the Git operations of that module that
+     take a record's "ref" field.
+
+  4. Administration. Path expressions rooted at the common directory
+     (<common>), a worktree's administration (<git-admin>: names or record keys
+     git_admin, admin) or a checkout's .git (<checkout>/.git), joined with "/"
+     or contained(...), through local variables and functions that return one;
+     bare administration directories that are listed, created, written or
+     removed; the common directory itself where it is listed in an access
+     scope; the literal .git compared with a path component; gitdir: content.
+     Uses are classified by the call or operation receiving the path; a path
+     placed in a list or record and stored under a key is "listed under" that
+     key. Stewart's storage below <common>/stewart collapses to one row per
+     subdirectory.
+
+  5. Refusals. raise StewartError(..., reason=...), directly or through a
+     function that returns a StewartError, when the raise is guarded by a
+     condition or loop over a Git-derived value, or handles an exception from
+     work holding one. A value is Git-derived when it comes from a Git helper
+     call, from a Git-administration expression in the same function (class 4,
+     not Stewart's storage), or from a function whose return value derives
+     from those, up to SOURCE_DEPTH levels deep. Derivation follows
+     assignment, loops, with, except and container mutation (append, extend,
+     insert, add, update). The common directory's path, paths into Stewart's
+     storage and Stewart's own installation (__file__) are locations and carry
+     nothing. A reason passed in as a parameter is taken from each caller that
+     passes a literal; a re-raised exc.reason is not a new refusal.
+
+IDs come from row content: inv.<command>[.<sorted flags>][.<literal operand
+words, first three per operand>][.via-<global options>]; cfg.<kind>.<name>;
+ref.<namespace>; adm.<root>.<literal segments> (a wholly run-time segment is
+"entry", a glob "any", a tuple constant its name); refuse.<reason>.<module>.
+<function>. They embed command, option, module, function and constant names,
+so an ID is stable while the code holding the opinion is unchanged; a rename
+changes it. Two rows with one ID stop generation rather than receive a suffix.
+
+Coverage. Every raw-scan hit (calls of the Git helpers and discovered
+wrappers, a literal "git", subprocess and os.exec*/spawn* launches, Git
+commands quoted in text) is classified. --coverage exits 1 when a hit is
+unmatched, a helper is referenced without a call, an invocation is
+unresolved, a wrapper no call reaches, a refusal reason cannot be resolved, a
+command appears with an option that has no gloss for that command, or a value
+was cut at MAX_VARIANTS alternatives. Reviewed launches that are not Git and
+re-raised reasons are listed without failing.
 """
 from __future__ import annotations
 
@@ -36,20 +105,20 @@ import io
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 import tempfile
 import tokenize
 from typing import NamedTuple
 
-BEGIN = "<!-- git-opinions:begin -->"
-END = "<!-- git-opinions:end -->"
+BEGIN = b"<!-- git-opinions:begin -->"
+END = b"<!-- git-opinions:end -->"
 PACKAGE = "stewart"
 #: The function that builds every Git argument vector and environment; invocations are calls that reach it.
 PRIMITIVE = ("_git", "_invocation")
-GIT = ("_git", "git")
 #: The Git module: its functions are Git helpers (class 5), and its fixed helpers are listed with their callers.
 GIT_MODULE = "_git"
-#: Alternatives kept per evaluated value; beyond this the remaining ones are dropped.
+#: Alternatives kept per evaluated value; --coverage fails when any value had more.
 MAX_VARIANTS = 24
 #: Git commands whose first operand is a verb that belongs to the command name.
 VERB_COMMANDS = frozenset({"worktree", "submodule", "remote", "stash", "notes", "bisect", "sparse-checkout"})
@@ -58,9 +127,16 @@ COMMON_KEYS = frozenset({"common", "common_dir", "git_common"})
 ADMIN_KEYS = frozenset({"git_admin", "admin"})
 #: Calls that pass a path or string through unchanged for the purposes of this table.
 TRANSPARENT = frozenset({"str", "Path", "PurePosixPath", "fsdecode", "fspath", "normpath"})
-#: Git commands that write refs (class 3 lists the invocation rows that use them).
+#: Calls that name the process's current directory.
+CURRENT_DIRECTORY = frozenset({"cwd", "getcwd"})
+#: Container methods that put a value into the container they are called on (class 5 derivation, class 2
+#: unresolved lists).
+MUTATORS = frozenset({"append", "extend", "insert", "add", "update", "appendleft", "extendleft", "setdefault"})
+#: Git commands that always write refs; `branch` and `symbolic-ref` write only in the forms ref_writes() names.
 REF_WRITERS = frozenset({"update-ref", "tag", "commit", "reset", "checkout", "switch", "merge", "rebase", "fetch",
                          "pull", "push", "notes", "replace", "stash", "cherry-pick", "revert", "am"})
+BRANCH_WRITING_OPTIONS = frozenset({"-d", "-D", "--delete", "-m", "-M", "--move", "-c", "-C", "--copy", "-f",
+                                    "--force", "--set-upstream-to", "-u", "--unset-upstream", "--edit-description"})
 
 #: What a call does with a path passed to it, by the called name (class 4).
 PATH_VERBS = {
@@ -88,71 +164,81 @@ STORAGE_VERBS = frozenset({"read", "written as an exclusive record", "written", 
 BARE_ADMIN_VERBS = frozenset({"removed", "created", "listed", "opened without following links",
                               "written as an exclusive record", "written"})
 
-#: Plain glosses of Git commands and options. They describe Git, not Stewart; rows without one
-#: show the command alone, and --coverage lists the gaps.
+#: Glosses of Git commands. Each is true of the command in any form; what a particular use does is said by
+#: the glosses of its options, which are keyed by command so that one option is never described out of context.
 COMMAND_GLOSS = {
-    "branch": "Reads the checked-out branch",
+    "branch": "Lists, reads or changes branches",
     "cat-file": "Reads objects from the object database",
     "diff": "Compares commits, the index and the working tree",
     "for-each-ref": "Lists refs",
-    "ls-files": "Lists paths Git knows in the working tree",
+    "ls-files": "Lists paths in the index or working tree",
     "ls-tree": "Lists a committed tree",
-    "merge-base": "Tests commit ancestry",
-    "rev-list": "Reads a commit's parents",
+    "merge-base": "Computes or tests merge bases",
+    "rev-list": "Lists commits",
     "rev-parse": "Resolves a name or a repository location",
-    "show": "Reads committed file bytes",
+    "show": "Shows objects",
     "status": "Reports working-tree and index status",
-    "symbolic-ref": "Tests whether a ref is symbolic",
+    "symbolic-ref": "Reads, writes or deletes a symbolic ref",
     "update-ref": "Writes or deletes refs",
     "worktree add": "Creates a linked worktree",
     "worktree list": "Lists the worktrees Git registers",
     "worktree lock": "Locks a linked worktree with a reason",
     "worktree unlock": "Unlocks a linked worktree",
 }
-OPTION_GLOSS = {
+#: Glosses of global options (before the command) and of command options, keyed "command option". An option
+#: ending in "=" glosses every value of it.
+GLOBAL_GLOSS = {
     "--git-dir=": "addresses a verified administration directly, never through `.git`",
     "--work-tree=": "names the checkout explicitly",
     "--no-replace-objects": "replacement objects ignored",
-    "--detach": "detached HEAD",
-    "--lock": "locked from creation",
-    "-b": "on a new branch",
-    "--no-deref": "never through a symbolic ref",
-    "--stdin": "one transaction on standard input",
-    "--verify": "the name must resolve",
-    "--is-ancestor": "ancestry only",
-    "--porcelain": "porcelain format",
-    "--porcelain=v1": "porcelain v1 format",
-    "-z": "NUL-delimited",
-    "--untracked-files=all": "every untracked file",
-    "--ignored": "ignored files included",
-    "--no-renames": "no rename detection",
-    "--no-ext-diff": "no external diff driver",
-    "--no-textconv": "no textconv filter",
-    "--binary": "binary patches",
-    "--full-index": "full object IDs",
-    "--cached": "against the index",
-    "--others": "untracked paths",
-    "--error-unmatch": "every path must be tracked",
-    "--path-format=absolute": "absolute path",
-    "--contains": "refs containing a commit",
-    "--batch": "batch reads on standard input",
-    "--name-only": "names only",
-    "--absolute-git-dir": "the worktree's administration directory",
-    "--git-common-dir": "the common directory",
-    "--show-toplevel": "the working tree's top level",
-    "--is-bare-repository": "whether the repository is bare",
-    "--show-current": "the branch name, empty when detached",
-    "--parents": "with parent IDs",
-    "--full-tree": "the whole tree",
-    "-r": "recursively",
-    "-e": "existence only",
-    "--quiet": "quiet",
-    "-q": "quiet",
-    "--reason": "with a lock reason",
-    "--format=": "named fields only",
-    "-n": "a limited count",
+}
+OPTION_GLOSS = {
+    "branch --show-current": "reads the checked-out branch's name, empty when detached",
+    "cat-file -e": "tests that an object exists",
+    "cat-file --batch": "batch reads on standard input",
+    "diff --binary": "binary patches",
+    "diff --cached": "against the index",
+    "diff --full-index": "full object IDs",
+    "diff --name-only": "names only",
+    "diff --no-ext-diff": "no external diff driver",
+    "diff --no-renames": "no rename detection",
+    "diff --no-textconv": "no textconv filter",
+    "diff -z": "NUL-delimited",
+    "for-each-ref --contains": "only refs containing a commit",
+    "for-each-ref --format=": "named fields only",
+    "ls-files --error-unmatch": "every path must be tracked",
+    "ls-files --others": "untracked paths",
+    "ls-files -z": "NUL-delimited",
+    "ls-tree --full-tree": "the whole tree",
+    "ls-tree --name-only": "names only",
+    "ls-tree -d": "directories only",
+    "ls-tree -r": "recursively",
+    "ls-tree -z": "NUL-delimited",
+    "merge-base --is-ancestor": "tests whether one commit is an ancestor of another",
+    "rev-list --parents": "with parent IDs",
+    "rev-list -n": "a limited count",
+    "rev-parse --absolute-git-dir": "the worktree's administration directory",
+    "rev-parse --git-common-dir": "the common directory",
+    "rev-parse --is-bare-repository": "whether the repository is bare",
+    "rev-parse --path-format=absolute": "absolute paths",
+    "rev-parse --show-toplevel": "the working tree's top level",
+    "rev-parse --verify": "the name must resolve",
+    "status --ignored": "ignored files included",
+    "status --porcelain=v1": "porcelain v1 format",
+    "status --untracked-files=all": "every untracked file",
+    "status -z": "NUL-delimited",
+    "symbolic-ref --quiet": "tests whether the ref is symbolic, quietly",
+    "symbolic-ref -q": "tests whether the ref is symbolic, quietly",
+    "update-ref --no-deref": "never through a symbolic ref",
+    "update-ref --stdin": "one transaction on standard input",
     "update-ref -d": "deletes, checking the old value when one is given",
-    "ls-tree -d": "directories",
+    "worktree add --detach": "detached HEAD",
+    "worktree add --lock": "locked from creation",
+    "worktree add --reason": "with a lock reason",
+    "worktree add -b": "on a new branch",
+    "worktree list --porcelain": "porcelain format",
+    "worktree list -z": "NUL-delimited",
+    "worktree lock --reason": "with a lock reason",
 }
 CONFIG_GLOSS = {
     "core.hooksPath=/dev/null": "Hooks never run: Git looks for them in `/dev/null`.",
@@ -173,6 +259,8 @@ REVIEWED = {
         "experiment, not a Git command Stewart composes",
     ("__main__", "<module>", "os.execv"): "re-executes Stewart's own bootstrap under isolated Python",
 }
+#: Values cut at MAX_VARIANTS alternatives since the last reset; --coverage fails when nonzero.
+TRUNCATIONS = {"count": 0}
 
 
 class Refusal(Exception):
@@ -189,10 +277,21 @@ class Spread(NamedTuple):
     text: str
 
 
+class Unknown(NamedTuple):
+    """A run of arguments the evaluator cannot follow (why says how); a call holding one is unresolved."""
+    text: str
+    why: str
+
+
 class Choice(NamedTuple):
     """One of several literal values drawn from a named tuple constant."""
     values: tuple
     label: str
+
+
+#: Elements of an argument vector that stand for a run of arguments rather than one scalar. Hole, Spread and
+#: Unknown are tuples themselves, so every helper below tests for these before treating an element as parts.
+RUNS = (Spread, Unknown)
 
 
 def short(node: ast.AST, limit: int = 34) -> str:
@@ -224,31 +323,40 @@ def unique(variants: list) -> list:
         if variant not in seen:
             seen.add(variant)
             out.append(variant)
+    if len(out) > MAX_VARIANTS:
+        TRUNCATIONS["count"] += 1
     return out[:MAX_VARIANTS]
 
 
 def concat(left: list, right: list) -> list:
     """Every pairing of two lists of alternatives, joined in order."""
-    return unique([a + b for a in left for b in right][:MAX_VARIANTS * 4])
+    pairs = [a + b for a in left for b in right]
+    if len(pairs) > MAX_VARIANTS * 4:
+        TRUNCATIONS["count"] += 1
+    return unique(pairs[:MAX_VARIANTS * 4])
 
 
 def literal(element) -> str | None:
     """The text of a purely literal scalar, else None."""
+    if isinstance(element, RUNS) or isinstance(element, Hole):
+        return None
     if isinstance(element, tuple) and all(isinstance(part, str) for part in element):
         return "".join(element)
     return None
 
 
 def leading(element) -> str:
-    """The literal text a scalar starts with ('' for a hole or a spread)."""
+    """The literal text a scalar starts with ('' for a hole or a run of arguments)."""
+    if isinstance(element, RUNS) or isinstance(element, Hole):
+        return ""
     if isinstance(element, tuple) and element and isinstance(element[0], str):
         return element[0]
     return ""
 
 
 def show(element, quote: bool = True) -> str:
-    """Display form: literal text, <holes>, {choices}, *spreads; quoted when it holds a space."""
-    if isinstance(element, Spread):
+    """Display form: literal text, <holes>, {choices}, *runs; quoted when a literal part holds a space."""
+    if isinstance(element, RUNS):
         return "*" + element.text
     text = "".join(part if isinstance(part, str) else f"<{part.text}>" if isinstance(part, Hole)
                    else "{" + ",".join(part.values) + "}" for part in element)
@@ -257,8 +365,8 @@ def show(element, quote: bool = True) -> str:
 
 
 def norm(element) -> str:
-    """Key form: holes become <>, spreads *, choices {label}; names of run-time values do not matter."""
-    if isinstance(element, Spread):
+    """Key form: holes become <>, runs *, choices {label}; names of run-time values do not matter."""
+    if isinstance(element, RUNS):
         return "*"
     return "".join(part if isinstance(part, str) else "<>" if isinstance(part, Hole) else "{" + part.label + "}"
                    for part in element)
@@ -272,8 +380,8 @@ def slug(text: str) -> str:
 
 
 def literal_slug(element, words: int | None = None) -> str:
-    """A slug of an element's literal parts only; holes and spreads contribute nothing."""
-    if isinstance(element, Spread):
+    """A slug of an element's literal parts only; holes and runs contribute nothing."""
+    if isinstance(element, RUNS):
         return ""
     text = " ".join(part if isinstance(part, str) else " ".join(part.values) if isinstance(part, Choice) else " "
                     for part in element)
@@ -321,18 +429,21 @@ class Function:
     def location(self, line: int) -> str:
         return f"{self.module.name}:{self.qualname}:{line}"
 
+    def place(self) -> str:
+        return f"{self.module.name}:{self.qualname}"
+
 
 class Module:
     """One parsed source file, with parent links, owners, imports and module constants."""
 
     def __init__(self, name: str, path: Path):
         self.name, self.path = name, path
-        self.text = path.read_text(encoding="utf-8")
-        self.lines = self.text.splitlines()
         try:
+            self.text = path.read_text(encoding="utf-8")
             self.tree = ast.parse(self.text, filename=str(path))
-        except SyntaxError as exc:
-            raise Refusal(f"cannot parse {path}: {exc}") from exc
+        except (OSError, UnicodeDecodeError, SyntaxError, ValueError) as exc:
+            raise Refusal(f"cannot read the source {path}: {exc}") from exc
+        self.lines = self.text.splitlines()
         self.parent = {child: node for node in ast.walk(self.tree) for child in ast.iter_child_nodes(node)}
         self.owner: dict = {}
         self.defs: dict = {}
@@ -344,6 +455,10 @@ class Module:
 
     def location(self, fn: Function | None, line: int) -> str:
         return fn.location(line) if fn else f"{self.name}:<module>:{line}"
+
+    def place(self, fn: Function | None) -> str:
+        """Where an opinion is held, for Stewart's users: module and function, no line number."""
+        return fn.place() if fn else f"{self.name}:<module>"
 
     def _visit(self, node: ast.AST, fn: Function | None, prefix: str) -> None:
         if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and node.body:
@@ -499,7 +614,7 @@ class Binding(NamedTuple):
 class Expansion(NamedTuple):
     argv: tuple
     via: tuple  # (function key, template line) for each wrapper that adds arguments
-    check: object  # True when a Git failure refuses with git_failed, False when tolerated, None when unknown
+    check: object  # True when a Git failure refuses, False when tolerated, None when unknown
     stdin: bool
 
 
@@ -520,6 +635,7 @@ class Analysis:
         self.source = source
         if PRIMITIVE not in source.functions:
             raise Refusal(f"{source.root} defines no {PRIMITIVE[0]}.{PRIMITIVE[1]}; every rule starts there")
+        TRUNCATIONS["count"] = 0
         self.option_builders: dict = {}
         self.string_helpers: dict = {}
         self.wrappers: dict = {}
@@ -527,6 +643,7 @@ class Analysis:
         self._discover_option_builders()
         self._discover_wrappers()
         self.template_ids = {id(node) for templates in self.wrappers.values() for node in templates}
+        self.launch_wrappers = self._discover_launch_wrappers()
         self.sites = self._find_sites()
         self.calls_to = defaultdict(list)  # function key -> [(module, fn, call)]
         for module in source.modules.values():
@@ -679,9 +796,11 @@ class Analysis:
         bases = [index for index, entry in enumerate(entries) if entry[1] in ("assign", "opaque")]
         if not bases:
             return None if not every else ([(Spread(ident),)] if want == "seq" else [(Hole(ident),)])
-        _, kind, statement = entries[bases[-1]]
+        base_line, kind, statement = entries[bases[-1]]
         if kind == "opaque":
             return [(Spread(ident),)] if want == "seq" else [(Hole(ident),)]
+        if want == "seq" and self.mutated(fn, ident, base_line, line):
+            return [(Unknown(ident, "a list changed by a method call after its assignment"),)]
         evaluate = self.seq if want == "seq" else self.scalar
         value = evaluate(statement.value, scope, depth)
         if all(len(variant) == 1 and isinstance(variant[0], (Hole, Spread)) for variant in value):
@@ -693,6 +812,12 @@ class Analysis:
                 if want == "scalar":
                     value = [merge(variant) for variant in value]
         return unique(value)
+
+    def mutated(self, fn: Function, ident: str, after: int, before: int) -> bool:
+        """Whether a mutating method is called on ident between an assignment and a use."""
+        return any(isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                   and node.func.attr in MUTATORS and isinstance(node.func.value, ast.Name)
+                   and node.func.value.id == ident and after <= node.lineno <= before for node in fn.nodes)
 
     # discovery ---------------------------------------------------------------------------------------
 
@@ -766,6 +891,40 @@ class Analysis:
                 return
             self.wrappers = found
 
+    def launches(self) -> list[tuple]:
+        """Process launches fed by **_invocation(...): (owning function, the launching call)."""
+        found = []
+        for fn in self.source.functions.values():
+            for node in fn.nodes:
+                if isinstance(node, ast.Call) and any(
+                        keyword.arg is None and isinstance(keyword.value, ast.Call)
+                        and (target := self.source.callee(keyword.value.func, fn, fn.module)) is not None
+                        and target.key == PRIMITIVE for keyword in node.keywords):
+                    found.append((fn, node))
+        return found
+
+    def _discover_launch_wrappers(self) -> dict:
+        """Wrappers whose template is the primitive inside a process launch, with the reason they refuse with.
+
+        The reason is the literal one of the StewartError the wrapper raises under a condition naming its
+        ``check`` parameter; such a wrapper decides whether a nonzero exit refuses.
+        """
+        found = {}
+        for fn, launch in self.launches():
+            if fn.key not in self.wrappers or "check" not in fn.params:
+                continue
+            reasons = set()
+            for node in fn.nodes:
+                if isinstance(node, ast.If) and any(isinstance(item, ast.Name) and item.id == "check"
+                                                    for item in ast.walk(node.test)):
+                    for raised in ast.walk(node):
+                        if isinstance(raised, ast.Raise) and isinstance(raised.exc, ast.Call) \
+                                and is_stewart_error(raised.exc.func):
+                            reasons |= {keyword.value.value for keyword in raised.exc.keywords
+                                        if keyword.arg == "reason" and isinstance(keyword.value, ast.Constant)}
+            found[fn.key] = ", ".join(sorted(reasons))
+        return found
+
     def bind(self, target: Function, call: ast.Call, scope: Scope) -> dict:
         bindings: dict = {}
         rest: list = []
@@ -811,8 +970,9 @@ class Analysis:
         inner = Scope(target.module, target, bindings, self.scope_for(target.parent, target.module)
                       if target.parent else None)
         check, stdin = None, False
-        if target.key == GIT:
-            check = self.truth(bindings.get("check"))
+        if target.key in self.launch_wrappers:
+            truth = self.truth(bindings.get("check"))
+            check = self.launch_wrappers[target.key] if truth is True else "" if truth is False else None
             given = bindings.get("input")
             stdin = given is not None and not (isinstance(given.value, ast.Constant) and given.value.value is None)
         out = []
@@ -849,19 +1009,28 @@ class Parsed(NamedTuple):
     operands: tuple
 
 
-def parse_argv(argv: tuple) -> Parsed | None:
-    """Split an argument vector into global options, the command, its flags and its operands."""
+def parse_argv(argv: tuple) -> tuple[Parsed | None, str]:
+    """Split an argument vector into global options, the command, its flags and its operands.
+
+    Returns the parse, or None and why the vector is unresolved: it holds a run the evaluator could not
+    follow, a run of unknown arguments stands where the command could be, or no literal command appears.
+    """
+    unknown = [element for element in argv if isinstance(element, Unknown)]
+    if unknown:
+        return None, f"*{unknown[0].text} is {unknown[0].why}"
     index = 0
     while index < len(argv):
         element = argv[index]
+        if isinstance(element, Spread):
+            return None, f"*{element.text}, a run of unknown arguments, stands where the command could be"
         text = literal(element)
         if text is not None and not text.startswith("-"):
             break
-        if not isinstance(element, Spread) and not leading(element).startswith("-"):
-            return None
+        if not leading(element).startswith("-"):
+            return None, f"{show(element)} stands where the command should be"
         index += 1
     if index == len(argv):
-        return None
+        return None, "no literal command"
     globals_, words = argv[:index], [literal(argv[index])]
     index += 1
     if words[0] in VERB_COMMANDS and index < len(argv):
@@ -869,10 +1038,10 @@ def parse_argv(argv: tuple) -> Parsed | None:
         if verb is not None and not verb.startswith("-"):
             words.append(verb)
             index += 1
-    flags = tuple(element for element in argv[index:]
-                  if not isinstance(element, Spread) and leading(element).startswith("-"))
-    operands = tuple(element for element in argv[index:] if element not in flags)
-    return Parsed(globals_, " ".join(words), flags, operands)
+    flags, operands = [], []
+    for element in argv[index:]:
+        (flags if not isinstance(element, RUNS) and leading(element).startswith("-") else operands).append(element)
+    return Parsed(globals_, " ".join(words), tuple(flags), tuple(operands)), ""
 
 
 def invocation_key(parsed: Parsed) -> tuple:
@@ -895,15 +1064,31 @@ def invocation_id(parsed: Parsed) -> str:
     return ".".join(parts)
 
 
-def option_gloss(element, sub: str = "") -> str | None:
-    text = leading(element) if literal(element) is None else literal(element)
-    if f"{sub} {text}" in OPTION_GLOSS:
-        return OPTION_GLOSS[f"{sub} {text}"]
-    if text in OPTION_GLOSS:
-        return OPTION_GLOSS[text]
-    if "=" in text and text.split("=", 1)[0] + "=" in OPTION_GLOSS:
-        return OPTION_GLOSS[text.split("=", 1)[0] + "="]
+def option_gloss(element, sub: str) -> str | None:
+    """The gloss of an option as used with a command (sub is "" for a global option), or None."""
+    text = literal(element)
+    text = leading(element) if text is None else text
+    table, prefix = (GLOBAL_GLOSS, "") if not sub else (OPTION_GLOSS, sub + " ")
+    if prefix + text in table:
+        return table[prefix + text]
+    if "=" in text and prefix + text.split("=", 1)[0] + "=" in table:
+        return table[prefix + text.split("=", 1)[0] + "="]
     return None
+
+
+def ref_writes(parsed: Parsed) -> bool:
+    """Whether an invocation's command writes refs."""
+    flags = {literal(item) or leading(item).split("=", 1)[0] for item in parsed.flags}
+    if parsed.sub in REF_WRITERS:
+        return True
+    if parsed.sub == "worktree add":
+        return bool(flags & {"-b", "-B"})
+    if parsed.sub == "branch":
+        return bool(flags & BRANCH_WRITING_OPTIONS) or (bool(parsed.operands) and not flags & {
+            "--show-current", "--list", "-l", "--contains", "--merged", "--no-merged", "--points-at"})
+    if parsed.sub == "symbolic-ref":
+        return bool(flags & {"-d", "--delete"}) or len(parsed.operands) >= 2
+    return False
 
 
 # --- the five classes ----------------------------------------------------------------------------------
@@ -919,14 +1104,15 @@ class Row(NamedTuple):
 
 
 def location_order(text: str):
+    """Sort key for module:function[:line] strings, module first, then line when present."""
     module, _, rest = text.partition(":")
-    function, _, line = rest.rpartition(":")
-    number = re.match(r"\d+", line)
-    return (module, int(number.group()) if number else 0, function, text)
+    function, _, tail = rest.partition(" ")
+    number = re.search(r":(\d+)$", function)
+    return (module, int(number.group(1)) if number else 0, function, text)
 
 
 class Tables:
-    """Rows of every class, the rules that produced them, and what --coverage reports."""
+    """Rows of every class, and what --coverage reports about how they were found."""
 
     def __init__(self, source: Source):
         self.source = source
@@ -934,14 +1120,14 @@ class Tables:
         self.site_rows: dict = defaultdict(set)  # id(call node) -> row IDs
         self.fn_rows: dict = defaultdict(set)  # function key -> row IDs of the sites it holds
         self.parsed_rows: dict = {}  # invocation row ID -> its parsed argument vector
-        self.unresolved: list = []
+        self.unresolved: list = []  # (site, why)
         self.gloss_gaps: set = set()
-        self.configuration = self._configuration()
-        self.invocations = self._invocations()
-        self.administration, self.local_nodes, self.path_nodes = self._administration()
         self._location_cache: dict = {}
+        self.invocations = self._invocations()
+        self.configuration = self._configuration()
+        self.administration, self.local_nodes, self.path_nodes = self._administration()
         self.refs, self.ref_writers = self._refs()
-        self.refusals, self.unresolved_reasons = self._refusals()
+        self.refusals, self.unresolved_reasons, self.reraised = self._refusals()
         rows = [*self.configuration, *self.invocations, *self.refs, *self.administration, *self.refusals]
         seen: dict = {}
         for row in rows:
@@ -955,7 +1141,7 @@ class Tables:
     def _configuration(self) -> list[Row]:
         analysis = self.analysis
         fn = self.source.functions[PRIMITIVE]
-        where = (fn.location(fn.node.lineno),)
+        where = (fn.place(),)
         scope = analysis.scope_for(fn, fn.module)
         rows: list[Row] = []
         group = "Configuration"
@@ -977,16 +1163,12 @@ class Tables:
                         where, ""))
         for index, element in enumerate(elements[:-1]):
             if isinstance(element, ast.Constant) and element.value == "-c":
-                setting = literal(analysis.scalar(elements[index + 1], scope)[0]) or show(
-                    analysis.scalar(elements[index + 1], scope)[0], quote=False)
+                setting = show(analysis.scalar(elements[index + 1], scope)[0], quote=False)
                 gloss = CONFIG_GLOSS.get(setting, "")
                 rows.append(Row("cfg.c." + slug(setting.split("=", 1)[0]), "configuration", group,
                                 f"Every Git command gets {code('-c ' + setting)}. {gloss}".strip(), where, ""))
         if "cwd" in fields:
-            value = short(fields["cwd"])
-            rows.append(Row("cfg.cwd", "configuration", group,
-                            f"Git runs in the directory each caller passes ({code('cwd=' + value)}); without "
-                            "`--git-dir` it discovers the repository from there.", where, ""))
+            rows.append(self._working_directory_row(fields["cwd"], where, group))
         environment = fields.get("env")
         assigned = None
         if isinstance(environment, ast.Name):
@@ -1012,38 +1194,53 @@ class Tables:
                         continue
                     rows.append(Row("cfg.env.removed." + slug(name), "configuration", group,
                                     f"Removes {code(name)} from the environment. {ENVIRONMENT_GLOSS.get(name, '')}"
-                                    .strip(), (fn.location(node.lineno),), ""))
+                                    .strip(), where, ""))
         # The process launches that consume the invocation: how output, input and time limits are handled.
-        for owner_key in sorted({key for key, _ in self._launches()}):
-            owner = self.source.functions[owner_key]
-            for _, call in (item for item in self._launches() if item[0] == owner_key):
-                words = []
-                keywords = {keyword.arg: keyword.value for keyword in call.keywords if keyword.arg}
-                if "capture_output" in keywords or "stdout" in keywords:
-                    words.append("captures Git's output")
-                if "stdin" not in keywords:
-                    words.append("Git's standard input is Stewart's own unless the caller passes `input`"
-                                 if "input" in keywords else "Git's standard input is Stewart's own")
-                else:
-                    words.append(f"standard input is {code(short(keywords['stdin']))}")
-                timeout = owner.defaults.get("timeout")
-                if timeout is not None and isinstance(timeout, ast.Constant):
-                    words.append(f"stops Git after {timeout.value} seconds unless the caller passes `timeout`")
-                rows.append(Row(f"cfg.process.{slug(owner.qualname)}", "configuration", group,
-                                f"{code(owner.qualname)} {'; '.join(words)}.", (owner.location(call.lineno),), ""))
+        for owner, call in sorted(analysis.launches(), key=lambda item: item[0].key):
+            words = []
+            keywords = {keyword.arg: keyword.value for keyword in call.keywords if keyword.arg}
+            if "capture_output" in keywords or "stdout" in keywords:
+                words.append("captures Git's output")
+            if "stdin" not in keywords:
+                words.append("Git's standard input is Stewart's own unless the caller passes `input`"
+                             if "input" in keywords else "Git's standard input is Stewart's own")
+            else:
+                words.append(f"standard input is {code(short(keywords['stdin']))}")
+            timeout = owner.defaults.get("timeout")
+            if timeout is not None and isinstance(timeout, ast.Constant):
+                words.append(f"stops Git after {timeout.value} seconds unless the caller passes `timeout`")
+            rows.append(Row(f"cfg.process.{slug(owner.qualname)}", "configuration", group,
+                            f"{code(owner.qualname)} {'; '.join(words)}.", (owner.place(),), ""))
         return rows
 
-    def _launches(self) -> list[tuple]:
-        """Process launches fed by **_invocation(...): (owning function key, the launching call)."""
-        found = []
-        for fn in self.source.functions.values():
-            for node in fn.nodes:
-                if isinstance(node, ast.Call) and any(
-                        keyword.arg is None and isinstance(keyword.value, ast.Call)
-                        and (target := self.source.callee(keyword.value.func, fn, fn.module)) is not None
-                        and target.key == PRIMITIVE for keyword in node.keywords):
-                    found.append((fn.key, node))
-        return found
+    def _working_directory_row(self, cwd: ast.AST, where: tuple, group: str) -> Row:
+        """Where Git runs: the first argument of each call to a Git helper outside the Git module, by kind."""
+        helpers = {PRIMITIVE, *self.analysis.wrappers} | {key for key in self.source.functions if key[0] == GIT_MODULE}
+        kinds: dict = defaultdict(set)
+        for key in helpers:
+            for module, caller, call in self.analysis.calls_to.get(key, []):
+                if module.name == GIT_MODULE or not call.args or isinstance(call.args[0], ast.Starred):
+                    continue
+                kinds[self._directory_kind(call.args[0])].add(module.place(caller))
+        statement = f"Git runs in the directory each caller passes ({code('cwd=' + short(cwd))}): a checkout or " \
+                    "repository root"
+        named = {"common": "the Git common directory", "current": "the process's current directory"}
+        exceptions = [f"{named[kind]} in " + ", ".join(f"`{place}`" for place in sorted(kinds[kind]))
+                      for kind in ("common", "current") if kinds.get(kind)]
+        if exceptions:
+            statement += ", except " + "; and ".join(exceptions)
+        statement += ". Without `--git-dir`, Git discovers the repository from there."
+        return Row("cfg.cwd", "configuration", group, statement, where, "")
+
+    @staticmethod
+    def _directory_kind(node: ast.AST) -> str:
+        while isinstance(node, ast.Call) and called_name(node.func) in TRANSPARENT and len(node.args) == 1:
+            node = node.args[0]
+        if isinstance(node, ast.Call) and called_name(node.func) in CURRENT_DIRECTORY:
+            return "current"
+        key = node.id if isinstance(node, ast.Name) else node.attr if isinstance(node, ast.Attribute) else \
+            node.slice.value if isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Constant) else None
+        return "common" if key in COMMON_KEYS else "root"
 
     # class 2 -----------------------------------------------------------------------------------------
 
@@ -1051,9 +1248,9 @@ class Tables:
         analysis = self.analysis
         groups: dict = defaultdict(list)
         for site in analysis.sites:
-            parsed = parse_argv(site.expansion.argv)
+            parsed, why = parse_argv(site.expansion.argv)
             if parsed is None:
-                self.unresolved.append(site)
+                self.unresolved.append((site, why))
                 continue
             groups[invocation_key(parsed)].append((site, parsed))
         rows = []
@@ -1062,16 +1259,14 @@ class Tables:
             row_id = invocation_id(parsed)
             self.parsed_rows[row_id] = parsed
             forms = sorted({"git " + " ".join(show(element) for element in site.expansion.argv) for site, _ in members})
-            where = set()
-            checks = set()
-            stdin = False
+            where, refusals, stdin = set(), set(), False
             for site, _ in members:
                 self.site_rows[id(site.node)].add(row_id)
                 if site.fn is not None:
                     self.fn_rows[site.fn.key].add(row_id)
-                via = "".join(f" via {key[0]}:{key[1]}:{line}" for key, line in site.expansion.via)
-                where.add(site.module.location(site.fn, site.node.lineno) + via)
-                checks.add(site.expansion.check)
+                via = "".join(f" via {key[0]}:{key[1]}" for key, _ in site.expansion.via)
+                where.add(site.module.place(site.fn) + via)
+                refusals.add(site.expansion.check or "")
                 stdin = stdin or site.expansion.stdin
             where_list = sorted(where, key=location_order)
             used_by = self._used_by({site.fn.key for site, _ in members if site.fn is not None
@@ -1080,19 +1275,19 @@ class Tables:
                 where_list.append(used_by)
             gloss = COMMAND_GLOSS.get(parsed.sub)
             if gloss is None:
-                self.gloss_gaps.add(f"command {parsed.sub}")
+                self.gloss_gaps.add(f"command {parsed.sub!r}")
                 gloss = f"Runs {code('git ' + parsed.sub)}"
             notes = []
-            for element in (*parsed.globals, *parsed.flags):
-                if isinstance(element, Spread):
-                    notes.append(f"global options {code(show(element))}")
-                    continue
-                note = option_gloss(element, parsed.sub)
-                if note is None:
-                    if leading(element) not in ("--",):
-                        self.gloss_gaps.add(f"option {show(element, quote=False)} ({parsed.sub})")
-                elif note not in notes:
-                    notes.append(note)
+            for sub, elements in (("", parsed.globals), (parsed.sub, parsed.flags)):
+                for element in elements:
+                    if literal(element) == "--":
+                        continue
+                    note = option_gloss(element, sub)
+                    if note is None:
+                        option = show(element, quote=False)
+                        self.gloss_gaps.add(f"option {option!r} of {sub!r}" if sub else f"global option {option!r}")
+                    elif note not in notes:
+                        notes.append(note)
             if stdin:
                 notes.append("input on standard input")
             statement = gloss + ("; " + "; ".join(notes) if notes else "") + "."
@@ -1100,10 +1295,11 @@ class Tables:
             shown = forms[:3] + ([f"… {extra} more form{'s' if extra > 1 else ''}"] if extra > 0 else [])
             opinion = statement + "<br>" + "<br>".join(code(form) if not form.startswith("…") else form
                                                        for form in shown)
-            if checks == {True}:
-                reason = "`git_failed`"
-            elif True in checks:
-                reason = "`git_failed` at some sites; others read the exit status"
+            named = sorted(value for value in refusals if value)
+            if named and "" not in refusals:
+                reason = ", ".join(f"`{value}`" for value in named)
+            elif named:
+                reason = ", ".join(f"`{value}`" for value in named) + " at some sites; others read the exit status"
             else:
                 reason = ""
             rows.append(Row(row_id, "invocation", "git " + parsed.sub, opinion, tuple(where_list), reason))
@@ -1126,41 +1322,96 @@ class Tables:
 
     def _refs(self) -> tuple[list[Row], list[str]]:
         analysis = self.analysis
-        namespaces: dict = defaultdict(lambda: {"forms": set(), "uses": defaultdict(set)})
+        namespaces: dict = defaultdict(lambda: {"forms": set(), "uses": defaultdict(set), "modules": set()})
         for module in self.source.modules.values():
             for node in ast.walk(module.tree):
                 if node in module.docstrings or isinstance(module.parent.get(node), ast.JoinedStr):
                     continue
-                if isinstance(node, ast.Constant) and isinstance(node.value, str) and node.value.startswith("refs/"):
-                    pass
-                elif isinstance(node, ast.JoinedStr) and node.values and isinstance(node.values[0], ast.Constant) \
-                        and str(node.values[0].value).startswith("refs/"):
-                    pass
-                else:
+                if not ((isinstance(node, ast.Constant) and isinstance(node.value, str)
+                         and node.value.startswith("refs/"))
+                        or (isinstance(node, ast.JoinedStr) and node.values and isinstance(node.values[0], ast.Constant)
+                            and str(node.values[0].value).startswith("refs/"))):
                     continue
                 fn = module.owner.get(node)
-                scope = analysis.scope_for(fn, module)
-                variants = analysis.scalar(node, scope)
-                for variant in variants:
+                for variant in analysis.scalar(node, analysis.scope_for(fn, module)):
                     prefix = leading(variant)
                     if len(variant) > 1 or not literal(variant):
                         prefix = prefix[:prefix.rfind("/") + 1] if "/" in prefix else prefix
                     entry = namespaces[prefix]
                     entry["forms"].add(show(variant, quote=False))
                     for use in self._ref_uses(node, fn, module):
-                        entry["uses"][use].add(module.location(fn, node.lineno))
+                        entry["uses"][use].add(module.place(fn))
+                    if self._recorded_ref(node, fn, module):
+                        entry["modules"].add(module.name)
+        # A recorded namespace also lists the module's Git operations on a record's "ref" field.
+        field_operations = self._ref_field_operations()
+        for entry in namespaces.values():
+            for module_name in entry["modules"]:
+                for place, rows in field_operations.get(module_name, []):
+                    for row in rows:
+                        entry["uses"][f"recorded refs {self._ref_verb(row)} by `{row}`"].add(place)
         rows = []
         for prefix, entry in namespaces.items():
             forms = ", ".join(code(form) for form in sorted(entry["forms"]))
+            uses = self._annotated(entry["uses"])
             where = sorted({item for places in entry["uses"].values() for item in places}, key=location_order)
-            rows.append(Row("ref." + slug(prefix.rstrip("/") or prefix), "ref", "Refs",
-                            f"{forms}: " + "; ".join(sorted(entry["uses"])) + ".", tuple(where), ""))
-        writers = []
-        for row_id, parsed in self.parsed_rows.items():
-            flags = {literal(item) for item in parsed.flags}
-            if parsed.sub in REF_WRITERS or (parsed.sub == "worktree add" and flags & {"-b", "-B"}):
-                writers.append(row_id)
-        return sorted(rows, key=lambda row: row.id), sorted(writers)
+            rows.append(Row("ref." + slug(prefix.rstrip("/") or prefix), "ref", "Refs", f"{forms}: {uses}.",
+                            tuple(where), ""))
+        writers = sorted(row_id for row_id, parsed in self.parsed_rows.items() if ref_writes(parsed))
+        return sorted(rows, key=lambda row: row.id), writers
+
+    @staticmethod
+    def _ref_field(node: ast.AST) -> bool:
+        """Whether an expression reads a record's "ref" field: x["ref"] or x.get("ref")."""
+        return any((isinstance(item, ast.Subscript) and isinstance(item.slice, ast.Constant) and item.slice.value == "ref")
+                   or (isinstance(item, ast.Call) and isinstance(item.func, ast.Attribute) and item.func.attr == "get"
+                       and item.args and isinstance(item.args[0], ast.Constant) and item.args[0].value == "ref")
+                   for item in ast.walk(node))
+
+    def _recorded_ref(self, node: ast.AST, fn: Function | None, module: Module) -> bool:
+        """A ref name stored under a "ref" key, or written in a function that stores "ref" records."""
+        parent = module.parent.get(node)
+        if isinstance(parent, ast.Dict) and node in parent.values:
+            key = parent.keys[parent.values.index(node)]
+            if isinstance(key, ast.Constant) and key.value == "ref":
+                return True
+        return fn is not None and any(isinstance(item, ast.Dict) and any(
+            isinstance(key, ast.Constant) and key.value == "ref" for key in item.keys) for item in fn.nodes)
+
+    def _ref_field_operations(self) -> dict:
+        """Per module, the Git operations (sites, or calls of functions holding sites) given a record's ref field."""
+        found: dict = defaultdict(list)
+        for module in self.source.modules.values():
+            for node in ast.walk(module.tree):
+                if not isinstance(node, ast.Call):
+                    continue
+                fn = module.owner.get(node)
+                rows = set(self.site_rows.get(id(node), ()))
+                if not rows:
+                    target = self.source.callee(node.func, fn, module)
+                    rows = set(self.fn_rows.get(target.key, ())) if target is not None else set()
+                if rows and any(self._ref_field(argument) for argument in
+                                [*node.args, *(keyword.value for keyword in node.keywords)]):
+                    found[module.name].append((module.place(fn), rows))
+        return found
+
+    def _ref_verb(self, row_id: str) -> str:
+        parsed = self.parsed_rows.get(row_id)
+        flags = {literal(item) for item in parsed.flags} if parsed else set()
+        if parsed and parsed.sub == "update-ref":
+            return "deleted" if "-d" in flags else "created" if "--stdin" in flags else "written"
+        return "written" if parsed and ref_writes(parsed) else "read"
+
+    @staticmethod
+    def _annotated(uses: dict) -> str:
+        """Uses joined; a use that holds at only one or two of a row's places names them."""
+        every = {place for places in uses.values() for place in places}
+        out = []
+        for use, places in sorted(uses.items()):
+            if len(places) <= 2 and places != every and len(every) > 1:
+                use += " (in " + ", ".join(f"`{place}`" for place in sorted(places)) + ")"
+            out.append(use)
+        return "; ".join(out)
 
     def _ref_uses(self, node: ast.AST, fn: Function | None, module: Module, depth: int = 0) -> set[str]:
         """How a ref name is used where it is written: passed to Git, tested, recorded or refused."""
@@ -1169,7 +1420,8 @@ class Tables:
             if isinstance(current, ast.Call):
                 if id(current) in self.site_rows:
                     return {"passed to Git: " + ", ".join(f"`{row}`" for row in sorted(self.site_rows[id(current)]))}
-                if isinstance(current.func, ast.Attribute) and current.func.attr == "startswith" and child is not current.func:
+                if isinstance(current.func, ast.Attribute) and current.func.attr == "startswith" \
+                        and child is not current.func:
                     return {"prefix test"}
                 if is_stewart_error(current.func):
                     return {"named in a refusal"}
@@ -1196,7 +1448,7 @@ class Tables:
                 return {"compared"}
             elif isinstance(current, ast.Return):
                 return {f"returned by `{fn.qualname if fn else '<module>'}`"}
-            elif isinstance(current, (ast.stmt,)):
+            elif isinstance(current, ast.stmt):
                 return {"recorded"}
             child, current = current, module.parent.get(current)
         return {"recorded"}
@@ -1292,6 +1544,7 @@ class Tables:
                 if isinstance(node, ast.Constant) and node.value == ".git" \
                         and isinstance(module.parent.get(node), ast.Compare):
                     shape, display, kind = ("name", ".git"), "a path component named `.git`", "name"
+                    uses = {"compared case-insensitively" if self._case_folded(module.parent[node]) else "compared"}
                 elif (isinstance(node, ast.Constant) and isinstance(node.value, (str, bytes))
                       and node.value[:8] in ("gitdir: ", b"gitdir: ")) or \
                         (isinstance(node, ast.JoinedStr) and node.values and isinstance(node.values[0], ast.Constant)
@@ -1300,30 +1553,31 @@ class Tables:
                         continue
                     shape, display, kind = ("content", "gitdir"), "a `.git` file holding one `gitdir: <path>` line", \
                         "content"
+                    uses = self._path_uses(node, fn, module)
                 elif isinstance(node, (ast.BinOp, ast.Call, ast.Name, ast.Subscript)):
                     if not self._maximal(node, module):
                         continue
                     shape = self.path_shape(node, fn, module)
                     if shape is None:
                         continue
-                    bare = len(shape) == 1
-                    if bare and shape[0] != "<git-admin>":
-                        continue
-                    if not bare and isinstance(node, (ast.Name, ast.Subscript)):
+                    if len(shape) > 1 and isinstance(node, (ast.Name, ast.Subscript)):
                         continue  # a local holding a longer path: its uses are followed from its assignment
                     display = shape[0] + "".join("/" + show(segment, quote=False) for segment in shape[1:])
+                    uses = self._path_uses(node, fn, module)
+                    if len(shape) == 1:
+                        # A bare administration directory counts where it is handled; the common directory
+                        # itself only where an access scope lists it.
+                        uses = {use for use in uses if use in BARE_ADMIN_VERBS} if shape[0] == "<git-admin>" else \
+                            {use for use in uses if use.startswith("listed under")}
+                        if not uses:
+                            continue
                 else:
                     continue
-                uses = self._path_uses(node, fn, module)
-                if kind == "path" and len(shape) == 1:
-                    uses &= BARE_ADMIN_VERBS  # a bare administration directory counts only where it is handled
-                    if not uses:
-                        continue
                 key = tuple(norm(segment) if isinstance(segment, tuple) else segment for segment in shape)
                 storage = key[0] == "<common>" and len(key) > 1 and key[1] == "stewart"
                 if storage:
                     # Stewart's own records: one row per directory below <common>/stewart, verbs only.
-                    uses = {use for use in uses if use in STORAGE_VERBS or use.startswith("created")}
+                    uses = {use for use in uses if use in STORAGE_VERBS or use.startswith(("created", "listed under"))}
                     key = key[:3]
                     display = "<common>/stewart" + (f"/{key[2]}/…" if len(key) > 2 else "")
                 else:
@@ -1335,7 +1589,7 @@ class Tables:
                 entry["paths"].add(shape)
                 entry["storage"] = storage
                 for use in uses or {"named"}:
-                    entry["uses"][use].add(module.location(fn, node.lineno))
+                    entry["uses"][use].add(module.place(fn))
         rows = []
         for key, entry in found.items():
             parts = [slug(key[0].strip("<>"))]
@@ -1350,11 +1604,17 @@ class Tables:
             shown = display if display.startswith("a ") else code(display)
             if entry["storage"] and len(entry["paths"]) > 1:
                 shown += f" ({len(entry['paths'])} paths)"
-            uses = "; ".join(sorted(entry["uses"]))
             where = sorted({item for places in entry["uses"].values() for item in places}, key=location_order)
             group = "Stewart's storage in the common directory" if entry["storage"] else "Git's administration"
-            rows.append(Row("adm." + ".".join(parts), "administration", group, f"{shown}: {uses}.", tuple(where), ""))
+            rows.append(Row("adm." + ".".join(parts), "administration", group,
+                            f"{shown}: {self._annotated(entry['uses'])}.", tuple(where), ""))
         return sorted(rows, key=lambda row: (row.group, row.id)), local_nodes, path_nodes
+
+    @staticmethod
+    def _case_folded(compare: ast.Compare) -> bool:
+        """Whether a comparison folds case first (an operand is x.lower() or x.casefold())."""
+        return any(isinstance(item, ast.Call) and isinstance(item.func, ast.Attribute)
+                   and item.func.attr in ("lower", "casefold") for item in [compare.left, *compare.comparators])
 
     def _maximal(self, node: ast.AST, module: Module) -> bool:
         """Whether a path expression is not merely part of a longer one (joined further, wrapped or contained)."""
@@ -1367,6 +1627,36 @@ class Tables:
                 and parent.args[0] is node:
             return False
         return not (isinstance(node, ast.Name) and not isinstance(node.ctx, ast.Load))
+
+    def _held(self, node: ast.AST, fn: Function | None, module: Module, depth: int) -> set[str]:
+        """What happens to a container holding a path: listed under a record key, named in a refusal, recorded."""
+        above = node
+        while True:
+            parent = module.parent.get(above)
+            if isinstance(parent, (ast.List, ast.Tuple, ast.Set, ast.Starred)):
+                above = parent
+            elif isinstance(parent, ast.Call) and called_name(parent.func) in ("list", "tuple", "sorted", "set",
+                                                                               "frozenset", "fromkeys") \
+                    and above in parent.args:
+                above = parent
+            else:
+                break
+        if isinstance(parent, ast.Dict) and above in parent.values:
+            key = parent.keys[parent.values.index(above)]
+            return {f"listed under `{key.value}`"} if isinstance(key, ast.Constant) else {"recorded"}
+        if isinstance(parent, ast.keyword) and parent.arg == "retained":
+            return {"named in a refusal"}
+        if isinstance(parent, ast.Call) and is_stewart_error(parent.func):
+            return {"named in a refusal"}
+        if isinstance(parent, ast.Assign) and len(parent.targets) == 1 and isinstance(parent.targets[0], ast.Name) \
+                and fn is not None and depth < 6:
+            uses: set = set()
+            for later in fn.nodes:
+                if isinstance(later, ast.Name) and later.id == parent.targets[0].id \
+                        and isinstance(later.ctx, ast.Load) and later.lineno >= parent.lineno:
+                    uses |= self._held(later, fn, module, depth + 1)
+            return uses or {"recorded"}
+        return {"recorded"}
 
     def _path_uses(self, node: ast.AST, fn: Function | None, module: Module, depth: int = 0) -> set[str]:
         """What the code does with a path where it is written, following a local variable to its uses."""
@@ -1383,19 +1673,17 @@ class Tables:
                     continue
                 if name in PATH_VERBS:
                     return {PATH_VERBS[name]}
+                if name in ("list", "tuple", "sorted", "set", "frozenset", "fromkeys"):
+                    return self._held(child, fn, module, depth)
                 target = self.source.callee(current.func, fn, module)
                 return {f"passed to `{target.qualname}`"} if target is not None else {"recorded"}
             if isinstance(current, ast.keyword):
                 if current.arg == "retained":
                     return {"named in a refusal"}
-            elif isinstance(current, (ast.List, ast.Tuple, ast.Set, ast.Dict, ast.Starred)):
-                above = current
-                while isinstance(module.parent.get(above), (ast.List, ast.Tuple, ast.Set, ast.Dict, ast.Starred)):
-                    above = module.parent[above]
-                holder = module.parent.get(above)
-                if isinstance(holder, ast.keyword) and holder.arg == "retained":
-                    return {"named in a refusal"}
-                return {"recorded"}
+            elif isinstance(current, ast.Dict):
+                return {"recorded"}  # a record's field; a list of paths under a key is "listed under" it
+            elif isinstance(current, (ast.List, ast.Tuple, ast.Set, ast.Starred)):
+                return self._held(child, fn, module, depth)
             elif isinstance(current, ast.Attribute) and current.value is child:
                 call = module.parent.get(current)
                 if isinstance(call, ast.Call) and call.func is current and current.attr in PATH_VERBS:
@@ -1405,8 +1693,8 @@ class Tables:
                         verb += f" (mode {mode.value:#o})".replace("0o", "0")
                     return {verb}
                 if current.attr in ("encode", "decode", "strip", "lower"):
-                    child, current = call if isinstance(call, ast.Call) and call.func is current else current, \
-                        module.parent.get(call if isinstance(call, ast.Call) and call.func is current else current)
+                    nxt = call if isinstance(call, ast.Call) and call.func is current else current
+                    child, current = nxt, module.parent.get(nxt)
                     continue
                 if current.attr not in ("parent", "name"):
                     return {"used"}
@@ -1504,14 +1792,19 @@ class Tables:
         return self._location_cache[id(node)]
 
     def _taint(self, fn: Function, sources: set, inherited: set, nodes: set) -> set:
-        """Names in fn that hold values derived from Git or its administration."""
+        """Names in fn that hold values derived from Git or its administration.
+
+        Derivation follows assignment (including to a subscript or attribute of a name), augmented assignment,
+        loop and comprehension targets, with targets, except names of a try over derived work, and container
+        mutation: a derived value appended, inserted or merged into a container derives the container.
+        """
         names = set(inherited)
         while True:
             before = len(names)
             for node in fn.nodes:
                 if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)) and node.value is not None \
-                        and not self._location_value(node.value, fn) and self._tainted(node.value, names, sources, fn,
-                                                                                       nodes):
+                        and not self._location_value(node.value, fn) \
+                        and self._tainted(node.value, names, sources, fn, nodes):
                     for target in (node.targets if isinstance(node, ast.Assign) else [node.target]):
                         names.update(_target_names(target))
                 elif isinstance(node, (ast.For, ast.AsyncFor, ast.comprehension)) \
@@ -1523,6 +1816,11 @@ class Tables:
                 elif isinstance(node, ast.Try) and any(self._tainted(item, names, sources, fn, nodes)
                                                        for item in node.body):
                     names.update(handler.name for handler in node.handlers if handler.name)
+                elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) \
+                        and node.func.attr in MUTATORS and isinstance(node.func.value, ast.Name) \
+                        and any(self._tainted(argument, names, sources, fn, nodes)
+                                for argument in [*node.args, *(keyword.value for keyword in node.keywords)]):
+                    names.add(node.func.value.id)
             if len(names) == before:
                 return names
 
@@ -1571,12 +1869,13 @@ class Tables:
         text = " ".join(render(node).split()) if node is not None else ""
         return text if len(text) <= limit else text[:limit - 1] + "…"
 
-    def _refusals(self) -> tuple[list[Row], list[str]]:
+    def _refusals(self) -> tuple[list[Row], list[str], list[str]]:
         analysis = self.analysis
         sources = self._sources()
         factories = self._factories()
         grouped: dict = defaultdict(list)
         unresolved: list = []
+        reraised: list = []
         taints: dict = {}
 
         def taint(fn: Function) -> set:
@@ -1594,7 +1893,6 @@ class Tables:
                 if not isinstance(node, ast.Raise) or not isinstance(node.exc, ast.Call):
                     continue
                 call = node.exc
-                reason_node, text = None, None
                 if is_stewart_error(call.func):
                     reason_node = next((keyword.value for keyword in call.keywords if keyword.arg == "reason"), None)
                     text = self.message(call.args[0] if call.args else None, {})
@@ -1612,11 +1910,13 @@ class Tables:
                 if not self._dependent(node, fn, names, sources):
                     continue
                 if isinstance(reason_node, ast.Constant) and isinstance(reason_node.value, str):
-                    grouped[(reason_node.value, fn.key)].append((fn.location(node.lineno), text))
+                    grouped[(reason_node.value, fn.key)].append((fn.place(), text))
+                elif isinstance(reason_node, ast.Attribute) and reason_node.attr == "reason":
+                    reraised.append(f"{fn.location(node.lineno)}: re-raises {short(reason_node)}, the reason of a "
+                                    "refusal raised elsewhere")
                 elif isinstance(reason_node, ast.Name) and reason_node.id in fn.params:
-                    callers = analysis.calls_to.get(fn.key, [])
                     resolved = False
-                    for module, caller, site in callers:
+                    for module, caller, site in analysis.calls_to.get(fn.key, []):
                         value = next((keyword.value for keyword in site.keywords if keyword.arg == reason_node.id), None)
                         if value is None and reason_node.id in fn.positional:
                             index = fn.positional.index(reason_node.id)
@@ -1624,7 +1924,7 @@ class Tables:
                         if isinstance(value, ast.Constant) and isinstance(value.value, str):
                             key = caller.key if caller else (module.name, "<module>")
                             grouped[(value.value, key)].append(
-                                (module.location(caller, site.lineno) + f" (raised in {fn.location(node.lineno)})", text))
+                                (module.place(caller) + f" (raised in {fn.place()})", text))
                             resolved = True
                     if not resolved:
                         unresolved.append(f"{fn.location(node.lineno)}: reason is parameter "
@@ -1634,68 +1934,45 @@ class Tables:
                                       f"{short(reason_node) if reason_node is not None else 'missing'}")
         rows = []
         for (reason, key), members in grouped.items():
-            members = sorted(set(members), key=lambda item: location_order(item[0]))
+            members = sorted(set(members), key=lambda item: (location_order(item[0]), item[1]))
             opinion = "<br>".join(f"“{cell(text)}”" for _, text in members)
-            rows.append(Row(f"refuse.{reason}.{key[0]}.{key[1]}", "refusal", "Refusals", opinion,
-                            tuple(where for where, _ in members), f"`{reason}`"))
-        return sorted(rows, key=lambda row: row.id), unresolved
+            where = tuple(dict.fromkeys(where for where, _ in members))
+            rows.append(Row(f"refuse.{reason}.{key[0]}.{key[1]}", "refusal", "Refusals", opinion, where,
+                            f"`{reason}`"))
+        return sorted(rows, key=lambda row: row.id), unresolved, reraised
 
 
 # --- rendering -----------------------------------------------------------------------------------------
 
-RULES = {
-    "configuration": (
-        "Read from `_git._invocation`, the one function that builds every Git argument vector and environment, "
-        "and from the process launches that consume it (calls given `**_invocation(...)`). The returned `args` "
-        "list supplies the program name and each `-c` setting; `dict(os.environ, NAME=value)` supplies "
-        "inheritance and each variable set; `env.pop(NAME)` (directly or over a literal tuple) each variable "
-        "removed; `cwd` the directory. A launch's keywords and its function's `timeout` default supply the "
-        "process handling. IDs: `cfg.` plus the setting or variable name."),
-    "invocation": (
-        "Every call that reaches `_git._invocation`. A *wrapper* is any function that passes one of its own "
-        "parameters, starred, as an argument after the repository to such a call (found by repeating the search "
-        "until nothing changes); calls to a wrapper are followed into it with their arguments substituted, so "
-        "`git_text`, `holdings._git_common` and nested helpers such as `collect.checkout_state.ask` contribute "
-        "their callers' commands. A function whose Git call takes its parameters only as values (such as "
-        "`status._git_head` or `_git.resolve_commit`) is not a wrapper: the row is where that call is written, "
-        "and for helpers in `_git` the row also counts their callers. An *option builder* is a function whose "
-        "every return is a tuple of options starting with `-` (such as `_repository.checkout_git`); its result "
-        "is shown as the options it builds. Local variables, list `+=`, conditional expressions and loops over "
-        "literal tuples are followed within a function. One row per distinct global options, command, flag set "
-        "and operand shape; `<expr>` is a value computed at run time and `*expr` an unknown run of arguments. "
-        "Reason `git_failed` means a nonzero exit refuses; otherwise the caller reads the exit status. "
-        "IDs: `inv.` + command + sorted flags (dashes dropped) + the literal words of operands (first three per "
-        "operand) + `via-` and the global options, each part present only when nonempty."),
-    "ref": (
-        "Every string literal or f-string whose text starts with `refs/`, outside docstrings, grouped by its "
-        "namespace (the literal text up to the last `/` before the first run-time value). Each use is classified "
-        "where the name is written, following a local variable to its uses: passed to a Git invocation row, "
-        "passed to a function holding one, tested as a prefix, compared, named in a refusal, returned or "
-        "recorded. IDs: `ref.` plus the namespace."),
-    "administration": (
-        "Path expressions rooted at the Git common directory (`<common>`: names or record keys `common`, "
-        "`common_dir`, `git_common`), a worktree's administration (`<git-admin>`: `git_admin`, `admin`) or a "
-        "checkout's `.git` (`<checkout>/.git`), joined with `/` or `contained(...)`, through local variables and "
-        "through functions that return one; bare administration directories when they are listed, created, "
-        "written or removed; the literal `.git` compared with a path component; and `gitdir: ` file content. "
-        "`{a,b}` is a literal tuple iterated over. Uses are classified by the call or operation receiving the "
-        "path. IDs: `adm.` plus the root and the literal segments."),
-    "refusal": (
-        "`raise StewartError(..., reason=...)`, directly or through a function that returns a `StewartError`, "
-        "when the raise is guarded by a condition or loop over a Git-derived value, or handles an exception from "
-        "work holding one. Values are Git-derived when they come from a Git helper call, from a Git-administration "
-        f"expression in the same function (class 4, not Stewart's storage), or from a function whose return value "
-        f"derives from those, up to {SOURCE_DEPTH} levels deep; the common directory's path, paths into Stewart's "
-        "storage and Stewart's own installation (`__file__`) are locations and carry nothing. A reason passed in "
-        "as a parameter is taken from each caller that passes a literal. Messages are shortened, with run-time "
-        "values in braces. IDs: `refuse.` + reason + module + function."),
-}
 TITLES = {
     "configuration": "Configuration common to every Git call",
     "invocation": "Git invocations",
     "ref": "Refs Stewart names, creates or deletes",
     "administration": "Git administration paths",
-    "refusal": "Refusals about repository shape",
+    "refusal": "Refusals that depend on what Git reports",
+}
+#: One plain sentence per class for Stewart's users: what the class lists and what it leaves out. The rules
+#: that select each class are in this script's docstring and --help.
+SUMMARIES = {
+    "configuration": (
+        "The settings, environment and working directory Stewart gives every Git command it runs. Your own Git "
+        "configuration and the rest of your environment still apply and are not listed."),
+    "invocation": (
+        "Each distinct Git command Stewart's own code runs, where it runs it, and whether a failure stops the "
+        "operation. Git run by the auditor or by an experiment, and Git commands Stewart only prints as advice, "
+        "are not listed."),
+    "ref": (
+        "The ref names Stewart's code writes, and what it does with refs in each namespace. Refs it only learns "
+        "from Git's output are not listed by name."),
+    "administration": (
+        "The files and directories in Git's administration that Stewart reads, writes or checks, and where its "
+        "own records live inside your repository's Git directory. Your working files and Stewart's checkout "
+        "home are not listed."),
+    "refusal": (
+        "The refusals Stewart raises because of something Git reported or something in Git's administration, "
+        "with their reason identifiers. Refusals that depend only on your arguments, on Stewart's own records "
+        "or on values passed between Stewart's functions, and problems that `status` reports without refusing, "
+        "are not listed."),
 }
 
 
@@ -1711,30 +1988,32 @@ def render(tables: Tables) -> str:
         "<!-- Generated by scripts/git_opinions.py from the Python source under src/stewart; edit the script, "
         "not this region, and regenerate with --write. -->",
         "",
-        "Each row below is something Stewart's code does with Git, found by parsing its source; none is written "
-        "by hand. A row's ID is formed from its content, never from a line number, so it stays the same until "
-        "the behavior it names changes. **Where** gives `module:function:line` for each place the opinion is "
-        "written; **Reason** is the refusal identifier Stewart reports, when there is one.",
+        "Rows are selected by parsing Stewart's source: each is something its code does with Git. Each row's "
+        "description is composed from fixed glosses of Git's commands and options, and of what the code does "
+        "with a path. A row's ID is formed from that content and from the names of the code that holds it, "
+        "never from a line number; it stays the same while the code holding the opinion is unchanged. "
+        "**Where** names the `module:function` of Stewart's source that holds the opinion; **Reason** is the "
+        "refusal identifier that code raises, when there is one. A refusal raised while preparing an audit is "
+        "reported as `prepare_failed`, with this reason in the preparation's failure record.",
     ]
     classes = [("configuration", tables.configuration), ("invocation", tables.invocations), ("ref", tables.refs),
                ("administration", tables.administration), ("refusal", tables.refusals)]
     for number, (name, rows) in enumerate(classes, 1):
-        out += ["", f"### {number}. {TITLES[name]} ({len(rows)} rows)", "", f"*Inclusion rule.* {RULES[name]}"]
+        out += ["", f"### {number}. {TITLES[name]} ({len(rows)} rows)", "", SUMMARIES[name]]
         groups: dict = {}
         for row in rows:
             groups.setdefault(row.group, []).append(row)
-        if len(groups) == 1:
+        if len(groups) <= 1:
             out += ["", *table(rows)]
         else:
             for group in sorted(groups):
                 heading = code(group) if name == "invocation" else group
                 out += ["", f"#### {heading}", "", *table(groups[group])]
         if name == "ref":
-            out += ["", "Invocation rows whose command writes refs (`update-ref` and the other ref-writing "
-                        "commands, or `worktree add` with `-b`): "
+            out += ["", "Invocation rows whose command writes refs: "
                     + (", ".join(f"`{row}`" for row in tables.ref_writers) or "none") + "."]
     text = "\n".join(out) + "\n"
-    if BEGIN in text or END in text:
+    if BEGIN.decode() in text or END.decode() in text:
         raise Refusal("the generated text contains a region marker")
     return text
 
@@ -1742,47 +2021,94 @@ def render(tables: Tables) -> str:
 # --- the document region -------------------------------------------------------------------------------
 
 
-def region(document: Path) -> tuple[str, int, int]:
-    """The document text and the span strictly between the markers; refuses missing or repeated markers."""
-    if document.is_symlink():
-        raise Refusal(f"{document} is a link; name the document itself (nothing was written)")
+def read_document(document: Path, *, for_write: bool) -> tuple[bytes, os.stat_result, Path]:
+    """The document's exact bytes, its identity and its absolute path; refuses anything unsafe to rewrite.
+
+    Every directory on the way must be a real directory, not a link, and the document a regular file with
+    no other hard link (replacing it would break them). It is opened without following a link and without
+    blocking, and must still be the file inspected. For --write it must also be writable by its owner.
+    """
+    path = Path(os.path.abspath(document))
+    for ancestor in reversed(path.parents):
+        try:
+            observed = os.lstat(ancestor)
+        except OSError as exc:
+            raise Refusal(f"cannot inspect {ancestor}: {exc}") from exc
+        if stat.S_ISLNK(observed.st_mode):
+            raise Refusal(f"{path} is reached through the link {ancestor}; name it by a path without links "
+                          "(nothing was written)")
     try:
-        text = document.read_text(encoding="utf-8")
+        observed = os.lstat(path)
     except OSError as exc:
-        raise Refusal(f"cannot read {document}: {exc}") from exc
-    begins, ends = text.count(BEGIN), text.count(END)
-    if begins != 1 or ends != 1:
-        raise Refusal(f"{document} must hold {BEGIN} and {END} exactly once each (found {begins} and {ends}); "
-                      "nothing was written")
-    start, stop = text.index(BEGIN) + len(BEGIN), text.index(END)
-    if stop < start:
-        raise Refusal(f"{document} has {END} before {BEGIN}; nothing was written")
-    return text, start, stop
-
-
-def write_region(document: Path, generated: str) -> bool:
-    """Replace the region's contents; returns whether anything changed."""
-    text, start, stop = region(document)
-    updated = text[:start] + "\n" + generated + text[stop:]
-    if updated == text:
-        return False
-    mode = document.stat().st_mode & 0o7777
-    descriptor, temporary = tempfile.mkstemp(prefix=f".{document.name}.", dir=document.parent)
+        raise Refusal(f"cannot inspect {path}: {exc}") from exc
+    if stat.S_ISLNK(observed.st_mode):
+        raise Refusal(f"{path} is a link; name the document itself (nothing was written)")
+    if not stat.S_ISREG(observed.st_mode):
+        raise Refusal(f"{path} is not a regular file (nothing was written)")
+    if observed.st_nlink != 1:
+        raise Refusal(f"{path} has {observed.st_nlink} hard links; replacing it would break them "
+                      "(nothing was written)")
+    if for_write and not observed.st_mode & stat.S_IWUSR:
+        raise Refusal(f"{path} is read-only; make it writable first if it should change (nothing was written)")
     try:
-        with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+    except OSError as exc:
+        raise Refusal(f"cannot open {path}: {exc}") from exc
+    try:
+        opened = os.fstat(descriptor)
+        if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (observed.st_dev, observed.st_ino):
+            raise Refusal(f"{path} changed while it was opened (nothing was written)")
+        chunks = []
+        while chunk := os.read(descriptor, 1 << 16):
+            chunks.append(chunk)
+    finally:
+        os.close(descriptor)
+    return b"".join(chunks), opened, path
+
+
+def region(data: bytes, document: Path) -> tuple[int, int]:
+    """The byte span strictly between the markers; refuses missing, repeated or reversed markers."""
+    begins, ends = data.count(BEGIN), data.count(END)
+    if begins != 1 or ends != 1:
+        raise Refusal(f"{document} must hold {BEGIN.decode()} and {END.decode()} exactly once each (found "
+                      f"{begins} and {ends}); nothing was written")
+    start, stop = data.index(BEGIN) + len(BEGIN), data.index(END)
+    if stop < start:
+        raise Refusal(f"{document} has {END.decode()} before {BEGIN.decode()}; nothing was written")
+    return start, stop
+
+
+def write_region(document: Path, generated: bytes) -> bool:
+    """Replace the region's bytes, every other byte kept exactly; returns whether anything changed.
+
+    The new document is staged beside the old one and replaces it only while the old one is unchanged. A
+    staging file that could not be put in place is kept, and the refusal names it.
+    """
+    data, observed, path = read_document(document, for_write=True)
+    start, stop = region(data, path)
+    updated = data[:start] + b"\n" + generated + data[stop:]
+    if updated == data:
+        return False
+    descriptor, staging = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".git-opinions-staged", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
             handle.write(updated)
-        os.chmod(temporary, mode)
-        os.replace(temporary, document)
-    except BaseException:
-        if os.path.lexists(temporary):
-            os.unlink(temporary)
-        raise
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(staging, stat.S_IMODE(observed.st_mode))
+        current, now, _ = read_document(path, for_write=True)
+        if current != data or (now.st_dev, now.st_ino) != (observed.st_dev, observed.st_ino):
+            raise Refusal(f"{path} changed while the region was generated")
+        os.replace(staging, path)
+    except (Refusal, OSError) as exc:
+        raise Refusal(f"{exc}; {path} was not replaced, and the staged bytes are kept at {staging}") from exc
     return True
 
 
-def check_region(document: Path, generated: str) -> bool:
-    text, start, stop = region(document)
-    return text[start:stop] == "\n" + generated
+def check_region(document: Path, generated: bytes) -> bool:
+    data, _, path = read_document(document, for_write=False)
+    start, stop = region(data, path)
+    return data[start:stop] == b"\n" + generated
 
 
 # --- coverage -------------------------------------------------------------------------------------------
@@ -1797,7 +2123,7 @@ RAW_PATTERNS = [
 
 
 def prose_spans(module: Module) -> dict:
-    """Per line, the character spans of comments and string text, and the spans of whole string tokens."""
+    """Per line, the character spans of comments and string text, with each token's type and text."""
     spans: dict = defaultdict(list)
     kinds = {tokenize.COMMENT, tokenize.STRING} | {getattr(tokenize, name) for name in
                                                    ("FSTRING_MIDDLE", "TSTRING_MIDDLE") if hasattr(tokenize, name)}
@@ -1813,17 +2139,13 @@ def prose_spans(module: Module) -> dict:
 
 
 def coverage(tables: Tables) -> tuple[list[str], int]:
-    """Every raw-scan hit with what accounts for it; the count of hits nothing accounts for."""
+    """Every raw-scan hit with what accounts for it, the checks that fail, and how many failed."""
     analysis, source = tables.analysis, tables.source
     names = {key[1].rsplit(".", 1)[-1] for key in [*analysis.wrappers, *analysis.option_builders]}
     patterns = RAW_PATTERNS + [rf"\b{re.escape(name)}\(" for name in sorted(names)
                                if not any(name in pattern for pattern in RAW_PATTERNS)]
     git_running = {site.fn.key for site in analysis.sites if site.fn is not None}
-    consumed = set()  # ids of option-builder calls whose result reaches a site
-    for site in analysis.sites:
-        for node in ast.walk(site.node):
-            if isinstance(node, ast.Call):
-                consumed.add(id(node))
+    consumed = {id(node) for site in analysis.sites for node in ast.walk(site.node) if isinstance(node, ast.Call)}
     reviewed_used: set = set()
     lines, dispositions, unmatched = [], defaultdict(int), []
     for module in source.modules.values():
@@ -1845,7 +2167,6 @@ def coverage(tables: Tables) -> tuple[list[str], int]:
                     end = len(line[:match.start() + len(text)].encode("utf-8"))
                     inside = [span for span in spans.get(number, []) if span[0] <= match.start() < span[1]]
                     literal_git = inside and inside[0][2] == tokenize.STRING and inside[0][3] in ('"git"', "'git'")
-                    fn = None
                     if inside and not literal_git:
                         fn = function_at(module, number)
                         quiet = inside[0][2] == tokenize.COMMENT or number in documented
@@ -1882,31 +2203,43 @@ def coverage(tables: Tables) -> tuple[list[str], int]:
                 lines.append(entry)
                 unmatched.append(entry)
                 dispositions["unmatched"] += 1
+    checks = [
+        ("raw-scan hits nothing accounts for", unmatched),
+        ("unresolved invocations (no row is made)",
+         [f"{site.module.location(site.fn, site.node.lineno)}: "
+          + " ".join(show(element) for element in site.expansion.argv) + f" ({why})" for site, why in tables.unresolved]),
+        ("wrappers no call reaches", [f"{key[0]}:{key[1]}" for key in sorted(analysis.wrappers)
+                                      if not analysis.calls_to.get(key)]),
+        ("refusals whose reason could not be resolved", tables.unresolved_reasons),
+        ("commands or options without a gloss for their command", sorted(tables.gloss_gaps)),
+        (f"values cut at MAX_VARIANTS ({MAX_VARIANTS}) alternatives",
+         [f"{TRUNCATIONS['count']} values"] if TRUNCATIONS["count"] else []),
+    ]
+    notes = [
+        ("re-raised reasons (not new refusals)", tables.reraised),
+        ("reviewed entries no hit matches", [f"{key}: {why}" for key, why in sorted(REVIEWED.items())
+                                             if key not in reviewed_used]),
+    ]
     report = [f"[git-opinions] raw scan: {sum(dispositions.values())} hits in {len(source.modules)} modules; "
               + ", ".join(f"{count} {kind}" for kind, count in sorted(dispositions.items())),
               *sorted(lines, key=location_order), ""]
-    for site in tables.unresolved:
-        unmatched.append(f"{site.module.location(site.fn, site.node.lineno)} unresolved command: "
-                         + " ".join(show(element) for element in site.expansion.argv))
-    for key in sorted(analysis.wrappers):
-        if not analysis.calls_to.get(key):
-            unmatched.append(f"{key[0]}:{key[1]} is a wrapper no call reaches; its commands are not in the table")
-    report.append(f"[git-opinions] unmatched ({len(unmatched)}):")
-    report += [f"  {entry}" for entry in unmatched] or ["  none"]
-    # An outdated review list misses no Git call, so it is reported without failing the check.
-    stale = [f"{key}: {why}" for key, why in sorted(REVIEWED.items()) if key not in reviewed_used]
-    report.append(f"[git-opinions] reviewed entries no hit matches ({len(stale)}):")
-    report += [f"  {entry}" for entry in stale] or ["  none"]
-    report.append(f"[git-opinions] refusals whose reason could not be resolved ({len(tables.unresolved_reasons)}):")
-    report += [f"  {entry}" for entry in tables.unresolved_reasons] or ["  none"]
-    report.append(f"[git-opinions] Git commands or options without a gloss ({len(tables.gloss_gaps)}):")
-    report += [f"  {entry}" for entry in sorted(tables.gloss_gaps)] or ["  none"]
+    failed = 0
+    for title, entries in checks:
+        failed += len(entries)
+        report.append(f"[git-opinions] {title} ({len(entries)}):")
+        report += [f"  {entry}" for entry in entries] or ["  none"]
+    for title, entries in notes:
+        report.append(f"[git-opinions] {title} ({len(entries)}, informational):")
+        report += [f"  {entry}" for entry in entries] or ["  none"]
     report.append("[git-opinions] wrappers: " + ", ".join(f"{key[0]}:{key[1]}" for key in sorted(analysis.wrappers)))
+    report.append("[git-opinions] launch wrappers: " + ", ".join(
+        f"{key[0]}:{key[1]} ({reason or 'no reason'})" for key, reason in sorted(analysis.launch_wrappers.items())))
     report.append("[git-opinions] option builders: " + ", ".join(f"{key[0]}:{key[1]}"
                                                                for key in sorted(analysis.option_builders)))
     report.append(f"[git-opinions] invocation sites: {len(analysis.sites)} expansions at "
                   f"{len({id(site.node) for site in analysis.sites})} calls")
-    return report, len(unmatched)
+    report.append(f"[git-opinions] {'FAILED' if failed else 'passed'}: {failed} problems in the checks above")
+    return report, failed
 
 
 def function_at(module: Module, line: int) -> Function | None:
@@ -1945,9 +2278,10 @@ def classify(tables, module, fn, node, parent, text, number, defs, git_running, 
     if rows:
         return "site: " + ", ".join(sorted(rows))
     if id(parent) in analysis.template_ids:
-        target = fn.key
-        count = len(analysis.calls_to.get(target, []))
-        return f"template: expanded at the {count} calls of {target[0]}:{target[1]}"
+        count = len(analysis.calls_to.get(fn.key, []))
+        return f"template: expanded at the {count} calls of {fn.key[0]}:{fn.key[1]}"
+    if any(site.node is parent for site, _ in tables.unresolved):
+        return "unresolved: listed below; no row is made"
     target = source.callee(parent.func, fn, module)
     if target is None:
         return "unmatched: the call names no package function"
@@ -1977,11 +2311,13 @@ def classify(tables, module, fn, node, parent, text, number, defs, git_running, 
         rows = sorted(tables.fn_rows.get(target.key, ()))
         return f"helper call: {target.qualname} runs " + ", ".join(rows)
     if target.key in analysis.wrappers:
-        return f"unmatched: a wrapper call that produced no command"
+        return "unmatched: a wrapper call that produced no command"
     return f"unrelated: calls {target.module.name}:{target.qualname}, which runs no Git"
 
 
 # --- command line ---------------------------------------------------------------------------------------
+
+EXIT_OK, EXIT_FAILED, EXIT_REFUSED, EXIT_INTERNAL = 0, 1, 2, 3
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1990,21 +2326,23 @@ def main(argv: list[str] | None = None) -> int:
                                      epilog=(
         "Run it with an explicit interpreter and isolated startup, for example\n"
         "  python3.14 -I -B scripts/git_opinions.py --check\n\n"
-        "Exit status: 0 on success; 1 when --check finds the region stale or --coverage finds\n"
-        "unaccounted hits; 2 when the source cannot be read, two rows would share an ID, or the\n"
-        "document is a link or its markers are missing, repeated or out of order."))
+        "Exit status: 0 on success; 1 when --check finds the region stale or --coverage finds a\n"
+        "problem; 2 when the run is refused (the source cannot be read, two rows would share an ID,\n"
+        "or the document is unsafe to read or rewrite: a link, under a linked directory, not a\n"
+        "regular file, hard-linked, read-only for --write, or with missing, repeated or reversed\n"
+        "markers); 3 on an internal error, with its traceback."))
     parser.add_argument("--source", type=Path, default=project / "src" / PACKAGE,
                         help="the package directory to read (default <project>/src/stewart)")
     parser.add_argument("--document", type=Path, default=project / "GIT-ENVIRONMENT-NEEDS.md",
                         help="the document holding the generated region (default <project>/GIT-ENVIRONMENT-NEEDS.md)")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--write", action="store_true",
-                      help="replace only the region between the git-opinions markers in the document")
+                      help="replace only the bytes between the git-opinions markers in the document")
     mode.add_argument("--check", action="store_true",
                       help="exit 1 when the document's region differs from what would be generated; writes nothing")
     mode.add_argument("--coverage", action="store_true",
                       help="list every raw-scan hit for Git invocations with what accounts for it; exit 1 when "
-                           "anything is unaccounted for")
+                           "any check fails")
     args = parser.parse_args(argv)
     try:
         source_root = args.source.resolve()
@@ -2012,26 +2350,37 @@ def main(argv: list[str] | None = None) -> int:
             raise Refusal(f"no source directory at {source_root}")
         tables = Tables(Source(source_root))
         if args.coverage:
-            report, unmatched = coverage(tables)
+            report, failed = coverage(tables)
             print("\n".join(report))
-            return 1 if unmatched else 0
-        generated = render(tables)
+            return EXIT_FAILED if failed else EXIT_OK
+        generated = render(tables).encode("utf-8")
         if args.write:
             changed = write_region(args.document, generated)
             print(f"[git-opinions] {'wrote' if changed else 'unchanged'}: the region of {args.document}")
-            return 0
+            return EXIT_OK
         if args.check:
             if check_region(args.document, generated):
                 print(f"[git-opinions] current: the region of {args.document} matches the source")
-                return 0
+                return EXIT_OK
             print(f"[git-opinions] stale: the region of {args.document} differs from what the source generates; "
                   "run scripts/git_opinions.py --write", file=sys.stderr)
-            return 1
-        sys.stdout.write(generated)
-        return 0
+            return EXIT_FAILED
+        if hasattr(sys.stdout, "buffer"):
+            sys.stdout.flush()
+            sys.stdout.buffer.write(generated)
+            sys.stdout.buffer.flush()
+        else:
+            sys.stdout.write(generated.decode("utf-8"))
+        return EXIT_OK
     except Refusal as exc:
         print(f"[git-opinions] refused: {exc}", file=sys.stderr)
-        return 2
+        return EXIT_REFUSED
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        print("[git-opinions] internal error: a defect in this script, named by the traceback above; the document "
+              "is replaced only by a completed --write", file=sys.stderr)
+        return EXIT_INTERNAL
 
 
 if __name__ == "__main__":
