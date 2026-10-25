@@ -9,11 +9,16 @@ audit when it is done.
 
 Stewart provides custody for bounded inquiries into material held in Git. It organizes cooperation between distinct roles: a manager who commissions, observes, and disposes of inquiries, and an auditor who investigates and reports.
 
-Stewart maintains the working boundaries of each inquiry, including its subject, permissions, records, and transitions. Its arrangements give the auditor a defined assignment and the manager a means of following the work without continually renegotiating their relationship.
+Stewart maintains the working boundaries of each inquiry, including its subject, permissions, records, and transitions. Its arrangements center on a defined assignment and a structured return for the manager to review. It serves people who want answers to bounded questions without continually steering the investigation.
 
 Audits can yield findings, unresolved questions, incomplete work, or accounts of missing evidence. Stewart makes their circumstances and products available for inspection, while the conduct and interpretation of an inquiry remain matters of judgment.
 
 ## How an audit works
+
+The workflow and harness permissions below describe the current Python
+implementation. [CONTRACTS.md](CONTRACTS.md) distinguishes its behavior from
+decided successor responsibilities; the successor access and custody boundaries
+are not yet implemented by these commands.
 
 An audit has two roles. The manager chooses the question, prepares the
 assignment, starts the auditor, reviews what comes back and closes the audit.
@@ -186,6 +191,11 @@ and the `stewart.api` Python API, together with:
   one released invocation;
 - launch profiles that render a Claude Code command through the
   `claude-code-restricted/1` scope adapter.
+
+The successor is decided to omit the dedicated program executor and its
+release/run stages. Permitted auditor tool use and custody of captured returns
+remain; see [the execution contract](CONTRACTS.md#program-execution-and-the-legacy-experiment-route).
+This departure is not implemented in the Python release described here.
 
 Its present limits:
 

@@ -532,6 +532,11 @@ support".
 - **The auditor's helpers**: the `report_declaration` and `verify_inputs`
   rows: **may change**. In this version they need Git in the auditor's
   checkout.
+- **Experiment execution**: the `experiment` release/run call sites:
+  **decided to change**. The successor omits Stewart's dedicated program
+  executor and those stages. Permitted auditor tool use and custody of its
+  captured return remain; those reports do not become Stewart's own execution
+  observations.
 - **Checking coverage**: `inv.ls-tree.full-tree-r-z.via-no-replace-objects`
   and `inv.cat-file.batch.via-no-replace-objects`: **relied on**. Coverage
   reads committed bytes without replacements or filters and hashes them
@@ -546,9 +551,14 @@ support".
   `inv.status.porcelain-v1-z` read Stewart's source checkout when you run it
   from source: **incidental**. They concern Stewart, not your material.
 - **Worktrees, branches and directories you ask Stewart to create**: the
-  `holdings` rows: **may change**. A later version may not create and
-  dispose of these for you. In this version Stewart refuses their disposal
-  while they hold uncommitted, ignored or unmerged work.
+  `holdings` creation and disposal rows: **decided to change**. The successor's
+  general manager-workspace creation and disposal service is deferred; it may
+  be isolated and removed rather than advanced. In this version worktree and
+  branch disposal refuses uncommitted, ignored or unmerged work as applicable.
+  Plain temporary directories have a different rule: their contents are
+  inventoried and frozen for removal, with live uses and recorded dependencies
+  checked. Records of published evidence and required dependency protections
+  remain responsibilities of the successor independently of this service.
 
 ### Refs
 
@@ -558,8 +568,10 @@ support".
   to delete them; Stewart then reports `session_retention` for that audit,
   and restoring the refs to the commits they named is the way back.
 - `ref.refs-heads`, `ref.refs-worktree`, `ref.refs-bisect` and
-  `ref.refs-stewart`: **may change**, with the worktrees and branches you ask
-  Stewart to create. Closing such a branch deletes its recorded ref.
+  `ref.refs-stewart`: their use for manager-resource creation and disposal is
+  **decided to change** with the deferred service. This does not decide every
+  other use of these namespaces. In this version closing a managed branch
+  deletes its recorded ref.
 - `ref.refs`: **incidental**, a check that a name is a full ref name.
 
 ### Administration paths
@@ -569,7 +581,9 @@ support".
   **may change**, with the linked worktree and the worktrees you ask Stewart
   to create. In this version Stewart writes its own marker files,
   `stewart-auditor.json` and `stewart-resource.json`, beside Git's; do not
-  edit them.
+  edit them. The manager-resource creation and disposal uses specifically are
+  **decided to change**, with the deferred service; the auditor-workspace
+  representation remains undecided.
 - `adm.name.dot-git`: **relied on**. A path component named `.git`, in any
   letter case, is never accepted as an audit path.
 - **Stewart's storage** (`adm.common.stewart.*`): what it asks of you is
@@ -604,8 +618,10 @@ and no further advice. Grouped by what they ask of you:
   collecting cannot help, as with a checkout transformation, abandon with an
   explicit discard. `session_retention` **may change** with the refs; restore
   the refs.
-- **Resources you asked for**: `resource_*`: **may change**. Disposal is
-  refused while doubt remains.
+- **Resources you asked for**: `resource_*`: the general manager-resource
+  creation and disposal operations are **decided to change**, with the service
+  deferred in the successor. This version refuses disposal while doubt remains;
+  existing records retain their meanings.
 - **Git itself**: `git_failed`, `git_ref_transaction`, `commit_id`. The Git
   command failed, refs could not be created together, or a commit ID was not
   given in full.

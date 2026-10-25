@@ -71,8 +71,8 @@ recorded as a loss despite an undertaking, never as a decline. Regenerability
 is never a ground: a digest proves what bytes to expect, not the ability to
 produce them.
 
-**The manager controls what survives by default; undertaken obligations
-survive the manager's close.** That control does not extinguish obligations
+**The manager controls what survives by default; requesting close does not
+cancel undertaken obligations.** That control does not extinguish obligations
 Stewart has undertaken concerning particular material: a resource Stewart did
 not create is never claimed for disposal; another audit's live use keeps a
 resource; retention and export copy bytes to their destinations and never
@@ -80,15 +80,20 @@ reference the session, so a retained outcome's promise of inspection does not
 depend on the session surviving; uncollected auditor work is not destroyed
 without an explicit discard naming it; and a preservation the manager began
 and Stewart recorded is completed or explicitly surrendered before conclusion.
+Clarified 2026-10-25: completed close must not conceal unfinished audit
+operations. Completed retained or exported products may survive independently;
+an interrupted close remains unfinished, with its failure and recovery visible.
 Releasing a resource claim when the resource changed concerns the scope of the
 authorized act, not a promise to the manager's earlier self. Human auditors,
 principals, material providers and later readers acquire no retention rights
 from their roles; any they hold come from promises, authority limits or
-reliance actually recorded. A provider's condition or a manager's delegation
-limit is recorded as a hold on a recorded resource, below; it is a record the
-manager makes, not a veto to imagine. Stewart's promises to the auditor are
-process promises: raw
-capture before interpretation, a disposition of every gap, and attribution
+reliance actually recorded. Updated 2026-10-25: a provider's condition or a
+manager's delegation limit concerning identified custody material can be
+recorded as a narrow, attributed hold with explicit release, below. This
+replaces the hold's dependency on the general manager-resource service,
+which is deferred. It is a record the manager makes, not a veto to imagine.
+Stewart's promises to the auditor are process promises: raw capture before
+interpretation, a disposition of every gap, and attribution
 that is never turned into a verdict.
 
 **Liberal in handing over, conservative in destroying.** Stewart gives the
@@ -96,11 +101,147 @@ manager verified material with its qualifications attached, and withholds
 destruction of material the manager has not judged. The manager's judgment,
 not Stewart's, decides what the material means.
 
+**A bounded commission and structured return are the product relationship.**
+Clarified 2026-10-25. Stewart serves people who want to ask narrow questions
+and receive answers to those questions, including accounts of missing evidence
+or incomplete work. Routine steering, live inspection and general agent
+supervision are not product objectives. Their availability in surrounding
+harnesses, or their usefulness in developing Stewart, does not justify
+reproducing them in the product. Judge proposed intervention facilities by a
+specific commission or custody need. This preserves the auditor's investigative
+latitude within the assignment; it does not prescribe a narrow method or an
+artificially small body of context. The exceptional intervention policy remains
+open, and this principle alone removes no existing operation or record.
+
+**Recording a commission does not itself promise replay.** Agreed design
+direction, 2026-10-25; candidate for a core commitment. A commission record
+explains the accepted question and its selected material. It does not by itself
+undertake to reconstruct an executable audit, reopen it or provide another
+invocation. The manager remains responsible for being able to construct a new
+question, including an identical one. Existing capture and preservation
+undertakings still apply. The user's preference is at most one audit retry
+facility, potentially none; explore the zero-facility, single-undertaking
+("trap door") design first. A restart-from-start convenience remains open,
+not approved, and retaining records does not imply it. The full staged
+construction/review/release/run relationship was reconsidered without giving
+existing code or tests a presumption of continued product responsibility. The
+user subsequently selected no dedicated successor program executor, below;
+the possible audit restart convenience remains undecided.
+
+**Incomplete Stewart operations remain Stewart's responsibility to account
+for.** Clarified 2026-10-25. Restricting intervention increases the importance
+of a supported account and disposition of interrupted custody work, particularly
+for agent-managers likely to improvise repairs when the interface leaves a gap.
+Do not make editing private state, deleting evidence or guessing whether an
+operation ran the expected recovery path. Complete an existing undertaking
+within its recorded authority where possible, or expose its unresolved state,
+limits and an authorized disposition. A diagnostic that merely leaves the
+manager to improvise private-state repairs is an interface gap, not a supported
+resolution. This is not a guarantee that lost bytes can be recovered.
+Completing custody work grants no fresh investigative
+execution; uncertainty cannot be replayed. Nor may a collection of retry
+facilities be accepted merely by calling them recovery. Concrete mechanisms
+and their supported failure cases still require design and qualification.
+
+**Investigative effectiveness and seamless operation are distinct aims.**
+Recorded 2026-10-25 as a design tension. An effective audit gives the auditor
+seemingly transparent access to the materials used to construct its question,
+conditioned by manager selection. Seamless operation is easier when Stewart
+can isolate a constrained, static slice without nesting or recursive
+expansion and make precise promises about it. These aims can trade off in
+unexpected ways. A smaller or more isolated slice is not by itself evidence
+of a more effective audit; broader access is not by itself evidence of better
+operation. Evaluate both for the particular commission and make the selected
+material and its limits intelligible. This tension grants no additional
+access and decides no workspace or history mechanism.
+
+## Handoff and audit-owned facilities
+
+Agreed direction 2026-10-25. **Decided, departure.** The manager retains
+authority over the commission and disposition; Stewart manages the audit's
+material from handoff through authorized closure. After handoff, manager
+access to the auditor's live material is to be very restricted and the audit
+process abstract to the manager. Missing information can be surfaced through
+the auditor's structured return. Later manager edits must not silently alter
+what the auditor was commissioned to investigate.
+
+Stewart allocates, protects and retires the facilities it supplies for an
+audit. A manager's independent preparation workspace has a separate lifetime;
+audit close does not grant disposal authority over it. Dependencies on such
+workspaces must actually be ended or otherwise secured before their existing
+protection can be removed. A working opportunity to keep material covered by
+the custody promise must be available through a supported interface wherever
+direct manager access is restricted. Retention remains optional except where
+Stewart has undertaken a specific obligation, including a hold. Auditor
+completion alone does not authorize closure or disposal.
+
+The exact permitted manager operations and enforced access mechanism remain
+to be designed and qualified, including a workable stop/collection route.
+The current implementation does not establish this manager-side boundary.
+No delivery service, new auditor channel, or guarantee that the host's entire
+execution environment is immutable follows from this direction.
+
+## Access through explicit grants
+
+Direction selected 2026-10-25. **Decided, departure.** Pursue auditor access
+defined positively by the commission's selected material and required
+facilities. The preference is to eliminate Stewart's responsibility for a
+private-location inventory, if the access arrangement can actually enforce
+the required boundary. Creating a new private manager location should not
+require updating an audit's exclusions to keep it inaccessible. Deferring
+manager-resource creation and disposal does not weaken access protection.
+
+Shared immutable storage must expose only the material the audit is authorized
+to read, not the store's entire contents. The manager-side restriction remains
+separate: receiving and inspecting the authorized captured return must not
+implicitly reopen the auditor's live material to manager intervention.
+
+Eliminating the inventory requires qualification in the supported harness,
+including shell and file-tool routes, useful authorized access, unselected
+and neighboring material, and private locations created after launch. Settings
+construction alone is not qualification. A narrowly scoped inventory remains
+an available fallback if the evidence requires it; its reason and limits must
+be stated, without restoring general manager-resource management. The mechanism
+and its enforcement are not established by this decision. Permitted auditor
+tool use still needs actual access/effect bounds; the later no-executor decision
+removes Stewart's separate program runner, not those obligations.
+
+## General manager-workspace service
+
+Decided 2026-10-25. **Deferred.** General creation and disposal of manager
+worktrees, branches and temporary directories is deferred from the successor
+transition. The preference is toward isolating and possibly removing this
+service instead of advancing it; deferral is not a commitment to implement
+it later. Reconsideration requires a separate need and commission, in the
+optional later implementation stage or a subsequent program.
+
+Audit-owned allocation remains in Stewart. So do required custody records of
+retention/export and their failures, and whatever dependency and access
+protections the chosen arrangement still needs. This does not require keeping
+the general resource API as the mechanism for those duties. The reason for
+deferral is the separation between audit custody and management of the
+manager's own work, not the subsystem's size or an assumption that nobody uses
+it.
+
+Python's resource service remains frozen as implemented. Historical resource
+records are preserved; successor interpretation follows the bounded evidence
+reader contract below and creates no general manager-resource removal claims.
+Existing resources can still be serviced by
+their Python implementation while available; any manual retirement is outside
+Stewart custody. Records are preserved. Closing Python audits does not settle
+every resource or unfinished claim: their inventory and supported recovery
+must receive an explicit transition disposition before Python is withdrawn.
+Historical receipts are never rewritten to achieve that transition.
+
 ## Public status contract
 
-Decided 2026-10-23. **Decided, departure.** Status is the first operation the
-successor realizes, read-only against Python-written sessions, with Python
-status as the control. The preservation-first extraction order described in
+Decided 2026-10-23, reader scope narrowed 2026-10-25. **Decided, departure.**
+Status remains the first read-only operation the successor realizes. The
+Python corpus and status behavior supply comparison evidence for the selected
+contracts; they do not impose permanent support for every Python private-session
+or resource format. Before implementation, name the consumer and supported
+record population under the evidence interpretation contract below. The
+preservation-first extraction order described in
 the findings applied to a Python implementation and is not required when the
 successor implements status and close against this document directly.
 
@@ -112,7 +253,20 @@ live-handoff consequences and consequential observation errors pending the
 wider audit, and where it keeps `stewart.closing/1`, the close contract later
 in this document supersedes it: close's checks are coverage by the triaged
 collection, the surviving live checks are enumerated there, and a closing
-record that freezes discard identities is a new schema.
+record that freezes discard identities is a new schema. The 2026-10-25
+manager-workspace deferral also revises the resource rows below; the former
+resource-based hold is replaced by the custody-material hold contract. The
+bounded reader decision also replaces the unconditional legacy-resource
+projection with support justified by an identified consumer and record
+population. A field's specified meaning is not a promise to decode every
+historical format that once supplied it.
+The later no-executor decision also supersedes successor release/run stages
+and their action offers in this inherited account. Historical release/attempt
+records may be interpreted for a specified consumer under the bounded reader
+contract; their existence does not commission a successor executor. Captured
+evidence, identity checks and precise failure diagnostics remain required for
+supported records. Existing Python operations and unfinished attempts remain
+writer-bound under the transition contract.
 
 ### Public contract
 
@@ -145,7 +299,7 @@ verification remain required. Immutable-looking filenames do not confer trust.
 | `auditor_reported` | Keep declaration-derived values, sources, identities and validation diagnostics. No live-report interpretation and no inference from prose. Omit the empty declaration section from ordinary pre-collection prose; JSON may retain explicit unavailable values. |
 | `dispositions`, `retentions`, `releases`, `attempts`, `runtime_recoveries`, `experiment` | Keep recorded progression and verified bindings/captures. An execution grant or absence of a release is not a task queue or readiness assertion. Do not demand success-only fields from failed records. |
 | `implementation` | Keep writer/viewer distinction and descriptor-verified writer handoff where offered. This verifies manager code, not auditor activity. Never execute/import recorded code to inspect it. |
-| `resources` | Replace live closeout dispositions with recorded association/identity information and record diagnostics. Ordinary status does not evaluate disposal eligibility. `close --plan` and actual close retain that job. No summary confers removal authority. |
+| `resources` | For an explicitly supported legacy population and identified consumer, expose recorded associations, identities and diagnostics read-only. This is not an unconditional port of Python resource reporting; unsupported material remains diagnosed, not treated as absent. Ordinary status does not evaluate disposal eligibility. The successor creates no general manager-resource removal claims; close planning and close evaluate only their audit-owned removal scope and its dependencies. No summary confers removal authority. |
 | `requests`, `closes`, `manager_storage` | Keep recorded request state, closing history/recovery diagnostics and custody locators. Optional keyed completion records are not promoted into a universal preparation-completion requirement. |
 | `attention`, `exit_code` | One authoritative public account of diagnosed record/capture issues and exceptional recorded conditions. Every item has source, stable reason, message and code; preserve useful retained locations and conditional next steps. |
 | `outstanding` | Retire this parallel obligation-like channel. Move neutral facts into their sections; real diagnostics into attention; operation conditions into the option that actually needs them. |
@@ -423,7 +577,7 @@ module layout.
 | Releases/capture associations (`status.py:651–681`; `captured.py`) | Recoverability, gaps and run/release offers | Keep selected captured-byte verification at read time and no live fallback. Preserve failed-release diagnostics without success-only field assumptions. |
 | Current inventory / coverage for close offer (`status.py:864–883,1373–1395`) | A fresh check gates the suggestion | Remove live inventory from status; retain `require_capture`, inventory and frozen revalidation in close (`close.py:1137–1150,372–405`). Offer only as conditional on close preflight. |
 | Paused holds, unresolved attempts (`close.py:1123–1130`) | Public history/news; actual close refusal | Shared records, close-owned mandatory predicates. Older unresolved attempts may remain close blockers even when newer attention supersedes them. |
-| Resource evaluation (`status.py:799–803`; `holdings.py:1146–1245,1363–1400`) | JSON disposal dispositions; exceptions become session problems | Normal status reports associations, not eligibility. Close-plan evaluates; actual close evaluates again after session removal, claims exclusively and revalidates. Preserve exceptional error coupling during separation. |
+| Resource evaluation (`status.py:799–803`; `holdings.py:1146–1245,1363–1400`) | JSON disposal dispositions; exceptions become session problems | Any legacy association/diagnostic view follows the bounded reader contract; no general legacy-resource projection is required. General manager-resource disposal is deferred. Close-plan and close own the frozen inventory, dependency and hold checks for audit-owned material they may remove; they acquire no disposal authority over manager workspaces. |
 | Manager implementation (`_invocation.py:37–96`; `implementation.compare`) | Verified command rendering and writer handoff | Keep explicit writer binding and verified descriptors. Inspection executes no recorded code. Session-read immutability is not a promise that API bootstrap never creates manager deployments. |
 | Listing/discovery (`status.py:1071–1135`; `audits.py:353–535`) | Listing runs full status; discovery reports path-presence hints | Listing adopts common custody projection. Discovery labels inventory hints and keeps selection identity rules; it does not become full status. |
 
@@ -454,6 +608,24 @@ control; `CUSTODY-AUDIT-FINDINGS.md` at `356dc58` records its behavior in the
 executed comparisons these rules answer. The rules apply to close's own
 assessment, however that assessment is obtained; they do not depend on the
 public status view.
+
+**Scope updated 2026-10-25.** Successor audit closure retires Stewart-owned
+audit facilities under the handoff contract above. General manager-workspace
+creation and disposal is deferred, so the old claim-and-retire phase over
+manager resources is not part of successor audit close. Any legacy resource
+reporting follows the bounded reader contract. Holds on identified custody material, live
+dependencies and the frozen revalidation of anything close actually removes
+remain required. Provisionally resolved 2026-10-25: the working environment
+may retire while held material remains in the audit's custody, delaying final
+custody close until explicit release and the other closing conditions are met.
+The lifecycle schema and its qualification remain open. A close cannot silently
+release a hold or destroy its subject, and completed close cannot leave
+unfinished audit operations behind under the name of a hold.
+The subsequent no-executor decision also removes dedicated attempt HOME,
+output areas and active release/run states from successor close. References to
+those facilities in the earlier rules and schema examples describe the legacy
+population; they do not require recreating it. General capture, hold, frozen
+removal and incomplete-operation obligations remain.
 
 **Runtime coverage replaces equality with preparation.** At a concluded close
 the supplied runtime is accounted for when its current state matches the
@@ -493,7 +665,20 @@ a drifted recovery is abandon's acknowledgment after the manager has taken what
 it wants. Reliance change: a successful old recovery alone does not authorize
 discarding new work written into it.
 
-**Experiment HOME is declared disposable with its identity recorded.** The
+**Access-boundary issue, 2026-10-25.** The phrase "after the manager has taken
+what it wants" assumes a preservation route that restricted manager live access
+may remove. It does not authorize direct access contrary to the handoff
+contract. On 2026-10-25 the user accepted a lean toward omitting the successor's
+mutable runtime-recovery materialization: first establish whether retained
+helper assets, bounded inspection and separately authorized fresh reuse serve
+its consumers without this extra directory. This is not yet a decided removal.
+If materialization remains necessary, specify its supported preservation route
+and lifecycle; otherwise explicitly revise the affected opportunity/recapture
+contract when removing the capability. Existing Python recoveries still require
+their transition disposition. The decline of recovery recapture below is not
+silently reversed.
+
+**Legacy experiment HOME is declared disposable with its identity recorded.** The
 attempt HOME is created outside the output area before launch and written by
 project code; the experiment contract places output elsewhere. The removed
 member is the attempt directory that contains HOME, and the declared category
@@ -502,6 +687,12 @@ when nonempty and freezes its identity in the closing record. A manager who
 wants HOME contents takes them before close. This is a declared category, not
 a content judgment; it was chosen over charging an acknowledgment because that
 acknowledgment would be of a nominal opportunity.
+
+The successor has no dedicated experiment HOME because it has no program
+executor. Its retrieval/cleanup interface is therefore not a successor design
+task. This rule remains relevant to the legacy population and does not promise
+to preserve HOME or authorize access outside its writer's interface. Other
+audit material does not acquire this disposable category by analogy.
 
 **The closing record freezes the identity of what was discarded.** Anything
 removed under acknowledgment or declaration, rather than by matching a reviewed
@@ -534,9 +725,9 @@ silence.
 
 **Command rendering is not a closure precondition.** Failure to render a
 suggested command from the cached manager launcher does not refuse close.
-Writer authority, captured evidence validation and frozen resource checks are
-unchanged. Handoff damage remains evidence and is diagnosed; it is not treated
-as merely unavailable interface.
+Writer authority, captured evidence validation and frozen revalidation within
+close's authorized removal scope remain required. Handoff damage remains
+evidence and is diagnosed; it is not treated as merely unavailable interface.
 
 **Retained, not re-decided.** A damaged retained record that conclusion relies
 on, such as a mismatched private handoff or a capture that no longer verifies,
@@ -546,8 +737,11 @@ is abandon with explicit discard, naming the damaged record.
 **Which live checks conclusion makes.** Conclusion's live checks are
 exactly: writer identity; the checkout inventory against the triaged
 collection's receipt; runtime coverage; each recovery against its capture; and
-the frozen resource evaluation. A public handoff differing from preparation is
-accounted for in the same way as the runtime: when the triaged collection
+the frozen identities, contents and dependencies of the audit-owned facilities
+being removed. General manager-resource eligibility evaluation is deferred
+with that service. Recorded custody holds also constrain removal. A public
+handoff differing from preparation is accounted for in the same way as the
+runtime: when the triaged collection
 recorded the difference as a gap and the disposition addressed it, it does not
 refuse conclusion. Observations that only populate the closing record, such as
 the maintainer checkout's HEAD and dirtiness or a destination's presence, are
@@ -733,9 +927,50 @@ network qualification; a permitted domain would make the auditor's readable
 Git object store transmissible, which that qualification must weigh. Stewart
 fetching and pinning external bytes itself is declined; see Declined.
 
-## Project commands as experiments
+## Program execution and the legacy experiment route
 
-Decided 2026-10-24. **Decided, departure.** The supported route for running a
+Decided 2026-10-25. **Decided, departure: no dedicated program executor in the
+successor.** Stewart supplies selected material, captures the audit's return
+and maintains its custody. An auditor may use tools under its commission and
+enforced access grants; this decision neither bans that activity nor grants
+unrestricted execution. It removes Stewart's separate program-execution service
+and the manager-operated construction/review/release/run relationship. It does
+not transfer that workflow into a new external executor or orchestration service.
+
+The reason is the bounded commission/return relationship and the responsibility
+cost of supervising program attempts. Existing implementation investment is
+not a reason to retain that responsibility. This revises the stage-3 decision
+that reviewed Python scripts are Stewart's route for project commands.
+Python remains frozen; the chosen departure is to be realized in the successor
+when implementation is commissioned.
+
+| Dependent behavior | Disposition for the successor |
+| --- | --- |
+| Experiment grants, exact-byte release, `run`, invocation reservations and child launcher | No dedicated execution API or intermediate manager approval stage. No same-audit re-release/output-reset facility. A commission can still state the auditor's permitted tools and operations. |
+| Program argv, exit, streams, protected-file endpoints and invocation limits | No Stewart executor witness or execution-count guarantee. Captured reports/logs retain their source attribution; byte verification does not establish the claimed execution or effects. |
+| Reviewed project-command shim | Superseded as a required Stewart route. Tool use remains subject to the commission and actual access/effect boundaries; no replacement executor is commissioned. |
+| Dedicated attempt output area and HOME | Not created by the successor. Their special retry, retrieval and close handling is not ported. Ordinary audit output remains subject to capture, preservation undertakings, holds and authorized removal. |
+| Ledger and measurement evidence | Preserve selected raw bytes, collection/review identities and attribution. Any supported interpretation must verify the applicable recorded membership rather than infer it from counts. A successor ledger-specific reader/reviewer needs a named consumer and scope; this decision neither commissions it nor makes reported rows proof of execution. |
+| Status and historical releases/attempts | No new executor stages or successor run/release suggestions. Interpret admitted historical records under the bounded reader contract, retaining their gaps and diagnostics without activating them. |
+| Existing Python attempts, captures, publications and related resources | Preserve their records and explicit legacy dispositions. No automatic completion, transfer of execution rights or discard follows from removing the successor executor. |
+| Interrupted capture, publication, requests and close | Retain Stewart's responsibility for supported completion or explicit disposition of its own undertaking. A new question is not its remedy, and an honest diagnostic alone is not a usable recovery path. |
+
+Recording the remit does not itself promise replay. The preference remains
+zero audit retry facilities, with at most one restart-from-start convenience
+still open; selecting no executor does not decide that separate interface.
+The lean against materializing mutable helper-runtime recovery directories is
+also separate: supplied auditor helpers are not the removed program runner.
+
+**Execution failure is not dissatisfaction with an audit answer.** Clarified
+2026-10-25. A manager deciding that an answer is intellectually unsatisfying
+and wanting another audit is outside Stewart's remit. Legacy execution records describe
+the authorized process and captured evidence; their errors do not grade the
+answer or prescribe further investigation. Questions about another invocation
+concern execution authority, prior evidence and working-state management, not
+a policy for when the manager should ask again.
+
+**Earlier route, superseded for the successor on 2026-10-25.** Decided
+2026-10-24: the supported route for running a
 project's own build or test commands is a reviewed Python script that invokes
 them through a subprocess, with the command literal in the frozen script so
 that the manager's byte review is the command review, the child's command
@@ -747,25 +982,56 @@ project's real system checks remains true where those checks need an
 environment the shim cannot provide. A separate command experiment kind is
 declined; see Declined.
 
-## Holds on recorded resources
+## Holds on identified custody material
 
-Decided 2026-10-24. **Decided, departure.** A manager may record a
-repository-level, attributed, blocking-only hold on any recorded resource.
-Close honors it exactly as a live use: the resource is never claimed, the hold
-is shown in `close --plan`, show, closeout and the closing record, and it is
-released only by an explicit attributed release record, never by a close flag,
-a container's retirement or a dispose option. The record carries the actor,
-the condition's text and a required limit stating what the hold does and does
-not do; its wording says "not destroyed by Stewart", never "returned" or
-"preserved against the manager", because Stewart can promise the first and
-neither of the others. For an enrolled resource this presents a condition
-enrollment already honors, and the enrollment note becomes visible wherever
-the hold is. For a Stewart-created resource it is a new commitment: a hold
-blocks the manager's own disposal until an attributed release. It leaves
-"removal is authorized by two records only" intact, since a hold grants
-nothing and is one more reason no claim is created. Release never requires the
-named provider, and no close flag acknowledges past a hold; the provider is
-named in a record and cannot invoke Stewart.
+Decided 2026-10-25. **Decided, departure.** A manager may record a narrow,
+attributed, blocking-only hold on identified custody material, with explicit
+release. This replaces the 2026-10-24 hold's attachment to the general
+recorded-resource service; it is not deferred with that service. Neither
+form is implemented in frozen Python.
+
+The record identifies the material, actor, condition and the limit of the
+undertaking. Stewart does not dispose of that material while the hold is
+active. A hold is released only by an explicit attributed release record;
+close, a container's retirement and a disposal option cannot override it.
+Its effect and identity are visible in custody inspection and removal
+planning, and any affected closing record accounts for it. A hold grants no
+removal, live-workspace access or investigative authority. It promises
+restraint by Stewart, not delivery or protection against the human controlling
+the machine. No third-party veto follows from naming a provider, and release
+does not require the provider to operate Stewart.
+
+The discriminating design test, recorded 2026-10-25, is that a hold must
+neither permit the manager to continue the audit nor excuse dangling operations
+after close. If the hold phase seems to need elaborate operational facilities,
+first examine whether the commission, capture or closure boundary is leaking.
+Recovering an interrupted custody operation must not become permission to
+resume investigation. Inspection or preservation of an authorized capture
+rests on its existing authorization; a hold adds none.
+
+Subject rule accepted 2026-10-25: hold a finite, explicitly identified selection,
+including the metadata and captured dependencies needed for the custody claims
+Stewart undertakes. References within that selection do not recursively enlarge
+the hold to every mentioned repository, file, tool or environment. Missing
+dependencies remain stated limitations or gaps, never material falsely claimed
+to be preserved. This promises neither reproducibility of the entire inquiry
+nor retention of every audit artifact.
+
+The representation of those identities and treatment of copies or transfers
+remain write-path design questions. A hold on an original does not
+silently attach to every copy; making a copy does not implicitly release the
+hold. If a hold is to allow a working directory to retire while identified
+captured bytes remain held, that identity and discharge rule must be explicit
+and verified. The user provisionally resolved the arrangement on 2026-10-25:
+keep that custody with the audit until explicit release and the other closing
+conditions permit final close, without establishing a separate service after
+audit closure. The inquiry may be finished and the working
+environment retired while custody remains held; this implies neither an active
+auditor nor a duty to monitor one. Release removes the hold's restriction,
+not the other conditions for disposal. The representation and recoverability
+of held material, and evidence for safe working-environment retirement, still
+need design and qualification. These details do not reopen the decided
+requirement for attribution, a narrow identified subject and explicit release.
 
 ## Attribution of retention
 
@@ -773,31 +1039,77 @@ Decided 2026-10-24. **Decided, departure.** `retain` records its actor as
 export and every resource-writing operation do, so that publication of the
 deliverable is not the least attributed step.
 
+## Evidence interpretation across implementations
+
+Decided 2026-10-25. **Decided, departure.** Protect supported, qualified
+interpretation of custody evidence independently of authority to continue its
+audit. A reader's different implementation, an unavailable old executable or a
+retired live environment does not by itself invalidate independently verified
+captured evidence. The reader names the material, custody identity, provenance,
+attributed claims and limits it can establish. Completed retained/exported
+products remain inspectable without the removed session.
+
+This replaces a blanket commitment to successor inspection of Python's private
+operational records. Legacy support requires an identified consumer, a bounded
+record population and explicit supported claims. Evidence inspection,
+transition diagnosis and current custody status are distinct needs. A need
+confined to transition can be met outside the successor's ordinary operating
+surface; it does not create a permanent compatibility obligation. Using Python
+records as acceptance evidence likewise creates no public support promise.
+
+Inspection preserves original bytes and separates interpretation from mutation,
+resource eligibility and execution. Unsupported schemas remain unsupported;
+invalid, missing and unreadable evidence retain their distinct diagnostics.
+No repair, replay, receipt conversion or implicit execution of recorded code
+follows from reading. An unavailable operational facility qualifies the affected
+operation, rather than suppressing independently interpretable evidence. A
+matching report digest cannot replace collection identity. Any optional writer
+handoff remains explicitly verified and confers no authority merely by existing.
+
+Each admitted reader scope must be qualified: valid supported evidence remains
+usable when irrelevant live state or old-code availability changes; damaged
+selected evidence invalidates the relevant claim; custody records remain
+unchanged and no old code executes. Whole-host read-only behavior must be
+qualified separately from custody-record immutability. No universal migration
+format or new operational service is required. Exact reader placement and the
+supported population remain design work under this contract.
+
 ## Writer continuity into the successor
 
-**Deferred to the successor transition.** The conservative default is that
-existing Python writers service their open sessions and the successor is
-read-only toward those lifetimes, with explicit verified handoff and no
-implicit execution of retained code, compatibility shims or rewritten
-receipts. If the successor is to continue old sessions, successor authority
-is granted explicitly with its evidence, supported record population and
-failure treatment. Expected consequence of the refusal principle: read-only
-export of a verified report across writers, with the exporting implementation
-recorded in the package, is expected to be permitted when this is decided.
-Closing every live Python audit under Python before the successor closes
-anything makes the default cost nothing in practice.
+Bounded retirement direction accepted 2026-10-25; successor mutation of old
+lifetimes remains **Deferred to the successor transition**. Existing Python
+writers service their open sessions. Any admitted successor inspection is
+read-only under the evidence interpretation contract above, with no implicit
+execution of retained code, compatibility shims or rewritten receipts. If the
+successor is to continue old sessions, its authority requires an explicit
+decision with evidence, supported record population and failure treatment.
+
+The transition settles identified undertakings in a specified legacy population
+without automatically transferring old operational roles into the successor.
+Closing Python audits avoids cross-writer mutation of those audits but does
+not settle independent resource claims or partial requests. Remaining
+undertakings need explicit dispositions before their writer is withdrawn;
+invalid evidence or an unresolved exception cannot be relabelled complete.
+Unchanged historical records are not continuing operations merely because they
+survive. Reuse of evidence grants neither an old session nor its execution rights.
+
+Cross-writer export remains separately deferred. Under the refusal principle,
+export of a verified report with the exporting implementation recorded in the
+package is expected to be permitted when that authority is decided; reading
+alone does not decide it.
 
 ## Access and experiment capability limits
 
-**Documentation.** Private-path and effect-authorization obligations are
-retained. Their costs are stated rather than promised away: the access scope
-is a snapshot, so later checkouts or manager entries can require stopping and
+**Documentation, frozen Python.** Private-path and effect-authorization
+obligations are retained. Their costs are stated rather than promised away:
+the access scope is a snapshot, so later checkouts or manager entries can require stopping and
 repreparing affected auditors; an HTTPS-only assignment can be structurally
 valid while the supplied adapter permits no network domains; the Python
 minimal-environment experiment route may not serve a project's real system
 checks; project rules reach the auditor only through supplied accessible
 guidance. Eliminating the coordination duty needs a different access
-arrangement and real harness qualification. External retrieval and project
+arrangement and real harness qualification; the selected explicit-grant
+direction above pursues that elimination. External retrieval and project
 commands as experiments are decided above in their narrowed forms.
 
 Further limits established by the additions inquiry, stated as facts of the
@@ -844,8 +1156,9 @@ excuse current behavior.
 Each entry records why, so later readers recover intent rather than infer it.
 
 - **Mandatory retention before close.** Converts advice into a duty, is
-  invasive to the manager's flow, and does nothing for recovery or HOME, which
-  are never retained.
+  invasive to the manager's flow, and did not address the baseline's uncaptured
+  recovery changes or disposable HOME. The later executor removal does not
+  reverse this decline; accepted narrow holds remain voluntary undertakings.
 - **A universal final preparation receipt.** A keyed preparation already binds
   an outcome for a caller who wants that evidence; status describes the
   interrupted state truthfully as a retained private handoff with publication
@@ -868,7 +1181,9 @@ Each entry records why, so later readers recover intent rather than infer it.
   at materialization. A later re-capture of new work written into it is not
   added; abandon's acknowledgment with frozen identity suffices for a drifted
   recovery, and a re-capture operation would be an addition with no identified
-  need.
+  need under that earlier access arrangement. The restricted-manager direction
+  now requires checking that premise: the recovery paragraph above records the
+  unresolved preservation route. This decline has not been silently reversed.
 - **Charging an acknowledgment for a nonempty experiment HOME.** The
   acknowledgment would be of a nominal opportunity; the identity record serves
   the later reader without the step.
@@ -876,8 +1191,9 @@ Each entry records why, so later readers recover intent rather than infer it.
   configure, inventory and dispose of a second Git administration per gitlink,
   extend coverage, declarations and the closing schema, and decide the fate
   of auditor commits, in an area Git's own documentation calls incomplete for
-  linked worktrees; pinned copies plus an ordinary experiment grant serve
-  path-based checks and captured edits. Git-aware tooling inside a submodule
+  linked worktrees; pinned copies and permitted auditor tool use serve
+  path-based checks and captured edits. The successor has no separate Stewart
+  experiment grant or executor. Git-aware tooling inside a submodule
   is a fresh candidate, not a residue of this one.
 - **An auditor-attributed acceptance of the commission.** No auditor channel
   reaches Stewart before collection; the `start` declaration skeleton is
@@ -891,14 +1207,22 @@ Each entry records why, so later readers recover intent rather than infer it.
   client would gain attribution only.
 - **A command experiment kind.** It drops membership review and the firing
   control and makes the project at HEAD plus an unpinned toolchain the
-  executed identity; reopen only on a fielded failure of the shim route that
-  is not merely a cost.
+  executed identity. That was the reason for declining a second executor
+  interface alongside the reviewed shim. On 2026-10-25 the user removed the
+  dedicated executor from successor scope altogether; neither kind is ported.
+  A fielded failure of the old shim does not by itself reopen that decision.
 - **Condition records on supplemental inputs or workspace declarations.** The
-  hold on recorded resources is the one form; these would duplicate it with
-  weaker attribution.
-- **A right to receive distinct from the commission.** The manager owns the
-  workspace and the disk the report is written to; Stewart cannot withhold
-  what the manager reads without it, cannot deliver to anyone else, and
-  segregating at capture would break raw capture before interpretation. The
+  decline stands with its reason updated 2026-10-25: a narrow, attributed hold
+  on identified custody material supplies the disposal restriction. Separate
+  generic condition mechanisms would duplicate it and would not establish
+  which captured copies they constrain. The general manager-resource form is
+  deferred with that service.
+- **A right to receive distinct from the commission.** The commission remains
+  authority for the manager to receive the return; limiting direct access to
+  live audit material does not revoke that authority. The earlier rationale
+  that the manager could read everything directly describes the Python
+  baseline, not the successor's intended access boundary. No separate
+  receiving party or delivery service has been selected, and segregating at
+  capture would break raw capture before interpretation. The
   only truthful residue, an auditor-declared claim that the commission does
   not authorize receipt of something, is a declaration-schema question.

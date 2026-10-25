@@ -6,17 +6,26 @@ in `tests`. Runtime dependencies are the Python standard library plus the
 declared external Git/shell prerequisites. Use the distribution's `_util` byte
 contracts; never import a containing repository's helpers or configuration.
 
-[The coordinator handoff](COORDINATOR-HANDOFF.md) records the user's working
-expectations for agents taking the coordinating role across harnesses. It is
-written for the next coordinator, not for the user, who generally does not
-read it. Keep it short enough to begin from and complete enough that nothing
-critical must be re-learned; no handoff resolves that tension. When replacing
-it, neither carry elements forward mechanically, which blesses past decisions
-without attention, nor regenerate it wholesale, which loses good guidance.
-Re-examine what you carry.
+[The coordinator handoff](COORDINATOR-HANDOFF.md) supplies working continuity
+across coordinators and harnesses. It is written at the user's direction but
+deliberately without their direct supervision or edits; they generally do not
+read it. The coordinator owns what to include, revise or omit, without knowing
+who or what the next coordinator will be. The inherited account begins aging
+as soon as work resumes. Keep it useful to begin from and retain what would be
+costly to rediscover, while accepting that it cannot be complete or perfect.
+Neither carry it forward mechanically, blessing past choices without attention,
+nor regenerate it wholesale and lose useful guidance. Re-examine what you carry;
+maintaining that continuity does not require the user to approve the handoff.
 [CONTRACTS.md](CONTRACTS.md) states the behavior Stewart is decided to have,
 with each contract's implementation status and the reasons for declined
 changes; changes to Stewart's intended responsibilities are recorded there.
+
+The bundled Python manual, role files and issued handoffs describe the frozen
+implementation they ship with. Use CONTRACTS.md's decided departures when
+designing the successor; do not import the baseline's manager access, resource
+service, dedicated program executor or private-location inventory as successor
+requirements. Keep those
+bundled bytes unchanged while Python remains the comparison baseline.
 
 “Ask Riker for help” means prepare a request for the user to relay to a separate
 Project conversation. `riker/RIKER.md` describes the exchange and links the
@@ -58,10 +67,36 @@ repeated permission requests. The user retains authority over purpose, scope
 and changes to protected obligations. Use the harness's delegation and workspace
 facilities, with Codex or Claude as appropriate; no fixed staffing, provider split
 or development orchestration framework is required. Development workers do not
-inherit Stewart's manager/auditor workflow. Keep worker returns compact and
-verify the combined result. Shared check-ins normally cover stage outcomes,
+inherit Stewart's manager/auditor workflow. Conversely, the product does not
+inherit the development fleet's steering and supervision practices. Stewart
+serves a bounded commission and structured return; additional intervention
+facilities need a specific commission or custody reason, not parity with a
+harness-managed swarm. After product handoff, the manager receives a structured
+return through the agreed interface; live access is to be restricted. Rich
+selected context and investigative latitude remain compatible with a narrow
+question. Successor access should be defined by explicit grants, preferably
+without a private-location inventory; any fallback needs actual enforcement
+evidence. Exact stop/capture, exceptional-intervention and delivery interfaces
+remain for design; this guidance selects no new channel. Keep worker returns
+compact and verify the combined result.
+Shared check-ins normally cover stage outcomes,
 semantic decisions, evidence and unresolved questions in human-readable docs;
 the coordinator manages internal logistics.
+
+The successor direction separates recording a commission from promising its
+replay; the manager owns constructing another question. Assess the preference
+for zero or at most one audit retry facility under CONTRACTS.md, without treating
+existing code or tests as reasons to preserve a staged workflow. Stewart must
+still account for its incomplete custody operations through supported paths:
+agent-managers should not need to improvise repairs to private state. Recovery
+cannot grant another investigative execution or conceal uncertainty, and a
+family of retries is not simplified by renaming it recovery. The successor has
+no dedicated program executor or manager-operated release/run stages. Permitted
+auditor tool use remains bounded by its commission and actual access grants;
+captured execution reports retain their attribution. The possible audit restart
+interface remains undecided. Frozen-Python rules below concerning releases,
+child loading and attempt evidence protect that baseline and admitted legacy
+interpretation; they do not require an executor in the successor.
 
 Use an explicit interpreter with isolated startup (`-I`, plus `-B` where
 bytecode must stay unwritten) in development commands. Isolated mode ignores
@@ -80,6 +115,12 @@ property and an invariance case. An explanation remains a hypothesis until a
 comparison distinguishes it from its rivals. Qualify real harness enforcement
 separately from settings construction. Write useful CLI help, comments and
 failure messages along with implementation and tests.
+For studies of missing capture, extraction or deletion, keep an independent
+witness and controls through review under the evidence-run retention rules;
+an apparently passing run may conceal the omission being investigated. Record
+observer scope and timing, and keep the witness outside the disposal under
+test. A rescue from development evidence does not establish that the product's
+ordinary retrieval worked or grant authority to resume its audit.
 
 The custody rules are:
 
@@ -138,7 +179,8 @@ The custody rules are:
   explicit selections; importing it conveys custody, never execution permission
   or acceptance of its claims. Never fall back to a live worktree file.
 - **Recovery preserves failure.** While an audit is live, a failed preparation
-  keeps its session and every failure record. `close` is the only deletion: it
+  keeps its session and every failure record. In the frozen Python baseline,
+  `close` is the only deletion: it
   is explicit and gated, writes its closing record first, and removes only what
   the session recorded or its resource claims froze. An abandoned audit ID is released only under the
   mechanical rule that `init` and `prepare` reapply; otherwise a fresh
@@ -147,7 +189,13 @@ The custody rules are:
   completed receipt supports a partial/unresolved label; an invalid or unreadable
   record keeps its diagnostics. Failed release reads must not require success-only
   fields or produce capture associations and run suggestions.
-- **Removal is authorized by two records only.** A session's `CLOSING.json`
+  For the successor, working-environment retirement may precede final custody
+  close while identified captured material stays held. Removal still needs
+  explicit recorded authority; a hold grants no continued investigation, and
+  completed close cannot conceal unfinished custody operations. The retirement
+  interface and receipt representation must realize that distinction.
+- **Removal is authorized by two records only.** In the frozen Python
+  baseline, a session's `CLOSING.json`
   authorizes its recorded inventory. A resource's exclusive
   `resources/<id>/claims/<n>.json`, created by a gated close (audit close after
   its `CLOSING.json`, or `close --resource`), authorizes that resource and the
@@ -167,6 +215,20 @@ The custody rules are:
   descriptors, only the recorded device and inode, never across filesystems,
   and never let Git delete contents; drop a worktree's administration only
   after its marker names the lifetime. Doubt about a use keeps the resource.
+  The successor's general manager-workspace creation and disposal service is
+  deferred, with a lean toward isolating and possibly removing it. Successor
+  audit removal remains closing-record-authorized and excludes independent
+  manager workspaces. Legacy interpretation serves an identified consumer over
+  explicitly supported records; it creates no new resource-removal claims or
+  blanket compatibility obligation. Preserve original evidence and diagnostics;
+  interpreting it grants no authority to continue its old lifetime.
+  Frozen revalidation, descriptor removal, custody, access and live-dependency
+  protections remain within that removal scope. A narrow, attributed hold
+  covers a finite identified selection and the metadata/captured dependencies
+  required for its custody claims; references do not recursively enlarge it.
+  It blocks disposal until explicit attributed release; close and container
+  removal never release it.
+  Copying or relocating held material does not by itself discharge the hold.
 - **Selection is a reference the caller keeps.** Discovery and selection write
   nothing and choose nothing by recency, current directory or installation.
   Every operation revalidates a reference; a draft reference never selects a

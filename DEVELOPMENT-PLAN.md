@@ -20,6 +20,28 @@ an opening decision round before the Rust write path (stage 4 below). The user
 authorized that round's inventory and comparisons; whether Rust status starts
 alongside it has not been decided. A second proposal for a history-only
 profile, `planning/inputs/history-only.md`, joined the same round.
+The resumed discussion has since decided deferral of the general
+manager-workspace creation/disposal service and a narrow attributed hold on
+identified custody material with explicit release. It also agreed the
+handoff/closure direction and recorded the effectiveness/seamlessness tension
+below. The hold's subject is a finite identified selection with its required
+custody dependencies, without recursive expansion. Held-capture closure is provisionally resolved; explicit access grants
+are selected with delegated fallback judgment. A bounded legacy transition and
+supported evidence interpretation are accepted, without blanket successor
+compatibility with Python's operational model. The remaining architectural
+choices and implementation commission stay open.
+Live-testing retention is being considered to expose missed extraction or
+silent loss; the independent test archive is the current recommendation, not
+a production cache or post-close recovery promise.
+The user has now selected A.2 arrangement 1: no dedicated successor program
+executor or staged manager-operated release/run workflow. Permitted auditor
+tool use and custody of captured returns remain; execution reports retain
+their attribution. Recording a commission without promising replay is an
+agreed direction and candidate core commitment. Zero versus at most one audit
+restart convenience is still open. Supported resolution of Stewart's own
+incomplete operations remains central, especially for agent-managers. The
+user requested the next coordinator handoff after this decision; implementation
+remains uncommissioned.
 
 Checkpoint, 2026-10-24: the user decided D1 as six close rules plus
 abandon parity, decided D2, D3 (contingent on stage 3's submodule decision) and
@@ -166,7 +188,16 @@ from the manager's continuation. When a manager starts an audit, the user
 expects it to arrange a watcher and own how it is called back. Stewart should
 remain agnostic about these arrangements; its status design need not determine
 the surrounding harness's approval flow. These are relationship examples, not
-executed qualifications of any harness.
+executed qualifications of any harness. A callback/watcher here concerns
+notification of a return or failure, not authority for recurring inspection,
+live editing or steering of the inquiry.
+
+Clarified 2026-10-25: the bounded commission and structured return are a
+positive product choice for users who want narrow questions and answers.
+Surrounding launch and callback arrangements do not make routine steering or
+general agent supervision Stewart product objectives. The development fleet's
+practices do not determine the product relationship. Rich selected context
+and investigative latitude remain compatible with a narrow question.
 
 The policy for pre-return intervention remains open; the coordinator's
 suggested list of exceptions has not been adopted as an exhaustive rule.
@@ -551,6 +582,10 @@ seven declines with their reasons, and the three deferrals with their
 dependencies. The second wave's comparisons were not run before the decision;
 they remain available as baseline verification at implementation, and the
 record marks as predictions the facts they would establish.
+This is the stage-3 decision history. The 2026-10-25 resource discussion
+replaces the resource-attached hold with a finite custody-material hold,
+narrows successor legacy inspection and removes the dedicated executor and
+reviewed-shim route from successor scope; CONTRACTS.md carries the current account.
 
 **Exit:** a coherent desired custody arrangement, with additions accepted,
 declined, narrowed or deferred. Separate semantics ready for implementation
@@ -569,10 +604,15 @@ The Python implementation is frozen as the reference baseline: no further
 behavior changes, so that one stable baseline is the control for acceptance.
 `CONTRACTS.md` lists every decided departure and the previously accepted
 corrections the Rust implementation realizes. Sequence read-only operations
-first, beginning with status against the existing corpus of Python-written
-sessions, then the write path, then close; write the acceptance suite against
-the contracts and drive the CLI so it is language-agnostic. Close every live
-Python audit under Python before Rust closes anything.
+first, beginning with status, then the write path, then close. Use the existing
+Python corpus as comparison evidence for the selected custody claims; it does
+not require permanent product support for every old operational structure.
+Before commissioning status implementation, specify its consumer, supported
+record population and placement under the bounded evidence-reader contract.
+Write acceptance against the contracts and drive the CLI so it is
+language-agnostic. Close every live Python audit under Python before Rust
+closes anything; separately dispose of independent legacy undertakings before
+withdrawing their writer.
 
 The user has also asked for `GIT-ENVIRONMENT-NEEDS.md`, a document for
 Stewart's users, the people who prepare material in Git and operate it, with
@@ -614,9 +654,13 @@ decided principles:
 
 - **A. The admission rule.** Whether "exactly three responsibilities"
   (workspace access, historical inspection, custody capture) is exhaustive.
-  Applied strictly it would move or reclassify experiment execution, which
-  stage 3 made the route for project commands, and the manager-side resource
-  lifecycle in `holdings.py`; its other three tests (traceable authority, an
+  A.2 is decided: the successor omits the dedicated executor and its staged
+  release/run relationship, superseding the stage-3 project-command route.
+  That decision does not itself adopt A.1's formal admission test.
+  The general manager-side
+  resource lifecycle is now deferred under A.3, with its retained custody
+  duties separated; do not treat that deferral as still awaiting decision.
+  The other three tests (traceable authority, an
   intelligible record, no substituted judgment) restate decided principles.
 - **B. The workspace representation.** A materialized plain directory with no
   `.git`, as an optional profile or as the only workspace form, with history
@@ -655,6 +699,78 @@ Under either proposal every audit still needs a return area that collection
 captures, since the report and declaration are files; "no workspace" means no
 subject tree.
 
+**Execution decision, 2026-10-25: arrangement 1 selected.** The successor
+has no dedicated program executor. Omit the staged manager-operated
+construction/review/release/run service, invocation controls, child launcher,
+dedicated attempt output/HOME lifecycle and Stewart's own execution-witness
+assurances. The decision supersedes stage 3's reviewed project-command shim
+as a required successor route. Permitted auditor tool use remains within its
+commission and enforced grants; captured reports of execution retain their
+attribution. No external service is commissioned to reproduce the old workflow.
+
+The comparison and rejected alternatives remain in CUSTODIAL-CORE-FINDINGS.md,
+"A.2 comparison and decision: who owns program execution?" They are reasons
+for the choice, not optional feature plans. CONTRACTS.md's execution section
+owns the detailed dispositions. The user requested the next coordinator handoff
+after this decision; no runtime implementation was commissioned.
+
+Carry these consequences into the remaining plan and eventual implementation:
+
+1. Remove executor stages and their action offers from the successor commission.
+   Distinguish permitted auditor tools from a Stewart process witness; do not
+   promote captured logs, scripts or ledger rows into proof that Stewart ran
+   or observed their reported process. The manager's wish to ask another
+   question remains outside Stewart's remit.
+2. Specify the reader's consumers and supported records before starting Rust
+   status. Historical releases/attempts may remain evidence; their presence
+   creates no successor execution facility. A ledger-specific interpretation
+   or membership-review surface needs its own bounded consumer and scope.
+3. Keep interrupted capture, publication, requests and close central to the
+   successor design. A diagnostic alone does not discharge the interface
+   requirement: identify supported completion/disposition, or retain an explicit
+   acceptance gap. An agent-manager must not be expected to repair private
+   records, guess whether work happened or erase evidence to proceed.
+4. Inventory the specified legacy population and explicitly dispose of its
+   unfinished Python attempts, publications and resources before withdrawing
+   their writer. No such population has yet been inventoried. Do not mutate
+   legacy receipts, transfer old execution rights or port the executor as a
+   substitute for this bounded transition work.
+
+| Case to carry into design/qualification | Required account under the chosen arrangement |
+| --- | --- |
+| Auditor reports a program failure | Preserve the report and selected evidence as attributed material; do not claim a Stewart-observed process result. |
+| Manager loses a reply | Identify the existing operation and its available result within the custody lifetime/undertakings; a new audit is not recovery of the old operation. |
+| Capture or publication is interrupted | Preserve captured fragments and output identities; complete within verified authority or explicitly dispose of the undertaking. A new observation cannot recover bytes never captured. |
+| Auditor activity or legacy execution remains uncertain | Use the chosen stop/capture and legacy-disposition rules; no blind replay, inferred completion or agent-written replacement receipts. Removing the successor executor does not settle capture quiescence. |
+| Retirement or close is interrupted | Account for the frozen removal operation, remaining inventory, live uses and holds. Do not present completed close or require ad hoc manager cleanup. |
+
+Qualification must distinguish failure, successful control and invariance cases.
+Live agent testing should observe whether the supported interface dissuades
+private-state repair after failures or a lost reply, with an independent witness
+under the existing evidence-retention rules. These are planned checks, not new
+results. Existing request bindings and closing records are evidence for design,
+not a requirement to port every Python mechanism.
+
+The preference remains zero audit retries, with at most one restart-from-start
+convenience still open. Recording a remit does not itself promise replay; the
+manager owns constructing another question. The separately assigned next-
+coordinator goal is still to effect the lean against mutable helper-runtime
+recovery directories: those helpers are distinct from the removed executor.
+A.1, B to F, delivery, exceptional intervention, exact custody recovery and
+selected reader formats remain open. The HOME/manual experiment-retry parts
+of R1 now have no successor facility to design; their legacy treatment remains.
+
+The comparison was checked in `.scratch/resource-decisions/validation-14.json`
+and its `.log`. The decision reconciliation and requested handoff are checked
+in `.scratch/resource-decisions/validation-15.json` and its `.log`; zero pytest
+nodes selected and zero behavioral comparisons run. Python production source
+remains frozen. Git-metadata restrictions blocked earlier commit attempts;
+the user subsequently requested committing the accumulated changes. The
+ordinary and elevated staging attempts both failed creating `.git/index.lock`
+with `Operation not permitted`; no commit was created. The attempt and final
+documentation check are retained in `.scratch/resource-decisions/commit-attempt-01.json`
+and its log. The coordinator handoff records the resulting version-control state.
+
 The round runs one inventory with two projections: the Git opinions table for
 `GIT-ENVIRONMENT-NEEDS.md`, generated by a tracked script, and Stewart's
 privileged operations classified against the admission rule. Focused
@@ -672,9 +788,10 @@ account for decision is `CUSTODIAL-CORE-FINDINGS.md`; decisions go to
 several of its comparisons presuppose linked worktrees, which decision B may
 replace, and they remain available at implementation.
 
-Rust status reads only Python-written sessions and does not depend on these
-decisions; it may start alongside the round at the user's instruction. The
-Rust write path waits for decisions A to F.
+Rust status may start alongside the remaining round at the user's instruction,
+after its supported consumer/record scope is made concrete. Interpreting
+legacy execution evidence does not require or authorize a successor executor.
+The Rust write path waits for the remaining A.1 and B to F decisions.
 
 The round's first wave ran on 2026-10-25: an operations inventory and a
 workspace and custody-location investigation (source only), the Git opinions
@@ -690,11 +807,356 @@ disposition of the rest. Generator runs after review: `git-opinions-02` and
 `-03` failed on test-helper naming (kept as records), `-04` and `-05` passed
 20 of 20.
 
-Awaiting the user: decisions A to F; the two proposed completions under B
+Awaiting the user: the remaining decisions under A to F (the manager-service
+and custody-hold decisions are recorded below); the two proposed completions under B
 (refusing an unrepresentable tree, one name normalization in capture); the
 leads on a concluded close over a failed preparation and on the recorded
 pause; the guide's statuses; and whether Rust status starts alongside. Nothing
 is in flight.
+
+Discussion resumed, 2026-10-25: the user had little opportunity to confer with
+the previous coordinator before the handoff. A to F are being reviewed as
+proposals. The user expressly kept manager resource management unsettled and
+commissioned a focused account of its interdependencies with the intended
+simplifications, allowing connections to be kept, ignored, eliminated or
+strengthened as appropriate. The source-based account is in
+`CUSTODIAL-CORE-FINDINGS.md`, A, "Resource management: dependencies under
+review". It separates manager creation/disposal from live-dependency and access
+protection, durable output records, holds, audit closure and recovery. Existing
+code and test scenarios were read; no new comparison was run. The initial
+account made no contract change; the decisions below followed discussion.
+A.2 was subsequently decided as no dedicated successor executor, above. No
+production source changes, implementation or Rust-status commission is in force.
+
+The user then requested a classification of those seven connections by
+conversation and experimentation. The account recommends conversation for
+1 (Git responsibility), 5 (closure authority) and 6 (holds); experiment then
+design for 2 (sharing, if its cost motivates the choice) and 4 (access
+enforcement); and design then experiment for 3 (publication layout) and
+7 (containment, recovery and transition). These are proposed inquiry routes;
+no experiment has been commissioned or run in this discussion.
+
+Preferred direction raised while discussing connection 5: after the manager
+hands an audit to Stewart, the manager's access to the auditor's material
+should be very restricted and the audit process should remain abstract to
+them. Missing information can surface in the auditor's structured return.
+The coordinator's example of an unmerged change concerned a separate manager
+preparation worktree, but did not make that distinction sufficiently clear.
+The resulting design question is whether handoff can end dependence on that
+mutable preparation environment, with close retiring Stewart-owned audit
+facilities and manager workspaces having a separate lifetime. This is a
+direction the user subsequently supported for connection 5. The detailed
+closure and access contracts remain to be worked out. Enforced manager-side
+separation, stopping/collection under that boundary, and the treatment of
+shared dependencies need evaluation.
+
+The user requested its implications for 1 and 6. The resulting proposals in
+the findings distinguish audit allocation from an optional manager-workspace
+service, and consider attaching narrowly scoped holds to identified custody
+material independently of that service. Restricted manager access also means
+that any promised opportunity to keep material must be available through
+Stewart's supported custody interface; a remedy requiring direct access to
+the live auditor workspace would need revision.
+
+**Decided, 2026-10-25 (resource discussion items 1 and 6):** defer the general
+manager-workspace creation and disposal service, with a lean toward isolating
+and possibly removing it rather than advancing it; retain a narrow,
+attributed hold on identified custody material with explicit release,
+independently of that service. Audit-owned allocation remains in the core.
+This is not a blanket deferral of access/dependency protections or custody
+records currently implemented in the resource subsystem. The supported
+handoff direction for 5, these decisions, and their reasons are recorded in
+`CONTRACTS.md`. Its principle, hold contract, condition-record decline,
+status/resource ownership rows and close scope have been reconciled; the
+resource-claim rule in AGENTS.md and CLAUDE.md distinguishes frozen Python
+from the successor. The Git environment guide reflects the manager-service
+deferral, while its other statuses remain for decision. No implementation
+or experiment has been commissioned.
+
+**Tension to preserve:** effectiveness favors seemingly transparent auditor
+access to the materials used to construct the question, conditioned by
+manager selection. Seamless operation favors an isolated, constrained,
+static slice without nesting or recursive expansion. These can trade off in
+unexpected ways. CONTRACTS.md records this as a design principle and
+VISION-PLAN.md carries it into the method of inquiry. Selection, material
+representation and custody promises must be evaluated together; neither
+maximum isolation nor maximum access is the default objective.
+
+Still open within this direction: precise manager access and its enforcement;
+the supported identities for holds and copy/transfer treatment; the lifecycle
+schema and qualification for the provisional resolution of 3; which
+dependencies can actually end at handoff; and legacy resources and claim
+recovery during transition. A.1, B to F, the two proposed completions, other
+leads and remaining Git-guide statuses are not approved by these resource
+decisions. A.2 was subsequently decided separately, above.
+
+On connection 2 the user expressed a **strong lean toward shared immutable
+material**. It is the preferred candidate to examine, not executed
+qualification or authority to depend on mutable manager files. For connection
+3, the user **provisionally resolved keeping held custody with the audit while
+its working environment retires** on 2026-10-25, with final custody close
+waiting for explicit release and the other closing conditions. This avoids
+assuming a separate continuing service after audit close. The lifecycle schema and sharing
+mechanism remain undecided. No experiment or implementation is commissioned.
+
+**Direction selected for 4, 2026-10-25:** pursue access defined by explicit
+grants to selected audit material and required facilities, preferably
+eliminating Stewart's responsibility for a private-location inventory. The
+user delegates judgment over a necessary fallback; routine mechanism choices
+within the existing access obligations need not return for another decision.
+Qualification must establish the boundary, including newly created private
+locations, shell and file-tool access, selected material in a shared store,
+and the separate manager-side restriction. No successor enforcement result
+is established. The later A.2 decision omits the dedicated experiment child;
+permitted auditor tool use still needs actual access/effect boundaries.
+CONTRACTS.md records the conditional direction and fallback limits.
+
+The remaining discussion of 7 concerns separate audit ownership, the lifetime
+of shared material through final close, and bounded recovery from interrupted
+custody work. The findings recommend avoiding nested independently owned
+lifetimes, making the last shared use and any independent storage lifetime
+explicit, and retaining failure records until the work has an explicit
+disposition. Legacy Python obligations receive a separate transition inventory
+and disposition under the existing writer-continuity default. No new layout,
+garbage-collection service or migration mechanism is selected by this briefing.
+
+The user accepted the bounded transition strategy with delegated judgment,
+after raising transition itself as a possible source of abstraction leaks.
+The findings record a finite procedure over a specified legacy record
+population: distinguish completed evidence from unfinished undertakings, stop
+admitting new work there at cutover, use authorized old writers to settle what
+can be settled, and explicitly dispose of the remainder without automatically
+porting old resource management. No actual legacy population has yet been
+inventoried in this discussion. This is a strategy, not an executed transition
+or a new successor service. CONTRACTS.md corrects the earlier claim that closing
+all Python audits makes continuity cost nothing: independent claims and partial
+requests can remain. Any admitted reader's scope and cost remain explicit.
+
+The user reconsidered the reader obligation and accepted the narrower direction
+on 2026-10-25. CONTRACTS.md now protects supported custody interpretation across
+implementations, requires a named consumer and bounded record population for
+legacy support, and permits transition-only inspection outside the ordinary
+successor surface where that suffices. It replaces the unconditional legacy
+resource-reporting promise and distinguishes preservation from interpretation
+and from authority to operate. AGENTS.md carries the same boundary. Existing
+source separates reading from writer authority but couples status to operational
+layout, resource evaluation and command construction; the retained status
+inquiry already demonstrated one command-rendering failure blocking the view.
+No new comparison ran. Status remains first, with consumer/record scope to be
+specified before implementation; Python fixtures are evidence, not a permanent
+compatibility promise. Cross-writer export remains separately deferred.
+
+The findings now give a current disposition for all seven resource questions.
+The user accepted 6's finite explicit held selection, including metadata and
+captured dependencies required for the custody claims Stewart undertakes;
+CONTRACTS.md records it. Representation and copy/transfer mechanics remain
+design work. For 2/7 the user remains unsure about caching, identifying risks
+in live testing: managers missing extraction and working around Stewart to
+recover material, and silent destruction/withholding going undetected because
+the evidence disappeared. These are concerns to test, not observed failures.
+
+The coordinator revises the initial no-cache recommendation for live testing:
+preserve an independent immutable test archive outside the disposal being
+exercised, compare pre-deletion audit material with normal captures and the
+manager's actual retrieval opportunities, and keep any rescue distinct from
+a successful product outcome. Record observer scope/timing rather than assume
+complete coverage; do not make a hold prevent the close under test. Archive
+retirement follows the development evidence rules. This is a proposal for
+development instrumentation, not a production cache or recovery-window
+decision. The production last-use policy remains open. Items 1, 3, 4 and 5
+have direction sufficient to guide their remaining design
+and qualification, without approving the separate A.1 or B–F proposals. A.2's
+later no-executor decision is recorded above.
+
+The user's discriminating test is that a hold must not permit the manager to
+continue the audit or permit dangling operations after close. Elaborate
+facilities during a hold are a warning to examine the commission, capture and
+closure boundaries. CONTRACTS.md now distinguishes requesting close from
+completing it: obligations are not cancelled by the request, and completion
+must not conceal unfinished operations. The findings retain proposed cases
+for testing this distinction, including independent completed publications
+and another audit's use of shared bytes. A failed close remains unfinished;
+recovery authority does not become investigative authority.
+
+The broader product guidance now treats the bounded commission and structured
+return as a positive choice for Stewart's intended users, rather than a reason
+to reproduce general harness supervision. This distinction is in CONTRACTS.md,
+VISION-PLAN.md, the reciprocal development/product boundary in AGENTS.md, and
+the root README's mission. It does not decide exceptional intervention or
+delivery, or remove current recording interfaces. `launch`/`message` record
+acknowledgments; `resume` releases paused writers. Their names alone do not
+establish a general agent-supervision service.
+
+Documentation validation is retained at
+`.scratch/resource-decisions/validation-01.json` and its `.log`: generated
+table freshness and generator coverage both exit 0; `git diff --check` and
+the production-source freeze comparison pass; AGENTS.md and its CLAUDE.md
+alias agree; no new guide identifier citations were introduced; 18 source/test
+anchor groups resolve. No pytest nodes selected and no new comparisons run.
+The record stays with this account under DEVELOPMENT.md's retention rules.
+The subsequent product/hold guidance check is retained in
+`.scratch/resource-decisions/validation-02.json` and its `.log`: whitespace,
+production-source freeze and the guidance alias checks pass. The recording
+meanings of `launch`/`message` and paused-writer `resume` were checked in source;
+no pytest nodes were selected and no behavioral comparisons were run. At that
+checkpoint Git metadata was unwritable, so the changes were saved but
+uncommitted; later commit disposition is recorded in the handoff.
+The provisional resolution of 3 and numbering alignment (3 publication,
+4 access exclusion) were checked with `git diff --check`; its output is kept
+in `.scratch/resource-decisions/validation-03.log`. The selected direction for
+4 and narrowed account of 7 received a documentation-only check retained in
+`.scratch/resource-decisions/validation-04.json` and its `.log`; no pytest
+nodes selected or behavioral comparisons run. Item 7's recommendations remain
+for discussion.
+The transition clarification's whitespace and production-freeze checks are
+retained in `.scratch/resource-decisions/validation-05.json` and its `.log`;
+zero pytest nodes selected and zero behavioral comparisons run.
+The reader assessment's documentation check is retained in
+`.scratch/resource-decisions/validation-06.json` and its `.log`; zero pytest
+nodes selected and zero behavioral comparisons run.
+The accepted reader scope and current seven-item account were checked in
+`.scratch/resource-decisions/validation-07.json` and its `.log`; zero pytest
+nodes selected and zero behavioral comparisons run. The production source
+remains frozen. Git metadata was still unwritable at that checkpoint.
+The accepted hold subject and live-testing retention discussion are checked in
+`.scratch/resource-decisions/validation-08.json` and its `.log`; zero pytest
+nodes selected and zero behavioral comparisons run.
+
+### Session-scoped agent-guidance reconciliation, 2026-10-25
+
+The user requested a review only against decisions from this engagement, not
+a global stale-document cleanup. The current stock is the seven-item table in
+CUSTODIAL-CORE-FINDINGS.md plus the product relationship, bounded transition,
+evidence-reader scope and effectiveness/seamlessness principles in CONTRACTS.md.
+Strong preferences, provisional resolutions, accepted directions and unexecuted
+recommendations remain distinct; production caching and a post-close recovery
+promise have not been decided.
+
+Reviewed root AGENTS.md/CLAUDE.md, COORDINATOR-HANDOFF.md, the two active plans,
+CONTRACTS.md, README.md and the Git environment guide; bundled role routing,
+maintainer/auditor guidance, protocols, question recipes, manual and the issued
+handoff text; Riker's current guidance/template; and .tmp's local guidance.
+The captured inquiries and external proposals were treated as historical
+evidence, not silently updated instructions. No session-related conflict was
+found in the Riker routing or .tmp's stated temporary-storage purpose.
+
+Corrections made:
+
+- Reconciled the coordinator handoff with the completed resource/hold/reader
+  decisions, restricted manager relationship, unresolved cache policy and
+  current working-tree state. Removed the stale separate-briefing-agent route
+  and qualified prior fleet expectations by their commissioned work.
+- General agent guidance now distinguishes the frozen bundled Python workflow
+  from successor obligations, includes explicit grants and the finite hold
+  subject, and separates environment retirement from final custody close.
+- Preserved the reciprocal development/product boundary and clarified that a
+  watcher/callback is not permission for recurring inspection or steering.
+- Added scoped evidence-retention guidance for omission/deletion studies,
+  without establishing an implemented archive or production recovery service.
+- Labelled the root README workflow as current Python; updated the active
+  inquiry routing and historical stage-3 hold account so they do not reopen
+  settled resource choices. The frozen bundled bytes remain unchanged.
+
+Remainder requiring substantive design or a decision:
+
+| ID | Guidance at issue | Why its disposition is not merely editorial |
+| --- | --- | --- |
+| R1 | CONTRACTS.md's drifted-recovery route assumes the manager has taken what it wants; experiment HOME advice also assumes direct taking. The manual additionally offers manual output-area cleanup before another attempt. | The user accepts a lean toward omitting successor runtime-recovery materialization; effecting that direction in the larger plan is the next coordinator's goal, below. Its removal is not yet decided. A.2 removes the executor, so its HOME and manual retry cleanup need no successor interface. Legacy evidence and unfinished operations retain their transition disposition. |
+| R2 | The baseline manual's post-launch ruling/message example and role instructions to stop/coordinate are not a settled successor intervention protocol. | The narrow commission/return relationship is decided, but exceptional intervention, stop/capture and return delivery are not. Keep recording acknowledgments distinct from delivering or authorizing intervention; do not delete all such records or assume live steering survives. |
+| R3 | CUSTODIAL-CORE-FINDINGS.md D's proposed retention-promise decline equated a chosen undertaking with mandatory retention before every close. | A narrow voluntarily recorded hold is accepted. Establish what the proposed commission promise adds beyond that hold and completed publication before accepting or declining it. The unsupported equivalence is removed; no new retention promise is approved. |
+
+Hold/copy/transfer representation, exact retirement receipts, selected reader
+formats and the shared-store last-use rule remain declared design work, rather
+than hidden contradictions repaired by inventing APIs. The independent live-test
+archive is still a development recommendation; its concrete scope/retirement
+and production cache policy remain open. Guidance for those future interfaces
+must be updated with their qualified implementation, not asserted by changing
+the frozen Python role files now.
+
+Review inventory and selected remaining excerpts are retained in
+`.scratch/resource-decisions/guidance-review-01.json`. Documentation checks are
+retained in `.scratch/resource-decisions/validation-09.json` and its `.log`;
+zero pytest nodes selected and zero behavioral comparisons run. The review
+updates existing coordinator guidance; it does not hand off the coordinating
+role or commission runtime implementation.
+
+The user clarified the coordinator's authority over that handoff: it necessarily
+ages as soon as it is taken up, was itself written by a coordinator working from
+an earlier handoff, and is deliberately not supervised or edited by the user.
+Continuity and change both matter. The coordinator selects what belongs for an
+unknown next coordinator, accepts imperfection, and need not seek approval of
+that selection. AGENTS.md and the handoff introduction now state this directly.
+
+R1's next briefing isolates runtime-recovery materialization from recovery of
+audit results. The existing operation creates a fresh directory from captured
+Stewart helper assets for inspection or a separately authorized fresh assignment;
+it never retargets the live audit's commands, scope or release (`runtime.py:298-304`).
+The user accepted the coordinator's lean toward omitting this extra mutable
+materialization: retain the evidence and provide bounded inspection/authorized
+fresh reuse, rather than automatically add a rescue-and-recapture service for
+changes written into the reconstructed directory. Removal itself is not yet an
+accepted contract change.
+Legacy recoveries still require their bounded transition disposition, and an
+unexpected change cannot simply be declared impossible or discarded. A.2's
+later no-executor choice removes the successor HOME/manual retry portions of R1.
+
+**Goal assigned to the next coordinator:** effect that lean in the larger
+program. Identify the actual consumers of helper-code materialization, establish
+whether bounded captured-asset inspection and fresh authorized reuse suffice,
+and reconcile the resulting scope across the reader, execution, close and
+legacy-transition commissions. Carry forward any necessary unmet use explicitly;
+do not invent a rescue service to protect an inherited directory mechanism.
+Return any required change to protected obligations for decision. This assigns
+planning work, not runtime implementation. A.2's executor removal is now
+decided separately; supplied helper-runtime materialization is still distinct.
+
+The handoff-authority clarification and R1 briefing account are checked in
+`.scratch/resource-decisions/validation-10.json` and its `.log`; zero pytest
+nodes selected and zero behavioral comparisons run.
+
+The R1 execution issue that led to the A.2 decision was another invocation of a released script
+after a process or evidence-production failure, not another audit sought because
+its answer was intellectually unsatisfying. The user explicitly placed the
+latter outside Stewart's remit. The coordinator withdraws the preceding
+briefing's proposal to prefer a fresh commission for another investigation as
+a resolution of this issue: it conflated the manager's investigative judgment
+with the executor's mechanics.
+
+Frozen Python has an optional construction/review/release/run flow. The auditor
+constructs a script and stops; the manager reviews and releases exact bytes;
+`run` reserves that release once and records the subprocess and its evidence.
+Nonzero exit, timeout and malformed output are concrete examples of recorded
+problems, not judgments of the audit answer. A further invocation needs a new
+release consistent with the assignment (`experiment.py:382-418`). Release also
+requires an absent output area (`experiment.py:276-286`) and offers collection,
+verification and manual removal/movement before another release, or a fresh
+audit. The manual describes this at `src/stewart/resources/README.md:1705-1718`.
+This output-area constraint applies after a successful run too. No change of
+question, script or auditor is necessary to expose it.
+
+The user's preference for at most one audit retry facility, potentially none,
+led to review of the whole execution relationship and selection of no dedicated
+successor executor. No local output retry/cleanup or dedicated HOME retrieval
+service is planned. A refusal before launch, an observed child failure and an
+uncertain outcome remain distinct in legacy evidence; none licenses replay.
+The legacy HOME category is unchanged and does not apply to other audit material.
+
+The accepted lean, next-coordinator goal and retry briefing are checked in
+`.scratch/resource-decisions/validation-11.json` and its `.log`; zero pytest
+nodes selected and zero behavioral comparisons run.
+
+The user's scope clarification and corrected execution account are checked in
+`.scratch/resource-decisions/validation-12.json` and its `.log`; zero pytest
+nodes selected and zero behavioral comparisons run.
+
+The user authorized recording the retry preference and revising planning after
+the discussion-only turn. CONTRACTS.md records the provenance/replay direction
+as a candidate core commitment and clarifies responsibility for incomplete
+operations. The vision, agent guidance, handoff and A.2 recommendation now
+reflect the decision sequence. These documentation changes are checked in
+`.scratch/resource-decisions/validation-13.json` and its `.log`; zero pytest
+nodes selected and zero behavioral comparisons run. Runtime source is frozen
+and no implementation is commissioned by these changes.
 
 ## 5. Optionally implement the revised custody arrangement in Rust
 
