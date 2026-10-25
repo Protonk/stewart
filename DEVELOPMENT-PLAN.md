@@ -676,6 +676,17 @@ Rust status reads only Python-written sessions and does not depend on these
 decisions; it may start alongside the round at the user's instruction. The
 Rust write path waits for decisions A to F.
 
+The round's first wave ran on 2026-10-25: an operations inventory and a
+workspace and custody-location investigation (source only), the Git opinions
+generator `scripts/git_opinions.py` with its tests (`git-opinions-01`, 4 of 4
+passed), installed-wheel comparisons (`comparisons-01` to `-04`, the last
+selecting 23 nodes, all passed, wheel `43da134c…`) and the Git-only
+history-view probe (`probe-05`). The account for decision is
+`CUSTODIAL-CORE-FINDINGS.md`, recommending a disposition for each of A to F;
+`GIT-ENVIRONMENT-NEEDS.md` holds the generated table, the narrative and the
+proposed status of each class of rows. Both go to a fresh independent reviewer
+before the user decides.
+
 ## 5. Optionally implement the revised custody arrangement in Rust
 
 The user chooses which authorized semantic changes and additions merit
