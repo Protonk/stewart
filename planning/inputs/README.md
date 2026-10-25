@@ -15,6 +15,9 @@ does not commission that work now.
 - [Custodial core](custodial-core.md) preserves verbatim an external proposal
   for a narrow three-responsibility custodial core and a files-only audit
   profile, relayed by the user on 2026-10-25.
+- [History only](history-only.md) preserves verbatim a second external
+  proposal, for an audit profile with history inspection and no workspace,
+  relayed by the user the same day.
 
 The earlier `docs`/`request` Click implementation and its follow-up note are
 available at `archive/2026-10-23/click-integration`. Other unmerged work remains
