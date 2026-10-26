@@ -72,7 +72,20 @@ consumers. Its three proposed completions concern decisions inside `close`,
 selected report availability beyond export, and portable original-question
 context. None is yet adopted. The bounded Rust package reader assignment is
 prepared, not commissioned; its placement and concrete publication, stopping
-and delivery routes remain open. CONTRACTS.md and Python remain unchanged.
+and delivery routes remain open. The initial account changed neither contracts
+nor Python.
+
+Subsequent direction, 2026-10-25: the user accepted adding
+`close --graceless-exit` and explicitly recording the control arrangement as
+debt to pay. CONTRACTS.md records the branch; RETURN-CUSTODY-DESIGN.md owns
+the unresolved control work. The command may be launched by the user or by
+an agent, including the manager agent; a printed command does not imply a
+human launcher. Bind the actual run and stopping authority across these paths
+and qualify what termination ends before promising support. Python remains frozen.
+The user's next discussion is a possible radical simplification of the rule
+for work outside the stable published answer. Hear that proposal before
+advancing the current recommendation; no change to that obligation is yet
+decided.
 
 Checkpoint, 2026-10-24: the user decided D1 as six close rules plus
 abandon parity, decided D2, D3 (contingent on stage 3's submodule decision) and
@@ -680,6 +693,12 @@ publication alone cannot resolve: work outside the selected return still
 needs a working preservation opportunity or an authorized named surrender
 before removal. A digest or a stable answer also does not establish stopped
 activity. The candidate snapshot mechanism has no qualified route yet.
+
+The accepted graceless-exit branch now adds a specific obligation to resolve
+the launch/control arrangement. Its task-flow and contract edits are checked
+in `.scratch/return-custody-design/validation-02.json` and its `.log`: zero
+pytest nodes selected and zero behavioral comparisons run. This is a recorded
+design commitment with qualification outstanding, not an implemented flag.
 
 Source review and revalidation of 21 retained export-comparison observations
 are recorded in `.scratch/return-custody-design/source-review-01.json` and

@@ -623,6 +623,23 @@ their separate manager-facing modes are not a requirement for the successor.
 Exact stop/capture, disposition and continuation mechanics remain open. No
 runtime implementation is commissioned by this direction.
 
+**Graceless exit direction accepted, 2026-10-25.** Include
+`close --graceless-exit` to request termination of the audit's execution
+without waiting for a cooperative handback or final report. Preserve obtainable
+partial work and account for capture gaps, including the possible loss of
+unwritten work, then continue the same closing operation. The flag supplies
+no blanket discard, hold release or surrender of a preservation undertaking;
+the existing custody and removal obligations still govern completion.
+
+This direction accepts an unresolved control obligation. The launch command
+may be executed by a person or by an agent; issuing it does not determine who
+starts, controls or later stops the audit. Design and qualify a binding from
+the audit lifetime to its actual execution, the authority and means to stop
+it, and evidence of what termination ended, including ongoing tool activity.
+The present auditor is Claude Code, but neither the launcher actor nor a
+particular control arrangement is fixed by this decision. No termination
+mechanism or runtime implementation is established here.
+
 Decided 2026-10-24. **Decided, departure.** The Python close at `6582df2` is the
 control; `CUSTODY-AUDIT-FINDINGS.md` at `356dc58` records its behavior in the
 executed comparisons these rules answer. The rules apply to close's own

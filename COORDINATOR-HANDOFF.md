@@ -24,8 +24,24 @@ a very spare, human-readable closing flow. Start discussion from
 [MANAGER-CLOSE-FLOW.md](MANAGER-CLOSE-FLOW.md), the proposed manager task flow;
 [RETURN-CUSTODY-DESIGN.md](RETURN-CUSTODY-DESIGN.md) carries the supporting
 cases, source inventory, authority boundaries and pending reader assignment.
+That initial design account was committed as `b4bc793`.
 
-The first decision is how `close` carries outstanding gap, follow-up,
+The user subsequently accepted a `close --graceless-exit` branch and asked
+that its unresolved control arrangement be recorded as debt we must pay.
+CONTRACTS.md now records that direction; the short flow includes the branch,
+and RETURN-CUSTODY-DESIGN.md names the control work. The present auditor is
+Claude Code, but the command can be run by the user or by an agent. The
+original arrangement let the user run and manage the audit while the manager
+agent did other work; an agent can also execute the supplied command itself.
+Do not mistake command rendering for a fixed human launch path or a reliable
+control handle. No controller, termination mechanism or executor is selected.
+
+**Next conversation:** the user wants to discuss "a stable published answer
+does not account for other work left in the environment" and may propose a
+radical simplification. Hear it before advancing the current recommendation.
+The existing obligations remain decided until that discussion changes them.
+
+Other open decisions include how `close` carries outstanding gap, follow-up,
 preservation, surrender and hold-release decisions without separate lifecycle
 commands or weakened authority. The other proposed completions are ordinary
 selected-report availability with surrounding damage and original-question
@@ -33,8 +49,9 @@ context in new portable results. None has been adopted. Publication, stopping
 and delivery still need an actual admitted route and qualification; the
 candidate snapshot mechanism is a design requirement, not enforcement evidence.
 No runtime implementation, Rust code, new behavioral comparison, harness
-qualification or worker dispatch occurred. CONTRACTS.md remains unchanged by
-this design session. The larger open architecture questions below remain.
+qualification or worker dispatch occurred. Only the graceless-exit direction
+has subsequently been added to CONTRACTS.md. The larger open architecture
+questions below remain.
 
 The most consequential new user direction is **one `close` command that closes
 the audit regardless of state**. The user's words were "My STRONG inclination

@@ -10,6 +10,10 @@ current Python commands.*
    available report and supporting material, identifying incomplete work and
    capture gaps. You do not enter the auditor's working environment.
 
+   **Without a handback:** `close --graceless-exit` requests termination without
+   waiting for a final report. Stewart preserves obtainable partial work and
+   continues closing under the same custody obligations.
+
 3. **Keep what you want to survive.** Stewart offers a working way to save it;
    reading the answer alone does not save it beyond close. You may keep nothing
    where existing obligations allow. Resolve any outstanding choices Stewart

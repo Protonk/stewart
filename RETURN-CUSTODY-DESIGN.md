@@ -2,8 +2,9 @@
 
 Design proposal, 2026-10-25. The [manager task flow](MANAGER-CLOSE-FLOW.md)
 is the short account for discussion. This account supplies its identity,
-authority and evidence boundaries. CONTRACTS.md remains the decided behavior;
-the proposals here neither amend it nor commission implementation.
+authority and evidence boundaries. CONTRACTS.md records the decided behavior,
+including the subsequently accepted graceless-exit direction below. The other
+proposals remain open; no runtime implementation is commissioned.
 
 ## Ordinary return and early close
 
@@ -28,6 +29,34 @@ final declaration after access is ended. No new accepted-answer receipt is
 proposed. Where the existing contract requires disposition of gaps or a
 follow-up request, the close interaction still obtains and binds that judgment;
 putting it inside `close` does not silently remove it.
+
+## Graceless exit and the control arrangement still owed
+
+**Direction accepted, mechanism unresolved.** `close --graceless-exit`
+requests termination without waiting for the auditor to cooperate or prepare
+a final report. Stewart preserves obtainable partial work and continues the
+same closing operation. Loss of unwritten work remains possible and capture
+limits stay explicit. The flag does not release holds, surrender preservation
+undertakings or authorize blanket disposal of uncaptured material.
+
+The present auditor is a Claude Code agent. The user's original arrangement
+had a manager agent supply a command, which the user ran while managing the
+audit and freeing the manager agent to do other work. An agent can also run
+that same command itself. These are both relevant launch paths. The frozen
+launcher renders a command; that fact establishes neither a human launcher
+nor which participant will retain control. Human-auditor accommodation is a
+separate question from who summons this agent auditor.
+
+**Accepted design debt:** before treating the branch as supported, select and
+qualify a control arrangement across those launch paths. It must bind the audit
+lifetime to the actual run, identify who has stopping authority and a usable
+means to exercise it, and account for what termination actually ended,
+including tool activity and descendants. Establish how that control survives
+the launching participant moving on or losing its reply, and what supported
+action remains when control or stop evidence is unavailable. Do not infer
+control from the identity of whoever printed the command. No wrapper, service,
+process model or new executor has been selected. Paying this debt is part of
+realizing the accepted branch, not an optional later enhancement.
 
 ## Publication and the material outside it
 
