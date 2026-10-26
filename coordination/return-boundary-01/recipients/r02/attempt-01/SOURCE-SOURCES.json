@@ -1,0 +1,47 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r02/SOURCE-BRIEF.md",
+      "sha256": "3d565558b4693e6d9ad08e4a8160e20e0d807544a2ddff09e48fcb6d4697c32a",
+      "scope": "Read in full this phase; exact selected-source grant, attribution and output restrictions."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A1/TEST-COVERAGE.md",
+      "sha256": "e0bcba4a2d668e98d23625e9c0bd9f10ba05ec01d7867fa843198a0e824976f5",
+      "scope": "Read in full without truncation; selected target tests/test_close.py lines 105-151, 208-245, 652-661 and 761-770. Inspected written test structure and assertions, not execution. Referenced helpers and fixtures outside excerpts were not opened."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A1/REGISTRATION.md",
+      "sha256": "eb1d13c67a660ef33d43015f4f00339383d772f60a1a2cb82d30dd45a051bab2",
+      "scope": "Read in full without truncation; selected target tests/test_repository.py lines 269-283, src/stewart/close.py lines 243-258, 378-427 and 475-497, src/stewart/_repository.py lines 257-262. Directly inspected local dataflow and written test controls; omitted helper implementations, retry dispatch, _read and _finish not supplied or read."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r02/attempt-01/FIRST-PASS.md",
+      "sha256": "91126b48210b40474cb2fbd2a71df8fab4fb0b0ba182ad4179e4410e79bbd97e",
+      "scope": "Earlier frozen answer retained in conversational context; bytes read this phase for SHA256 bookkeeping only, not modified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r02/attempt-01/SOURCES.json",
+      "sha256": "6a651797524ab0d14050dc7de5d13a939af1d8abfe085b3dd73446cfd2feb478",
+      "scope": "Earlier frozen ledger retained in conversational context; bytes read this phase for SHA256 bookkeeping only, not modified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r02/attempt-01/SUPPORT-RESPONSE.md",
+      "sha256": "2705d2731ceffa59475b07947aa48e14121c1c873cfe7063d36e991922c27510",
+      "scope": "Earlier frozen support response retained in conversational context; bytes read this phase for SHA256 bookkeeping only, not modified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r02/attempt-01/SUPPORT-SOURCES.json",
+      "sha256": "eabe81024dd107d849e39a2d903a11287684aeddfe414dd38d3fd290fe9ad437",
+      "scope": "Earlier frozen support ledger retained in conversational context; bytes read this phase for SHA256 bookkeeping only, not modified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r02/attempt-01/PROGRESS.md",
+      "sha256": "36ae5e1568894986855a5f67ff4ee1b3ee21a0fac66089e4580657d46d40f80a",
+      "scope": "Own status output updated to source-phase ready and read to hash final status."
+    }
+  ],
+  "outside_context": "Earlier exact-grant documents, the additional attributed passage, and both frozen responses remain in conversational context; their earlier read scopes are recorded in unchanged SOURCES.json and SUPPORT-SOURCES.json. Current system/developer guidance, user-supplied current AGENTS.md and environment information remain automatically visible but are not historical-target evidence. Parent dispatch states that all four earlier response/ledger files are frozen. No current repository sources, neighboring study files, Git, external sources or accidental outside documents were read.",
+  "limits": "These files are newly supplied editorial selections represented as exact captured historical target excerpts. The computed packet hashes match the source brief. No Git read or whole historical source-file read independently verified the editorial provenance, stated whole-source hashes or completeness. Selected source bytes can support local static reasoning; written assertions do not establish execution results. Omitted fixtures/helpers and undisplayed branches remain unresolved.",
+  "operations": "Read only the source brief, two new granted excerpt files, and own output bytes for hashing/status. Used /usr/bin/python3 -I -B with standard-library document bookkeeping only. Wrote SOURCE-RESPONSE.md, SOURCE-SOURCES.json and PROGRESS.md. None of the four frozen files was written. No project/historical execution, tests, installs, Git, network, Claude, custody actions, deletion or nested agents."
+}

@@ -1,0 +1,37 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r10/SOURCE-BRIEF.md",
+      "sha256": "4f63edee69b2d4573c34bdb82394a4b3685ec15f52289409838ba2599639fe73",
+      "scope": "Read in full for the selected-source task, exact added file grant, output requirements and limits."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A3/LEDGER.md",
+      "sha256": "ce376c363e2187e4505d07ad6d54f2d08cd846496e867c1786ad6bdf25fa87bb",
+      "scope": "Read in full; packet SHA256 matched the source brief. Inspected supplied historical ledger.py lines 134–289 (parse_rows, summarize, prerequisites), experiment.py lines 133–164 (_validate_review), 337–353 (_capture_output), 510–527 (ledger classification), and resources/README.md lines 1240–1315. Consulted the editorial scope statement and supplied source identity metadata. Whole-file historical hashes are supplied metadata, not independently verified hashes of files opened in this phase. Omitted helpers/constants and referenced paths were not read."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r10/attempt-01/FIRST-PASS.md",
+      "sha256": "65c355c04f23ded1c544eb43d8e233f131ba2ed59c3cc2e9160fbc6d703e247b",
+      "scope": "Hash-only read to record and check frozen identity; no content reread or revision. Prior account retained from earlier phase."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r10/attempt-01/SOURCES.json",
+      "sha256": "a644377c3bfea2dbc826d5983a31856cf88e77ceabe55c188e79d58d85c55b69",
+      "scope": "Hash-only read; preserved frozen source ledger. Prior evidence context is recorded there."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r10/attempt-01/SUPPORT-RESPONSE.md",
+      "sha256": "6fd1d5455d5b6a69ac32d2bd567a682c547df5ceb9ef1ebede13816954489494",
+      "scope": "Hash-only read to record and check frozen identity; no content reread or revision. Prior account retained from earlier phase."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r10/attempt-01/SUPPORT-SOURCES.json",
+      "sha256": "92182de1b28f8c11ab9c038c4b18e39030c45d458872896fe5b8986d8f203d6a",
+      "scope": "Hash-only read; preserved frozen support source ledger."
+    }
+  ],
+  "outside_context": "No new substantive outside context. Parent task directs this final selected-source phase and states all earlier responses/ledgers are frozen. Existing general repository, environment and tool instructions remain operational context as previously disclosed, not historical subject evidence. Previous exact-grant readings remain conversation context; no earlier evidence file was reopened in this phase. No current repository implementation, other study files, Git, network, private stores, old audit environment or execution observations were accessed.",
+  "truncation_or_unread": "No output truncation. SOURCE-BRIEF.md and LEDGER.md read in full. The explicitly omitted historical validators, comparator, measurement helper, constants and additional wrapper/custody implementation remain unread. No absence claim is made about whether other historical artifacts existed.",
+  "activity": "Static document/source-excerpt reading and SHA256 hashing only. Wrote only SOURCE-RESPONSE.md, SOURCE-SOURCES.json and appended progress in the assigned output directory. No execution of historical/project code, tests, network, Git access, nested agents, custody actions or deletion. All four earlier frozen files preserved unchanged."
+}

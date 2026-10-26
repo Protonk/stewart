@@ -1,0 +1,22 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r11/SOURCE-BRIEF.md",
+      "sha256": "80c0a5c2f38127c3372b112e89d5921cc72ee2eb64a599ac0851a3b4ec22ce47",
+      "scope": "Read in full; final phase constraints, selected source grant, expected document hashes and output requirements."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A1/TEST-COVERAGE.md",
+      "sha256": "e0bcba4a2d668e98d23625e9c0bd9f10ba05ec01d7867fa843198a0e824976f5",
+      "scope": "Read in full without truncation. Selected historical tests/test_close.py excerpts: 105-151, 208-245, 652-661 and 761-770. Inspected bodies, assertions, interruption wrapper and ordering; no referenced fixtures/helpers or original source files were opened. Written assertions only; no execution."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A1/REGISTRATION.md",
+      "sha256": "eb1d13c67a660ef33d43015f4f00339383d772f60a1a2cb82d30dd45a051bab2",
+      "scope": "Read in full without truncation. Selected historical tests/test_repository.py:269-283; src/stewart/close.py:243-258, 378-427, 475-497; src/stewart/_repository.py:257-262. Inspected identity matching, conditional early return and leftover exclusion; source boundary and omitted helpers remain limits. No other referenced files opened."
+    }
+  ],
+  "prior_basis": "Earlier finite return, support passage and frozen responses remain available in conversation context; none were reread from disk in this phase. Earlier exact reads and hashes are recorded in SOURCES.json and SUPPORT-SOURCES.json in this same output directory. FIRST-PASS.md, SOURCES.json, SUPPORT-RESPONSE.md and SUPPORT-SOURCES.json were not modified. Own PROGRESS.md was appended to; SOURCE-RESPONSE.md and this ledger are new outputs.",
+  "outside_context": "No new outside context or accidental outside read. Current automatically supplied AGENTS.md, developer instructions and environment are operating constraints, not historical evidence. Parent dispatch supplies the final-phase brief path and freeze instruction. The new source documents describe editorial selection during the study and identify historical sources; no Git/custody verification was undertaken. No original referenced source file, test fixture, historical environment, other study file, current project document, network resource or private store was opened. No historical/project execution, tests, installations, Git access, nested delegation, custody action or deletion occurred. /usr/bin/python3 -I -B performed document bookkeeping and hashing only.",
+  "truncation_or_unread": "All three newly consulted documents were read completely. No tool output was truncated. Source excerpts omit helper definitions, retry dispatch and publication code; these were not followed outside the grant. Printed whole-source and excerpt digests were not independently verified against historical originals; the two supplied document hashes match the exact grant."
+}

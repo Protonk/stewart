@@ -1,0 +1,42 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/SOURCE-BRIEF.md",
+      "sha256": "f605e7842596be937f1bcad39605add3381c491a8b0dc01cfac67858b109c855",
+      "scope": "Read in full: exact two-file addition, historical-source attribution, limits, frozen-file preservation and response requirements."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A1/TEST-COVERAGE.md",
+      "sha256": "e0bcba4a2d668e98d23625e9c0bd9f10ba05ec01d7867fa843198a0e824976f5",
+      "scope": "Read in full without truncation. Examined supplied historical tests/test_close.py excerpts at 105-151, 208-245, 652-661 and 761-770, including second-audit timing, interruption monkeypatch, late-entry assertions, and both moved-checkout cases. Whole artifact digest matches brief; printed whole-source/excerpt digests are attribution metadata, not independently verified provenance."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A1/REGISTRATION.md",
+      "sha256": "eb1d13c67a660ef33d43015f4f00339383d772f60a1a2cb82d30dd45a051bab2",
+      "scope": "Read in full without truncation. Examined tests/test_repository.py 269-283; close.py 243-258, 378-427 and 475-497; _repository.py 257-262. Used written reuse assertion, two registration lookup branches, early kept return, leftover exclusion and lifetime docstring. Whole artifact digest matches brief; original source files and unprovided helpers were not opened."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/attempt-01/FIRST-PASS.md",
+      "sha256": "928bedaaca98403f51b21b5f00e88ca811c8ad22c454f45ee8e962a575680f93",
+      "scope": "Hash-only reads in this phase for preservation verification; previous response content remains available from earlier phases. Not modified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/attempt-01/SOURCES.json",
+      "sha256": "e547f0f64b2c8debefe5812ee2cffcba263f7c62ab81a9415769f182963d98c0",
+      "scope": "Hash-only reads in this phase for preservation verification. Not modified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/attempt-01/SUPPORT-RESPONSE.md",
+      "sha256": "e6c099619fe4db20c2971b9ff76e5144c9389a96f4926575875fbb5ad122ef7d",
+      "scope": "Hash-only reads in this phase for preservation verification; previous response content remains available from earlier phase. Not modified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/attempt-01/SUPPORT-SOURCES.json",
+      "sha256": "3f704d441d7466e07fc25ad4cbec24af5bd629d71f2adb05fb1c4625591ce61c",
+      "scope": "Hash-only reads in this phase for preservation verification. Not modified."
+    }
+  ],
+  "outside_context": "Parent source-phase dispatch and existing automatic system/developer/environment/current repository AGENTS guidance remain available. Prior permitted historical-return and support-phase context remains in conversation; no earlier content file was reread in this phase beyond hash-only reads of the four frozen outputs. Current repository rules were not used to fill historical source gaps. No source reference was followed; no accidental outside read occurred.",
+  "truncation_or_unread": "Both newly granted artifacts were fully read with no truncation. Their selected-source boundaries exclude fixture bodies, registration/read helpers, complete removal action sequence, retry dispatch, receipt validation, finish/completion implementation and other tests. Original subject files, execution observations and historical provenance were not independently inspected.",
+  "actions": "Static file reads, SHA256 calculations, word count and writing SOURCE-RESPONSE.md, SOURCE-SOURCES.json and PROGRESS.md only. No source/project execution, tests, installation, Python invocation, network, Git access, custody action, deletion or delegation."
+}

@@ -1,0 +1,32 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/SUPPORT-BRIEF.md",
+      "sha256": "9ca4a3d6f2a568bffa4cf2e82848b8efaa2186a984da382401ef0775839f71ee",
+      "scope": "Read in full: sole additional grant, task, output paths, word range, preservation requirement and continued restrictions."
+    },
+    {
+      "path": ".scratch/return-boundary-01/support/A1/PASSAGE.md",
+      "sha256": "79deaab0d058fbcb74255d58ef2a9a01ae3dc55eaba95e99978179f38d3fdf76",
+      "scope": "Read in full, including attribution and complete Tests paragraph. Computed digest matches SUPPORT-BRIEF. No truncation."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p04/RETURN.md",
+      "sha256": "98a3ffaa6de5666151e105a1c75318b6dbd284d6b8efbb9566239a6fd2741038",
+      "scope": "Previously read in full under initial grant; this phase reread only lines 378-387 to compare the Tests paragraph, and recomputed whole-file SHA256. Same wording appears at lines 381-386. No historical references followed."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/attempt-01/FIRST-PASS.md",
+      "sha256": "928bedaaca98403f51b21b5f00e88ca811c8ad22c454f45ee8e962a575680f93",
+      "scope": "Read in full to compare the frozen judgment and follow-up request. Hashed for preservation verification. Not modified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/attempt-01/SOURCES.json",
+      "sha256": "e547f0f64b2c8debefe5812ee2cffcba263f7c62ab81a9415769f182963d98c0",
+      "scope": "Hash-only read for preservation verification in this phase; contents known from creation in prior phase. Not modified."
+    }
+  ],
+  "outside_context": "The parent's support-phase dispatch and the existing automatic system/developer/environment/current repository AGENTS context remain available. Prior historical-reading context consists only of the initially granted materials described in the frozen SOURCES.json. Current repository guidance was not treated as historical evidence. No new outside material or accidental outside read occurred. No other recipient/study output, source file, historical workspace, Git content or network source was read.",
+  "truncation_or_unread": "No truncation in this phase. The sole additional passage was read in full. Cited target tests, implementation, fixtures and historical execution remain uninspected; the repeated passage is not independent verification of them.",
+  "actions": "Static cat/sed reads, SHA256 calculations, and writing SUPPORT-RESPONSE.md, SUPPORT-SOURCES.json and PROGRESS.md only. No project execution, tests, installs, Python, Git, network, custody action, deletion or delegation."
+}

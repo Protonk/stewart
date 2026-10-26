@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r11/BRIEF.md",
+      "sha256": "32f4966d56aef8e8c8ff331e59c368bd007253cd6571730c72654cc7b8b97ff2",
+      "scope": "Read in full; recipient task, exact access and output constraints; operational guidance, not historical evidence."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r11/READ-MANIFEST.json",
+      "sha256": "48cf8d6f500b49286153315fcb36f5330af14318102bd8f23513ecad9cf3ddd3",
+      "scope": "Read in full; five-file read grant and expected hashes."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/PROMPT.md",
+      "sha256": "c52f7e2865215bcae7f72aca6f8a0eb3cd5f1539994600d1dc1ed90e28d10c42",
+      "scope": "Read in full; Question, Decision, scope, static evidence requirements and stop condition; historical commission."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/RECIPE.md",
+      "sha256": "afe8ae2f2ae265c30efd600b9a017e7753c705a2e6f432b7b4f78da6ff0b5c55",
+      "scope": "Read in full; Information preservation question, distinction and stopping rule."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/AUDITOR.md",
+      "sha256": "7e770434d0dbb67f63cfcc3d9ef5ba340674131f1b23989abd01e57d3392337f",
+      "scope": "Read in full; historical auditor authorization and static-only constraints."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/MAINTAINER.md",
+      "sha256": "73ee3817fcae530c86224cfb2184ec97d7acb762b37270e090b914936c8a0dbf",
+      "scope": "Read in full; historical manager guidance; not proof of implementation or execution."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p11/RETURN.md",
+      "sha256": "6f26f5931e1ea02b6a9eaab3512b429b53dd1904c18b02837f6fe2b32f14da10",
+      "scope": "Read in full, all 846 lines; report completion qualification, answer, coverage, trust assumptions, producer-to-consumer trace, findings 1 and 2, boundaries A/B/C/E/L, hostile-content discussion, concurrency, U1-U4, proposed checks, stopping account and both attributed preliminary notes. Initial aggregate tool output was truncated; subsequently read numbered lines 120-350, 350-540, and 1-119 plus 540-846 to recover all content. No unread portion remains in this supplied file; no claim that excerpts reproduce complete historical originals."
+    }
+  ],
+  "outside_context": "Automatically supplied user AGENTS.md guidance and environment/developer instructions were visible, including current custody/removal and successor principles, Python isolation, filesystem restrictions, workflow and tool instructions. They were used only as operating constraints, not evidence of the historical target. The parent task gave the recipient brief path and time/access limits; no inherited study conversation or historical manager review was supplied. Historical outside-context disclosures inside RETURN.md were read as attributed report text only; none of their referenced materials was opened. No accidental outside file reads, network, Git, project execution, tests, installations, custody actions, deletion or nested delegation occurred. File parsing/hashing and output creation used /usr/bin/python3 -I -B; cat read only granted files. Own PROGRESS.md was written before substantive work; FIRST-PASS.md and this bookkeeping file are original outputs, not external evidence."
+}

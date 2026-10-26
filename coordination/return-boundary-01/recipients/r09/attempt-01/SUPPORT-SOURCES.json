@@ -1,0 +1,22 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r09/SUPPORT-BRIEF.md",
+      "sha256": "cea4ddf67e1c59671d1cba261d89419e5d5f18ae1cfda9504f2b18f8142f7919",
+      "scope": "Read in full: additional passage grant, frozen earlier outputs, response requirements and preserved operational limits."
+    },
+    {
+      "path": ".scratch/return-boundary-01/support/A1/PASSAGE.md",
+      "sha256": "79deaab0d058fbcb74255d58ef2a9a01ae3dc55eaba95e99978179f38d3fdf76",
+      "scope": "Read in full: attribution wrapper and Finding 1 Tests paragraph. Digest matches SUPPORT-BRIEF.md."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p09/RETURN.md",
+      "sha256": "98a3ffaa6de5666151e105a1c75318b6dbd284d6b8efbb9566239a6fd2741038",
+      "scope": "This phase searched and reread lines 381-388 to compare Finding 1 Tests with the added passage; whole file hashed. Other previously read sections remain available through the initial phase context and frozen SOURCES.json. No historical references followed."
+    }
+  ],
+  "outside_context": "The coordinator's second dispatch states that FIRST-PASS.md and SOURCES.json are frozen and directs only this support phase. Earlier automatic general repository, environment, tool and developer guidance remains as disclosed in the frozen SOURCES.json, used solely as operational instruction. No additional outside files, network material, project source, test files, Git contents, historical workspaces or manager reviews were consulted. No accidental outside reads occurred.",
+  "truncation_or_unread_material": "No support-phase output truncation. The support brief and passage were read completely. Historical cited source/tests and runtime results remain unavailable within the grant; none were opened or executed.",
+  "preservation": "FIRST-PASS.md and SOURCES.json were not edited. Only the new support response, this support ledger and PROGRESS.md were written in this phase."
+}

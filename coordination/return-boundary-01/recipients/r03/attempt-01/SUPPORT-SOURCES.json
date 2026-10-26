@@ -1,0 +1,35 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r03/SUPPORT-BRIEF.md",
+      "sha256": "d6d2f6cdad9bda35626136718fe796eb679360b17802952c3140f70e6b29064f",
+      "scope": "Read in full; support-phase grant and required outputs."
+    },
+    {
+      "path": ".scratch/return-boundary-01/support/A3/PASSAGE.md",
+      "sha256": "f01bb882fc5a6cacbb1ad18ba4f03b57c29c80af582a5f6e61e3abd45195b32d",
+      "scope": "Read in full, without truncation; attributed P4 two-direction proof sketch and explicit evidence-class qualification."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p03/RETURN.md",
+      "sha256": "32cc2e124bc0e5f7f7136fa4f14e9e74ce78e6a2f94ffef28026832e37341057",
+      "scope": "Reread lines 382-428 only in this phase to compare P3, P4 and the added passage; entire bytes hashed. Earlier phase read the complete file."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r03/attempt-01/FIRST-PASS.md",
+      "sha256": "4134442a9c28c52c403c00397785eafbba679347766d0ad1bb886f476060b49c",
+      "scope": "Reread in full to compare prior account; hashed only, never written in this phase."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r03/attempt-01/SOURCES.json",
+      "sha256": "3a292e6b345ad03ef84a32bf938baae444b026dcad875c34ce651caa2f556704",
+      "scope": "Bytes read only to record frozen-artifact hash; never written in this phase."
+    }
+  ],
+  "passage_matches_granted_sha256": true,
+  "repeated_body_matches_return": true,
+  "read_scope_note": "Static document reading, hashing and comparison only. No truncation. No references followed. Earlier grants remain as documented in frozen SOURCES.json.",
+  "outside_context": "Retained automatically supplied general operating instructions, user-provided current repository AGENTS.md and environment/permission context, plus the parent support dispatch. None was treated as historical target evidence. No new accidental or external context, network, Git activity, source execution, tests or delegation.",
+  "frozen_artifacts": "FIRST-PASS.md and SOURCES.json were not modified. Their current digests are included in files. Only separate support outputs and appended PROGRESS.md were written.",
+  "output_word_count": 503
+}

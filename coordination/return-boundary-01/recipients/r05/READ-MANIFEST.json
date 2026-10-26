@@ -1,0 +1,25 @@
+{
+  "files": [
+    {
+      "path": ".scratch/return-boundary-01/packets/p05/RETURN.md",
+      "sha256": "4ca5a4d4c38e26899d81e87f1febfefb81484aa63e29136fcbf94fc655a83c84"
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/PROMPT.md",
+      "sha256": "480a509749a7abe362723060d99d6d30a4ba6f429a4322b03499f2881a48864c"
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/AUDITOR.md",
+      "sha256": "70187cf028445265259b0839f326001e426f83c9a0689f4aef6cd66096cac14b"
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/MAINTAINER.md",
+      "sha256": "c74d49f5f1deaff7aead38541d095904f2d75939c566aff72537cce3e6e39135"
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/RECIPE.md",
+      "sha256": "885fcffaf3459a464226bd46a3557aee4734de6ada780a911b914b923868b0e9"
+    }
+  ],
+  "limits": "Only enumerated files and your brief/outputs are admitted; content references do not grant other reads."
+}

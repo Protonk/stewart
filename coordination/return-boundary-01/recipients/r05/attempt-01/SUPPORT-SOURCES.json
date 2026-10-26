@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r05/SUPPORT-BRIEF.md",
+      "sha256": "bb385c70f0d18679effb6469c3b5fc5a12e1f684cfd2612c5f5b83a477ee1773",
+      "scope": "Read in full to establish the additional grant, task and preservation requirement."
+    },
+    {
+      "path": ".scratch/return-boundary-01/support/A3/PASSAGE.md",
+      "sha256": "f01bb882fc5a6cacbb1ad18ba4f03b57c29c80af582a5f6e61e3abd45195b32d",
+      "scope": "Read in full, without truncation: attribution, rows-to-P(R) sketch, P(R)-to-rows sketch and closing sequence-problems sentence."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r05/attempt-01/FIRST-PASS.md",
+      "sha256": "9a8af8f73b71b225a1a66d16af21f4edf06743b9c159bedaa398d79f72cdcb34",
+      "scope": "Read bytes for preservation hashing only in this phase; substantive first-pass text remained available in conversation context and was used for comparison. Not changed."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r05/attempt-01/SOURCES.json",
+      "sha256": "18754ab2afcb67a8bc08436945bb0d7b39a0c1767e48c8f24cd03157e5a45a3c",
+      "scope": "Read bytes for preservation hashing only in this phase; earlier source bookkeeping remained available in conversation context. Not changed."
+    }
+  ],
+  "additional_passage_hash_matches_brief": true,
+  "prior_evidence_carried_forward": "Earlier granted RETURN.md and recipient-context PROMPT.md, RECIPE.md, AUDITOR.md and MAINTAINER.md remain available from the first phase in conversation context. They were not reread from disk in this phase. Their exact hashes and prior reading scopes are in the unchanged SOURCES.json.",
+  "truncation_or_unread_material": "No truncation in this phase. The added passage was read completely. No referenced implementation, historical source note, runtime record or other ungranted file was read.",
+  "outside_context": "The parent dispatch and SUPPORT-BRIEF supplied the phase instruction. Previously available current repository guidance, environment, tool policies and first-phase conversation remained available; they governed operations, not historical conclusions. No new accidental outside context or outside-file reads occurred.",
+  "activity": "Static document interpretation and hashing only. No network, project execution, tests, Git operations, external model consultation, nested delegation, custody actions or deletion.",
+  "frozen_files_preserved": true
+}

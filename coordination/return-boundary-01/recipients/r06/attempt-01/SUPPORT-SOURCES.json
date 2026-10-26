@@ -1,0 +1,36 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r06/SUPPORT-BRIEF.md",
+      "sha256": "5bc095607f4b3647a1ed7733dbdd2ba53ac6c4307deeca1cfd17136f77da9819",
+      "scope": "Read in full for the support-phase grant, required output and restrictions."
+    },
+    {
+      "path": ".scratch/return-boundary-01/support/A1/PASSAGE.md",
+      "sha256": "79deaab0d058fbcb74255d58ef2a9a01ae3dc55eaba95e99978179f38d3fdf76",
+      "scope": "Read in full, lines 1-12: attribution wrapper and repeated Finding 1 Tests paragraph.",
+      "brief_sha256_matches": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p06/RETURN.md",
+      "sha256": "c6468d06f885a884f29107a33623fa65a452bf224ecb2c0684e1e33f0d05650d",
+      "scope": "During this phase, reread only lines 381-386 to compare the original attributed paragraph with the added passage. All bytes subsequently read for SHA256 only. Full content had been read in the prior phase."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r06/attempt-01/FIRST-PASS.md",
+      "sha256": "e26f79b073ce132b557afa2eb0a084f464ae767e212505b1d8eb0611184134e4",
+      "scope": "Read as bytes only for pre-write and post-write SHA256 preservation check. Prior-phase authored content remained in conversation context and informed this response; no memo revision.",
+      "unchanged_from_support_phase_start": true
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r06/attempt-01/SOURCES.json",
+      "sha256": "4acc6653d63f651e723de39915bc1f9af8762e028eca0d39f036e18764c1c28b",
+      "scope": "Read as bytes only for pre-write and post-write SHA256 preservation check; no revision.",
+      "unchanged_from_support_phase_start": true
+    }
+  ],
+  "outside_context": "The prior recipient phase and its frozen first-pass account remain in conversation context. The coordinator follow-up states those outputs are frozen and directs this support brief. Automatically supplied general repository/environment/tool guidance is unchanged; current successor/custody requirements were not used as historical evidence. No new outside context or accidental outside read occurred. No historical source/test files, other packets, manager reviews, Git contents, network sources or private stores were opened.",
+  "truncation_or_unread_material": "No support-phase tool output was truncated. The support brief and added passage were read in full. The historical source and test bodies named in the passage remain unread; repeated attribution does not independently verify them.",
+  "operations": "Static cat/nl/sed reads, isolated standard-library Python hash/document bookkeeping, and writes confined to the assigned attempt-01 outputs. No project execution, tests, historical helpers, network, Git operations, deletion, custody actions or delegation.",
+  "preservation": "FIRST-PASS.md and SOURCES.json were hashed before and after creating the support response, and are unchanged. They were not revised."
+}

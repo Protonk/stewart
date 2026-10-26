@@ -91,8 +91,19 @@ argument from shared source and later distinguished that reconstruction from
 the auditor's own argument. Other arms also inspected source, so this is no
 measured cost or causal format result. Full common/reordered text and source
 context were preserved. No durable schema, fresh authoring, question-specific
-form or operating route is qualified; these remain W01/F2 work. No repeat is
-dispatched in this bounded window.
+form or operating route is qualified; these remain W01/F2 work. The user subsequently authorized the deeper
+[finite-return inquiry](coordination/return-boundary-01/COMMISSION.md) after
+accepting a connection/purpose/replacement-or-relinquishment/falsifier criterion.
+The deeper inquiry is complete and independently reviewed in the
+[integrated result](coordination/return-boundary-01/RESULT.md): twelve recipients,
+36 frozen phase responses, 384 response checks, and independent review of every
+memo. Four omissions changed available support/attribution without changing the
+central recommendations; finite subject excerpts enabled direct checks and local
+qualifications. The result supports specific inspection tasks, not compression,
+fresh authoring, general invariance or actual custody/control qualification.
+Unresolved source/specimen/attempt/runtime requests remain explicit. Prospective
+fresh authoring is the next recommended content inquiry, not yet commissioned. This W01/F2 inquiry changes no W02 custody promise or other protected
+obligation; normal authoring and operating-route qualification remain open.
 
 All items below are open unless their state says otherwise. F numbers are the
 sequence above, not authorizations. Detailed contract clauses govern beyond
@@ -101,7 +112,7 @@ its implementation is considered complete.
 
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
-| W01 — Diagnostic pilot complete; broader inquiry open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
+| W01 — Two diagnostic studies complete; broader inquiry open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
 | W02 — Policy open | Select admitted-answer-only or complete-attempt custody; define setter acknowledgments, bounded snapshot assembly, attempt identities, corrections/finality, retrieval and lifetime. Decide partial work on early close, compulsory manager gap/follow-up responses and helper-independent human handback. [Keyhole decisions](KEYHOLE-OBLIGATIONS-FINDINGS.md#decisions-and-evidence-still-needed), [Riker assessment](KEYHOLE-OBLIGATIONS-FINDINGS.md#riker-and-the-transition). | W01 informs F3. Before F5, choose scope and update affected contracts explicitly. Test invalid final discriminator after substantial setters, full attempt versus call arguments, later-setter invariance, failed custody writing, racing/repeated finals and lost success replies. The prior coordinator's preference for attempt custody is not a decision. |
 | W03 — Architecture open | Decide A.1's formal admission rule and D's commission facilities, capture terms and retention promise, including R3's distinction from a voluntary hold. Identify any new auditor channel's effect on inherited assumptions. [Opening decisions](#opening-decision-round-a-narrow-custodial-core), [R3](#session-scoped-agent-guidance-reconciliation-2026-10-25). | F3, informed by W01/W02 and W04–W09. No executor does not adopt an exact-three-responsibilities formula. Test grants and recorded limitations against the actual commissioned view; admission is not a verdict on the answer. |
 | W04 — Workspace/history open | Decide B and F: plain subject files, history-only use, pinned history facility, and supported Git-aware/build/test capabilities. Resolve unrepresentable trees and name normalization as proposed decisions, not silent fixes. [B](CUSTODIAL-CORE-FINDINGS.md#b-the-workspace-representation), [F](CUSTODIAL-CORE-FINDINGS.md#f-the-form-of-the-history-facility). | Capability comparisons in F2; selected representation before F5. Verify selected object membership, absent unrelated/dangling/replacement objects, graft/shallow/partial limits, case/Unicode behavior and real tool usability. A shared backing store cannot expose its whole contents. |

@@ -1,0 +1,33 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r01/SUPPORT-BRIEF.md",
+      "sha256": "6ae262a9471b526ab8856d498d69c89c97b369372a3022dfc3577e3f5809fd17",
+      "scope": "Read in full; additional read grant, frozen-output rule and support-response requirements."
+    },
+    {
+      "path": ".scratch/return-boundary-01/support/A3/PASSAGE.md",
+      "sha256": "f01bb882fc5a6cacbb1ad18ba4f03b57c29c80af582a5f6e61e3abd45195b32d",
+      "scope": "Read in full; explicit attribution and P4 rows-to-P(R), P(R)-to-rows and sequencing proof sketch."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p01/RETURN.md",
+      "sha256": "d66365f57d045bc31669ef1d063bab3e790a0f6c678a53835775bbb886f423b3",
+      "scope": "Re-read lines 380\u2013427 only during this phase: P3 anomaly-to-unmet mapping and P4 proof sketch; full file read solely for SHA256 bookkeeping. Earlier complete reading remains documented in frozen SOURCES.json."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r01/attempt-01/FIRST-PASS.md",
+      "sha256": "51e60ecc0b7c14104c2c28e8dbfca7ce2c7876ccc6fd7894191ee036427d79d5",
+      "scope": "Read for hash bookkeeping only in support phase; never written in this phase."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r01/attempt-01/SOURCES.json",
+      "sha256": "a14a16b279d75de64acd5ad9530219b482403080b6de7562de333737a3e20fff",
+      "scope": "Read for hash bookkeeping only in support phase; never written in this phase."
+    }
+  ],
+  "passage_matches_brief_sha256": true,
+  "outside_context": "The already supplied current repository AGENTS.md, environment/permission information, general tool/developer guidance and prior phase conversation remain automatically visible. The new parent dispatch states that FIRST-PASS.md and SOURCES.json are frozen and points to SUPPORT-BRIEF.md. These are operational context, not evidence about historical behavior. No outside study, project, source, historical workspace or network material was read.",
+  "read_limits": "No output truncation. Only the support brief, newly granted passage and the already granted return excerpt were substantively consulted in this phase. Prior phase conclusions and readings were remembered; original referenced source files were not opened.",
+  "actions": "Read and compared static documents; hashed allowed files with /usr/bin/python3 -I -B; wrote SUPPORT-RESPONSE.md and SUPPORT-SOURCES.json and appended support progress. FIRST-PASS.md and SOURCES.json were not modified. No project execution, tests, Git commands, network, custody actions or delegation."
+}

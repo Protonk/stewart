@@ -1,0 +1,42 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r02/BRIEF.md",
+      "sha256": "f22a50c8edc19d69f5ada489013aa2101221d06808cd2a5e714a0f460994f8ea",
+      "scope": "Read in full; task, grant, output and stopping restrictions."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r02/READ-MANIFEST.json",
+      "sha256": "a7dd24674d6d8bb1693266b6d2830d2f034137e068d5366cf27c6d4e979b6fba",
+      "scope": "Read in full; exact five-file evidence grant. Computed hashes of all five files match this manifest."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p02/RETURN.md",
+      "sha256": "6f26f5931e1ea02b6a9eaab3512b429b53dd1904c18b02837f6fe2b32f14da10",
+      "scope": "Read all 846 lines. Initial combined output truncated the middle; numbered rereads of lines 165-430, 430-650 and 651-846 supplied the missing content and precise citations. Relevant sections: Answer and implication; Inputs, coverage and gaps; Trust assumptions; Producer-to-consumer trace; Findings 1 and 2; Claim boundaries A and L; hostile contents; Concurrency; U1-U4; Evidence request; separately attributed reading and trace notes. Historical source files named inside were not opened."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/PROMPT.md",
+      "sha256": "c52f7e2865215bcae7f72aca6f8a0eb3cd5f1539994600d1dc1ed90e28d10c42",
+      "scope": "Read in full, 134 lines; original question, decision, historical trust model, static-only scope, evidence requirements and stop condition. Historical execution instructions treated as artifacts only."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/AUDITOR.md",
+      "sha256": "7e770434d0dbb67f63cfcc3d9ef5ba340674131f1b23989abd01e57d3392337f",
+      "scope": "Read in full, 24 lines; historical role and limited static-review authority."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/MAINTAINER.md",
+      "sha256": "73ee3817fcae530c86224cfb2184ec97d7acb762b37270e090b914936c8a0dbf",
+      "scope": "Read in full, 34 lines; historical manager responsibilities, writer coordination and separation of judgment from custody."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/RECIPE.md",
+      "sha256": "afe8ae2f2ae265c30efd600b9a017e7753c705a2e6f432b7b4f78da6ff0b5c55",
+      "scope": "Read in full, 29 lines; Information preservation recipe, companion artifacts, actual consumer and intentional-projection distinction."
+    }
+  ],
+  "outside_context": "Automatically supplied system/developer instructions cover operation, tools, skills, filesystem limits and agent coordination. The user-supplied AGENTS.md text contains extensive current Stewart development and successor custody/access/removal contracts; it was visible but was not treated as evidence for the historical target. The environment supplies current repository path, shell and date. Parent task instruction supplies the exact brief path and six-active-minute delivery request. No inherited study conversation, current repository documents, neighboring packets, historical manager reviews, Git data, network or accidental external files were consulted. References and commit subjects appearing inside the granted RETURN.md remain attributed return content; none were followed.",
+  "unread_material": "No granted evidence file remains unread. Historical implementation, tests, helper outputs, receipts, original report/notes objects, old workspace and runtime configuration are absent from the grant and were not read or executed.",
+  "operations": "Static cat/nl/sed reading, isolated /usr/bin/python3 -I -B standard-library hashing of only granted files plus brief/manifest, and writing assigned output documents. No project execution, tests, installs, Git operation, custody action, network or delegation."
+}

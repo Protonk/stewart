@@ -1,0 +1,27 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r12/SUPPORT-BRIEF.md",
+      "sha256": "649f42dcb8d1ff84ecb34538d1b09e5038a5b8efe51b89697c4475e3a05b2ec2",
+      "scope": "Full support brief read: additional passage grant, length, preservation and output requirements."
+    },
+    {
+      "path": ".scratch/return-boundary-01/support/A3/PASSAGE.md",
+      "sha256": "f01bb882fc5a6cacbb1ad18ba4f03b57c29c80af582a5f6e61e3abd45195b32d",
+      "scope": "Full attributed passage read; repeated P4 rows-to-review and review-to-rows proof sketch. No cited historical source followed."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r12/attempt-01/FIRST-PASS.md",
+      "sha256": "70c0f8b5ae7317ab7f0db5a86c26c95adc9a05fb3035b484c5cb39d27566c4b2",
+      "scope": "Full frozen first-pass memo reread for comparison; unchanged."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p12/RETURN.md",
+      "sha256": "d66365f57d045bc31669ef1d063bab3e790a0f6c678a53835775bbb886f423b3",
+      "scope": "Reread lines 380–429: P3 anomaly-to-unmet mapping and P4 bijection proof sketch. Full-file bytes hashed only for source identity; other sections remained available from prior phase context."
+    }
+  ],
+  "outside_context": "Prior recipient phase context includes the original brief, exact manifest, five granted materials and the frozen first-pass judgment/source ledger. The same automatically supplied general repository, environment, permission and Codex instructions persist; none were used as evidence of historical behavior. New parent dispatch required the support phase only. No outside files or historical references were accessed, and no network, Git, project execution, tests, installations, custody actions, deletion or delegation occurred. Python /usr/bin/python3 -I -B was used only for standard-library hashing and document writing.",
+  "truncation_or_unread": "No support-phase output was truncated. Full support brief, full passage and full FIRST-PASS.md were read; RETURN.md was reread only at lines 380–429. No source code or execution evidence was granted or consulted.",
+  "preservation": "FIRST-PASS.md and SOURCES.json were not written or modified. The support response and this separate source ledger are new outputs."
+}

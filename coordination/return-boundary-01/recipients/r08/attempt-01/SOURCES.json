@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "path": ".scratch/return-boundary-01/packets/p08/RETURN.md",
+      "sha256": "4ca5a4d4c38e26899d81e87f1febfefb81484aa63e29136fcbf94fc655a83c84",
+      "scope": "Read in full, all 954 lines. Consequential sections: Answer and implication; Inputs, coverage and gaps; actual algorithm; source trace; P1–P6; full R*/L0 and contrast arms; fixture cross-check; decoding and validation limits; stopping account. Initial combined tool display was truncated; explicit reads of lines 1–99, 100–439, 440–738 and 739–954 recovered the entire file. No remaining unread portion.",
+      "matches_manifest": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/PROMPT.md",
+      "sha256": "480a509749a7abe362723060d99d6d30a4ba6f429a4322b03499f2881a48864c",
+      "scope": "Read in full: original question, decision, scope, evidence, stop condition and assignment metadata. Historical references were not followed.",
+      "matches_manifest": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/AUDITOR.md",
+      "sha256": "70187cf028445265259b0839f326001e426f83c9a0689f4aef6cd66096cac14b",
+      "scope": "Read in full as historical role guidance; not treated as new execution authority.",
+      "matches_manifest": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/MAINTAINER.md",
+      "sha256": "c74d49f5f1deaff7aead38541d095904f2d75939c566aff72537cce3e6e39135",
+      "scope": "Read in full as historical manager guidance; no historical actions performed.",
+      "matches_manifest": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/RECIPE.md",
+      "sha256": "885fcffaf3459a464226bd46a3557aee4734de6ada780a911b914b923868b0e9",
+      "scope": "Read in full: Instrument discrimination question, supply, return and stop guidance.",
+      "matches_manifest": true
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r08/BRIEF.md",
+      "sha256": "fbdc0240b093d91cfe424422a4c5fd8dd4fcfefcd6ada28e6a6e1565a33521a5",
+      "scope": "Read in full before substantive work: exact access boundary, output requirements and recipient task."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r08/READ-MANIFEST.json",
+      "sha256": "0cbb6c8231e1585935c293ee7db60cf05671f227e64b03e92199a94d7dd9022a",
+      "scope": "Read in full to identify exact five-file grant and expected hashes."
+    }
+  ],
+  "outside_context": "Automatically supplied current repository AGENTS.md instructions, environment/cwd and permission boundaries, generic agent/tool/developer guidance, and parent dispatch naming this brief were present. Current successor and custody guidance was used only as operational constraint, not historical evidence. No inherited study conversation beyond this dispatch was supplied to this review. No other project documents, historical sources, Git material, neighboring packets, fieldwork, private stores or network were read. The return itself reports the historical auditor's inherited context; those are attributed statements inside the granted return, not files accessed by this recipient. No accidental outside read occurred.",
+  "unread_or_truncated": "The first batch display truncated RETURN.md; all 954 lines were subsequently reread in four explicit non-truncated ranges. All five granted files were read in full. Cited historical source/test/helper artifacts were not read and are not independently verified.",
+  "method": "Static text reading/search, manual specimen reasoning, and isolated standard-library Python hashing/document serialization only. No project imports, execution, tests, network, Git, custody operations, deletion or delegation.",
+  "first_pass_word_count": 903,
+  "status": "ready"
+}

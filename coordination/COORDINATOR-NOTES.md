@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 during the next coordinator's intake. This is a
+Updated 2026-10-26 after completing the reviewed finite-return inquiry. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -9,11 +9,66 @@ actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
 
-The bounded A3 representation pilot is complete and independently reviewed.
-The user requested an orderly stopping point and stand-by; no turnover note.
-All six assigned agents returned and no worker remains active in this engagement.
-No further experiment, replication, question-specific form or implementation is
-underway. Await the user's next commission.
+The user has authorized the deeper finite-return inquiry after discussing the
+reviewed A3 pilot and accepting this criterion: a connection can end when its
+required purpose is carried by the bounded undertaking, or deliberately
+relinquished, with relevant failure cases supporting that account. This is
+inquiry authority, not removal of obligations or adoption of Promise/Yield.
+The [commission](return-boundary-01/COMMISSION.md) and
+[progress](return-boundary-01/PROGRESS.md) own the bounded wave. Availability was
+roughly two hours from 20:39 UTC on 2026-10-26; aim to integrate by 22:20.
+No Claude today. User owns Git recording and may commit without editing files.
+
+At 20:56 UTC three fresh workers were dispatched from saved briefs with no
+conversation inheritance. Source HEAD is `6e07529`, plus the discussion account;
+42 historical files and 14 guidance snapshots are pinned in
+`.scratch/return-boundary-01/inputs-01.json`. The last source capture was verified.
+Root owns commission, protocol, integration, review and shared documents. Workers
+own only their role's `attempt-01/` and matching scratch directory:
+
+| Worker | Saved brief | Observed state / next action |
+| --- | --- | --- |
+| `/root/boundary_a3` | [A3](return-boundary-01/a3/BRIEF.md) | Complete; packet and integration evidence reviewed. |
+| `/root/boundary_a1` | [A1](return-boundary-01/a1/BRIEF.md) | Complete; packet and integration evidence reviewed. |
+| `/root/boundary_dependencies` | [Dependency challenge](return-boundary-01/dependencies/BRIEF.md) | Returned; fourteen-row map and comparison recommendation inspected. |
+
+The independent packet/protocol reviewer `/root/boundary_review` returned;
+565 corrected main and 68 supplemental static assertions passed. Root read and
+[disposed the review](return-boundary-01/REVIEW-DISPOSITION.md), preserving its
+initial reviewer-code false failure. Twelve exact grants remain unchanged.
+The finite-return inquiry is complete and independently reviewed. All twelve
+recipients `/root/boundary_r01` through `_r12` returned all three phases. Root read
+and froze 36 memos and 36 read ledgers; response validation passed 384 checks.
+The reviewer read every memo and verified 269 integration pins plus 211 earlier
+pins. Its 1,089 assertions include 1,088 passes and one preserved comparison to
+r02's later-updated mutable progress; frozen responses/ledgers are unchanged.
+The r12 line-count discrepancy remains documented. Both requested prose
+corrections are applied, with reviewed drafts preserved in scratch.
+
+The [result](return-boundary-01/RESULT.md),
+[observations](return-boundary-01/OBSERVATIONS.md) and
+[integration disposition](return-boundary-01/INTEGRATION-DISPOSITION.md) own the
+findings and limits. The four omission readers identify newly explicit support;
+eight controls identify repetition. Selected source enables local checks and
+qualifications while remaining helpers, the escaped specimen, concrete attempt
+records and runtime comparisons stay unrun. No protected obligation is removed.
+Prospective fresh authoring is the next recommended content commission; it is not
+dispatched. Actual custody/delivery/stopping qualification and policy choices
+remain separate program work.
+
+All first-stage, recipient and review workers have returned; no worker task,
+source expansion, execution, external action or unresolved effectful reply remains.
+Root owns the final document/evidence check at
+`.scratch/return-boundary-01/final-check-01.json` and `.log`; inspect that record
+when resuming. Retain the finite scratch evidence with the report: it is not all
+in Git. User Git ownership continues; no agent Git mutation or ordinary turnover
+note is pending. The next substantive action is discussion of these results and
+a new bounded commission, rather than automatically pursuing the unrun requests.
+No runtime, tests, historical records or protected obligations are changed.
+
+The bounded A3 representation pilot is complete and independently reviewed,
+recorded by the user as `6e0752923b83f5d61368c90811839e05db7d762e`.
+All six earlier pilot workers returned. The earlier stand-by has ended.
 
 The [result](answer-representation-01/RESULT.md) records four fresh first-pass
 memos, four original-support reveals and four historical-review responses. The
@@ -39,14 +94,16 @@ outputs preserve the dispatch and return account. Initial inputs are pinned at
 records remain under that local directory. Keep this finite evidence population
 with the result through comparison/review. It is not all in Git. The whole
 program remains open under DEVELOPMENT-PLAN W01–W20; normal auditor authoring,
-other return types, narrower/counterbalanced comparisons and operating-route
-qualification retain their uncommissioned scope.
+other return types and operating-route qualification remain open. The narrower
+counterbalanced A1/A3 comparison was subsequently commissioned and is recorded
+above; further authoring and operational trials have not been dispatched.
 
 The user took Git recording after both ordinary and escalated staging failed
 creating `.git/index.lock`. They may commit saved files concurrently without
 editing them. User commit `41e80f1ac373e6dc244e495eea1477aa6deeb676` records the
-principle/commission layer. Subsequent pilot results and current-account updates
-are saved for the user's recording; inspect Git for actual status. No agent Git
+principle/commission layer, and `6e07529` records the reviewed pilot and responses.
+The finite-return inquiry follows those commits; HEAD was still 6e07529 at the
+21:44 checkpoint. Inspect Git for actual status. No agent Git
 mutation or permission investigation is pending. Intake/discussion check records
 remain in `.scratch/coordinator-intake-20261026-01.json`,
 `.scratch/coordinator-intake-recording-01.json` and the two
@@ -60,8 +117,9 @@ and source are in [the commission](handoff-transition-01/COMMISSION.md).
 The two investigations and fresh review are complete. The arrangement was
 committed as `daaedbb`; no material blockers, and one low progress-text ambiguity
 was fixed. The requested thin turnover briefing is now written.
-The product inquiry remains at completed preparation;
-this documentation commission authorizes no empirical pilot or runtime work.
+At that earlier cutoff the product inquiry remained at completed preparation;
+that documentation commission itself authorized no empirical pilot or runtime work.
+The two later study commissions and their current state are recorded above.
 
 - Coordinator handle in this harness: `/root`; initial source `4cfde95`, clean
   at intake. Exact original inputs: `.scratch/handoff-transition-01/inputs-01.json`.
@@ -83,8 +141,8 @@ this documentation commission authorizes no empirical pilot or runtime work.
   is saved after the arrangement commit. No independent empirical work is running.
 - Completion evidence: final document validation is
   `.scratch/handoff-transition-01/turnover-02.json` and `.log`; committed-byte
-  verification is `completion-01.json`. The next substantive task awaits the user's commission;
-  the proposed A3 pilot below has not been dispatched.
+  verification is `completion-01.json`. At that historical cutoff the A3 pilot was still a recommendation;
+  the subsequent commission and completion are recorded above.
   [Coordinator progress](handoff-transition-01/PROGRESS.md) records this cutoff.
 
 Observed capacity for this thread: four total active slots. This transformation
@@ -96,7 +154,7 @@ trigger its limit that day. No Claude session has been launched in these waves.
 That percentage is a dated report, not a future quota observation. The possible
 later quota study remains deferred under W08/W11/W20 in the program plan.
 
-## Current dispatch index
+## Completed coordinator-document dispatch index
 
 Shared workspace for this wave: this repository on `main`. Original source
 `4cfde95` plus the input manifest above. Each saved brief states exclusive read/
@@ -123,10 +181,10 @@ all briefs, returns, the corpus, clause map and proposed comparisons. The
 was checked. Final documentation evidence is
 `.scratch/successor-inquiry-01/validation-02.json` and `completion-01.json`.
 
-The outgoing coordinator recommends the bounded A3 ledger representation pilot:
-produce/review finite packets, then fresh recipients for original/common/
-omitted-support/reordered-evidence arms. This is a recommendation already
-prepared in the findings, not a commission. Missing construction/non-answer
+The outgoing preparation recommendation was the bounded A3 ledger representation
+pilot: produce/review finite packets, then fresh original/common/omitted-support/
+reordered-evidence recipients. The user later commissioned and completed it, then
+the deeper A1/A3 inquiry above; the preparation recommendation alone granted neither. Missing construction/non-answer
 cases, route/endpoint qualification, helper fresh-source reuse and actual finite
 legacy population remain open. Typed/keyhole custody and automatic retirement
 are still proposals; no decision is supplied by their prominence in earlier

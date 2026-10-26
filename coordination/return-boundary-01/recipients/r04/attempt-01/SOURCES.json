@@ -1,0 +1,42 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/BRIEF.md",
+      "sha256": "0c54b54c5f4f28a9ea9c9967bd986c6ed30678cd920b58d49dccacf3128e4346",
+      "scope": "Read in full: exact grant, task, output requirements and restrictions."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r04/READ-MANIFEST.json",
+      "sha256": "d2214346c6150ce2e622ce56ec9c6b2e93765ca263e4245a2cf22f2955abd08d",
+      "scope": "Read in full: enumerated files and expected digests. All five supplied content-file digests matched independently computed shasum results."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p04/RETURN.md",
+      "sha256": "98a3ffaa6de5666151e105a1c75318b6dbd284d6b8efbb9566239a6fd2741038",
+      "scope": "Read all 853 lines. Initial combined tool output truncated the middle; explicit subsequent reads of 1-192, 193-449, 450-665 and 666-853 resolved all truncation. Used declaration/qualification, Answer and implication, Inputs/coverage/gaps, Trust assumptions, resource trace, Findings 1 and 2, boundaries A-C/E/L, hostile-content discussion, Concurrency, U1-U4, proposed comparisons, and separately attributed preliminary notes. No cited historical source file was opened."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/PROMPT.md",
+      "sha256": "c52f7e2865215bcae7f72aca6f8a0eb3cd5f1539994600d1dc1ed90e28d10c42",
+      "scope": "Read in full: original question, manager decision, static-review boundary, corruption/concurrency distinctions, evidence requirements, stopping condition and assignment metadata. Historical permissions treated as artifacts, not a new grant."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/RECIPE.md",
+      "sha256": "afe8ae2f2ae265c30efd600b9a017e7753c705a2e6f432b7b4f78da6ff0b5c55",
+      "scope": "Read in full: Information preservation recipe, including companion artifacts, intentional projection, actual consumers and bounded next checks."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/AUDITOR.md",
+      "sha256": "7e770434d0dbb67f63cfcc3d9ef5ba340674131f1b23989abd01e57d3392337f",
+      "scope": "Read in full: historical role limits and static-review rules."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/MAINTAINER.md",
+      "sha256": "73ee3817fcae530c86224cfb2184ec97d7acb762b37270e090b914936c8a0dbf",
+      "scope": "Read in full: historical manager responsibilities, actual writer coordination, review/custody distinctions, and close-related claims."
+    }
+  ],
+  "outside_context": "Automatically supplied current repository AGENTS instructions include successor direction and modern custody, identity, descriptor-removal, retention and evidence requirements. They governed operations but were not used as evidence of the historical target. General system/developer tooling and filesystem constraints, current workspace path/date, denied-path names, and the parent's recipient dispatch were also supplied automatically. No parent study conversation, historical manager review, other recipient output, current source, Git content, neighboring project, private store, network source or other file was consulted. No accidental outside read occurred. Own output files were created solely within the assigned attempt directory.",
+  "unread_material": "No granted file remains unread. References to original report/notes, historical target sources and tests, runtime, question-guide path, inherited leads and historical workspaces were not followed. The return's source-identity metadata was read as supplied attribution, not independently verified historical custody.",
+  "actions": "Static cat/sed/rg reads, line count, SHA256 calculation, and writing assigned documents only. No project execution, Python invocation, tests, installs, Git operation, network, custody action, deletion, or nested delegation."
+}

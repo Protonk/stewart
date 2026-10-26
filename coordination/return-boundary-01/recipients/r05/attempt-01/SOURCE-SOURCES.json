@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r05/SOURCE-BRIEF.md",
+      "sha256": "38c864ef372eeec796e635eee3ed2eecbf84e87342849fb194f57348aaebeb46",
+      "scope": "Read in full: exact additional grant, source selection limits, output task and frozen-file preservation requirement."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A3/LEDGER.md",
+      "sha256": "ce376c363e2187e4505d07ad6d54f2d08cd846496e867c1786ad6bdf25fa87bb",
+      "scope": "Read in full without truncation. Editorial preface; ledger.py 134-289 (parse_rows, summarize, prerequisites); experiment.py 133-164 (_validate_review), 337-353 (_capture_output), 510-527 (ledger assembly); README.md 1240-1315 (Ledger contract). Only the Markdown excerpt artifact was read; referenced original files and whole-file hashes were not independently verified."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r05/attempt-01/FIRST-PASS.md",
+      "sha256": "9a8af8f73b71b225a1a66d16af21f4edf06743b9c159bedaa398d79f72cdcb34",
+      "scope": "Read bytes for preservation hashing only in this phase. Earlier substantive text and bookkeeping remained available in conversation context; not revised."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r05/attempt-01/SOURCES.json",
+      "sha256": "18754ab2afcb67a8bc08436945bb0d7b39a0c1767e48c8f24cd03157e5a45a3c",
+      "scope": "Read bytes for preservation hashing only in this phase. Earlier substantive text and bookkeeping remained available in conversation context; not revised."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r05/attempt-01/SUPPORT-RESPONSE.md",
+      "sha256": "5ef7792f9a312a660a5045d3ad063176f0f99c623b316fa86785735fd3f8b935",
+      "scope": "Read bytes for preservation hashing only in this phase. Earlier substantive text and bookkeeping remained available in conversation context; not revised."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r05/attempt-01/SUPPORT-SOURCES.json",
+      "sha256": "f4d7f2d932eab96d174c6116c90c94f482c70adc7d68e92c3becb1277d7ac49a",
+      "scope": "Read bytes for preservation hashing only in this phase. Earlier substantive text and bookkeeping remained available in conversation context; not revised."
+    }
+  ],
+  "source_excerpt_hash_matches_brief": true,
+  "prior_evidence_carried_forward": "The original finite return, question/recipe, historical role context and additional P4 passage remain available from earlier authorized reads in conversation context. They were not reread from disk in this phase. Their reading scopes and hashes are recorded in the frozen earlier source ledgers.",
+  "truncation_or_unread_material": "No output truncation in this phase. LEDGER.md was read in full. Omitted constants, _row_problem, _comparison_key, measurement_problem, wrapper/helper context, original source files and runtime artifacts were not read.",
+  "outside_context": "The parent source-phase dispatch, supplied source brief, prior phase conversation, current repository guidance and environment/tool policies were available. Current guidance governs operations and was not used to fill historical source gaps. No accidental outside-file read or new external context occurred.",
+  "observations": "Own observations are the supplied excerpt contents and SHA256 results. Source reading supports static inference only. No tests, project execution, network, Git operations, external model consultation, delegation, custody actions or deletion occurred.",
+  "frozen_files_preserved": true
+}

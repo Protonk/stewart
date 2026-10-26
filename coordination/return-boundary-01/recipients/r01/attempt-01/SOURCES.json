@@ -1,0 +1,47 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r01/BRIEF.md",
+      "sha256": "de60fb5811c4f119b98ba6a77bc39fe9a3aedbc5362c6bf1f7c721e270d98a00",
+      "scope": "Read in full; task, grant, output and evidence-class restrictions."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r01/READ-MANIFEST.json",
+      "sha256": "e2f56fb9bff4d6b18f98bb42098e1062f329563613b56836d87b2631aa227f97",
+      "scope": "Read in full; enumerated allowed paths and expected SHA256 values."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/PROMPT.md",
+      "sha256": "480a509749a7abe362723060d99d6d30a4ba6f429a4322b03499f2881a48864c",
+      "scope": "Read in full; Question, Decision, Scope and exclusions, Evidence, Stop condition and Assignment metadata.",
+      "matches_read_manifest": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/RECIPE.md",
+      "sha256": "885fcffaf3459a464226bd46a3557aee4734de6ada780a911b914b923868b0e9",
+      "scope": "Read in full; Instrument discrimination recipe.",
+      "matches_read_manifest": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/AUDITOR.md",
+      "sha256": "70187cf028445265259b0839f326001e426f83c9a0689f4aef6cd66096cac14b",
+      "scope": "Read in full; historical operating guidance, not new authorization.",
+      "matches_read_manifest": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A3/MAINTAINER.md",
+      "sha256": "c74d49f5f1deaff7aead38541d095904f2d75939c566aff72537cce3e6e39135",
+      "scope": "Read in full; historical manager-role and exit-code context, not permission for actions.",
+      "matches_read_manifest": true
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p01/RETURN.md",
+      "sha256": "d66365f57d045bc31669ef1d063bab3e790a0f6c678a53835775bbb886f423b3",
+      "scope": "Read in full, lines 1\u2013973, using four complete line-numbered segments after an initially truncated batch. Consequential sections: Answer and implication; Inputs, coverage and gaps; Route traced; summarize step by step; Derived properties P1\u2013P6; Independent contrasts and complete R*/L0/arms; Fixture cross-check; decoding and comparison limits; Missing experiment and Stopping reason.",
+      "matches_read_manifest": true
+    }
+  ],
+  "outside_context": "Automatically supplied current AGENTS.md guidance, cwd, date, filesystem restrictions, generic Codex/tool/skill instructions, and the parent dispatch naming this brief and restrictions were visible. They governed operations only and were not evidence about the historical target. No inherited study conversation or outside study files were read. Historical references in supplied documents were not followed. No accidental outside reads.",
+  "read_limits": "The first combined cat output was globally truncated and RETURN.md also exceeded its individual output limit. RETURN.md was subsequently read completely in four line-numbered segments (1\u2013250, 251\u2013500, 501\u2013750, 751\u20131000; actual ending at 973), eliminating unread material. All other granted files were completely visible. No source code, historical receipt or attempt artifacts referenced by the return were opened.",
+  "actions": "Static reads and source hashing; wrote PROGRESS.md before substantive work, then FIRST-PASS.md and SOURCES.json in the exclusive output directory. Python used /usr/bin/python3 -I -B for bookkeeping only. No project imports, execution, tests, network, Git commands, custody actions or delegation."
+}

@@ -1,0 +1,32 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r10/SUPPORT-BRIEF.md",
+      "sha256": "8e18780168843f14eaf294d52ba8ff1ec75eedc752798cdedfba38e82950b33e",
+      "scope": "Read in full for this support phase's task and exact additional grant."
+    },
+    {
+      "path": ".scratch/return-boundary-01/support/A3/PASSAGE.md",
+      "sha256": "f01bb882fc5a6cacbb1ad18ba4f03b57c29c80af582a5f6e61e3abd45195b32d",
+      "scope": "Read in full; SHA256 matches SUPPORT-BRIEF.md. Historical auditor P4 reasoning only."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p10/RETURN.md",
+      "sha256": "32cc2e124bc0e5f7f7136fa4f14e9e74ce78e6a2f94ffef28026832e37341057",
+      "scope": "This phase reread lines 380–428: P3 mapping and P4 proof sketch, to check the additional passage against support already supplied. Hash unchanged. Other references use the complete first-phase reading recorded in frozen SOURCES.json."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r10/attempt-01/FIRST-PASS.md",
+      "sha256": "65c355c04f23ded1c544eb43d8e233f131ba2ed59c3cc2e9160fbc6d703e247b",
+      "scope": "Hash-only read in this phase to record frozen first-response identity; content retained from earlier authorship, not reread or revised."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r10/attempt-01/SOURCES.json",
+      "sha256": "a644377c3bfea2dbc826d5983a31856cf88e77ceabe55c188e79d58d85c55b69",
+      "scope": "Hash-only read in this phase; frozen first-phase source ledger remains unchanged and records prior evidence context."
+    }
+  ],
+  "outside_context": "No new substantive outside context. Parent task stated that the first response/source ledger are frozen and directed reading only SUPPORT-BRIEF.md; inherited general repository, environment and tool instructions remain operational context as disclosed in SOURCES.json. No other study or project files, Git, network, historical source, private stores, or execution observations were accessed.",
+  "truncation_or_unread": "No truncation in support-phase output. Both new granted files were read in full. No historical source or execution material is newly granted. Earlier files not reread in this phase remain available only through the already recorded first-phase context.",
+  "activity": "Static reads, comparison of supplied passages, SHA256 hashing and assigned output writes only. No project execution, tests, network, Git, delegation or custody actions. FIRST-PASS.md and SOURCES.json preserved unchanged."
+}

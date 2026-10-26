@@ -1,0 +1,42 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r09/BRIEF.md",
+      "sha256": "ca2499b420ed9dd8e6eefdf6b734e4c9883e680e84b5ab2a4e9db04dcd6eeb48",
+      "scope": "Read in full: file grant, exclusive output boundary, task, timing and source bookkeeping. Operational instruction only."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r09/READ-MANIFEST.json",
+      "sha256": "35915703d92169f4743cff7c210af36323295b69293804e35ed954e7d43a0b29",
+      "scope": "Read in full: exact five admitted evidence files and expected hashes."
+    },
+    {
+      "path": ".scratch/return-boundary-01/packets/p09/RETURN.md",
+      "sha256": "98a3ffaa6de5666151e105a1c75318b6dbd284d6b8efbb9566239a6fd2741038",
+      "scope": "All 853 lines read. Consequential sections: Answer and implication; Inputs, coverage and gaps; Trust assumptions; Producer-to-consumer trace per resource class; Findings 1 and 2; Claim boundaries and projections; Hostile contents; Concurrency; Unresolved premises; Evidence request; separately attributed preliminary reading log and trace/candidates notes. Initial combined-tool output truncated the middle; subsequent reads of lines 1-120, 120-390, 390-650 and 650-853 recovered the complete file. Historical subject files and original report/note files were not opened or hash-verified."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/PROMPT.md",
+      "sha256": "c52f7e2865215bcae7f72aca6f8a0eb3cd5f1539994600d1dc1ed90e28d10c42",
+      "scope": "Read in full: question, manager decision, historical scope, trust assumptions, required evidence and stopping condition, assignment metadata. Historical permissions treated as artifacts, not current authority."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/AUDITOR.md",
+      "sha256": "7e770434d0dbb67f63cfcc3d9ef5ba340674131f1b23989abd01e57d3392337f",
+      "scope": "Read in full: historical auditor role and static review constraints."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/MAINTAINER.md",
+      "sha256": "73ee3817fcae530c86224cfb2184ec97d7acb762b37270e090b914936c8a0dbf",
+      "scope": "Read in full: historical maintainer responsibility, writer coordination, collection and deletion claims; no historical operations performed."
+    },
+    {
+      "path": ".scratch/return-boundary-01/recipient-context/A1/RECIPE.md",
+      "sha256": "afe8ae2f2ae265c30efd600b9a017e7753c705a2e6f432b7b4f78da6ff0b5c55",
+      "scope": "Read in full: Information preservation question, distinctions, consumer checks, return and stop rules."
+    }
+  ],
+  "outside_context": "Automatically supplied context included the current repository AGENTS.md instructions in the user message, environment path/date and sandbox rules, generic developer/tool/skill instructions, and the coordinator's dispatch. Current custody, descriptor-removal, retry and successor guidance could overlap this topic; it was used only to constrain operations, never as evidence of the historical target. No inherited study discussion beyond the dispatch, historical manager reviews, other packets, current source, Git data, network material, neighboring projects, private stores or referenced external artifacts were consulted. No accidental outside-file reads occurred. The return itself discloses the historical auditor's inherited context; those references were not followed.",
+  "verification": "Computed SHA256 with shasum for all seven listed files; all five manifest evidence digests match. This verifies only the consulted packet bytes against the supplied manifest, not the historical source assertions or capture provenance.",
+  "unread_material": "None of the five granted evidence files remains unread. All cited historical source files, tests, helper receipts, old workspaces, Git/interpreter configuration and harness enforcement evidence remain unconsulted and are distinguished from the auditor's descriptions."
+}

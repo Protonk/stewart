@@ -1,0 +1,41 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r07/SOURCE-BRIEF.md",
+      "sha256": "3bfe297416dbb3779d1aa214745b9561a5170f8c7e75d7c4e771077e51a3561f",
+      "scope": "Read in full: two exact additional source-document grants, frozen previous outputs, static-only restrictions and response requirements."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A1/TEST-COVERAGE.md",
+      "sha256": "e0bcba4a2d668e98d23625e9c0bd9f10ba05ec01d7867fa843198a0e824976f5",
+      "scope": "Read all 129 lines with numbering, no truncation; document SHA256 matched brief. Includes selected historical tests/test_close.py lines 105-151, 208-245, 652-661 and 761-770. Directly inspected uninterrupted second-audit case, removal interruption wrapper and retry assertions, moved-checkout cases. Helpers and full source file were not read; whole-source and excerpt hashes in the document are supplied provenance, not independently retrieved Git identities."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A1/REGISTRATION.md",
+      "sha256": "eb1d13c67a660ef33d43015f4f00339383d772f60a1a2cb82d30dd45a051bab2",
+      "scope": "Read all 139 lines with numbering, no truncation; document SHA256 matched brief. Includes historical tests/test_repository.py 269-283, close.py 243-258, 378-427 and 475-497, and _repository.py 257-262. Inspected written reuse control, registration lookup, removal/keep branch, leftovers filtering and lifetime-marker explanation. Omitted helpers, retry validation/dispatch and completion code were not read."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r07/attempt-01/FIRST-PASS.md",
+      "sha256": "b03d937ba6655a41374fed3d55571466f303ad1564007fed9f55d1ed4cd3c5a7",
+      "scope": "Hash-only read this phase to check frozen identity. Earlier reasoning retained in context. Not edited."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r07/attempt-01/SOURCES.json",
+      "sha256": "d66e501eaf68ce4e44de994e1ab0495e2556cc81489b8cd0aed5ed341b8a6b2a",
+      "scope": "Hash-only read this phase to check frozen identity. Not edited."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r07/attempt-01/SUPPORT-RESPONSE.md",
+      "sha256": "2773de66d1f933497110312737dc99d0bafd1d4afcb4a60afba380fb2578bf75",
+      "scope": "Hash-only read this phase to record frozen identity. Earlier reasoning retained in context. Not edited."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r07/attempt-01/SUPPORT-SOURCES.json",
+      "sha256": "f53fa9023f457d567437cdb94013286d9b5498eff67976ab17da1d570ef002ff",
+      "scope": "Hash-only read this phase to record frozen identity. Not edited."
+    }
+  ],
+  "outside_context": "Earlier first/support phases and their granted material remain in conversational context. Automatically supplied current repository guidance, environment, permissions, tool/developer instructions and skill catalog remain operational context only, not evidence of historical target behavior. Parent dispatch froze four prior files and authorized this exact source brief. No other study results, source files or external material were accessed. No project or historical execution, tests, Git access, network, custody actions, deletion or delegation occurred. Static document reading, line counting and hashing only; writes confined to the assigned attempt directory.",
+  "truncation_or_unread": "No truncation or unread portions in the source brief or two added source documents. Referenced full historical subject files and omitted helpers, fixture setup, retry dispatch/validation, completion logic, deployment configuration and old audit environment were not accessed."
+}

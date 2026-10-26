@@ -1,0 +1,46 @@
+{
+  "files": [
+    {
+      "path": "coordination/return-boundary-01/recipients/r08/SOURCE-BRIEF.md",
+      "sha256": "d18c7c96863d318e8598a00be2672da7a5d370a41111d6eb90fc010d0c6a64cd",
+      "scope": "Read in full: exact additional source grant, frozen outputs, source-phase question and operational restrictions."
+    },
+    {
+      "path": ".scratch/return-boundary-01/source-grants/A3/LEDGER.md",
+      "sha256": "ce376c363e2187e4505d07ad6d54f2d08cd846496e867c1786ad6bdf25fa87bb",
+      "scope": "Read in full, no truncation: editorial limits; ledger.py 134–289; experiment.py 133–164, 337–353 and 510–527; README.md 1240–1315. All references identify embedded historical excerpts, not separately opened original files. Omitted helpers/constants/wrapper context were not read.",
+      "matches_source_brief": true
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r08/attempt-01/FIRST-PASS.md",
+      "sha256": "0c6af9c0f67e57d02035d2d1848a654a6b31617e802120d6381fcaf1cfdc09ae",
+      "scope": "Byte-hashed only for frozen-output preservation check in this phase; contents were not reread or changed. Prior response context remains available from earlier phases."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r08/attempt-01/SOURCES.json",
+      "sha256": "dc5fbbbaee608987798a44a5da104faa763cbee030704a903e80fdfb20ca8681",
+      "scope": "Byte-hashed only for frozen-output preservation check in this phase; contents were not reread or changed. Prior response context remains available from earlier phases."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r08/attempt-01/SUPPORT-RESPONSE.md",
+      "sha256": "0ad8c10867d99b6fca3006adf105202e404bc1e19217fb3fea19ff69d36b3123",
+      "scope": "Byte-hashed only for frozen-output preservation check in this phase; contents were not reread or changed. Prior response context remains available from earlier phases."
+    },
+    {
+      "path": "coordination/return-boundary-01/recipients/r08/attempt-01/SUPPORT-SOURCES.json",
+      "sha256": "75bca7f66cd31efe517704ba28f73ca907827948a3e2b295d4c2ac0f086d0010",
+      "scope": "Byte-hashed only for frozen-output preservation check in this phase; contents were not reread or changed. Prior response context remains available from earlier phases."
+    }
+  ],
+  "outside_context": "This phase inherited my earlier admitted finite-return and support-passage readings, both frozen response phases, and the coordinator dispatch directing SOURCE-BRIEF.md. Current repository AGENTS.md, environment/permissions and generic tool/developer guidance remain operational constraints only, not historical subject evidence. No current repository source, historical original file beyond the selected excerpt document, tests, Git, network, private store, neighboring project, other packet or old audit environment was accessed. No accidental outside read occurred.",
+  "unread_or_truncated": "No tool display truncation. The newly granted excerpt document was read in full. Its omitted validators, comparator, module constants, wrapper context and custody helpers remain unread. Whole-file digests printed in the excerpt are supplied metadata, not hashes independently calculated from those unavailable originals.",
+  "frozen_files_sha256": {
+    "FIRST-PASS.md": "0c6af9c0f67e57d02035d2d1848a654a6b31617e802120d6381fcaf1cfdc09ae",
+    "SOURCES.json": "dc5fbbbaee608987798a44a5da104faa763cbee030704a903e80fdfb20ca8681",
+    "SUPPORT-RESPONSE.md": "0ad8c10867d99b6fca3006adf105202e404bc1e19217fb3fea19ff69d36b3123",
+    "SUPPORT-SOURCES.json": "75bca7f66cd31efe517704ba28f73ca907827948a3e2b295d4c2ac0f086d0010"
+  },
+  "method": "Static source/text reading and reasoning only; isolated standard-library Python used solely for document writing, SHA256 bookkeeping and frozen-file comparison. No project or historical execution, import, test, installation, network, Git, custody operation, deletion or delegation.",
+  "source_response_word_count": 621,
+  "status": "ready"
+}
