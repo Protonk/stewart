@@ -24,6 +24,13 @@ The current harness permits four total, enough for the three prepared inquiry
 workers plus the coordinator. This is a current capacity observation, not a
 permanent staffing rule.
 
+The user reports Claude usage at 99% on 2026-10-26 and does not want a session
+to trigger the limit today. AGENTS.md now requires explicit permission before
+starting or resuming Claude through any harness, CLI or SDK. This wave used
+the current harness; no Claude session was launched. The deliberate usage-limit
+study is deferred in W08/W11/W20. Do not assume today's quota observation still
+holds later, or mistake general fleet authority for permission to use Claude.
+
 AGENTS.md now requires saved briefs, progressive disk checkpoints, file-backed
 long-command output where supported, and reconciliation before replacing an
 unreachable worker. [Coordinator notes](coordination/COORDINATOR-NOTES.md) locate
@@ -42,6 +49,22 @@ handles and inspected checkpoints; do not infer that a prepared brief ran.
 Runtime implementation, fresh audits, live harness/network experiments and
 custody disposal are not commissioned. Routine staffing and recovery stay
 with the coordinator; product choices and later trial scope remain reserved.
+
+All three preparation returns are saved and integrated in
+[SUCCESSOR-PREPARATION-FINDINGS.md](SUCCESSOR-PREPARATION-FINDINGS.md). Independent
+review found no blockers and one corrected supporting-note locator. Three
+original product returns survive at exact historical Git paths. The proposed next pilot uses the ledger case with original/common/
+omitted-support/reordered-evidence arms and held-out manager review. It needs
+no Claude or private-store access but is not dispatched. Operating routes remain
+unqualified, and the 60-group acceptance map plus finite legacy inventory brief
+make later dispatch dependencies explicit. No actual legacy population was read.
+The original outcome commits had no containing refs; the coordinator added
+local development-evidence refs and retained exact text copies.
+[Corpus retention](coordination/successor-inquiry-01/CORPUS-RETENTION.md) explains
+recovery and the main-only clone limitation. Final documentary validation is
+`.scratch/successor-inquiry-01/validation-02.json` and `.log`. The first wave is
+complete; the next bounded empirical commission still needs authorization.
+Claude sessions separately require explicit permission; no quota test today.
 
 The dispatch-practice review completed with no blockers and one integrated
 output-ownership correction. Its validation is retained in
@@ -71,7 +94,8 @@ that account at the front of [DEVELOPMENT-PLAN.md](DEVELOPMENT-PLAN.md):
   the current scope. Do not launch all nine mechanically or lose their surviving
   questions when dropping obsolete executor/resource mechanisms.
 - Three bounded first-wave briefs cover answer requirements, operating routes,
-  and coverage/transition. They are prepared, not dispatched. Later workers
+  and coverage/transition. They were dispatched under the subsequent commission;
+  consult the index for their current state. Later workers
   need shared identity/schema/record interfaces and exclusive edit ownership;
   the coordinator integrates root documents and verifies the combined result.
 - Corpus access, real-harness control/delivery trials, Linux execution, actual

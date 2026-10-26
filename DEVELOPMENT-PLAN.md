@@ -11,7 +11,8 @@ Click integration and a dedicated successor program executor are out of scope.
 The user requested this forward reconciliation so accumulated decisions become
 work that is actually completed, and future coordinators can dispatch agents
 without rediscovering dependencies or inheriting conflicting assignments. This
-revision commissions planning only. The sequence and register below own the
+reconciliation commissioned planning; the user subsequently authorized the
+bounded first preparation wave described below. The sequence and register own the
 current work account; the numbered stages later in this document retain their
 supporting decisions, evidence and inquiry history. Earlier recommendations
 are comparisons where the keyhole candidate reopens them, not parallel queues.
@@ -62,6 +63,22 @@ completion. An item closes only with linked evidence or an explicit decision
 that defers, replaces or removes it; a new recommendation cannot silently erase
 a decided obligation. Split rows when different parts acquire different states.
 
+First-wave source preparation is complete and independently reviewed in
+[SUCCESSOR-PREPARATION-FINDINGS.md](SUCCESSOR-PREPARATION-FINDINGS.md).
+It supplies an exact three-case corpus, a concrete one-case representation
+pilot, candidate operating routes and a detailed
+[clause-to-acceptance map](coordination/successor-inquiry-01/coverage/attempt-01/CLAUSE-ACCEPTANCE-MAP.md).
+The map owns the initial clause trace beneath W01–W20; it is not implementation
+evidence or authority to replace contracts. The
+[finite transition brief](coordination/successor-inquiry-01/coverage/attempt-01/TRANSITION-INVENTORY-BRIEF.md)
+names required inputs and the separate F6/F7 gates. No live legacy population
+has been inventoried. Review found no blockers and one corrected source locator;
+no trial or implementation is started by these preparation results. The next
+proposed empirical commission is the A3 original/common-form pilot with omission
+and ordering controls. Remaining corpus, route and inventory prerequisites stay
+open. Final document checks are retained in
+`.scratch/successor-inquiry-01/validation-02.json` and `.log`.
+
 All items below are open unless their state says otherwise. F numbers are the
 sequence above, not authorizations. Detailed contract clauses govern beyond
 these summaries; every admitted clause must have acceptance coverage before
@@ -69,7 +86,7 @@ its implementation is considered complete.
 
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
-| W01 — Inquiry planned | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
+| W01 — Corpus prepared; pilot unrun | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
 | W02 — Policy open | Select admitted-answer-only or complete-attempt custody; define setter acknowledgments, bounded snapshot assembly, attempt identities, corrections/finality, retrieval and lifetime. Decide partial work on early close, compulsory manager gap/follow-up responses and helper-independent human handback. [Keyhole decisions](KEYHOLE-OBLIGATIONS-FINDINGS.md#decisions-and-evidence-still-needed), [Riker assessment](KEYHOLE-OBLIGATIONS-FINDINGS.md#riker-and-the-transition). | W01 informs F3. Before F5, choose scope and update affected contracts explicitly. Test invalid final discriminator after substantial setters, full attempt versus call arguments, later-setter invariance, failed custody writing, racing/repeated finals and lost success replies. The prior coordinator's preference for attempt custody is not a decision. |
 | W03 — Architecture open | Decide A.1's formal admission rule and D's commission facilities, capture terms and retention promise, including R3's distinction from a voluntary hold. Identify any new auditor channel's effect on inherited assumptions. [Opening decisions](#opening-decision-round-a-narrow-custodial-core), [R3](#session-scoped-agent-guidance-reconciliation-2026-10-25). | F3, informed by W01/W02 and W04–W09. No executor does not adopt an exact-three-responsibilities formula. Test grants and recorded limitations against the actual commissioned view; admission is not a verdict on the answer. |
 | W04 — Workspace/history open | Decide B and F: plain subject files, history-only use, pinned history facility, and supported Git-aware/build/test capabilities. Resolve unrepresentable trees and name normalization as proposed decisions, not silent fixes. [B](CUSTODIAL-CORE-FINDINGS.md#b-the-workspace-representation), [F](CUSTODIAL-CORE-FINDINGS.md#f-the-form-of-the-history-facility). | Capability comparisons in F2; selected representation before F5. Verify selected object membership, absent unrelated/dangling/replacement objects, graft/shallow/partial limits, case/Unicode behavior and real tool usability. A shared backing store cannot expose its whole contents. |
@@ -85,7 +102,7 @@ its implementation is considered complete.
 | W14 — Close direction decided, coverage changes open | Implement one close entry point across all states, including graceless exit, with distinct retirement and final custody close. Reconcile the lifetime-based disposable-environment proposal with every existing close protection before removing content identities, duplicate checks, later-collection accounting or partial-tree salvage. Resolve the failed-preparation record and recorded-writer-pause leads. [Close](CONTRACTS.md#close), [reduction candidates](KEYHOLE-OBLIGATIONS-FINDINGS.md#what-could-fall-away), [leads](CUSTODIAL-CORE-FINDINGS.md#leads). | Policy in F3; implementation after W08/W10/W11 and preservation in F6. Cover each removal ground, kept/substituted checkout, preserved failure evidence, interrupted removal, hold/live-use protection and incomplete preservation. Own operational checks independently of status/rendering. Changed scratch versus substituted ownership must differ. No automatic retirement on a rejected attempt. |
 | W15 — Trust corrections owed | Establish one Git configuration/environment policy: configured filters and replacement consistency, hooks, grafts, lazy fetch, patch formatting, Unicode assumptions and relative worktree paths as applicable. Use exclusive capture writes and verified descriptor traversal. [Corrections](CUSTODIAL-CORE-FINDINGS.md#corrections), [accepted fixes](CONTRACTS.md#previously-accepted-corrections). | Shared foundation before F5 input/custody operations. Source and narrow probes do not qualify the whole policy. Use matched/unmatched/unconfigured execution controls and identity comparisons; qualify the selected routes without assuming unsupported SHA-256 or host behavior. |
 | W16 — Earlier accepted fixes owed | Compute implementation identity before allocating applicable state; keep Git metadata timeout values unknown. Compare attached/detached/unborn/chained HEAD before replacing porcelain queries. Bind the last required observation to the value used and retain it through removal; include executable-mode changes where capture coverage remains. [Earlier corrections](CONTRACTS.md#previously-accepted-corrections). | Assign each surviving surface in F3/F4/F5, removal binding in F6. If a surface disappears under an authorized scope decision, record that disposition rather than porting its machinery or silently dropping the rule. Review traversal races, concurrent unkeyed closes and changed-target progress within the admitted scope. |
-| W17 — Legacy strategy decided, population absent | Identify the finite Python population: live audits, recoveries, resources/claims, partial requests, captures and completed publications. Separate evidence reading from old-writer operations and transition-only diagnosis. [Writer transition](CONTRACTS.md#writer-continuity-into-the-successor). | Discover authorized locations/population in F1; inventory before cutover commitments. Before F6 close execution, stop new admissions to the transitioning Python population and close its live audits under Python. Settle independent undertakings before F7 withdraws the writer; do not postpone the live-audit gate until final release. No successor mutation/cross-writer export without its separate decision; no rewritten receipts or restored executor. |
+| W17 — Inventory scoped; population unknown | Identify the finite Python population: live audits, recoveries, resources/claims, partial requests, captures and completed publications. Separate evidence reading from old-writer operations and transition-only diagnosis. [Writer transition](CONTRACTS.md#writer-continuity-into-the-successor). | Discover authorized locations/population in F1; inventory before cutover commitments. Before F6 close execution, stop new admissions to the transitioning Python population and close its live audits under Python. Settle independent undertakings before F7 withdraws the writer; do not postpone the live-audit gate until final release. No successor mutation/cross-writer export without its separate decision; no rewritten receipts or restored executor. |
 | W18 — User documentation pending | Settle remaining Git-guide statuses, then link it from README and include it in the sdist with the wheel unchanged. Plan successor Git-observation coverage; write useful CLI help, failure next steps, installation, user guidance and qualified limits alongside implementation. [Git publication](#git-document-publication-and-guidance), [guide](GIT-ENVIRONMENT-NEEDS.md). | Existing guide publication can finish independently once statuses are decided. F4–F7 documentation follows implemented behavior. Frozen bundled Python text stays unchanged; successor guidance needs its own home. Verify generated-table freshness/coverage, distribution contents and audience, not just links. |
 | W19 — Implementation foundation uncommissioned | Select Rust/toolchain/dependency policy, packaging and CLI boundaries, any admitted callable API, and reproducible installed-artifact checks. Adapt language-agnostic acceptance to compare selected contracts, not all Python behavior. [Stage 4](#4-transition-to-rust), [development checks](DEVELOPMENT.md). | F4 foundation before operation workers. Keep runtime independent of containing repositories; imports/startup side-effect free where applicable, byte contracts explicit, reason IDs stable, safe control JSON and exclusive receipts shared. Historical fixtures are immutable inputs, not schemas to rewrite. |
 | W20 — Integrated/platform qualification pending | Build the independent witness for omission/deletion studies, retain it through review, qualify final manager/auditor boundaries and execute macOS/Linux/WSL acceptance. [Platform exit](#4-transition-to-rust), [retention](DEVELOPMENT.md#retained-runs-and-their-removal). | Witness and environment preparation in F1/F2; final evidence F6/F7. Preserve firing/differing/invariance cases, actual selector counts, host/harness identities and failed runs. A rescue is a product retrieval failure; settings construction and Linux recipes establish neither enforcement nor WSL support. |
@@ -133,6 +150,14 @@ decision before implementation. The receipt decision belongs with W02/W12;
 none is authorized by merely retaining a submission.
 
 ## Preparing and dispatching agents
+
+Deferred study, 2026-10-26: deliberate Claude usage exhaustion belongs to
+W08/W11/W20 in the medium term. It is not commissioned and must not run today;
+the user reports 99% usage. A future brief must distinguish launch refusal,
+interruption during work, and uncertain effects or lost replies, without
+preselecting a product outcome. Starting or resuming any Claude session needs
+the user's explicit permission under AGENTS.md, regardless of general fleet
+authorization or a classifier allowing the call.
 
 The user commissioned this bounded **inquiry preparation** wave on 2026-10-26
 after its briefing. It is not a runtime or live-trial commission. At dispatch the coordinator pins one source
