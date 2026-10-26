@@ -140,10 +140,13 @@ revision, a run directory and any newly authorized corpus locations. Workers
 may read this repository and the explicitly supplied sources only; restricted
 neighboring projects are not a way to fill a corpus or legacy-inventory gap.
 All three assignments return a compact finding, source anchors, unknowns and
-a concrete next comparison. They edit only their assigned run file. The
-coordinator alone integrates root plans, contracts and shared design documents.
+a concrete next comparison. Each `<run>` below is that task's attempt directory;
+the table names its primary findings file. The brief also grants its progress
+and final-return files, as specified under laptop continuity below. Workers
+edit only those assigned outputs. The coordinator alone integrates root plans,
+contracts and shared design documents.
 
-| Assignment / edit ownership | Complete bounded brief | Return and stopping point |
+| Assignment / primary output | Complete bounded brief | Return and stopping point |
 | --- | --- | --- |
 | Answer requirements / `<run>/answers.md` | Read W01/W02, the four frozen question recipes, keyhole findings and accessible actual reports. Select a small varied corpus; bind original question, available context/return and the manager task where known. Identify required support, qualifications and candidate representations. Do not invent missing decisions or use fixtures as real audit experience. | Corpus manifest with unavailable cases explicit; first representation comparison with recipient information boundary and controls. Stop before converting the full corpus, running fresh audits or fixing a durable schema. |
 | Operating routes / `<run>/routes.md` | Read W04–W11 and the close/return design. Compare concrete launch/access/stop/delivery arrangements compatible with the bounded product relationship and no executor. Include human-run and agent-run launch, human handback, shared material and loss of launcher/reply. Separate source/settings evidence from enforcement. | Route/dependency table, consequential choices and small qualified-probe proposals with required host/tools/permissions/cost. No live harness run, external message, service creation or implementation. Flag unknown feasibility rather than filling it with an assumed controller. |
@@ -181,6 +184,54 @@ Keep these updates short and current rather than accumulating competing status
 paragraphs. A successor coordinator should be able to identify the next runnable
 assignment and why other work is waiting from this section and its cited results.
 
+### Laptop dispatch and continuity
+
+The user has selected coordinator-led dispatch as the working arrangement,
+with about ten simultaneous agents as a soft fleet-wide memory preference.
+The current harness has four total slots: the coordinator and three workers.
+The first inquiry wave therefore fits without using a second harness. Later
+capacity is checked at dispatch; neither four nor ten is a staffing target.
+This turn prepares guidance and the dispatch briefing, not the substantive
+inquiry or implementation. Within subsequently commissioned work, ordinary
+assignment changes and replacement workers are coordinator decisions.
+
+[Coordinator notes](coordination/COORDINATOR-NOTES.md) are the dispatch index.
+Keep program status in W01–W20, current worker/attempt state in that index,
+and reconstruction guidance in COORDINATOR-HANDOFF.md. Worker progress owns
+its detailed findings; do not copy several changing versions into all three.
+AGENTS.md supplies the standing checkpoint and recovery rules. Before a wave
+starts, give each worker a saved brief and its own attempt paths, with a source
+commit or a retained patch/snapshot for any admitted uncommitted inputs.
+Unstarted rows have no invented worker handle or evidence of execution.
+
+For the prepared inquiry wave, instantiate the three briefs above under
+`coordination/successor-inquiry-01/<task>/BRIEF.md`. Each dispatched attempt
+gets its own directory, such as `attempt-01/`, with `PROGRESS.md`, substantive
+findings as they develop, and a final `RETURN.md` written before the chat return.
+The worker owns only its assigned output files; the coordinator owns the index,
+brief changes and root documents. A changed assignment gets a recorded revision;
+a replacement gets a new attempt rather than overwriting uncertain output.
+Large command outputs go under a fresh `.scratch/` run path recorded in the
+brief. Nothing here changes evidence-run pruning or the frozen baseline.
+
+Start with three independent preparation workers: answer requirements,
+operating routes, and coverage/transition. The coordinator checks their initial
+disk checkpoints, integrates findings as they return and commissions a fresh
+reviewer over the combined account after worker slots become available.
+Review findings are resolved before dependent trials or implementation.
+Further waves follow the F1–F7 dependencies; do not keep all available slots
+occupied merely because they exist. Preserve room for integration and useful
+independent review.
+
+On recovery, first read the handoff, this plan and the index, then inspect the
+named attempts and actual workspace state. Reconcile observations before
+marking a worker returned, interrupted or integrated. If an old writer cannot
+be confirmed stopped, a replacement uses disjoint paths or an isolated worktree.
+Adopt verified saved work with its provenance; retain incomplete and uncertain
+work separately. Resume known incomplete development work, not an uncertain
+command against the same effectful target. Missing corpus access or unresolved
+product obligations return as concrete questions; routine dispatch does not.
+
 ## Git document publication and guidance
 
 W18 has a small independent finish once remaining statuses are settled:
@@ -205,6 +256,15 @@ local links and anchors, whitespace, frozen production source, unchanged
 contracts/historical inputs and generated Git-table checks. Actual outcomes
 belong to that record; zero pytest nodes and zero behavioral comparisons are
 planned for this documentation-only revision.
+
+The subsequent laptop dispatch guidance and briefing preparation are checked
+in `.scratch/coordinator-dispatch/validation-01.json` and `.log`. The bounded
+[independent review](coordination/dispatch-review-01-RETURN.md) examined the
+saved source snapshots and interruption scenarios; its single output-ownership
+finding is resolved in the dispatch section and coordinator notes. Its progress
+and final return were saved before the chat return. This is documentary review,
+not qualification by induced sleep, network loss or process failure. No pytest
+nodes or behavioral comparisons were selected for this guidance change.
 
 ## Purpose and authority
 

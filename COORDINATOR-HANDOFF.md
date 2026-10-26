@@ -16,6 +16,35 @@ Earlier versions remain in Git.
 
 ## Where this handover leaves you
 
+The user's latest direction is coordinator-led sub-agent dispatch, with little
+routine user management. The laptop preference is about ten simultaneous agents
+or fewer across the whole fleet, expressed in prose rather than enforced in
+code. Lower harness limits and memory pressure govern actual concurrency.
+The current harness permits four total, enough for the three prepared inquiry
+workers plus the coordinator. This is a current capacity observation, not a
+permanent staffing rule.
+
+AGENTS.md now requires saved briefs, progressive disk checkpoints, file-backed
+long-command output where supported, and reconciliation before replacing an
+unreachable worker. [Coordinator notes](coordination/COORDINATOR-NOTES.md) locate
+assignments, attempt outputs, observed state and the next action. Read those
+notes after interruption; they are an index, not proof that a worker is alive
+or stopped. Keep potentially live writers out of replacement edit paths.
+The active plan owns dependencies; the index owns dispatch state; worker files
+own findings. Update these during work, not only when writing a final handoff.
+
+This change prepares the guidance and dispatch briefing. The substantive inquiry
+wave has not started. A bounded independent review of the dispatch/recovery
+guidance completed with no blocking findings; its output-ownership correction
+is integrated, and the notes link its saved inputs, checkpoint and return.
+Validation is recorded in `.scratch/coordinator-dispatch/validation-01.json`
+and `.log`. No actual sleep/network-fault test was run. The next program wave is answer requirements,
+operating routes and coverage/transition, followed by coordinator integration
+and fresh review. Routine staffing and recovery stay with the coordinator;
+product decisions and any new trial/implementation commission retain their
+existing boundaries. This arrangement does not ask the user to approve each
+worker or reconstruct a lost conversation.
+
 Coordinator intake and forward reconciliation, 2026-10-26. The preceding
 session ended with a computer fault, without a deliberate final handoff. This
 file had accumulated incidental updates. The user believes the last recorded

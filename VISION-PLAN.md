@@ -48,6 +48,17 @@ provider split is required. The user need not relay routine worker messages or
 manage individual assignments. The coordinator brings back decisions beyond
 its authority and important failures or disagreements.
 
+The user wants that coordination to be the ordinary way this program advances,
+without managing individual workers. On this laptop, normally stay at about
+ten simultaneous agents or fewer across the fleet, with lower harness limits
+and memory pressure governing actual concurrency. Prefer small useful waves.
+Continuity must survive the loss of a worker conversation: briefs, intermediate
+findings, evidence and the next action belong on disk while work proceeds.
+The coordinator maintains the dispatch account and handoff and can replace a
+worker from verified saved work without asking the user to reconstruct it.
+Uncertain effects and potentially live writers remain explicit. AGENTS.md
+states the standing checkpoint and recovery practice.
+
 The coordinator owns how outside advice is assessed and incorporated into the
 work, including when to consult Riker. Advice relayed by the user is not thereby
 endorsed by the user. Preserve its provenance, test its claims against available

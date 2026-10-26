@@ -83,6 +83,60 @@ Shared check-ins normally cover stage outcomes,
 semantic decisions, evidence and unresolved questions in human-readable docs;
 the coordinator manages internal logistics.
 
+For development on the laptop, normally keep the whole fleet to about ten
+simultaneous agents or fewer, counting coordinators, reviewers and nested
+workers across harnesses. This is a soft memory-pressure preference, not a
+target or a hard-coded limit. Respect any lower harness limit; use fewer when
+builds, tests or other work need memory. Exceed the preference only for a
+specific useful reason and record it in the coordinator's notes. Workers
+arrange any further delegation with the coordinator so it remains in the
+shared count. Do not accumulate idle sessions unnecessarily or start another
+harness merely to evade a capacity limit. Inside an authorized commission,
+the coordinator manages dispatch, replacement and integration without asking
+the user to approve each worker or wave.
+
+Development work must be recoverable from disk when sleep, network loss or an
+unreachable worker interrupts the conversation. Use the harness and ordinary
+files, not a new orchestration service:
+
+- Before dispatch, save the complete brief, source revision (and any admitted
+  uncommitted inputs), permitted reads/writes, output/evidence paths and
+  completion criteria. Keep a coordinator-owned dispatch index linking the
+  assignment, agent handle, worktree, observed state and last checked output.
+  The handoff locates that index; the active plan owns program dependencies.
+- Each worker writes an initial checkpoint before substantial work, saves
+  substantive findings and changes as they arise, and refreshes its progress
+  at meaningful milestones and roughly every five to ten active minutes on
+  longer tasks. Save before a long tool call as well. This is a checkpoint
+  cadence, not a wall-clock timeout or evidence of liveness. A useful checkpoint
+  names completed work, source/evidence paths, uncertainties, work in progress
+  and the exact next step; conversation history is not its only record.
+- Send long-running command output to recorded files while it is produced
+  where the tool supports it; record the command, working directory, process
+  identity when available, and eventual outcome separately. A lost tool reply
+  does not establish success, failure or absence of effects. Preserve code,
+  draft findings and evidence before sending the final return to the coordinator.
+- Keep small briefs, progress and returns in tracked coordination files;
+  keep bulky run artifacts in their recorded evidence locations under the
+  existing retention rules. The coordinator commits coherent checkpoints;
+  saving to disk must not wait for a commit or for finished work. Record
+  dispatch, return, reassignment and integration promptly in the index, and
+  refresh the handoff at wave boundaries and consequential changes.
+- After interruption, reconcile the index, actual files/diffs, retained logs
+  and available harness state before continuing. A silent or unreachable
+  worker is not known stopped. Prevent overlapping writers, including a prior
+  coordinator with queued work: confirm the old writer stopped before
+  transferring its paths, or give its replacement a
+  separate attempt directory/worktree and preserve the old output. Record the
+  new attempt and what verified work it adopts. Do not blindly rerun an
+  uncertain effectful command or treat a saved draft as a verified result.
+
+The coordinator verifies the saved result and its evidence before marking an
+assignment integrated. Keep unresolved work explicit and retire coordination
+notes only after useful conclusions have moved into the plan, documentation
+or tests and their evidence has a disposition. These are development practices;
+they add no Stewart product retry, monitoring or intervention facility.
+
 The successor direction separates recording a commission from promising its
 replay; the manager owns constructing another question. Assess the preference
 for zero or at most one audit retry facility under CONTRACTS.md, without treating
