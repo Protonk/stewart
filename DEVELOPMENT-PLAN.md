@@ -43,6 +43,24 @@ incomplete operations remains central, especially for agent-managers. The
 user requested the next coordinator handoff after this decision; implementation
 remains uncommissioned.
 
+Coordinator intake, 2026-10-25: the user strongly prefers a single `close`
+command that closes the audit regardless of state, with withdrawal during an
+active investigation handled internally if needed. This is the successor
+interface design direction. Existing holds and custody obligations still
+constrain completion; the manager should not need to select a separate
+withdrawal, abandonment or recovery procedure. CONTRACTS.md records the
+direction and its unresolved mechanics. No implementation is commissioned.
+
+Current planning priority, 2026-10-25: define return acquisition, availability,
+delivery and recovery of identified custody operations before considering an
+audit-restart convenience. The user delegated assessment of peripheral advice
+and adjustment of this plan to the coordinator. The next design work below
+makes stable publication the leading normal-capture candidate, names the
+exported-result recipient as the first evidence-reader consumer to specify,
+and carries early and interrupted closure through the single `close` entry
+point. These are planning choices and recommendations; new custody commitments
+still require decision. No audit restart is scheduled for the first successor.
+
 Checkpoint, 2026-10-24: the user decided D1 as six close rules plus
 abandon parity, decided D2, D3 (contingent on stage 3's submodule decision) and
 D4, deferred D5 to stage 4, took D6 as documentation, declined seven optional
@@ -640,6 +658,144 @@ project is retired.
 **Exit:** an integrated Rust system verified against the selected contracts,
 with platform evidence and explicit disposition of any unmet acceptance item.
 
+### Next design work: acquiring returns and completing custody
+
+Planning revision, 2026-10-25, under the user's delegation. The peripheral
+recommendations are preserved in
+[`planning/inputs/return-and-custody-advice.txt`](planning/inputs/return-and-custody-advice.txt).
+Their relative links were not followed. The choices below are the coordinator's
+assessment against current Stewart contracts, source and retained findings;
+relaying the advice did not make it the user's guidance. No new runtime or
+harness experiment is commissioned by this planning revision.
+
+Develop one account of what Stewart acquires, how the manager receives it, and
+how the same custody undertaking finishes after interruption. This is the next
+design priority within the open A to F round. Recommend zero audit restarts for
+the first successor and schedule no restart convenience. The open product
+choice of at most one such facility remains reserved; reconsider it only for
+an identified need after the custody interfaces are concrete. Do not replace
+recovery of Stewart's own work with a new investigation.
+
+Produce the following connected design account before proposing implementation:
+
+1. **Acquiring an identified return (C, D and R2).** Make a stable, identified
+   publication the leading candidate for ordinary acquisition. Define the
+   publication act, its finite material boundary, the mechanism that establishes
+   stability, the authority to acquire it and the exact observation Stewart can
+   claim. Here publication means fixing the auditor's return for acquisition;
+   later retention/export to a manager destination is a separate operation.
+   A digest or a declaration of completion alone establishes no freeze.
+   Qualify the arrangement and its read/write routes equally for human and
+   agent auditors; human authorship neither supplies nor defeats confinement.
+   Distinguish the auditor's claimed investigative outcome, completeness of
+   acquisition, and completion of custody. A complete publication can report
+   failed or incomplete investigation. Preserve raw captured bytes before
+   interpretation, including invalid declarations and interrupted fragments.
+   Specify what happens to material outside the publication: selecting a return
+   must not silently narrow an existing capture or preservation obligation.
+   Early close must have a supported path when no stable publication exists.
+   Keep the baseline's attributed stop and movement observations as comparison
+   evidence, not proof of a stronger stability guarantee. Stable return bytes
+   alone do not establish stopped activity, revoked grants or safe retirement.
+2. **Making the return available and delivering it (R2).** Recommend a normal
+   reader that verifies the selected report and the dependencies of its claims,
+   carries relevant surrounding damage, and names unfinished custody work
+   without withholding an otherwise usable answer merely for cleanup. This
+   extends the decided export-only policy and therefore needs a specific
+   contract decision. A damaged dependency qualifies the claim it supports;
+   intact report bytes do not make all reported evidence verified. Separately
+   identify the receiving endpoint, callback/resumption responsibility and
+   evidence of delivery on each admitted route. Availability, attempted
+   delivery and receipt are different observations; loss of notification must
+   not require another audit or routine manager polling. Preserve the decline
+   of an accepted-answer receipt. A delivery observation is no verdict on the
+   answer and supplies no authority for recurring live inspection.
+3. **Completing identified custody operations, including close.** Design the
+   manager's retained request reference or unambiguous discovery path as well
+   as the exclusive binding before effects. An identifier returned only in a
+   lost reply cannot serve that manager. Map each interrupted operation to its
+   planned outputs, observed effects, available result and supported completion
+   or explicit disposition. A repeat of an identified request remains that
+   undertaking; it neither adopts unrelated output nor treats a new observation
+   of changed material as the old capture. Do not silently deduplicate unkeyed
+   requests. Use one manager-facing `close` entry point across preparation,
+   investigation, return, holds and failure, including internal withdrawal and
+   partial-work accounting. Continue removal against its frozen inventory and
+   revalidated identities; a replacement at the same path grants no authority.
+   Keep holds, other live uses and preservation undertakings effective. State
+   a usable resolution for each failure; neither a diagnostic alone nor a new
+   manager-facing menu of withdrawal/recovery stages meets the design target.
+4. **Reading a portable result and bounding legacy needs.** Specify a manager
+   or later investigator opening an exported result after its original audit
+   environment and writer are gone as the first evidence-reader consumer.
+   Name exact admitted schemas, selections and supported claims. Account for
+   the question's bytes, subject identity, report, selected support, collection
+   and source-receipt identities, attribution and qualifications. A commit ID
+   alone does not recover absent question bytes. Inventory what existing
+   packages actually carry before promising this view; missing historical
+   context stays a limitation, with no rewritten receipts or assumed format
+   upgrade. Preserve a finite selection and the dependencies needed for its
+   claims, without promising replay or recursively preserving its references.
+   Apply the same requirement to held captures after environment retirement.
+   A portable snapshot describes its recorded custody; it cannot establish a
+   later completion or hold release without the relevant later evidence.
+   Keep current-operation status and transition-only Python diagnosis separately
+   scoped. This consumer selection organizes reader design; Rust implementation
+   remains status first, write path next and close last, pending commission.
+   In this account, resolve R1's helper-asset consumers: prefer inspection of
+   captured assets and separately authorized fresh reuse over a new mutable
+   recovery directory. Carry any unmet consumer and existing Python recovery's
+   transition disposition explicitly; removal is not yet a contract decision.
+
+For B and F, retain the leading recommendation of a plain subject directory
+and a separately granted pinned history view, including history-only inquiries
+with a return area. Use a self-contained copy of the selected history as the
+initial design candidate. Shared immutable storage may optimize it only after
+selected access and independent custody identities are established. Before
+deciding the sole workspace form, give concrete capability examples for
+Git-aware inspection and build/test tools: what works, what needs a different
+invocation, and what would be unsupported. Useful auditor tool use remains
+important after executor removal. Rich selected context is compatible with a
+narrow question. Do not add a live history-query service to resolve convenience
+issues without assessing its new channel and availability obligations.
+
+The following comparisons define the questions for later qualification; none
+has run in this revision. Reuse earlier evidence where it measures the property.
+For each new comparison include a firing control, a case differing in that
+property and an invariance case, with an independent witness outside any
+capture/disposal under study and retained through review.
+
+| Case | What the design and later evidence must distinguish |
+| --- | --- |
+| A fixed return reports failed investigation | Acquisition can complete while the auditor declares incomplete work; no Stewart process witness is inferred. Compare a successful-investigation report with the same acquisition conditions. |
+| A writer attempts to change publication during acquisition | The mechanism protects the identified version or qualifies the failed acquisition and preserves observed bytes. An unchanged publication and changes outside the selection distinguish stability from unrelated activity. |
+| Close arrives before publication, or after failed preparation | The same `close` request accounts for available partial material and stopping uncertainty, without requiring a completed publication or another investigation. A completed return supplies the ordinary control. |
+| Export or acquisition reply is lost | A caller-held reference or supported discovery finds the original undertaking and its planned result; a changed source is a new observation. Compare no effects, partial effects and a completed operation whose reply alone was lost. |
+| Return is available but notification fails | The same identified answer remains retrievable; delivery state stays qualified. Compare confirmed delivery and an unrelated custody change without introducing routine polling or answer acceptance. |
+| Selected report survives surrounding damage | Verify the selected view with relevant qualifications; selected-byte or required-dependency damage changes the affected claim. Equal report bytes in distinct collections retain distinct custody identities. |
+| Close is interrupted, a path is replaced, or a hold/live use remains | Continue only frozen authorized removal, preserve protected material and keep a verified answer readable. Compare the original target, a substituted target and unrelated filesystem changes. |
+| Exported result moves and the original environment disappears | Supported interpretation survives irrelevant paths, writer loss and live-state changes; damaged selected evidence fails its claim. Establish the supported platform result rather than infer portability from a recipe. |
+
+**Exit of this design work:** a concrete manager interaction account for normal
+return, early close and each supported failure; a candidate acquisition and
+delivery protocol with explicit identity/authority boundaries; a bounded reader
+population; and a list of contract decisions with their reliance changes.
+In particular bring back the stability undertaking and any capture-scope change,
+the extension of selected-report access beyond export, delivery obligations,
+and any conflict between single-command close and existing obligations. The
+account must distinguish incomplete investigation, acquisition, delivery and
+closure without making them new mandatory manager-operated stages. Decide the
+remaining workspace, commission and custody-location choices against that
+account before commissioning the write path. No fleet is dispatched or runtime
+implementation started by preparing this work.
+
+Documentation checks for this planning revision are retained in
+`.scratch/return-planning/validation-01.json` and its `.log`, with starting
+documents under `before/` to distinguish the pre-existing single-close edits.
+Zero pytest nodes are selected and zero behavioral comparisons run. The user
+has taken responsibility for the pending commits and Git-permission diagnosis;
+this revision makes no further staging or commit attempt.
+
 ### Opening decision round: a narrow custodial core
 
 The user placed the external proposal in
@@ -670,6 +826,10 @@ decided principles:
 - **C. The capture trigger.** The proposal asks for a supervised session exit
   and demonstrated exclusion of writers; the decided relationship keeps
   Stewart agnostic about launch arrangements and accommodates human auditors.
+  The leading candidate is now acquisition of a stable, identified publication,
+  with an explicit early-close/partial path, as specified in the next design
+  work above. Its stronger guarantee needs a mechanism and a contract decision;
+  auditor type does not determine whether access or stability is enforced.
 - **D. Commission fields.** Permitted facilities, capture policy and a
   retention promise, against the decided principles that close offers
   opportunity and that promises to the auditor are process promises.
@@ -736,23 +896,15 @@ Carry these consequences into the remaining plan and eventual implementation:
    legacy receipts, transfer old execution rights or port the executor as a
    substitute for this bounded transition work.
 
-| Case to carry into design/qualification | Required account under the chosen arrangement |
-| --- | --- |
-| Auditor reports a program failure | Preserve the report and selected evidence as attributed material; do not claim a Stewart-observed process result. |
-| Manager loses a reply | Identify the existing operation and its available result within the custody lifetime/undertakings; a new audit is not recovery of the old operation. |
-| Capture or publication is interrupted | Preserve captured fragments and output identities; complete within verified authority or explicitly dispose of the undertaking. A new observation cannot recover bytes never captured. |
-| Auditor activity or legacy execution remains uncertain | Use the chosen stop/capture and legacy-disposition rules; no blind replay, inferred completion or agent-written replacement receipts. Removing the successor executor does not settle capture quiescence. |
-| Retirement or close is interrupted | Account for the frozen removal operation, remaining inventory, live uses and holds. Do not present completed close or require ad hoc manager cleanup. |
-
-Qualification must distinguish failure, successful control and invariance cases.
-Live agent testing should observe whether the supported interface dissuades
-private-state repair after failures or a lost reply, with an independent witness
-under the existing evidence-retention rules. These are planned checks, not new
-results. Existing request bindings and closing records are evidence for design,
-not a requirement to port every Python mechanism.
+The next design work above now owns the concrete failure cases and planned
+qualification. Existing request bindings and closing records are evidence for
+design, not a requirement to port every Python mechanism. Live agent testing
+should separately establish whether the supported interfaces dissuade private-
+state repair after failures; successful record checks alone cannot establish it.
 
 The preference remains zero audit retries, with at most one restart-from-start
-convenience still open. Recording a remit does not itself promise replay; the
+convenience still open as a product decision and unscheduled in the first
+successor plan. Recording a remit does not itself promise replay; the
 manager owns constructing another question. The separately assigned next-
 coordinator goal is still to effect the lean against mutable helper-runtime
 recovery directories: those helpers are distinct from the removed executor.
@@ -807,12 +959,13 @@ disposition of the rest. Generator runs after review: `git-opinions-02` and
 `-03` failed on test-helper naming (kept as records), `-04` and `-05` passed
 20 of 20.
 
-Awaiting the user: the remaining decisions under A to F (the manager-service
+Remaining semantic decisions: those under A to F (the manager-service
 and custody-hold decisions are recorded below); the two proposed completions under B
 (refusing an unrepresentable tree, one name normalization in capture); the
 leads on a concluded close over a failed preparation and on the recorded
-pause; the guide's statuses; and whether Rust status starts alongside. Nothing
-is in flight.
+pause; the guide's statuses; and whether Rust status starts alongside. The
+coordinator develops the connected return/custody account above to make those
+choices concrete. No runtime implementation is in flight.
 
 Discussion resumed, 2026-10-25: the user had little opportunity to confer with
 the previous coordinator before the handoff. A to F are being reviewed as
@@ -1062,7 +1215,7 @@ Remainder requiring substantive design or a decision:
 | ID | Guidance at issue | Why its disposition is not merely editorial |
 | --- | --- | --- |
 | R1 | CONTRACTS.md's drifted-recovery route assumes the manager has taken what it wants; experiment HOME advice also assumes direct taking. The manual additionally offers manual output-area cleanup before another attempt. | The user accepts a lean toward omitting successor runtime-recovery materialization; effecting that direction in the larger plan is the next coordinator's goal, below. Its removal is not yet decided. A.2 removes the executor, so its HOME and manual retry cleanup need no successor interface. Legacy evidence and unfinished operations retain their transition disposition. |
-| R2 | The baseline manual's post-launch ruling/message example and role instructions to stop/coordinate are not a settled successor intervention protocol. | The narrow commission/return relationship is decided, but exceptional intervention, stop/capture and return delivery are not. Keep recording acknowledgments distinct from delivering or authorizing intervention; do not delete all such records or assume live steering survives. |
+| R2 | The baseline manual's post-launch ruling/message example and role instructions to stop/coordinate are not a settled successor intervention protocol. | The narrow commission/return relationship is decided. The user now strongly prefers one `close` command from any audit state, with any withdrawal path internal. Exact stop/capture, disposition and continuation mechanics, other exceptional intervention and return delivery remain open. Keep recording acknowledgments distinct from delivering or authorizing intervention; do not assume live steering survives. |
 | R3 | CUSTODIAL-CORE-FINDINGS.md D's proposed retention-promise decline equated a chosen undertaking with mandatory retention before every close. | A narrow voluntarily recorded hold is accepted. Establish what the proposed commission promise adds beyond that hold and completed publication before accepting or declining it. The unsupported equivalence is removed; no new retention promise is approved. |
 
 Hold/copy/transfer representation, exact retirement receipts, selected reader
@@ -1157,6 +1310,46 @@ reflect the decision sequence. These documentation changes are checked in
 `.scratch/resource-decisions/validation-13.json` and its `.log`; zero pytest
 nodes selected and zero behavioral comparisons run. Runtime source is frozen
 and no implementation is commissioned by these changes.
+
+### Single close entry point, 2026-10-25
+
+During coordinator intake, the user stated: "My STRONG inclination is to offer
+a close command and that's it." The manager should know that close closes the
+audit regardless of state; "close demanded while audit in progress" may route
+internally to withdrawal. The user authorized recording this direction after
+the coordinator distinguished a close request from guaranteed immediate
+completion under existing holds and unfinished preservation undertakings.
+
+Design one manager-facing close operation across preparation, investigation,
+returned work, held custody and failure states. Stewart owns the internal
+stopping, partial-work accounting and custody steps; a manager should not need
+to diagnose the stage, repair private records or discover a different lifecycle
+command to finish closing. The existing conclusion/abandon distinction supplies
+custody rules and legacy evidence, not a requirement for separate successor
+modes. Do not weaken the one-command target merely by exposing the old stages
+under it. Keep any concrete conflict with an existing obligation explicit for
+decision, including the authority needed to release a hold or surrender an
+unfinished preservation undertaking. Exact prompts, dispositions, stopping and
+continuation mechanisms remain design work; no new interface is implemented.
+
+This narrows R2's interface question without settling capture quiescence,
+other exceptional intervention or delivery. Planned qualification should cover
+the same close entry point at each lifecycle stage, closure interrupted and
+continued within recorded authority, and holds or competing uses that still
+protect their material. These are planned cases, not executed results.
+
+The previous documentation changes were committed as `a8de387`; its account
+supersedes the earlier checkpoint's uncommitted state. The failed staging
+attempt records remain historical evidence. This intake's documentation checks
+are retained in `.scratch/close-direction/validation-01.json` and its `.log`,
+with the final account checked in `validation-02.json` and its `.log` in the
+same directory: zero pytest nodes selected and zero behavioral comparisons run.
+The user requested a recording commit as a partial check of repaired Git
+permissions. Both ordinary and elevated staging still failed creating
+`.git/index.lock` with `Operation not permitted`; nothing was staged and no
+commit was created. `.scratch/close-direction/commit-attempt-01.json` and its
+`.log` retain both outcomes. The five documentation edits remain uncommitted
+until this session can write Git metadata. Do not bypass that restriction.
 
 ## 5. Optionally implement the revised custody arrangement in Rust
 

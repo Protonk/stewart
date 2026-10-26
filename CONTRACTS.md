@@ -603,6 +603,26 @@ those advisory restrictions into new mandatory refusal conditions.
 
 ## Close
 
+**Successor interface direction, 2026-10-25.** The user's strong preference is
+one manager-facing `close` command that closes the audit regardless of its
+current state. Design toward that single entry point across the lifecycle:
+the manager need not diagnose the stage and choose a separate withdrawal,
+abandonment or closure procedure. A request made during investigation may
+take an internal withdrawal path; Stewart owns the supported stopping,
+partial-work accounting and custody steps needed to complete closure.
+
+This is a design direction, not an implemented interface or a guarantee of
+immediate completion. Existing holds, preservation undertakings and removal
+authority still constrain completion; requesting close does not silently
+release or surrender them. An interrupted or blocked closure remains visibly
+unfinished and needs a supported path through `close`, without private-state
+repair or another lifecycle command. Determine the required dispositions and
+return any concrete conflict with an existing obligation for decision. The
+earlier conclusion/abandon rules below constrain custody and legacy behavior;
+their separate manager-facing modes are not a requirement for the successor.
+Exact stop/capture, disposition and continuation mechanics remain open. No
+runtime implementation is commissioned by this direction.
+
 Decided 2026-10-24. **Decided, departure.** The Python close at `6582df2` is the
 control; `CUSTODY-AUDIT-FINDINGS.md` at `356dc58` records its behavior in the
 executed comparisons these rules answer. The rules apply to close's own

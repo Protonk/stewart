@@ -38,6 +38,13 @@ provider split is required. The user need not relay routine worker messages or
 manage individual assignments. The coordinator brings back decisions beyond
 its authority and important failures or disagreements.
 
+The coordinator owns how outside advice is assessed and incorporated into the
+work, including when to consult Riker. Advice relayed by the user is not thereby
+endorsed by the user. Preserve its provenance, test its claims against available
+evidence, and use judgment to revise the plan; changes to protected obligations
+still need the user's decision. Consultation is useful when it resolves a
+concrete uncertainty, not a mandatory approval stage.
+
 Judge this practice by coherent, verified work and reduced coordination burden
 while the user retains semantic control. More agents or more machinery are not
 success measures. Improve the arrangement through experience; add standing
@@ -64,8 +71,31 @@ retain their attribution. Carry the simplification through the dependent plans
 without creating an external replacement service. Incomplete Stewart custody
 operations still need supported handling without requiring an agent-manager to
 manipulate private state. Fewer retries must not mean less responsibility for
-what Stewart has already undertaken. The possible audit restart interface
-remains open.
+what Stewart has already undertaken. The coordinator recommends zero audit
+restarts for the first successor and schedules no convenience while the return
+and custody interfaces remain unsettled. The possible restart interface remains
+an open product choice, rather than an implementation prerequisite.
+
+Prioritize a concrete account of acquiring a return, making it readable,
+delivering it and completing identified custody work after interruption. Develop
+stable publication as the leading ordinary-acquisition candidate, with explicit
+handling for early close and partial capture. Judge stability by the actual
+access and publication arrangement, equally for human and agent auditors.
+Keep investigative outcome, acquisition, delivery and closure distinct without
+turning those distinctions into a staged manager workflow. The first evidence-
+reader consumer to specify is the recipient of an exported result whose original
+environment is gone; current custody status and transition diagnosis retain
+their own bounded consumers. These planning choices make the open contracts
+concrete without changing the status-first Rust implementation sequence.
+
+The user strongly prefers one manager-facing `close` command that closes an
+audit from any state. Design the stopping, partial-work accounting and custody
+steps within that operation, including any internal withdrawal path. The
+manager should not need to diagnose a stage and choose a separate closure
+procedure. Existing obligations still constrain completion; an unfinished close
+needs a supported continuation through the same entry point. Exact mechanics
+and any concrete conflict with protected obligations remain for design and
+decision.
 
 Carry the product tension the user recorded on 2026-10-25 through these
 inquiries: investigative effectiveness favors seemingly transparent access to

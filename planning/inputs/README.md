@@ -18,6 +18,13 @@ does not commission that work now.
 - [History only](history-only.md) preserves verbatim a second external
   proposal, for an audit profile with history inspection and no workspace,
   relayed by the user the same day.
+- [Return and custody advice](return-and-custody-advice.txt) preserves the
+  recommendations of a peripherally involved agent, relayed on 2026-10-25.
+  The user expressly supplied advice rather than endorsing its recommendations,
+  then delegated its assessment and incorporation into planning to the
+  coordinator. Its relative links refer to the sender's separate context;
+  preserve them as supplied text, but do not resolve or follow them. Assess
+  its claims against the permitted Stewart sources and retained evidence.
 
 The earlier `docs`/`request` Click implementation and its follow-up note are
 available at `archive/2026-10-23/click-integration`. Other unmerged work remains

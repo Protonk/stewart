@@ -10,6 +10,13 @@ proposed completions and leads the round turned up. Decisions are recorded in
 `CONTRACTS.md`; this document retires once they are recorded and its run
 records are disposed of under DEVELOPMENT.md's rules.
 
+Subsequent peripheral advice, relayed on 2026-10-25 and preserved at
+[`planning/inputs/return-and-custody-advice.txt`](planning/inputs/return-and-custody-advice.txt),
+informs the current recommendations below under the coordinator's delegated
+planning judgment. Its relative links were not followed. It changes the leading
+capture candidate and supplies a concrete proposed evidence-reader consumer;
+it is neither a new executed result nor a user endorsement of those proposals.
+
 Evidence is labelled where it matters: *executed* means an installed-wheel run
 or the Git-only probe observed it; *source* means a reading anchored in the
 code; *prediction* means a reading no run has tested; *judgment* is the
@@ -33,9 +40,12 @@ one history form, with custody always present:
 The standard profile grants both, files-only grants the tree, history-only
 grants the view. The commission records the grants; there are no modes to
 build separately. Keep custody records in the repository's Git common
-directory, but stop placing refs in the user's ref namespace. Keep the
-manager's attributed stop as the capture trigger. **A.2 is now decided: the
-successor has no dedicated program executor.** Permitted auditor tool use and
+directory, but stop placing refs in the user's ref namespace. Develop stable,
+identified publication as the leading ordinary-capture candidate, with an
+explicit path for early close and partial acquisition; C distinguishes this
+new planning recommendation from the earlier attributed-stop proposal.
+**A.2 is now decided: the successor has no dedicated program executor.**
+Permitted auditor tool use and
 custody of captured returns remain; the staged release/run workflow is not
 ported or transferred into an external service. Other items remain
 recommendations except where a decision is marked below. The user has decided
@@ -50,6 +60,13 @@ every linked-worktree session, registry row or private Python resource model
 follows. Old writers retain authority over their lifetimes; transition-only
 inspection need not become a permanent successor surface. Historical evidence
 is preserved unchanged, and the Python corpus remains comparison evidence.
+
+Specify the recipient of an exported result after the original environment and
+writer disappear as the first evidence-reader consumer. This does not replace
+current-operation status or establish permanent support for every Python
+package. DEVELOPMENT-PLAN.md owns the connected acquisition, delivery, recovery
+and reader design work, including the proposed extension of selected-report
+availability beyond export and the unresolved contents of a portable result.
 
 ## A. The admission rule
 
@@ -531,6 +548,16 @@ not a custody-material hold or an auditor process (`triage.py:444-479`). Any
 review of their future role must distinguish those meanings. Exceptional
 intervention, stopping/collection and delivery mechanisms remain open.
 
+**Close interface direction, 2026-10-25.** In the succeeding coordinator's
+intake, the user strongly preferred one `close` command that closes an audit
+regardless of state. Any withdrawal path for an active investigation belongs
+inside that operation. CONTRACTS.md records the direction: existing holds and
+custody obligations still constrain completion, and unfinished closure needs
+a supported path through the same entry point. This narrows the interface
+question; exact stopping, capture and disposition mechanisms, other exceptional
+intervention and delivery remain open. It supplies no executed evidence and
+does not commission implementation.
+
 **Direction selected for 4, 2026-10-25.** Pursue access defined positively
 from the commission's selected material and required facilities, with the
 user's preference to eliminate Stewart's responsibility for a private-location
@@ -852,16 +879,36 @@ another host, a harness sub-agent, a human auditor) without an executor
 environment: a separate user, a container or a qualified sandbox that ends
 descendants (`workspace.md` §5.6).
 
-**Recommendation.** Decline the supervised exit as a precondition: without a
-new executor environment it would make files-only unavailable to every
-supported arrangement, and weakened to an attributed claim it is today's stop
-acknowledgment. Keep the attributed stop and movement detection, and adopt
-the proposal's wording discipline: a capture preserves the contents found
-identical at two observations, before and after the archive, at an
-acknowledged stop; it does not recover earlier states or rule out a change
-undone between the observations. If an executor ever supplies an exit
-attestation, it is recorded as an attributed observation in its own field. No
-new obligation follows.
+**Earlier recommendation, retained as comparison.** The prior account
+recommended declining supervised exit as a precondition: without a new
+executor environment it would make files-only unavailable to every supported
+arrangement, and weakened to an attributed claim it is today's stop
+acknowledgment. It retained attributed stop and movement detection, with the
+limited claim that captured contents matched observations before and after
+the archive. That neither recovers earlier states nor rules out a change
+undone between observations. These limits remain relevant comparison evidence;
+an externally supplied exit attestation remains attributed and implies no
+dedicated Stewart executor.
+
+**Current planning recommendation, 2026-10-25.** Develop acquisition of an
+identified, stable publication as the ordinary boundary, with an explicit
+partial-acquisition route when close arrives before publication or acquisition
+is interrupted. This supersedes the attributed-stop proposal as the leading
+normal-capture candidate; it does not turn the earlier observations into
+evidence of stability. Define how publication actually fixes the version and
+how acquisition verifies it. A digest or completion declaration alone is not
+that mechanism. A complete publication can report incomplete or failed
+investigation; incomplete acquisition is a different state. Preserve raw bytes
+before interpretation and name any change to the scope of capture for decision.
+
+No inherent human/agent distinction determines enforcement. The access and
+publication arrangement must establish the claimed boundary. Stable return
+bytes alone do not establish that activity stopped or that removing the
+environment is authorized. The single `close` direction needs a supported
+path even without a publication, while the existing movement comparison
+remains evidence of what the baseline can and cannot observe. Exact publication,
+delivery, stopping and partial-acquisition mechanisms require design and
+qualification; the stronger custody undertaking is not yet decided.
 
 ## D. Commission fields
 
