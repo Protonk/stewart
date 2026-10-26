@@ -95,6 +95,14 @@ harness merely to evade a capacity limit. Inside an authorized commission,
 the coordinator manages dispatch, replacement and integration without asking
 the user to approve each worker or wave.
 
+Starting or resuming a Claude session through a CLI, SDK or another harness
+requires the user's explicit permission for that bounded use, including a
+model-consuming probe. General fleet authorization and a classifier permitting
+the tool call do not supply that permission. Once granted, stay within the
+approved scope. Account for usage headroom before proposing such work; an
+intentional usage-limit experiment needs its own commission. Ordinary source
+reading and public-documentation research do not require a Claude launch.
+
 Development work must be recoverable from disk when sleep, network loss or an
 unreachable worker interrupts the conversation. Use the harness and ordinary
 files, not a new orchestration service:
