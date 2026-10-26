@@ -115,6 +115,18 @@ implementation and dispatch remain uncommissioned; no new evidence of fresh
 authoring, late findings, reproduction or custody is claimed. The broader W01
 coverage, including question-specific authoring comparisons, remains open.
 
+The user then authorized the proposed prototype/pilot, subsequently limiting
+the current continuation to 10–15 minutes of checkpointed preparation.
+[Execution commission](coordination/fresh-authoring-01/COMMISSION.md) and
+[progress](coordination/fresh-authoring-01/PROGRESS.md) own that state. A separate
+standard-library submission helper is complete outside frozen Python: 204 checks
+passed across 32 helper invocations; root's 118 retained-evidence checks also
+passed. The [preparation result](coordination/fresh-authoring-01/PREPARATION-RESULT.md)
+records the six selected source/guidance inputs, fixed question, assessment and
+limits. The worker returned. Exact author briefs, witness timing and recipient
+materialization remain before dispatch in the next suitable machine window.
+Preparation checks do not constitute fresh-authoring or custody qualification.
+
 All items below are open unless their state says otherwise. F numbers are the
 sequence above, not authorizations. Detailed contract clauses govern beyond
 these summaries; every admitted clause must have acceptance coverage before

@@ -1,0 +1,103 @@
+{
+  "kind": "fresh-authoring-preparation-inputs",
+  "source_revision": "81b557a78db156e7bfc5e8d35ece9d1438608d87",
+  "status": "candidate inputs; no dispatch or trial",
+  "note": "Pins identify source, not a claim that every byte was read. Future dispatch must copy and freeze exact excerpts and grants.",
+  "files": [
+    {
+      "path": "src/stewart/ledger.py",
+      "role": "candidate subject source",
+      "sha256": "e77d83e723d28385b73370832d6a2b0f2f87fcc84c6ad2905135d68eb0ee9696",
+      "bytes": 14504,
+      "git_blob": "25b0b09e03b72ee848887f74b258bb8c6eed0b87",
+      "candidate_line_ranges": null
+    },
+    {
+      "path": "src/stewart/experiment.py",
+      "role": "candidate review-case constraint excerpts only",
+      "sha256": "7726616bdeab8eeba15fb9e14b7d290cd302ba022d09c37e6137fd67ea90d9b1",
+      "bytes": 33427,
+      "git_blob": "87fe0f21d78d8fd6ca399b6df26b8eb91dfcac1a",
+      "candidate_line_ranges": [
+        [
+          62,
+          63
+        ],
+        [
+          133,
+          164
+        ]
+      ]
+    },
+    {
+      "path": "src/stewart/_json.py",
+      "role": "candidate control JSON decoding source",
+      "sha256": "794f886883bab334582a4b16e9d60137498c2e7c2f3de259b0ce9680a05ada92",
+      "bytes": 1251,
+      "git_blob": "de2459e9419de8660a88e408e5b04bea3703f956",
+      "candidate_line_ranges": null
+    },
+    {
+      "path": "tests/test_stewart_ledger.py",
+      "role": "candidate subject test assertions, not executed evidence",
+      "sha256": "332e4a1ad8cd409b520ca7d11242ee7f2779e7aed5bbf0ab3376232c810c01ce",
+      "bytes": 14882,
+      "git_blob": "85ed16f5c345fffacff635be4aac6e8bf5f112bd",
+      "candidate_line_ranges": null
+    },
+    {
+      "path": "src/stewart/resources/QUESTION-TYPE.md",
+      "role": "candidate recipe excerpt",
+      "sha256": "a229525047d47d9b0838643d799cebcd8fd8b53595157d3d48d4c21ac071f4f7",
+      "bytes": 11128,
+      "git_blob": "ffc0e35d6833c2c07774aaaca323c1a30652025d",
+      "candidate_line_ranges": [
+        [
+          91,
+          117
+        ]
+      ]
+    },
+    {
+      "path": "src/stewart/resources/AUDIT-PROTOCOLS.md",
+      "role": "candidate construction protocol excerpts",
+      "sha256": "fdd9dd60db072521ee573651a55011636ca5f35f06bc2b49dc0ab7cf66e96dcf",
+      "bytes": 6315,
+      "git_blob": "c33cec18a0008f7d2aaedb3b7a61ade5c22b9c88",
+      "candidate_line_ranges": [
+        [
+          17,
+          36
+        ],
+        [
+          60,
+          90
+        ]
+      ]
+    },
+    {
+      "path": "coordination/return-boundary-01/RESULT.md",
+      "role": "coordinator preparation only; withhold from fresh workers",
+      "sha256": "ae8c470bdff31111306b4f71c5758d5c1dc29520cd519f8cfacf59f14b5331bb",
+      "bytes": 14136,
+      "git_blob": "653e9824d53bd780b237850e74fc1c398d569319",
+      "candidate_line_ranges": null
+    },
+    {
+      "path": "KEYHOLE-OBLIGATIONS-FINDINGS.md",
+      "role": "coordinator preparation only",
+      "sha256": "877b87ea9d15ba0dddfa8022092d671de9f179026138fbc047f009fbcbb9eb27",
+      "bytes": 18987,
+      "git_blob": "3ed6bf1771458c28239f34c71fea9a9b3ae761bc",
+      "candidate_line_ranges": null
+    },
+    {
+      "path": "CONTRACTS.md",
+      "role": "coordinator contract reference; future role grants remain explicit",
+      "sha256": "ab308d09c23ea84dc5004c94069c13eb0b80a9b3864ff84cb02a7cb97201288b",
+      "bytes": 89592,
+      "git_blob": "5f9eea3df630234fa661cf2d6d1851dc872061b2",
+      "candidate_line_ranges": null
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "check_count": 204,
+  "passed": 204,
+  "failed": 0,
+  "helper_invocations": 32,
+  "installed_wheel_pytest_nodes": 0,
+  "project_experiment_executions": 0,
+  "recorded_utc": "2026-10-26T22:49:03.693301+00:00",
+  "check_commands": 1,
+  "observed_result_reasons": {
+    "structure_accepted": 10,
+    "raw_size_exceeded": 1,
+    "support_count_exceeded": 1,
+    "duplicate_json_key": 3,
+    "duplicate_support_id": 1,
+    "identity_mismatch": 2,
+    "invalid_utf8": 1,
+    "nonfinite_json_number": 4,
+    "invalid_unicode_text": 1,
+    "malformed_json": 1,
+    "malformed_field": 3,
+    "unsupported_encoding": 1,
+    "destination_exists": 3
+  },
+  "source_identities": {
+    "submit.py": {
+      "bytes": 10418,
+      "sha256": "74e3d7c9f66c921ca38689ee84b8181e9fe071796df7b37d46808a0716c7b75c"
+    },
+    "check.py": {
+      "bytes": 11737,
+      "sha256": "6bab7ff14e1f579376c342cd0f592295e684364fd2a4c0b902be2b3bce800ed8"
+    },
+    "README.md": {
+      "bytes": 6950,
+      "sha256": "0088c67186a348c2c351760ee97a0af5ddbee23cef05a2c6e067d8eff2c63b9c"
+    }
+  },
+  "retained_result": ".scratch/fresh-authoring-01/prototype/attempt-01/check-run-01/RESULT.json",
+  "retained_result_identity": {
+    "bytes": 30591,
+    "sha256": "d35d2cc34ca2bb95ae2aec7c35a78da64b7f76691e8f3176c5be775f0109b9e6"
+  }
+}

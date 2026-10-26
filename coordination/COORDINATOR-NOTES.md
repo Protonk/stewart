@@ -9,24 +9,42 @@ actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
 
-The user recorded the completed finite-return inquiry in commit 81b557a; root
-verified the clean tree and the 170 final document identities against committed
-bytes. The 315 local evidence files were present; the user's report that all
-were unchanged is not a new independent full-file rehash.
+The user authorized the [fresh construction pilot](fresh-authoring-01/COMMISSION.md)
+after its preparation, then limited this continuation to 10–15 minutes and an
+orderly preparation checkpoint. The selected recipient task is inspection of the
+exact returned construction and deciding whether to execute. Actual execution
+of that construction and product custody changes are outside the commission.
 
-The subsequent bounded commission is preparation of one concrete fresh-authoring
-trial, within a roughly half-hour window. Root owns
-[the proposed construction brief](fresh-authoring-01/BRIEF.md), its pinned
-inputs and [progress](fresh-authoring-01/PROGRESS.md), plus this account and the
-work-register update. The user selected inspection of the exact returned specimen
-and deciding whether to execute as the recipient task. Independent reproduction
-is outside this first candidate undertaking. No worker is dispatched; prototype
-implementation and the trial itself remain uncommissioned. Preparation is
-complete; 21 static source/link/whitespace checks passed, with zero product
-executions or pytest nodes. Records are under
-`.scratch/fresh-authoring-preparation-01/`; retain them with the brief. The next
-step is discussion of the proposal and a later concrete prototype/trial commission.
-No ordinary turnover note is requested. User Git ownership continues.
+Preparation is complete in [the integrated result](fresh-authoring-01/PREPARATION-RESULT.md).
+Worker /root/fresh_prototype returned the standalone helper, usage and checks;
+204/204 assertions passed across 32 helper invocations. Root read the code and
+results and verified 118/118 retained-evidence checks, including source identities,
+29 independent input/capture comparisons and three reuse refusals. Zero project
+experiments or installed-wheel/pytest nodes ran. The six-file subject packet,
+fixed question and pre-authoring assessment are saved. No author/recipient has
+been dispatched and no worker or uncertain effectful reply remains in flight.
+
+The helper's 1 MiB limit is an admission bound, not a disk/time/stream bound;
+full over-limit input is retained. Destination ancestors and access grants are
+procedural. Durability, crash/fault injection, custody, delivery and adversarial
+access remain unqualified. The result records these limits and the distinction
+between helper checks and fresh-auditor evidence.
+
+Root owns the brief, commission, assessment, packet, integration and shared
+plans. The worker owned only prototype/attempt-01/ and matching scratch. Retain
+.scratch/fresh-authoring-01/ and .scratch/fresh-authoring-preparation-01/ with
+their results. With another suitable machine window, complete the fresh author's
+exact grant, output paths and witness timing, then run the already authorized
+pilot, materialize/freeze recipient variants and integrate independent review.
+No further scope approval is needed merely to continue that pilot.
+
+User Git ownership continues. HEAD f5bebc1 at continuation intake contained the
+plan/account update; coordination/fresh-authoring-01/ was still untracked and
+needs inclusion in the next commit. Prior commit 81b557a recorded the reviewed
+finite-return inquiry; its 315 evidence files were present and its 170 recorded
+document identities matched committed bytes. The user's report that all 315
+were unchanged was not a new independent full-file rehash. No ordinary turnover
+note was requested or written.
 
 ## Completed finite-return inquiry
 
