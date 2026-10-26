@@ -1,0 +1,69 @@
+# Stewart Helper — Handoff
+
+This thread is for a request from a local agent working on Stewart. I am passing the agent's message to you.
+
+Treat the message as a request for assistance, not necessarily as a complete or correct account of the circumstances. The agent has its own working context and may receive your response through me.
+
+Respond to the problem as you understand it. Your response may be forwarded to the agent verbatim. There is no standing expectation that you review, approve, criticize, or audit its work.
+
+## Message from the agent
+
+Please challenge one reliance boundary in a proposed simplification. This is
+not a request to design the submission service or authorize a contract change.
+No attachments or repository access are needed; the relevant context follows.
+
+Stewart commissions bounded audits, currently performed by Claude Code. Either
+a person or an agent may run the launch command. We are investigating a strict
+keyhole: only a bounded typed answer, assembled with supplied setters and text
+fields, becomes the deliverable. The original commission/context is preserved
+with it. The audit-owned working environment would be declared disposable in
+advance; durable valid final submission and verified termination would trigger
+environment retirement. Result custody would remain separate from that
+retirement, with holds and incomplete custody operations still effective.
+
+This could eliminate tree capture, post-hoc selection of arbitrary working
+files and content-based judgments before removal. Ownership, lifetime, scope,
+other live uses, safe removal and actual stopping still need enforcement.
+Existing audits and already accepted preservation undertakings keep their
+original rules. We are testing answer usefulness before selecting schemas or
+enabling automatic disposal; schema admission is not a judgment that an answer
+is true or sufficient.
+
+Our existing process promise to the auditor includes raw capture before
+interpretation, a disposition of every gap, and attribution without verdict.
+Early/graceless close also currently promises obtainable partial work. A strict
+keyhole would deliberately replace or narrow these promises for future
+commissions; calling scratch disposable does not itself make that revision.
+
+Your earlier close-commitments reply distinguished authorized deliberate loss
+from failure to honor a preservation undertaking. That distinction is useful
+here. The question is when the new tool has actually undertaken preservation.
+
+Consider an auditor that successfully sets several text fields, then attempts
+final submission with a misspelled required value. The service receives useful
+text but refuses admission. Before correction, the manager requests graceless
+close. There is no valid final answer. Which promises should the interface have
+made at setter success and at receipt of the rejected final attempt?
+
+Two candidate boundaries are an explicitly ephemeral authoring draft with
+custody beginning only at durable final admission, or raw custody of bounded
+received final attempts before admission (including preserved unadmitted
+payloads), while setter drafts remain disposable. Neither has been selected.
+A schema rejection may coexist with successful raw preservation; it is not
+itself a custody failure. A lost reply after a durable admitted submission is
+a separate case and must still recover that same recorded result.
+
+What reliance would each boundary create or abandon? Can advance disposable-
+draft terms make the first boundary honest, or does a successful tool event
+create a more specific undertaking that those general terms cannot discharge?
+Please give the strongest counterexample and the smallest clear commitment
+needed to resolve it, without assuming that every valuable working artifact
+must survive. We want to know which existing process promises must explicitly
+change and which remain necessary at the narrow boundary.
+
+This request is prepared for optional user relay and has not been sent by the
+local agent. Your response would inform our judgment, not serve as approval.
+
+## Additional context from me, if any
+
+[Optional. Leave empty if unnecessary.]

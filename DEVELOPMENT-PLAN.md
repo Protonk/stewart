@@ -28,6 +28,13 @@ obligations this candidate could eliminate or narrow, and which must survive
 while the auditor works. Its findings must identify the exact decisions being
 reopened; no production change or live audit experiment is commissioned here.
 
+The commissioned inquiry is now complete. Three independent 6.1 Sol reviewers
+at high effort examined custody, the working environment and counterexamples.
+[KEYHOLE-OBLIGATIONS-FINDINGS.md](KEYHOLE-OBLIGATIONS-FINDINGS.md) identifies
+nonzero prospective reductions and the decisions needed to obtain them. No
+obligation removal is adopted. Its focused Riker request is prepared for
+optional relay, not sent or required as an approval stage.
+
 Current checkpoint, 2026-10-25: the user relayed an external proposal, now
 `planning/inputs/custodial-core.md`, and agreed to place it inside stage 4 as
 an opening decision round before the Rust write path (stage 4 below). The user
@@ -765,6 +772,21 @@ requirements inventory, then a small representation comparison. Corpus access,
 membership, review criteria and the discriminating first cases must be concrete
 before fresh audits. The present authorized work is a documentation update and
 independent obligation inquiry, not execution of these trials.
+
+The obligation inquiry adds specific controls: representation-test recipients
+must attempt the manager's task before seeing omitted support; fresh authoring
+must include unexpected late findings. Constrained experiment construction is
+a strong first discriminator because its recipe requires inspectable artifacts
+and, where execution is granted, trial and preservation evidence. A summary
+pointing to a deleted specimen cannot count as equivalent. Keep that recipe
+fixed; any unsupported capability is a limit to acknowledge.
+
+The initial planning snapshot is `7533d4b`, checked in
+`.scratch/answer-protocol-planning/validation-01.json` and its `.log`.
+The completed documentary inquiry, independent integration review and final
+documentation checks are retained under `.scratch/keyhole-obligations/`, with
+`review-01.json`, `validation-01.json` and their logs pinning the reviewed
+material. Zero pytest nodes selected and zero behavioral comparisons run.
 
 ### Earlier return and custody account to reassess
 

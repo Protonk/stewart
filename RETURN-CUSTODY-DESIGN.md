@@ -18,9 +18,10 @@ DEVELOPMENT-PLAN.md schedules real-return inventory, representation comparisons
 overall and per question, fresh authoring trials and integrated submission/
 disposal qualification. The earlier account below supplies source findings and
 questions to reassess, especially preservation of work outside the submission.
-It is not a competing commission to build tree capture. The exact obligations
-to remove, replace or retain remain for the commissioned independent inquiry
-and the user's decisions; CONTRACTS.md remains authoritative meanwhile.
+It is not a competing commission to build tree capture. The completed
+[obligation inquiry](KEYHOLE-OBLIGATIONS-FINDINGS.md) identifies prospective
+reductions, surviving duties and the decisions still needed. No removal has
+been adopted; CONTRACTS.md remains authoritative meanwhile.
 
 ## Ordinary return and early close
 

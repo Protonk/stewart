@@ -47,15 +47,24 @@ trials and integrated submission/disposal qualification, with decision points
 before the durable interface and before automatic disposal. No live trial is
 commissioned by this planning approval.
 
-The user has commissioned a three-stage obligation inquiry: form questions
-from this conversation, have regular sub-agents inspect the plans/designs, then
-brief them on potential reductions and consider a Riker question. Use 6.1 Sol
-at high effort where available, Astra at medium as fallback. The inquiry must
-test whether the reduction extends beyond result capture while preserving a
-carefully maintained field of work. Existing contracts remain authoritative
-until the resulting changes are explicitly decided. The earlier return/custody
-account and legacy package-reader assignment now need reassessment against
-this direction.
+The commissioned three-stage obligation inquiry is complete: questions from
+this conversation, three independent 6.1 Sol/high reviews, and an integrated
+reduction briefing in [KEYHOLE-OBLIGATIONS-FINDINGS.md](KEYHOLE-OBLIGATIONS-FINDINGS.md).
+Its strongest additional candidate is disposal authority over an exclusively
+owned environment lifetime instead of descendant content identities, capture
+equality and duplicate-byte tests. That needs an explicit change to today's
+promises, not merely a disposable label. Tree-gap triage, repeated collection
+and arbitrary support packaging could shrink; compulsory manager follow-up
+and early-close partial-tree salvage are separate policy decisions. Safe
+inputs, access, ownership, stopping, holds and interrupted operations remain.
+Setter success, a rejected final attempt and durable admission need distinct
+custody semantics. Human handback without helpers also needs explicit treatment.
+Existing contracts remain authoritative until changes are decided. The earlier
+return/custody account and legacy package-reader assignment need reassessment
+against this direction. The optional [Riker relay request](riker/KEYHOLE-COMMITMENTS-REQUEST.txt)
+asks when a tool event undertakes preservation; it has not been sent and is no
+approval gate. Review evidence is under `.scratch/keyhole-obligations/`; the
+initial planning snapshot is `7533d4b`. No live answer trials have run.
 
 Other open decisions include how `close` carries outstanding gap, follow-up,
 preservation, surrender and hold-release decisions without separate lifecycle
@@ -64,9 +73,10 @@ selected-report availability with surrounding damage and original-question
 context in new portable results. None has been adopted. Publication, stopping
 and delivery still need an actual admitted route and qualification; the
 candidate snapshot mechanism is a design requirement, not enforcement evidence.
-No runtime implementation, Rust code, new behavioral comparison, harness
-qualification or worker dispatch occurred. Only the graceless-exit direction
-has subsequently been added to CONTRACTS.md. The larger open architecture
+No runtime implementation, Rust code, new behavioral comparison or harness
+qualification occurred. The workers performed documentary inquiry only.
+Only the graceless-exit direction has subsequently been added to CONTRACTS.md.
+The larger open architecture
 questions below remain.
 
 The most consequential new user direction is **one `close` command that closes
@@ -178,24 +188,25 @@ recovery, availability, workspace form and a portable-result reader, then
 delegated its assessment and incorporation into the plans to the coordinator.
 It is preserved in `planning/inputs/return-and-custody-advice.txt`; its relative
 links were not followed and must not be treated as local sources to resolve.
-The resulting planning revision makes the connected return/custody design
-account the next priority. Develop stable, identified publication as the
-leading ordinary-acquisition candidate, with explicit early-close and partial
-paths; distinguish availability from delivery, and give interrupted operations
-usable completion/disposition through their existing identity. Schedule no
-audit restart for the first successor. These are coordinator recommendations
-and ordering choices, not newly accepted contracts or an implementation
-commission. The development plan contains the concrete work products and
-discriminating cases. Re-examine the recommendations as you use them rather than
-mechanically repeating the advice or treating it as another task queue.
+The resulting connected return/custody account originally made stable
+publication the leading acquisition candidate. The keyhole proposal and
+completed obligation inquiry now supersede that priority. Use the earlier
+account as a comparison, especially where it promises general tree capture or
+partial-work salvage; it is not another implementation queue. Distinguish
+availability from delivery, and give interrupted operations supported
+completion/disposition through their existing identity. Schedule no audit
+restart for the first successor. These remain coordinator recommendations and
+ordering choices, not newly accepted contracts or an implementation commission.
+The development plan puts empirical answer requirements before the durable
+interface and integrated qualification before automatic disposal.
 
 The first walkthrough now covers ordinary publication and delivery, close
 before publication, interrupted acquisition, a lost reply and interrupted
 removal. The new design account makes those interactions reviewable; it does
-not settle a concrete harness protocol. Discuss its bounded decisions, then
-select an actual publication/stopping/delivery arrangement to qualify. You
-own the order and method. The details most likely to be lost in a short recap
-are:
+not settle a concrete harness protocol. Discuss the keyhole findings' bounded
+decisions and select an actual submission/stopping/delivery arrangement to
+qualify. You own the order and method. The details most likely to be lost in a
+short recap are:
 
 - "Publication" here fixes the auditor's return for acquisition; later
   retention/export to a manager destination is a different operation. A digest
