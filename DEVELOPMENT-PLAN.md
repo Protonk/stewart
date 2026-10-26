@@ -134,8 +134,8 @@ none is authorized by merely retaining a submission.
 
 ## Preparing and dispatching agents
 
-The next wave is ready as a bounded **inquiry preparation** proposal, not a
-runtime or live-trial commission. At dispatch the coordinator pins one source
+The user commissioned this bounded **inquiry preparation** wave on 2026-10-26
+after its briefing. It is not a runtime or live-trial commission. At dispatch the coordinator pins one source
 revision, a run directory and any newly authorized corpus locations. Workers
 may read this repository and the explicitly supplied sources only; restricted
 neighboring projects are not a way to fill a corpus or legacy-inventory gap.
@@ -191,9 +191,10 @@ with about ten simultaneous agents as a soft fleet-wide memory preference.
 The current harness has four total slots: the coordinator and three workers.
 The first inquiry wave therefore fits without using a second harness. Later
 capacity is checked at dispatch; neither four nor ten is a staffing target.
-This turn prepares guidance and the dispatch briefing, not the substantive
-inquiry or implementation. Within subsequently commissioned work, ordinary
-assignment changes and replacement workers are coordinator decisions.
+The guidance/briefing preparation is complete. The user has now commissioned
+the first inquiry-preparation wave; implementation and live trials remain
+outside it. Ordinary assignment changes and replacement workers within this
+commission are coordinator decisions.
 
 [Coordinator notes](coordination/COORDINATOR-NOTES.md) are the dispatch index.
 Keep program status in W01–W20, current worker/attempt state in that index,

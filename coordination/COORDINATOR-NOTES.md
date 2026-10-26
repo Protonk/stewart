@@ -9,12 +9,13 @@ records an observation; silence and old timestamps establish no liveness.
 
 ## Current commission and capacity
 
-The user asked for laptop-aware coordination guidance and a dispatch briefing.
-The main inquiry, live trials and implementation have not started. One bounded
-independent review of this guidance is within the preparation work. Coordinator
-ownership includes routine dispatch and replacement within a commissioned task;
-new product commitments and the previously reserved execution scope still need
-their decisions. Do not ask the user to manage individual workers.
+The user authorized the briefed first preparation wave on 2026-10-26:
+answer requirements, operating routes, and coverage/transition, followed by
+coordinator integration and independent review. Runtime implementation, fresh
+audits, live harness/network experiments and custody disposal remain outside
+this commission. The dispatch-practice review is complete. Routine staffing,
+replacement and integration belong to the coordinator. Product decisions and
+subsequent empirical execution retain their stated boundaries.
 
 The machine preference is roughly ten simultaneous agents or fewer in total,
 including coordinators, reviewers and nested workers. The available harness
@@ -28,9 +29,9 @@ still holds. Further worker delegation must be coordinated in the same count.
 | Assignment / scope | Observed state and handle | Saved work and next action |
 | --- | --- | --- |
 | `dispatch_guidance_review`, preparation only | Integrated after coordinator verification; harness handle `/root/dispatch_guidance_review`. No worker work remains. | [Brief](dispatch-review-01-BRIEF.md), [progress](dispatch-review-01-PROGRESS.md), [return](dispatch-review-01-RETURN.md). Source base `777c87b` plus six exact inputs in `.scratch/coordinator-dispatch/review-inputs-01.json`. One low-severity finding resolved below; final checks in `.scratch/coordinator-dispatch/validation-01.json` and `.log`. |
-| `answers`, W01/W02 | Prepared outline; no worker or attempt. | [First-wave briefs](../DEVELOPMENT-PLAN.md#preparing-and-dispatching-agents). At program dispatch, freeze `coordination/successor-inquiry-01/answers/BRIEF.md` and give the worker its own `attempt-01/`. |
-| `routes`, W04–W11 | Prepared outline; no worker or attempt. | Same first-wave source; freeze `coordination/successor-inquiry-01/routes/BRIEF.md` with concrete permitted sources and trial exclusions. |
-| `coverage`, W01–W20 and transition | Prepared outline; no worker or attempt. | Same first-wave source; freeze `coordination/successor-inquiry-01/coverage/BRIEF.md`, including the finite-inventory access gaps. |
+| `answers`, W01/W02 | Authorized; brief saved; not yet dispatched. | [Brief](successor-inquiry-01/answers/BRIEF.md). Source `250d494` and `.scratch/successor-inquiry-01/inputs-01.json`; shared repository, exclusive `successor-inquiry-01/answers/attempt-01/` outputs. Next dispatch and inspect the initial checkpoint. |
+| `routes`, W04–W11 | Authorized; brief saved; not yet dispatched. | [Brief](successor-inquiry-01/routes/BRIEF.md). Source `250d494` and `.scratch/successor-inquiry-01/inputs-01.json`; shared repository, exclusive `successor-inquiry-01/routes/attempt-01/` outputs. Next dispatch and inspect the initial checkpoint. |
+| `coverage`, W01–W20 and transition | Authorized; brief saved; not yet dispatched. | [Brief](successor-inquiry-01/coverage/BRIEF.md). Source `250d494` and `.scratch/successor-inquiry-01/inputs-01.json`; shared repository, exclusive `successor-inquiry-01/coverage/attempt-01/` outputs. Next dispatch and inspect the initial checkpoint. |
 
 For each dispatch, record the exact source commit/snapshot, task name and
 agent handle, start observation, worktree, exclusive output paths and last
@@ -60,12 +61,11 @@ before retiring a coordination record. Existing development evidence-retention
 rules still govern run artifacts. Small files are versioned with coherent
 commits, while workers save intermediate work without waiting for a commit.
 
-Guidance and briefing preparation are complete in this change. The next
-substantive proposal is the three-worker inquiry-preparation wave, then
-integration/review and bounded empirical trials. No main-wave worker has been
-dispatched. At the next commission, pin its inputs and instantiate its saved
-briefs/attempt paths before spawning; normal staffing and replacement stay
-with the coordinator.
+The current wave is authorized. Save each worker handle immediately after
+spawn, inspect its initial checkpoint and track useful partial results. Next
+integrate the three returns into one proposed comparison/decision account,
+then arrange independent review and report the result. Do not start empirical
+trials merely because this preparation succeeds.
 
 ## Review disposition
 

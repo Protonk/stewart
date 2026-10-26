@@ -33,17 +33,20 @@ or stopped. Keep potentially live writers out of replacement edit paths.
 The active plan owns dependencies; the index owns dispatch state; worker files
 own findings. Update these during work, not only when writing a final handoff.
 
-This change prepares the guidance and dispatch briefing. The substantive inquiry
-wave has not started. A bounded independent review of the dispatch/recovery
-guidance completed with no blocking findings; its output-ownership correction
-is integrated, and the notes link its saved inputs, checkpoint and return.
-Validation is recorded in `.scratch/coordinator-dispatch/validation-01.json`
-and `.log`. No actual sleep/network-fault test was run. The next program wave is answer requirements,
-operating routes and coverage/transition, followed by coordinator integration
-and fresh review. Routine staffing and recovery stay with the coordinator;
-product decisions and any new trial/implementation commission retain their
-existing boundaries. This arrangement does not ask the user to approve each
-worker or reconstruct a lost conversation.
+The user has now authorized the briefed first inquiry-preparation wave:
+answer requirements, operating routes and coverage/transition, with integration
+and independent review. Saved briefs and attempt locations are linked from the
+coordinator notes; source inputs are pinned to `250d494` and retained in
+`.scratch/successor-inquiry-01/inputs-01.json`. Consult the index for actual
+handles and inspected checkpoints; do not infer that a prepared brief ran.
+Runtime implementation, fresh audits, live harness/network experiments and
+custody disposal are not commissioned. Routine staffing and recovery stay
+with the coordinator; product choices and later trial scope remain reserved.
+
+The dispatch-practice review completed with no blockers and one integrated
+output-ownership correction. Its validation is retained in
+`.scratch/coordinator-dispatch/validation-01.json` and `.log`; no induced fault
+test was run. This wave puts the saved-progress practice into ordinary use.
 
 Coordinator intake and forward reconciliation, 2026-10-26. The preceding
 session ended with a computer fault, without a deliberate final handoff. This
