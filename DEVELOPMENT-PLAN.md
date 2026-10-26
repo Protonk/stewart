@@ -14,6 +14,20 @@ This document owns the current sequence, stage outcomes and consequential
 decisions. Internal assignments and execution details belong to the coordinating
 agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
 
+Current priority, 2026-10-25: pursue and test the user's keyhole proposal for
+typed submissions as the entire deliverable, with audit working state declared
+disposable in advance and retirement triggered by durable valid submission
+and safe termination. This is an architectural candidate, not blanket approval
+to remove existing obligations. Put the answer-protocol inquiry at the front
+of stage 4, before committing to the successor submission format and write
+path. The four existing question types come from real audit experience; use
+them as constraints on the answer experiments, not as inventions to reshape
+for schema convenience. A possible additional question type is separate work.
+The user has commissioned an independent agent inquiry into which other
+obligations this candidate could eliminate or narrow, and which must survive
+while the auditor works. Its findings must identify the exact decisions being
+reopened; no production change or live audit experiment is commissioned here.
+
 Current checkpoint, 2026-10-25: the user relayed an external proposal, now
 `planning/inputs/custodial-core.md`, and agreed to place it inside stage 4 as
 an opening decision round before the Rust write path (stage 4 below). The user
@@ -82,10 +96,9 @@ the unresolved control work. The command may be launched by the user or by
 an agent, including the manager agent; a printed command does not imply a
 human launcher. Bind the actual run and stopping authority across these paths
 and qualify what termination ends before promising support. Python remains frozen.
-The user's next discussion is a possible radical simplification of the rule
-for work outside the stable published answer. Hear that proposal before
-advancing the current recommendation; no change to that obligation is yet
-decided.
+The subsequent keyhole proposal and answer-protocol inquiry below supersede
+the earlier stable-publication recommendation as the next design priority.
+The extent of the resulting custody changes remains for evidence and decision.
 
 Checkpoint, 2026-10-24: the user decided D1 as six close rules plus
 abandon parity, decided D2, D3 (contingent on stage 3's submodule decision) and
@@ -653,6 +666,13 @@ Python corpus as comparison evidence for the selected custody claims; it does
 not require permanent product support for every old operational structure.
 Before commissioning status implementation, specify its consumer, supported
 record population and placement under the bounded evidence-reader contract.
+The previously prepared Python-package reader assignment is a possible legacy
+need, not automatically the successor's first result format. Reassess its
+consumer and priority under the keyhole inquiry. Independent read-only work
+may proceed when separately justified; answer rendering and submission storage
+follow the answer-protocol evidence. Keep the implementation order of read-only
+operations, write path and close without turning it into a reason to build the
+old tree-capture workflow.
 Write acceptance against the contracts and drive the CLI so it is
 language-agnostic. Close every live Python audit under Python before Rust
 closes anything; separately dispose of independent legacy undertakings before
@@ -684,15 +704,77 @@ project is retired.
 **Exit:** an integrated Rust system verified against the selected contracts,
 with platform evidence and explicit disposition of any unmet acceptance item.
 
-### Next design work: acquiring returns and completing custody
+### Answer protocol inquiry before the successor write path
 
-The first connected account is now in RETURN-CUSTODY-DESIGN.md, accompanied
-by the manager's task flow. Use it for the next decisions rather than repeat
-the source inventory. It identifies a protected-obligation conflict that
-publication alone cannot resolve: work outside the selected return still
-needs a working preservation opportunity or an authorized named surrender
-before removal. A digest or a stable answer also does not establish stopped
-activity. The candidate snapshot mechanism has no qualified route yet.
+Agreed planning sequence, 2026-10-25. The user values the potential reduction
+from a narrow submission boundary but does not claim equivalent empirical
+knowledge of answer structures and question types. The answer side was mostly
+left to agents. Establish which common and question-specific structures are
+useful through actual returns and fresh audits before freezing the interface.
+The suggested answer shapes from discussion are hypotheses, not schemas to
+implement on authority of their apparent plausibility.
+
+1. **Inventory real returns.** Select a small, varied, explicitly accessible
+   corpus of actual audits across the four established types, including useful
+   answers, difficult returns, missing evidence, reframing and partial work.
+   Record the manager's decision and what the return actually needed to carry.
+   Keep unavailable cases explicit; test fixtures cannot stand in for this
+   experience. Do not search restricted neighboring projects for a corpus.
+2. **Test representation, common structure first and then per question.**
+   Compare a minimal typed structure plus text with more specific forms using
+   the same existing returns. Unknowns remain unknown; conversion cannot invent
+   evidence to satisfy required fields. Have a recipient perform the original
+   manager task using the question, supplied context and candidate answer,
+   comparing the original return. Identify lost qualifications, improved
+   inspectability, unnecessary fields and dependence on escape text.
+3. **Test fresh authoring through an experimental submission tool.** Hold
+   commission, supplied material and investigative permissions comparable while
+   varying the answer interface; repeat where agent variability could explain
+   the result. Test whether fields guide useful work or cause premature
+   conclusions, invented precision or suppressed unexpected findings. Include
+   `needs-evidence`, `reframe`, blocked and partial returns as legitimate
+   outcomes. Keep the replaceable prototype outside frozen Python. This phase
+   needs a later concrete commission and execution budget; none is dispatched
+   by approving this plan or the present document inquiry.
+4. **Qualify submission and disposal together.** Against a candidate protocol,
+   exercise durable submission, runtime refusal, lost replies, interrupted
+   writes, graceful/graceless termination and interrupted removal, including
+   human-run and agent-run launch commands. Keep an independent witness outside
+   the disposal through review, including successful cases. A rescue from it
+   demonstrates a product shortcoming, not ordinary retrieval. This phase
+   pays the control debt as well as testing the custody boundary.
+
+Two decision points govern the transition. **Before the durable submission
+interface:** choose a provisional common structure, requirements per admitted
+question type, and explicit unsupported capabilities. **Before automatic
+environment disposal:** establish both useful answers and working submission,
+control, custody and removal together. Final implementation acceptance repeats
+the relevant cases against the actual successor; prototype success is not
+production or cross-platform qualification.
+
+Evaluate decision usefulness, retained qualifications, inspectable support and
+burden on author and recipient separately from schema validity. Use independent
+contrasts and invariance controls; a compliant but inadequate answer must not
+look like success. Agent assessments aid review; select consequential examples
+for the user rather than asking them to review every return or treating agent
+agreement as the standard. Keep the question recipes stable during comparisons.
+Document any new question type as a separate empirical need.
+
+**Next bounded empirical assignment:** corpus selection and an answer-
+requirements inventory, then a small representation comparison. Corpus access,
+membership, review criteria and the discriminating first cases must be concrete
+before fresh audits. The present authorized work is a documentation update and
+independent obligation inquiry, not execution of these trials.
+
+### Earlier return and custody account to reassess
+
+RETURN-CUSTODY-DESIGN.md and the manager's task flow record the earlier
+connected account. Its source inventory and failure distinctions remain
+useful. Its proposed preservation of work outside a publication is precisely
+what the keyhole candidate reopens: the inquiry must decide whether an
+advance disposable-state contract can replace that promise for new audits.
+Do not continue designing general tree capture on the assumption that the
+earlier recommendation is settled. Stopping/control remains a separate issue.
 
 The accepted graceless-exit branch now adds a specific obligation to resolve
 the launch/control arrangement. Its task-flow and contract edits are checked
@@ -718,14 +800,16 @@ relaying the advice did not make it the user's guidance. No new runtime or
 harness experiment is commissioned by this planning revision.
 
 Develop one account of what Stewart acquires, how the manager receives it, and
-how the same custody undertaking finishes after interruption. This is the next
-design priority within the open A to F round. Recommend zero audit restarts for
+how the same custody undertaking finishes after interruption, now against the
+keyhole candidate. Recommend zero audit restarts for
 the first successor and schedule no restart convenience. The open product
 choice of at most one such facility remains reserved; reconsider it only for
 an identified need after the custody interfaces are concrete. Do not replace
 recovery of Stewart's own work with a new investigation.
 
-Produce the following connected design account before proposing implementation:
+Reassess the following earlier work products against the candidate and the
+obligation inquiry; these are coverage questions, not a separate implementation
+queue or a promise to preserve the old capture mechanism:
 
 1. **Acquiring an identified return (C, D and R2).** Make a stable, identified
    publication the leading candidate for ordinary acquisition. Define the

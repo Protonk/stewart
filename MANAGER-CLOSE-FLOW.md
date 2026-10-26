@@ -3,6 +3,9 @@
 *Proposed successor task flow. This describes the intended experience, not the
 current Python commands.*
 
+*This draft is under review for typed submissions and automatic retirement of
+disposable working environments.*
+
 1. **Ask Stewart to close the audit.** Use `close` whether the audit is being
    prepared, still under investigation, or has returned an answer.
 

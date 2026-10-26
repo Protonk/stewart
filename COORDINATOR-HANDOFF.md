@@ -36,10 +36,26 @@ agent did other work; an agent can also execute the supplied command itself.
 Do not mistake command rendering for a fixed human launch path or a reliable
 control handle. No controller, termination mechanism or executor is selected.
 
-**Next conversation:** the user wants to discuss "a stable published answer
-does not account for other work left in the environment" and may propose a
-radical simplification. Hear it before advancing the current recommendation.
-The existing obligations remain decided until that discussion changes them.
+The user then proposed the keyhole simplification: accept only typed submissions
+through supplied setters and text, make that the deliverable, and dispose of
+the auditor's working tree after durable valid submission and safe termination.
+They support pursuing it and agreed to an answer-protocol inquiry at the front
+of stage 4. The question types are hard won from real audits; answer structures
+need empirical investigation, first overall and then per question. The plan
+now schedules real-return inventory, representation comparisons, fresh authoring
+trials and integrated submission/disposal qualification, with decision points
+before the durable interface and before automatic disposal. No live trial is
+commissioned by this planning approval.
+
+The user has commissioned a three-stage obligation inquiry: form questions
+from this conversation, have regular sub-agents inspect the plans/designs, then
+brief them on potential reductions and consider a Riker question. Use 6.1 Sol
+at high effort where available, Astra at medium as fallback. The inquiry must
+test whether the reduction extends beyond result capture while preserving a
+carefully maintained field of work. Existing contracts remain authoritative
+until the resulting changes are explicitly decided. The earlier return/custody
+account and legacy package-reader assignment now need reassessment against
+this direction.
 
 Other open decisions include how `close` carries outstanding gap, follow-up,
 preservation, surrender and hold-release decisions without separate lifecycle

@@ -76,17 +76,28 @@ restarts for the first successor and schedules no convenience while the return
 and custody interfaces remain unsettled. The possible restart interface remains
 an open product choice, rather than an implementation prerequisite.
 
-Prioritize a concrete account of acquiring a return, making it readable,
-delivering it and completing identified custody work after interruption. Develop
-stable publication as the leading ordinary-acquisition candidate, with explicit
-handling for early close and partial capture. Judge stability by the actual
-access and publication arrangement, equally for human and agent auditors.
-Keep investigative outcome, acquisition, delivery and closure distinct without
-turning those distinctions into a staged manager workflow. The first evidence-
-reader consumer to specify is the recipient of an exported result whose original
-environment is gone; current custody status and transition diagnosis retain
-their own bounded consumers. These planning choices make the open contracts
-concrete without changing the status-first Rust implementation sequence.
+Pursue the keyhole candidate: the typed submission is the entire deliverable,
+and audit working state is declared disposable in advance, with retirement
+after durable valid submission and safe termination. Examine the obligations
+this could eliminate or narrow without weakening the field of work while the
+auditor investigates. The candidate reopens earlier tree-preservation choices;
+it does not silently repeal them or apply new rules to historical audits.
+
+The established question types were learned through real audits. Give answer
+structures comparable empirical attention: inspect actual returns, compare
+representations generally and per question, then test fresh authoring through
+a replaceable submission prototype. Select the durable interface only after
+those comparisons, and enable automatic disposal only after integrated custody
+and control qualification. An agent's ability to satisfy a schema is distinct
+from an answer's usefulness. A possible new question type has its own inquiry.
+
+Keep investigative outcome, submission admission, delivery and closure distinct
+without turning them into manager-operated stages. A portable result still
+serves a reader whose original environment is gone, but the earlier Python-
+package reader is a bounded legacy candidate rather than the default successor
+result model. The return route and launch/control arrangement require actual
+qualification. Read-only operations still precede the write path and close;
+independent work needs its own justified consumer and scope.
 
 The user strongly prefers one manager-facing `close` command that closes an
 audit from any state. Design the stopping, partial-work accounting and custody

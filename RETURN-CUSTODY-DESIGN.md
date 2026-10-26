@@ -6,6 +6,22 @@ authority and evidence boundaries. CONTRACTS.md records the decided behavior,
 including the subsequently accepted graceless-exit direction below. The other
 proposals remain open; no runtime implementation is commissioned.
 
+**Current direction for inquiry:** the user proposed a keyhole through which
+only a typed submission produced by supplied setters and text fields becomes
+the deliverable. The working tree would be declared disposable in advance and
+retired after durable valid submission and safe termination. The user supports
+pursuing this simplification, with empirical work on answer structures before
+committing to the interface. The existing question recipes came from real
+audits; candidate answer forms have not yet earned that standing.
+
+DEVELOPMENT-PLAN.md schedules real-return inventory, representation comparisons
+overall and per question, fresh authoring trials and integrated submission/
+disposal qualification. The earlier account below supplies source findings and
+questions to reassess, especially preservation of work outside the submission.
+It is not a competing commission to build tree capture. The exact obligations
+to remove, replace or retain remain for the commissioned independent inquiry
+and the user's decisions; CONTRACTS.md remains authoritative meanwhile.
+
 ## Ordinary return and early close
 
 The manager should make preservation and custody decisions, not select a
@@ -227,7 +243,8 @@ and qualification before their stronger promises are adopted. Keep workspace
 form, commission fields and custody location open where this account has not
 settled them. Do not replace those decisions with an implementation accident.
 
-**Prepared first reader assignment, pending commission:** implement a read-only
+**Earlier reader assignment, now a legacy candidate requiring renewed consumer
+and priority justification:** implement a read-only
 Rust custody inspection for `stewart.evidence-package/5` collection packages
 with `REPORT.md`, optional captured-file members and complete selected runtime
 groups. Take an explicit package location; consult no originating session,
