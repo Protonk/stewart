@@ -31,6 +31,16 @@ consequential alternatives, evidence, integrated outcomes and open questions.
 Go deeper when a decision needs it. Keep the account short enough to use and
 revise it as understanding changes.
 
+Keep the whole forward program recoverable as well as each decision. The
+[development plan](DEVELOPMENT-PLAN.md) owns the dependency sequence, outstanding
+work and evidence needed to finish it. Before dispatching workers, identify
+shared interfaces, exclusive edit ownership, integration order and external
+dependencies; do not make the user manage those logistics. An accepted change
+stays visible until implemented and verified or given an explicit disposition.
+Update the current account after integration rather than accumulating competing
+checkpoints. Prepare future waves concretely without treating planning as a
+commission to run them.
+
 Inside an authorized commission, the coordinating agent chooses decomposition,
 delegation, providers, workspaces, integration and verification. Codex and
 Claude are available resources; neither a fixed staffing model nor an even

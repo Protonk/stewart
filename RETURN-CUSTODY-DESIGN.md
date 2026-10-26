@@ -6,6 +6,11 @@ authority and evidence boundaries. CONTRACTS.md records the decided behavior,
 including the subsequently accepted graceless-exit direction below. The other
 proposals remain open; no runtime implementation is commissioned.
 
+The [forward program](DEVELOPMENT-PLAN.md#forward-sequence-and-decision-points)
+owns scheduling, dependencies and verification assignments for this design and
+the keyhole inquiry. This account is supporting design material, not a second
+implementation queue.
+
 **Current direction for inquiry:** the user proposed a keyhole through which
 only a typed submission produced by supplied setters and text fields becomes
 the deliverable. The working tree would be declared disposable in advance and

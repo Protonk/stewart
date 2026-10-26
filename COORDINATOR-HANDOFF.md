@@ -16,275 +16,96 @@ Earlier versions remain in Git.
 
 ## Where this handover leaves you
 
-The 2026-10-25 handoff was followed by a session that successfully committed
-the inherited tree as `8fd864f`. The user then agreed to work through the
-return/close interaction, inventory portable-result contents and prepare
-bounded decisions and a first reader assignment. They specifically requested
-a very spare, human-readable closing flow. Start discussion from
-[MANAGER-CLOSE-FLOW.md](MANAGER-CLOSE-FLOW.md), the proposed manager task flow;
-[RETURN-CUSTODY-DESIGN.md](RETURN-CUSTODY-DESIGN.md) carries the supporting
-cases, source inventory, authority boundaries and pending reader assignment.
-That initial design account was committed as `b4bc793`.
+Coordinator intake and forward reconciliation, 2026-10-26. The preceding
+session ended with a computer fault, without a deliberate final handoff. This
+file had accumulated incidental updates. The user believes the last recorded
+change, `a1881c0` incorporating Riker's keyhole reply, may also have been the
+last substantive exchange. Intake found a clean tree and verified that all
+five documents in that change matched their retained validation identities.
+Python source still matched `6582df2`. This is reconstruction from the surviving
+record and the user's recollection, not a recovered conversation transcript.
 
-The user subsequently accepted a `close --graceless-exit` branch and asked
-that its unresolved control arrangement be recorded as debt we must pay.
-CONTRACTS.md now records that direction; the short flow includes the branch,
-and RETURN-CUSTODY-DESIGN.md names the control work. The present auditor is
-Claude Code, but the command can be run by the user or by an agent. The
-original arrangement let the user run and manage the audit while the manager
-agent did other work; an agent can also execute the supplied command itself.
-Do not mistake command rendering for a fixed human launch path or a reliable
-control handle. No controller, termination mechanism or executor is selected.
+The user's concern is the **whole forward timeline**: many changes were decided
+but left for later implementation and testing, and coordinators dispatching
+many agents need to avoid logistical snags. The current reconciliation puts
+that account at the front of [DEVELOPMENT-PLAN.md](DEVELOPMENT-PLAN.md):
 
-The user then proposed the keyhole simplification: accept only typed submissions
-through supplied setters and text, make that the deliverable, and dispose of
-the auditor's working tree after durable valid submission and safe termination.
-They support pursuing it and agreed to an answer-protocol inquiry at the front
-of stage 4. The question types are hard won from real audits; answer structures
-need empirical investigation, first overall and then per question. The plan
-now schedules real-return inventory, representation comparisons, fresh authoring
-trials and integrated submission/disposal qualification, with decision points
-before the durable interface and before automatic disposal. No live trial is
-commissioned by this planning approval.
+- F1–F7 give dependencies from inquiry preparation through evidence, connected
+  design decisions, read-only Rust, write operations, close and acceptance.
+- W01–W20 account for outstanding decisions, implementation and verification,
+  including earlier accepted fixes, the Git guide, helper consumers and legacy
+  retirement. A decided contract is not an implemented or dispatched task.
+- The nine unrun stage-3 comparisons now have individual dispositions against
+  the current scope. Do not launch all nine mechanically or lose their surviving
+  questions when dropping obsolete executor/resource mechanisms.
+- Three bounded first-wave briefs cover answer requirements, operating routes,
+  and coverage/transition. They are prepared, not dispatched. Later workers
+  need shared identity/schema/record interfaces and exclusive edit ownership;
+  the coordinator integrates root documents and verifies the combined result.
+- Corpus access, real-harness control/delivery trials, Linux execution, actual
+  WSL evidence and the finite legacy population are explicit dependencies.
+  Prepare them early; do not discover them only when close is otherwise ready.
 
-The commissioned three-stage obligation inquiry is complete: questions from
-this conversation, three independent 6.1 Sol/high reviews, and an integrated
-reduction briefing in [KEYHOLE-OBLIGATIONS-FINDINGS.md](KEYHOLE-OBLIGATIONS-FINDINGS.md).
-Its strongest additional candidate is disposal authority over an exclusively
-owned environment lifetime instead of descendant content identities, capture
-equality and duplicate-byte tests. That needs an explicit change to today's
-promises, not merely a disposable label. Tree-gap triage, repeated collection
-and arbitrary support packaging could shrink; compulsory manager follow-up
-and early-close partial-tree salvage are separate policy decisions. Safe
-inputs, access, ownership, stopping, holds and interrupted operations remain.
-Setter success, a rejected final attempt and durable admission need distinct
-custody semantics. Human handback without helpers also needs explicit treatment.
-Existing contracts remain authoritative until changes are decided. The earlier
-return/custody account and legacy package-reader assignment need reassessment
-against this direction. The user has relayed
-[Riker's reply](riker/KEYHOLE-COMMITMENTS-REPLY.txt) to the preserved request.
-It treats both custody policies as coherent and exposes the crucial difference
-between retaining a final call's arguments and retaining the complete attempted
-answer assembled from setters. Specific acknowledgement wording must agree
-with disposable-draft terms. The coordinator favors testing complete-attempt
-custody first, but neither policy is adopted. This would narrow partial-work
-recovery to durably preserved attempts, leave unsubmitted drafts disposable,
-and add attempt identity/retrieval/lifetime duties. Schema rejection does not
-supply early-close removal authority; lost success replies do not change a
-durably admitted result. Review evidence is under `.scratch/keyhole-obligations/`,
-including `riker-reply-validation-01.json` and its `.log`; the initial planning
-snapshot is `7533d4b`. No live answer trials have run.
+This work changes planning, not product contracts or implementation authority.
+No runtime work, live answer trial or fleet was commissioned by the reconciliation.
+Its checks are retained in `.scratch/forward-program/validation-01.json` and
+`.log`. Continue by making the next bounded inquiry concrete under the plan;
+bring consequential obligation changes and a concrete trial commission to the
+user, without asking them to manage assignments or Git logistics.
 
-Other open decisions include how `close` carries outstanding gap, follow-up,
-preservation, surrender and hold-release decisions without separate lifecycle
-commands or weakened authority. The other proposed completions are ordinary
-selected-report availability with surrounding damage and original-question
-context in new portable results. None has been adopted. Publication, stopping
-and delivery still need an actual admitted route and qualification; the
-candidate snapshot mechanism is a design requirement, not enforcement evidence.
-No runtime implementation, Rust code, new behavioral comparison or harness
-qualification occurred. The workers performed documentary inquiry only.
-Only the graceless-exit direction has subsequently been added to CONTRACTS.md.
-The larger open architecture
-questions below remain.
+## The design direction behind the sequence
 
-The most consequential new user direction is **one `close` command that closes
-the audit regardless of state**. The user's words were "My STRONG inclination
-is to offer a close command and that's it." Any withdrawal path for closing an
-active investigation belongs inside that operation. The user authorized
-recording this as the successor design direction. The manager should not need
-to diagnose a stage and choose a separate withdrawal, abandonment or closure
-procedure. Existing holds and preservation undertakings still constrain
-completion; exact stopping, capture, dispositions and continuation remain for
-design. Bring back concrete conflicts with protected obligations while taking
-the one-command target seriously. CONTRACTS.md owns the direction. It is not
-permission to report completed close while unfinished obligations remain.
+The previous session moved from simplifying the manager's closing flow to
+reducing the scope of what Stewart undertakes to preserve. The user wants one
+`close` command from any state and accepted `close --graceless-exit`. Actual
+run binding, stopping authority and evidence that tool activity ended remain
+design debt. A person or an agent may execute the supplied command; rendering
+it establishes no controller. Human authorship is a separate accommodation and
+never an exception to required access enforcement.
 
-One intake correction matters: I framed human auditors as a potential exception
-to enforced access. The user correctly challenged that distinction. A human
-can receive restricted repository data just as an agent can. Assess the actual
-access/publication arrangement and its tools, not whether the auditor is human.
-No admission exception for unenforced access was adopted. Do not reopen that
-mistaken framing as an unresolved user question.
+The **keyhole candidate** makes a typed submission the whole deliverable and
+declares working state disposable in advance, with retirement after durable
+valid submission and safe termination. It is the current inquiry direction,
+not an adopted repeal of tree-custody, early-close or removal obligations.
+The established question types came from real audits; useful answer structures
+need their own empirical evidence. Inventory real returns, compare forms, then
+trial fresh authoring and integrated submission/disposal. No live answer trial
+has run. The obligation inquiry and three independent reviews are in
+[KEYHOLE-OBLIGATIONS-FINDINGS.md](KEYHOLE-OBLIGATIONS-FINDINGS.md).
 
-The user also delegated judgment over how to internalize outside advice,
-including when to consult Riker. They authorized the planning revision, not
-blanket adoption of the advice. The revision makes return acquisition,
-availability/delivery and identified-operation recovery the next design
-priority, with no audit restart scheduled for the first successor. Stable
-publication is the leading ordinary-capture candidate; the recipient of a
-portable exported result is the first evidence-reader consumer to specify.
-These are this coordinator's planning judgments. You may revise them with
-reasons and evidence; do not mistake them for new decided contracts.
+Riker's [reply](riker/KEYHOLE-COMMITMENTS-REPLY.txt) treats admission-only custody
+and complete-attempt custody as coherent alternatives. The prior coordinator
+favored testing complete attempts first; neither policy is adopted. An attempt
+must mean the entire assembled answer, not just final-call arguments. Setter
+success, custody failure, schema rejection and durable admission with a lost
+reply need distinct meanings. A rejected attempt never fires the proposed
+successful-completion retirement trigger. Preserve the advice's provenance.
 
-The inherited **no dedicated successor program executor** decision (A.2,
-arrangement 1) is settled. Stewart supplies selected material, captures the
-auditor's return and maintains custody; permitted auditor tool use remains
-bounded by its commission and enforced grants. Captured execution reports
-remain attributed claims, without a Stewart process witness or invocation
-guarantee. Do not port or externally recreate the manager-operated
-construction/review/release/run workflow, child launcher, dedicated attempt
-HOME or output-reset/re-release facilities. The reviewed project-command shim
-is superseded. CONTRACTS.md records the dispositions; the other arrangements
-in CUSTODIAL-CORE-FINDINGS.md are comparisons, not optional feature plans.
+The older [return design](RETURN-CUSTODY-DESIGN.md) and
+[manager flow](MANAGER-CLOSE-FLOW.md) remain useful comparisons, especially
+for failure cases, portable-result contents and helper consumers. They are
+not a second commission to build general tree capture or a default legacy
+package reader. Their proposed ordinary selected-report availability and
+portable original-question context still need decisions.
 
-The five-stage program remains: status inquiry, custody audit, additions, Rust
-transition, and optional implementation of the revised arrangement. Stages 1–3
-closed, with stage-4 departures governing current scope. **Click integration
-was dropped. Python remains frozen** against `6582df2`, including bundled
-manuals and role files. Begin from the actual working tree and recorded
-decisions. This handoff commissions no automatic port or implementation.
+Keep inherited decisions distinct from the new candidate: no dedicated
+successor executor or release/run workflow; deferred general manager-workspace
+service; audit-owned facilities and restricted manager access; explicit auditor
+grants, with delegated evidence-based fallback judgment; finite attributed
+holds with explicit release, provisionally outliving environment retirement;
+bounded evidence readers and legacy transition. Shared immutable material is
+preferred but its mechanism and last-use policy remain open. No audit restart
+is scheduled; at most one convenience remains a product question. Recording
+a commission need not promise replay. Stewart still owes supported handling of
+its incomplete custody operations, without granting another investigation.
 
-The resource discussion also established these directions:
-
-- Defer general manager-workspace creation/disposal, leaning toward isolating
-  and removing it rather than promising a later port. Audit-owned allocation
-  and required custody, access and shared-use protections remain.
-- Restrict manager access after handoff; preserve the bounded commission and
-  structured return. Manager workspaces have independent lifetimes.
-- Strongly prefer shared immutable material. Its last-use/cache policy remains
-  open; sharing must not expose unselected material or merge collection identities.
-- Provisionally allow the working environment to retire while the same audit
-  holds identified captures. Final custody close waits for explicit release
-  and its other conditions. A hold permits neither continued investigation nor
-  dangling operations after completed close.
-- Hold a finite identified selection, with attribution and metadata/captured
-  dependencies needed for its custody claims. References do not enlarge it
-  recursively; copying does not silently release the original hold. Exact
-  identity and transfer representation remains design work.
-- Pursue explicit access grants, preferably eliminating the private-location
-  inventory. The user delegates judgment over an evidence-justified fallback.
-  Actual harness qualification must cover manager and auditor boundaries.
-- Use bounded legacy retirement over a specified population; none has yet been
-  inventoried. Protect supported evidence interpretation across writers, with
-  named consumers, records and claims. A historical release, runtime or resource
-  record does not require the successor to continue its old operational role.
-
-The manager owns constructing another question, including an identical one.
-Recording the remit need not promise replay; this is an agreed direction and
-candidate core commitment. The preference is zero audit retry facilities, with
-at most one restart-from-start convenience still open. Intellectual dissatisfaction
-with an audit answer and the decision to ask again are outside Stewart's remit.
-Do not describe them as a Stewart failure or recovery task.
-
-**Incomplete Stewart operations remain its responsibility.** This matters
-especially for agent-managers, whom an inadequate interface can lead to repair
-private state, erase evidence or guess whether work happened. A diagnostic alone
-is not a supported resolution. Capture, publication, lost replies and interrupted
-close need usable completion/disposition paths within recorded authority, with
-honest gaps where evidence is lost. Recovery cannot grant another investigation
-or replay uncertainty; renaming several retry facilities does not simplify them.
-The plan's failure cases remain design/qualification work, not executed results.
-
-Live testing must be able to detect missed extraction and silent destruction
-or withholding. The current recommendation is an independent immutable test
-archive outside the disposal under test, retained through review even for passing
-runs. Its observer scope and timing must be explicit; copying only Stewart's
-capture cannot reveal what capture omitted. Archive rescue is not successful
-product retrieval, and a hold must not prevent the close being tested. This
-is not an implemented archive, a production cache or a post-close recovery promise.
-
-## Take up the remaining work
-
-Continue the design conversation before commissioning implementation. The
-stage-4 round came from `planning/inputs/custodial-core.md` and
-`planning/inputs/history-only.md`, preserved verbatim. The initial inquiry was
-independently reviewed; the subsequent conversation changed several recommendations.
-DEVELOPMENT-PLAN.md and CUSTODIAL-CORE-FINDINGS.md own the current account.
-
-The user subsequently supplied peripheral advice on return acquisition,
-recovery, availability, workspace form and a portable-result reader, then
-delegated its assessment and incorporation into the plans to the coordinator.
-It is preserved in `planning/inputs/return-and-custody-advice.txt`; its relative
-links were not followed and must not be treated as local sources to resolve.
-The resulting connected return/custody account originally made stable
-publication the leading acquisition candidate. The keyhole proposal and
-completed obligation inquiry now supersede that priority. Use the earlier
-account as a comparison, especially where it promises general tree capture or
-partial-work salvage; it is not another implementation queue. Distinguish
-availability from delivery, and give interrupted operations supported
-completion/disposition through their existing identity. Schedule no audit
-restart for the first successor. These remain coordinator recommendations and
-ordering choices, not newly accepted contracts or an implementation commission.
-The development plan puts empirical answer requirements before the durable
-interface and integrated qualification before automatic disposal.
-
-The first walkthrough now covers ordinary publication and delivery, close
-before publication, interrupted acquisition, a lost reply and interrupted
-removal. The new design account makes those interactions reviewable; it does
-not settle a concrete harness protocol. Discuss the keyhole findings' bounded
-decisions and select an actual submission/stopping/delivery arrangement to
-qualify. You own the order and method. The details most likely to be lost in a
-short recap are:
-
-- "Publication" here fixes the auditor's return for acquisition; later
-  retention/export to a manager destination is a different operation. A digest
-  or completion declaration does not freeze a working directory. A complete
-  publication may report incomplete investigation; incomplete acquisition and
-  unfinished closure are separate facts. Stable return bytes alone do not
-  establish stopped activity or removal authority.
-- An operation identity only returned in the lost reply does not solve that
-  failure. The manager needs a reference already held or supported unambiguous
-  discovery. Continuing the undertaking must not adopt unrelated outputs or
-  relabel a new observation of changed material as the old capture.
-- A readable answer is not delivered merely by existing. Specify the receiving
-  endpoint and callback/resumption responsibility without making routine
-  polling or an accepted-answer acknowledgment the manager's job. Extending
-  selected-report access with surrounding damage from export to the ordinary
-  reader remains a proposed contract change.
-- The portable reader needs finite supporting bytes and identities, not just
-  a commit ID naming an absent question. Existing packages need an actual
-  inventory before their supported view is promised. A portable snapshot does
-  not establish later hold release or operation completion. Keep current
-  custody status and transition diagnosis separately scoped, and retain the
-  status-first Rust implementation sequence.
-
-The remaining decisions and unfinished assignments are:
-
-- **A.1 and B–F remain open:** formal admission rule, workspace representation,
-  capture trigger, commission fields, custody location and history facility.
-  No executor does not itself adopt the exact-three-responsibilities formula.
-  Two proposed completions under B concern unrepresentable trees and name
-  normalization; two leads concern concluded close over failed preparation and
-  recorded writer pause. The Git guide's remaining statuses also need decision.
-- **The remaining guidance questions are substantive.** R2's closing entry
-  point now has the single-command direction above; exact stop/capture and
-  closure dispositions, other exceptional intervention and delivery remain
-  open. Old harness-message examples are not a successor protocol.
-  R3 concerns D's proposed commission retention promise:
-  the accepted voluntary hold defeats the old equation with mandatory retention.
-  Identify what the promise adds beyond a hold and completed publication.
-- **The inherited helper-runtime assignment is partly advanced:** the source
-  and manual name inspection and separately authorized fresh reuse as its two
-  consumers; RETURN-CUSTODY-DESIGN.md maps them to captured-asset reading and
-  explicit export. Qualification of the fresh-reuse route and an inventory
-  of existing Python recoveries remain undone. Removal is not yet decided.
-  Helper assets are
-  distinct from the program executor just removed. Existing Python recovery
-  material needs an explicit
-  transition disposition. R1's dedicated experiment HOME/retry portions no longer
-  need a successor interface; do not revive them to settle the helper question.
-- The first evidence-reader consumer to specify is now the recipient of an
-  exported result whose original environment and writer are gone. Bound its
-  schemas, material and supported claims before proposing Rust status work;
-  current-operation status and transition diagnosis still have separate needs.
-  Historical attempt/ledger interpretation needs a justified scope and does not
-  preserve executor APIs. The Python corpus supplies comparison evidence, not
-  a blanket compatibility promise. Rust remains status first, close last; the
-  write path waits for the remaining architecture decisions.
-
-Keep the seven resource directions settled while designing their mechanisms.
-Hold identities/transfer, shared-store lifetime, actual access enforcement and
-supported custody recovery still need qualification. Rust acceptance requires
-executed Linux and WSL evidence as well as the macOS baseline; the user plans
-to ask a friend to run WSL. A recipe or Linux result cannot substitute for that
-run. Reassess stage 3's unrun nine comparisons against selected scope before
-commissioning any; neither linked worktrees nor executor parity is assumed.
-
-Record decisions in CONTRACTS.md and update current plans. Finish the Git
-publication work below after its remaining statuses are settled. Keep findings
-and run records until their evidence is superseded; prune artifacts only under
-DEVELOPMENT.md. No implementation commission is hidden in this handoff.
+CONTRACTS.md controls these obligations. The forward register owns their
+remaining design and acceptance work, including A.1/B–F, R1–R3 and the two
+proposed workspace completions. The coordinator owns ordering and ordinary
+mechanism choices within authority. Stage 4 remains status first, write path
+next, close last; scope the reader before implementation and do not port known
+superseded facilities just to obtain parity. Keep the independent witness
+outside disposal through review: rescue does not establish product retrieval.
 
 ## The Git environment document
 
@@ -481,10 +302,11 @@ both outside such a sandbox, or permit those operations.
 ## Consultation and engagement records
 
 Riker is a separately situated helper, not a superior authority. Requests and
-replies are user-relayed under [riker/RIKER.md](riker/RIKER.md). Two exchanges
-are retained: the status-delegation exchange, which sharpened the commitments
-boundary, and the close-commitments exchange, whose reply produced the final
-principle revisions and the retention-undertaking rule. Consultation is
+replies are user-relayed under [riker/RIKER.md](riker/RIKER.md). Three exchanges
+are retained: status delegation, which sharpened the commitments boundary;
+close commitments, which informed the principle revisions and the
+retention-undertaking rule; and keyhole commitments, which distinguished
+admission-only custody from preserving complete attempted answers. Consultation is
 optional, at the coordinator's or user's discretion, with no prescribed place
 in the sequence; repository claims still need evidence.
 

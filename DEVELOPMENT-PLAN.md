@@ -1,160 +1,210 @@
 # Stewart's five-stage development plan
 
-Status: the five-stage sequence is agreed; Click integration is dropped.
-Stages 1 and 2 are decided. The status contract and the custody decisions are
-recorded in [CONTRACTS.md](CONTRACTS.md) with their implementation status; the
-findings documents and their run records remain until Rust acceptance evidence
-supersedes them, because a run's record leaves with the document that cites
-it. Python is frozen as the reference baseline; decided departures are
-implemented in Rust. Stages 2 and 3 closed on 2026-10-24. Stage 4, the Rust
-transition, opens with a decision round on an external proposal for a narrow
-custodial core and files-only workspaces, sharing its inventory with the Git
-environment document; the Rust write path waits for those decisions.
-This document owns the current sequence, stage outcomes and consequential
-decisions. Internal assignments and execution details belong to the coordinating
-agent. The [longer-term vision](VISION-PLAN.md) describes the working relationship.
+Current account, 2026-10-26. Stages 1–3 have completed their inquiries and
+semantic decisions; that does **not** mean their decided changes are implemented.
+Python remains frozen at `6582df2`, including bundled guidance. Stage 4 is in
+successor design, with empirical answer requirements ahead of the durable
+interface. Rust implementation and fresh audit trials are not commissioned.
+Stage 5 remains optional implementation of selected additional responsibilities.
+Click integration and a dedicated successor program executor are out of scope.
 
-Current priority, 2026-10-25: pursue and test the user's keyhole proposal for
-typed submissions as the entire deliverable, with audit working state declared
-disposable in advance and retirement triggered by durable valid submission
-and safe termination. This is an architectural candidate, not blanket approval
-to remove existing obligations. Put the answer-protocol inquiry at the front
-of stage 4, before committing to the successor submission format and write
-path. The four existing question types come from real audit experience; use
-them as constraints on the answer experiments, not as inventions to reshape
-for schema convenience. A possible additional question type is separate work.
-The user has commissioned an independent agent inquiry into which other
-obligations this candidate could eliminate or narrow, and which must survive
-while the auditor works. Its findings must identify the exact decisions being
-reopened; no production change or live audit experiment is commissioned here.
+The user requested this forward reconciliation so accumulated decisions become
+work that is actually completed, and future coordinators can dispatch agents
+without rediscovering dependencies or inheriting conflicting assignments. This
+revision commissions planning only. The sequence and register below own the
+current work account; the numbered stages later in this document retain their
+supporting decisions, evidence and inquiry history. Earlier recommendations
+are comparisons where the keyhole candidate reopens them, not parallel queues.
+[CONTRACTS.md](CONTRACTS.md) remains authoritative for intended behavior and
+[AGENTS.md](AGENTS.md) for development practice. The [vision](VISION-PLAN.md)
+explains the working relationship.
 
-The commissioned inquiry is now complete. Three independent 6.1 Sol reviewers
-at high effort examined custody, the working environment and counterexamples.
-[KEYHOLE-OBLIGATIONS-FINDINGS.md](KEYHOLE-OBLIGATIONS-FINDINGS.md) identifies
-nonzero prospective reductions and the decisions needed to obtain them. No
-obligation removal is adopted. The user has relayed
-[Riker's reply](riker/KEYHOLE-COMMITMENTS-REPLY.txt): either custody boundary can
-be coherent, but a preserved final attempt must contain the complete assembled
-answer. The coordinator favors testing attempt custody first; policy selection
-and the changes to existing partial-work promises remain open.
+## Forward sequence and decision points
 
-Current checkpoint, 2026-10-25: the user relayed an external proposal, now
-`planning/inputs/custodial-core.md`, and agreed to place it inside stage 4 as
-an opening decision round before the Rust write path (stage 4 below). The user
-authorized that round's inventory and comparisons; whether Rust status starts
-alongside it has not been decided. A second proposal for a history-only
-profile, `planning/inputs/history-only.md`, joined the same round.
-The resumed discussion has since decided deferral of the general
-manager-workspace creation/disposal service and a narrow attributed hold on
-identified custody material with explicit release. It also agreed the
-handoff/closure direction and recorded the effectiveness/seamlessness tension
-below. The hold's subject is a finite identified selection with its required
-custody dependencies, without recursive expansion. Held-capture closure is provisionally resolved; explicit access grants
-are selected with delegated fallback judgment. A bounded legacy transition and
-supported evidence interpretation are accepted, without blanket successor
-compatibility with Python's operational model. The remaining architectural
-choices and implementation commission stay open.
-Live-testing retention is being considered to expose missed extraction or
-silent loss; the independent test archive is the current recommendation, not
-a production cache or post-close recovery promise.
-The user has now selected A.2 arrangement 1: no dedicated successor program
-executor or staged manager-operated release/run workflow. Permitted auditor
-tool use and custody of captured returns remain; execution reports retain
-their attribution. Recording a commission without promising replay is an
-agreed direction and candidate core commitment. Zero versus at most one audit
-restart convenience is still open. Supported resolution of Stewart's own
-incomplete operations remains central, especially for agent-managers. The
-user requested the next coordinator handoff after this decision; implementation
-remains uncommissioned.
+This is a dependency timeline, not a calendar estimate. No experiment, host,
+agent capacity or external return date has been assumed available. A coordinator
+may overlap independent work within its commission; consequential changes to
+obligations return to the user. Preparing an assignment does not dispatch it.
 
-Coordinator intake, 2026-10-25: the user strongly prefers a single `close`
-command that closes the audit regardless of state, with withdrawal during an
-active investigation handled internally if needed. This is the successor
-interface design direction. Existing holds and custody obligations still
-constrain completion; the manager should not need to select a separate
-withdrawal, abandonment or recovery procedure. CONTRACTS.md records the
-direction and its unresolved mechanics. No implementation is commissioned.
+| Step | Work and useful overlap | Required result before dependent work |
+| --- | --- | --- |
+| F1 — Prepare the next inquiry | Make the answer corpus, route candidates, bounded legacy population and acceptance coverage concrete. The three first-wave briefs below can run independently when commissioned. | An accessible corpus with known gaps; candidate access/control/delivery routes and their unknowns; a trace from every register item to a decision, implementation assignment or explicit deferral. Concrete trials and their cost are ready for commissioning. |
+| F2 — Obtain discriminating evidence | Inventory real returns and compare common then question-specific answer forms. Qualify candidate access, stopping and delivery feasibility alongside this where their trial scope is approved. Test fresh authoring through a replaceable prototype after the representation comparison. Investigate workspace/history/tool capability and helper consumers as needed. | Evidence of answer usefulness, supported capabilities and credible operating routes. Separate representation evidence, prototype behavior and real-harness enforcement. No schema is selected merely because agents can fill it. |
+| F3 — Decide the connected successor design | Integrate F2 with A.1, B–F, the keyhole custody choices, R1–R3, and the close/hold/failure cases. Reconcile affected contracts and guidance. | A bounded commission, answer/context form, custody-start/finality policy, access and control arrangement, storage/lifetime model and supported recovery paths. Name which decided departures ship in stage 4, which are commissioned in stage 5 and which remain deferred, with dependencies. This scope decision precedes the write path. |
+| F4 — Implement the read-only foundation | On an implementation commission, select Rust/build/distribution tooling and establish CLI acceptance against frozen Python evidence. Implement bounded record verification and status first. A separately justified reader slice may start before all F3 decisions only if its consumer, record population and interfaces are already settled. | Verified read-only behavior for the admitted scope, honest unsupported-record diagnoses, schema/provenance decisions and an acceptance harness the write-path workers can use. The old Python-package reader is a candidate, not an automatic first assignment. |
+| F5 — Implement the selected write path | Integrate input preparation and owned facilities, launch/grants, submission custody, result retrieval/delivery, preservation and holds in that dependency order. Shared identity, request, record and error contracts precede parallel operation implementations. | End-to-end return availability and supported continuation/disposition of interrupted operations. Results survive loss of the original environment where promised. No automatic disposal is enabled on the strength of schema admission alone. |
+| F6 — Implement and qualify close last | Complete W17's live-Python-audit gate before Rust closes anything. Integrate one close entry point, including graceless exit, with verified stopping, preservation, hold release, retirement and final custody closure. Repeat prototype comparisons against the actual successor. | Useful answers plus integrated custody, control and removal evidence, including failure and omission controls. Automatic retirement, if adopted, has its own authorized trigger and acceptance evidence. Close never declares completion over unfinished obligations. |
+| F7 — Accept, transition and finish | Exercise the integrated release on macOS, Linux and actual WSL; finish user documentation and packaging. Finish the remaining bounded legacy transition and accept the commissioned scope, including any stage-5 additions integrated through F4–F6. | An explicit outcome for every register item and acceptance gap; settled legacy undertakings before withdrawing their writer; released documentation matching actual support. Retire plans/findings only when their purpose and evidence obligations are discharged. |
 
-Current planning priority, 2026-10-25: define return acquisition, availability,
-delivery and recovery of identified custody operations before considering an
-audit-restart convenience. The user delegated assessment of peripheral advice
-and adjustment of this plan to the coordinator. The next design work below
-makes stable publication the leading normal-capture candidate, names the
-exported-result recipient as the first evidence-reader consumer to specify,
-and carries early and interrupted closure through the single `close` entry
-point. These are planning choices and recommendations; new custody commitments
-still require decision. No audit restart is scheduled for the first successor.
+F7 preparation begins early: locate the Linux execution route and WSL contact,
+identify the legacy population, and design evidence retention during F1/F2.
+Final platform qualification uses the integrated successor. The user plans to
+ask a friend for WSL execution; preparing that handoff is coordinator work,
+while an actual WSL return remains an external dependency. No CI is available.
 
-Design progress, 2026-10-25: the user agreed to work through the manager
-interaction, inventory portable-result contents, then prepare bounded decisions
-and a first reader assignment. They specifically requested a very spare,
-human-readable closing flow. [MANAGER-CLOSE-FLOW.md](MANAGER-CLOSE-FLOW.md)
-is that proposed task flow; [RETURN-CUSTODY-DESIGN.md](RETURN-CUSTODY-DESIGN.md)
-contains ordinary/early-close cases, interrupted-operation continuations,
-the frozen package-format inventory and the documented helper-recovery
-consumers. Its three proposed completions concern decisions inside `close`,
-selected report availability beyond export, and portable original-question
-context. None is yet adopted. The bounded Rust package reader assignment is
-prepared, not commissioned; its placement and concrete publication, stopping
-and delivery routes remain open. The initial account changed neither contracts
-nor Python.
+Stage 4 is not a parity port followed by an optional rewrite. Its commission
+must say which selected departures its coherent foundation includes. Stage 5
+is not a place to lose accepted work by omission: an item left there names its
+purpose and prerequisite, and remains open until implemented or explicitly
+disposed of. Later stage-5 commissions re-enter the relevant design,
+implementation and acceptance steps rather than bypassing qualification.
+Zero audit restart facilities are scheduled for the first
+successor; the possible single restart convenience remains an open product
+choice, not a prerequisite. General manager-workspace service remains deferred.
 
-Subsequent direction, 2026-10-25: the user accepted adding
-`close --graceless-exit` and explicitly recording the control arrangement as
-debt to pay. CONTRACTS.md records the branch; RETURN-CUSTODY-DESIGN.md owns
-the unresolved control work. The command may be launched by the user or by
-an agent, including the manager agent; a printed command does not imply a
-human launcher. Bind the actual run and stopping authority across these paths
-and qualify what termination ends before promising support. Python remains frozen.
-The subsequent keyhole proposal and answer-protocol inquiry below supersede
-the earlier stable-publication recommendation as the next design priority.
-The extent of the resulting custody changes remains for evidence and decision.
+## Work register
 
-Checkpoint, 2026-10-24: the user decided D1 as six close rules plus
-abandon parity, decided D2, D3 (contingent on stage 3's submodule decision) and
-D4, deferred D5 to stage 4, took D6 as documentation, declined seven optional
-changes with recorded reasons, and chose to freeze Python and carry every
-departure into Rust with status as the first Rust operation. The decisions,
-the principles behind them and the declines are in `CONTRACTS.md`. The inquiry
-materials were committed at `356dc58`. The independent review of the decision
-set returned fourteen findings, none blocking; the corrections are applied and
-three completions it required are recorded in `CONTRACTS.md` as proposed,
-awaiting confirmation. The later-return comparison then executed
-(`.scratch/custody-audit/later-return-03`, 6 of 6 passed) and refined the
-source finding; the resulting rule is a fourth proposed completion. Its
-evidence was independently reviewed and its artifacts pruned. `CONTRACTS.md`
-is linked from AGENTS.md and shipped in the source distribution, validated by
-`.scratch/contracts-link/distribution-01` (10 of 10 passed, wheel digest
-unchanged). Riker's reply on the two general commitments arrived and is
-retained at `riker/CLOSE-COMMITMENTS-REPLY.txt`; it adds a fifth proposed
-completion and three proposed revisions to the principles, recorded in stage 2.
-The user confirmed the five completions and the principle revisions;
-`CONTRACTS.md` records them as decided and stage 2 is closed. Stage 3 was
-commissioned, investigated, reviewed and decided the same day: the user agreed
-to `CUSTODY-ADDITIONS-FINDINGS.md` as recommended, and `CONTRACTS.md` carries
-its acceptances, declines and deferrals. Stage 4 is next.
+The coordinator owns integration and this register. Each dispatched item gains
+a named assignment owner, exact input revision, exclusive edit scope and result
+location. On return, record implemented scope, actual verification and remaining
+work here or in its linked account. A worker's completion is not program
+completion. An item closes only with linked evidence or an explicit decision
+that defers, replaces or removes it; a new recommendation cannot silently erase
+a decided obligation. Split rows when different parts acquire different states.
 
-Checkpoint, 2026-10-23: `STATUS-INQUIRY-FINDINGS.md` records the decided
-contract, concrete examples, observation/consumer map, preservation-first
-implementation outline and limitations. Two source researchers and independent
-review contributed; every review finding is resolved. Installed-wheel runs
-`.scratch/status-inquiry/baseline-01.json` and `render-boundary-01.json` selected
-30 and 1 nodes respectively, all passed: 31 total, 0 failed, 0 skipped,
-0 deselected. Forty-two verified JSON/prose evidence copies, logs, receipts and
-wheels are retained with the findings; only working artifacts were pruned via
-`scripts/prune.py`. No production behavior changed. Stage 2's account is in
-`CUSTODY-AUDIT-FINDINGS.md`: three source investigations, four investigative
-test files and coordinator synthesis cover closure/recovery, commission/execution,
-evidence/identity and Git trust. Its first installed-wheel run selected 26 nodes:
-25 passed and one probe-configuration error failed before the intended operation.
-The corrected probe's three controls all passed in a fresh run. Thus 26 distinct
-nodes now have passing evidence; neither the failed run nor its cause is hidden.
-Independent review verified the outcomes, all retained copies and their hashes;
-its findings are resolved. Ninety observation/fixture files and eight staged
-inquiry-source copies remain with the receipts/logs/wheels. Only working artifacts
-were pruned through `scripts/prune.py`; the report cites both removal records.
-Changes to custody obligations and production
-implementation remain reserved.
+All items below are open unless their state says otherwise. F numbers are the
+sequence above, not authorizations. Detailed contract clauses govern beyond
+these summaries; every admitted clause must have acceptance coverage before
+its implementation is considered complete.
+
+| ID / present state | Work still owed and source | Dependency and completion evidence |
+| --- | --- | --- |
+| W01 — Inquiry planned | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
+| W02 — Policy open | Select admitted-answer-only or complete-attempt custody; define setter acknowledgments, bounded snapshot assembly, attempt identities, corrections/finality, retrieval and lifetime. Decide partial work on early close, compulsory manager gap/follow-up responses and helper-independent human handback. [Keyhole decisions](KEYHOLE-OBLIGATIONS-FINDINGS.md#decisions-and-evidence-still-needed), [Riker assessment](KEYHOLE-OBLIGATIONS-FINDINGS.md#riker-and-the-transition). | W01 informs F3. Before F5, choose scope and update affected contracts explicitly. Test invalid final discriminator after substantial setters, full attempt versus call arguments, later-setter invariance, failed custody writing, racing/repeated finals and lost success replies. The prior coordinator's preference for attempt custody is not a decision. |
+| W03 — Architecture open | Decide A.1's formal admission rule and D's commission facilities, capture terms and retention promise, including R3's distinction from a voluntary hold. Identify any new auditor channel's effect on inherited assumptions. [Opening decisions](#opening-decision-round-a-narrow-custodial-core), [R3](#session-scoped-agent-guidance-reconciliation-2026-10-25). | F3, informed by W01/W02 and W04–W09. No executor does not adopt an exact-three-responsibilities formula. Test grants and recorded limitations against the actual commissioned view; admission is not a verdict on the answer. |
+| W04 — Workspace/history open | Decide B and F: plain subject files, history-only use, pinned history facility, and supported Git-aware/build/test capabilities. Resolve unrepresentable trees and name normalization as proposed decisions, not silent fixes. [B](CUSTODIAL-CORE-FINDINGS.md#b-the-workspace-representation), [F](CUSTODIAL-CORE-FINDINGS.md#f-the-form-of-the-history-facility). | Capability comparisons in F2; selected representation before F5. Verify selected object membership, absent unrelated/dangling/replacement objects, graft/shallow/partial limits, case/Unicode behavior and real tool usability. A shared backing store cannot expose its whole contents. |
+| W05 — Storage/layout open | Decide E: custody location, retained commission objects/refs, explicit locators and behavior when the repository or result moves. [E](CUSTODIAL-CORE-FINDINGS.md#e-where-custody-lives). | F3 before request/storage schemas and F5. Test moves, nested/unrelated paths, mirror/ref behavior for the selected design and writer/environment loss. Preserve historical identities; no location inferred by recency, current directory or installation. |
+| W06 — Decided inputs, implementation pending | Supply pinned submodule trees as one-level plain copies from locally available objects, no fetch or new submodule administration; refuse supplemental destinations beneath gitlinks before allocation. Preserve selected input/commission identity. [Input contracts](CONTRACTS.md#supplemental-inputs-below-gitlinks). | W04/W05/W15 determine mechanism for F5. Cover missing objects, changed copies, nested gitlinks, conflicting destinations and source independence. Existing capture/duplicate-copy disposal requirements remain unless W02/W14 explicitly revise them. |
+| W07 — Access direction decided, enforcement unqualified | Enforce selected auditor grants and the separate restriction on manager access after handoff; evaluate shared immutable material and private locations created after launch. Record external sources beside constructed network grants. [Access](CONTRACTS.md#access-through-explicit-grants), [network](CONTRACTS.md#external-sources-and-the-constructed-network-grant). | Route feasibility in F2; admitted grants before F5; actual harness qualification at F6/F7. Cover shell and file tools, useful authorized access, neighboring/unselected material and effects. Prefer no private inventory; evidence may justify the delegated narrow fallback. Domain-grant construction remains deferred until network qualification. |
+| W08 — Control debt accepted | Bind the audit lifetime to its actual execution, stopping authority and usable control; handle human-run and agent-run launch commands and ongoing tool/descendant activity. Design exceptional intervention within the bounded commission. Preserve attributed human/agent launch metadata and the optional stop basis. [Control debt](RETURN-CUSTODY-DESIGN.md#graceless-exit-and-the-control-arrangement-still-owed), [acknowledgments](CONTRACTS.md#launch-acknowledgments-by-people). | F2 route trials before a durable control promise in F3/F5. F6 covers cooperative and graceless stops, launcher loss, missing control and surviving descendants. A command renderer or stopped parent is not proof of termination. No dedicated program executor is restored. |
+| W09 — Delivery deferred; result proposals open | Record manager-declared return arrangements; specify the receiving endpoint and notification/resumption responsibility, keeping availability, notification and receipt separate. Preserve retention/export actor attribution and the decided export of verified selected custody with surrounding damage. Decide ordinary selected-result access with surrounding damage and finite original-question context in portable results. [Return design](RETURN-CUSTODY-DESIGN.md#decisions-and-the-next-implementation-boundary), [return contracts](CONTRACTS.md#return-arrangements-and-the-human-auditor). | F2 endpoint feasibility, F3 promises, F5 integration. Test available answer with failed notification, retrieval after cleanup/writer loss, missing question context and selected versus required/unselected dependency damage. No routine polling or accepted-answer receipt is introduced. |
+| W10 — Holds decided, representation open | Implement finite attributed holds, explicit release and custody continuing after environment retirement; choose copy/transfer identities and shared-store last-use policy. Distinguish R3's proposed commission undertaking. [Holds](CONTRACTS.md#holds-on-identified-custody-material). | W02/W05/W07 feed F3/F5; removal depends on this at F6. Test copying without release, finite dependencies, another audit's live use, held captures after retirement, and no investigative authority or dangling operations after completed close. Production caching is not selected by the test-witness requirement. |
+| W11 — Supported recovery required | Design requests known before dispatch, exclusive intent binding, planned effects and outcome identity; support completion or attributed disposition of interrupted preparation, submission, preservation, delivery and close. [Recovery principles](CONTRACTS.md#principles), [failure cases](RETURN-CUSTODY-DESIGN.md#a-request-that-survives-its-reply). | Common request/record rules before parallel F5 implementations. Test no effect, partial effect, completed effect/lost reply, changed source/destination and unrelated output; unkeyed calls remain distinct. Live agent trials separately test whether the interface avoids private-state repair. Recovery grants no investigation or replay of uncertainty. |
+| W12 — Status decided, scope pending | Select current-status, portable-result and transition readers with named consumers/records; implement shared verified reading and the appropriate status/discovery/listing projections, schemas, reasons and exits. Bound any historical ledger/attempt interpretation. [Status](CONTRACTS.md#public-status-contract), [reader scope](CONTRACTS.md#evidence-interpretation-across-implementations). | Scope before F4; W02/W05/W09 determine new result formats. Cover neutral absence, failed/missing/invalid/unreadable records, collection identity despite equal bytes, prompt provenance, read-time capture verification, no live-report fallback or old-code execution, and option bindings without readiness inference. Public status never becomes close's gatekeeper. |
+| W13 — Helper lean, removal undecided | Finish R1: qualify captured-asset inspection and explicit export for separately authorized fresh reuse; inventory existing recoveries. Decide omission of mutable helper-runtime materialization or specify its supported preservation/lifecycle route. [Helper consumers](RETURN-CUSTODY-DESIGN.md#helper-recovery-consumers). | W12/W17 before final F3 scope or an explicit deferral. Consumers are identified by source; the fresh-reuse route remains untested. Legacy recoveries retain their obligations. Executor HOME/retry facilities are already omitted and are not part of this decision. |
+| W14 — Close direction decided, coverage changes open | Implement one close entry point across all states, including graceless exit, with distinct retirement and final custody close. Reconcile the lifetime-based disposable-environment proposal with every existing close protection before removing content identities, duplicate checks, later-collection accounting or partial-tree salvage. Resolve the failed-preparation record and recorded-writer-pause leads. [Close](CONTRACTS.md#close), [reduction candidates](KEYHOLE-OBLIGATIONS-FINDINGS.md#what-could-fall-away), [leads](CUSTODIAL-CORE-FINDINGS.md#leads). | Policy in F3; implementation after W08/W10/W11 and preservation in F6. Cover each removal ground, kept/substituted checkout, preserved failure evidence, interrupted removal, hold/live-use protection and incomplete preservation. Own operational checks independently of status/rendering. Changed scratch versus substituted ownership must differ. No automatic retirement on a rejected attempt. |
+| W15 — Trust corrections owed | Establish one Git configuration/environment policy: configured filters and replacement consistency, hooks, grafts, lazy fetch, patch formatting, Unicode assumptions and relative worktree paths as applicable. Use exclusive capture writes and verified descriptor traversal. [Corrections](CUSTODIAL-CORE-FINDINGS.md#corrections), [accepted fixes](CONTRACTS.md#previously-accepted-corrections). | Shared foundation before F5 input/custody operations. Source and narrow probes do not qualify the whole policy. Use matched/unmatched/unconfigured execution controls and identity comparisons; qualify the selected routes without assuming unsupported SHA-256 or host behavior. |
+| W16 — Earlier accepted fixes owed | Compute implementation identity before allocating applicable state; keep Git metadata timeout values unknown. Compare attached/detached/unborn/chained HEAD before replacing porcelain queries. Bind the last required observation to the value used and retain it through removal; include executable-mode changes where capture coverage remains. [Earlier corrections](CONTRACTS.md#previously-accepted-corrections). | Assign each surviving surface in F3/F4/F5, removal binding in F6. If a surface disappears under an authorized scope decision, record that disposition rather than porting its machinery or silently dropping the rule. Review traversal races, concurrent unkeyed closes and changed-target progress within the admitted scope. |
+| W17 — Legacy strategy decided, population absent | Identify the finite Python population: live audits, recoveries, resources/claims, partial requests, captures and completed publications. Separate evidence reading from old-writer operations and transition-only diagnosis. [Writer transition](CONTRACTS.md#writer-continuity-into-the-successor). | Discover authorized locations/population in F1; inventory before cutover commitments. Before F6 close execution, stop new admissions to the transitioning Python population and close its live audits under Python. Settle independent undertakings before F7 withdraws the writer; do not postpone the live-audit gate until final release. No successor mutation/cross-writer export without its separate decision; no rewritten receipts or restored executor. |
+| W18 — User documentation pending | Settle remaining Git-guide statuses, then link it from README and include it in the sdist with the wheel unchanged. Plan successor Git-observation coverage; write useful CLI help, failure next steps, installation, user guidance and qualified limits alongside implementation. [Git publication](#git-document-publication-and-guidance), [guide](GIT-ENVIRONMENT-NEEDS.md). | Existing guide publication can finish independently once statuses are decided. F4–F7 documentation follows implemented behavior. Frozen bundled Python text stays unchanged; successor guidance needs its own home. Verify generated-table freshness/coverage, distribution contents and audience, not just links. |
+| W19 — Implementation foundation uncommissioned | Select Rust/toolchain/dependency policy, packaging and CLI boundaries, any admitted callable API, and reproducible installed-artifact checks. Adapt language-agnostic acceptance to compare selected contracts, not all Python behavior. [Stage 4](#4-transition-to-rust), [development checks](DEVELOPMENT.md). | F4 foundation before operation workers. Keep runtime independent of containing repositories; imports/startup side-effect free where applicable, byte contracts explicit, reason IDs stable, safe control JSON and exclusive receipts shared. Historical fixtures are immutable inputs, not schemas to rewrite. |
+| W20 — Integrated/platform qualification pending | Build the independent witness for omission/deletion studies, retain it through review, qualify final manager/auditor boundaries and execute macOS/Linux/WSL acceptance. [Platform exit](#4-transition-to-rust), [retention](DEVELOPMENT.md#retained-runs-and-their-removal). | Witness and environment preparation in F1/F2; final evidence F6/F7. Preserve firing/differing/invariance cases, actual selector counts, host/harness identities and failed runs. A rescue is a product retrieval failure; settings construction and Linux recipes establish neither enforcement nor WSL support. |
+
+The register preserves the close contract's detailed rules even while W02/W14
+may replace their subject for new audits: runtime/public-handoff coverage,
+recovery capture comparisons, frozen discard identities, kept-checkout exits,
+rendering-independent closure, preservation undertakings, supplied-file copies
+and every later verification-level collection gap. Dedicated executor HOME and
+general manager-resource disposal are already outside successor implementation;
+legacy interpretation remains bounded by W17. No new declared-disposable
+category is inferred from those old rules.
+
+## Test obligations and the unrun comparisons
+
+At F3, produce a clause-to-acceptance map for the selected scope using W01–W20.
+Each implemented change needs the firing control, measured difference and
+invariance case appropriate to its claim. Existing Python evidence may supply
+one side; record when it measures only a source prediction, a narrow fixture
+or an earlier design. Prototype and harness trials do not substitute for final
+successor acceptance. Failure codes must not imply no effects occurred.
+
+The nine proposed stage-3 comparisons were never run. Their current planning
+dispositions below prevent both accidental omission and automatic execution
+of obsolete probes. The source is [the proposed second wave](CUSTODY-ADDITIONS-FINDINGS.md#proposed-second-wave);
+its original account remains unchanged.
+
+| Original comparison | Forward disposition |
+| --- | --- |
+| Last supplied-file copy at abandon | Carry to W06/W14 acceptance if duplicate-based removal remains; if lifetime disposal replaces it, explicitly revise the promise and test that authority and scope instead. |
+| Absorbed submodule, clean/modified/ignored | Use the parts needed to discriminate W06's plain pinned copies and captured input identity; do not assume populated-submodule support or broad tree capture. |
+| `submodule.recurse=true` during preparation | Carry the configuration hazard to W06/W15's chosen materialization route. Run the old worktree probe only if it informs that mechanism or a named legacy need. |
+| Unrecorded submodule administration removed at close | No successor requirement to create that administration. W17 decides whether the actual legacy population needs this baseline probe; W14 still tests removal boundaries. |
+| Ferried launch block | Carry to W08/W09's human-run and agent-run launch/control/delivery qualification. |
+| Hand-written declaration | Carry to W02's human-handback decision and acceptance of its admitted manual equivalent if retained. Do not mistake a person launching an agent for a human author. |
+| Enrollment note visibility | General manager-resource projection is not being ported. W10 tests attributed hold visibility; W17 requires the old-note probe only for a named reader/transition consumer. |
+| Enrolled resource nested in managed directory | The old manager-container endpoint is out of successor scope. W07/W10/W14 still test independent lifetime, live dependency and external-material protection; W17 owns any actual old-container case. |
+| Representative build cost at collection | Retire as a test of the omitted reviewed-shim executor. W01/W04 separately assess useful build/test investigation and whether its answer can carry inspectable evidence. |
+
+Other deferred comparisons stay with their owners: W04/W15 cover history and
+Git hazards; W08 covers control and descendants; W09 covers the real receiving
+endpoint; W07 covers network grants. Cross-writer export, a capture receipt
+visible to the auditor and any added restart facility require their own bounded
+decision before implementation. The receipt decision belongs with W02/W12;
+none is authorized by merely retaining a submission.
+
+## Preparing and dispatching agents
+
+The next wave is ready as a bounded **inquiry preparation** proposal, not a
+runtime or live-trial commission. At dispatch the coordinator pins one source
+revision, a run directory and any newly authorized corpus locations. Workers
+may read this repository and the explicitly supplied sources only; restricted
+neighboring projects are not a way to fill a corpus or legacy-inventory gap.
+All three assignments return a compact finding, source anchors, unknowns and
+a concrete next comparison. They edit only their assigned run file. The
+coordinator alone integrates root plans, contracts and shared design documents.
+
+| Assignment / edit ownership | Complete bounded brief | Return and stopping point |
+| --- | --- | --- |
+| Answer requirements / `<run>/answers.md` | Read W01/W02, the four frozen question recipes, keyhole findings and accessible actual reports. Select a small varied corpus; bind original question, available context/return and the manager task where known. Identify required support, qualifications and candidate representations. Do not invent missing decisions or use fixtures as real audit experience. | Corpus manifest with unavailable cases explicit; first representation comparison with recipient information boundary and controls. Stop before converting the full corpus, running fresh audits or fixing a durable schema. |
+| Operating routes / `<run>/routes.md` | Read W04–W11 and the close/return design. Compare concrete launch/access/stop/delivery arrangements compatible with the bounded product relationship and no executor. Include human-run and agent-run launch, human handback, shared material and loss of launcher/reply. Separate source/settings evidence from enforcement. | Route/dependency table, consequential choices and small qualified-probe proposals with required host/tools/permissions/cost. No live harness run, external message, service creation or implementation. Flag unknown feasibility rather than filling it with an assumed controller. |
+| Coverage and transition / `<run>/coverage.md` | Read all W rows against CONTRACTS and retained findings; check adopted, proposed, superseded and deferred distinctions. Identify the authorized legacy population/location still needed, helper consumers and an initial clause-to-acceptance map; reconcile the nine comparisons above. | Missing/contradictory obligations and a finite transition-inventory brief. No custody mutation, pruning, compatibility implementation or assumed access to other projects. Do not rerun historical probes merely to confirm their existence. |
+
+With three worker slots the assignments can run together; with fewer, sequence
+them without changing their boundaries. The coordinator integrates their
+returns, resolves ordinary disagreements, selects the smallest discriminating
+trials and brings only consequential contract choices and the concrete next
+commission to the user. Independent review follows the integrated account;
+a review finding needs a disposition before dependent implementation.
+
+For later implementation waves, settle common interfaces before dividing files:
+record/identity/schema and safe I/O ownership first, then status, preparation,
+submission/preservation and finally close. An operation owner must consume the
+shared validators rather than fork them. Assign a single owner to each shared
+module, schema, fixture family and build/test entry point. Use isolated worktrees
+when concurrent edits overlap, otherwise exclusive file ownership in the shared
+workspace; integrate in dependency order on main. Each return identifies its
+base, changed paths, interface changes, actual checks and unresolved work.
+Coordinator integration checks the combined result, not just individual returns.
+
+Dispatch preflight is concrete and proportionate: exact permitted writes,
+selected interpreter/wheelhouse or pinned Rust toolchain, fresh result names,
+retention/witness location outside disposal, supported host and any exclusive
+harness resource. Python comparisons use `scripts/check.py`, explicit isolated
+startup and actual selector counts. Check private-HOME `.gitconfig` permissions
+before an evidence run; give every run its own output paths. Do not parallelize
+serial tests, a shared audit lifetime, harness session or removal target.
+There is no fixed staffing/provider split and no new orchestration framework.
+
+At every integration checkpoint, update the register before the next dispatch:
+what changed, evidence, decisions reopened, work left and the next dependency.
+Keep these updates short and current rather than accumulating competing status
+paragraphs. A successor coordinator should be able to identify the next runnable
+assignment and why other work is waiting from this section and its cited results.
+
+## Git document publication and guidance
+
+W18 has a small independent finish once remaining statuses are settled:
+regenerate/check the Python-derived table using `scripts/git_opinions.py`, keep
+its interpretation guide aligned with decisions, link the guide from README,
+and add it to the source distribution include list. Verify source-distribution
+contents and an unchanged production wheel. Its narrative serves Stewart's
+users and does not route them through plans or internal tooling. The successor's
+Git observation method is a later choice; the baseline generator is not a
+required Rust architecture. Correct the frozen manual's known discrepancies
+in successor guidance, not by changing baseline bytes.
+
+## Reconciliation evidence
+
+This forward account is a documentation reconciliation, not new behavioral,
+answer-quality or enforcement evidence. The 2026-10-25 keyhole inquiry and
+Riker incorporation remain recorded in `.scratch/keyhole-obligations/`; the
+latest source documents matched their retained identities at coordinator intake.
+This revision's checks are retained in
+`.scratch/forward-program/validation-01.json` and `.log`: scope/coverage review,
+local links and anchors, whitespace, frozen production source, unchanged
+contracts/historical inputs and generated Git-table checks. Actual outcomes
+belong to that record; zero pytest nodes and zero behavioral comparisons are
+planned for this documentation-only revision.
 
 ## Purpose and authority
 
@@ -191,14 +241,17 @@ the public view stops making them. The findings contain the full decided
 contract; its implementation and any reserved obligation changes remain separate.
 
 **Implementation decision, 2026-10-24:** Python implementation is declined.
-Status is the first operation the Rust implementation realizes, read-only
-against Python-written sessions, with Python status as the control. The
-findings' preservation-first extraction order applied to a Python
-implementation and is not required. The four reserved questions are disposed:
-concluded-close readiness obligations under stage 2's D1 rules; offer versus
-direct-close basis as advice kept separate from preconditions, with the
-later-return rule pending; proof of preparation completion declined; delivery
-and human participation carried to stage 3. The decided contract now lives in
+Status is the first operation the Rust implementation realizes. The original
+proposal was read-only against Python-written sessions with Python status as
+the control; the later bounded-reader decision requires naming the consumer
+and record population first (W12). Python remains comparison evidence, not a
+blanket reader-support promise. The findings' preservation-first extraction
+order applied to a Python implementation and is not required. The four reserved
+questions are disposed: concluded-close readiness obligations under stage 2's
+D1 rules; offer versus direct-close basis as advice kept separate from
+preconditions, with the later-return rule subsequently decided; proof of
+preparation completion declined; delivery and human participation carried to
+stage 3. The decided contract now lives in
 `CONTRACTS.md`; the findings retire when the Rust acceptance evidence
 supersedes theirs.
 
@@ -851,8 +904,8 @@ Reassess the following earlier work products against the candidate and the
 obligation inquiry; these are coverage questions, not a separate implementation
 queue or a promise to preserve the old capture mechanism:
 
-1. **Acquiring an identified return (C, D and R2).** Make a stable, identified
-   publication the leading candidate for ordinary acquisition. Define the
+1. **Acquiring an identified return (C, D and R2).** Reassess the earlier
+   stable-publication candidate against complete typed submission. Define the
    publication act, its finite material boundary, the mechanism that establishes
    stability, the authority to acquire it and the exact observation Stewart can
    claim. Here publication means fixing the auditor's return for acquisition;
@@ -965,9 +1018,10 @@ implementation started by preparing this work.
 Documentation checks for this planning revision are retained in
 `.scratch/return-planning/validation-01.json` and its `.log`, with starting
 documents under `before/` to distinguish the pre-existing single-close edits.
-Zero pytest nodes are selected and zero behavioral comparisons run. The user
-has taken responsibility for the pending commits and Git-permission diagnosis;
-this revision makes no further staging or commit attempt.
+Zero pytest nodes are selected and zero behavioral comparisons run. At that
+historical checkpoint the user took responsibility for the blocked commits and permission
+diagnosis. The accumulated changes were subsequently committed as `8fd864f`;
+normal coordinator ownership of Git logistics applies again.
 
 ### Opening decision round: a narrow custodial core
 
@@ -999,9 +1053,9 @@ decided principles:
 - **C. The capture trigger.** The proposal asks for a supervised session exit
   and demonstrated exclusion of writers; the decided relationship keeps
   Stewart agnostic about launch arrangements and accommodates human auditors.
-  The leading candidate is now acquisition of a stable, identified publication,
-  with an explicit early-close/partial path, as specified in the next design
-  work above. Its stronger guarantee needs a mechanism and a contract decision;
+  The earlier stable-publication candidate is now being reassessed against
+  typed submission, with early-close/partial custody awaiting explicit decision in
+  W02/W14. Any stronger guarantee needs a mechanism and a contract decision;
   auditor type does not determine whether access or stability is enforced.
 - **D. Commission fields.** Permitted facilities, capture policy and a
   retention promise, against the decided principles that close offers
@@ -1028,9 +1082,9 @@ with custody always present, which bears on B and D. Its one new decision:
   documentation says `cat-file --batch-all-objects` reaches alternate object
   stores, so a view borrowing the subject's objects would not confine scope.
 
-Under either proposal every audit still needs a return area that collection
-captures, since the report and declaration are files; "no workspace" means no
-subject tree.
+Both original proposals assumed a file return area independent of the subject
+tree. The keyhole inquiry now reopens that return mechanism; a history-only
+audit still needs its admitted answer channel, not necessarily a captured tree.
 
 **Execution decision, 2026-10-25: arrangement 1 selected.** The successor
 has no dedicated program executor. Omit the staged manager-operated
@@ -1521,8 +1575,8 @@ The user requested a recording commit as a partial check of repaired Git
 permissions. Both ordinary and elevated staging still failed creating
 `.git/index.lock` with `Operation not permitted`; nothing was staged and no
 commit was created. `.scratch/close-direction/commit-attempt-01.json` and its
-`.log` retain both outcomes. The five documentation edits remain uncommitted
-until this session can write Git metadata. Do not bypass that restriction.
+`.log` retain both outcomes. The edits were later committed in `8fd864f` after
+ordinary Git writes worked. These retained failures are historical evidence, not a current restriction.
 
 ## 5. Optionally implement the revised custody arrangement in Rust
 

@@ -17,6 +17,15 @@ planning judgment. Its relative links were not followed. It changes the leading
 capture candidate and supplies a concrete proposed evidence-reader consumer;
 it is neither a new executed result nor a user endorsement of those proposals.
 
+Current planning context, 2026-10-26: the later typed-submission inquiry
+reopens this account's file return area, general tree capture, content-based
+retirement and stable-publication recommendations. They remain comparisons,
+not implementation assignments. [The forward program](DEVELOPMENT-PLAN.md#forward-sequence-and-decision-points)
+tracks the decisions and verification still owed; CONTRACTS.md controls until
+changes are decided. The later explicit-grant direction admits no exception to
+required enforcement merely because an auditor is human. No qualification is
+established by the candidate routes described here.
+
 Evidence is labelled where it matters: *executed* means an installed-wheel run
 or the Git-only probe observed it; *source* means a reading anchored in the
 code; *prediction* means a reading no run has tested; *judgment* is the
