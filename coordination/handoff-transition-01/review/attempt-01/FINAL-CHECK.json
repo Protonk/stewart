@@ -1,0 +1,22 @@
+{
+  "own_outputs": [
+    {
+      "path": "FINDINGS.md",
+      "final_newline": true,
+      "no_trailing_whitespace": true
+    },
+    {
+      "path": "PROGRESS.md",
+      "final_newline": true,
+      "no_trailing_whitespace": true
+    },
+    {
+      "path": "RETURN.md",
+      "final_newline": true,
+      "no_trailing_whitespace": true
+    }
+  ],
+  "original_progress_review_pin_unchanged": true,
+  "pytest_nodes": 0,
+  "behavioral_comparisons": 0
+}

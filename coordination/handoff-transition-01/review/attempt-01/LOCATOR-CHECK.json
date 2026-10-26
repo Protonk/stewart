@@ -1,0 +1,68 @@
+{
+  "named_paths": [
+    {
+      "path": ".scratch/handoff-transition-01/inputs-01.json",
+      "exists": true
+    },
+    {
+      "path": ".scratch/handoff-transition-01/checkpoints-01.json",
+      "exists": true
+    },
+    {
+      "path": ".scratch/successor-inquiry-01/validation-02.json",
+      "exists": true
+    },
+    {
+      "path": ".scratch/successor-inquiry-01/completion-01.json",
+      "exists": true
+    },
+    {
+      "path": ".scratch/forward-program/validation-01.json",
+      "exists": true
+    },
+    {
+      "path": "coordination/successor-inquiry-01/COORDINATOR-PROGRESS.md",
+      "exists": true
+    },
+    {
+      "path": "coordination/successor-inquiry-01/REVIEW-DISPOSITION.md",
+      "exists": true
+    },
+    {
+      "path": "coordination/successor-inquiry-01/CORPUS-RETENTION.md",
+      "exists": true
+    },
+    {
+      "path": "coordination/successor-inquiry-01/answers/attempt-01/CORPUS.json",
+      "exists": true
+    },
+    {
+      "path": ".scratch/successor-inquiry-01/answers/attempt-01/sources",
+      "exists": true
+    }
+  ],
+  "local_refs": [
+    {
+      "ref": "refs/development-evidence/successor-inquiry-01/a1",
+      "expected": "d2a5779bca324e04e84b60aee5af85ec4f199785",
+      "observed": "d2a5779bca324e04e84b60aee5af85ec4f199785",
+      "returncode": 0,
+      "matches": true
+    },
+    {
+      "ref": "refs/development-evidence/successor-inquiry-01/a2",
+      "expected": "4fe0ab7040c679f1985f95a2c6d443e4eb2c8ccb",
+      "observed": "4fe0ab7040c679f1985f95a2c6d443e4eb2c8ccb",
+      "returncode": 0,
+      "matches": true
+    },
+    {
+      "ref": "refs/development-evidence/successor-inquiry-01/a3",
+      "expected": "3d3107e8ee8e0ddb72f493d60864240772619c61",
+      "observed": "3d3107e8ee8e0ddb72f493d60864240772619c61",
+      "returncode": 0,
+      "matches": true
+    }
+  ],
+  "limit": "Presence and ref value only; no corpus payload or bulk run-artifact verification, no ref/remote mutation."
+}

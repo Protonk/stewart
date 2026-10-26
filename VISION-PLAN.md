@@ -41,35 +41,18 @@ Update the current account after integration rather than accumulating competing
 checkpoints. Prepare future waves concretely without treating planning as a
 commission to run them.
 
-Inside an authorized commission, the coordinating agent chooses decomposition,
-delegation, providers, workspaces, integration and verification. Codex and
-Claude are available resources; neither a fixed staffing model nor an even
-provider split is required. The user need not relay routine worker messages or
-manage individual assignments. The coordinator brings back decisions beyond
-its authority and important failures or disagreements.
+The coordinator's operating guidance now lives in
+[coordination/](coordination/README.md). Its standing orders own dispatch,
+capacity, permission and recovery practice; the working account records current
+work. The optional turnover brief supplements intake, while work saved during
+the session supports an abrupt departure. This vision supplies the reasons for
+the arrangement rather than a second set of standing procedures.
 
-The user wants that coordination to be the ordinary way this program advances,
-without managing individual workers. On this laptop, normally stay at about
-ten simultaneous agents or fewer across the fleet, with lower harness limits
-and memory pressure governing actual concurrency. Prefer small useful waves.
-Continuity must survive the loss of a worker conversation: briefs, intermediate
-findings, evidence and the next action belong on disk while work proceeds.
-The coordinator maintains the dispatch account and handoff and can replace a
-worker from verified saved work without asking the user to reconstruct it.
-Uncertain effects and potentially live writers remain explicit. AGENTS.md
-states the standing checkpoint and recovery practice.
-
-The coordinator owns how outside advice is assessed and incorporated into the
-work, including when to consult Riker. Advice relayed by the user is not thereby
-endorsed by the user. Preserve its provenance, test its claims against available
-evidence, and use judgment to revise the plan; changes to protected obligations
-still need the user's decision. Consultation is useful when it resolves a
-concrete uncertainty, not a mandatory approval stage.
-
-Judge this practice by coherent, verified work and reduced coordination burden
-while the user retains semantic control. More agents or more machinery are not
-success measures. Improve the arrangement through experience; add standing
-procedure only when it solves a concrete recurring problem.
+Judge the arrangement by coherent, verified work and reduced coordination
+burden while the user retains semantic control. More agents or more machinery
+are not success measures. Improve the practice through experience; identify
+lasting procedural changes explicitly rather than accumulating them in turnover
+prose. Coordinator judgments remain attributable beside their subject.
 
 Keep this development arrangement distinct from the product relationship.
 Stewart's intended users want narrow questions and answers; a bounded

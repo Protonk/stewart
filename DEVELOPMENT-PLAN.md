@@ -156,7 +156,7 @@ W08/W11/W20 in the medium term. It is not commissioned and must not run today;
 the user reports 99% usage. A future brief must distinguish launch refusal,
 interruption during work, and uncertain effects or lost replies, without
 preselecting a product outcome. Starting or resuming any Claude session needs
-the user's explicit permission under AGENTS.md, regardless of general fleet
+the user's explicit permission under the coordinator standing orders, regardless of general fleet
 authorization or a classifier allowing the call.
 
 The user commissioned this bounded **inquiry preparation** wave on 2026-10-26
@@ -209,54 +209,28 @@ Keep these updates short and current rather than accumulating competing status
 paragraphs. A successor coordinator should be able to identify the next runnable
 assignment and why other work is waiting from this section and its cited results.
 
-### Laptop dispatch and continuity
+### Coordinator continuity and current dispatch
 
-The user has selected coordinator-led dispatch as the working arrangement,
-with about ten simultaneous agents as a soft fleet-wide memory preference.
-The current harness has four total slots: the coordinator and three workers.
-The first inquiry wave therefore fits without using a second harness. Later
-capacity is checked at dispatch; neither four nor ten is a staffing target.
-The guidance/briefing preparation is complete. The user has now commissioned
-the first inquiry-preparation wave; implementation and live trials remain
-outside it. Ordinary assignment changes and replacement workers within this
-commission are coordinator decisions.
+[Coordinator notes](coordination/COORDINATOR-NOTES.md) are the maintained working
+account and dispatch index. This plan owns W01–W20 and their dependencies;
+worker files own detailed findings. [Standing orders](coordination/STANDING-ORDERS.md)
+own intake, checkpoint, capacity, permission and recovery practice. The optional
+turnover brief is not required to locate work or resume after interruption.
 
-[Coordinator notes](coordination/COORDINATOR-NOTES.md) are the dispatch index.
-Keep program status in W01–W20, current worker/attempt state in that index,
-and reconstruction guidance in COORDINATOR-HANDOFF.md. Worker progress owns
-its detailed findings; do not copy several changing versions into all three.
-AGENTS.md supplies the standing checkpoint and recovery rules. Before a wave
-starts, give each worker a saved brief and its own attempt paths, with a source
-commit or a retained patch/snapshot for any admitted uncommitted inputs.
-Unstarted rows have no invented worker handle or evidence of execution.
+The first inquiry-preparation wave is complete, including independent review,
+as recorded in [the integrated account](SUCCESSOR-PREPARATION-FINDINGS.md).
+The three saved briefs and returns are under `coordination/successor-inquiry-01/`.
+The proposed A3 representation pilot is not yet commissioned. Runtime changes,
+actual route trials, helper comparisons and live legacy inventory retain their
+individual boundaries. Later empirical/implementation dispatch follows F1–F7
+with concrete source/evidence and host/control preflight; preparation alone
+supplies no execution authority.
 
-For the prepared inquiry wave, instantiate the three briefs above under
-`coordination/successor-inquiry-01/<task>/BRIEF.md`. Each dispatched attempt
-gets its own directory, such as `attempt-01/`, with `PROGRESS.md`, substantive
-findings as they develop, and a final `RETURN.md` written before the chat return.
-The worker owns only its assigned output files; the coordinator owns the index,
-brief changes and root documents. A changed assignment gets a recorded revision;
-a replacement gets a new attempt rather than overwriting uncertain output.
-Large command outputs go under a fresh `.scratch/` run path recorded in the
-brief. Nothing here changes evidence-run pruning or the frozen baseline.
-
-Start with three independent preparation workers: answer requirements,
-operating routes, and coverage/transition. The coordinator checks their initial
-disk checkpoints, integrates findings as they return and commissions a fresh
-reviewer over the combined account after worker slots become available.
-Review findings are resolved before dependent trials or implementation.
-Further waves follow the F1–F7 dependencies; do not keep all available slots
-occupied merely because they exist. Preserve room for integration and useful
-independent review.
-
-On recovery, first read the handoff, this plan and the index, then inspect the
-named attempts and actual workspace state. Reconcile observations before
-marking a worker returned, interrupted or integrated. If an old writer cannot
-be confirmed stopped, a replacement uses disjoint paths or an isolated worktree.
-Adopt verified saved work with its provenance; retain incomplete and uncertain
-work separately. Resume known incomplete development work, not an uncertain
-command against the same effectful target. Missing corpus access or unresolved
-product obligations return as concrete questions; routine dispatch does not.
+The user separately commissioned the coordinator-document transformation on
+2026-10-26, after identifying the old living handoff's potential to turn inherited
+judgment into standing authority. Its [commission](coordination/handoff-transition-01/COMMISSION.md)
+and [progress](coordination/handoff-transition-01/PROGRESS.md) own this bounded
+work. It changes development continuity/routing, not product scope or contracts.
 
 ## Git document publication and guidance
 
@@ -269,6 +243,31 @@ users and does not route them through plans or internal tooling. The successor's
 Git observation method is a later choice; the baseline generator is not a
 required Rust architecture. Correct the frozen manual's known discrepancies
 in successor guidance, not by changing baseline bytes.
+
+The requested form is a handwritten narrative, the mechanically source-generated
+table, and a handwritten interpretation guide. The guide's statuses describe
+the baseline version: relied on, decided to change, may change, incidental;
+unsupported cases belong in the narrative. Calling every row “supported” would
+promise behavior the inquiry proposes to change. Use the selected explicit
+interpreter with `-I -B` to run `scripts/git_opinions.py --write`, then `--check`
+and `--coverage` in separate invocations. Only the marked table is generated.
+`tests/test_git_opinions.py` checks freshness and guide row/reason references.
+These task-specific requirements came from the recorded user request and guide
+review; they are not a general format or standing procedure for other documents.
+
+### Baseline evidence disposition
+
+The coordinator-document transformation leaves the status, custody-audit,
+custody-additions and custodial-core findings and their cited run records in
+place for the forward program's baseline comparisons. Their owners are the
+respective findings and this plan; DEVELOPMENT.md governs run-artifact removal.
+No pruning, report deletion or new universal retention rule is authorized here.
+The old handoff's broad “until Rust acceptance” account and the purpose-served
+wording in some earlier owners need a scoped disposition before these named
+baseline reports/records retire. W20's acceptance/replacement evidence supplies
+that future review point; mere relocation of guidance does not discharge their
+current purpose. This preserves the unresolved wording without carrying it into
+standing orders or applying it to every future finding.
 
 ## Reconciliation evidence
 
@@ -832,8 +831,8 @@ Stewart's users, the people who prepare material in Git and operate it, with
 the development user acting only as their proxy: how to prepare that material
 for Stewart and what Stewart does not support, as a narrative introduction, a
 mechanically generated table of the Git opinions Stewart holds, and an
-interpretation guide. The coordinator handoff describes the request. The
-decisions it produces are recorded in `CONTRACTS.md`, and the Rust
+interpretation guide. The [publication work above](#git-document-publication-and-guidance) owns its
+remaining steps. The decisions it produces are recorded in `CONTRACTS.md`, and the Rust
 implementation honors or deliberately changes each decided opinion.
 
 Make any intended behavior awaiting the optional final stage explicit. Avoid
@@ -1234,7 +1233,9 @@ the user subsequently requested committing the accumulated changes. The
 ordinary and elevated staging attempts both failed creating `.git/index.lock`
 with `Operation not permitted`; no commit was created. The attempt and final
 documentation check are retained in `.scratch/resource-decisions/commit-attempt-01.json`
-and its log. The coordinator handoff records the resulting version-control state.
+and its log. The later recording commits (`a8de387`, then `8fd864f`) are
+accounted for under [single close](#single-close-entry-point-2026-10-25); these
+failed attempts are historical observations, not current Git restrictions.
 
 The round runs one inventory with two projections: the Git opinions table for
 `GIT-ENVIRONMENT-NEEDS.md`, generated by a tracked script, and Stewart's
@@ -1466,7 +1467,8 @@ production-source freeze and the guidance alias checks pass. The recording
 meanings of `launch`/`message` and paused-writer `resume` were checked in source;
 no pytest nodes were selected and no behavioral comparisons were run. At that
 checkpoint Git metadata was unwritable, so the changes were saved but
-uncommitted; later commit disposition is recorded in the handoff.
+uncommitted; `a8de387` subsequently recorded that accumulated documentation,
+as noted under [single close](#single-close-entry-point-2026-10-25).
 The provisional resolution of 3 and numbering alignment (3 publication,
 4 access exclusion) were checked with `git diff --check`; its output is kept
 in `.scratch/resource-decisions/validation-03.log`. The selected direction for
@@ -1677,7 +1679,7 @@ intended invariants. Unimplemented decisions receive an explicit disposition.
 
 ## Disposition of the former plans
 
-- The fleet convention is now standing development guidance in `AGENTS.md`.
+- The fleet convention is now [coordinator standing guidance](coordination/STANDING-ORDERS.md).
   No separate fleet implementation project remains.
 - Product orchestration is dropped as a planned project. Existing supported
   interfaces remain; no code or test depends on its former plan.
