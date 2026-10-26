@@ -1,0 +1,696 @@
+{
+  "checks": [
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/ASSESSMENT.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/RESULT.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/REVIEW-DISPOSITION.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/REVIEW-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/SUPPORT-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/attempt-01/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/attempt-01/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/attempt-01/REVIEW-PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/attempt-01/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/attempt-01/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/attempt-01/SUPPORT-PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r01/attempt-01/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/REVIEW-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/SUPPORT-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/attempt-01/FINAL-PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/attempt-01/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/attempt-01/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/attempt-01/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/attempt-01/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/attempt-01/SUPPORT-PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r02/attempt-01/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r03/BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r03/REVIEW-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r03/SUPPORT-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r03/attempt-01/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r03/attempt-01/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r03/attempt-01/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r03/attempt-01/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r03/attempt-01/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/REVIEW-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/SUPPORT-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/attempt-01/FINAL-PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/attempt-01/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/attempt-01/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/attempt-01/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/attempt-01/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/attempt-01/SUPPORT-PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/recipients/r04/attempt-01/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "integration snapshot:coordination/answer-representation-01/review/INTEGRATION-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r01/first/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r01/attempt-01/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r01/first/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r01/attempt-01/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r01/first/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r02/first/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r02/attempt-01/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r02/first/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r02/attempt-01/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r02/first/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r03/first/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r03/attempt-01/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r03/first/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r03/attempt-01/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r03/first/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r04/first/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r04/attempt-01/FIRST-PASS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r04/first/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r04/attempt-01/SOURCES.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r04/first/PROGRESS.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r01/support/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r01/attempt-01/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r02/support/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r02/attempt-01/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r03/support/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r03/attempt-01/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r04/support/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r04/attempt-01/SUPPORT-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r01/review/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r01/attempt-01/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r02/review/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r02/attempt-01/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r03/review/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r03/attempt-01/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "frozen copy:.scratch/answer-representation-01/responses/r04/review/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "unchanged response:coordination/answer-representation-01/recipients/r04/attempt-01/REVIEW-RESPONSE.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "three frozen response phases:r01",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phase freeze order:r01",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:coordination/answer-representation-01/recipients/r01/BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p01/READ-MANIFEST.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p01/answer.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p01/notes-a.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p01/notes-b.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/question.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/recipe.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/ledger.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/experiment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/resources/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/tests/test_stewart_experiment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "truncation disclosed:r01",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "three frozen response phases:r02",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phase freeze order:r02",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:coordination/answer-representation-01/recipients/r02/BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p02/READ-MANIFEST.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p02/answer.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/question.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/recipe.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/ledger.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/experiment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/resources/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/tests/test_stewart_experiment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "truncation disclosed:r02",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "three frozen response phases:r03",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phase freeze order:r03",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:coordination/answer-representation-01/recipients/r03/BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p03/READ-MANIFEST.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p03/answer.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/question.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/recipe.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/auditor-role.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/manager-role.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/ledger.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/experiment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/resources/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/tests/test_stewart_ledger.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/tests/test_stewart_experiment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "truncation disclosed:r03",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "three frozen response phases:r04",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "phase freeze order:r04",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:coordination/answer-representation-01/recipients/r04/BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p04/READ-MANIFEST.json",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/p04/answer.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/question.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/recipe.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/ledger.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/experiment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/src/stewart/resources/README.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/tests/test_stewart_experiment.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "declared source boundary:.scratch/answer-representation-01/packets/context/tests/test_stewart_ledger.py",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "truncation disclosed:r04",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "equal brief body:BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "equal brief body:SUPPORT-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "equal brief body:REVIEW-BRIEF.md",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "250 unique omitted source lines",
+      "passed": true,
+      "detail": "250"
+    },
+    {
+      "name": "reported coordinator 100 checks",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "pytest_selected": 0,
+  "product_executions": 0
+}

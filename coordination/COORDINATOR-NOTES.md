@@ -9,45 +9,48 @@ actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
 
-The user commissioned the bounded A3 representation pilot on 2026-10-26 at
-about 18:50 UTC, with about 35 minutes before machine sleep. No Claude calls
-for this day; this is a usage constraint, not permanent provider policy. The
-[commission](answer-representation-01/COMMISSION.md) records the task, principle,
-source boundary, ownership and cutoff. Aim for a saved result by 19:20 UTC,
-before the 19:25 outer limit. Fresh authoring, normal auditor-route qualification
-and a durable answer schema remain outside this wave.
+The bounded A3 representation pilot is complete and independently reviewed.
+The user requested an orderly stopping point and stand-by; no turnover note.
+All six assigned agents returned and no worker remains active in this engagement.
+No further experiment, replication, question-specific form or implementation is
+underway. Await the user's next commission.
 
-The user established intellectual agnosticism as a core principle, including
-in development. The coordinator is recording it in CONTRACTS, AGENTS and the
-plans. The pilot examines answer restrictions and their effect on expression,
-inspection and pressure toward outcomes; historical-manager agreement is not
-success. Original mistakes and qualifications stay attributed.
+The [result](answer-representation-01/RESULT.md) records four fresh first-pass
+memos, four original-support reveals and four historical-review responses. The
+omission recipient identified missing support and reconstructed its argument
+from admitted source; reveal changed direct attribution without changing its
+central conclusion. Other arms also inspected source. This establishes neither
+format equivalence, a time saving nor a durable schema. The study follows the
+user's intellectual-agnosticism principle now recorded in CONTRACTS and guidance.
 
-Coordinator `/root` owns the commission/progress/result, root guidance/contracts/
-plans, source snapshots and integration. Exact admitted source and uncommitted
-inputs are in `.scratch/answer-representation-01/inputs-01.json`; initial HEAD
-was `a35e943e2b029927361dc0d6b436c30260a2e3fa`. Seven original A3 text hashes
-match the retained corpus; twelve historical context files are captured.
-Producer `/root/a3_producer` is dispatched with its [saved brief](answer-representation-01/producer/BRIEF.md)
-and exclusive packet/producer paths. Initial checkpoint and first source reading
-are saved; it is constructing the four packets. No recipient is dispatched yet.
-Next: independently review packet fidelity and controls, then dispatch finite
-fresh recipients. Four simultaneous slots including coordinator; no nested work.
+[Independent integration review](answer-representation-01/review/attempt-01/INTEGRATION-REVIEW.md)
+found no substantive blocker; 138 checks passed. The coordinator's response
+validation passed 100 checks. Producer transformation checks: 192 passed.
+Packet review: 393/397 passed, with four benign duplicate self-manifest entries
+preserved. Final checks are `.scratch/answer-representation-01/final-check-01.json`
+and `.log`. Zero pytest nodes and zero installed-wheel/product behavioral
+comparisons; one four-arm agent representation pilot with twelve response phases.
+No Claude call, historical code execution, custody mutation or pruning occurred.
 
-Intake read the standing orders, both active plans, contracts, development
-instructions and preparation findings. Prior completion records were present;
-the three development-evidence refs still matched CORPUS-RETENTION.md. Intake
-checks did not repeat historical behavioral evidence. Records are
-`.scratch/coordinator-intake-20261026-01.json`,
+The [commission](answer-representation-01/COMMISSION.md),
+[progress](answer-representation-01/PROGRESS.md), saved briefs and per-worker
+outputs preserve the dispatch and return account. Initial inputs are pinned at
+`.scratch/answer-representation-01/inputs-01.json`; packet, review and phase-freeze
+records remain under that local directory. Keep this finite evidence population
+with the result through comparison/review. It is not all in Git. The whole
+program remains open under DEVELOPMENT-PLAN W01–W20; normal auditor authoring,
+other return types, narrower/counterbalanced comparisons and operating-route
+qualification retain their uncommissioned scope.
+
+The user took Git recording after both ordinary and escalated staging failed
+creating `.git/index.lock`. They may commit saved files concurrently without
+editing them. User commit `41e80f1ac373e6dc244e495eea1477aa6deeb676` records the
+principle/commission layer. Subsequent pilot results and current-account updates
+are saved for the user's recording; inspect Git for actual status. No agent Git
+mutation or permission investigation is pending. Intake/discussion check records
+remain in `.scratch/coordinator-intake-20261026-01.json`,
 `.scratch/coordinator-intake-recording-01.json` and the two
-`.scratch/coordinator-discussion-20261026-01.json` / `-02.json` discussion checks.
-
-Both ordinary and escalated staging failed creating `.git/index.lock` with
-`Operation not permitted`. The user now manages Git and may commit saved work
-concurrently without editing files. Use pinned input snapshots and check history
-when a diff disappears; do not interpret a clean tree as lost work. No further
-Git permission diagnosis or agent Git mutation is in scope. Worker output and
-progress must be saved without depending on a final commit or reply.
+`.scratch/coordinator-discussion-20261026-01.json` / `-02.json` files.
 
 ## Completed coordinator-document commission
 

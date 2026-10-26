@@ -1,0 +1,8 @@
+{
+  "checks": 138,
+  "passed": 138,
+  "failures": [],
+  "snapshot_files": 43,
+  "frozen_records": 20,
+  "response_phases": 12
+}

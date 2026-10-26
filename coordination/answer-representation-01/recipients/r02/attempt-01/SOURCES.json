@@ -1,0 +1,20 @@
+{
+  "recipient": "r02",
+  "attempt": "attempt-01",
+  "scope": "Static historical decision memo; no execution or new observations",
+  "consulted": [
+    {"path": "coordination/answer-representation-01/recipients/r02/BRIEF.md", "sections": ["entire brief"], "purpose": "Task and access boundaries"},
+    {"path": ".scratch/answer-representation-01/packets/p02/READ-MANIFEST.json", "sections": ["entire manifest"], "purpose": "Enumerated admitted sources"},
+    {"path": ".scratch/answer-representation-01/packets/p02/answer.md", "sections": ["B001-B044; initial full read truncated; targeted rereads of lines 259-891", "Primary reliance: B002-B007, B009-B016, B018-B019, B022-B027, B033-B044"], "purpose": "Historical answer, evidence classes, proof sketches, contrasts, limitations and proposed wording"},
+    {"path": ".scratch/answer-representation-01/packets/context/question.md", "sections": ["entire question"], "purpose": "Original decision and scope"},
+    {"path": ".scratch/answer-representation-01/packets/context/recipe.md", "sections": ["Instrument discrimination"], "purpose": "Expected distinction between static predictions and measured results"},
+    {"path": ".scratch/answer-representation-01/packets/context/src/stewart/ledger.py", "sections": ["lines 1-289"], "purpose": "Direct static check of parsing, equality, state machine, membership and prerequisites"},
+    {"path": ".scratch/answer-representation-01/packets/context/src/stewart/experiment.py", "sections": ["lines 133-164", "lines 490-552"], "purpose": "Review validation and wrapper classification of capture, summary, unmet, errors and exit"},
+    {"path": ".scratch/answer-representation-01/packets/context/src/stewart/resources/README.md", "sections": ["lines 1240-1318"], "purpose": "Documented ledger, aggregate controls, equality and raw decoding contracts"},
+    {"path": ".scratch/answer-representation-01/packets/context/tests/test_stewart_experiment.py", "sections": ["lines 430-463 (requested through 480)"], "purpose": "Read assertions distinguishing successful custody from missing measurement prerequisites"}
+  ],
+  "not_independently_verified": ["historical input digests", "retained attempt or release custody", "test execution", "all test assertions cited by historical auditor", "float and surrogate edge examples"],
+  "reconstruction": "Derived compact evidence checklist and conditional manager decision; checked central proof against admitted implementation. Initial long output truncation addressed by targeted rereads of relied-on sections.",
+  "accidental_out_of_bound_reads": [],
+  "commands": "Only mkdir/output writes and cat, sed, rg reads of admitted paths. No Git, network, project execution, tests, other agents or custody operations."
+}

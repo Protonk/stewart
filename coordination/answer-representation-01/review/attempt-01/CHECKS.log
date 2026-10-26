@@ -1,0 +1,12 @@
+Static review commands and outcomes
+
+1. cat review/BRIEF.md and COMMISSION.md: exit 0; saved initial PROGRESS.md before substantive packet review.
+2. cat review-inputs-01.json, producer DESIGN.md/RETURN.md and RECIPIENT-TEMPLATE.md: exit 0; read finite snapshot and review route.
+3. python3 -I -B metadata inspection of INVENTORY.json and inputs-01.json: exit 0; printed structure/source identity fields only, not case metadata.
+4. cat/sed finite p02/p03 payloads, manifests, original question, recipe, role artifacts, and omitted-passages R/N1/N2: exit 0. Some combined tool outputs were truncated; follow-up reads covered the omitted passage tails and p03 specimens. Full source files remain retained independently.
+5. python3 -I -B .scratch/answer-representation-01/review/check-01.py: exit 0. Output retained at .scratch/answer-representation-01/review/check-01.log. 397 checks, 393 pass, 4 informational uniqueness failures; every manifest repeats itself. No product tests.
+6. cat extracted wrappers-01.json: exit 0; only organizational/attribution wrappers found.
+7. rg -n 'P-sub|O-op|P-dup|P-omit|strict-v2|bijection|one-to-one|membership|reviewed|omission' p03/answer.md: exit 0; four residual generic reviewed references, retained at residual-scan-01.log. No named contrast or bijection term. This is not proof of semantic absence.
+8. cat producer/BRIEF.md: exit 0; checked construction commission against final choices.
+
+All Python commands used python3 -I -B. Actual interpreter at saved-output time: /Applications/Xcode.app/Contents/Developer/usr/bin/python3

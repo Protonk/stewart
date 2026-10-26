@@ -1,0 +1,18 @@
+# Support response
+
+My substantive decision remains unchanged: the instrument supports conditional zero wording against an intact validated review, gated by empty `ledger.unmet` and zero ordinary mismatches; no empirical zero was supplied. What changes is the attribution and availability of the central reasoning. The original report contains the acceptance rule, membership proof references and wording that I had reconstructed from admitted source during the first pass. I can now attribute those arguments to the historical auditor directly, rather than merely saying they were recoverable from context.
+
+Newly consulted report passages are “What an empty unmet implies,” the first three rows of “What the three fields jointly support,” acceptance-rule steps 1–3, algorithm steps 1, 5 and 6, finding 1, and “Wording for a reviewed measurement summary.” They explicitly bind membership to the release, distinguish filtered counts from reviewed totals, and supply the omitted practical conditions. Notes 01 P1–P4 and P6 give the missing proof: every anomaly reaches unmet, and absence of those anomalies supplies both directions of the correspondence between accepted comparisons and reviewed measurement IDs. This confirms my reconstructed argument; it does not make it an execution result.
+
+Notes 02 now supplies P-sub, P-dup, P-omit, O-op and the S authority comparison. P-sub changes only B:strict's identity, preserving row counts and the firing control while manufacturing a numeric zero; O-op supplies the contrasting complete zero. My omission prediction matches P-omit. My first-pass duplicate example appended a duplicate B:strict, whereas the original P-dup relabels it canonical; these are distinct edits with different predicted comparison counts, not a correction of either count. Finding 3 newly makes explicit that the supplied substitution fixture loses its firing control, so it does not itself isolate substitution with a surviving control. I had read that fixture but did not articulate this limitation in the memo.
+
+Already directly available were the static evidence ceiling, L0, K-swap, control and decoder qualifications, and error/prerequisite separation. The reveal strengthens the directly available support for membership discrimination. It leaves the empirical ceiling and the need to inspect actual retained operands for per-measurement control firing unchanged.
+
+New sources consulted (all relative to the repository):
+
+- `coordination/answer-representation-01/recipients/r03/SUPPORT-BRIEF.md`, all.
+- `.scratch/answer-representation-01/source/original/audits/ledger-instrument-review/reports/ledger-instrument-discrimination-01.md`, report, especially Answer, findings 1–3, contrasts and closing wording.
+- `.scratch/answer-representation-01/source/original/audits/ledger-instrument-review/scratch/ledger-instrument-discrimination-01/notes/01-trace-and-fixtures.md`, route, summarization, P1–P6 and fixture cross-check.
+- `.scratch/answer-representation-01/source/original/audits/ledger-instrument-review/scratch/ledger-instrument-discrimination-01/notes/02-independent-contrasts.md`, review, rows, arm table and rival explanations.
+
+Context-boundary clarification: before FIRST-PASS, automatically supplied conversation context contained general repository/environment/tool guidance and the bounded dispatch instructions. It did not contain producer/reviewer findings, the thread's A3 discussion, historical manager conclusions, or an experimental packet-to-arm mapping. My own r03-to-p03 assignment was disclosed by BRIEF, as intended. I read no additional files to answer this clarification. No new boundary violation or execution occurred; FIRST-PASS.md and SOURCES.json remain unchanged.
