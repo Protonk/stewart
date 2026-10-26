@@ -105,6 +105,16 @@ Unresolved source/specimen/attempt/runtime requests remain explicit. Prospective
 fresh authoring is the next recommended content inquiry, not yet commissioned. This W01/F2 inquiry changes no W02 custody promise or other protected
 obligation; normal authoring and operating-route qualification remain open.
 
+The user subsequently commissioned shallow preparation of a
+[fresh construction trial](coordination/fresh-authoring-01/BRIEF.md), choosing
+inspection of the exact returned specimen and a decision whether to execute as
+the recipient task. The candidate asks an author to construct a ledger
+membership comparison through a common envelope with selected exact support
+bytes. It proposes complete/omitted/reordered recipient variants. Prototype
+implementation and dispatch remain uncommissioned; no new evidence of fresh
+authoring, late findings, reproduction or custody is claimed. The broader W01
+coverage, including question-specific authoring comparisons, remains open.
+
 All items below are open unless their state says otherwise. F numbers are the
 sequence above, not authorizations. Detailed contract clauses govern beyond
 these summaries; every admitted clause must have acceptance coverage before

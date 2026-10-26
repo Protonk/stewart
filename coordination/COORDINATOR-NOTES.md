@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 after completing the reviewed finite-return inquiry. This is a
+Updated 2026-10-26 after fresh-authoring preparation. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -9,7 +9,28 @@ actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
 
-The user has authorized the deeper finite-return inquiry after discussing the
+The user recorded the completed finite-return inquiry in commit 81b557a; root
+verified the clean tree and the 170 final document identities against committed
+bytes. The 315 local evidence files were present; the user's report that all
+were unchanged is not a new independent full-file rehash.
+
+The subsequent bounded commission is preparation of one concrete fresh-authoring
+trial, within a roughly half-hour window. Root owns
+[the proposed construction brief](fresh-authoring-01/BRIEF.md), its pinned
+inputs and [progress](fresh-authoring-01/PROGRESS.md), plus this account and the
+work-register update. The user selected inspection of the exact returned specimen
+and deciding whether to execute as the recipient task. Independent reproduction
+is outside this first candidate undertaking. No worker is dispatched; prototype
+implementation and the trial itself remain uncommissioned. Preparation is
+complete; 21 static source/link/whitespace checks passed, with zero product
+executions or pytest nodes. Records are under
+`.scratch/fresh-authoring-preparation-01/`; retain them with the brief. The next
+step is discussion of the proposal and a later concrete prototype/trial commission.
+No ordinary turnover note is requested. User Git ownership continues.
+
+## Completed finite-return inquiry
+
+The user authorized the deeper finite-return inquiry after discussing the
 reviewed A3 pilot and accepting this criterion: a connection can end when its
 required purpose is carried by the bounded undertaking, or deliberately
 relinquished, with relevant failure cases supporting that account. This is
