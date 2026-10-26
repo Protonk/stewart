@@ -32,8 +32,11 @@ The commissioned inquiry is now complete. Three independent 6.1 Sol reviewers
 at high effort examined custody, the working environment and counterexamples.
 [KEYHOLE-OBLIGATIONS-FINDINGS.md](KEYHOLE-OBLIGATIONS-FINDINGS.md) identifies
 nonzero prospective reductions and the decisions needed to obtain them. No
-obligation removal is adopted. Its focused Riker request is prepared for
-optional relay, not sent or required as an approval stage.
+obligation removal is adopted. The user has relayed
+[Riker's reply](riker/KEYHOLE-COMMITMENTS-REPLY.txt): either custody boundary can
+be coherent, but a preserved final attempt must contain the complete assembled
+answer. The coordinator favors testing attempt custody first; policy selection
+and the changes to existing partial-work promises remain open.
 
 Current checkpoint, 2026-10-25: the user relayed an external proposal, now
 `planning/inputs/custodial-core.md`, and agreed to place it inside stage 4 as
@@ -781,12 +784,27 @@ and, where execution is granted, trial and preservation evidence. A summary
 pointing to a deleted specimen cannot count as equivalent. Keep that recipe
 fixed; any unsupported capability is a limit to acknowledge.
 
+The relayed Riker reply adds a submission-boundary comparison to phase 4:
+stage substantial findings, submit only an invalid discriminator, then close
+gracelessly. Distinguish custody of the complete assembled attempt from logging
+only final-call arguments. Include a valid-discriminator control, a later setter
+that must leave the captured attempt invariant, failed custody writing and a
+lost admission acknowledgement. Keep an independent payload witness outside
+disposal. Evaluate the reliance created by setter and rejection wording as
+well as stored bytes. Before implementing attempt custody, specify snapshot
+assembly, payload bounds, repeated-attempt identity and result lifetime.
+No rejected attempt triggers successful-completion retirement; early close
+requires its own recorded authority. Both custody policies remain open.
+
 The initial planning snapshot is `7533d4b`, checked in
 `.scratch/answer-protocol-planning/validation-01.json` and its `.log`.
 The completed documentary inquiry, independent integration review and final
 documentation checks are retained under `.scratch/keyhole-obligations/`, with
 `review-01.json`, `validation-01.json` and their logs pinning the reviewed
 material. Zero pytest nodes selected and zero behavioral comparisons run.
+The reply and its incorporation are checked in
+`.scratch/keyhole-obligations/riker-reply-validation-01.json` and its `.log`,
+also with zero selected pytest nodes and zero behavioral comparisons.
 
 ### Earlier return and custody account to reassess
 

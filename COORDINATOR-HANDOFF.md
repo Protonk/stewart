@@ -61,10 +61,19 @@ Setter success, a rejected final attempt and durable admission need distinct
 custody semantics. Human handback without helpers also needs explicit treatment.
 Existing contracts remain authoritative until changes are decided. The earlier
 return/custody account and legacy package-reader assignment need reassessment
-against this direction. The optional [Riker relay request](riker/KEYHOLE-COMMITMENTS-REQUEST.txt)
-asks when a tool event undertakes preservation; it has not been sent and is no
-approval gate. Review evidence is under `.scratch/keyhole-obligations/`; the
-initial planning snapshot is `7533d4b`. No live answer trials have run.
+against this direction. The user has relayed
+[Riker's reply](riker/KEYHOLE-COMMITMENTS-REPLY.txt) to the preserved request.
+It treats both custody policies as coherent and exposes the crucial difference
+between retaining a final call's arguments and retaining the complete attempted
+answer assembled from setters. Specific acknowledgement wording must agree
+with disposable-draft terms. The coordinator favors testing complete-attempt
+custody first, but neither policy is adopted. This would narrow partial-work
+recovery to durably preserved attempts, leave unsubmitted drafts disposable,
+and add attempt identity/retrieval/lifetime duties. Schema rejection does not
+supply early-close removal authority; lost success replies do not change a
+durably admitted result. Review evidence is under `.scratch/keyhole-obligations/`,
+including `riker-reply-validation-01.json` and its `.log`; the initial planning
+snapshot is `7533d4b`. No live answer trials have run.
 
 Other open decisions include how `close` carries outstanding gap, follow-up,
 preservation, surrender and hold-release decisions without separate lifecycle

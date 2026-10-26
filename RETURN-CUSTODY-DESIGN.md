@@ -23,6 +23,15 @@ It is not a competing commission to build tree capture. The completed
 reductions, surviving duties and the decisions still needed. No removal has
 been adopted; CONTRACTS.md remains authoritative meanwhile.
 
+The user has since relayed [Riker's submission-boundary reply](riker/KEYHOLE-COMMITMENTS-REPLY.txt).
+The coordinator favors testing custody of complete bounded final attempts,
+including previously set fields, while authoring drafts remain disposable.
+Preserved rejected attempts and admitted answers would have separate status;
+neither call logging nor a successful setter establishes that preservation.
+Admission-only custody remains an alternative. The findings carry the policy
+tradeoff and new qualification cases; the existing partial-work promise has
+not yet been revised.
+
 ## Ordinary return and early close
 
 The manager should make preservation and custody decisions, not select a

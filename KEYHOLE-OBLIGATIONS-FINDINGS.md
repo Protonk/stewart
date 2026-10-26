@@ -171,11 +171,52 @@ No such trials were run in this inquiry.
 Riker's earlier [close-commitments reply](riker/CLOSE-COMMITMENTS-REPLY.txt)
 already allows deliberate authorized loss and protects actual undertakings.
 Re-asking whether valuable scratch must always survive would add little.
-The useful question is which submission-tool event creates an undertaking:
-successful setter use, receipt of a final attempt, or durable final admission.
-The prepared [relay request](riker/KEYHOLE-COMMITMENTS-REQUEST.txt) asks for a
-challenge to those reliance boundaries. It is optional consultation, has not
-been sent, and is not an approval stage.
+The [relay request](riker/KEYHOLE-COMMITMENTS-REQUEST.txt) asked which
+submission-tool event creates an undertaking: successful setter use, receipt
+of a final attempt, or durable final admission. The user has returned
+[Riker's reply](riker/KEYHOLE-COMMITMENTS-REPLY.txt). It is advice, not a
+decision or approval of either custody policy.
+
+Both boundaries can be coherent. Setter success can promise only staging in
+a disposable authoring draft, but its acknowledgement must say so; specific
+language such as "saved" can contradict general disposable-draft terms.
+Admission-only custody explicitly gives up recovery of unadmitted partial
+answers. Attempt custody instead promises the **complete bounded answer
+assembled for final submission**, including previously set fields, before
+schema admission. Logging only the final call's arguments can lose the answer
+while retaining evidence that a call occurred. Unsubmitted drafts remain
+outside that narrower preservation promise.
+
+The coordinator favors attempt custody as the first candidate to test. This
+retains a useful partial-work promise at the deliberate handoff without general
+tree salvage. Admission-only custody remains a coherent alternative. Neither
+policy is selected. Under the favored candidate, distinguish these outcomes:
+
+| Operation and outcome | Representation owed to the auditor and manager |
+| --- | --- |
+| Setter succeeds | Fields staged for continued authoring; no durable custody promised. |
+| Complete attempted answer preserved; schema rejected | Identified attempted payload remains retrievable, but is not an admitted answer. |
+| Promised attempt custody fails | Identify incomplete custody; do not describe the whole outcome as schema rejection or promise retrieval that failed. |
+| Answer durably admitted; reply lost | Recover the same recorded answer; retry cannot downgrade it to an unadmitted attempt. |
+
+This is a controlled widening of custody beyond admitted answer schemas.
+Rejected payloads remain untrusted, bounded objects; their preservation gives
+them no authority to select files, dereference paths or count as valid answers.
+The protocol must define complete snapshot assembly and enforce its bounds
+before promising custody. It must also specify attempt identity, repeated
+attempt handling and custody lifetime: preserving attempts adds these duties,
+and a later valid answer cannot silently erase earlier undertakings. Those
+details are coordinator deductions to test, not additional claims from Riker.
+
+The counterexample belongs in integrated qualification: stage substantial
+findings, submit only a misspelled discriminator, then request graceless close.
+Compare complete attempt capture with final-arguments-only logging; use a
+corrected discriminator as a control and preserve an independent witness.
+Verify that a later setter cannot change the captured attempt. Separately
+test failed custody writing and lost admission acknowledgement. No admission
+means the successful-completion retirement trigger has not fired; early close
+still needs independent recorded authority and verified termination. Absence
+of a preservation promise never supplies removal authority.
 
 Existing Python audits, captured evidence, recoveries and unfinished operations
 keep their actual obligations under the [bounded writer transition](CONTRACTS.md#writer-continuity-into-the-successor).
@@ -199,3 +240,8 @@ The integrated review and documentation validation are retained in
 `review-01.json` and `validation-01.json` with their logs in that directory.
 Zero pytest nodes selected and zero behavioral comparisons run. This is a
 documentary responsibility inquiry, not enforcement or answer-quality evidence.
+
+The subsequently relayed keyhole reply is preserved separately from the
+historical request and earlier reviews. Its incorporation and documentation
+checks are recorded in `.scratch/keyhole-obligations/riker-reply-validation-01.json`
+and its `.log`; zero pytest nodes selected and zero behavioral comparisons run.
