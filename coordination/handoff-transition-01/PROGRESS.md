@@ -1,10 +1,11 @@
 # Coordinator continuity transformation — progress
 
-Current checkpoint, 2026-10-26: both investigations and fresh review are complete.
-No material blockers; R1's stale progress text was corrected and the reviewer
-verified it. The old root handoff is retired and active routes use coordination.
-TURNOVER is deliberately blank. Next validate/commit this arrangement, then
-write and check the requested thin successor briefing. No worker work remains.
+Final checkpoint, 2026-10-26: the transformation is complete. Both investigations
+and fresh review returned; no material blockers, R1 corrected and verified.
+Arrangement commit `daaedbb` retained a blank TURNOVER. Its 27 validated documents
+matched committed bytes and the tree was clean before the requested thin brief
+was written. The brief and completion accounts are now saved. No worker work,
+uncertain effectful reply or running command is recorded at this cutoff.
 
 Root owns shared guidance, account and plan edits; each worker owns its separate
 attempt outputs. The current index identifies those paths. Base `4cfde95` was
@@ -28,10 +29,14 @@ command is recorded at this checkpoint. Reconcile any later actual effects.
   unlabeled instructions in the earlier version of this progress file; this
   current checkpoint replaces them. The original review snapshot remains intact.
 
-## Exact next action and limits
+## Completion record and next substantive work
 
-Validate and commit the reviewed arrangement, then write and validate the thin
-successor brief. Final arrangement check: `.scratch/handoff-transition-01/arrangement-01.json`
-and `.log`. The product inquiry remains at completed preparation; no A3 pilot
-or runtime work is commissioned. Zero pytest nodes, behavioral comparisons,
-Claude sessions, actual faults or custody actions.
+Final arrangement check: 164/164 static checks in
+`.scratch/handoff-transition-01/arrangement-01.json` and `.log`; committed-byte
+verification in `arrangement-recording-01.json`. The populated thin-brief check
+is `turnover-02.json` and `.log`, and final recording is `completion-01.json`
+in the same evidence directory. No substantive transformation work remains; the next task awaits the user's
+commission. The recommended A3 pilot remains
+uncommissioned. Zero pytest nodes, behavioral comparisons, Claude sessions,
+actual faults or custody actions. No special final message is needed to locate
+this account or the preserved source and worker evidence.

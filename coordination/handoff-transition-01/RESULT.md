@@ -1,6 +1,6 @@
 # Coordinator continuity transformation — integration account
 
-Status: arrangement integrated and independently reviewed; thin final briefing pending. Authorized by the
+Status: transformation complete; thin final briefing written after the arrangement commit. Authorized by the
 user on 2026-10-26; original source `4cfde95` and nine exact snapshots in
 `.scratch/handoff-transition-01/inputs-01.json`. This account is an attributed
 development change record, not another standing guide or product commission.
@@ -11,8 +11,8 @@ Root AGENTS describes the coordinator role and directs readers to
 `coordination/README.md`. The existing CLAUDE.md symlink continues to expose the
 same root instructions. Standing orders own operating duties; COORDINATOR-NOTES
 owns current coordinator/worker state and uncertainty; TURNOVER.md is the one
-optional supplementary brief. It is deliberately blank during integration and
-will be populated after the arrangement is complete, as the user requested.
+optional supplementary brief. It was deliberately blank during integration, review and the arrangement
+commit; it was then populated with the requested thin briefing.
 Intake works when it is blank/missing and checks a populated brief for staleness.
 No dedicated judgments file was created. The old root COORDINATOR-HANDOFF.md is
 retired after its useful material has been accounted for; original bytes remain
@@ -86,6 +86,8 @@ sampled ambiguous provenance. Those checks support documentary coherence only.
 
 The first root check passed 152/152 static checks with TURNOVER empty. Final
 arrangement checks are retained in `.scratch/handoff-transition-01/arrangement-01.json`
-and `.log`. The coordinator will commit this verified arrangement before writing
-the requested thin turnover, then check that brief separately. No empirical
-pilot is started by completing this documentation commission.
+and `.log`. The verified arrangement was committed as `daaedbb` with TURNOVER empty. All
+27 validated documents matched the recorded bytes (arrangement-recording-01.json).
+The requested thin briefing was written afterward; its final validation is
+`.scratch/handoff-transition-01/turnover-02.json` and `.log`, with final recording
+in `completion-01.json`. No empirical pilot is started by this completion.

@@ -15,5 +15,6 @@ recovery test. It removes an avoidable ambiguity for the next intake.
 The reviewer inspected and verified the R1 correction before returning. No
 other findings were raised. Final arrangement validation is recorded in
 `.scratch/handoff-transition-01/arrangement-01.json` and `.log`. The optional brief
-remains blank for this reviewed/committed arrangement; the user-requested thin
-brief follows completion, with its own final check.
+remained blank for the reviewed arrangement and its `daaedbb` commit. The
+user-requested thin briefing was written after that completion and is checked
+in `.scratch/handoff-transition-01/turnover-02.json` and `.log`.

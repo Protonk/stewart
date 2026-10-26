@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 during the coordinator-document transformation. This is a
+Updated 2026-10-26 after the coordinator-document transformation and thin briefing. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -12,8 +12,9 @@ actual files, user instructions and available harness state after interruption.
 The user authorized transforming this arrangement with sub-agent dispatch and,
 after completion, writing a thin successor turnover brief. The accepted scope
 and source are in [the commission](handoff-transition-01/COMMISSION.md).
-The two investigations and fresh review are complete. The arrangement is
-integrated; no material blockers, and one low progress-text ambiguity was fixed.
+The two investigations and fresh review are complete. The arrangement was
+committed as `daaedbb`; no material blockers, and one low progress-text ambiguity
+was fixed. The requested thin turnover briefing is now written.
 The product inquiry remains at completed preparation;
 this documentation commission authorizes no empirical pilot or runtime work.
 
@@ -23,22 +24,23 @@ this documentation commission authorizes no empirical pilot or runtime work.
   VISION-PLAN, this account, coordination README/STANDING-ORDERS/TURNOVER, and
   `handoff-transition-01/` coordinator-owned commission/progress/result/review brief.
   Worker attempt paths in the index below have separate ownership.
-- Admitted uncommitted integration: those guidance/account/plan edits and new
-  transformation records. Original inputs remain pinned; the reviewer has
-  18 exact integrated inputs in `.scratch/handoff-transition-01/review-inputs-01.json`.
-  Inspect the actual diff rather than treating this list as a complete patch.
+- Arrangement checkpoint: `daaedbb`, with its deliberately empty TURNOVER and
+  all 27 validated documents matching committed bytes; recorded in
+  `.scratch/handoff-transition-01/arrangement-recording-01.json`. The subsequent
+  thin briefing and completion-account updates are the only final additions.
+  Inspect Git for their actual recording state rather than inferring it here.
 - Last verified state: all investigator and reviewer returns read; initial
   checkpoint identities in `.scratch/handoff-transition-01/checkpoints-01.json`.
   The old handoff's grouped disposition and recovery/reference map informed the
   reviewed [integration account](handoff-transition-01/RESULT.md).
-- At this checkpoint, no unresolved effectful tool reply or long-running shell
-  command is recorded. Documentation edits are saved; no transformation commit
-  yet. Review is complete. Silence after this entry would not establish later
-  effects.
-- Next action: validate and commit the reviewed arrangement, then write and
-  validate the user-requested thin brief. Final arrangement check is
-  `.scratch/handoff-transition-01/arrangement-01.json` and `.log`.
-  [Coordinator progress](handoff-transition-01/PROGRESS.md) retains milestones.
+- At this cutoff, no unresolved effectful reply, long-running shell command or
+  unfinished worker assignment is recorded for this commission. The thin brief
+  is saved after the arrangement commit. No independent empirical work is running.
+- Completion evidence: final document validation is
+  `.scratch/handoff-transition-01/turnover-02.json` and `.log`; committed-byte
+  verification is `completion-01.json`. The next substantive task awaits the user's commission;
+  the proposed A3 pilot below has not been dispatched.
+  [Coordinator progress](handoff-transition-01/PROGRESS.md) records this cutoff.
 
 Observed capacity for this thread: four total active slots. This transformation
 used the coordinator plus two investigators, then one fresh reviewer. All three
