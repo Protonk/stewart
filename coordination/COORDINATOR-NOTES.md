@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 after the coordinator-document transformation and thin briefing. This is a
+Updated 2026-10-26 during the next coordinator's intake. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -8,6 +8,36 @@ working account of observed work, authority received and remaining questions.
 actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
+
+The incoming user requested coordinator intake and discussion of the current
+plans; that conversation will establish the initial development commission.
+The coordinator read the entry guidance, standing orders, this account, the
+optional turnover, root AGENTS, both active plans, CONTRACTS, DEVELOPMENT and
+the successor preparation account and answer-comparison findings. Observed
+source is `a35e943e2b029927361dc0d6b436c30260a2e3fa`; the working tree was clean
+before this intake update. The three corpus development refs still match
+CORPUS-RETENTION.md. The two prior completion records are present and report
+successful documentary checks; intake has not repeated their full validation
+or the historical experiments.
+
+Current coordinator handle is `/root`; no worker is dispatched in this
+engagement. Coordinator-owned development edit at this checkpoint is this
+account only. Product work remains at completed inquiry preparation, with
+the A3 representation pilot a recommendation for discussion. The next action
+is to establish the commission with the user; no pilot, implementation,
+route probe or legacy inventory has begun. The prior completion account below
+is retained with its provenance, not adopted as a new grant of work.
+
+Intake command output is retained in
+`.scratch/coordinator-intake-20261026-01.json`; recording attempts and the final
+document check are in `.scratch/coordinator-intake-recording-01.json`.
+Both ordinary and escalated `git add` failed creating `.git/index.lock` with
+`Operation not permitted`; no commit was made. The user then took responsibility
+for Git if escalation could not reach the metadata. This account is saved
+uncommitted; no further permission diagnosis is underway. Zero pytest nodes
+and zero behavioral comparisons were run for this intake.
+
+## Completed coordinator-document commission
 
 The user authorized transforming this arrangement with sub-agent dispatch and,
 after completion, writing a thin successor turnover brief. The accepted scope
