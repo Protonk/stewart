@@ -61,6 +61,19 @@ and carries early and interrupted closure through the single `close` entry
 point. These are planning choices and recommendations; new custody commitments
 still require decision. No audit restart is scheduled for the first successor.
 
+Design progress, 2026-10-25: the user agreed to work through the manager
+interaction, inventory portable-result contents, then prepare bounded decisions
+and a first reader assignment. They specifically requested a very spare,
+human-readable closing flow. [MANAGER-CLOSE-FLOW.md](MANAGER-CLOSE-FLOW.md)
+is that proposed task flow; [RETURN-CUSTODY-DESIGN.md](RETURN-CUSTODY-DESIGN.md)
+contains ordinary/early-close cases, interrupted-operation continuations,
+the frozen package-format inventory and the documented helper-recovery
+consumers. Its three proposed completions concern decisions inside `close`,
+selected report availability beyond export, and portable original-question
+context. None is yet adopted. The bounded Rust package reader assignment is
+prepared, not commissioned; its placement and concrete publication, stopping
+and delivery routes remain open. CONTRACTS.md and Python remain unchanged.
+
 Checkpoint, 2026-10-24: the user decided D1 as six close rules plus
 abandon parity, decided D2, D3 (contingent on stage 3's submodule decision) and
 D4, deferred D5 to stage 4, took D6 as documentation, declined seven optional
@@ -659,6 +672,23 @@ project is retired.
 with platform evidence and explicit disposition of any unmet acceptance item.
 
 ### Next design work: acquiring returns and completing custody
+
+The first connected account is now in RETURN-CUSTODY-DESIGN.md, accompanied
+by the manager's task flow. Use it for the next decisions rather than repeat
+the source inventory. It identifies a protected-obligation conflict that
+publication alone cannot resolve: work outside the selected return still
+needs a working preservation opportunity or an authorized named surrender
+before removal. A digest or a stable answer also does not establish stopped
+activity. The candidate snapshot mechanism has no qualified route yet.
+
+Source review and revalidation of 21 retained export-comparison observations
+are recorded in `.scratch/return-custody-design/source-review-01.json` and
+its `.log`; documentation validation is in `validation-01.json` and its
+`.log` in the same directory. Zero pytest nodes selected and zero new
+behavioral comparisons run. The original observations remain in their
+existing evidence population. The helper-recovery inventory covers documented
+consumers, not an inventory of live Python recoveries or a qualified fresh-
+reuse route. Keep those unfinished items with the legacy transition.
 
 Planning revision, 2026-10-25, under the user's delegation. The peripheral
 recommendations are preserved in

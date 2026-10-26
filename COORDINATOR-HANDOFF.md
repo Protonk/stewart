@@ -16,15 +16,25 @@ Earlier versions remain in Git.
 
 ## Where this handover leaves you
 
-The user requested this handoff on 2026-10-25 after this coordinator's intake,
-clarification of the close interface, and a revision of the plans using
-peripheral advice. This engagement did documentation and source assessment:
-no runtime implementation, Rust status work, new behavioral comparison or
-harness qualification ran, and no workers were dispatched. No consultation or
-clarification reply is pending. The work now ready to take up is the connected
-return/custody design account in DEVELOPMENT-PLAN.md, under "Next design work:
-acquiring returns and completing custody". The proposals are concrete enough
-to investigate, but the protocol itself has not been designed or qualified.
+The 2026-10-25 handoff was followed by a session that successfully committed
+the inherited tree as `8fd864f`. The user then agreed to work through the
+return/close interaction, inventory portable-result contents and prepare
+bounded decisions and a first reader assignment. They specifically requested
+a very spare, human-readable closing flow. Start discussion from
+[MANAGER-CLOSE-FLOW.md](MANAGER-CLOSE-FLOW.md), the proposed manager task flow;
+[RETURN-CUSTODY-DESIGN.md](RETURN-CUSTODY-DESIGN.md) carries the supporting
+cases, source inventory, authority boundaries and pending reader assignment.
+
+The first decision is how `close` carries outstanding gap, follow-up,
+preservation, surrender and hold-release decisions without separate lifecycle
+commands or weakened authority. The other proposed completions are ordinary
+selected-report availability with surrounding damage and original-question
+context in new portable results. None has been adopted. Publication, stopping
+and delivery still need an actual admitted route and qualification; the
+candidate snapshot mechanism is a design requirement, not enforcement evidence.
+No runtime implementation, Rust code, new behavioral comparison, harness
+qualification or worker dispatch occurred. CONTRACTS.md remains unchanged by
+this design session. The larger open architecture questions below remain.
 
 The most consequential new user direction is **one `close` command that closes
 the audit regardless of state**. The user's words were "My STRONG inclination
@@ -146,13 +156,13 @@ commission. The development plan contains the concrete work products and
 discriminating cases. Re-examine the recommendations as you use them rather than
 mechanically repeating the advice or treating it as another task queue.
 
-A useful starting point is to follow one return through ordinary publication
-and delivery, then through close before publication, interrupted acquisition,
-a lost operation reply and interrupted removal. Produce an intelligible
-manager interaction account and the identity/authority boundaries behind it,
-then identify the specific contract changes for decision. You own the order
-and method; this is a suggested entry into the plan, not a fixed script. The
-details most likely to be lost in a short recap are:
+The first walkthrough now covers ordinary publication and delivery, close
+before publication, interrupted acquisition, a lost reply and interrupted
+removal. The new design account makes those interactions reviewable; it does
+not settle a concrete harness protocol. Discuss its bounded decisions, then
+select an actual publication/stopping/delivery arrangement to qualify. You
+own the order and method. The details most likely to be lost in a short recap
+are:
 
 - "Publication" here fixes the auditor's return for acquisition; later
   retention/export to a manager destination is a different operation. A digest
@@ -191,11 +201,12 @@ The remaining decisions and unfinished assignments are:
   R3 concerns D's proposed commission retention promise:
   the accepted voluntary hold defeats the old equation with mandatory retention.
   Identify what the promise adds beyond a hold and completed publication.
-- **The inherited helper-runtime assignment is partly advanced:** its lean
-  against mutable recovery directories is now integrated into the connected
-  reader and legacy-disposition plan. The actual consumer inventory and proof
-  that captured-asset inspection plus separately authorized fresh reuse suffice
-  have not been completed. Removal is not yet decided. Helper assets are
+- **The inherited helper-runtime assignment is partly advanced:** the source
+  and manual name inspection and separately authorized fresh reuse as its two
+  consumers; RETURN-CUSTODY-DESIGN.md maps them to captured-asset reading and
+  explicit export. Qualification of the fresh-reuse route and an inventory
+  of existing Python recoveries remain undone. Removal is not yet decided.
+  Helper assets are
   distinct from the program executor just removed. Existing Python recovery
   material needs an explicit
   transition disposition. R1's dedicated experiment HOME/retry portions no longer
@@ -344,34 +355,22 @@ captured historical documents.
 
 ## Working tree and evidence
 
-At this handoff's inspection, the checkout is on `main` at `a8de387`, one commit
-ahead of `origin/main`. That commit records the preceding coordinator's eight
-documentation files. This coordinator's accumulated work is still unstaged:
-CONTRACTS.md, COORDINATOR-HANDOFF.md, CUSTODIAL-CORE-FINDINGS.md,
-DEVELOPMENT-PLAN.md, VISION-PLAN.md and `planning/inputs/README.md` are modified;
-`planning/inputs/return-and-custody-advice.txt` is new. The user will handle these
-commits, including this handoff. Inspect Git when you arrive because that may
-already have happened; preserve the contents rather than reconstructing them
-from an earlier commit.
+The inherited seven-file tree was committed unchanged on `main` as `8fd864f`,
+after the earlier `a8de387`. Normal staging and committing worked in this
+session. The earlier coordinators' `Operation not permitted` failures remain
+historical records in `.scratch/resource-decisions/commit-attempt-01.json`
+and `.scratch/close-direction/commit-attempt-01.json`, with their logs; they
+are not a current prohibition. Keep normal coordinator ownership of Git
+logistics and inspect the actual state when resuming. No push was made for
+the inherited-tree commit.
 
-**Both this coordinator and the previous coordinator had trouble committing.**
-Their ordinary and elevated staging attempts failed creating `.git/index.lock`
-with `Operation not permitted`. The earlier attempts are retained in
-`.scratch/resource-decisions/commit-attempt-01.json` and its log; this
-coordinator's attempts are in `.scratch/close-direction/commit-attempt-01.json`
-and its log. Nothing was staged and no commit was created by those attempts.
-The user took over committing and investigating the access problem, so this
-coordinator made no later staging/commit attempt.
-
-**I expect you, the next coordinator, to be able to commit properly.** The user
-asked me to carry that expectation forward.
-Treat the two coordinators' failures as evidence about their sessions, not a
-standing prohibition or a reason to hand future Git logistics back to the user.
-Resume the normal coordinator responsibility under AGENTS.md: inspect the actual
-state, preserve unrelated changes and commit verified work in coherent layers.
-The expected repair has not been verified here; judge your environment from
-its own results and respect its access restrictions. Report an actual failure
-if it recurs, without bypassing restrictions or asking about routine Git choices.
+That commit's validation is `.scratch/commit-working-tree/validation-01.json`
+and its log: all seven files matched their retained checks, and fresh
+whitespace, frozen-source, unchanged-implementation and generated Git-table
+checks passed. The subsequent design account adds MANAGER-CLOSE-FLOW.md and
+RETURN-CUSTODY-DESIGN.md and updates this handoff and DEVELOPMENT-PLAN.md.
+Its source review and documentation validation live in
+`.scratch/return-custody-design/`, cited by the plan and design account.
 
 The preceding documentation validation culminates in
 `resource-decisions/validation-15.json` and its log. The single-close direction's
@@ -381,7 +380,7 @@ planning revision. These checks selected
 zero pytest nodes and ran zero behavioral comparisons; they include the frozen
 source and generated Git table.
 
-This final handoff is checked in `.scratch/coordinator-turnover/validation-01.json`
+The inherited handoff is checked in `.scratch/coordinator-turnover/validation-01.json`
 and its log: zero pytest nodes selected and zero behavioral comparisons run.
 The check verifies the frozen source and that the other documents still match
 the completed planning revision; it establishes no repaired Git write access.
