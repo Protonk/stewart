@@ -58,6 +58,14 @@ without a private-location inventory; any fallback needs actual enforcement
 evidence. Exact stop/capture, exceptional-intervention and delivery interfaces
 remain for design; this guidance selects no new channel.
 
+Stewart stays agnostic about the intellectual utility of audits, including in
+development evaluation. Its major intellectual influence belongs in question
+types and the constrained audit space. Examine whether answer restrictions let
+participants express, inspect and contest permitted responses; do not use
+agreement with a preferred outcome as the success criterion. Restrictions that
+privilege or exclude substantive outcomes need explicit design deliberation.
+Auditor and manager judgments remain attributed. CONTRACTS.md owns the principle.
+
 The successor direction separates recording a commission from promising its
 replay; the manager owns constructing another question. Assess the preference
 for zero or at most one audit retry facility under CONTRACTS.md, without treating

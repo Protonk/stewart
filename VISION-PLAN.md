@@ -90,10 +90,16 @@ it does not silently repeal them or apply new rules to historical audits.
 The established question types were learned through real audits. Give answer
 structures comparable empirical attention: inspect actual returns, compare
 representations generally and per question, then test fresh authoring through
-a replaceable submission prototype. Select the durable interface only after
-those comparisons, and enable automatic disposal only after integrated custody
-and control qualification. An agent's ability to satisfy a schema is distinct
-from an answer's usefulness. A possible new question type has its own inquiry.
+a replaceable submission prototype. Stewart remains agnostic about the
+intellectual utility of audits, including during development. Its major
+intellectual influence belongs in question types and the constrained audit
+space; assess how answer restrictions preserve, obscure or steer the responses
+those questions permit. Agreement with a preferred outcome is not success.
+Restrictions that privilege substantive outcomes require explicit deliberation.
+Select the durable interface only after those comparisons, and enable automatic
+disposal only after integrated custody and control qualification. Schema
+validity alone establishes neither faithful expression nor inspectable support.
+A possible new question type has its own inquiry.
 
 Keep investigative outcome, submission admission, delivery and closure distinct
 without turning them into manager-operated stages. A portable result still

@@ -9,33 +9,45 @@ actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
 
-The incoming user requested coordinator intake and discussion of the current
-plans; that conversation will establish the initial development commission.
-The coordinator read the entry guidance, standing orders, this account, the
-optional turnover, root AGENTS, both active plans, CONTRACTS, DEVELOPMENT and
-the successor preparation account and answer-comparison findings. Observed
-source is `a35e943e2b029927361dc0d6b436c30260a2e3fa`; the working tree was clean
-before this intake update. The three corpus development refs still match
-CORPUS-RETENTION.md. The two prior completion records are present and report
-successful documentary checks; intake has not repeated their full validation
-or the historical experiments.
+The user commissioned the bounded A3 representation pilot on 2026-10-26 at
+about 18:50 UTC, with about 35 minutes before machine sleep. No Claude calls
+for this day; this is a usage constraint, not permanent provider policy. The
+[commission](answer-representation-01/COMMISSION.md) records the task, principle,
+source boundary, ownership and cutoff. Aim for a saved result by 19:20 UTC,
+before the 19:25 outer limit. Fresh authoring, normal auditor-route qualification
+and a durable answer schema remain outside this wave.
 
-Current coordinator handle is `/root`; no worker is dispatched in this
-engagement. Coordinator-owned development edit at this checkpoint is this
-account only. Product work remains at completed inquiry preparation, with
-the A3 representation pilot a recommendation for discussion. The next action
-is to establish the commission with the user; no pilot, implementation,
-route probe or legacy inventory has begun. The prior completion account below
-is retained with its provenance, not adopted as a new grant of work.
+The user established intellectual agnosticism as a core principle, including
+in development. The coordinator is recording it in CONTRACTS, AGENTS and the
+plans. The pilot examines answer restrictions and their effect on expression,
+inspection and pressure toward outcomes; historical-manager agreement is not
+success. Original mistakes and qualifications stay attributed.
 
-Intake command output is retained in
-`.scratch/coordinator-intake-20261026-01.json`; recording attempts and the final
-document check are in `.scratch/coordinator-intake-recording-01.json`.
-Both ordinary and escalated `git add` failed creating `.git/index.lock` with
-`Operation not permitted`; no commit was made. The user then took responsibility
-for Git if escalation could not reach the metadata. This account is saved
-uncommitted; no further permission diagnosis is underway. Zero pytest nodes
-and zero behavioral comparisons were run for this intake.
+Coordinator `/root` owns the commission/progress/result, root guidance/contracts/
+plans, source snapshots and integration. Exact admitted source and uncommitted
+inputs are in `.scratch/answer-representation-01/inputs-01.json`; initial HEAD
+was `a35e943e2b029927361dc0d6b436c30260a2e3fa`. Seven original A3 text hashes
+match the retained corpus; twelve historical context files are captured.
+Producer `/root/a3_producer` is dispatched with its [saved brief](answer-representation-01/producer/BRIEF.md)
+and exclusive packet/producer paths. Initial checkpoint and first source reading
+are saved; it is constructing the four packets. No recipient is dispatched yet.
+Next: independently review packet fidelity and controls, then dispatch finite
+fresh recipients. Four simultaneous slots including coordinator; no nested work.
+
+Intake read the standing orders, both active plans, contracts, development
+instructions and preparation findings. Prior completion records were present;
+the three development-evidence refs still matched CORPUS-RETENTION.md. Intake
+checks did not repeat historical behavioral evidence. Records are
+`.scratch/coordinator-intake-20261026-01.json`,
+`.scratch/coordinator-intake-recording-01.json` and the two
+`.scratch/coordinator-discussion-20261026-01.json` / `-02.json` discussion checks.
+
+Both ordinary and escalated staging failed creating `.git/index.lock` with
+`Operation not permitted`. The user now manages Git and may commit saved work
+concurrently without editing files. Use pinned input snapshots and check history
+when a diff disappears; do not interpret a clean tree as lost work. No further
+Git permission diagnosis or agent Git mutation is in scope. Worker output and
+progress must be saved without depending on a final commit or reply.
 
 ## Completed coordinator-document commission
 

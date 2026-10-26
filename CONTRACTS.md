@@ -113,6 +113,23 @@ latitude within the assignment; it does not prescribe a narrow method or an
 artificially small body of context. The exceptional intervention policy remains
 open, and this principle alone removes no existing operation or record.
 
+**Stewart remains agnostic about audits' intellectual utility.** Clarified
+2026-10-26. This governs development as well as the product. Stewart's major
+intellectual influence belongs in its supported question types and constrained
+audit space. It does not judge whether an audit was worth undertaking or whether
+its outcome is intellectually valuable. Auditor and manager judgments remain
+their own and retain their attribution.
+
+Answer requirements must let participants express, inspect and contest the
+responses the commissioned question permits, including no supported finding,
+missing evidence, an unresolved premise or a proposed reframe. Restrictions
+that exclude or privilege substantive outcomes require explicit deliberation
+as design choices, even when introduced through formatting or schemas.
+Development may examine lost qualifications, unsupported promotions and the
+pressure a format places on authors or recipients. Agreement with a preferred
+or historical outcome is not the measure of a successful answer interface.
+This principle selects no particular answer schema or custody policy.
+
 **Recording a commission does not itself promise replay.** Agreed design
 direction, 2026-10-25; candidate for a core commitment. A commission record
 explains the accepted question and its selected material. It does not by itself
