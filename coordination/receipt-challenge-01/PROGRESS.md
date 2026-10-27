@@ -60,3 +60,38 @@ builder/disposition/grants are frozen as 55 packet-review inputs. Reviewer is
 active on that finite gate; no reader dispatched. The a01 original MANIFEST
 assertion remains an ancillary undelivered claim, separate from the reduction.
 Root has saved integration drafts, explicitly pending reader evidence.
+
+## Reader dispatch
+
+Actual packet review passed 334/334. Root read the full report and revalidated
+all 55 input identities before dispatch. READER-DISPOSITION and DISPATCH-05
+record the accepted gate. Fresh /root/receipt_r01, /root/receipt_r02 and
+/root/receipt_r03 are active under their saved briefs; r04 waits for capacity.
+Reviewer is stopped. Author/reduction layer committed as 3548bb1. Root is
+preparing integration and a provisional recommendation; reader judgments remain
+pending. No source reveal or historical execution is planned.
+
+r02 returned/stopped; root is reading its memo/read account. r04 now dispatched
+fresh under its saved reviewed brief. r01/r03/r04 active; no second reader phase.
+
+r01 and r03 have also returned/stopped; root read their full memos/ledgers and
+the actual retained comparison outputs. Both original readers repeat the central
+bindings; r01 independently marks the ancillary MANIFEST claim. r02 narrows the
+reduced delivery claim. Root separately qualifies r02's categorical snapshot-only
+statement using the preserved preflight reconstruction. Only r04 remains active.
+No reader history is changed and no additional phase is authorized.
+
+## All readers integrated; final review ready to freeze
+
+All four readers returned/stopped. Root read every full memo and read ledger,
+plus retained comparison outcomes. Both originals permit central byte inspection;
+both reductions leave those operands unavailable but retain useful narrower
+claims. r01 also marks the ancillary missing MANIFEST; r02's broad snapshot-only
+statement is separately qualified against preflight reconstruction. No participant
+record is changed. READER-FREEZE preserves 23 files. Root's integration checker
+passed 289/289, exit 0 empty stderr. RESULT, OBSERVATIONS and the provisional
+interface recommendation now include all outcomes and their limits. Next: freeze
+review inputs, independent integration review, disposition/final checks/recording.
+
+Final review dispatched: 257 exact frozen identities in INTEGRATION-INPUTS-01;
+/root/receipt_review active under INTEGRATION-GRANT. No participant work remains.

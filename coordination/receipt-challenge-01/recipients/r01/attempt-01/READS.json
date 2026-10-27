@@ -1,0 +1,132 @@
+{
+  "reader": "r01",
+  "attempt": "attempt-01",
+  "scope": "Actual intentional reads and command effects through substantive work and output preparation. This is not a complete access log or timing trace. Final read-only presence/readability verification follows freezing and is reported in tool output, not claimed here in advance.",
+  "working_directory": "/Users/raccoon/Desktop/Experiments/stewart",
+  "packet_root": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r01",
+  "output_roots": [
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r01/attempt-01",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r01/attempt-01"
+  ],
+  "declared_influences": [
+    "The dispatch instructed me to use only the saved brief and its packet, save initial progress, and freeze the required outputs.",
+    "Shared ambient system/developer and user-provided development instructions were already visible; they influenced scope and attribution discipline. They are not proof of enforced isolation.",
+    "No other agent, study account, network source or historical recorded path was consulted."
+  ],
+  "intentional_reads": [
+    {
+      "path": "coordination/receipt-challenge-01/recipients/r01/BRIEF.md",
+      "mode": "Complete text displayed by cat; read before initial progress was saved."
+    },
+    {
+      "path": ".scratch/receipt-challenge-01/reader-packets/r01",
+      "mode": "Directory filename inventory only, with rg --files -g '*'; no broader discovery."
+    },
+    {
+      "packet_relative_paths": ["NOTICE.md", "PACKET.json", "base/QUESTION.md", "base/RECIPE.md"],
+      "mode": "Complete concatenated text displayed; later read as bytes by the retained comparison script."
+    },
+    {
+      "packet_relative_paths": ["RETURN.raw", "RETURN-MANIFEST.json", "base/ORIGINS.json", "base/ACCEPTED.json"],
+      "mode": "cat attempted complete display; combined tool output was truncated. All four later read as bytes and strict JSON by the retained comparison script. Relevant records, metadata, checks and the payload answer were then displayed in its output. No claim of complete human reading of the original truncated output."
+    },
+    {
+      "packet_relative_paths": ["primary.txt", "artifact-01.txt", "artifact-02.txt"],
+      "mode": "Complete concatenated text displayed separately; later read as bytes and compared exactly to RETURN.raw selected strings."
+    },
+    {
+      "packet_relative_paths": ["base/capture.py"],
+      "mode": "Complete numbered source text displayed using nl -ba; later hashed as bytes. Never imported or executed."
+    },
+    {
+      "packet_relative_paths": ["artifact-03.txt", "artifact-04.txt"],
+      "mode": "Read in full as bytes and strict JSON by retained reader script; exact byte identities, nested envelope equality, decoded text identities, metadata and payload answer inspected through its output. The historical investigation support text remains attributed, not verified historical conduct."
+    },
+    {
+      "path": ".scratch/receipt-challenge-01/recipients/r01/attempt-01/check_bindings.py",
+      "mode": "Reader-authored comparison code loaded by /usr/bin/python3 -I -B -S; this is the only executed Python script."
+    },
+    {
+      "path": ".scratch/receipt-challenge-01/recipients/r01/attempt-01/check_bindings.json",
+      "mode": "Complete printed output read using cat."
+    },
+    {
+      "path": "coordination/receipt-challenge-01/recipients/r01/attempt-01/PROGRESS.md",
+      "mode": "Own file read/updated by apply_patch at two milestones after initial creation."
+    }
+  ],
+  "commands_and_effects": [
+    {
+      "command": "cat coordination/receipt-challenge-01/recipients/r01/BRIEF.md",
+      "effect": "Read the finite assignment; exit 0."
+    },
+    {
+      "command": "mkdir -p coordination/receipt-challenge-01/recipients/r01/attempt-01 .scratch/receipt-challenge-01/recipients/r01/attempt-01",
+      "effect": "Created/ensured only the assigned output directories; exit 0."
+    },
+    {
+      "tool": "apply_patch",
+      "effect": "Created initial PROGRESS.md before packet inventory or substantive packet inspection."
+    },
+    {
+      "command": "rg --files -g '*' .scratch/receipt-challenge-01/reader-packets/r01",
+      "effect": "Listed only files under the granted packet; exit 0."
+    },
+    {
+      "command": "cat .scratch/receipt-challenge-01/reader-packets/r01/NOTICE.md .scratch/receipt-challenge-01/reader-packets/r01/PACKET.json .scratch/receipt-challenge-01/reader-packets/r01/base/QUESTION.md .scratch/receipt-challenge-01/reader-packets/r01/base/RECIPE.md",
+      "effect": "Displayed version, present packet identities, named use and recipe; exit 0. Executed alongside the next independent read with Promise.allSettled; both results inspected."
+    },
+    {
+      "command": "cat .scratch/receipt-challenge-01/reader-packets/r01/RETURN.raw .scratch/receipt-challenge-01/reader-packets/r01/RETURN-MANIFEST.json .scratch/receipt-challenge-01/reader-packets/r01/base/ORIGINS.json .scratch/receipt-challenge-01/reader-packets/r01/base/ACCEPTED.json",
+      "effect": "Read all named files at command level; exit 0. Tool rendering truncated the large combined result; substantive text and relevant bindings were subsequently obtained separately."
+    },
+    {
+      "command": "cat .scratch/receipt-challenge-01/reader-packets/r01/primary.txt .scratch/receipt-challenge-01/reader-packets/r01/artifact-01.txt .scratch/receipt-challenge-01/reader-packets/r01/artifact-02.txt",
+      "effect": "Displayed complete selected primary analysis, premise table and check account; exit 0."
+    },
+    {
+      "command": "nl -ba .scratch/receipt-challenge-01/reader-packets/r01/base/capture.py",
+      "effect": "Displayed the complete candidate writer as numbered text; exit 0."
+    },
+    {
+      "tool": "apply_patch",
+      "effect": "Created reader-owned check_bindings.py in the assigned scratch output directory. It uses only Python standard-library JSON, hashing and fixed packet paths, without importing subject code."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S .scratch/receipt-challenge-01/recipients/r01/attempt-01/check_bindings.py > .scratch/receipt-challenge-01/recipients/r01/attempt-01/check_bindings.json",
+      "effect": "Exit 0. Read the explicit 14-file packet inventory, computed identities and comparisons, and saved exact stdout as check_bindings.json. No subject execution. The output records interpreter version, full input paths/identities and each result."
+    },
+    {
+      "command": "cat .scratch/receipt-challenge-01/recipients/r01/attempt-01/check_bindings.json",
+      "effect": "Displayed and inspected the independent comparisons and all relevant record metadata; exit 0."
+    },
+    {
+      "tool": "apply_patch",
+      "effect": "Updated PROGRESS.md with completed source and binding checks."
+    },
+    {
+      "tool": "apply_patch",
+      "effect": "Created MEMO.md, then finalized PROGRESS.md and created this READS.json within the assigned output directory. These are reader analysis/progress records, not historical receipts."
+    }
+  ],
+  "reader_comparison_work": {
+    "code": ".scratch/receipt-challenge-01/recipients/r01/attempt-01/check_bindings.py",
+    "exact_printed_output": ".scratch/receipt-challenge-01/recipients/r01/attempt-01/check_bindings.json",
+    "inputs": "The explicit 14 packet paths in check_bindings.py, with complete byte identities in check_bindings.json; original input bytes remain delivered in the packet.",
+    "operations": [
+      "Strict UTF-8/JSON decoding with duplicate-key and nonfinite-number rejection.",
+      "13 PACKET.json listed identity comparisons; four ORIGINS.json identity comparisons; selected-return primary and four support exact-text comparisons.",
+      "Acceptance-to-payload raw identity, snapshot envelope equality, metadata/expected identity equalities, ordered decoded text identities and total.",
+      "In-memory trailing-space and JSON-reserialization comparisons preserve decoded meaning while changing raw identity; an altered snapshot answer fails direct envelope equality despite unchanged raw label. Exact derivation code, original inputs and printed output are retained."
+    ],
+    "reconstruction_limit": "No missing original artifact or historical event reconstructed. Hypothetical changed bytes/structures exist only as deterministic in-memory text/JSON operands; none were passed to the candidate writer. A rival identical-byte history is stated as a logical limit, not performed or observed.",
+    "results": "All relevant present bindings agree. These comparisons do not establish historical execution, authorship, investigation completion or enforced isolation."
+  },
+  "unfollowed_references": [
+    "All historical paths in ACCEPTED.json and ORIGINS.json.",
+    "The earlier prior_inventory path and recipe_source path in ORIGINS.json.",
+    "The author's unavailable original MANIFEST.json and private process/read records.",
+    "Historical investigation source paths and line citations inside payload.raw."
+  ],
+  "stopping_rule": "MEMO.md and this READS.json are frozen. After read-only presence/readability verification of MEMO.md, READS.json and PROGRESS.md, stop. No reveal or later reader phase is authorized."
+}

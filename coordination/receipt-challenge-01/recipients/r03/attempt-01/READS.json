@@ -1,0 +1,109 @@
+{
+  "reader": "r03",
+  "attempt": "attempt-01",
+  "status": "frozen reader ledger; terminal readability verification is the final command below",
+  "scope": "Actual intentional task reads and commands/effects. This is not a complete operating-system access log or time log. Shared ambient instructions were declared influences, not proof of enforced isolation.",
+  "working_directory": "/Users/raccoon/Desktop/Experiments/stewart",
+  "brief_read": "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r03/BRIEF.md",
+  "packet_root": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r03",
+  "packet_paths_read_relative_to_packet_root": [
+    "NOTICE.md",
+    "PACKET.json",
+    "RETURN-MANIFEST.json",
+    "RETURN.raw",
+    "primary.txt",
+    "artifact-01.txt",
+    "artifact-02.txt",
+    "base/QUESTION.md",
+    "base/RECIPE.md",
+    "base/ACCEPTED.json",
+    "base/ORIGINS.json",
+    "base/capture.py"
+  ],
+  "own_paths_read_or_loaded_by_commands": [
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r03/attempt-01/inspect_packet.py",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r03/attempt-01/CHECKS.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r03/attempt-01/PROGRESS.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r03/attempt-01/MEMO.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r03/attempt-01/READS.json"
+  ],
+  "commands_and_effects": [
+    {
+      "command": "cat coordination/receipt-challenge-01/recipients/r03/BRIEF.md",
+      "effect": "Read the complete assignment before packet inspection."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S -c 'from pathlib import Path; p=Path(\"coordination/receipt-challenge-01/recipients/r03/attempt-01\"); p.mkdir(parents=True,exist_ok=True); (p/\"PROGRESS.md\").write_text(\"# Progress\\n\\nInitial checkpoint: brief read; substantive packet inspection has not started.\\n\\nAuthorized work: inspect only the r03 packet, perform its named consumer use, and freeze MEMO.md and READS.json. Shared ambient instructions are influences, not evidence of enforced isolation. No subject execution, Git, network, removal, or external reads will be used.\\n\",encoding=\"utf-8\")'",
+      "effect": "Created the owned output directory and initial PROGRESS.md before substantive inspection."
+    },
+    {
+      "command": "rg --files --hidden .scratch/receipt-challenge-01/reader-packets/r03",
+      "effect": "Listed packet paths only. No historical locator was followed."
+    },
+    {
+      "commands": [
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/base/QUESTION.md",
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/base/RECIPE.md",
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/NOTICE.md",
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/PACKET.json",
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/RETURN-MANIFEST.json"
+      ],
+      "effect": "Read named use, recipe, actual-version notice and current packet/return manifests. Independent reads were batched; all returned results were inspected."
+    },
+    {
+      "commands": [
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/primary.txt",
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/base/ACCEPTED.json",
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/base/ORIGINS.json",
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/base/capture.py"
+      ],
+      "effect": "Read the selected analysis and base evidence. capture.py was read only as source text, never imported or executed. The historical paths/inventory references in these files were not opened. All returned results were inspected."
+    },
+    {
+      "commands": [
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/artifact-01.txt",
+        "cat .scratch/receipt-challenge-01/reader-packets/r03/artifact-02.txt"
+      ],
+      "effect": "Read both delivered companion texts in full. Source coordinates and claims inside the historical response remained attributed text, not further read grants."
+    },
+    {
+      "tool": "apply_patch",
+      "effect": "Created reader-authored .scratch/receipt-challenge-01/recipients/r03/attempt-01/inspect_packet.py. Exact independent comparison code is retained there."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S .scratch/receipt-challenge-01/recipients/r03/attempt-01/inspect_packet.py > .scratch/receipt-challenge-01/recipients/r03/attempt-01/CHECKS.json",
+      "effect": "Executed only reader-authored standard-library text/JSON/hash comparison code. Read the twelve explicit packet paths listed above, decoded seven JSON documents with repeated-key/nonfinite rejection, computed current byte identities, and saved exact comparison output. Exit code 0. All 15 recorded comparison booleans were true. No submitted executable or historical investigation was executed."
+    },
+    {
+      "command": "cat .scratch/receipt-challenge-01/recipients/r03/attempt-01/CHECKS.json",
+      "effect": "Read and inspected all retained independent comparison results."
+    },
+    {
+      "tool": "apply_patch",
+      "effect": "Updated owned PROGRESS.md with inspection/comparison/final checkpoints; created MEMO.md and this READS.json. No shared file was edited."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S -c 'from pathlib import Path; import hashlib,json; root=Path(\"coordination/receipt-challenge-01/recipients/r03/attempt-01\"); result={}; names=(\"MEMO.md\",\"READS.json\",\"PROGRESS.md\");\nfor name in names:\n p=root/name; raw=p.read_bytes(); text=raw.decode(\"utf-8\",\"strict\"); assert raw; result[name]={\"bytes\":len(raw),\"sha256\":hashlib.sha256(raw).hexdigest(),\"readable\":True};\n if name==\"READS.json\": json.loads(text)\nprint(json.dumps(result,indent=2))'",
+      "effect": "Terminal presence/readability verification of MEMO.md, READS.json and PROGRESS.md; JSON parse of this ledger and printed byte identities. Its successful tool result is the freeze confirmation. No further read or mutation follows."
+    }
+  ],
+  "reconstruction": {
+    "historical_reconstruction_performed": false,
+    "reader_derivation": "Decoded already delivered JSON and recomputed/comparatively checked current byte identities and complete envelope equality. No missing original evidence was synthesized.",
+    "exact_code": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r03/attempt-01/inspect_packet.py",
+    "exact_input_bytes": "Remain in the granted packet; each intentional input and its current byte identity is recorded in CHECKS.json. The code uses only twelve explicit packet paths, never historical metadata paths.",
+    "exact_output": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r03/attempt-01/CHECKS.json",
+    "attribution": "These computations are reader observations; originals and the author's claims remain separately attributed."
+  },
+  "boundaries": {
+    "nested_agents": false,
+    "git_commands_or_changes": false,
+    "network_or_installations": false,
+    "subject_imports_or_execution": false,
+    "historical_paths_opened": false,
+    "project_tests_or_custody_operations": false,
+    "removal_or_pruning": false,
+    "outside_packet_or_own_output_intentional_reads_after_brief": false,
+    "enforced_isolation_claim": false
+  }
+}

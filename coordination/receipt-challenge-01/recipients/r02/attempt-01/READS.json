@@ -1,0 +1,100 @@
+{
+  "reader": "r02",
+  "attempt": "attempt-01",
+  "version_inspected": "Coordinator-reduced a01 common-form return, as declared by NOTICE.md and RETURN-MANIFEST.json.",
+  "scope_note": "This is an intentional-read and command/effect account, not a complete access or timing log. Shell/interpreter/library loading is not inventoried. Shared ambient instructions influenced the work and do not prove enforced isolation.",
+  "intentional_content_read_paths": [
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r02/BRIEF.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/PACKET.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/NOTICE.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/RETURN-MANIFEST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/RETURN.raw",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/artifact-01.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/artifact-02.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/base/ACCEPTED.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/base/ORIGINS.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/base/QUESTION.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/base/RECIPE.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/base/capture.py",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02/primary.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r02/attempt-01/inspect_packet.py",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r02/attempt-01/finalize.py",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r02/attempt-01/MEMO.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r02/attempt-01/READS.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r02/attempt-01/PROGRESS.md"
+  ],
+  "directory_enumeration": {
+    "path": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02",
+    "scope": "Names of files inside only this packet, before content inspection."
+  },
+  "commands_and_effects_in_order": [
+    {
+      "command": "/bin/cat /Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r02/BRIEF.md",
+      "effect": "Read the sole saved assignment brief before packet inspection."
+    },
+    {
+      "command": "/bin/mkdir -p /Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r02/attempt-01 /Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r02/attempt-01",
+      "effect": "Created the two owned attempt output directories."
+    },
+    {
+      "command": "/bin/cat > /Users/raccoon/Desktop/Experiments/stewart/coordination/receipt-challenge-01/recipients/r02/attempt-01/PROGRESS.md <<'EOF' [initial progress text] EOF",
+      "effect": "Saved initial progress before packet inspection. Initial text remains at the beginning of PROGRESS.md."
+    },
+    {
+      "command": "/usr/bin/find /Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/reader-packets/r02 -type f -print",
+      "effect": "Listed 12 packet file paths. No outside directory inventory or file read."
+    },
+    {
+      "command": "/bin/cat .scratch/receipt-challenge-01/reader-packets/r02/base/QUESTION.md .scratch/receipt-challenge-01/reader-packets/r02/base/RECIPE.md .scratch/receipt-challenge-01/reader-packets/r02/NOTICE.md .scratch/receipt-challenge-01/reader-packets/r02/PACKET.json .scratch/receipt-challenge-01/reader-packets/r02/RETURN-MANIFEST.json .scratch/receipt-challenge-01/reader-packets/r02/base/ACCEPTED.json .scratch/receipt-challenge-01/reader-packets/r02/base/ORIGINS.json",
+      "effect": "Read task, recipe, version notice and current/historical-reference metadata; did not follow historical paths."
+    },
+    {
+      "command": "/bin/cat .scratch/receipt-challenge-01/reader-packets/r02/primary.txt .scratch/receipt-challenge-01/reader-packets/r02/artifact-01.txt .scratch/receipt-challenge-01/reader-packets/r02/artifact-02.txt .scratch/receipt-challenge-01/reader-packets/r02/base/capture.py",
+      "effect": "Read delivered primary and analysis artifacts, and candidate writer as source text only."
+    },
+    {
+      "command": "/bin/cat > .scratch/receipt-challenge-01/recipients/r02/attempt-01/inspect_packet.py <<'PY' [retained exact script] PY",
+      "effect": "Created own static comparison script; exact code retained at the named output path."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S .scratch/receipt-challenge-01/recipients/r02/attempt-01/inspect_packet.py",
+      "effect": "Ran only own standard-library JSON/text/hash comparison code. Read PACKET.json and its 11 listed files, decoded RETURN.raw, checked identities and extracted text correspondence, and created CHECKS.json exclusively. Printed that full output for inspection. All 11 listed packet identities matched; the reduced return contains two analysis support objects and no original companions. Did not import or execute capture.py or submitted code."
+    },
+    {
+      "command": "/bin/cat >> coordination/receipt-challenge-01/recipients/r02/attempt-01/PROGRESS.md <<'EOF' [milestone] EOF",
+      "effect": "Appended the inspected scope, check results, current assessment and remaining output work."
+    },
+    {
+      "command": "/bin/cat > coordination/receipt-challenge-01/recipients/r02/attempt-01/MEMO.md <<'EOF' [retained memo text] EOF",
+      "effect": "Created the frozen assessment draft with exact qualified claim, premise table, delivery and historical limits, and minimal additions or claim change."
+    },
+    {
+      "command": "/bin/cat > .scratch/receipt-challenge-01/recipients/r02/attempt-01/finalize.py <<'PY' [retained exact script] PY",
+      "effect": "Created own finalization code at this named path."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S .scratch/receipt-challenge-01/recipients/r02/attempt-01/finalize.py",
+      "effect": "Created this intentional-read ledger, appended final progress, then read MEMO.md, READS.json and PROGRESS.md as UTF-8 to verify nonempty readability and parse READS.json. Printed verification lengths and hashes. No edits occur after that successful verification."
+    }
+  ],
+  "reconstruction": {
+    "performed": false,
+    "note": "No absent companion, original history, or provenance was reconstructed. Own check code only compared delivered JSON/text/bytes and hashed files. Author-reported historical-companion checks remain attributed to a01."
+  },
+  "retained_own_check_code": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r02/attempt-01/inspect_packet.py",
+  "retained_own_check_output": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r02/attempt-01/CHECKS.json",
+  "retained_finalization_code": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/receipt-challenge-01/recipients/r02/attempt-01/finalize.py",
+  "own_output_observation": "CHECKS.json content was inspected from the script stdout, not separately reopened. Final outputs were reopened only for the recorded final readability verification.",
+  "outside_packet_reads": "None intentionally requested, except the assigned BRIEF.md and this reader's own outputs. Recorded absolute historical paths were treated as inert text.",
+  "excluded_actions": [
+    "No nested agents",
+    "No network",
+    "No Git operations",
+    "No installations",
+    "No subject imports or execution",
+    "No project tests",
+    "No custody operations",
+    "No removal or pruning"
+  ],
+  "freeze_rule": "MEMO.md and READS.json are frozen after the successful final verification in finalize.py. Reader phase ends immediately afterward."
+}

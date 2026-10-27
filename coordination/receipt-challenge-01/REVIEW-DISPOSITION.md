@@ -45,3 +45,12 @@ VARIANT-DISPOSITION binds the builder, all its consumed sources, reviewed briefs
 and returned selections. One assembly exited 0 with empty stderr and produced
 48 packet files. PACKET-REVIEW-INPUTS-01 freezes 55 packet/grant/builder identities.
 Actual packet review remains the gate before fresh reader dispatch.
+
+## Actual packet gate
+
+Root read PACKET-REVIEW and accepts reader readiness after 334/334 comparisons.
+All 48 packet files, mappings, selected bytes and provenance match; the assembly
+disposition covers every consumed input. No private records or removed bodies
+enter reduced packets. Root revalidated the 55 input identities before dispatch.
+READER-DISPOSITION records the exact accepted review. These are static endpoint
+observations, not continuous assembly monitoring or OS isolation evidence.

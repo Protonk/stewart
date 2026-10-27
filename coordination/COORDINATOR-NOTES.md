@@ -40,17 +40,28 @@ captures exited 0 with 9/9 checks each, and companion/variant invariances pass.
 The two different weakest-premise orderings remain attributed with their
 assumptions. No unexpected empirical finding or formal reframe is claimed.
 
-Reviewer /root/receipt_review passed 259/259 concrete-variant checks; root read
-and accepted the report and fixed both builder guards. One assembly produced
-48 packet files (exit 0, empty stderr), now frozen with grants/builder as 55
-packet-review inputs. Reviewer is active on that membership gate. Preparation
-commit is 4859d28. No reader has been dispatched. Root owns integration and the pending
-provisional recommendation; its pre-return draft is explicitly outside participant
-grants. No uncertain effect is pending. Local evidence owner is
-`.scratch/receipt-challenge-01/` with this study's RESULT; preserve every original,
-variant, failure, raw witness and reconstruction.
+Reviewer /root/receipt_review passed 259/259 concrete-variant checks and 334/334
+actual packet checks. Root disposed both and revalidated the 55 packet inputs
+before fresh dispatch. All four readers /root/receipt_r01 through _r04 have now
+returned and stopped; root read every full memo/read account and retained check
+output. Both original readers repeat the central bindings; both reduced readers
+identify the absent operands while retaining useful narrower claims. r01
+independently marks the ancillary undelivered MANIFEST assertion. Root separately
+qualifies r02's categorical snapshot-only insufficiency using preflight's exact
+reconstruction; the original memo stays unchanged.
 
-## Completed answer/revision comparison and current pause
+READER-FREEZE preserves 23 reader-owned files; root integration passed 289/289,
+exit 0 empty stderr. Preparation commit is 4859d28, author/reduction commit 3548bb1.
+Root integrated RESULT, OBSERVATIONS and PROVISIONAL-INTERFACE and froze 257
+exact final-review inputs under INTEGRATION-GRANT. /root/receipt_review is active
+on that baseline, recorded by DISPATCH-06. Root owns remaining review disposition, final checks, Git recording,
+committed-byte/evidence inventory and clean pause. No new substantive inquiry,
+source reveal, subject run or uncertain effect is pending. Local evidence owner is
+`.scratch/receipt-challenge-01/` with RESULT; preserve every original, variant,
+check, diagnostic, raw witness and reconstruction. The recommendation is not a
+contract decision; W02 and operational work remain uncommissioned here.
+
+## Completed answer/revision comparison
 
 At 04:16:21 UTC on 2026-10-27 the user authorized “Ok. Proceed.” for the
 [fresh answer/revision comparison](answer-revision-01/COMMISSION.md). Four fresh
@@ -86,11 +97,11 @@ The bounded study is complete. Preparation is committed at 134573a and participa
 records at 2dce5b8. The [result](answer-revision-01/RESULT.md),
 [observations](answer-revision-01/OBSERVATIONS.md) and
 [review disposition](answer-revision-01/REVIEW-DISPOSITION.md) own the findings,
-limits and remaining coverage. Root finishes final document/evidence checks,
-Git recording and committed-byte verification, then pauses with no further
-worker dispatch. No uncertain effectful reply, subject process or study phase
-remains. Inspect COMPLETION.json and actual Git state after interruption; absence
-of that record means mechanical recording is unfinished.
+limits and remaining coverage. Final recording completed at 4322827, with
+303/303 final checks, 99 committed files verified and a clean tree at that
+cutoff. COMPLETION.json inventories 3,623 retained evidence files. The requested
+pause was completed before the new commission above. No uncertain effectful
+reply, subject process or study phase remains from that comparison.
 
 Local evidence is `.scratch/answer-revision-01/` plus its adjacent command streams.
 ASSEMBLY, author/reader barriers, recipient packets, INTEGRATION-INPUTS-01 and
