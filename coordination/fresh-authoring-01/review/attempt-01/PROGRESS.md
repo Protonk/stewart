@@ -1,11 +1,9 @@
-# Preflight complete
+# Review complete; stopped
 
-2026-10-27T01:49:58.250199+00:00
+2026-10-27T02:18:13.773056+00:00
 
-Initial static preflight and additional recipient-template/corrective-source/packet-gate reads are complete. PREFLIGHT.md and READS.json are saved. Dual-root witness gap was found, reported, and corrected; the corrective source pin/diff and syntax were verified. Root has supplied the planned independent packet verification; its actual successful record remains an integration prerequisite. A zero-available-support directory edge was reported as conditional.
+Initial preflight and integration review, including the separately pinned coordinator result draft, are complete. INTEGRATION-REVIEW.md, READS-INTEGRATION.json and RETURN.md saved and read back. Preflight files remain unchanged.
 
-All 12 initial review pins and all 17 pre-dispatch input pins match. Recipient template and corrected utility additional pins match. No project, subject, helper, authored checker or packet-gate execution; no out-of-grant reads, Git, network, shared edits or deletion.
+No material blocker or result-draft correction remains. Narrow signaled-omission effect supported; actual canonical reading limits order inference. Verification: 436/436 snapshot identities; original 383/384 overstrict progress comparison retained, corrected distinct comparator 383/383; supplemental population/provenance/brief checks 50/50. Counts overlap; zero project/helper/subject/observer executions by reviewer.
 
-Exact next action: return preflight, then stop pending separately issued integration-review grant.
-
-Final addendum 2026-10-27T01:50:36.851686+00:00: verified the separately pinned packet-checker correction for absent objects directory; actual gate remains pending. Forty-two actual-read entries saved. Preflight now returned; no further work without integration grant.
+Exact command/outcome account and reviewer output identities saved in owned scratch. No shared edits, deletion, Git, network or out-of-grant reads. Next action belongs to root: finalize review disposition/pending language and report bounded results. Reviewer stopped; no continuing authorized task or uncertain side effect remains.

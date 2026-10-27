@@ -96,3 +96,13 @@ execution-01/PROTOCOL.md and execution-01/PROGRESS.md own the new wave. Subject
 source remains 81b557a; development HEAD is aa55bc7. Root has prepared the author
 grant and a coordinator-mediated draft/final submission sequence with a witness
 before each invocation. No author has yet been dispatched.
+
+## Pilot complete and independently reviewed — 2026-10-27
+
+The resumed wave completed both author checkpoints, all six recipient response
+phases and independent integration review. RESULT.md and execution-01/REVIEW-DISPOSITION.md
+own the observed result, exact counts, retained failed check and limits. All
+workers returned. No subject/observer execution is authorized or pending. The
+program plan retains broader W01 cases and separate custody/control decisions.
+Final checks and recording are identified by the pilot-01 final-check/completion
+records and actual Git state; all local evidence remains held with the report.

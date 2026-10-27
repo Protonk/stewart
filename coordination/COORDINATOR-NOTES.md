@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 Pacific / 2026-10-27 UTC for resumed fresh authoring. This is a
+Updated 2026-10-26 Pacific / 2026-10-27 UTC for completed fresh authoring. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -9,57 +9,61 @@ actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
 
-2026-10-27 01:36:51 UTC (2026-10-26 Pacific): the user resumed the authorized
-fresh-construction pilot with approximately 70 minutes available. Aim to finish
-integration by 02:36 UTC, leaving time for an orderly checkpoint. The turnover
-brief was consumed; commit aa55bc7 successfully tested staging/committing without
-escalation. Root resumes ordinary Git recording for this authorized work.
+The resumed fresh-construction pilot is complete and independently reviewed in
+[RESULT.md](fresh-authoring-01/RESULT.md). The user supplied about 70 minutes
+at 2026-10-27 01:36:51 UTC (2026-10-26 Pacific); author, recipient and review
+work finished within that window. All five workers returned and are stopped:
+`/root/fresh_author`, `/root/fresh_r01`, `/root/fresh_r02`, `/root/fresh_r03`,
+and `/root/fresh_review`. No uncertain effectful reply or study phase remains.
 
-The [execution protocol](fresh-authoring-01/execution-01/PROTOCOL.md) and
-[progress](fresh-authoring-01/execution-01/PROGRESS.md) own this wave. Root owns
-shared documents, role briefs, `.scratch/fresh-authoring-01/pilot-01/`, witness,
-submissions, recipient materialization, freezes and integration. Workers own
-only their assigned attempt directories. Initial source is aa55bc7, clean;
-subject source remains 81b557a. Fresh author `/root/fresh_author` returned draft and final selections and is
-stopped. Both were witnessed and structurally accepted; five byte/snapshot checks
-passed per helper invocation. Final selection is 60,027 raw bytes / 18 objects,
-with no substantive revision or actual late finding reported. Root fixed the
-observer-code omission before responses; 299/299 source/packet checks passed.
-Three fresh recipients `/root/fresh_r01`, `/root/fresh_r02`, `/root/fresh_r03`
-returned both phases and are stopped. Root read all six memos. Both phase sets
-and supporting output roots are frozen; 26 first-phase and 50 final response
-identity checks passed, with initial files unchanged after reveal. Six reveal
-checks confirmed the same observer object for every recipient. r02 reports the
-missing code inspection repaired; full/reordered controls report no new bytes
-or changed recommendation. Execution setup remains a distinct future commission.
+Root read all six recipient memos and the independent review, then disposed
+its findings. The complete return supported two recipients' exact construction
+inspection. The signaled observer-code omission blocked that particular code
+inspection for r02; reveal repaired it. Full-content controls' grounds stayed
+unchanged. r03 read a reversed manifest but chose canonical substantive reading
+order, so no reversed-consumption or general invariance claim follows. All
+readers kept future execution setup separate from missing construction support.
 
-`/root/fresh_review` completed preflight and is stopped pending imminent
-integration dispatch. The exact integration grant is saved; root is pinning the
-closed evidence population. Root owns result integration and shared documents.
-No subject/observer execution or uncertain effectful reply is outstanding.
+The helper accepted two selections: draft 41,537 bytes / 13 objects, final
+60,027 bytes / 18 objects. All original support and the answer were unchanged;
+five additions record self-check/provenance. No substantive revision or actual
+late finding was reported. Root's packet comparisons passed 299/299; final
+response identity checks passed 50/50. Independent review verified 436 snapshot
+identities, 383 corrected comparisons and 50 supplemental checks. Its original
+383/384 mutable-progress comparison remains preserved with its correction.
+No project experiment or installed-wheel/pytest node ran.
 
-The user-selected recipient task is inspection of the exact returned construction
-and deciding whether to commission execution. Actual execution of the construction,
-product implementation and custody changes remain outside the commission.
-Preparation is complete in [PREPARATION-RESULT.md](fresh-authoring-01/PREPARATION-RESULT.md):
-204 helper assertions across 32 invocations and 118 retained-evidence checks
-passed. These qualify the cooperative helper only. The six-file subject packet,
-common question and pre-authoring assessment remain fixed. Zero product trials
-or installed-wheel/pytest nodes are authorized in this wave.
+[Execution progress](fresh-authoring-01/execution-01/PROGRESS.md),
+[protocol](fresh-authoring-01/execution-01/PROTOCOL.md) and
+[review disposition](fresh-authoring-01/execution-01/REVIEW-DISPOSITION.md) locate
+the detailed work. Root owns integration/shared documents. The local finite
+population is `.scratch/fresh-authoring-01/pilot-01/`; retain all witnesses,
+commands, snapshots, responses and failed/corrected checks with RESULT.md.
+Final documentation/endpoint checks and committed-byte/evidence inventories
+are located by `FINAL-CHECKS-02.json` and `COMPLETION.json` there. Inspect those
+records and actual Git state to establish the final recording checkpoint;
+absence of the completion record means that mechanical recording is unfinished.
+Earlier `.scratch/fresh-authoring-01/` and
+`.scratch/fresh-authoring-preparation-01/` evidence also stays with its owners.
+These local witnesses are not all carried by a Git clone.
 
-The helper's 1 MiB limit is admission-only; full over-limit input is retained.
-Read/write grants and destination ancestors are procedural. Durability,
-crash/fault behavior, actual access enforcement, delivery, stopping and disposal
-remain unqualified. Root's independent witness begins before dispatch and captures
-saved checkpoints before submission; unsaved work and continuous activity are
-outside observation. Preserve attribution and the difference between an invalid
-construction, missing selected support and a request for new execution evidence.
+The consumed turnover remains a stub. Git recording succeeded without escalation
+at aa55bc7 and 2dcc957; root again owns ordinary recording for authorized work.
+Commit 2dcc957 records the construction/recipient capture; final review/result
+recording is identified by the completion record and Git. Subject source remains
+81b557a and frozen Python remains unchanged.
 
-Retain `.scratch/fresh-authoring-01/` and `.scratch/fresh-authoring-preparation-01/`
-with their reports, plus earlier study evidence. Preparation was recorded at
-88fd1e7; its 15 document identities and 258 evidence files matched at the saved
-turnover reconciliation. Historical records stay unchanged. The completed
-finite-return study and other program work remain as described below.
+Next substantive work needs a bounded commission. The recipients recommend
+execution of the now-inspected construction once exact staging/interpreter,
+preservation/loading, effects/stops and retained-output arrangements are defined.
+No such execution is authorized by this pilot. W01 still needs broader question
+and outcome coverage, alternate-interface evidence and actual late findings;
+no durable schema, custody-start policy, access/control/disposal qualification
+or protected-obligation change was selected. No further dispatch is pending.
+
+The user requested a pause after final recording and evidence verification.
+Finish those mechanical steps, then remain paused with all workers stopped.
+No further dispatch or substantive work begins until the user resumes.
 
 ## Completed finite-return inquiry
 

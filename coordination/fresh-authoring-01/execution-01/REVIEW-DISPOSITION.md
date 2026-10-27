@@ -25,5 +25,45 @@ or enforcement claim follows from these static corrections.
 
 ## Integration
 
-Pending frozen final selection, packets and recipient responses. No final
-study conclusion is asserted by this preflight disposition.
+Root read the complete INTEGRATION-REVIEW.md and RETURN.md, all underlying
+check summaries, the independent comparison sources and the exact corrective
+diff. The reviewer read every memo and read ledger, the witnessed author
+population, packets, source, selection and root's pinned result draft. No
+material blocker or prose correction to the bounded conclusions remains.
+
+The reviewer verified 436/436 input snapshot identities, 383/383 corrected
+static comparisons, and 50/50 supplemental population/provenance/brief checks.
+Its initial 383/384 result is preserved: a predicate compared author PROGRESS.md
+across draft and final milestones, although the latter legitimately recorded
+new progress. The original process exited zero despite printing that failed
+comparison; root uses the record's actual outcome. The corrected distinct
+script excludes only that mutable progress comparison and writes a new result.
+No study evidence was altered. The earlier progress bytes remain in the draft
+witness. Root verified that this is the sole predicate change, alongside the
+new result filename. This reviewer-code issue is resolved and retained.
+
+The reviewer independently supports the named, signaled-omission effect and the
+same-content control responses. Its important qualification is adopted in the
+result: r03 read a reversed manifest but chose canonical substantive reading
+order. This is neither reversed-consumption evidence nor general order
+invariance. The unavailable descriptor explicitly signaled the missing code;
+there was no blind loss detection or product retrieval failure. A restored
+study selection does not rewrite the initial observation.
+
+The result draft was reviewed at SHA-256
+28c41a0c0dddce7b6bf9314f50efe4351edd016b05ad7edd3e6f50b11b5d4c79.
+Finalization changes its review status, records actual counts and adds the
+final evidence locations; its substantive interpretation is unchanged. The
+reviewer's original finite source snapshot remains intact.
+
+Review scope excludes independent verification of Git commit contents, all
+repository runtime/test files, actual harness isolation, original Git provenance
+and complete participant process history. Root owns the repository endpoint
+checks and final committed-byte verification. Participant read/execution accounts
+remain attributed. No helper or subject code was executed by the reviewer.
+
+All findings have a disposition. No author, recipient or reviewer task remains.
+The broader W01 cases and separate execution/custody work retain the explicit
+open dispositions in RESULT.md and the program plan. Keep all witnesses,
+original failed checks and corrected records with the report; no pruning or
+historical-record rewriting is authorized by completion.

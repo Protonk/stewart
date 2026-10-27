@@ -4,7 +4,7 @@ Current account, 2026-10-26. Stages 1–3 have completed their inquiries and
 semantic decisions; that does **not** mean their decided changes are implemented.
 Python remains frozen at `6582df2`, including bundled guidance. Stage 4 is in
 successor design, with empirical answer requirements ahead of the durable
-interface. Rust implementation and fresh audit trials are not commissioned.
+interface. Rust implementation and real-harness operating-route trials are not commissioned.
 Stage 5 remains optional implementation of selected additional responsibilities.
 Click integration and a dedicated successor program executor are out of scope.
 
@@ -106,40 +106,33 @@ recommended prospective fresh authoring, subsequently commissioned below. This
 W01/F2 inquiry changes no W02 custody promise or other protected
 obligation; normal authoring and operating-route qualification remain open.
 
-The user subsequently commissioned shallow preparation of a
-[fresh construction trial](coordination/fresh-authoring-01/BRIEF.md), choosing
-inspection of the exact returned specimen and a decision whether to execute as
-the recipient task. The candidate asks an author to construct a ledger
-membership comparison through a common envelope with selected exact support
-bytes. It proposes complete/omitted/reordered recipient variants. At that
-preparation checkpoint implementation and dispatch were uncommissioned; no
-new evidence of fresh authoring, late findings, reproduction or custody is
-claimed. The broader W01
-coverage, including question-specific authoring comparisons, remains open.
+The subsequent [fresh construction pilot](coordination/fresh-authoring-01/RESULT.md)
+is complete and independently reviewed. One fresh author selected a hypothetical
+ledger comparison, exact specimens and an unexecuted observer through a checked
+common envelope; three fresh recipients returned six frozen phase memos. Full
+selected content supported the construction-inspection task without author-scratch
+access. A signaled observer-code omission obstructed that named inspection;
+restoring the original code repaired it. Complete-content controls' grounds stayed
+unchanged. Reversed descriptor order did not force reversed substantive reading,
+so the result establishes no general order invariance or causal interface effect.
 
-The user then authorized the proposed prototype/pilot, subsequently limiting
-the current continuation to 10–15 minutes of checkpointed preparation.
-[Execution commission](coordination/fresh-authoring-01/COMMISSION.md) and
-[progress](coordination/fresh-authoring-01/PROGRESS.md) own that state. A separate
-standard-library submission helper is complete outside frozen Python: 204 checks
-passed across 32 helper invocations; root's 118 retained-evidence checks also
-passed. The [preparation result](coordination/fresh-authoring-01/PREPARATION-RESULT.md)
-records the six selected source/guidance inputs, fixed question, assessment and
-limits. The worker returned. Exact author briefs, witness timing and recipient
-materialization remain before dispatch in the next suitable machine window.
-Preparation checks do not constitute fresh-authoring or custody qualification.
-Commit 88fd1e7 records this preparation. The user subsequently requested turnover
-and stand-by: retain the existing pilot commission, with no further dispatch until
-the user resumes. Scope and unfinished preparation remain in the linked account.
-The user resumed the bounded pilot at 2026-10-27 01:36:51 UTC with about
-70 minutes available. [Execution protocol](coordination/fresh-authoring-01/execution-01/PROTOCOL.md)
-and [progress](coordination/fresh-authoring-01/execution-01/PROGRESS.md) own this
-continuation; source and assessment stay pinned. This grants construction and
-recipient inspection, not execution of the constructed experiment.
-The author and all three recipients have now returned both checkpoints/phases.
-The helper accepted draft and final selections; all 299 packet comparisons and
-50 final response identity checks passed. Independent integration review is
-next; this checkpoint does not yet assert a reviewed study conclusion.
+The final selection is 60,027 raw bytes and 18 objects. Root verified 299 packet
+comparisons and 50 final response comparisons; independent review verified 436
+snapshot identities, 383 corrected comparisons and 50 supplemental checks, with
+its original overstrict mutable-progress failure preserved. These are overlapping
+static checks, not runtime trials or an efficacy score. No ledger/observer or
+project experiment ran, and no product custody operation was performed. The
+[execution account](coordination/fresh-authoring-01/execution-01/PROGRESS.md) and
+result own exact commands, evidence and retention. All five workers returned;
+no further phase or unresolved effect is pending.
+
+This adds one prospective construction case to W01/F2. No actual late finding,
+partial/reframed/non-answer authoring, pressured cap or alternative answer
+interface was exercised. The recipients recommend a separately bounded execution
+once staging, interpreter, preservation/loading and output-capture conditions
+are defined; that is a new undertaking, not unfinished pilot work or an execution
+grant. Broader answer requirements, custody policy and operating-route evidence
+remain open. No protected obligation or durable schema has changed.
 
 All items below are open unless their state says otherwise. F numbers are the
 sequence above, not authorizations. Detailed contract clauses govern beyond
@@ -148,7 +141,7 @@ its implementation is considered complete.
 
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
-| W01 — Two diagnostic studies complete; authoring pilot prepared | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
+| W01 — Three bounded studies complete; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
 | W02 — Policy open | Select admitted-answer-only or complete-attempt custody; define setter acknowledgments, bounded snapshot assembly, attempt identities, corrections/finality, retrieval and lifetime. Decide partial work on early close, compulsory manager gap/follow-up responses and helper-independent human handback. [Keyhole decisions](KEYHOLE-OBLIGATIONS-FINDINGS.md#decisions-and-evidence-still-needed), [Riker assessment](KEYHOLE-OBLIGATIONS-FINDINGS.md#riker-and-the-transition). | W01 informs F3. Before F5, choose scope and update affected contracts explicitly. Test invalid final discriminator after substantial setters, full attempt versus call arguments, later-setter invariance, failed custody writing, racing/repeated finals and lost success replies. The prior coordinator's preference for attempt custody is not a decision. |
 | W03 — Architecture open | Decide A.1's formal admission rule and D's commission facilities, capture terms and retention promise, including R3's distinction from a voluntary hold. Identify any new auditor channel's effect on inherited assumptions. [Opening decisions](#opening-decision-round-a-narrow-custodial-core), [R3](#session-scoped-agent-guidance-reconciliation-2026-10-25). | F3, informed by W01/W02 and W04–W09. No executor does not adopt an exact-three-responsibilities formula. Test grants and recorded limitations against the actual commissioned view; admission is not a verdict on the answer. |
 | W04 — Workspace/history open | Decide B and F: plain subject files, history-only use, pinned history facility, and supported Git-aware/build/test capabilities. Resolve unrepresentable trees and name normalization as proposed decisions, not silent fixes. [B](CUSTODIAL-CORE-FINDINGS.md#b-the-workspace-representation), [F](CUSTODIAL-CORE-FINDINGS.md#f-the-form-of-the-history-facility). | Capability comparisons in F2; selected representation before F5. Verify selected object membership, absent unrelated/dangling/replacement objects, graft/shallow/partial limits, case/Unicode behavior and real tool usability. A shared backing store cannot expose its whole contents. |
