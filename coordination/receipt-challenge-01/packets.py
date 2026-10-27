@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 
 REPO=Path(__file__).resolve().parents[2]
@@ -16,7 +17,23 @@ def read(p):
     return p.read_bytes()
 
 
-def load(p):return json.loads(read(p))
+def unique(pairs):
+    result={}
+    for key,value in pairs:
+        if key in result:raise ValueError('Repeated control key: '+key)
+        result[key]=value
+    return result
+
+
+def reject_constant(value):raise ValueError('Nonfinite control number: '+value)
+def finite_float(value):
+    parsed=float(value)
+    if not math.isfinite(parsed):raise ValueError('Nonfinite control number: '+value)
+    return parsed
+
+
+def decode(raw):return json.loads(raw,object_pairs_hook=unique,parse_constant=reject_constant,parse_float=finite_float)
+def load(p):return decode(read(p))
 def sha(raw):return hashlib.sha256(raw).hexdigest()
 
 
@@ -62,8 +79,10 @@ def packets():
     population=[]
     for reader,author,kind in [('r01','a01','original'),('r02','a01','reduced'),('r03','a02','original'),('r04','a02','reduced')]:
         cap=ROOT/'captures'/author/kind
-        if load(cap/'CHECKS.json')['exit']!=0:raise ValueError('Capture not admitted')
-        raw=read(cap/'input.raw');snapshot=load(cap/'helper/SNAPSHOT.json');payload=json.loads(raw)
+        outcome=load(cap/'CHECKS.json')
+        if outcome['exit']!=0 or outcome['passed']!=outcome['total'] or not outcome['checks'] or not all(outcome['checks'].values()):
+            raise ValueError('Capture has unresolved admission/byte checks')
+        raw=read(cap/'input.raw');snapshot=load(cap/'helper/SNAPSHOT.json');payload=decode(raw)
         if snapshot['envelope']!=payload:raise ValueError('Payload differs from snapshot')
         packet=ROOT/'reader-packets'/reader;packet.mkdir(parents=True,exist_ok=False)
         for name in ('QUESTION.md','RECIPE.md','ACCEPTED.json','capture.py','ORIGINS.json'):

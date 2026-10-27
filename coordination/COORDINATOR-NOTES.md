@@ -31,12 +31,24 @@ static comparisons. Root read and disposed the report; exact helper/ops identiti
 are bound in PREFLIGHT-DISPOSITION. Both capture-guard omissions were fixed before
 authors. Review also demonstrated exact raw reconstruction from SNAPSHOT; any
 concrete omission must account for that redundant dependency. No historical
-investigation or producer has been rerun. The reviewer /root/receipt_review is
-stopped pending actual selections; authors are ready for fresh dispatch after
-preparation recording. Next: freeze and capture returned originals, then obtain
-independent concrete-variant/packet review before four recipients. No uncertain
-effect is pending. Local evidence owner: `.scratch/receipt-challenge-01/` with
-this study's RESULT; preserve every original, variant, failure and witness.
+investigation or producer has been rerun. Both authors /root/receipt_a01 and /root/receipt_a02 returned/stopped; root
+read their arguments and private accounts and captured originals unchanged.
+Original/reduced raw sizes: a01 52,048/19,684; a02 46,238/14,167 bytes. Both
+originals select exact raw+snapshot companions; reductions remove that whole
+dependency group while preserving primary/metadata and other analysis. Four
+captures exited 0 with 9/9 checks each, and companion/variant invariances pass.
+The two different weakest-premise orderings remain attributed with their
+assumptions. No unexpected empirical finding or formal reframe is claimed.
+
+Reviewer /root/receipt_review passed 259/259 concrete-variant checks; root read
+and accepted the report and fixed both builder guards. One assembly produced
+48 packet files (exit 0, empty stderr), now frozen with grants/builder as 55
+packet-review inputs. Reviewer is active on that membership gate. Preparation
+commit is 4859d28. No reader has been dispatched. Root owns integration and the pending
+provisional recommendation; its pre-return draft is explicitly outside participant
+grants. No uncertain effect is pending. Local evidence owner is
+`.scratch/receipt-challenge-01/` with this study's RESULT; preserve every original,
+variant, failure, raw witness and reconstruction.
 
 ## Completed answer/revision comparison and current pause
 

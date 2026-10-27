@@ -1,0 +1,69 @@
+{
+  "intentional_read_scope": [
+    "coordination/receipt-challenge-01/authors/a02/BRIEF.md",
+    ".scratch/receipt-challenge-01/subject/",
+    "coordination/receipt-challenge-01/authors/a02/attempt-01/SELECTED.json"
+  ],
+  "actual_subject_files_read": [
+    "QUESTION.md",
+    "RECIPE.md",
+    "MANIFEST.json",
+    "ORIGINS.json",
+    "SNAPSHOT.json",
+    "ACCEPTED.json",
+    "capture.py",
+    "payload.raw"
+  ],
+  "commands_and_effects": [
+    {
+      "command": "cat coordination/receipt-challenge-01/authors/a02/BRIEF.md",
+      "effect": "Read assigned brief."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S (initial checkpoint and directory listing)",
+      "effect": "Created own attempt directory if absent and exclusively created PROGRESS.md; enumerated paths only within the subject directory."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S (combined packet text display)",
+      "effect": "Read all eight subject files as UTF-8 text; tool display truncated. Later focused displays recovered material needed for inspection."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S (acceptance and numbered producer display)",
+      "effect": "Reread ACCEPTED.json and all of capture.py as text; did not import or execute producer."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S (strict JSON/hash comparison)",
+      "effect": "Read manifest and all seven listed file byte streams; independently recomputed byte lengths/SHA-256, decoded receipt/snapshot/raw with duplicate-key and nonfinite rejection, compared envelope/metadata/raw identities and decoded text identities. No files written."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S (decoded payload display)",
+      "effect": "Reread payload.raw and displayed full answer plus all three support texts to recover complete content from the earlier truncation. No referenced historical source opened."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S (selection construction)",
+      "effect": "Reread exact payload.raw and SNAPSHOT.json bytes; assembled analysis plus exact original UTF-8 texts; checked minimal shape, names/count, size and round trips; created SELECTED.json once with exclusive binary open."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S (final saved-selection validation and private records)",
+      "effect": "Reread own SELECTED.json and both selected original companions; verified saved shape, limit and byte-equivalent companion texts. Appended final PROGRESS.md entry. Exclusively created PROCESS.md and READS.json. No further work after four required files exist."
+    }
+  ],
+  "observation_limits": [
+    "This records intentional tool reads and effects, not an exhaustive OS, harness or access audit.",
+    "Ambient harness/project instructions and the parent assignment were available influences; no additional project source was read under them.",
+    "The first combined tool display was truncated; focused later displays supplied full relevant writer, metadata and selected-response text.",
+    "Hashes and structural comparisons are current static observations, not proof of historical authenticity, author conduct, execution, enforcement, intellectual completion or durability.",
+    "Original paths in packet data and response text were treated as inert coordinates and never followed.",
+    "No Git, network, Claude, nested agents, installation, subject imports/execution, project tests, custody operations, deletion or pruning was used."
+  ],
+  "selected_return": {
+    "path": "coordination/receipt-challenge-01/authors/a02/attempt-01/SELECTED.json",
+    "bytes": 46238,
+    "sha256": "6c86cd823543da748b39dc3258bb76186a06605554e88212dadd796c8ced81cd",
+    "artifact_names": [
+      "payload.raw",
+      "SNAPSHOT.json"
+    ],
+    "exact_companion_bytes_verified": true
+  }
+}

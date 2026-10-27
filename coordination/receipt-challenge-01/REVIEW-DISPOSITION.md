@@ -24,5 +24,24 @@ will not enlarge it after recipient results. Reader grants/packets.py and the
 concrete variants still require the next independent review.
 
 PREFLIGHT-DISPOSITION.json binds the accepted helper and ops hashes. Root may
-dispatch a01/a02 under their saved complete-source grants. The reviewer is
-stopped until those returns and a concrete proposed reduction are frozen.
+dispatch a01/a02 under their saved complete-source grants. That author gate is
+complete; the subsequent concrete review is recorded below.
+
+## Concrete variants and assembly
+
+Root read the full VARIANT-REVIEW and accepts its assembly readiness and limits.
+259/259 independent static checks cover 109 frozen identities, 140 content/capture
+comparisons and 10 checks of the builder revision. All four actual new captures
+are valid and the reductions preserve every retained field/text/order. Removing
+both original companions obstructs their direct byte comparison and removes the
+decoded historical response too; no isolated-serialization or universal
+non-reconstruction claim follows. The a01 MANIFEST-check assertion is an ancillary
+original-delivery limitation, not an effect of reduction.
+
+Two builder guards were corrected before assembly, preserving both versions:
+strict duplicate-key/nonfinite decoding and complete successful capture checks.
+Version 02 is pinned by PACKET-CODE-02. No variant was rebuilt or recaptured.
+VARIANT-DISPOSITION binds the builder, all its consumed sources, reviewed briefs
+and returned selections. One assembly exited 0 with empty stderr and produced
+48 packet files. PACKET-REVIEW-INPUTS-01 freezes 55 packet/grant/builder identities.
+Actual packet review remains the gate before fresh reader dispatch.

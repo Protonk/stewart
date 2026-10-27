@@ -27,3 +27,36 @@ and retained, so raw-only removal with that companion cannot establish a gap.
 Root clarified historical embedded answer versus separate study interpretation
 in PROTOCOL. The reviewer is stopped. Next: record preparation, dispatch a01/a02
 fresh, then freeze/capture returned originals before choosing reviewed reductions.
+
+Preparation committed as 4859d28. Fresh /root/receipt_a01 and /root/receipt_a02
+are dispatched under their pinned briefs, common/minimal respectively. Root plus
+two authors is the active fleet; reviewer stopped. DISPATCH-02 binds their grants.
+No source release or later author phase is planned.
+
+## Original returns and concrete variants frozen
+
+Both fresh authors returned/stopped. Root read both selected arguments, all
+analysis artifacts and private process/read accounts. Exact selected companions
+match the subject (4/4 checks). Both authors narrow the citation and preserve
+positive byte bindings; their weakest-premise orderings have explicit different
+assumptions. Both report refinements, no unexpected empirical finding and no
+substantive form friction. Original capture sizes: a01 52,048, a02 46,238 bytes.
+
+Root constructed separate variants removing the raw+snapshot dependency group,
+31,445 original text bytes each, preserving all primary/metadata/retained analysis.
+Reduced sizes: a01 19,684 bytes with two analysis artifacts; a02 14,167 with zero
+artifacts and all analysis in primary. Four captures exited 0 with 9/9 checks
+each; two transformations passed 4/4 checks each. No correction/rejection.
+109 exact variant-review snapshots are frozen; /root/receipt_review resumed
+under VARIANT-GRANT. No reader packet or dispatch yet. Next: dispose concrete
+review, assemble/pin/check exact packets, then four fresh readers.
+
+## Concrete review accepted; packets await membership review
+
+Root read/disposed 259/259 variant-review checks. Both builder guards were fixed
+before assembly, with original version and transformation evidence retained.
+One packet assembly exited 0 with empty stderr. The actual 48 packet files plus
+builder/disposition/grants are frozen as 55 packet-review inputs. Reviewer is
+active on that finite gate; no reader dispatched. The a01 original MANIFEST
+assertion remains an ancillary undelivered claim, separate from the reduction.
+Root has saved integration drafts, explicitly pending reader evidence.

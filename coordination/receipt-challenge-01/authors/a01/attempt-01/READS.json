@@ -1,0 +1,68 @@
+{
+  "scope": "Intentional reads and commands for a01 attempt-01; not an exhaustive OS/process trace.",
+  "read_files": [
+    "coordination/receipt-challenge-01/authors/a01/BRIEF.md",
+    ".scratch/receipt-challenge-01/subject/QUESTION.md",
+    ".scratch/receipt-challenge-01/subject/RECIPE.md",
+    ".scratch/receipt-challenge-01/subject/MANIFEST.json",
+    ".scratch/receipt-challenge-01/subject/ORIGINS.json",
+    ".scratch/receipt-challenge-01/subject/ACCEPTED.json",
+    ".scratch/receipt-challenge-01/subject/SNAPSHOT.json",
+    ".scratch/receipt-challenge-01/subject/capture.py",
+    ".scratch/receipt-challenge-01/subject/payload.raw",
+    "coordination/receipt-challenge-01/authors/a01/attempt-01/SELECTED.json"
+  ],
+  "commands_and_effects": [
+    {
+      "command": "cat coordination/receipt-challenge-01/authors/a01/BRIEF.md",
+      "effect": "Read the assigned grant and form."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S -c (initial progress writer)",
+      "effect": "Created own attempt directory and initial PROGRESS.md before substantive work."
+    },
+    {
+      "command": "rg --files .scratch/receipt-challenge-01/subject",
+      "effect": "Listed only granted subject filenames."
+    },
+    {
+      "command": "cat QUESTION.md RECIPE.md MANIFEST.json ORIGINS.json under granted subject",
+      "effect": "Read question, recipe and supplied provenance metadata."
+    },
+    {
+      "command": "cat ACCEPTED.json SNAPSHOT.json under granted subject",
+      "effect": "Read retained acceptance and original snapshot."
+    },
+    {
+      "command": "cat capture.py payload.raw under granted subject",
+      "effect": "Read original payload and candidate source; the combined tool display truncated part of source."
+    },
+    {
+      "command": "nl -ba .scratch/receipt-challenge-01/subject/capture.py",
+      "effect": "Read the complete candidate as source with line numbers; no import or execution."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - (independent hash/strict JSON comparison script)",
+      "effect": "Read manifest and its seven named files; computed and displayed lengths/hashes; decoded raw, acceptance and snapshot; compared raw identities, envelope, metadata, question/revision strings and decoded text identities."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - (milestone progress writer)",
+      "effect": "Updated own PROGRESS.md with completed reads/checks and developing conclusion."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - (final selection and private-record writer)",
+      "effect": "Reread payload.raw, SNAPSHOT.json and ACCEPTED.json; rechecked required equalities and exact known identities; built and exclusively wrote SELECTED.json; reread own selection and verified roundtrip, schema/size and verbatim companions; wrote final PROGRESS.md, PROCESS.md and READS.json. Did not invoke supplied capture.py."
+    }
+  ],
+  "selected_return": {
+    "bytes": 52048,
+    "sha256": "b8632ef984781b66376cefff14850f6327adc89195b7b6388e8d1b6be346153e"
+  },
+  "observation_limits": [
+    "Static file contents and current byte correspondence only; no historical source expansion or original-coordinate reads.",
+    "Packet and ambient text assertions do not establish historical conduct, identity authentication or access enforcement.",
+    "No Git, network, other actors, nested agents, installation, tests, subject imports/execution, custody operations, deletion or pruning.",
+    "Tool/shell internals and automatic infrastructure access are not instrumented by this account; listed reads are actual intentional inquiry reads.",
+    "After the final four required files exist, the attempt is frozen and no further inquiry or selected-return modification is performed."
+  ]
+}
