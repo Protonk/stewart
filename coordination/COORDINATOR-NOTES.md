@@ -1,11 +1,32 @@
 # Current coordinator account
 
-Updated 2026-10-27 after integration of the bounded submission prototype.
+Updated 2026-10-27 during the authoring-boundary discussion after the prototype.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
+
+## Current discussion: custody home and interrupted ordinary operations
+
+After prototype completion, the user accepted repository-associated persistent
+per-audit custody outside the disposable workspace; integration-owned interrupted-
+operation accounting; and retaining replaced/deleted payloads until authorized
+closure while immediately changing current answer membership. CONTRACTS records
+these accepted directions. Exact placement, enforcement and move/backup behavior
+remain mechanism/qualification work. Close's holds and preservation restrictions
+remain intact; no cleanup or product integration is commissioned.
+
+The user asks whether this wants to be a ledger and proposes proving that an
+interruption reaches the auditor with a usable retry instruction, using another
+add rather than a separate recovery facility when there is no element to replace.
+[The discussion note](submission-design-01/AUTHORING-BOUNDARY.md) distinguishes
+accepted policy, the proposed custody ledger, before-publication failure and a
+published addition whose reply was lost. Same-operation identity must survive;
+content equality cannot infer retry intent. Persistent evidence alone proves no
+auditor notification. Root is discussing that boundary and a candidate proof,
+not launching a new harness/worker trial. Manager-side discussion remains next.
+This account owns `.scratch/authoring-boundary-01/` recording and validation.
 
 ## Completed: bounded atomic answer-editing prototype
 
@@ -33,11 +54,10 @@ subject execution remains pending. Root owns integration, plans/accounts and Git
 final readiness/Git disposition. No Claude, product custody,
 removal or manager-side work was commissioned. No turnover was requested.
 
-Next recommendation, not a new commission: settle the actual store/access boundary
-and supported recovery interaction before integrating the tool into Stewart.
-Keep normal authoring small; the prototype's resolve/resume/cancel probes do not
-establish a product workflow. Unused preparation damage must not become an edit
-gate; selected submission dependencies remain verified. Physical reclamation,
+The prototype's recommendation led to the current discussion above. Keep normal
+authoring small; its resolve/resume/cancel probes do not establish a product
+workflow. Unused preparation damage must not become an edit gate; selected
+submission dependencies remain verified. Physical reclamation implementation,
 holds, delivery, stop/retirement/close, human handback and platform qualification
 remain explicitly open in DEVELOPMENT-PLAN. This report/account owns
 `.scratch/submission-prototype-01/` and the finite external specimens it identifies.

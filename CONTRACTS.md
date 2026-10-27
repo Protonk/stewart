@@ -294,13 +294,39 @@ early and provides informative failures from which the auditor can recover.
 The interface does not require a separate promotion of the same artifact bytes
 from disposable authoring state into custody.
 
+**Custody home and edit retention.** Accepted 2026-10-27 after the bounded
+prototype. Use persistent per-audit custody associated with the repository,
+outside the disposable auditor workspace, with an explicit audit reference.
+It survives helper exit and working-environment retirement. Auditor changes to the
+recorded answer pass through the submission tool; the actual grant/enforcement mechanism, exact
+location and repository move/backup behavior remain to be qualified. Repository
+association does not imply that an ordinary Git clone transfers custody.
+
+For the initial successor implementation, replacement and deletion change current
+answer membership immediately; superseded and deleted payloads remain internally
+held until authorized closure. This provides no draft status or general version-
+history service. Retention, holds, incomplete-operation evidence and the closing
+record's removal authority still govern what closure may actually remove.
+
+**The tool integration owns interrupted-operation accounting.** Accepted
+2026-10-27. Preserve an operation reference before dispatch. On supported re-entry,
+return its verified recorded outcome or complete that same authorized operation
+when its exact material, revision and authority still permit it. Surface genuine
+choices and retained uncertainty without requiring private-state repair or routine
+resolve/resume/cancel authoring stages. An interrupted addition may already have
+published an element before its reply was lost; completion must not add it twice.
+Equal content or names cannot identify a retry, since distinct additions may
+intentionally contain identical bytes. Exact auditor-facing retry syntax and the
+route that makes an interruption visible remain for design and qualification;
+recording an interruption alone establishes no delivery or resumed auditor.
+
 This undertaking is independent of manager delivery and retention after closure.
 It grants no manager access to live authoring material and selects no audit
 execution or restart facility. Add/replace/delete is the authoring direction;
 it grants no authority to rewrite exclusive historical receipts, release a hold,
 or erase failure evidence. Existing partial-work, hold and interrupted-operation
 obligations remain. Supported interruption cases, handle/version semantics,
-storage/access mechanism, physical reclamation of replaced/deleted material,
+storage/access mechanism, authorized end-of-lifetime reclamation,
 delivery and treatment at early close remain to be specified and
 qualified. No general draft-history service or runtime implementation is
 commissioned by this direction.
