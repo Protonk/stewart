@@ -175,6 +175,15 @@ not an unexpected ordinary late finding. Substantive reframing, refusal/blocked
 returns, valid-but-inadequate answers and unexpected findings remain open.
 This wave selects no durable interface, custody policy or implementation change.
 
+The user subsequently commissioned the [receipt-sufficiency challenge and
+provisional interface brief](coordination/receipt-challenge-01/COMMISSION.md)
+on 2026-10-27. Preparation uses a real retained acceptance record, two fresh
+authors in common/minimal forms, and four fresh readers of original/reduced
+selected support. All author source is available from the outset; controlled
+recipient omission is not an unexpected author finding. Independent preflight,
+concrete variant review and integration precede the final recommendation. This
+wave selects no product contract; W02 and operational qualification remain open.
+
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
 | W01 — Four bounded studies and construction execution complete; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
