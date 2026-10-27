@@ -42,3 +42,10 @@ Turnover checkpoint, 2026-10-27 00:24 UTC (2026-10-26 Pacific): the user request
 an ordinary turnover brief followed by stand-by. Preparation is recorded in
 88fd1e7. Do not resume dispatch merely because a new session has started; await
 the user's resumption. That stand-by does not revoke this pilot commission.
+
+Resumed 2026-10-27 01:36:51 UTC (2026-10-26 Pacific): the user supplied about
+70 minutes and instructed the coordinator to proceed. The stand-by is ended
+for this bounded pilot. execution-01/PROTOCOL.md records the concrete sequence
+and witness. Construction execution and product changes remain outside scope.
+The successful commit test at aa55bc7 permits root to resume ordinary Git
+recording of this authorized work; no further permission investigation is needed.

@@ -1,0 +1,302 @@
+{
+  "reviewer": "fresh_review",
+  "scope": "Initial preflight only, with two root-issued additional read grants",
+  "completed_at": "2026-10-27T01:50:36.850798+00:00",
+  "ordered_read_groups": [
+    "Initial brief",
+    "Parallel general instructions and three manifests; output-directory existence check",
+    "12 snapshot hash checks, then design documents",
+    "Protocol, original utility, author brief",
+    "Helper README and implementation",
+    "Additional grant and recipient template",
+    "Corrective pin and utility diff/AST; 17 input snapshot hash checks",
+    "Root-issued independent packet-verification source; no execution"
+  ],
+  "reads": [
+    {
+      "path": "coordination/fresh-authoring-01/review/BRIEF.md",
+      "mode": "complete semantic read",
+      "purpose": "Initial assignment and finite review grant"
+    },
+    {
+      "path": "AGENTS.md",
+      "mode": "complete semantic read",
+      "purpose": "Applicable project instructions"
+    },
+    {
+      "path": "coordination/STANDING-ORDERS.md",
+      "mode": "complete semantic read",
+      "purpose": "Applicable worker constraints"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/REVIEW-INPUTS.json",
+      "mode": "complete semantic read",
+      "purpose": "Exact review input pins"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/INPUTS.json",
+      "mode": "complete semantic read",
+      "purpose": "Witness timing and exact source/input pins"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/OPS-IDENTITY.json",
+      "mode": "complete semantic read",
+      "purpose": "Original operations identity"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/AGENTS.md",
+      "mode": "complete byte/hash read; content reviewed via original path",
+      "purpose": "Pinned preflight review input",
+      "sha256": "da88d6d8a33ddae2420015f80cd355c3e05907f82beacf3f27c816393787d0a6",
+      "bytes": 16283
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/STANDING-ORDERS.md",
+      "mode": "complete byte/hash read; content reviewed via original path",
+      "purpose": "Pinned preflight review input",
+      "sha256": "488425bd822288bb18799d6607694607d15400ff33c95a658eb2e4974a1463bb",
+      "bytes": 6402
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/review/BRIEF.md",
+      "mode": "complete byte/hash read; content reviewed via original path",
+      "purpose": "Pinned preflight review input",
+      "sha256": "e8a05b5f4019ea4248bca6f86121093c3fbde16897f204a45afb385f9f7f62b5",
+      "bytes": 2837
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/COMMISSION.md",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "48a9f482e63051abea5b631ef9f5f962e5947afc5e395557d39e6ed551be5df4",
+      "bytes": 3251
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/BRIEF.md",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "059f164acdef9f7f92415cce7a7ac986c36520aa81fd72d441315c0af2f66ac3",
+      "bytes": 12326
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/ASSESSMENT.md",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "d0e0cb5b92c6d9fadf64eaf23414f168552d90a6ab12621662feaefa20b2124f",
+      "bytes": 5083
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/PREPARATION-RESULT.md",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "73a370f27cad2eb1ddcb76baa92c6ffa5510b85767e1f248ebd4e9b2e2d91f98",
+      "bytes": 4466
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/execution-01/PROTOCOL.md",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "a3c0282c2e592a371f06dbff5a5f279b97257bbcf2defaffc9563488d71d8377",
+      "bytes": 4807
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/execution-01/pilot_ops.py",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "8602d5b1ca6f7692ecd14b9f3dac3abd7dab69310721fb95b893072d9ae4b824",
+      "bytes": 10029
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/author/BRIEF.md",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "8dd788cdc1919547c60922cb544bfb0309ea8286119a082ab185c9f98049e415",
+      "bytes": 4969
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/prototype/attempt-01/README.md",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "0088c67186a348c2c351760ee97a0af5ddbee23cef05a2c6e067d8eff2c63b9c",
+      "bytes": 6950
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs/coordination/fresh-authoring-01/prototype/attempt-01/submit.py",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Pinned preflight review input",
+      "sha256": "74e3d7c9f66c921ca38689ee84b8181e9fe071796df7b37d46808a0716c7b75c",
+      "bytes": 10418
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/AGENTS.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "da88d6d8a33ddae2420015f80cd355c3e05907f82beacf3f27c816393787d0a6",
+      "bytes": 16283
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/coordination/STANDING-ORDERS.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "488425bd822288bb18799d6607694607d15400ff33c95a658eb2e4974a1463bb",
+      "bytes": 6402
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/coordination/fresh-authoring-01/author/BRIEF.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "8dd788cdc1919547c60922cb544bfb0309ea8286119a082ab185c9f98049e415",
+      "bytes": 4969
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/coordination/fresh-authoring-01/prototype/attempt-01/README.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "0088c67186a348c2c351760ee97a0af5ddbee23cef05a2c6e067d8eff2c63b9c",
+      "bytes": 6950
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/coordination/fresh-authoring-01/prototype/attempt-01/submit.py",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "74e3d7c9f66c921ca38689ee84b8181e9fe071796df7b37d46808a0716c7b75c",
+      "bytes": 10418
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/coordination/fresh-authoring-01/COMMISSION.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "48a9f482e63051abea5b631ef9f5f962e5947afc5e395557d39e6ed551be5df4",
+      "bytes": 3251
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/coordination/fresh-authoring-01/BRIEF.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "059f164acdef9f7f92415cce7a7ac986c36520aa81fd72d441315c0af2f66ac3",
+      "bytes": 12326
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/coordination/fresh-authoring-01/ASSESSMENT.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "d0e0cb5b92c6d9fadf64eaf23414f168552d90a6ab12621662feaefa20b2124f",
+      "bytes": 5083
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/coordination/fresh-authoring-01/execution-01/PROTOCOL.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "a3c0282c2e592a371f06dbff5a5f279b97257bbcf2defaffc9563488d71d8377",
+      "bytes": 4807
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/.scratch/fresh-authoring-01/subject-01/AUDIT-PROTOCOLS-EXCERPTS.txt",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "de70d07a13b7d7c636dbbd345f090cbae3eebfb4bff8f42221ce5d40fb6ec5bc",
+      "bytes": 3074
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/.scratch/fresh-authoring-01/subject-01/QUESTION-TYPE-EXCERPTS.txt",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "a82010f6333bd306a82dcfafb447d44634e663e0340743bc16f6f998c112adee",
+      "bytes": 1625
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/.scratch/fresh-authoring-01/subject-01/QUESTION.md",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "0fb72116e76c35da957c90a85307e60289f6aaf078987a9ba2d96c5b30c1eb01",
+      "bytes": 4561
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/.scratch/fresh-authoring-01/subject-01/SUBJECT.json",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "d6c0d256a2bd79ad6ef2e2c2cc6bdd4f2f2d87d41f6dd612a3412a52ef14b664",
+      "bytes": 3430
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/.scratch/fresh-authoring-01/subject-01/_json.py",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "794f886883bab334582a4b16e9d60137498c2e7c2f3de259b0ce9680a05ada92",
+      "bytes": 1251
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/.scratch/fresh-authoring-01/subject-01/experiment-EXCERPTS.txt",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "c696cb91bb18eae6984ef83931f24aebfae73b5509cc2da7b6b22bc92b8895aa",
+      "bytes": 2561
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/.scratch/fresh-authoring-01/subject-01/ledger.py",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "e77d83e723d28385b73370832d6a2b0f2f87fcc84c6ad2905135d68eb0ee9696",
+      "bytes": 14504
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/inputs/.scratch/fresh-authoring-01/subject-01/test_stewart_ledger.py",
+      "mode": "complete byte/hash verification only",
+      "purpose": "Verify pre-dispatch input snapshot against INPUTS.json; subject code not executed or imported",
+      "sha256": "332e4a1ad8cd409b520ca7d11242ee7f2779e7aed5bbf0ab3376232c810c01ce",
+      "bytes": 14882
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/REVIEW-ADDITIONAL-01.json",
+      "mode": "complete semantic read",
+      "purpose": "Exact additional recipient-template grant",
+      "sha256": "fdb383a70a267adcbd6f34f0ff7a4956a388a41c3978866358e85c5334ddfde8",
+      "bytes": 452
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs-02/RECIPIENT-TEMPLATE.md",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Recipient boundaries and freeze/reveal task",
+      "sha256": "088e2b156c44eed9bdc01c4de1114ecc7d580e860c4a583f4a6139e45f6aa00a",
+      "bytes": 3744
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/OPS-IDENTITY-02.json",
+      "mode": "complete semantic read",
+      "purpose": "Exact corrective operations pin",
+      "sha256": "2a1fb2d0806d726a5d76428586be5349fd94b5d78ee65b155b38cecd54b5fdb6",
+      "bytes": 521
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs-03/pilot_ops.py",
+      "mode": "complete byte/hash read, AST parse without execution, full diff from semantically reviewed original",
+      "purpose": "Verify dual-root witness correction and unchanged surrounding utility",
+      "sha256": "ec6753fcb21ecd51d148e1d08a493e20e9936da565448aed3204a10f37bcccde",
+      "bytes": 10636
+    },
+    {
+      "path": "coordination/fresh-authoring-01/execution-01/verify_packets.py",
+      "mode": "complete semantic and byte/hash read",
+      "purpose": "Root-issued additional grant: inspect planned independent pre-dispatch verification gate; do not execute it",
+      "bytes": 6352,
+      "sha256": "c8ecef4d5adb404d19f5a30fae923c29f80682c90442478f6b262b08f5f558a9"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/PACKET-VERIFIER-IDENTITY.json",
+      "mode": "complete semantic read",
+      "purpose": "Root-issued gate correction grant; static confirmation of absent-object-directory handling",
+      "bytes": 468,
+      "sha256": "f8601dcf9651ef6f9bd41b443940895588e820ff0e66dac886cf4a5026929537"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/review-inputs-04/verify_packets.py",
+      "mode": "complete byte/hash read and complete diff from previously semantically reviewed checker",
+      "purpose": "Root-issued gate correction grant; static confirmation of absent-object-directory handling",
+      "bytes": 6352,
+      "sha256": "c8ecef4d5adb404d19f5a30fae923c29f80682c90442478f6b262b08f5f558a9"
+    }
+  ],
+  "out_of_grant_reads": [],
+  "executions": "Only shell cat/ls and /usr/bin/python3 -I -B standard-library read/hash/JSON/diff/AST and report writes. No subject, project, helper or authored construction execution.",
+  "notes": "Subject packet snapshots were read as bytes only to verify 17 input pins; their intellectual contents were not inspected. Own reports and these allowed manifests were reused while assembling the ledger."
+}

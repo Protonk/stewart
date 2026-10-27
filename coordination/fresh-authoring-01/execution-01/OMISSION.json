@@ -1,0 +1,20 @@
+{
+  "decided_at": "2026-10-27T01:54:03.750485+00:00",
+  "observer": "root",
+  "final_snapshot": ".scratch/fresh-authoring-01/pilot-01/final-submission-01/SNAPSHOT.json",
+  "final_snapshot_sha256": "ee265aca02630bd02e8f52db26591f83faaaf639abe05c0682da86d0c16174f3",
+  "omitted_id": "observe-proposed.py",
+  "omitted_bytes": 3420,
+  "omitted_sha256": "6a43854fa7b8da8435f5123cffb46df0cd1fa0ab356bedf7077f0bda36dfeca9",
+  "expected_inspection_loss": "The reader cannot inspect the exact proposed observer implementation: loading named pinned modules, reading the frozen fixture/specimens, emitting parse problems beside summary/prerequisites, and endpoint preservation behavior. It can still inspect the specimens and ledger logic.",
+  "remaining_support": "CONSTRUCTION.md, REVISION.md, RETURN.md and predictions describe intended observer behavior and name it; AUTHORED-IDENTITIES.json names its digest. These are retained. They do not supply the complete code. A newly reconstructed observer would be a different authored artifact.",
+  "duplicate_check": {
+    "exact_code_repeated_in_other_support": false,
+    "code_definition_repeated_elsewhere": []
+  },
+  "comparison": "r01 complete; r02 only this support text absent with honest unavailable descriptor; r03 same complete bytes and ID associations, reversed descriptor presentation order.",
+  "alternative_not_selected": "B-duplicate.jsonl is described as a single label substitution from A in multiple selected objects; omitting it risks an immediately reconstructable specimen rather than independent support loss.",
+  "firing_rule": "Require an observed loss of the named inspection and repair on revealing the original exact observer. Recommendation change is not required. If remaining prose suffices or the object is irrelevant to the recipient task, report a non-firing omission.",
+  "reveal": "Same original code bytes and ID to all three recipients, only after every first memo and read ledger is frozen.",
+  "limits": "One purposively selected omission, one author and one reader per arm; no causal interface or broad sufficiency claim. No subject execution."
+}

@@ -88,3 +88,11 @@ plan. No dispatch or behavioral run occurred during this turnover. The pilot
 remains authorized, but further work waits for the user's resumption. No worker
 or uncertain operation remains in flight. Fieldwork notes remain outside the
 project; they do not replace the ordinary turnover brief.
+
+## Resumed pilot — 2026-10-27 01:36:51 UTC
+
+The user supplied approximately 70 minutes and instructed root to proceed.
+execution-01/PROTOCOL.md and execution-01/PROGRESS.md own the new wave. Subject
+source remains 81b557a; development HEAD is aa55bc7. Root has prepared the author
+grant and a coordinator-mediated draft/final submission sequence with a witness
+before each invocation. No author has yet been dispatched.

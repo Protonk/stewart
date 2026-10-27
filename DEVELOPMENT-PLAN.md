@@ -131,6 +131,15 @@ Preparation checks do not constitute fresh-authoring or custody qualification.
 Commit 88fd1e7 records this preparation. The user subsequently requested turnover
 and stand-by: retain the existing pilot commission, with no further dispatch until
 the user resumes. Scope and unfinished preparation remain in the linked account.
+The user resumed the bounded pilot at 2026-10-27 01:36:51 UTC with about
+70 minutes available. [Execution protocol](coordination/fresh-authoring-01/execution-01/PROTOCOL.md)
+and [progress](coordination/fresh-authoring-01/execution-01/PROGRESS.md) own this
+continuation; source and assessment stay pinned. This grants construction and
+recipient inspection, not execution of the constructed experiment.
+The author and all three recipients have now returned both checkpoints/phases.
+The helper accepted draft and final selections; all 299 packet comparisons and
+50 final response identity checks passed. Independent integration review is
+next; this checkpoint does not yet assert a reviewed study conclusion.
 
 All items below are open unless their state says otherwise. F numbers are the
 sequence above, not authorizations. Detailed contract clauses govern beyond

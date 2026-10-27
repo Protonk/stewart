@@ -1,0 +1,87 @@
+{
+  "recipient": "r01",
+  "phase": "second",
+  "recorded_at": "2026-10-27T02:04:34.800353+00:00",
+  "grant": "Original inspection grant plus coordination/fresh-authoring-01/recipients/r01/REVEAL-GRANT.md; no execution or permission to follow referenced paths.",
+  "reads_in_order": [
+    {
+      "path": "coordination/fresh-authoring-01/recipients/r01/REVEAL-GRANT.md",
+      "mode": "full text",
+      "purpose": "Read exact additional grant and preserve first-phase outputs unchanged"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/reveal/r01/OBJECT.json",
+      "mode": "full text",
+      "purpose": "Identify additional selected support ID, role and encoding"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/reveal/r01/SUPPORT.txt",
+      "mode": "full text",
+      "purpose": "Inspect the newly supplied observer copy as unexecuted source"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/packets/r01/return/objects/object-10.txt",
+      "mode": "raw bytes",
+      "purpose": "Directly compare against the observer already present in the original packet"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/reveal/r01/SUPPORT.txt",
+      "mode": "raw bytes",
+      "purpose": "Check byte equality, byte count and SHA-256 against original object"
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/pilot-01/reveal/r01/OBJECT.json",
+      "mode": "JSON parse",
+      "purpose": "Read selected ID for the byte-comparison output"
+    },
+    {
+      "path": "coordination/fresh-authoring-01/recipients/r01/attempt-01/SECOND.md",
+      "mode": "raw byte read",
+      "purpose": "Verify saved second memo exists and is nonempty"
+    },
+    {
+      "path": "coordination/fresh-authoring-01/recipients/r01/attempt-01/READS-SECOND.json",
+      "mode": "JSON parse",
+      "purpose": "Read back own saved ledger"
+    }
+  ],
+  "inspection_commands": [
+    {
+      "command": "cat coordination/fresh-authoring-01/recipients/r01/REVEAL-GRANT.md"
+    },
+    {
+      "command": "cat .scratch/fresh-authoring-01/pilot-01/reveal/r01/OBJECT.json .scratch/fresh-authoring-01/pilot-01/reveal/r01/SUPPORT.txt"
+    },
+    {
+      "command": "/usr/bin/python3 -I -B - (inline script)",
+      "script": "from pathlib import Path\nimport hashlib, json\nold = Path(\".scratch/fresh-authoring-01/pilot-01/packets/r01/return/objects/object-10.txt\").read_bytes()\nnew = Path(\".scratch/fresh-authoring-01/pilot-01/reveal/r01/SUPPORT.txt\").read_bytes()\nmetadata = json.loads(Path(\".scratch/fresh-authoring-01/pilot-01/reveal/r01/OBJECT.json\").read_bytes())\nprint(json.dumps({\"id\": metadata[\"id\"], \"old_bytes\": len(old), \"new_bytes\": len(new), \"byte_equal\": old == new, \"old_sha256\": hashlib.sha256(old).hexdigest(), \"new_sha256\": hashlib.sha256(new).hexdigest(), \"method\": \"Standard-library byte comparison and SHA-256 only; neither file executed.\"}, indent=2))"
+    },
+    {
+      "command": "/usr/bin/python3 -I -B - (own read-ledger creation and readback)",
+      "inspection_scope": "Read SECOND.md as bytes and READS-SECOND.json with json.loads after exclusively creating the ledger; no additional task-source reads."
+    }
+  ],
+  "comparison_observation": {
+    "old_bytes": 3420,
+    "new_bytes": 3420,
+    "byte_equal": true,
+    "sha256": "6a43854fa7b8da8435f5123cffb46df0cd1fa0ab356bedf7077f0bda36dfeca9",
+    "scope": "Equality of selected copies only; no observer/ledger execution or continuous-preservation claim."
+  },
+  "out_of_grant_access": [],
+  "execution": {
+    "subject_executions": 0,
+    "observer_executions": 0,
+    "test_runs": 0,
+    "project_imports": 0,
+    "substitute_verifier_runs": 0,
+    "git_commands": 0,
+    "network_calls": 0,
+    "custody_operations": 0,
+    "claude_calls": 0,
+    "nested_agents": 0
+  },
+  "first_phase_preservation": "No writes to FIRST.md or READS-FIRST.json. Second-phase initial and final progress entries were appended only to PROGRESS.md.",
+  "other_commands": "Initial isolated standard-library Python progress append; shell cat here-document creating SECOND.md; final isolated standard-library Python exclusive READS-SECOND.json creation and progress append. These wrote only assigned output paths.",
+  "result": "Added support duplicates already inspectable observer bytes; grounds, recommendation and named execution dependencies remain unchanged. Saved separate second-phase outputs and stopped."
+}

@@ -1,0 +1,116 @@
+{
+  "kind": "first-checkpoint-actual-read-account",
+  "recorded_at": "2026-10-27T01:47:18.380224+00:00",
+  "author": "/root/fresh_author",
+  "reads": [
+    {
+      "path": "coordination/fresh-authoring-01/author/BRIEF.md",
+      "purpose": "Read the finite role grant and first-checkpoint obligations before beginning."
+    },
+    {
+      "path": "AGENTS.md",
+      "purpose": "Read project instructions, without following links outside the role grant."
+    },
+    {
+      "path": "coordination/STANDING-ORDERS.md",
+      "purpose": "Read worker checkpoint, authority and launch constraints; coordinator intake links were not followed."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/prototype/attempt-01/README.md",
+      "purpose": "Read exact envelope fields, permitted response kinds, caps and structural-acceptance limits; helper was not invoked."
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/subject-01/QUESTION.md",
+      "purpose": "Read the fixed question, observables, variation, preservation and stop rules; reread bytes for identity."
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/subject-01/SUBJECT.json",
+      "purpose": "Read supplied revision, source/packet pins and finite subject inventory; reread bytes for identity."
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/subject-01/ledger.py",
+      "purpose": "Read complete verifier/recorder source and derive predictions; reread bytes for identity without import or execution."
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/subject-01/experiment-EXCERPTS.txt",
+      "purpose": "Read the review and case schema constraints; reread bytes for identity."
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/subject-01/_json.py",
+      "purpose": "Read the distinct repeated-key control decoder contract; reread bytes for identity without import or execution."
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/subject-01/test_stewart_ledger.py",
+      "purpose": "Read written source assertions as examples, not observed trials or an answer key; reread bytes for identity without execution."
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/subject-01/QUESTION-TYPE-EXCERPTS.txt",
+      "purpose": "Read the construction recipe; reread separately after combined output truncated part of this file, then read bytes for identity."
+    },
+    {
+      "path": ".scratch/fresh-authoring-01/subject-01/AUDIT-PROTOCOLS-EXCERPTS.txt",
+      "purpose": "Read construction/preservation/stop constraints; reread bytes for identity."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/review.json",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/A-complete.jsonl",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/B-duplicate.jsonl",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/C-note-invariant.jsonl",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/D-control-extinguished.jsonl",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/E-admission-before-reach.jsonl",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/F-parse-problem.jsonl",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/CONSTRUCTION.md",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/PREDICTIONS.md",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/support/observe-proposed.py",
+      "purpose": "Read own authored bytes to compute identity and embed exact selected UTF-8 text in the draft envelope; no execution."
+    },
+    {
+      "path": "coordination/fresh-authoring-01/author/attempt-01/DRAFT-NOTE.md",
+      "purpose": "Read own saved draft note for its identity and exact envelope support."
+    }
+  ],
+  "accidental_out_of_grant_access": [],
+  "non_file_context": [
+    "Received only the role dispatch and session instructions; no historical study answer or coordinator witness was sought."
+  ],
+  "execution_account": {
+    "project_imports": 0,
+    "subject_executions": 0,
+    "proposed_observer_executions": 0,
+    "tests_run": 0,
+    "helper_invocations": 0,
+    "network_calls": 0,
+    "git_mutations": 0
+  },
+  "notes": [
+    "Standard-library scripts assembled JSON/text and computed byte identities. Generated identities and this read account were embedded from in-memory text without rereading their saved files.",
+    "The source-reading output was inspected; a truncated recipe was reread in full. No grant links were followed."
+  ]
+}

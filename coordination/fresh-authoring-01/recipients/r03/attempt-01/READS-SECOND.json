@@ -1,0 +1,77 @@
+{
+  "reader": "r03",
+  "phase": "second",
+  "cwd": "/Users/raccoon/Desktop/Experiments/stewart",
+  "task": "Inspect exact added support and compare its contribution with the frozen first assessment",
+  "actual_files_first_read_order": [
+    {
+      "n": 1,
+      "path": "coordination/fresh-authoring-01/recipients/r03/REVEAL-GRANT.md",
+      "mode": "text",
+      "purpose": "Read the exact additional read grant, unchanged restrictions and separate-output requirement"
+    },
+    {
+      "n": 2,
+      "path": ".scratch/fresh-authoring-01/pilot-01/reveal/r03/OBJECT.json",
+      "mode": "text",
+      "purpose": "Identify the added selected support as observe-proposed.py, an unexecuted proposed observer"
+    },
+    {
+      "n": 3,
+      "path": ".scratch/fresh-authoring-01/pilot-01/reveal/r03/SUPPORT.txt",
+      "mode": "text, then raw bytes for SHA-256",
+      "purpose": "Inspect the added observer source and compare its byte identity to the selected observer inspected in phase one"
+    }
+  ],
+  "inspection_commands": [
+    {
+      "order": 1,
+      "command": "cat coordination/fresh-authoring-01/recipients/r03/REVEAL-GRANT.md",
+      "read_entries": [1],
+      "exit_code": 0
+    },
+    {
+      "order": 2,
+      "command": "cat .scratch/fresh-authoring-01/pilot-01/reveal/r03/OBJECT.json .scratch/fresh-authoring-01/pilot-01/reveal/r03/SUPPORT.txt",
+      "read_entries": [2, 3],
+      "exit_code": 0
+    },
+    {
+      "order": 3,
+      "command": "/usr/bin/python3 -I -B - <<'PY'\nimport hashlib\nimport json\nfrom pathlib import Path\npath = Path('.scratch/fresh-authoring-01/pilot-01/reveal/r03/SUPPORT.txt')\nraw = path.read_bytes()\ndigest = hashlib.sha256(raw).hexdigest()\nprint(json.dumps({'path': str(path), 'bytes': len(raw), 'sha256': digest, 'matches_first_phase_selected_observer_identity': len(raw) == 3420 and digest == '6a43854fa7b8da8435f5123cffb46df0cd1fa0ab356bedf7077f0bda36dfeca9', 'inspection': 'Byte identity only; no authored or subject code executed'}, indent=2))\nPY",
+      "read_entries": [3],
+      "exit_code": 0,
+      "result": {
+        "bytes": 3420,
+        "sha256": "6a43854fa7b8da8435f5123cffb46df0cd1fa0ab356bedf7077f0bda36dfeca9",
+        "matches_first_phase_selected_observer_identity": true
+      }
+    }
+  ],
+  "comparison_basis": "The existing first-phase context includes the complete frozen first memo, read ledger and observer inspection. No original packet file or own output was reread from disk in this phase.",
+  "already_available_material": "Original return/objects/object-10.txt, support ID observe-proposed.py, was fully read and byte-hashed in phase one.",
+  "new_substantive_support": "None. The added observer copy has the same bytes and SHA-256 as the previously selected observer. Its new delivery metadata and point-in-time identity match are the only additions.",
+  "out_of_grant_access": [],
+  "no_out_of_grant_access_observed": true,
+  "references_not_followed": "No path mentioned by the reveal metadata or observer source was followed; no other roles, histories, witness, original author scratch, coordinator notes, plans or later material was accessed.",
+  "execution": {
+    "project_imports": 0,
+    "authored_code_executions": 0,
+    "subject_executions": 0,
+    "trials_or_tests": 0,
+    "substitute_verifier_executions": 0,
+    "git_commands": 0,
+    "network_calls": 0,
+    "claude_sessions": 0,
+    "nested_agents": 0,
+    "permitted_python_use": "One standard-library byte/hash inspection, printed as JSON; no subject semantics executed"
+  },
+  "writes": [
+    "Appended second-phase initial checkpoint to the existing owned PROGRESS.md",
+    "Created separate SECOND.md and READS-SECOND.json in the owned attempt directory",
+    "Appended final second-phase progress checkpoint"
+  ],
+  "first_phase_outputs_revised": false,
+  "recommendation": "Unchanged: commission the six evaluations once the execution grant, exact staging, interpreter/environment record and preservation/output-capture arrangement are concrete.",
+  "stop": "Separate second memo and read ledger saved; no further inspection or execution undertaken."
+}
