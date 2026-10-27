@@ -34,12 +34,18 @@ the named actor's acknowledgment that intake remains incomplete and the named
 custodian retains all partial bytes and diagnostics; it never deletes anything
 or labels the commission accepted. It cannot abandon a verified accepted bundle.
 
-`inspect` returns JSON with acceptance identity, original commission inventory,
-declared authority and individual verification results. `read` writes one verified
-member's exact bytes to stdout and a JSON qualification to stderr. It can recover
+`inspect` returns JSON with the observed intake state and, when its intent is
+valid, the original request and commission inventory. An incomplete acknowledgment
+does not erase that original undertaking or imply acceptance. Accepted bundles
+also expose acceptance identity and individual verification results.
+
+`read` requires a supported accepted bundle and writes one verified member's
+exact bytes to stdout and a JSON qualification to stderr. It can recover
 a selected verified member even when a different payload is missing; it never
 claims whole-bundle integrity in that case. `@request` retrieves the original
-request bytes. Reader commands never consult original source paths or execute
+request bytes from a supported accepted bundle. Incomplete inspection describes
+the original request and retained inventory; it does not promise complete raw
+originals or provide incomplete-material retrieval. Reader commands never consult original source paths or execute
 recorded code. A bundle can be moved as a whole.
 
 The returned receipt SHA-256 is a reference the caller can retain. Supply it to
@@ -83,8 +89,8 @@ there is no global registry and no recency-based selection.
 
 Bounds: 128 members, 16 MiB per member, 128 MiB total payload, 1 MiB request.
 The original request counts separately from payload. Nonempty custodian, grants,
-limits and views are required. Input file permissions/executable bits and source
-paths are reported as provenance only; this bundle does not reconstruct a runnable
+limits and views are required. Source paths are provenance only; file modes and
+executable permissions are not recorded. This bundle does not reconstruct a runnable
 environment or promise an atomic multi-file snapshot. Expected identities define
 the selection, and each copied file is checked for observed change during reading.
 

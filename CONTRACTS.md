@@ -244,6 +244,10 @@ at the designated destination. Neither path overwrites records, conceals unmet
 acceptance nor grants deletion or another investigation. Unrecorded or unverified
 disposition remains unresolved. A lost success reply is recovered from the
 existing verified record, not by guessing whether an operation ran.
+An acknowledged incomplete intake still exposes its valid recorded request and
+selection for inspection. Acknowledgment changes the outcome, not the original
+undertaking. Damaged intent keeps its diagnostics rather than an invented request;
+incomplete inspection does not promise complete raw originals or acceptance.
 
 This intake and readback form one useful feature. A separate reader preview is
 not commissioned or required first. This supersedes the earlier status-first

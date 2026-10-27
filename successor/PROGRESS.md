@@ -44,3 +44,22 @@ worker release SHA-256:
 `b057d64cf010c28554ae087b2da4f4ae5ac8b0834ea8bed863d3cfcc99ddd1b2`.
 Code edits are stopped and parent owns integration/independent acceptance. No
 worker commit, baseline runtime mutation, result schema or audit launch occurred.
+
+2026-10-27 audit-driven repair resumed under saved AUDIT-FIX.md. Parent confirmed
+an actual auditor prediction: valid original undertaking disappears from inspect
+following incomplete acknowledgment. Scope is inspection projection plus guide
+corrections, not receipt rewrites, incomplete raw retrieval or future results.
+Next: retain a failing focused regression against current code, fix validated
+request presentation, run full Rust tests/release offline and return identity.
+
+
+Audit repair completed. Focused regression failed as predicted before repair
+(1 failed, 14 filtered), retained at evidence/audit-regression-before.*. Updated
+inspection keeps validated request_id, original_undertaking and intent_sha256
+after disposition; invalid intent still exposes diagnostics and no inferred
+undertaking. Full suite test-04 passed 15/15, no unit tests; release-03 succeeded.
+README now states modes are not recorded and raw read/@request requires an
+accepted bundle. Final release SHA-256:
+`dbcf332cbba5ecf7ee74491ffe80875df82af64418b09215d9f6ca22459d8bbd`.
+Only successor/ changed. No historical receipt, audit snapshot or return was
+edited. Parent owns before/after verification and preservation. Code stopped.

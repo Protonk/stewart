@@ -392,6 +392,9 @@ fn damaged_intent_acknowledgment_preserves_unresolved_original() {
     let i = c.inspect();
     assert_eq!(i.status.code(), Some(3));
     assert_eq!(value(&i)["state"], "unresolved_acknowledged");
+    assert!(value(&i).get("original_undertaking").is_none());
+    assert!(value(&i).get("request_id").is_none());
+    assert!(value(&i)["original_intent_diagnostic"].is_object());
     assert_eq!(fs::read(c.bundle.join("INTENT.json")).unwrap(), b"{");
 }
 
@@ -472,4 +475,45 @@ fn disposition_binding_is_shared_by_inspection_intake_and_replay() {
     fs::write(&path, raw).unwrap();
     ok(&c.inspect());
     assert_eq!(reason(&c.intake("accept")), "intake_disposed");
+}
+
+#[test]
+fn incomplete_acknowledgment_preserves_original_undertaking_without_sources() {
+    let c = Case::new("incomplete-recall");
+    let requested = c.request_value();
+    fs::write(&c.material, b"changed after request").unwrap();
+    assert_eq!(reason(&c.intake("accept")), "binding_mismatch");
+    let before = value(&c.inspect());
+    assert_eq!(before["state"], "incomplete");
+    assert_eq!(before["original_undertaking"], requested);
+    let intent = fs::read(c.bundle.join("INTENT.json")).unwrap();
+    // These are test input files, removed to distinguish retained recall from
+    // accidentally reconstructing the request from live manager sources.
+    fs::remove_file(&c.request).unwrap();
+    fs::remove_file(&c.question).unwrap();
+    fs::remove_file(&c.material).unwrap();
+    let acknowledgment = c.run(&[
+        "abandon",
+        "--bundle",
+        c.bundle.to_str().unwrap(),
+        "--actor",
+        "manager",
+        "--reason",
+        "Keep incomplete copies; originals unavailable",
+    ]);
+    ok(&acknowledgment);
+    let after_output = c.inspect();
+    ok(&after_output);
+    let after = value(&after_output);
+    assert_eq!(after["state"], "incomplete_acknowledged");
+    assert_eq!(after["request_id"], before["request_id"]);
+    assert_eq!(
+        after["original_undertaking"],
+        before["original_undertaking"]
+    );
+    assert_eq!(after["intent_sha256"], before["intent_sha256"]);
+    assert_eq!(fs::read(c.bundle.join("INTENT.json")).unwrap(), intent);
+    assert!(!c.bundle.join("ACCEPTED.json").exists());
+    assert_eq!(reason(&c.read("@request")), "missing");
+    assert_eq!(reason(&c.read("question")), "missing");
 }

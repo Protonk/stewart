@@ -580,10 +580,16 @@ fn inspect(bundle: &str, pin: Option<&str>) -> Result<(Value, i32)> {
         } else {
             3
         };
-        return Ok((
-            json!({"schema":"stewart.commission-inspection/1","state":a.status,"bundle":bundle,"disposition":a,"original_intent_diagnostic":loaded.as_ref().err(),"inventory":safe::snapshot(&d)?}),
-            code,
-        ));
+        let mut observation = json!({"schema":"stewart.commission-inspection/1","state":a.status,"bundle":bundle,"disposition":a,"original_intent_diagnostic":loaded.as_ref().err(),"inventory":safe::snapshot(&d)?});
+        // A disposition changes the intake outcome, not the original question.
+        // Only a validated intent supplies this projection; damaged intent keeps
+        // its diagnostic and cannot be reconstructed from live source paths.
+        if let Ok(l) = loaded.as_ref() {
+            observation["request_id"] = json!(&l.request.request_id);
+            observation["original_undertaking"] = json!(&l.request);
+            observation["intent_sha256"] = json!(digest(&l.intent_raw));
+        }
+        return Ok((observation, code));
     }
     let l = match loaded {
         Ok(l) => l,
