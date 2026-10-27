@@ -1,0 +1,139 @@
+{
+  "recipient": "r04",
+  "phase": "01",
+  "attempt": "attempt-01",
+  "scope": "Actual deliberate reads and material effects in this recipient turn. This is not a system-wide access log and does not claim filesystem isolation enforcement.",
+  "read_paths": [
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r04/BRIEF.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/PACKET.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/RETURN-MANIFEST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/RETURN.raw",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/primary.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/artifact-01.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/QUESTION.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/RECIPE.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/AVAILABILITY.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/ENTRIES.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/MANIFEST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/declaration-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/control-json-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/error-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/audit-id-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/commit-id-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/report-valid.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/report-mismatch.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/report-missing.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/report-invalid.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/report-partial-null.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01/subject/report-prose-variant.md"
+  ],
+  "commands_and_effects": [
+    {
+      "command": "cat /Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r04/BRIEF.md",
+      "effect": "Read recipient scope before packet inspection."
+    },
+    {
+      "command": "mkdir -p coordination/answer-revision-01/recipients/r04/attempt-01 .scratch/answer-revision-01/recipients/r04/attempt-01",
+      "effect": "Ensured only the two assigned attempt directories existed."
+    },
+    {
+      "command": "cat > coordination/answer-revision-01/recipients/r04/attempt-01/PROGRESS.md <<'EOF' ... EOF",
+      "effect": "Saved initial progress before reading packet contents."
+    },
+    {
+      "command": "rg --files /Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r04/phase-01",
+      "effect": "Listed packet paths only; no content search outside packet."
+    },
+    {
+      "command_template": "cat '<packet>/<file>'",
+      "files": [
+        "PACKET.json",
+        "RETURN-MANIFEST.json",
+        "subject/QUESTION.md",
+        "subject/RECIPE.md",
+        "subject/AVAILABILITY.md",
+        "primary.txt",
+        "artifact-01.txt"
+      ],
+      "effect": "Read inventories, question, recipe, availability and selected response; independent reads batched."
+    },
+    {
+      "command_template": "cat '<packet>/<file>'",
+      "files": [
+        "RETURN.raw",
+        "subject/ENTRIES.json",
+        "subject/MANIFEST.json",
+        "subject/declaration-source.txt",
+        "subject/control-json-source.txt",
+        "subject/error-source.txt",
+        "subject/audit-id-source.txt",
+        "subject/commit-id-source.txt"
+      ],
+      "effect": "Read raw selection, entries, subject inventory and all supplied source excerpts; independent reads batched."
+    },
+    {
+      "command_template": "cat '<packet>/<file>'",
+      "files": [
+        "subject/report-valid.md",
+        "subject/report-mismatch.md",
+        "subject/report-missing.md",
+        "subject/report-invalid.md",
+        "subject/report-partial-null.md",
+        "subject/report-prose-variant.md"
+      ],
+      "effect": "Read all six hypothetical reports; independent reads batched."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - <<'PY' ... PY",
+      "read_files": [
+        "PACKET.json",
+        "RETURN-MANIFEST.json",
+        "RETURN.raw",
+        "primary.txt",
+        "artifact-01.txt",
+        "subject/QUESTION.md",
+        "subject/RECIPE.md",
+        "subject/AVAILABILITY.md",
+        "subject/ENTRIES.json",
+        "subject/MANIFEST.json",
+        "subject/declaration-source.txt",
+        "subject/control-json-source.txt",
+        "subject/error-source.txt",
+        "subject/audit-id-source.txt",
+        "subject/commit-id-source.txt",
+        "subject/report-valid.md",
+        "subject/report-mismatch.md",
+        "subject/report-missing.md",
+        "subject/report-invalid.md",
+        "subject/report-partial-null.md",
+        "subject/report-prose-variant.md"
+      ],
+      "effect": "Used pathlib, hashlib and json from the standard library to read packet bytes, compare 20 inventory lengths/digests, compare selected return text, compare the target-only pair, and compare declaration suffixes in the prose pair. All checks matched. Created exclusive .scratch/answer-revision-01/recipients/r04/attempt-01/STATIC-INSPECTION.json. No subject code imported, compiled or executed."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - <<'PY' ... PY",
+      "effect": "Assembled this read log and FIRST.md from in-script text; wrote both with exclusive creation and appended a final checkpoint to PROGRESS.md. No further subject reads."
+    }
+  ],
+  "writes": [
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r04/attempt-01/PROGRESS.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipients/r04/attempt-01/STATIC-INSPECTION.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r04/attempt-01/FIRST.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r04/attempt-01/READS-FIRST.json"
+  ],
+  "ambient_influences": [
+    "Parent task, recipient brief, and provided AGENTS/developer guidance. These instructions were context, not independently inspected repository files."
+  ],
+  "not_performed": [
+    "subject imports/execution/tests",
+    "Git inspection or edits",
+    "network",
+    "source expansion",
+    "other participants or historical answer reads",
+    "nested agents",
+    "Claude",
+    "custody operations",
+    "deletion/pruning"
+  ],
+  "checkpoint_policy": "FIRST.md and READS-FIRST.json are frozen first-pass files; no later overwrite is intended. No claim of OS-level immutability is made."
+}

@@ -1,0 +1,164 @@
+{
+  "recipient": "r01",
+  "phase": "first selected return only",
+  "question_id": "declaration-status-preservation-01",
+  "record_scope": "Deliberate reads and relevant tool actions in this recipient turn, recorded from the commands used; not an exhaustive operating-system access log or proof of enforced isolation.",
+  "ambient_influences": [
+    "Parent bounded-task dispatch",
+    "Shared user AGENTS instructions and developer instructions in the conversation",
+    "The assigned BRIEF.md"
+  ],
+  "read_paths": [
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/BRIEF.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/PACKET.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/RETURN-MANIFEST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/QUESTION.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/RECIPE.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/AVAILABILITY.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/primary.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/RETURN.raw",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/artifact-01.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/artifact-02.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/artifact-03.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/artifact-04.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/ENTRIES.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/MANIFEST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/declaration-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/control-json-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/audit-id-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/commit-id-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/error-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-valid.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-mismatch.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-missing.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-invalid.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-partial-null.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-prose-variant.md"
+  ],
+  "own_output_read_paths": [
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipients/r01/attempt-01/INSPECTION-FIRST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/FIRST.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/PROGRESS.md"
+  ],
+  "actions": [
+    {
+      "command": "cat /Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/BRIEF.md",
+      "effect": "Read the sole assigned brief before packet inspection."
+    },
+    {
+      "command": "mkdir -p coordination/answer-revision-01/recipients/r01/attempt-01 .scratch/answer-revision-01/recipients/r01/attempt-01",
+      "effect": "Ensure only granted output directories exist."
+    },
+    {
+      "command": "cat > coordination/answer-revision-01/recipients/r01/attempt-01/PROGRESS.md with a quoted heredoc",
+      "effect": "Saved initial progress before substantive inspection."
+    },
+    {
+      "command": "rg --files .scratch/answer-revision-01/recipient-packets/r01/phase-01",
+      "effect": "Listed packet file paths; no contents outside the finite packet were requested."
+    },
+    {
+      "command_form": "cat <each listed packet path>",
+      "batches_relative_to_packet": [
+        [
+          "PACKET.json",
+          "RETURN-MANIFEST.json",
+          "subject/QUESTION.md",
+          "subject/RECIPE.md",
+          "subject/AVAILABILITY.md",
+          "primary.txt"
+        ],
+        [
+          "RETURN.raw",
+          "artifact-01.txt",
+          "artifact-02.txt",
+          "artifact-03.txt",
+          "artifact-04.txt",
+          "subject/ENTRIES.json",
+          "subject/MANIFEST.json",
+          "subject/declaration-source.txt",
+          "subject/control-json-source.txt",
+          "subject/audit-id-source.txt",
+          "subject/commit-id-source.txt",
+          "subject/error-source.txt"
+        ],
+        [
+          "subject/report-valid.md",
+          "subject/report-mismatch.md",
+          "subject/report-missing.md",
+          "subject/report-invalid.md",
+          "subject/report-partial-null.md",
+          "subject/report-prose-variant.md"
+        ]
+      ],
+      "effect": "Read every admitted packet file as text. Independent reads were batched with Promise.allSettled and every result was inspected."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - with inline standard-library script",
+      "effect": "Read PACKET.json and all 23 files it lists; recomputed bytes and SHA-256. Read RETURN.raw, RETURN-MANIFEST.json, primary and support text to compare selected content. Compared valid/mismatch and valid/prose bytes without importing, executing or emulating subject code. Wrote INSPECTION-FIRST.json only in the granted scratch attempt."
+    },
+    {
+      "tool": "apply_patch",
+      "effect": "Created FIRST.md and appended completion progress in the granted coordination attempt."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - with inline standard-library script",
+      "effect": "Read own INSPECTION-FIRST.json and own FIRST.md/PROGRESS.md to verify saved output, then created this READS-FIRST.json. This is the final write of the first read record."
+    }
+  ],
+  "byte_inspection_result": {
+    "inventoried_files_checked": 23,
+    "all_inventory_bytes_and_hashes_match": true,
+    "selection_checks": {
+      "primary_equals_raw_answer": true,
+      "supports": [
+        {
+          "id": "route-and-sites",
+          "file": "artifact-01.txt",
+          "text_equals_raw_support": true
+        },
+        {
+          "id": "entry-matrix",
+          "file": "artifact-02.txt",
+          "text_equals_raw_support": true
+        },
+        {
+          "id": "distinguishing-pairs",
+          "file": "artifact-03.txt",
+          "text_equals_raw_support": true
+        },
+        {
+          "id": "provenance-and-next-check",
+          "file": "artifact-04.txt",
+          "text_equals_raw_support": true
+        }
+      ]
+    },
+    "pair_checks": {
+      "valid_to_mismatch_only_expected_target_commit_line": true,
+      "valid_and_prose_declaration_suffix_identical": true
+    }
+  },
+  "output_checks": [
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/FIRST.md",
+      "bytes": 8637,
+      "sha256": "4c2eab302dd3e4e650348ef492dc348b16ac9f53ba380575e902064b08822702"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/PROGRESS.md",
+      "bytes": 904,
+      "sha256": "1dde6c61b8a3afa1746f9b3156237cbbb3aeb9aadf3b8827a5599204bbc9bbb3"
+    }
+  ],
+  "excluded_actions": [
+    "No live source or omitted implementation read",
+    "No Git inspection",
+    "No other recipient or author-process files",
+    "No historical or later-phase answers",
+    "No subject imports, execution, tests or installation",
+    "No network, Claude or nested agents",
+    "No custody operations, deletion or pruning"
+  ],
+  "freeze": "FIRST.md and this read record close the first checkpoint; stop after saving them."
+}

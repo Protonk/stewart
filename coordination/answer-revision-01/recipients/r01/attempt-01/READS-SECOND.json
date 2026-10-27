@@ -1,0 +1,213 @@
+{
+  "recipient": "r01",
+  "phase": "second selected return only",
+  "question_id": "declaration-status-preservation-01",
+  "record_scope": "Deliberate tool reads and relevant effects recorded from this second task; not an exhaustive operating-system access log or independent proof of enforced isolation.",
+  "ambient_influences": [
+    "The frozen first-phase context",
+    "Parent second-task dispatch and milestone reminder",
+    "Shared user AGENTS and developer instructions",
+    "The assigned first brief and SECOND-GRANT.md"
+  ],
+  "read_paths": [
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/SECOND-GRANT.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/FIRST.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/PACKET.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/RETURN-MANIFEST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/RETURN.raw",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/primary.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/artifact-01.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/artifact-02.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/artifact-03.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/artifact-04.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/consumer-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/AVAILABILITY.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/QUESTION.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/ENTRIES.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/RECIPE.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/declaration-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/control-json-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/audit-id-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/commit-id-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/error-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/report-valid.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/report-mismatch.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/report-missing.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/report-invalid.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/report-partial-null.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-02/subject/report-prose-variant.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/PACKET.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/RETURN-MANIFEST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/RETURN.raw",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/artifact-01.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/artifact-02.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/artifact-03.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/artifact-04.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/primary.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/AVAILABILITY.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/ENTRIES.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/QUESTION.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/RECIPE.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/audit-id-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/commit-id-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/control-json-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/declaration-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/error-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-invalid.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-mismatch.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-missing.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-partial-null.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-prose-variant.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipient-packets/r01/phase-01/subject/report-valid.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/READS-FIRST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipients/r01/attempt-01/INSPECTION-SECOND.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/SECOND.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/PROGRESS.md"
+  ],
+  "actions": [
+    {
+      "command": "cat /Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/SECOND-GRANT.md",
+      "effect": "Read the second-phase grant."
+    },
+    {
+      "command": "rg --files .scratch/answer-revision-01/recipient-packets/r01/phase-02",
+      "effect": "Listed only the newly admitted packet paths."
+    },
+    {
+      "command": "cat coordination/answer-revision-01/recipients/r01/attempt-01/FIRST.md",
+      "effect": "Reread the frozen first memo for comparison."
+    },
+    {
+      "command_form": "cat <each listed phase-two packet path>",
+      "batches_relative_to_packet": [
+        [
+          "PACKET.json",
+          "RETURN-MANIFEST.json",
+          "RETURN.raw",
+          "primary.txt",
+          "artifact-01.txt",
+          "artifact-02.txt",
+          "artifact-03.txt",
+          "artifact-04.txt",
+          "subject/consumer-source.txt",
+          "subject/AVAILABILITY.md",
+          "subject/QUESTION.md",
+          "subject/ENTRIES.json"
+        ],
+        [
+          "primary.txt",
+          "subject/RECIPE.md",
+          "subject/declaration-source.txt",
+          "subject/control-json-source.txt",
+          "subject/audit-id-source.txt",
+          "subject/commit-id-source.txt",
+          "subject/error-source.txt",
+          "subject/report-valid.md",
+          "subject/report-mismatch.md",
+          "subject/report-missing.md",
+          "subject/report-invalid.md",
+          "subject/report-partial-null.md",
+          "subject/report-prose-variant.md"
+        ]
+      ],
+      "effect": "Read selected answer, support, inventories and all supplied subject text. Independent calls were batched with Promise.allSettled. The first batch exceeded the aggregate display budget and truncated part of primary.txt; primary.txt was reread fully in the second batch. Relevant selected content was also available in RETURN.raw."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - with inline standard-library script",
+      "effect": "Read both packet inventories, all 23 listed second-phase files and their 22 common first-phase paths. Compared actual bytes, selected raw/text equality and pair differences. Read FIRST.md and READS-FIRST.json to record their hashes. Wrote INSPECTION-SECOND.json in the owned scratch attempt. Subject code was not imported, executed or emulated.",
+      "script_read_paths_record": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/recipients/r01/attempt-01/INSPECTION-SECOND.json"
+    },
+    {
+      "tool": "apply_patch",
+      "effect": "Created SECOND.md and appended a second-phase progress milestone. Did not modify FIRST.md or READS-FIRST.json."
+    },
+    {
+      "tool": "collaboration.send_message",
+      "effect": "Reported to the parent that SECOND.md and the milestone were saved and the read ledger was being finalized. No other recipient was contacted and no agent was spawned."
+    },
+    {
+      "command": "/usr/bin/python3 -I -B -S - with inline standard-library script",
+      "effect": "Read owned inspection output, reread both frozen first-checkpoint files to verify unchanged hashes, checked saved SECOND.md and PROGRESS.md, and created READS-SECOND.json exclusively. No new subject evidence was read."
+    }
+  ],
+  "inspection_results": {
+    "second_packet_files_checked": 23,
+    "all_inventory_bytes_and_hashes_match": true,
+    "new_packet_paths": [
+      "subject/consumer-source.txt"
+    ],
+    "old_packet_paths_not_repeated": [
+      "subject/MANIFEST.json"
+    ],
+    "unchanged_common_subject_files": 14,
+    "changed_common_subject_files": [
+      "subject/AVAILABILITY.md"
+    ],
+    "selection_checks": {
+      "primary_equals_raw_answer": true,
+      "support_count_matches": true,
+      "supports": [
+        {
+          "id": "complete-source-route",
+          "file": "artifact-01.txt",
+          "text_equals_raw_support": true
+        },
+        {
+          "id": "returned-case-matrix",
+          "file": "artifact-02.txt",
+          "text_equals_raw_support": true
+        },
+        {
+          "id": "distinguishing-pairs-and-projections",
+          "file": "artifact-03.txt",
+          "text_equals_raw_support": true
+        },
+        {
+          "id": "branch-limits-and-stop",
+          "file": "artifact-04.txt",
+          "text_equals_raw_support": true
+        }
+      ]
+    },
+    "pair_checks": {
+      "valid_to_mismatch_only_expected_target_commit_line": true,
+      "valid_and_prose_declaration_suffix_identical": true
+    }
+  },
+  "frozen_first_preservation_checks": [
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/FIRST.md",
+      "bytes": 8637,
+      "sha256": "4c2eab302dd3e4e650348ef492dc348b16ac9f53ba380575e902064b08822702",
+      "unchanged_from_second_inspection": true
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/READS-FIRST.json",
+      "bytes": 8968,
+      "sha256": "ab519b303a3f46e2dd9e9739e0d2718f7439df55d8aab213ddf9058eedaa336d",
+      "unchanged_from_second_inspection": true
+    }
+  ],
+  "saved_output_checks": [
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/SECOND.md",
+      "bytes": 10522,
+      "sha256": "382f1c778df9769f5c9e72819c4dea225f6c5c2bd4f68661ee45542007125ce8"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/recipients/r01/attempt-01/PROGRESS.md",
+      "bytes": 1450,
+      "sha256": "00398bee38398da4c5fe1a7ed969ad9ecee3efc3a825be9f3ef336717b3dfd2e"
+    }
+  ],
+  "excluded_actions": [
+    "No live or omitted source read",
+    "No broader repository or Git inspection",
+    "No other recipient, author-process or unseen answer reads",
+    "No subject imports, execution, tests or installation",
+    "No network, Claude or nested agents",
+    "No custody operations, deletion or pruning",
+    "No overwrite of FIRST.md or READS-FIRST.json"
+  ],
+  "freeze": "SECOND.md and this read ledger close the second checkpoint. Stop after saving."
+}

@@ -1,0 +1,7 @@
+# Phase-two progress
+
+The release grant was explicitly activated after the phase-one freeze. I read RELEASE-GRANT.md and will inspect only its finite release and earlier granted material. SELECTED-01.json remains frozen. No conclusion from source arrival alone.
+
+Milestone: the release consumer matched its manifest size/digest. Its lines 92–94 call the supplied expectation helper and validator and pass the full validation dictionary through claims; lines 78–82 attach auditor attribution and the same validation context to both claim entries. Thus non-valid top-level null values do not erase mismatched declaration claims or diagnostic distinctions. All six report cases can now be traced end to end statically. Unavailable-session/read branches have reasons and no validation; a missing expected digest validates synthetic empty bytes with source null, which must not be called an observed declaration absence. Preparing a self-contained second selection with these bounds; no source execution or expanded access.
+
+Final milestone: phase-two account supports the bounded named use for supplied report reads, retains explicit availability/source qualifications and makes no runtime claim. PROCESS-02.md and READS-02.json are saved. SELECTED-02.json is being written exclusively after structural/size checks, with one self-contained artifact. First-phase records remain untouched. Stopping after this freeze.

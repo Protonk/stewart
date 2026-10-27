@@ -1,0 +1,70 @@
+{
+  "author": "a03",
+  "phase": "phase-02",
+  "scope": "Actual additional explicit file reads and command effects after release activation; not an OS trace or a reconstruction of unobserved infrastructure reads.",
+  "paths_read": [
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/authors/a03/RELEASE-GRANT.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/releases/a03/MANIFEST.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/releases/a03/consumer-source.txt",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/authors/a03/attempt-01/SELECTED-01.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/authors/a03/attempt-01/PROCESS-01.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/grants/a03/phase-01/consumer-source.txt"
+  ],
+  "commands_and_effects": [
+    {
+      "sequence": 1,
+      "command": "cat the explicitly activated a03 RELEASE-GRANT.md",
+      "effect": "Read the phase-two scope and record-preservation instructions."
+    },
+    {
+      "sequence": 2,
+      "command": "cat heredoc appended to PROGRESS.md; cat the release MANIFEST.json",
+      "effect": "Saved a phase-two initial milestone and read the release manifest."
+    },
+    {
+      "sequence": 3,
+      "command": "Independent cat commands: released consumer-source.txt; own SELECTED-01.json and PROCESS-01.md",
+      "effect": "Read newly admitted source text and reviewed the frozen first answer/process. The reads were dispatched together."
+    },
+    {
+      "sequence": 4,
+      "command": "/usr/bin/python3 -I -B -S with standard-library pathlib/hashlib/json heredoc",
+      "effect": "Read the release manifest, released consumer bytes and original packet consumer bytes; verified the release against its manifest and exact byte equality with the earlier source; exclusively wrote private RELEASE-CHECK-02.json. No subject code was executed."
+    },
+    {
+      "sequence": 5,
+      "command": "/usr/bin/python3 -I -B -S with standard-library pathlib/hashlib/json heredoc",
+      "effect": "Read SELECTED-01.json bytes and checked its previously recorded digest; exclusively wrote those same bytes to SELECTED-02.json; exclusively wrote PROCESS-02.md and READS-02.json; appended a final phase-two milestone to PROGRESS.md. No first-phase selection/process/read record was overwritten."
+    }
+  ],
+  "writes": [
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/authors/a03/attempt-01/PROGRESS.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/answer-revision-01/authors/a03/attempt-01/RELEASE-CHECK-02.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/authors/a03/attempt-01/SELECTED-02.json",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/authors/a03/attempt-01/PROCESS-02.md",
+    "/Users/raccoon/Desktop/Experiments/stewart/coordination/answer-revision-01/authors/a03/attempt-01/READS-02.json"
+  ],
+  "release_comparison": {
+    "equal_bytes": true,
+    "bytes_each": 1471,
+    "sha256_each": "740d401930db095afe945363f8037db18d46239190470372c76593c004ba655c",
+    "matches_release_manifest": true
+  },
+  "selection_comparison": {
+    "second_written_from_exact_first_bytes": true,
+    "bytes_each": 14761,
+    "sha256_each": "0e7d0687bb4b8770730e1eeffac6465320a928533248b3f778fc4b43ab054f63",
+    "substantive_change": "None; the release repeats source already used in the first account."
+  },
+  "not_performed": [
+    "subject imports or execution",
+    "tests",
+    "Git inspection or edits",
+    "wider source or other actor reads",
+    "network or installation",
+    "Claude or nested agents",
+    "custody operations",
+    "deletion or pruning"
+  ],
+  "observation_limits": "The file grant was followed as a behavioral restriction. No OS-enforcement claim, complete filesystem-observation claim, or elapsed-effort estimate is made."
+}
