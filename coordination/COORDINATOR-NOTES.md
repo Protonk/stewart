@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-27 after normal manager receipt/close and re-entry decisions.
+Updated 2026-10-27 during the narrow manager collect discussion.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -21,11 +21,16 @@ actions. CONTRACTS records these directions with implementation/qualification
 pending. Close ends the ability to ask for another copy from audit custody; it
 does not end independent manager-held access. Exact command spelling is open.
 
-The user explicitly leaves the no-submission/unfinished-return case open as thorny.
-Root's next proposed discussion case is recorded elements surviving an auditor
-that ceased authoring before submit: consider the same durable-copy route with
-explicit unsubmitted attribution, without inventing an auditor submission. That
-candidate is not yet accepted. Holds, failed preservation, stop evidence and work
+The user proposes a special manager-accessible collect function for the narrow
+case of recorded artifacts followed by ceased authoring without submit. Root's
+[candidate](submission-design-01/INTERACTION-SIMPLIFICATIONS.md#proposed-collect-for-recorded-but-unsubmitted-work)
+fixes the recorded selection with manager/Stewart attribution and delivers the
+ordinary durable copy. Root recommends atomically ending editing at collection,
+with a single winner against a concurrent submit and same-operation continuation.
+That terminal-authority/eligibility design is not yet accepted; no live-peek or
+audit-restart facility is selected. The function is not a required normal-return
+stage or a claim about stopping all processes. Broader unfinished-return cases
+remain open. Holds, failed preservation, stop evidence and work
 outside the helper retain their obligations; they must not recreate routine
 acceptance/triage/retain/export stages for a completed normal return.
 
@@ -37,7 +42,8 @@ account. No new implementation, worker, harness trial, delivery or removal is
 commissioned. Auditor notice/re-entry qualification remains open and is not a
 prerequisite for this discussion. This account owns the input/validation records
 in `.scratch/interaction-simplifications-01/` and the subsequent decision records
-in `.scratch/manager-return-direction-01/`; run-012 reflections remain separate.
+in `.scratch/manager-return-direction-01/` and
+`.scratch/manager-collect-discussion-01/`; run-012 reflections remain separate.
 
 ## Recent decisions: custody home and interrupted ordinary operations
 

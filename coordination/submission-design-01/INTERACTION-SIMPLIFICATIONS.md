@@ -83,7 +83,7 @@ Several manager simplifications are already decided:
 | Question | Current disposition |
 | --- | --- |
 | 1. What does normal receipt give? | Decided: a durable manager-held copy of the sealed manifest and selected material. Straightforward independent copying is preferred despite space cost. Actual receiving/delivery, destination and packaging remain unqualified; C's input evidence does not qualify output delivery. |
-| 2. What if no submission finished? | Explicitly open: the user calls this thorny and wants further discussion. Decide what current/partial material is returned, its provenance and qualifications, and the treatment of work outside the helper. No full-ledger reading requirement or automatic discard follows. |
+| 2. What if no submission finished? | Under discussion: the user proposes a special manager-accessible collect function for recorded artifacts whose author ceased authoring before submit. The bounded candidate below does not decide the whole incomplete-return case, physical stopping or work outside the helper. |
 | 3. What decision remains before ordinary close? | Decided: the manager asks whether its durable copy is somewhere safe and affirmatively closes, knowing audit-held copying will cease. No additional routine acceptance, follow-up, retain/export or backup-proof step. Existing exceptional obligations remain distinct from this completed normal path. |
 | 4. How does an interrupted manager return? | Decided interaction: help, status, then normal audit actions, with explicit audit/operation identity and supported continuation. CLI syntax is illustrative. Read-only status offers factual context; it neither guesses a selected audit nor imposes polling or certifies present backup safety. |
 
@@ -99,14 +99,55 @@ stop evidence must remain explicit. The user's ordinary-path choice is not silen
 authority to discard those obligations. Exact authority and presentation for such
 cases must fit the simplification rather than restore a routine lifecycle pipeline.
 
-The next discussion should start with one concrete incomplete case: the auditor
-successfully added elements, then ceased authoring before submit. Those bytes are
-already held, but no auditor-submitted answer exists. Coordinator candidate:
-once the selection can be fixed, provide its verified current contents through
-the same durable-copy route with an explicit unsubmitted/incomplete attribution.
-This is not yet selected and does not determine pending add effects, material
-outside the helper or physical retirement. Preserve auditor claims separately
-from Stewart's observations; do not manufacture an auditor submission.
+## Proposed collect for recorded but unsubmitted work
+
+The user asks whether a special manager-accessible `collect()` can handle the
+case where the auditor successfully added artifacts and then ceased authoring
+before submit. Root recommends pursuing that narrow fallback. This remains a
+candidate interface and semantics, not a runtime commission or an adopted grant
+to interrupt an otherwise live audit.
+
+Conceptual input is an explicit audit reference. Stewart selects the currently
+recorded elements; it need not obtain a prepare handle from the absent auditor.
+No submitted answer is invented. Candidate behavior:
+
+1. Verify the recorded selection and bind one fixed manifest. Required damaged or
+   unresolved records retain diagnostics; a pending addition is not silently
+   promoted into an acknowledged element or discarded as absent.
+2. Atomically seal that collection and end further add/replace/delete/submit for
+   that answer. A concurrent submit either commits first, in which case the
+   normal submitted return governs, or loses to collection and cannot replace
+   it afterward. No competing final returns or changing collected revisions.
+3. Attribute the act: the manager requested collection, Stewart fixed/verified
+   the recorded selection, and the auditor did not submit it. Artifact content
+   keeps its original attribution. This is not an intellectual incompleteness
+   judgment or a forged auditor completion declaration.
+4. Supply the same durable manager-held copy interface used by normal return.
+   The manager can then affirmatively close after deciding the copy is safe.
+   Another normal-path collect/triage/retain pipeline is not introduced.
+5. A repeat of the same collection undertaking returns or completes that same
+   fixed result/copy. An intentionally requested additional copy before close
+   still copies that result; it never selects later authoring work.
+
+This function is for recorded unsubmitted material. A normal submitted return
+does not need collection. It is not a live-view service, workspace sweep, general
+salvage mechanism, close, deletion or audit restart. Those distinctions constrain
+its supported claims rather than adding manager-operated phases.
+
+The consequential design edge remains explicit: how Stewart establishes that
+authoring has ceased, and what authority collect has if it has not. Silence is
+not evidence. Root recommends that any successful collect irrevocably end editing
+at the same boundary that fixes the result, so it cannot provide a live peek
+followed by resumed authoring. This does not establish that all processes/tools
+stopped or authorize environment removal. The precise eligibility/control check,
+whether collection may itself end an otherwise live authoring opportunity, and
+the actual copying route still need agreement and qualification.
+
+Empty selections, missing/corrupt held bytes, unfinished adds and material outside
+the helper are other incomplete cases; this proposal does not claim to settle
+them. The selected material and remaining obligations must be explicit before
+normal close can complete. Frozen Python's collect implementation and its staged
+workflow do not determine this successor function's meaning.
 
 ## Reading the earlier designs
 

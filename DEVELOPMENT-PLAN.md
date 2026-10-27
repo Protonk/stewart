@@ -197,6 +197,16 @@ holds, failed preservation and stopping obligations remain; routine triage or
 retain/export stages are not reintroduced for a completed normal return. The
 earlier auditor notice proof does not block this design discussion.
 
+The next narrow proposal is manager-accessible collect for artifacts successfully
+recorded before an auditor ceased authoring without submit. The
+[current candidate](coordination/submission-design-01/INTERACTION-SIMPLIFICATIONS.md#proposed-collect-for-recorded-but-unsubmitted-work)
+would seal the current recorded selection with explicit manager-collected rather
+than auditor-submitted attribution, then use the ordinary durable-copy/close path.
+Root recommends ending edits atomically and serializing against a late submit;
+eligibility/control authority and this terminal behavior remain for agreement.
+It adds no normal-return collection stage and claims no general workspace salvage
+or process stopping. No implementation or trial is commissioned by the question.
+
 ## Work register
 
 The coordinator owns integration and this register. Each dispatched item gains
