@@ -135,12 +135,20 @@ grant. Broader answer requirements, custody policy and operating-route evidence
 remain open. No protected obligation or durable schema has changed.
 
 The user subsequently commissioned [one bounded construction execution](coordination/construction-execution-01/COMMISSION.md)
-at 2026-10-27 03:43 UTC. Exact captured inputs, Python 3.14 qualification,
-independent preservation/capture and preflight review precede one observer
-invocation across A–F. Frozen predictions are compared without input tuning or
-rerunning; independent result review follows. Preparation is in progress and no
-observer has run at this checkpoint. This advances the inspected W01 construction
-case only; it adds no executor or broader study authorization.
+at 2026-10-27 03:43 UTC. After exact staging, interpreter qualification and
+independent preflight, one unchanged observer invocation completed six evaluations
+on CPython 3.14.9, exit 0 and empty stderr. All frozen predictions matched in
+107/107 captured-output comparisons. A/B retain equal raw counts and the firing
+control while membership diagnostics differ; C's complete summary is invariant,
+and D/E/F distinguish operands, event order and a separate parse gap. Inputs
+matched parent and child endpoint observations; continuous preservation remains
+unestablished. [The result](coordination/construction-execution-01/RESULT.md)
+owns exact capture and retention. Independent captured-result review passed
+215/215 with no remaining blocker; one prose correction precisely limits C's
+invariance to summary/prerequisites, with no parse problems. No target rerun or
+input tuning occurred. This advances the inspected W01 case
+only; it adds no executor or broader study authorization. Zero pytest nodes or
+installed-wheel runs were selected for this standalone frozen-source experiment.
 
 All items below are open unless their state says otherwise. F numbers are the
 sequence above, not authorizations. Detailed contract clauses govern beyond
@@ -149,7 +157,7 @@ its implementation is considered complete.
 
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
-| W01 — Three bounded studies complete; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
+| W01 — Three bounded studies and construction execution complete; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
 | W02 — Policy open | Select admitted-answer-only or complete-attempt custody; define setter acknowledgments, bounded snapshot assembly, attempt identities, corrections/finality, retrieval and lifetime. Decide partial work on early close, compulsory manager gap/follow-up responses and helper-independent human handback. [Keyhole decisions](KEYHOLE-OBLIGATIONS-FINDINGS.md#decisions-and-evidence-still-needed), [Riker assessment](KEYHOLE-OBLIGATIONS-FINDINGS.md#riker-and-the-transition). | W01 informs F3. Before F5, choose scope and update affected contracts explicitly. Test invalid final discriminator after substantial setters, full attempt versus call arguments, later-setter invariance, failed custody writing, racing/repeated finals and lost success replies. The prior coordinator's preference for attempt custody is not a decision. |
 | W03 — Architecture open | Decide A.1's formal admission rule and D's commission facilities, capture terms and retention promise, including R3's distinction from a voluntary hold. Identify any new auditor channel's effect on inherited assumptions. [Opening decisions](#opening-decision-round-a-narrow-custodial-core), [R3](#session-scoped-agent-guidance-reconciliation-2026-10-25). | F3, informed by W01/W02 and W04–W09. No executor does not adopt an exact-three-responsibilities formula. Test grants and recorded limitations against the actual commissioned view; admission is not a verdict on the answer. |
 | W04 — Workspace/history open | Decide B and F: plain subject files, history-only use, pinned history facility, and supported Git-aware/build/test capabilities. Resolve unrepresentable trees and name normalization as proposed decisions, not silent fixes. [B](CUSTODIAL-CORE-FINDINGS.md#b-the-workspace-representation), [F](CUSTODIAL-CORE-FINDINGS.md#f-the-form-of-the-history-facility). | Capability comparisons in F2; selected representation before F5. Verify selected object membership, absent unrelated/dangling/replacement objects, graft/shallow/partial limits, case/Unicode behavior and real tool usability. A shared backing store cannot expose its whole contents. |

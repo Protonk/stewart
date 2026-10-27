@@ -1,0 +1,315 @@
+{
+  "A-complete.jsonl": {
+    "parse_problem": null,
+    "parsed_rows": 10,
+    "prerequisites": [],
+    "raw_valid_compare_rows": 4,
+    "summary": {
+      "compared_without_admission": [],
+      "declaration_conflicts": [],
+      "duplicate_measurements": [],
+      "inconsistent_comparisons": [],
+      "malformed_rows": [],
+      "mismatching_cases": {
+        "control": [
+          "switch-control"
+        ],
+        "ordinary": []
+      },
+      "missing_declarations": [],
+      "missing_measurements": [],
+      "populations": {
+        "control": {
+          "admitted": 1,
+          "compared": 1,
+          "declared": 1,
+          "mismatches": 1,
+          "reached": 1,
+          "refused": 0
+        },
+        "ordinary": {
+          "admitted": 1,
+          "compared": 3,
+          "declared": 1,
+          "mismatches": 0,
+          "reached": 1,
+          "refused": 0
+        }
+      },
+      "sequence_problems": [],
+      "uncompared": [],
+      "undeclared": [],
+      "unexpected_admission": [],
+      "unexpected_measurements": [],
+      "unreached": [],
+      "unresolved_admission": [],
+      "unreviewed_cases": []
+    }
+  },
+  "B-duplicate.jsonl": {
+    "parse_problem": null,
+    "parsed_rows": 10,
+    "prerequisites": [
+      "missing measurements: parcel-check:label",
+      "duplicate measurements: parcel-check:seal"
+    ],
+    "raw_valid_compare_rows": 4,
+    "summary": {
+      "compared_without_admission": [],
+      "declaration_conflicts": [],
+      "duplicate_measurements": [
+        {
+          "case": "parcel-check",
+          "measurement": "seal"
+        }
+      ],
+      "inconsistent_comparisons": [],
+      "malformed_rows": [],
+      "mismatching_cases": {
+        "control": [
+          "switch-control"
+        ],
+        "ordinary": []
+      },
+      "missing_declarations": [],
+      "missing_measurements": [
+        {
+          "case": "parcel-check",
+          "measurement": "label"
+        }
+      ],
+      "populations": {
+        "control": {
+          "admitted": 1,
+          "compared": 1,
+          "declared": 1,
+          "mismatches": 1,
+          "reached": 1,
+          "refused": 0
+        },
+        "ordinary": {
+          "admitted": 1,
+          "compared": 1,
+          "declared": 1,
+          "mismatches": 0,
+          "reached": 1,
+          "refused": 0
+        }
+      },
+      "sequence_problems": [],
+      "uncompared": [],
+      "undeclared": [],
+      "unexpected_admission": [],
+      "unexpected_measurements": [],
+      "unreached": [],
+      "unresolved_admission": [],
+      "unreviewed_cases": []
+    }
+  },
+  "C-note-invariant.jsonl": {
+    "parse_problem": null,
+    "parsed_rows": 10,
+    "prerequisites": [],
+    "raw_valid_compare_rows": 4,
+    "summary": {
+      "compared_without_admission": [],
+      "declaration_conflicts": [],
+      "duplicate_measurements": [],
+      "inconsistent_comparisons": [],
+      "malformed_rows": [],
+      "mismatching_cases": {
+        "control": [
+          "switch-control"
+        ],
+        "ordinary": []
+      },
+      "missing_declarations": [],
+      "missing_measurements": [],
+      "populations": {
+        "control": {
+          "admitted": 1,
+          "compared": 1,
+          "declared": 1,
+          "mismatches": 1,
+          "reached": 1,
+          "refused": 0
+        },
+        "ordinary": {
+          "admitted": 1,
+          "compared": 3,
+          "declared": 1,
+          "mismatches": 0,
+          "reached": 1,
+          "refused": 0
+        }
+      },
+      "sequence_problems": [],
+      "uncompared": [],
+      "undeclared": [],
+      "unexpected_admission": [],
+      "unexpected_measurements": [],
+      "unreached": [],
+      "unresolved_admission": [],
+      "unreviewed_cases": []
+    }
+  },
+  "D-control-extinguished.jsonl": {
+    "parse_problem": null,
+    "parsed_rows": 10,
+    "prerequisites": [
+      "no control produced a nonzero disagreement; the instrument was not observed to fire",
+      "mismatch flags contradict recorded operands for: switch-control"
+    ],
+    "raw_valid_compare_rows": 4,
+    "summary": {
+      "compared_without_admission": [],
+      "declaration_conflicts": [],
+      "duplicate_measurements": [],
+      "inconsistent_comparisons": [
+        "switch-control"
+      ],
+      "malformed_rows": [],
+      "mismatching_cases": {
+        "control": [],
+        "ordinary": []
+      },
+      "missing_declarations": [],
+      "missing_measurements": [],
+      "populations": {
+        "control": {
+          "admitted": 1,
+          "compared": 1,
+          "declared": 1,
+          "mismatches": 0,
+          "reached": 1,
+          "refused": 0
+        },
+        "ordinary": {
+          "admitted": 1,
+          "compared": 3,
+          "declared": 1,
+          "mismatches": 0,
+          "reached": 1,
+          "refused": 0
+        }
+      },
+      "sequence_problems": [],
+      "uncompared": [],
+      "undeclared": [],
+      "unexpected_admission": [],
+      "unexpected_measurements": [],
+      "unreached": [],
+      "unresolved_admission": [],
+      "unreviewed_cases": []
+    }
+  },
+  "E-admission-before-reach.jsonl": {
+    "parse_problem": null,
+    "parsed_rows": 10,
+    "prerequisites": [
+      "no ordinary comparison was recorded",
+      "comparisons recorded while cases were not admitted: parcel-check",
+      "cases without an admission outcome: parcel-check",
+      "parcel-check: admission requires prior reach and cannot repeat"
+    ],
+    "raw_valid_compare_rows": 4,
+    "summary": {
+      "compared_without_admission": [
+        "parcel-check"
+      ],
+      "declaration_conflicts": [],
+      "duplicate_measurements": [],
+      "inconsistent_comparisons": [],
+      "malformed_rows": [],
+      "mismatching_cases": {
+        "control": [
+          "switch-control"
+        ],
+        "ordinary": []
+      },
+      "missing_declarations": [],
+      "missing_measurements": [],
+      "populations": {
+        "control": {
+          "admitted": 1,
+          "compared": 1,
+          "declared": 1,
+          "mismatches": 1,
+          "reached": 1,
+          "refused": 0
+        },
+        "ordinary": {
+          "admitted": 0,
+          "compared": 0,
+          "declared": 1,
+          "mismatches": 0,
+          "reached": 1,
+          "refused": 0
+        }
+      },
+      "sequence_problems": [
+        "parcel-check: admission requires prior reach and cannot repeat"
+      ],
+      "uncompared": [],
+      "undeclared": [],
+      "unexpected_admission": [],
+      "unexpected_measurements": [],
+      "unreached": [],
+      "unresolved_admission": [
+        "parcel-check"
+      ],
+      "unreviewed_cases": []
+    }
+  },
+  "F-parse-problem.jsonl": {
+    "parse_problem": {
+      "count": 1,
+      "line": 11,
+      "prefix": "invalid JSON row:"
+    },
+    "parsed_rows": 10,
+    "prerequisites": [],
+    "raw_valid_compare_rows": 4,
+    "summary": {
+      "compared_without_admission": [],
+      "declaration_conflicts": [],
+      "duplicate_measurements": [],
+      "inconsistent_comparisons": [],
+      "malformed_rows": [],
+      "mismatching_cases": {
+        "control": [
+          "switch-control"
+        ],
+        "ordinary": []
+      },
+      "missing_declarations": [],
+      "missing_measurements": [],
+      "populations": {
+        "control": {
+          "admitted": 1,
+          "compared": 1,
+          "declared": 1,
+          "mismatches": 1,
+          "reached": 1,
+          "refused": 0
+        },
+        "ordinary": {
+          "admitted": 1,
+          "compared": 3,
+          "declared": 1,
+          "mismatches": 0,
+          "reached": 1,
+          "refused": 0
+        }
+      },
+      "sequence_problems": [],
+      "uncompared": [],
+      "undeclared": [],
+      "unexpected_admission": [],
+      "unexpected_measurements": [],
+      "unreached": [],
+      "unresolved_admission": [],
+      "unreviewed_cases": []
+    }
+  }
+}

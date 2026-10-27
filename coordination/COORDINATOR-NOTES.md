@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 Pacific / 2026-10-27 UTC for the authorized construction run. This is a
+Updated 2026-10-26 Pacific / 2026-10-27 UTC for the completed construction run. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -21,14 +21,29 @@ Root owns `construction-execution-01/`, shared accounts/plans and
 `review/attempt-01/` and matching scratch. The [protocol](construction-execution-01/PROTOCOL.md)
 defines staging, interpreter qualification, one-launch reservation, capture,
 the 30-second guard and preservation limits. No observer or subject has executed
-at the preparation checkpoint. Preparation passed 60/60 checks, observing CPython
-3.14.9 with isolated/no-site/no-bytecode flags. Reviewer `/root/construction_run_review`
-returned READY from the saved [brief](construction-execution-01/review/BRIEF.md)
-and 63 frozen inputs at REVIEW-INPUTS-01.json. Root integrated its preflight and
-preserved two nonblocking check discrepancies (443/445 passes). A caught-parent-
-failure driver gap was fixed and reviewed before launch. The reviewer is stopped
-pending captured-result review. Next: record preparation, reserve the sole launch,
-capture and compare it, then resume independent review. All evidence stays
+at that initial checkpoint. Preparation then passed 60/60 checks, observing
+CPython 3.14.9 with isolated/no-site/no-bytecode flags. Reviewer
+`/root/construction_run_review` returned READY from the saved
+[brief](construction-execution-01/review/BRIEF.md) and 63 frozen inputs.
+Root integrated its preflight and retained two nonblocking comparison discrepancies
+(443/445 passes). A caught-parent-failure driver gap was fixed and reviewed before
+launch. Reviewed preparation is committed as 4bc6bd9.
+
+At 04:01:26 UTC the sole observer invocation ended: PID 69922, exit 0, empty
+stderr, eight captured records including all six A–F evaluations. Root read the
+raw output; its frozen comparator passed 107/107 and all predictions matched.
+Parent stage/witness and child endpoint identities agree; continuous preservation
+remains unestablished. [RESULT.md](construction-execution-01/RESULT.md) records
+the completed, independently reviewed result. The reviewer verified 48 frozen
+result inputs and passed 215/215 checks, with no remaining blocker. Root accepted
+one wording correction limiting C's invariance to its full summary/prerequisites,
+with no parse problems; emitted identity fields differ. Both drafts remain.
+The reviewer returned and is stopped, with no uncertain effect or further study
+phase pending. Final evidence/document checks passed 278/278 in FINAL-CHECKS-01.json; final Git
+recording and the committed-byte/evidence inventory are located by COMPLETION.json
+under this study's scratch root. Inspect that record and actual Git state after
+interruption; its absence means mechanical recording remains unfinished. Root
+stops at a clean checkpoint after recording, with no further dispatch. All evidence stays
 with this study, with no disposal or revision/rerun after an observed failure.
 
 ## Completed fresh-construction pilot

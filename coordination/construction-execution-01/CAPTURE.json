@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-27T04:03:03.883050+00:00",
+  "source": "local .scratch/construction-execution-01/observer.stdout",
+  "tracked_copy": "OBSERVATIONS.jsonl",
+  "exit_record": {
+    "at": "2026-10-27T04:01:26.297497+00:00",
+    "exit": 0,
+    "pid": 69922,
+    "stderr": {
+      "bytes": 0,
+      "ctime_ns": 1793073686253692932,
+      "device": 16777233,
+      "inode": 116755299,
+      "mode": 420,
+      "mtime_ns": 1793073686253692932,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout": {
+      "bytes": 9270,
+      "ctime_ns": 1793073686286611896,
+      "device": 16777233,
+      "inode": 116755298,
+      "mode": 420,
+      "mtime_ns": 1793073686286611896,
+      "sha256": "5b30fad3c0202277a008f54043107ff45ddf51dccbf8bec52405773c9d39dbcc"
+    }
+  },
+  "launch_plan": {
+    "argv": [
+      "/opt/homebrew/Cellar/python@3.14/3.14.9/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "-I",
+      "-B",
+      "-S",
+      "/Users/raccoon/Desktop/Experiments/stewart/.scratch/construction-execution-01/stage/specimens/observe-proposed.py",
+      "--packet",
+      "/Users/raccoon/Desktop/Experiments/stewart/.scratch/construction-execution-01/stage/packet",
+      "--specimens",
+      "/Users/raccoon/Desktop/Experiments/stewart/.scratch/construction-execution-01/stage/specimens"
+    ],
+    "at": "2026-10-27T04:01:26.253569+00:00",
+    "cwd": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/construction-execution-01/stage",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "TZ": "UTC"
+    },
+    "start_new_session": true,
+    "stderr": "observer.stderr",
+    "stdin": "DEVNULL",
+    "stdout": "observer.stdout",
+    "timeout_seconds": 30
+  },
+  "observer_invocations": 1,
+  "specimen_evaluations": 6,
+  "pytest_nodes": 0,
+  "installed_wheel_runs": 0,
+  "continuous_preservation_established": false
+}

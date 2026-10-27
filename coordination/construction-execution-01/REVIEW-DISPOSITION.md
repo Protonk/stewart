@@ -21,3 +21,19 @@ and the exact reviewed driver identity. It authorizes the already-commissioned
 single launch operationally; it is not new user permission or a product receipt.
 The reservation remains nonreusable even after failure. Result review is pending
 captured output; no specimen, observer or source change is permitted.
+
+## Captured result, 2026-10-27 04:08 UTC
+
+Root read RESULT-REVIEW.md and RESULT-REVIEW.json. Independent review passed
+215/215 with no exception or failed comparison and corroborated the full six
+predictions, exact eight-record capture, single launch, parent/child input
+identities, retained outputs and limits. No remaining substantive blocker.
+
+Accept the one prose correction: C's full summary and prerequisites are unchanged,
+with no parse problems; its emitted identity fields differ. The original “full
+result invariant” draft is frozen in result-review-inputs-01, and the reviewer
+retained/verified the corrected draft. Inputs, predictions and observations are
+unchanged. Root incorporated the review/counts in RESULT.md and shared accounts.
+The reviewer has returned and is stopped. Remaining work is final evidence and
+document verification plus ordinary Git recording, with no target rerun or
+further substantive dispatch.
