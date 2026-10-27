@@ -15,6 +15,13 @@ Audits can yield findings, unresolved questions, incomplete work, or accounts of
 
 ## How an audit works
 
+The first usable Rust successor feature is separately available as
+[`stewart-commission`](successor/README.md). It delivers a verified bundle of an
+original commission into manager-controlled storage and independently reads its
+retained bytes. It supports incomplete-intake completion or attributed disposition
+without deletion. Its acceptance does not launch an audit or undertake result
+custody; the Python workflow below continues to serve those operations.
+
 The workflow and harness permissions below describe the current Python
 implementation. [CONTRACTS.md](CONTRACTS.md) distinguishes its behavior from
 decided successor responsibilities; the successor access and custody boundaries

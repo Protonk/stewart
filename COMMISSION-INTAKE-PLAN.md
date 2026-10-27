@@ -79,7 +79,7 @@ comes after the custody choice, and belongs to this commission only.
 
 ## Implementation and C acceptance
 
-After settlement, establish the minimal Rust build/distribution and installed
+Implement the settled minimal Rust build/distribution and installed
 artifact checks for C. Implement shared verification only as needed by intake
 and its readback. Independent readback is part of C, not a separate A milestone.
 No broad status, launch, executor, result producer/reader or audit close operation
@@ -193,7 +193,15 @@ inspection are not acceptance criteria for C.
 
 Selected: C's scope, manager-custodied delivery and incomplete-intake disposition,
 and the subsequent authentic self-audit; A deferred unless experience justifies
-it. Root dispatched /root/commission_impl for successor/ implementation and
-prepared a separate frozen-workflow preparation assignment. No audit, fresh
-manager, investigator or Claude process has yet been launched. No original receipt, runtime or bundled guidance
-has been changed. Finish the shared interface, implement/qualify C, then run and preserve the bounded audit with separate claims.
+it. Both implementation and frozen-workflow preparation workers returned/stopped.
+Root reviewed C and independently qualified the release: 14/14 Rust integration
+tests and 46/46 installed-executable checks, with two real process interruptions.
+The [acceptance account](coordination/commission-intake-01/C-ACCEPTANCE.md) owns
+evidence and limits; `successor/evidence/` and
+`.scratch/commission-intake-01/` remain retained under it. The existing custody
+writer separately passed 63/63 selected installed-wheel nodes. Frozen role files
+have been copied into `audits/commission-recall`; no actual audit, fresh manager,
+investigator or Claude process has yet been launched. No original receipt,
+Python runtime or bundled guidance was changed. Next freeze the target and actual
+prompt, accept its original undertaking with C, and conduct/preserve the bounded
+audit with separate claims.

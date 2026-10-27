@@ -11,6 +11,8 @@ Status markers:
 
 - **Implemented.** The Python implementation exhibits the behavior and its
   tests protect it.
+- **Implemented in Rust.** The separately scoped successor implementation
+  exhibits the stated behavior; its user documentation states qualified limits.
 - **Decided, departure.** The behavior is decided and the Python implementation
   does not exhibit it. The successor implementation realizes it; the Python
   behavior is the control in the successor's acceptance evidence.
@@ -146,7 +148,8 @@ user subsequently selected no dedicated successor program executor, below;
 the possible audit restart convenience remains undecided.
 
 **Standard commission receipts support manager recall.** Decided direction,
-2026-10-27; **Decided, departure**, successor implementation pending. A manager
+2026-10-27; **Implemented in Rust** for the bounded commission-input delivery
+leg, with integration into the later audit service still pending. A manager
 supplies copies of material for which it is responsible. Stewart promptly returns
 detailed receipts for the commission and accepted input selection, independently
 of waiting for the auditor's result. Those receipts use a consistent, documented
@@ -168,8 +171,9 @@ The manager remains responsible for retaining a receipt/reference or knowing the
 standard access route. Losing both may require additional reconstruction work;
 Stewart does not promise general memory recovery or guess an audit by recency.
 The manager need not retain the original conversation to inspect the commission.
-Exact receipt schema, presentation/location, intake acknowledgment boundaries and
-retention after closure remain for design and qualification. The interface must
+The commission-input leg's receipt schema, presentation, explicit location and
+acknowledgment boundaries are documented in its user guide. Audit-service
+integration and retention after audit closure remain for design and qualification. The interface must
 be usable while the audit is live. This input-receipt decision does not settle
 custody of the auditor's partial answers or promise executable audit replay.
 
@@ -213,7 +217,9 @@ access and decides no workspace or history mechanism.
 
 ## First successor leg: commission-input acceptance
 
-Selected 2026-10-27. **Decided, departure**, implementation in progress.
+Selected 2026-10-27. **Implemented in Rust**, locally qualified on Apple Silicon
+macOS. The separate [commission-bundle guide](successor/README.md) states the
+interface and limits; this is not the full successor audit service.
 The first usable successor leg accepts a bounded
 commission-input selection, issues detailed receipts and supports independent
 verified readback of the original undertaking. Accepted materials must remain

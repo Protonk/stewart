@@ -27,9 +27,13 @@ uncommitted plan/contract/commission edits are admitted worker context.
 
 | Worker | Ownership and saved assignment | Observed state |
 | --- | --- | --- |
-| /root/commission_impl | `successor/`; `coordination/commission-intake-01/IMPLEMENTATION.md` | Dispatched; README interface saved, implementing offline Rust CLI. No commit authority. |
+| /root/commission_impl | `successor/`; `coordination/commission-intake-01/IMPLEMENTATION.md` | Returned/stopped. 14/14 integration tests, root review corrections integrated; release b057d64c… frozen. |
 | /root/commission_auditprep | `coordination/commission-intake-01/audit-preparation/`; `AUDIT-PREPARATION.md` | Returned and stopped; root read REPORT. Five read-only commands, 18 source identities, no custody effects. |
 
+Root's independent copied-binary check passed 46/46, including two real SIGKILL
+cases, under `acceptance-02/`; the earlier 44/44 run and review corrections remain
+recorded. [C acceptance](commission-intake-01/C-ACCEPTANCE.md) names evidence and
+qualified limits. Root copied verified frozen roles into `audits/commission-recall`.
 No actual auditor, fresh manager or later investigator has yet been dispatched.
 No Claude launch, transfer or new TURNOVER brief. Frozen Python requires checkout
 home outside all Git worktrees; use a fresh 0700 `/private/tmp` home when launching

@@ -1,0 +1,11 @@
+[package]
+name = "stewart-commission"
+version = "0.1.0"
+edition = "2024"
+description = "Bounded original-commission delivery and independently verified readback"
+
+[dependencies]
+libc = "=0.2.178"
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.147"
+sha2 = "=0.10.9"

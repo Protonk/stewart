@@ -222,6 +222,38 @@ refused removal is recorded, printed and fails the invocation.
 
 ## Qualification
 
+### Rust commission-input slice
+
+The independent crate under `successor/` supplies `stewart-commission`; its
+[user guide](successor/README.md) states the admitted inputs and custody boundary.
+Use the pinned Cargo.lock and locally provisioned dependency cache:
+
+```sh
+cargo test --locked --offline --manifest-path successor/Cargo.toml
+cargo build --locked --offline --release --manifest-path successor/Cargo.toml
+"$STEWART_BUILD/bin/python" -I -B scripts/check_commission.py --binary /absolute/stewart/successor/target/release/stewart-commission --evidence /absolute/new-commission-check
+```
+
+The external checker copies the executable, records its identity, and drives it
+from a fresh unrelated directory. It preserves exact small input witnesses,
+large-input identities, command streams and real process-interruption evidence.
+The chosen evidence directory must be new. Its START/RESULT records locate the
+retained working directory; do not remove that witness or the interrupted
+specimens during review. Rust integration tests retain their fixtures/streams
+under `successor/evidence/`, with unique run names; these are development evidence,
+not product storage. The citing report/plan owns their retention. Neither route
+deletes its artifacts or interprets an old passing result as a new run.
+
+Current qualification is Apple Silicon macOS with Rust 1.99.0. Linux/WSL support,
+host-wide confinement, storage replication and power-loss behavior are not
+established by the local comparisons. File/directory synchronization is part of
+the implementation, not a proof of the underlying device's durability. The Python
+installed-wheel checker qualifies only Python; it is used separately when that
+frozen writer operates an audit. No test of result inspection is a release gate
+for this commission-input slice.
+
+### Python baseline and wider successor
+
 Development and acceptance target Apple Silicon macOS with Python 3.14.
 POSIX APIs alone do not establish Linux or other-host support; qualify those
 hosts separately. Harness enforcement also needs its own explicit
