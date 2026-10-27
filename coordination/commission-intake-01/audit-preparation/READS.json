@@ -1,0 +1,160 @@
+{
+  "at": "2026-10-27T17:14:00.621404+00:00",
+  "scope": "Read-only source and environment inventory; no audit/build/installation/custody operation. Source excerpts also read through tool calls.",
+  "commands": [
+    {
+      "label": "cli-signatures",
+      "argv": [
+        "rg",
+        "-n",
+        "add_parser|--input-manifest|--checkout-home|--style|--auditor-stopped|--select|--output|--support|--collection|--triage",
+        "src/stewart/cli.py"
+      ],
+      "cwd": "/Users/raccoon/Desktop/Experiments/stewart",
+      "returncode": 0
+    },
+    {
+      "label": "binding-sites",
+      "argv": [
+        "rg",
+        "-n",
+        "^def |PACKAGE_SCHEMA|_SOURCE_FIELDS|_MANIFEST_FIELDS|source_bytes|source =|manifest =|follow_up|support_reviewed",
+        "src/stewart/handoff.py",
+        "src/stewart/triage.py"
+      ],
+      "cwd": "/Users/raccoon/Desktop/Experiments/stewart",
+      "returncode": 0
+    },
+    {
+      "label": "startup-home",
+      "argv": [
+        "rg",
+        "-n",
+        "manager-home|require_separate_home|prompt_commit_shape|target_drift|helper_command|def _render_handoff",
+        "src/stewart/_bootstrap.py",
+        "src/stewart/prepare.py"
+      ],
+      "cwd": "/Users/raccoon/Desktop/Experiments/stewart",
+      "returncode": 0
+    },
+    {
+      "label": "selected-tests",
+      "argv": [
+        "rg",
+        "-n",
+        "^def test_preparation_supplies|^def test_retention_publishes|^def test_selected_captured",
+        "tests/test_prepared_runtime.py",
+        "tests/test_stewart_triage.py",
+        "tests/test_stewart_handoff.py"
+      ],
+      "cwd": "/Users/raccoon/Desktop/Experiments/stewart",
+      "returncode": 0
+    },
+    {
+      "label": "environment",
+      "argv": [
+        "/Users/raccoon/Desktop/Experiments/stewart/.venv/bin/python",
+        "-I",
+        "-B",
+        "-c",
+        "import sys, importlib.util; from pathlib import Path; print(sys.version); print(sys.executable); print([(n, None if (s:=importlib.util.find_spec(n)) is None else s.origin) for n in ('build','hatchling','pytest','stewart')]); print([p.name for p in sorted(Path('.scratch/wheelhouse').iterdir())])"
+      ],
+      "cwd": "/Users/raccoon/Desktop/Experiments/stewart",
+      "returncode": 0
+    }
+  ],
+  "files": [
+    {
+      "path": "src/stewart/cli.py",
+      "size": 98785,
+      "sha256": "c08a27d819f6f48c0e118ec8601e80cde9fd031913f9b4a5750c07bfaf49cbf4"
+    },
+    {
+      "path": "src/stewart/assignment.py",
+      "size": 24873,
+      "sha256": "4a789ef351cadd819f8ce717bf7dc84684ada3476daed9020b931e9a346e742b"
+    },
+    {
+      "path": "src/stewart/workspace.py",
+      "size": 4332,
+      "sha256": "0d74c6094c4c993c1b64653bb80f4ca9f53d36472dc316bb025b0ead33c59c6b"
+    },
+    {
+      "path": "src/stewart/prepare.py",
+      "size": 26302,
+      "sha256": "18e97b20fdb930511bddcbaec3ab5384c33d2791132c4ebe0f9dc8e9e44b6e58"
+    },
+    {
+      "path": "src/stewart/coordination.py",
+      "size": 9148,
+      "sha256": "981cfa03de4b1e81f4d02e71bc98e2e02cb27c2c4b4a231f6f4fe58cbc8a348f"
+    },
+    {
+      "path": "src/stewart/collect.py",
+      "size": 36397,
+      "sha256": "ab81e516c275f6706a34e102491e8977268df30ca56ae59c5ce1c715b5104b54"
+    },
+    {
+      "path": "src/stewart/triage.py",
+      "size": 26290,
+      "sha256": "ac404d01f49f244a1d78477253e22785d23fc1902647fe25ad313be0f90f28bd"
+    },
+    {
+      "path": "src/stewart/handoff.py",
+      "size": 23610,
+      "sha256": "68c805403182bc87198a82d8cc9130b202df5a4705c45577af7714cea414edae"
+    },
+    {
+      "path": "src/stewart/report_declaration.py",
+      "size": 39501,
+      "sha256": "e65455b7e57e794627888e9cf2b971092e7e9ecb563db1529bcaa2b329bd84b4"
+    },
+    {
+      "path": "src/stewart/_bootstrap.py",
+      "size": 42082,
+      "sha256": "6f0b8a530ee71536add84ba76f5b8d4f54ed70eb7f79a37a6e9826dc72cb9526"
+    },
+    {
+      "path": "src/stewart/__main__.py",
+      "size": 633,
+      "sha256": "5491c986dcaf37397157e275b8bf27ff688ae556ac762e99e123916c5bb6e245"
+    },
+    {
+      "path": "src/stewart/docs.py",
+      "size": 945,
+      "sha256": "b616a447ff34a48caea78d71b46fec7fa3a15418d97a4c17fd5701e54c293c4e"
+    },
+    {
+      "path": "src/stewart/resources/README.md",
+      "size": 144443,
+      "sha256": "68f03e6eebac52d36fffe0ed51cb8e934d9efdd76d8a7122dade0529e4ab946d"
+    },
+    {
+      "path": "src/stewart/resources/AUDITOR.md",
+      "size": 1091,
+      "sha256": "71ddda03fa5dd428b63b06f5e74368e07c493b125924c2e34b6a16b01f086dc3"
+    },
+    {
+      "path": "src/stewart/resources/MAINTAINER.md",
+      "size": 1878,
+      "sha256": "9516635419cfdd26d67059fbb78da3c9127bc8050f251d4f2e8db4001af0da1f"
+    },
+    {
+      "path": "src/stewart/resources/QUESTION-TYPE.md",
+      "size": 11128,
+      "sha256": "a229525047d47d9b0838643d799cebcd8fd8b53595157d3d48d4c21ac071f4f7"
+    },
+    {
+      "path": "DEVELOPMENT.md",
+      "size": 13759,
+      "sha256": "8b91d2b5436b2ac656163421ec06d91ac696d61d2cbede349ab9cab7b04ab3f0"
+    },
+    {
+      "path": "README.md",
+      "size": 14625,
+      "sha256": "a3b0c705970756432c8f110175f8f13ccc63283dd3c492b4b39abaef1461b402"
+    }
+  ],
+  "pytest_nodes": 0,
+  "installed_wheel_runs": 0
+}

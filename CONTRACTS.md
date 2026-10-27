@@ -211,6 +211,52 @@ operation. Evaluate both for the particular commission and make the selected
 material and its limits intelligible. This tension grants no additional
 access and decides no workspace or history mechanism.
 
+## First successor leg: commission-input acceptance
+
+Selected 2026-10-27. **Decided, departure**, implementation in progress.
+The first usable successor leg accepts a bounded
+commission-input selection, issues detailed receipts and supports independent
+verified readback of the original undertaking. Accepted materials must remain
+recoverable without the originating process. Its acceptance promise, responsible
+custodian and accounting for incomplete intake must be explicit before the write
+interface is implemented.
+
+The user selected manager-custodied delivery: a verified, self-contained bundle
+is delivered into explicitly designated storage, and the named manager/custodian
+is responsible for preserving it thereafter. Acceptance means the entire
+selected original undertaking and its detailed receipt are present and verified
+at that destination; printing a path or digest alone is insufficient. It does
+not mean an audit has launched or a result is owed through this intake slice.
+C neither silently deletes delivered material nor undertakes a separate private
+retention service. Independent readback verifies retained bytes, diagnoses loss
+or damage and never silently substitutes live sources.
+
+Incomplete intake retains partial bytes and diagnostics. Its known reference
+supports completion within the original intent or explicit attributed
+acknowledgment/disposition as incomplete, with custody of partial material kept
+at the designated destination. Neither path overwrites records, conceals unmet
+acceptance nor grants deletion or another investigation. Unrecorded or unverified
+disposition remains unresolved. A lost success reply is recovered from the
+existing verified record, not by guessing whether an operation ran.
+
+This intake and readback form one useful feature. A separate reader preview is
+not commissioned or required first. This supersedes the earlier status-first
+implementation ordering for this leg, not the substantive status obligations of
+the later audit service. Commission receipts describe original question, inputs,
+guidance and declared grants/limits; they do not claim auditor activity or settle
+future result representation, inspection or custody.
+
+A subsequent bounded self-audit will exercise manager recall after a context
+discontinuity and give a later investigator the actual audit return without the
+original writer or working environment. An explicitly responsible existing
+custody process preserves that return. This is not a result-custody capability
+of commission intake. Record what the investigator needs, what artifacts support
+and what remains inaccessible or unsupported. Those observations inform whether
+a result reader preview, new producer-and-reader slice, transition tool or no
+additional feature is justified. Successful result inspection is not an acceptance
+criterion for the commission-input leg. No future reader or result schema is
+selected merely to stage this inquiry.
+
 ## Handoff and audit-owned facilities
 
 Agreed direction 2026-10-25. **Decided, departure.** The manager retains
@@ -292,7 +338,9 @@ Historical receipts are never rewritten to achieve that transition.
 ## Public status contract
 
 Decided 2026-10-23, reader scope narrowed 2026-10-25. **Decided, departure.**
-Status remains the first read-only operation the successor realizes. The
+The earlier status-first implementation order is superseded for the initial
+commission-input acceptance/readback leg selected above. Status remains owed
+for the later operational audit service. The
 Python corpus and status behavior supply comparison evidence for the selected
 contracts; they do not impose permanent support for every Python private-session
 or resource format. Before implementation, name the consumer and supported

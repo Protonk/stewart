@@ -1,0 +1,15 @@
+src/stewart/_bootstrap.py:162:    "pause_note_required", "pause_unacknowledged", "prepare_failed", "close_leftovers", "prompt_commit_shape", "prompt_digest", "prompt_drift", "reason_required",
+src/stewart/_bootstrap.py:167:    "startup_isolation", "support_unreviewed", "target_ancestry", "target_drift", "unassigned_prompt",
+src/stewart/_bootstrap.py:686:    source.add_argument("--manager-home", type=Path, help="private retained-deployment directory")
+src/stewart/_bootstrap.py:723:                                       "to select current source instead, use source --manager-home with a fresh absolute directory",
+src/stewart/prepare.py:32:    require_separate_home,
+src/stewart/prepare.py:122:        raise StewartError("prompt commit must be a normal one-parent commit", reason="prompt_commit_shape")
+src/stewart/prepare.py:125:        raise StewartError(f"prompt commit must change {ws.prompt} alone", reason="prompt_commit_shape")
+src/stewart/prepare.py:145:            reason="target_drift",
+src/stewart/prepare.py:180:    require_separate_home(home, repo=repo, worktrees=worktree_roots(repo), common=common, manager_home=manager_root,
+src/stewart/prepare.py:350:def _render_handoff(ws: Workspace, record: dict) -> str:
+src/stewart/prepare.py:355:    def helper_command(module, *extra):
+src/stewart/prepare.py:394:        + helper_command("inputs") + "\n```\n"
+src/stewart/prepare.py:404:        + helper_command("declaration", "start") + "\n```\n\n"
+src/stewart/prepare.py:409:        + helper_command("declaration", "set", "--completion", "complete",
+src/stewart/prepare.py:413:        + helper_command("declaration", "check", "--print") + "\n```\n"

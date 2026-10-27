@@ -1,33 +1,79 @@
 # Current coordinator account
 
-Updated 2026-10-27 for the first-leg consumer/population consultation.
+Updated 2026-10-27 for commissioned intake implementation and subsequent self-audit.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
+## Active: C intake implementation, then bounded self-audit
+
+The user selected C as the first usable successor leg, with acceptance/custody
+settled first, and explicitly selected manager-custodied delivery in response to
+the concrete custody question. CONTRACTS records the boundary: original
+undertaking, detailed receipts, independent readback, manager preservation after
+delivery, retained/accounted partial intake with supported completion or explicit
+incomplete disposition. A is not commissioned or prerequisite. The subsequent
+genuine self-audit gives a fresh manager a recall task and a later investigator
+the actual return without original writer/workspace access. Existing frozen
+Python custody preserves that return; C does not. Result inspection does not
+decide C acceptance or preselect a future result feature.
+
+Root owns `COMMISSION-INTAKE-PLAN.md`, shared contracts/vision/plan/account,
+`coordination/commission-intake-01/`, independent acceptance, audit management,
+evidence retention and Git. Source checkpoint eea8719, initially clean. Current
+uncommitted plan/contract/commission edits are admitted worker context.
+
+| Worker | Ownership and saved assignment | Observed state |
+| --- | --- | --- |
+| /root/commission_impl | `successor/`; `coordination/commission-intake-01/IMPLEMENTATION.md` | Dispatched; README interface saved, implementing offline Rust CLI. No commit authority. |
+| /root/commission_auditprep | `coordination/commission-intake-01/audit-preparation/`; `AUDIT-PREPARATION.md` | Returned and stopped; root read REPORT. Five read-only commands, 18 source identities, no custody effects. |
+
+No actual auditor, fresh manager or later investigator has yet been dispatched.
+No Claude launch, transfer or new TURNOVER brief. Frozen Python requires checkout
+home outside all Git worktrees; use a fresh 0700 `/private/tmp` home when launching
+the audit, rather than the assignment's initial in-workspace suggestion. Root
+will retain that environment until custody is settled; investigator exclusion
+does not require physical deletion. `.venv` has Python/build/test dependencies
+but no installed Stewart; wheelhouse exists. Root will qualify an installed
+frozen wheel before using its custody operations. Independent C evidence will
+be retained under `.scratch/commission-intake-01/`, owned by the intake plan.
+The frozen installed-wheel check selected 63/63 passing nodes (handoff, triage,
+inputs), recorded at `frozen-custody-check-01.json` there. The exact tested wheel
+is installed in `frozen-installed/`. Initial default-manager startup refused the
+outside-workspace destination; its original diagnostic remains. Explicit fresh
+manager home startup passed. `AUDIT-ENVIRONMENT.json` records the runtime and
+private manager/checkout homes. No audit exists yet. Root's independent installed
+C checker is `scripts/check_commission.py`; it retains witnesses and actual
+process-interruption evidence without deleting artifacts.
+
+Next: implement and independently verify C, then author the actual bounded
+question against that code/evidence, prepare/launch/capture through the existing
+workflow, and record investigator needs/support/gaps before choosing further work.
+
 ## Coordinator transition: agreed procedure, transfer not yet directed
 
-The next discussion is the first implementation leg's consumer and record
+The prior discussion concerned the first leg's consumer and record
 population. The user asked for this question alone to be briefed to Riker, under
 the user-relayed workflow in riker/RIKER.md. Root prepared the self-contained
 [opening](../riker/FIRST-LEG-CONSUMER-REQUEST.txt), with no required attachments,
 from checkpoint e68c251. It names the real record-population uncertainty and
 compares successor preview, bounded legacy reader and limited intake/receipt
-production. No option is selected by preparing the request. The user will relay
-the message and reply; no external message was sent or reply received here.
+production. Preparing the request selected no option. The subsequent explicit
+user direction selects C, as recorded above; no external message was sent here.
 Commission contents, custody/storage, answer distinctions and acceptance stay
 with the user and coordinator; damage/failure behavior gets a later separate
 sanity check. Root owns this request, plan/account update and recording; no agent or runtime work is
 dispatched. Validation/recording are under `.scratch/first-leg-riker-brief-01/`,
 owned by this account and the plan. The next step is to assess relayed advice
-and settle the consumer/population before designing the dependent interfaces.
+records the completed preparation; the active implementation supersedes its
+former next-step recommendation.
 
 The user agreed to plan an Opus 5.5 coordination leg at the next bounded implementation
-boundary, following a focused design round. F4's read-only foundation is the
-proposed first leg; no Rust implementation or Claude launch is commissioned by
-this discussion. Root remains the coordinator, with no incoming coordinator
+boundary, following a focused design round. C subsequently replaced the proposed
+read-only foundation and is commissioned under the settled custody boundary.
+No Claude launch is commissioned. Root remains the coordinator, with no incoming coordinator
 active and no parallel work queue. The user will direct the actual transfer.
 
 The user explicitly requires one coordinator at a time and durable guidance and

@@ -1,0 +1,3 @@
+tests/test_stewart_handoff.py:45:def test_selected_captured_bytes_survive_live_edits_and_source_removal_and_prepare(checkout, compact):
+tests/test_prepared_runtime.py:23:def test_preparation_supplies_every_issued_helper_without_project_sources(ready_project, run_cmd):
+tests/test_stewart_triage.py:35:def test_retention_publishes_the_reviewed_capture_not_the_live_report(checkout):

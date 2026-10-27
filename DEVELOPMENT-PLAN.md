@@ -3,8 +3,11 @@
 Current account, 2026-10-27. Stages 1–3 have completed their inquiries and
 semantic decisions; that does **not** mean their decided changes are implemented.
 Python remains frozen at `6582df2`, including bundled guidance. Stage 4 is in
-successor design, with empirical answer requirements ahead of the durable
-interface. Rust implementation and real-harness operating-route trials are not commissioned.
+successor implementation for the user-selected commission-input leg C, with a
+separate subsequent self-audit. Manager-custodied delivery is selected; broad
+audit runtime and real-harness operating-route trials remain outside this leg.
+[The intake plan](COMMISSION-INTAKE-PLAN.md) owns implementation, acceptance and
+the separately preserved self-audit.
 Stage 5 remains optional implementation of selected additional responsibilities.
 Click integration and a dedicated successor program executor are out of scope.
 
@@ -32,7 +35,7 @@ obligations return to the user. Preparing an assignment does not dispatch it.
 | F1 — Prepare the next inquiry | Make the answer corpus, route candidates, bounded legacy population and acceptance coverage concrete. The three first-wave briefs below can run independently when commissioned. | An accessible corpus with known gaps; candidate access/control/delivery routes and their unknowns; a trace from every register item to a decision, implementation assignment or explicit deferral. Concrete trials and their cost are ready for commissioning. |
 | F2 — Obtain discriminating evidence | Inventory real returns and compare common then question-specific answer forms. Qualify candidate access, stopping and delivery feasibility alongside this where their trial scope is approved. Test fresh authoring through a replaceable prototype after the representation comparison. Investigate workspace/history/tool capability and helper consumers as needed. | Evidence of answer usefulness, supported capabilities and credible operating routes. Separate representation evidence, prototype behavior and real-harness enforcement. No schema is selected merely because agents can fill it. |
 | F3 — Decide the connected successor design | Integrate F2 with A.1, B–F, the keyhole custody choices, R1–R3, and the close/hold/failure cases. Reconcile affected contracts and guidance. | A bounded commission, answer/context form, custody-start/finality policy, access and control arrangement, storage/lifetime model and supported recovery paths. Name which decided departures ship in stage 4, which are commissioned in stage 5 and which remain deferred, with dependencies. This scope decision precedes the write path. |
-| F4 — Implement the read-only foundation | On an implementation commission, select Rust/build/distribution tooling and establish CLI acceptance against frozen Python evidence. Implement bounded record verification and status first. A separately justified reader slice may start before all F3 decisions only if its consumer, record population and interfaces are already settled. | Verified read-only behavior for the admitted scope, honest unsupported-record diagnoses, schema/provenance decisions and an acceptance harness the write-path workers can use. The old Python-package reader is a candidate, not an automatic first assignment. |
+| F4 — Implement the commission-input leg | User-selected C combines original-input acceptance, detailed receipts and independent verified readback in Rust. Manager-custodied delivery and explicit incomplete-intake disposition precede the write interface. Establish tooling and installed-artifact acceptance for this scope. | Recoverable original undertaking without its originating process and supported completion/disposition. A separate A preview or broad status implementation is not a prerequisite. Conduct the subsequent actual self-audit with existing result custody; use investigator observations to decide later result work. |
 | F5 — Implement the selected write path | Integrate input preparation and owned facilities, launch/grants, submission custody, result retrieval/delivery, preservation and holds in that dependency order. Shared identity, request, record and error contracts precede parallel operation implementations. | End-to-end return availability and supported continuation/disposition of interrupted operations. Results survive loss of the original environment where promised. No automatic disposal is enabled on the strength of schema admission alone. |
 | F6 — Implement and qualify close last | Complete W17's live-Python-audit gate before Rust closes anything. Integrate one close entry point, including graceless exit, with verified stopping, preservation, hold release, retirement and final custody closure. Repeat prototype comparisons against the actual successor. | Useful answers plus integrated custody, control and removal evidence, including failure and omission controls. Automatic retirement, if adopted, has its own authorized trigger and acceptance evidence. Close never declares completion over unfinished obligations. |
 | F7 — Accept, transition and finish | Exercise the integrated release on macOS, Linux and actual WSL; finish user documentation and packaging. Finish the remaining bounded legacy transition and accept the commissioned scope, including any stage-5 additions integrated through F4–F6. | An explicit outcome for every register item and acceptance gap; settled legacy undertakings before withdrawing their writer; released documentation matching actual support. Retire plans/findings only when their purpose and evidence obligations are discharged. |
@@ -56,10 +59,12 @@ choice, not a prerequisite. General manager-workspace service remains deferred.
 The user agreed on 2026-10-27 to aim the Opus 5.5 coordinator transition at a bounded
 implementation leg after a focused connected-design round. Settle the first
 leg's promises, exclusions, record population/interfaces and acceptance cases;
-do not require completing every remaining research case first. The proposed
-first leg is F4's read-only Rust foundation, followed by assessment before a
-larger write-path commission. Implementation and a Claude launch remain separately
-commissioned. One coordinator owns the work at a time; coordination standing
+do not require completing every remaining research case first. The user then
+selected C, bounded commission-input acceptance and independent readback, as
+F4's first usable implementation leg. Manager-custodied delivery and explicit
+incomplete-intake disposition are settled in CONTRACTS; broader write-path work
+remains separate. A Claude launch remains separately commissioned.
+One coordinator owns the work at a time; coordination standing
 orders govern the explicit transfer and the requested thin briefing. There is
 no active incoming coordinator or transfer directive yet.
 
@@ -68,10 +73,13 @@ the other release choices, with a standalone Riker consultation prepared in
 [the request](riker/FIRST-LEG-CONSUMER-REQUEST.txt). The local coordinator and user
 will work on commission contents, custody/storage, answer distinctions and
 acceptance; damage/failure semantics receive a separate later sanity check.
-The request compares a successor-reader preview, a justified finite legacy
-reader and a small intake/receipt-and-reader feature without choosing among
-them. It is prepared for user relay; no reply or implementation commission has
-been received. Advice does not itself amend the selected scope or sequencing.
+The historical request compares three alternatives and remains unchanged. The
+user has now explicitly selected C and a subsequent genuine bounded self-audit,
+with a fresh manager recalling the original undertaking and a later investigator
+examining the actual preserved return. The existing custody process, not C,
+owns that return. Result inspection is not C acceptance. Observations determine
+whether any result reader, producer/reader or transition feature is warranted;
+A is not commissioned or prerequisite. The current intake plan owns this work.
 
 ## Standard commission receipts and manager recall
 
@@ -110,10 +118,11 @@ Carry this connected work into F2/F3 before the successor write path:
    close, disposal, retry, polling or notification guarantee.
 
 W05/W06 own storage and input binding, W12 the named commission-reader consumer,
-W18 the standard presentation/help, and W11 the interrupted-intake account. F4
-implements the settled read interface; F5 integrates immediate receipts with
-input acceptance and the separately qualified result/error route. These are
-planned design and qualification tasks, not a new experiment or runtime commission.
+W18 the standard presentation/help, and W11 the interrupted-intake account. The
+user-selected C leg now combines intake and its independent readback in F4,
+with manager-custodied delivery. F5 retains the broader audit/result route.
+The separately commissioned self-audit follows usable C and preserves its actual
+return through existing custody without determining a successor result schema.
 
 ## Work register
 

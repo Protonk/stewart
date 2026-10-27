@@ -129,8 +129,15 @@ without turning them into manager-operated stages. A portable result still
 serves a reader whose original environment is gone, but the earlier Python-
 package reader is a bounded legacy candidate rather than the default successor
 result model. The return route and launch/control arrangement require actual
-qualification. Read-only operations still precede the write path and close;
-independent work needs its own justified consumer and scope.
+qualification. The user selected bounded commission-input acceptance and its
+independent verified readback as the first usable successor leg. Settle its
+acceptance promise and outstanding custody responsibilities explicitly; a separate
+reader preview is neither selected nor a prerequisite. Keep its claims to the
+original undertaking. A genuine subsequent self-audit, preserved through an
+existing responsible custody process, supplies experience for any later result
+feature. Observe the investigator's needs without predetermining a new reader or
+making successful result inspection an acceptance criterion for commission intake.
+Close still follows qualified preservation and control.
 
 The user strongly prefers one manager-facing `close` command that closes an
 audit from any state. Design the stopping, partial-work accounting and custody
