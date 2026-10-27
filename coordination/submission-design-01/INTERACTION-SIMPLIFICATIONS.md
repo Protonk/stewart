@@ -94,6 +94,17 @@ Close ends audit custody and the ability to request its copy again, while the
 manager-held copy remains independent. This changes the normal successor workflow;
 it does not rewrite frozen Python or claim implemented delivery.
 
+The user subsequently approved the remaining recommendations: the return carries
+the original question/instructions, commission receipt, sealed manifest, selected
+bytes and submission/collection provenance; the initial destination is chosen at
+commissioning and further copies may name another. Empty selections and partial
+returns use this same interface with honest completeness/diagnostics. Necessary
+loss acknowledgment belongs inside close. If close was requested before receipt,
+it arranges collection/copying and stays unfinished until an affirmative decision
+after the manager receives the result. The earlier request alone cannot authorize
+disposal. [The completeness briefing](RETURN-COMPLETENESS.md) makes the remaining
+failure distinction precise; exact loss disposition is still open.
+
 No-submission return, a failed copying undertaking, an active hold or unavailable
 stop evidence must remain explicit. The user's ordinary-path choice is not silent
 authority to discard those obligations. Exact authority and presentation for such
@@ -149,11 +160,12 @@ evaluation is not a transition gate and supplies no current justification for
 delays, readiness criteria or deterrents. Ordinary correctness testing of races,
 fixed-result identity, copying and interrupted operations remains required.
 
-Empty selections, missing/corrupt held bytes, unfinished adds and material outside
-the helper are other incomplete cases; this direction does not claim to settle
-them. The selected material and remaining obligations must be explicit before
-normal close can complete. Frozen Python's collect implementation and its staged
-workflow do not determine this successor function's meaning.
+The subsequent approval settles honest empty returns and delivery of verifiable
+available material with explicit gaps through the same interface. Exact loss
+disposition, unverifiable selection identity, unfinished adds and material outside
+the helper remain design work. The selected material and remaining obligations
+must be explicit before normal close can complete. Frozen Python's collect
+implementation and its staged workflow do not determine this function's meaning.
 
 ## Reading the earlier designs
 

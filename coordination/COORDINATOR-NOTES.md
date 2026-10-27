@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-27 after the manager collect authority decision.
+Updated 2026-10-27 during the precise return-completeness discussion.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -21,6 +21,19 @@ actions. CONTRACTS records these directions with implementation/qualification
 pending. Close ends the ability to ask for another copy from audit custody; it
 does not end independent manager-held access. Exact command spelling is open.
 
+The user now approved finite return contents (original question/instructions,
+commission receipt, sealed manifest, selected bytes and provenance), an initial
+destination chosen at commissioning, honest empty/partial returns through the
+same interface, and necessary loss acknowledgment within close. A close requested
+before receipt arranges collection/copying and remains unfinished until the manager
+affirmatively proceeds after receipt. CONTRACTS records these choices. The user
+asks for a precise briefing on “when Stewart cannot supply the complete expected
+material.” [The briefing](submission-design-01/RETURN-COMPLETENESS.md) distinguishes
+a known missing/corrupt member, unverifiable selection identity, incomplete copying
+and a completed copy with a lost reply. Intellectual incompleteness and a verifiably
+empty selection are different. The exact authority/effect of an incomplete closing
+disposition remains for discussion; no new mechanism is approved or implemented.
+
 The user explicitly decided that manager collect may itself end the authoring
 opportunity and that this authority carries through the Rust transition. The
 [recorded direction](submission-design-01/INTERACTION-SIMPLIFICATIONS.md#manager-collection-of-recorded-unsubmitted-work)
@@ -30,8 +43,8 @@ or auditor agreement is not a prerequisite. Frequent early manager use may be
 revisited on later evidence, but the user defers policy intervention beyond the
 near/medium term; no waiting/readiness/deterrence gate is commissioned. Mechanical
 qualification remains owed. This is not a required normal-return stage, live-peek
-or audit-restart facility, or proof of stopped processes. Broader unfinished-return cases
-remain open. Holds, failed preservation, stop evidence and work
+or audit-restart facility, or proof of stopped processes. Broader unfinished-return
+cases remain open as narrowed above. Holds, failed preservation, stop evidence and work
 outside the helper retain their obligations; they must not recreate routine
 acceptance/triage/retain/export stages for a completed normal return.
 
@@ -45,7 +58,8 @@ prerequisite for this discussion. This account owns the input/validation records
 in `.scratch/interaction-simplifications-01/` and the subsequent decision records
 in `.scratch/manager-return-direction-01/` and
 `.scratch/manager-collect-discussion-01/` and
-`.scratch/manager-collect-authority-01/`; run-012 reflections remain separate.
+`.scratch/manager-collect-authority-01/` and `.scratch/return-completeness-01/`;
+run-012 reflections remain separate.
 
 ## Recent decisions: custody home and interrupted ordinary operations
 

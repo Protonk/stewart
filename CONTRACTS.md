@@ -366,8 +366,27 @@ manifest and its selected material, retaining their exact identities and binding
 The copy remains independently inspectable after audit closure; it does not rely
 on the auditor workspace or audit-held payloads surviving. The user accepts the
 space cost of straightforward independent copying in preference to clever shared
-storage. Exact destination, packaging and actual receiving/delivery route still
-need design and qualification. A manifest or notification alone is not the copy.
+storage. Concrete packaging, destination representation and actual receiving/
+delivery route still need design and qualification. A manifest or notification
+alone is not the copy.
+
+**Return contents and initial destination.** Accepted 2026-10-27. The return
+includes the original question/instructions, commission receipt, sealed manifest,
+selected artifact bytes and submission/collection provenance, so it remains
+understandable after close. Choose the initial copy destination when commissioning;
+further copies may name another destination. This is a finite package, not an
+implicit copy of everything mentioned in its contents or a promise of executable
+audit replay.
+
+**Empty and partial returns use the same interface.** Accepted 2026-10-27.
+A verifiably empty recorded selection produces an honest empty return. If some
+selected material cannot be supplied or verified, provide the verifiable material
+with an explicit account of the missing, damaged or unverified parts. Do not
+report a partial copy as complete or infer an empty selection from broken records.
+Necessary acknowledgment of loss belongs inside the close interaction, rather
+than a separate triage workflow. Exact supported loss dispositions and the
+treatment of unverifiable selection identity still need design; this decision
+does not waive a hold or silently surrender a preservation undertaking.
 
 Stewart verifies and records completion of its copying undertaking. That is
 distinct from the manager's judgment that the copy is somewhere safe and from
@@ -378,6 +397,14 @@ Stewart's audit custody, knowing that it loses the ability to request another
 copy from that custody. No additional routine report-acceptance, kind-bound
 follow-up, retain/export or backup-certification step is required between normal
 receipt and close. The affirmative close request expresses that decision.
+
+**Close requested before the copy exists.** Accepted 2026-10-27. The same close
+interaction arranges the necessary collection/copying and presents its result,
+remaining unfinished until the manager affirmatively proceeds after receipt.
+An earlier close request is not, by itself, post-receipt authority to dispose of
+the source. Interruption continues that same undertaking; it does not convert a
+lost copy reply into permission to complete removal. No separate withdrawal,
+abandonment or recovery command is required to traverse this interaction.
 
 Before close, a supported request can produce another copy of the same sealed
 return. This neither selects newer auditor material nor starts another audit.
