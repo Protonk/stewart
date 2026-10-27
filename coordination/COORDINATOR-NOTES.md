@@ -7,36 +7,63 @@ working account of observed work, authority received and remaining questions.
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current commission and coordinator checkpoint
+## Completed answer/revision comparison and current pause
 
-At 04:16:21 UTC the user authorized the recommended fresh-authoring comparison:
-“Ok. Proceed.” The [commission](answer-revision-01/COMMISSION.md) and
-[protocol](answer-revision-01/PROTOCOL.md) fix four fresh authors, two answer
-forms × delayed/complete evidence, a later fixed source release, four fresh
-recipients and independent review. The fresh information-preservation question
-traces declaration validation into status._auditor_report's attributed fields.
-All subject inspection is static. This resumes work beyond the completed run
-below; no product implementation, subject execution or disposal is commissioned.
+At 04:16:21 UTC on 2026-10-27 the user authorized “Ok. Proceed.” for the
+[fresh answer/revision comparison](answer-revision-01/COMMISSION.md). Four fresh
+authors compare common/minimal forms across delayed/complete consumer-source
+grants for a declaration-to-status question; four fresh recipients inspect each
+author's two selections. All subject work is static. Root owns integration,
+shared plans/accounts and Git recording; workers own only their named attempts.
+Four active slots, no nested delegation, Claude, network, product execution,
+custody, disposal or pruning. Source is 5f00082; preparation commit is 134573a.
 
-Source HEAD 5f00082, clean at intake. Root owns answer-revision-01 shared records,
-source/grant/release assembly, capture, integration, shared plans and
-`.scratch/answer-revision-01/`. Four initial source grants and four exact later
-releases are frozen in ASSEMBLY.json; 117 design-review snapshots are pinned at
-REVIEW-INPUTS-01.json. Author/recipient attempts have exclusive write grants.
-The whole fleet remains within four active slots, with no nested workers.
+All eight author selections are captured/admitted, 80/80 byte/identity checks,
+zero correction attempts. Both delayed authors keep the initial consumer gap,
+then ground their full account in released source. Complete-source controls
+show one byte-identical reselection and one correction of an overbroad sentence
+on self-review. Those changes do not establish a causal format effect. All four
+authors and transport worker are stopped. Transport qualification is 571/571
+assertions over 41 captures plus help. Preflight review is 1,184/1,184 static
+checks; root disposed two coordinator-utility gaps before author dispatch.
 
-Transport worker `/root/revision_transport` returned from its saved brief; its
-dual-form helper passed 571 assertions across 41 capture calls plus a help call,
-zero subject/pytest execution. It is stopped. Independent reviewer
-`/root/revision_review` returned READY after 1,184/1,184 checks over 117 design
-and 471 transport/evidence snapshots plus revised ops bindings. It is stopped
-pending integration. Root disposed two coordinator gaps before participants;
-required private-account freezing and capture-barrier revalidation are now
-explicitly enforced by the study utility. Root has not yet dispatched authors
-at this preflight checkpoint. Next: record preparation, dispatch fresh authors
-within capacity, freeze all four first selections before any source release,
-then final selections and fresh recipient phases. No uncertain effectful reply
-is pending. The local PREFLIGHT-DISPOSITION binds accepted helper/ops bytes.
+Root read all eight author selections/support/process accounts and all eight
+reader memos. Both delayed readers resolve the consumer gap after release;
+complete-source readers distinguish correction and repetition. r02 acknowledges
+missing a conflicting blanket sentence in its first review; earlier records stay
+unchanged. Both reader freezes are saved. All participants and the independent reviewer
+are stopped. Root's static integration checks passed 774/774. Independent review
+verified 1,745 frozen snapshots and passed 2,534/2,534 assertions plus two separate
+grant comparisons. Root read and disposed the full review; no substantive blocker
+or required wording correction remains. Reviewer inventory-script diagnostics
+and root's earlier inventory diagnostic remain retained separately from evidence
+checks. No subject/helper rerun followed them.
+
+The bounded study is complete. Preparation is committed at 134573a and participant
+records at 2dce5b8. The [result](answer-revision-01/RESULT.md),
+[observations](answer-revision-01/OBSERVATIONS.md) and
+[review disposition](answer-revision-01/REVIEW-DISPOSITION.md) own the findings,
+limits and remaining coverage. Root finishes final document/evidence checks,
+Git recording and committed-byte verification, then pauses with no further
+worker dispatch. No uncertain effectful reply, subject process or study phase
+remains. Inspect COMPLETION.json and actual Git state after interruption; absence
+of that record means mechanical recording is unfinished.
+
+Local evidence is `.scratch/answer-revision-01/` plus its adjacent command streams.
+ASSEMBLY, author/reader barriers, recipient packets, INTEGRATION-INPUTS-01 and
+INTEGRATION-CHECKS-01 bind the completed work. Final checks are under
+`final-check-01/`; COMPLETION.json identifies the final commit and finite retained
+evidence inventory. Preserve every raw witness, private account, original
+checkpoint, helper control, review baseline and diagnostic with this study;
+not all are in Git. No pruning or remote operation occurred.
+
+W01 remains open for substantive reframing, refusal/blocked outcomes,
+valid-but-inadequate returns and ordinary unexpected findings, with broader
+question/route coverage. A planned reveal does not satisfy unexpected-discovery
+coverage. No durable interface, compulsory-field, custody-start, recovery,
+access/disposal or intellectual-utility decision follows from this comparison.
+Further substantive work needs its next bounded commission; no implementation
+or product experiment is pending from this wave.
 
 ## Completed construction execution
 

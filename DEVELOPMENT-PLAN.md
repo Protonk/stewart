@@ -155,20 +155,29 @@ sequence above, not authorizations. Detailed contract clauses govern beyond
 these summaries; every admitted clause must have acceptance coverage before
 its implementation is considered complete.
 
-At 2026-10-27 04:16 UTC the user commissioned the next
+At 2026-10-27 04:16 UTC the user commissioned the
 [fresh answer/revision comparison](coordination/answer-revision-01/COMMISSION.md).
-Four fresh authors will inspect a new finite declaration-to-status route across
-two answer forms and delayed/complete consumer-source schedules. All first
-selections precede a fixed source release, with repeated identical source for
-complete-evidence controls. Four fresh recipients inspect both phases, then
-independent review assesses concrete requirements, obstructions and limits.
-Preparation is frozen and preflight underway; no author has yet been dispatched.
-Controlled source arrival is not itself an unexpected late finding. This is
-W01 evidence gathering, not a durable interface, custody or implementation choice.
+All four authors and four recipients have completed both phases; original
+checkpoints and private accounts are frozen. Both common and minimal forms
+carry useful conditional work under an explicit consumer-source gap, then
+qualified source-grounded accounts after release. Complete-source controls show
+one unchanged selection and one self-review correction of an overbroad sentence;
+its reader acknowledges missing that sentence in its first review. Root's
+774/774 static integration checks passed; independent integration review passed
+2,534/2,534 assertions over 1,745 frozen snapshots, with no substantive blocker.
+The bounded comparison is complete and all workers stopped. Participant records
+are committed at 2dce5b8; the [result](coordination/answer-revision-01/RESULT.md)
+locates final recording and retained evidence. The
+[observations](coordination/answer-revision-01/OBSERVATIONS.md) distinguish content
+requirements from evidence for compulsory fields. One author/reader per cell
+cannot establish causal format effects or equivalence. Controlled release is
+not an unexpected ordinary late finding. Substantive reframing, refusal/blocked
+returns, valid-but-inadequate answers and unexpected findings remain open.
+This wave selects no durable interface, custody policy or implementation change.
 
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
-| W01 — Three bounded studies and construction execution complete; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
+| W01 — Four bounded studies and construction execution complete; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
 | W02 — Policy open | Select admitted-answer-only or complete-attempt custody; define setter acknowledgments, bounded snapshot assembly, attempt identities, corrections/finality, retrieval and lifetime. Decide partial work on early close, compulsory manager gap/follow-up responses and helper-independent human handback. [Keyhole decisions](KEYHOLE-OBLIGATIONS-FINDINGS.md#decisions-and-evidence-still-needed), [Riker assessment](KEYHOLE-OBLIGATIONS-FINDINGS.md#riker-and-the-transition). | W01 informs F3. Before F5, choose scope and update affected contracts explicitly. Test invalid final discriminator after substantial setters, full attempt versus call arguments, later-setter invariance, failed custody writing, racing/repeated finals and lost success replies. The prior coordinator's preference for attempt custody is not a decision. |
 | W03 — Architecture open | Decide A.1's formal admission rule and D's commission facilities, capture terms and retention promise, including R3's distinction from a voluntary hold. Identify any new auditor channel's effect on inherited assumptions. [Opening decisions](#opening-decision-round-a-narrow-custodial-core), [R3](#session-scoped-agent-guidance-reconciliation-2026-10-25). | F3, informed by W01/W02 and W04–W09. No executor does not adopt an exact-three-responsibilities formula. Test grants and recorded limitations against the actual commissioned view; admission is not a verdict on the answer. |
 | W04 — Workspace/history open | Decide B and F: plain subject files, history-only use, pinned history facility, and supported Git-aware/build/test capabilities. Resolve unrepresentable trees and name normalization as proposed decisions, not silent fixes. [B](CUSTODIAL-CORE-FINDINGS.md#b-the-workspace-representation), [F](CUSTODIAL-CORE-FINDINGS.md#f-the-form-of-the-history-facility). | Capability comparisons in F2; selected representation before F5. Verify selected object membership, absent unrelated/dangling/replacement objects, graft/shallow/partial limits, case/Unicode behavior and real tool usability. A shared backing store cannot expose its whole contents. |

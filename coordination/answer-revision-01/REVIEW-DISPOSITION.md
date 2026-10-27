@@ -22,4 +22,36 @@ Authors may now be dispatched under their saved finite grants. All-four initial
 author and recipient barriers remain required before their respective later
 releases. Root accepts the exploratory/normal-path limits, with no causal format,
 unexpected-discovery, enforcement, custody or product-interface qualification.
-Independent integration review remains pending actual frozen participant returns.
+Independent integration review was deferred until actual frozen participant returns;
+its completed disposition follows.
+
+## Integration, 2026-10-27 05:06 UTC
+
+Root read the complete INTEGRATION-REVIEW.md and accepts READY with no substantive
+blocker or required wording correction. The reviewer read all eight selected
+returns, eight private process accounts, eight recipient memos and sixteen
+read/effect accounts. It verified 1,745 frozen input identities and passed
+2,534/2,534 formal static assertions, plus two separately recorded normalized
+grant comparisons. The root draft's delayed-source resolution, repeated-source
+correction/reselection, r02's acknowledged missed sentence and repeated process
+claim qualifications are independently supported. Counts and first-record
+preservation agree; no participant output is changed to fit the integration.
+
+The reviewer retained two preliminary read-only inventory KeyErrors caused by
+assuming older manifest keys. Root's earlier inventory KeyError is separately
+retained in COORDINATOR-INSPECTION-NOTE-01.json. These are code/schema-inspection
+diagnostics, not failed subject cases or failed evidence assertions. The corrected
+independent checker passed without subject, transport or coordinator-utility
+execution. No capture repair, rerun or deletion followed those diagnostics.
+
+Root accepts the proposed requirements as discussion inputs, not compulsory
+fields or product contracts. One author/reader per cell, planned source release,
+static source predictions and procedural grants retain their stated limits.
+Reframing, refusal/blocked outcomes, valid-but-inadequate answers and unexpected
+ordinary findings remain open W01 coverage. No custody, access, disposal,
+runtime/platform or intellectual-utility claim is added.
+
+All workers are complete and stopped. Root owns final document/evidence checks,
+Git recording and the committed-byte/evidence inventory, located by
+`.scratch/answer-revision-01/COMPLETION.json`. All review baselines, diagnostics,
+original participant checkpoints and independent witnesses remain retained.
