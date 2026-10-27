@@ -145,6 +145,45 @@ existing code or tests a presumption of continued product responsibility. The
 user subsequently selected no dedicated successor program executor, below;
 the possible audit restart convenience remains undecided.
 
+**Standard commission receipts support manager recall.** Decided direction,
+2026-10-27; **Decided, departure**, successor implementation pending. A manager
+supplies copies of material for which it is responsible. Stewart promptly returns
+detailed receipts for the commission and accepted input selection, independently
+of waiting for the auditor's result. Those receipts use a consistent, documented
+presentation and access route, with an explicit commission reference. A manager
+whose conversation has been compacted can use them to recover the original
+question and supplied material, including for constructing a competing answer.
+
+The account binds the original question/instructions, selected material identities
+and their supplied view, relevant Stewart-added guidance or transformations,
+and recorded grants and limits. It provides a supported way to inspect the
+corresponding retained bytes; a filename or digest alone does not supply them.
+Distinguish the requested selection, what Stewart recorded accepting or making
+available, and any unconfirmed or incomplete step. Manager edits after handoff
+do not alter this account, and missing or invalid originals are diagnosed rather
+than replaced from a live worktree. It describes the commission, not what the
+auditor has read, understood or is currently doing; it grants no live access.
+
+The manager remains responsible for retaining a receipt/reference or knowing the
+standard access route. Losing both may require additional reconstruction work;
+Stewart does not promise general memory recovery or guess an audit by recency.
+The manager need not retain the original conversation to inspect the commission.
+Exact receipt schema, presentation/location, intake acknowledgment boundaries and
+retention after closure remain for design and qualification. The interface must
+be usable while the audit is live. This input-receipt decision does not settle
+custody of the auditor's partial answers or promise executable audit replay.
+
+**Prefer inexpensive assurance that supports manager judgment.** User design
+lean, 2026-10-27. Look for bounded handoffs through trap doors with clear receipts:
+the manager supplies copies it is responsible for, receives detailed receipts
+immediately, and eventually receives a result or error. Favor inexpensive,
+inspectable facts on which a competent manager can decide how to proceed,
+without making Stewart supervise that judgment. Faster runtime and more routine
+use of audits are desired effects, not established findings. This lean chooses
+no new automatic disposal, retry or delivery mechanism. Errors still account for
+partial effects and unfinished custody obligations; an error does not discharge
+them. Concrete eventual-delivery and failure guarantees require a qualified route.
+
 **Incomplete Stewart operations remain Stewart's responsibility to account
 for.** Clarified 2026-10-25. Restricting intervention increases the importance
 of a supported account and disposition of interrupted custody work, particularly

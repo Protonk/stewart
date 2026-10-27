@@ -1,11 +1,32 @@
 # Current coordinator account
 
-Updated 2026-10-27 for the receipt-sufficiency challenge and interface recommendation. This is a
-working account of observed work, authority received and remaining questions.
+Updated 2026-10-27 for commission-receipt recall and the inexpensive-assurance
+lean. This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
+
+## Commission-receipt direction and planning update
+
+After the completed receipt study, the user authorized folding manager recall
+into the plan and recording a broader lean toward inexpensive assurance, bounded
+handoffs through trap doors and clear receipts. The successor requirement in
+CONTRACTS is prompt, detailed commission receipts in a standard form, with original
+question and input inspection while the auditor works. A manager may retain the reference or
+know the standard access route; losing both can require more work. No general
+memory service, live-auditor inspection or replay promise follows.
+
+VISION records the user's lean and desired routine use/runtime benefits as
+hypotheses. DEVELOPMENT-PLAN's manager-recall section assigns presentation,
+input binding, reader, failure and retention decisions to existing work items,
+with a fresh-manager qualification case and controls. Root owns these four
+document edits and ordinary recording. No worker dispatch, empirical trial,
+runtime/bundled-guidance edit or change to historical study records is involved.
+Validation and the final commit/clean-state record are retained under
+`.scratch/commission-recall-plan-01/`, owned by this account and DEVELOPMENT-PLAN.
+The next substantive work remains connected successor design, not automatic
+execution of the newly planned qualification.
 
 ## Completed receipt-challenge commission
 

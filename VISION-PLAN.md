@@ -80,6 +80,24 @@ restarts for the first successor and schedules no convenience while the return
 and custody interfaces remain unsettled. The possible restart interface remains
 an open product choice, rather than an implementation prerequisite.
 
+The user's 2026-10-27 lean is to find cases where inexpensive assurance lets
+competent managers make their own determinations. Favor bounded handoffs through
+trap doors with clear receipts. The intended everyday relationship is: the
+manager gives Stewart copies of materials it is responsible for, immediately
+receives detailed receipts, and eventually receives a result or error. Aim for
+audits to become routine, with less runtime machinery and less managerial
+coordination. Those benefits remain hypotheses to assess, not measured gains or
+grounds for weakening custody obligations.
+
+Commission recall is the concrete first application. Present the receipt and its
+access route consistently enough that a manager who forgets the supplied question
+or material can inspect the original undertaking without observing the auditor's
+work. Do not turn occasional forgetting into a general memory-management service:
+losing both the receipt/reference and knowledge of the standard route may require
+more work. The manager still owns its competing inquiry and judgment. CONTRACTS.md
+records this successor requirement and the broader lean; the development plan
+owns its remaining presentation, custody and qualification decisions.
+
 Pursue the keyhole candidate: the typed submission is the entire deliverable,
 and audit working state is declared disposable in advance, with retirement
 after durable valid submission and safe termination. Examine the obligations
