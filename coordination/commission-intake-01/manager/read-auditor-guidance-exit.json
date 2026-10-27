@@ -1,0 +1,8 @@
+{
+  "finished_utc": "2026-10-27T17:32:55.086593+00:00",
+  "returncode": 0,
+  "stdout_file": "recovered/auditor-guidance.bin",
+  "stdout_size": 1091,
+  "stdout_sha256": "71ddda03fa5dd428b63b06f5e74368e07c493b125924c2e34b6a16b01f086dc3",
+  "matches_pinned_inspection": true
+}

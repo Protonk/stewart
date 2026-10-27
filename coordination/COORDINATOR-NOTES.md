@@ -1,60 +1,59 @@
 # Current coordinator account
 
-Updated 2026-10-27 for commissioned intake implementation and subsequent self-audit.
+Updated 2026-10-27 after C implementation, repair and completed self-audit/investigation.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Active: C intake implementation, then bounded self-audit
+## Completed: C intake and genuine self-audit
 
-The user selected C as the first usable successor leg, with acceptance/custody
-settled first, and explicitly selected manager-custodied delivery in response to
-the concrete custody question. CONTRACTS records the boundary: original
-undertaking, detailed receipts, independent readback, manager preservation after
-delivery, retained/accounted partial intake with supported completion or explicit
-incomplete disposition. A is not commissioned or prerequisite. The subsequent
-genuine self-audit gives a fresh manager a recall task and a later investigator
-the actual return without original writer/workspace access. Existing frozen
-Python custody preserves that return; C does not. Result inspection does not
-decide C acceptance or preselect a future result feature.
+The user selected C and explicitly settled manager-custodied delivery: verified
+original commission copies in designated storage, manager preservation afterward,
+retained partial bytes/diagnostics with supported completion or attributed
+incomplete disposition. C is implemented in `successor/`. A is not commissioned
+or prerequisite; no future result representation or custody service was selected.
 
-Root owns `COMMISSION-INTAKE-PLAN.md`, shared contracts/vision/plan/account,
-`coordination/commission-intake-01/`, independent acceptance, audit management,
-evidence retention and Git. Source checkpoint eea8719, initially clean. Current
-uncommitted plan/contract/commission edits are admitted worker context.
+[The final account](../reports/commission-self-audit-2026-10-27/RESULT.md) owns the
+commission, actual audit, fresh-manager recall, later investigation and evidence.
+Intake/subject commit `0dbb2eb`, prompt-only commit `e906095`, narrow repair
+`075f4d3`. Final binary SHA-256
+`dbcf332cbba5ecf7ee74491ffe80875df82af64418b09215d9f6ca22459d8bbd`.
+Final checks: 15/15 Rust integration tests, 46/46 independent installed-executable
+checks, 11/11 repaired comparison predicates. The prior 11/11 reproduction and
+failed regression/driver evidence remain. Frozen Python separately passed 63/63
+selected installed-wheel nodes. Runtime/bundled baseline bytes are unchanged.
 
-| Worker | Ownership and saved assignment | Observed state |
-| --- | --- | --- |
-| /root/commission_impl | `successor/`; `coordination/commission-intake-01/IMPLEMENTATION.md` | Returned/stopped. 14/14 integration tests, root review corrections integrated; release b057d64c… frozen. |
-| /root/commission_auditprep | `coordination/commission-intake-01/audit-preparation/`; `AUDIT-PREPARATION.md` | Returned and stopped; root read REPORT. Five read-only commands, 18 source identities, no custody effects. |
+The actual 57-member commission and original request were recovered by a fresh
+manager; root's withheld-witness membership/byte comparison passed 59/59. The
+stopped static auditor identified an acknowledged-incomplete request-presentation
+gap and erroneous mode-provenance wording. Both were confirmed/corrected within C;
+the original question, source snapshot, report and three notes remain unchanged.
+Root used frozen collect/triage/retain/export for the return, verified all four
+outputs against its precollection witness, then completed normal close with no
+leftovers. The original audit worktree is absent and export remains verified.
+C performed none of that result custody or removal.
 
-Root's independent copied-binary check passed 46/46, including two real SIGKILL
-cases, under `acceptance-02/`; the earlier 44/44 run and review corrections remain
-recorded. [C acceptance](commission-intake-01/C-ACCEPTANCE.md) names evidence and
-qualified limits. Root copied verified frozen roles into `audits/commission-recall`.
-No actual auditor, fresh manager or later investigator has yet been dispatched.
-No Claude launch, transfer or new TURNOVER brief. Frozen Python requires checkout
-home outside all Git worktrees; use a fresh 0700 `/private/tmp` home when launching
-the audit, rather than the assignment's initial in-workspace suggestion. Root
-will retain that environment until custody is settled; investigator exclusion
-does not require physical deletion. `.venv` has Python/build/test dependencies
-but no installed Stewart; wheelhouse exists. Root will qualify an installed
-frozen wheel before using its custody operations. Independent C evidence will
-be retained under `.scratch/commission-intake-01/`, owned by the intake plan.
-The frozen installed-wheel check selected 63/63 passing nodes (handoff, triage,
-inputs), recorded at `frozen-custody-check-01.json` there. The exact tested wheel
-is installed in `frozen-installed/`. Initial default-manager startup refused the
-outside-workspace destination; its original diagnostic remains. Explicit fresh
-manager home startup passed. `AUDIT-ENVIRONMENT.json` records the runtime and
-private manager/checkout homes. No audit exists yet. Root's independent installed
-C checker is `scripts/check_commission.py`; it retains witnesses and actual
-process-interruption evidence without deleting artifacts.
+The fresh later investigator received only the finite delivered package,
+original commission, pins and later reader. It independently checked historical
+claims and original recall while keeping absent observations and historical
+execution unproved. Its tooling failures are retained, not product failures.
+Root accepts its bounded recommendation: the existing finite delivery aid is
+enough here; no additional product feature now. A reader could reduce recurring
+mapping work but cannot supply missing evidence. Revisit only for a named need.
+Fresh contexts and finite read grants do not prove OS-enforced confinement.
 
-Next: implement and independently verify C, then author the actual bounded
-question against that code/evidence, prepare/launch/capture through the existing
-workflow, and record investigator needs/support/gaps before choosing further work.
+All five workers returned/stopped: /root/commission_impl (including repair),
+/root/commission_auditprep, /root/commission_auditor, /root/commission_manager and
+/root/commission_investigator. Root owns shared documentation, integration, Git
+and retained evidence. No active worker, inquiry, repair or uncertain effect
+remains. `.scratch/commission-intake-01/`, `successor/evidence/` and their located
+working specimens stay with the final report. `COMPLETION.json` there records
+final inventory, validation, commits and clean state; absence means mechanical
+recording remains unfinished. The bounded intake plan is retired; broader
+successor decisions/platform work remain in DEVELOPMENT-PLAN. Root is still the
+sole coordinator. No Claude launch, transfer directive or new TURNOVER brief.
 
 ## Coordinator transition: agreed procedure, transfer not yet directed
 

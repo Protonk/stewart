@@ -1,0 +1,166 @@
+{
+  "bundle": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/bundle",
+  "custodian": "Acceptance investigator",
+  "externally_pinned": false,
+  "integrity": "verified",
+  "members": [
+    {
+      "id": "@request",
+      "path": "copy-000002-request.json",
+      "sha256": "b68ece2aa84b4d796195a3aece6615ba2a38b0693eb50b09a7a1f694117bb840",
+      "size": 2893,
+      "verified": true
+    },
+    {
+      "id": "question",
+      "path": "copy-000002-000.bin",
+      "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+      "size": 59,
+      "verified": true
+    },
+    {
+      "id": "material",
+      "path": "copy-000002-001.bin",
+      "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990",
+      "size": 285,
+      "verified": true
+    },
+    {
+      "id": "guidance",
+      "path": "copy-000002-002.bin",
+      "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56",
+      "size": 51,
+      "verified": true
+    },
+    {
+      "id": "large0",
+      "path": "copy-000002-003.bin",
+      "sha256": "960791741d6e16f8b3defee31bc9053f6bc3366ddb5f43a3304fe5b93b8400a3",
+      "size": 16777216,
+      "verified": true
+    },
+    {
+      "id": "large1",
+      "path": "copy-000002-004.bin",
+      "sha256": "bed6dd886803911448139eb2974b1c90cfdf6987b3a26f2abc84a48d1e95ef65",
+      "size": 16777216,
+      "verified": true
+    },
+    {
+      "id": "large2",
+      "path": "copy-000002-005.bin",
+      "sha256": "68e4866e5f35039a8f91aba0dc046c3dc9811f858121622769ddc1c201086c75",
+      "size": 16777216,
+      "verified": true
+    },
+    {
+      "id": "large3",
+      "path": "copy-000002-006.bin",
+      "sha256": "4f9e5ff6d5a386025a4959399d74f4b790e356b1692a3bd1dd1724aedf7e9704",
+      "size": 16777216,
+      "verified": true
+    },
+    {
+      "id": "large4",
+      "path": "copy-000002-007.bin",
+      "sha256": "fb72ed879bbfd7254c326ffded64f96da7e1be2626f465c987b51a609933d712",
+      "size": 16777216,
+      "verified": true
+    },
+    {
+      "id": "large5",
+      "path": "copy-000002-008.bin",
+      "sha256": "a787d3eb434e744374a9fa43566d070583cdf53b10758fd43f457d540fe6752e",
+      "size": 16777216,
+      "verified": true
+    }
+  ],
+  "original_undertaking": {
+    "custodian": "Acceptance investigator",
+    "grants": "Read selected originals.",
+    "limits": "No investigation or result custody is commissioned.",
+    "members": [
+      {
+        "id": "question",
+        "role": "question",
+        "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+        "size": 59,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/question",
+        "view": "question.original"
+      },
+      {
+        "id": "material",
+        "role": "material",
+        "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990",
+        "size": 285,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/material",
+        "view": "material.original"
+      },
+      {
+        "id": "guidance",
+        "role": "guidance",
+        "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56",
+        "size": 51,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/guidance",
+        "view": "guidance.original"
+      },
+      {
+        "id": "large0",
+        "role": "material",
+        "sha256": "960791741d6e16f8b3defee31bc9053f6bc3366ddb5f43a3304fe5b93b8400a3",
+        "size": 16777216,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/large0",
+        "view": "large0.original"
+      },
+      {
+        "id": "large1",
+        "role": "material",
+        "sha256": "bed6dd886803911448139eb2974b1c90cfdf6987b3a26f2abc84a48d1e95ef65",
+        "size": 16777216,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/large1",
+        "view": "large1.original"
+      },
+      {
+        "id": "large2",
+        "role": "material",
+        "sha256": "68e4866e5f35039a8f91aba0dc046c3dc9811f858121622769ddc1c201086c75",
+        "size": 16777216,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/large2",
+        "view": "large2.original"
+      },
+      {
+        "id": "large3",
+        "role": "material",
+        "sha256": "4f9e5ff6d5a386025a4959399d74f4b790e356b1692a3bd1dd1724aedf7e9704",
+        "size": 16777216,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/large3",
+        "view": "large3.original"
+      },
+      {
+        "id": "large4",
+        "role": "material",
+        "sha256": "fb72ed879bbfd7254c326ffded64f96da7e1be2626f465c987b51a609933d712",
+        "size": 16777216,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/large4",
+        "view": "large4.original"
+      },
+      {
+        "id": "large5",
+        "role": "material",
+        "sha256": "a787d3eb434e744374a9fa43566d070583cdf53b10758fd43f457d540fe6752e",
+        "size": 16777216,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/interrupted/sources/large5",
+        "view": "large5.original"
+      }
+    ],
+    "request_id": "interrupted",
+    "schema": "stewart.commission-request/1"
+  },
+  "qualification": "Recorded delivery of original commission only. Declarations are attributed, not enforcement or auditor activity. Self-consistency does not authenticate historical origin. Manager preserves this bundle.",
+  "receipt": "ACCEPTED.json",
+  "receipt_sha256": "98f63ce1056e9430761bb147817d17b245d3a409743d652df39eb72449bede43",
+  "request_id": "interrupted",
+  "schema": "stewart.commission-inspection/1",
+  "state": "accepted"
+}
+

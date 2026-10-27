@@ -1,0 +1,7 @@
+{
+  "pid": 54825,
+  "exit": -9,
+  "observed_large_files_before_signal": [
+    "copy-000001-003.bin"
+  ]
+}

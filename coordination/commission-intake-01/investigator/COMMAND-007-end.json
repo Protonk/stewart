@@ -1,0 +1,25 @@
+{
+  "finished_utc": "2026-10-27T17:48:32.554773+00:00",
+  "exit": 0,
+  "reads": [
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/C-READ-request-end.json",
+      "scope": "own investigator output",
+      "bytes": 69,
+      "sha256": "d0df23ad05614c956d81e69664817f9823e899fb3333eb509671a8cb4de84666"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/C-READ-question-end.json",
+      "scope": "own investigator output",
+      "bytes": 69,
+      "sha256": "16d032da4e9df9992d7cae5e59046bd422dbe6e378a45cfada1996c2ad49211b"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/C-READ-question-stdout.txt",
+      "scope": "own investigator output",
+      "bytes": 19944,
+      "sha256": "6ae80c931509de20d0aa1dde857e427f981ee7fd9144f9ae265ab9f17d350218"
+    }
+  ],
+  "metadata": []
+}

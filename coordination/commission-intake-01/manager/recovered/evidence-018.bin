@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/commission-intake-01/acceptance-02/installed/stewart-commission",
+    "read",
+    "--bundle",
+    "/private/tmp/stewart-commission-check-3kqpvn49/unrelated/nested/moved-bundle",
+    "--member",
+    "question",
+    "--receipt-sha256",
+    "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86"
+  ],
+  "cwd": "/private/tmp/stewart-commission-check-3kqpvn49"
+}

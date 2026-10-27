@@ -1,0 +1,693 @@
+{
+  "scope": "Direct investigator content reads and metadata; supplied C internal accesses were not traced.",
+  "records": [
+    {
+      "command_record": "COMMAND-002-end.json",
+      "exit": 0,
+      "reads": [
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/DELIVERY.json",
+          "bytes": 13062,
+          "sha256": "97d009dfbe4750a49c2353225b6e90ce53855d8dfca52fac6a567b16d9c44e8b"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/READER-GUIDE.md",
+          "bytes": 7553,
+          "sha256": "e79bc7314c75fbf54b66f1eda7ac0284a1457469c823ab41fa232bcddde3baad"
+        }
+      ],
+      "metadata": [
+        {
+          "directory": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return",
+          "entries": [
+            {
+              "name": "files",
+              "kind": "dir",
+              "bytes": 192
+            },
+            {
+              "name": "manifest.json",
+              "kind": "file",
+              "bytes": 22686
+            },
+            {
+              "name": "source.json",
+              "kind": "file",
+              "bytes": 41547
+            }
+          ]
+        },
+        {
+          "directory": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission",
+          "entries": [
+            {
+              "name": "ACCEPTED-000001.stage",
+              "kind": "file",
+              "bytes": 10853
+            },
+            {
+              "name": "ACCEPTED.json",
+              "kind": "file",
+              "bytes": 10853
+            },
+            {
+              "name": "ATTEMPT-000001.json",
+              "kind": "file",
+              "bytes": 10683
+            },
+            {
+              "name": "ATTEMPT-000001.stage",
+              "kind": "file",
+              "bytes": 10683
+            },
+            {
+              "name": "INTENT.json",
+              "kind": "file",
+              "bytes": 25927
+            },
+            {
+              "name": "INTENT.stage",
+              "kind": "file",
+              "bytes": 25927
+            },
+            {
+              "name": "copy-000001-000.bin",
+              "kind": "file",
+              "bytes": 18654
+            },
+            {
+              "name": "copy-000001-001.bin",
+              "kind": "file",
+              "bytes": 1091
+            },
+            {
+              "name": "copy-000001-002.bin",
+              "kind": "file",
+              "bytes": 11128
+            },
+            {
+              "name": "copy-000001-003.bin",
+              "kind": "file",
+              "bytes": 8069
+            },
+            {
+              "name": "copy-000001-004.bin",
+              "kind": "file",
+              "bytes": 7142
+            },
+            {
+              "name": "copy-000001-005.bin",
+              "kind": "file",
+              "bytes": 293
+            },
+            {
+              "name": "copy-000001-006.bin",
+              "kind": "file",
+              "bytes": 4905
+            },
+            {
+              "name": "copy-000001-007.bin",
+              "kind": "file",
+              "bytes": 33063
+            },
+            {
+              "name": "copy-000001-008.bin",
+              "kind": "file",
+              "bytes": 4547
+            },
+            {
+              "name": "copy-000001-009.bin",
+              "kind": "file",
+              "bytes": 12079
+            },
+            {
+              "name": "copy-000001-010.bin",
+              "kind": "file",
+              "bytes": 16289
+            },
+            {
+              "name": "copy-000001-011.bin",
+              "kind": "file",
+              "bytes": 14616
+            },
+            {
+              "name": "copy-000001-012.bin",
+              "kind": "file",
+              "bytes": 95909
+            },
+            {
+              "name": "copy-000001-013.bin",
+              "kind": "file",
+              "bytes": 5017
+            },
+            {
+              "name": "copy-000001-014.bin",
+              "kind": "file",
+              "bytes": 13442
+            },
+            {
+              "name": "copy-000001-015.bin",
+              "kind": "file",
+              "bytes": 16741
+            },
+            {
+              "name": "copy-000001-016.bin",
+              "kind": "file",
+              "bytes": 526
+            },
+            {
+              "name": "copy-000001-017.bin",
+              "kind": "file",
+              "bytes": 106
+            },
+            {
+              "name": "copy-000001-018.bin",
+              "kind": "file",
+              "bytes": 106
+            },
+            {
+              "name": "copy-000001-019.bin",
+              "kind": "file",
+              "bytes": 392
+            },
+            {
+              "name": "copy-000001-020.bin",
+              "kind": "file",
+              "bytes": 0
+            },
+            {
+              "name": "copy-000001-021.bin",
+              "kind": "file",
+              "bytes": 2646
+            },
+            {
+              "name": "copy-000001-022.bin",
+              "kind": "file",
+              "bytes": 415
+            },
+            {
+              "name": "copy-000001-023.bin",
+              "kind": "file",
+              "bytes": 234
+            },
+            {
+              "name": "copy-000001-024.bin",
+              "kind": "file",
+              "bytes": 0
+            },
+            {
+              "name": "copy-000001-025.bin",
+              "kind": "file",
+              "bytes": 405
+            },
+            {
+              "name": "copy-000001-026.bin",
+              "kind": "file",
+              "bytes": 0
+            },
+            {
+              "name": "copy-000001-027.bin",
+              "kind": "file",
+              "bytes": 2659
+            },
+            {
+              "name": "copy-000001-028.bin",
+              "kind": "file",
+              "bytes": 441
+            },
+            {
+              "name": "copy-000001-029.bin",
+              "kind": "file",
+              "bytes": 246
+            },
+            {
+              "name": "copy-000001-030.bin",
+              "kind": "file",
+              "bytes": 0
+            },
+            {
+              "name": "copy-000001-031.bin",
+              "kind": "file",
+              "bytes": 441
+            },
+            {
+              "name": "copy-000001-032.bin",
+              "kind": "file",
+              "bytes": 472
+            },
+            {
+              "name": "copy-000001-033.bin",
+              "kind": "file",
+              "bytes": 59
+            },
+            {
+              "name": "copy-000001-034.bin",
+              "kind": "file",
+              "bytes": 400
+            },
+            {
+              "name": "copy-000001-035.bin",
+              "kind": "file",
+              "bytes": 304
+            },
+            {
+              "name": "copy-000001-036.bin",
+              "kind": "file",
+              "bytes": 0
+            },
+            {
+              "name": "copy-000001-037.bin",
+              "kind": "file",
+              "bytes": 402
+            },
+            {
+              "name": "copy-000001-038.bin",
+              "kind": "file",
+              "bytes": 0
+            },
+            {
+              "name": "copy-000001-039.bin",
+              "kind": "file",
+              "bytes": 5748
+            },
+            {
+              "name": "copy-000001-040.bin",
+              "kind": "file",
+              "bytes": 439
+            },
+            {
+              "name": "copy-000001-041.bin",
+              "kind": "file",
+              "bytes": 0
+            },
+            {
+              "name": "copy-000001-042.bin",
+              "kind": "file",
+              "bytes": 2306
+            },
+            {
+              "name": "copy-000001-043.bin",
+              "kind": "file",
+              "bytes": 398
+            },
+            {
+              "name": "copy-000001-044.bin",
+              "kind": "file",
+              "bytes": 320
+            },
+            {
+              "name": "copy-000001-045.bin",
+              "kind": "file",
+              "bytes": 0
+            },
+            {
+              "name": "copy-000001-046.bin",
+              "kind": "file",
+              "bytes": 2547
+            },
+            {
+              "name": "copy-000001-047.bin",
+              "kind": "file",
+              "bytes": 1067
+            },
+            {
+              "name": "copy-000001-048.bin",
+              "kind": "file",
+              "bytes": 1067
+            },
+            {
+              "name": "copy-000001-049.bin",
+              "kind": "file",
+              "bytes": 960
+            },
+            {
+              "name": "copy-000001-050.bin",
+              "kind": "file",
+              "bytes": 960
+            },
+            {
+              "name": "copy-000001-051.bin",
+              "kind": "file",
+              "bytes": 1477
+            },
+            {
+              "name": "copy-000001-052.bin",
+              "kind": "file",
+              "bytes": 1477
+            },
+            {
+              "name": "copy-000001-053.bin",
+              "kind": "file",
+              "bytes": 59
+            },
+            {
+              "name": "copy-000001-054.bin",
+              "kind": "file",
+              "bytes": 285
+            },
+            {
+              "name": "copy-000001-055.bin",
+              "kind": "file",
+              "bytes": 51
+            },
+            {
+              "name": "copy-000001-056.bin",
+              "kind": "file",
+              "bytes": 1113
+            },
+            {
+              "name": "copy-000001-request.json",
+              "kind": "file",
+              "bytes": 23943
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "command_record": "COMMAND-003-end.json",
+      "exit": 0,
+      "reads": [
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/manifest.json",
+          "bytes": 22686,
+          "sha256": "328fd15fe78b073bcbe47f8e636e060d8b0ea0f8e01aca9319f4e8ca9735d127"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0000.md",
+          "bytes": 13877,
+          "sha256": "591b8b17ce1d0810902cac5591aace32b3821bacd8a549208dcea70c4f9e159b"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0001.md",
+          "bytes": 3735,
+          "sha256": "f2a7911bcf6c7d3830d769a1616e92daa68e5f6c186e26e818ce8dc1d6c97da0"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0002.md",
+          "bytes": 4143,
+          "sha256": "91808e359791f48404888c3ed6e34db7c4ce485e32c1244136efcce06f72ba56"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0003.md",
+          "bytes": 3279,
+          "sha256": "e03cb9c91c8ce2a92ca0ca5b0f63eca9336c7b6b50f06c17ea694912b19be4e1"
+        }
+      ],
+      "metadata": []
+    },
+    {
+      "command_record": "COMMAND-004-end.json",
+      "exit": 0,
+      "reads": [
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0000.md",
+          "bytes": 13877,
+          "sha256": "591b8b17ce1d0810902cac5591aace32b3821bacd8a549208dcea70c4f9e159b"
+        }
+      ],
+      "metadata": []
+    },
+    {
+      "command_record": "COMMAND-005-end.json",
+      "exit": 0,
+      "reads": [
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/manifest.json",
+          "bytes": 22686,
+          "sha256": "328fd15fe78b073bcbe47f8e636e060d8b0ea0f8e01aca9319f4e8ca9735d127"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0000.md",
+          "bytes": 13877,
+          "sha256": "591b8b17ce1d0810902cac5591aace32b3821bacd8a549208dcea70c4f9e159b"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0001.md",
+          "bytes": 3735,
+          "sha256": "f2a7911bcf6c7d3830d769a1616e92daa68e5f6c186e26e818ce8dc1d6c97da0"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0002.md",
+          "bytes": 4143,
+          "sha256": "91808e359791f48404888c3ed6e34db7c4ce485e32c1244136efcce06f72ba56"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/files/0003.md",
+          "bytes": 3279,
+          "sha256": "e03cb9c91c8ce2a92ca0ca5b0f63eca9336c7b6b50f06c17ea694912b19be4e1"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/audit-return/source.json",
+          "bytes": 41547,
+          "sha256": "120cda40f8fb770e17afea18c6190ec25085a94bf760ca6c4df8307fc7c88d99"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/ACCEPTED.json",
+          "bytes": 10853,
+          "sha256": "8b5c73b84f1c729f96390d4fcdfb4acfc9c62e6036528c39002226043762680f"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/.scratch/commission-intake-01/acceptance-03/installed/stewart-commission",
+          "bytes": 869504,
+          "sha256": "dbcf332cbba5ecf7ee74491ffe80875df82af64418b09215d9f6ca22459d8bbd"
+        }
+      ],
+      "metadata": []
+    },
+    {
+      "command_record": "COMMAND-007-end.json",
+      "exit": 0,
+      "reads": [
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/C-READ-request-end.json",
+          "scope": "own investigator output",
+          "bytes": 69,
+          "sha256": "d0df23ad05614c956d81e69664817f9823e899fb3333eb509671a8cb4de84666"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/C-READ-question-end.json",
+          "scope": "own investigator output",
+          "bytes": 69,
+          "sha256": "16d032da4e9df9992d7cae5e59046bd422dbe6e378a45cfada1996c2ad49211b"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/C-READ-question-stdout.txt",
+          "scope": "own investigator output",
+          "bytes": 19944,
+          "sha256": "6ae80c931509de20d0aa1dde857e427f981ee7fd9144f9ae265ab9f17d350218"
+        }
+      ],
+      "metadata": []
+    },
+    {
+      "command_record": "COMMAND-009-end.json",
+      "exit": 0,
+      "reads": [
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/ACCEPTED.json",
+          "bytes": 10853,
+          "sha256": "8b5c73b84f1c729f96390d4fcdfb4acfc9c62e6036528c39002226043762680f"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/INTENT.json",
+          "bytes": 25927,
+          "sha256": "465a7b67ae9ff88c13cc9d10e666407de5106e6265d842a710d53b253c462b4f"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/ATTEMPT-000001.json",
+          "bytes": 10683,
+          "sha256": "94d90977b26b562ea687b7f12743ab98d89622a40b52a16eace2011a6a99e16c"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-request.json",
+          "bytes": 23943,
+          "sha256": "5ca32d770e6fc2a70adb2631dd9ba6276c5d587b1159ba178b89b5b3fa0e7b05"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-007.bin",
+          "bytes": 33063,
+          "sha256": "5b4f5e28725757dcd633e987763a77757c5cd1c8a0ff4134e986555c8435b70c"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-009.bin",
+          "bytes": 12079,
+          "sha256": "dc5a7482944e8c55634501bd5962e8f0755d3110db727991e84d982a96a5f99a"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-004.bin",
+          "bytes": 7142,
+          "sha256": "d0cd54d180194f709d4347df1b53a1891434054d8613054c759e74054daf21ae"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-012.bin",
+          "bytes": 95909,
+          "sha256": "01ce5d0cbe1504981ea61b5043382a525cf6c4430a9440743a40ed223591518c"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-040.bin",
+          "bytes": 439,
+          "sha256": "ca50cd3bd24a7421c78efb01476e1cfcc9d2068b35df96cac6f4503dc155ca06"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-042.bin",
+          "bytes": 2306,
+          "sha256": "ead40feb2b767be72ea9e65721bd972de24318bcf10abfd7e4b573af9f20a695"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-044.bin",
+          "bytes": 320,
+          "sha256": "82b16c6ffb46fc90550e12ed952d7644f2ed7673d8a67548ed9c5f4bb5db17c2"
+        }
+      ],
+      "metadata": []
+    },
+    {
+      "command_record": "COMMAND-010-end.json",
+      "exit": 0,
+      "reads": [
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-request.json",
+          "bytes": 23943,
+          "sha256": "5ca32d770e6fc2a70adb2631dd9ba6276c5d587b1159ba178b89b5b3fa0e7b05"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/ACCEPTED.json",
+          "bytes": 10853,
+          "sha256": "8b5c73b84f1c729f96390d4fcdfb4acfc9c62e6036528c39002226043762680f"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-016.bin",
+          "bytes": 526,
+          "sha256": "3f31932e863954e3f31e5597e9074b37684f2871207013a93878a7640ed63352"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-046.bin",
+          "bytes": 2547,
+          "sha256": "85e2ba788072da1dc444c8b27588d7a8665e0262ae9ae2ed90a3053ce84377d7"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-029.bin",
+          "bytes": 246,
+          "sha256": "3a5cf55a8a545395a3e708fed15a4b42e9181c5469a595d8b30404d0614a9ca4"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-030.bin",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-032.bin",
+          "bytes": 472,
+          "sha256": "50f227c292ea952b52c5381b0aaef1020afa8ba84e1d98f92478f21c0cc3e91d"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-033.bin",
+          "bytes": 59,
+          "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-048.bin",
+          "bytes": 1067,
+          "sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-049.bin",
+          "bytes": 960,
+          "sha256": "f7d13c83332e48d4e5ce456a9a2f60663e26880253ffcd056d293d889078a23a"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-051.bin",
+          "bytes": 1477,
+          "sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-056.bin",
+          "bytes": 1113,
+          "sha256": "8bcad7d186b45c44f6d3cbf04ba7dbf859980c22754c79ee347d2a76907c17db"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-053.bin",
+          "bytes": 59,
+          "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-054.bin",
+          "bytes": 285,
+          "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-055.bin",
+          "bytes": 51,
+          "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-047.bin",
+          "bytes": 1067,
+          "sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-050.bin",
+          "bytes": 960,
+          "sha256": "f7d13c83332e48d4e5ce456a9a2f60663e26880253ffcd056d293d889078a23a"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-052.bin",
+          "bytes": 1477,
+          "sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-021.bin",
+          "bytes": 2646,
+          "sha256": "8c2b31300bdf328ccb19fd798a036c075e7730a4b9e681af3650b82c436785ad"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-027.bin",
+          "bytes": 2659,
+          "sha256": "bfb5f89e7451c138d3f79ec98e489517193248ba46daa5592d49ce781652580b"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-033.bin",
+          "bytes": 59,
+          "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-015.bin",
+          "bytes": 16741,
+          "sha256": "6815f11a543c7536ed90839c93f24f0f45786fea8301fe82538829afdeb77370"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-007.bin",
+          "bytes": 33063,
+          "sha256": "5b4f5e28725757dcd633e987763a77757c5cd1c8a0ff4134e986555c8435b70c"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-002.bin",
+          "bytes": 11128,
+          "sha256": "a229525047d47d9b0838643d799cebcd8fd8b53595157d3d48d4c21ac071f4f7"
+        }
+      ],
+      "metadata": []
+    },
+    {
+      "command_record": "COMMAND-006-reconciliation.json",
+      "outer_exit": 1,
+      "c_reads_exit": [
+        0,
+        0
+      ],
+      "reads_reconciled_from_code_and_retained_outputs": [
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-request.json",
+          "bytes": 23943,
+          "sha256": "5ca32d770e6fc2a70adb2631dd9ba6276c5d587b1159ba178b89b5b3fa0e7b05"
+        },
+        {
+          "path": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission/copy-000001-000.bin",
+          "bytes": 18654,
+          "sha256": "619c32fe0511a1ae997cefc633a7f7542de87c5b07783408313e00ebab85222d"
+        }
+      ]
+    }
+  ]
+}

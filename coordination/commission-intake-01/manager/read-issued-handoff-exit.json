@@ -1,0 +1,8 @@
+{
+  "finished_utc": "2026-10-27T17:32:55.096277+00:00",
+  "returncode": 0,
+  "stdout_file": "recovered/issued-handoff.bin",
+  "stdout_size": 8069,
+  "stdout_sha256": "17292e5d934ec01f2bcf299e1033989139bd491aaee1cf3b7815eac880ead63c",
+  "matches_pinned_inspection": true
+}

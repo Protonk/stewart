@@ -1,0 +1,84 @@
+{
+  "at": "2026-10-27T17:23:39.193829+00:00",
+  "rust_tests": {
+    "passed": 14,
+    "failed": 0,
+    "selected": 14,
+    "unit_tests": 0
+  },
+  "test_command": "cargo test --offline --locked --manifest-path successor/Cargo.toml",
+  "release_command": "cargo build --offline --locked --release --manifest-path successor/Cargo.toml",
+  "binary_sha256": "b057d64cf010c28554ae087b2da4f4ae5ac8b0834ea8bed863d3cfcc99ddd1b2",
+  "files": [
+    {
+      "path": "successor/.gitignore",
+      "size": 20,
+      "sha256": "c932f63d269ca94c4db86a04746c151d56f522072c510df7ce420ffc4e235598"
+    },
+    {
+      "path": "successor/Cargo.lock",
+      "size": 4905,
+      "sha256": "3fe8b18fdb9f9b2961788b31efeb7c5e269073d66e351c29cfbdf8cb3eca6d26"
+    },
+    {
+      "path": "successor/Cargo.toml",
+      "size": 293,
+      "sha256": "7a0f0234fb8df1c30eda812a1dcd8cbf657b1c078483fc4c2ed9683d1528f79a"
+    },
+    {
+      "path": "successor/PROGRESS.md",
+      "size": 2799,
+      "sha256": "9cc7ddf4d12b41397ff6de3fdcadc80a102fdf63c1ca5d5d2dbe932af59059c9"
+    },
+    {
+      "path": "successor/README.md",
+      "size": 7142,
+      "sha256": "d0cd54d180194f709d4347df1b53a1891434054d8613054c759e74054daf21ae"
+    },
+    {
+      "path": "successor/src/control.rs",
+      "size": 4547,
+      "sha256": "250f08b491b9133b99382af66a4a4276f04c11f1e0debce9a66db37bf81dc88c"
+    },
+    {
+      "path": "successor/src/main.rs",
+      "size": 33063,
+      "sha256": "5b4f5e28725757dcd633e987763a77757c5cd1c8a0ff4134e986555c8435b70c"
+    },
+    {
+      "path": "successor/src/safe.rs",
+      "size": 12079,
+      "sha256": "dc5a7482944e8c55634501bd5962e8f0755d3110db727991e84d982a96a5f99a"
+    },
+    {
+      "path": "successor/tests/cli.rs",
+      "size": 16289,
+      "sha256": "6a54c9a61e6d0984fade652e6845a0ab70a6b3d022a07b6217a1264e9d1f2416"
+    }
+  ],
+  "retained_evidence": [
+    "check-01.stdout",
+    "check-01.stderr",
+    "check-02.stdout",
+    "check-02.stderr",
+    "build-01.stdout",
+    "build-01.stderr",
+    "test-01.stdout",
+    "test-01.stderr",
+    "test-02.stdout",
+    "test-02.stderr",
+    "test-03.stdout",
+    "test-03.stderr",
+    "release-01.stdout",
+    "release-01.stderr",
+    "release-02.stdout",
+    "release-02.stderr"
+  ],
+  "limits": [
+    "Observed macOS host only; no Linux/WSL execution",
+    "Advisory lock is not hostile-host confinement",
+    "Filesystem sync is not replication or hardware-loss guarantee",
+    "Corrupt intent acknowledgment remains unresolved",
+    "No audit result custody or future result representation"
+  ]
+}

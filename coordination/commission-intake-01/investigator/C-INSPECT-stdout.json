@@ -1,0 +1,886 @@
+{
+  "bundle": "/Users/raccoon/Desktop/Experiments/stewart/reports/commission-self-audit-2026-10-27/commission",
+  "custodian": "Stewart development principal, with root coordinator operating repository preservation",
+  "externally_pinned": true,
+  "integrity": "verified",
+  "members": [
+    {
+      "id": "@request",
+      "path": "copy-000001-request.json",
+      "sha256": "5ca32d770e6fc2a70adb2631dd9ba6276c5d587b1159ba178b89b5b3fa0e7b05",
+      "size": 23943,
+      "verified": true
+    },
+    {
+      "id": "question",
+      "path": "copy-000001-000.bin",
+      "sha256": "619c32fe0511a1ae997cefc633a7f7542de87c5b07783408313e00ebab85222d",
+      "size": 18654,
+      "verified": true
+    },
+    {
+      "id": "auditor-guidance",
+      "path": "copy-000001-001.bin",
+      "sha256": "71ddda03fa5dd428b63b06f5e74368e07c493b125924c2e34b6a16b01f086dc3",
+      "size": 1091,
+      "verified": true
+    },
+    {
+      "id": "question-types",
+      "path": "copy-000001-002.bin",
+      "sha256": "a229525047d47d9b0838643d799cebcd8fd8b53595157d3d48d4c21ac071f4f7",
+      "size": 11128,
+      "verified": true
+    },
+    {
+      "id": "issued-handoff",
+      "path": "copy-000001-003.bin",
+      "sha256": "17292e5d934ec01f2bcf299e1033989139bd491aaee1cf3b7815eac880ead63c",
+      "size": 8069,
+      "verified": true
+    },
+    {
+      "id": "input-001",
+      "path": "copy-000001-004.bin",
+      "sha256": "d0cd54d180194f709d4347df1b53a1891434054d8613054c759e74054daf21ae",
+      "size": 7142,
+      "verified": true
+    },
+    {
+      "id": "input-002",
+      "path": "copy-000001-005.bin",
+      "sha256": "7a0f0234fb8df1c30eda812a1dcd8cbf657b1c078483fc4c2ed9683d1528f79a",
+      "size": 293,
+      "verified": true
+    },
+    {
+      "id": "input-003",
+      "path": "copy-000001-006.bin",
+      "sha256": "3fe8b18fdb9f9b2961788b31efeb7c5e269073d66e351c29cfbdf8cb3eca6d26",
+      "size": 4905,
+      "verified": true
+    },
+    {
+      "id": "input-004",
+      "path": "copy-000001-007.bin",
+      "sha256": "5b4f5e28725757dcd633e987763a77757c5cd1c8a0ff4134e986555c8435b70c",
+      "size": 33063,
+      "verified": true
+    },
+    {
+      "id": "input-005",
+      "path": "copy-000001-008.bin",
+      "sha256": "250f08b491b9133b99382af66a4a4276f04c11f1e0debce9a66db37bf81dc88c",
+      "size": 4547,
+      "verified": true
+    },
+    {
+      "id": "input-006",
+      "path": "copy-000001-009.bin",
+      "sha256": "dc5a7482944e8c55634501bd5962e8f0755d3110db727991e84d982a96a5f99a",
+      "size": 12079,
+      "verified": true
+    },
+    {
+      "id": "input-007",
+      "path": "copy-000001-010.bin",
+      "sha256": "6a54c9a61e6d0984fade652e6845a0ab70a6b3d022a07b6217a1264e9d1f2416",
+      "size": 16289,
+      "verified": true
+    },
+    {
+      "id": "input-008",
+      "path": "copy-000001-011.bin",
+      "sha256": "1a23c2d39855e876d85d84bf6907154dc2d2bf2639041a99a99c97644af9373d",
+      "size": 14616,
+      "verified": true
+    },
+    {
+      "id": "input-009",
+      "path": "copy-000001-012.bin",
+      "sha256": "01ce5d0cbe1504981ea61b5043382a525cf6c4430a9440743a40ed223591518c",
+      "size": 95909,
+      "verified": true
+    },
+    {
+      "id": "input-010",
+      "path": "copy-000001-013.bin",
+      "sha256": "6bf1968074b6a88ce429bc72fbaaa3f447bc8348ed82e591ac307300410f5df2",
+      "size": 5017,
+      "verified": true
+    },
+    {
+      "id": "evidence-001",
+      "path": "copy-000001-014.bin",
+      "sha256": "03b690eda2ccc6b33553aa4f48614c59f2b2556a20534a2e5acb833cb118ff16",
+      "size": 13442,
+      "verified": true
+    },
+    {
+      "id": "evidence-002",
+      "path": "copy-000001-015.bin",
+      "sha256": "6815f11a543c7536ed90839c93f24f0f45786fea8301fe82538829afdeb77370",
+      "size": 16741,
+      "verified": true
+    },
+    {
+      "id": "evidence-003",
+      "path": "copy-000001-016.bin",
+      "sha256": "3f31932e863954e3f31e5597e9074b37684f2871207013a93878a7640ed63352",
+      "size": 526,
+      "verified": true
+    },
+    {
+      "id": "evidence-004",
+      "path": "copy-000001-017.bin",
+      "sha256": "969189b877b94d718a954dff641e78b46c7d071fee0005589aab72e5a48bb6e2",
+      "size": 106,
+      "verified": true
+    },
+    {
+      "id": "evidence-005",
+      "path": "copy-000001-018.bin",
+      "sha256": "82410fce1d59a99d45c55c9535497d03629ad1f81a4719a5e17f8ed076e2fb71",
+      "size": 106,
+      "verified": true
+    },
+    {
+      "id": "evidence-006",
+      "path": "copy-000001-019.bin",
+      "sha256": "8c5e7dec4378366f7e6a17373e310990f2767e8ae960c877a054cb0880cdbcd5",
+      "size": 392,
+      "verified": true
+    },
+    {
+      "id": "evidence-007",
+      "path": "copy-000001-020.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "verified": true
+    },
+    {
+      "id": "evidence-008",
+      "path": "copy-000001-021.bin",
+      "sha256": "8c2b31300bdf328ccb19fd798a036c075e7730a4b9e681af3650b82c436785ad",
+      "size": 2646,
+      "verified": true
+    },
+    {
+      "id": "evidence-009",
+      "path": "copy-000001-022.bin",
+      "sha256": "4c1b0317ed5eea68d7342d10aba31408f32c54427eb58e49acc2847ff51be1ac",
+      "size": 415,
+      "verified": true
+    },
+    {
+      "id": "evidence-010",
+      "path": "copy-000001-023.bin",
+      "sha256": "67fc1e5401f6deb029023d5597ead660d9ad1935013de9b9a8a05a9599b6490b",
+      "size": 234,
+      "verified": true
+    },
+    {
+      "id": "evidence-011",
+      "path": "copy-000001-024.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "verified": true
+    },
+    {
+      "id": "evidence-012",
+      "path": "copy-000001-025.bin",
+      "sha256": "564f9b2b91ffb9017dd35d0f2650a79640a131324b9c984a915eb59c6add2e44",
+      "size": 405,
+      "verified": true
+    },
+    {
+      "id": "evidence-013",
+      "path": "copy-000001-026.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "verified": true
+    },
+    {
+      "id": "evidence-014",
+      "path": "copy-000001-027.bin",
+      "sha256": "bfb5f89e7451c138d3f79ec98e489517193248ba46daa5592d49ce781652580b",
+      "size": 2659,
+      "verified": true
+    },
+    {
+      "id": "evidence-015",
+      "path": "copy-000001-028.bin",
+      "sha256": "fcef715080c3f276b1e55fe33da76c8a9e1c3beccbc37bbe7a56c42ca33a8158",
+      "size": 441,
+      "verified": true
+    },
+    {
+      "id": "evidence-016",
+      "path": "copy-000001-029.bin",
+      "sha256": "3a5cf55a8a545395a3e708fed15a4b42e9181c5469a595d8b30404d0614a9ca4",
+      "size": 246,
+      "verified": true
+    },
+    {
+      "id": "evidence-017",
+      "path": "copy-000001-030.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "verified": true
+    },
+    {
+      "id": "evidence-018",
+      "path": "copy-000001-031.bin",
+      "sha256": "ee576002b31c0fb9c0094eab3583aa4da54ab210e97b836a518a554c4121b8f1",
+      "size": 441,
+      "verified": true
+    },
+    {
+      "id": "evidence-019",
+      "path": "copy-000001-032.bin",
+      "sha256": "50f227c292ea952b52c5381b0aaef1020afa8ba84e1d98f92478f21c0cc3e91d",
+      "size": 472,
+      "verified": true
+    },
+    {
+      "id": "evidence-020",
+      "path": "copy-000001-033.bin",
+      "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+      "size": 59,
+      "verified": true
+    },
+    {
+      "id": "evidence-021",
+      "path": "copy-000001-034.bin",
+      "sha256": "ebac9093c3239080831b3a51c9a12ef721294740e6cef09177580941c04250e5",
+      "size": 400,
+      "verified": true
+    },
+    {
+      "id": "evidence-022",
+      "path": "copy-000001-035.bin",
+      "sha256": "66b5e018bb159589958988d98a74a023e23aab1eec2f050e4c0c9bf9df08a467",
+      "size": 304,
+      "verified": true
+    },
+    {
+      "id": "evidence-023",
+      "path": "copy-000001-036.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "verified": true
+    },
+    {
+      "id": "evidence-024",
+      "path": "copy-000001-037.bin",
+      "sha256": "795fb5f54710fb197858668fbdb7c92f14dadd653499530c8ff89e8e777f1282",
+      "size": 402,
+      "verified": true
+    },
+    {
+      "id": "evidence-025",
+      "path": "copy-000001-038.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "verified": true
+    },
+    {
+      "id": "evidence-026",
+      "path": "copy-000001-039.bin",
+      "sha256": "8b75649404ce6941ab9b6695b3a8a3540e00cfeb2a33e416f95286bcc31c6c0d",
+      "size": 5748,
+      "verified": true
+    },
+    {
+      "id": "evidence-027",
+      "path": "copy-000001-040.bin",
+      "sha256": "ca50cd3bd24a7421c78efb01476e1cfcc9d2068b35df96cac6f4503dc155ca06",
+      "size": 439,
+      "verified": true
+    },
+    {
+      "id": "evidence-028",
+      "path": "copy-000001-041.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "verified": true
+    },
+    {
+      "id": "evidence-029",
+      "path": "copy-000001-042.bin",
+      "sha256": "ead40feb2b767be72ea9e65721bd972de24318bcf10abfd7e4b573af9f20a695",
+      "size": 2306,
+      "verified": true
+    },
+    {
+      "id": "evidence-030",
+      "path": "copy-000001-043.bin",
+      "sha256": "cac42c88ac8c97628ab7983c0238a54d729b318fdf1798e08eff3a4524d6e340",
+      "size": 398,
+      "verified": true
+    },
+    {
+      "id": "evidence-031",
+      "path": "copy-000001-044.bin",
+      "sha256": "82b16c6ffb46fc90550e12ed952d7644f2ed7673d8a67548ed9c5f4bb5db17c2",
+      "size": 320,
+      "verified": true
+    },
+    {
+      "id": "evidence-032",
+      "path": "copy-000001-045.bin",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0,
+      "verified": true
+    },
+    {
+      "id": "evidence-033",
+      "path": "copy-000001-046.bin",
+      "sha256": "85e2ba788072da1dc444c8b27588d7a8665e0262ae9ae2ed90a3053ce84377d7",
+      "size": 2547,
+      "verified": true
+    },
+    {
+      "id": "evidence-034",
+      "path": "copy-000001-047.bin",
+      "sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86",
+      "size": 1067,
+      "verified": true
+    },
+    {
+      "id": "evidence-035",
+      "path": "copy-000001-048.bin",
+      "sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86",
+      "size": 1067,
+      "verified": true
+    },
+    {
+      "id": "evidence-036",
+      "path": "copy-000001-049.bin",
+      "sha256": "f7d13c83332e48d4e5ce456a9a2f60663e26880253ffcd056d293d889078a23a",
+      "size": 960,
+      "verified": true
+    },
+    {
+      "id": "evidence-037",
+      "path": "copy-000001-050.bin",
+      "sha256": "f7d13c83332e48d4e5ce456a9a2f60663e26880253ffcd056d293d889078a23a",
+      "size": 960,
+      "verified": true
+    },
+    {
+      "id": "evidence-038",
+      "path": "copy-000001-051.bin",
+      "sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb",
+      "size": 1477,
+      "verified": true
+    },
+    {
+      "id": "evidence-039",
+      "path": "copy-000001-052.bin",
+      "sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb",
+      "size": 1477,
+      "verified": true
+    },
+    {
+      "id": "evidence-040",
+      "path": "copy-000001-053.bin",
+      "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+      "size": 59,
+      "verified": true
+    },
+    {
+      "id": "evidence-041",
+      "path": "copy-000001-054.bin",
+      "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990",
+      "size": 285,
+      "verified": true
+    },
+    {
+      "id": "evidence-042",
+      "path": "copy-000001-055.bin",
+      "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56",
+      "size": 51,
+      "verified": true
+    },
+    {
+      "id": "evidence-043",
+      "path": "copy-000001-056.bin",
+      "sha256": "8bcad7d186b45c44f6d3cbf04ba7dbf859980c22754c79ee347d2a76907c17db",
+      "size": 1113,
+      "verified": true
+    }
+  ],
+  "original_undertaking": {
+    "custodian": "Stewart development principal, with root coordinator operating repository preservation",
+    "grants": "The original PROMPT Scope and exclusions supplies the exact finite read and helper grants. Issued auditor guidance and public handoff are included.",
+    "limits": "Static Information preservation audit only; no C/project execution, network, Git history, fixes, unrelated reads or delegation. Declarations of access are not evidence of harness enforcement. C records this undertaking and does not own its audit return.",
+    "members": [
+      {
+        "id": "question",
+        "role": "question",
+        "sha256": "619c32fe0511a1ae997cefc633a7f7542de87c5b07783408313e00ebab85222d",
+        "size": 18654,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/PROMPT.md",
+        "view": "audits/commission-recall/PROMPT.md"
+      },
+      {
+        "id": "auditor-guidance",
+        "role": "guidance",
+        "sha256": "71ddda03fa5dd428b63b06f5e74368e07c493b125924c2e34b6a16b01f086dc3",
+        "size": 1091,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/AUDITOR.md",
+        "view": "audits/commission-recall/AUDITOR.md"
+      },
+      {
+        "id": "question-types",
+        "role": "guidance",
+        "sha256": "a229525047d47d9b0838643d799cebcd8fd8b53595157d3d48d4c21ac071f4f7",
+        "size": 11128,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/QUESTION-TYPE.md",
+        "view": "audits/commission-recall/QUESTION-TYPE.md"
+      },
+      {
+        "id": "issued-handoff",
+        "role": "guidance",
+        "sha256": "17292e5d934ec01f2bcf299e1033989139bd491aaee1cf3b7815eac880ead63c",
+        "size": 8069,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/.stewart-handoffs/ba8b8209-3363-4302-8898-d81b68994c26.md",
+        "view": "issued public handoff"
+      },
+      {
+        "id": "input-001",
+        "role": "material",
+        "sha256": "d0cd54d180194f709d4347df1b53a1891434054d8613054c759e74054daf21ae",
+        "size": 7142,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/successor/README.md",
+        "view": "successor/README.md"
+      },
+      {
+        "id": "input-002",
+        "role": "material",
+        "sha256": "7a0f0234fb8df1c30eda812a1dcd8cbf657b1c078483fc4c2ed9683d1528f79a",
+        "size": 293,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/successor/Cargo.toml",
+        "view": "successor/Cargo.toml"
+      },
+      {
+        "id": "input-003",
+        "role": "material",
+        "sha256": "3fe8b18fdb9f9b2961788b31efeb7c5e269073d66e351c29cfbdf8cb3eca6d26",
+        "size": 4905,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/successor/Cargo.lock",
+        "view": "successor/Cargo.lock"
+      },
+      {
+        "id": "input-004",
+        "role": "material",
+        "sha256": "5b4f5e28725757dcd633e987763a77757c5cd1c8a0ff4134e986555c8435b70c",
+        "size": 33063,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/successor/src/main.rs",
+        "view": "successor/src/main.rs"
+      },
+      {
+        "id": "input-005",
+        "role": "material",
+        "sha256": "250f08b491b9133b99382af66a4a4276f04c11f1e0debce9a66db37bf81dc88c",
+        "size": 4547,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/successor/src/control.rs",
+        "view": "successor/src/control.rs"
+      },
+      {
+        "id": "input-006",
+        "role": "material",
+        "sha256": "dc5a7482944e8c55634501bd5962e8f0755d3110db727991e84d982a96a5f99a",
+        "size": 12079,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/successor/src/safe.rs",
+        "view": "successor/src/safe.rs"
+      },
+      {
+        "id": "input-007",
+        "role": "material",
+        "sha256": "6a54c9a61e6d0984fade652e6845a0ab70a6b3d022a07b6217a1264e9d1f2416",
+        "size": 16289,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/successor/tests/cli.rs",
+        "view": "successor/tests/cli.rs"
+      },
+      {
+        "id": "input-008",
+        "role": "material",
+        "sha256": "1a23c2d39855e876d85d84bf6907154dc2d2bf2639041a99a99c97644af9373d",
+        "size": 14616,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/scripts/check_commission.py",
+        "view": "scripts/check_commission.py"
+      },
+      {
+        "id": "input-009",
+        "role": "material",
+        "sha256": "01ce5d0cbe1504981ea61b5043382a525cf6c4430a9440743a40ed223591518c",
+        "size": 95909,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/CONTRACTS.md",
+        "view": "CONTRACTS.md"
+      },
+      {
+        "id": "input-010",
+        "role": "material",
+        "sha256": "6bf1968074b6a88ce429bc72fbaaa3f447bc8348ed82e591ac307300410f5df2",
+        "size": 5017,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/coordination/commission-intake-01/C-ACCEPTANCE.md",
+        "view": "coordination/commission-intake-01/C-ACCEPTANCE.md"
+      },
+      {
+        "id": "evidence-001",
+        "role": "material",
+        "sha256": "03b690eda2ccc6b33553aa4f48614c59f2b2556a20534a2e5acb833cb118ff16",
+        "size": 13442,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/COPY-PROVENANCE.json",
+        "view": "audits/commission-recall/inputs/COPY-PROVENANCE.json"
+      },
+      {
+        "id": "evidence-002",
+        "role": "material",
+        "sha256": "6815f11a543c7536ed90839c93f24f0f45786fea8301fe82538829afdeb77370",
+        "size": 16741,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/acceptance-RESULT.json",
+        "view": "audits/commission-recall/inputs/acceptance-RESULT.json"
+      },
+      {
+        "id": "evidence-003",
+        "role": "material",
+        "sha256": "3f31932e863954e3f31e5597e9074b37684f2871207013a93878a7640ed63352",
+        "size": 526,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/acceptance-START.json",
+        "view": "audits/commission-recall/inputs/acceptance-START.json"
+      },
+      {
+        "id": "evidence-004",
+        "role": "material",
+        "sha256": "969189b877b94d718a954dff641e78b46c7d071fee0005589aab72e5a48bb6e2",
+        "size": 106,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/acceptance-kill-before-disposition.end.json",
+        "view": "audits/commission-recall/inputs/acceptance-kill-before-disposition.end.json"
+      },
+      {
+        "id": "evidence-005",
+        "role": "material",
+        "sha256": "82410fce1d59a99d45c55c9535497d03629ad1f81a4719a5e17f8ed076e2fb71",
+        "size": 106,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/acceptance-kill-during-copy.end.json",
+        "view": "audits/commission-recall/inputs/acceptance-kill-during-copy.end.json"
+      },
+      {
+        "id": "evidence-006",
+        "role": "material",
+        "sha256": "8c5e7dec4378366f7e6a17373e310990f2767e8ae960c877a054cb0880cdbcd5",
+        "size": 392,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-001.start.json",
+        "view": "audits/commission-recall/inputs/command-001.start.json"
+      },
+      {
+        "id": "evidence-007",
+        "role": "material",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-001.stderr",
+        "view": "audits/commission-recall/inputs/command-001.stderr"
+      },
+      {
+        "id": "evidence-008",
+        "role": "material",
+        "sha256": "8c2b31300bdf328ccb19fd798a036c075e7730a4b9e681af3650b82c436785ad",
+        "size": 2646,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-001.stdout",
+        "view": "audits/commission-recall/inputs/command-001.stdout"
+      },
+      {
+        "id": "evidence-009",
+        "role": "material",
+        "sha256": "4c1b0317ed5eea68d7342d10aba31408f32c54427eb58e49acc2847ff51be1ac",
+        "size": 415,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-010.start.json",
+        "view": "audits/commission-recall/inputs/command-010.start.json"
+      },
+      {
+        "id": "evidence-010",
+        "role": "material",
+        "sha256": "67fc1e5401f6deb029023d5597ead660d9ad1935013de9b9a8a05a9599b6490b",
+        "size": 234,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-010.stderr",
+        "view": "audits/commission-recall/inputs/command-010.stderr"
+      },
+      {
+        "id": "evidence-011",
+        "role": "material",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-010.stdout",
+        "view": "audits/commission-recall/inputs/command-010.stdout"
+      },
+      {
+        "id": "evidence-012",
+        "role": "material",
+        "sha256": "564f9b2b91ffb9017dd35d0f2650a79640a131324b9c984a915eb59c6add2e44",
+        "size": 405,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-013.start.json",
+        "view": "audits/commission-recall/inputs/command-013.start.json"
+      },
+      {
+        "id": "evidence-013",
+        "role": "material",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-013.stderr",
+        "view": "audits/commission-recall/inputs/command-013.stderr"
+      },
+      {
+        "id": "evidence-014",
+        "role": "material",
+        "sha256": "bfb5f89e7451c138d3f79ec98e489517193248ba46daa5592d49ce781652580b",
+        "size": 2659,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-013.stdout",
+        "view": "audits/commission-recall/inputs/command-013.stdout"
+      },
+      {
+        "id": "evidence-015",
+        "role": "material",
+        "sha256": "fcef715080c3f276b1e55fe33da76c8a9e1c3beccbc37bbe7a56c42ca33a8158",
+        "size": 441,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-014.start.json",
+        "view": "audits/commission-recall/inputs/command-014.start.json"
+      },
+      {
+        "id": "evidence-016",
+        "role": "material",
+        "sha256": "3a5cf55a8a545395a3e708fed15a4b42e9181c5469a595d8b30404d0614a9ca4",
+        "size": 246,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-014.stderr",
+        "view": "audits/commission-recall/inputs/command-014.stderr"
+      },
+      {
+        "id": "evidence-017",
+        "role": "material",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-014.stdout",
+        "view": "audits/commission-recall/inputs/command-014.stdout"
+      },
+      {
+        "id": "evidence-018",
+        "role": "material",
+        "sha256": "ee576002b31c0fb9c0094eab3583aa4da54ab210e97b836a518a554c4121b8f1",
+        "size": 441,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-015.start.json",
+        "view": "audits/commission-recall/inputs/command-015.start.json"
+      },
+      {
+        "id": "evidence-019",
+        "role": "material",
+        "sha256": "50f227c292ea952b52c5381b0aaef1020afa8ba84e1d98f92478f21c0cc3e91d",
+        "size": 472,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-015.stderr",
+        "view": "audits/commission-recall/inputs/command-015.stderr"
+      },
+      {
+        "id": "evidence-020",
+        "role": "material",
+        "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+        "size": 59,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-015.stdout",
+        "view": "audits/commission-recall/inputs/command-015.stdout"
+      },
+      {
+        "id": "evidence-021",
+        "role": "material",
+        "sha256": "ebac9093c3239080831b3a51c9a12ef721294740e6cef09177580941c04250e5",
+        "size": 400,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-020.start.json",
+        "view": "audits/commission-recall/inputs/command-020.start.json"
+      },
+      {
+        "id": "evidence-022",
+        "role": "material",
+        "sha256": "66b5e018bb159589958988d98a74a023e23aab1eec2f050e4c0c9bf9df08a467",
+        "size": 304,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-020.stderr",
+        "view": "audits/commission-recall/inputs/command-020.stderr"
+      },
+      {
+        "id": "evidence-023",
+        "role": "material",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-020.stdout",
+        "view": "audits/commission-recall/inputs/command-020.stdout"
+      },
+      {
+        "id": "evidence-024",
+        "role": "material",
+        "sha256": "795fb5f54710fb197858668fbdb7c92f14dadd653499530c8ff89e8e777f1282",
+        "size": 402,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-021.start.json",
+        "view": "audits/commission-recall/inputs/command-021.start.json"
+      },
+      {
+        "id": "evidence-025",
+        "role": "material",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-021.stderr",
+        "view": "audits/commission-recall/inputs/command-021.stderr"
+      },
+      {
+        "id": "evidence-026",
+        "role": "material",
+        "sha256": "8b75649404ce6941ab9b6695b3a8a3540e00cfeb2a33e416f95286bcc31c6c0d",
+        "size": 5748,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-021.stdout",
+        "view": "audits/commission-recall/inputs/command-021.stdout"
+      },
+      {
+        "id": "evidence-027",
+        "role": "material",
+        "sha256": "ca50cd3bd24a7421c78efb01476e1cfcc9d2068b35df96cac6f4503dc155ca06",
+        "size": 439,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-023.start.json",
+        "view": "audits/commission-recall/inputs/command-023.start.json"
+      },
+      {
+        "id": "evidence-028",
+        "role": "material",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-023.stderr",
+        "view": "audits/commission-recall/inputs/command-023.stderr"
+      },
+      {
+        "id": "evidence-029",
+        "role": "material",
+        "sha256": "ead40feb2b767be72ea9e65721bd972de24318bcf10abfd7e4b573af9f20a695",
+        "size": 2306,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-023.stdout",
+        "view": "audits/commission-recall/inputs/command-023.stdout"
+      },
+      {
+        "id": "evidence-030",
+        "role": "material",
+        "sha256": "cac42c88ac8c97628ab7983c0238a54d729b318fdf1798e08eff3a4524d6e340",
+        "size": 398,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-024.start.json",
+        "view": "audits/commission-recall/inputs/command-024.start.json"
+      },
+      {
+        "id": "evidence-031",
+        "role": "material",
+        "sha256": "82b16c6ffb46fc90550e12ed952d7644f2ed7673d8a67548ed9c5f4bb5db17c2",
+        "size": 320,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-024.stderr",
+        "view": "audits/commission-recall/inputs/command-024.stderr"
+      },
+      {
+        "id": "evidence-032",
+        "role": "material",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size": 0,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/command-024.stdout",
+        "view": "audits/commission-recall/inputs/command-024.stdout"
+      },
+      {
+        "id": "evidence-033",
+        "role": "material",
+        "sha256": "85e2ba788072da1dc444c8b27588d7a8665e0262ae9ae2ed90a3053ce84377d7",
+        "size": 2547,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/implementation-record.json",
+        "view": "audits/commission-recall/inputs/implementation-record.json"
+      },
+      {
+        "id": "evidence-034",
+        "role": "material",
+        "sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86",
+        "size": 1067,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-ACCEPTED-000001.stage",
+        "view": "audits/commission-recall/inputs/specimen-ACCEPTED-000001.stage"
+      },
+      {
+        "id": "evidence-035",
+        "role": "material",
+        "sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86",
+        "size": 1067,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-ACCEPTED.json",
+        "view": "audits/commission-recall/inputs/specimen-ACCEPTED.json"
+      },
+      {
+        "id": "evidence-036",
+        "role": "material",
+        "sha256": "f7d13c83332e48d4e5ce456a9a2f60663e26880253ffcd056d293d889078a23a",
+        "size": 960,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-ATTEMPT-000001.json",
+        "view": "audits/commission-recall/inputs/specimen-ATTEMPT-000001.json"
+      },
+      {
+        "id": "evidence-037",
+        "role": "material",
+        "sha256": "f7d13c83332e48d4e5ce456a9a2f60663e26880253ffcd056d293d889078a23a",
+        "size": 960,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-ATTEMPT-000001.stage",
+        "view": "audits/commission-recall/inputs/specimen-ATTEMPT-000001.stage"
+      },
+      {
+        "id": "evidence-038",
+        "role": "material",
+        "sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb",
+        "size": 1477,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-INTENT.json",
+        "view": "audits/commission-recall/inputs/specimen-INTENT.json"
+      },
+      {
+        "id": "evidence-039",
+        "role": "material",
+        "sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb",
+        "size": 1477,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-INTENT.stage",
+        "view": "audits/commission-recall/inputs/specimen-INTENT.stage"
+      },
+      {
+        "id": "evidence-040",
+        "role": "material",
+        "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+        "size": 59,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-copy-000001-000.bin",
+        "view": "audits/commission-recall/inputs/specimen-copy-000001-000.bin"
+      },
+      {
+        "id": "evidence-041",
+        "role": "material",
+        "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990",
+        "size": 285,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-copy-000001-001.bin",
+        "view": "audits/commission-recall/inputs/specimen-copy-000001-001.bin"
+      },
+      {
+        "id": "evidence-042",
+        "role": "material",
+        "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56",
+        "size": 51,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-copy-000001-002.bin",
+        "view": "audits/commission-recall/inputs/specimen-copy-000001-002.bin"
+      },
+      {
+        "id": "evidence-043",
+        "role": "material",
+        "sha256": "8bcad7d186b45c44f6d3cbf04ba7dbf859980c22754c79ee347d2a76907c17db",
+        "size": 1113,
+        "source": "/private/tmp/stewart-c-audits-mb2asw7f/stewart-a964a1bb21fd/ba8b8209-3363-4302-8898-d81b68994c26/worktree/audits/commission-recall/inputs/specimen-copy-000001-request.json",
+        "view": "audits/commission-recall/inputs/specimen-copy-000001-request.json"
+      }
+    ],
+    "request_id": "commission-recall-self-audit-01",
+    "schema": "stewart.commission-request/1"
+  },
+  "qualification": "Recorded delivery of original commission only. Declarations are attributed, not enforcement or auditor activity. Self-consistency does not authenticate historical origin. Manager preserves this bundle.",
+  "receipt": "ACCEPTED.json",
+  "receipt_sha256": "8b5c73b84f1c729f96390d4fcdfb4acfc9c62e6036528c39002226043762680f",
+  "request_id": "commission-recall-self-audit-01",
+  "schema": "stewart.commission-inspection/1",
+  "state": "accepted"
+}
+

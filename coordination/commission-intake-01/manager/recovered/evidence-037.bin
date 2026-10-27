@@ -1,0 +1,30 @@
+{
+  "schema": "stewart.commission-attempt/1",
+  "writer_sha256": "b057d64cf010c28554ae087b2da4f4ae5ac8b0834ea8bed863d3cfcc99ddd1b2",
+  "intent_sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb",
+  "number": 1,
+  "request_copy": "copy-000001-request.json",
+  "members": [
+    {
+      "id": "question",
+      "path": "copy-000001-000.bin",
+      "size": 59,
+      "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855"
+    },
+    {
+      "id": "material",
+      "path": "copy-000001-001.bin",
+      "size": 285,
+      "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990"
+    },
+    {
+      "id": "guidance",
+      "path": "copy-000001-002.bin",
+      "size": 51,
+      "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56"
+    }
+  ],
+  "acceptance_stage": "ACCEPTED-000001.stage",
+  "failure_record": "FAILURE-000001.json",
+  "failure_stage": "FAILURE-000001.stage"
+}

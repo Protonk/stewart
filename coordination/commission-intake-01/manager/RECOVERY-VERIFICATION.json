@@ -1,0 +1,18 @@
+{
+  "guide_sha256": "d0cd54d180194f709d4347df1b53a1891434054d8613054c759e74054daf21ae",
+  "guide_bytes": 7142,
+  "recovery_executable_sha256": "b057d64cf010c28554ae087b2da4f4ae5ac8b0834ea8bed863d3cfcc99ddd1b2",
+  "receipt_sha256": "8b5c73b84f1c729f96390d4fcdfb4acfc9c62e6036528c39002226043762680f",
+  "request_id": "commission-recall-self-audit-01",
+  "role_counts": {
+    "question": 1,
+    "guidance": 3,
+    "material": 53
+  },
+  "payload_bytes": 293513,
+  "original_request_bytes": 23943,
+  "read_count": 58,
+  "qualification_count": 58,
+  "all_read_qualifications_pinned_and_whole_bundle_verified": true,
+  "all_recovered_bytes_rechecked": true
+}

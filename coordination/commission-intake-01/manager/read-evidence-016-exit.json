@@ -1,0 +1,8 @@
+{
+  "finished_utc": "2026-10-27T17:32:55.216528+00:00",
+  "returncode": 0,
+  "stdout_file": "recovered/evidence-016.bin",
+  "stdout_size": 246,
+  "stdout_sha256": "3a5cf55a8a545395a3e708fed15a4b42e9181c5469a595d8b30404d0614a9ca4",
+  "matches_pinned_inspection": true
+}

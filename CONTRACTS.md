@@ -256,10 +256,10 @@ the later audit service. Commission receipts describe original question, inputs,
 guidance and declared grants/limits; they do not claim auditor activity or settle
 future result representation, inspection or custody.
 
-A subsequent bounded self-audit will exercise manager recall after a context
-discontinuity and give a later investigator the actual audit return without the
-original writer or working environment. An explicitly responsible existing
-custody process preserves that return. This is not a result-custody capability
+Qualification pairs manager recall after a context discontinuity with a bounded
+self-audit and later inspection of its actual return without the original writer
+or working environment. An explicitly responsible existing custody process
+preserves that return. This is not a result-custody capability
 of commission intake. Record what the investigator needs, what artifacts support
 and what remains inaccessible or unsupported. Those observations inform whether
 a result reader preview, new producer-and-reader slice, transition tool or no

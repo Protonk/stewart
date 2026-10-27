@@ -1,0 +1,415 @@
+COMMISSION CHAIN {
+  "intent_hash": true,
+  "attempt_hash": true,
+  "request_hash": true,
+  "intent_request_exact": true,
+  "writer_intent_match": true,
+  "writer_attempt_match": true,
+  "member_count": 57,
+  "receipt_member_example": {
+    "id": "question",
+    "path": "copy-000001-000.bin",
+    "size": 18654,
+    "sha256": "619c32fe0511a1ae997cefc633a7f7542de87c5b07783408313e00ebab85222d"
+  }
+}
+
+===== VERIFIED HISTORICAL successor/src/main.rs sha256 5b4f5e28725757dcd633e987763a77757c5cd1c8a0ff4134e986555c8435b70c =====
+LINES 73 THROUGH 90
+73: struct Member {
+74:     id: String,
+75:     role: String,
+76:     source: String,
+77:     view: String,
+78:     size: u64,
+79:     sha256: String,
+80: }
+81: #[derive(Debug, Serialize, Deserialize, Clone)]
+82: #[serde(deny_unknown_fields)]
+83: struct Request {
+84:     schema: String,
+85:     request_id: String,
+86:     custodian: String,
+87:     grants: String,
+88:     limits: String,
+89:     members: Vec<Member>,
+90: }
+LINES 178 THROUGH 183
+178: struct Intent {
+179:     schema: String,
+180:     writer_sha256: String,
+181:     request_sha256: String,
+182:     request_utf8: String,
+183: }
+LINES 567 THROUGH 609
+567: fn inspect(bundle: &str, pin: Option<&str>) -> Result<(Value, i32)> {
+568:     let d = Dir::open(bundle)?;
+569:     let loaded = load(&d);
+570:     if d.exists("ABANDONED.json")? {
+571:         if pin.is_some() {
+572:             return Err(binding(
+573:                 "An incomplete acknowledgment cannot establish the pinned acceptance",
+574:                 "ABANDONED.json",
+575:             ));
+576:         }
+577:         let (a, _) = disposition(&d, &loaded)?;
+578:         let code = if a.status == "incomplete_acknowledged" {
+579:             0
+580:         } else {
+581:             3
+582:         };
+583:         return Ok((
+584:             json!({"schema":"stewart.commission-inspection/1","state":a.status,"bundle":bundle,"disposition":a,"original_intent_diagnostic":loaded.as_ref().err(),"inventory":safe::snapshot(&d)?}),
+585:             code,
+586:         ));
+587:     }
+588:     let l = match loaded {
+589:         Ok(l) => l,
+590:         Err(e) => {
+591:             return Ok((
+592:                 json!({"schema":"stewart.commission-inspection/1","state":"unresolved","bundle":bundle,"diagnostic":e,"inventory":safe::snapshot(&d)?}),
+593:                 3,
+594:             ));
+595:         }
+596:     };
+597:     if d.exists("ACCEPTED.json")? {
+598:         let (a, raw) = acceptance(&d, &l, pin)?;
+599:         let v = view(&d, &l, &a, &raw, pin);
+600:         let code = if v["integrity"] == "verified" { 0 } else { 3 };
+601:         return Ok((v, code));
+602:     }
+603:     if pin.is_some() {
+604:         return Err(binding("Pinned acceptance is missing", "ACCEPTED.json"));
+605:     }
+606:     Ok((
+607:         json!({"schema":"stewart.commission-inspection/1","state":"incomplete","bundle":bundle,"request_id":l.request.request_id,"original_undertaking":l.request,"intent_sha256":digest(&l.intent_raw),"inventory":safe::snapshot(&d)?,"next_step":"Complete with the original request or explicitly acknowledge incomplete intake using abandon; retain all partial bytes."}),
+608:         3,
+609:     ))
+LINES 631 THROUGH 675
+631: /// Status, intake and disposition replay use this same binding validation.
+632: fn disposition(d: &Dir, loaded: &Result<Loaded>) -> Result<(Abandoned, Vec<u8>)> {
+633:     let raw = d.read("ABANDONED.json", RECORD_LIMIT)?;
+634:     let a: Abandoned = control::parse(&raw, ABANDON_SCHEMA, "ABANDONED.json")?;
+635:     validate_abandon(&a)?;
+636:     if a.status == "incomplete_acknowledged" {
+637:         let l = loaded.as_ref().map_err(Clone::clone)?;
+638:         if a.intent_sha256.as_deref() != Some(digest(&l.intent_raw).as_str())
+639:             || a.writer_sha256 != l.intent.writer_sha256
+640:             || a.custodian != l.request.custodian
+641:             || a.original_intent_diagnostic.is_some()
+642:             || a.prior_acceptance_diagnostic.is_some()
+643:             || d.exists("ACCEPTED.json")?
+644:         {
+645:             return Err(binding(
+646:                 "Disposition does not bind the original incomplete undertaking",
+647:                 "ABANDONED.json",
+648:             ));
+649:         }
+650:     } else {
+651:         if a.original_intent_diagnostic.is_none() && a.prior_acceptance_diagnostic.is_none() {
+652:             return Err(binding(
+653:                 "Unresolved acknowledgment has no recorded uncertainty",
+654:                 "ABANDONED.json",
+655:             ));
+656:         }
+657:         if let Some(ref recorded) = a.intent_sha256 {
+658:             let l = loaded.as_ref().map_err(Clone::clone)?;
+659:             if *recorded != digest(&l.intent_raw)
+660:                 || a.writer_sha256 != l.intent.writer_sha256
+661:                 || a.custodian != l.request.custodian
+662:             {
+663:                 return Err(binding(
+664:                     "Observation acknowledgment's available intent binding changed",
+665:                     "ABANDONED.json",
+666:                 ));
+667:             }
+668:         } else if a.original_intent_diagnostic.is_none() {
+669:             return Err(binding(
+670:                 "Observation without intent identity lacks its diagnostic",
+671:                 "ABANDONED.json",
+672:             ));
+673:         }
+674:     }
+675:     Ok((a, raw))
+LINES 728 THROUGH 803
+728:     let a = Abandoned {
+729:         schema: ABANDON_SCHEMA.into(),
+730:         writer_sha256: current,
+731:         status: if l.is_err() || previous.is_some() {
+732:             "unresolved_acknowledged"
+733:         } else {
+734:             "incomplete_acknowledged"
+735:         }
+736:         .into(),
+737:         actor: actor.into(),
+738:         reason: reason.into(),
+739:         custodian: l
+740:             .as_ref()
+741:             .map(|x| x.request.custodian.clone())
+742:             .unwrap_or_else(|_| actor.into()),
+743:         intent_sha256: l.as_ref().ok().map(|x| digest(&x.intent_raw)),
+744:         prior_acceptance_diagnostic: previous,
+745:         original_intent_diagnostic: l.as_ref().err().cloned(),
+746:         inventory: safe::snapshot(&d)?,
+747:     };
+748:     let raw = encode(&a)?;
+749:     let names = d.names()?;
+750:     let n = (1..=999999u32)
+751:         .find(|n| !names.contains(&format!("ABANDONED-{n:06}.stage")))
+752:         .ok_or_else(|| {
+753:             Error::new(
+754:                 "limit_exceeded",
+755:                 "Disposition staging names exhausted",
+756:                 bundle,
+757:                 "Keep existing records.",
+758:             )
+759:         })?;
+760:     let stage = format!("ABANDONED-{n:06}.stage");
+761:     d.write_receipt("ABANDONED.json", &stage, &raw)?;
+762:     Ok(
+763:         json!({"state":a.status,"disposition":a,"receipt_sha256":digest(&raw),"qualification":"The named custodian retains all partial bytes. No deletion or acceptance is authorized. Any damaged prior outcome remains uncertain."}),
+764:     )
+765: }
+766: fn read_member(bundle: &str, id: &str, pin: Option<&str>) -> Result<()> {
+767:     let d = Dir::open(bundle)?;
+768:     let l = load(&d)?;
+769:     let (a, raw) = acceptance(&d, &l, pin)?;
+770:     let o = if id == "@request" {
+771:         Output {
+772:             id: id.into(),
+773:             path: a.request_copy.clone(),
+774:             size: l.intent.request_utf8.len() as u64,
+775:             sha256: l.intent.request_sha256.clone(),
+776:         }
+777:     } else {
+778:         a.members
+779:             .iter()
+780:             .find(|m| m.id == id)
+781:             .cloned()
+782:             .ok_or_else(|| {
+783:                 Error::new(
+784:                     "unknown_member",
+785:                     "Member is not selected by this commission",
+786:                     id,
+787:                     "Inspect the explicit commission inventory and choose a listed ID.",
+788:                 )
+789:             })?
+790:     };
+791:     let b = d.read(&o.path, MEMBER_LIMIT)?;
+792:     verify(&b, o.size, &o.sha256, &o.path)?;
+793:     let inspection = view(&d, &l, &a, &raw, pin);
+794:     let qualification = json!({"member":id,"size":b.len(),"sha256":digest(&b),"receipt_sha256":digest(&raw),"externally_pinned":pin.is_some(),"whole_bundle_integrity":inspection["integrity"],"qualification":inspection["qualification"]});
+795:     eprintln!("{}", qualification);
+796:     std::io::stdout().lock().write_all(&b).map_err(|e| {
+797:         Error::new(
+798:             "output_failed",
+799:             e.to_string(),
+800:             "stdout",
+801:             "Preserve the bundle; retry readback to a working output destination.",
+802:         )
+803:     })
+
+===== VERIFIED HISTORICAL successor/src/safe.rs sha256 dc5a7482944e8c55634501bd5962e8f0755d3110db727991e84d982a96a5f99a =====
+LINES 349 THROUGH 358
+349: pub fn snapshot(d: &Dir) -> Result<serde_json::Value> {
+350:     let mut entries = Vec::new();
+351:     for name in d.names()? {
+352:         let item = match d.read(&name, crate::MEMBER_LIMIT) {
+353:             Ok(b) => serde_json::json!({"name":name,"size":b.len(),"sha256":digest(&b)}),
+354:             Err(e) => serde_json::json!({"name":name,"diagnostic":e}),
+355:         };
+356:         entries.push(item);
+357:     }
+358:     Ok(serde_json::Value::Array(entries))
+
+===== VERIFIED HISTORICAL successor/README.md sha256 d0cd54d180194f709d4347df1b53a1891434054d8613054c759e74054daf21ae =====
+LINES 26 THROUGH 45
+26: ```
+27: 
+28: The caller creates a new empty directory before first acceptance and retains its
+29: locator. All paths are explicit absolute paths with no symlink components. An
+30: existing matching accepted request returns its recorded receipt; an interrupted
+31: request requires explicit `complete`. A changed request refuses. `complete` uses
+32: new planned member names and never overwrites a failed copy. `abandon` records
+33: the named actor's acknowledgment that intake remains incomplete and the named
+34: custodian retains all partial bytes and diagnostics; it never deletes anything
+35: or labels the commission accepted. It cannot abandon a verified accepted bundle.
+36: 
+37: `inspect` returns JSON with acceptance identity, original commission inventory,
+38: declared authority and individual verification results. `read` writes one verified
+39: member's exact bytes to stdout and a JSON qualification to stderr. It can recover
+40: a selected verified member even when a different payload is missing; it never
+41: claims whole-bundle integrity in that case. `@request` retrieves the original
+42: request bytes. Reader commands never consult original source paths or execute
+43: recorded code. A bundle can be moved as a whole.
+44: 
+45: The returned receipt SHA-256 is a reference the caller can retain. Supply it to
+LINES 79 THROUGH 89
+79: for recall, never extraction destinations. All material must be explicit regular
+80: files; no recursive selection, symbolic links, special files, Git materialization
+81: or executable replay occurs. The request ID is scoped to its bundle directory;
+82: there is no global registry and no recency-based selection.
+83: 
+84: Bounds: 128 members, 16 MiB per member, 128 MiB total payload, 1 MiB request.
+85: The original request counts separately from payload. Nonempty custodian, grants,
+86: limits and views are required. Input file permissions/executable bits and source
+87: paths are reported as provenance only; this bundle does not reconstruct a runnable
+88: environment or promise an atomic multi-file snapshot. Expected identities define
+89: the selection, and each copied file is checked for observed change during reading.
+
+===== VERIFIED HISTORICAL CONTRACTS.md sha256 01ce5d0cbe1504981ea61b5043382a525cf6c4430a9440743a40ed223591518c =====
+LINES 150 THROUGH 178
+150: **Standard commission receipts support manager recall.** Decided direction,
+151: 2026-10-27; **Implemented in Rust** for the bounded commission-input delivery
+152: leg, with integration into the later audit service still pending. A manager
+153: supplies copies of material for which it is responsible. Stewart promptly returns
+154: detailed receipts for the commission and accepted input selection, independently
+155: of waiting for the auditor's result. Those receipts use a consistent, documented
+156: presentation and access route, with an explicit commission reference. A manager
+157: whose conversation has been compacted can use them to recover the original
+158: question and supplied material, including for constructing a competing answer.
+159: 
+160: The account binds the original question/instructions, selected material identities
+161: and their supplied view, relevant Stewart-added guidance or transformations,
+162: and recorded grants and limits. It provides a supported way to inspect the
+163: corresponding retained bytes; a filename or digest alone does not supply them.
+164: Distinguish the requested selection, what Stewart recorded accepting or making
+165: available, and any unconfirmed or incomplete step. Manager edits after handoff
+166: do not alter this account, and missing or invalid originals are diagnosed rather
+167: than replaced from a live worktree. It describes the commission, not what the
+168: auditor has read, understood or is currently doing; it grants no live access.
+169: 
+170: The manager remains responsible for retaining a receipt/reference or knowing the
+171: standard access route. Losing both may require additional reconstruction work;
+172: Stewart does not promise general memory recovery or guess an audit by recency.
+173: The manager need not retain the original conversation to inspect the commission.
+174: The commission-input leg's receipt schema, presentation, explicit location and
+175: acknowledgment boundaries are documented in its user guide. Audit-service
+176: integration and retention after audit closure remain for design and qualification. The interface must
+177: be usable while the audit is live. This input-receipt decision does not settle
+178: custody of the auditor's partial answers or promise executable audit replay.
+LINES 191 THROUGH 200
+191: **Incomplete Stewart operations remain Stewart's responsibility to account
+192: for.** Clarified 2026-10-25. Restricting intervention increases the importance
+193: of a supported account and disposition of interrupted custody work, particularly
+194: for agent-managers likely to improvise repairs when the interface leaves a gap.
+195: Do not make editing private state, deleting evidence or guessing whether an
+196: operation ran the expected recovery path. Complete an existing undertaking
+197: within its recorded authority where possible, or expose its unresolved state,
+198: limits and an authorized disposition. A diagnostic that merely leaves the
+199: manager to improvise private-state repairs is an interface gap, not a supported
+200: resolution. This is not a guarantee that lost bytes can be recovered.
+LINES 218 THROUGH 246
+218: ## First successor leg: commission-input acceptance
+219: 
+220: Selected 2026-10-27. **Implemented in Rust**, locally qualified on Apple Silicon
+221: macOS. The separate [commission-bundle guide](successor/README.md) states the
+222: interface and limits; this is not the full successor audit service.
+223: The first usable successor leg accepts a bounded
+224: commission-input selection, issues detailed receipts and supports independent
+225: verified readback of the original undertaking. Accepted materials must remain
+226: recoverable without the originating process. Its acceptance promise, responsible
+227: custodian and accounting for incomplete intake must be explicit before the write
+228: interface is implemented.
+229: 
+230: The user selected manager-custodied delivery: a verified, self-contained bundle
+231: is delivered into explicitly designated storage, and the named manager/custodian
+232: is responsible for preserving it thereafter. Acceptance means the entire
+233: selected original undertaking and its detailed receipt are present and verified
+234: at that destination; printing a path or digest alone is insufficient. It does
+235: not mean an audit has launched or a result is owed through this intake slice.
+236: C neither silently deletes delivered material nor undertakes a separate private
+237: retention service. Independent readback verifies retained bytes, diagnoses loss
+238: or damage and never silently substitutes live sources.
+239: 
+240: Incomplete intake retains partial bytes and diagnostics. Its known reference
+241: supports completion within the original intent or explicit attributed
+242: acknowledgment/disposition as incomplete, with custody of partial material kept
+243: at the designated destination. Neither path overwrites records, conceals unmet
+244: acceptance nor grants deletion or another investigation. Unrecorded or unverified
+245: disposition remains unresolved. A lost success reply is recovered from the
+246: existing verified record, not by guessing whether an operation ran.
+
+===== EXACT audits/commission-recall/inputs/command-023.start.json =====
+{
+  "argv": [
+    "/Users/raccoon/Desktop/Experiments/stewart/.scratch/commission-intake-01/acceptance-02/installed/stewart-commission",
+    "abandon",
+    "--bundle",
+    "/private/tmp/stewart-commission-check-3kqpvn49/abandoned/bundle",
+    "--actor",
+    "Acceptance manager",
+    "--reason",
+    "Explicitly retain partial material; requested acceptance not completed."
+  ],
+  "cwd": "/private/tmp/stewart-commission-check-3kqpvn49"
+}
+
+===== EXACT audits/commission-recall/inputs/command-023.stdout =====
+{
+  "disposition": {
+    "actor": "Acceptance manager",
+    "custodian": "Acceptance investigator",
+    "intent_sha256": "473616d96da924dd4192b64fcba9eabb0d69e235dac5347e35768a5bd7696da8",
+    "inventory": [
+      {
+        "name": "ATTEMPT-000001.json",
+        "sha256": "a168b62858069c02f6eb89a2a30c2e959ee5bc8e3c1523a5cb264c14bace6ce7",
+        "size": 2034
+      },
+      {
+        "name": "ATTEMPT-000001.stage",
+        "sha256": "a168b62858069c02f6eb89a2a30c2e959ee5bc8e3c1523a5cb264c14bace6ce7",
+        "size": 2034
+      },
+      {
+        "name": "INTENT.json",
+        "sha256": "473616d96da924dd4192b64fcba9eabb0d69e235dac5347e35768a5bd7696da8",
+        "size": 3417
+      },
+      {
+        "name": "INTENT.stage",
+        "sha256": "473616d96da924dd4192b64fcba9eabb0d69e235dac5347e35768a5bd7696da8",
+        "size": 3417
+      },
+      {
+        "name": "copy-000001-000.bin",
+        "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+        "size": 59
+      },
+      {
+        "name": "copy-000001-001.bin",
+        "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990",
+        "size": 285
+      },
+      {
+        "name": "copy-000001-002.bin",
+        "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56",
+        "size": 51
+      },
+      {
+        "name": "copy-000001-003.bin",
+        "sha256": "960791741d6e16f8b3defee31bc9053f6bc3366ddb5f43a3304fe5b93b8400a3",
+        "size": 16777216
+      },
+      {
+        "name": "copy-000001-request.json",
+        "sha256": "e957f80698cf1faa5602f33a57c8781172218476b127912aaee0db04e54f64aa",
+        "size": 2873
+      }
+    ],
+    "original_intent_diagnostic": null,
+    "prior_acceptance_diagnostic": null,
+    "reason": "Explicitly retain partial material; requested acceptance not completed.",
+    "schema": "stewart.commission-abandoned/1",
+    "status": "incomplete_acknowledged",
+    "writer_sha256": "b057d64cf010c28554ae087b2da4f4ae5ac8b0834ea8bed863d3cfcc99ddd1b2"
+  },
+  "qualification": "The named custodian retains all partial bytes. No deletion or acceptance is authorized. Any damaged prior outcome remains uncertain.",
+  "receipt_sha256": "8ea4cc6413fc71d5f520eee291e439beb0016e0a320a3e524565d6b00b469759",
+  "state": "incomplete_acknowledged"
+}
+
+
+===== EXACT audits/commission-recall/inputs/command-024.stderr =====
+{"error":{"message":"An attributed acknowledgment exists; its recorded limits still apply","next_step":"Inspect this retained bundle; preserve unresolved obligations and use a fresh directory for a new commission.","paths":["/private/tmp/stewart-commission-check-3kqpvn49/abandoned/bundle"],"reason":"intake_disposed"}}

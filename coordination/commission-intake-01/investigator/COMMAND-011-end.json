@@ -1,0 +1,49 @@
+{
+  "finished_utc": "2026-10-27T17:53:34.155210+00:00",
+  "exit": 0,
+  "reads": [
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/COMMAND-002-end.json",
+      "scope": "own investigator output",
+      "bytes": 8315,
+      "sha256": "547c5e5e64c6d9e5333b0603b583e9e331f36b4c5a641878351cf75f258ced72"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/COMMAND-003-end.json",
+      "scope": "own investigator output",
+      "bytes": 1331,
+      "sha256": "71b7936b1da05e808934cc4bf7068fc0c8329d5ebc31ef7fdc2d7a54a1238421"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/COMMAND-004-end.json",
+      "scope": "own investigator output",
+      "bytes": 350,
+      "sha256": "232ba723b8c4435ca02cfc53eec69adfb308cce9772a3d6703b1d8c9f36c68f1"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/COMMAND-005-end.json",
+      "scope": "own investigator output",
+      "bytes": 2071,
+      "sha256": "41107428157e080d51aae429e1ffe7fef4c5084210e31ae2eb7d38efa8d3f0c2"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/COMMAND-007-end.json",
+      "scope": "own investigator output",
+      "bytes": 975,
+      "sha256": "c30dd7ef23957fa8ee428480c193ac489c19eb26fc579a6a65f85bc65c793dd1"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/COMMAND-009-end.json",
+      "scope": "own investigator output",
+      "bytes": 2839,
+      "sha256": "b39084f09e5f3900fb22b1c0cf3f640ae34fac5803073f74b43fcae731c3e258"
+    },
+    {
+      "path": "/Users/raccoon/Desktop/Experiments/stewart/coordination/commission-intake-01/investigator/COMMAND-010-end.json",
+      "scope": "own investigator output",
+      "bytes": 6067,
+      "sha256": "02b5e0326487a46e13790ba35ada13efd38880916cba16500c27c633bec68e18"
+    }
+  ],
+  "metadata": []
+}

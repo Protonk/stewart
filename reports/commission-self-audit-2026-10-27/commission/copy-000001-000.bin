@@ -1,0 +1,328 @@
+# Audit assignment
+
+## Question
+
+Primary question type: Information preservation (the named section in the supplied
+QUESTION-TYPE.md). Does C preserve the distinction between the original requested
+undertaking, completed verified delivery, incomplete intake, and what a later
+reader can currently verify across its acceptance-to-readback route? Assess the
+actual first-release implementation and supplied observed records. Identify the
+first supported loss or promotion, or state the bounded evidence for preservation
+and the remaining unproved premises.
+
+## Decision
+
+The manager must decide whether to rely on this release for recovering an original
+commission after losing conversational context, or repair a concrete defect or
+narrow its documentation first. C is manager-custodied original-input delivery;
+it does not launch an audit, preserve results or authenticate historical actor
+honesty. No particular finding or favorable conclusion is requested. A supported
+needs-evidence or reframe response is available.
+
+## Scope and exclusions
+
+Read the pinned input_files and supplemental_inputs in metadata, this PROMPT,
+AUDITOR.md, and the Information preservation section of QUESTION-TYPE.md. Trace
+successor/src/main.rs intake, run_copy, acceptance, inspect, read_member and
+abandon/disposition with their actual control.rs/safe.rs dependencies. Review the
+relevant selected tests and external checker, and the supplied observed receipts
+and command outputs. All those producer/consumer sites were opened by the manager
+before issuing this question. Contracts unrelated to the admitted C scope are
+context, not an instruction to implement the rest of Stewart.
+
+Static review is authorized. You may use file/search tools and explicit isolated
+Python standard-library inspection (`/usr/bin/python3 -I -B -S`) to parse, hash
+and compare the selected bytes. Matched search lines count as reads. You may run
+only the handoff's exact input-verification and report-declaration helper commands
+in addition to those inspection operations. No project/C execution, building,
+pytest/Cargo tests, trial scripts, network, Git history, unrelated repository
+reads, repairs or delegated work. Retained test observations are evidence with
+their recorded limits, not permission to rerun their commands. Paths inside
+records identify provenance; they grant no access to the referenced live locations.
+
+Write only the assigned report and declared notes directory. Preserve raw source
+records. Use notes/READ-ACCOUNT.md for actually consulted inputs and any scope or
+tool failures; use notes/CLAIM-TRACE.md for the supporting source/record trace and
+independently proposed discriminating comparisons. Keep those notes readable.
+A missing essential premise should be named, not filled by ungranted inspection.
+
+## Evidence
+
+The C-ACCEPTANCE.md account is the manager's attributed claim; examine its stated
+coverage against the actual source and supplied evidence. The 46/46 external
+checks include command exits and behavior predicates, not 46 independent cases.
+The worker's 14/14 integration tests and two real parent SIGKILL observations are
+separate evidence. No outcome count proves universal correctness.
+
+`inputs/specimen-*` contains exact copies of one actually accepted healthy C bundle
+from the external check, with names prefixed solely for this audit's supplied view.
+COPY-PROVENANCE.json maps the original member names and records the manager's
+copying account. These bytes are the specimen, not a fabricated future result
+format. The accepted receipt pins its intent and attempt; compare the raw copied
+request and selected payloads. The original source paths are deliberately outside
+your grant. `inputs/command-*` are selected actual external-driver invocations and
+streams for accepted delivery, changed intent/selection, damaged versus unaffected
+members, interrupted intake/completion and incomplete disposition. START, RESULT
+and kill end records identify the observer, binary and observed interruption.
+They do not independently prove which source compiled into the binary, hostile-host
+enforcement, multi-file snapshot atomicity, power-loss durability or historical
+actor honesty. Preserve such distinctions in your answer.
+
+No original live writer/process or test working directory is available to this
+assignment. Do not reconstruct unavailable effects from a passing assertion.
+A comparison you propose but cannot execute remains a prediction. The manager may
+later commission a separate discriminating check if its decision requires one.
+
+## Stop condition
+
+Stop once you have traced the admitted route and assessed the supplied evidence,
+and either found a concrete loss/promotion, found no supported defect within that
+scope, or identified the precise missing premise that blocks the decision. Limit
+the investigation to this one commission; do not expand into future result
+schemas or a general codebase audit. Report each substantive conclusion with its
+support and qualification, distinguish observed behavior from source prediction,
+and give the smallest discriminating next check where useful. Complete the
+issued declaration helpers and return. A report with no supported defect is as
+admissible as one with a defect; neither is a general correctness verdict.
+
+## Assignment metadata
+
+```audit-assignment
+{
+  "audit_id": "commission-recall-self-audit-01",
+  "target_commit": "0dbb2eb0b31b488727c1ad3c8c01c0a4be934652",
+  "report_path": "audits/commission-recall/reports/commission-recall-self-audit-01.md",
+  "input_files": [
+    "successor/README.md",
+    "successor/Cargo.toml",
+    "successor/Cargo.lock",
+    "successor/src/main.rs",
+    "successor/src/control.rs",
+    "successor/src/safe.rs",
+    "successor/tests/cli.rs",
+    "scripts/check_commission.py",
+    "CONTRACTS.md",
+    "coordination/commission-intake-01/C-ACCEPTANCE.md"
+  ],
+  "supplemental_inputs": [
+    {
+      "path": "audits/commission-recall/inputs/COPY-PROVENANCE.json",
+      "sha256": "03b690eda2ccc6b33553aa4f48614c59f2b2556a20534a2e5acb833cb118ff16",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/acceptance-RESULT.json",
+      "sha256": "6815f11a543c7536ed90839c93f24f0f45786fea8301fe82538829afdeb77370",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/acceptance-START.json",
+      "sha256": "3f31932e863954e3f31e5597e9074b37684f2871207013a93878a7640ed63352",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/acceptance-kill-before-disposition.end.json",
+      "sha256": "969189b877b94d718a954dff641e78b46c7d071fee0005589aab72e5a48bb6e2",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/acceptance-kill-during-copy.end.json",
+      "sha256": "82410fce1d59a99d45c55c9535497d03629ad1f81a4719a5e17f8ed076e2fb71",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-001.start.json",
+      "sha256": "8c5e7dec4378366f7e6a17373e310990f2767e8ae960c877a054cb0880cdbcd5",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-001.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-001.stdout",
+      "sha256": "8c2b31300bdf328ccb19fd798a036c075e7730a4b9e681af3650b82c436785ad",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-010.start.json",
+      "sha256": "4c1b0317ed5eea68d7342d10aba31408f32c54427eb58e49acc2847ff51be1ac",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-010.stderr",
+      "sha256": "67fc1e5401f6deb029023d5597ead660d9ad1935013de9b9a8a05a9599b6490b",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-010.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-013.start.json",
+      "sha256": "564f9b2b91ffb9017dd35d0f2650a79640a131324b9c984a915eb59c6add2e44",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-013.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-013.stdout",
+      "sha256": "bfb5f89e7451c138d3f79ec98e489517193248ba46daa5592d49ce781652580b",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-014.start.json",
+      "sha256": "fcef715080c3f276b1e55fe33da76c8a9e1c3beccbc37bbe7a56c42ca33a8158",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-014.stderr",
+      "sha256": "3a5cf55a8a545395a3e708fed15a4b42e9181c5469a595d8b30404d0614a9ca4",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-014.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-015.start.json",
+      "sha256": "ee576002b31c0fb9c0094eab3583aa4da54ab210e97b836a518a554c4121b8f1",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-015.stderr",
+      "sha256": "50f227c292ea952b52c5381b0aaef1020afa8ba84e1d98f92478f21c0cc3e91d",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-015.stdout",
+      "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-020.start.json",
+      "sha256": "ebac9093c3239080831b3a51c9a12ef721294740e6cef09177580941c04250e5",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-020.stderr",
+      "sha256": "66b5e018bb159589958988d98a74a023e23aab1eec2f050e4c0c9bf9df08a467",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-020.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-021.start.json",
+      "sha256": "795fb5f54710fb197858668fbdb7c92f14dadd653499530c8ff89e8e777f1282",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-021.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-021.stdout",
+      "sha256": "8b75649404ce6941ab9b6695b3a8a3540e00cfeb2a33e416f95286bcc31c6c0d",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-023.start.json",
+      "sha256": "ca50cd3bd24a7421c78efb01476e1cfcc9d2068b35df96cac6f4503dc155ca06",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-023.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-023.stdout",
+      "sha256": "ead40feb2b767be72ea9e65721bd972de24318bcf10abfd7e4b573af9f20a695",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-024.start.json",
+      "sha256": "cac42c88ac8c97628ab7983c0238a54d729b318fdf1798e08eff3a4524d6e340",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-024.stderr",
+      "sha256": "82b16c6ffb46fc90550e12ed952d7644f2ed7673d8a67548ed9c5f4bb5db17c2",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/command-024.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/implementation-record.json",
+      "sha256": "85e2ba788072da1dc444c8b27588d7a8665e0262ae9ae2ed90a3053ce84377d7",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-ACCEPTED-000001.stage",
+      "sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-ACCEPTED.json",
+      "sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-ATTEMPT-000001.json",
+      "sha256": "f7d13c83332e48d4e5ce456a9a2f60663e26880253ffcd056d293d889078a23a",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-ATTEMPT-000001.stage",
+      "sha256": "f7d13c83332e48d4e5ce456a9a2f60663e26880253ffcd056d293d889078a23a",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-INTENT.json",
+      "sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-INTENT.stage",
+      "sha256": "5c816e4241e97b14cb5091fedcf73597bfa283110477ea71fc8b14c08b4b91cb",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-copy-000001-000.bin",
+      "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-copy-000001-001.bin",
+      "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-copy-000001-002.bin",
+      "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    },
+    {
+      "path": "audits/commission-recall/inputs/specimen-copy-000001-request.json",
+      "sha256": "8bcad7d186b45c44f6d3cbf04ba7dbf859980c22754c79ee347d2a76907c17db",
+      "provenance": "Root-preserved actual C development acceptance evidence; COPY-PROVENANCE identifies source and limits."
+    }
+  ],
+  "scratch_paths": [
+    "audits/commission-recall/scratch/commission-recall-self-audit-01/notes"
+  ]
+}
+```

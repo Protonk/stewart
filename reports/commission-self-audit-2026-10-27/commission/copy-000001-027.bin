@@ -1,0 +1,76 @@
+{
+  "bundle": "/private/tmp/stewart-commission-check-3kqpvn49/same-intent-new-destination",
+  "custodian": "Acceptance investigator",
+  "externally_pinned": false,
+  "integrity": "verified",
+  "members": [
+    {
+      "id": "@request",
+      "path": "copy-000001-request.json",
+      "sha256": "8bcad7d186b45c44f6d3cbf04ba7dbf859980c22754c79ee347d2a76907c17db",
+      "size": 1113,
+      "verified": true
+    },
+    {
+      "id": "question",
+      "path": "copy-000001-000.bin",
+      "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+      "size": 59,
+      "verified": true
+    },
+    {
+      "id": "material",
+      "path": "copy-000001-001.bin",
+      "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990",
+      "size": 285,
+      "verified": true
+    },
+    {
+      "id": "guidance",
+      "path": "copy-000001-002.bin",
+      "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56",
+      "size": 51,
+      "verified": true
+    }
+  ],
+  "original_undertaking": {
+    "custodian": "Acceptance investigator",
+    "grants": "Read selected originals.",
+    "limits": "No investigation or result custody is commissioned.",
+    "members": [
+      {
+        "id": "question",
+        "role": "question",
+        "sha256": "da3d8ea36c2623f19c1baa8e5244522671f24649ffa835a92095ad8d8636f855",
+        "size": 59,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/healthy/sources/question",
+        "view": "question.original"
+      },
+      {
+        "id": "material",
+        "role": "material",
+        "sha256": "4e62695ab65164c0052ed07eb22e714fdc5e39a0d6beed5e169df2d820b43990",
+        "size": 285,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/healthy/sources/material",
+        "view": "material.original"
+      },
+      {
+        "id": "guidance",
+        "role": "guidance",
+        "sha256": "047628df006d95289d7302916d343411b09039079a06848e1cda61346016de56",
+        "size": 51,
+        "source": "/private/tmp/stewart-commission-check-3kqpvn49/healthy/sources/guidance",
+        "view": "guidance.original"
+      }
+    ],
+    "request_id": "healthy",
+    "schema": "stewart.commission-request/1"
+  },
+  "qualification": "Recorded delivery of original commission only. Declarations are attributed, not enforcement or auditor activity. Self-consistency does not authenticate historical origin. Manager preserves this bundle.",
+  "receipt": "ACCEPTED.json",
+  "receipt_sha256": "831cd6a4aa057baddaa006b495e9377310a1642b019d5b2b133cbe554f060e86",
+  "request_id": "healthy",
+  "schema": "stewart.commission-inspection/1",
+  "state": "accepted"
+}
+
