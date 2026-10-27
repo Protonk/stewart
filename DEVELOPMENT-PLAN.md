@@ -70,8 +70,9 @@ the explicit transfer and requested thin briefing. After C and its self-audit
 completed, the user directed a transfer to another Astra coordinator to help
 reach the later Opus turnover point. The next tenure prepares the next bounded
 implementation commission with the user; no next product slice or Claude launch
-is selected by this transfer. The outgoing coordinator prepares the briefing,
-then stops before the user starts the incoming coordinator.
+is selected by this transfer. The incoming coordinator consumed the briefing on
+2026-10-27 at clean HEAD `e06a46b`. The current commission is intake and discussion
+with the user to establish the next bounded work; no implementation is dispatched.
 
 The user chose to address the first leg's consumer and record population before
 the other release choices, with a standalone Riker consultation prepared in
@@ -135,6 +136,29 @@ user-selected C leg now combines intake and its independent readback in F4,
 with manager-custodied delivery. F5 retains the broader audit/result route.
 The separately commissioned self-audit follows usable C and preserves its actual
 return through existing custody without determining a successor result schema.
+
+Current F3 discussion, 2026-10-27: the user accepted preventive construction as a
+sound direction for the auditor-facing submission tool. Give the tool control
+over artifact identities, explicit edits, generated mechanical metadata and the
+exact revision finalized, with enforcement at the receiving boundary. The
+[protocol candidate](coordination/submission-design-01/DESIGN.md) makes the next
+discussion concrete. After artifact addition succeeds and the helper exits, exact
+selected bytes and identity remain recoverable in Stewart while the audit is open.
+The user clarified the simple authoring surface: add, replace using an existing
+element's handle, and delete, with strongly sought atomicity and early informative
+refusals. Avoid draft-status lifecycle stages and a second promotion of the same
+content into custody. CONTRACTS records the direction. Residual interrupted-operation
+accounting, element-handle/version semantics, reclamation, partial-work disposition
+and W09's delivery promise remain open. Construction
+checks should first prevent avoidable invalid states; residual failure choices
+then determine the custody protocol. No runtime implementation or new trial is
+commissioned by this direction. The user accepted an inspectable prepare-generated
+manifest/handle and submission defaulting to dry run, with an explicit flag for
+actual submission. CONTRACTS now records stale-preparation refusal, atomic ending
+of editing, and recovery of the same submission after a lost reply. Exact mechanism
+and qualification remain open. Manager-side simplification is for later discussion.
+The remaining pre-sleep work is a documented failure walkthrough and a bounded
+next-work brief under the same coordination directory, not implementation dispatch.
 
 ## Work register
 
@@ -282,7 +306,7 @@ no product contract; W02 and operational qualification remain open.
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
 | W01 — Bounded content comparisons and construction execution; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. The receipt challenge adds controlled valid-but-inadequate support for a specific byte-comparison claim. Unexpected ordinary findings, substantive reframing, refusal/blocked returns, broader fresh instrument discrimination and specific-schema comparisons remain open; do not reshape question recipes for the schema. |
-| W02 — Policy open | Select admitted-answer-only or complete-attempt custody; define setter acknowledgments, bounded snapshot assembly, attempt identities, corrections/finality, retrieval and lifetime. Decide partial work on early close, compulsory manager gap/follow-up responses and helper-independent human handback. [Keyhole decisions](KEYHOLE-OBLIGATIONS-FINDINGS.md#decisions-and-evidence-still-needed), [Riker assessment](KEYHOLE-OBLIGATIONS-FINDINGS.md#riker-and-the-transition). | W01 informs F3. Before F5, choose scope and update affected contracts explicitly. Test invalid final discriminator after substantial setters, full attempt versus call arguments, later-setter invariance, failed custody writing, racing/repeated finals and lost success replies. The prior coordinator's preference for attempt custody is not a decision. |
+| W02 — Atomic authoring and normal submission decided; implementation open | Add, handle-based replace and delete edit recorded elements with recoverability beyond helper exit. Prepare issues an inspectable exact-revision handle; submit defaults to dry run, explicit true atomically ends edits, and the same handle recovers a lost reply. Avoid draft-status stages. Specify element handles, mutation recovery, retrieval and reclamation; decide partial work on early close, compulsory manager gap/follow-up responses and manual handback. [Current design](coordination/submission-design-01/DESIGN.md). | Qualify atomic publication, stale/cross-audit handles, racing edits/submissions, dry-run invariance, corrupted held bytes and lost replies under the [failure walkthrough](coordination/submission-design-01/FAILURE-WALKTHROUGH.md). The old misspelled-discriminator counterexample remains historical; no required discriminator is selected to preserve it. Real storage/access, holds/physical reclamation and manager delivery remain separate dependencies. |
 | W03 — Architecture open | Decide A.1's formal admission rule and D's commission facilities, capture terms and retention promise, including R3's distinction from a voluntary hold. Identify any new auditor channel's effect on inherited assumptions. [Opening decisions](#opening-decision-round-a-narrow-custodial-core), [R3](#session-scoped-agent-guidance-reconciliation-2026-10-25). | F3, informed by W01/W02 and W04–W09. No executor does not adopt an exact-three-responsibilities formula. Test grants and recorded limitations against the actual commissioned view; admission is not a verdict on the answer. |
 | W04 — Workspace/history open | Decide B and F: plain subject files, history-only use, pinned history facility, and supported Git-aware/build/test capabilities. Resolve unrepresentable trees and name normalization as proposed decisions, not silent fixes. [B](CUSTODIAL-CORE-FINDINGS.md#b-the-workspace-representation), [F](CUSTODIAL-CORE-FINDINGS.md#f-the-form-of-the-history-facility). | Capability comparisons in F2; selected representation before F5. Verify selected object membership, absent unrelated/dangling/replacement objects, graft/shallow/partial limits, case/Unicode behavior and real tool usability. A shared backing store cannot expose its whole contents. |
 | W05 — C delivery implemented; audit storage open | C delivers an explicit portable bundle to its named manager custodian. For the later audit service, decide E: custody location, retained commission objects/refs, explicit locators and behavior when the repository or result moves. Set the standard commission-receipt location/access convention and retention after closure. [E](CUSTODIAL-CORE-FINDINGS.md#e-where-custody-lives). | F3 before request/storage schemas and F5. Test moves, nested/unrelated paths, mirror/ref behavior for the selected design and writer/environment loss. Preserve historical identities; no location inferred by recency, current directory or installation. |

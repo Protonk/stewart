@@ -267,6 +267,70 @@ additional feature is justified. Successful result inspection is not an acceptan
 criterion for the commission-input leg. No future reader or result schema is
 selected merely to stage this inquiry.
 
+## Successor answer construction and atomic artifact edits
+
+Agreed design direction, 2026-10-27. **Decided, departure; implementation and
+qualification pending.** The auditor-facing submission tool controls construction
+of the deliverable so avoidable invalid artifact arrangements cannot become
+submitted results through supported operations. It manages artifact identity,
+explicit edits, generated mechanical metadata and the exact recorded selection;
+the receiving boundary enforces the requirements too. This is mechanical
+authority, not authority to assess the answer's intellectual value or silently
+rewrite its content. Exact protocol and representation remain for design.
+
+After adding an artifact succeeds and the helper exits, the exact selected bytes
+and their identity remain recoverable in Stewart while the audit remains open.
+Successful addition therefore undertakes more than validation or process-local
+staging. The originating helper need not stay alive to recover the selection.
+A source path or digest alone cannot fulfill this promise.
+
+The user clarified that this is an opportunity to avoid draft-status lifecycle
+stages. The auditor edits recorded elements through add, replacement using an
+existing element's handle, and delete. Seek atomic operations: newly stored bytes
+that have not yet been hashed and recorded belong only to a narrow internal
+mechanical window, not a manager- or auditor-operated draft phase. Each successful
+operation establishes its recorded change; the tool refuses invalid operations
+early and provides informative failures from which the auditor can recover.
+The interface does not require a separate promotion of the same artifact bytes
+from disposable authoring state into custody.
+
+This undertaking is independent of manager delivery and retention after closure.
+It grants no manager access to live authoring material and selects no audit
+execution or restart facility. Add/replace/delete is the authoring direction;
+it grants no authority to rewrite exclusive historical receipts, release a hold,
+or erase failure evidence. Existing partial-work, hold and interrupted-operation
+obligations remain. Supported interruption cases, handle/version semantics,
+storage/access mechanism, physical reclamation of replaced/deleted material,
+delivery and treatment at early close remain to be specified and
+qualified. No general draft-history service or runtime implementation is
+commissioned by this direction.
+
+**Normal submission ends editing.** Accepted 2026-10-27; implementation and
+qualification pending. Preparation verifies the current recorded answer and
+artifacts, generates an inspectable manifest, and issues a handle bound to that
+audit and exact collection revision. Preparation is independently callable and
+leaves editing open; it creates no authoring lifecycle status. The auditor need
+not manufacture the envelope, manifest or its hash.
+
+Submission requires that issued handle and defaults to a dry run. Only an explicit
+true submission argument requests the effectful operation. A subsequent edit
+makes the earlier preparation stale; submission refuses informatively rather
+than silently selecting newer material. Revalidate the exact selected bytes and
+bind the last check to publication so an edit and submission cannot race past
+one another. A dry run does not fix the answer or publish a submission.
+
+Successful actual submission atomically fixes the selected result and ends further
+add/replace/delete edits of that answer. The same handle identifies the same
+submission after a lost reply; an identical confirmed repeat returns its recorded
+outcome without creating a second submission. Uncertain or damaged records keep
+their diagnostics and require supported resolution, not guessed repetition.
+Submission is not a second upload or promotion into custody, and it does not
+establish manager delivery, terminated processes, safe environment retirement or
+completed audit close. Those responsibilities remain separate. Exact handle
+issuance/storage and callable or tool-interface syntax remain mechanism choices;
+no call-stack trick or mandatory nesting of preparation inside submission is
+required. Manager-side simplification is deferred to later discussion.
+
 ## Handoff and audit-owned facilities
 
 Agreed direction 2026-10-25. **Decided, departure.** The manager retains

@@ -1,12 +1,35 @@
 # Current coordinator account
 
-Updated 2026-10-27 for the user-directed transfer to another Astra coordinator,
-after C implementation, repair and completed self-audit/investigation.
+Updated 2026-10-27 during submission-protocol design, after the completed C leg.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
+
+## Current session checkpoint: submission design before machine sleep
+
+The user accepted atomic add/handle-based replace/delete of recorded answer
+elements, with recoverability after helper exit and no draft-status lifecycle.
+They then accepted inspectable prepare-issued handles, dry-run submission by
+default, explicit true for actual submission, stale-handle refusal, atomic ending
+of edits and recovery of the same submission after a lost reply. CONTRACTS records
+these directions; exact mechanism and runtime qualification remain open.
+Manager-side simplification is explicitly for later discussion.
+
+Root completed a [failure walkthrough](submission-design-01/FAILURE-WALKTHROUGH.md)
+and prepared a [next-work brief](submission-design-01/NEXT-WORK.md) for a bounded
+Rust prototype. This is a coordinator desk review, not independent review or
+executed evidence. No prototype, worker, audit or Claude session is running or
+commissioned. [The session checkpoint](submission-design-01/CHECKPOINT.md) owns
+the exact next action and saved validation locators. This session continues after
+sleep; TURNOVER remains the consumed stub, not a new handoff.
+
+Shared edits are saved but uncommitted after the two recorded staging failures.
+Root has not inferred a permissions repair or transfer of Git ownership. The
+next conversation is whether to commission the bounded prototype or first settle
+the real storage/access boundary for a direct product implementation. Neither
+route should silently absorb the deferred manager-side work.
 
 ## Completed: C intake and genuine self-audit
 
@@ -57,25 +80,32 @@ tree at `b17a0ee` independently confirmed before turnover preparation. The bound
 intake plan is retired; broader successor decisions/platform work remain in
 DEVELOPMENT-PLAN. No Claude launch occurred.
 
-## Current transition: Astra to Astra before a later Opus leg
+## Current intake and plan discussion
 
-After accepting the completed C leg, the user explicitly directed a turnover to
-another Astra coordinator to help reach the later Opus turnover point. The user
-will conclude this session and start the incoming coordinator. Outgoing `/root`
-owns only this continuity reconciliation, the thin TURNOVER brief and Git
-recording until its final return; no incoming coordinator or competing queue is
-active. No new implementation, inquiry or Claude session is dispatched.
+The incoming `/root` took up coordination on 2026-10-27 at the user's direction.
+The immediate commission is to read current guidance/plans and discuss them with
+the user; that conversation establishes the initial substantive commission.
+Observed HEAD is `e06a46bfb8ceb8f206955b4d9a56b1bfa4071a46`, matching the
+preparation revision, with a clean tree before intake edits. Root read and
+reconciled the exact TURNOVER, standing orders, current account, both active
+plans, relevant contracts, C's guide/completed report and the provisional
+answer-interface recommendation. The inherited COMPLETION record agrees with
+the report's counts and completed-work checkpoint; its tests were not rerun.
+Prior worker termination and audit closure are inherited recorded observations,
+not new harness or product-operation checks.
 
-The next Astra tenure is intended to work with the user on the next bounded
-implementation commission, then prepare a separately directed Opus 5.5 transfer.
-Outgoing recommendation: start by briefing the next useful audit-service leg
-against DEVELOPMENT-PLAN's current F3 and work register. Settle its consumer,
-promises/exclusions, commission and answer distinctions, custody/delivery and
-failure responsibilities, interfaces and acceptance. Carry explicit deferrals
-and dependencies into a concrete implementation assignment. C's completed
-acceptance does not settle those broader choices, and the full program need not
-finish before a useful implementation leg can be commissioned. This recommendation
-selects no next product slice and grants no implementation or Claude launch.
+The turnover is consumed and stubbed. The intended later Opus 5.5 transfer
+remains separately user-directed. No next product slice, implementation dispatch,
+new empirical study or Claude launch is commissioned at this intake.
+
+Root's opening recommendation is a focused discussion of the next useful
+audit-service leg, starting with the content boundary and when custody begins.
+The completed studies recommend readable text plus ordered explicit artifacts;
+they do not decide W02's partial/rejected-attempt custody, correction or finality.
+Settle the selected leg's consumer, promises/exclusions, delivery and failure
+responsibilities, interfaces and acceptance before implementation. The broader
+F3/register choices remain visible without making every research case a
+prerequisite. C's acceptance settles only its own intake promise.
 
 The earlier user-relayed [Riker opening](../riker/FIRST-LEG-CONSUMER-REQUEST.txt)
 is historical preparation from `e68c251`; C superseded its first-leg alternatives.
@@ -85,22 +115,80 @@ the user wanted a separate sanity check of damage/failure semantics. Preserve
 that consultation intent for the next relevant scope under riker/RIKER.md;
 neither the old request nor advice is an implementation commission.
 
-Durable-guidance review found no new standing procedure or product contract to
-add. Standing orders already require one coordinator, continuous saved guidance,
-explicit turnover and consumption/stubbing. CONTRACTS and VISION already capture
-the inexpensive-assurance lean and original-commission boundary; C's repair is
-in its contract, guide and tests. The completed report owns the bounded finding
-that no additional result feature is currently justified. This transfer updates
-the current account and plan, not those settled rules or historical records.
-
-Root owns `coordination/COORDINATOR-NOTES.md`, `coordination/TURNOVER.md` and the
-current transition paragraph in DEVELOPMENT-PLAN. This account owns the small
-validation and final recording records under `.scratch/astra-turnover-20261027-01/`.
+No new standing procedure or product contract is selected by intake. Root owns
+this account, turnover consumption and the current transition paragraph in
+DEVELOPMENT-PLAN. This account owns the small intake/validation/recording files
+under `.scratch/coordinator-intake-run-012/`, plus the previous transfer's
+`.scratch/astra-turnover-20261027-01/` records.
 Earlier `.scratch/first-leg-riker-brief-01/` and
 `.scratch/coordinator-transfer-guidance-01/` remain retained with this account.
-The live harness lists the implementation, manager and investigator as completed;
-the completed C account records the other two workers' returns/stops. No worker
-assignment, long-running command or uncertain effect remains to transfer.
+No worker has been dispatched in the incoming session. The next action is the
+user discussion; no prior task is automatically resumed.
+Intake documentation checks passed; zero pytest nodes and zero behavioral
+comparisons ran. Ordinary and escalated Git staging both refused creation of
+`.git/index.lock` with `Operation not permitted`. Intake edits remain saved and
+unstaged; no commit was created. The recording files in this intake's scratch
+directory retain the failure. This observed failure does not revive earlier
+user-owned Git arrangements or authorize a permissions repair.
+
+Discussion checkpoint: the user selected the malformed-submission example for
+thought/design and asked for specific meanings of “useful work,” “malformed final
+response” and “manager receipt.” Root traced it to the historical setter/invalid-
+discriminator counterexample and the later provisional text/artifact recommendation.
+The opening example had conflated substantive value, material location, structural
+admission and delivery. Root will distinguish those before recommending a custody
+policy. No required discriminator, setter interface, result-delivery promise or
+change to partial-work custody is selected by this discussion.
+The user then proposed strengthening the auditor-facing submission tool so it
+can prevent the problematic artifact configuration, building on preflight. Root's
+design response will examine tool-owned construction: assigned artifact identities,
+atomic validated edits, explicit replacement, generated control metadata and
+finalization of the exact checked revision. The receiving boundary must enforce
+the same rules; client preflight alone cannot authorize custody or retirement.
+This shifts the example toward prevention before choosing residual failure policy.
+Draft persistence, correction/finality and manual handback remain explicit choices;
+no implementation or protected-obligation change is selected yet.
+
+At 20:09 UTC the user accepted the preventive-construction direction as sound
+and asked how to proceed with about 35 minutes before sleeping the machine,
+explicitly not ending the session. Root prepared a bounded
+[submission protocol candidate](submission-design-01/DESIGN.md) for discussion.
+The recommendation is to use this window to settle the normal interaction,
+challenge concrete failures and prepare the next bounded implementation/prototype
+brief, saving by approximately 20:39 UTC. The timing is a working estimate, not
+permission to resolve unanswered choices by default. No new worker, trial or
+implementation is dispatched. Root owns the candidate and shared continuity
+edits. The user then agreed entirely with the provisional recommendation that a
+successful artifact addition leaves exact selected bytes and identity in a
+recoverable draft while the audit is open. Root recorded that direction in
+CONTRACTS and the current plan/candidate. This creates a limited undertaking
+before final submission; final-result admission cannot erase it. The candidate
+now proposes the held bytes, draft/commission binding, completed-operation record
+and supported retrieval that realize it. Detailed interruption coverage,
+replacement/version lifetime, finality, early close and delivery remain open.
+The user then clarified that recoverability should avoid draft-status lifecycle
+stages. They want add, replacement using an existing element's handle, and delete
+in Stewart; strongly seek atomicity, with only a narrow internal window for bytes
+not yet hashed/recorded, and early informative failures enabling auditor recovery.
+Root revised CONTRACTS and the candidate accordingly. The earlier proposed
+draft-to-final content-transfer step is withdrawn; each successful edit is already
+recorded. Interrupted-call outcomes remain operation accounting, not new authoring
+stages. Proposed stale-handle semantics, failure responses and replacement/delete
+reclamation still need specification; no new physical removal is authorized here.
+The prior candidate is preserved at
+`.scratch/coordinator-intake-run-012/design-before-atomic-elements.md`.
+At roughly 20:27 UTC the user proposed ending editing through a prepare-generated
+manifest/handle plus an explicit submit flag, with submission defaulting to dry
+run. They asked about passing preparation itself as a function argument in Rust.
+Root recommends a prepared result/issued handle, independently inspectable before
+submission, with stale-version refusal and an atomic seal of the current answer.
+The candidate records the detailed proposal, including lost-reply resolution and
+the distinction between Rust type checks and cross-process handle enforcement.
+No exact public API syntax, token mechanism, preparation status stage or new runtime
+implementation is selected. The user subsequently accepted the behavioral design
+and explicitly deferred manager-side simplification. Root recorded the accepted
+boundary in CONTRACTS and completed the walkthrough/brief named at the current
+checkpoint above. Their qualification remains future work.
 
 ## Commission-receipt direction and planning update
 
