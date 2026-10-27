@@ -155,6 +155,17 @@ sequence above, not authorizations. Detailed contract clauses govern beyond
 these summaries; every admitted clause must have acceptance coverage before
 its implementation is considered complete.
 
+At 2026-10-27 04:16 UTC the user commissioned the next
+[fresh answer/revision comparison](coordination/answer-revision-01/COMMISSION.md).
+Four fresh authors will inspect a new finite declaration-to-status route across
+two answer forms and delayed/complete consumer-source schedules. All first
+selections precede a fixed source release, with repeated identical source for
+complete-evidence controls. Four fresh recipients inspect both phases, then
+independent review assesses concrete requirements, obstructions and limits.
+Preparation is frozen and preflight underway; no author has yet been dispatched.
+Controlled source arrival is not itself an unexpected late finding. This is
+W01 evidence gathering, not a durable interface, custody or implementation choice.
+
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
 | W01 — Three bounded studies and construction execution complete; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |

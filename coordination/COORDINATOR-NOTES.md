@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 Pacific / 2026-10-27 UTC for the completed construction run. This is a
+Updated 2026-10-26 Pacific / 2026-10-27 UTC for the fresh answer/revision comparison. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -8,6 +8,37 @@ working account of observed work, authority received and remaining questions.
 actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
+
+At 04:16:21 UTC the user authorized the recommended fresh-authoring comparison:
+“Ok. Proceed.” The [commission](answer-revision-01/COMMISSION.md) and
+[protocol](answer-revision-01/PROTOCOL.md) fix four fresh authors, two answer
+forms × delayed/complete evidence, a later fixed source release, four fresh
+recipients and independent review. The fresh information-preservation question
+traces declaration validation into status._auditor_report's attributed fields.
+All subject inspection is static. This resumes work beyond the completed run
+below; no product implementation, subject execution or disposal is commissioned.
+
+Source HEAD 5f00082, clean at intake. Root owns answer-revision-01 shared records,
+source/grant/release assembly, capture, integration, shared plans and
+`.scratch/answer-revision-01/`. Four initial source grants and four exact later
+releases are frozen in ASSEMBLY.json; 117 design-review snapshots are pinned at
+REVIEW-INPUTS-01.json. Author/recipient attempts have exclusive write grants.
+The whole fleet remains within four active slots, with no nested workers.
+
+Transport worker `/root/revision_transport` returned from its saved brief; its
+dual-form helper passed 571 assertions across 41 capture calls plus a help call,
+zero subject/pytest execution. It is stopped. Independent reviewer
+`/root/revision_review` returned READY after 1,184/1,184 checks over 117 design
+and 471 transport/evidence snapshots plus revised ops bindings. It is stopped
+pending integration. Root disposed two coordinator gaps before participants;
+required private-account freezing and capture-barrier revalidation are now
+explicitly enforced by the study utility. Root has not yet dispatched authors
+at this preflight checkpoint. Next: record preparation, dispatch fresh authors
+within capacity, freeze all four first selections before any source release,
+then final selections and fresh recipient phases. No uncertain effectful reply
+is pending. The local PREFLIGHT-DISPOSITION binds accepted helper/ops bytes.
+
+## Completed construction execution
 
 At 2026-10-27 03:43:32 UTC the user resumed work: “Very well. Carry this out.
 The machine is free.” The new [commission](construction-execution-01/COMMISSION.md)
