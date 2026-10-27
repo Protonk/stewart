@@ -355,7 +355,60 @@ establish manager delivery, terminated processes, safe environment retirement or
 completed audit close. Those responsibilities remain separate. Exact handle
 issuance/storage and callable or tool-interface syntax remain mechanism choices;
 no call-stack trick or mandatory nesting of preparation inside submission is
-required. Manager-side simplification is deferred to later discussion.
+required. The manager-side directions subsequently selected are below.
+
+## Successor manager receipt and ordinary closure
+
+Accepted 2026-10-27 after the auditor-side simplification discussion.
+**Decided, departure; implementation and qualification pending.** Normal return
+of a submitted answer supplies a durable manager-held copy of the sealed
+manifest and its selected material, retaining their exact identities and binding.
+The copy remains independently inspectable after audit closure; it does not rely
+on the auditor workspace or audit-held payloads surviving. The user accepts the
+space cost of straightforward independent copying in preference to clever shared
+storage. Exact destination, packaging and actual receiving/delivery route still
+need design and qualification. A manifest or notification alone is not the copy.
+
+Stewart verifies and records completion of its copying undertaking. That is
+distinct from the manager's judgment that the copy is somewhere safe and from
+any claim that the manager read or understood the answer. For the ordinary
+completed, verified return, the manager's remaining decision is affirmative
+close: the manager is satisfied with the placement of its durable copy and ends
+Stewart's audit custody, knowing that it loses the ability to request another
+copy from that custody. No additional routine report-acceptance, kind-bound
+follow-up, retain/export or backup-certification step is required between normal
+receipt and close. The affirmative close request expresses that decision.
+
+Before close, a supported request can produce another copy of the same sealed
+return. This neither selects newer auditor material nor starts another audit.
+After close, the manager-held copy survives independently and remains the
+manager's preservation responsibility; Stewart does not promise to recreate
+disposed audit payloads. Normal return thus fulfills a copying undertaking before
+close; the general rule that close itself is not preservation still applies.
+
+The no-submission/unfinished-return case is explicitly unresolved and must be
+discussed separately. This ordinary-path decision does not release a hold,
+surrender a failed or incomplete preservation undertaking, establish stopped
+execution or authorize unaccounted removal. Existing constraints remain; they
+must not be turned into routine stages in the completed normal path. Frozen
+Python records and their admitted legacy interpretation remain unchanged.
+
+**An interrupted manager re-enters through ordinary help and status.** Accepted
+2026-10-27 as an interaction requirement, not fixed CLI spelling. A manager can
+learn the interface through help, inspect audits through status and act through
+their normal supported operations without reconstructing the old conversation
+or diagnosing a private recovery stage. Within an explicitly selected repository
+or custody scope, discovery/status expose identifiable audits, relevant recorded
+return/copy locations and interrupted undertakings, and intelligible next actions.
+The selected audit and each continued undertaking remain explicitly bound; nothing
+is selected by recency or guessed from a lost reply. A continuation recovers or
+completes the same authorized operation, not another investigation.
+
+Help/status are a supported re-entry route, not mandatory preliminaries to every
+operation or a routine polling duty. Status remains factual and read-only; a
+recorded delivery does not certify the copy's present safety, and absent records
+do not establish auditor liveness or completion. Exact discovery scope, presentation
+and actual interruption/receiving behavior remain to be implemented and qualified.
 
 ## Handoff and audit-owned facilities
 
@@ -806,6 +859,12 @@ complete collection (`status.py:1373–1395`; `close.py:1115–1136`). Do not mi
 those advisory restrictions into new mandatory refusal conditions.
 
 ## Close
+
+The later [manager receipt direction](#successor-manager-receipt-and-ordinary-closure)
+selects durable normal return followed by affirmative close as the only ordinary
+post-receipt decision. Earlier collection/triage procedures below do not add a
+routine successor acceptance pipeline; their admitted legacy meaning and the
+surviving exceptional custody/removal obligations remain.
 
 **Successor interface direction, 2026-10-25.** The user's strong preference is
 one manager-facing `close` command that closes the audit regardless of its

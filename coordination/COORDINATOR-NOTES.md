@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-27 while collecting auditor simplifications for manager design.
+Updated 2026-10-27 after normal manager receipt/close and re-entry decisions.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -13,11 +13,21 @@ The user asks to collect auditor-side simplifications already made or committed
 and use them when deciding the manager interaction. Root's
 [collected account](submission-design-01/INTERACTION-SIMPLIFICATIONS.md) separates
 decisions, bounded prototype evidence and open mechanisms, then maps their
-consequences to manager decisions. Stewardship of mechanical work must stay with
-Stewart rather than be transferred to the manager. Current recommendation:
-begin with whether normal return receipt establishes a durable manager-held copy,
-then define incomplete returns, remaining closing choices and same-operation
-continuation. These are discussion candidates, not adopted manager policy.
+consequences to manager decisions. Mechanical work stays with Stewart. The user
+now chooses durable manager-held copying of the sealed return despite space cost;
+affirmative close after deciding the copy is somewhere safe as the only ordinary
+post-receipt decision; and re-entry through help/status followed by normal audit
+actions. CONTRACTS records these directions with implementation/qualification
+pending. Close ends the ability to ask for another copy from audit custody; it
+does not end independent manager-held access. Exact command spelling is open.
+
+The user explicitly leaves the no-submission/unfinished-return case open as thorny.
+Root's next proposed discussion case is recorded elements surviving an auditor
+that ceased authoring before submit: consider the same durable-copy route with
+explicit unsubmitted attribution, without inventing an auditor submission. That
+candidate is not yet accepted. Holds, failed preservation, stop evidence and work
+outside the helper retain their obligations; they must not recreate routine
+acceptance/triage/retain/export stages for a completed normal return.
 
 Existing standard commission recall, single close, restricted live access and no
 dedicated executor remain commitments. Earlier disposable-draft/collection-stage
@@ -26,7 +36,8 @@ preserved those older documents as sources, with precedence explained in the new
 account. No new implementation, worker, harness trial, delivery or removal is
 commissioned. Auditor notice/re-entry qualification remains open and is not a
 prerequisite for this discussion. This account owns the input/validation records
-in `.scratch/interaction-simplifications-01/`; run-012 reflections remain separate.
+in `.scratch/interaction-simplifications-01/` and the subsequent decision records
+in `.scratch/manager-return-direction-01/`; run-012 reflections remain separate.
 
 ## Recent decisions: custody home and interrupted ordinary operations
 

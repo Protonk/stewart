@@ -1,9 +1,9 @@
 # Auditor simplifications and the manager discussion
 
 Collected 2026-10-27 at the user's request, after authoring-boundary commit
-ea31c37. The user wants manager interaction simplification to follow auditor
-interaction simplification. This is a synthesis and discussion agenda; manager
-recommendations below are not new product decisions or an implementation commission.
+ea31c37, then updated with the manager decisions below. The user wants manager
+interaction simplification to follow auditor interaction simplification. Accepted
+directions are distinguished from remaining discussion; no implementation is commissioned.
 [CONTRACTS](../../CONTRACTS.md) remains authoritative.
 
 ## Auditor-side commitments
@@ -78,43 +78,35 @@ Several manager simplifications are already decided:
 - Stewart does not judge whether the answer was worthwhile or prescribe another
   audit because the manager dislikes it. Those judgments remain the manager's.
 
-## Decisions to discuss, in order
+## Manager decisions following this collection
 
-1. **What does receiving the return give the manager?** Distinguish access to
-   audit-held material from a verified copy in a named manager-held destination
-   that survives close. Candidate simplification: choose the normal destination
-   once and make successful delivery fulfill that preservation undertaking, so
-   the same bytes need no later retain/export decision. This needs explicit
-   agreement and a qualified delivery route; reading alone currently establishes
-   no preservation. C's input-copy pattern informs this candidate, but its evidence
-   does not qualify output delivery.
-2. **What is the ordinary return object, including when no submission finished?**
-   Candidate: one inspectable result bound to the original commission, selected
-   answer/artifacts, their submission status and specific qualifications. Preserve
-   auditor claims separately from Stewart's custody observations. Decide which
-   unsubmitted/partial material it presents and what stays accessible; keep the
-   treatment of work outside the helper explicit. Do not make the full internal
-   ledger or obsolete versions the compulsory reading surface.
-3. **Which decisions genuinely remain when closing?** Keep the existing single
-   close direction. Obtain only outstanding, material-specific choices about
-   preservation, gaps/follow-up, holds or surrender. Already recorded choices
-   apply to the same identified material. Their presentation can be simplified;
-   removing an existing obligation would require a separate explicit decision.
-   Submission, receipt or an ordinary close request does not itself release a hold
-   or authorize unaccounted removal. Automatic retirement remains undecided.
-4. **How does the manager continue after a lost reply or unfinished delivery/close?**
-   Candidate: the same ordinary operation and retained reference recover its
-   outcome or remaining authorized work. Define the actual receiving/re-entry
-   endpoint and the specific outside action needed if Stewart cannot proceed.
-   Preserve receipt uncertainty and failed undertakings; introduce no new audit
-   execution or family of repair commands. Actual stopping authority remains a
-   control-design obligation, not a manager assertion that makes it true.
+| Question | Current disposition |
+| --- | --- |
+| 1. What does normal receipt give? | Decided: a durable manager-held copy of the sealed manifest and selected material. Straightforward independent copying is preferred despite space cost. Actual receiving/delivery, destination and packaging remain unqualified; C's input evidence does not qualify output delivery. |
+| 2. What if no submission finished? | Explicitly open: the user calls this thorny and wants further discussion. Decide what current/partial material is returned, its provenance and qualifications, and the treatment of work outside the helper. No full-ledger reading requirement or automatic discard follows. |
+| 3. What decision remains before ordinary close? | Decided: the manager asks whether its durable copy is somewhere safe and affirmatively closes, knowing audit-held copying will cease. No additional routine acceptance, follow-up, retain/export or backup-proof step. Existing exceptional obligations remain distinct from this completed normal path. |
+| 4. How does an interrupted manager return? | Decided interaction: help, status, then normal audit actions, with explicit audit/operation identity and supported continuation. CLI syntax is illustrative. Read-only status offers factual context; it neither guesses a selected audit nor imposes polling or certifies present backup safety. |
 
-The candidate normal interaction is: commission the audit, receive and inspect its
-return, then close with only remaining choices. These are user tasks, not a chosen
-command count or schema. Receiving the normal return need not require requesting
-destruction first. The first useful decision is whether normal return delivery
-already establishes a durable manager-held copy.
+The ordinary path is now commission, durable return, affirmative close. Making
+another copy of the same sealed return remains supported before close. Stewart
+owns verification of its copying; the manager owns placement and later safety.
+Close ends audit custody and the ability to request its copy again, while the
+manager-held copy remains independent. This changes the normal successor workflow;
+it does not rewrite frozen Python or claim implemented delivery.
+
+No-submission return, a failed copying undertaking, an active hold or unavailable
+stop evidence must remain explicit. The user's ordinary-path choice is not silent
+authority to discard those obligations. Exact authority and presentation for such
+cases must fit the simplification rather than restore a routine lifecycle pipeline.
+
+The next discussion should start with one concrete incomplete case: the auditor
+successfully added elements, then ceased authoring before submit. Those bytes are
+already held, but no auditor-submitted answer exists. Coordinator candidate:
+once the selection can be fixed, provide its verified current contents through
+the same durable-copy route with an explicit unsubmitted/incomplete attribution.
+This is not yet selected and does not determine pending add effects, material
+outside the helper or physical retirement. Preserve auditor claims separately
+from Stewart's observations; do not manufacture an auditor submission.
 
 ## Reading the earlier designs
 
