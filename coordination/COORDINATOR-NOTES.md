@@ -1,6 +1,7 @@
 # Current coordinator account
 
-Updated 2026-10-27 after C implementation, repair and completed self-audit/investigation.
+Updated 2026-10-27 for the user-directed transfer to another Astra coordinator,
+after C implementation, repair and completed self-audit/investigation.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -18,7 +19,8 @@ or prerequisite; no future result representation or custody service was selected
 [The final account](../reports/commission-self-audit-2026-10-27/RESULT.md) owns the
 commission, actual audit, fresh-manager recall, later investigation and evidence.
 Intake/subject commit `0dbb2eb`, prompt-only commit `e906095`, narrow repair
-`075f4d3`. Final binary SHA-256
+`075f4d3`; completed artifacts and reconciliation committed as `b17a0ee`.
+Final binary SHA-256
 `dbcf332cbba5ecf7ee74491ffe80875df82af64418b09215d9f6ca22459d8bbd`.
 Final checks: 15/15 Rust integration tests, 46/46 independent installed-executable
 checks, 11/11 repaired comparison predicates. The prior 11/11 reproduction and
@@ -50,48 +52,55 @@ All five workers returned/stopped: /root/commission_impl (including repair),
 and retained evidence. No active worker, inquiry, repair or uncertain effect
 remains. `.scratch/commission-intake-01/`, `successor/evidence/` and their located
 working specimens stay with the final report. `COMPLETION.json` there records
-final inventory, validation, commits and clean state; absence means mechanical
-recording remains unfinished. The bounded intake plan is retired; broader
-successor decisions/platform work remain in DEVELOPMENT-PLAN. Root is still the
-sole coordinator. No Claude launch, transfer directive or new TURNOVER brief.
+final inventory, validation, commits and clean state. It was read and the clean
+tree at `b17a0ee` independently confirmed before turnover preparation. The bounded
+intake plan is retired; broader successor decisions/platform work remain in
+DEVELOPMENT-PLAN. No Claude launch occurred.
 
-## Coordinator transition: agreed procedure, transfer not yet directed
+## Current transition: Astra to Astra before a later Opus leg
 
-The prior discussion concerned the first leg's consumer and record
-population. The user asked for this question alone to be briefed to Riker, under
-the user-relayed workflow in riker/RIKER.md. Root prepared the self-contained
-[opening](../riker/FIRST-LEG-CONSUMER-REQUEST.txt), with no required attachments,
-from checkpoint e68c251. It names the real record-population uncertainty and
-compares successor preview, bounded legacy reader and limited intake/receipt
-production. Preparing the request selected no option. The subsequent explicit
-user direction selects C, as recorded above; no external message was sent here.
-Commission contents, custody/storage, answer distinctions and acceptance stay
-with the user and coordinator; damage/failure behavior gets a later separate
-sanity check. Root owns this request, plan/account update and recording; no agent or runtime work is
-dispatched. Validation/recording are under `.scratch/first-leg-riker-brief-01/`,
-owned by this account and the plan. The next step is to assess relayed advice
-records the completed preparation; the active implementation supersedes its
-former next-step recommendation.
+After accepting the completed C leg, the user explicitly directed a turnover to
+another Astra coordinator to help reach the later Opus turnover point. The user
+will conclude this session and start the incoming coordinator. Outgoing `/root`
+owns only this continuity reconciliation, the thin TURNOVER brief and Git
+recording until its final return; no incoming coordinator or competing queue is
+active. No new implementation, inquiry or Claude session is dispatched.
 
-The user agreed to plan an Opus 5.5 coordination leg at the next bounded implementation
-boundary, following a focused design round. C subsequently replaced the proposed
-read-only foundation and is commissioned under the settled custody boundary.
-No Claude launch is commissioned. Root remains the coordinator, with no incoming coordinator
-active and no parallel work queue. The user will direct the actual transfer.
+The next Astra tenure is intended to work with the user on the next bounded
+implementation commission, then prepare a separately directed Opus 5.5 transfer.
+Outgoing recommendation: start by briefing the next useful audit-service leg
+against DEVELOPMENT-PLAN's current F3 and work register. Settle its consumer,
+promises/exclusions, commission and answer distinctions, custody/delivery and
+failure responsibilities, interfaces and acceptance. Carry explicit deferrals
+and dependencies into a concrete implementation assignment. C's completed
+acceptance does not settle those broader choices, and the full program need not
+finish before a useful implementation leg can be commissioned. This recommendation
+selects no next product slice and grants no implementation or Claude launch.
 
-The user explicitly requires one coordinator at a time and durable guidance and
-working accounts maintained throughout each tenure. For a planned transfer the
-user specifically directs a thin TURNOVER briefing; the incoming coordinator
-reads/reconciles it and stubs it. Disorderly termination relies on already saved
-work. Standing orders now replace the former discretionary write/clear wording
-with this procedure, and the entry/vision agree. TURNOVER remains its existing
-stub: this discussion is not the directive to write the actual briefing.
+The earlier user-relayed [Riker opening](../riker/FIRST-LEG-CONSUMER-REQUEST.txt)
+is historical preparation from `e68c251`; C superseded its first-leg alternatives.
+No external message was sent here. Commission contents, custody/storage, answer
+distinctions and acceptance were to be worked through locally with the user;
+the user wanted a separate sanity check of damage/failure semantics. Preserve
+that consultation intent for the next relevant scope under riker/RIKER.md;
+neither the old request nor advice is an implementation commission.
 
-Root owns this documentation update and ordinary Git recording. No worker or
-new inquiry is dispatched. Validation and final recording are retained under
-`.scratch/coordinator-transfer-guidance-01/` with this account. Next substantive
-work is the connected-design discussion preceding a bounded implementation
-commission; the turnover directive is still to come.
+Durable-guidance review found no new standing procedure or product contract to
+add. Standing orders already require one coordinator, continuous saved guidance,
+explicit turnover and consumption/stubbing. CONTRACTS and VISION already capture
+the inexpensive-assurance lean and original-commission boundary; C's repair is
+in its contract, guide and tests. The completed report owns the bounded finding
+that no additional result feature is currently justified. This transfer updates
+the current account and plan, not those settled rules or historical records.
+
+Root owns `coordination/COORDINATOR-NOTES.md`, `coordination/TURNOVER.md` and the
+current transition paragraph in DEVELOPMENT-PLAN. This account owns the small
+validation and final recording records under `.scratch/astra-turnover-20261027-01/`.
+Earlier `.scratch/first-leg-riker-brief-01/` and
+`.scratch/coordinator-transfer-guidance-01/` remain retained with this account.
+The live harness lists the implementation, manager and investigator as completed;
+the completed C account records the other two workers' returns/stops. No worker
+assignment, long-running command or uncertain effect remains to transfer.
 
 ## Commission-receipt direction and planning update
 

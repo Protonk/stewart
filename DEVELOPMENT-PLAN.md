@@ -65,9 +65,13 @@ selected C, bounded commission-input acceptance and independent readback, as
 F4's first usable implementation leg. Manager-custodied delivery and explicit
 incomplete-intake disposition are settled in CONTRACTS; broader write-path work
 remains separate. A Claude launch remains separately commissioned.
-One coordinator owns the work at a time; coordination standing
-orders govern the explicit transfer and the requested thin briefing. There is
-no active incoming coordinator or transfer directive yet.
+One coordinator owns the work at a time; coordination standing orders govern
+the explicit transfer and requested thin briefing. After C and its self-audit
+completed, the user directed a transfer to another Astra coordinator to help
+reach the later Opus turnover point. The next tenure prepares the next bounded
+implementation commission with the user; no next product slice or Claude launch
+is selected by this transfer. The outgoing coordinator prepares the briefing,
+then stops before the user starts the incoming coordinator.
 
 The user chose to address the first leg's consumer and record population before
 the other release choices, with a standalone Riker consultation prepared in
