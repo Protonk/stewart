@@ -134,6 +134,14 @@ are defined; that is a new undertaking, not unfinished pilot work or an executio
 grant. Broader answer requirements, custody policy and operating-route evidence
 remain open. No protected obligation or durable schema has changed.
 
+The user subsequently commissioned [one bounded construction execution](coordination/construction-execution-01/COMMISSION.md)
+at 2026-10-27 03:43 UTC. Exact captured inputs, Python 3.14 qualification,
+independent preservation/capture and preflight review precede one observer
+invocation across A–F. Frozen predictions are compared without input tuning or
+rerunning; independent result review follows. Preparation is in progress and no
+observer has run at this checkpoint. This advances the inspected W01 construction
+case only; it adds no executor or broader study authorization.
+
 All items below are open unless their state says otherwise. F numbers are the
 sequence above, not authorizations. Detailed contract clauses govern beyond
 these summaries; every admitted clause must have acceptance coverage before

@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 Pacific / 2026-10-27 UTC for completed fresh authoring. This is a
+Updated 2026-10-26 Pacific / 2026-10-27 UTC for the authorized construction run. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -8,6 +8,30 @@ working account of observed work, authority received and remaining questions.
 actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
+
+At 2026-10-27 03:43:32 UTC the user resumed work: “Very well. Carry this out.
+The machine is free.” The new [commission](construction-execution-01/COMMISSION.md)
+authorizes exact staging and one invocation of the returned observer over A–F,
+independent capture, comparison to frozen predictions and independent review.
+It does not commission broader authoring or product implementation. Source HEAD
+is 9ffad1f, clean at intake. The earlier requested pause is lifted for this task.
+
+Root owns `construction-execution-01/`, shared accounts/plans and
+`.scratch/construction-execution-01/`; a fresh reviewer will own its separate
+`review/attempt-01/` and matching scratch. The [protocol](construction-execution-01/PROTOCOL.md)
+defines staging, interpreter qualification, one-launch reservation, capture,
+the 30-second guard and preservation limits. No observer or subject has executed
+at the preparation checkpoint. Preparation passed 60/60 checks, observing CPython
+3.14.9 with isolated/no-site/no-bytecode flags. Reviewer `/root/construction_run_review`
+returned READY from the saved [brief](construction-execution-01/review/BRIEF.md)
+and 63 frozen inputs at REVIEW-INPUTS-01.json. Root integrated its preflight and
+preserved two nonblocking check discrepancies (443/445 passes). A caught-parent-
+failure driver gap was fixed and reviewed before launch. The reviewer is stopped
+pending captured-result review. Next: record preparation, reserve the sole launch,
+capture and compare it, then resume independent review. All evidence stays
+with this study, with no disposal or revision/rerun after an observed failure.
+
+## Completed fresh-construction pilot
 
 The resumed fresh-construction pilot is complete and independently reviewed in
 [RESULT.md](fresh-authoring-01/RESULT.md). The user supplied about 70 minutes
@@ -53,17 +77,16 @@ Commit 2dcc957 records the construction/recipient capture; final review/result
 recording is identified by the completion record and Git. Subject source remains
 81b557a and frozen Python remains unchanged.
 
-Next substantive work needs a bounded commission. The recipients recommend
+At the pilot's cutoff, next substantive work needed a bounded commission. The recipients recommended
 execution of the now-inspected construction once exact staging/interpreter,
 preservation/loading, effects/stops and retained-output arrangements are defined.
-No such execution is authorized by this pilot. W01 still needs broader question
+No such execution was authorized by that pilot; the new commission above supplies it. W01 still needs broader question
 and outcome coverage, alternate-interface evidence and actual late findings;
 no durable schema, custody-start policy, access/control/disposal qualification
 or protected-obligation change was selected. No further dispatch is pending.
 
 The user requested a pause after final recording and evidence verification.
-Finish those mechanical steps, then remain paused with all workers stopped.
-No further dispatch or substantive work begins until the user resumes.
+That pause was completed; the subsequent bounded execution is authorized above.
 
 ## Completed finite-return inquiry
 
