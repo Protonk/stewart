@@ -1,0 +1,7 @@
+# Integration checkpoint 11
+
+All participant memos, ledgers, progress and retained comparison/finalization code have now been read, with truncated displays recovered where needed. Supplied programs stayed inert. The final four coordinator document deltas match INTEGRATION-DELTA-02.json; the reconstruction qualifications are accepted. Both participant memos remain unchanged. Earlier reports and all four unchanged recipe expectations support the provisional recommendation at its stated scope.
+
+The new independent integration check preserved a 640/641 result. Its sole failed predicate required all root check labels to be unique. Inspection finds 289 successful assertion instances with 271 labels: 18 pinned-byte labels recur across preparation/disposition and capture checks. The source explains this. The reviewer-only unique-label requirement was unnecessary; root does not claim unique independent experiments. A focused count-resolution script and fresh evidence path are prepared. The initial script/result remain unchanged.
+
+Outstanding work: run that reviewer-authored focused check, write INTEGRATION-REVIEW.md with exact counts and resolved findings, verify own final files and save final checkpoint, then stop. No subject/helper/builder/root-checker/reader-checker execution, Git mutation, network, nested agent, disposal or custody operation occurred. Root owns final disposition and recording.

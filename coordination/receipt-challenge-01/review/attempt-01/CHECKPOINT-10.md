@@ -1,0 +1,7 @@
+# Integration checkpoint 10
+
+The 257 frozen integration identities verified. Full coordinator reports, all four reader memos, prior reports and recipe have been read, with bounded recovery of truncated displays still required for two ledgers and reader check code. Independent reverse reconstruction retained at reverse-reconstruction-01 passed 5/5: with restored raw plus delivered base context, a reviewer-authored candidate matches the original SNAPSHOT identity and bytes; changed metadata fires the digest control while envelope meaning stays invariant. This qualifies r04’s hypothetical categorical extension, not the actual reduced packet’s two missing operands or historical execution. Root accepted and pinned four final document deltas in INTEGRATION-DELTA-02.json; those remain to inspect.
+
+Still to do: finish full ledger/code inspection, independent static integration checks, inspect exact final deltas, write final report and checkpoint. No subject/helper/builder execution, Git mutation, nested agent, network, or disposal. Only own review output paths written.
+
+After context resumption, two read-command errors occurred before any output record was written: incorrect positional CLI order (exit 2); then requesting our newly authored integration_read.py through the frozen input index (exit 1 KeyError). Neither ran study code or mutated an input. Exact command/error details retained separately in resumed-read-errors.json. Corrected by directly reading explicitly admitted grants and own code.

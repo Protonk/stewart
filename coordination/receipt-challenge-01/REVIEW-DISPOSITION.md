@@ -54,3 +54,55 @@ disposition covers every consumed input. No private records or removed bodies
 enter reduced packets. Root revalidated the 55 input identities before dispatch.
 READER-DISPOSITION records the exact accepted review. These are static endpoint
 observations, not continuous assembly monitoring or OS isolation evidence.
+
+## Integration finding: reverse reconstruction
+
+While integration review continues, root read the reviewer's exact independent
+construction code, five-check result, input identities and command account under
+`review/attempt-01/reverse-reconstruction-01/` in scratch. All five checks pass.
+The candidate is built from raw, acceptance metadata and statically read layout,
+then compared with ORIGINS and the original snapshot. The original comparison
+witness is read only after candidate creation within that program invocation.
+The reviewer had prior access in earlier phases; no blind-reconstruction claim
+follows. A changed-metadata control changes
+the digest while preserving the envelope. No supplied writer code executes.
+
+Root accepts the required qualification of r04's categorical statement about
+recreated snapshot bytes and the exclusivity implied by “must also be delivered.”
+Matching reconstruction supports byte correspondence under the recorded-identity
+assumptions, not original delivery or historical execution. RESULT, OBSERVATIONS
+and PROVISIONAL-INTERFACE now preserve that distinction; both reduced packets still
+lack the operands and all reader memos remain unchanged. r02's related overreach
+is separately qualified by the preflight snapshot-to-raw witness. Exact original
+review drafts remain frozen in INTEGRATION-INPUTS-01; the revised four documents
+were pinned in INTEGRATION-DELTA-02. INTEGRATION-DELTA-03 additionally confines
+the witness-read timing to this program invocation and discloses prior reviewer
+access. The final review accepted both deltas.
+
+## Final integration accepted
+
+Root read the complete INTEGRATION-REVIEW and final checkpoint. No substantive
+blocker remains; root accepts the qualified content result and provisional advice,
+without adopting a schema, custody policy or operational permission. Both reader
+extensions remain attributed and their memos untouched. All seven workers have
+returned and stopped; no participant follow-up is needed.
+
+The reviewer verified all 257 integration snapshots. Its first integration run
+is retained at 640/641, exit 1: the sole failed predicate imposed unique labels
+on root's check account. The exact focused correction passed 3/3, pinning both
+the original failed result and root's result. Root records 289 successful
+assertion instances, 271 distinct labels and 18 expected repeated pinned-byte
+labels across evidence passes. That is not a claim of 289 independent study cases.
+Root read the correction and accepts withdrawal of only the extra uniqueness
+expectation. Neither original check output was replaced or rerun.
+
+Separate reverse reconstruction checks passed 5/5, final timing-delta identities
+6/6 and final reviewer output checks 2/2. Two initial read-command errors remain
+in the review's resumed-read-errors.json; neither executed study code or changed
+evidence. Original drafts, failed predicate, corrected account and all witnesses
+remain with RESULT. INTEGRATION-DISPOSITION.json pins the accepted final report.
+
+Root completes final document/syntax/protected-scope checks, coherent Git recording,
+committed-byte verification and finite evidence inventory, then pauses. COMPLETION
+locates that endpoint; absence means mechanical recording remains unfinished.
+No runtime, frozen guidance, tests, contracts or protected obligations change.

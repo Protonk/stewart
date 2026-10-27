@@ -95,3 +95,28 @@ review inputs, independent integration review, disposition/final checks/recordin
 
 Final review dispatched: 257 exact frozen identities in INTEGRATION-INPUTS-01;
 /root/receipt_review active under INTEGRATION-GRANT. No participant work remains.
+
+Integration review verified 257 frozen identities and demonstrated a second
+reconstruction route: raw plus acceptance metadata and statically read layout
+produces the exact snapshot identity (5/5 checks, changed-metadata control). Root
+read the exact code/operands/result and qualified r04's categorical extension in
+RESULT, OBSERVATIONS, PROVISIONAL-INTERFACE and disposition. All reader memos stay
+unchanged. INTEGRATION-DELTA-02 freezes those four revisions for final review.
+Reader records committed as 9fc7248. Reviewer remains active; no new reader phase.
+
+## Independent review accepted; mechanical closeout
+
+Root read the final INTEGRATION-REVIEW and checkpoint. No substantive blocker.
+Both reconstruction qualifications and precise reviewer prior-exposure account
+are accepted; participant history remains unchanged. The original 640/641 review
+run and sole extra uniqueness predicate are retained, with 3/3 focused correction
+confirming root's 289 successful instances/271 labels/18 repeats. Reverse witness
+5/5, final delta 6/6, reviewer output verification 2/2. Two read-only review-command
+diagnostics remain. INTEGRATION-DISPOSITION pins acceptance. All seven workers
+stopped. Next: final document/syntax/scope checks, final commit, committed-byte
+and evidence inventory in COMPLETION, then clean pause. No new study is pending.
+
+Final document, syntax and protected-scope checks passed 107/107, exit 0 with
+empty stderr. No product or installed-wheel test was selected. Root now records
+the final reviewed layer and verifies committed bytes/retained evidence;
+COMPLETION.json records the actual clean endpoint. No further work is dispatched.

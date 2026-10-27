@@ -7,7 +7,7 @@ working account of observed work, authority received and remaining questions.
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current receipt-challenge commission
+## Completed receipt-challenge commission
 
 On 2026-10-27 the user authorized “Looks good. Proceed with this.” for the
 [receipt-sufficiency challenge](receipt-challenge-01/COMMISSION.md) and provisional
@@ -53,13 +53,30 @@ reconstruction; the original memo stays unchanged.
 READER-FREEZE preserves 23 reader-owned files; root integration passed 289/289,
 exit 0 empty stderr. Preparation commit is 4859d28, author/reduction commit 3548bb1.
 Root integrated RESULT, OBSERVATIONS and PROVISIONAL-INTERFACE and froze 257
-exact final-review inputs under INTEGRATION-GRANT. /root/receipt_review is active
-on that baseline, recorded by DISPATCH-06. Root owns remaining review disposition, final checks, Git recording,
-committed-byte/evidence inventory and clean pause. No new substantive inquiry,
-source reveal, subject run or uncertain effect is pending. Local evidence owner is
-`.scratch/receipt-challenge-01/` with RESULT; preserve every original, variant,
-check, diagnostic, raw witness and reconstruction. The recommendation is not a
-contract decision; W02 and operational work remain uncommissioned here.
+review inputs. Independent integration review is complete, no substantive blocker.
+Root read and accepted the report. Reverse raw-to-snapshot reconstruction passed
+5/5 and qualifies r04's categorical extension; the timing account explicitly
+states prior reviewer exposure. Both final document deltas are accepted, and all
+participant memos remain unchanged. Reader records are committed as 9fc7248.
+
+The first reviewer integration run is retained at 640/641; its only failed
+predicate required unique root check labels. Focused correction passed 3/3:
+289 successful assertion instances, 271 labels and 18 expected repeated identity
+labels. Final timing-delta checks passed 6/6, reviewer output checks 2/2. Root
+accepted the limited withdrawal and preserved the original result and two
+read-only command diagnostics. No study or subject rerun followed.
+
+Final document/syntax/protected-scope checks passed 107/107, exit 0 with empty
+stderr. All seven workers returned and stopped. No new substantive inquiry,
+source reveal, subject process or uncertain effect remains. Root's final mechanical recording
+and clean endpoint are located by `.scratch/receipt-challenge-01/COMPLETION.json`;
+its absence means those closing steps are unfinished. It identifies final checks,
+Git recording, committed-byte verification and the finite evidence inventory.
+The local evidence owner is RESULT with `.scratch/receipt-challenge-01/` and
+adjacent streams; preserve originals, variants, diagnostics and both reconstruction
+witnesses. No disposal/pruning occurred. The recommendation is not a contract
+decision; W02 and operational work remain open. The next substantive work is a
+decision discussion, not another automatically dispatched study.
 
 ## Completed answer/revision comparison
 

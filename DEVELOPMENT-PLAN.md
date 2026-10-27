@@ -1,6 +1,6 @@
 # Stewart's five-stage development plan
 
-Current account, 2026-10-26. Stages 1–3 have completed their inquiries and
+Current account, 2026-10-27. Stages 1–3 have completed their inquiries and
 semantic decisions; that does **not** mean their decided changes are implemented.
 Python remains frozen at `6582df2`, including bundled guidance. Stage 4 is in
 successor design, with empirical answer requirements ahead of the durable
@@ -177,16 +177,28 @@ This wave selects no durable interface, custody policy or implementation change.
 
 The user subsequently commissioned the [receipt-sufficiency challenge and
 provisional interface brief](coordination/receipt-challenge-01/COMMISSION.md)
-on 2026-10-27. Preparation uses a real retained acceptance record, two fresh
-authors in common/minimal forms, and four fresh readers of original/reduced
-selected support. All author source is available from the outset; controlled
-recipient omission is not an unexpected author finding. Independent preflight,
-concrete variant review and integration precede the final recommendation. This
-wave selects no product contract; W02 and operational qualification remain open.
+on 2026-10-27. Both fresh authors and all four readers have returned and stopped.
+Original readers independently check the central raw/snapshot claims; reduced
+readers identify the missing operands while retaining useful narrower conclusions.
+The reductions remain structurally valid and preserve the authored argument. This
+is a valid-but-inadequate case for a particular claimed inspection, not a verdict
+on the entire answer or an author-selection failure. All author source was
+available from the outset; controlled omission is not an unexpected author finding.
+Preflight, variant and packet reviews passed; root integration passed 289/289.
+Final independent review of the [result](coordination/receipt-challenge-01/RESULT.md)
+and [provisional recommendation](coordination/receipt-challenge-01/PROVISIONAL-INTERFACE.md)
+is complete, with both reconstruction qualifications incorporated and no substantive
+blocker. Participant records are committed as 3548bb1 and 9fc7248; the result's
+COMPLETION record locates final recording and retained evidence. All seven workers
+are stopped and no further inquiry is automatically dispatched. The recommendation
+favors readable free text plus ordered explicit
+selected artifacts, external commission/selection binding and optional semantic
+hints, without claiming schema minimality or format equivalence. This wave selects
+no product contract; W02 and operational qualification remain open.
 
 | ID / present state | Work still owed and source | Dependency and completion evidence |
 | --- | --- | --- |
-| W01 — Four bounded studies and construction execution complete; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. Recipients first attempt the task without omitted support. Include unexpected late findings and valid-but-inadequate answers; do not reshape question recipes for the schema. |
+| W01 — Bounded content comparisons and construction execution; broader coverage open | Establish answer requirements across instrument discrimination, information preservation, constrained experiment construction and receipt sufficiency; include missing evidence, reframing and partial work. Compare minimal/common and specific forms, then fresh authoring. A possible fifth question type is separate. [Answer inquiry](#answer-protocol-inquiry-before-the-successor-write-path). | F1 corpus and manager tasks before F2 comparisons; F2 before durable answer design in F3/F4. The receipt challenge adds controlled valid-but-inadequate support for a specific byte-comparison claim. Unexpected ordinary findings, substantive reframing, refusal/blocked returns, broader fresh instrument discrimination and specific-schema comparisons remain open; do not reshape question recipes for the schema. |
 | W02 — Policy open | Select admitted-answer-only or complete-attempt custody; define setter acknowledgments, bounded snapshot assembly, attempt identities, corrections/finality, retrieval and lifetime. Decide partial work on early close, compulsory manager gap/follow-up responses and helper-independent human handback. [Keyhole decisions](KEYHOLE-OBLIGATIONS-FINDINGS.md#decisions-and-evidence-still-needed), [Riker assessment](KEYHOLE-OBLIGATIONS-FINDINGS.md#riker-and-the-transition). | W01 informs F3. Before F5, choose scope and update affected contracts explicitly. Test invalid final discriminator after substantial setters, full attempt versus call arguments, later-setter invariance, failed custody writing, racing/repeated finals and lost success replies. The prior coordinator's preference for attempt custody is not a decision. |
 | W03 — Architecture open | Decide A.1's formal admission rule and D's commission facilities, capture terms and retention promise, including R3's distinction from a voluntary hold. Identify any new auditor channel's effect on inherited assumptions. [Opening decisions](#opening-decision-round-a-narrow-custodial-core), [R3](#session-scoped-agent-guidance-reconciliation-2026-10-25). | F3, informed by W01/W02 and W04–W09. No executor does not adopt an exact-three-responsibilities formula. Test grants and recorded limitations against the actual commissioned view; admission is not a verdict on the answer. |
 | W04 — Workspace/history open | Decide B and F: plain subject files, history-only use, pinned history facility, and supported Git-aware/build/test capabilities. Resolve unrepresentable trees and name normalization as proposed decisions, not silent fixes. [B](CUSTODIAL-CORE-FINDINGS.md#b-the-workspace-representation), [F](CUSTODIAL-CORE-FINDINGS.md#f-the-form-of-the-history-facility). | Capability comparisons in F2; selected representation before F5. Verify selected object membership, absent unrelated/dangling/replacement objects, graft/shallow/partial limits, case/Unicode behavior and real tool usability. A shared backing store cannot expose its whole contents. |
