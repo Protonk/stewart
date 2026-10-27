@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-27 for coordinator-transition planning and the turnover procedure.
+Updated 2026-10-27 for the first-leg consumer/population consultation.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -8,6 +8,21 @@ This is a working account of observed work, authority received and remaining que
 actual files, user instructions and available harness state after interruption.
 
 ## Coordinator transition: agreed procedure, transfer not yet directed
+
+The next discussion is the first implementation leg's consumer and record
+population. The user asked for this question alone to be briefed to Riker, under
+the user-relayed workflow in riker/RIKER.md. Root prepared the self-contained
+[opening](../riker/FIRST-LEG-CONSUMER-REQUEST.txt), with no required attachments,
+from checkpoint e68c251. It names the real record-population uncertainty and
+compares successor preview, bounded legacy reader and limited intake/receipt
+production. No option is selected by preparing the request. The user will relay
+the message and reply; no external message was sent or reply received here.
+Commission contents, custody/storage, answer distinctions and acceptance stay
+with the user and coordinator; damage/failure behavior gets a later separate
+sanity check. Root owns this request, plan/account update and recording; no agent or runtime work is
+dispatched. Validation/recording are under `.scratch/first-leg-riker-brief-01/`,
+owned by this account and the plan. The next step is to assess relayed advice
+and settle the consumer/population before designing the dependent interfaces.
 
 The user agreed to plan an Opus 5.5 coordination leg at the next bounded implementation
 boundary, following a focused design round. F4's read-only foundation is the

@@ -63,6 +63,16 @@ commissioned. One coordinator owns the work at a time; coordination standing
 orders govern the explicit transfer and the requested thin briefing. There is
 no active incoming coordinator or transfer directive yet.
 
+The user chose to address the first leg's consumer and record population before
+the other release choices, with a standalone Riker consultation prepared in
+[the request](riker/FIRST-LEG-CONSUMER-REQUEST.txt). The local coordinator and user
+will work on commission contents, custody/storage, answer distinctions and
+acceptance; damage/failure semantics receive a separate later sanity check.
+The request compares a successor-reader preview, a justified finite legacy
+reader and a small intake/receipt-and-reader feature without choosing among
+them. It is prepared for user relay; no reply or implementation commission has
+been received. Advice does not itself amend the selected scope or sequencing.
+
 ## Standard commission receipts and manager recall
 
 On 2026-10-27 the user selected standard detailed commission receipts as the first
