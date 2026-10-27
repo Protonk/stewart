@@ -83,7 +83,7 @@ Several manager simplifications are already decided:
 | Question | Current disposition |
 | --- | --- |
 | 1. What does normal receipt give? | Decided: a durable manager-held copy of the sealed manifest and selected material. Straightforward independent copying is preferred despite space cost. Actual receiving/delivery, destination and packaging remain unqualified; C's input evidence does not qualify output delivery. |
-| 2. What if no submission finished? | Under discussion: the user proposes a special manager-accessible collect function for recorded artifacts whose author ceased authoring before submit. The bounded candidate below does not decide the whole incomplete-return case, physical stopping or work outside the helper. |
+| 2. What if no submission finished? | Decided for recorded unsubmitted work: manager collect may itself end authoring and produce the fixed manager-collected return. Carry that authority through Rust; early-use policy intervention is deferred beyond the near/medium term. Other incomplete cases, physical stopping and work outside the helper remain for design. |
 | 3. What decision remains before ordinary close? | Decided: the manager asks whether its durable copy is somewhere safe and affirmatively closes, knowing audit-held copying will cease. No additional routine acceptance, follow-up, retain/export or backup-proof step. Existing exceptional obligations remain distinct from this completed normal path. |
 | 4. How does an interrupted manager return? | Decided interaction: help, status, then normal audit actions, with explicit audit/operation identity and supported continuation. CLI syntax is illustrative. Read-only status offers factual context; it neither guesses a selected audit nor imposes polling or certifies present backup safety. |
 
@@ -99,17 +99,18 @@ stop evidence must remain explicit. The user's ordinary-path choice is not silen
 authority to discard those obligations. Exact authority and presentation for such
 cases must fit the simplification rather than restore a routine lifecycle pipeline.
 
-## Proposed collect for recorded but unsubmitted work
+## Manager collection of recorded unsubmitted work
 
-The user asks whether a special manager-accessible `collect()` can handle the
-case where the auditor successfully added artifacts and then ceased authoring
-before submit. Root recommends pursuing that narrow fallback. This remains a
-candidate interface and semantics, not a runtime commission or an adopted grant
-to interrupt an otherwise live audit.
+The user first proposed manager-accessible `collect()` for recorded artifacts
+after authoring ceased without submit. They then explicitly decided that collect
+itself must be allowed to end the authoring opportunity, carrying that authority
+through the Rust transition. It does not require prior cessation or auditor
+agreement. Implementation and qualification remain pending; this direction does
+not itself launch implementation or a trial.
 
 Conceptual input is an explicit audit reference. Stewart selects the currently
-recorded elements; it need not obtain a prepare handle from the absent auditor.
-No submitted answer is invented. Candidate behavior:
+recorded elements; it need not obtain a prepare handle from the auditor.
+No submitted answer is invented. Intended behavior:
 
 1. Verify the recorded selection and bind one fixed manifest. Required damaged or
    unresolved records retain diagnostics; a pending addition is not silently
@@ -134,17 +135,22 @@ does not need collection. It is not a live-view service, workspace sweep, genera
 salvage mechanism, close, deletion or audit restart. Those distinctions constrain
 its supported claims rather than adding manager-operated phases.
 
-The consequential design edge remains explicit: how Stewart establishes that
-authoring has ceased, and what authority collect has if it has not. Silence is
-not evidence. Root recommends that any successful collect irrevocably end editing
-at the same boundary that fixes the result, so it cannot provide a live peek
-followed by resumed authoring. This does not establish that all processes/tools
-stopped or authorize environment removal. The precise eligibility/control check,
-whether collection may itself end an otherwise live authoring opportunity, and
-the actual copying route still need agreement and qualification.
+The authority question is settled: collect can end an otherwise live authoring
+opportunity. Its irreversible editing cutoff at the fixed-result boundary keeps
+it from being a live peek followed by resumed authoring. No inference from silence
+or prior proof of ceased authoring is needed. This does not establish that all
+processes/tools stopped or authorize environment removal; copying and actual
+process-control mechanisms still need qualification.
+
+The user explicitly accepts carrying this decision through Rust without near-
+or medium-term intervention against managers collecting early. If later testing
+shows frequent early use worth addressing, revisit policy then. Such behavioral
+evaluation is not a transition gate and supplies no current justification for
+delays, readiness criteria or deterrents. Ordinary correctness testing of races,
+fixed-result identity, copying and interrupted operations remains required.
 
 Empty selections, missing/corrupt held bytes, unfinished adds and material outside
-the helper are other incomplete cases; this proposal does not claim to settle
+the helper are other incomplete cases; this direction does not claim to settle
 them. The selected material and remaining obligations must be explicit before
 normal close can complete. Frozen Python's collect implementation and its staged
 workflow do not determine this successor function's meaning.

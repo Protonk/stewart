@@ -386,8 +386,27 @@ manager's preservation responsibility; Stewart does not promise to recreate
 disposed audit payloads. Normal return thus fulfills a copying undertaking before
 close; the general rule that close itself is not preservation still applies.
 
-The no-submission/unfinished-return case is explicitly unresolved and must be
-discussed separately. This ordinary-path decision does not release a hold,
+**Manager collect may end authoring.** Decided 2026-10-27 for the Rust transition.
+For recorded work without an auditor submission, manager-accessible `collect`
+is authorized to end the authoring opportunity itself. It does not require the
+auditor first to stop, agree, or declare completion. Collection atomically fixes
+the recorded selection and prevents further edits/submission of that answer;
+it supplies the durable manager-held copy with explicit manager-collected,
+not auditor-submitted, attribution. A concurrent submission and collection have
+one winner; a submitted return that won first remains the normal return.
+Continuation after interruption uses the same fixed collection and undertaking,
+without reopening authoring. Collection does not itself establish physical
+process termination or authorize environment removal or custody close.
+
+Carry this authority through the Rust transition. Frequent early use by managers
+may justify revisiting interaction policy on later evidence, but the user
+explicitly defers such intervention beyond the near and medium term. Do not add
+waiting periods, auditor-readiness requirements, early-use deterrents or a
+manager-behavior evaluation gate to this implementation direction. Mechanical
+race, custody, interruption and access protections still require qualification.
+
+Other unfinished-return cases, including unresolved operations and unavailable
+material, remain for design. These return directions do not release a hold,
 surrender a failed or incomplete preservation undertaking, establish stopped
 execution or authorize unaccounted removal. Existing constraints remain; they
 must not be turned into routine stages in the completed normal path. Frozen

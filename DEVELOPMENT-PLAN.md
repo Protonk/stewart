@@ -197,15 +197,17 @@ holds, failed preservation and stopping obligations remain; routine triage or
 retain/export stages are not reintroduced for a completed normal return. The
 earlier auditor notice proof does not block this design discussion.
 
-The next narrow proposal is manager-accessible collect for artifacts successfully
-recorded before an auditor ceased authoring without submit. The
-[current candidate](coordination/submission-design-01/INTERACTION-SIMPLIFICATIONS.md#proposed-collect-for-recorded-but-unsubmitted-work)
-would seal the current recorded selection with explicit manager-collected rather
-than auditor-submitted attribution, then use the ordinary durable-copy/close path.
-Root recommends ending edits atomically and serializing against a late submit;
-eligibility/control authority and this terminal behavior remain for agreement.
-It adds no normal-return collection stage and claims no general workspace salvage
-or process stopping. No implementation or trial is commissioned by the question.
+Manager collect authority is now decided for the Rust transition: it may itself
+end authoring, fix the recorded selection with manager-collected attribution,
+and use the ordinary durable-copy/close path. The
+[recorded direction](coordination/submission-design-01/INTERACTION-SIMPLIFICATIONS.md#manager-collection-of-recorded-unsubmitted-work)
+requires atomic editing cutoff, one winner against submit, and same-operation
+continuation. Prior auditor cessation, agreement or readiness is not a prerequisite.
+The user defers intervention against frequent early manager use beyond the near
+and medium term; a behavioral-use study is not a transition gate. Qualify mechanical
+correctness and access normally. No normal-return collection stage, general
+workspace salvage or claim of process termination is introduced. Implementation
+and trial remain unlaunched; physical stopping/removal obligations stay separate.
 
 ## Work register
 

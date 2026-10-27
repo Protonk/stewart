@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-27 during the narrow manager collect discussion.
+Updated 2026-10-27 after the manager collect authority decision.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -21,15 +21,16 @@ actions. CONTRACTS records these directions with implementation/qualification
 pending. Close ends the ability to ask for another copy from audit custody; it
 does not end independent manager-held access. Exact command spelling is open.
 
-The user proposes a special manager-accessible collect function for the narrow
-case of recorded artifacts followed by ceased authoring without submit. Root's
-[candidate](submission-design-01/INTERACTION-SIMPLIFICATIONS.md#proposed-collect-for-recorded-but-unsubmitted-work)
-fixes the recorded selection with manager/Stewart attribution and delivers the
-ordinary durable copy. Root recommends atomically ending editing at collection,
-with a single winner against a concurrent submit and same-operation continuation.
-That terminal-authority/eligibility design is not yet accepted; no live-peek or
-audit-restart facility is selected. The function is not a required normal-return
-stage or a claim about stopping all processes. Broader unfinished-return cases
+The user explicitly decided that manager collect may itself end the authoring
+opportunity and that this authority carries through the Rust transition. The
+[recorded direction](submission-design-01/INTERACTION-SIMPLIFICATIONS.md#manager-collection-of-recorded-unsubmitted-work)
+fixes the selection with manager/Stewart attribution, ends edits atomically,
+serializes against submit and supplies the ordinary durable copy. Prior cessation
+or auditor agreement is not a prerequisite. Frequent early manager use may be
+revisited on later evidence, but the user defers policy intervention beyond the
+near/medium term; no waiting/readiness/deterrence gate is commissioned. Mechanical
+qualification remains owed. This is not a required normal-return stage, live-peek
+or audit-restart facility, or proof of stopped processes. Broader unfinished-return cases
 remain open. Holds, failed preservation, stop evidence and work
 outside the helper retain their obligations; they must not recreate routine
 acceptance/triage/retain/export stages for a completed normal return.
@@ -43,7 +44,8 @@ commissioned. Auditor notice/re-entry qualification remains open and is not a
 prerequisite for this discussion. This account owns the input/validation records
 in `.scratch/interaction-simplifications-01/` and the subsequent decision records
 in `.scratch/manager-return-direction-01/` and
-`.scratch/manager-collect-discussion-01/`; run-012 reflections remain separate.
+`.scratch/manager-collect-discussion-01/` and
+`.scratch/manager-collect-authority-01/`; run-012 reflections remain separate.
 
 ## Recent decisions: custody home and interrupted ordinary operations
 
