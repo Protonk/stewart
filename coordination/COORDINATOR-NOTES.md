@@ -1,13 +1,48 @@
 # Current coordinator account
 
-Updated 2026-10-27 during submission-protocol design, after the completed C leg.
+Updated 2026-10-27 after integration of the bounded submission prototype.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current session checkpoint: submission design before machine sleep
+## Completed: bounded atomic answer-editing prototype
+
+At 22:05 UTC on 2026-10-27 the user resumed: “Ok you may go ahead as planned.”
+Clean source cf7216f was verified, ending standby. The bounded prototype and its
+independent checking are now commissioned under
+[COMMISSION](submission-design-01/COMMISSION.md); manager-side work remains deferred.
+Rust/cargo 1.99.0 and Python 3.14.9 are available locally. Root pinned thirteen
+inherited inputs and five dispatch inputs under `.scratch/submission-prototype-01/`.
+
+The separate Rust prototype now passes 72/72 independent process cases, 2512
+assertions and 522 helper invocations on final binary cacc57df. The driver observed
+32 kernel stop barriers with 19 kill/13 continue controls. Fresh review reproduced
+four recovery/dependency defects and verified their corrections; the driver found
+an additional unknown-field refusal defect. An observer naming error and all
+earlier failed runs remain. [RESULT](submission-design-01/RESULT.md) owns exact
+identities, counts, dispositions, limitations and retained evidence. This is a
+bounded mechanism result, not product integration or a usability finding.
+
+Root accepts the final review's bounded assessment: no unresolved blocker for this
+commission. All three workers `/root/submission_impl`, `/root/submission_driver`
+and `/root/submission_review` have returned with saved handbacks; no worker or
+subject execution remains pending. Root owns integration, plans/accounts and Git.
+[PROGRESS](submission-design-01/PROGRESS.md) and the report's COMPLETION.json own
+final readiness/Git disposition. No Claude, product custody,
+removal or manager-side work was commissioned. No turnover was requested.
+
+Next recommendation, not a new commission: settle the actual store/access boundary
+and supported recovery interaction before integrating the tool into Stewart.
+Keep normal authoring small; the prototype's resolve/resume/cancel probes do not
+establish a product workflow. Unused preparation damage must not become an edit
+gate; selected submission dependencies remain verified. Physical reclamation,
+holds, delivery, stop/retirement/close, human handback and platform qualification
+remain explicitly open in DEVELOPMENT-PLAN. This report/account owns
+`.scratch/submission-prototype-01/` and the finite external specimens it identifies.
+
+## Prior session checkpoint: submission design before machine sleep
 
 The user accepted atomic add/handle-based replace/delete of recorded answer
 elements, with recoverability after helper exit and no draft-status lifecycle.
@@ -19,17 +54,16 @@ Manager-side simplification is explicitly for later discussion.
 
 Root completed a [failure walkthrough](submission-design-01/FAILURE-WALKTHROUGH.md)
 and prepared a [next-work brief](submission-design-01/NEXT-WORK.md) for a bounded
-Rust prototype. This is a coordinator desk review, not independent review or
-executed evidence. No prototype, worker, audit or Claude session is running or
-commissioned. [The session checkpoint](submission-design-01/CHECKPOINT.md) owns
-the exact next action and saved validation locators. This session continues after
+Rust prototype. At that checkpoint it was a coordinator desk review only, with no
+prototype execution commissioned. [The saved checkpoint](submission-design-01/CHECKPOINT.md)
+records that historical state. The user subsequently committed the design in
+cf7216f and resumed the prototype as recorded above. This session continued after
 sleep; TURNOVER remains the consumed stub, not a new handoff.
 
-Shared edits are saved but uncommitted after the two recorded staging failures.
-Root has not inferred a permissions repair or transfer of Git ownership. The
-next conversation is whether to commission the bounded prototype or first settle
-the real storage/access boundary for a direct product implementation. Neither
-route should silently absorb the deferred manager-side work.
+The pre-sleep edits initially remained uncommitted after two staging failures,
+then the user's sweep committed them. Those old failures do not prove current Git
+permissions or transfer Git ownership. The later authorization selected the
+bounded prototype, preserving the deferred manager-side boundary.
 
 ## Completed: C intake and genuine self-audit
 
@@ -80,7 +114,7 @@ tree at `b17a0ee` independently confirmed before turnover preparation. The bound
 intake plan is retired; broader successor decisions/platform work remain in
 DEVELOPMENT-PLAN. No Claude launch occurred.
 
-## Current intake and plan discussion
+## Earlier intake and discussion record
 
 The incoming `/root` took up coordination on 2026-10-27 at the user's direction.
 The immediate commission is to read current guidance/plans and discuss them with

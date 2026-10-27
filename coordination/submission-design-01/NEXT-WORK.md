@@ -1,9 +1,12 @@
-# Prepared next-work brief: atomic answer-editing prototype
+# Commissioned brief: atomic answer-editing prototype
 
-Prepared 2026-10-27 for discussion after the machine resumes. **Not commissioned
-or dispatched.** Root owns this brief and coherent integration. The user accepted
-the product direction, not a runtime experiment or this particular implementation
-assignment. No manager-side work is included.
+Prepared 2026-10-27 and subsequently commissioned at 22:05 UTC by “Ok you may go
+ahead as planned.” Its bounded implementation and 72-case process run are complete;
+RESULT.md owns evidence, review disposition, limits and the next recommendation.
+COMMISSION.md and PROGRESS.md retain execution and dispatch. The original pre-sleep
+brief remains in Git and the pinned inputs. Root owns integration; no manager-side
+work is included. The remaining text records the commissioned scope, not a fresh
+authorization to dispatch it again.
 
 ## Recommended bounded commission
 
@@ -18,7 +21,8 @@ custody. Product integration follows a separate bounded decision/commission.
 ## Source, scope and ownership before dispatch
 
 Use the current checkout, not an assumed preparation snapshot. Initial discussion
-base is e06a46b; the accepted contract/design edits are currently uncommitted.
+base was e06a46b; the user committed the accepted contract/design edits in cf7216f
+before commissioning this execution.
 Before dispatch, pin actual HEAD and admitted uncommitted inputs with their exact
 bytes/hashes. Inputs are AGENTS, coordinator standing orders, CONTRACTS' answer
 construction section and relevant custody/access/request principles, DEVELOPMENT,
