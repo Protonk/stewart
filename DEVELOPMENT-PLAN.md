@@ -181,6 +181,16 @@ lost may already exist, and identical bytes do not identify an operation. Exact
 retry identity transport, actual auditor notification/re-entry and access
 enforcement remain to be designed and tested. No new harness trial is launched.
 
+The user now asks to collect the auditor-side simplifications and carry the same
+aim into manager interaction. [The collected account](coordination/submission-design-01/INTERACTION-SIMPLIFICATIONS.md)
+distinguishes commitments, prototype checks and proposals; it is the current
+discussion frame. Manager decisions concern receipt versus durable preservation,
+the normal/incomplete return, only genuinely outstanding closing choices, and
+same-operation delivery/close continuation. Existing single-close, commission
+recall and custody protections remain. No manager interface or delivery default
+has been newly adopted, and the earlier auditor notice proof does not block this
+design discussion. Keep internal work inside Stewart as interactions simplify.
+
 ## Work register
 
 The coordinator owns integration and this register. Each dispatched item gains

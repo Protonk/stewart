@@ -1,13 +1,34 @@
 # Current coordinator account
 
-Updated 2026-10-27 during the authoring-boundary discussion after the prototype.
+Updated 2026-10-27 while collecting auditor simplifications for manager design.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current discussion: custody home and interrupted ordinary operations
+## Current discussion: carry interaction simplification to the manager
+
+The user asks to collect auditor-side simplifications already made or committed
+and use them when deciding the manager interaction. Root's
+[collected account](submission-design-01/INTERACTION-SIMPLIFICATIONS.md) separates
+decisions, bounded prototype evidence and open mechanisms, then maps their
+consequences to manager decisions. Stewardship of mechanical work must stay with
+Stewart rather than be transferred to the manager. Current recommendation:
+begin with whether normal return receipt establishes a durable manager-held copy,
+then define incomplete returns, remaining closing choices and same-operation
+continuation. These are discussion candidates, not adopted manager policy.
+
+Existing standard commission recall, single close, restricted live access and no
+dedicated executor remain commitments. Earlier disposable-draft/collection-stage
+proposals cannot reintroduce work the newer authoring contract removes. Root
+preserved those older documents as sources, with precedence explained in the new
+account. No new implementation, worker, harness trial, delivery or removal is
+commissioned. Auditor notice/re-entry qualification remains open and is not a
+prerequisite for this discussion. This account owns the input/validation records
+in `.scratch/interaction-simplifications-01/`; run-012 reflections remain separate.
+
+## Recent decisions: custody home and interrupted ordinary operations
 
 After prototype completion, the user accepted repository-associated persistent
 per-audit custody outside the disposable workspace; integration-owned interrupted-
