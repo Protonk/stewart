@@ -53,6 +53,16 @@ Zero audit restart facilities are scheduled for the first
 successor; the possible single restart convenience remains an open product
 choice, not a prerequisite. General manager-workspace service remains deferred.
 
+The user agreed on 2026-10-27 to aim the Opus 5.5 coordinator transition at a bounded
+implementation leg after a focused connected-design round. Settle the first
+leg's promises, exclusions, record population/interfaces and acceptance cases;
+do not require completing every remaining research case first. The proposed
+first leg is F4's read-only Rust foundation, followed by assessment before a
+larger write-path commission. Implementation and a Claude launch remain separately
+commissioned. One coordinator owns the work at a time; coordination standing
+orders govern the explicit transfer and the requested thin briefing. There is
+no active incoming coordinator or transfer directive yet.
+
 ## Standard commission receipts and manager recall
 
 On 2026-10-27 the user selected standard detailed commission receipts as the first

@@ -44,9 +44,14 @@ commission to run them.
 The coordinator's operating guidance now lives in
 [coordination/](coordination/README.md). Its standing orders own dispatch,
 capacity, permission and recovery practice; the working account records current
-work. The optional turnover brief supplements intake, while work saved during
-the session supports an abrupt departure. This vision supplies the reasons for
-the arrangement rather than a second set of standing procedures.
+work. One coordinator owns the coherent result at a time, including across
+harness changes. Each coordinator keeps durable guidance and current accounts
+updated as work proceeds. Before a planned transfer the user specifically directs
+a thin turnover briefing; the incoming coordinator reads it, reconciles its useful
+content and stubs it. Work saved during the session supports an abrupt departure
+without a fresh brief. This keeps turnover from becoming a growing runbook. This
+vision supplies the reasons for the arrangement rather than a second set of
+standing procedures.
 
 Judge the arrangement by coherent, verified work and reduced coordination
 burden while the user retains semantic control. More agents or more machinery

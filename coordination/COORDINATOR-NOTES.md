@@ -1,11 +1,33 @@
 # Current coordinator account
 
-Updated 2026-10-27 for commission-receipt recall and the inexpensive-assurance
-lean. This is a working account of observed work, authority received and remaining questions.
+Updated 2026-10-27 for coordinator-transition planning and the turnover procedure.
+This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
+
+## Coordinator transition: agreed procedure, transfer not yet directed
+
+The user agreed to plan an Opus 5.5 coordination leg at the next bounded implementation
+boundary, following a focused design round. F4's read-only foundation is the
+proposed first leg; no Rust implementation or Claude launch is commissioned by
+this discussion. Root remains the coordinator, with no incoming coordinator
+active and no parallel work queue. The user will direct the actual transfer.
+
+The user explicitly requires one coordinator at a time and durable guidance and
+working accounts maintained throughout each tenure. For a planned transfer the
+user specifically directs a thin TURNOVER briefing; the incoming coordinator
+reads/reconciles it and stubs it. Disorderly termination relies on already saved
+work. Standing orders now replace the former discretionary write/clear wording
+with this procedure, and the entry/vision agree. TURNOVER remains its existing
+stub: this discussion is not the directive to write the actual briefing.
+
+Root owns this documentation update and ordinary Git recording. No worker or
+new inquiry is dispatched. Validation and final recording are retained under
+`.scratch/coordinator-transfer-guidance-01/` with this account. Next substantive
+work is the connected-design discussion preceding a bounded implementation
+commission; the turnover directive is still to come.
 
 ## Commission-receipt direction and planning update
 

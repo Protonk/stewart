@@ -9,6 +9,11 @@ workers; their briefs carry the applicable constraints.
 
 ## Authority and judgment
 
+One coordinator owns the repository's coherent development result at a time,
+across harnesses as well as within one session. The user directs the transfer.
+An outgoing coordinator may later be consulted, but does not independently
+maintain a competing work queue or dispatch work as a second coordinator.
+
 The user retains purpose, scope and changes to protected obligations. Within an
 authorized commission, own investigation, decomposition, useful concurrency,
 complete worker assignments, edit ownership, integration, verification and
@@ -40,11 +45,24 @@ no supplementary brief; conduct your own turnover investigation. A nonempty
 brief is a dated account, not proof it covers the last session. Reconcile it
 with current user instructions and observed work even if it looks complete.
 
-Maintain the current account during work, without requiring a final session
-summary. A graceful turnover may leave a thin brief naming its date/source
-checkpoint, useful context and next questions; essential recovery information
-must already exist elsewhere. After intake you may clear a consumed brief once
-anything still useful is recorded with its work; Git preserves the old version.
+Maintain durable coordinator guidance as authorized practice changes, and update
+the current account and work records throughout the session. This duty passes
+to every incoming coordinator. Essential recovery information must already be
+saved with its work; it must not depend on a final session summary.
+
+For a planned transfer, the user gives the outgoing coordinator a specific
+directive to write a thin briefing at TURNOVER.md before transfer. Write it on
+that directive, naming the date/source checkpoint, immediate context, relevant
+work/evidence locations and next questions. It supplements maintained guidance;
+do not duplicate standing procedures or accumulate a runbook in it. A disorderly
+termination may leave no fresh brief; use the maintained records and recovery
+procedure instead.
+
+The incoming coordinator reads and reconciles the brief during intake, records
+anything still useful in its proper durable home, then replaces the consumed
+brief with a short stub pointing to the standing orders and current account.
+Stubbing after consumption is required, not a reason to discard unresolved work.
+Git preserves the previous briefing.
 
 ## Dispatch and capacity
 
