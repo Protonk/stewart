@@ -37,3 +37,8 @@ actual command outputs, and preserve failed checks alongside corrections.
 The prepared BRIEF.md remains the design basis and now names this subsequent
 authority. Its earlier preparation-only status is retained in the pre-dispatch
 snapshot. No protected product obligation changes.
+
+Turnover checkpoint, 2026-10-27 00:24 UTC (2026-10-26 Pacific): the user requested
+an ordinary turnover brief followed by stand-by. Preparation is recorded in
+88fd1e7. Do not resume dispatch merely because a new session has started; await
+the user's resumption. That stand-by does not revoke this pilot commission.

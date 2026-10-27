@@ -67,5 +67,8 @@ Retain `.scratch/fresh-authoring-01/` and the earlier preparation evidence with
 this result under DEVELOPMENT.md's policy. The small source/coordination files
 belong in Git; bulky witnesses stay in the retained local evidence population.
 HEAD f5bebc1 contained the plan/account changes at intake; the entire new
-`coordination/fresh-authoring-01/` directory was still untracked. User Git
-ownership continues. No ordinary turnover note was requested or written.
+`coordination/fresh-authoring-01/` directory was then untracked. Commit 88fd1e7
+subsequently recorded it. The user has now requested turnover and stand-by;
+the current account and coordination/TURNOVER.md record that state. User Git
+ownership continues. The authorized pilot resumes only when the user returns
+to it; no new scope decision is required merely by that interruption.

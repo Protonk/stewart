@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-26 after fresh-authoring preparation. This is a
+Updated 2026-10-26 Pacific / 2026-10-27 UTC for requested turnover. This is a
 working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -8,6 +8,10 @@ working account of observed work, authority received and remaining questions.
 actual files, user instructions and available harness state after interruption.
 
 ## Current commission and coordinator checkpoint
+
+The user requested a turnover brief and then stand-by. The brief is saved at
+[TURNOVER.md](TURNOVER.md). No further development dispatch is to begin until
+the user resumes work; the substantive pilot commission below remains valid.
 
 The user authorized the [fresh construction pilot](fresh-authoring-01/COMMISSION.md)
 after its preparation, then limited this continuation to 10–15 minutes and an
@@ -38,13 +42,16 @@ exact grant, output paths and witness timing, then run the already authorized
 pilot, materialize/freeze recipient variants and integrate independent review.
 No further scope approval is needed merely to continue that pilot.
 
-User Git ownership continues. HEAD f5bebc1 at continuation intake contained the
-plan/account update; coordination/fresh-authoring-01/ was still untracked and
-needs inclusion in the next commit. Prior commit 81b557a recorded the reviewed
-finite-return inquiry; its 315 evidence files were present and its 170 recorded
-document identities matched committed bytes. The user's report that all 315
-were unchanged was not a new independent full-file rehash. No ordinary turnover
-note was requested or written.
+User Git ownership continues. Commit 88fd1e7 now includes the entire preparation
+directory; the checkout was clean before turnover edits. Reconciliation against
+the saved completion record verified all 15 document identities in both working
+and committed bytes, and all 258 listed local evidence files. The record is
+.scratch/fresh-authoring-01/turnover-reconciliation-01.json; later turnover edits
+do not rewrite the earlier completion identities. Prior commit 81b557a recorded
+the reviewed finite-return inquiry; its 315 evidence files were present and its
+170 recorded document identities matched committed bytes at that checkpoint.
+Those older files were not rehashed in this turnover check. An ordinary turnover
+brief is now requested and saved; fieldwork reflections remain separate.
 
 ## Completed finite-return inquiry
 
@@ -56,7 +63,8 @@ inquiry authority, not removal of obligations or adoption of Promise/Yield.
 The [commission](return-boundary-01/COMMISSION.md) and
 [progress](return-boundary-01/PROGRESS.md) own the bounded wave. Availability was
 roughly two hours from 20:39 UTC on 2026-10-26; aim to integrate by 22:20.
-No Claude today. User owns Git recording and may commit without editing files.
+The user requested no Claude for 2026-10-26 only. User owns Git recording and may
+commit without editing files.
 
 At 20:56 UTC three fresh workers were dispatched from saved briefs with no
 conversation inheritance. Source HEAD is `6e07529`, plus the discussion account;
@@ -91,9 +99,10 @@ findings and limits. The four omission readers identify newly explicit support;
 eight controls identify repetition. Selected source enables local checks and
 qualifications while remaining helpers, the escaped specimen, concrete attempt
 records and runtime comparisons stay unrun. No protected obligation is removed.
-Prospective fresh authoring is the next recommended content commission; it is not
-dispatched. Actual custody/delivery/stopping qualification and policy choices
-remain separate program work.
+Prospective fresh authoring was the next recommended content commission; the
+subsequent authorization and completed prototype preparation are recorded above.
+No author has been dispatched. Actual custody/delivery/stopping qualification
+and policy choices remain separate program work.
 
 All first-stage, recipient and review workers have returned; no worker task,
 source expansion, execution, external action or unresolved effectful reply remains.

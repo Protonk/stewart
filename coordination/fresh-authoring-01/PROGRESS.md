@@ -71,4 +71,20 @@ and recipient runs are deferred to the next suitable machine window under the
 existing commission. Their exact briefs/paths, witness timing and recipient
 materialization remain to prepare before dispatch. No project experiment ran.
 Keep the complete retained scratch population; no pruning or disposal occurred.
-The new coordination directory still needs inclusion in the user's next commit.
+At that checkpoint the new coordination directory still needed inclusion in the
+user's next commit.
+
+## Requested turnover and stand-by — 2026-10-27, 00:24 UTC
+
+Commit 88fd1e7 includes the full preparation directory. The checkout was clean
+before turnover edits. Root reconciled all 15 recorded document identities with
+the working and committed bytes, and rehashed all 258 evidence files listed in
+completion-01.json: all matched. turnover-reconciliation-01.json preserves this
+observation. Original completion records and worker returns remain unchanged.
+
+The user requested an ordinary turnover brief and then stand-by. Root updated
+coordination/TURNOVER.md, the current coordinator account and the development
+plan. No dispatch or behavioral run occurred during this turnover. The pilot
+remains authorized, but further work waits for the user's resumption. No worker
+or uncertain operation remains in flight. Fieldwork notes remain outside the
+project; they do not replace the ordinary turnover brief.
