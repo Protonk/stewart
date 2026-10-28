@@ -158,8 +158,8 @@ Two consequences need the user:
   sandbox enforcement is unqualified. Coverage gaps: launch-block failure
   promises and the non-darwin name branch got no Linux evidence.
 
-The Python container is kept until the user deletes it; its useful contents are
-exported.
+After export, the user deleted the kept Python container; the pulled images remain
+for reruns.
 
 The user agreed root's leans on the case table's Q1, Q5, Q20 and Q32, chose
 option B for Q10 (submit proceeds with a note over an unresolved own operation),
