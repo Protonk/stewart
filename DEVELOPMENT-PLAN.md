@@ -233,6 +233,13 @@ separate decisions. This is a recommendation, not an approved implementation leg
 or turnover directive. The coordinator owns preparing the concrete commission;
 the entire remaining research register is not a handoff prerequisite.
 
+The user offers a preparation audit. The coordinator recommends the bounded
+[Information preservation question](coordination/opus-preparation-audit-01/QUESTION.md)
+about whether decided obligations survive translation into this candidate scope,
+especially dependencies on deferred capabilities. Source 4636a67, static inspection
+and the finite input route are specified. It is proposed, not dispatched; it
+supplies no runtime qualification or implementation commission.
+
 ## Work register
 
 The coordinator owns integration and this register. Each dispatched item gains

@@ -25,6 +25,16 @@ finite acceptance must precede dispatch; coordinator-owned preparation need not
 reopen all research questions. The user has not requested the ordinary turnover
 brief yet. This account owns `.scratch/opus-readiness-01/`; no worker is dispatched.
 
+The user offers an audit to firm up preparation and asks whether it would help.
+Root recommends one bounded Information preservation audit of decided obligations
+as carried into the candidate implementation commission. The
+[proposed question](opus-preparation-audit-01/QUESTION.md) fixes the source at
+4636a67, the contract-to-commission route, selected inputs, static scope and useful
+return. It tests hidden dependencies on deferred capabilities while allowing
+legitimate deferral, no supported gap or reframe. This is an audit proposal;
+no auditor/session/Claude launch or implementation is dispatched. Root owns its
+preparation and `.scratch/opus-preparation-audit-01/` recording.
+
 ## Manager interaction decisions supporting that scope
 
 The user asks to collect auditor-side simplifications already made or committed
