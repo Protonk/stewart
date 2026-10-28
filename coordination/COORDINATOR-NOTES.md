@@ -1,13 +1,34 @@
 # Current coordinator account
 
-Updated 2026-10-27 with conditional routing for the custody concerns.
+Updated 2026-10-27 Pacific (2026-10-28 UTC) for the requested turnover and standby.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current discussion: readiness for the Opus implementation turnover
+## Current checkpoint: requested turnover and standby
+
+The user directed: “Make those reconciliations, then write a turnover brief and
+stand by.” The high-level sweep read only the standing orders, this account and
+the development and vision plans. The approved reconciliation makes F3/F5's
+dependencies explicit for each bounded leg, allowing custody/delivery before live
+launch/control while preserving actual access qualification and the later full
+audit-service obligations. VISION now describes custody during authoring, submit
+or collect fixing the return, and the durable manager copy with commission context;
+workspace disposability remains conditional. No product obligation was changed.
+
+The ordinary [turnover brief](TURNOVER.md) is prepared from source `afc8f89`.
+Root owns these documentation edits and `.scratch/opus-turnover-run-012/`.
+`VALIDATION.json` there records the checks; `COMPLETION.json` records final Git
+recording, committed-byte verification and clean state. Until those records exist,
+final verification/recording is unfinished. After that endpoint root stands by:
+no new worker, implementation, inquiry or Claude launch is dispatched. The next
+coordinator takes ownership at the user's direction. The implementation leg still
+needs its bounded scope, actual interface and finite acceptance commission.
+Fieldwork reflections remain separate from the project turnover.
+
+## Implementation preparation carried forward
 
 The next implementation preparation remains the candidate custody-and-delivery
 leg: settle its scope with the user and make its interface and acceptance concrete.
@@ -45,8 +66,9 @@ the agreed authoring/collect interface and supported interrupted-operation re-en
 Physical removal, live launch/control and unknown-inventory closing authority stay
 explicit follow-on work. Scope approval, first supported receiving/tool route and
 finite acceptance must precede dispatch; coordinator-owned preparation need not
-reopen all research questions. The user has not requested the ordinary turnover
-brief yet. This account owns `.scratch/opus-readiness-01/`; no worker is dispatched.
+reopen all research questions. The later directive requests the ordinary turnover
+brief, as recorded above. This account owns `.scratch/opus-readiness-01/`; no worker
+is dispatched.
 
 The user commissioned the proposed preparation audit: “Excellent. Run that audit.”
 It is complete. [The result](../reports/opus-preparation-audit-2026-10-27/RESULT.md)
@@ -65,9 +87,10 @@ collection, retention/export and normal close. No custody gaps, closing failures
 or leftovers were observed. The report preserves a heading-only scope deviation,
 re-read truncated output and root's corrected triage-schema refusal. No successor
 runtime or OS-access qualification follows. No worker or audit lifetime remains
-pending, and no implementation or ordinary turnover is launched. The result owns
-`.scratch/opus-preparation-audit-01/`; the next decision remains bounded scope and
-the explicit transfer, not another general inquiry.
+pending. The audit commissioned no implementation or ordinary turnover; the brief
+now follows the separate user directive above. The result owns
+`.scratch/opus-preparation-audit-01/`; the next substantive decision remains the
+bounded implementation scope, not another general inquiry.
 
 ## Manager interaction decisions supporting that scope
 

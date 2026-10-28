@@ -103,12 +103,20 @@ more work. The manager still owns its competing inquiry and judgment. CONTRACTS.
 records this successor requirement and the broader lean; the development plan
 owns its remaining presentation, custody and qualification decisions.
 
-Pursue the keyhole candidate: the typed submission is the entire deliverable,
-and audit working state is declared disposable in advance, with retirement
-after durable valid submission and safe termination. Examine the obligations
-this could eliminate or narrow without weakening the field of work while the
-auditor investigates. The candidate reopens earlier tree-preservation choices;
-it does not silently repeal them or apply new rules to historical audits.
+Develop the finite answer boundary with custody beginning during authoring of
+recorded elements. Auditor submission or manager collection fixes the return
+selection; the manager receives an independent durable copy with the original
+commission context and provenance. Empty and partial returns use that same
+interface with an honest account of gaps. Affirmative close follows the manager's
+decision that the copy is safely placed, subject to remaining custody obligations.
+
+The keyhole candidate's proposed disposability of other audit working state
+remains a conditional design question. When affected preservation or disposal work
+brings that choice into scope, examine what obligations it could eliminate or
+narrow without weakening the field of investigation. A finite return selection
+does not itself authorize disposal. Any retirement requires qualified preservation
+and control; the candidate neither silently repeals existing preservation
+obligations nor applies new rules to historical audits.
 
 The established question types were learned through real audits. Give answer
 structures comparable empirical attention: inspect actual returns, compare

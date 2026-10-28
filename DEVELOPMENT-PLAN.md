@@ -35,11 +35,21 @@ obligations return to the user. Preparing an assignment does not dispatch it.
 | --- | --- | --- |
 | F1 — Prepare the next inquiry | Make the answer corpus, route candidates, bounded legacy population and acceptance coverage concrete. The three first-wave briefs below can run independently when commissioned. | An accessible corpus with known gaps; candidate access/control/delivery routes and their unknowns; a trace from every register item to a decision, implementation assignment or explicit deferral. Concrete trials and their cost are ready for commissioning. |
 | F2 — Obtain discriminating evidence | Inventory real returns and compare common then question-specific answer forms. Qualify candidate access, stopping and delivery feasibility alongside this where their trial scope is approved. Test fresh authoring through a replaceable prototype after the representation comparison. Investigate workspace/history/tool capability and helper consumers as needed. | Evidence of answer usefulness, supported capabilities and credible operating routes. Separate representation evidence, prototype behavior and real-harness enforcement. No schema is selected merely because agents can fill it. |
-| F3 — Decide the connected successor design | Integrate F2 with A.1, B–F, the keyhole custody choices, R1–R3, and the close/hold/failure cases. Reconcile affected contracts and guidance. | A bounded commission, answer/context form, custody-start/finality policy, access and control arrangement, storage/lifetime model and supported recovery paths. Name which decided departures ship in stage 4, which are commissioned in stage 5 and which remain deferred, with dependencies. This scope decision precedes the write path. |
+| F3 — Decide the connected successor design | Integrate F2 with A.1, B–F, the keyhole custody choices, R1–R3, and the close/hold/failure cases for the selected leg. Reconcile affected contracts and guidance. | A bounded commission, answer/context form, custody-start/finality policy, access and control dependencies, storage/lifetime model and supported recovery paths. Settle the arrangements the leg relies on and name its exclusions. Name which decided departures ship in stage 4, which are commissioned in stage 5 and which remain deferred, with dependencies. This scope decision precedes each bounded write leg. |
 | F4 — C complete locally; broader readers remain scoped | User-selected C combines original-input acceptance, detailed receipts and independent verified readback in Rust. Manager-custodied delivery and explicit incomplete-intake disposition precede the write interface. Establish tooling and installed-artifact acceptance for this scope. | Recoverable original undertaking without its originating process and supported completion/disposition. A separate A preview or broad status implementation is not a prerequisite. Conduct the subsequent actual self-audit with existing result custody; use investigator observations to decide later result work. |
-| F5 — Implement the selected write path | Integrate input preparation and owned facilities, launch/grants, submission custody, result retrieval/delivery, preservation and holds in that dependency order. Shared identity, request, record and error contracts precede parallel operation implementations. | End-to-end return availability and supported continuation/disposition of interrupted operations. Results survive loss of the original environment where promised. No automatic disposal is enabled on the strength of schema admission alone. |
+| F5 — Implement the selected write path | Build bounded legs under the rule below. For the full audit service, integrate input preparation and owned facilities, launch/grants, submission custody, result retrieval/delivery, preservation and holds in that dependency order. Shared identity, request, record and error contracts precede parallel operation implementations. | End-to-end return availability within the commissioned scope and supported continuation/disposition of interrupted operations. Results survive loss of the original environment where promised. No automatic disposal is enabled on the strength of schema admission alone. |
 | F6 — Implement and qualify close last | Complete W17's live-Python-audit gate before Rust closes anything. Integrate one close entry point, including graceless exit, with verified stopping, preservation, hold release, retirement and final custody closure. Repeat prototype comparisons against the actual successor. | Useful answers plus integrated custody, control and removal evidence, including failure and omission controls. Automatic retirement, if adopted, has its own authorized trigger and acceptance evidence. Close never declares completion over unfinished obligations. |
 | F7 — Accept, transition and finish | Exercise the integrated release on macOS, Linux and actual WSL; finish user documentation and packaging. Finish the remaining bounded legacy transition and accept the commissioned scope, including any stage-5 additions integrated through F4–F6. | An explicit outcome for every register item and acceptance gap; settled legacy undertakings before withdrawing their writer; released documentation matching actual support. Retire plans/findings only when their purpose and evidence obligations are discharged. |
+
+F3/F5 apply dependencies to the capabilities a leg undertakes. A separately
+commissioned answer-custody and manager-delivery leg may precede live auditor
+launch and physical process control. It must settle and qualify its own access,
+custody, identity, delivery and interrupted-operation boundaries. Deferring launch
+does not defer access enforcement or authorize claims of stopped processes,
+safe removal or completed audit closure. The full audit service and F6 retain
+their control, preservation and removal dependencies. This sequencing clarification
+was approved with the high-level reconciliation on 2026-10-27; the candidate
+leg's concrete scope, interface and acceptance still need their commission.
 
 F7 preparation begins early: locate the Linux execution route and WSL contact,
 identify the legacy population, and design evidence retention during F1/F2.
@@ -71,8 +81,11 @@ completed, the user directed a transfer to another Astra coordinator to help
 reach the later Opus turnover point. The next tenure prepares the next bounded
 implementation commission with the user; no next product slice or Claude launch
 is selected by this transfer. The incoming coordinator consumed the briefing on
-2026-10-27 at clean HEAD `e06a46b`. The current commission is intake and discussion
-with the user to establish the next bounded work; no implementation is dispatched.
+2026-10-27 at clean HEAD `e06a46b`. That tenure completed the bounded authoring
+prototype, custody/manager decisions and preparation audit recorded below. The
+user has now directed the high-level reconciliations, an ordinary turnover brief
+and standby. The next custody/delivery implementation leg remains a candidate;
+no implementation dispatch or Claude launch is authorized by writing the brief.
 
 The user chose to address the first leg's consumer and record population before
 the other release choices, with a standalone Riker consultation prepared in

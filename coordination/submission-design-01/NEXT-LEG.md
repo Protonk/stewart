@@ -2,8 +2,11 @@
 
 Prepared 2026-10-27 in response to “What else do we have left to set into place
 before we can do an Opus turnover?” This is the coordinator's recommendation for
-discussion, not an implementation commission, launch authorization or turnover
-directive. The current TURNOVER remains its consumed stub.
+discussion, not an implementation commission or launch authorization. The user
+subsequently directed the ordinary turnover brief and standby; that directive
+does not approve this candidate for implementation. The development plan now
+explicitly permits a bounded custody/delivery leg before live launch/control,
+while retaining its own access and custody qualification requirements.
 
 The subsequent [bounded static audit](../../reports/opus-preparation-audit-2026-10-27/RESULT.md)
 found no demonstrated contradiction requiring the deferred physical control/removal
