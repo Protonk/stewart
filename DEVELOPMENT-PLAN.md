@@ -59,7 +59,11 @@ while an actual WSL return remains an external dependency. No CI is available.
 The Linux execution route is located: Apple's `container` tool runs arm64 Linux
 VMs on the development Mac, and a first run of the frozen baseline and the
 commission-input slice at `03efeb3`, with a same-commit macOS control, is recorded
-in the coordinator account. That run is preparation, not F7 acceptance.
+in the coordinator account. That run is preparation, not F7 acceptance. Its
+successor-design inputs bear on W14 (close plausibly leaves relative worktree
+administrations under Git >= 2.48), W15 (no declared minimum Git version), W04
+(name normalization keyed to the observed volume, not the platform) and W20
+(Linux sandbox enforcement unqualified); the run's local record holds the evidence.
 
 Stage 4 is not a parity port followed by an optional rewrite. Its commission
 must say which selected departures its coherent foundation includes. Stage 5
@@ -87,12 +91,15 @@ implementation commission with the user; no next product slice or Claude launch
 is selected by this transfer. The incoming coordinator consumed the briefing on
 2026-10-27 at clean HEAD `e06a46b`. That tenure completed the bounded authoring
 prototype, custody/manager decisions and preparation audit recorded below. The
-user has now directed the high-level reconciliations, an ordinary turnover brief
-and standby. The next custody/delivery implementation leg remains a candidate;
-no implementation dispatch or Claude launch is authorized by writing the brief.
+user then directed the high-level reconciliations, an ordinary turnover brief
+and standby. The next custody/delivery implementation leg remained a candidate;
+no implementation dispatch or Claude launch was authorized by writing the brief.
 The incoming Opus coordinator consumed that briefing on 2026-10-27 Pacific at
-clean HEAD `f67ca30`. Its intake selects no scope; settling the candidate with
-the user is the next step.
+clean HEAD `f67ca30`. The user then approved the candidate as the first
+implementation leg; it is not yet dispatch-ready, and
+[PLAN-FIT](coordination/custody-delivery-01/PLAN-FIT.md) records the decisions
+made and still open. On 2026-10-28 the user directed another turnover brief
+before the leg's remaining decisions.
 
 The user chose to address the first leg's consumer and record population before
 the other release choices, with a standalone Riker consultation prepared in
@@ -249,8 +256,8 @@ recommends persistent answer custody and manager delivery tied to C, applying to
 new successor records. It identifies scope approval, a supported tool/receiving
 route and finite acceptance as pre-dispatch work, with physical removal, live
 launch/control and unknown-inventory closing authority explicitly deferred for
-separate decisions. This is a recommendation, not an approved implementation leg
-or turnover directive. The coordinator owns preparing the concrete commission;
+separate decisions. The user approved it on 2026-10-28 as the first
+implementation leg; it is not yet dispatch-ready. The coordinator owns preparing the concrete commission;
 the entire remaining research register is not a handoff prerequisite.
 
 The user offers a preparation audit. The coordinator recommends the bounded

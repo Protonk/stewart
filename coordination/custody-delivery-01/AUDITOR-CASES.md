@@ -3,9 +3,11 @@
 Discussion draft, 2026-10-28 UTC, from source `866a4c4`, prepared at the user's
 request (“1. Yes.”) after they said “every wall carries a sign pointing at the
 door” should be especially true of the auditor's submission tool, with pre-designed
-cases giving the auditor quick, specific resolution. **Nothing here is agreed.**
-Signs, reason identifiers and wording are proposals; rows marked open depend on
-the questions at the end.
+cases giving the auditor quick, specific resolution. **Only the decisions at the
+end are agreed** (recorded in CONTRACTS); where a row conflicts with them, the
+decisions govern (for example, reply headers name the audit, not a question label).
+Otherwise signs, reason identifiers and wording are proposals; rows marked open
+depend on the questions at the end.
 
 Produced by read-only workflow `wf_3f10a53c-1ac`: one finder derived cases from the
 decided contracts and the prototype's refusals; another imagined what eager,
@@ -756,7 +758,8 @@ open question.
 ## Open questions, triaged by the coordinator
 
 Numbers refer to the merger's 36 questions (full text in the scratch return).
-The triage is the coordinator's proposal; it decides nothing.
+The triage is the coordinator's proposal; the user's responses and the decisions
+section record what was settled.
 
 ### For the user: these touch what participants can express or what Stewart promises
 

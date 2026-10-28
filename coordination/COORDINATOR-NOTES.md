@@ -1,208 +1,115 @@
 # Current coordinator account
 
-Updated 2026-10-27 Pacific (2026-10-28 UTC) at the Opus coordinator's intake.
+Updated 2026-10-28 UTC at the Opus coordinator's turnover.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current checkpoint: Opus coordinator intake
+## Current checkpoint: Opus tenure at turnover
 
-The user directed the transfer: “Please assume the coordinator role by first
-reading the turnover brief, then the remainder of the coordinator documentation.”
-The incoming Opus 5.5 coordinator (`/root` in this harness) read the brief, the
-directory entry, standing orders, this account, NEXT-LEG and both active plans.
-Observed HEAD is `f67ca30`, clean, equal to the outgoing COMPLETION record's final
-head; its five recorded document hashes match the working tree. The brief's content
-already has durable homes here, in NEXT-LEG and in DEVELOPMENT-PLAN, so it is
-consumed and stubbed. No worker state was inherited by this session; none is
-recorded as pending. Intake pins and observations are in
-`.scratch/opus-intake-01/INTAKE.json`; recording follows in that directory.
+The user directed the transfer into this tenure: “Please assume the coordinator
+role by first reading the turnover brief, then the remainder of the coordinator
+documentation.”
+The Opus 5.5 coordinator (`/root` in this harness) took intake at clean HEAD
+`f67ca30`, consumed and stubbed the brief and recorded intake in
+`.scratch/opus-intake-01/`. On 2026-10-28 the user directed this tenure's
+turnover brief; this checkpoint is written for it. Commits `f987a78` through the
+turnover commit record the tenure.
 
-Intake commissions nothing. The next substantive step is the user discussion of
-NEXT-LEG's first decision: approve or revise the bounded custody-and-delivery
-deliverable and its exclusions. Interface, receiving route and acceptance
-preparation follow that choice. No implementation, worker, inquiry or Claude launch
-is dispatched, and no product obligation is changed by intake.
+**First leg.** The user approved the [NEXT-LEG candidate](submission-design-01/NEXT-LEG.md)
+(persistent answer custody and manager delivery connected to C) as the first
+implementation leg, hoping to continue through the remainder of the transition.
+It is neither dispatched nor dispatch-ready. [PLAN-FIT](custody-delivery-01/PLAN-FIT.md)
+owns the plan-fit assessment, the seven user decisions with the user's answers,
+and the coordinator reconciliation list. Settled: the provisional answer structure
+(item 2; reasoning in [ANSWER-STRUCTURE](custody-delivery-01/ANSWER-STRUCTURE.md),
+decision in CONTRACTS, bounds revisited under W02 by a much later real-project
+audit); specimens-only leg-1 audits (4); re-entry for a continuing auditor only,
+otherwise manager collect (5); unknown selection narrowed to destroyed or tampered
+custody, with atomic seal, sealed-manifest delivery before any bytes and redundant
+membership records as leg-1 acceptance cases, and close's behavior on a damaged
+audit left to the close leg (6); development capacity (7). Open with the user:
+item 1, an agreed access-route document that also fixes how many Stewart auditors
+trials use and answers case-table Q14 and Q27–Q31; item 3, delivery, designed with
+item 1 and starting from sealed-manifest delivery at seal time (C's request has no
+destination field). Route research `.scratch/route-research-01/RETURN.json` holds
+checked Apple `container` and Claude Code facts for item 1 (64 confirmed, 13
+corrected), partly framed around the since-corrected containment purpose. The
+threat-model and enclosure discussion behind item 1 is unfinished and deliberately
+unrecorded beyond CONTRACTS; the user asked to talk it through rather than have
+conclusions recorded.
 
-The user then approved the NEXT-LEG candidate as the first leg, hoping to continue
-through the remainder of the transition, and enabled ultracode for this session:
-“For this first leg, you should use a small/modest number of agents (more than 1
-or 2 auditors is too much). For later legs we can talk about expanding to 4-10
-simultaneous sub-agents. Look across the development and vision plan and see if
-this assignment makes sense. We won't kick things off just yet.” The leg is not
-yet dispatched; collaboration setup continues. Root dispatched one read-only
-plan-fit review (in-harness workflow `wf_bdadff4a-f82`, at most two concurrent
-agents: two lens reviewers, then one adversarial verifier) from source `f987a78`.
-Brief and returns: `.scratch/plan-fit-review-01/`. It writes nothing in the
-repository and informs the user discussion only. All three agents returned with
-no errors (556,241 sub-agent tokens); none remains active. Root read every finding,
-spot-checked the weightiest citations and saved the integrated account as
-[PLAN-FIT](custody-delivery-01/PLAN-FIT.md): the leg makes sense in direction and
-fits one or two agents, but is not dispatch-ready. Seven user decisions lead,
-with the access route first; coordinator reconciliation items follow. The next
-step is the user's response; nothing is dispatched.
+**Auditor-facing cases.** [AUDITOR-CASES](custody-delivery-01/AUDITOR-CASES.md) is
+a 113-row discussion draft. Its agreed parts (Q1, Q5, Q10 option B, Q20, Q32, Q33)
+are in CONTRACTS as “Auditor-facing signs and re-entry”. Q26 (which informational
+notes might press authors toward a shape) awaits a proposal from the
+coordinator; the mechanical questions are coordinator work within the eventual
+commission. The
+[orientation trial](custody-delivery-01/ORIENTATION-TRIAL.md) is prepared,
+registered under W12 and not commissioned; the user asked to plan it then and “do
+it outside this session” (the preparing one), and its real auditor sessions need
+explicit launch permission.
 
-The user answered all seven items; PLAN-FIT records the answers and root's
-opening position. Accepted: specimens-only leg-1 audits (4) and re-entry limited
-to a continuing auditor, including return to the submission tool after compaction (5).
-Items 1 and 3 are to be designed together, with item 1 written into an agreed
-document that also fixes the number of Stewart auditors in trials. Item 2 needs
-elaboration. Item 6 waits on whether the condition can be avoided. The user will
-set up a Linux container with Apple's `container` tool together with root (not
-installed here; macOS 26.7.1 arm64). Root may now run its own workflows within a
-rough ceiling of ten simultaneous agents. Root picked item 6 to discuss first.
+**Linux and the suite (complete).** The user installed Apple's `container` 1.6.1;
+first light is in `.scratch/linux-first-light-01/`. The user corrected the purpose:
+the Linux work checks that Stewart works on Linux; it is not auditor containment,
+which may be temporary and contingent. The first Linux run at `03efeb3` (arm64
+Debian 13 VM, `--network none`) passed Rust 15/15 and the commission checker
+46/46 against the Linux binary; the Python suite failed 20 of 1140. A same-commit
+macOS control isolated 18 Linux-only failures, all test assumptions (hardcoded
+`/bin/zsh`, APFS case/normalization lookup, Git >= 2.48); triage `wf_ded12c0e-24e`
+found no Linux product defect. `.scratch/linux-check-01/RESULTS.md` owns the
+record, including successor-design inputs (a plausible relative-worktree
+administration leak in close under Git >= 2.48, no declared minimum Git, name
+normalization keyed to the volume, unqualified Linux sandbox enforcement) and
+coverage gaps. The run is F7 preparation, not acceptance. At the user's direction
+root then repaired the two tests that were red on every platform (`54b1c91`) and
+the checkout-only FIFO hazard from leg C's `fifo-source` test (`1a74720`). The full
+suite in the checkout now passes 1140 with 1 skipped
+(`.scratch/fifo-hygiene-01/`). `test_runner_withholds_rustc_from_provisioning`
+can flake under load: pip allows `rustc --version` 0.5 s.
 
-The user accepted root's item-6 account: the residue is destruction or tampering
-of Stewart's own custody records; the three avoidance mechanisms become leg-1
-acceptance and the narrowed policy goes to the close leg as close's behavior on a
-damaged audit (the user wants `close` to answer any state). Item 3 starts from
-sealed-manifest delivery at seal time. Root drafted the item-2 elaboration as
-[ANSWER-STRUCTURE](custody-delivery-01/ANSWER-STRUCTURE.md) (proposal, not agreed)
-and dispatched read-only workflow `wf_91217239-a10` (two checkers: document
-fidelity and outcome pressure) against it. Returns go to
-`.scratch/answer-structure-check-01/`; root revises the draft before presenting it.
-Both checkers returned with no errors (286,042 sub-agent tokens); none remains
-active. Root accepted their material findings and revised the proposal: a
-distinguished optional account element instead of a first-position convention;
-names as free labels with uniqueness as guidance; a retained-bytes cap that can
-never block small edits; recorded `limit_exceeded` observations; acknowledged
-limits for constrained experiment construction; a versioned manifest. The
-reviewed first draft is `DRAFT-01.md` there. The user then approved all six
-choices, keeping the bounds as clean arbitrary limits to be tested by a much
-later, separately commissioned real-project audit. Root recorded the provisional
-structure in CONTRACTS, the bounds revisit in W02, the first decision point and
-the narrowed unverifiable-selection concern in DEVELOPMENT-PLAN. Remaining
-first-leg discussion: items 1 and 3 (access route, Stewart auditor count,
-delivery), then coordinator reconciliation. Root dispatched read-only workflow
-`wf_7b78b039-d07` from `866a4c4` (Apple `container` facts, Claude Code facts,
-repository constraints, then one adversarial fact checker; at most three
-concurrent; no installs, containers or Claude launches). Brief and returns:
-`.scratch/route-research-01/`. Root put framing questions to the user meanwhile.
+**State.** No worker, workflow, background command or Claude launch is active or
+pending, and none occurred outside in-harness workflows. No container is running;
+the alpine, rust and python images pulled by digest remain for reruns, and the
+container services the user started may still be running. Observed environment
+facts: this harness's command sandbox refuses `container` commands and `ps`/`pgrep`,
+so container service and run commands go through the user's terminal (`!`); the
+full suite runs outside the sandbox (DEVELOPMENT.md); macOS asked once for
+`container-runtime-linux` Desktop access and the user allowed it. Frozen Python
+runtime and bundled guidance bytes are unchanged; tests, `pyproject.toml`'s sdist
+list and one successor test changed as recorded. Nothing has been pushed.
 
-Correction from the user: the Linux container work is to check that Stewart works
-on Linux, not to containerize the auditor now; auditor containerization may be
-temporary and contingent. Root had folded the container into the access-route
-question; the running route research is partly framed that way and will be read
-with the corrected purpose. The user and root are still discussing the threat
-model and access framing; nothing from that conversation is recorded as agreed.
-At the user's request (“1. Yes.”) root dispatched read-only workflow
-`wf_3f10a53c-1ac` from `866a4c4`: two case finders (decided semantics; agent
-behavior) and one merger, at most two concurrent, to feed a discussion draft of
-the auditor submission-tool case table. Brief and returns: `.scratch/auditor-cases-01/`.
-Route research `wf_7b78b039-d07` returned: four agents, no errors, 684,634 sub-agent
-tokens; the checker confirmed 64 and corrected 13 external facts and listed
-omissions. Saved as `.scratch/route-research-01/RETURN.json`. Root reads its
-container facts for Linux platform checks and its Claude Code facts for the
-open enclosure question; it is input to discussion, not a decision.
-The user installed Apple's `container`; observed `/usr/local/bin/container`,
-`container CLI version 1.6.1 (build: release, commit: aa8d76b)`. The user has not
-run `container system start`. Root's `container system status` from inside its
-command sandbox failed with `Operation not permitted`, so service operations need
-the user's terminal or an explicitly approved unsandboxed command.
-First light is complete and recorded in `.scratch/linux-first-light-01/` (baseline,
-after start, after run). The user started the services with the recommended kernel,
-pulled alpine and ran `uname -a` with `--network none`: arm64 Linux 6.18.35. Direct
-IPv4 stayed healthy before and after, routes and interfaces matched the baseline
-and no container remained. No Stewart code has run in Linux yet. Root verified the
-pinned image tags `rust:1.99.0-trixie` and `python:3.14.9-trixie` exist for arm64
-and that the local wheelhouse holds only pure-Python wheels; root is proposing the
-Stewart Linux check plan to the user.
+**Owned records.** This account owns `.scratch/opus-intake-01/`,
+`plan-fit-review-01/`, `answer-structure-check-01/`, `route-research-01/`,
+`auditor-cases-01/`, `linux-first-light-01/`, `linux-check-01/`,
+`stale-tests-01/` and `fifo-hygiene-01/`, all local and untracked. Bulky Linux
+archives and check.py artifact directories there follow DEVELOPMENT.md's retention
+rules; nothing was pruned.
 
-Case-table workflow `wf_3f10a53c-1ac` returned: three agents, no errors, 668,649
-sub-agent tokens; 105 + 54 candidate cases merged into 113 rows with 36 open
-questions. Root wrote the discussion draft
-[AUDITOR-CASES](custody-delivery-01/AUDITOR-CASES.md) with its own triage of the
-questions (seven for the user, six for the item-1 document, the rest mechanical).
-Nothing in it is agreed.
+**Next.** Discuss items 1 and 3 with the user and write the agreed access-route
+document; bring a Q26 proposal; work PLAN-FIT's reconciliation list (W-row
+dispositions, custody home and move behavior, status consumer, shared contracts,
+stale ordering text, CONTRACTS' “Delivery: Deferred” clause); then make the first
+leg's commission concrete. Early independent work: the W17 legacy inventory (needs
+the user's allowlist and inputs), the WSL handoff (coordinator preparation; the run
+is external) and W18 guide statuses.
 
-The user approved the Linux checks: “Go ahead and proceed.” Root staged
-`.scratch/linux-check-01/` from commit `03efeb3` (git archive, 21 vendored crates
-offline, exactly the nine locked wheels verified against `requirements.lock`, step
-scripts) and wrote `run.sh` for the user to run from their terminal; `BRIEF.md`
-there records scope and limits. Read-only review `wf_f42b8829-96c` (two reviewers:
-host driver, in-container fidelity) is checking the scripts before hand-off. No
-container has run Stewart code yet.
-That review found one blocking defect (`check_commission.py` hardcodes
-`/private/tmp`) and several material ones; root revised the scripts (see the
-run's BRIEF) and dispatched re-review `wf_c1ca783b-f25`. The re-review found
-17 of 18 fixed and no blocking defect; root closed its remaining gaps and ran a
-dry test of the driver against a fake `container` CLI (control flow only; no VM,
-network or Stewart code). The driver is ready to hand to the user; it runs
-detached, writes `out/host/DONE` at its end and `out/host/driver.pid` for a clean
-stop.
+## Implementation preparation carried forward
 
-The user turned off iCloud Desktop sync, ran the driver (2026-10-28T13:35Z) and
-allowed macOS's one-time Desktop-access request for `container-runtime-linux`.
-It finished in nine minutes with `failures=3 integrity=0`; the record is
-`.scratch/linux-check-01/RESULTS.md`. Linux arm64 (Debian 13, kernel 6.18.35): Rust
-15/15 (same as macOS), release build verified, commission checker 46/46 against the
-Linux binary, Python suite 20 failed / 1119 passed / 1 skipped. A same-commit macOS
-control over the same archive (identical wheel and suite digests, same 1140 nodes)
-failed 2 / passed 1137, so 18 failures are Linux-only. Triage `wf_ded12c0e-24e`
-(seven classify/verify pairs, all upheld, every macOS prediction matched) found no
-Linux product defect: the 18 are tests that hardcode `/bin/zsh`, expect APFS's
-case/normalization-insensitive lookup, or need Git >= 2.48 (Debian ships 2.47.3).
-Two consequences need the user:
-
-- The full suite is red on macOS at HEAD, independent of Linux: the authority
-  ratchet has flagged tracked `coordination/answer-revision-01` scripts since
-  134573a, and the sdist include and test still name the deleted
-  `COORDINATOR-HANDOFF.md`. Repairing them touches tests and `pyproject.toml`,
-  not runtime or bundled bytes.
-- Successor-design inputs (not Linux defects): close plausibly leaks relative
-  worktree administrations under Git >= 2.48 with `worktree.useRelativePaths`
-  (helper-level probe, not end to end); no minimum Git version is declared;
-  name normalization must key on the observed volume, not the platform; Linux
-  sandbox enforcement is unqualified. Coverage gaps: launch-block failure
-  promises and the non-darwin name branch got no Linux evidence.
-
-After export, the user deleted the kept Python container; the pulled images remain
-for reruns.
-
-The user directed: “Fix those two tests.” Commit 54b1c91 exempts top-level
-`coordination/` from the authority ratchet (with a planted control showing that a
-`coordination` directory elsewhere still fails) and drops `COORDINATOR-HANDOFF.md`
-from the sdist include list and its test. Over a clean archive of that tree
-(`.scratch/stale-tests-01/`), macOS gave 1138 passed, 1 skipped, 1 failed. The failure,
-`test_runner_withholds_rustc_from_provisioning`, is a load flake: pip gives
-`rustc --version` a 0.5 s timeout, the run was about 45% slower than the control,
-and the node passed 3 of 3 reruns. Two checkout-only hazards remain for the user:
-each `cargo test` leaves a FIFO in the ignored `successor/evidence/` (four so far,
-from `successor/tests/cli.rs:230`), and 17 runner/foundation tests copy the whole
-project except `.scratch`, `.git`, `dist` and `build`, so `shutil.copytree` fails on
-the FIFO. Those copies also include `successor/target` (175 MB) each time. The full
-suite therefore stays red when run in the checkout itself.
-
-The user approved root's fix: “Go ahead.” The `fifo-source` test now removes its
-FIFO after the refusal is recorded; the four project copies share
-`project_copy_ignore` in `tests/support.py`, which skips `successor/target` and
-`successor/evidence` only at `successor/`; a planted-FIFO smoke test is the firing
-control. The four earlier FIFOs were removed after recording them in
-`.scratch/fifo-hygiene-01/fifos-removed.txt`. Verified there: `cargo test` 15/15
-with no new FIFO, and the full suite in the checkout passed 1140, skipped 1, exit 0.
-
-The user agreed root's leans on the case table's Q1, Q5, Q20 and Q32, chose
-option B for Q10 (submit proceeds with a note over an unresolved own operation),
-and settled Q33 (question printed verbatim on request, slim help, no question
-type shown to the auditor). CONTRACTS records these as “Auditor-facing signs and
-re-entry”. The orientation question is deferred to a trial the user asked to plan
-now and run outside this session:
-[ORIENTATION-TRIAL](custody-delivery-01/ORIENTATION-TRIAL.md), registered under W12,
-not commissioned.
-
-The outgoing tenure ended with the user's directive: “Make those reconciliations,
+The paragraphs in this section are the previous (Astra) tenure's account as of
+2026-10-27; the current checkpoint above supersedes what they say comes next.
+That tenure ended with the user's directive: “Make those reconciliations,
 then write a turnover brief and stand by.” Its reconciliation made F3/F5's
 dependencies explicit for each bounded leg, allowing custody/delivery before live
 launch/control while preserving access qualification and the full audit-service
 obligations. `.scratch/opus-turnover-run-012/` records its validation and final
 recording. Fieldwork reflections remain separate from the project turnover.
 
-## Implementation preparation carried forward
-
-The next implementation preparation remains the candidate custody-and-delivery
-leg: settle its scope with the user and make its interface and acceptance concrete.
+The user has since approved the custody-and-delivery candidate as the first leg
+(current checkpoint above); making its interface and acceptance concrete continues.
 The custody concerns below add no immediate inquiry assignment.
 
 The user directs that the two custody discomforts remain recoverable without
@@ -238,7 +145,7 @@ Physical removal, live launch/control and unknown-inventory closing authority st
 explicit follow-on work. Scope approval, first supported receiving/tool route and
 finite acceptance must precede dispatch; coordinator-owned preparation need not
 reopen all research questions. The later directive requests the ordinary turnover
-brief, as recorded above. This account owns `.scratch/opus-readiness-01/`; no worker
+brief, as recorded at the start of this section. This account owns `.scratch/opus-readiness-01/`; no worker
 is dispatched.
 
 The user commissioned the proposed preparation audit: “Excellent. Run that audit.”
@@ -259,7 +166,7 @@ or leftovers were observed. The report preserves a heading-only scope deviation,
 re-read truncated output and root's corrected triage-schema refusal. No successor
 runtime or OS-access qualification follows. No worker or audit lifetime remains
 pending. The audit commissioned no implementation or ordinary turnover; the brief
-now follows the separate user directive above. The result owns
+followed the separate user directive recorded at the start of this section. The result owns
 `.scratch/opus-preparation-audit-01/`; the next substantive decision remains the
 bounded implementation scope, not another general inquiry.
 

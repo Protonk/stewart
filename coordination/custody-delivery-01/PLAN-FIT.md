@@ -30,12 +30,14 @@ reconciliation.
 
 ## Decisions for the user
 
+As assessed before the user's answers; the responses below record what changed.
+
 1. **Access route (A1, B2, B8, B13; critic: platform).** The leg must qualify its
    own access boundary although launch is excluded. Allowing tool-mediated edits
    while denying the auditor direct custody mutation needs an enforcement
    arrangement around the auditor process and a tool that holds authority the
    auditor lacks, the same arrangement launch would select. No route probe has run
-   (routes FINDINGS P1–P3, not executed); custodian component, threat scope and
+   ([routes FINDINGS](../successor-inquiry-01/routes/attempt-01/FINDINGS.md) P1–P3, not executed); custodian component, threat scope and
    host classes are open user choices; a container route may exclude native macOS
    and so bears on the stage-4 platform exit. Root's recommendation: settle the
    route before fixing the write path, informed by a bounded P1-style probe
@@ -77,8 +79,11 @@ Recorded from the user's reply; wording condensed, meaning preserved.
 
 - **Linux route:** set up a Linux container together with Apple's `container`
   tool; it may need installing plus further installs. Observed: this host is
-  macOS 26.7.1 on arm64 and `container` is not on PATH. A container on this Mac
-  gives a real Linux kernel; it does not by itself cover x86_64 or WSL.
+  macOS 26.7.1 on arm64. A container on this Mac gives a real Linux kernel; it
+  does not by itself cover x86_64 or WSL. The user later installed `container`
+  1.6.1 and corrected the purpose: the Linux work checks that Stewart works on
+  Linux, not auditor containment. The first Linux run is recorded in the
+  coordinator account.
 - **1 Access route:** settle together, write it down and agree on it. That agreed
   document also settles how many Stewart auditors (product participants) trials use.
 - **2 Answer structure:** the user needed it elaborated; root's
@@ -90,15 +95,15 @@ Recorded from the user's reply; wording condensed, meaning preserved.
 - **5 Re-entry:** accepted. A continuing auditor can find out what happened to an
   interrupted operation or return to the submission tool after compaction;
   otherwise the manager collects.
-- **6 Unknown-selection deferral:** not yet accepted. The user first needs to know
-  whether the condition could be avoided entirely.
+- **6 Unknown-selection deferral:** the user first needed to know whether the
+  condition could be avoided entirely; root's account below was then accepted.
 - **7 Capacity:** “1 or 2 auditors” meant development sub-agents; the previous
   review shape was fine. Root may establish its own workflows dynamically within
   a rough ceiling of ten simultaneous agents. Claude CLI/SDK sessions as product
   participants are not granted by this; their number belongs in the item-1 document.
 
-Root opened discussion with item 6. Root's position, for discussion and not yet
-agreed: the condition cannot be avoided entirely, because it means every
+Root opened discussion with item 6. Root's position, accepted by the user as
+recorded after it: the condition cannot be avoided entirely, because it means every
 trustworthy copy of the small selection record (element identities, names,
 digests, order) is gone, and no design recovers a record with no surviving copy.
 It can be removed from every ordinary path and confined to destruction or
@@ -115,7 +120,8 @@ tampering of Stewart's own records:
   membership inside custody (immutable membership revisions plus operation
   records naming element identity and digest);
 - enforced auditor access (item 1) removes the likeliest cause of destroyed
-  records, an auditor shell touching custody.
+  records, an auditor shell touching custody. This point depends on item 1,
+  which remains open.
 
 The open policy would then narrow to what close does after Stewart's own custody
 records are destroyed or tampered with. It does not block leg 1, whose audits
@@ -161,7 +167,8 @@ manifest to the manager's destination at seal time.
 ## Remainder of the transition (outline)
 
 1. Early independent preparation: W17 read-only inventory (needs the user's
-   allowlist and inputs), Linux route, WSL handoff, W18 guide statuses. Needs no
+   allowlist and inputs), WSL handoff, W18 guide statuses. The Linux route is
+   located and a first run recorded. Needs no
    Claude launch; concurrent work would exceed the first leg's capacity unless agreed.
 2. F2 route evidence: P1 grants, P2 control after launcher loss, P3 manager
    restriction/recovery; serial harness sessions with explicit permission.

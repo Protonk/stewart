@@ -1,5 +1,10 @@
 # Candidate implementation commission for the Opus turnover
 
+**Status, 2026-10-28:** the user approved this candidate as the first
+implementation leg. It is not yet dispatch-ready; [PLAN-FIT](../custody-delivery-01/PLAN-FIT.md)
+records the decisions made since and those still open. The text below is the
+recommendation as prepared.
+
 Prepared 2026-10-27 in response to “What else do we have left to set into place
 before we can do an Opus turnover?” This is the coordinator's recommendation for
 discussion, not an implementation commission or launch authorization. The user
