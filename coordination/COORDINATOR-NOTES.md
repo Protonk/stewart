@@ -69,7 +69,13 @@ distinguished optional account element instead of a first-position convention;
 names as free labels with uniqueness as guidance; a retained-bytes cap that can
 never block small edits; recorded `limit_exceeded` observations; acknowledged
 limits for constrained experiment construction; a versioned manifest. The
-reviewed first draft is `DRAFT-01.md` there. Six user choices are pending.
+reviewed first draft is `DRAFT-01.md` there. The user then approved all six
+choices, keeping the bounds as clean arbitrary limits to be tested by a much
+later, separately commissioned real-project audit. Root recorded the provisional
+structure in CONTRACTS, the bounds revisit in W02, the first decision point and
+the narrowed unverifiable-selection concern in DEVELOPMENT-PLAN. Remaining
+first-leg discussion: items 1 and 3 (access route, Stewart auditor count,
+delivery), then coordinator reconciliation.
 
 The outgoing tenure ended with the user's directive: “Make those reconciliations,
 then write a turnover brief and stand by.” Its reconciliation made F3/F5's

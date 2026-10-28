@@ -81,7 +81,9 @@ Recorded from the user's reply; wording condensed, meaning preserved.
   gives a real Linux kernel; it does not by itself cover x86_64 or WSL.
 - **1 Access route:** settle together, write it down and agree on it. That agreed
   document also settles how many Stewart auditors (product participants) trials use.
-- **2 Answer structure:** the user needs it elaborated further.
+- **2 Answer structure:** the user needed it elaborated; root's
+  [proposal](ANSWER-STRUCTURE.md) was then approved in full, with arbitrary
+  bounds to be checked by a much later real-project audit. Recorded in CONTRACTS.
 - **3 Delivery trigger:** discuss and design it, aiming to make things easier.
 - **4 Specimens only:** accepted. Leg-1 audits are development/acceptance
   specimens until the service can launch and close.

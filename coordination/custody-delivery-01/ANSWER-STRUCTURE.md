@@ -1,8 +1,11 @@
 # Provisional answer structure for the first leg
 
-Coordinator proposal for discussion, 2026-10-28 UTC, from source `f784001`. Not
-agreed and not a CONTRACTS change. It elaborates PLAN-FIT item 2 at the user's
-request. Revision 2 incorporates a read-only check (workflow `wf_91217239-a10`:
+Coordinator proposal, 2026-10-28 UTC, from source `f784001`, elaborating PLAN-FIT
+item 2 at the user's request. **Agreed 2026-10-28:** the user approved all six
+choices below. On bounds: “just set those clean, arbitrary restrictions … and then
+way, way later in development we commission an audit with stewart on a real project
+and determine if we hit those limits.” CONTRACTS now records the accepted
+structure; this note keeps the reasoning. Revision 2 incorporates a read-only check (workflow `wf_91217239-a10`:
 document fidelity and outcome-pressure lenses; returns in
 `.scratch/answer-structure-check-01/`). Root accepted its material findings; the
 reviewed first draft, never committed, is preserved there as `DRAFT-01.md`.

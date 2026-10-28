@@ -357,6 +357,36 @@ issuance/storage and callable or tool-interface syntax remain mechanism choices;
 no call-stack trick or mandatory nesting of preparation inside submission is
 required. The manager-side directions subsequently selected are below.
 
+**Provisional answer structure.** Accepted 2026-10-28 for the first successor
+custody/delivery leg; provisional, implementation and qualification pending.
+An answer is an optional readable account plus ordered artifacts. Each element
+is exact bytes with a tool-assigned identity and version and an auditor-chosen
+name. One element may carry a structural account marker that Stewart never
+interprets; an answer without one, including an empty answer, is admitted on
+submit as well as collect. Names are uninterpreted labels that may contain `/`;
+duplicates are reported, not refused, and never identify a retry. Element and
+answer metadata carry no outcome, kind, completion or role field and no required
+declaration; no per-question-type requirement is checked at admission, and the
+bundled recipes remain instructions and inspection guidance. Explicitly
+unsupported in this leg: directory elements, references or links in place of
+bytes, semantic hints or roles as fields, content transformation, history
+browsing, execution witnessing (supplied logs remain auditor-attributed bytes),
+materializing name layout in the delivered copy, and a human auditor's manual
+equivalent. Material referenced but not recorded is not a return member; existing
+partial-work and preservation obligations toward it are unaffected.
+
+Bounds are deliberately arbitrary starting values, stated in help and the
+commission as limits of the custody undertaking: 256 elements, 64 MiB per
+element and 256 MiB in the current selection, with a 1 GiB cap on retained
+superseded/deleted payloads that can refuse only edits larger than 1 MiB
+(smaller edits draw on a fixed 64 MiB reserve; delete, prepare, submit and
+collect never refuse on it). Stewart records each `limit_exceeded` refusal as its
+own observation and lists it in the return's provenance. In the delivered copy,
+elements sit under Stewart-generated names keeping a conservative extension,
+with a plain-text index; the manifest is authoritative and carries a format
+version. Whether the bounds bind is to be examined much later by a separately
+commissioned Stewart audit of a real project.
+
 ## Successor manager receipt and ordinary closure
 
 Accepted 2026-10-27 after the auditor-side simplification discussion.
