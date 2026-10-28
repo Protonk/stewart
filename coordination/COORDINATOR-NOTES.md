@@ -28,6 +28,23 @@ workflow or Claude launch. This account owns `.scratch/coordinator-intake-202610
 Next: continue items 1 and 3 with the user, then the brief's other questions
 (Q26 proposal, PLAN-FIT reconciliation, the concrete first-leg commission).
 
+Alignment, 2026-10-28: at the user's request root described Stewart's mission,
+design, custody/containment and the WSL MVP, then a staged sequence to that MVP,
+holding its own reservations out of chat for a later turn, then discussed the
+coordinator role. At the user's request the reservations are collected, with a
+reader's key and a section of radical alternatives (each giving up something
+root infers the user values), in `.scratch/alignment-20261028-01/RESERVATIONS.md`
+(owned by this account). No decision or commission follows from any of it.
+
+The user then reacted to the radical alternatives (quoted with root's reading at
+the end of that file): adopt R2 (auditor has only Stewart's tools), R6 (Linux
+only), R8 (drop the Python baseline); strong lean to R7 (no Git; history exported
+as files is “fine”); prefer R2's simplicity over R4 (so Stewart runs the auditor);
+R3/R4/R5 interesting together; R1 wants a pitch; R9 open, possibly revived as
+typing under R2. On that basis root drafted
+[the MVP design](linux-mvp-01/DESIGN.md) for discussion. CONTRACTS is unchanged
+until the user decides; the draft lists what would change and its open questions.
+
 ## Previous checkpoint: Opus tenure at turnover
 
 The user directed the transfer into this tenure: “Please assume the coordinator
