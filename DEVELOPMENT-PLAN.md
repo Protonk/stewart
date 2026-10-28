@@ -56,6 +56,10 @@ identify the legacy population, and design evidence retention during F1/F2.
 Final platform qualification uses the integrated successor. The user plans to
 ask a friend for WSL execution; preparing that handoff is coordinator work,
 while an actual WSL return remains an external dependency. No CI is available.
+The Linux execution route is located: Apple's `container` tool runs arm64 Linux
+VMs on the development Mac, and a first run of the frozen baseline and the
+commission-input slice at `03efeb3`, with a same-commit macOS control, is recorded
+in the coordinator account. That run is preparation, not F7 acceptance.
 
 Stage 4 is not a parity port followed by an optional rewrite. Its commission
 must say which selected departures its coherent foundation includes. Stage 5

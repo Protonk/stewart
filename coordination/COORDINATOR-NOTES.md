@@ -131,7 +131,35 @@ run's BRIEF) and dispatched re-review `wf_c1ca783b-f25`. The re-review found
 dry test of the driver against a fake `container` CLI (control flow only; no VM,
 network or Stewart code). The driver is ready to hand to the user; it runs
 detached, writes `out/host/DONE` at its end and `out/host/driver.pid` for a clean
-stop. No Linux run of Stewart code has started.
+stop.
+
+The user turned off iCloud Desktop sync, ran the driver (2026-10-28T13:35Z) and
+allowed macOS's one-time Desktop-access request for `container-runtime-linux`.
+It finished in nine minutes with `failures=3 integrity=0`; the record is
+`.scratch/linux-check-01/RESULTS.md`. Linux arm64 (Debian 13, kernel 6.18.35): Rust
+15/15 (same as macOS), release build verified, commission checker 46/46 against the
+Linux binary, Python suite 20 failed / 1119 passed / 1 skipped. A same-commit macOS
+control over the same archive (identical wheel and suite digests, same 1140 nodes)
+failed 2 / passed 1137, so 18 failures are Linux-only. Triage `wf_ded12c0e-24e`
+(seven classify/verify pairs, all upheld, every macOS prediction matched) found no
+Linux product defect: the 18 are tests that hardcode `/bin/zsh`, expect APFS's
+case/normalization-insensitive lookup, or need Git >= 2.48 (Debian ships 2.47.3).
+Two consequences need the user:
+
+- The full suite is red on macOS at HEAD, independent of Linux: the authority
+  ratchet has flagged tracked `coordination/answer-revision-01` scripts since
+  134573a, and the sdist include and test still name the deleted
+  `COORDINATOR-HANDOFF.md`. Repairing them touches tests and `pyproject.toml`,
+  not runtime or bundled bytes.
+- Successor-design inputs (not Linux defects): close plausibly leaks relative
+  worktree administrations under Git >= 2.48 with `worktree.useRelativePaths`
+  (helper-level probe, not end to end); no minimum Git version is declared;
+  name normalization must key on the observed volume, not the platform; Linux
+  sandbox enforcement is unqualified. Coverage gaps: launch-block failure
+  promises and the non-darwin name branch got no Linux evidence.
+
+The Python container is kept until the user deletes it; its useful contents are
+exported.
 
 The user agreed root's leans on the case table's Q1, Q5, Q20 and Q32, chose
 option B for Q10 (submit proceeds with a note over an unresolved own operation),
