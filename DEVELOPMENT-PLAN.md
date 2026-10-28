@@ -86,6 +86,9 @@ prototype, custody/manager decisions and preparation audit recorded below. The
 user has now directed the high-level reconciliations, an ordinary turnover brief
 and standby. The next custody/delivery implementation leg remains a candidate;
 no implementation dispatch or Claude launch is authorized by writing the brief.
+The incoming Opus coordinator consumed that briefing on 2026-10-27 Pacific at
+clean HEAD `f67ca30`. Its intake selects no scope; settling the candidate with
+the user is the next step.
 
 The user chose to address the first leg's consumer and record population before
 the other release choices, with a standalone Riker consultation prepared in

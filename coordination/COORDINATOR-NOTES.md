@@ -1,32 +1,37 @@
 # Current coordinator account
 
-Updated 2026-10-27 Pacific (2026-10-28 UTC) for the requested turnover and standby.
+Updated 2026-10-27 Pacific (2026-10-28 UTC) at the Opus coordinator's intake.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current checkpoint: requested turnover and standby
+## Current checkpoint: Opus coordinator intake
 
-The user directed: “Make those reconciliations, then write a turnover brief and
-stand by.” The high-level sweep read only the standing orders, this account and
-the development and vision plans. The approved reconciliation makes F3/F5's
+The user directed the transfer: “Please assume the coordinator role by first
+reading the turnover brief, then the remainder of the coordinator documentation.”
+The incoming Opus 5.5 coordinator (`/root` in this harness) read the brief, the
+directory entry, standing orders, this account, NEXT-LEG and both active plans.
+Observed HEAD is `f67ca30`, clean, equal to the outgoing COMPLETION record's final
+head; its five recorded document hashes match the working tree. The brief's content
+already has durable homes here, in NEXT-LEG and in DEVELOPMENT-PLAN, so it is
+consumed and stubbed. No worker state was inherited by this session; none is
+recorded as pending. Intake pins and observations are in
+`.scratch/opus-intake-01/INTAKE.json`; recording follows in that directory.
+
+Intake commissions nothing. The next substantive step is the user discussion of
+NEXT-LEG's first decision: approve or revise the bounded custody-and-delivery
+deliverable and its exclusions. Interface, receiving route and acceptance
+preparation follow that choice. No implementation, worker, inquiry or Claude launch
+is dispatched, and no product obligation is changed by intake.
+
+The outgoing tenure ended with the user's directive: “Make those reconciliations,
+then write a turnover brief and stand by.” Its reconciliation made F3/F5's
 dependencies explicit for each bounded leg, allowing custody/delivery before live
-launch/control while preserving actual access qualification and the later full
-audit-service obligations. VISION now describes custody during authoring, submit
-or collect fixing the return, and the durable manager copy with commission context;
-workspace disposability remains conditional. No product obligation was changed.
-
-The ordinary [turnover brief](TURNOVER.md) is prepared from source `afc8f89`.
-Root owns these documentation edits and `.scratch/opus-turnover-run-012/`.
-`VALIDATION.json` there records the checks; `COMPLETION.json` records final Git
-recording, committed-byte verification and clean state. Until those records exist,
-final verification/recording is unfinished. After that endpoint root stands by:
-no new worker, implementation, inquiry or Claude launch is dispatched. The next
-coordinator takes ownership at the user's direction. The implementation leg still
-needs its bounded scope, actual interface and finite acceptance commission.
-Fieldwork reflections remain separate from the project turnover.
+launch/control while preserving access qualification and the full audit-service
+obligations. `.scratch/opus-turnover-run-012/` records its validation and final
+recording. Fieldwork reflections remain separate from the project turnover.
 
 ## Implementation preparation carried forward
 
