@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-27 while preparing the Opus turnover scope.
+Updated 2026-10-27 during the custody-and-mission shakedown before Opus transfer.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -8,6 +8,19 @@ This is a working account of observed work, authority received and remaining que
 actual files, user instructions and available harness state after interruption.
 
 ## Current discussion: readiness for the Opus implementation turnover
+
+After the preparation audit, the user requested a final own-words account of what
+Stewart takes custody of and how it serves the mission, inviting discomfort as a
+reason to inspect the design. Root's [shakedown account](submission-design-01/CUSTODY-SHAKEDOWN.md)
+separates executable Python/C/prototype behavior from decided successor work.
+It identifies two coordinator concerns, not new decisions: the exact treatment of
+workspace material never added to the answer, and a supported end to custody when
+selection is unknowable. Neither a complete manifest nor a delivery receipt grants
+disposal authority over other obligations. The proposed bounded no-removal leg can
+remain useful while those boundaries are resolved before disposal implementation.
+No contract, implementation, new audit or transfer is authorized by this discussion.
+This account owns `.scratch/custody-shakedown-01/`; fieldwork reflections remain
+separate. The user has not yet directed the ordinary turnover brief.
 
 The user approves the concrete failure briefing and asks what remains before an
 Opus turnover. CONTRACTS now records the known-selection incomplete-close direction:

@@ -254,6 +254,15 @@ candidate scope and unknown-inventory closing deferral remain for user dispositi
 mechanism/acceptance preparation remains coordinator work. No new implementation
 or turnover was launched by accepting the audit's bounded findings.
 
+The user then requested a final custody-and-mission shakedown before transfer.
+The coordinator's [own account](coordination/submission-design-01/CUSTODY-SHAKEDOWN.md)
+separates current implementation from intended duties and identifies two existing
+boundaries for closer discussion: workspace material outside recorded answer
+membership, and concluding custody under unknown selection scope. These concerns
+do not change contracts, broaden the candidate leg or authorize disposal. W02/W14
+already own the partial-work/removal questions; the bounded no-removal leg does
+not silently settle them. No additional audit or implementation is commissioned.
+
 ## Work register
 
 The coordinator owns integration and this register. Each dispatched item gains
