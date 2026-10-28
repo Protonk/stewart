@@ -59,20 +59,21 @@ current selection. Required dependencies still matter.
   retroactively change the earlier delivery observation. Another copy is supported
   before close; disposed audit material is not promised afterward.
 
-## What remains to decide inside close
+## Closing direction after the briefing
 
 The approved direction already supplies verifiable available material and an
-explicit gap account without another manager-facing triage stage. The unresolved
-policy is the authority and record needed to end a still-unfulfilled undertaking.
+explicit gap account without another manager-facing triage stage. The user then
+approved the known-selection direction below. The exact record and interaction
+still need implementation; disposition with unverifiable selection remains open.
 An acknowledgment that a warning was seen is not necessarily authority to stop
 trying to deliver named material and remove its remaining custody sources.
 
-The coordinator recommends starting with the narrow known-selection case:
+The accepted direction starts with the narrow known-selection case:
 Stewart identifies the unsupplied member and its expected identity, what it
 actually observed, what was copied, and the obligation that closing would end.
-The manager could then choose supported completion or explicitly authorize that
-named incomplete disposition within close. This is a recommendation for discussion,
-not an adopted new mechanism. The loss remains recorded despite the undertaking;
+The manager may then choose supported completion or explicitly authorize that
+named incomplete disposition within close. That is a product direction, not an
+implemented mechanism. The loss remains recorded despite the undertaking;
 it is never relabeled an opportunity the manager declined.
 
 Unverifiable selection identity is a harder separate case: Stewart cannot ask the

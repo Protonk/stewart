@@ -384,9 +384,20 @@ selected material cannot be supplied or verified, provide the verifiable materia
 with an explicit account of the missing, damaged or unverified parts. Do not
 report a partial copy as complete or infer an empty selection from broken records.
 Necessary acknowledgment of loss belongs inside the close interaction, rather
-than a separate triage workflow. Exact supported loss dispositions and the
-treatment of unverifiable selection identity still need design; this decision
-does not waive a hold or silently surrender a preservation undertaking.
+than a separate triage workflow.
+
+**Known-selection incomplete close.** Accepted 2026-10-27 after the concrete
+failure briefing. For a known unsupplied member, identify its expected identity,
+the observed failure, the verified material delivered and the undertaking that
+close would end. The manager may explicitly authorize ending that named
+unfulfilled undertaking and otherwise-permitted disposal within close. Merely
+acknowledging a warning does not supply this authority. Preserve the failure as
+loss despite an undertaking, not a declined preservation opportunity; a currently
+unavailable copy is not proof of permanent loss. Exact records and interaction
+remain to be implemented. This authority does not release a hold, override another
+lifetime's use or establish stopped execution. When required selection records
+cannot establish what is owed, the scope and authority of any incomplete closing
+disposition remain for design; never invent an exact missing list or infer emptiness.
 
 Stewart verifies and records completion of its copying undertaking. That is
 distinct from the manager's judgment that the copy is somewhere safe and from

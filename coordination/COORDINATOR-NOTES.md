@@ -1,13 +1,31 @@
 # Current coordinator account
 
-Updated 2026-10-27 during the precise return-completeness discussion.
+Updated 2026-10-27 while preparing the Opus turnover scope.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current discussion: carry interaction simplification to the manager
+## Current discussion: readiness for the Opus implementation turnover
+
+The user approves the concrete failure briefing and asks what remains before an
+Opus turnover. CONTRACTS now records the known-selection incomplete-close direction:
+the manager can explicitly end a named unsatisfied undertaking after an exact gap
+account; the failure and other disposal constraints remain. Unverifiable selection
+scope still lacks a decided closing authority. No implementation or transfer has
+yet been commissioned by this readiness question.
+
+Root's [next-leg candidate](submission-design-01/NEXT-LEG.md) recommends persistent
+answer custody and manager delivery connected to C, with new successor records,
+the agreed authoring/collect interface and supported interrupted-operation re-entry.
+Physical removal, live launch/control and unknown-inventory closing authority stay
+explicit follow-on work. Scope approval, first supported receiving/tool route and
+finite acceptance must precede dispatch; coordinator-owned preparation need not
+reopen all research questions. The user has not requested the ordinary turnover
+brief yet. This account owns `.scratch/opus-readiness-01/`; no worker is dispatched.
+
+## Manager interaction decisions supporting that scope
 
 The user asks to collect auditor-side simplifications already made or committed
 and use them when deciding the manager interaction. Root's
@@ -31,8 +49,9 @@ asks for a precise briefing on “when Stewart cannot supply the complete expect
 material.” [The briefing](submission-design-01/RETURN-COMPLETENESS.md) distinguishes
 a known missing/corrupt member, unverifiable selection identity, incomplete copying
 and a completed copy with a lost reply. Intellectual incompleteness and a verifiably
-empty selection are different. The exact authority/effect of an incomplete closing
-disposition remains for discussion; no new mechanism is approved or implemented.
+empty selection are different. The known-selection closing direction is now
+accepted as recorded above; exact mechanism and unknown-selection disposition
+remain open. No new runtime implementation is commissioned.
 
 The user explicitly decided that manager collect may itself end the authoring
 opportunity and that this authority carries through the Rust transition. The

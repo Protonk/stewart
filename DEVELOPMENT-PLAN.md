@@ -218,8 +218,20 @@ the manager affirmatively proceeds after receipt. CONTRACTS records these choice
 The [completeness briefing](coordination/submission-design-01/RETURN-COMPLETENESS.md)
 distinguishes missing/corrupt selected bytes, unverifiable required identity,
 incomplete transfer and a completed copy whose reply was lost. The remaining
-decision concerns explicit disposition of an unfulfilled undertaking, including
-unknown selection scope. No new runtime work or loss mechanism is commissioned.
+decision concerned explicit disposition of an unfulfilled undertaking. The user
+then approved the known-selection direction: name the missing member, observations,
+delivered material and obligation before explicit authorization to end it inside
+close. CONTRACTS owns the decision. Unknown selection scope and exact implementation
+remain open. No new runtime work is commissioned.
+
+Opus readiness discussion: [the next-leg candidate](coordination/submission-design-01/NEXT-LEG.md)
+recommends persistent answer custody and manager delivery tied to C, applying to
+new successor records. It identifies scope approval, a supported tool/receiving
+route and finite acceptance as pre-dispatch work, with physical removal, live
+launch/control and unknown-inventory closing authority explicitly deferred for
+separate decisions. This is a recommendation, not an approved implementation leg
+or turnover directive. The coordinator owns preparing the concrete commission;
+the entire remaining research register is not a handoff prerequisite.
 
 ## Work register
 
