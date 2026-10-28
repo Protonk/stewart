@@ -54,6 +54,23 @@ set up a Linux container with Apple's `container` tool together with root (not
 installed here; macOS 26.7.1 arm64). Root may now run its own workflows within a
 rough ceiling of ten simultaneous agents. Root picked item 6 to discuss first.
 
+The user accepted root's item-6 account: the residue is destruction or tampering
+of Stewart's own custody records; the three avoidance mechanisms become leg-1
+acceptance and the narrowed policy goes to the close leg as close's behavior on a
+damaged audit (the user wants `close` to answer any state). Item 3 starts from
+sealed-manifest delivery at seal time. Root drafted the item-2 elaboration as
+[ANSWER-STRUCTURE](custody-delivery-01/ANSWER-STRUCTURE.md) (proposal, not agreed)
+and dispatched read-only workflow `wf_91217239-a10` (two checkers: document
+fidelity and outcome pressure) against it. Returns go to
+`.scratch/answer-structure-check-01/`; root revises the draft before presenting it.
+Both checkers returned with no errors (286,042 sub-agent tokens); none remains
+active. Root accepted their material findings and revised the proposal: a
+distinguished optional account element instead of a first-position convention;
+names as free labels with uniqueness as guidance; a retained-bytes cap that can
+never block small edits; recorded `limit_exceeded` observations; acknowledged
+limits for constrained experiment construction; a versioned manifest. The
+reviewed first draft is `DRAFT-01.md` there. Six user choices are pending.
+
 The outgoing tenure ended with the user's directive: “Make those reconciliations,
 then write a turnover brief and stand by.” Its reconciliation made F3/F5's
 dependencies explicit for each bounded leg, allowing custody/delivery before live

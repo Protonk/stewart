@@ -119,6 +119,16 @@ The open policy would then narrow to what close does after Stewart's own custody
 records are destroyed or tampered with. It does not block leg 1, whose audits
 are specimens and remove nothing.
 
+**User response:** comfortable with this; it is plausible, and more disciplined
+manager/auditor access cannot avoid the residue. `close` could then be the
+manager's recourse for a damaged audit; the user would like `close` to be the
+answer whenever the manager wants the audit closed, regardless of state,
+recognizing that this is hard to effect. Agreed for leg 1: the three avoidance
+mechanisms become acceptance cases; the narrowed destroyed-custody policy goes
+to the close leg, framed as close's behavior on a damaged audit (consistent with
+VISION's single close from any state). Item 3 starts from delivering the sealed
+manifest to the manager's destination at seal time.
+
 ## Coordinator reconciliation before a commission
 
 - W-row disposition table: W02/W05/W07/W09/W11/W12 split into leg-1 part and
