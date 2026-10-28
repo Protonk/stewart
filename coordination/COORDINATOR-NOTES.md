@@ -50,6 +50,23 @@ and a verbatim copy of the held-back file), the radical design, and a clean-shee
 presentation (`STEWART.md`), plus root's final reservations about the new stance.
 The user will review the folder once committed. Next: that review.
 
+Discussion after the folder (not yet in it): root pitched a no-types "panel"
+Stewart and a "coupling library" Stewart (reservations in
+`.scratch/alignment-20261028-01/PANEL-RESERVATIONS.md` and `LIBRARY-RESERVATIONS.md`);
+root prefers the library, starting with `survey` and `claim-check`. On root's deep
+reservations the user directed, condensed: material injection is disallowed by
+design, because the cooperative manager selects and words the question and the
+material and is responsible for the answers; post-MVP the auditor may become a
+real human, so think of Stewart as a problem router, not an agent harness; testing
+read-only sufficiency is research; neutrality needs restating; provider-side
+reasoning and compaction are not Stewart's concern, but the submission tool must
+make compaction harmless (“what am I working with again” returns question,
+materials, anything submitted and submission errors); usefulness can only be
+learned if Stewart is fast enough to iterate; the manager side needs design.
+At the user's request root then wrote [the router sketch](linux-mvp-01/ROUTER.md)
+(no reservations) and extended the folder's conversation record through it. It is
+now the latest statement of the design; CONTRACTS remains unchanged.
+
 ## Previous checkpoint: Opus tenure at turnover
 
 The user directed the transfer into this tenure: “Please assume the coordinator

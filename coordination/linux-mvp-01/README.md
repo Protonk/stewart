@@ -12,6 +12,8 @@ decision.
 | [DESIGN.md](DESIGN.md) | The radical design: the first draft, written with its reasons and anchors back to the conversation and CONTRACTS. |
 | [STEWART.md](STEWART.md) | The same design presented as *the* design: written from a clean sheet, open decisions posed where they arise. |
 | [RESERVATIONS.md](RESERVATIONS.md) | What still bothers me about the new stance, after re-reading all three. |
+| [ROUTER.md](ROUTER.md) | Where the conversation went next: a sketch of Stewart as a problem router for cooperative actors who want to make it *just* so, after two pitches on question types and your answers to my deep reservations. |
 
-STEWART.md is the latest and most complete statement. Where the views disagree on
-details, the earlier files are records of how we got there.
+The conversation continues past the three views; its later turns lead to
+ROUTER.md, which is now the latest statement. Where files disagree on details,
+the earlier ones are records of how we got there.
