@@ -126,7 +126,12 @@ host driver, in-container fidelity) is checking the scripts before hand-off. No
 container has run Stewart code yet.
 That review found one blocking defect (`check_commission.py` hardcodes
 `/private/tmp`) and several material ones; root revised the scripts (see the
-run's BRIEF) and dispatched re-review `wf_c1ca783b-f25`.
+run's BRIEF) and dispatched re-review `wf_c1ca783b-f25`. The re-review found
+17 of 18 fixed and no blocking defect; root closed its remaining gaps and ran a
+dry test of the driver against a fake `container` CLI (control flow only; no VM,
+network or Stewart code). The driver is ready to hand to the user; it runs
+detached, writes `out/host/DONE` at its end and `out/host/driver.pid` for a clean
+stop. No Linux run of Stewart code has started.
 
 The user agreed root's leans on the case table's Q1, Q5, Q20 and Q32, chose
 option B for Q10 (submit proceeds with a note over an unresolved own operation),
