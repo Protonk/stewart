@@ -5,6 +5,12 @@ before we can do an Opus turnover?” This is the coordinator's recommendation f
 discussion, not an implementation commission, launch authorization or turnover
 directive. The current TURNOVER remains its consumed stub.
 
+The subsequent [bounded static audit](../../reports/opus-preparation-audit-2026-10-27/RESULT.md)
+found no demonstrated contradiction requiring the deferred physical control/removal
+service. Root accepted its three concrete preparation clarifications and incorporated
+them below. This supports the scope recommendation; it does not approve the leg,
+qualify its runtime or make this note a dispatch-ready commission.
+
 ## Recommended useful boundary
 
 Build the successor's first persistent answer-custody and manager-delivery leg.
@@ -36,6 +42,12 @@ unavailable to the readback process instead of deleting evidence under test.
    State which participant/integration owns each reference before dispatch and
    which supported call/re-entry exposes its outcome. Exact wire spelling and
    schema are implementation choices within these commitments.
+   Bind the new audit to an independently retained original commission identity;
+   name the finite question/instruction/receipt dependencies it undertakes to hold,
+   when that undertaking starts and the supported reader. A locator or matching
+   question bytes cannot establish original identity, and a live-source fallback
+   cannot supply missing originals. Specify the copy-operation identity, initial
+   destination and ownership of partial destination outputs alongside that route.
 3. **Bound unresolved policy.** Known-selection incomplete closing now has an
    accepted direction. For unknowable selection scope, recommend retaining
    available material and diagnostics and leaving close unfinished until that
@@ -60,16 +72,31 @@ or independent consultation is commissioned by this note.
   against the integrated boundary instead of importing its 72/72 result.
 - Stale preparation refuses; dry run preserves edits; submit versus collect has
   one fixed winner with correct attribution, including an honest empty collection.
-- Interrupted add before and after publication exposes its same-operation outcome
-  through the supported interface. Deliberate equal-byte addition stays distinct.
-  Qualify actual auditor notice/re-entry separately from driver-visible records.
+  Add pending-edit/collect arbitration, repeated winning and losing calls, and
+  attempts to edit after collection while an external process remains alive.
+  Staging bytes and a lost reply must not decide membership by themselves.
+- Interrupted add before backend intent publication, after element publication
+  and during reply delivery exposes its same-operation outcome through the actual
+  participant interface. Include loss of the caller/wrapper, supported initial-store
+  failure and an unverifiable outcome. Name who retains the reference before
+  dispatch. Deliberate equal-byte addition stays distinct; unrelated readback stays
+  useful. Qualify actual auditor notice/re-entry separately from internal records.
 - A fresh manager can discover the explicit audit through help/status and obtain
   the original question, manifest and exact selected bytes through normal actions.
+  Make original C/context access unavailable as well as answer custody; distinguish
+  changed live originals, distinct equal-byte commissions and unrelated damage.
 - An independent manager copy verifies without access to audit custody; another
   requested copy uses the same fixed return. A lost reply does not create a new
-  return, duplicate an operation or supply closing authority.
+  return, duplicate an operation or supply closing authority. Distinguish a partial
+  destination write from verified completion before the reply was lost.
 - Known missing/corrupt bytes, unknown required identity, failed destination copy
   and unrelated record damage retain their distinct diagnostics and useful access.
+  Include missing original question/instructions/commission binding, not only
+  answer artifacts. Unknown inventory must not become an empty selection.
+- The selected access route permits authorized edits and fixed-return reading while
+  denying direct custody mutation and unselected access. Deferring launch/control
+  does not defer this boundary; a cooperative driver or written settings cannot
+  qualify it. If unavailable, state the limit and return the concrete scope issue.
 - Preserve controls and witnesses outside affected custody; report actual selected
   cases and host/interface limits. Keep C's existing acceptance and frozen Python
   protection within the appropriate regression scope.

@@ -242,6 +242,18 @@ audit: “Excellent. Run that audit.” Its [commission](coordination/opus-prepa
 owns the independent static return and ordinary frozen-Python custody. It supplies
 no successor runtime qualification or implementation commission.
 
+The audit is now complete; [its result](reports/opus-preparation-audit-2026-10-27/RESULT.md)
+finds no demonstrated dependency forcing physical stop/removal into this leg.
+Root accepted and incorporated three pre-dispatch clarifications: independent
+original-commission binding and owed context custody; actual participant re-entry,
+earliest interrupted operations and pending-add/collect arbitration; and distinct
+copy completion, required-dependency damage and enforced access observations.
+The source-reviewed report and both notes survived ordinary frozen collection,
+retention/export and normal close, verified against an independent witness. The
+candidate scope and unknown-inventory closing deferral remain for user disposition;
+mechanism/acceptance preparation remains coordinator work. No new implementation
+or turnover was launched by accepting the audit's bounded findings.
+
 ## Work register
 
 The coordinator owns integration and this register. Each dispatched item gains

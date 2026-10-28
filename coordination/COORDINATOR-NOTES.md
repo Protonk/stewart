@@ -25,24 +25,26 @@ finite acceptance must precede dispatch; coordinator-owned preparation need not
 reopen all research questions. The user has not requested the ordinary turnover
 brief yet. This account owns `.scratch/opus-readiness-01/`; no worker is dispatched.
 
-The user offers an audit to firm up preparation and asks whether it would help.
-Root recommends one bounded Information preservation audit of decided obligations
-as carried into the candidate implementation commission. The
-[proposed question](opus-preparation-audit-01/QUESTION.md) fixes the source at
-4636a67, the contract-to-commission route, selected inputs, static scope and useful
-return. It tests hidden dependencies on deferred capabilities while allowing
-legitimate deferral, no supported gap or reframe. This is an audit proposal;
-no auditor/session/Claude launch or implementation was dispatched by that proposal.
-The user then commissioned it: “Excellent. Run that audit.”
-[The commission](opus-preparation-audit-01/COMMISSION.md) owns the frozen-Python
-custody route, fresh auditor scope and preservation/close obligations. Root has
-copied the exact pinned inputs into `audits/opus-preparation`, owns preparation
-and `.scratch/opus-preparation-audit-01/` recording, and will save the actual handoff
-and worker handle before investigation. Auditor `/root/opus_preparation_auditor`
-is now dispatched in a fresh context against prompt 3b457bb and ten selected
-inputs. [Progress](opus-preparation-audit-01/PROGRESS.md) owns the actual lifetime,
-handoff and preserved command streams. Root awaits its stopped return before
-collection. No implementation or turnover is launched.
+The user commissioned the proposed preparation audit: “Excellent. Run that audit.”
+It is complete. [The result](../reports/opus-preparation-audit-2026-10-27/RESULT.md)
+owns the bounded documentary conclusion, source-reviewed disposition, exact
+identities, qualifications and retained failures. The fresh auditor found no
+demonstrated contradiction requiring physical process control/removal in the
+candidate leg. Root incorporated three concrete clarifications into NEXT-LEG:
+original commission/context custody, participant-visible interrupted operations
+and pending-selection races, and distinct copying/damage/access observations.
+These sharpen implementation preparation without selecting a new responsibility.
+
+Subject documents remain pinned at 4636a67; support d387096, prompt 3b457bb.
+Auditor `/root/opus_preparation_auditor` returned complete/answer and explicitly
+stopped. All three authored files matched the independent witness through ordinary
+collection, retention/export and normal close. No custody gaps, closing failures
+or leftovers were observed. The report preserves a heading-only scope deviation,
+re-read truncated output and root's corrected triage-schema refusal. No successor
+runtime or OS-access qualification follows. No worker or audit lifetime remains
+pending, and no implementation or ordinary turnover is launched. The result owns
+`.scratch/opus-preparation-audit-01/`; the next decision remains bounded scope and
+the explicit transfer, not another general inquiry.
 
 ## Manager interaction decisions supporting that scope
 
