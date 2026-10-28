@@ -99,7 +99,8 @@ clean HEAD `f67ca30`. The user then approved the candidate as the first
 implementation leg; it is not yet dispatch-ready, and
 [PLAN-FIT](coordination/custody-delivery-01/PLAN-FIT.md) records the decisions
 made and still open. On 2026-10-28 the user directed another turnover brief
-before the leg's remaining decisions.
+before the leg's remaining decisions; the incoming coordinator consumed it the
+same day at clean HEAD `4037ec3`. Its intake selects no scope.
 
 The user chose to address the first leg's consumer and record population before
 the other release choices, with a standalone Riker consultation prepared in

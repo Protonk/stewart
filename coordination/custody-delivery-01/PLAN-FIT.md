@@ -137,6 +137,43 @@ to the close leg, framed as close's behavior on a damaged audit (consistent with
 VISION's single close from any state). Item 3 starts from delivering the sealed
 manifest to the manager's destination at seal time.
 
+## Items 1 and 3: conversation in progress
+
+The threat-model and enclosure discussion behind item 1 is unfinished. The user
+asked to talk it through rather than have conclusions recorded, so nothing is
+settled beyond CONTRACTS (notably “Access through explicit grants” and
+“Auditor-facing signs and re-entry”). The agreed item-1 document also fixes how
+many Stewart auditors trials use and answers [AUDITOR-CASES](AUDITOR-CASES.md)
+Q14 and Q27–Q31. Item 3 starts from delivering the sealed manifest to the
+manager's destination at seal time; C's request has no destination field yet.
+Route facts for both are in `.scratch/route-research-01/RETURN.json` (local),
+partly framed around the since-corrected containment purpose.
+
+The user's own words from that conversation, carried from the 2026-10-28 turnover
+brief as inputs for continuing it, not conclusions:
+
+- “We consider the manager and auditor to be cooperative but fallible and
+  potentially accelerated by eager and persistent agents. The agent's shell can
+  do anything the user can and we should expect bored or confused auditors or
+  managers to attempt things that seem silly or improbable in retrospect.”
+- “… the goal of this adversarial containment is to harden and lubricate normal
+  operations. If I'm operating stewart and an auditor escapes and draws
+  conclusions from material not supplied I'll be mad and consider that a failure
+  of our design but I don't want us to act as though a safety barrier has been
+  breached. I think there's some hard to reach keyhole we can thread where we
+  make the most obvious, the easiest, and the safest thing to do be the same
+  thing: interact with stewart.”
+- “One thing we should consider is that containerization might be a temporary,
+  contingent move. I'd really love to be able to load up an agent, acclimate it
+  to the auditor role, place it in a space where much aside from the materials
+  needed to answer the question is absent, and be ok with it.”
+- A hypothesis the user has not verified but started Stewart around: “limiting
+  attention might improve focus on the question at hand.”
+- “‘The manager side is the harder mirror’ YES. But also there's less that they
+  can damage that we are responsible for. … However their TOOL they interact with
+  is more complex than the auditor's and we still want it to fail early and in an
+  informative way.”
+
 ## Coordinator reconciliation before a commission
 
 - W-row disposition table: W02/W05/W07/W09/W11/W12 split into leg-1 part and

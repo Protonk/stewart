@@ -1,13 +1,34 @@
 # Current coordinator account
 
-Updated 2026-10-28 UTC at the Opus coordinator's turnover.
+Updated 2026-10-28 UTC at the incoming coordinator's intake.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
 [turnover](TURNOVER.md) is supplementary. Reconcile these observations with
 actual files, user instructions and available harness state after interruption.
 
-## Current checkpoint: Opus tenure at turnover
+## Current checkpoint: intake of the 2026-10-28 transfer
+
+The user directed this transfer: “Please read `coordination/TURNOVER.md` and
+prepare to assume the coordinator role. When you are ready, I will turn ultracode
+on.” The incoming coordinator (Claude Code, Opus 5.5) took intake on 2026-10-28
+UTC at clean HEAD `4037ec3`, which matches the brief's stated source plus its
+tidying commit. `origin/main` is at `3442f84`, 19 commits behind; nothing has
+been pushed. Intake read the brief, standing orders, this account,
+[PLAN-FIT](custody-delivery-01/PLAN-FIT.md), [NEXT-LEG](submission-design-01/NEXT-LEG.md),
+AUDITOR-CASES' open questions, the CONTRACTS access, delivery and auditor-facing
+sections, the route-research summaries and verifier corrections, and the Linux
+results. The brief is consumed and stubbed; the user's words for the item-1
+conversation, which had no other home, moved to PLAN-FIT. The previous tenure's
+checkpoint below remains the substantive state. Its claims about workers,
+containers and services are inherited observations; this harness cannot inspect
+the previous session or the container services. Intake selects no scope, worker,
+workflow or Claude launch. This account owns `.scratch/coordinator-intake-20261028-01/`.
+
+Next: continue items 1 and 3 with the user, then the brief's other questions
+(Q26 proposal, PLAN-FIT reconciliation, the concrete first-leg commission).
+
+## Previous checkpoint: Opus tenure at turnover
 
 The user directed the transfer into this tenure: “Please assume the coordinator
 role by first reading the turnover brief, then the remainder of the coordinator
