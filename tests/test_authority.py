@@ -7,7 +7,8 @@ import stewart
 
 HOME = "src/stewart/"
 LITERALS = ("```audit-assignment", "```audit-report", "stewart/sessions")
-EXEMPT_PREFIXES = (HOME, "tests/")
+# coordination/ holds captured development records whose study scripts quote custody fences as data.
+EXEMPT_PREFIXES = (HOME, "tests/", "coordination/")
 EXCLUDED_TOP_LEVEL = {".scratch", ".git", "dist", "build"}
 
 
@@ -126,7 +127,11 @@ def test_walk_prunes_excluded_top_level_trees_and_lists_what_rglob_listed(tmp_pa
 
 
 def test_ratchet_goes_red_on_a_planted_duplicate_and_ignores_unrelated_text(tmp_path: Path) -> None:
-    """Sensitivity and the invariance it must keep: literal present versus words nearby."""
+    """Sensitivity and the invariance it must keep: literal present versus words nearby.
+
+    Exemptions are path prefixes from the project root, so a top-level coordination record is
+    exempt while a ``coordination`` directory elsewhere is not.
+    """
     (tmp_path / "dup.py").write_text('PATTERN = "^```audit-assignment"\n', encoding="utf-8")
     (tmp_path / "layout.py").write_text('SESSIONS = "stewart/sessions"\n', encoding="utf-8")
     (tmp_path / "ok.py").write_text('note = "assignments and the stewart tool are discussed"\n', encoding="utf-8")
@@ -139,7 +144,13 @@ def test_ratchet_goes_red_on_a_planted_duplicate_and_ignores_unrelated_text(tmp_
     tests = tmp_path / "tests"
     tests.mkdir(parents=True)
     (tests / "t.py").write_text('FENCE = "```audit-assignment"\n', encoding="utf-8")
-    assert custody_literal_violations(tmp_path, ["src/stewart/x.py", "tests/t.py"]) == []
+    for record in ("coordination/study/c.py", "scripts/coordination/c.py"):
+        (tmp_path / record).parent.mkdir(parents=True)
+        (tmp_path / record).write_text('FENCE = "```audit-report"\n', encoding="utf-8")
+    assert custody_literal_violations(tmp_path, ["src/stewart/x.py", "tests/t.py", "coordination/study/c.py"]) == []
+    assert custody_literal_violations(tmp_path, ["scripts/coordination/c.py"]) == [
+        "scripts/coordination/c.py: '```audit-report'",
+    ]
 
 
 def disposition_binding_duplicates(sources: dict[str, str]) -> list[str]:

@@ -139,7 +139,7 @@ def test_sdist_builds_same_wheel_without_git_or_network(tmp_path, run_cmd):
         assert all(member.isfile() or member.isdir() for member in members)
         assert {name.removeprefix("src/stewart/") for name in names if name.startswith("src/stewart/")}
         assert {name for name in names if name.startswith("src/stewart/")} == {"src/stewart/" + name for name in SOURCE_FILES}
-        assert {"LICENSE", "README.md", "AGENTS.md", "COORDINATOR-HANDOFF.md", "CONTRACTS.md", "DEVELOPMENT.md", "pyproject.toml", "requirements.lock", "scripts/check.py", "scripts/prune.py", "tests/conftest.py", "tests/acceptance.py"} <= names
+        assert {"LICENSE", "README.md", "AGENTS.md", "CONTRACTS.md", "DEVELOPMENT.md", "pyproject.toml", "requirements.lock", "scripts/check.py", "scripts/prune.py", "tests/conftest.py", "tests/acceptance.py"} <= names
         assert all(not {".scratch", ".git", "__pycache__"}.intersection(Path(name).parts)
                    and not name.endswith("-PLAN.md") for name in names)
         assert archive.extractfile("stewart-0.1.0/.gitignore").read() == (project / ".gitignore").read_bytes()
