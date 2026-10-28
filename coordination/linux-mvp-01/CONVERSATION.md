@@ -1418,3 +1418,62 @@ Recorded as turn 18, in your words. Two things your version changes from mine th
 - The sentence that material is files and that where they came from is the manager's business is gone. "Selected files" carries the no-Git decision implicitly; CONTRACTS would say it outright when the Git-dependent contracts retire.
 
 Everything else in mine is in yours, shorter. When you say so, this text goes into CONTRACTS as the mission beside the neutrality restatement, and I start retiring the Python baseline and the Git contracts. Until then it stays in the conversation record as your wording, and the five answer-form and stopping-rule choices are the next discussion.
+
+---
+
+## 19. The submission tool as a boundary object
+
+> Ok. It can go there and also the README. We're not quite ready to move to
+> action yet. So far the auditor interface discussion has been policed by my
+> attention but the manager interface to the tool has not been battled over.
+> Apart from expectations about how close works and what questions/materials are
+> added, we have not firmed up as much as we have on the auditor side. One
+> important element to remember is they are assuredly not the same kind of tool.
+> The auditor tool needs to be what it has become: something that accepts data
+> and records it in a ledger and returns simple, clear responses quickly when
+> prodded. It is designed to be very uninteresting and to make reasonable guesses
+> about the right way to work it mostly work out. It is designed to have no
+> observable knobs for the auditor save at submission time for de-selecting a dry
+> run. It is geared toward auditor re-try rather than tool recovery and manager
+> interpretation of exceptional results. It is the hard side of a boundary
+> object, separating the auditor's community of practice from the managers. The
+> auditor is Star & Griesemer's trapper or farmer stapling a bird to a
+> questionarre. The manager is more of a worker at the zoological institute.
+> First reflect back to me my expression of the submission tool design, then tell
+> me if this updates how you looked at it (and if so, where that update needs to
+> go in our docs), then finally give me a capsule idea or question that can get
+> us going w/ settling on the manager side.
+
+The first sentence directed recording the turn 18 mission in CONTRACTS and the
+README, which this turn did. The coordinator's reply, as given:
+
+The mission is in CONTRACTS as a dated Mission section ahead of the principles, and it replaces the README's Mission section. The README's opening line and workflow still describe the Python tool; I left them, since the contracts that assume Git and the baseline are not yet retired.
+
+### Your submission tool, reflected back
+
+- It is a ledger with a mouth. The auditor hands it data; it records the data and says at once, plainly, what it recorded.
+- It is deliberately uninteresting. Nothing about it invites exploration, tuning or cleverness.
+- It is forgiving of guesses. An auditor who works it the way it looks like it should work, without studying it, mostly gets what it intended.
+- It has one visible setting at one moment: whether this submit is a dry run. From the auditor's seat everything else is fixed.
+- When a call fails or its outcome is unknown, the answer is "do it again." The tool does not repair on its own, and it does not hand exceptional states down the line for the manager to sort out.
+- It is the hard side of a boundary object. Star and Griesemer's trappers sent Grinnell's museum specimens stapled to standardized forms without ever adopting the museum's theories; the form did the translating. The auditor fills the form from where it stands. The manager is the institute worker who takes what arrives and does the institute's work with it. Neither has to join the other's practice, and the tool is what keeps them from having to.
+
+### What it changes, and where it goes
+
+Mostly it names what the protocol already is. It changes three things.
+
+1. **Interrupted operations.** ROUTER and END-TO-END still carry "unresolved operations" in the re-entry call, in the return's record, and in C3's kill-point tests where Stewart settles each one. Under your stance the ledger is the only truth. A call either appended a complete record or it did not; a retry or the re-entry call shows what is there; the auditor re-does what is missing. Stewart settles nothing and the return carries no unresolved-operation state. A torn tail is a diagnostic, never an element. C3 becomes: kill at any point, the next reply tells the truth about the ledger, and a retry lands exactly once as a new record. If you meant instead that the manager, not the tool, interprets whatever exceptional states remain, the tool is the same and only the return's vocabulary differs.
+2. **Orientation.** It is the form's instructions, not a briefing. It says how to fill the form and when the form is complete, never why the question matters or what the institute will do with the answer. That bounds the orientation and keeps Stewart's influence to form.
+3. **A test for slots.** A field belongs on the form only if the collector can fill it from where they stand, with the evidence stapled on. A field that needs the institute's categories belongs to the manager. That is the test I will bring to choice 1, and it reframes choice 4: checking that a citation resolves is checking that the specimen is attached, not identifying it.
+
+Where it goes, on your word:
+
+- CONTRACTS: a decided statement of the auditor interface's character, beside the principles. Uninteresting, knobless except the dry-run confirm, forgiving of guesses, retry over recovery, no exceptional states handed to the manager, and the boundary between the two communities of practice. The existing process promises to the auditor stay; they are consistent with it.
+- ROUTER.md's protocol section and END-TO-END's C3 and C4: remove unresolved-operation settlement and restate the interruption tests as ledger truth plus retry, recorded against this turn.
+- Later, when built: the orientation text itself and the coupling authoring rule.
+
+### A capsule for the manager side
+
+The trapper staples the bird to the form and mails it. What settles the manager side is what the institute does when the parcel arrives, and that comes down to one question: **what is the manager's unit of keeping?** If it is the single return, the manager side is a mailbox with a receipt, and commission, status, deliver and close are each about one audit. If it is the line of inquiry the return belongs to, the manager side is a catalog. An inquiry holds the problems sent out, the returns that came back, what each was varied from, and the manager's notes in the manager's own attributed voice; commission, compare, status and close answer where the inquiry stands. The router already leans that way with `--like`, `compare` and "what it was varied from", but never says so, and a repeated engagement after a poor question then reads as a line rather than a failure. The hard side is standardized; the soft side is where the manager's local needs get room: grouping, naming, annotation, interpretation.
+
+My candidate: the manager's unit is the inquiry, Stewart keeps the catalog and never reads it, and every manager command answers "where does this inquiry stand." Argue with that.

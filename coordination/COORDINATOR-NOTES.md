@@ -42,9 +42,17 @@ consumed and stubbed; Git holds it at `05a21d4`.
 **Delivered.** The mission pitch, the changes from the README's mission, what is
 held provisional and the choices to bring to the user are recorded as the
 coordinator's reply in turn 17. The user answered with their own three-paragraph
-mission text, recorded verbatim as turn 18; that text is the current mission
-wording and is the user's. It is not yet recorded in CONTRACTS, which is
-unchanged; the user has not directed that step.
+mission text, recorded verbatim as turn 18. On the user's direction in turn 19
+it is recorded as CONTRACTS' Mission section and the README's Mission section.
+Turn 19 also holds the user's statement of the submission tool's character (a
+ledger; uninteresting; knobless except the dry-run confirm; auditor retry over
+tool recovery; the hard side of a boundary object in Star and Griesemer's
+sense) and the coordinator's reply: three updates it implies (ledger truth
+replaces unresolved-operation settlement; orientation as form instructions; a
+fillable-from-where-they-stand test for slots), where they would go (CONTRACTS,
+ROUTER.md's protocol, END-TO-END C3/C4), and a capsule for the manager side
+(the manager's unit of keeping: the inquiry as a catalog). None of those edits
+is made; the user said action is not yet wanted.
 
 **Coordinator's reading of the design** (from ROUTER.md and END-TO-END.md under
 the user's direction; the folder's AGENTS file governs attribution):
@@ -89,20 +97,22 @@ dissolved by it.
 
 ## Next
 
-1. **The user's direction on recording the turn 18 mission in CONTRACTS**, on
-   the two points the coordinator raised in reply (the "separate context"
-   wording against the only-Stewart's-tools decision, and the dropped no-Git
-   sentence), and on adopting the router.
-2. **If adopted:** restate the principles in CONTRACTS (the neutrality
-   restatement drafted in conversation turn 12 and the mission pitched in
-   turn 17), retire the Python baseline and the Git-dependent contracts, and
+1. **The manager side.** The user is settling it in conversation; turn 19's
+   capsule (unit of keeping: return or inquiry) is the opening question. The
+   two points raised on the mission wording in turn 18 ("separate context"
+   against the only-Stewart's-tools decision; the dropped no-Git sentence)
+   are unanswered. Adoption of the router as a whole is still the user's call.
+2. **On the user's word:** record the submission tool's character in CONTRACTS
+   and carry the ledger-truth change into ROUTER.md and END-TO-END C3/C4.
+3. **If adopted:** restate the principles in CONTRACTS under the recorded
+   mission (the neutrality restatement drafted in conversation turn 12),
+   retire the Python baseline and the Git-dependent contracts, and
    rewrite DEVELOPMENT-PLAN. CLAUDE.md/AGENTS.md encode the old design's custody
    rules and belong to the user; change them only at the user's direction.
-3. **Answer forms and stopping rules.** Bring each consequential choice to the
+4. **Answer forms and stopping rules.** Bring each consequential choice to the
    user before building: typed slots versus free-form elements, stated versus
    checked stopping rules, shown versus sealed prior, citation checking, and the
    two submission nudges. Turn 17 lists them.
-4. **Design the manager side.** The user named it a gap.
 5. **Open questions from the conversation:** resuming a dead run; the person
    adapter and transport; how form opinions get added to the library.
 6. **The apparatus:** build, test and experiment container images, with build

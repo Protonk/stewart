@@ -32,6 +32,31 @@ the decisions below is recorded in `STATUS-INQUIRY-FINDINGS.md` and
 `.scratch/status-inquiry/` and `.scratch/custody-audit/` kept outside Git under
 DEVELOPMENT.md's retention rules.
 
+## Mission
+
+Decided 2026-10-28, in the user's words. It replaces the mission the README
+carried for the Python implementation. Contracts below that assume material
+held in Git, a Python reference baseline or an auditor checkout predate this
+mission; restating or retiring them is a separate decision, and their status
+markers stand until it is made.
+
+Stewart is a custodian for bounded inquiries between cooperative parties. The
+manager supplies a problem in their own words, selected files and an answer
+form. Stewart places an auditor in a separate context and returns its answer
+with a faithful record. It keeps copies, distinguishes and attributes
+observations, acknowledgments and claims, writes records once, verifies
+delivery, and states promptly and precisely what it did.
+
+We strive to let the manager attend to the problem rather than the asking.
+Orientation, answer forms, stopping rules and exits preserve the auditor’s
+latitude. They are readable, versioned, previewed and recorded in returns. The
+protocol makes the question, material and recorded answer recoverable.
+
+Stewart must never judge conclusions. Forms must permit no finding, missing
+evidence or a wrong question without favoring outcomes. Stewart must show that
+auditors can use its arrangements; their authors continually judge their value
+as instruments of inquiry, independently of preferred answers.
+
 ## Principles
 
 Decided 2026-10-24. These govern how the contracts below are read and how new

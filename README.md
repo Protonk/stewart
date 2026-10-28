@@ -7,11 +7,22 @@ audit when it is done.
 
 ## Mission
 
-Stewart provides custody for bounded inquiries into material held in Git. It organizes cooperation between distinct roles: a manager who commissions, observes, and disposes of inquiries, and an auditor who investigates and reports.
+Stewart is a custodian for bounded inquiries between cooperative parties. The
+manager supplies a problem in their own words, selected files and an answer
+form. Stewart places an auditor in a separate context and returns its answer
+with a faithful record. It keeps copies, distinguishes and attributes
+observations, acknowledgments and claims, writes records once, verifies
+delivery, and states promptly and precisely what it did.
 
-Stewart maintains the working boundaries of each inquiry, including its subject, permissions, records, and transitions. Its arrangements center on a defined assignment and a structured return for the manager to review. It serves people who want answers to bounded questions without continually steering the investigation.
+We strive to let the manager attend to the problem rather than the asking.
+Orientation, answer forms, stopping rules and exits preserve the auditor’s
+latitude. They are readable, versioned, previewed and recorded in returns. The
+protocol makes the question, material and recorded answer recoverable.
 
-Audits can yield findings, unresolved questions, incomplete work, or accounts of missing evidence. Stewart makes their circumstances and products available for inspection, while the conduct and interpretation of an inquiry remain matters of judgment.
+Stewart must never judge conclusions. Forms must permit no finding, missing
+evidence or a wrong question without favoring outcomes. Stewart must show that
+auditors can use its arrangements; their authors continually judge their value
+as instruments of inquiry, independently of preferred answers.
 
 ## How an audit works
 
