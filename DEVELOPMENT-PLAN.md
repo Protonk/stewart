@@ -100,7 +100,12 @@ implementation leg; it is not yet dispatch-ready, and
 [PLAN-FIT](coordination/custody-delivery-01/PLAN-FIT.md) records the decisions
 made and still open. On 2026-10-28 the user directed another turnover brief
 before the leg's remaining decisions; the incoming coordinator consumed it the
-same day at clean HEAD `4037ec3`. Its intake selects no scope.
+same day at clean HEAD `4037ec3`. Its intake selects no scope. That tenure's
+design conversation with the user produced a proposed redirection, recorded in
+[coordination/linux-mvp-01/](coordination/linux-mvp-01/README.md): a Linux-only
+problem router whose auditor has only Stewart's tools, with no Python baseline and
+no Git. This plan and CONTRACTS are unchanged until the user decides; first-leg
+preparation is paused meanwhile. The user then directed another turnover.
 
 The user chose to address the first leg's consumer and record population before
 the other release choices, with a standalone Riker consultation prepared in

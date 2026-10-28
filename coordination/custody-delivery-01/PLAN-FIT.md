@@ -1,5 +1,12 @@
 # Plan fit of the approved custody-and-delivery leg
 
+**Paused, 2026-10-28.** A later design conversation with the user, recorded in
+[linux-mvp-01/](../linux-mvp-01/README.md), proposes a different successor shape: a
+Linux-only problem router whose auditor has only Stewart's tools. Until the user
+decides whether to adopt it, this assessment is paused, not retired. Its
+access-route and containment questions are largely dissolved by that proposal;
+its signs, re-entry and answer-structure work carries into it.
+
 Coordinator assessment, 2026-10-28 UTC, from source `f987a78`. The user approved
 the [NEXT-LEG candidate](../submission-design-01/NEXT-LEG.md) as the first leg,
 hopes to continue through the remainder of the transition, set the first leg's
