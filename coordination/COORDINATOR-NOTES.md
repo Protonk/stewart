@@ -75,7 +75,40 @@ later, separately commissioned real-project audit. Root recorded the provisional
 structure in CONTRACTS, the bounds revisit in W02, the first decision point and
 the narrowed unverifiable-selection concern in DEVELOPMENT-PLAN. Remaining
 first-leg discussion: items 1 and 3 (access route, Stewart auditor count,
-delivery), then coordinator reconciliation.
+delivery), then coordinator reconciliation. Root dispatched read-only workflow
+`wf_7b78b039-d07` from `866a4c4` (Apple `container` facts, Claude Code facts,
+repository constraints, then one adversarial fact checker; at most three
+concurrent; no installs, containers or Claude launches). Brief and returns:
+`.scratch/route-research-01/`. Root put framing questions to the user meanwhile.
+
+Correction from the user: the Linux container work is to check that Stewart works
+on Linux, not to containerize the auditor now; auditor containerization may be
+temporary and contingent. Root had folded the container into the access-route
+question; the running route research is partly framed that way and will be read
+with the corrected purpose. The user and root are still discussing the threat
+model and access framing; nothing from that conversation is recorded as agreed.
+At the user's request (“1. Yes.”) root dispatched read-only workflow
+`wf_3f10a53c-1ac` from `866a4c4`: two case finders (decided semantics; agent
+behavior) and one merger, at most two concurrent, to feed a discussion draft of
+the auditor submission-tool case table. Brief and returns: `.scratch/auditor-cases-01/`.
+Route research `wf_7b78b039-d07` returned: four agents, no errors, 684,634 sub-agent
+tokens; the checker confirmed 64 and corrected 13 external facts and listed
+omissions. Saved as `.scratch/route-research-01/RETURN.json`. Root reads its
+container facts for Linux platform checks and its Claude Code facts for the
+open enclosure question; it is input to discussion, not a decision.
+The user installed Apple's `container`; observed `/usr/local/bin/container`,
+`container CLI version 1.6.1 (build: release, commit: aa8d76b)`. The user has not
+run `container system start`. Root's `container system status` from inside its
+command sandbox failed with `Operation not permitted`, so service operations need
+the user's terminal or an explicitly approved unsandboxed command.
+First light is complete and recorded in `.scratch/linux-first-light-01/` (baseline,
+after start, after run). The user started the services with the recommended kernel,
+pulled alpine and ran `uname -a` with `--network none`: arm64 Linux 6.18.35. Direct
+IPv4 stayed healthy before and after, routes and interfaces matched the baseline
+and no container remained. No Stewart code has run in Linux yet. Root verified the
+pinned image tags `rust:1.99.0-trixie` and `python:3.14.9-trixie` exist for arm64
+and that the local wheelhouse holds only pure-Python wheels; root is proposing the
+Stewart Linux check plan to the user.
 
 The outgoing tenure ended with the user's directive: “Make those reconciliations,
 then write a turnover brief and stand by.” Its reconciliation made F3/F5's
