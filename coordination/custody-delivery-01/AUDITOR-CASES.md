@@ -877,3 +877,18 @@ account; a damaged operation record; repeat-before-confirm completing and stalin
 the preparation; repeat-after-confirm returning already_submitted that names the
 operation as not recorded; provenance listing exactly the unresolved operations;
 control: no unresolved operation, no note.
+
+## Decisions after the briefing (2026-10-28)
+
+- **Q10:** “#3 B looks like the move.” Proceed with a note, as briefed above.
+- **Q33:** “Print the question verbatim when it is asked. Keep bare help slim and
+  useful. For later refactors we may consider subcommand help.” On a header label:
+  “The question type is an implementation problem for the manager. The auditor
+  doesn't need to know what a question type is.” Root's reading: reply headers
+  name the audit, not a question type or a label derived from the question. On an
+  orientation file: feel it out later through testing, planned now and run outside
+  this session; see [ORIENTATION-TRIAL](ORIENTATION-TRIAL.md).
+- CONTRACTS now records the agreed auditor-facing behavior (“Auditor-facing signs
+  and re-entry”): the two principles, signs as acceptance criteria, no custody
+  paths in auditor replies, damage scoped to dependent claims, stopping as the
+  final door, Q10 and Q33. Q26 and the mechanical and item-1 questions remain open.

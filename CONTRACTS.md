@@ -387,6 +387,30 @@ with a plain-text index; the manifest is authoritative and carries a format
 version. Whether the bounds bind is to be examined much later by a separately
 commissioned Stewart audit of a real project.
 
+**Auditor-facing signs and re-entry.** Accepted 2026-10-28 for the first
+successor custody/delivery leg; implementation and qualification pending. The
+user's working premise: managers and auditors are cooperative but fallible, and
+eager, persistent agents make them fallible faster; containment exists to harden
+and smooth normal operation, not as a security barrier. Two design principles
+follow. Prefer absence to denial: where the arrangement allows, custody and
+unselected material are not in the auditor's world, rather than visible and
+refused. Every wall carries a sign pointing at the door: each anticipated refusal
+names a stable reason, states its effect on the answer and gives the specific next
+action, and those signs are acceptance criteria. Auditor-facing replies name no
+custody paths; custody locations belong to the manager's status. Damage blocks
+only the claims that depend on it. After submission, collection, closure or
+unrepairable damage, stopping is the auditor's final door; no further auditor
+channel is added.
+
+A confirmed submission proceeds while one of the auditor's own operations is
+unresolved (intent recorded, outcome not). Inspect, prepare and the dry run list
+each such operation, what it would have changed, its exact repeat call and what
+confirming now means; the confirmation reply repeats it, and the return's
+provenance records it as interrupted, not included and ended by submission.
+Bare help stays a slim, useful cheatsheet; the question is printed verbatim when
+asked. The auditor is not shown the question type, which is the manager's
+implementation concern.
+
 ## Successor manager receipt and ordinary closure
 
 Accepted 2026-10-27 after the auditor-side simplification discussion.

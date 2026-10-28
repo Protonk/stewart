@@ -124,6 +124,18 @@ scripts) and wrote `run.sh` for the user to run from their terminal; `BRIEF.md`
 there records scope and limits. Read-only review `wf_f42b8829-96c` (two reviewers:
 host driver, in-container fidelity) is checking the scripts before hand-off. No
 container has run Stewart code yet.
+That review found one blocking defect (`check_commission.py` hardcodes
+`/private/tmp`) and several material ones; root revised the scripts (see the
+run's BRIEF) and dispatched re-review `wf_c1ca783b-f25`.
+
+The user agreed root's leans on the case table's Q1, Q5, Q20 and Q32, chose
+option B for Q10 (submit proceeds with a note over an unresolved own operation),
+and settled Q33 (question printed verbatim on request, slim help, no question
+type shown to the auditor). CONTRACTS records these as “Auditor-facing signs and
+re-entry”. The orientation question is deferred to a trial the user asked to plan
+now and run outside this session:
+[ORIENTATION-TRIAL](custody-delivery-01/ORIENTATION-TRIAL.md), registered under W12,
+not commissioned.
 
 The outgoing tenure ended with the user's directive: “Make those reconciliations,
 then write a turnover brief and stand by.” Its reconciliation made F3/F5's
