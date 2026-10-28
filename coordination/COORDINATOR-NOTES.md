@@ -38,7 +38,11 @@ The user then commissioned it: “Excellent. Run that audit.”
 custody route, fresh auditor scope and preservation/close obligations. Root has
 copied the exact pinned inputs into `audits/opus-preparation`, owns preparation
 and `.scratch/opus-preparation-audit-01/` recording, and will save the actual handoff
-and worker handle before investigation. No implementation or turnover is launched.
+and worker handle before investigation. Auditor `/root/opus_preparation_auditor`
+is now dispatched in a fresh context against prompt 3b457bb and ten selected
+inputs. [Progress](opus-preparation-audit-01/PROGRESS.md) owns the actual lifetime,
+handoff and preserved command streams. Root awaits its stopped return before
+collection. No implementation or turnover is launched.
 
 ## Manager interaction decisions supporting that scope
 
