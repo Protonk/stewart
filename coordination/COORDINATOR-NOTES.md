@@ -110,6 +110,21 @@ pinned image tags `rust:1.99.0-trixie` and `python:3.14.9-trixie` exist for arm6
 and that the local wheelhouse holds only pure-Python wheels; root is proposing the
 Stewart Linux check plan to the user.
 
+Case-table workflow `wf_3f10a53c-1ac` returned: three agents, no errors, 668,649
+sub-agent tokens; 105 + 54 candidate cases merged into 113 rows with 36 open
+questions. Root wrote the discussion draft
+[AUDITOR-CASES](custody-delivery-01/AUDITOR-CASES.md) with its own triage of the
+questions (seven for the user, six for the item-1 document, the rest mechanical).
+Nothing in it is agreed.
+
+The user approved the Linux checks: “Go ahead and proceed.” Root staged
+`.scratch/linux-check-01/` from commit `03efeb3` (git archive, 21 vendored crates
+offline, exactly the nine locked wheels verified against `requirements.lock`, step
+scripts) and wrote `run.sh` for the user to run from their terminal; `BRIEF.md`
+there records scope and limits. Read-only review `wf_f42b8829-96c` (two reviewers:
+host driver, in-container fidelity) is checking the scripts before hand-off. No
+container has run Stewart code yet.
+
 The outgoing tenure ended with the user's directive: “Make those reconciliations,
 then write a turnover brief and stand by.” Its reconciliation made F3/F5's
 dependencies explicit for each bounded leg, allowing custody/delivery before live
