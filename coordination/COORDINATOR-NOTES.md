@@ -175,6 +175,14 @@ project except `.scratch`, `.git`, `dist` and `build`, so `shutil.copytree` fail
 the FIFO. Those copies also include `successor/target` (175 MB) each time. The full
 suite therefore stays red when run in the checkout itself.
 
+The user approved root's fix: “Go ahead.” The `fifo-source` test now removes its
+FIFO after the refusal is recorded; the four project copies share
+`project_copy_ignore` in `tests/support.py`, which skips `successor/target` and
+`successor/evidence` only at `successor/`; a planted-FIFO smoke test is the firing
+control. The four earlier FIFOs were removed after recording them in
+`.scratch/fifo-hygiene-01/fifos-removed.txt`. Verified there: `cargo test` 15/15
+with no new FIFO, and the full suite in the checkout passed 1140, skipped 1, exit 0.
+
 The user agreed root's leans on the case table's Q1, Q5, Q20 and Q32, chose
 option B for Q10 (submit proceeds with a note over an unresolved own operation),
 and settled Q33 (question printed verbatim on request, slim help, no question
