@@ -1385,3 +1385,36 @@ The mission requires only that form opinions are written down, shown before a ru
 5. The two nudges, a reminder after an unsubmitted stop and a warning near a limit: keep, drop, or make them manager settings.
 
 Intake is done. I consumed and stubbed the turnover brief, rewrote the current account for this tenure, added one line to the standing orders about keeping process out of app conversations, and recorded your note and this reply as turn 17 of the conversation file. Nothing is pushed and no worker or model call has run. Next is your verdict on this mission.
+
+---
+
+## 18. The user's mission text
+
+> I like this better:
+>
+> Stewart is a custodian for bounded inquiries between cooperative parties. The
+> manager supplies a problem in their own words, selected files and an answer
+> form. Stewart places an auditor in a separate context and returns its answer
+> with a faithful record. It keeps copies, distinguishes and attributes
+> observations, acknowledgments and claims, writes records once, verifies
+> delivery, and states promptly and precisely what it did.
+>
+> We strive to let the manager attend to the problem rather than the asking.
+> Orientation, answer forms, stopping rules and exits preserve the auditor’s
+> latitude. They are readable, versioned, previewed and recorded in returns. The
+> protocol makes the question, material and recorded answer recoverable.
+>
+> Stewart must never judge conclusions. Forms must permit no finding, missing
+> evidence or a wrong question without favoring outcomes. Stewart must show that
+> auditors can use its arrangements; their authors continually judge their value
+> as instruments of inquiry, independently of preferred answers.
+
+The three paragraphs are the user's own wording of the mission, in reply to the
+pitch in turn 17. The coordinator's reply, as given:
+
+Recorded as turn 18, in your words. Two things your version changes from mine that I want you to have chosen rather than lost:
+
+- "Places an auditor in a separate context" no longer says the auditor's world is only the arrangement. That is your R2 decision, and it still holds for the model adapter. If the softening is for the person adapter, the mission is right and CONTRACTS carries the property per adapter. If not, "a context containing only the problem" is the stronger line.
+- The sentence that material is files and that where they came from is the manager's business is gone. "Selected files" carries the no-Git decision implicitly; CONTRACTS would say it outright when the Git-dependent contracts retire.
+
+Everything else in mine is in yours, shorter. When you say so, this text goes into CONTRACTS as the mission beside the neutrality restatement, and I start retiring the Python baseline and the Git contracts. Until then it stays in the conversation record as your wording, and the five answer-form and stopping-rule choices are the next discussion.

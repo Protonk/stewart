@@ -41,7 +41,10 @@ consumed and stubbed; Git holds it at `05a21d4`.
 
 **Delivered.** The mission pitch, the changes from the README's mission, what is
 held provisional and the choices to bring to the user are recorded as the
-coordinator's reply in turn 17. It is a proposal; CONTRACTS is unchanged.
+coordinator's reply in turn 17. The user answered with their own three-paragraph
+mission text, recorded verbatim as turn 18; that text is the current mission
+wording and is the user's. It is not yet recorded in CONTRACTS, which is
+unchanged; the user has not directed that step.
 
 **Coordinator's reading of the design** (from ROUTER.md and END-TO-END.md under
 the user's direction; the folder's AGENTS file governs attribution):
@@ -86,7 +89,10 @@ dissolved by it.
 
 ## Next
 
-1. **The user's verdict on the mission pitch** and on adopting the router.
+1. **The user's direction on recording the turn 18 mission in CONTRACTS**, on
+   the two points the coordinator raised in reply (the "separate context"
+   wording against the only-Stewart's-tools decision, and the dropped no-Git
+   sentence), and on adopting the router.
 2. **If adopted:** restate the principles in CONTRACTS (the neutrality
    restatement drafted in conversation turn 12 and the mission pitched in
    turn 17), retire the Python baseline and the Git-dependent contracts, and
