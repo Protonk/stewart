@@ -1,19 +1,32 @@
-# One design encounter, three views
+# One design conversation, and what it produced
 
 On 2026-10-28 an alignment conversation about Stewart turned into a redesign. This
-folder holds that encounter at three zoom levels, plus what still bothers me about
-the result. Nothing here changes CONTRACTS; adopting any of it is a separate
-decision.
+folder records that conversation and the documents it produced. Nothing here
+changes CONTRACTS; adopting any of it is a separate decision.
+[AGENTS.md](AGENTS.md) says how agents should treat the folder.
+
+## Start here
 
 | Read | What it is |
 | --- | --- |
-| [CONVERSATION.md](CONVERSATION.md) | The conversation itself: your prompts verbatim and my replies. |
-| [CONVERSATION-HELD-BACK.md](CONVERSATION-HELD-BACK.md) | The notes I held back during it, the radical alternatives (R1–R12), and your comment on them with my reading. A verbatim copy of the working file. |
-| [DESIGN.md](DESIGN.md) | The radical design: the first draft, written with its reasons and anchors back to the conversation and CONTRACTS. |
-| [STEWART.md](STEWART.md) | The same design presented as *the* design: written from a clean sheet, open decisions posed where they arise. |
-| [RESERVATIONS.md](RESERVATIONS.md) | What still bothers me about the new stance, after re-reading all three. |
-| [ROUTER.md](ROUTER.md) | Where the conversation went next: a sketch of Stewart as a problem router for cooperative actors who want to make it *just* so, after two pitches on question types and your answers to my deep reservations. |
+| [ROUTER.md](ROUTER.md) | **The latest design.** Stewart as a problem router for cooperative actors who want to make it *just* so. |
+| [END-TO-END.md](END-TO-END.md) | **What an end-to-end test of the router must show**, including a real-model conformance gate. |
 
-The conversation continues past the three views; its later turns lead to
-ROUTER.md, which is now the latest statement. Where files disagree on details,
-the earlier ones are records of how we got there.
+## How it got there
+
+The conversation produced three views of one design encounter, then continued:
+
+| Read | What it is |
+| --- | --- |
+| [CONVERSATION.md](CONVERSATION.md) | The conversation itself: the user's prompts verbatim and the coordinator's replies, from the first alignment question to the end-to-end test request. |
+| [CONVERSATION-HELD-BACK.md](CONVERSATION-HELD-BACK.md) | Notes the coordinator held back during the first three turns, the radical alternatives (R1–R12), and the user's comment on them. A verbatim copy of the working file. |
+| [DESIGN.md](DESIGN.md) | View 2, the radical design: the first draft, with its reasons and anchors back to the conversation and CONTRACTS. |
+| [STEWART.md](STEWART.md) | View 3: the same design presented from a clean sheet, with open decisions posed where they arise. |
+| [RESERVATIONS.md](RESERVATIONS.md) | What still bothered the coordinator after the three views, including which details were its own inventions. |
+
+After the three views, the conversation covered two pitches on question types
+(a panel of blind auditors, and a small library of question-answer couplings),
+settled on the coupling library, worked through the coordinator's deep
+reservations and the user's answers, and arrived at ROUTER.md and END-TO-END.md.
+Where files disagree on details, the later ones are current and the earlier ones
+are records.

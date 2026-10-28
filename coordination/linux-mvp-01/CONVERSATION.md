@@ -1267,3 +1267,65 @@ removed. A new Responsiveness section sets response budgets for manager commands
 and protocol calls, and "What ships, and what doesn't" replaced the Platform
 section: one small static binary ships, while build, test and experiment
 containers form an apparatus that never does.
+
+---
+
+## 15. One major reservation about the router
+
+> Ok. Now apart from haziness on the manager tool side, what is one major
+> reservation you still have with this router.
+
+My one major reservation: **the thing that matters most is the thing we test
+least.**
+
+The whole router rests on one claim: a real model, set up in an arrangement
+exactly so, works through the protocol and actually delivers an answer.
+Concretely, that means:
+- it records its findings rather than writing them as prose and stopping;
+- it reaches for `what_am_i_working_with` after compaction;
+- it fills the coupling's slots;
+- it calls `submit`.
+
+As drawn, none of that is a release gate.
+- The test image proves the binary against a fake provider replaying turns we
+  scripted. The fake behaves exactly as we imagined a model would, so it can't
+  catch a real model behaving differently.
+- The experiment image is where real models run, and it's explicitly never a
+  gate.
+
+So a release can pass every check while real auditors drown in reading, answer in
+prose, ignore the slots, and come back honestly empty. Models change underneath us
+too: a protocol that works with today's model can quietly stop working with the
+next one, and nothing would notice.
+
+This isn't about answer quality, which we've agreed Stewart doesn't judge. It's
+about whether the arrangement Stewart builds is usable by the auditors it's built
+for. That's Stewart's own responsibility under the router's principle that Stewart
+owns the arrangement.
+
+What would address it is a small real-model check as a release gate. For each
+model a release supports:
+- a handful of fixed, cheap commissions;
+- checks on procedure only: did it submit, do its citations resolve, did it
+  recover after compaction, did it use the slots;
+- every release names the models it was checked against.
+
+That costs a little real money per release, and in return it keeps Stewart honest
+about the one claim everything else depends on.
+
+---
+
+## 16. The end-to-end test, and the folder's guides
+
+> EXCELLENT. Ok. Alonside that router, write up `END-TO-END.md` with what an end to
+> end test of what we care about needs to look like. Give that directory a readme
+> for navigation if it doesn't have one already and an AGENTS file indicating that
+> it is a record of a design conversation. When that is complete, collect and
+> combobulate your coordinator workspace and write a turnover brief. The incoming
+> coordinator will be able to see the folder we've been working on just as you've
+> left it.
+
+This turn produced [END-TO-END.md](END-TO-END.md), a rewritten
+[README.md](README.md), and [AGENTS.md](AGENTS.md) with a `CLAUDE.md` link to it, as
+at the repository root. The coordinator workspace and turnover brief live outside
+this folder.
