@@ -760,6 +760,12 @@ The triage is the coordinator's proposal; it decides nothing.
 
 ### For the user: these touch what participants can express or what Stewart promises
 
+**User response, 2026-10-28:** “I think I agree with most.” Root reads this as
+agreement with the stated leans on Q1, Q5, Q20 and Q32. Q26 had no lean and stays
+open. The user asked for a more specific briefing on Q10 (below) and to discuss
+Q33's choices, noting a possible thin cheatsheet help and a “where am I at” help,
+and the cost of a CLI that dynamically describes arbitrarily added materials.
+
 - **Q1. Make the signs acceptance criteria.** Should each reason's sign and next
   step become an acceptance case, and should “absent rather than denied” and
   “every wall carries a sign” be written down as principles? Today the nearest
@@ -823,3 +829,51 @@ Q31 (whether “continuing participant” is enforced or policy).
   first leg; Q35 a near-miss confirmation refuses with the exact syntax rather
   than falling back to a dry run, and `status` is accepted as an alias of inspect;
   Q36 reason identifiers are platform-neutral, with the filesystem fact in detail.
+
+## Briefing on Q10: submitting while one of the auditor's own operations is unresolved
+
+Coordinator briefing at the user's request, 2026-10-28. Proposal, not agreed.
+
+**What “unresolved” means.** Each add, replace or delete binds its intent
+(operation reference, target, source identity) before any effect. It is
+unresolved when that binding exists but no outcome is recorded: the call was
+killed between binding and publication. Not included: a call killed before
+binding (Stewart knows nothing), a lost reply after publication (resolved; the
+change is in the answer), a call still running (busy), or damaged operation
+records (reported as unverifiable).
+
+**Example.** The auditor's `add run.log` (op-17) is killed after Stewart bound it
+and held the bytes but before publishing. Its context compacts. It inspects,
+prepares, dry-runs and confirms. A replace is sharper: if `replace H3` (the
+account) was interrupted, the selection still holds the *earlier* account.
+
+**Option A, refuse.** Confirm refuses `unresolved_operation` and names the call to
+repeat. Repeating either completes it (new revision, so prepare again) or returns
+a definite “can never complete”, which resolves it. Costs: an extra cycle; a wall
+when the operation's records are damaged or storage keeps failing, leaving only
+manager collect; asymmetry with collect, which proceeds over pending operations;
+and no refusal ground in CONTRACTS' principles applies, because the submission
+claims exactly the recorded revision and nothing false.
+
+**Option B, proceed with a note (lean).** Inspect, prepare and the dry run list
+each unresolved operation, what it would have changed and its exact repeat call,
+and say what confirming now means: “op-17 (add run.log, 3.1 MB) was interrupted
+and is not in this selection; to include it, repeat <call> and prepare again; if
+you confirm now it can never complete.” For a replace: “the earlier version of H3
+is in this selection.” Confirm succeeds and repeats the note. The return's
+provenance lists each such operation as interrupted, not included, ended by
+submission; held bytes stay until close like other failure evidence. Cost: an
+agent that skips notes submits without what it meant to include; the manager
+sees it in provenance.
+
+**Rejected variants.** An acknowledgment flag on confirm (eager agents add flags
+reflexively, adding interface for little gain). Submit completing pending
+operations itself (changes membership after the manifest was inspected, breaking
+the prepare/handle contract).
+
+**Acceptance cases if B is chosen.** Confirm with an interrupted add whose bytes
+were held, not held, or whose source is gone; an interrupted replace of the
+account; a damaged operation record; repeat-before-confirm completing and staling
+the preparation; repeat-after-confirm returning already_submitted that names the
+operation as not recorded; provenance listing exactly the unresolved operations;
+control: no unresolved operation, no note.
