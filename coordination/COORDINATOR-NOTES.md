@@ -66,6 +66,11 @@ learned if Stewart is fast enough to iterate; the manager side needs design.
 At the user's request root then wrote [the router sketch](linux-mvp-01/ROUTER.md)
 (no reservations) and extended the folder's conversation record through it. It is
 now the latest statement of the design; CONTRACTS remains unchanged.
+The user then refined “fast”: it means the app (manager interface and submission
+tool respond quickly and instill confidence); audit time and effort are the
+manager's business. Development moves off the noisy host: build toward and deploy
+in containers with build dependencies root selects, an experimental apparatus that
+doesn't ship, and a small fast Rust app that does. ROUTER.md now says so.
 
 ## Previous checkpoint: Opus tenure at turnover
 

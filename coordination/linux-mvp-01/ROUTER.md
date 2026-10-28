@@ -39,7 +39,9 @@ Stewart doesn't investigate and doesn't judge. It arranges, carries and records.
   to work from it.
 - **Losing track is never fatal.** One call tells an auditor everything it is
   working with.
-- **Fast enough to iterate.** Everything except the auditor's own work is instant.
+- **Quick to answer, and sure of what it says.** Every manager command and every
+  protocol call responds promptly and says exactly what it did. How long an audit
+  runs and how hard its auditor thinks are the manager's business, not Stewart's.
 - **Records are written once.**
 
 ## The shape
@@ -186,11 +188,24 @@ across audits, materials and models.
 ## Iterating
 
 - `stewart commission --like ID` starts from an earlier problem, with overrides.
-- A quick-pass setting runs a cheaper model at lower effort.
 - `stewart compare` lays out returns of the same coupling side by side.
 - Each audit records what it was varied from, so a sequence of attempts reads as
   one.
-- Everything except the run takes milliseconds.
+
+## Responsiveness
+
+The manager and the auditor should never wait on Stewart, and never wonder what
+it did.
+
+- **Ordinary calls take tens of milliseconds.** Startup, `status`, `preview`,
+  `what_am_i_working_with`, answer edits, `prepare` and `submit` answer at once.
+- **Size-bound work shows its size first.** Intake copying, search across all the
+  material, and delivery state how much they are about to handle, report
+  progress, and finish with what they verified.
+- **Every reply carries its own certainty.** What changed, what was checked, and
+  what to do next, in the same place every time. A reply never says "probably".
+- **Speed is tested.** Response budgets are part of the test suite, measured on
+  material at the size limits.
 
 ## The manager's surface
 
@@ -222,17 +237,35 @@ the arrangement, every protocol call and its outcome, the conversation, the seal
 and each delivery. Stewart deletes nothing. Closing is a record; removing an
 audit's directory is the manager's ordinary housekeeping.
 
-## Platform
+## What ships, and what doesn't
 
-One static Linux binary for x86_64 and aarch64; WSL2 runs it as is. The only
-network Stewart touches is the model provider, over HTTPS, from the model adapter.
+**Stewart ships as one small binary.** It is statically linked Rust for Linux on
+x86_64 and aarch64, with no runtime dependencies; WSL2 runs it as is. The coupling
+library and orientation are built in. The only network it touches is the model
+provider, over HTTPS, from the model adapter.
+
+**The apparatus never ships.** Everything used to build, test and experiment with
+Stewart lives in Linux containers defined in the repository:
+
+- **a build image** with a pinned Rust toolchain, the musl targets, and a short list
+  of vendored crates (JSON, hashing, regular expressions, HTTPS over a pure-Rust TLS
+  stack), producing the release binaries reproducibly and offline;
+- **a test image** that runs the suite against the binary as built: a fake model
+  provider replaying scripted auditor turns, material at the size limits, the
+  response budgets, and every lifecycle and failure path;
+- **an experiment image** for trials with real models and real questions, kept
+  apart from the suite and never a release gate.
+
+No host language runtimes, version matrices or host toolchains are involved. A
+developer's machine only needs to run containers; on a Mac that is a Linux VM.
+What gets tested is exactly the binary that ships, in the kind of system it ships
+to.
 
 ## First release
 
 - The model adapter.
 - `survey` and `claim-check`.
 - `new`, `preview`, `commission`, `run`, `status`, `collect`, `deliver`, `compare`,
-  `close` and `help`.
-- Linux x86_64 and aarch64, with the scripted suite running against a fake model
-  provider.
+  `close` and `help`, all within the response budgets.
+- Release binaries for Linux x86_64 and aarch64, built and tested in the apparatus.
 - A handoff package for a WSL2 run.

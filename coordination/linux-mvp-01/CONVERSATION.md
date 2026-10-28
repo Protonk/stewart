@@ -1246,3 +1246,24 @@ same conversation, or does every interruption cost a full new run?
 > sketch. Leave this alongside the others.
 
 The sketch is [ROUTER.md](ROUTER.md).
+
+---
+
+## 14. What "fast" means
+
+> Ok. One finer refinement. For fast I mean the app. Audit time and effort level
+> are the manager's business. What I want is for the manager interface and the
+> audit submission tool to respond quickly and instill confidence. For our fast
+> iteration and testing, the very early stages of the app which ran batteries for
+> python 3.11 AND 3.14 was not fast. An app that needs to live in a noisy personal
+> mac while being developed around those vagaries is not fast--instead we can just
+> build toward and deploy in containers with a set of build dependencies you
+> select, an experimental apparatus that doesn't ship, and a small, fast rust app
+> that does.
+
+ROUTER.md was revised in place. The "fast enough to iterate" principle became
+"quick to answer, and sure of what it says", and the quick-pass model setting was
+removed. A new Responsiveness section sets response budgets for manager commands
+and protocol calls, and "What ships, and what doesn't" replaced the Platform
+section: one small static binary ships, while build, test and experiment
+containers form an apparatus that never does.
