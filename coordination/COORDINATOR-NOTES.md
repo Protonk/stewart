@@ -26,6 +26,24 @@ deliverable and its exclusions. Interface, receiving route and acceptance
 preparation follow that choice. No implementation, worker, inquiry or Claude launch
 is dispatched, and no product obligation is changed by intake.
 
+The user then approved the NEXT-LEG candidate as the first leg, hoping to continue
+through the remainder of the transition, and enabled ultracode for this session:
+“For this first leg, you should use a small/modest number of agents (more than 1
+or 2 auditors is too much). For later legs we can talk about expanding to 4-10
+simultaneous sub-agents. Look across the development and vision plan and see if
+this assignment makes sense. We won't kick things off just yet.” The leg is not
+yet dispatched; collaboration setup continues. Root dispatched one read-only
+plan-fit review (in-harness workflow `wf_bdadff4a-f82`, at most two concurrent
+agents: two lens reviewers, then one adversarial verifier) from source `f987a78`.
+Brief and returns: `.scratch/plan-fit-review-01/`. It writes nothing in the
+repository and informs the user discussion only. All three agents returned with
+no errors (556,241 sub-agent tokens); none remains active. Root read every finding,
+spot-checked the weightiest citations and saved the integrated account as
+[PLAN-FIT](custody-delivery-01/PLAN-FIT.md): the leg makes sense in direction and
+fits one or two agents, but is not dispatch-ready. Seven user decisions lead,
+with the access route first; coordinator reconciliation items follow. The next
+step is the user's response; nothing is dispatched.
+
 The outgoing tenure ended with the user's directive: “Make those reconciliations,
 then write a turnover brief and stand by.” Its reconciliation made F3/F5's
 dependencies explicit for each bounded leg, allowing custody/delivery before live
