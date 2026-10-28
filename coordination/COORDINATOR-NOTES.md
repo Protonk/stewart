@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-27 during the custody-and-mission shakedown before Opus transfer.
+Updated 2026-10-27 with conditional routing for the custody concerns.
 This is a working account of observed work, authority received and remaining questions.
 [Standing orders](STANDING-ORDERS.md) own operating instructions;
 [the directory entry](README.md) identifies intake documents. The optional
@@ -9,18 +9,28 @@ actual files, user instructions and available harness state after interruption.
 
 ## Current discussion: readiness for the Opus implementation turnover
 
-After the preparation audit, the user requested a final own-words account of what
-Stewart takes custody of and how it serves the mission, inviting discomfort as a
-reason to inspect the design. Root's [shakedown account](submission-design-01/CUSTODY-SHAKEDOWN.md)
-separates executable Python/C/prototype behavior from decided successor work.
-It identifies two coordinator concerns, not new decisions: the exact treatment of
-workspace material never added to the answer, and a supported end to custody when
-selection is unknowable. Neither a complete manifest nor a delivery receipt grants
-disposal authority over other obligations. The proposed bounded no-removal leg can
-remain useful while those boundaries are resolved before disposal implementation.
-No contract, implementation, new audit or transfer is authorized by this discussion.
-This account owns `.scratch/custody-shakedown-01/`; fieldwork reflections remain
-separate. The user has not yet directed the ordinary turnover brief.
+The next implementation preparation remains the candidate custody-and-delivery
+leg: settle its scope with the user and make its interface and acceptance concrete.
+The custody concerns below add no immediate inquiry assignment.
+
+The user directs that the two custody discomforts remain recoverable without
+turnover prose and without becoming the immediate successor's default inquiry.
+Their disposition and concrete triggers now live in
+[the plan's conditional review](../DEVELOPMENT-PLAN.md#when-to-revisit-the-custody-concerns),
+owned by W02/W14 with W11's existing operation accounting. The
+[shakedown account](submission-design-01/CUSTODY-SHAKEDOWN.md) retains the reasoning.
+For the candidate no-removal leg, keep preparing its actual interface, identity,
+custody/access and acceptance work. Do not open an inquiry into unregistered
+workspace disposition or unknown-selection closure merely because these concerns
+are inherited. Revisit at a plan trigger before making the affected promise or
+disposal decision, or when concrete evidence shows that the current obligation
+cannot otherwise be honored. Protected-obligation changes still belong to the user.
+
+The standing-orders addition states the general coordination rule without routing
+durable guidance to this particular plan. This is authorized continuity organization,
+not a change to product contracts or approval of implementation/transfer. This
+account owns `.scratch/custody-shakedown-01/` and
+`.scratch/custody-concern-routing-01/`; fieldwork reflections remain separate.
 
 The user approves the concrete failure briefing and asks what remains before an
 Opus turnover. CONTRACTS now records the known-selection incomplete-close direction:

@@ -54,6 +54,11 @@ unavailable to the readback process instead of deleting evidence under test.
    authority is decided. This is a proposed deferral, not a new permanent refusal
    contract. Work outside the helper and broader answer restrictions cannot be
    silently disposed of by defining this leg narrowly.
+   Use the plan's [conditional review](../../DEVELOPMENT-PLAN.md#when-to-revisit-the-custody-concerns)
+   for these two boundaries. They are not an inquiry to run on intake or a gate
+   before ordinary authoring/delivery implementation. Revisit before a specified
+   preservation, disposability or terminal-disposition decision, or on concrete
+   evidence that the interim account cannot uphold an existing obligation.
 4. **Fix acceptance and stopping points.** Turn the cases below into a finite
    acceptance population tied to the actual supported interface. Name what requires
    user decision or a separately authorized harness trial. Mechanical choices can

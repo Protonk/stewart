@@ -31,6 +31,15 @@ not make inherited advice binding. When changing a standing procedure, identify
 the change and its basis within delegated authority; continuity editing is not
 an additional grant over purpose or protected obligations.
 
+Keep deferred concerns with their owning work, stating what may proceed while
+they remain open and the concrete decision or evidence that makes them relevant.
+Their presence in an inherited account is not an instruction to investigate now.
+When scoping affected work, check those conditions and carry applicable limits
+into its assignment; no periodic re-investigation is required. A condition becoming
+relevant commissions no new policy or implementation by itself. Establish the
+bounded consequence, proceed within existing authority and bring any required
+change to protected obligations to the user. Keep independent authorized work moving.
+
 The [Riker exchange guide](../riker/RIKER.md) owns user-relayed consultation.
 Consultation is optional. Advice relayed by
 the user is not automatically their endorsement; assess it and preserve its

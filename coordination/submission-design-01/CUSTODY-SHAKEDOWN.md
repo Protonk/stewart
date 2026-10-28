@@ -6,6 +6,13 @@ implementation guides at 68a5f97. It changes no responsibility or removal author
 The user asked what Stewart takes custody of and invited discomfort to identify
 where the design deserves closer attention.
 
+**Current disposition:** the user subsequently asked to preserve these concerns
+without making them the immediate successor's work queue. The plan owns
+[when to revisit them](../../DEVELOPMENT-PLAN.md#when-to-revisit-the-custody-concerns),
+the conditions under which work may proceed and the responsible work items.
+The discussion below explains the concerns; it is not a standing instruction to
+investigate them on intake or a new product obligation.
+
 ## The job custody serves
 
 I understand the mission as enabling someone to commission a bounded inquiry,
