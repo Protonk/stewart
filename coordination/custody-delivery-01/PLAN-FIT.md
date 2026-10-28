@@ -71,6 +71,54 @@ reconciliation.
    sub-agents are this harness's dispatch facility; a CLI/SDK Claude session as a
    product participant still needs explicit bounded permission and usage headroom.
 
+## User responses, 2026-10-28 UTC
+
+Recorded from the user's reply; wording condensed, meaning preserved.
+
+- **Linux route:** set up a Linux container together with Apple's `container`
+  tool; it may need installing plus further installs. Observed: this host is
+  macOS 26.7.1 on arm64 and `container` is not on PATH. A container on this Mac
+  gives a real Linux kernel; it does not by itself cover x86_64 or WSL.
+- **1 Access route:** settle together, write it down and agree on it. That agreed
+  document also settles how many Stewart auditors (product participants) trials use.
+- **2 Answer structure:** the user needs it elaborated further.
+- **3 Delivery trigger:** discuss and design it, aiming to make things easier.
+- **4 Specimens only:** accepted. Leg-1 audits are development/acceptance
+  specimens until the service can launch and close.
+- **5 Re-entry:** accepted. A continuing auditor can find out what happened to an
+  interrupted operation or return to the submission tool after compaction;
+  otherwise the manager collects.
+- **6 Unknown-selection deferral:** not yet accepted. The user first needs to know
+  whether the condition could be avoided entirely.
+- **7 Capacity:** “1 or 2 auditors” meant development sub-agents; the previous
+  review shape was fine. Root may establish its own workflows dynamically within
+  a rough ceiling of ten simultaneous agents. Claude CLI/SDK sessions as product
+  participants are not granted by this; their number belongs in the item-1 document.
+
+Root opened discussion with item 6. Root's position, for discussion and not yet
+agreed: the condition cannot be avoided entirely, because it means every
+trustworthy copy of the small selection record (element identities, names,
+digests, order) is gone, and no design recovers a record with no surviving copy.
+It can be removed from every ordinary path and confined to destruction or
+tampering of Stewart's own records:
+
+- atomic edits/seal and same-operation accounting already keep interruptions,
+  lost replies and submit/collect races from producing it (prototype mechanism
+  evidence only);
+- after seal, deliver the sealed manifest to the manager's independent
+  destination before any bytes, and return it or its digest in the seal reply;
+  later custody damage then yields known missing members, which already has an
+  accepted close direction;
+- during authoring, keep two independent self-verifying derivations of current
+  membership inside custody (immutable membership revisions plus operation
+  records naming element identity and digest);
+- enforced auditor access (item 1) removes the likeliest cause of destroyed
+  records, an auditor shell touching custody.
+
+The open policy would then narrow to what close does after Stewart's own custody
+records are destroyed or tampered with. It does not block leg 1, whose audits
+are specimens and remove nothing.
+
 ## Coordinator reconciliation before a commission
 
 - W-row disposition table: W02/W05/W07/W09/W11/W12 split into leg-1 part and

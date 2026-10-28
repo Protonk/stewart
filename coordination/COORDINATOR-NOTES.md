@@ -44,6 +44,16 @@ fits one or two agents, but is not dispatch-ready. Seven user decisions lead,
 with the access route first; coordinator reconciliation items follow. The next
 step is the user's response; nothing is dispatched.
 
+The user answered all seven items; PLAN-FIT records the answers and root's
+opening position. Accepted: specimens-only leg-1 audits (4) and re-entry limited
+to a continuing auditor, including return to the submission tool after compaction (5).
+Items 1 and 3 are to be designed together, with item 1 written into an agreed
+document that also fixes the number of Stewart auditors in trials. Item 2 needs
+elaboration. Item 6 waits on whether the condition can be avoided. The user will
+set up a Linux container with Apple's `container` tool together with root (not
+installed here; macOS 26.7.1 arm64). Root may now run its own workflows within a
+rough ceiling of ten simultaneous agents. Root picked item 6 to discuss first.
+
 The outgoing tenure ended with the user's directive: “Make those reconciliations,
 then write a turnover brief and stand by.” Its reconciliation made F3/F5's
 dependencies explicit for each bounded leg, allowing custody/delivery before live
