@@ -44,6 +44,11 @@ R3/R4/R5 interesting together; R1 wants a pitch; R9 open, possibly revived as
 typing under R2. On that basis root drafted
 [the MVP design](linux-mvp-01/DESIGN.md) for discussion. CONTRACTS is unchanged
 until the user decides; the draft lists what would change and its open questions.
+The user then asked for three views of the encounter, which are now in
+[linux-mvp-01/](linux-mvp-01/README.md): the conversation (prompts verbatim, replies,
+and a verbatim copy of the held-back file), the radical design, and a clean-sheet
+presentation (`STEWART.md`), plus root's final reservations about the new stance.
+The user will review the folder once committed. Next: that review.
 
 ## Previous checkpoint: Opus tenure at turnover
 
