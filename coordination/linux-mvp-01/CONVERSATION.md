@@ -1329,3 +1329,59 @@ This turn produced [END-TO-END.md](END-TO-END.md), a rewritten
 [README.md](README.md), and [AGENTS.md](AGENTS.md) with a `CLAUDE.md` link to it, as
 at the repository root. The coordinator workspace and turnover brief live outside
 this folder.
+
+---
+
+## 17. The second transfer, and a mission for the code
+
+> You are assuming the coordinator role for now. You should find a turnover brief
+> in the repo. On top of that, I have some notes. As you take over, keep the
+> coupling library provisional. survey and claim-check were proposals developed
+> during this conversation; their concrete presentation doesn’t mean their design
+> as instruments of inquiry is settled. Stewart should remain agnostic about
+> auditors’ conclusions, while we remain responsible for judging the arrangements
+> it offers them. Keep protocol conformance distinct from that design question,
+> and bring consequential choices about answer forms and stopping rules into our
+> discussion. Further, you should collect your understanding of the new design and
+> first return to me with a new mission statement. Don't update the README, but
+> pitch a new code mission. We are still a custodian. We are still working with
+> cooperative actors in the manager and auditor. We are still interesting in
+> allowing the manager to focus on their problem and not the vagaries of how to
+> ask a question the right way where the asker has a different context than the
+> answerer. We no longer care about git.
+
+This turn opened the next coordinator's tenure (Claude Code, Fable 5.1). The
+reply, as given:
+
+Here is the mission I propose for the successor code. The README is untouched. This is a pitch, and CONTRACTS is unchanged until you adopt it.
+
+### Mission
+
+Stewart is a custodian for bounded inquiries between cooperative parties. A manager who holds material and has a problem about it gives Stewart the problem in their own words, the material they chose, and the shape of answer they want. Stewart builds a world for an auditor that contains exactly that and the means to answer, places the auditor in it, and returns the answer with a faithful record of how it was produced.
+
+Stewart exists so that the manager can attend to their problem rather than to the asking. Asker and answerer never share a context. The manager should not have to learn how a particular model or person wants to be addressed, how to protect the auditor's latitude, or how to make a settled question worth re-examining. Stewart's arrangements carry that work once and in the open: the orientation, the answer's form, its stopping rule, its exits, and a protocol through which an auditor can always re-establish what it is working with.
+
+Stewart is agnostic about conclusions and open about form. It never judges whether an answer is right, valuable or welcome. Every form it offers must let an auditor say that nothing was found, that the evidence is missing, or that the question is wrong, and no form is designed to favor an outcome. Its form opinions live in small, versioned, readable files that the manager sees before a run and that every return records. Those arrangements are instruments of inquiry. Showing that a real auditor can work in one is Stewart's responsibility. Judging whether it is a good instrument belongs to the people who write Stewart's arrangements; that judgment is never finished and is never settled by agreement with a preferred outcome.
+
+Custody is faithful holding. Stewart keeps copies of what it was given and what was produced, records what was observed, acknowledged and claimed in separate attributed fields, writes every record once, verifies what it delivers, and answers at once and without hedging about what it did. Material is files the manager selected. Where they came from is the manager's business.
+
+### What changed from the README's mission
+
+- Material was "held in Git". Now it is files the manager selected, and Stewart has no relationship with version control. History reaches an auditor only as exported files.
+- The manager used to commission, observe and dispose. Now the manager states the problem, selects material, chooses the answer form and sets limits. Live observation is not offered, and close is a record because Stewart deletes nothing.
+- The auditor used to work in a checkout with a shell. Now its world is the arrangement: for a model, Stewart's tools and nothing else; for a person, a packet they agree to work from.
+- The old mission never said why a manager wanted help. This one names the gap between asker and answerer as the reason the product exists.
+- "Supported question types and the constrained audit space" become arrangements and couplings, and the mission says who is responsible for judging them.
+- Custody was tied to a repository and a checkout. Now it is faithful holding and attribution of what each party authored.
+
+### Choices I will bring to you before anything is built
+
+The mission requires only that form opinions are written down, shown before a run and recorded in the return. It does not commit to the coupling library as the mechanism, to `survey` or `claim-check` as instruments, to answer slots exposed as tools, to mechanical citation checking, or to the reminder and near-limit warning. Those last two push toward submitting and were the previous coordinator's inventions. The choices I see as consequential:
+
+1. Answer form: typed slots exposed as tools, free-form elements rendered by a template, or both. `claim-check` as sketched needs the first.
+2. Stopping rules: stated to the auditor only, or checked by Stewart at submit. I recommend stated only, never enforced.
+3. The prior: shown or sealed, and whether that is fixed per coupling or chosen per problem.
+4. Citation checking: mechanical, report-only, or none. A mechanical check rewards citing over synthesis and over arguments from absence.
+5. The two nudges, a reminder after an unsubmitted stop and a warning near a limit: keep, drop, or make them manager settings.
+
+Intake is done. I consumed and stubbed the turnover brief, rewrote the current account for this tenure, added one line to the standing orders about keeping process out of app conversations, and recorded your note and this reply as turn 17 of the conversation file. Nothing is pushed and no worker or model call has run. Next is your verdict on this mission.

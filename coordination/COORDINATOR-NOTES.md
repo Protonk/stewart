@@ -1,72 +1,76 @@
 # Current coordinator account
 
-Updated 2026-10-28 UTC at the outgoing coordinator's turnover.
-This is a working account of observed work, authority received and remaining
-questions. [Standing orders](STANDING-ORDERS.md) own operating instructions;
-[the directory entry](README.md) identifies intake documents. The optional
-[turnover](TURNOVER.md) is supplementary. Reconcile these observations with
-actual files, user instructions and available harness state after interruption.
+Updated 2026-10-28 UTC at the incoming coordinator's intake, the second transfer
+that day. This is a working account of observed work, authority received and
+remaining questions. [Standing orders](STANDING-ORDERS.md) own operating
+instructions; [the directory entry](README.md) identifies intake documents. The
+optional [turnover](TURNOVER.md) is supplementary. Reconcile these observations
+with actual files, user instructions and available harness state after
+interruption.
 
-This account was condensed at this turnover to current state, open work and the
-local records it owns. The full earlier narrative, covering every completed
-commission since 2026-10-24, is in Git:
+The account was condensed at the first 2026-10-28 turnover to current state, open
+work and the local records it owns. The full earlier narrative, covering every
+completed commission since 2026-10-24, is in Git:
 `git show 313c4e3:coordination/COORDINATOR-NOTES.md`. Each completed commission's
 own RESULT or COMPLETION record owns its findings and evidence.
 
-## Current checkpoint: turnover after the design conversation
+## Current checkpoint: intake and the mission pitch
 
-**Tenure.** The user directed the transfer in: “Please read
-`coordination/TURNOVER.md` and prepare to assume the coordinator role.” Intake ran
-on 2026-10-28 at clean HEAD `4037ec3` (records in
-`.scratch/coordinator-intake-20261028-01/`). The user then held a long design
-conversation and directed this turnover. Commits `7f29e83` through the turnover
-commit record the tenure.
+**Tenure.** The user directed the transfer in this session's first message:
+"You are assuming the coordinator role for now. You should find a turnover brief
+in the repo." Intake ran on 2026-10-28 at clean HEAD `05a21d4` (Claude Code,
+Fable 5.1; record in `.scratch/coordinator-intake-20261028-02/`). The brief was
+consumed and stubbed; Git holds it at `05a21d4`.
 
-**The design conversation.** It is recorded in full in
-[linux-mvp-01/](linux-mvp-01/README.md). Read that folder's README and AGENTS file
-first. It moved from an alignment check to a proposed redesign of the successor:
-Stewart as a *problem router* for cooperative actors who want to make it *just*
-so. [ROUTER.md](linux-mvp-01/ROUTER.md) and
-[END-TO-END.md](linux-mvp-01/END-TO-END.md) are the latest working statements.
+**User direction at intake** (quoted in full as turn 17 of
+[linux-mvp-01/CONVERSATION.md](linux-mvp-01/CONVERSATION.md); condensed here):
 
-**User direction given in the conversation** (quoted in full in
-`linux-mvp-01/CONVERSATION.md`; condensed here):
+- The coupling library stays provisional. `survey` and `claim-check` were
+  proposals developed in the conversation; their concrete presentation does not
+  settle their design as instruments of inquiry.
+- Stewart remains agnostic about auditors' conclusions; we remain responsible
+  for judging the arrangements it offers them.
+- Protocol conformance (whether a real auditor can work in the arrangement) is a
+  distinct question from that design question.
+- Consequential choices about answer forms and stopping rules come to the user.
+- The first deliverable is a new mission statement for the successor code,
+  pitched in chat with the README left unchanged. Stewart is still a custodian;
+  manager and auditor are still cooperative; the point is still to let the
+  manager focus on their problem rather than on how to ask a question when asker
+  and answerer have different contexts; Git no longer matters.
 
-- The auditor has only Stewart's tools (“R2 I want 100%”). Stewart runs the
-  auditor rather than leaving launch to the manager (“I prefer the simplicity of
-  R2 over R4”).
-- Linux only, not a Mac tool (R6). Drop the Python baseline (“R8 I basically agree
-  with full stop”). Git dependence has bothered the user; exporting history as
-  files is “fine” (R7).
-- Question types: the coordinator recommended a small library of question-answer
-  couplings over a no-types panel; the router sketch builds on that.
-- Material injection is disallowed by design. The cooperative manager selects and
-  words the question and the material, may insert preferences, and is responsible
-  for the answers.
-- After the MVP, the auditor may become a real human. Think of Stewart as a
-  problem router, not an agent harness.
-- Testing whether read-only investigation is enough is a research project.
-  Neutrality needs restating.
-- Provider-side reasoning and compaction are not Stewart's concern. The submission
-  tool must make compaction harmless (“what am I working with again”).
-- Usefulness can only be learned if Stewart is fast. “Fast” means the app: the
-  manager interface and submission tool respond quickly and instill confidence.
-  Audit time and effort are the manager's business.
-- Develop toward and deploy in containers, with build dependencies the
-  coordinator selects; an experimental apparatus that doesn't ship; a small fast
-  Rust app that does.
-- The manager side needs design.
-- A real-model conformance gate is wanted (“EXCELLENT”); END-TO-END.md designs it.
+**Delivered.** The mission pitch, the changes from the README's mission, what is
+held provisional and the choices to bring to the user are recorded as the
+coordinator's reply in turn 17. It is a proposal; CONTRACTS is unchanged.
 
-**What has not changed.** CONTRACTS, CLAUDE.md/AGENTS.md, DEVELOPMENT-PLAN,
-VISION-PLAN and all product code are unchanged by the conversation. The user has
-not yet adopted the router into CONTRACTS; they said they would review the folder.
-Much of the router's detail is the coordinator's proposal, not user direction;
-`linux-mvp-01/RESERVATIONS.md` separates the two for the first draft.
+**Coordinator's reading of the design** (from ROUTER.md and END-TO-END.md under
+the user's direction; the folder's AGENTS file governs attribution):
 
-**State.** No worker, workflow, background command or Claude launch is active or
-pending, and none ran this tenure. No container was started this tenure. Nothing
-has been pushed: `origin/main` is at `3442f84`.
+- A problem is what the manager writes: the question verbatim, selected files,
+  an answer form, auditor settings and a destination. Stewart builds an
+  arrangement from it, places an auditor in it through an adapter, and returns
+  the answer with its record.
+- The arrangement is the auditor's whole world: for a model, the protocol tools
+  plus the form's slots; for a person, a packet and an agreement.
+- One protocol call restores everything an auditor is working with, so provider
+  compaction is harmless by construction.
+- Records are write-once; Stewart deletes nothing; close is a record.
+- Responsiveness is a product requirement for manager commands and protocol
+  calls, never for audits.
+- One static Linux binary ships; build, test and experiment containers never do.
+- Decided by the user in the conversation: the auditor has only Stewart's tools;
+  Stewart runs the auditor; Linux only; no Python baseline; no Git; material
+  injection is disallowed by design and the manager owns wording and selection;
+  the submission tool makes compaction harmless; fast means the app; containers
+  for development; a real-model conformance gate.
+- Proposed by coordinators, not decided: the coupling mechanism and its two
+  starter couplings, slots as tools, mechanical citation checks, the reminder and
+  near-limit warning, the access log in the return, never deleting, the home
+  layout, the command set and the response budgets' numbers.
+
+**State.** No worker, workflow, background command, container or Claude launch is
+active or pending, and none ran this tenure. Nothing has been pushed:
+`origin/main` is at `3442f84`.
 
 ## Paused: first-leg preparation
 
@@ -82,23 +86,29 @@ dissolved by it.
 
 ## Next
 
-1. **The user's review** of `linux-mvp-01/`, and whether to adopt the router.
-2. **If adopted:** restate the principles in CONTRACTS (a draft of the neutrality
-   restatement is in the conversation, turn 12), retire the Python baseline and the
-   Git-dependent contracts, and rewrite DEVELOPMENT-PLAN. CLAUDE.md/AGENTS.md
-   encode the old design's custody rules and belong to the user; change them only
-   at the user's direction.
-3. **Design the manager side.** The user named it a gap.
-4. **Open questions from the conversation:** resuming a dead run; the person adapter
-   and transport; how form opinions get added to the library.
-5. **The apparatus:** build, test and experiment container images, with build
+1. **The user's verdict on the mission pitch** and on adopting the router.
+2. **If adopted:** restate the principles in CONTRACTS (the neutrality
+   restatement drafted in conversation turn 12 and the mission pitched in
+   turn 17), retire the Python baseline and the Git-dependent contracts, and
+   rewrite DEVELOPMENT-PLAN. CLAUDE.md/AGENTS.md encode the old design's custody
+   rules and belong to the user; change them only at the user's direction.
+3. **Answer forms and stopping rules.** Bring each consequential choice to the
+   user before building: typed slots versus free-form elements, stated versus
+   checked stopping rules, shown versus sealed prior, citation checking, and the
+   two submission nudges. Turn 17 lists them.
+4. **Design the manager side.** The user named it a gap.
+5. **Open questions from the conversation:** resuming a dead run; the person
+   adapter and transport; how form opinions get added to the library.
+6. **The apparatus:** build, test and experiment container images, with build
    dependencies the coordinator selects.
-6. **Model use needs permission.** The real-model conformance gate and any
+7. **Model use needs permission.** The real-model conformance gate and any
    experiment calls the model provider. Those are model-consuming sessions and
    need the user's explicit, bounded permission and a budget under the standing
    orders.
 
 ## Environment notes
+
+Inherited observations from the previous tenure; not re-tested at this intake.
 
 - This harness's command sandbox refuses Apple `container` commands and `ps`/`pgrep`.
   Container service and run commands go through the user's terminal (`!`).
@@ -126,7 +136,8 @@ stays with that report under the retention rules.
 
 | Records | Owner of findings |
 | --- | --- |
-| `alignment-20261028-01/`, `coordinator-intake-20261028-01/` | This tenure. The alignment notes are copied verbatim into `linux-mvp-01/`. |
+| `coordinator-intake-20261028-02/` | This tenure's intake. |
+| `alignment-20261028-01/`, `coordinator-intake-20261028-01/` | The design-conversation tenure. The alignment notes are copied verbatim into `linux-mvp-01/`. |
 | `route-research-01/`, `plan-fit-review-01/`, `answer-structure-check-01/`, `auditor-cases-01/` | PLAN-FIT, ANSWER-STRUCTURE and AUDITOR-CASES (paused first-leg work) |
 | `linux-first-light-01/`, `linux-check-01/`, `stale-tests-01/`, `fifo-hygiene-01/` | This account. `linux-check-01/RESULTS.md` holds the Linux findings that DEVELOPMENT-PLAN cites. |
 | `opus-intake-01/`, `opus-readiness-01/`, `opus-turnover-run-012/`, `astra-turnover-20261027-01/`, `coordinator-intake-run-012/`, `coordinator-transfer-guidance-01/`, `first-leg-riker-brief-01/` | This account (earlier intakes and turnovers) |

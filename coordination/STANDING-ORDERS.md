@@ -21,7 +21,9 @@ ordinary disagreements without repeated permission requests. Preparing an
 approach does not commission its execution. Bring consequential crossings and
 important failures back with their reasons; complete independent authorized
 work meanwhile. Shared check-ins normally explain outcomes, evidence and open
-choices, with detail where it helps a decision.
+choices, with detail where it helps a decision. When the user is discussing
+the app, keep development process out of the reply and in the files; the
+user asked for this on 2026-10-28.
 
 Distinguish user direction, established commitments, observed facts and your
 recommendations beside the work they explain. No separate judgments file is
