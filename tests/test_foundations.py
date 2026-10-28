@@ -16,7 +16,7 @@ from stewart import _util
 from stewart._json import loads_control
 from stewart._bootstrap import MANIFEST_SCHEMA, observe_runtime, runtime_digest, runtime_manifest, verify_runtime
 from stewart._bootstrap import StewartError
-from support import clean_environment, package_import_violations
+from support import clean_environment, package_import_violations, project_copy_ignore
 
 
 @pytest.mark.smoke
@@ -242,7 +242,7 @@ def test_test_runner_rejects_parent_configuration(tmp_path, run_cmd):
     project = Path(os.environ["STEWART_TEST_PROJECT"])
     parent = tmp_path / "parent"
     child = parent / "stewart"
-    shutil.copytree(project, child, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", ".scratch", ".git", "dist", "build"))
+    shutil.copytree(project, child, ignore=project_copy_ignore(project))
     sentinel = parent / "parent-plugin-fired"
     (parent / "pytest.ini").write_text("[pytest]\naddopts = --strict-markers\n")
     (parent / "conftest.py").write_text(f"from pathlib import Path\nPath({str(sentinel)!r}).write_text('fired')\n")
@@ -420,7 +420,7 @@ runpy.run_path(sys.argv[0], run_name='__main__')
 def test_runner_applies_config_contents_and_reports_selection(tmp_path, run_cmd):
     project = Path(os.environ["STEWART_TEST_PROJECT"])
     child = tmp_path / "project"
-    shutil.copytree(project, child, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", ".scratch", ".git", "dist", "build"))
+    shutil.copytree(project, child, ignore=project_copy_ignore(project))
     result_path = tmp_path / "selection.json"
     command = [sys.executable, "-I", "-B", child / "scripts/check.py", "--result", result_path,
                "-q", "-k", "test_serialization_vectors"]

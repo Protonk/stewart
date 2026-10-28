@@ -139,6 +139,23 @@ def stage_runtime(destination: Path) -> Path:
     return destination
 
 
+def project_copy_ignore(source: Path):
+    """A ``shutil.copytree`` ignore for copying the project at ``source`` into a test.
+
+    Caches, retained runs, Git and build trees are skipped wherever they occur.
+    The successor's Rust build output and retained test evidence are skipped only
+    at ``successor/``: they are large, ignored by Git, unused by the Python suite,
+    and the evidence can hold FIFOs, which copytree cannot copy.
+    """
+    def ignore(directory, names):
+        skipped = {"__pycache__", ".pytest_cache", ".scratch", ".git", "dist", "build"}.intersection(names)
+        if Path(directory) == source / "successor":
+            skipped |= {"target", "evidence"}.intersection(names)
+        return skipped
+
+    return ignore
+
+
 def reduced_project(source: Path, destination: Path, probes: dict[str, str]) -> Path:
     """Copy the project with only the harness modules and the given probe files under tests/.
 
@@ -147,9 +164,10 @@ def reduced_project(source: Path, destination: Path, probes: dict[str, str]) -> 
     environment and builds a wheel, so callers group their invocations.
     """
     harness = {"conftest.py", "support.py"}
+    project_ignore = project_copy_ignore(source)
 
     def ignore(directory, names):
-        skipped = {"__pycache__", ".pytest_cache", ".scratch", ".git", "dist", "build"}.intersection(names)
+        skipped = project_ignore(directory, names)
         return skipped | set(names) - harness if Path(directory) == source / "tests" else skipped
 
     shutil.copytree(source, destination, ignore=ignore)

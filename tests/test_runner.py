@@ -14,7 +14,8 @@ import types
 
 import pytest
 
-from support import budget_overruns, clean_environment, path_without_rustc, plugin_origins, reduced_project, rustc_stub
+from support import (budget_overruns, clean_environment, path_without_rustc, plugin_origins, project_copy_ignore,
+                     reduced_project, rustc_stub)
 
 
 @pytest.mark.smoke
@@ -43,10 +44,27 @@ def test_budget_charges_all_phases_and_ignores_node_names():
     assert list(budget_overruns({"renamed": phases}, 0.6).values()) == [sum(phases.values())]
 
 
+@pytest.mark.smoke
+def test_project_copy_leaves_successor_output_behind_and_keeps_the_same_names_elsewhere(tmp_path):
+    """The successor's build output and FIFO-bearing evidence stay behind; the same names elsewhere copy."""
+    source = tmp_path / "source"
+    for name in ("successor/Cargo.toml", "successor/target/debug/x", "successor/evidence/case/request.json",
+                 "tests/evidence/kept.txt", "src/target/kept.txt", ".scratch/run/x"):
+        (source / name).parent.mkdir(parents=True, exist_ok=True)
+        (source / name).write_text("")
+    os.mkfifo(source / "successor/evidence/case/material.bin")
+    # Firing control: a copy that only skips the usual names stops at the FIFO.
+    with pytest.raises(shutil.Error, match="named pipe"):
+        shutil.copytree(source, tmp_path / "plain", ignore=shutil.ignore_patterns(".scratch"))
+    shutil.copytree(source, tmp_path / "copy", ignore=project_copy_ignore(source))
+    copied = sorted(str(path.relative_to(tmp_path / "copy")) for path in (tmp_path / "copy").rglob("*") if path.is_file())
+    assert copied == ["src/target/kept.txt", "successor/Cargo.toml", "tests/evidence/kept.txt"], copied
+
+
 def test_runner_budgets_fire_on_setup_and_total_work(tmp_path, run_cmd):
     source = Path(os.environ["STEWART_TEST_PROJECT"])
     project = tmp_path / "project"
-    shutil.copytree(source, project, ignore=shutil.ignore_patterns("__pycache__", ".pytest_cache", ".scratch", ".git", "dist", "build"))
+    shutil.copytree(source, project, ignore=project_copy_ignore(source))
     (project / "tests/test_budget_probe.py").write_text(
         "import time\nimport pytest\n@pytest.fixture\ndef slow_setup():\n"
         "    time.sleep(0.15)\n@pytest.mark.smoke\ndef test_budget_probe(slow_setup):\n    pass\n")

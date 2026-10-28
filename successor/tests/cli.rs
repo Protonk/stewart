@@ -232,6 +232,8 @@ fn links_and_special_files_do_not_become_inputs() {
     let p = std::ffi::CString::new(q.material.to_str().unwrap()).unwrap();
     assert_eq!(unsafe { libc::mkfifo(p.as_ptr(), 0o600) }, 0);
     assert_eq!(reason(&q.intake("accept")), "not_regular");
+    // The refusal is recorded; a FIFO left in evidence would stop whole-tree copies.
+    fs::remove_file(&q.material).unwrap();
     let parent = Case::new("unsafe-parent");
     let link = parent.root.join("linked");
     symlink(&parent.root, &link).unwrap();
