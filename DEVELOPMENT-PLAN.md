@@ -237,8 +237,10 @@ The user offers a preparation audit. The coordinator recommends the bounded
 [Information preservation question](coordination/opus-preparation-audit-01/QUESTION.md)
 about whether decided obligations survive translation into this candidate scope,
 especially dependencies on deferred capabilities. Source 4636a67, static inspection
-and the finite input route are specified. It is proposed, not dispatched; it
-supplies no runtime qualification or implementation commission.
+and the finite input route are specified. The user subsequently commissioned the
+audit: “Excellent. Run that audit.” Its [commission](coordination/opus-preparation-audit-01/COMMISSION.md)
+owns the independent static return and ordinary frozen-Python custody. It supplies
+no successor runtime qualification or implementation commission.
 
 ## Work register
 

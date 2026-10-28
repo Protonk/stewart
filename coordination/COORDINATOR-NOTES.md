@@ -32,8 +32,13 @@ as carried into the candidate implementation commission. The
 4636a67, the contract-to-commission route, selected inputs, static scope and useful
 return. It tests hidden dependencies on deferred capabilities while allowing
 legitimate deferral, no supported gap or reframe. This is an audit proposal;
-no auditor/session/Claude launch or implementation is dispatched. Root owns its
-preparation and `.scratch/opus-preparation-audit-01/` recording.
+no auditor/session/Claude launch or implementation was dispatched by that proposal.
+The user then commissioned it: “Excellent. Run that audit.”
+[The commission](opus-preparation-audit-01/COMMISSION.md) owns the frozen-Python
+custody route, fresh auditor scope and preservation/close obligations. Root has
+copied the exact pinned inputs into `audits/opus-preparation`, owns preparation
+and `.scratch/opus-preparation-audit-01/` recording, and will save the actual handoff
+and worker handle before investigation. No implementation or turnover is launched.
 
 ## Manager interaction decisions supporting that scope
 
