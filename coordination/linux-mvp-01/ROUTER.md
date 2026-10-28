@@ -268,4 +268,6 @@ to.
 - `new`, `preview`, `commission`, `run`, `status`, `collect`, `deliver`, `compare`,
   `close` and `help`, all within the response budgets.
 - Release binaries for Linux x86_64 and aarch64, built and tested in the apparatus.
-- A handoff package for a WSL2 run.
+- A handoff package for a WSL2 run: the release binary plus the test suite's
+  driver and fake provider, run natively in WSL2, since WSL's own environment is
+  what's being tested.
