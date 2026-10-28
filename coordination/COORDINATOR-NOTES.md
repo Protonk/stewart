@@ -161,6 +161,20 @@ Two consequences need the user:
 After export, the user deleted the kept Python container; the pulled images remain
 for reruns.
 
+The user directed: “Fix those two tests.” Commit 54b1c91 exempts top-level
+`coordination/` from the authority ratchet (with a planted control showing that a
+`coordination` directory elsewhere still fails) and drops `COORDINATOR-HANDOFF.md`
+from the sdist include list and its test. Over a clean archive of that tree
+(`.scratch/stale-tests-01/`), macOS gave 1138 passed, 1 skipped, 1 failed. The failure,
+`test_runner_withholds_rustc_from_provisioning`, is a load flake: pip gives
+`rustc --version` a 0.5 s timeout, the run was about 45% slower than the control,
+and the node passed 3 of 3 reruns. Two checkout-only hazards remain for the user:
+each `cargo test` leaves a FIFO in the ignored `successor/evidence/` (four so far,
+from `successor/tests/cli.rs:230`), and 17 runner/foundation tests copy the whole
+project except `.scratch`, `.git`, `dist` and `build`, so `shutil.copytree` fails on
+the FIFO. Those copies also include `successor/target` (175 MB) each time. The full
+suite therefore stays red when run in the checkout itself.
+
 The user agreed root's leans on the case table's Q1, Q5, Q20 and Q32, chose
 option B for Q10 (submit proceeds with a note over an unresolved own operation),
 and settled Q33 (question printed verbatim on request, slim help, no question
