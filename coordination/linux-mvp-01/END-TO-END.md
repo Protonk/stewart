@@ -17,6 +17,12 @@ close": C5/C8/C12 are qualified and C15/C16 added. These are acceptance designs,
 not executed checks. Preview, auditor retry and question typing remain separate
 discussions; their existing proposed checks are not settled by this amendment.
 
+Amended 2026-10-29 following CONTRACTS' "Successor manager preparation and
+acceptance": C1/C2/C8/C11/C16 follow prepared selection and close before launch;
+C17 covers contextual failures and interrupted acceptance. These are acceptance
+designs, not executed checks. Exact material support, the remaining arrangement
+inspection surface and retention/removal remain unsettled.
+
 ## What we care about
 
 Each claim below is something the router promises. A test passes only when it
@@ -35,12 +41,13 @@ failing.
 | C8 | Close works from every state. |
 | C9 | Stewart answers quickly and every reply says what it did. |
 | C10 | Real models can actually use the arrangement and finish. |
-| C11 | The app teaches: the problem file, the preview and the receipt show the manager exactly what the auditor gets. |
+| C11 | Help, the scaffold, preparation and the receipt explain the submission boundary and identify the selected material. |
 | C12 | The run is a handoff: a receipt's run line works for whoever holds it, from anywhere. |
 | C13 | A dead run continues: the audit is its ledger, and `run` again picks it up. |
 | C14 | The process promises hold: refusals are recorded with their bytes and reason, every gap has a disposition, no record carries a verdict. |
 | C15 | A manager recovers the fixed commission through its reference without the original session or source files. |
 | C16 | Status distinguishes the run, answer seal, delivery and closure, with evidence and usable next actions. |
+| C17 | Preparation/commission failures report their context, effects and uncertainty through Stewart's interface. |
 
 Answer quality is not on the list. Stewart doesn't judge answers, so its tests
 don't either.
@@ -86,8 +93,8 @@ points at it through its provider URL setting and doesn't know it's fake.
 
 - **Pass:** every recorded request to the provider carries exactly the
   arrangement's tools (the protocol plus the coupling's slots), its frame and its
-  limits. `stewart preview` produces the same arrangement digest as the first
-  request actually sent.
+  limits. The accepted receipt names the same arrangement digest as the first
+  request actually sent; its settings agree with the prepared selection.
 - **Differing:** a problem with a different coupling changes the tool list exactly
   by that coupling's slots.
 - **Invariance:** changing the material changes the materials index but not the
@@ -95,8 +102,8 @@ points at it through its provider URL setting and doesn't know it's fake.
 - **Also:** read, search and list given paths outside the material (`../`,
   absolute paths, names that only exist on the host) are refused with a sign, and
   nothing outside the material appears in any reply.
-- **Sabotage:** a test build that adds one extra tool, and one where preview
-  renders a different frame from the one sent. Both must fail.
+- **Sabotage:** a test build that adds one extra tool, and one where the recorded
+  arrangement differs from the one sent. Both must fail.
 
 ### C2 — Question and material arrive unchanged
 
@@ -107,9 +114,10 @@ points at it through its provider URL setting and doesn't know it's fake.
   difference.
 - **Invariance:** the same material supplied under a different directory path
   serves identical content under the same names.
-- **Also:** non-UTF-8 bytes, empty files, very long lines, files at the size limit,
-  and symbolic links and special files inside a supplied directory (listed in the
-  receipt as not copied).
+- **Also:** empty files, very long lines and files at the size limit, with reader
+  checks for each supported format. Non-UTF-8 content follows the decided format
+  contract rather than an assumed text reader. Symbolic links, special files and
+  other unsupported entries refuse intake rather than silently reducing it.
 - **Sabotage:** material changed between intake and read in a test build, and a
   normalizing read. Both must fail.
 
@@ -204,11 +212,17 @@ state appears in any reply or in the return.
 
 ### C8 — Close from every state
 
-Close runs against each state: commissioned, running (live loop), ended without
+Close runs against each state: preparation, failed intake, copying in flight,
+accepted but never launched, running (live loop), ended without
 submission, submitted, delivered, partially delivered, damaged storage and
 already closed. Each reaches the documented effects or an explicit unfinished
-outcome with its supported continuation. A prior auditor seal keeps its actor;
-an unsubmitted selection is sealed by the manager. Sealing alone never counts
+outcome with its supported continuation. Before launch it leaves the manager's
+folder intact, prevents future launch and creates no answer, empty manager seal
+or answer-placement confirmation. Failed intake is accounted for without forcing
+successful submission. Race close with intake using controlled synchronization;
+their outcomes must agree and no launch may follow closing. After launch a prior
+auditor seal keeps its actor; an unsubmitted selection is sealed by the manager.
+Sealing alone never counts
 as stopped execution. Delivery preceding the first close request permits ordinary
 close to confirm placement;
 close that first produces a copy presents a seal/delivery-bound confirmation
@@ -228,17 +242,19 @@ close unfinished with its evidence.
 Under the still-proposed never-delete rule, none removes anything (C6). There is
 no separate collect or deliver command. The differing case is delivery before
 versus during close; the invariance case changes the invoking directory and
-process after a lost reply. Sabotage controls skip post-copy confirmation or
-report sealed authoring as terminated execution; both must fail.
+process after a lost reply. Sabotage controls skip post-copy confirmation,
+report sealed authoring as terminated execution or invent an empty return before
+launch; each must fail.
 
 ### C9 — Quick, and sure of what it says
 
 - **Response budgets**, measured in the test image on material at the size
   limits and reported as actual timings:
-  - startup, `status`, `preview` and `help` answer within tens of milliseconds;
+  - startup, `status` and `help` answer within tens of milliseconds;
   - every protocol call except a full-material search does too;
-  - intake, commission readback, full search and delivery state their size first
-    and report progress; raw readback has no progress text in its byte stream.
+  - manager preparation and source scanning report scope and progress; intake,
+    commission readback, full search and delivery state their known size and
+    report progress; raw readback has no progress text in its byte stream.
 - **Certainty:** every protocol reply begins with the header line. Every refusal
   carries a reason, its effect and the next call. Every manager command's JSON
   output carries what changed and what was verified. A schema check runs over
@@ -248,29 +264,23 @@ report sealed authoring as terminated execution; both must fail.
 
 ### C11 — The app teaches
 
-- **Pass:** `stewart new` for each form writes a problem file whose every field
-  carries a comment and an example, which parses unchanged. `stewart preview` of
-  a witness problem renders the question byte for byte, the materials index with
-  the witness's names and sizes, and the same arrangement digest the first
-  request later carries (C1). The checks fire on planted cases: a name in the
-  question that appears in no material, a material the question mentions that is
-  not attached, a directory that expanded to nothing, and files skipped by the
-  default excludes, each naming what the auditor would experience.
-- **Advisory:** `commission` proceeds past every check and the receipt records
-  each one verbatim.
-- **Names:** a relative path is the material's name; an absolute path without a
-  label is refused with a sign; two materials that would share a name are refused
-  with a sign; nothing is renamed.
-- **Mouth and record:** the question inline and the same question by path, and
-  material listed in the file and the same material as arguments, produce
-  identical canonical problems and receipts. An unknown key and a bad value are
-  each refused naming the field and the fix.
-- **Excludes:** version-control administration, build output and over-limit
-  files inside an attached directory are listed as excluded; an explicit include
-  copies one of them; a symbolic link and a special file are listed as not copied.
-- **Sabotage:** a build whose preview renders a different frame from the one
-  sent (shared with C1), one that silently renames a colliding material, and one
-  whose receipt omits a fired check.
+- **Pass:** the scaffold and help explain ordinary editing and the instruction
+  to leave the folder unchanged from prepare through commissioning. Prepare's
+  manifest identifies the witness's question, material names, hashes and settings;
+  its handle alone accepts nothing. Explicitly confirmed commissioning preserves
+  those bytes and records the manager declaration separately from observed checks.
+- **Differing:** change selected contents or membership after preparation; the
+  old handle refuses rather than capturing the newer selection. Fresh preparation
+  permits the revised proposal under the same unaccepted reference.
+- **Invariance:** compose prepare and commission without an inspection pause;
+  the accepted bytes and declarations follow the same contract. Source edits after
+  acceptance leave the commission unchanged.
+- **Also:** omit the affirmative argument; no acceptance. Exceeded limits,
+  unsupported entries, unknown fields and name collisions have useful refusals,
+  with no silent exclusion or renaming. Close after prepare requires no unprepare.
+- **Sabotage:** silently accept newer bytes, omit an entry, accept without explicit
+  affirmation, or present matching scans as proof of a source snapshot. Each
+  control must fail. A separate preview/advice surface is not assumed by this test.
 
 ### C12 — The run is a handoff
 
@@ -351,7 +361,8 @@ report sealed authoring as terminated execution; both must fail.
 - **Pass:** at each independently witnessed lifecycle point, status reports the
   run observation, answer seal/actor, delivery verification/location and closure
   as distinct facts, with the receipt command and any specific next action.
-  Human and JSON presentations agree. The test covers a never-run commission,
+  Human and JSON presentations agree. The test covers preparation, failed intake,
+  uncertain acceptance, closure before launch, a never-run commission,
   held run, interruption, ordinary unsubmitted stop, limit stop, sealed but
   undelivered answer, partial delivery, verified delivery, incomplete close,
   completed close and close with an explicitly surrendered known delivery loss.
@@ -367,6 +378,31 @@ report sealed authoring as terminated execution; both must fail.
 - **Sabotage:** a build that calls every ended run submitted, one that calls a
   seal delivered, and one that converts unknown membership into an empty answer.
   All must fail.
+
+### C17 — Exceptional state has one contextual presentation
+
+- **Pass:** force a required source read to fail after prepare, then a destination
+  write, verification, acceptance-record operation and receipt-delivery operation
+  in separate cases. The caller receives a stable reason with operation and cause,
+  established or uncertain acceptance, known effects, retained locations and a
+  supported next action. Independent witnesses establish which effects occurred.
+  Check both human and structured presentations; helper output is not the only
+  diagnostic. These are controlled boundary failures, not timing-dependent sleeps.
+- **Differing:** fail before acceptance versus after acceptance but before reply.
+  The latter must reconcile to the original acceptance under the same handle,
+  without another capture, even when the source has subsequently changed.
+- **Invariance:** a permission change that leaves every required operation and
+  verification working does not itself manufacture a changed-selection failure.
+  Restoring source access permits a matching prepared selection to be retried.
+- **Also:** fail diagnostic persistence as well as the original operation; retain
+  both causes and distinguish reported from durably recorded diagnostics. Exercise
+  unclassified errors and reporting-channel failures. Forced termination and
+  startup failure test the caller's missing-result handling and later reconciliation,
+  not an impossible immediate reply from an absent process. Unknown acceptance
+  never becomes absent acceptance and never authorizes a fresh capture by default.
+- **Sabotage:** replace the original failure with a secondary logging error,
+  treat unreadable acceptance as absence, blindly repeat after a reply failure,
+  or omit a planned partial effect from the account. Each control must fail.
 
 ### Platforms
 

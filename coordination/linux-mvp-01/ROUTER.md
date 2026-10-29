@@ -16,6 +16,12 @@ qualified status and delivery continuation below follow CONTRACTS' "Successor
 manager readback, status and close." Preview, auditor retry and question
 typing/coupling remain separate discussions; this amendment decides none of them.
 
+Amended 2026-10-29 following the user's agreements recorded in CONTRACTS'
+"Successor manager preparation and acceptance": ordinary preparation, explicit
+prepare/commission, cooperative source checks, close before launch and contextual
+errors replace the earlier manager intake workflow. A separate arrangement
+preview, exact material support and retention/removal remain unsettled.
+
 ## The idea
 
 Someone has a problem: a question about material they hold. They want it answered
@@ -85,7 +91,9 @@ with its **record**.
 ## The problem
 
 A problem is a Markdown file: a front-matter header and, as the body, the
-question in the manager's own words.
+question in the manager's own words. The form and settings below remain
+illustrative; the separate typing/coupling discussion selects what ships.
+Materials now come from the submission folder, not an extra path list.
 
 ```markdown
 ---
@@ -93,11 +101,6 @@ stewart: problem/1
 inquiry: parser-2.4
 form: claim-check
 claim: The 2.4 parser accepts every input the 2.3 parser accepted.
-material:
-  - src/parser/
-  - exports/parser-history.txt
-  - label: design-notes
-    path: /home/me/notes/parser-2.4.md
 auditor:
   adapter: model
   model: claude-opus-5-5
@@ -115,28 +118,23 @@ change since 2.3 shipped.
 
 - **Inquiry:** the line of questions this problem belongs to. It is the
   manager's unit as far as Stewart is concerned.
-- **Question:** the body, delivered verbatim. It may also be given by path.
+- **Question:** the body, delivered verbatim.
 - **Material:** files and directories, copied and verified at intake. Anything that
-  lives elsewhere (history, test output, logs) comes in as exported files. Extra
-  material may be added as command-line arguments.
+  lives elsewhere (history, test output, logs) is placed in the submission folder
+  as exported files before preparation.
 - **Form:** the shape the answer should take, plus any fields that form asks for.
 - **Auditor:** which adapter, and its settings and limits.
 - **Destination:** where the return goes.
 
 ## Material
 
-Flexible at the mouth, exact in the record.
-
-- A path relative to the problem file is the material's name in the auditor's
-  index. An absolute path needs a label, which becomes its name. Two materials
-  that would share a name are refused with a sign; nothing is renamed silently.
-- A directory expands to its regular files. By default Stewart excludes
-  version-control administration, build output and files over the per-file
-  limit; every exclusion is listed, and the manager can include any of them
-  explicitly. Symbolic links and special files are listed as not copied.
-- Whatever the manager wrote, the preview and the receipt show one canonical
-  problem. Unknown keys and bad values are refused with a sign naming the field
-  and the fix, never dropped.
+The submission boundary is literal, with a prepared manifest naming the selected
+question, material and settings. Exact layout and initial material types remain
+to be specified. Unsupported entries, ambiguous names and exceeded limits block
+intake with a useful reason; nothing is silently renamed or excluded. The manager
+corrects the ordinary folder and prepares again when its selection changes.
+Unknown fields and bad values name the field and fix. The accepted receipt records
+the captured selection independently of subsequent edits to the source.
 
 ## Answer forms and couplings
 
@@ -190,30 +188,33 @@ From the problem, Stewart builds the arrangement:
 
 The orientation is the form's instructions: how to fill it and when it is
 complete. It does not say why the question matters or what the manager will do
-with the answer. `stewart preview` shows the arrangement exactly as the auditor
-will meet it, before anything runs or costs anything. The arrangement's digest
-goes in the receipt.
+with the answer. The prepared selection binds the relevant submission settings;
+the accepted arrangement's digest goes in the receipt. How the manager inspects
+the arrangement before acceptance remains to be settled; a separate preview
+command is not a required stage.
 
 ## Before the run: the app is the lesson
 
-Asking is the hard part, and the app teaches it through the four replies a
-manager reads anyway.
+The manager assembles a question and materials in an ordinary folder. Help and
+the scaffold explain the selected form and submission rules without making
+Stewart judge whether the question or evidence is intellectually sufficient.
 
-- **`stewart help`** is one screen: write a problem file, preview it, commission
-  it; then run, status, close. It lists the forms with one "ask this when" line
-  each, and the limits. There is no manual behind it.
-- **`stewart new <form>`** writes the problem file with every field commented:
-  what it is for, what the auditor will and will not see because of it, and an
-  example. The comments are written against the gap: the auditor knows nothing
-  the manager does not put in the question or the material.
-- **`stewart preview`** is the mirror. It renders what the auditor will meet and
-  runs the checks: names in the question that appear in no material; material
-  the question mentions that is not attached; directories that expanded to
-  nothing; files skipped and why; the total against the limits. Each check says
-  what the auditor would experience. Checks are advisory. Stewart is less
-  entitled to be strict about what a manager thinks necessary than it is to make
-  an auditor retry, so commission proceeds past a warning and the receipt records
-  it.
+- **`stewart help`** describes ordinary editing, prepare and explicit commission,
+  then run, status and close. It explains the limits and instructs the manager to
+  finish editing before prepare and leave the folder alone through commissioning.
+- **`stewart new`** creates the preparation scaffold and reference. The manager
+  owns that folder; close leaves it alone. Exact layout and form selection remain
+  design work.
+- **`stewart prepare`** inventories and hashes the selected question and materials,
+  checks mechanical intake rules and binds relevant settings. It returns an
+  inspectable manifest and handle, without accepting or preserving source bytes.
+  Unsupported entries and exceeded limits are refused, not silently excluded.
+- **Commissioning** takes that handle and an explicit acknowledgment that
+  preparation is finished. It copies and verifies against the manifest and checks
+  the final source membership and contents. The declaration and matching checks
+  are separately recorded; neither proves an atomic source snapshot. Edits that
+  change the selection require fresh preparation, with no unprepare or mandatory
+  inspection pause. A separate preview or asking-advice surface remains unsettled.
 - **The receipt** confirms: this is the question, this is the material as copied,
   this is the run command. It also gives `stewart receipt REF` for later recall.
 
@@ -345,9 +346,10 @@ files the manager owns.
 The manager and the auditor should never wait on Stewart, and never wonder what
 it did.
 
-- **Ordinary calls take tens of milliseconds.** Startup, `status`, `preview`,
-  `what_am_i_working_with`, answer edits, `prepare` and `submit` answer at once.
-- **Size-bound work shows its size first.** Intake copying, commission readback,
+- **Ordinary calls take tens of milliseconds.** Startup, `status`,
+  `what_am_i_working_with`, answer edits, auditor `prepare` and `submit` answer at once.
+- **Size-bound work shows its scope and progress.** Manager preparation and source
+  scanning, intake copying, commission readback,
   search across all the material, and delivery state how much they are about to
   handle, report progress, and finish with what they verified. Raw readback keeps
   progress and qualifications outside the byte stream.
@@ -364,17 +366,23 @@ close. That is all.
 | Command | Does |
 | --- | --- |
 | `stewart help` | A short cheatsheet; detail per command. |
-| `stewart new` | Scaffolds a problem file for a chosen form, or from an earlier problem. |
-| `stewart preview` | Shows the arrangement exactly as the auditor will meet it, with the checks. |
-| `stewart commission` | Copies and verifies the material and issues the receipt with the run line. |
+| `stewart new` | Creates the ordinary preparation scaffold and reference. |
+| `stewart prepare` | Records the selected names, hashes and settings and returns a handle; accepts no commission. |
+| `stewart commission` | Takes the prepared handle and explicit acknowledgment; copies, verifies, checks the source and records acceptance before issuing the receipt and run line. |
 | `stewart receipt REF` | Retrieves the original commission and readback item IDs; `--read ITEM` returns verified original bytes. |
 | `stewart run` | Places the auditor and runs it, delivering a sealed answer at the end. |
 | `stewart status` | States the run, answer seal, delivery and closure facts for an audit, or each audit in an inquiry, with explicit references and next actions. |
-| `stewart close` | From any state: stops a live run, seals what is recorded as the manager's if unsubmitted, delivers if not delivered, and records the end once the manager confirms the copy is placed. |
+| `stewart close` | Before launch, ends preparation or the accepted commission without creating an answer. After launch, stops as needed, seals unsubmitted work with manager attribution, and completes owed delivery and closure. |
 
-Every command fails early with a reason and a next step. Every command can answer
-in JSON, for managers who are agents; raw receipt readback instead puts bytes on
-stdout and qualifications on stderr.
+Every exceptional response names the failed operation and cause, established or
+uncertain acceptance, known partial effects, retained locations and a supported
+next action. A failed reply may follow acceptance; unavailable evidence is not
+absence. Errors in recording or delivering diagnostics preserve the original
+failure and their own uncertainty. Human and JSON presentations carry the same
+facts; raw receipt readback instead puts bytes on stdout and qualifications on
+stderr. A process unable to start or report cannot promise an immediate response;
+the calling interface and later access through the reference account for the
+missing result. Exact implementation and qualification remain pending.
 
 Status says, for example, "Interrupted; not submitted", "Answer sealed; delivery
 incomplete", or "Delivery verified at [time/location]; audit open". It does not
@@ -402,7 +410,17 @@ stopping succeeded just because the answer was sealed.
 
 ## Lifecycle and storage
 
-Commission fixes the question and material. Runs may be interrupted and continued
+Preparation leaves the manager's folder ordinary and editable. A reference can
+accept one commission; another requires an explicit new reference. Failed attempts
+keep their own intent and partial effects. An accepted handle repeated after a
+lost reply retrieves its acceptance, even if the folder was subsequently edited;
+uncertainty must be reconciled before another capture. Close before launch ends
+work under that reference without manufacturing an answer or answer-placement confirmation.
+It accounts for failed intake without requiring successful submission. Real
+custody loss remains distinct. Close coordinates with in-flight intake, prevents
+future launch, and continues through close if its own operations are unfinished.
+
+Acceptance fixes the captured question and material. Runs may be interrupted and continued
 on that commission until the answer is sealed or the audit ends. An auditor
 submission or manager close seals the answer once. Delivery and its verification
 follow that seal; close records the end after the required confirmation and
@@ -444,8 +462,9 @@ to.
 ## First release
 
 - The model adapter.
-- `survey` and `claim-check`, as the provisional library.
-- `help`, `new`, `preview`, `commission`, `receipt`, `run`, `status` and `close`,
+- The forms selected in the separate typing/coupling discussion; the illustrated
+  `survey` and `claim-check` do not select the release library.
+- `help`, `new`, manager `prepare`, `commission`, `receipt`, `run`, `status` and `close`,
   all within the response budgets.
 - Release binaries for Linux x86_64 and aarch64, built and tested in the apparatus.
 - A handoff package for a WSL2 run: the release binary plus the test suite's

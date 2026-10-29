@@ -623,12 +623,14 @@ submission over unresolved operations above.
 problems about one concern, each audit recording which problem it was varied
 from. After the question, the manager's operations are the receipt, asking
 whether the audit is done, and close. There is no separate collect, deliver or
-compare command: close from any state stops a live run, seals what is recorded
+compare command: after auditor launch, close stops a live run, seals what is recorded
 with manager attribution if unsubmitted, delivers when no verified copy exists,
 and records the end on the manager's confirmation; delivery otherwise happens at
 the end of a run with a sealed answer. An unsubmitted stop needs manager sealing
 through close. Comparing returns is the manager's work on files it owns. The
 manager readback, status and close section below completes these interfaces.
+The later manager preparation and acceptance contract defines close before launch,
+which creates no auditor return.
 
 **The escalated run.** Commission and run are separate commands and the line
 between them is the network: commission copies, verifies and records locally;
@@ -645,21 +647,14 @@ hold an audit the agent ran, one a person ran on its behalf, and one handed back
 and forth.
 
 **The problem file and material acceptance.** A problem is a Markdown file with a
-front-matter header and the question as its body, delivered verbatim; the
-question may also be given by path and material may also be given as arguments.
-A path relative to the problem file is the material's name in the auditor's
-index; an absolute path needs a label; two materials that would share a name are
-refused, never renamed. Directories expand with default excludes
-(version-control administration, build output, over-limit files), every
-exclusion listed and explicitly includable; links and special files are listed as
-not copied. Whatever the manager wrote, preview and receipt show one canonical
-problem; unknown keys and bad values are refused naming the field and the fix.
-The app teaches asking through `help`, `new`, `preview` and the receipt, with
-preview's checks written against the gap between asker and answerer. The checks
-are advisory and recorded in the receipt: unlike the auditor's tool, where
-Stewart must make the auditor retry rather than return a damaged archive, Stewart
-is less entitled to be strict about what material a manager thinks necessary.
-Stricter checks remain a later decision on evidence.
+front-matter header and the question as its body, delivered verbatim. Unknown
+keys and bad values are refused naming the field and the fix. The 2026-10-29
+manager preparation and acceptance contract below replaces the earlier path-list
+expansion, default exclusions and preview-led commissioning workflow with one
+ordinary submission folder and an explicit prepared selection. Mechanical intake
+checks do not judge whether the manager's evidence is intellectually sufficient.
+The remaining arrangement-inspection surface and exact supported material types
+remain for design; the earlier advisory preview is not a required runtime stage.
 
 **The return is the submission.** Decided 2026-10-28 (turn 22). The manager
 receives only what the auditor submitted through the submission tool and
@@ -739,14 +734,16 @@ audit. An empty recorded selection is not the auditor's claim of "nothing found.
 
 | Established condition | Manager-facing answer and supported next action |
 | --- | --- |
-| Commissioned, never run | Not started; the receipt supplies `run REF`. |
+| Preparation or failed intake, acceptance known absent | No accepted commission; identify the preparation or failed attempt, with preparation/commissioning or close available as applicable. |
+| Commissioned, never run | Not started; the receipt supplies `run REF`, or close ends the commission without an auditor return. |
 | A run is currently held | Run active, with the observation's evidence; `close REF` can end it. |
 | A placement was interrupted, answer unsealed | Interrupted, not submitted; `run REF` continues when the existing limits and run exclusion permit, or `close REF` ends authoring. |
 | Run ended normally without submission, or audit limit reached | Run ended, not submitted; `close REF` seals the recorded selection with manager attribution. It does not infer an auditor conclusion. |
 | Answer sealed, delivery absent, failed or partial | Answer sealed, delivery incomplete; `close REF` continues copying that same selection. |
 | Complete delivery verified and audit open | Return delivery verified at the recorded time and location; `close REF` ends custody on the manager's confirmation. |
 | Closing operation incomplete | Close unfinished; show its completed effects, remaining obligation and the exact continuation through `close`. |
-| Closed | Closed, with the recorded delivery or explicitly surrendered loss; closure with loss is never complete delivery. |
+| Closed before any auditor launch | Closed without an auditor return; distinguish accepted commission custody from unaccepted preparation. |
+| Closed after auditor launch | Closed, with the recorded delivery or explicitly surrendered loss; closure with loss is never complete delivery. |
 
 These are facts to establish, not defaults for damaged records. When a fact
 cannot be established, name that uncertainty and its evidence rather than
@@ -757,7 +754,8 @@ launches, repairs, seals, copies or closes anything. Each actionable failure
 names a stable reason, retained locations and a supported next action; offers
 are not preconditions. No bare "done" hides which undertaking was completed.
 
-**Close continues delivery without another investigation.** A run delivers
+**Close continues delivery without another investigation.** After auditor launch,
+a run delivers
 automatically only after an answer has been sealed. An unsubmitted stop leaves
 the recorded selection for manager sealing through close. Close prevents further
 authoring, preserves a submission that won the seal race, and otherwise seals
@@ -793,6 +791,99 @@ when the manager explicitly names the undertaking being surrendered, separately
 from ordinary placement confirmation. Unknown selection remains diagnosed and
 unfinished, never guessed empty or covered by a blanket discard. Neither route
 releases a hold or authorizes removal that the applicable custody rules forbid.
+
+## Successor manager preparation and acceptance
+
+Decided with the user, 2026-10-29. **Decided, departure; implementation and
+qualification pending.** This replaces the earlier manager preparation workflow,
+draft-reference replacement and proposed repeated-commission behavior, and
+qualifies close before launch. It changes no frozen Python or historical records.
+Storage location, retention/removal, live-record access, exact material support,
+auditor retry and question typing remain separate decisions.
+
+**One folder, one acceptance boundary, one close action.** The manager prepares
+the question and materials in an ordinary directory, using ordinary tools. Even
+when Stewart creates the scaffold, the folder remains the manager's; close leaves
+it alone. Preparation does not undertake preservation of its evolving file bytes
+or revive the general manager-workspace service. Stewart constructs a separate
+captured commission; acceptance fixes that copy, not the source directory.
+Later source edits cannot change an accepted commission.
+
+The submission selection is explicit and literal within its defined boundary.
+Unsupported entries, collisions and exceeded limits require an explanation and
+refusal, not a silently reduced selection. Exact layout, file formats, naming
+rules and limits remain to be specified. Preparation and commissioning are local;
+the auditor cannot be launched before acceptance. The ordinary reference follows
+preparation through at most one accepted commission and closure; another accepted
+commission requires an explicit new reference, even when materials are reused.
+
+**Preparation binds a proposal; commissioning accepts it.** Manager `prepare`
+inventories and hashes the question and materials, checks mechanical intake
+rules, binds relevant submission settings, and returns a handle identifying the
+manifest with a readable account of the selection. Preparation does not accept
+the commission or establish custody of source bytes. The instruction to finish
+editing and leave the folder unchanged precedes prepare, since hashing takes time.
+
+`commission(handle, I_AM_FINISHED=true)` requests acceptance of that selection.
+The acknowledgment means the manager has finished assembling it and will leave
+the folder unchanged until commissioning returns. Without an explicit affirmative
+argument there is no acceptance. The manager's declaration is recorded separately
+from Stewart's observations. Commissioning copies against the prepared manifest,
+verifies the captured bytes, and compares a final source scan, including directory
+membership, against the preparation. A mismatch prevents acceptance; newer
+material cannot silently replace the prepared selection. Changed selection needs
+fresh preparation. There is no unprepare action or required inspection pause;
+the calls may be composed. Exact CLI spellings remain implementation design.
+
+These are cooperative interference checks, not proof that the live directory
+never changed or that the source had this complete state at one instant. The
+receipt identifies what Stewart captured and which checks matched, without
+turning the declaration or repeated hashes into an atomic snapshot claim.
+
+**Attempts and acceptance remain distinct.** Copying, verification, recording
+acceptance and returning its receipt take time. A complete copy alone establishes
+no acceptance. Each attempt keeps its own fixed selection, partial effects and
+diagnostics; editing the folder cannot rewrite that intent. A conclusively failed
+submission permits correction and another attempt under the same reference.
+An accepted handle repeated after a lost reply retrieves the recorded acceptance,
+even if the source has since changed. Uncertain acceptance must be reconciled
+before a new capture; unavailable or damaged evidence is not evidence of absence.
+The storage/publication protocol and supported interruption cases require testing.
+
+**Close before launch ends the reference without making an answer.** Close retires
+preparation or an accepted but never-launched commission, accounts for incomplete
+intake, and prevents a later launch under that reference. It coordinates with an
+in-flight commission so their recorded effects agree. If launch already happened,
+the running-audit close rules apply. Failed intake need not be completed
+successfully merely to close; actual loss of material Stewart undertook to
+preserve remains distinct and cannot disappear under that rule. Retained copies
+and records remain governed by their custody obligations. No auditor return,
+manager-sealed empty answer or answer-placement confirmation is invented before
+launch. Close may itself remain unfinished with a specific continuation through
+close, never a requirement to repair Stewart's private records manually.
+
+**Exceptional state has one contextual presentation.** An operational failure
+travels with its operation, affected material or record, and underlying cause to
+Stewart's presentation boundary. Helpers return diagnostics rather than leaving
+independent complaints as the manager's only account. Human and structured replies
+identify a stable reason, what Stewart could not do, acceptance as established or
+uncertain, known partial effects and retained locations, and a supported next
+action. Source access failure, changed selection, failed acceptance recording and
+failed receipt delivery are different conditions. An error does not imply absent
+effects; a reply failure can follow successful acceptance.
+
+Unexpected errors use the same account with explicit limits on certainty;
+implementation defects remain attributed to Stewart. Failure to record a failure
+must retain the original diagnostic alongside the recording failure. A diagnostic
+delivered to the caller is distinct from one durably retained. Reporting itself
+uses fallible operations; process startup failure, forced termination or loss of
+every reporting channel may prevent an immediate Stewart response. The calling
+interface treats a missing result as interrupted or unknown, and later access
+through the same reference reconciles surviving records. No immediate-reporting
+guarantee is claimed for those cases. The manager may restore access to its own
+folder, but never needs to edit receipts, delete partial captures or improvise
+repairs to private state. Qualify this behavior with controlled failures at the
+operation boundaries, independent evidence and unaffected comparison cases.
 
 ## Transition status of the earlier contracts
 
@@ -871,9 +962,10 @@ replacing removal-phrased text with the obligation that survives:
   "interrupted, unconfirmed", never "running"; no inference from elapsed time;
   the other durable status rules (exit codes, one attention channel, options are
   not instructions, offers are not preconditions) carry as a short list.
-- Commission is not deduplicated: a repeated commission is a new audit in the
-  inquiry, which status lists; `run` and `close` answer by reference and are
-  safe to repeat.
+- The former proposed rule that repeated commission creates another audit is
+  superseded by manager preparation and acceptance: a reference accepts at most
+  one commission, and a confirmed repeat of its accepted preparation handle
+  retrieves that acceptance. New commissions require explicit new references.
 - Intake records each file's bytes, size and mode; the index shows size; mode
   is recorded, not interpreted.
 - The general manager-workspace service and export/import retire into Declined:

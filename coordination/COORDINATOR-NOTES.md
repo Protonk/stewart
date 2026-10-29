@@ -21,10 +21,13 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
-The historical review of manager/worker drafting is complete. The current
-discussion concerns the manager's submission boundary, especially copying an
-ordinary editable folder. This is product design, not runtime qualification or
-implementation; the earlier design conversations remain closed.
+The historical review and manager preparation/error discussion are complete.
+The user wants the remaining consequential choices identified and resolved so
+Rust transition and testing can proceed. This is product design and specification,
+not a runtime implementation commission; the earlier design conversations remain
+closed. CONTRACTS, ROUTER and END-TO-END now record the agreed manager changes,
+including C17 for exceptional-state presentation. No runtime tests have run for
+these changes.
 
 **Agreed working model:** one submission folder, one acceptance boundary and one
 close action. A failed submission leaves the folder editable; an accepted
@@ -49,18 +52,26 @@ takes time. Edits require fresh preparation when the selection no longer matches
 there is no unprepare action. The calls may be composed without an inspection
 pause. Manager declarations and Stewart's matching observations remain separately
 attributed; this is cooperative interference detection, not an atomic snapshot
-guarantee. Reconcile the product contracts/sketch with this direction; no runtime
-implementation is commissioned.
+guarantee. CONTRACTS' "Successor manager preparation and acceptance" owns the
+details and remaining limits.
 
-**Current discussion:** how exceptional conditions throughout prepare/commission
-reach Stewart's own error presentation. The user's example is an accidental
-permission change racing commissioning, not adversarial behavior. The user wants
-to shape the presentation and responsibility principles, not enumerate every
-failure branch. Review found structured errors in the Rust intake slice, but a
-broad filesystem-to-`unreadable` mapping and direct output calls are not evidence
-that all failures pass through a coherent presentation. Operation outcome,
-partial effects, uncertainty and failures to record or deliver a diagnostic need
-explicit treatment. These mechanisms remain design and qualification work.
+**Agreed error responsibility:** ordinary and unexpected failures reach one
+contextual presentation naming cause, established or uncertain acceptance,
+known effects and retained evidence, and a supported next action. Reporting or
+recording failure preserves the original diagnostic; missing results are not
+failed-acceptance evidence. Managers may restore their own source access but
+do not repair Stewart's private state. The user shapes these principles, not
+every failure branch. The Rust slice's current structured errors are a starting
+point, not evidence of complete coverage. Implementation and C17 qualification
+remain pending.
+
+**Next discussion, coordinator recommendation:** settle storage/custody and
+retention, including live manager access; the initial material/reader contract
+and arrangement inspection; auditor retry/re-entry; and question typing/coupling
+with answer presentation. Stopping/publication mechanisms need engineering and
+evidence, not a user-designed failure tree. Human transport, broader form-library
+policy and optional investigation experiments remain later work. No proposed
+default on retention, format support or forms is adopted by this recommendation.
 
 **Historical review findings, coordinator assessment:**
 
@@ -105,13 +116,12 @@ orchestration plans at `22c6693` and `4c92c97`; `CUSTODIAL-CORE-FINDINGS.md`,
 `RETURN-CUSTODY-DESIGN.md`; `successor/README.md` and `successor/src/main.rs`;
 `coordination/submission-design-01/RESULT.md`. The archived Click docs/request
 surface was checked and supplied no separate preparation design. Historical
-files, frozen code and contracts are unchanged; no runtime tests or model calls ran.
+files and frozen code remain unchanged; no runtime tests or model calls ran.
 
 The earlier delegated manager recall and status/close design fixes are recorded
 in CONTRACTS and synchronized into the sketch/test design at `eff8126`.
-Their detailed application to intake still needs reconciliation with the agreed
-working model above; never-run accepted commissions and unaccepted preparation
-are not interchangeable.
+Their application to intake now follows the later manager preparation contract;
+never-run accepted commissions and unaccepted preparation remain distinct.
 Auditor retry/re-entry and question typing/coupling still need separate discussions.
 The two past design conversations remain closed. No transition stage is commissioned.
 
