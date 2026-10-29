@@ -1,5 +1,11 @@
 # Auditor retry and re-entry
 
+Disposition, 2026-10-29: the user accepted the recommended interaction. CONTRACTS'
+"Successor auditor retry and re-entry" now owns it. The body below preserves the
+briefing as presented at `36a438f`, including alternatives and its then-proposed
+status; those alternatives were not all adopted. No runtime qualification follows
+from this design acceptance.
+
 Prepared 2026-10-29 at the user's request after delegated settlement of manager
 custody and initial materials. **Briefing and recommendations, not adopted
 auditor changes.** Question types, slots, citation rules, substantive stopping

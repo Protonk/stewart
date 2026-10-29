@@ -23,14 +23,18 @@ for the turn-by-turn account of the review.
 
 The user's delegated custody/retention and initial-material settlement is recorded
 in CONTRACTS and synchronized into AGENTS, ROUTER, END-TO-END and TRANSITION-PLAN.
-The separate [auditor retry/re-entry briefing](auditor-reentry-01/BRIEFING.md) is
-ready for discussion. Its recommendations are not adopted. Question typing and
-answer rendering come last, after retry/re-entry. This was specification and
-briefing work; no runtime implementation or model call was commissioned or run.
+The user has accepted the [auditor retry/re-entry recommendation](auditor-reentry-01/BRIEFING.md),
+now recorded in CONTRACTS and C3/C4. The current commission is three question-design
+paths with no preference or degree-of-change labels. They are recorded in
+[PATHS](question-types-01/PATHS.md); none is adopted. The user wants Stewart to
+express opinions about question/material/evidence pairings and teach through its
+tool interface without making broad requests unusable. A usable residual type is
+central to the alternatives. This is specification and discussion work; no runtime
+implementation or model call was commissioned or run.
 Historical conversations, prototypes and frozen implementation are unchanged.
 Verification: `git diff --check` passed; an isolated Python documentation check
-validated 13 local link targets and code-fence balance in the briefing, router
-and transition plan. No runtime test cases were selected or claimed.
+validated 13 local link targets and code-fence balance in the two discussion
+documents, router and transition plan. No runtime test cases were selected or claimed.
 
 **Agreed working model:** one submission folder, one acceptance boundary and one
 close action. A failed submission leaves the folder editable; an accepted
@@ -81,16 +85,21 @@ explicit material-read/search pagination. Prepare retains an inspectable pinned
 arrangement; no separate preview command ships. CONTRACTS owns details; C18/C19
 own the acceptance design. These are decided scope, not qualified runtime behavior.
 
-**Next discussion:** the retry briefing distinguishes a new addition from replay
-of a known completed invocation; content equality never identifies intent. Its
-recommendation is a bounded re-entry index with exact element/version handles and
-recent completed receipts, no auditor request-key knobs or recovery console, and
-explicit handling of stale edits and confirmed-submit lookup. Fresh adds remain
-new items unless the user chooses a stronger action-identity contract. The brief
-states the recognition limit and the larger alternative rather than claiming
-invisible adapter IDs can recover an identity lost by the caller. No C3/C4 or
-auditor semantics were changed. Question types/slots/rendering are deferred to
-the next separate discussion. Human transport and optional studies remain later.
+**Agreed auditor interaction:** bounded re-entry with exact element/version
+handles and recent completed receipts; distinct fresh adds; stale replacements
+cannot overwrite later edits; exact repeated deletion reports its recorded effect;
+confirmed submit retrieves its existing outcome. A known invocation can have its
+completed result redelivered, but equal arguments do not recover lost intent.
+No request-key knob, mandatory re-entry stage or recovery console. CONTRACTS owns
+the limits and C3/C4 the qualification design; no runtime qualification is claimed.
+
+**Current question paths:** open inquiry with evidence modules; auditor framing
+of the investigable question within the original commission; and a library of
+question families with open inquiry alongside them. Each preserves the manager's
+original words, current material/tool grants and a usable broad-request route.
+No option or mixture, slot schema, citation refusal, substantive stopping rule or
+answer rendering has been chosen. Present them without a preference or a mapping
+to the user's requested labels. Human transport and optional studies remain later.
 
 **Historical review findings, coordinator assessment:**
 
@@ -142,7 +151,7 @@ The earlier delegated manager recall and status/close design fixes are recorded
 in CONTRACTS and synchronized into the sketch/test design at `eff8126`.
 Their application to intake now follows the later manager preparation contract;
 never-run accepted commissions and unaccepted preparation remain distinct.
-Auditor retry/re-entry and question typing/coupling still need separate discussions.
+Auditor retry/re-entry is settled; question typing/coupling is the current discussion.
 The two past design conversations remain closed. No transition stage is commissioned.
 
 ## Inherited product state

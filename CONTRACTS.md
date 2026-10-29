@@ -615,15 +615,14 @@ before interpretation, a disposition of every gap, attribution never turned into
 a verdict) stand.
 
 **Ledger truth.** A protocol call either appended a complete record or it did
-not; a torn record is a diagnostic, never an element. After a failed call or a
-lost reply the auditor calls again; the re-entry call shows what landed; a retry
-lands as a new record, and equal bytes never identify a retry; a repeated
-confirmed submit is identified by its handle, bound to the exact collection
-revision, and returns its recorded outcome, which is a lookup, not a
-settlement. Stewart settles
-nothing on the auditor's behalf, and no reply or return carries an
-unresolved-operation state. This supersedes interrupted-operation settlement and
-submission over unresolved operations above.
+not; a torn record is a diagnostic, never an element. Re-entry shows recorded
+effects; a fresh addition creates a new element, even when its bytes match an
+earlier one. A repeated confirmed submit is identified by its handle and returns
+its recorded outcome. The later auditor retry/re-entry contract distinguishes new
+calls from replay of a known completed invocation and supplies stale-edit behavior.
+Stewart exposes no authoring settlement console or unresolved-operation state in
+the answer. This supersedes interrupted-operation settlement and submission over
+unresolved operations above without treating damaged evidence as absent.
 
 **The manager's unit is the inquiry**, as far as Stewart is concerned: a line of
 problems about one concern, each audit recording which problem it was varied
@@ -699,7 +698,8 @@ the manager recall and status/close interface concerns. **Decided, departure;
 implementation and qualification pending.** This completes those interfaces
 without then deciding preview, auditor retry, question typing, storage location,
 live-record access or removal. The later 2026-10-29 contracts settle the manager
-storage/material decisions; auditor retry and question typing remain open.
+storage/material decisions; the later auditor retry contract settles re-entry.
+Question typing remains open.
 Frozen Python and commission-bundle commands
 remain unchanged.
 
@@ -807,8 +807,8 @@ qualification pending.** This replaces the earlier manager preparation workflow,
 draft-reference replacement and proposed repeated-commission behavior, and
 qualifies close before launch. It changes no frozen Python or historical records.
 The later custody and initial-material contracts settle storage, retention, live
-manager access, material support and arrangement inspection. Auditor retry and
-question typing remain separate discussions.
+manager access, material support and arrangement inspection. The later auditor
+retry contract settles re-entry; question typing remains a separate discussion.
 
 **One folder, one acceptance boundary, one close action.** The manager prepares
 the question and materials in an ordinary directory, using ordinary tools. Even
@@ -1102,6 +1102,69 @@ must either honor that binding through a supported writer or refuse with a next
 step. After acceptance the receipt recovers the original question, materials
 and arrangement. Built-in help describes available forms and reader limits;
 which forms exist and their substantive requirements remain a separate decision.
+
+## Successor auditor retry and re-entry
+
+Accepted by the user 2026-10-29 following the separate retry/re-entry briefing.
+**Decided, departure; implementation and qualification pending.** Question types,
+slot shapes, citation requirements, substantive stopping rules and answer rendering
+are not selected here. The auditor still has ordinary authoring calls and explicit
+submission, without request-key arguments, retry tuning or resolve/resume/cancel.
+
+**A new addition is a new item.** Repeating add with equal text and labels can
+create another element; equality never establishes intent or authorizes merging.
+After an uncertain reply, re-entry makes completed effects available for the
+auditor to recognize before deciding whether another addition is wanted. It is
+not a mandatory stage or permission gate before each edit. This does not promise
+that blind repetition of a fresh add is harmless or reconstruct lost intentions.
+
+**Edits respect exact targets.** Replace targets an element/version; an old
+target does not overwrite a later revision. A stale-target reply identifies the
+current version and supplies its handle and a read/replace next action without
+claiming the earlier replacement failed. Repeating a recorded deletion of the
+exact target reports that recorded removal without another mutation. A target
+replaced or changed in another way retains that distinction; it never deletes a
+newer version. Read operations may be repeated without changing answer state.
+
+Preparation binds the exact current selection. Repeated preparation can inspect
+that selection; it submits nothing. Confirmed submit with an already accepted
+handle returns the existing seal/outcome, including after close, without resealing
+or reopening authoring. A sealed/closed reply states the actual sealer and end,
+not a request to prepare forever. A manager seal is never reported as an auditor
+submission. State and integrity checks still apply to a handle whose acceptance
+cannot be established; missing-readable-result is not evidence of no effect.
+
+**One re-entry call restores orientation and access.** It names the audit,
+open/sealed/closed condition, current answer revision, cumulative allowances,
+question/material access, current element identities and versions, and recent
+completed edit receipts. Each receipt identifies its action, target, resulting
+revision and completed effect. The latest relevant refusal remains associated
+with the operation/revision it describes. These are observations, not inferences
+about what the auditor has read, understood or concluded.
+
+The reply is bounded and includes exact counts, identities, sizes and explicit
+continuations/read handles for the remainder. The question is verbatim when read;
+an excerpt cannot masquerade as the whole question. Answer bytes remain readable
+by their handles. Pagination is bound to a revision; an intervening edit requires
+a refreshed view, not silently mixed versions. No custody path is exposed. This
+supersedes the unbounded-looking promise to place the whole question and answer
+in one reply. It preserves recorded work across compaction/dead-run continuation,
+not unrecorded thoughts, a complete model context or fresh investigative limits.
+
+**Redelivering a known result is different from making a new call.** When the
+adapter retains an exact invocation identity bound to its arguments and complete
+ledger outcome, it can return that outcome without another mutation. A new call
+with matching arguments cannot be inferred to be that invocation. Uncertain
+effects require their own evidence to be reconciled, not guessed repetition or
+promotion of partial data into an answer element. No hidden identifier promises
+logical-action recovery after the caller loses the identity connecting its calls.
+
+Expected refusals give the completed effect or unchanged state and the next
+ordinary call. Unrepairable damage preserves diagnostics and leads to stopping,
+not repeated additions or auditor repair of private custody. Operational failures
+remain in Stewart's operating account; they do not become fabricated conclusions
+or mandatory answer fields. No retry changes the material world, resets limits,
+revives a closed reference or grants another investigation.
 
 ## Transition status of the earlier contracts
 

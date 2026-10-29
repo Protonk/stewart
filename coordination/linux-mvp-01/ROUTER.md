@@ -20,8 +20,9 @@ Amended 2026-10-29 following the user's agreements and subsequent delegation,
 recorded in CONTRACTS' manager preparation, custody and initial-material sections:
 ordinary preparation, explicit prepare/commission, cooperative checks and
 contextual errors; a designated non-removing archive; literal text materials and
-preparation inspection without a separate preview. Auditor retry/re-entry and
-question types remain separate discussions, with question types last.
+preparation inspection without a separate preview. The user subsequently accepted
+bounded auditor re-entry, exact edit targets and known-invocation result replay;
+the corresponding CONTRACTS section governs. Question types remain under discussion.
 
 ## The idea
 
@@ -264,7 +265,7 @@ The protocol is the same for every adapter:
 
 | Call | Does |
 | --- | --- |
-| `what_am_i_working_with` | The question verbatim, the materials index, the current answer as recorded, and the last submission error if any. |
+| `what_am_i_working_with` | Bounded orientation: audit/state/revision/allowances, exact question/material access, current element handles/versions, recent completed receipts and relevant refusals; explicit reads/pages retrieve the remainder. |
 | `list`, `read`, `search` | Reach the material. |
 | *coupling slots* | Fill the answer's shape, e.g. `record_premise`. |
 | `add`, `replace`, `delete` | Edit free-form answer elements. |
@@ -276,11 +277,30 @@ citation is checked against the material, byte for byte; that check is one of
 the answer-form choices still to be decided.
 
 The ledger is the only truth. A call either appended a complete record or it did
-not; a torn record is a diagnostic, never an element. After a failed call or a
-lost reply the auditor calls again, and `what_am_i_working_with` shows what
-landed. A retry lands as a new record; equal bytes never identify a retry.
-Stewart settles nothing on the auditor's behalf, and the return carries no
-unresolved-operation state.
+not; a torn record is a diagnostic, never an element. A fresh add creates another
+element, even with equal bytes. After an uncertain reply, re-entry shows completed
+effects so the auditor can decide what remains to do. It is not a required stage
+before each edit, and blind repetition of a fresh add is not promised harmless.
+
+Replace respects the exact element/version and explains a stale target with its
+current handle; it cannot overwrite a newer edit. Repeated deletion of the exact
+already-deleted target reports the recorded removal; other stale targets retain
+their diagnosis. Confirmed submission with an accepted handle retrieves the
+recorded seal, including after close, with its actual attribution. No reply
+invites authoring after sealing or closure.
+
+A known invocation with exact arguments and a completed ledger outcome can have
+that result redelivered without another mutation. A fresh call with matching
+arguments is not that identity. Uncertain effects are not guessed absent or
+settled by silently completing an older authoring request. There is no auditor
+request-key knob or recovery console. Operational diagnostics remain Stewart's
+account, not fabricated answer elements or conclusions.
+
+Re-entry supplies exact counts and retrieval routes, rather than dumping an
+unbounded question/answer into model context. Read question bytes verbatim; mark
+excerpts explicitly. Page the answer at a bound revision and refresh after edits
+instead of mixing versions. It restores recorded work and access, not unrecorded
+thoughts or reset allowances. No private custody paths enter the auditor's view.
 
 ## Adapters
 

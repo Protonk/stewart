@@ -21,8 +21,8 @@ Amended 2026-10-29 following the user's agreements and delegated manager decisio
 in CONTRACTS: C1/C2/C8/C11/C16 follow prepared selection and close before launch;
 C17 covers exceptional state, C18 designated retained custody and C19 literal
 text materials and preparation inspection. These are acceptance designs, not
-executed checks. Auditor retry/re-entry and question types remain separate
-discussions; proposed changes in their briefing are not adopted here.
+executed checks. The subsequent accepted auditor retry/re-entry contract updates
+C3/C4 below. Question types remain proposals; their choice is not made by a test.
 
 ## What we care about
 
@@ -35,7 +35,7 @@ failing.
 | C1 | The auditor's world is exactly the arrangement. |
 | C2 | The manager's question and material reach the auditor unchanged. |
 | C3 | Answers are kept, sealed and attributed correctly, including across interruptions. |
-| C4 | Compaction is harmless: an auditor that loses track recovers through the protocol. |
+| C4 | After context loss, bounded re-entry recovers recorded work and access without inventing missing memory. |
 | C5 | The delivered return is complete, verified and faithful to what was recorded. |
 | C6 | The record is honest: write-once, nothing deleted, the access log matches what happened. |
 | C7 | Couplings wrap the question, expose their slots, and check citations. |
@@ -131,33 +131,45 @@ manager close, including:
 
 - a stale handle after an edit, which is refused;
 - repeated confirmed submits, which return the same submission;
+- repeated exact deletion, which reports its recorded removal, and stale
+  replacement/deletion targets that cannot mutate a newer version;
 - submit racing close, run many times, with exactly one winner each time and
   correct attribution;
-- close on an empty answer, giving an honest empty return;
+- close after auditor launch on an empty answer, giving an honest empty return;
 - the limits on elements and sizes, and the edits that are still allowed at them.
 
 **Interruptions.** The ledger is the only truth. The driver kills the binary at
 fixed points: while a record is being appended, after it is complete and before
 the reply, during seal, and during delivery. Afterward, `what_am_i_working_with`
 and `status` report exactly the complete records; a torn tail is reported as a
-diagnostic and never as an element; the auditor's retry lands exactly once, as a
-new record; nothing is settled on the auditor's behalf and no unresolved-operation
-state appears in any reply or in the return.
+diagnostic and never as an element. A fresh repeated addition creates another
+element; intentional equal-byte additions remain distinct. Re-entry identifies
+both with their actual handles/receipts, without claiming sameness of intent.
+Redelivery of a known completed invocation instead returns that outcome without
+another mutation. Lost identities or unreadable outcomes cannot justify content
+deduplication or guessed fresh execution. No settlement console or unfinished
+authoring request is handed down as part of the auditor's answer.
 
-- **Sabotage:** a test build that reports a torn record as an element, and one
-  that drops a retry as a duplicate because its bytes match.
+- **Sabotage:** report a torn record as an element, merge fresh equal-byte adds,
+  execute a known completed invocation twice, overwrite a newer version with an
+  old target or attribute a manager seal to the auditor. Each control must fire.
 
-### C4 — Compaction is harmless
+### C4 — Re-entry restores recorded work and access
 
 - **Pass:** the fake emits a compaction block midway. The script then calls
-  `what_am_i_working_with`, which returns the question verbatim, the materials
-  index and every element recorded so far. The script
-  continues and submits, and the submission contains the elements recorded before
-  compaction exactly once.
-- **Differing:** a submission error pending at compaction shows up in
-  `what_am_i_working_with`.
+  `what_am_i_working_with`, which returns bounded state/revision/allowances,
+  exact question/material access, element/version handles, recent completed
+  receipts and relevant refusals. The script follows explicit pages/read handles
+  and verifies all bytes against an independent witness, then continues without
+  re-adding its prior work. Include an answer and question/index exceeding one
+  reply, with essential content on the last page. Re-entry is not a mutation gate.
+- **Differing:** a relevant refusal retains its operation/revision; an intervening
+  edit invalidates an old page rather than silently mixing two answer revisions.
+  Missing or damaged recorded data is distinct from lost model context.
 - **Invariance:** the same run without compaction produces the same sealed answer.
-- **Sabotage:** a build whose re-entry reply omits the current answer.
+- **Sabotage:** omit an element, truncate without continuation, omit the last
+  page, mix revisions or reset allowances after compaction. Each must fail.
+  These checks preserve recorded work, not thoughts never submitted to the ledger.
 
 ### C5 — The return is complete and faithful
 
