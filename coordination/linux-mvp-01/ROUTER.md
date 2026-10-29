@@ -25,7 +25,10 @@ bounded auditor re-entry, exact edit targets and known-invocation result replay;
 the corresponding CONTRACTS section governs. The user then selected question
 families as the organizing model, with inquiry framing as a specific family and
 open inquiry roughly following the optional-evidence-module proposal. CONTRACTS'
-"Successor question families and open inquiry" governs; detailed forms remain open.
+"Successor question families and open inquiry" governs. The user subsequently
+selected open inquiry, inquiry framing and comparison as the initial library and
+accepted a preparation-generated, Stewart-attributed Markdown rendering sealed
+with the structured answer. Detailed forms and enforcement remain open.
 
 ## The idea
 
@@ -174,12 +177,13 @@ prompts, auditor instructions and answer expectations. It wraps the manager's
 question without rewriting it and is pinned in the arrangement. The library is
 the chosen organizing model; its concrete forms are not yet specified.
 
-Two roles are selected, with names provisional:
+Three initial families are selected, with final spellings provisional:
 
 | Family | Commissioned work | Boundary |
 | --- | --- | --- |
 | Open inquiry | Answer the manager's question with an account of the evidence and limits; optional evidence modules can supply useful structure | No compulsory module selection, justification for choosing open, reduced service or extra commissioning step |
 | Inquiry framing | Formulate a working question from the concern, then investigate it within the same commission | Preserve the original request and attribute the framing and its limitations to the auditor; no expanded materials, tools, budget or live approval |
+| Comparison | Compare supplied alternatives against the stated criterion, explaining evidence and limits | Concrete fields and enforcement remain to be specified; no required winner or invented evidence |
 
 Open inquiry with no modules is a complete route for broad requests. Material-role
 prompts may expose unassigned roles without treating them as proof that evidence
@@ -188,12 +192,14 @@ Every family permits challenging the framing, missing evidence, no supported
 finding and qualifications. Only selecting inquiry framing commissions formulation
 as part of the task; the other families do not silently inherit it.
 
-Comparison, behavior check and claim examination are candidates, not the release
-roster. The old `survey` and `claim-check` illustrations do not select schemas;
+Specify each family through a manager submission, actual auditor tools and a
+return, including an inadequate-evidence case. Behavior check and claim examination
+remain later candidates. The old `survey` and `claim-check` illustrations do not
+select schemas;
 `first_unbound` and `smallest_addition` are not inherited obligations. Concrete
 slots/tools, module interactions, citation handling, stopping rules/checks, a
-manager-supplied prior and rendering remain to be settled together. One test for
-any slot: the auditor can fill it from where it stands, including an account of
+manager-supplied prior remain to be settled together. Rendering is decided below.
+One test for any slot: the auditor can fill it from where it stands, including an account of
 what cannot be established. Selecting a family certifies no substantive outcome.
 The rule for adding families remains open. Every return identifies its selected
 coupling and version.
@@ -362,10 +368,18 @@ the recorded selection for manager sealing through close:
 parser-2.4-7QK3RM/
   MANIFEST.json      the audit reference, the form and version, every member
                      and its digest, and who sealed it
-  answer/            the raw slots and elements (whether a form's rendering is
-                     also a prepare-generated, Stewart-attributed member is
-                     undecided)
+  answer/            the structured answer and recorded elements, plus the
+                     deterministic Markdown rendering generated during prepare
+                     and sealed as an identified Stewart-attributed member
 ```
+
+Preparation makes the rendering inspectable without a mandatory pause; the handle
+binds its exact bytes with the source selection. Rendering preserves the author's
+statements without adding interpretations or operating history. Delivery and
+readback use those sealed bytes, never a rendering regenerated with a later form.
+When close seals unsubmitted work after launch, it applies the same rendering rule
+with manager seal attribution and no claim of auditor review. Rendering failure
+uses the existing custody continuation; no owed member silently disappears.
 
 The destination is exclusive: an existing directory is evidence and is refused,
 never overwritten or emptied. The question, the receipt, the arrangement, the
@@ -518,8 +532,8 @@ to.
 ## First release
 
 - The model adapter.
-- A question-family library including open inquiry and inquiry framing; concrete
-  forms, modules and any additional families remain to be specified. The earlier
+- A question-family library of open inquiry, inquiry framing and comparison;
+  concrete forms and modules remain to be specified. The earlier
   `survey` and `claim-check` illustrations do not select the release library.
 - `help`, `new`, manager `prepare`, `commission`, `receipt`, `run`, `status` and `close`,
   all within the response budgets.

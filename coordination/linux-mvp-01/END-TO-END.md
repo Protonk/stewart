@@ -24,7 +24,10 @@ text materials and preparation inspection. These are acceptance designs, not
 executed checks. The subsequent accepted auditor retry/re-entry contract updates
 C3/C4 below. The subsequent question-family decision updates C7: the library is
 selected, inquiry framing is one family, and open inquiry permits optional evidence
-modules. Concrete forms remain to be specified; tests do not choose their schemas.
+modules. The subsequent initial-library decision selects open inquiry, inquiry
+framing and comparison. C5 now requires the accepted deterministic Markdown
+rendering to be inspectable at preparation and sealed with the structured answer.
+Concrete forms and enforcement remain to be specified; tests do not choose them.
 
 ## What we care about
 
@@ -180,9 +183,16 @@ authoring request is handed down as part of the auditor's answer.
   audit reference, and who sealed it. The manifest digest printed at seal equals
   the delivered one. An inventory of the delivered directory holds the manifest
   and the elements and nothing else: no question, receipt, arrangement, access
-  log, run summary or conversation. Whether a prepare-generated rendering is a
-  sealed member is undecided; if it is, it is attributed to Stewart and
-  reproducible from the elements.
+  log, run summary or conversation. The preparation-generated Markdown rendering
+  is a sealed member, attributed to Stewart and reproducible from the exact
+  structured answer and elements under the pinned rendering rules. The auditor
+  can inspect those same bytes before confirming submission.
+- **Rendering comparisons:** a changed answer requires fresh preparation and a
+  matching rendering; an unrelated installed-form change cannot alter delivery
+  or readback of an existing seal. Contradictions and missing evidence in the
+  recorded answer stay attributed and are never repaired by the renderer. Cover
+  manager sealing of unsubmitted work without claiming auditor review, and a
+  rendering failure that remains diagnosed rather than dropping the member.
 - **Also:**
   - a delivery interrupted partway keeps its partial directory and names the
     missing members, and `close` produces a complete copy;
@@ -197,7 +207,8 @@ authoring request is handed down as part of the auditor's answer.
   - an unknown membership is never delivered as an empty answer.
 - **Sabotage:** a build that drops the last element, one that writes the
   manifest after the members, and one that delivers the conversation beside the
-  answer.
+  answer; also one that regenerates the rendering at delivery under a different
+  form or silently adds a substantive conclusion.
 
 ### C6 — The record is honest
 
@@ -236,7 +247,8 @@ schemas, tools and rendered fixtures follow the remaining form specification.
 - **Sabotage:** a build that paraphrases the manager's question, requires a module
   for open inquiry, or silently gives another family the inquiry-framing task.
 - **Still pending:** concrete field/tool checks, citation handling, stopping
-  rules/checks, treatment of a prior and rendering. The former `survey` and
+  rules/checks and treatment of a prior. C5 owns the decided rendering behavior.
+  The former `survey` and
   `claim-check` examples do not select these by becoming fixtures.
 
 ### C8 — Close from every state
@@ -513,14 +525,12 @@ the case counts, the timings and every control that fired.
 This tier answers C10. It checks procedure, never answer quality.
 
 **Fixed commissions.** The apparatus will contain small commissions covering the
-selected forms, with known structures. Exact fixtures await the form specification.
-The earlier examples below remain candidates for comparison, not a release roster
-or inherited answer schema:
-
-- a `survey` over a handful of files with one planted fact relevant to the
-  question;
-- a `claim-check` whose claim rests on three premises, exactly one of which the
-  material doesn't support.
+three selected families: open inquiry, inquiry framing and comparison. Each
+specimen includes a manager submission, actual auditor tools and an example
+return, with an inadequate-evidence case. Exact fixtures await the form
+specification; planted evidence may help inspection but finding it is not a
+required substantive outcome. The earlier `survey` and `claim-check` examples
+are not inherited schemas.
 
 Each is sized so that forcing compaction is practical, either through a low
 compaction trigger or a run long enough to reach it.

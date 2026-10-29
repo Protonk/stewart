@@ -27,13 +27,19 @@ The user has accepted the [auditor retry/re-entry recommendation](auditor-reentr
 now recorded in CONTRACTS and C3/C4. From the [three question-design paths](question-types-01/PATHS.md),
 the user selected C as the family-library architecture, B as a specific
 inquiry-framing type, and A roughly as open inquiry with optional evidence modules.
-CONTRACTS records that synthesis; concrete forms remain unfinished. Stewart's
+CONTRACTS records that synthesis and the subsequent accepted initial library
+(open inquiry, inquiry framing, comparison) and deterministic Markdown rendering,
+generated at preparation, inspectable and sealed with the structured answer.
+The user asked to discuss enforcement and prompting separately; the
+[briefing](question-types-01/ENFORCEMENT-BRIEFING.md) is a recommendation, not an
+adopted policy. Concrete family submission/tool/return specimens, including
+inadequate evidence, remain to be specified. Stewart's
 opinions about question/material/evidence pairings must leave broad requests usable
 and the residual type an ordinary service. This is specification and discussion work; no runtime
 implementation or model call was commissioned or run.
 Historical conversations, prototypes and frozen implementation are unchanged.
 Verification: `git diff --check` passed; an isolated Python documentation check
-validated 30 local link targets and code-fence balance in the six changed documents.
+validated 32 local link targets and code-fence balance in the six changed documents.
 No runtime test cases were selected or claimed.
 
 **Agreed working model:** one submission folder, one acceptance boundary and one
@@ -100,10 +106,24 @@ modules; no compulsory module selection or justification. Inquiry framing explic
 commissions formulation and useful bounded investigation within the same commission,
 preserving the original question and attributing the framing to the auditor. Other
 families can contest a premise or report missing evidence without silently acquiring
-that task. Final names, slots/tools, common expectations, module interactions,
-citation handling, stopping rules/checks, priors and rendering remain open. The
-other example families are not an adopted release roster, and the old claim-check
-slots are not inherited obligations. Human transport and optional studies remain later.
+that task. Comparison joins those two as the accepted initial library. Concrete
+specimens must include an inadequate-evidence case. Final names, slots/tools,
+common expectations, module interactions, citation handling, stopping rules/checks
+and priors remain open; the old claim-check slots are not inherited obligations.
+Rendering now preserves the structured answer and seals an inspectable deterministic
+Markdown presentation generated during preparation, with Stewart rendering
+attribution and no added interpretation. Manager close applies the same rendering
+rule to its own seal after launch. Delivery/readback use stored sealed bytes.
+Human transport and optional studies remain later.
+
+**Current enforcement proposal, not adopted:** refuse malformed operations and
+invalid structured locators/quotes, without grading evidential support; report
+mechanically missing form entries at prepare without a submission completeness
+gate; preserve the existing empty-answer route; one procedural reminder after an
+ordinary unsubmitted stop and one factual near-limit notice, within cumulative
+allowances. The briefing contrasts this with required coverage entries and names
+that departure explicitly. No reminder or form policy was settled by accepting
+the library or rendering.
 
 **Historical review findings, coordinator assessment:**
 
@@ -165,7 +185,7 @@ The two past design conversations remain closed. No transition stage is commissi
   platform, no-Git, no-baseline and auditor's-world decisions), and a
   transition-status review whose eight original questions now have explicit
   dispositions: removal/holds/custodian/live access are settled for the first
-  release; stopping is engineering/qualification, forms are the final discussion,
+  release; stopping is engineering/qualification, forms/enforcement are the final discussion and rendering is settled,
   and live legacy obligations remain a retirement gate. ROUTER.md and
   END-TO-END.md under `linux-mvp-01/` are the settled sketch and test design, with
   the revising turns noted at their tops. The README is framed as the frozen
