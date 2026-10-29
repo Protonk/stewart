@@ -1,6 +1,6 @@
 # Current coordinator account
 
-Updated 2026-10-28 by the incoming coordinator (Codex) for the manager/auditor
+Updated 2026-10-29 by the incoming coordinator (Codex) for the manager/auditor
 interface review. This is a working account of observed work,
 authority received and remaining questions. [Standing orders](STANDING-ORDERS.md)
 own operating instructions; [the directory entry](README.md) identifies intake
@@ -21,19 +21,33 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
-The user commissioned a historical review of manager/worker drafting and
-commissioning, going behind today's router conversation, to identify inherited
-assumptions relevant to an ordinary preparation directory. The review is
-source/document research, not runtime qualification or implementation.
+The historical review of manager/worker drafting is complete. The current
+discussion concerns the manager's submission boundary, especially copying an
+ordinary editable folder. This is product design, not runtime qualification or
+implementation; the earlier design conversations remain closed.
 
-**Candidate under discussion, not a decision:** Stewart may create an ordinary
-editable preparation directory. The manager assembles the question and material
-with ordinary tools; commissioning performs preflight, copies and seals, then
-issues the receipt before the auditor is summoned. The draft label need not be
-an exposed workflow state. The user explicitly wants failed copies accounted
-for, the modest meaning of close worked out against actual directory ownership,
-and Stewart responsible for the submission boundary, possibly by refusing
-commissioning. No preview removal, directory ownership or disposal rule is decided.
+**Agreed working model:** one submission folder, one acceptance boundary and one
+close action. A failed submission leaves the folder editable; an accepted
+submission fixes the captured commission. Close works before launch without
+requiring an auditor or inventing an auditor return, and leaves the manager's
+folder alone. Failed intake must be accounted for, but need not be completed
+successfully merely to close. Actual custody loss remains distinct from ordinary
+submission failure. Close can remain visibly unfinished when its own operations
+cannot complete; repeating close is the supported continuation. Acceptance and
+its receipt must be reconciled after interruption before another capture is
+attempted. Exact storage, retention and interruption mechanisms remain open.
+
+**Current copying discussion:** source stability cannot be proved by ordinary
+before/after scans. The user favors a cooperative arrangement, with hashing to
+detect likely interference, rather than a promise of an atomic source snapshot.
+The new proposal is manager `prepare()` followed by `commission(handle,
+I_AM_FINISHED=true)`, analogous to auditor preparation and explicit submission.
+The manager would participate by declaring preparation finished; Stewart would
+perform the hashing. This interface is under discussion, not yet a contract:
+what the handle binds, what the acknowledgment means, and the source/copy checks
+need definition. Manager declarations and Stewart's observations must remain
+separately attributed. No separate preview interface or runtime work is settled
+by this proposal.
 
 **Historical review findings, coordinator assessment:**
 
@@ -82,8 +96,9 @@ files, frozen code and contracts are unchanged; no runtime tests or model calls 
 
 The earlier delegated manager recall and status/close design fixes are recorded
 in CONTRACTS and synchronized into the sketch/test design at `eff8126`.
-Their application to an uncommissioned preparation directory is now open;
-never-run accepted commissions and unaccepted preparation are not interchangeable.
+Their detailed application to intake still needs reconciliation with the agreed
+working model above; never-run accepted commissions and unaccepted preparation
+are not interchangeable.
 Auditor retry/re-entry and question typing/coupling still need separate discussions.
 The two past design conversations remain closed. No transition stage is commissioned.
 
