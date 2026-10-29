@@ -5,11 +5,11 @@ end" here means from a problem file a manager wrote to a verified return the
 manager reads, through the actual release binary, with nothing replaced except
 the model provider, and in one tier not even that.
 
-Revised at turns 19–22 of [the conversation](CONVERSATION.md): ledger truth
+Revised at turns 19–23 of [the conversation](CONVERSATION.md): ledger truth
 replaces settled interruptions in C3 and C4, `collect` and `deliver` leave the
-command set in C3, C5 and C8, two claims are added for the manager side (C11,
-C12), and C5 delivers only the submission. The version before those turns is in
-Git at `05a21d4`.
+command set in C3, C5 and C8, three claims are added (C11, C12, C13), and C5
+delivers only the submission. The version before those turns is in Git at
+`05a21d4`. The design review ended at turn 23; this is the settled test design.
 
 ## What we care about
 
@@ -31,6 +31,7 @@ failing.
 | C10 | Real models can actually use the arrangement and finish. |
 | C11 | The app teaches: the problem file, the preview and the receipt show the manager exactly what the auditor gets. |
 | C12 | The run is a handoff: a receipt's run line works for whoever holds it, from anywhere. |
+| C13 | A dead run continues: the audit is its ledger, and `run` again picks it up. |
 
 Answer quality is not on the list. Stewart doesn't judge answers, so its tests
 don't either.
@@ -247,6 +248,24 @@ deliver command for the suite to drive.
 - **Sabotage:** a build whose run line depends on the commissioning directory,
   and one that commissions over the network.
 
+### C13 — A dead run continues
+
+- **Pass:** the driver kills the binary mid-run at fixed points: during a
+  provider request, while a tool reply is being written, and between turns.
+  `status` then reports the audit interrupted with its run count. `run REF`
+  continues: the first request of the new conversation carries the continuation
+  notice and the same arrangement digest as the first run; the ledger's elements
+  are unchanged; the limits reported to the auditor are cumulative across runs;
+  the final submission contains every element recorded before the kill exactly
+  once; the record holds every run.
+- **Differing:** a run killed after a confirmed submit leaves the audit ended;
+  `run` refuses with a sign and `close` delivers. A provider that fails past the
+  bounded retry ends the run as interrupted, and `run` again continues.
+- **Invariance:** the same script without a kill yields the same sealed answer
+  (shared with C4).
+- **Sabotage:** a build that resets limits on continuation, and one that starts
+  a fresh ledger.
+
 ### Platforms
 
 The scripted tier runs, unchanged, on:
@@ -277,15 +296,16 @@ Each is sized so that forcing compaction is practical, either through a low
 compaction trigger or a run long enough to reach it.
 
 **Runs.** For each model a release supports: each commission three times at the
-release's default effort, plus one run with compaction forced.
+release's default effort, plus one run with compaction forced and one run killed
+midway and continued.
 
 **The gate passes when, for every run:**
 
 - the run ends sealed by the auditor's own submission, not by a limit, a collect,
   or a second unsubmitted stop;
 - every citation in the answer resolves;
-- after compaction, no element recorded before it is added again, and the
-  submission still contains them;
+- after compaction, and after a kill and continuation, no element recorded
+  before it is added again, and the submission still contains them;
 - for `claim-check`, the answer uses the coupling's slots rather than only
   free-form elements.
 

@@ -1601,3 +1601,20 @@ Why this and not the others:
 What it needs: `run` refuses while another run holds the audit and after submission or close; limits belong to the audit, not the process; a provider outage inside a run gets a bounded retry, then the run ends and `run` again continues. Replaying the previous conversation to the model so it keeps its reading is an adapter optimization to consider only if the conformance tier shows re-reading after a kill is costly. It would change nothing in the record.
 
 If that is the answer, say so and I will record it. It is the only item from these two questions not yet in the materials.
+
+---
+
+## 23. The answer, and the end of the design review
+
+> Ok. Let's call that the answer. Consider this the end of the design review.
+> Adjust the coordinator notes so that the next coordinator knows to not carry on
+> your habit of adding to coordinator notes for this conversation. When you're
+> satisfied with the design, settle our design documents and indicate in a new
+> turnover brief that the next coordinator will familiarize themselves with the
+> plan and the overall sequence and prepare to manage the continuing transition.
+> Report when that turnover brief is ready.
+
+The dead-run recommendation from turn 22 is decided and recorded in CONTRACTS,
+ROUTER.md and END-TO-END.md. This is the last turn of the design review; the
+record closes here. The coordinator's report went to the coordinator records,
+not to this file.

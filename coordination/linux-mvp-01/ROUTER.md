@@ -2,11 +2,13 @@
 
 *A problem router for cooperative actors who want to make it **just** so.*
 
-Revised at turns 19–22 of [the conversation](CONVERSATION.md): the auditor's
+Revised at turns 19–23 of [the conversation](CONVERSATION.md): the auditor's
 tool as a form and a ledger (19); the inquiry as the manager's unit, the
 operations after the receipt, and the escalated run (20); the problem file,
 material acceptance and the pre-run lesson (21); the return as the submission
-and nothing else (22). The version before those turns is in Git at `05a21d4`.
+and nothing else (22); the dead run as a continued placement (23). The version
+before those turns is in Git at `05a21d4`. The design review ended at turn 23;
+CONTRACTS records the decisions, and this is the settled sketch.
 
 ## The idea
 
@@ -272,6 +274,18 @@ depending on it: an agent manager may commission, hand the run line to a person,
 do nothing while it runs, and come back to `status` afterward; or run it
 itself; or both within one session.
 
+**The dead run.** An audit is its ledger, and a run is one placement of the
+auditor into the arrangement. A run that dies ends a placement, not the audit.
+`run REF` afterward continues it: a new conversation, the same arrangement, the
+same ledger, limits counted across runs. The resumed auditor is told it is
+continuing and that `what_am_i_working_with` shows what it has recorded. Stewart
+records every run and `status` says how many there were. A provider outage
+inside a run gets a bounded retry; then the run ends and `run` again continues.
+This is what a person auditor does on returning to the work, so one protocol
+serves both adapters. Replaying the earlier conversation so a model keeps its
+reading is an adapter optimization to weigh on evidence; it changes nothing in
+the record.
+
 ## The return
 
 The manager receives what the auditor submitted through the tool and `prepare`
@@ -337,7 +351,9 @@ in JSON, for managers who are agents.
 
 ```
 problem ─▶ commissioned ─▶ running ─▶ ended ─▶ delivered ─▶ closed
-                                        (submitted, limit, or close)
+                            │   ▲     (submitted, limit, or close)
+                            ▼   │
+                         interrupted   (run again continues)
 ```
 
 Each audit lives under Stewart's home as write-once records: the copied material,

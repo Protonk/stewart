@@ -170,7 +170,10 @@ not approved, and retaining records does not imply it. The full staged
 construction/review/release/run relationship was reconsidered without giving
 existing code or tests a presumption of continued product responsibility. The
 user subsequently selected no dedicated successor program executor, below;
-the possible audit restart convenience remains undecided.
+the possible audit restart convenience remains undecided. *Settled 2026-10-28:
+there is no restart convenience. A dead run is continued as the same
+undertaking under "An audit is its ledger" in the successor interfaces section;
+continuation is not a restart.*
 
 **Standard commission receipts support manager recall.** Decided direction,
 2026-10-27; **Implemented in Rust** for the bounded commission-input delivery
@@ -636,6 +639,24 @@ The manifest names the audit reference, the form and its version, and who
 sealed it, which is how the Mission's "recorded in returns" is met; the full
 arrangement is in the record. This narrows the 2026-10-27 return contents
 above.
+
+**An audit is its ledger; a run is one placement.** Decided 2026-10-28 (turn
+23). A run is one placement of the auditor into the arrangement. A run that
+dies, through a tool-call timeout, a closed terminal or a provider outage that
+outlasts a bounded retry, ends a placement, not the audit. `run` on the same
+reference continues the audit: a new conversation, the same arrangement and
+ledger, limits counted across runs, and the auditor told that it is continuing
+and that the re-entry call shows what it has recorded. Stewart records every
+run, status says how many there were, and the return is unaffected. `run`
+refuses while another run holds the audit and after submission or close. This
+is continuation of one undertaking, not a restart facility: one ledger, one
+answer sealed once, limits that never reset, no second investigation. It
+settles the restart-from-start convenience left open under the principles as
+none. The same continuation is what a person auditor does on returning to the
+work, so one protocol serves both adapters. Replaying the earlier conversation
+to a model so it keeps its reading is an adapter optimization to weigh only on
+conformance-tier evidence that re-reading after a kill is costly; it would
+change nothing in the record.
 
 ## Handoff and audit-owned facilities
 
@@ -1485,6 +1506,7 @@ when implementation is commissioned.
 Recording the remit does not itself promise replay. The preference remains
 zero audit retry facilities, with at most one restart-from-start convenience
 still open; selecting no executor does not decide that separate interface.
+*Settled 2026-10-28: no restart convenience; see "An audit is its ledger".*
 The lean against materializing mutable helper-runtime recovery directories is
 also separate: supplied auditor helpers are not the removed program runner.
 
