@@ -21,6 +21,15 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
+**Paused at the user's request before a network interruption, 2026-10-29.** The
+active task is to draft three worked examples and brief a small sub-agent pressure
+test. The draft is in [question-examples-01/](question-examples-01/BRIEFING.md);
+the [pause checkpoint](question-examples-01/CHECKPOINT.md) records completed files,
+remaining review and the undelivered chat briefing. No sub-agents, external model
+calls, runtime builds or background jobs were started. The proposed review is not
+launched, and its tools/schemas are not adopted policy. Resume that drafting task
+from the checkpoint; do not restart the earlier design discussions.
+
 The user's delegated custody/retention and initial-material settlement is recorded
 in CONTRACTS and synchronized into AGENTS, ROUTER, END-TO-END and TRANSITION-PLAN.
 The user has accepted the [auditor retry/re-entry recommendation](auditor-reentry-01/BRIEFING.md),
