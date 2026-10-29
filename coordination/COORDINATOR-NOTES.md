@@ -21,14 +21,18 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
-**Paused at the user's request before a network interruption, 2026-10-29.** The
-active task is to draft three worked examples and brief a small sub-agent pressure
-test. The draft is in [question-examples-01/](question-examples-01/BRIEFING.md);
-the [pause checkpoint](question-examples-01/CHECKPOINT.md) records completed files,
-remaining review and the undelivered chat briefing. No sub-agents, external model
-calls, runtime builds or background jobs were started. The proposed review is not
-launched, and its tools/schemas are not adopted policy. Resume that drafting task
-from the checkpoint; do not restart the earlier design discussions.
+**Resumed at the user's instruction, 2026-10-29.** The three worked examples and
+small sub-agent pressure-test proposal are in
+[question-examples-01/](question-examples-01/BRIEFING.md). The local consistency
+review is complete and the chat briefing is ready. The
+[pause checkpoint](question-examples-01/CHECKPOINT.md) preserves the earlier stop.
+No sub-agents, external model calls, runtime builds or background jobs were
+started. The proposal uses three fresh auditors (comparison with B withheld),
+then one fresh reader, followed by one integration pass and targeted recheck.
+The review is not launched; the paper tools/schemas remain proposals, not policy.
+Local example checks passed: 10 Markdown files, 25 local links, three material
+indexes, 21 entries, 22 citations, six renderings, three inadequate-packet scopes
+and omission lists, and one exact quotation range. No product test ran.
 
 The user's delegated custody/retention and initial-material settlement is recorded
 in CONTRACTS and synchronized into AGENTS, ROUTER, END-TO-END and TRANSITION-PLAN.
@@ -42,8 +46,8 @@ generated at preparation, inspectable and sealed with the structured answer.
 The user accepted the separate
 [enforcement briefing](question-types-01/ENFORCEMENT-BRIEFING.md); CONTRACTS now
 records its policy and C7 its qualification design. Concrete family
-submission/tool/return specimens, including inadequate evidence, remain to be
-specified. Stewart's
+submission/tool/return specimens, including inadequate evidence, are now drafted
+for review; their schemas are not adopted. Stewart's
 opinions about question/material/evidence pairings must leave broad requests usable
 and the residual type an ordinary service. This is specification and discussion work; no runtime
 implementation or model call was commissioned or run.
@@ -226,10 +230,10 @@ active or pending.
 
 ## Next
 
-Prepare concrete submission/tool/return specimens for open inquiry, inquiry
-framing and comparison under the settled policy, including inadequate evidence.
-These are the remaining design artifacts; no broad policy issue is currently
-identified as blocking the foundation. A build commission still needs its endpoint
+The concrete submission/tool/return specimens and pressure-test proposal are
+ready in question-examples-01; deliver the briefing and treat the proposed review
+as the next bounded design exercise, not an already dispatched task. No broad
+policy issue is currently identified as blocking the foundation. A build commission still needs its endpoint
 and model/provider qualification scope, with explicit bounded permission and a
 budget for model-consuming work. Routine engineering and record reconciliation
 belong to the coordinator within that commission. Hidden priors, larger catalogues

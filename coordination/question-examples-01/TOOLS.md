@@ -39,8 +39,10 @@ by their authors. Code reasoning is not a witnessed execution.
   invalid call, not a guess to preserve or erase previous content.
 - `delete(handle)` removes exactly that version from current membership under
   the settled repeated-delete rules. Retained old bytes are not physically removed.
-- `answer_read(handle)` retrieves an entry's current recorded value or, for a
-  prepared-member handle, the exact prepared rendering/manifest bytes.
+- `answer_read(handle)` retrieves the explicitly named current entry/version or,
+  for a prepared-member handle, the exact prepared rendering/manifest bytes. A
+  stale entry handle receives a diagnostic and the current handle; it does not
+  silently select a newer version. Historical entry browsing is not added here.
 - `what_am_i_working_with()` supplies state, revision, cumulative allowances,
   question/material access, entry handles and recent completed effects. It cannot
   restore thoughts that were never recorded. Reads and mutations obey CONTRACTS'

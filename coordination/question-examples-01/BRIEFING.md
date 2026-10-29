@@ -83,8 +83,9 @@ The packets are cooperative read scopes for a paper exercise, not an enforced
 Stewart auditor sandbox. Inspect the workers' actual reads where the harness
 exposes them; any exposure to withheld material qualifies that result.
 
-Each worker returns a compact proposed tool-call trace, its resulting answer,
-and up to five concrete friction points. A friction point names the exact call,
+Each worker makes one paper attempt, with at most twenty proposed calls, and
+returns the trace, its resulting answer and up to five concrete friction points.
+A friction point names the exact call,
 field, reply or instruction and what the worker had to guess. Where the card
 does not determine a response, mark it unresolved instead of inventing product
 behavior. The trace is a paper walk-through, never a claim that real tools ran.
@@ -95,11 +96,13 @@ Ask it to identify what was investigated, what remains unanswered, who supplied
 each judgment and whether any wording implies broader assurance than the answer
 supports. It does not see the intended interpretation or author solutions. This
 tests whether the return can stand on its own in the agreed manager context.
+Keep that reader's output to one page of concrete observations.
 
 The coordinator checks source/reference validity and fidelity, then tries four
 small paper controls against the card: an invalid quotation; a valid but irrelevant
 citation; an empty selection; and two contradictory entries. The expected
 mechanical effects are prescribed by CONTRACTS, not by agreement with an answer.
+The exact quote and expected effects are in [CITATION-CONTROLS.md](CITATION-CONTROLS.md).
 
 Save dispatch briefs and admitted inputs before launch, with exact source revision,
 allowed reads, exclusive output directories and a short completion bound. Workers
@@ -125,3 +128,18 @@ It cannot establish runtime custody, real tool reliability, supported-model
 conformance, intellectual usefulness of audits or statistical robustness. Those
 claims require different evidence. The real model gate remains later and bounded
 by its own authorization.
+
+## Local review before presenting this briefing
+
+The resumed review made initial marker state and `was_sent` semantics explicit
+in all three source packets, then updated their full-file references. It also
+clarified that answer reads never silently follow a stale entry handle to a newer
+version. The remaining questions above are deliberate review targets, not fixes
+already validated by agents. No sub-agent has seen or tested these examples yet.
+
+`git diff --check` passed. An isolated Python artifact check verified 10 packet
+Markdown files, 25 local link targets, three submission/material indexes, 21
+authored entries, 22 entry citations, six faithful renderings, all three inadequate
+packet scopes/omission lists, and one exact quotation range. It also checked the
+ordinary walkthroughs' entry/revision replies and preserved manager wording.
+These results establish local example consistency, not executed product behavior.

@@ -1,5 +1,12 @@
 # Pause checkpoint
 
+**Resumed on the user's instruction, 2026-10-29.** The draft has received its
+local consistency review and the briefing is ready for delivery. Marker semantics
+and exact-version answer reads were clarified; citation values, renderings and
+variant scopes were checked. Current work and proposed next steps are in
+[BRIEFING.md](BRIEFING.md). No sub-agents or runtime work were launched. The pause
+account below is preserved as the point from which work resumed.
+
 2026-10-29. The user asked for a suitable pause point before interrupting the
 network. Stop here after saving and committing the draft. No sub-agent, provider
 call, container, runtime build or background job was started or is pending.

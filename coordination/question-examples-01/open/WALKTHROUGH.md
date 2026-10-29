@@ -14,7 +14,7 @@ Selected materials:
 
 | Material ID in this walkthrough | Captured file | Bytes |
 | --- | --- | --- |
-| `m1` | [requirements.txt](submission/materials/requirements.txt) | 589 |
+| `m1` | [requirements.txt](submission/materials/requirements.txt) | 662 |
 | `m2` | [a.py](submission/materials/a.py) | 175 |
 | `m3` | [supplied-report.txt](submission/materials/supplied-report.txt) | 591 |
 
@@ -33,7 +33,7 @@ text from the linked files and these usable full-file citation values:
   "m1": {
     "material": "m1",
     "start": 0,
-    "end": 589
+    "end": 662
   },
   "m2": {
     "material": "m2",
@@ -58,7 +58,7 @@ record_observation({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     },
     {
       "material": "m2",
@@ -90,7 +90,7 @@ record_limit({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -117,7 +117,7 @@ Rendered by Stewart. Entry text is attributed to the auditor.
 
 Implementation A can send the same reminder twice if the worker stops after sending but before recording the sent marker. On restart, the missing marker permits another send. This conflicts with R1 under the supplied assumptions. The supplied fictional report describes that outcome for R8; I have not executed a test.
 
-Citations: m1 [0, 589); m2 [0, 175); m3 [0, 591).
+Citations: m1 [0, 662); m2 [0, 175); m3 [0, 591).
 
 ## Account
 
@@ -127,7 +127,7 @@ The supplied excerpts support one restart-related duplicate-delivery concern. Th
 
 Only one delivery function, stated assumptions and the limited supplied report were examined. The rest of the app, concurrent workers and gateway failures within a call are outside this packet.
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 ```
 
 ## Inadequate-evidence variant

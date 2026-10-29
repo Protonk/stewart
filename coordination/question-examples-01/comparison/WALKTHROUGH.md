@@ -14,7 +14,7 @@ Selected materials:
 
 | Material ID in this walkthrough | Captured file | Bytes |
 | --- | --- | --- |
-| `m1` | [requirements.txt](submission/materials/requirements.txt) | 589 |
+| `m1` | [requirements.txt](submission/materials/requirements.txt) | 662 |
 | `m2` | [a.py](submission/materials/a.py) | 175 |
 | `m4` | [b.py](submission/materials/b.py) | 175 |
 
@@ -33,7 +33,7 @@ text from the linked files and these usable full-file citation values:
   "m1": {
     "material": "m1",
     "start": 0,
-    "end": 589
+    "end": 662
   },
   "m2": {
     "material": "m2",
@@ -58,7 +58,7 @@ record_criterion({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -82,7 +82,7 @@ record_comparison({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -104,7 +104,7 @@ record_limit({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -131,13 +131,13 @@ Rendered by Stewart. Entry text is attributed to the auditor.
 
 Compare A and B against R1 (at most one visible message per reminder ID) and R2 (eventual delivery after restart when the gateway is available), using the supplied serial-worker and completed-call assumptions.
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 
 ## Comparison
 
 A sends before marking. A restart in that gap can duplicate a message, conflicting with R1. B marks before sending. A restart in that gap finds the marker and skips sending, so the reminder can remain undelivered despite gateway availability, conflicting with R2. These are deductions from the supplied code and assumptions; no execution report is included in this packet.
 
-Citations: m2 [0, 175); m4 [0, 175); m1 [0, 589).
+Citations: m2 [0, 175); m4 [0, 175); m1 [0, 662).
 
 ## Account
 
@@ -147,7 +147,7 @@ Neither ordering satisfies both requirements across these restart windows. The p
 
 The comparison covers only the shown functions under the supplied assumptions. It does not establish behavior with overlapping workers or partial gateway failures, or compare any third implementation.
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 ```
 
 ## Inadequate-evidence variant
@@ -165,7 +165,7 @@ record_criterion({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -183,7 +183,7 @@ record_account({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -214,13 +214,13 @@ Rendered by Stewart. Entry text is attributed to the auditor.
 
 The requested criteria are R1 and R2 under the supplied restart assumptions.
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 
 ## Account
 
 A has a send-before-mark restart window that can produce duplicate delivery. B is not supplied, so I cannot compare A with B or select between them from this packet.
 
-Citations: m2 [0, 175); m1 [0, 589).
+Citations: m2 [0, 175); m1 [0, 662).
 
 ## Limit
 

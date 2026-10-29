@@ -14,7 +14,7 @@ Selected materials:
 
 | Material ID in this walkthrough | Captured file | Bytes |
 | --- | --- | --- |
-| `m1` | [requirements.txt](submission/materials/requirements.txt) | 589 |
+| `m1` | [requirements.txt](submission/materials/requirements.txt) | 662 |
 | `m2` | [a.py](submission/materials/a.py) | 175 |
 | `m3` | [supplied-report.txt](submission/materials/supplied-report.txt) | 591 |
 
@@ -33,7 +33,7 @@ text from the linked files and these usable full-file citation values:
   "m1": {
     "material": "m1",
     "start": 0,
-    "end": 589
+    "end": 662
   },
   "m2": {
     "material": "m2",
@@ -104,7 +104,7 @@ record_account({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -118,7 +118,7 @@ record_limit({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -161,13 +161,13 @@ Citations: m2 [0, 175); m3 [0, 591).
 
 Yes, that restart window permits duplicate delivery under the stated assumptions and conflicts with R1. This answer addresses the working question selected above.
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 
 ## Limit
 
 This inquiry did not establish the reliability of the rest of the application or investigate all ways a reminder could disappear. Gateway failures within a call and concurrent workers are outside the supplied assumptions.
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 ```
 
 ## Inadequate-evidence variant
@@ -185,7 +185,7 @@ record_working_question({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -198,7 +198,7 @@ record_relation({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -211,7 +211,7 @@ record_account({
     {
       "material": "m1",
       "start": 0,
-      "end": 589
+      "end": 662
     }
   ]
 })
@@ -242,19 +242,19 @@ Rendered by Stewart. Entry text is attributed to the auditor.
 
 Does the implementation meet R1 and R2 across a worker restart?
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 
 ## Relation
 
 This would examine duplicate and missing reminders, the concrete requirements corresponding to the stated concern.
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 
 ## Account
 
 The packet states the desired behavior and simplifying assumptions, but supplies no implementation or behavior report. I cannot investigate whether the implementation meets these requirements from this material.
 
-Citations: m1 [0, 589).
+Citations: m1 [0, 662).
 
 ## Limit
 
