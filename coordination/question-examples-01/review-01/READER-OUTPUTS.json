@@ -1,0 +1,17 @@
+[
+  {
+    "path": "reader/outputs/CHECKPOINT.md",
+    "bytes": 805,
+    "sha256": "d60380d672c9d851827f06087a3b3544b60aa2aba1c8efb88ad03077d1e7359a"
+  },
+  {
+    "path": "reader/outputs/READING.md",
+    "bytes": 3796,
+    "sha256": "8f917f866fd3613d944b3e59b73e5117d4105f75ed3fb7fb858cbc466515c23d"
+  },
+  {
+    "path": "reader/outputs/READS.md",
+    "bytes": 1207,
+    "sha256": "32d4142665a2300d458b5c7c521811fd8c047a5ef0accc7b3502e3147c068978"
+  }
+]

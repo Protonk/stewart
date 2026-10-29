@@ -21,40 +21,34 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
-**Resumed at the user's instruction, 2026-10-29.** The three worked examples and
-small sub-agent pressure-test proposal are in
-[question-examples-01/](question-examples-01/BRIEFING.md). The local consistency
-review is complete and the chat briefing is ready. The
-[pause checkpoint](question-examples-01/CHECKPOINT.md) preserves the earlier stop.
-No sub-agents, external model calls, runtime builds or background jobs were
-started. The proposal uses three fresh auditors (comparison with B withheld),
-then one fresh reader, followed by one integration pass and targeted recheck.
-The review is not launched; the paper tools/schemas remain proposals, not policy.
-Local example checks passed: 10 Markdown files, 25 local links, three material
-indexes, 21 entries, 22 citations, six renderings, three inadequate-packet scopes
-and omission lists, and one exact quotation range. No product test ran.
+**Bounded question-family pressure test complete, 2026-10-29.** The user
+commissioned the proposed review, now recorded in
+[Review 01 results](question-examples-01/review-01/RESULTS.md). Source `a7c9443`,
+exact actor/reader inputs and all original output hashes are retained. Root
+integrated three fresh auditors, one fresh reader and one targeted fresh recheck
+in this checkout; all five agents completed and have no pending work. No external
+provider/Claude session, source execution, container or Rust implementation ran.
+Handles, read/write ownership and checkpoints are in the review's PROGRESS.md.
 
-The user's delegated custody/retention and initial-material settlement is recorded
-in CONTRACTS and synchronized into AGENTS, ROUTER, END-TO-END and TRANSITION-PLAN.
-The user has accepted the [auditor retry/re-entry recommendation](auditor-reentry-01/BRIEFING.md),
-now recorded in CONTRACTS and C3/C4. From the [three question-design paths](question-types-01/PATHS.md),
-the user selected C as the family-library architecture, B as a specific
-inquiry-framing type, and A roughly as open inquiry with optional evidence modules.
-CONTRACTS records that synthesis and the subsequent accepted initial library
-(open inquiry, inquiry framing, comparison) and deterministic Markdown rendering,
-generated at preparation, inspectable and sealed with the structured answer.
-The user accepted the separate
-[enforcement briefing](question-types-01/ENFORCEMENT-BRIEFING.md); CONTRACTS now
-records its policy and C7 its qualification design. Concrete family
-submission/tool/return specimens, including inadequate evidence, are now drafted
-for review; their schemas are not adopted. Stewart's
-opinions about question/material/evidence pairings must leave broad requests usable
-and the residual type an ordinary service. This is specification and discussion work; no runtime
-implementation or model call was commissioned or run.
-Historical conversations, prototypes and frozen implementation are unchanged.
-Verification: `git diff --check` passed; an isolated Python documentation check
-validated 33 local link targets and code-fence balance in the six changed documents.
-No runtime test cases were selected or claimed.
+The four actor attempts made 52 proposed paper calls, recorded 20 entries and
+used 41 checked citation ranges. The reader recovered scopes and attribution,
+with the comparison's decisive inability buried late. Root made one candidate-card
+revision: auxiliary comparison observations, direct answer/inability placement,
+criterion attribution and a concrete paper Markdown convention. The fresh recheck
+led with inability, used observations and matched that rendering. It still filled
+comparison with an inability statement; missing-section/empty submission was not
+exercised by an actor. Actual prepare/manifest/submit schemas remain symbolic.
+This is limited paper usability evidence, not runtime or model qualification.
+Full child tool transcripts are not exposed to root; read scopes are worker
+reports and input hashes, not proof of enforced isolation.
+
+The library, rendering, enforcement, custody and retry policies are settled in
+CONTRACTS; detailed tool names/schemas are still candidates. The current work
+returns the results, not a new policy debate or an automatically started Rust
+stage. Further work is concrete interface specification and a bounded build
+commission with model qualification scope/budget. No broader repeated agent cycle
+is pending. The [earlier network checkpoint](question-examples-01/CHECKPOINT.md)
+is historical and does not pause current work.
 
 **Agreed working model:** one submission folder, one acceptance boundary and one
 close action. A failed submission leaves the folder editable; an accepted
@@ -230,15 +224,14 @@ active or pending.
 
 ## Next
 
-The concrete submission/tool/return specimens and pressure-test proposal are
-ready in question-examples-01; deliver the briefing and treat the proposed review
-as the next bounded design exercise, not an already dispatched task. No broad
-policy issue is currently identified as blocking the foundation. A build commission still needs its endpoint
-and model/provider qualification scope, with explicit bounded permission and a
-budget for model-consuming work. Routine engineering and record reconciliation
-belong to the coordinator within that commission. Hidden priors, larger catalogues
-and elaborate module composition are unselected; defer rather than inherit them.
-WSL handoff timing and Python retirement retain their later decision points.
+Return the bounded pressure-test findings and their limits. Do not repeat the
+agent exercise or treat symbolic paper replies as conformance. Complete exact
+preparation/manifest/submission schemas when specifying the Rust interfaces;
+carry missing-section, empty-answer and conflicting-entry paths into actual
+acceptance tests. A build commission still needs its endpoint and model/provider
+qualification scope, with explicit bounded permission and budget for model-consuming
+work. Hidden priors, larger catalogues and elaborate module composition remain
+unselected. WSL handoff timing and Python retirement keep their later decisions.
 
 ## Environment notes
 

@@ -1,0 +1,62 @@
+{
+  "scope": "Coordinator checks on paper fixtures, not implemented Stewart validation",
+  "input_hashes_checked": 17,
+  "witness_sha256": "3c8aa8422012374ddd204acebf0ef45a78fa49cf8fb129c0a3faa104329edb98",
+  "controls": [
+    {
+      "case": "valid_quote",
+      "citation": {
+        "material": "m1",
+        "start": 50,
+        "end": 119,
+        "quote": "R1. A reminder ID should cause at most one recipient-visible message."
+      },
+      "observed_bytes_match": true,
+      "prescribed_product_effect": "admit mechanically valid citation; no support verdict"
+    },
+    {
+      "case": "changed_quote_same_range",
+      "citation": {
+        "material": "m1",
+        "start": 50,
+        "end": 119,
+        "quote": "R1. A reminder ID should cause exactly one recipient-visible message."
+      },
+      "observed_bytes_match": false,
+      "prescribed_product_effect": "refuse mutation; retain raw attempted call"
+    },
+    {
+      "case": "valid_but_irrelevant",
+      "claim": "The service encrypts every stored reminder.",
+      "citation": {
+        "material": "m1",
+        "start": 50,
+        "end": 119,
+        "quote": "R1. A reminder ID should cause at most one recipient-visible message."
+      },
+      "observed_bytes_match": true,
+      "prescribed_product_effect": "no semantic rejection or support grade"
+    },
+    {
+      "case": "empty_selection",
+      "entries": [],
+      "prescribed_product_effect": "prepare and confirmed submit remain available; renderer states no answer entries recorded"
+    },
+    {
+      "case": "contradictory_entries",
+      "entries": [
+        {
+          "tool": "record_account",
+          "text": "A satisfies R1.",
+          "citations": []
+        },
+        {
+          "tool": "record_account",
+          "text": "A does not satisfy R1.",
+          "citations": []
+        }
+      ],
+      "prescribed_product_effect": "preserve both attributed entries in order; do not choose or reconcile"
+    }
+  ]
+}

@@ -72,10 +72,14 @@ reaches it, and the consequential ones go to the user:
 
 - **Family definitions.** Specify the three accepted families through actual
   manager submissions, auditor tools and returns, including inadequate evidence.
-  A locally checked draft packet and proposed small sub-agent review are in
-  [question-examples-01](coordination/question-examples-01/BRIEFING.md). Work resumed
-  after the user's network pause; no review agents have been launched. The concrete
-  paper tools/schemas remain proposals, not silently adopted implementation inputs.
+  The [bounded pressure test](coordination/question-examples-01/review-01/RESULTS.md)
+  completed three paper auditors, a fresh reader and one targeted fresh recheck.
+  A small candidate-card revision adds comparison observations and clearer answer
+  placement/criterion attribution/rendering. Exact preparation/manifest/submit
+  wire schemas still need specification; symbolic replies are not runtime evidence.
+  The concrete paper tool names/schemas remain proposals, not silently adopted
+  implementation inputs. Missing-section and empty submissions were not exercised
+  by these agents; carry them into the executable acceptance tests.
   Final names, concrete authoring tools/schemas, orientation and any optional
   module interactions remain. Apply the accepted mechanical checks, nonblocking
   omission observations, empty-answer route and bounded notices. No field or test

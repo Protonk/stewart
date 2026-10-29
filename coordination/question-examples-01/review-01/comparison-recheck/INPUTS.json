@@ -1,0 +1,27 @@
+[
+  {
+    "path": "comparison-recheck/inputs/MATERIALS.json",
+    "bytes": 223,
+    "sha256": "d81ca32b04e9d0b40d815f562e24e02bb9ff89e2163c7a88a1275b26f47f8918"
+  },
+  {
+    "path": "comparison-recheck/inputs/TOOLS.md",
+    "bytes": 7918,
+    "sha256": "973c757c19c5580b9b0fbfb060f8164b170322623bce94f0a40a8b3a158b5362"
+  },
+  {
+    "path": "comparison-recheck/inputs/materials/a.py",
+    "bytes": 175,
+    "sha256": "3fed093a5696428b7440ae3a0f93d2bd3bc93084b495fc3ec6297ab78c23afce"
+  },
+  {
+    "path": "comparison-recheck/inputs/materials/requirements.txt",
+    "bytes": 662,
+    "sha256": "3c8aa8422012374ddd204acebf0ef45a78fa49cf8fb129c0a3faa104329edb98"
+  },
+  {
+    "path": "comparison-recheck/inputs/question.md",
+    "bytes": 138,
+    "sha256": "2f08ebdc43861482559ab0214c5e4663842ebac228cbb5d376cbee56946116c0"
+  }
+]

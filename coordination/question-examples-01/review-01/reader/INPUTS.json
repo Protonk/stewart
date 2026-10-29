@@ -1,0 +1,43 @@
+[
+  {
+    "path": "reader/inputs/open-question.md",
+    "source": "open/inputs/question.md",
+    "bytes": 46,
+    "sha256": "96bb1920cba63505a4e03c579c4ccceb74f95893df57eef775e0b6b5ec21d36e"
+  },
+  {
+    "path": "reader/inputs/open-return.md",
+    "source": "open/outputs/RETURN.md",
+    "bytes": 2460,
+    "sha256": "aa2789fa68063d4c05161958e10d1d47e1cac9d103bec5aa395f80aeb11ca1bd"
+  },
+  {
+    "path": "reader/inputs/framing-question.md",
+    "source": "framing/inputs/question.md",
+    "bytes": 136,
+    "sha256": "8456c2578f9ec44b107063c336d2f041415e9af605f8593fd4abc6091f84bdea"
+  },
+  {
+    "path": "reader/inputs/framing-return.md",
+    "source": "framing/outputs/RETURN.md",
+    "bytes": 4500,
+    "sha256": "3e433fc6292238e3459e1cb3f957b7ae66b6b842dad05365b87e06de5bc78d0c"
+  },
+  {
+    "path": "reader/inputs/comparison-question.md",
+    "source": "comparison/inputs/question.md",
+    "bytes": 138,
+    "sha256": "2f08ebdc43861482559ab0214c5e4663842ebac228cbb5d376cbee56946116c0"
+  },
+  {
+    "path": "reader/inputs/comparison-return.md",
+    "source": "comparison/outputs/RETURN.md",
+    "bytes": 2531,
+    "sha256": "8543e2b2589c1cecfd904eee63766e479726d47308c5c20a37b32cf0495cdac9"
+  },
+  {
+    "path": "reader/inputs/ATTRIBUTION.json",
+    "bytes": 957,
+    "sha256": "18b71396a60aab81207feba2ddad43a7a6496bfac8ecf578223ebcbc5a649840"
+  }
+]

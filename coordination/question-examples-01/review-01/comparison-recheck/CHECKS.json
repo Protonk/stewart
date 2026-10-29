@@ -1,0 +1,12 @@
+{
+  "kind": "targeted paper recheck, no runtime execution",
+  "calls": 13,
+  "entries": 6,
+  "citations": 8,
+  "exact_proposed_rendering": true,
+  "direct_inability_first": true,
+  "auxiliary_observation_entries": 2,
+  "comparison_entry_records_inability": true,
+  "empty_comparison_section_exercised": false,
+  "schema_gaps_remain": true
+}

@@ -1,5 +1,12 @@
 # Three examples and a small pressure test
 
+**Disposition, 2026-10-29:** the user authorized the proposed exercise. Three
+fresh auditors, one fresh reader and one targeted fresh recheck have completed.
+[Review results](review-01/RESULTS.md) preserve the evidence, revision and limits.
+The proposal below is retained as presented, including its then-unlaunched status.
+The current tool card incorporates the small candidate revision; exact names and
+schemas remain proposals. No Rust/runtime qualification was performed.
+
 Prepared 2026-10-29 under the user's request for worked examples and a briefing
 on how sub-agents could pressure-test them. Base revision: `1ba28ac`. This is
 design preparation, not permission to launch the proposed review or start Rust

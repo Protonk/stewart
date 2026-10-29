@@ -1,0 +1,20 @@
+[
+  {
+    "material": "m1",
+    "name": "requirements.txt",
+    "path": "materials/requirements.txt",
+    "bytes": 662
+  },
+  {
+    "material": "m2",
+    "name": "a.py",
+    "path": "materials/a.py",
+    "bytes": 175
+  },
+  {
+    "material": "m3",
+    "name": "supplied-report.txt",
+    "path": "materials/supplied-report.txt",
+    "bytes": 591
+  }
+]

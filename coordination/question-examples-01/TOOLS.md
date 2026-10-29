@@ -3,7 +3,13 @@
 Proposed concrete interface, 2026-10-29. This is a paper prototype, not an
 implemented Stewart adapter. Tool names, entry schemas and presentation below
 are candidates for review under CONTRACTS, not new settled policy. All replies
-and handles in the walkthroughs are illustrative. No auditor or provider ran.
+and handles in the walkthroughs are illustrative. Review-01 records subsequent
+paper-agent attempts; no actual Stewart auditor/provider session ran.
+
+Revised after review-01's first paper attempts. Original actor packets and returns
+are preserved there. The revision gives comparison an auxiliary observation tool,
+clarifies answer placement and criterion attribution, and fixes the example's
+Markdown layout. It adds no submission requirement or semantic validation.
 
 The auditor has the captured question, listed materials and the selected family's
 instructions/tools. It cannot execute the supplied code, fetch other material,
@@ -66,14 +72,25 @@ manager-purpose briefing for the auditor.
 | --- | --- | --- |
 | Open inquiry | `record_account`, `record_observation`, `record_limit` | Address the question from the supplied materials. Connect observations to their basis and state the reach and limits of the account. No positive finding or universal assurance is required. |
 | Inquiry framing | `record_working_question`, `record_relation`, `record_observation`, `record_account`, `record_limit` | Formulate a working question that the supplied material can bear on, explain its relationship to the original concern, and investigate it in this commission. Preserve the original request. Explain inability when useful bounded investigation is not possible. |
-| Comparison | `record_criterion`, `record_comparison`, `record_account`, `record_limit` | Identify the criterion and compare the requested alternatives using supplied evidence. Distinguish source reasoning from reported observations. State unequal evidence, an unavailable criterion or inability to compare without inventing a winner. |
+| Comparison | `record_criterion`, `record_comparison`, `record_observation`, `record_account`, `record_limit` | Identify the criterion, distinguishing what the manager supplied from the auditor's interpretation. Compare the requested alternatives using supplied evidence. Use observations for findings about one alternative; a comparison entry relates alternatives. Distinguish source reasoning from reported observations. State unequal evidence, an unavailable criterion or inability to compare without inventing a winner. |
 
-There is no required entry count. Every named recording kind is an expected
-section for preparation's factual coverage display, not a submission prerequisite.
+There is no required entry count. Named recording kinds are expected sections
+for preparation's factual coverage display, not submission prerequisites, except
+that comparison's auxiliary `record_observation` is not an expected section.
+Its coverage list remains criterion, comparison, account and limit. Counts may
+include auxiliary observations without implying that a comparison was performed.
 The text can contest a premise, state inability, contain uncertainty or disagree
 with other entries. This deliberately starts with section names and prose rather
 than a deeper taxonomy of claims; the pressure test should examine whether it
 provides enough useful guidance and preserves relationships between entries.
+
+In every family, use the account to state the direct response and its reach,
+including an inability to answer the requested question. Put that account before
+supporting detail when it helps the reader locate the answer; do not leave a
+decisive inability only in the final limitation. Explain a requirement label such
+as R1 in ordinary words when first using it. These are authoring instructions,
+not ordering, citation or substantive-completeness gates. The renderer never
+reorders entries or judges whether an observation "really" compares alternatives.
 
 ## Preparation, submission and rendering
 
@@ -87,13 +104,23 @@ seals the exact prepared selection and rendering. An intervening edit makes that
 handle stale; an already accepted handle retrieves its recorded outcome. No
 reading/inspection pause or additional omission acknowledgment is required.
 
-For the examples, rendering is mechanical: a Stewart-renderer attribution line,
-then entries in recorded order, each with its kind as a heading, the exact text,
-and its structured citations listed below. It does not insert the manager's
+For the examples, the exact renderer convention is the line
+`Rendered by Stewart. Entry text is attributed to the auditor.`, followed by a
+blank line and each entry in recorded order. The level-two heading is the tool
+name with `record_` removed, underscores replaced by spaces and the initial letter
+capitalized (for example, `Working question`). After a blank line, emit the exact
+entry text. If citations exist, add a blank line and
+`Citations: m1 [50, 120); m2 [0, 175).` using the actual IDs and end-exclusive
+ranges in recorded order. An explicit quote, if present, follows its range as a
+JSON-escaped string. Separate entries with a blank line and end with one newline.
+This is a proposed deterministic presentation rule, not a final product wire
+schema. It does not insert the manager's
 question, infer a conclusion, combine repeated sections or resolve contradictions.
 An empty selection gets only the factual presentation `No answer entries recorded.`
 The sealer and form version belong in the manifest; no fake receipt digest is
-printed in these walkthroughs. Final Markdown layout is still a proposal.
+printed in these walkthroughs. Actual prepare/manifest/submit response schemas
+remain implementation specification work; do not claim a machine round trip
+from their symbolic representations in this exercise.
 
 The settled one unsubmitted-stop reminder and one factual near-limit notice
 apply across the audit and within its cumulative budget. They are not extra

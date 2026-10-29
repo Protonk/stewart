@@ -1,0 +1,23 @@
+{
+  "open": {
+    "substantive_author": "auditor agent",
+    "rendering": "Stewart proposed renderer, simulated by the worker",
+    "sealer": "auditor in the paper confirmed-submission trace",
+    "real_execution": false,
+    "note": "No real Stewart receipt, provider run or custody acceptance is represented."
+  },
+  "framing": {
+    "substantive_author": "auditor agent",
+    "rendering": "Stewart proposed renderer, simulated by the worker",
+    "sealer": "auditor in the paper confirmed-submission trace",
+    "real_execution": false,
+    "note": "No real Stewart receipt, provider run or custody acceptance is represented."
+  },
+  "comparison": {
+    "substantive_author": "auditor agent",
+    "rendering": "Stewart proposed renderer, simulated by the worker",
+    "sealer": "auditor in the paper confirmed-submission trace",
+    "real_execution": false,
+    "note": "No real Stewart receipt, provider run or custody acceptance is represented."
+  }
+}

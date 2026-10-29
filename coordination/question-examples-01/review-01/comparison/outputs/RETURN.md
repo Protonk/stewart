@@ -1,0 +1,31 @@
+Rendered by Stewart. All entry text below is attributed to the auditor.
+
+## record_criterion
+
+Auditor criterion: R1 requires at most one recipient-visible message for a reminder ID. R2 requires eventual production of a message after a worker restart when the gateway is available. I assess the excerpt under the stated durable-marker, serial-worker and between-completed-call stop assumptions. These are separate safety and progress requirements; evidence for one does not establish the other.
+
+Citations:
+
+- `{"material":"m1","start":50,"end":576}`
+
+## record_comparison
+
+Auditor source reasoning: A admits a duplicate if restart processing invokes deliver again for the same reminder. Start with no sent marker: was_sent returns false, gateway.send completes with one visible message, and the worker stops before mark_sent. On re-entry the marker is still absent, so another completed send produces a second visible message. This is a serial, between-call counterexample to R1 for that restart processing; it needs neither concurrency nor an in-call failure. The packet does not show the surrounding restart dispatcher, so this is an admitted source-level trace, not an observed application run.
+
+Citations:
+
+- `{"material":"m2","start":0,"end":175}`
+- `{"material":"m1","start":255,"end":662}`
+
+## record_account
+
+Auditor source reasoning: A writes the durable marker only after a completed visible send. Once mark_sent completes, later invocations seeing that marker return without sending. If a restarted worker invokes deliver for an unmarked reminder and proceeds through its calls, the send occurs before marking. Thus A has no mark-before-send loss window between these completed calls, but has the duplicate window described above. This ordering does not establish R2's eventual guarantee: the packet supplies no restart dispatch or progress rule, and excludes gateway failures within a call from its description. Gateway availability alone does not establish that deliver is invoked or reaches its send. No execution or reported test observations are supplied.
+
+Citations:
+
+- `{"material":"m2","start":0,"end":175}`
+- `{"material":"m1","start":120,"end":662}`
+
+## record_limit
+
+Auditor limitation: The listed packet contains only requirements.txt (m1) and a.py (m2). No implementation B or B-specific observations are supplied. I cannot compare A with B, determine B's compliance, or rank their tradeoffs. My claims about A are conditional source reasoning over the supplied excerpt, not whole-application verification.
