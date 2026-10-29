@@ -5,10 +5,11 @@ end" here means from a problem file a manager wrote to a verified return the
 manager reads, through the actual release binary, with nothing replaced except
 the model provider, and in one tier not even that.
 
-Revised at turns 19–21 of [the conversation](CONVERSATION.md): ledger truth
+Revised at turns 19–22 of [the conversation](CONVERSATION.md): ledger truth
 replaces settled interruptions in C3 and C4, `collect` and `deliver` leave the
-command set in C3, C5 and C8, and two claims are added for the manager side
-(C11, C12). The version before those turns is in Git at `05a21d4`.
+command set in C3, C5 and C8, two claims are added for the manager side (C11,
+C12), and C5 delivers only the submission. The version before those turns is in
+Git at `05a21d4`.
 
 ## What we care about
 
@@ -139,18 +140,21 @@ state appears in any reply or in the return.
 
 ### C5 — The return is complete and faithful
 
-- **Pass:** the driver compares each delivered return against its witness: the
-  question, the receipt's material digests, every element's bytes and order, the
-  account marker, and who sealed it. The manifest digest printed at seal equals
-  the delivered one.
+- **Pass:** the driver compares each delivered return against its witness: every
+  element's bytes and order, the account marker, the form and version named, the
+  audit reference, and who sealed it. The manifest digest printed at seal equals
+  the delivered one. An inventory of the delivered directory holds the manifest
+  and the elements and nothing else: no question, receipt, arrangement, access
+  log, run summary or conversation.
 - **Also:**
   - a delivery interrupted partway keeps its partial directory and names the
     missing members, and `close` produces a complete copy;
   - a payload corrupted in Stewart's storage before delivery is reported as
     damage, never delivered as good, never treated as absent from the answer;
   - an unknown membership is never delivered as an empty answer.
-- **Sabotage:** a build that drops the last element, and one that writes the
-  manifest after the members.
+- **Sabotage:** a build that drops the last element, one that writes the
+  manifest after the members, and one that delivers the conversation beside the
+  answer.
 
 ### C6 — The record is honest
 

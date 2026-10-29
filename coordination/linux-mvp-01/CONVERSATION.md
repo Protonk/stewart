@@ -1567,3 +1567,37 @@ Two more questions about the manager.
 2. **What the manager receives.** Beyond the answer, what travels to the destination: the access log and run summary only, or the auditor's full conversation too? The conversation is the only place reasoning summaries appear, it quotes material freely and can be large, and a person auditor produces none. Whether it is part of the return or stays in Stewart's home decides what "faithful record" means at the destination.
 
 After these two I would close the conversation record and consolidate.
+
+---
+
+## 22. The return is the submission, and the dead run
+
+> 1. That's a good question I don't know the answer to yet. Help me out. 2. I
+> think the manager receives only what the auditor submits to the submission tool
+> and is accepted by prepare. Nothing else. That helps preserve us keep the
+> auditor being human an end goal even if right now it's a claude harness.
+
+The second answer is recorded in ROUTER.md, END-TO-END.md and CONTRACTS at this
+turn. The coordinator's reply, as given:
+
+**The return** is recorded: what the auditor submitted and prepare accepted, nothing else. Three consequences follow, and they are now in ROUTER, END-TO-END C5 and CONTRACTS:
+
+- The delivered directory is the manifest and the elements it lists. The manifest names the audit reference, the form and its version, and who sealed it; that is how the mission's "recorded in returns" is met, with the full arrangement staying in the record.
+- The question, receipt, arrangement, access log, run summary and conversation stay in Stewart's home as the record. `status` and the files answer for them, and nothing about them travels.
+- A return looks the same whether a model or a person produced it, which is the point.
+
+### The dead run
+
+My recommendation: an audit is its ledger, and a run is one placement of the auditor into the arrangement. A dead run ends a placement, not the audit. `run REF` after one continues the audit: a new conversation, the same arrangement, the same ledger, limits counted across runs. The first thing the resumed auditor hears is that it is continuing and that `what_am_i_working_with` shows what it has recorded. Stewart's home keeps every run as its own record, and `status` says how many there were.
+
+Why this and not the others:
+
+- It is what the person adapter needs anyway. A person works over days and leaves; for them every return to the work is a continuation from the ledger. Treating a dead model run the same way keeps one protocol.
+- It is what compaction already made us handle. A dead run is total compaction, and the one re-entry call was built for exactly that. If the auditor recorded as it went, the ledger carries the investigation; if it did not, it re-reads, which is its business.
+- It makes foreground-by-default survivable. An agent manager whose tool-call timeout is shorter than the audit runs, gets killed, runs again, and the audit continues. A person who closes the terminal does the same.
+- It is not a retry family. There is one ledger, one answer sealed once, limits that never reset, and a record that says how many placements it took. The second-attempt option is the retry family CONTRACTS warns against: a fresh investigation that either sees an answer it did not write or discards one the manager paid for. Refusal is honest, but it makes every timeout cost a whole audit and contradicts how a person would work.
+- The old "no resume" rule was right for an auditor Stewart did not own, where continuing could pass off a second investigation as the first. Here Stewart owns the conversation, and the record shows the gap instead of hiding it.
+
+What it needs: `run` refuses while another run holds the audit and after submission or close; limits belong to the audit, not the process; a provider outage inside a run gets a bounded retry, then the run ends and `run` again continues. Replaying the previous conversation to the model so it keeps its reading is an adapter optimization to consider only if the conformance tier shows re-reading after a kill is costly. It would change nothing in the record.
+
+If that is the answer, say so and I will record it. It is the only item from these two questions not yet in the materials.

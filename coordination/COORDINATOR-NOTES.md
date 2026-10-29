@@ -81,6 +81,15 @@ manager questions the user requested: what `run` does after a dead run, and
 whether the auditor's conversation travels in the return. The user said the
 design conversation is nearly done.
 
+**Turn 22:** the user decided the return is only what the auditor submitted
+and prepare accepted, nothing else, so that a return looks the same from a
+model or a person; recorded in CONTRACTS (narrowing the 2026-10-27 return
+contents), ROUTER.md and END-TO-END C5. On the dead run the user asked for
+help; the coordinator recommended that an audit is its ledger and a run is one
+placement, so `run` after a dead run continues from the ledger in a new
+conversation with cumulative limits and every run recorded. That is a
+recommendation awaiting the user's decision.
+
 **Coordinator's reading of the design** (from ROUTER.md and END-TO-END.md under
 the user's direction; the folder's AGENTS file governs attribution):
 
@@ -124,9 +133,9 @@ dissolved by it.
 
 ## Next
 
-1. **The manager side.** Turn 21 answered the five pre-audit choices; two
-   questions are out (dead run; conversation in the return). The user intends
-   to end the design conversation soon; after that, consolidate. The
+1. **The manager side.** The dead-run recommendation (turn 22) awaits the
+   user's decision; record it when given. The user intends to end the design
+   conversation soon; after that, consolidate. The
    two points raised on the mission wording in turn 18 ("separate context"
    against the only-Stewart's-tools decision; the dropped no-Git sentence)
    are unanswered. Adoption of the router as a whole is still the user's call.

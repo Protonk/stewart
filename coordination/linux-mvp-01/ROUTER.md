@@ -2,11 +2,11 @@
 
 *A problem router for cooperative actors who want to make it **just** so.*
 
-Revised at turns 19–21 of [the conversation](CONVERSATION.md): the auditor's
+Revised at turns 19–22 of [the conversation](CONVERSATION.md): the auditor's
 tool as a form and a ledger (19); the inquiry as the manager's unit, the
 operations after the receipt, and the escalated run (20); the problem file,
-material acceptance and the pre-run lesson (21). The version before those turns
-is in Git at `05a21d4`.
+material acceptance and the pre-run lesson (21); the return as the submission
+and nothing else (22). The version before those turns is in Git at `05a21d4`.
 
 ## The idea
 
@@ -39,8 +39,8 @@ Stewart doesn't investigate and doesn't judge. It arranges, carries and records.
   arrangement.
 - **Opinionated about form, agnostic about conclusions.** Stewart's opinions about
   what an answer should look like live only in its answer forms and the
-  auditor's orientation. Those are versioned, readable, recorded in every return
-  and shown to the manager before a run. Stewart never judges whether an answer is
+  auditor's orientation. Those are versioned, readable, named by every return's
+  manifest and shown to the manager before a run. Stewart never judges whether an answer is
   right, valuable or welcome.
 - **The world is the arrangement.** For a model, that means its tool list and
   nothing more. For a person, it means the packet they receive and their agreement
@@ -239,8 +239,8 @@ calls, and reports when a run ends.
 
 **Model adapter.** Stewart's own thin loop over the Messages API. The model's tools
 are the protocol, so its world is exactly the arrangement. Compaction and reasoning
-display are the manager's settings. The full conversation is kept for the
-manager to read.
+display are the manager's settings. The full conversation is kept in Stewart's
+home for whoever runs Stewart to read; it never travels in the return.
 
 **Person adapter.** The same protocol through a humane command line, and in time
 carried to wherever the person works. The person works from the arrangement by
@@ -274,21 +274,22 @@ itself; or both within one session.
 
 ## The return
 
-The auditor seals with `submit`, or the manager seals with `close`. At the end
-of the run Stewart delivers to the destination, then reads everything back to
-verify it:
+The manager receives what the auditor submitted through the tool and `prepare`
+accepted, and nothing else. The auditor seals with `submit`, or the manager
+seals with `close`. At the end of the run Stewart delivers to the destination,
+then reads everything back to verify it:
 
 ```
 parser-2.4-7QK3RM/
-  MANIFEST.json      every member and its digest; who sealed it
-  QUESTION.md        verbatim
-  ARRANGEMENT.json   frame, coupling and version, tools, limits
-  RECEIPT.json       the material as copied, and the preview's checks
+  MANIFEST.json      the audit reference, the form and version, every member
+                     and its digest, and who sealed it
   answer/            rendered by the coupling, plus the raw slots and elements
-  RECORD.json        adapter and settings, access log, run summary
 ```
 
-Every instance of a coupling renders the same way, so returns are comparable
+The question, the receipt, the arrangement, the access log, the run summary and
+the conversation stay in Stewart's home as the record; `status` and the files
+answer for them. A return looks the same whether a model or a person produced
+it. Every instance of a coupling renders the same way, so returns are comparable
 across audits, materials and models. Comparing them is the manager's work on
 files the manager owns.
 

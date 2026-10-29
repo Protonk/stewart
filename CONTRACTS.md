@@ -452,7 +452,9 @@ storage. Concrete packaging, destination representation and actual receiving/
 delivery route still need design and qualification. A manifest or notification
 alone is not the copy.
 
-**Return contents and initial destination.** Accepted 2026-10-27. The return
+**Return contents and initial destination.** Accepted 2026-10-27. *Narrowed
+2026-10-28: the return is only what the auditor submitted and prepare accepted,
+below; the rest stays in Stewart's record.* The return
 includes the original question/instructions, commission receipt, sealed manifest,
 selected artifact bytes and submission/collection provenance, so it remains
 understandable after close. Choose the initial copy destination when commissioning;
@@ -622,6 +624,18 @@ are advisory and recorded in the receipt: unlike the auditor's tool, where
 Stewart must make the auditor retry rather than return a damaged archive, Stewart
 is less entitled to be strict about what material a manager thinks necessary.
 Stricter checks remain a later decision on evidence.
+
+**The return is the submission.** Decided 2026-10-28 (turn 22). The manager
+receives only what the auditor submitted through the submission tool and
+prepare accepted: the sealed manifest and the elements it lists. Nothing else
+travels: not the question, the receipt, the arrangement, the access log, the
+run summary or the conversation, which stay in Stewart's home as its record,
+readable by whoever runs Stewart. The reason is the end goal of a human
+auditor: a return must look the same whether a model or a person produced it.
+The manifest names the audit reference, the form and its version, and who
+sealed it, which is how the Mission's "recorded in returns" is met; the full
+arrangement is in the record. This narrows the 2026-10-27 return contents
+above.
 
 ## Handoff and audit-owned facilities
 
