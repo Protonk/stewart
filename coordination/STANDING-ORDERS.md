@@ -49,6 +49,13 @@ provenance.
 
 ## Intake and optional turnover
 
+The product design is the maintained DESIGN/CONTRACTS/ACCEPTANCE set. Historical
+reviews and captured plans are evidence, not standing assignments or competing
+specifications. Do not read a closed design conversation to reconstruct current
+intent. Discover active plans outside historical evidence packets. An implementation
+spec can resolve routine naming and mechanisms; new authority or substantive
+answer restrictions still return to the user.
+
 Read [COORDINATOR-NOTES.md](COORDINATOR-NOTES.md), discover active `*-PLAN.md`
 documents and inspect the actual working tree, named outputs and evidence.
 Consult [TURNOVER.md](TURNOVER.md) at that exact path. Blank or missing means
@@ -94,6 +101,13 @@ Stay within granted scope; account for usage headroom. Deliberate usage-limit
 studies need their own commission. Source reading needs no Claude launch.
 
 ## Save work as it happens
+
+Keep continuity compact: update the current account after integration instead of
+appending a conversation turn. Preserve accepted work until implemented/verified
+or explicitly disposed. Before delegation, settle shared interfaces, exclusive
+edit ownership, integration order and external dependencies; the user need not
+manage those logistics. Judge coordination by coherent verified work and reduced
+user burden, not agent count. Preparing future work does not commission it.
 
 Before dispatch, save the brief, source revision and admitted uncommitted inputs,
 permitted reads/writes, exclusive output/evidence paths and completion criteria.

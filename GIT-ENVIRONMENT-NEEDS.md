@@ -1,5 +1,9 @@
 # Preparing material in Git for Stewart
 
+**Frozen Python guide.** This generated source inventory is retained for the
+legacy implementation and its checks. It is not a successor requirement; the
+[current design](DESIGN.md) takes copied files and has no Git relationship.
+
 This document is for the people who keep material in a Git repository and
 run Stewart over it. It says what this version of Stewart expects of that
 repository, what it places in and beside it, how it runs Git, and what it

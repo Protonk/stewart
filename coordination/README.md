@@ -1,20 +1,28 @@
 # Coordinating Stewart
 
-Start with these three places:
+Read [standing orders](STANDING-ORDERS.md), [the current account](COORDINATOR-NOTES.md)
+and any populated [turnover supplement](TURNOVER.md). The current account records
+active work and interruption state; it is not a transcript or a second design.
 
-| Document | Role |
+The design review is closed. The maintained product entry points are:
+
+| Document | Owns |
 | --- | --- |
-| [Standing orders](STANDING-ORDERS.md) | Operating responsibilities, discretion and constraints for the development coordinator. |
-| [Current account](COORDINATOR-NOTES.md) | Maintained commissions, coordinator/worker checkpoints, uncertainties and routes to plans and evidence. |
-| [Turnover brief](TURNOVER.md) | Thin, dated supplement written on the user's directive before a planned transfer, then consumed and stubbed by the incoming coordinator. Blank or missing is ordinary; a populated brief may be stale. |
+| [Design and vision](../DESIGN.md) | The system, responsibilities and workflow. |
+| [Contracts](../CONTRACTS.md) | Decided behavior, scope and reasons for exclusions. |
+| [Acceptance](../ACCEPTANCE.md) | Required evidence and failure/control cases. |
+| [Form specification brief](../docs/QUESTION-FORMS.md) | Concrete inputs to the three families' exact specification. |
 
-Read the standing orders and current account regardless of the brief's presence.
-The orders describe intake when a session ends abruptly. Continuity comes from
-work saved during the session; it does not depend on a successful final rewrite.
-One coordinator owns the work at a time. Keep durable guidance and the current
-account updated throughout each tenure; the brief is never a growing runbook.
+Discover the one current implementation path through the tracked `*-PLAN.md`
+convention. Captured copies inside evidence packets are historical inputs, not
+active plans. No old conversation, candidate architecture, worker review or
+retired plan is prerequisite reading. Do not reconstruct the design from history.
 
-[AGENTS.md](../AGENTS.md) contains general project development guidance;
-[CONTRACTS.md](../CONTRACTS.md) owns intended product behavior. Other files and
-subdirectories here hold assignments and their records. Use the current account
-to identify active work; an old brief or return is not a new commission.
+[AGENTS.md](../AGENTS.md) contains project development constraints. One coordinator
+owns integration, Git and continuity; the user retains purpose and consequential
+semantic choices. Keep durable guidance current and stateless. A turnover is a
+thin supplement, never a growing runbook or extra source of authority.
+
+Subdirectories not named by the current account retain completed development
+evidence. [EVIDENCE.md](EVIDENCE.md) indexes retention obligations for work that
+actually needs those records; it is not another queue or design reading list.

@@ -1,6 +1,12 @@
 # Developing Stewart
 
-This project is independently buildable: runtime code lives in `src/stewart`,
+The successor design review is closed. Start product work from [DESIGN.md](DESIGN.md),
+[CONTRACTS.md](CONTRACTS.md) and [ACCEPTANCE.md](ACCEPTANCE.md), not historical
+conversations or prototype briefs. Exact schemas and mechanisms are engineering
+work within those decisions; bring new authority or substantive restrictions
+back to the user. Historical evidence is not a competing design.
+
+The frozen Python tool is independently buildable: its runtime lives in `src/stewart`,
 bundled guidance and launcher templates in `src/stewart/resources`, and tests
 in `tests`. Runtime dependencies are the Python standard library plus the
 declared external Git/shell prerequisites. Use the distribution's `_util` byte
@@ -41,7 +47,7 @@ Preserve captured historical documents. Do not add compatibility shims or
 rewrite historical receipts to fit a newer schema.
 
 "The user" in development guidance is the development principal. Stewart's
-users are the people who hold material in Git and operate it; today they are
+users are the people who supply material and operate it; today they are
 the same person, who then acts as their proxy and decides on their behalf. A
 document for Stewart's users must serve them, not the proxy.
 
@@ -56,10 +62,10 @@ commission readback, operating status and close. The first Rust release's
 manager-designated archive remains readable by its owner; no live answer viewer,
 steering channel or secrecy from the host owner is promised. Rich
 selected context and investigative latitude remain compatible with a narrow
-question. Successor access should be defined by explicit grants, preferably
-without a private-location inventory; any fallback needs actual enforcement
-evidence. Exact stop/capture, exceptional-intervention and delivery interfaces
-remain for design; this guidance selects no new channel.
+question. The successor auditor has only Stewart's commission-bound tools,
+without a private-location inventory. Qualify actual access and stopping, not merely the
+settings. Exact wire and process mechanisms instantiate CONTRACTS; they do not
+select an extra intervention channel.
 
 Stewart stays agnostic about the intellectual utility of audits, including in
 development evaluation. Its major intellectual influence belongs in question
@@ -70,17 +76,17 @@ privilege or exclude substantive outcomes need explicit design deliberation.
 Auditor and manager judgments remain attributed. CONTRACTS.md owns the principle.
 
 The successor direction separates recording a commission from promising its
-replay; the manager owns constructing another question. Assess the preference
-for zero or at most one audit retry facility under CONTRACTS.md, without treating
-existing code or tests as reasons to preserve a staged workflow. Stewart must
-still account for its incomplete custody operations through supported paths:
+replay; the manager owns constructing another question. There is no restart-from-start
+facility. An interrupted run continues the same ledger and cumulative limits;
+existing code or tests do not justify restoring a staged workflow. Stewart must
+account for its incomplete custody operations through supported paths:
 agent-managers should not need to improvise repairs to private state. Recovery
 cannot grant another investigative execution or conceal uncertainty, and a
 family of retries is not simplified by renaming it recovery. The successor has
-no dedicated program executor or manager-operated release/run stages. Permitted
+no dedicated program executor or staged program release/run workflow. Permitted
 auditor tool use remains bounded by its commission and actual access grants;
-captured execution reports retain their attribution. The possible audit restart
-interface remains undecided. Frozen-Python rules below concerning releases,
+supplied execution reports retain their attribution. Continuation grants no fresh
+investigation or reset allowance. Frozen-Python rules below concerning releases,
 child loading and attempt evidence protect that baseline and admitted legacy
 interpretation; they do not require an executor in the successor.
 
@@ -107,6 +113,12 @@ an apparently passing run may conceal the omission being investigated. Record
 observer scope and timing, and keep the witness outside the disposal under
 test. A rescue from development evidence does not establish that the product's
 ordinary retrieval worked or grant authority to resume its audit.
+
+The custody rules below retain their stated scope. Python module names, Git
+resources, request keys, executor and removal mechanics protect the frozen legacy
+implementation; they are not extra Rust features. Rust follows CONTRACTS and
+qualifies equivalent exclusive-write, exact-byte, attribution and failure duties
+within its narrower scope.
 
 The custody rules are:
 

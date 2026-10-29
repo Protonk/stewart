@@ -1,6 +1,9 @@
 # Developing Stewart
 
-This document covers building Stewart from source and running its test suite.
+This document covers the existing frozen Python build/checker, the scoped Rust
+commission slice and retained evidence. The complete successor service follows
+[DESIGN.md](DESIGN.md) and [ACCEPTANCE.md](ACCEPTANCE.md); its Linux apparatus
+commands must be added as implemented, without claiming parity with Python.
 [AGENTS.md](AGENTS.md) states the development rules and custody contracts that
 changes must keep, and the [manual](src/stewart/resources/README.md) documents
 the installed tool. Development commands name an explicit interpreter and use
@@ -16,7 +19,7 @@ metadata: the version comes from `src/stewart/_version.py`, and no `.git`
 directory or VCS plugin is needed.
 
 Provision the build environment and wheelhouse, and build and install a wheel,
-as the README's [Installation](README.md#installation) section shows. The
+as the frozen guide's [Installation](docs/FROZEN-PYTHON.md#installation) section shows. The
 commands below reuse its absolute-path variables `STEWART_SOURCE`,
 `STEWART_BUILD` and `STEWART_WHEELS`. Provision while network access is
 available: `scripts/check.py` performs no network downloads, and its nested
