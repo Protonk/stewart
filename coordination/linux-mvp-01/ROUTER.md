@@ -224,8 +224,9 @@ The protocol is the same for every adapter:
 | `prepare`, `submit` | Prepare a manifest and handle; submit is a dry run unless confirmed, and confirming seals. |
 
 Every reply opens with a header line saying where the auditor is. Every refusal
-gives a reason, its effect on the answer, and the next call. Every citation is
-checked against the material, byte for byte.
+gives a reason, its effect on the answer, and the next call. As proposed, every
+citation is checked against the material, byte for byte; that check is one of
+the answer-form choices still to be decided.
 
 The ledger is the only truth. A call either appended a complete record or it did
 not; a torn record is a diagnostic, never an element. After a failed call or a
@@ -297,12 +298,15 @@ then reads everything back to verify it:
 parser-2.4-7QK3RM/
   MANIFEST.json      the audit reference, the form and version, every member
                      and its digest, and who sealed it
-  answer/            rendered by the coupling, plus the raw slots and elements
+  answer/            the raw slots and elements (whether a form's rendering is
+                     also a prepare-generated, Stewart-attributed member is
+                     undecided)
 ```
 
-The question, the receipt, the arrangement, the access log, the run summary and
-the conversation stay in Stewart's home as the record; `status` and the files
-answer for them. A return looks the same whether a model or a person produced
+The destination is exclusive: an existing directory is evidence and is refused,
+never overwritten or emptied. The question, the receipt, the arrangement, the
+access log, the run summary and the conversation stay in Stewart's home as the
+record; `status` and the files answer for them. A return looks the same whether a model or a person produced
 it. Every instance of a coupling renders the same way, so returns are comparable
 across audits, materials and models. Comparing them is the manager's work on
 files the manager owns.
@@ -358,8 +362,10 @@ problem ─▶ commissioned ─▶ running ─▶ ended ─▶ delivered ─▶ 
 
 Each audit lives under Stewart's home as write-once records: the copied material,
 the arrangement, every protocol call and its outcome, the conversation, the seal
-and the delivery. Stewart deletes nothing. Closing is a record; removing an
-audit's directory is the manager's ordinary housekeeping.
+and the delivery. As proposed, Stewart deletes nothing, closing is a record, and
+removing an audit's directory is the manager's ordinary housekeeping; whether
+Stewart ever removes bytes is the first decision the transition plan carries to
+the user.
 
 ## What ships, and what doesn't
 

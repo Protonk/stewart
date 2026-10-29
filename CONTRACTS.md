@@ -411,7 +411,9 @@ element and 256 MiB in the current selection, with a 1 GiB cap on retained
 superseded/deleted payloads that can refuse only edits larger than 1 MiB
 (smaller edits draw on a fixed 64 MiB reserve; delete, prepare, submit and
 collect never refuse on it). Stewart records each `limit_exceeded` refusal as its
-own observation and lists it in the return's provenance. In the delivered copy,
+own observation and lists it in the return's provenance (*narrowed 2026-10-28:
+the return is the submission; refusals and gaps reach the manager through
+status and the record, never the return*). In the delivered copy,
 elements sit under Stewart-generated names keeping a conservative extension,
 with a plain-text index; the manifest is authoritative and carries a format
 version. Whether the bounds bind is to be examined much later by a separately
@@ -440,7 +442,9 @@ confirming now means; the confirmation reply repeats it, and the return's
 provenance records it as interrupted, not included and ended by submission.
 Bare help stays a slim, useful cheatsheet; the question is printed verbatim when
 asked. The auditor is not shown the question type, which is the manager's
-implementation concern.
+implementation concern. *Restated 2026-10-28: the auditor is shown the form's
+instructions and slots, which are its orientation and tools, and not the form's
+name, the manager's reason for choosing it, or a sealed prior.*
 
 ## Successor manager receipt and ordinary closure
 
@@ -566,6 +570,30 @@ qualification pending.** These read under the Mission above. Where they narrow
 or supersede an earlier successor direction, that direction is marked in place
 and its text kept as the reasoning it replaced.
 
+**Platform, baseline, material and the auditor's world.** Decided 2026-10-28
+(turns 5, 6, 12, 14 and 15 of the conversation), recorded here on the
+disposition review's finding that retirements below cited decisions this
+document did not contain. Stewart ships as one statically linked Linux binary
+for x86_64 and aarch64; it is not a macOS tool, and WSL2 runs it as is. The
+Python implementation is no longer a reference baseline: it is a frozen legacy
+tool, usable until the successor runs an audit end to end and then retired;
+"Implemented" markers in this document describe that legacy tool, not a
+comparison the successor must pass. Material is files the manager selects,
+copied at commission; Stewart has no relationship with version control, and
+history, diffs, logs and test output reach an auditor only as exported files.
+The auditor has only Stewart's tools, and Stewart runs the auditor rather than
+leaving launch to the manager; any other way of working is a new adapter.
+Material injection is disallowed by design: the manager, a cooperative party,
+chooses and words the question and selects the material, may state
+preferences, and is responsible for the answers those choices produce.
+Provider-side reasoning and compaction are not Stewart's concern beyond the
+re-entry call. "Fast" means the app's responsiveness: manager commands and
+protocol calls answer promptly and state exactly what they did, while audit
+time and effort are the manager's business. Development builds, tests and
+experiments in Linux containers with build dependencies the coordinator
+selects, and the apparatus never ships. A real-model conformance gate checks
+procedure, never answer quality, for each supported model before release.
+
 **The auditor's tool is a form and a ledger.** It accepts data, records it, and
 returns simple, clear responses quickly when prodded. It is deliberately
 uninteresting and makes reasonable guesses about how to work it mostly work out.
@@ -583,7 +611,10 @@ a verdict) stand.
 **Ledger truth.** A protocol call either appended a complete record or it did
 not; a torn record is a diagnostic, never an element. After a failed call or a
 lost reply the auditor calls again; the re-entry call shows what landed; a retry
-lands as a new record, and equal bytes never identify a retry. Stewart settles
+lands as a new record, and equal bytes never identify a retry; a repeated
+confirmed submit is identified by its handle, bound to the exact collection
+revision, and returns its recorded outcome, which is a lookup, not a
+settlement. Stewart settles
 nothing on the auditor's behalf, and no reply or return carries an
 unresolved-operation state. This supersedes interrupted-operation settlement and
 submission over unresolved operations above.
@@ -657,6 +688,94 @@ work, so one protocol serves both adapters. Replaying the earlier conversation
 to a model so it keeps its reading is an adapter optimization to weigh only on
 conformance-tier evidence that re-reading after a kill is costly; it would
 change nothing in the record.
+
+## Transition status of the earlier contracts
+
+**Proposed**, 2026-10-28, from the fresh-eyes disposition review in
+`coordination/contracts-disposition-01/RETURN.md` (pinned to `7e49301`), which
+disposed every section and bold title above and below under the decided design:
+of 75 required rows, 25 carry as written, 23 hold in spirit but are phrased for
+Git, the checkout, Python or removal, 21 depend on something the decisions
+removed, and 6 need the user. Nothing is retired by this section; retired text
+stays in place until the user confirms each disposition, and then keeps the
+reasoning behind any decision it explains. The review's table is the working
+list for that confirmation.
+
+**Decisions the user has not made**, on which the dispositions hang:
+
+1. **Does Stewart ever remove bytes?** The sketch's "Stewart deletes nothing;
+   close is a record" is a coordinator proposal. Five of the six undecided rows
+   (the removal-authority principles, the closing record's frozen inventory and
+   schema, holds) and the test design's "nothing removed" checks hang on it.
+2. **Holds and conditions.** If never-delete is adopted, the hold mechanism
+   retires into Declined, and the question remains whether a receipt can carry
+   an attributed condition note on identified material; if removal exists, the
+   hold carries as written.
+3. **The custodian of the commission copy.** The first leg's user selection
+   delivered the commission bundle into manager-designated storage with a named
+   custodian; the sketch's home layout places the copy under Stewart's home. The
+   user says whether the home is that designated storage or the copy goes to a
+   manager-named location.
+4. **How close reaches a run it did not start.** Under the escalated run a
+   person or another process may hold the run. Signal by recorded process,
+   a lock the run watches, or refusal with a sign naming the holder; and what the
+   record says was stopped (the last complete ledger record is the natural
+   boundary).
+5. **The rendered answer.** The return is the submission; a form's rendering is
+   Stewart's product. Either the return holds raw slots and elements only, or
+   the rendering is a prepare-generated, Stewart-attributed, reproducible member
+   sealed with the rest.
+6. **The outcome-shaping influences**, under the deliberation principle: the
+   orientation text, the reminder after an unsubmitted stop, the near-limit
+   warning, mechanical citation refusal and slot enumerations are each recorded
+   as a deliberated choice or made a manager setting before the first release.
+7. **Live Python undertakings.** Whether any Python audit, resource or partial
+   request with a live undertaking exists. If none, Python records are
+   historical and the successor reads none of them; if some, they close under
+   Python before it is withdrawn.
+8. **Manager access to the record during a run.** Two decided paragraphs
+   disagree: "very restricted" (2026-10-25) against "readable by whoever runs
+   Stewart" (2026-10-28, following the user's turn-12 words). The proposed
+   restatement: Stewart offers no live observation or steering interface and the
+   manager cannot change the auditor's world after commission; the record in
+   Stewart's home is readable by whoever runs Stewart, including during a run,
+   and that is not a product surface.
+
+**Restatements the coordinator proposes to make on confirmation**, each
+replacing removal-phrased text with the obligation that survives:
+
+- The close contract: loss despite an undertaking is never recorded as
+  declined; a completed close conceals no unfinished operation; an interrupted
+  close stays visibly unfinished and resumes through close; the closing record
+  names what was given up; no waiting periods, readiness requirements or
+  deterrents on the manager's seal; advice is never a precondition; close's
+  confirmation is not acceptance of the answer.
+- Delivery: the destination is exclusive, so an existing directory is evidence
+  and is refused, never overwritten or emptied; a partial delivery keeps its
+  name and the complete copy gets a new one; the return is a self-describing
+  package verifiable from its manifest alone and names the delivering version;
+  after verified delivery the home's copy is the manager's only second source,
+  by hand, with no present-safety certification.
+- Versions: every record names the Stewart version and schema that wrote it;
+  `run` and `close` on a record written by another version proceed only with the
+  recorded arrangement verified by digest, else refuse naming both versions; a
+  record is never upgraded in place; later versions read older records or
+  diagnose them as unsupported.
+- Status: recorded run endings are facts; a held run is an observation with its
+  evidence, labelled as such; a run whose process cannot be observed is
+  "interrupted, unconfirmed", never "running"; no inference from elapsed time;
+  the other durable status rules (exit codes, one attention channel, options are
+  not instructions, offers are not preconditions) carry as a short list.
+- Commission is not deduplicated: a repeated commission is a new audit in the
+  inquiry, which status lists; `run` and `close` answer by reference and are
+  safe to repeat.
+- Intake records each file's bytes, size and mode; the index shows size; mode
+  is recorded, not interpreted.
+- The general manager-workspace service and export/import retire into Declined:
+  Stewart manages no manager workspace, reads the manager's paths at commission,
+  and writes only to its home and the named destination.
+- "Never rewrite historical receipts" carries into the development guidance
+  unchanged.
 
 ## Handoff and audit-owned facilities
 
@@ -1450,11 +1569,15 @@ into the private session. A human auditor can therefore return a valid report
 without the helpers. The auditor acquires no further standing: no channel, no
 notification, no retention right, no role transfer.
 
-**Delivery.** **Deferred.** Stewart describing, requiring or performing
+**Delivery.** **Deferred.** *Realized 2026-10-28: delivery happens at the end
+of the run and through close, under "The manager's unit is the inquiry".*
+Stewart describing, requiring or performing
 delivery of the return waits on a receiving endpoint and real-harness
 evidence. Delivery is not placed outside Stewart by this deferral.
 
-**A capture receipt for the auditor.** **Deferred.** A read-only projection or
+**A capture receipt for the auditor.** **Deferred.** *Realized 2026-10-28 by
+the re-entry call under "Ledger truth", which shows the auditor exactly what
+is recorded.* A read-only projection or
 receipt an auditor could see, confirming their return was captured raw, is
 decided with the successor's status rendering. It serves Stewart's first
 process promise to a human auditor.

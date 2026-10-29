@@ -32,6 +32,7 @@ failing.
 | C11 | The app teaches: the problem file, the preview and the receipt show the manager exactly what the auditor gets. |
 | C12 | The run is a handoff: a receipt's run line works for whoever holds it, from anywhere. |
 | C13 | A dead run continues: the audit is its ledger, and `run` again picks it up. |
+| C14 | The process promises hold: refusals are recorded with their bytes and reason, every gap has a disposition, no record carries a verdict. |
 
 Answer quality is not on the list. Stewart doesn't judge answers, so its tests
 don't either.
@@ -146,7 +147,9 @@ state appears in any reply or in the return.
   audit reference, and who sealed it. The manifest digest printed at seal equals
   the delivered one. An inventory of the delivered directory holds the manifest
   and the elements and nothing else: no question, receipt, arrangement, access
-  log, run summary or conversation.
+  log, run summary or conversation. Whether a prepare-generated rendering is a
+  sealed member is undecided; if it is, it is attributed to Stewart and
+  reproducible from the elements.
 - **Also:**
   - a delivery interrupted partway keeps its partial directory and names the
     missing members, and `close` produces a complete copy;
@@ -161,7 +164,9 @@ state appears in any reply or in the return.
 
 - **Pass:** an inventory of Stewart's home before and after every command shows
   only additions: no file is rewritten and none removed, through to and after
-  close. The access log equals the sequence of read, list and search calls in the
+  close. ("None removed" presumes the proposal that Stewart never deletes; if
+  the user decides otherwise, this becomes "only additions until close" and C8
+  gains the earlier close contract's removal checks.) The access log equals the sequence of read, list and search calls in the
   script. The run summary's turns and usage equal what the fake reported.
 - **Sabotage:** a build that rewrites a record in place, and one that skips logging
   a search.
@@ -173,7 +178,9 @@ state appears in any reply or in the return.
   slots render in the return as the coupling specifies.
 - **Citations:** a citation to real lines passes. One off by a line, one naming a
   missing material, and one quoting text that isn't there are each refused with a
-  sign and never recorded as valid.
+  sign and never recorded as valid. (The mechanical check is one of the
+  answer-form choices; this item stands only if it is adopted. Under C14 the
+  refused call is still recorded with its bytes and reason.)
 - **Exits:** *wrong question*, *missing evidence* and *nothing found* each seal and
   deliver like any other answer.
 - **Prior:** `claim-check` shows the manager's claim. A coupling that seals the
@@ -252,7 +259,10 @@ deliver command for the suite to drive.
 
 - **Pass:** the driver kills the binary mid-run at fixed points: during a
   provider request, while a tool reply is being written, and between turns.
-  `status` then reports the audit interrupted with its run count. `run REF`
+  `status` then reports the audit interrupted with its run count, as an
+  observation with its evidence (a run record without an end record and no
+  observable process), never as an inference from elapsed time; the liveness
+  mechanism is for design. `run REF`
   continues: the first request of the new conversation carries the continuation
   notice and the same arrangement digest as the first run; the ledger's elements
   are unchanged; the limits reported to the auditor are cumulative across runs;
@@ -265,6 +275,20 @@ deliver command for the suite to drive.
   (shared with C4).
 - **Sabotage:** a build that resets limits on continuation, and one that starts
   a fresh ledger.
+
+### C14 — The process promises hold
+
+- **Pass:** every refused protocol call (a limit, a stale handle, a refused
+  citation, a path outside the material) is in the record with its reason and
+  the bytes the auditor sent; every gap (a torn tail, a limit refusal, a dead
+  run, an undelivered member) appears in `status` with a recorded disposition;
+  no record, reply or return carries a grade, deadline or verdict field, and a
+  schema check over every record proves it.
+- **Differing:** a refusal of a different kind is recorded with its own reason.
+- **Invariance:** the same script with the refused call omitted produces the
+  same sealed answer.
+- **Sabotage:** a build that drops a refused add without recording it, and one
+  that adds an outcome field to the manifest.
 
 ### Platforms
 
