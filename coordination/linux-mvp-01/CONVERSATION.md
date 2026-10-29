@@ -1535,3 +1535,35 @@ Flexible at the mouth, exact in the record. The problem file accepts the questio
 5. Run in the foreground with a detached option, or detached by default. Escalation to a person argues for foreground.
 
 Your three decisions in this turn (inquiry as the unit, the post-receipt operations, allowing for the escalated run) are recorded in the conversation; I will bring them into CONTRACTS together with the rest of the manager side once it settles, unless you want them there now.
+
+---
+
+## 21. Five answers, and the materials updated
+
+> 1. I think markdown with a front matter header is good here. 2. My inclination
+> is refuse on collision 3. Advisory. We may decide later to be more strict but
+> unlike the auditor submission tool where it is our responsibility to force the
+> auditor to retry rather than return with a damaged archive, here we are less
+> empowered to make strict errors about what materials the manager thinks are
+> necessary. 4. I think that's fine. 5. Foreground by default. NOTE: we must plan
+> around the fact that harnesses escalate but we can't demand or enforce that.
+> Update our materials and ask me 2 more questions about the manager. We're
+> nearly done with the design conversation and the need to keep updating it.
+
+The direction to update the materials revised ROUTER.md and END-TO-END.md in
+place and added a decided section to CONTRACTS. The coordinator's reply, as
+given:
+
+All five are recorded, with your reason on the third. The materials are updated:
+
+- ROUTER.md now carries the form-and-ledger principle, ledger truth in the protocol, the Markdown problem file with its material rules, the pre-run lesson, the run as a handoff, and a manager surface of `help`, `new`, `preview`, `commission`, `run`, `status` and `close`. `collect`, `deliver` and `compare` are gone.
+- END-TO-END.md restates C3 and C4 as ledger truth and retry, moves C5 and C8 onto close, and adds C11 (the app teaches) and C12 (the run is a handoff).
+- CONTRACTS has a decided section for turns 19 to 21, and the three earlier successor paragraphs it conflicts with are marked superseded or narrowed in place, with their text kept as the reasoning they replaced.
+
+Two more questions about the manager.
+
+1. **The dead run.** With run in the foreground, a run will sometimes die under the manager: a tool-call timeout, a closed terminal, a provider outage. What should `run` on the same reference do afterward: continue the same conversation from the ledger; start a second attempt against the same commission, with both attempts in the record; or refuse and require a new commission? The old "no resume" rule was written for an auditor Stewart did not own. Now Stewart holds the whole conversation, and each choice is coherent. The first costs the manager least; the third keeps "one audit, one undertaking" literally.
+
+2. **What the manager receives.** Beyond the answer, what travels to the destination: the access log and run summary only, or the auditor's full conversation too? The conversation is the only place reasoning summaries appear, it quotes material freely and can be large, and a person auditor produces none. Whether it is part of the return or stays in Stewart's home decides what "faithful record" means at the destination.
+
+After these two I would close the conversation record and consolidate.

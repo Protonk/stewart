@@ -334,7 +334,9 @@ history service. Retention, holds, incomplete-operation evidence and the closing
 record's removal authority still govern what closure may actually remove.
 
 **The tool integration owns interrupted-operation accounting.** Accepted
-2026-10-27. Preserve an operation reference before dispatch. On supported re-entry,
+2026-10-27. *Superseded 2026-10-28 by ledger truth, below: Stewart settles no
+operation on the auditor's behalf; the auditor retries. The text stands as the
+reasoning it replaced.* Preserve an operation reference before dispatch. On supported re-entry,
 return its verified recorded outcome or complete that same authorized operation
 when its exact material, revision and authority still permit it. Surface genuine
 choices and retained uncertainty without requiring private-state repair or routine
@@ -427,8 +429,9 @@ only the claims that depend on it. After submission, collection, closure or
 unrepairable damage, stopping is the auditor's final door; no further auditor
 channel is added.
 
-A confirmed submission proceeds while one of the auditor's own operations is
-unresolved (intent recorded, outcome not). Inspect, prepare and the dry run list
+*Superseded 2026-10-28 by ledger truth, below; no unresolved-operation state
+exists to list.* A confirmed submission proceeds while one of the auditor's own
+operations is unresolved (intent recorded, outcome not). Inspect, prepare and the dry run list
 each such operation, what it would have changed, its exact repeat call and what
 confirming now means; the confirmation reply repeats it, and the return's
 provenance records it as interrupted, not included and ended by submission.
@@ -498,12 +501,16 @@ abandonment or recovery command is required to traverse this interaction.
 
 Before close, a supported request can produce another copy of the same sealed
 return. This neither selects newer auditor material nor starts another audit.
+*Narrowed 2026-10-28: that request is `close` itself, which delivers when no
+verified copy exists; there is no separate deliver command (below).*
 After close, the manager-held copy survives independently and remains the
 manager's preservation responsibility; Stewart does not promise to recreate
 disposed audit payloads. Normal return thus fulfills a copying undertaking before
 close; the general rule that close itself is not preservation still applies.
 
 **Manager collect may end authoring.** Decided 2026-10-27 for the Rust transition.
+*Narrowed 2026-10-28: the authority stands and is exercised only through
+`close`; there is no separate collect command (below).*
 For recorded work without an auditor submission, manager-accessible `collect`
 is authorized to end the authoring opportunity itself. It does not require the
 auditor first to stop, agree, or declare completion. Collection atomically fixes
@@ -545,6 +552,76 @@ operation or a routine polling duty. Status remains factual and read-only; a
 recorded delivery does not certify the copy's present safety, and absent records
 do not establish auditor liveness or completion. Exact discovery scope, presentation
 and actual interruption/receiving behavior remain to be implemented and qualified.
+
+## Successor interfaces decided 2026-10-28
+
+Decided 2026-10-28 in the design conversation recorded under
+`coordination/linux-mvp-01/` (turns 19–21); **decided, implementation and
+qualification pending.** These read under the Mission above. Where they narrow
+or supersede an earlier successor direction, that direction is marked in place
+and its text kept as the reasoning it replaced.
+
+**The auditor's tool is a form and a ledger.** It accepts data, records it, and
+returns simple, clear responses quickly when prodded. It is deliberately
+uninteresting and makes reasonable guesses about how to work it mostly work out.
+It has no observable setting for the auditor except, at submission, de-selecting
+the dry run. It is geared toward auditor retry rather than tool recovery, and it
+does not hand exceptional states down the line for the manager to interpret. It
+is the hard side of a boundary object separating the auditor's community of
+practice from the manager's, in Star and Griesemer's sense: the standardized
+form a collector staples to a specimen. The orientation is the form's
+instructions, how to fill it and when it is complete, never a briefing on why
+the question matters. Stewart's process promises to the auditor (raw capture
+before interpretation, a disposition of every gap, attribution never turned into
+a verdict) stand.
+
+**Ledger truth.** A protocol call either appended a complete record or it did
+not; a torn record is a diagnostic, never an element. After a failed call or a
+lost reply the auditor calls again; the re-entry call shows what landed; a retry
+lands as a new record, and equal bytes never identify a retry. Stewart settles
+nothing on the auditor's behalf, and no reply or return carries an
+unresolved-operation state. This supersedes interrupted-operation settlement and
+submission over unresolved operations above.
+
+**The manager's unit is the inquiry**, as far as Stewart is concerned: a line of
+problems about one concern, each audit recording which problem it was varied
+from. After the question, the manager's operations are the receipt, asking
+whether the audit is done, and close. There is no separate collect, deliver or
+compare command: close from any state stops a live run, seals what is recorded
+with manager attribution if unsubmitted, delivers when no verified copy exists,
+and records the end on the manager's confirmation; delivery otherwise happens at
+the end of the run; comparing returns is the manager's work on files it owns.
+
+**The escalated run.** Commission and run are separate commands and the line
+between them is the network: commission copies, verifies and records locally;
+run is the only step that reaches the provider and needs its key. The receipt is
+the handoff and carries the reference, the exact run line and what run needs
+from the environment. Run takes the reference and nothing else, works from any
+directory, needs no session, runs in the foreground by default, and refuses with
+a sign when the audit is running or has ended. Status takes a reference and
+answers whoever holds it. Stewart records what it observed about each invocation
+as observations and never labels who the manager is. Agent harnesses escalate
+network commands to a person at their own discretion; Stewart cannot demand or
+enforce that and must plan around it without depending on it, so one session may
+hold an audit the agent ran, one a person ran on its behalf, and one handed back
+and forth.
+
+**The problem file and material acceptance.** A problem is a Markdown file with a
+front-matter header and the question as its body, delivered verbatim; the
+question may also be given by path and material may also be given as arguments.
+A path relative to the problem file is the material's name in the auditor's
+index; an absolute path needs a label; two materials that would share a name are
+refused, never renamed. Directories expand with default excludes
+(version-control administration, build output, over-limit files), every
+exclusion listed and explicitly includable; links and special files are listed as
+not copied. Whatever the manager wrote, preview and receipt show one canonical
+problem; unknown keys and bad values are refused naming the field and the fix.
+The app teaches asking through `help`, `new`, `preview` and the receipt, with
+preview's checks written against the gap between asker and answerer. The checks
+are advisory and recorded in the receipt: unlike the auditor's tool, where
+Stewart must make the auditor retry rather than return a damaged archive, Stewart
+is less entitled to be strict about what material a manager thinks necessary.
+Stricter checks remain a later decision on evidence.
 
 ## Handoff and audit-owned facilities
 

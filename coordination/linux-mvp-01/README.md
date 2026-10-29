@@ -29,4 +29,8 @@ After the three views, the conversation covered two pitches on question types
 settled on the coupling library, worked through the coordinator's deep
 reservations and the user's answers, and arrived at ROUTER.md and END-TO-END.md.
 Where files disagree on details, the later ones are current and the earlier ones
-are records.
+are records. The conversation continued after the first turnover: turns 17–21
+settled the mission, the auditor's tool as a form and a ledger, the inquiry as
+the manager's unit, the escalated run and the problem file. ROUTER.md and
+END-TO-END.md were revised in place at those turns, and CONTRACTS now records
+the decisions.

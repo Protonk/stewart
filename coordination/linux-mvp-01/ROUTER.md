@@ -2,6 +2,12 @@
 
 *A problem router for cooperative actors who want to make it **just** so.*
 
+Revised at turns 19–21 of [the conversation](CONVERSATION.md): the auditor's
+tool as a form and a ledger (19); the inquiry as the manager's unit, the
+operations after the receipt, and the escalated run (20); the problem file,
+material acceptance and the pre-run lesson (21). The version before those turns
+is in Git at `05a21d4`.
+
 ## The idea
 
 Someone has a problem: a question about material they hold. They want it answered
@@ -16,9 +22,11 @@ Stewart doesn't investigate and doesn't judge. It arranges, carries and records.
 ## Who is involved
 
 - **The manager owns the problem.** They choose and word the question, select the
-  material, pick the shape the answer should take, and set the budget. They are
+  material, pick the shape the answer should take, and set the limits. They are
   cooperative, may state preferences (that is their business), and are
-  responsible for the answers their choices produce.
+  responsible for the answers their choices produce. A manager is a person or an
+  agent; an agent's harness may hand the run to a person, and Stewart does not
+  tell them apart.
 - **The auditor owns the answer.** Also cooperative. A model to begin with, a
   person later.
 - **Stewart owns the arrangement and the record.** It situates the auditor
@@ -30,13 +38,20 @@ Stewart doesn't investigate and doesn't judge. It arranges, carries and records.
   manager the question and material, the auditor the answer, Stewart the
   arrangement.
 - **Opinionated about form, agnostic about conclusions.** Stewart's opinions about
-  what an answer should look like live only in its coupling files and the
-  auditor's orientation. Those are versioned, readable, recorded in every receipt
+  what an answer should look like live only in its answer forms and the
+  auditor's orientation. Those are versioned, readable, recorded in every return
   and shown to the manager before a run. Stewart never judges whether an answer is
   right, valuable or welcome.
 - **The world is the arrangement.** For a model, that means its tool list and
   nothing more. For a person, it means the packet they receive and their agreement
   to work from it.
+- **The auditor's tool is a form and a ledger.** It accepts data, records it, and
+  answers plainly and at once. It is deliberately uninteresting, forgiving of
+  guesses, and has one visible setting: whether a submit is a dry run. When a call
+  fails or its reply is lost, the auditor calls again; the tool never repairs on
+  the auditor's behalf and never hands an exceptional state down the line. It is
+  the hard side of a boundary object between the auditor's practice and the
+  manager's: the standardized form the collector staples to the specimen.
 - **Losing track is never fatal.** One call tells an auditor everything it is
   working with.
 - **Quick to answer, and sure of what it says.** Every manager command and every
@@ -61,33 +76,65 @@ with its **record**.
 
 ## The problem
 
-```json
-{
-  "schema": "stewart.problem/1",
-  "id": "parser-2.4",
-  "question": "/work/q/parser-2.4.md",
-  "material": ["/work/src/parser/", "/work/exports/parser-history.txt"],
-  "coupling": "claim-check",
-  "claim": "The 2.4 parser accepts every input the 2.3 parser accepted.",
-  "auditor": { "adapter": "model", "model": "claude-opus-5-5", "effort": "high",
-               "limits": { "turns": 200, "tokens": 4000000, "minutes": 120 },
-               "compaction": "on", "reasoning": "summarized" },
-  "destination": "/work/returns"
-}
+A problem is a Markdown file: a front-matter header and, as the body, the
+question in the manager's own words.
+
+```markdown
+---
+stewart: problem/1
+inquiry: parser-2.4
+form: claim-check
+claim: The 2.4 parser accepts every input the 2.3 parser accepted.
+material:
+  - src/parser/
+  - exports/parser-history.txt
+  - label: design-notes
+    path: /home/me/notes/parser-2.4.md
+auditor:
+  adapter: model
+  model: claude-opus-5-5
+  effort: high
+  limits: { turns: 200, tokens: 4000000, minutes: 120 }
+  compaction: on
+  reasoning: summarized
+destination: /work/returns
+---
+
+Does the 2.4 parser accept every input the 2.3 parser accepted? The grammar
+was rewritten in `src/parser/grammar.rs`; the exported history lists every
+change since 2.3 shipped.
 ```
 
-- **Question:** the manager's words, delivered verbatim.
+- **Inquiry:** the line of questions this problem belongs to. It is the
+  manager's unit as far as Stewart is concerned.
+- **Question:** the body, delivered verbatim. It may also be given by path.
 - **Material:** files and directories, copied and verified at intake. Anything that
-  lives elsewhere (history, test output, logs) comes in as exported files.
-- **Coupling:** the shape the answer should take, plus any fields that coupling
-  asks for.
-- **Auditor:** which adapter, and its settings.
-- **Destination:** where returns go.
+  lives elsewhere (history, test output, logs) comes in as exported files. Extra
+  material may be added as command-line arguments.
+- **Form:** the shape the answer should take, plus any fields that form asks for.
+- **Auditor:** which adapter, and its settings and limits.
+- **Destination:** where the return goes.
 
-## Couplings
+## Material
 
-A coupling is a small versioned file that wraps the manager's question. It never
-rewrites the question. It contributes:
+Flexible at the mouth, exact in the record.
+
+- A path relative to the problem file is the material's name in the auditor's
+  index. An absolute path needs a label, which becomes its name. Two materials
+  that would share a name are refused with a sign; nothing is renamed silently.
+- A directory expands to its regular files. By default Stewart excludes
+  version-control administration, build output and files over the per-file
+  limit; every exclusion is listed, and the manager can include any of them
+  explicitly. Symbolic links and special files are listed as not copied.
+- Whatever the manager wrote, the preview and the receipt show one canonical
+  problem. Unknown keys and bad values are refused with a sign naming the field
+  and the fix, never dropped.
+
+## Answer forms and couplings
+
+An answer form is what the manager picks. The library file that defines it is a
+**coupling**: a small versioned file that wraps the manager's question without
+rewriting it. It contributes:
 
 - **an answer shape:** named slots, which the protocol exposes as tools;
 - **a stopping rule:** stated so that every conclusion finishes at the same point;
@@ -95,8 +142,15 @@ rewrites the question. It contributes:
 - **the prior:** whether a claim the manager supplies is shown to the auditor as
   its subject or kept sealed.
 
+The library is provisional. `survey` and `claim-check` were proposed in the
+conversation; their concrete shape does not settle their design as instruments of
+inquiry, and consequential choices about answer forms and stopping rules are
+made in discussion, not by the library. One test for a slot: the auditor must be
+able to fill it from where it stands, with the evidence attached. A field that
+needs the manager's categories belongs to the manager.
+
 ```
-coupling: claim-check@1
+coupling: claim-check@1          (illustrative)
 asks:     claim
 frame:    "You are given a question and a claim someone relies on. Lay out
            the premises the claim needs, and for each say whether the
@@ -108,8 +162,6 @@ stop:     every premise the claim relies on is accounted for, or missing
           material prevents that
 prior:    shown
 ```
-
-The library starts with two couplings:
 
 | Coupling | For | Answer shape |
 | --- | --- | --- |
@@ -128,9 +180,34 @@ From the problem, Stewart builds the arrangement:
 - the **tool set**: the protocol plus the coupling's slots;
 - the **limits**.
 
-`stewart preview` shows the arrangement exactly as the auditor will meet it,
-before anything runs or costs anything. The arrangement's digest goes in the
-receipt.
+The orientation is the form's instructions: how to fill it and when it is
+complete. It does not say why the question matters or what the manager will do
+with the answer. `stewart preview` shows the arrangement exactly as the auditor
+will meet it, before anything runs or costs anything. The arrangement's digest
+goes in the receipt.
+
+## Before the run: the app is the lesson
+
+Asking is the hard part, and the app teaches it through the four replies a
+manager reads anyway.
+
+- **`stewart help`** is one screen: write a problem file, preview it, commission
+  it; then run, status, close. It lists the forms with one "ask this when" line
+  each, and the limits. There is no manual behind it.
+- **`stewart new <form>`** writes the problem file with every field commented:
+  what it is for, what the auditor will and will not see because of it, and an
+  example. The comments are written against the gap: the auditor knows nothing
+  the manager does not put in the question or the material.
+- **`stewart preview`** is the mirror. It renders what the auditor will meet and
+  runs the checks: names in the question that appear in no material; material
+  the question mentions that is not attached; directories that expanded to
+  nothing; files skipped and why; the total against the limits. Each check says
+  what the auditor would experience. Checks are advisory. Stewart is less
+  entitled to be strict about what a manager thinks necessary than it is to make
+  an auditor retry, so commission proceeds past a warning and the receipt records
+  it.
+- **The receipt** confirms: this is the question, this is the material as copied,
+  this is the run command.
 
 ## The protocol
 
@@ -138,7 +215,7 @@ The protocol is the same for every adapter:
 
 | Call | Does |
 | --- | --- |
-| `what_am_i_working_with` | The question verbatim, the materials index, the current answer, and any unresolved operations or submission errors. |
+| `what_am_i_working_with` | The question verbatim, the materials index, the current answer as recorded, and the last submission error if any. |
 | `list`, `read`, `search` | Reach the material. |
 | *coupling slots* | Fill the answer's shape, e.g. `record_premise`. |
 | `add`, `replace`, `delete` | Edit free-form answer elements. |
@@ -147,6 +224,13 @@ The protocol is the same for every adapter:
 Every reply opens with a header line saying where the auditor is. Every refusal
 gives a reason, its effect on the answer, and the next call. Every citation is
 checked against the material, byte for byte.
+
+The ledger is the only truth. A call either appended a complete record or it did
+not; a torn record is a diagnostic, never an element. After a failed call or a
+lost reply the auditor calls again, and `what_am_i_working_with` shows what
+landed. A retry lands as a new record; equal bytes never identify a retry.
+Stewart settles nothing on the auditor's behalf, and the return carries no
+unresolved-operation state.
 
 ## Adapters
 
@@ -166,31 +250,54 @@ Every return names the adapter that produced it and how that adapter holds the
 auditor to the arrangement. Any other way of working, such as running code or
 another harness, is a new adapter. Stewart itself doesn't change.
 
+## The run and the handoff
+
+Commission and run are separate commands, and the line between them is the
+network. `commission` copies and verifies the material and writes records, all
+locally. `run` is the only step that touches the provider and needs its key.
+
+- The receipt is the handoff. It carries the audit's reference, the exact run
+  command, and what run needs from the environment.
+- `run` takes the reference and nothing else. It works from any directory,
+  needs no session, runs in the foreground by default, and refuses with a sign
+  if the audit is already running or has ended.
+- `status` takes a reference and answers whoever holds it.
+- Stewart records what it observed about each invocation (user, process, time)
+  as observations. It never labels who the manager is; the manager is whoever
+  holds the reference.
+
+Agent harnesses escalate network commands to a person at their own discretion.
+Stewart cannot demand or enforce that, so the design allows for it without
+depending on it: an agent manager may commission, hand the run line to a person,
+do nothing while it runs, and come back to `status` afterward; or run it
+itself; or both within one session.
+
 ## The return
 
-The auditor seals with `submit`, or the manager seals with `collect`. Stewart
-delivers to the destination, then reads everything back to verify it:
+The auditor seals with `submit`, or the manager seals with `close`. At the end
+of the run Stewart delivers to the destination, then reads everything back to
+verify it:
 
 ```
-parser-2.4-7QK3RM-copy-1/
+parser-2.4-7QK3RM/
   MANIFEST.json      every member and its digest; who sealed it
   QUESTION.md        verbatim
   ARRANGEMENT.json   frame, coupling and version, tools, limits
-  RECEIPT.json       the material as copied
+  RECEIPT.json       the material as copied, and the preview's checks
   answer/            rendered by the coupling, plus the raw slots and elements
-  RECORD.json        adapter and settings, access log, unresolved operations,
-                     run summary
+  RECORD.json        adapter and settings, access log, run summary
 ```
 
 Every instance of a coupling renders the same way, so returns are comparable
-across audits, materials and models.
+across audits, materials and models. Comparing them is the manager's work on
+files the manager owns.
 
 ## Iterating
 
-- `stewart commission --like ID` starts from an earlier problem, with overrides.
-- `stewart compare` lays out returns of the same coupling side by side.
-- Each audit records what it was varied from, so a sequence of attempts reads as
-  one.
+- `stewart new --like REF` starts from an earlier problem in the inquiry, with
+  overrides.
+- Each audit records which problem it was varied from, so an inquiry reads as
+  one line of questions rather than a string of failures.
 
 ## Responsiveness
 
@@ -209,18 +316,18 @@ it did.
 
 ## The manager's surface
 
+After the question, the manager's operations are a receipt, "is it done?" and
+close. That is all.
+
 | Command | Does |
 | --- | --- |
-| `stewart new` | Scaffolds a problem file for a chosen coupling. |
-| `stewart preview` | Shows the arrangement exactly as the auditor will meet it. |
-| `stewart commission` | Copies and verifies the material and issues the receipt. |
-| `stewart run` | Places the auditor and runs it. |
-| `stewart status` | States where every audit stands. |
-| `stewart collect` | Seals what is recorded, attributed to the manager. |
-| `stewart deliver` | Makes another verified copy of a sealed return. |
-| `stewart compare` | Lays returns side by side. |
-| `stewart close` | Records the end of the audit once the manager confirms the copy is placed. |
 | `stewart help` | A short cheatsheet; detail per command. |
+| `stewart new` | Scaffolds a problem file for a chosen form, or from an earlier problem. |
+| `stewart preview` | Shows the arrangement exactly as the auditor will meet it, with the checks. |
+| `stewart commission` | Copies and verifies the material and issues the receipt with the run line. |
+| `stewart run` | Places the auditor and runs it, delivering at the end. |
+| `stewart status` | States where an audit, or every audit in an inquiry, stands. |
+| `stewart close` | From any state: stops a live run, seals what is recorded as the manager's if unsubmitted, delivers if not delivered, and records the end once the manager confirms the copy is placed. |
 
 Every command fails early with a reason and a next step. Every command can answer
 in JSON, for managers who are agents.
@@ -228,13 +335,13 @@ in JSON, for managers who are agents.
 ## Lifecycle and storage
 
 ```
-problem ─▶ commissioned ─▶ running ─▶ sealed ─▶ delivered ─▶ closed
-                              └─ ended ─┘ (collect)
+problem ─▶ commissioned ─▶ running ─▶ ended ─▶ delivered ─▶ closed
+                                        (submitted, limit, or close)
 ```
 
 Each audit lives under Stewart's home as write-once records: the copied material,
 the arrangement, every protocol call and its outcome, the conversation, the seal
-and each delivery. Stewart deletes nothing. Closing is a record; removing an
+and the delivery. Stewart deletes nothing. Closing is a record; removing an
 audit's directory is the manager's ordinary housekeeping.
 
 ## What ships, and what doesn't
@@ -264,9 +371,9 @@ to.
 ## First release
 
 - The model adapter.
-- `survey` and `claim-check`.
-- `new`, `preview`, `commission`, `run`, `status`, `collect`, `deliver`, `compare`,
-  `close` and `help`, all within the response budgets.
+- `survey` and `claim-check`, as the provisional library.
+- `help`, `new`, `preview`, `commission`, `run`, `status` and `close`, all within
+  the response budgets.
 - Release binaries for Linux x86_64 and aarch64, built and tested in the apparatus.
 - A handoff package for a WSL2 run: the release binary plus the test suite's
   driver and fake provider, run natively in WSL2, since WSL's own environment is

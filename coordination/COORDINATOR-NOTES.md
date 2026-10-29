@@ -68,6 +68,19 @@ the mouth, exact in the record", and lists five choices (problem file format,
 index names, advisory versus blocking checks, default excludes, foreground
 run).
 
+**Turn 21 (user decisions, recorded in CONTRACTS):** Markdown problem file with
+front matter; refuse on name collision; advisory checks, with the reason that
+Stewart is less entitled to be strict about a manager's material than about
+an auditor's retry; default excludes, listed; foreground run by default; plan
+around harness escalation without demanding or enforcing it. On the direction
+"update our materials": ROUTER.md and END-TO-END.md revised in place (turns
+19–21 noted at their tops; prior text at `05a21d4`), and CONTRACTS gained
+"Successor interfaces decided 2026-10-28" with three earlier successor
+paragraphs marked superseded or narrowed in place. The reply asked the two
+manager questions the user requested: what `run` does after a dead run, and
+whether the auditor's conversation travels in the return. The user said the
+design conversation is nearly done.
+
 **Coordinator's reading of the design** (from ROUTER.md and END-TO-END.md under
 the user's direction; the folder's AGENTS file governs attribution):
 
@@ -111,16 +124,14 @@ dissolved by it.
 
 ## Next
 
-1. **The manager side.** The user is settling it in conversation. Turn 20
-   decided the unit (the inquiry) and the post-receipt operations; the
-   pre-audit surface is the current focus and turn 20's five choices are
-   open. The
+1. **The manager side.** Turn 21 answered the five pre-audit choices; two
+   questions are out (dead run; conversation in the return). The user intends
+   to end the design conversation soon; after that, consolidate. The
    two points raised on the mission wording in turn 18 ("separate context"
    against the only-Stewart's-tools decision; the dropped no-Git sentence)
    are unanswered. Adoption of the router as a whole is still the user's call.
-2. **On the user's word:** record in CONTRACTS the submission tool's character
-   (turn 19) and the turn 20 decisions, and carry the ledger-truth change and
-   the reduced manager command set into ROUTER.md and END-TO-END C3/C4/C8.
+2. **Done at turn 21:** CONTRACTS records turns 19–21; ROUTER.md and
+   END-TO-END.md carry ledger truth and the reduced manager command set.
 3. **If adopted:** restate the principles in CONTRACTS under the recorded
    mission (the neutrality restatement drafted in conversation turn 12),
    retire the Python baseline and the Git-dependent contracts, and

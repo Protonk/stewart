@@ -5,6 +5,11 @@ end" here means from a problem file a manager wrote to a verified return the
 manager reads, through the actual release binary, with nothing replaced except
 the model provider, and in one tier not even that.
 
+Revised at turns 19–21 of [the conversation](CONVERSATION.md): ledger truth
+replaces settled interruptions in C3 and C4, `collect` and `deliver` leave the
+command set in C3, C5 and C8, and two claims are added for the manager side
+(C11, C12). The version before those turns is in Git at `05a21d4`.
+
 ## What we care about
 
 Each claim below is something the router promises. A test passes only when it
@@ -23,6 +28,8 @@ failing.
 | C8 | Close works from every state. |
 | C9 | Stewart answers quickly and every reply says what it did. |
 | C10 | Real models can actually use the arrangement and finish. |
+| C11 | The app teaches: the problem file, the preview and the receipt show the manager exactly what the auditor gets. |
+| C12 | The run is a handoff: a receipt's run line works for whoever holds it, from anywhere. |
 
 Answer quality is not on the list. Stewart doesn't judge answers, so its tests
 don't either.
@@ -98,29 +105,31 @@ points at it through its provider URL setting and doesn't know it's fake.
 ### C3 — Answers kept, sealed and attributed
 
 Scripts drive add, replace, delete, prepare, dry-run submit, confirmed submit and
-manager collect, including:
+manager close, including:
 
 - a stale handle after an edit, which is refused;
 - repeated confirmed submits, which return the same submission;
-- submit racing collect, run many times, with exactly one winner each time and
+- submit racing close, run many times, with exactly one winner each time and
   correct attribution;
-- collect on an empty answer, giving an honest empty return;
+- close on an empty answer, giving an honest empty return;
 - the limits on elements and sizes, and the edits that are still allowed at them.
 
-**Interruptions.** The driver kills the binary at fixed points: before an
-operation's intent is recorded, after intent and before effect, after effect and
-before the outcome is recorded, after the outcome and before the reply, during
-seal, and during delivery. The next command must settle each one exactly once,
-landed or not, and list it in provenance.
+**Interruptions.** The ledger is the only truth. The driver kills the binary at
+fixed points: while a record is being appended, after it is complete and before
+the reply, during seal, and during delivery. Afterward, `what_am_i_working_with`
+and `status` report exactly the complete records; a torn tail is reported as a
+diagnostic and never as an element; the auditor's retry lands exactly once, as a
+new record; nothing is settled on the auditor's behalf and no unresolved-operation
+state appears in any reply or in the return.
 
-- **Sabotage:** a test build that skips writing the outcome record, and one that
-  applies an edit twice on settlement.
+- **Sabotage:** a test build that reports a torn record as an element, and one
+  that drops a retry as a duplicate because its bytes match.
 
 ### C4 — Compaction is harmless
 
 - **Pass:** the fake emits a compaction block midway. The script then calls
   `what_am_i_working_with`, which returns the question verbatim, the materials
-  index, every element recorded so far and any unresolved operation. The script
+  index and every element recorded so far. The script
   continues and submits, and the submission contains the elements recorded before
   compaction exactly once.
 - **Differing:** a submission error pending at compaction shows up in
@@ -136,7 +145,7 @@ landed or not, and list it in provenance.
   the delivered one.
 - **Also:**
   - a delivery interrupted partway keeps its partial directory and names the
-    missing members, and the next `deliver` produces a complete copy;
+    missing members, and `close` produces a complete copy;
   - a payload corrupted in Stewart's storage before delivery is reported as
     damage, never delivered as good, never treated as absent from the answer;
   - an unknown membership is never delivered as an empty answer.
@@ -169,12 +178,13 @@ landed or not, and list it in provenance.
 
 ### C8 — Close from every state
 
-Close runs against each state: commissioned, running (live loop), ended, sealed,
-delivered, partially delivered, damaged storage and already closed. Each one
-reaches the documented outcome: stop, collect, deliver, report, wait for
-confirmation, record. None of them removes anything (checked by the C6
-inventory). Confirming with a missing member requires naming the undertaking
-being given up.
+Close runs against each state: commissioned, running (live loop), ended without
+submission, submitted, delivered, partially delivered, damaged storage and
+already closed. Each one reaches the documented outcome: stop, seal attributed
+to the manager, deliver, report, wait for confirmation, record. None of them
+removes anything (checked by the C6 inventory). Confirming with a missing member
+requires naming the undertaking being given up. There is no separate collect or
+deliver command for the suite to drive.
 
 ### C9 — Quick, and sure of what it says
 
@@ -189,6 +199,49 @@ being given up.
   every reply the suite produces.
 - **Sabotage:** a build with an injected delay in one protocol call, and one that
   omits the effect line on one refusal.
+
+### C11 — The app teaches
+
+- **Pass:** `stewart new` for each form writes a problem file whose every field
+  carries a comment and an example, which parses unchanged. `stewart preview` of
+  a witness problem renders the question byte for byte, the materials index with
+  the witness's names and sizes, and the same arrangement digest the first
+  request later carries (C1). The checks fire on planted cases: a name in the
+  question that appears in no material, a material the question mentions that is
+  not attached, a directory that expanded to nothing, and files skipped by the
+  default excludes, each naming what the auditor would experience.
+- **Advisory:** `commission` proceeds past every check and the receipt records
+  each one verbatim.
+- **Names:** a relative path is the material's name; an absolute path without a
+  label is refused with a sign; two materials that would share a name are refused
+  with a sign; nothing is renamed.
+- **Mouth and record:** the question inline and the same question by path, and
+  material listed in the file and the same material as arguments, produce
+  identical canonical problems and receipts. An unknown key and a bad value are
+  each refused naming the field and the fix.
+- **Excludes:** version-control administration, build output and over-limit
+  files inside an attached directory are listed as excluded; an explicit include
+  copies one of them; a symbolic link and a special file are listed as not copied.
+- **Sabotage:** a build whose preview renders a different frame from the one
+  sent (shared with C1), one that silently renames a colliding material, and one
+  whose receipt omits a fired check.
+
+### C12 — The run is a handoff
+
+- **Pass:** the receipt carries the reference and the exact run line. Copied
+  into a shell in an unrelated directory with a different home, that line runs
+  the audit to delivery; `status REF` from a third directory reports it done and
+  names the destination. The run is in the foreground and exits with the run's
+  outcome.
+- **Differing:** `run` on a reference that is running, has ended or is closed is
+  refused with a sign naming the state and the next command.
+- **Invariance:** who invokes `run` and from where changes the record's
+  observations (user, process, time) and nothing else; no reply or record names a
+  manager role.
+- **Also:** `run` without the provider's key refuses before any request, naming
+  what it needs; `commission` succeeds without network and without the key.
+- **Sabotage:** a build whose run line depends on the commissioning directory,
+  and one that commissions over the network.
 
 ### Platforms
 
