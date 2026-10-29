@@ -998,8 +998,8 @@ private-location inventory or protection from a hostile host owner is promised.
 Decided 2026-10-29 under the same delegation. **Decided, departure;
 implementation and qualification pending.** This supplies a small concrete
 first-release contract, not an intellectual limit on what audits ought to ask.
-The later question-family and rendering decisions govern those aspects; slot
-restrictions and citation validation remain for separate discussion. The older
+The later question-family, rendering and enforcement decisions govern those
+aspects; concrete field schemas remain to be specified. The older
 commission-bundle reader and frozen Python keep their own admitted formats and bounds.
 
 **The folder has two entries.** The submission root contains `question.md` and
@@ -1230,13 +1230,12 @@ can wait. Behavior check and claim examination remain candidates for later work.
 **Still to specify.**
 The earlier `survey` and `claim-check` sketches do not supply default schemas;
 in particular, `first_unbound` and `smallest_addition` are not inherited answer
-obligations. Concrete fields and tools, common answer expectations, module
-composition, citation handling, stopping instructions and checks, treatment of a
-manager-supplied prior still need a coherent specification under the
-outcome-deliberation principle. Rendering is settled below. Choosing the library
-does not settle the remaining validation questions or replace the provisional
-custody format by implication. The rule for admitting future families also
-remains open.
+obligations. Concrete fields and tools, common answer expectations, any module
+composition and exact orientation text still need coherent specimens under the
+outcome-deliberation principle. Rendering and enforcement are settled below;
+specimens must apply them without adding a completeness gate. Treatment of a
+manager-supplied hidden prior and the rule for admitting future families remain
+unselected features, not requirements inherited from older sketches.
 
 ## Successor readable answer rendering
 
@@ -1267,9 +1266,74 @@ Close after launch applies the same rendering rule when it seals unsubmitted
 recorded work as the manager's. It does not claim auditor inspection or submission.
 Rendering failures retain their evidence and use the existing supported custody
 continuation; they do not silently omit an owed member or invent a successful
-seal. Close before launch still creates no auditor return. Whether answer-form
-omissions refuse auditor submission is a separate, still-open decision; accepting
-rendering does not itself add a completeness gate.
+seal. Close before launch still creates no auditor return. The later enforcement
+decision keeps answer-form omissions nonblocking; rendering adds no completeness
+gate.
+
+## Successor auditor form enforcement and prompting
+
+Accepted by the user, 2026-10-29, after the separate briefing. **Decided;
+implementation and qualification pending.** Stewart checks mechanically
+interpretable entries and references, makes incomplete form coverage visible,
+and gives bounded procedural prompts. It does not certify intellectual completion.
+
+**Entry validity.** Apply the existing contextual refusals to malformed calls,
+stale targets, unsupported bytes and exceeded limits. Structured material citations
+must identify captured material and an admissible range. When an explicitly
+verbatim quote is supplied, its bytes must match that range. Refuse a mutation
+with an invalid locator or mismatching quote, naming the defect, actual effect
+and ordinary correction route. A validation refusal creates no answer element;
+preserve the attempted call under the raw-capture contract. Recording or storage
+failure retains its exceptional-state diagnosis rather than masquerading as a
+validation refusal.
+
+Read/search tools supply usable captured-material references; auditors need not
+guess offsets. Do not scrape ordinary prose for citation-like text, move a
+locator to matching text, normalize a quotation or validate a paraphrase as an
+exact quote. Matching references establish no evidential support or entailment.
+Accept mechanically valid attributed claims even when their reasoning is poor;
+Stewart assigns no substantive support verdict. Supplied reports remain attributed
+material, not Stewart-witnessed executions.
+
+**Form expectations and incomplete answers.** Small entry schemas require
+interpretable arguments; the form's instructions ask for evidence and limits.
+Every family offers ordinary expression of inadequate material, uncertainty,
+disagreement and no supported finding without demanding an invented comparison,
+winner, defect or repair. Preparation reports mechanically observable omissions
+concisely with access to the prepared answer: "No comparison entries are recorded"
+is an observation; "the investigation was inadequate" is not.
+
+Missing expected sections do not refuse preparation or submission, trigger a
+separate acknowledgment or require a correction cycle. Preserve the existing
+empty-answer route. Empty means no recorded answer entries, never "no issues
+found" or a claim of completion. The renderer may faithfully expose the recorded
+structure but cannot fill gaps or produce a completeness grade. The existing
+confirmed submit is the effectful acknowledgment; inspection remains optional.
+Invalid, damaged or unverifiable selected bytes still refuse under custody rules.
+This deliberately tolerates incomplete and unhelpful returns. Requiring an entry
+for every family obligation was considered and declined because it can reward
+filler, invented support and loops over how to express inability.
+
+**Bounded prompting.** After an ordinary model turn ends without submission,
+give at most one procedural reminder across the audit, if allowance remains:
+
+> This turn ended without a submission. Your recorded answer remains unsealed.
+> If you intend to submit it, use prepare and confirm its handle with submit.
+
+The reminder permits the ordinary next response without demanding immediate
+submission or another conclusion. Another unsubmitted stop ends the placement
+under the existing rules. Continuing the audit does not reset the reminder's
+allowance. Provider failures, interrupted calls and hard limits are different
+events, not occasions to issue this reminder indiscriminately.
+
+Give at most one factual near-limit notice across the audit, tied to a configured
+threshold and the allowance Stewart actually accounts for. State the remaining
+allowance and that exhaustion leaves an unsealed answer unsubmitted; do not urge
+a finding or adequate-coverage claim. Notices and subsequent work use the existing
+cumulative budget. Exact threshold and transport are engineering choices. At
+exhaustion preserve the work and report its actual state, without an automatic
+auditor seal or invented conclusion. Manager close remains available to seal the
+recorded work with manager attribution.
 
 ## Transition status of the earlier contracts
 
@@ -1307,11 +1371,12 @@ delegation settles the manager items below; the rest remain with their stated wo
    by the auditor and sealed with the rest. Attribute rendering to Stewart;
    return stored bytes without later reinterpretation. The rendering contract
    above governs manager sealing and failures too.
-6. **The outcome-shaping influences — question-typing discussion**, under the
-   deliberation principle: the
-   orientation text, the reminder after an unsubmitted stop, the near-limit
-   warning, mechanical citation refusal and slot enumerations are each recorded
-   as a deliberated choice or made a manager setting before the first release.
+6. **The outcome-shaping influences — enforcement policy decided; concrete forms
+   remain.** Apply mechanical structured-citation checks, nonblocking omission
+   observations, empty-answer admission and bounded factual prompts under the
+   enforcement contract above. Concrete slot schemas and orientation wording
+   must instantiate those decisions without adding outcome requirements. They
+   remain visible in the prepared arrangement under the deliberation principle.
 7. **Live Python undertakings — retirement gate.** Whether any Python audit,
    resource or partial
    request with a live undertaking exists. If none, Python records are

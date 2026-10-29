@@ -1,5 +1,12 @@
 # Auditor form enforcement and prompting
 
+**Disposition, 2026-10-29:** the user accepted the recommendation, including
+nonblocking omissions and the existing empty-answer route, mechanical structured
+citation checks and bounded prompting. The decision is in
+[CONTRACTS.md](../../CONTRACTS.md#successor-auditor-form-enforcement-and-prompting).
+The briefing below is preserved as presented; its required-coverage alternative
+was not adopted. Concrete family specimens and implementation remain unfinished.
+
 Proposal for the user's separate discussion, 2026-10-29. No enforcement choice
 in this briefing is adopted merely by recording it. The user has accepted open
 inquiry, inquiry framing and comparison as the initial families, and a

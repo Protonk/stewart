@@ -26,9 +26,12 @@ the architecture and its limits. The user then accepted open inquiry, inquiry
 framing and comparison as the initial library, to be specified through concrete
 submission/tool/return examples including inadequate evidence, and a deterministic
 Markdown rendering prepared for inspection and sealed with the structured answer.
-The current separate discussion is [auditor enforcement and prompting](coordination/question-types-01/ENFORCEMENT-BRIEFING.md);
-its recommendations are not yet adopted. Concrete forms remain unfinished. The stage
-sequence remains planning, not a runtime commission or an old checklist to replay.
+The user accepted [auditor enforcement and prompting](coordination/question-types-01/ENFORCEMENT-BRIEFING.md):
+mechanical structured-citation checks, nonblocking omissions and empty-answer
+admission, with bounded factual prompts. CONTRACTS owns the decision. Concrete
+family specimens remain unfinished; this is specification work under settled
+policy. The stage sequence remains planning, not a runtime commission or an old
+checklist to replay.
 
 ## What is decided, and where
 
@@ -39,7 +42,9 @@ sequence remains planning, not a runtime commission or an old checklist to repla
   **Successor auditor retry and re-entry** records the subsequent agreement.
   **Successor question families and open inquiry** records the selected organizing
   model and initial library. **Successor readable answer rendering** records the
-  accepted sealed presentation. Concrete form and enforcement choices remain open.
+  accepted sealed presentation. **Successor auditor form enforcement and prompting**
+  settles validation, incomplete submissions and notices. Concrete forms remain
+  to be specified under those decisions.
   The later decisions supersede earlier workflows and proposals.
 - **The settled design sketch** is
   [coordination/linux-mvp-01/ROUTER.md](coordination/linux-mvp-01/ROUTER.md)
@@ -65,22 +70,20 @@ sequence remains planning, not a runtime commission or an old checklist to repla
 These are in ROUTER.md and not separately decided. Each is decided when the work
 reaches it, and the consequential ones go to the user:
 
-- **Answer forms and stopping rules.** Concrete authoring tools and their schemas;
-  stopping rules stated to the auditor only versus checked at submit; the prior shown or
-  sealed, per form or per problem; mechanical citation checking versus
-  report-only versus none; the reminder after an unsubmitted stop and the
-  warning near a limit. The initial library is open inquiry, inquiry framing and
-  comparison. Its concrete forms remain unfinished. The separate enforcement
-  briefing proposes mechanical citation checks, nonblocking coverage observations
-  and bounded prompting; it is not a decision. `survey` and `claim-check` are prior proposals,
-  not assumed instruments or schemas to repair into the new library.
-  One test for a slot: the auditor must be able to fill it from where it stands,
-  with the evidence attached.
 - **Family definitions.** Specify the three accepted families through actual
   manager submissions, auditor tools and returns, including inadequate evidence.
-  Final names, common expectations and any optional module interactions are open.
-  The preserved paths and older C7 sketches do not select their detailed schemas
-  or substantive stopping rules.
+  Final names, concrete authoring tools/schemas, orientation and any optional
+  module interactions remain. Apply the accepted mechanical checks, nonblocking
+  omission observations, empty-answer route and bounded notices. No field or test
+  may quietly introduce a substantive conclusion or completeness requirement.
+  `survey` and `claim-check` are old proposals, not schemas to repair into the
+  new library. The specimens should make the consequences of the settled policy
+  reviewable; routine details are implementation work unless they expose a new
+  substantive restriction.
+- **Unselected extensions.** Hidden-prior machinery, a larger family catalogue
+  and elaborate module composition are not first-build requirements. The
+  coordinator recommends deferring them; any later addition needs its own
+  concrete purpose and design. No such feature is authorized by an old sketch.
 - **Mechanics:** the access log; archive record layout within the designated root; command
   spellings except the now-specified receipt/readback and delivery-redirection
   routes; response-budget numbers; default model, effort and run limits;
@@ -95,11 +98,11 @@ start at any time is listed after the stages.
 
 | Stage | Work | Required result | Decisions for the user |
 | --- | --- | --- | --- |
-| **T0 — Settle the record** | Apply decided manager and auditor contracts to successor guidance and preserve frozen/historical records. The old eight-question disposition review is historical input: removal, holds, custodian and live manager access are settled; stopping is engineering/qualification, form enforcement and concrete schemas are the final discussion; rendering is settled, and live Python undertakings are a retirement gate. Complete remaining contract disposition and successor development guidance without requiring routine row approvals; preserve reasons and actual obligations. Dispose of older plans before deleting them. | Coherent current contracts and guidance, with legacy behavior clearly scoped and no runtime dependency on plans. | Concrete forms/enforcement; any genuine conflict with an existing protected undertaking. |
+| **T0 — Settle the record** | Apply decided manager and auditor contracts to successor guidance and preserve frozen/historical records. The old eight-question disposition review is historical input: removal, holds, custodian and live manager access are settled; stopping is engineering/qualification, enforcement and rendering are settled, with concrete family specimens still to specify, and live Python undertakings are a retirement gate. Complete remaining contract disposition and successor development guidance without requiring routine row approvals; preserve reasons and actual obligations. Dispose of older plans before deleting them. | Coherent current contracts and guidance, with legacy behavior clearly scoped and no runtime dependency on plans. | Any substantive restriction exposed by the concrete forms or genuine conflict with an existing protected undertaking. |
 | **T1 — The apparatus** | Build image (pinned Rust toolchain, musl targets for x86_64 and aarch64, a short vendored crate list for JSON, hashing, regular expressions and HTTPS over a pure-Rust TLS stack), test image (driver and fake provider), experiment image. Reproducible offline release builds. On the development Mac: a native aarch64 container and an emulated x86_64 one through Apple's `container`. Restate the evidence retention rules for runs in the apparatus. | A trivial binary built and tested in both images on both architectures, with image and binary digests recorded. | Crate selection is the coordinator's; record it. |
 | **T2 — The foundation and the manager's front door** | One `stewart` binary: stable reference through preparation and one acceptance; designated non-removing archive; write-once records; strict control JSON; contextual errors; `question.md`/`materials/` scaffold; literal bounded UTF-8 text intake and paged reader; `help`, `new`, manager `prepare` with readable pinned arrangement, explicit confirmed `commission`, `receipt REF` with `--read ITEM`, and `status`. Prepared names/bytes/settings bind copying and final source checks; failed attempts remain distinct, and interrupted acceptance is reconciled before fresh capture. The existing `successor/` code seeds safe reads, control JSON and verified copy, not its old bundle workflow. | C2, C6, C9, C11, C15 and applicable C16-C19 cases pass in the test image, with timings and independent witnesses. | Manager foundation policy settled; actual release forms depend on T3, and test fixtures must not silently choose them. |
-| **T3 — The ledger and the protocol** | Implement bounded re-entry with element/version handles and recent completed receipts; material/answer reads; distinct fresh adds, target-safe replace/delete, preparation and confirmed submission; known-invocation result replay and contextual signs without an auditor recovery console. Qualify C3/C4 including pagination and lost replies. Form tools, citations and stopping instructions follow the question-design decision; neither `survey` nor `claim-check` is assumed. The protocol's command-line face serves the person adapter later. | C3, C4, subsequently decided C7 cases and protocol budgets in C9 pass. | Concrete answer tools, enforcement and stopping; rendering behavior is decided. |
-| **T4 — The model adapter and the run** | The thin loop over the Messages API; the arrangement as the tool list; compaction and reasoning as settings; limits across runs; `run` from the reference alone, foreground, key from the environment, refusing when running or ended; the dead run continued; bounded provider retry; the record (conversation, access log, run summary) in the home. | C1, C12, C13 and C4 end to end against the fake provider. | None expected; the nudges (reminder, warning) are decided in T3. |
+| **T3 — The ledger and the protocol** | Implement bounded re-entry with element/version handles and recent completed receipts; material/answer reads; distinct fresh adds, target-safe replace/delete, preparation and confirmed submission; known-invocation result replay and contextual signs without an auditor recovery console. Qualify C3/C4 including pagination and lost replies. Implement the concrete family tools under the decided citation checks, nonblocking omissions, empty-answer admission and cumulative prompt allowances; neither `survey` nor `claim-check` is assumed. The protocol's command-line face serves the person adapter later. | C3, C4, C7 and protocol budgets in C9 pass. | Concrete family specimens; return only a new substantive restriction that existing policy does not decide. |
+| **T4 — The model adapter and the run** | The thin loop over the Messages API; the arrangement as the tool list; compaction and reasoning as settings; limits across runs; `run` from the reference alone, foreground, key from the environment, refusing when running or ended; the dead run continued; bounded provider retry; the record (conversation, access log, run summary) in the home. | C1, C12, C13 and C4 end to end against the fake provider. | None expected; implement the decided reminder/notice policy without resetting allowances on continuation. |
 | **T5 — Delivery and close** | Before launch, close ends preparation or the accepted commission, accounts for failed intake without forcing success, leaves the manager folder alone and creates no answer. Coordinate close with intake and launch. After launch, stop with evidence, preserve an auditor seal or seal as the manager's, continue owed delivery including `--destination DIR`, and record on applicable placement confirmation. Recover confirmation after lost replies; retain the archive including partials; name actual custody loss; keep unknown membership unfinished. No deletion service. | C5, C8, C6 through close and C16-C19. The first end-to-end audit under the successor. | No further retention policy choice; return a specific unmet promise if stopping/publication qualification cannot support the decided behavior. |
 | **T6 — The scripted tier and the WSL handoff** | The whole scripted tier on both architectures with every sabotage control firing; the handoff package (binary, driver, fake provider, environment capture) run natively on WSL2 by the user's friend; results archived and recorded. | A WSL2 run record with counts, timings, controls and environment. | The handoff's timing is the user's. |
 | **T7 — The conformance gate** | The real-model tier of END-TO-END: fixed commissions, procedure checks only, forced compaction and a kill-and-continue run per model. | The release names its supported models and its cost. | Explicit, bounded permission and a budget for model-consuming runs. |
@@ -153,9 +156,10 @@ says.
 
 - Concrete question forms: open inquiry, inquiry framing and comparison are the
   initial library, with sealed deterministic Markdown rendering decided. Specify
-  their asking/material/answer expectations and tools; decide which expectations
-  are instructions and which are mechanical checks. The separate enforcement
-  briefing owns the current proposal, including the explicit empty-answer fork.
+  their asking/material/answer expectations and tools under the accepted enforcement
+  policy. Missing expected coverage and empty selections can submit; structured
+  citation mismatches refuse their entry mutation. Do not reopen that decision
+  through a fixture or renderer.
   Optional modules must leave open inquiry usable with none. The preserved paths
   and illustrative claim-check slots do not supply an adopted schema.
 - The person adapter and transport (post-MVP; T9).
@@ -165,6 +169,10 @@ says.
   and material evidence still owed. These are engineering tasks under the decided
   scope, not open policy choices or authority to start a runtime stage.
 - Replacement development guidance for the successor (T0; the user's).
+- Build commission: intended endpoint and supported model/provider scope, with
+  explicit bounded authorization and budget for real-model qualification. The
+  current conversation settles design; it has not started implementation. WSL
+  handoff timing and Python retirement retain their later decision points.
 - The two points raised on the mission's wording in conversation turn 18 and not
   answered: "separate context" against the only-Stewart's-tools decision, and
   the dropped sentence that material is files and provenance is the manager's

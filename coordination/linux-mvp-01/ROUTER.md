@@ -28,7 +28,9 @@ open inquiry roughly following the optional-evidence-module proposal. CONTRACTS'
 "Successor question families and open inquiry" governs. The user subsequently
 selected open inquiry, inquiry framing and comparison as the initial library and
 accepted a preparation-generated, Stewart-attributed Markdown rendering sealed
-with the structured answer. Detailed forms and enforcement remain open.
+with the structured answer. The subsequent enforcement agreement settles
+mechanical citation checks, nonblocking omissions, empty-answer admission and
+bounded factual prompting; concrete family specimens remain unfinished.
 
 ## The idea
 
@@ -183,7 +185,7 @@ Three initial families are selected, with final spellings provisional:
 | --- | --- | --- |
 | Open inquiry | Answer the manager's question with an account of the evidence and limits; optional evidence modules can supply useful structure | No compulsory module selection, justification for choosing open, reduced service or extra commissioning step |
 | Inquiry framing | Formulate a working question from the concern, then investigate it within the same commission | Preserve the original request and attribute the framing and its limitations to the auditor; no expanded materials, tools, budget or live approval |
-| Comparison | Compare supplied alternatives against the stated criterion, explaining evidence and limits | Concrete fields and enforcement remain to be specified; no required winner or invented evidence |
+| Comparison | Compare supplied alternatives against the stated criterion, explaining evidence and limits | Concrete fields remain to be specified; no required winner or invented evidence |
 
 Open inquiry with no modules is a complete route for broad requests. Material-role
 prompts may expose unassigned roles without treating them as proof that evidence
@@ -195,11 +197,11 @@ as part of the task; the other families do not silently inherit it.
 Specify each family through a manager submission, actual auditor tools and a
 return, including an inadequate-evidence case. Behavior check and claim examination
 remain later candidates. The old `survey` and `claim-check` illustrations do not
-select schemas;
-`first_unbound` and `smallest_addition` are not inherited obligations. Concrete
-slots/tools, module interactions, citation handling, stopping rules/checks, a
-manager-supplied prior remain to be settled together. Rendering is decided below.
-One test for any slot: the auditor can fill it from where it stands, including an account of
+select schemas; `first_unbound` and `smallest_addition` are not inherited
+obligations. Concrete slots/tools, orientation and any module interactions remain
+to be specified under the settled enforcement policy. Hidden-prior machinery is
+an unselected feature. Rendering is decided below. One test for any slot: the
+auditor can fill it from where it stands, including an account of
 what cannot be established. Selecting a family certifies no substantive outcome.
 The rule for adding families remains open. Every return identifies its selected
 coupling and version.
@@ -272,9 +274,28 @@ The protocol is the same for every adapter:
 | `prepare`, `submit` | Prepare a manifest and handle; submit is a dry run unless confirmed, and confirming seals. |
 
 Every reply opens with a header line saying where the auditor is. Every refusal
-gives a reason, its effect on the answer, and the next call. As proposed, every
-citation is checked against the material, byte for byte; that check is one of
-the answer-form choices still to be decided.
+gives a reason, its effect on the answer, and the next call. Structured material
+citations name captured material and admissible ranges; explicitly verbatim
+quotes must match their bytes. Invalid citations refuse the entry mutation while
+the raw attempted call remains recorded. Read/search supply usable references.
+Prose is not scraped for citations, paraphrases are not exact quotes, and a
+matching reference certifies no support for the conclusion.
+
+Preparation shows mechanically observable omissions without a completeness gate
+or extra acknowledgment. Missing expected sections and empty selections can be
+submitted. The form gives ordinary expression to limits, disagreement and no
+finding; the renderer never turns an empty selection into "no issues found."
+Damaged or unverifiable bytes keep their custody diagnosis.
+
+At most one procedural reminder across the audit follows an ordinary unsubmitted
+model stop when allowance remains: the turn ended without submission, recorded
+work is unsealed, and prepare plus confirmed submit effects submission. Another
+unsubmitted stop ends the placement; continuation does not reset the reminder.
+Provider failures, interrupted calls and hard limits are distinct. At most one
+factual near-limit notice reports remaining accounted allowance and the effect
+of exhaustion. Neither prompt demands a finding or expands the cumulative
+budget. Exhaustion never supplies an automatic auditor seal; manager close can
+seal recorded work with its own attribution.
 
 The ledger is the only truth. A call either appended a complete record or it did
 not; a torn record is a diagnostic, never an element. A fresh add creates another

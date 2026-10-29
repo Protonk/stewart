@@ -27,7 +27,9 @@ selected, inquiry framing is one family, and open inquiry permits optional evide
 modules. The subsequent initial-library decision selects open inquiry, inquiry
 framing and comparison. C5 now requires the accepted deterministic Markdown
 rendering to be inspectable at preparation and sealed with the structured answer.
-Concrete forms and enforcement remain to be specified; tests do not choose them.
+The subsequent enforcement decision supplies mechanical structured-citation
+checks, nonblocking omissions, empty-answer admission and bounded factual prompts.
+C7 follows those decisions; concrete family specimens remain to be specified.
 
 ## What we care about
 
@@ -244,12 +246,30 @@ schemas, tools and rendered fixtures follow the remaining form specification.
   without inventing a defect or repair. Inquiry framing permits an account that
   useful bounded investigation was impossible. No test grades agreement with an
   expected substantive conclusion as successful compliance.
+- **Citation controls:** compare a valid locator/quote, a changed range or quote,
+  and a valid but irrelevant citation. Only the mechanical mismatch refuses the
+  entry mutation; the raw attempted call remains recorded and no answer element
+  is created for the refusal. Prose that resembles a citation is not scraped;
+  paraphrases are not checked as verbatim quotations. Read/search references can
+  be used directly without guessing offsets.
+- **Omissions:** prepare describes missing entries factually, without refusing
+  preparation/submission or adding acknowledgment steps. Incomplete, empty and
+  ordinary complete selections all have submission paths. An empty answer cannot
+  render as "no issues found." Invalid or damaged selected bytes remain custody
+  failures, not nonblocking intellectual omissions.
+- **Prompts:** capture the exact orientation and notices delivered. One ordinary
+  unsubmitted stop can receive the procedural reminder; another ends the
+  placement. Continuation cannot reset the audit's one reminder or one near-limit
+  notice. Exercise exhausted allowances, provider failures and interrupted calls
+  as differing events; no extra allowance or automatic auditor seal appears.
 - **Sabotage:** a build that paraphrases the manager's question, requires a module
-  for open inquiry, or silently gives another family the inquiry-framing task.
-- **Still pending:** concrete field/tool checks, citation handling, stopping
-  rules/checks and treatment of a prior. C5 owns the decided rendering behavior.
-  The former `survey` and
-  `claim-check` examples do not select these by becoming fixtures.
+  for open inquiry, silently gives another family the inquiry-framing task,
+  grades evidential support, blocks an incomplete selection, or resets a prompt
+  allowance after continuation.
+- **Still pending:** concrete field/tool schemas, orientation wording and any
+  optional modules. Hidden-prior machinery is unselected. C5 owns rendering.
+  The former `survey` and `claim-check` examples do not select schemas by becoming
+  fixtures.
 
 ### C8 — Close from every state
 
@@ -543,12 +563,18 @@ midway and continued.
 
 - the run ends sealed by the auditor's own submission, not by a limit, a close,
   or a second unsubmitted stop;
-- citations follow the subsequently specified handling rules; this does not
-  preselect mechanical refusal as that rule;
+- structured material citations satisfy the mechanical locator/quote rules;
+  evidential support is never graded by Stewart;
 - after compaction, and after a kill and continuation, no element recorded
   before it is added again, and the submission still contains them;
-- the answer follows its family's subsequently specified response procedure,
-  without requiring a particular substantive finding.
+- the answer follows the specified authoring/submission procedure; missing form
+  coverage and empty answers remain admissible and no substantive finding is
+  required.
+
+Report the operations actually exercised. An allowed empty submission can show
+submission conformance but supplies no evidence about unused entry/edit/citation
+paths. Qualify that coverage explicitly; do not replace missing procedural evidence
+with a content-completeness grade.
 
 **Reported but not gating:** whether the planted fact or the unsupported premise
 was found, turns and tokens used, how often `what_am_i_working_with` was called and

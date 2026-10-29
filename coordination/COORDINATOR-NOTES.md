@@ -30,16 +30,17 @@ inquiry-framing type, and A roughly as open inquiry with optional evidence modul
 CONTRACTS records that synthesis and the subsequent accepted initial library
 (open inquiry, inquiry framing, comparison) and deterministic Markdown rendering,
 generated at preparation, inspectable and sealed with the structured answer.
-The user asked to discuss enforcement and prompting separately; the
-[briefing](question-types-01/ENFORCEMENT-BRIEFING.md) is a recommendation, not an
-adopted policy. Concrete family submission/tool/return specimens, including
-inadequate evidence, remain to be specified. Stewart's
+The user accepted the separate
+[enforcement briefing](question-types-01/ENFORCEMENT-BRIEFING.md); CONTRACTS now
+records its policy and C7 its qualification design. Concrete family
+submission/tool/return specimens, including inadequate evidence, remain to be
+specified. Stewart's
 opinions about question/material/evidence pairings must leave broad requests usable
 and the residual type an ordinary service. This is specification and discussion work; no runtime
 implementation or model call was commissioned or run.
 Historical conversations, prototypes and frozen implementation are unchanged.
 Verification: `git diff --check` passed; an isolated Python documentation check
-validated 32 local link targets and code-fence balance in the six changed documents.
+validated 33 local link targets and code-fence balance in the six changed documents.
 No runtime test cases were selected or claimed.
 
 **Agreed working model:** one submission folder, one acceptance boundary and one
@@ -108,22 +109,24 @@ preserving the original question and attributing the framing to the auditor. Oth
 families can contest a premise or report missing evidence without silently acquiring
 that task. Comparison joins those two as the accepted initial library. Concrete
 specimens must include an inadequate-evidence case. Final names, slots/tools,
-common expectations, module interactions, citation handling, stopping rules/checks
-and priors remain open; the old claim-check slots are not inherited obligations.
+orientation and any optional module interactions remain to be specified under
+the settled enforcement policy. Hidden-prior machinery is unselected; the old
+claim-check slots are not inherited obligations.
 Rendering now preserves the structured answer and seals an inspectable deterministic
 Markdown presentation generated during preparation, with Stewart rendering
 attribution and no added interpretation. Manager close applies the same rendering
 rule to its own seal after launch. Delivery/readback use stored sealed bytes.
 Human transport and optional studies remain later.
 
-**Current enforcement proposal, not adopted:** refuse malformed operations and
+**Agreed enforcement policy:** refuse malformed operations and
 invalid structured locators/quotes, without grading evidential support; report
 mechanically missing form entries at prepare without a submission completeness
 gate; preserve the existing empty-answer route; one procedural reminder after an
 ordinary unsubmitted stop and one factual near-limit notice, within cumulative
-allowances. The briefing contrasts this with required coverage entries and names
-that departure explicitly. No reminder or form policy was settled by accepting
-the library or rendering.
+allowances. Required entries for every coverage obligation were considered and
+declined; incomplete and unhelpful returns remain possible. The current task
+records this agreement and identifies remaining work; it does not commission a
+runtime stage or real-model runs.
 
 **Historical review findings, coordinator assessment:**
 
@@ -175,7 +178,8 @@ The earlier delegated manager recall and status/close design fixes are recorded
 in CONTRACTS and synchronized into the sketch/test design at `eff8126`.
 Their application to intake now follows the later manager preparation contract;
 never-run accepted commissions and unaccepted preparation remain distinct.
-Auditor retry/re-entry is settled; question typing/coupling is the current discussion.
+Auditor retry/re-entry, question-family architecture, rendering and enforcement
+are settled; concrete family specimens remain to be specified.
 The two past design conversations remain closed. No transition stage is commissioned.
 
 ## Inherited product state
@@ -185,8 +189,9 @@ The two past design conversations remain closed. No transition stage is commissi
   platform, no-Git, no-baseline and auditor's-world decisions), and a
   transition-status review whose eight original questions now have explicit
   dispositions: removal/holds/custodian/live access are settled for the first
-  release; stopping is engineering/qualification, forms/enforcement are the final discussion and rendering is settled,
-  and live legacy obligations remain a retirement gate. ROUTER.md and
+  release; stopping is engineering/qualification, enforcement and rendering are
+  settled, concrete family specimens remain to be specified, and live legacy
+  obligations remain a retirement gate. ROUTER.md and
   END-TO-END.md under `linux-mvp-01/` are the settled sketch and test design, with
   the revising turns noted at their tops. The README is framed as the frozen
   Python tool's manual under the new mission.
@@ -212,11 +217,15 @@ active or pending.
 
 ## Next
 
-Discuss the preparation-directory candidate and the historical assumptions it
-changes, especially submission selection, failed copy attempts and close before
-acceptance. Keep auditor retry/re-entry and question typing/coupling separate.
-No runtime stage follows automatically. Model-consuming work still requires
-explicit, bounded permission and a budget under the standing orders.
+Prepare concrete submission/tool/return specimens for open inquiry, inquiry
+framing and comparison under the settled policy, including inadequate evidence.
+These are the remaining design artifacts; no broad policy issue is currently
+identified as blocking the foundation. A build commission still needs its endpoint
+and model/provider qualification scope, with explicit bounded permission and a
+budget for model-consuming work. Routine engineering and record reconciliation
+belong to the coordinator within that commission. Hidden priors, larger catalogues
+and elaborate module composition are unselected; defer rather than inherit them.
+WSL handoff timing and Python retirement retain their later decision points.
 
 ## Environment notes
 
