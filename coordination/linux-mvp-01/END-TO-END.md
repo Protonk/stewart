@@ -11,6 +11,12 @@ command set in C3, C5 and C8, three claims are added (C11, C12, C13), and C5
 delivers only the submission. The version before those turns is in Git at
 `05a21d4`. The design review ended at turn 23; this is the settled test design.
 
+Amended 2026-10-28 under the user's delegated resolution of manager recall and
+status/close, following CONTRACTS' "Successor manager readback, status and
+close": C5/C8/C12 are qualified and C15/C16 added. These are acceptance designs,
+not executed checks. Preview, auditor retry and question typing remain separate
+discussions; their existing proposed checks are not settled by this amendment.
+
 ## What we care about
 
 Each claim below is something the router promises. A test passes only when it
@@ -33,6 +39,8 @@ failing.
 | C12 | The run is a handoff: a receipt's run line works for whoever holds it, from anywhere. |
 | C13 | A dead run continues: the audit is its ledger, and `run` again picks it up. |
 | C14 | The process promises hold: refusals are recorded with their bytes and reason, every gap has a disposition, no record carries a verdict. |
+| C15 | A manager recovers the fixed commission through its reference without the original session or source files. |
+| C16 | Status distinguishes the run, answer seal, delivery and closure, with evidence and usable next actions. |
 
 Answer quality is not on the list. Stewart doesn't judge answers, so its tests
 don't either.
@@ -153,6 +161,12 @@ state appears in any reply or in the return.
 - **Also:**
   - a delivery interrupted partway keeps its partial directory and names the
     missing members, and `close` produces a complete copy;
+  - an unavailable destination is replaced through `close REF --destination DIR`;
+    the new exclusive copy has the same seal and member bytes, the original
+    location and failure remain recorded, and no provider request occurs;
+  - a lost reply after verified delivery is recovered through close without a
+    second copy; an existing conflicting package is neither overwritten nor
+    adopted as Stewart's own attempt;
   - a payload corrupted in Stewart's storage before delivery is reported as
     damage, never delivered as good, never treated as absent from the answer;
   - an unknown membership is never delivered as an empty answer.
@@ -192,11 +206,30 @@ state appears in any reply or in the return.
 
 Close runs against each state: commissioned, running (live loop), ended without
 submission, submitted, delivered, partially delivered, damaged storage and
-already closed. Each one reaches the documented outcome: stop, seal attributed
-to the manager, deliver, report, wait for confirmation, record. None of them
-removes anything (checked by the C6 inventory). Confirming with a missing member
-requires naming the undertaking being given up. There is no separate collect or
-deliver command for the suite to drive.
+already closed. Each reaches the documented effects or an explicit unfinished
+outcome with its supported continuation. A prior auditor seal keeps its actor;
+an unsubmitted selection is sealed by the manager. Sealing alone never counts
+as stopped execution. Delivery preceding the first close request permits ordinary
+close to confirm placement;
+close that first produces a copy presents a seal/delivery-bound confirmation
+reference and remains unfinished until it is confirmed through close.
+
+Kill after copying and before its reply, and after confirmation and before its
+reply. Status recovers the exact outstanding confirmation or recorded closing
+outcome; a repeat without `--confirm TOKEN` only re-presents a copy first made
+through close, even though delivery now predates that repeat. It does not reseal,
+recopy a verified delivery or close without the required confirmation. A confirmation for a different seal/delivery is
+refused. Confirming with a known missing member requires naming the undertaking
+being given up separately from placement confirmation. Unknown membership stays
+unfinished and never becomes an empty return. Replacing the destination repairs
+no missing source bytes. A stop whose completion cannot be established keeps
+close unfinished with its evidence.
+
+Under the still-proposed never-delete rule, none removes anything (C6). There is
+no separate collect or deliver command. The differing case is delivery before
+versus during close; the invariance case changes the invoking directory and
+process after a lost reply. Sabotage controls skip post-copy confirmation or
+report sealed authoring as terminated execution; both must fail.
 
 ### C9 — Quick, and sure of what it says
 
@@ -204,7 +237,8 @@ deliver command for the suite to drive.
   limits and reported as actual timings:
   - startup, `status`, `preview` and `help` answer within tens of milliseconds;
   - every protocol call except a full-material search does too;
-  - intake, full search and delivery state their size first and report progress.
+  - intake, commission readback, full search and delivery state their size first
+    and report progress; raw readback has no progress text in its byte stream.
 - **Certainty:** every protocol reply begins with the header line. Every refusal
   carries a reason, its effect and the next call. Every manager command's JSON
   output carries what changed and what was verified. A schema check runs over
@@ -242,9 +276,9 @@ deliver command for the suite to drive.
 
 - **Pass:** the receipt carries the reference and the exact run line. Copied
   into a shell in an unrelated directory with a different home, that line runs
-  the audit to delivery; `status REF` from a third directory reports it done and
-  names the destination. The run is in the foreground and exits with the run's
-  outcome.
+  the audit to delivery; `status REF` from a third directory reports the seal,
+  verified delivery and still-open closure, and names the destination. The run is
+  in the foreground and exits with the run's outcome.
 - **Differing:** `run` on a reference that is running, has ended or is closed is
   refused with a sign naming the state and the next command.
 - **Invariance:** who invokes `run` and from where changes the record's
@@ -289,6 +323,50 @@ deliver command for the suite to drive.
   same sealed answer.
 - **Sabotage:** a build that drops a refused add without recording it, and one
   that adds an outcome field to the manifest.
+
+### C15 — Manager recall through the receipt
+
+- **Pass:** the witness retains the commissioned question, problem, arrangement
+  and input bytes. After the originating session is gone and the source files
+  have been removed or changed, `receipt REF` supplies the recorded commission
+  and stable readback item IDs. `receipt REF --read ITEM` matches the witness
+  bytes for each item. Receipt and status both supply the readback route. The
+  installed form definition cannot replace the recorded arrangement.
+- **Differing:** damage one retained input. Its readback diagnoses damage;
+  another independently verified input still reads. The original receipt is
+  unchanged and recorded acceptance is distinguished from current verification.
+- **Invariance:** an unrelated working directory, changed HOME and no provider
+  key change no selected bytes; repeat while running and after close with the
+  material retained. No read changes the ledger or sends a provider request.
+- **Also:** an incomplete commission is not called accepted; unavailable or
+  unsupported selected evidence keeps its diagnostic; closed-custody readback
+  with missing bytes never substitutes a live original. Raw bytes and diagnostic
+  output use separate streams, including large and non-text inputs.
+- **Sabotage:** a build that reads the live source, one that renders the current
+  form in place of the recorded arrangement, and one that treats an intact
+  member as proof of whole-commission integrity. Each must fail.
+
+### C16 — Status answers the manager's actual question
+
+- **Pass:** at each independently witnessed lifecycle point, status reports the
+  run observation, answer seal/actor, delivery verification/location and closure
+  as distinct facts, with the receipt command and any specific next action.
+  Human and JSON presentations agree. The test covers a never-run commission,
+  held run, interruption, ordinary unsubmitted stop, limit stop, sealed but
+  undelivered answer, partial delivery, verified delivery, incomplete close,
+  completed close and close with an explicitly surrendered known delivery loss.
+- **Differing:** kill before versus after sealing. The former may continue
+  through run under existing limits; the latter continues delivery through close
+  without a provider call. Neither is called a completed delivery.
+- **Invariance:** changing elapsed time establishes no liveness or completion;
+  changing a previously delivered copy does not cause status to certify its
+  present safety or silently undertake another delivery. Status is read-only.
+- **Also:** damaged or unreadable controlling records keep their diagnostics,
+  and absent observation facilities do not establish that a process stopped.
+  Inquiry status lists references without choosing an audit by recency.
+- **Sabotage:** a build that calls every ended run submitted, one that calls a
+  seal delivered, and one that converts unknown membership into an empty answer.
+  All must fail.
 
 ### Platforms
 

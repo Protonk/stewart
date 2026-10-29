@@ -626,7 +626,9 @@ whether the audit is done, and close. There is no separate collect, deliver or
 compare command: close from any state stops a live run, seals what is recorded
 with manager attribution if unsubmitted, delivers when no verified copy exists,
 and records the end on the manager's confirmation; delivery otherwise happens at
-the end of the run; comparing returns is the manager's work on files it owns.
+the end of a run with a sealed answer. An unsubmitted stop needs manager sealing
+through close. Comparing returns is the manager's work on files it owns. The
+manager readback, status and close section below completes these interfaces.
 
 **The escalated run.** Commission and run are separate commands and the line
 between them is the network: commission copies, verifies and records locally;
@@ -688,6 +690,109 @@ work, so one protocol serves both adapters. Replaying the earlier conversation
 to a model so it keeps its reading is an adapter optimization to weigh only on
 conformance-tier evidence that re-reading after a kill is costly; it would
 change nothing in the record.
+
+## Successor manager readback, status and close
+
+Decided 2026-10-28 by the coordinator under the user's delegated resolution of
+the manager recall and status/close interface concerns. **Decided, departure;
+implementation and qualification pending.** This completes those interfaces
+without deciding preview, auditor retry, question typing, storage location,
+live-record access or removal. Frozen Python and commission-bundle commands
+remain unchanged.
+
+**The receipt is retrievable.** `stewart receipt REF` retrieves the recorded
+commission: the original question, accepted material index, arrangement identity,
+grants and limits, recorded intake qualifications and exact run line. It lists
+stable item IDs and the readback command for the original problem, question,
+recorded arrangement and each copied input. `stewart receipt REF --read ITEM`
+returns the selected item's verified original bytes, not its live source or a
+rendering reconstructed with the currently installed form. Raw readback writes
+bytes to stdout and qualifications to stderr; ordinary receipt inspection has
+human-readable and JSON presentations. The initial receipt and `status REF`
+both give this access route. The reference works independently of the invoking
+directory or session; inquiry status lists explicit audit references and never
+selects one by recency.
+
+Readback is local and read-only, including while a run is active. It exposes the
+fixed commission, not the auditor's live answer or conversation. What intake
+recorded accepting and what the reader now verifies remain separate facts; a
+receipt is not rewritten to reflect subsequent damage. An incomplete commission
+is identified as incomplete, never supplied with an invented acceptance receipt.
+Missing, damaged, unreadable and unsupported selected records retain distinct
+diagnostics. Independently verifiable selected material remains readable when
+unrelated material is damaged. Reads name their verification scope and do not
+vouch for the whole commission from one valid member. Large readback is
+size-bound work with progress outside the byte stream.
+
+This route remains usable after close for commission material still retained
+under the applicable custody rules; it diagnoses unavailable material rather
+than recreating it. It adds no indefinite retention or removal authority. It
+does not add commission material to the auditor's return. The manager may keep
+the retrieved bytes independently.
+
+**Status answers with distinct facts.** `status REF` gives one short headline
+and separately identifies the observed run, recorded answer seal and its actor,
+delivery verification and location, and closure. The JSON presentation preserves
+the same distinctions and diagnostics. A process ending does not establish a
+submission; a seal does not establish delivery; delivery does not close the
+audit. An empty recorded selection is not the auditor's claim of "nothing found."
+
+| Established condition | Manager-facing answer and supported next action |
+| --- | --- |
+| Commissioned, never run | Not started; the receipt supplies `run REF`. |
+| A run is currently held | Run active, with the observation's evidence; `close REF` can end it. |
+| A placement was interrupted, answer unsealed | Interrupted, not submitted; `run REF` continues when the existing limits and run exclusion permit, or `close REF` ends authoring. |
+| Run ended normally without submission, or audit limit reached | Run ended, not submitted; `close REF` seals the recorded selection with manager attribution. It does not infer an auditor conclusion. |
+| Answer sealed, delivery absent, failed or partial | Answer sealed, delivery incomplete; `close REF` continues copying that same selection. |
+| Complete delivery verified and audit open | Return delivery verified at the recorded time and location; `close REF` ends custody on the manager's confirmation. |
+| Closing operation incomplete | Close unfinished; show its completed effects, remaining obligation and the exact continuation through `close`. |
+| Closed | Closed, with the recorded delivery or explicitly surrendered loss; closure with loss is never complete delivery. |
+
+These are facts to establish, not defaults for damaged records. When a fact
+cannot be established, name that uncertainty and its evidence rather than
+substituting an empty answer, interrupted run or completed operation. Run counts
+and recorded endings remain facts; liveness requires current evidence, never
+elapsed time. Status neither probes the delivered copy's current safety nor
+launches, repairs, seals, copies or closes anything. Each actionable failure
+names a stable reason, retained locations and a supported next action; offers
+are not preconditions. No bare "done" hides which undertaking was completed.
+
+**Close continues delivery without another investigation.** A run delivers
+automatically only after an answer has been sealed. An unsubmitted stop leaves
+the recorded selection for manager sealing through close. Close prevents further
+authoring, preserves a submission that won the seal race, and otherwise seals
+with manager attribution. It reports run termination separately from the seal;
+completed close requires the applicable stopping evidence. The mechanism for
+reaching a run held by another process still needs qualification.
+
+If delivery cannot complete at the commissioned destination, the same interface
+accepts `close REF --destination DIR` to continue the copying undertaking at a
+manager-selected replacement destination. This changes neither the commission
+nor the sealed answer. The new delivery location and its relation to the failed
+attempt are recorded before copying. Existing destinations and partial copies
+are never overwritten or emptied; a new attempt uses a fresh exclusive package
+name and keeps the earlier attempt's bytes and diagnostics. A lost reply is
+reconciled against that undertaking's own recorded attempts; an already verified
+delivery is reported again, not blindly copied again. This is completion of the
+owed delivery, not a general copy service after verified delivery or closure.
+
+Where delivery was already verified when close was first requested, ordinary
+close is the manager's affirmative decision about that copy's placement. Where close
+first produces the copy, its reply presents the result and a confirmation
+reference bound to the audit, seal and delivery record. Confirmation stays
+inside `close REF --confirm TOKEN`, is recoverable through status after a lost
+reply, and cannot silently acknowledge another destination or selection.
+Repeating that close without the confirmation only re-presents the result; the
+copy now existing does not turn a repeat into post-receipt confirmation. A
+pre-delivery request alone never supplies it. Confirmed repeats return the
+recorded closing outcome. No additional report acceptance is required.
+
+Unavailable selected bytes remain a delivery failure even if the destination is
+changed. The existing known-selection incomplete-close authority applies only
+when the manager explicitly names the undertaking being surrendered, separately
+from ordinary placement confirmation. Unknown selection remains diagnosed and
+unfinished, never guessed empty or covered by a blanket discard. Neither route
+releases a hold or authorizes removal that the applicable custody rules forbid.
 
 ## Transition status of the earlier contracts
 

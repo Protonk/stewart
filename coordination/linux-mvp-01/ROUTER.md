@@ -10,6 +10,12 @@ and nothing else (22); the dead run as a continued placement (23). The version
 before those turns is in Git at `05a21d4`. The design review ended at turn 23;
 CONTRACTS records the decisions, and this is the settled sketch.
 
+Amended 2026-10-28 after that closed conversation, under the user's delegation
+to resolve manager recall and status/close: the receipt readback command,
+qualified status and delivery continuation below follow CONTRACTS' "Successor
+manager readback, status and close." Preview, auditor retry and question
+typing/coupling remain separate discussions; this amendment decides none of them.
+
 ## The idea
 
 Someone has a problem: a question about material they hold. They want it answered
@@ -209,7 +215,19 @@ manager reads anyway.
   an auditor retry, so commission proceeds past a warning and the receipt records
   it.
 - **The receipt** confirms: this is the question, this is the material as copied,
-  this is the run command.
+  this is the run command. It also gives `stewart receipt REF` for later recall.
+
+The receipt is a supported interface after the commissioning conversation is
+gone. `stewart receipt REF` retrieves the recorded commission, its original
+question, material index, arrangement identity and intake qualifications. Its
+stable item IDs and `stewart receipt REF --read ITEM` recover the original
+problem, question, recorded arrangement and individual copied inputs as verified
+bytes. It works from any directory, without a provider key, including during a
+run. It reads the fixed commission, never the auditor's live answer. Recorded
+acceptance and present verification are distinguished; damage is diagnosed
+without substituting live sources or current form definitions. A valid selected
+item remains readable despite unrelated damage. After close the same route
+reads what remains retained, with no new retention promise.
 
 ## The protocol
 
@@ -264,7 +282,9 @@ locally. `run` is the only step that touches the provider and needs its key.
 - `run` takes the reference and nothing else. It works from any directory,
   needs no session, runs in the foreground by default, and refuses with a sign
   if the audit is already running or has ended.
-- `status` takes a reference and answers whoever holds it.
+- `status` takes a reference, gives the receipt retrieval command, and answers
+  whoever holds it. It distinguishes the observed run, answer seal, delivery and
+  closure; a stopped run is not necessarily a submitted or delivered answer.
 - Stewart records what it observed about each invocation (user, process, time)
   as observations. It never labels who the manager is; the manager is whoever
   holds the reference.
@@ -291,8 +311,9 @@ the record.
 
 The manager receives what the auditor submitted through the tool and `prepare`
 accepted, and nothing else. The auditor seals with `submit`, or the manager
-seals with `close`. At the end of the run Stewart delivers to the destination,
-then reads everything back to verify it:
+seals with `close`. A run with a sealed answer delivers to the destination,
+then reads everything back to verify it. A run ending without submission leaves
+the recorded selection for manager sealing through close:
 
 ```
 parser-2.4-7QK3RM/
@@ -306,8 +327,9 @@ parser-2.4-7QK3RM/
 The destination is exclusive: an existing directory is evidence and is refused,
 never overwritten or emptied. The question, the receipt, the arrangement, the
 access log, the run summary and the conversation stay in Stewart's home as the
-record; `status` and the files answer for them. A return looks the same whether a model or a person produced
-it. Every instance of a coupling renders the same way, so returns are comparable
+record. `receipt` provides commission readback; `status` reports operating facts;
+the remaining record stays in the home. A return looks the same whether a model
+or a person produced it. Every instance of a coupling renders the same way, so returns are comparable
 across audits, materials and models. Comparing them is the manager's work on
 files the manager owns.
 
@@ -325,9 +347,10 @@ it did.
 
 - **Ordinary calls take tens of milliseconds.** Startup, `status`, `preview`,
   `what_am_i_working_with`, answer edits, `prepare` and `submit` answer at once.
-- **Size-bound work shows its size first.** Intake copying, search across all the
-  material, and delivery state how much they are about to handle, report
-  progress, and finish with what they verified.
+- **Size-bound work shows its size first.** Intake copying, commission readback,
+  search across all the material, and delivery state how much they are about to
+  handle, report progress, and finish with what they verified. Raw readback keeps
+  progress and qualifications outside the byte stream.
 - **Every reply carries its own certainty.** What changed, what was checked, and
   what to do next, in the same place every time. A reply never says "probably".
 - **Speed is tested.** Response budgets are part of the test suite, measured on
@@ -344,21 +367,48 @@ close. That is all.
 | `stewart new` | Scaffolds a problem file for a chosen form, or from an earlier problem. |
 | `stewart preview` | Shows the arrangement exactly as the auditor will meet it, with the checks. |
 | `stewart commission` | Copies and verifies the material and issues the receipt with the run line. |
-| `stewart run` | Places the auditor and runs it, delivering at the end. |
-| `stewart status` | States where an audit, or every audit in an inquiry, stands. |
+| `stewart receipt REF` | Retrieves the original commission and readback item IDs; `--read ITEM` returns verified original bytes. |
+| `stewart run` | Places the auditor and runs it, delivering a sealed answer at the end. |
+| `stewart status` | States the run, answer seal, delivery and closure facts for an audit, or each audit in an inquiry, with explicit references and next actions. |
 | `stewart close` | From any state: stops a live run, seals what is recorded as the manager's if unsubmitted, delivers if not delivered, and records the end once the manager confirms the copy is placed. |
 
 Every command fails early with a reason and a next step. Every command can answer
-in JSON, for managers who are agents.
+in JSON, for managers who are agents; raw receipt readback instead puts bytes on
+stdout and qualifications on stderr.
+
+Status says, for example, "Interrupted; not submitted", "Answer sealed; delivery
+incomplete", or "Delivery verified at [time/location]; audit open". It does not
+infer an auditor conclusion from an empty selection, liveness from elapsed time,
+or present copy safety from a delivery record. Damaged records keep their
+diagnostics instead of defaulting to one of these states. It gives the specific
+continuation through `run` or `close`, without making inspection a prerequisite.
+
+If copying cannot finish at its destination, `close REF --destination DIR`
+continues the same owed delivery elsewhere. It records the replacement location,
+uses a fresh exclusive package name and preserves partial copies. It never
+changes the sealed answer or reopens investigation. A repeated close reconciles
+its own recorded effects and reports an already verified delivery again. This
+does not add a general copy service after successful delivery or closure.
+
+If delivery predates the first close request, ordinary close is the manager's
+placement confirmation. If close first makes the copy, it returns a confirmation
+reference bound to that seal and delivery, recoverable through status; the manager
+uses `close REF --confirm TOKEN` after receipt. Repeating close without that
+confirmation only re-presents the result. Lost replies do not authorize final closure. Known
+missing members require explicit surrender of their named undertakings, distinct
+from ordinary confirmation. Unknown selection stays diagnosed and unfinished.
+Run termination is evidenced separately from sealing; close cannot claim that
+stopping succeeded just because the answer was sealed.
 
 ## Lifecycle and storage
 
-```
-problem ─▶ commissioned ─▶ running ─▶ ended ─▶ delivered ─▶ closed
-                            │   ▲     (submitted, limit, or close)
-                            ▼   │
-                         interrupted   (run again continues)
-```
+Commission fixes the question and material. Runs may be interrupted and continued
+on that commission until the answer is sealed or the audit ends. An auditor
+submission or manager close seals the answer once. Delivery and its verification
+follow that seal; close records the end after the required confirmation and
+stopping evidence. A run ending at a limit without submission has no automatic
+auditor seal. A closed audit with an explicitly surrendered delivery loss stays
+labelled that way, never as a completely delivered return.
 
 Each audit lives under Stewart's home as write-once records: the copied material,
 the arrangement, every protocol call and its outcome, the conversation, the seal
@@ -395,8 +445,8 @@ to.
 
 - The model adapter.
 - `survey` and `claim-check`, as the provisional library.
-- `help`, `new`, `preview`, `commission`, `run`, `status` and `close`, all within
-  the response budgets.
+- `help`, `new`, `preview`, `commission`, `receipt`, `run`, `status` and `close`,
+  all within the response budgets.
 - Release binaries for Linux x86_64 and aarch64, built and tested in the apparatus.
 - A handoff package for a WSL2 run: the release binary plus the test suite's
   driver and fake provider, run natively in WSL2, since WSL's own environment is

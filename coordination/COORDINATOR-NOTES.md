@@ -21,38 +21,43 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
-The user commissioned a review of the manager and auditor tool interfaces and
-concerns brought back in conversation. The two design sessions are historical;
-their conversation and recording habit stay closed. The turnover's proposed
-next work is information, not an instruction to execute T0 or any other stage.
-Intake read the named historical accounts at `313c4e3` and `8daac52`, the current
-contracts, sketch, test design and plan, and checked the successor's actual
-command surface. The successor still implements commission bundles only.
+The user delegated resolution of the interface review's manager recall and
+status/close concerns (1 and 2). Their design is complete in CONTRACTS'
+"Successor manager readback, status and close", synchronized into ROUTER,
+END-TO-END and TRANSITION-PLAN. No runtime implementation stage is commissioned;
+`successor/` still implements commission bundles only. The two past design
+sessions and their conversation/recording habit stay closed.
 
-Coordinator concerns for discussion, not decisions or implementation work:
+- `receipt REF` supplies the fixed commission and stable readback IDs;
+  `--read ITEM` retrieves selected verified original bytes, independently of
+  the old session, live inputs or currently installed form.
+- Status distinguishes run observations, the answer seal, delivery and closure.
+  Close continues owed delivery at a replacement destination when necessary,
+  preserves failed copies and recovers its own recorded effects. A copy first
+  produced through close requires its bound confirmation; a lost reply followed
+  by a bare repeat cannot become confirmation merely because the copy now exists.
+- The acceptance design adds C15/C16 and expands C5/C8/C12. No runtime tests,
+  model calls or workers ran. Documentation consistency and whitespace were
+  checked; implementation and qualification remain pending.
 
-- Manager recall needs an explicit supported route from the reference to the
-  original question, arrangement and copied input bytes; the proposed command
-  list does not yet describe that route.
-- Status and close need plain distinctions between an interrupted placement,
-  unsubmitted work, a sealed answer, verified delivery and completed close.
-  Delivery failure must have a usable path within close, including a destination
-  that is no longer usable, without implying another investigation.
-- Material acceptance and preview need to distinguish copied bytes from what
-  the auditor's read/search interface can actually present, and account for
-  changed inputs between preview and commission.
-- Retry guidance must distinguish a new addition from a handle-bound submission
-  lookup and make recorded identities/revisions easy to recover after a lost
-  reply; blanket "try again" guidance can duplicate an addition.
-- Re-entry must restore a usable working position at admitted size limits;
-  returning every answer byte in one reply is not a scalable specification.
-- The illustrative claim-check slots steer toward finding and repairing missing
-  support. A refuted claim, a supported claim and an indeterminate claim need
-  equally ordinary expression, and the stopping instruction needs scrutiny.
+Three separate discussions remain, at the user's direction:
 
-These are specification concerns, not demonstrated runtime defects. No runtime
-tests, model calls or workers were launched. Product contracts, plans and the
-closed design record are unchanged.
+- **Preview (3), next briefing:** distinguish mechanical intake forecasting,
+  showing the auditor's arrangement, and advice about the question. Commission
+  is already local and receipt readback is available before run, so a separate
+  preview's value needs stating. Consider omission or a sharply limited preview
+  as well as the fuller view. No preview contract has changed yet.
+- **Auditor retry/re-entry (4):** brief the different consequences of repeating
+  an addition and a confirmed submission, recoverable identities/revisions,
+  and useful re-entry at admitted artifact sizes. No authoring semantics changed.
+- **Question typing/coupling (5):** discuss the arrangement itself. The user put
+  the claim-check asymmetry in the broader history of arguing about retaining
+  question types and reaching this coupling proposal. Do not treat the current
+  proposal as an assumed answer or repair its slots in isolation.
+
+Independent manager work can proceed when commissioned; preview, retry and form
+implementation depend on their respective discussions. The turnover's proposed
+T0 work remains background, not a present instruction.
 
 ## Inherited product state
 
@@ -87,11 +92,10 @@ active or pending.
 
 ## Next
 
-Discuss the interface concerns with the user. No transition stage follows
-automatically from this review. TRANSITION-PLAN.md retains the prior coordinator's
-sequence and CONTRACTS' Proposed transition section retains the pending
-dispositions; neither is the present commission. Model-consuming work still
-requires explicit, bounded permission and a budget under the standing orders.
+Discuss preview's scope, then brief auditor retry and question typing/coupling
+separately. The manager-interface design fixes are complete; no runtime stage
+follows automatically. Model-consuming work still requires explicit, bounded
+permission and a budget under the standing orders.
 
 ## Environment notes
 
