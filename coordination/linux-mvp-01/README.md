@@ -1,16 +1,17 @@
 # One design conversation, and what it produced
 
 On 2026-10-28 an alignment conversation about Stewart turned into a redesign. This
-folder records that conversation and the documents it produced. Nothing here
-changes CONTRACTS; adopting any of it is a separate decision.
-[AGENTS.md](AGENTS.md) says how agents should treat the folder.
+folder records that conversation and the documents it produced. The conversation
+ended at turn 23 the same day; the user's decisions from it are recorded in
+[CONTRACTS.md](../../CONTRACTS.md), which owns them. Nothing is added to the
+conversation now. [AGENTS.md](AGENTS.md) says how agents should treat the folder.
 
 ## Start here
 
 | Read | What it is |
 | --- | --- |
-| [ROUTER.md](ROUTER.md) | **The latest design.** Stewart as a problem router for cooperative actors who want to make it *just* so. |
-| [END-TO-END.md](END-TO-END.md) | **What an end-to-end test of the router must show**, including a real-model conformance gate. |
+| [ROUTER.md](ROUTER.md) | **The settled design sketch.** Stewart as a problem router for cooperative actors who want to make it *just* so. Where it and CONTRACTS differ, CONTRACTS decides; where CONTRACTS is silent, the sketch is the coordinator's proposal. |
+| [END-TO-END.md](END-TO-END.md) | **The settled test design**: what an end-to-end test of the router must show, including a real-model conformance gate. |
 
 ## How it got there
 

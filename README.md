@@ -5,6 +5,13 @@ of Git projects under local custody. It prepares an auditor's checkout, records
 each step of the audit, captures what the auditor produces and retires the
 audit when it is done.
 
+That describes the frozen Python implementation, which remains the usable audit
+tool until its successor runs an audit end to end. Stewart's decided direction
+is the mission below and the successor contracts in
+[CONTRACTS.md](CONTRACTS.md): one Linux binary, no Git, an auditor whose world
+is only the tools Stewart gives it. Everything after the mission here is the
+Python tool's manual.
+
 ## Mission
 
 Stewart is a custodian for bounded inquiries between cooperative parties. The

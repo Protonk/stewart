@@ -1,5 +1,12 @@
 # Stewart's five-stage development plan
 
+> **Superseded 2026-10-28.** The design review recorded in
+> `coordination/linux-mvp-01/` replaced the program below, and
+> [TRANSITION-PLAN.md](TRANSITION-PLAN.md) now owns the transition, including
+> the disposition of this plan's register and steps. This text is kept, unchanged
+> below this note, until that disposition is confirmed item by item; then this
+> file is deleted. Nothing below commissions work.
+
 Current account, 2026-10-27. Stages 1–3 have completed their inquiries and
 semantic decisions; that does **not** mean their decided changes are implemented.
 Python remains frozen at `6582df2`, including bundled guidance. Stage 4 has

@@ -1,5 +1,16 @@
 # A development program led through inquiry and decisions
 
+> **Updated 2026-10-28.** The design review recorded in
+> `coordination/linux-mvp-01/` decided a new mission and successor interfaces;
+> CONTRACTS.md owns them and [TRANSITION-PLAN.md](TRANSITION-PLAN.md) owns the
+> program. The working-relationship paragraphs below stand. The product
+> paragraphs are overtaken where they assume material held in Git, commission
+> recall as the first application, the commission-input leg as the first
+> successor leg, zero restarts as scheduled (a dead run now continues as the
+> same undertaking), or the access/history tension as undecided (the auditor's
+> world is its tool list). This plan retires when its remaining guidance has
+> moved into the coordination guidance; that move is a transition-plan task.
+
 Stewart's longer-term development should let the user commission substantial
 changes through one high-level agent and remain involved chiefly in purpose,
 semantics and the assessment of results. The agent owns the organization of
