@@ -21,6 +21,14 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
+**Machine-interface discussion, 2026-10-29.** The user asks to settle the interface
+or strong opinions for a later spec agent. The proposal is in
+[machine-interface-01/BRIEFING.md](machine-interface-01/BRIEFING.md): one typed
+operation core with role-specific views, compact structured replies with effect
+certainty, purpose-bound opaque handles, immutable prepared selection separate
+from actual sealing, snapshot reads and strict versioned schemas. It is not an
+adopted contract or a spec/build commission. No new agent was dispatched.
+
 **Bounded question-family pressure test complete, 2026-10-29.** The user
 commissioned the proposed review, now recorded in
 [Review 01 results](question-examples-01/review-01/RESULTS.md). Source `a7c9443`,
@@ -43,9 +51,9 @@ Full child tool transcripts are not exposed to root; read scopes are worker
 reports and input hashes, not proof of enforced isolation.
 
 The library, rendering, enforcement, custody and retry policies are settled in
-CONTRACTS; detailed tool names/schemas are still candidates. The current work
-returns the results, not a new policy debate or an automatically started Rust
-stage. Further work is concrete interface specification and a bounded build
+CONTRACTS; detailed tool names/schemas are still candidates. The review results
+have been returned; current work is the separate machine-interface discussion.
+Further work is concrete interface specification and a bounded build
 commission with model qualification scope/budget. No broader repeated agent cycle
 is pending. The [earlier network checkpoint](question-examples-01/CHECKPOINT.md)
 is historical and does not pause current work.
@@ -224,8 +232,10 @@ active or pending.
 
 ## Next
 
-Return the bounded pressure-test findings and their limits. Do not repeat the
-agent exercise or treat symbolic paper replies as conformance. Complete exact
+Discuss the proposed machine-interface boundaries, especially prepared selection
+versus actual seal and role-specific views. The later spec agent should supply
+exact request/reply and record fixtures within the accepted boundaries. Do not
+repeat the agent exercise or treat symbolic paper replies as conformance. Complete
 preparation/manifest/submission schemas when specifying the Rust interfaces;
 carry missing-section, empty-answer and conflicting-entry paths into actual
 acceptance tests. A build commission still needs its endpoint and model/provider

@@ -98,6 +98,11 @@ reaches it, and the consequential ones go to the user:
   WSL `/mnt/` handling and filesystem qualification; the person adapter's
   presentation and transport.
 
+The current [machine-interface proposal](coordination/machine-interface-01/BRIEFING.md)
+sets out semantic defaults for a later spec agent, including preparation versus
+seal records and role-specific views. It remains under discussion; no exact wire
+schema or new runtime stage is adopted by that document.
+
 ## The sequence
 
 Dependency order, not a calendar. Each stage names the result required before
