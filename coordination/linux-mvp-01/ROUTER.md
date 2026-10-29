@@ -16,11 +16,12 @@ qualified status and delivery continuation below follow CONTRACTS' "Successor
 manager readback, status and close." Preview, auditor retry and question
 typing/coupling remain separate discussions; this amendment decides none of them.
 
-Amended 2026-10-29 following the user's agreements recorded in CONTRACTS'
-"Successor manager preparation and acceptance": ordinary preparation, explicit
-prepare/commission, cooperative source checks, close before launch and contextual
-errors replace the earlier manager intake workflow. A separate arrangement
-preview, exact material support and retention/removal remain unsettled.
+Amended 2026-10-29 following the user's agreements and subsequent delegation,
+recorded in CONTRACTS' manager preparation, custody and initial-material sections:
+ordinary preparation, explicit prepare/commission, cooperative checks and
+contextual errors; a designated non-removing archive; literal text materials and
+preparation inspection without a separate preview. Auditor retry/re-entry and
+question types remain separate discussions, with question types last.
 
 ## The idea
 
@@ -95,6 +96,17 @@ question in the manager's own words. The form and settings below remain
 illustrative; the separate typing/coupling discussion selects what ships.
 Materials now come from the submission folder, not an extra path list.
 
+```
+submission/
+  question.md
+  materials/
+```
+
+These are the only root entries. Intended extra material goes under `materials/`;
+unexpected root entries receive a useful refusal. Stewart's metadata lives in
+the separately designated archive. `new` can scaffold or use an explicit
+existing folder without overwriting it. The caller keeps the returned reference.
+
 ```markdown
 ---
 stewart: problem/1
@@ -128,13 +140,27 @@ change since 2.3 shipped.
 
 ## Material
 
-The submission boundary is literal, with a prepared manifest naming the selected
-question, material and settings. Exact layout and initial material types remain
-to be specified. Unsupported entries, ambiguous names and exceeded limits block
-intake with a useful reason; nothing is silently renamed or excluded. The manager
+The submission boundary is literal: every entry under `materials/`, including
+hidden entries and empty directories, is accounted for. Names are exact relative
+UTF-8 paths, case-sensitive without normalization. Links and special files refuse
+intake without being followed; hard-linked regular files remain separately named
+selections. No Git/build/editor exclusion list exists. Unknown fields, ambiguous
+names, unsupported bytes and exceeded limits name the item and fix. The manager
 corrects the ordinary folder and prepares again when its selection changes.
-Unknown fields and bad values name the field and fix. The accepted receipt records
-the captured selection independently of subsequent edits to the source.
+
+The initial reader serves raw UTF-8 text without NUL bytes, regardless of extension.
+It preserves line endings and all other bytes. It performs no document extraction,
+OCR, archive expansion, normalization or execution. JSON/CSV/code are read as text;
+a nominal document that meets the encoding rule is raw syntax, not a promise of
+rendered-document support. The manager supplies text exports when needed.
+
+[CONTRACTS](../../CONTRACTS.md#successor-initial-materials-and-preparation-inspection)
+fixes the initial file/count/byte/path bounds. `list` exposes the captured index;
+`read` gives exact bounded text with byte ranges and explicit continuation; literal
+case-sensitive `search` names its scope, byte positions and whether more remains.
+Long lines and paginated results cannot disappear behind unmarked truncation.
+These tools never fall back to the live source folder. Source permissions are not
+part of content identity or replicated execution grants.
 
 ## Answer forms and couplings
 
@@ -188,10 +214,11 @@ From the problem, Stewart builds the arrangement:
 
 The orientation is the form's instructions: how to fill it and when it is
 complete. It does not say why the question matters or what the manager will do
-with the answer. The prepared selection binds the relevant submission settings;
-the accepted arrangement's digest goes in the receipt. How the manager inspects
-the arrangement before acceptance remains to be settled; a separate preview
-command is not a required stage.
+with the answer. Prepare retains a readable arrangement and its machine
+representation: exact versioned instructions, form, tools, limits and bindings to
+the question/material selection. It returns their locations for inspection with
+ordinary tools. Commission uses that pinned arrangement; the accepted digest goes
+in the receipt. No separate preview command ships initially.
 
 ## Before the run: the app is the lesson
 
@@ -203,8 +230,7 @@ Stewart judge whether the question or evidence is intellectually sufficient.
   then run, status and close. It explains the limits and instructs the manager to
   finish editing before prepare and leave the folder alone through commissioning.
 - **`stewart new`** creates the preparation scaffold and reference. The manager
-  owns that folder; close leaves it alone. Exact layout and form selection remain
-  design work.
+  owns that folder; close leaves it alone. Form selection remains separate design work.
 - **`stewart prepare`** inventories and hashes the selected question and materials,
   checks mechanical intake rules and binds relevant settings. It returns an
   inspectable manifest and handle, without accepting or preserving source bytes.
@@ -214,7 +240,8 @@ Stewart judge whether the question or evidence is intellectually sufficient.
   the final source membership and contents. The declaration and matching checks
   are separately recorded; neither proves an atomic source snapshot. Edits that
   change the selection require fresh preparation, with no unprepare or mandatory
-  inspection pause. A separate preview or asking-advice surface remains unsettled.
+  inspection pause. The readable arrangement supplies pre-acceptance inspection;
+  no separate preview or advisory question-grading surface ships initially.
 - **The receipt** confirms: this is the question, this is the material as copied,
   this is the run command. It also gives `stewart receipt REF` for later recall.
 
@@ -227,8 +254,9 @@ bytes. It works from any directory, without a provider key, including during a
 run. It reads the fixed commission, never the auditor's live answer. Recorded
 acceptance and present verification are distinguished; damage is diagnosed
 without substituting live sources or current form definitions. A valid selected
-item remains readable despite unrelated damage. After close the same route
-reads what remains retained, with no new retention promise.
+item remains readable despite unrelated damage. After close the same route reads
+retained originals. The first Rust release removes no archived bytes; external
+loss is diagnosed and never repaired from changed live sources.
 
 ## The protocol
 
@@ -428,12 +456,26 @@ stopping evidence. A run ending at a limit without submission has no automatic
 auditor seal. A closed audit with an explicitly surrendered delivery loss stays
 labelled that way, never as a completely delivered return.
 
-Each audit lives under Stewart's home as write-once records: the copied material,
-the arrangement, every protocol call and its outcome, the conversation, the seal
-and the delivery. As proposed, Stewart deletes nothing, closing is a record, and
-removing an audit's directory is the manager's ordinary housekeeping; whether
-Stewart ever removes bytes is the first decision the transition plan carries to
-the user.
+Stewart's home is the manager's explicitly designated archive, independent of the
+preparation folder and answer destination. References bind that store and audit;
+changing directories, installations or configuration cannot select another store.
+Acceptance fulfills original-input custody there, with independent verified
+readback. The receipt names the location and actual custody arrangement.
+
+The first release keeps copied materials, arrangements, ledger/conversation,
+attempts, partials, failed stages, superseded/deleted answer payloads, seals,
+delivery and closing records. No close, retry, storage pressure or age permits
+physical deletion, and no purge/prune/hold-release service ships. Close still
+establishes stopping and accounts for delivery; retaining internal bytes does not
+satisfy a separate promised destination. Earlier recorded holds remain unchanged.
+
+The manager owns ongoing storage availability and backup. Ordinary host access
+can read the archive even while a run is active; the product does not promise
+secrecy from that owner. The manager's supported live commands remain receipt,
+status and close, without an answer/conversation viewer or steering channel.
+Archive paths stay outside the auditor's tool world. External deletion or movement
+can break references and is not a supported repair; a closed marker grants no
+blanket disposal authority over independent obligations.
 
 ## What ships, and what doesn't
 

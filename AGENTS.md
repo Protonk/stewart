@@ -23,7 +23,7 @@ implementation they ship with. Use CONTRACTS.md's decided departures when
 designing the successor; do not import the baseline's manager access, resource
 service, dedicated program executor or private-location inventory as successor
 requirements. Keep those
-bundled bytes unchanged while Python remains the comparison baseline.
+bundled bytes unchanged while Python remains the frozen legacy implementation.
 
 For user-relayed consultation, [riker/RIKER.md](riker/RIKER.md) defines
 “ask Riker for help.”
@@ -51,7 +51,10 @@ inherit the development fleet's steering and supervision practices. Stewart
 serves a bounded commission and structured return; additional intervention
 facilities need a specific commission or custody reason, not parity with a
 harness-managed swarm. After product handoff, the manager receives a structured
-return through the agreed interface; live access is to be restricted. Rich
+return through the agreed interface; live product access is restricted to
+commission readback, operating status and close. The first Rust release's
+manager-designated archive remains readable by its owner; no live answer viewer,
+steering channel or secrecy from the host owner is promised. Rich
 selected context and investigative latitude remain compatible with a narrow
 question. Successor access should be defined by explicit grants, preferably
 without a private-location inventory; any fallback needs actual enforcement
@@ -198,10 +201,14 @@ The custody rules are:
   descriptors, only the recorded device and inode, never across filesystems,
   and never let Git delete contents; drop a worktree's administration only
   after its marker names the lifetime. Doubt about a use keeps the resource.
-  The successor's general manager-workspace creation and disposal service is
-  deferred, with a lean toward isolating and possibly removing it. Successor
-  audit removal remains closing-record-authorized and excludes independent
-  manager workspaces. Legacy interpretation serves an identified consumer over
+  The first Rust successor has no removal service: close ends activity and keeps
+  captured bytes, partials and records in the manager-designated archive; the
+  ordinary preparation folder stays with its manager. No prune, purge or hold/
+  release workflow ships in that non-removing scope. This releases no earlier
+  hold or obligation. Any later destructive service needs a new explicit contract
+  and must revisit these authority, custody and dependency protections. The general
+  manager-workspace service remains deferred. Legacy interpretation serves an
+  identified consumer over
   explicitly supported records; it creates no new resource-removal claims or
   blanket compatibility obligation. Preserve original evidence and diagnostics;
   interpreting it grants no authority to continue its old lifetime.

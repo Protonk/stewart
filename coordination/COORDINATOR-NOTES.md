@@ -21,13 +21,16 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
-The historical review and manager preparation/error discussion are complete.
-The user wants the remaining consequential choices identified and resolved so
-Rust transition and testing can proceed. This is product design and specification,
-not a runtime implementation commission; the earlier design conversations remain
-closed. CONTRACTS, ROUTER and END-TO-END now record the agreed manager changes,
-including C17 for exceptional-state presentation. No runtime tests have run for
-these changes.
+The user's delegated custody/retention and initial-material settlement is recorded
+in CONTRACTS and synchronized into AGENTS, ROUTER, END-TO-END and TRANSITION-PLAN.
+The separate [auditor retry/re-entry briefing](auditor-reentry-01/BRIEFING.md) is
+ready for discussion. Its recommendations are not adopted. Question typing and
+answer rendering come last, after retry/re-entry. This was specification and
+briefing work; no runtime implementation or model call was commissioned or run.
+Historical conversations, prototypes and frozen implementation are unchanged.
+Verification: `git diff --check` passed; an isolated Python documentation check
+validated 13 local link targets and code-fence balance in the briefing, router
+and transition plan. No runtime test cases were selected or claimed.
 
 **Agreed working model:** one submission folder, one acceptance boundary and one
 close action. A failed submission leaves the folder editable; an accepted
@@ -38,7 +41,8 @@ successfully merely to close. Actual custody loss remains distinct from ordinary
 submission failure. Close can remain visibly unfinished when its own operations
 cannot complete; repeating close is the supported continuation. Acceptance and
 its receipt must be reconciled after interruption before another capture is
-attempted. Exact storage, retention and interruption mechanisms remain open.
+attempted. Storage/retention policy is now settled below; publication,
+interruption and stopping mechanisms still require implementation and evidence.
 
 **Agreed cooperative preparation:** source stability cannot be proved by ordinary
 before/after scans. Manager `prepare()` inventories and hashes the question and
@@ -65,13 +69,28 @@ every failure branch. The Rust slice's current structured errors are a starting
 point, not evidence of complete coverage. Implementation and C17 qualification
 remain pending.
 
-**Next discussion, coordinator recommendation:** settle storage/custody and
-retention, including live manager access; the initial material/reader contract
-and arrangement inspection; auditor retry/re-entry; and question typing/coupling
-with answer presentation. Stopping/publication mechanisms need engineering and
-evidence, not a user-designed failure tree. Human transport, broader form-library
-policy and optional investigation experiments remain later work. No proposed
-default on retention, format support or forms is adopted by this recommendation.
+**Delegated manager decisions:** one explicitly designated archive independent of
+preparation and delivery; immutable captured records and bytes kept through close;
+no first-release purge/prune/hold-release service and no release of legacy holds.
+Manager receipt/status/close remain narrow; ordinary archive files are readable
+by their owner, without a secrecy or live-steering claim. The source folder is
+`question.md` plus literal recursive `materials/`, including hidden entries; links,
+special files and unsupported bytes refuse. The initial reader is exact UTF-8 text
+without NUL or transformations, with published file/count/path/byte bounds and
+explicit material-read/search pagination. Prepare retains an inspectable pinned
+arrangement; no separate preview command ships. CONTRACTS owns details; C18/C19
+own the acceptance design. These are decided scope, not qualified runtime behavior.
+
+**Next discussion:** the retry briefing distinguishes a new addition from replay
+of a known completed invocation; content equality never identifies intent. Its
+recommendation is a bounded re-entry index with exact element/version handles and
+recent completed receipts, no auditor request-key knobs or recovery console, and
+explicit handling of stale edits and confirmed-submit lookup. Fresh adds remain
+new items unless the user chooses a stronger action-identity contract. The brief
+states the recognition limit and the larger alternative rather than claiming
+invisible adapter IDs can recover an identity lost by the caller. No C3/C4 or
+auditor semantics were changed. Question types/slots/rendering are deferred to
+the next separate discussion. Human transport and optional studies remain later.
 
 **Historical review findings, coordinator assessment:**
 
@@ -95,7 +114,8 @@ default on retention, format support or forms is adopted by this recommendation.
   request; it is not a drafting workspace. Intent is bound before copying and
   changed request bytes are refused. Editing a draft after failed copying cannot
   silently rewrite the old attempt's intended selection or adopt its partial
-  copies as a new selection. The ordinary interaction remains to be designed.
+  copies as a new selection. The current manager contract now supplies the
+  ordinary interaction while preserving that distinction.
 - Python's general manager-resource service distinguished creation from
   enrollment and independent/shared lifetimes; it was later deferred from the
   successor. A preparation folder needs bounded custody/close semantics, not an
@@ -130,9 +150,10 @@ The two past design conversations remain closed. No transition stage is commissi
 - **The design is decided and recorded.** CONTRACTS.md has the Mission (the
   user's words), "Successor interfaces decided 2026-10-28" (including the
   platform, no-Git, no-baseline and auditor's-world decisions), and a
-  **Proposed** "Transition status of the earlier contracts" section listing
-  eight decisions the user has not made and the restatements proposed on
-  confirmation. ROUTER.md and
+  transition-status review whose eight original questions now have explicit
+  dispositions: removal/holds/custodian/live access are settled for the first
+  release; stopping is engineering/qualification, forms are the final discussion,
+  and live legacy obligations remain a retirement gate. ROUTER.md and
   END-TO-END.md under `linux-mvp-01/` are the settled sketch and test design, with
   the revising turns noted at their tops. The README is framed as the frozen
   Python tool's manual under the new mission.

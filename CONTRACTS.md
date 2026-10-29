@@ -14,8 +14,8 @@ Status markers:
 - **Implemented in Rust.** The separately scoped successor implementation
   exhibits the stated behavior; its user documentation states qualified limits.
 - **Decided, departure.** The behavior is decided and the Python implementation
-  does not exhibit it. The successor implementation realizes it; the Python
-  behavior is the control in the successor's acceptance evidence.
+  does not exhibit it. The successor realizes and qualifies it independently;
+  frozen Python behavior is not its acceptance baseline.
 - **Documentation.** The behavior is retained; only its limits need stating.
 - **Declined.** Considered and not adopted, with the reason, so later readers
   recover the intent rather than infer it from omission.
@@ -24,8 +24,9 @@ Status markers:
   principles after independent review, awaiting the user's confirmation. It
   is not relied on until marked decided.
 
-The Python implementation is the reference baseline. Its production source is
-unchanged since commit `6582df2` and receives no further behavior changes;
+The Python implementation is frozen legacy code, not the successor's reference
+baseline (decided 2026-10-28). Its production source is unchanged since commit
+`6582df2` and receives no further behavior changes;
 previously accepted corrections are realized in the successor. Evidence for
 the decisions below is recorded in `STATUS-INQUIRY-FINDINGS.md` and
 `CUSTODY-AUDIT-FINDINGS.md` at commit `356dc58`, with run records under
@@ -61,6 +62,11 @@ as instruments of inquiry, independently of preferred answers.
 
 Decided 2026-10-24. These govern how the contracts below are read and how new
 ones are judged.
+
+For the first Rust audit service, the later custody and initial-material contracts
+state the current storage/removal scope. Earlier removal machinery remains frozen
+Python behavior or a requirement to revisit before any future destructive service;
+it does not imply that Rust implements deletion or imports legacy lifetimes.
 
 **Stewart acts only on what was judged.** A closing evaluation authorizes the
 removal of what it judged, and its record freezes that judgment. Material the
@@ -653,8 +659,8 @@ manager preparation and acceptance contract below replaces the earlier path-list
 expansion, default exclusions and preview-led commissioning workflow with one
 ordinary submission folder and an explicit prepared selection. Mechanical intake
 checks do not judge whether the manager's evidence is intellectually sufficient.
-The remaining arrangement-inspection surface and exact supported material types
-remain for design; the earlier advisory preview is not a required runtime stage.
+The later initial-material contract supplies the arrangement-inspection surface
+and supported reader; the earlier advisory preview is not a runtime stage.
 
 **The return is the submission.** Decided 2026-10-28 (turn 22). The manager
 receives only what the auditor submitted through the submission tool and
@@ -691,8 +697,10 @@ change nothing in the record.
 Decided 2026-10-28 by the coordinator under the user's delegated resolution of
 the manager recall and status/close interface concerns. **Decided, departure;
 implementation and qualification pending.** This completes those interfaces
-without deciding preview, auditor retry, question typing, storage location,
-live-record access or removal. Frozen Python and commission-bundle commands
+without then deciding preview, auditor retry, question typing, storage location,
+live-record access or removal. The later 2026-10-29 contracts settle the manager
+storage/material decisions; auditor retry and question typing remain open.
+Frozen Python and commission-bundle commands
 remain unchanged.
 
 **The receipt is retrievable.** `stewart receipt REF` retrieves the recorded
@@ -798,8 +806,9 @@ Decided with the user, 2026-10-29. **Decided, departure; implementation and
 qualification pending.** This replaces the earlier manager preparation workflow,
 draft-reference replacement and proposed repeated-commission behavior, and
 qualifies close before launch. It changes no frozen Python or historical records.
-Storage location, retention/removal, live-record access, exact material support,
-auditor retry and question typing remain separate decisions.
+The later custody and initial-material contracts settle storage, retention, live
+manager access, material support and arrangement inspection. Auditor retry and
+question typing remain separate discussions.
 
 **One folder, one acceptance boundary, one close action.** The manager prepares
 the question and materials in an ordinary directory, using ordinary tools. Even
@@ -811,8 +820,8 @@ Later source edits cannot change an accepted commission.
 
 The submission selection is explicit and literal within its defined boundary.
 Unsupported entries, collisions and exceeded limits require an explanation and
-refusal, not a silently reduced selection. Exact layout, file formats, naming
-rules and limits remain to be specified. Preparation and commissioning are local;
+refusal, not a silently reduced selection. The initial-material contract specifies
+layout, text reading, names and limits. Preparation and commissioning are local;
 the auditor cannot be launched before acceptance. The ordinary reference follows
 preparation through at most one accepted commission and closure; another accepted
 commission requires an explicit new reference, even when materials are reused.
@@ -885,6 +894,215 @@ folder, but never needs to edit receipts, delete partial captures or improvise
 repairs to private state. Qualify this behavior with controlled failures at the
 operation boundaries, independent evidence and unaffected comparison cases.
 
+## Successor custody, retention and manager access
+
+Decided 2026-10-29 by the coordinator under the user's explicit delegation to
+settle custody/retention and the initial material contract. **Decided, departure;
+implementation and qualification pending.** Applies to the first Rust audit
+service. Existing Python undertakings, recorded holds and historical receipts
+are unchanged; accepting this design authorizes no actual disposal or migration.
+
+**The manager designates an archive, not a cache.** One explicit storage root
+holds Stewart's records for the manager. It is selected when a reference is
+created, either directly or through a previously explicit manager configuration;
+there is no silently selected fallback store. `new` reports the absolute root,
+the new reference and the preparation folder. References bind the store identity
+and audit identity; later operations do not select a store from the current
+directory, newest record, installation location or newly changed configuration.
+Missing or replaced storage is diagnosed, never silently recreated as an empty
+audit. Reference identity is not an access credential; actual filesystem access
+is still required. Relocation or backup confers no execution permission, and
+automatic relocation/rebinding is outside this release's interface.
+
+The designated root is the manager-custodied delivery location for original
+commission bytes. Successful acceptance requires those bytes and the acceptance
+record to be recoverable there, with verified readback through the reference.
+Printing a path or hash alone does not fulfill it. The receipt names the actual
+location and custody arrangement; it does not invent another person who has
+acknowledged responsibility. The manager is responsible for the storage's ongoing
+availability, capacity and independent backup. Stewart is responsible for its
+writes, verification, attribution, retention behavior and diagnoses. Local
+synchronization is qualified on supported filesystems; this is no replication,
+backup, protection against the owner or hardware-loss guarantee.
+
+Three locations have separate meanings: the ordinary manager preparation folder;
+the designated Stewart archive; and an independently verified answer-delivery
+destination. The archive must not be inside the preparation folder, nor the
+preparation folder inside the archive. No supported answer destination overlaps
+either one. Validate these relationships through the actual opened locations,
+not lexical path comparison alone. This prevents intake from absorbing its own
+records and delivery from modifying the source or archive. Default creation uses
+private permissions for the operating account; permission choices do not change
+the recorded custody identity or confer another account's acknowledgment.
+
+**Close ends activity; this release does not delete retained bytes.** Successful
+close records the end of that reference, prevents further investigation, and
+completes or explicitly accounts for its actual custody obligations. It keeps
+accepted originals, arrangement records, attempts and partial captures, failed
+stages and diagnostics, ledger records, superseded/deleted answer payloads,
+submitted answers, delivery records and closing records. Auditor `delete` changes
+current answer membership only. It does not physically erase a payload. Normal
+exit, retry, cancellation, close, age and storage pressure authorize no erasure.
+There is no prune, purge, automatic cleanup or resource-removal service in the
+first Rust release. Storage exhaustion is a contextual failure, never permission
+to remove earlier evidence. In-memory buffers and operating-system descriptors
+can be released; records and captured on-disk material remain.
+
+Consequently, close does not promise to reclaim disk space or remove the manager's
+preparation folder. It also does not depend on keeping an auditor working merely
+because bytes remain retained. Readback of retained originals continues after
+close; it verifies current bytes and diagnoses damage without rewriting the
+historical acceptance. The separately delivered answer remains self-describing
+and verifiable without this archive, the original sources or the issuing process.
+Its verified placement and any required confirmation are still required; keeping
+an internal copy does not silently satisfy delivery to a different destination.
+
+The manager can use ordinary filesystem backup and administration for its own
+storage. Stewart does not certify such a copy as verified delivery, authorize
+removal on someone else's behalf, monitor external deletion or promise recovery
+after external loss. A closed marker is not evidence that all retained material
+is disposable under an independently recorded obligation. No live archive is to
+be manually repaired, rewritten or partially deleted as an error-recovery step.
+Moving/removing it may make its references unavailable; the product diagnoses
+that condition rather than starting over under the old identity.
+
+**Holds do not create a new manager workflow in this release.** A hold/release
+or generic condition-note facility is declined for this non-removing successor:
+there is no destructive operation for a new hold to gate. This does not release
+existing holds, erase attributed conditions, or turn copying/closure into a
+disposition of earlier undertakings. Live legacy obligations remain with their
+own writer and must be accounted for before its withdrawal. A future deletion
+service requires a new explicit contract covering authority, finite selections,
+dependencies, holds, verified preservation and failure; none is inherited merely
+by adding a delete command. Frozen removal protections remain preserved for that
+review and for the legacy implementation.
+
+**The manager's live product interface stays narrow.** `receipt` reads the fixed
+commission; `status` states operating and custody facts; `close` ends work. There
+is no supported live answer/conversation viewer, question mutation, message to
+the auditor, or steering channel. Holding the reference does not expose auditor
+authoring tools to the manager. Closed references cannot reopen through a read.
+
+The archive is ordinary local storage readable by its owner, including during a
+run. Stewart does not claim enforced secrecy from that owner. The owner can
+inspect records with ordinary tools, but this is not a steering interface and
+does not authorize edits to the accepted arrangement or ledger. Qualified
+operational isolation keeps archive locations and unrelated files out of the
+auditor's tool world. It is distinct from filesystem permissions against other
+host accounts and from the manager's ability to read its own archive. No
+private-location inventory or protection from a hostile host owner is promised.
+
+## Successor initial materials and preparation inspection
+
+Decided 2026-10-29 under the same delegation. **Decided, departure;
+implementation and qualification pending.** This supplies a small concrete
+first-release contract, not an intellectual limit on what audits ought to ask.
+Question types, slot restrictions, citation validation and answer rendering remain
+for the separate question-typing discussion. The older commission-bundle reader
+and frozen Python keep their own admitted formats and bounds.
+
+**The folder has two entries.** The submission root contains `question.md` and
+`materials/`. `question.md` holds the front matter and verbatim question body;
+the complete original file is captured as well as the body supplied to the auditor.
+`materials/` recursively supplies every contained entry. A material's public name
+is its exact path relative to `materials/`, using `/` between components. Host
+absolute paths and archive paths are not auditor material names. No extra path
+arguments, external-path labels, automatic includes or exclusion rules enlarge
+or reduce this set. Unexpected entries at the submission root are refused with
+instructions to put intended material under `materials/` or move it outside the
+submission. Stewart's own metadata is stored in the archive, not this folder.
+
+`new` may scaffold an absent folder or use an explicitly supplied existing
+folder without replacing its contents. An existing folder's shape is checked at
+prepare; neither operation grants removal authority. Another commission requires
+another explicit reference, even if it uses the same source folder. There is no
+implicit resubmission caused by copying a directory or finding a marker in it.
+Only the caller's explicit reference selects work. Moving the source requires
+an explicit new reference in this release; old attempts and their diagnostics
+stay recorded. The accepted commission remains readable without the source.
+
+Hidden entries under `materials/` are included on the same terms as visible ones.
+There are no automatic exclusions for Git administration, build output or editor
+backups. Empty files and empty directories are admitted; directory membership is
+recorded, including empty directories. An empty material set is mechanically
+valid and is not a finding about evidence sufficiency. Symlinks, sockets, devices,
+FIFOs and other non-regular/non-directory entries refuse preparation without being
+followed or read. Ordinary hard-linked files are admitted as separately named
+byte selections; their other links confer no additional access or shared custody.
+
+**The first reader is exact UTF-8 text.** Question and material files must be
+valid UTF-8 without NUL bytes. Preserve their bytes, including line endings, BOMs,
+empty content and missing final newlines; no transcoding, newline normalization,
+OCR, archive expansion, document extraction or execution occurs. Admission is
+for raw text reading, independent of filename extension. It does not promise
+format interpretation: JSON/CSV/SVG are text, and even a nominal document whose
+bytes happen to meet the text rule is exposed as raw syntax, not as an extracted
+or rendered document. PDF/image/office/binary readers are outside this release;
+the manager supplies a suitable text export when that is what the auditor needs.
+Prepare names this reader and its absence of transformations in the arrangement.
+Unsupported bytes refuse intake rather than becoming inaccessible attachments.
+
+Names are UTF-8, case-sensitive and retained exactly without Unicode
+normalization. Reject control characters in names, absolute names, dot/parent
+components and names that collide in the public index. Do not silently rename.
+Archive payload filenames are generated identities, not manager-controlled paths;
+relative source names cannot traverse archive or delivery locations. Source modes,
+ownership and executable bits are not replicated as grants or included in the
+content identity. A permission change matters through the actual access and
+verification outcomes, not as an automatic changed-content verdict.
+
+Initial bounds are engineering starting values, published by help and recorded
+in each preparation/commission. They do not assert that a selected question has
+enough context. Changes require a versioned contract and updated boundary tests.
+
+| Scope | First-release bound |
+| --- | --- |
+| Complete `question.md`, including front matter | 256 KiB |
+| Material files, excluding `question.md` | 128 |
+| One material file | 16 MiB |
+| Total question and material file bytes | 128 MiB |
+| Directories under `materials/`, including that root | 256 |
+| Material path | 1,024 UTF-8 bytes, at most 32 components, at most 255 bytes per component |
+| Text bytes returned by one material read | 64 KiB |
+| Material search results per page | 128, also bounded by the reply's text allowance |
+
+Scanning enforces bounds as it goes, not only after allocating an unbounded tree
+or file. Overflow, invalid encoding and unsupported entries identify the material
+and bound, keep attempted effects accounted for, and establish no acceptance.
+Hashing and capture are bounded source reads, with the descriptor and source-change
+checks required elsewhere. Permissions and available space are observations,
+not promises that later operations will succeed.
+
+`list`, `read` and `search` serve only accepted captured material, never the live
+folder or a path mentioned inside a document. List reports the exact index and
+sizes. Read returns bounded exact text with its material identity, byte range and
+an explicit continuation when more remains; UTF-8 code points are not split.
+Line-oriented requests cannot silently drop the tail of a long line. Search is
+case-sensitive literal text search over an explicitly named scope, with material
+identities and byte positions, bounded pages and explicit continuation/completion.
+It is not semantic search or a separate filesystem grant. An incomplete search
+cannot be reported as exhaustive absence. Pagination is bound to the accepted
+material identities; raw exact-byte readback remains available to the manager.
+
+**Prepare supplies inspection; no separate preview command ships initially.**
+The manager reads its question and materials with ordinary tools. Prepare returns
+the selection's names, sizes, hashes, counts and limits, and the handle. It also
+retains a readable arrangement record alongside its machine representation and
+returns their locations. That record contains the exact versioned orientation,
+form instructions, stopping instructions, tool definitions and configured limits,
+plus bindings to the source question/material selection. It identifies raw text
+reading and any truncation/continuation rules. This allows inspection before
+commissioning without a mandatory review pause or advisory question grading.
+
+These preparation records are preserved as control records; they are not an
+accepted copy of the original input files. Commissioning uses the pinned
+arrangement, not whatever the current installation would generate later. A
+changed form implementation cannot silently change a prepared commission; it
+must either honor that binding through a supported writer or refuse with a next
+step. After acceptance the receipt recovers the original question, materials
+and arrangement. Built-in help describes available forms and reader limits;
+which forms exist and their substantive requirements remain a separate decision.
+
 ## Transition status of the earlier contracts
 
 **Proposed**, 2026-10-28, from the fresh-eyes disposition review in
@@ -892,50 +1110,50 @@ operation boundaries, independent evidence and unaffected comparison cases.
 disposed every section and bold title above and below under the decided design:
 of 75 required rows, 25 carry as written, 23 hold in spirit but are phrased for
 Git, the checkout, Python or removal, 21 depend on something the decisions
-removed, and 6 need the user. Nothing is retired by this section; retired text
-stays in place until the user confirms each disposition, and then keeps the
-reasoning behind any decision it explains. The review's table is the working
-list for that confirmation.
+removed, and 6 needed the user at the time of the review. Those are historical
+review counts. Later decided contracts, including the delegated manager settlement
+above, govern their named scope. Other proposed restatements remain proposals;
+the review alone retires no obligation. Preserve the reasoning and evidence behind
+each disposition without requiring the user to confirm routine editorial rows.
 
-**Decisions the user has not made**, on which the dispositions hang:
+**Disposition of the review's eight questions**, updated 2026-10-29. Its counts
+above describe the original review, not eight current user decisions. The user's
+delegation settles the manager items below; the rest remain with their stated work.
 
-1. **Does Stewart ever remove bytes?** The sketch's "Stewart deletes nothing;
-   close is a record" is a coordinator proposal. Five of the six undecided rows
-   (the removal-authority principles, the closing record's frozen inventory and
-   schema, holds) and the test design's "nothing removed" checks hang on it.
-2. **Holds and conditions.** If never-delete is adopted, the hold mechanism
-   retires into Declined, and the question remains whether a receipt can carry
-   an attributed condition note on identified material; if removal exists, the
-   hold carries as written.
-3. **The custodian of the commission copy.** The first leg's user selection
-   delivered the commission bundle into manager-designated storage with a named
-   custodian; the sketch's home layout places the copy under Stewart's home. The
-   user says whether the home is that designated storage or the copy goes to a
-   manager-named location.
-4. **How close reaches a run it did not start.** Under the escalated run a
-   person or another process may hold the run. Signal by recorded process,
+1. **Removal — decided.** The first Rust release has no deletion service, at
+   close or otherwise. Its archive persists. Frozen removal authority and evidence
+   remain legacy behavior and prerequisites for any future destructive service.
+2. **Holds and conditions — decided.** No new hold/release or generic condition-note
+   facility in this non-removing release. Earlier holds and attributed obligations
+   are not released; they remain with their writer and transition obligations.
+3. **Commission custodian — decided.** The manager explicitly designates the
+   archive root; Stewart's home is that custody destination, not an extra cache.
+   Acceptance and independent readback must fulfill original-input delivery there.
+4. **How close reaches a run it did not start — engineering and qualification.**
+   Under the escalated run a person or another process may hold the run. Signal by recorded process,
    a lock the run watches, or refusal with a sign naming the holder; and what the
    record says was stopped (the last complete ledger record is the natural
    boundary).
-5. **The rendered answer.** The return is the submission; a form's rendering is
+5. **The rendered answer — question-typing discussion.** The return is the
+   submission; a form's rendering is
    Stewart's product. Either the return holds raw slots and elements only, or
    the rendering is a prepare-generated, Stewart-attributed, reproducible member
    sealed with the rest.
-6. **The outcome-shaping influences**, under the deliberation principle: the
+6. **The outcome-shaping influences — question-typing discussion**, under the
+   deliberation principle: the
    orientation text, the reminder after an unsubmitted stop, the near-limit
    warning, mechanical citation refusal and slot enumerations are each recorded
    as a deliberated choice or made a manager setting before the first release.
-7. **Live Python undertakings.** Whether any Python audit, resource or partial
+7. **Live Python undertakings — retirement gate.** Whether any Python audit,
+   resource or partial
    request with a live undertaking exists. If none, Python records are
    historical and the successor reads none of them; if some, they close under
    Python before it is withdrawn.
-8. **Manager access to the record during a run.** Two decided paragraphs
-   disagree: "very restricted" (2026-10-25) against "readable by whoever runs
-   Stewart" (2026-10-28, following the user's turn-12 words). The proposed
-   restatement: Stewart offers no live observation or steering interface and the
-   manager cannot change the auditor's world after commission; the record in
-   Stewart's home is readable by whoever runs Stewart, including during a run,
-   and that is not a product surface.
+8. **Live manager access — decided.** Receipt/status/close are the narrow manager
+   product surface; no live answer viewer or steering channel. Ordinary archive
+   files remain readable by their owner. This reconciles restricted product
+   interaction with the absence of host-owner secrecy, without making records
+   editable through supported operations or weakening the auditor's tool grants.
 
 **Restatements the coordinator proposes to make on confirmation**, each
 replacing removal-phrased text with the obligation that survives:
@@ -966,8 +1184,9 @@ replacing removal-phrased text with the obligation that survives:
   superseded by manager preparation and acceptance: a reference accepts at most
   one commission, and a confirmed repeat of its accepted preparation handle
   retrieves that acceptance. New commissions require explicit new references.
-- Intake records each file's bytes, size and mode; the index shows size; mode
-  is recorded, not interpreted.
+- The earlier proposed source-mode preservation requirement is superseded by
+  the initial-material contract: retain exact bytes, names, sizes and hashes;
+  source permissions are not replicated as grants or part of content identity.
 - The general manager-workspace service and export/import retire into Declined:
   Stewart manages no manager workspace, reads the manager's paths at commission,
   and writes only to its home and the named destination.

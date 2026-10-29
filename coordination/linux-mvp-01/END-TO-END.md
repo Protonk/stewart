@@ -17,11 +17,12 @@ close": C5/C8/C12 are qualified and C15/C16 added. These are acceptance designs,
 not executed checks. Preview, auditor retry and question typing remain separate
 discussions; their existing proposed checks are not settled by this amendment.
 
-Amended 2026-10-29 following CONTRACTS' "Successor manager preparation and
-acceptance": C1/C2/C8/C11/C16 follow prepared selection and close before launch;
-C17 covers contextual failures and interrupted acceptance. These are acceptance
-designs, not executed checks. Exact material support, the remaining arrangement
-inspection surface and retention/removal remain unsettled.
+Amended 2026-10-29 following the user's agreements and delegated manager decisions
+in CONTRACTS: C1/C2/C8/C11/C16 follow prepared selection and close before launch;
+C17 covers exceptional state, C18 designated retained custody and C19 literal
+text materials and preparation inspection. These are acceptance designs, not
+executed checks. Auditor retry/re-entry and question types remain separate
+discussions; proposed changes in their briefing are not adopted here.
 
 ## What we care about
 
@@ -48,6 +49,8 @@ failing.
 | C15 | A manager recovers the fixed commission through its reference without the original session or source files. |
 | C16 | Status distinguishes the run, answer seal, delivery and closure, with evidence and usable next actions. |
 | C17 | Preparation/commission failures report their context, effects and uncertainty through Stewart's interface. |
+| C18 | Designated custody remains intact through close, with explicit scope and no silent store substitution. |
+| C19 | The initial reader and preparation inspection faithfully expose the literal text submission. |
 
 Answer quality is not on the list. Stewart doesn't judge answers, so its tests
 don't either.
@@ -186,12 +189,13 @@ state appears in any reply or in the return.
 
 - **Pass:** an inventory of Stewart's home before and after every command shows
   only additions: no file is rewritten and none removed, through to and after
-  close. ("None removed" presumes the proposal that Stewart never deletes; if
-  the user decides otherwise, this becomes "only additions until close" and C8
-  gains the earlier close contract's removal checks.) The access log equals the sequence of read, list and search calls in the
+  close. This is the decided first-release retention policy, not a proposal.
+  An in-progress new file may be incomplete; it never replaces an earlier record.
+  The access log equals the sequence of read, list and search calls in the
   script. The run summary's turns and usage equal what the fake reported.
-- **Sabotage:** a build that rewrites a record in place, and one that skips logging
-  a search.
+- **Sabotage:** a build that rewrites a record in place, removes a retained partial
+  on retry/close, or skips logging a search. Independent inventories remain outside
+  the archive so a passing result cannot conceal deletion of the witness.
 
 ### C7 — Couplings
 
@@ -239,7 +243,7 @@ unfinished and never becomes an empty return. Replacing the destination repairs
 no missing source bytes. A stop whose completion cannot be established keeps
 close unfinished with its evidence.
 
-Under the still-proposed never-delete rule, none removes anything (C6). There is
+Under the decided first-release retention rule, none removes anything (C6). There is
 no separate collect or deliver command. The differing case is delivery before
 versus during close; the invariance case changes the invoking directory and
 process after a lost reply. Sabotage controls skip post-copy confirmation,
@@ -280,7 +284,8 @@ launch; each must fail.
   with no silent exclusion or renaming. Close after prepare requires no unprepare.
 - **Sabotage:** silently accept newer bytes, omit an entry, accept without explicit
   affirmation, or present matching scans as proof of a source snapshot. Each
-  control must fail. A separate preview/advice surface is not assumed by this test.
+  control must fail. Preparation's readable arrangement is checked under C19;
+  no separate preview command or question-grading surface is required.
 
 ### C12 — The run is a handoff
 
@@ -403,6 +408,66 @@ launch; each must fail.
 - **Sabotage:** replace the original failure with a secondary logging error,
   treat unreadable acceptance as absence, blindly repeat after a reply failure,
   or omit a planned partial effect from the account. Each control must fail.
+
+### C18 — Designated custody and retention
+
+- **Pass:** create explicit, disjoint preparation, archive and delivery locations.
+  Witness their identities and the full expected archive population independently.
+  Accept, lose the original sources, read back, deliver and close; original input
+  readback still verifies and the separately delivered answer verifies after the
+  archive is made unavailable in the test. No earlier record, partial, failed stage
+  or superseded/deleted payload disappears through retry, close or storage pressure.
+  The preparation directory remains untouched by close.
+- **Differing:** remove or replace the named archive in a controlled specimen;
+  the reference diagnoses missing/different storage rather than creating or using
+  a fresh audit. Damaged records remain damaged, not newly absent. Startup with
+  insufficient permissions reports contextual failure without broadening access.
+- **Invariance:** change working directory, installation path and default-store
+  configuration while using the original reference. It still selects only its
+  bound archive. A copied archive grants no execution permission by itself.
+- **Also:** root/destination overlaps and aliases are refused from actual opened
+  locations. The operating owner can read retained files during a run, while the
+  manager product offers only receipt/status/close and the auditor tools expose
+  no archive path or unrelated file. This tests those distinct scopes, not secrecy
+  from the owner. No hold release, disposal permission or delivery verification
+  is inferred from close, copying, a backup path or an externally removed file.
+- **Sabotage:** select a newer store, fall back to live source bytes, prune on
+  pressure, treat retained internal bytes as delivered elsewhere, or declare a
+  missing archive closed and clean. Each control must fire. Witnesses and damaged
+  originals remain retained under the evidence-run rules through review.
+
+### C19 — Literal text materials and preparation inspection
+
+- **Pass:** witness `question.md` and every file/directory under `materials/`,
+  including hidden names, empty files/directories, BOMs, CRLF, multibyte characters
+  and absent final newlines. Preparation and acceptance agree with that exact
+  population. Read ranges reassemble the exact originals; long lines span pages
+  without lost bytes or split UTF-8 code points. Search reports correct literal
+  hit positions, named scope and explicit completion/continuation.
+- **Differing:** invalid UTF-8, NUL, links/special files, unexpected root entries,
+  ambiguous names and each independently exceeded bound produce useful refusals
+  with no acceptance or silent exclusion. A file's name alone must not claim
+  document extraction, rendering or execution. The nominal-document case whose
+  bytes meet the text rule is described and served only as raw text syntax.
+- **Invariance:** extension changes preserve raw text; moving an otherwise equal
+  submission to another explicit source location/reference preserves public names
+  and bytes. Permissions that leave required access working do not change content
+  identity. Distinct hard-link names remain distinct selections.
+- **Inspection:** before acceptance, prepare returns the manifest and locations
+  of readable/machine arrangement records. Verify pinned instruction/tool/limit
+  bytes and source bindings against a witness. Change the installed form after
+  preparation: the old handle either uses its verified pinned arrangement through
+  a supported writer or refuses, never silently regenerates it. Preparation does
+  not claim accepted original-input custody; the manager needs no preview command
+  or mandatory review acknowledgment beyond explicit commissioning.
+- **Bounds:** exercise exact and just-over limits independently for question,
+  file count, file bytes, total bytes, directories, path size/depth/components,
+  read pages and search pages. Enumeration/read limits are enforced while working,
+  rather than after unbounded allocation. Empty materials remain mechanically
+  admissible; no test grades whether the question has sufficient evidence.
+- **Sabotage:** skip hidden content, normalize newlines/names, auto-expand an
+  archive, follow a link, silently truncate a long line/result set, omit the final
+  page or regenerate instructions from the current installation. Each must fail.
 
 ### Platforms
 
