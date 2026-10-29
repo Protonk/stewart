@@ -13,12 +13,11 @@ declared external Git/shell prerequisites. Use the distribution's `_util` byte
 contracts; never import a containing repository's helpers or configuration.
 
 One coordinating agent owns the coherent development result: understanding the
-commission, organizing delegated work, integrating evidence and maintaining
-continuity. The user retains purpose, scope and protected obligations; the
-coordinator owns the organization of authorized work. Coordinators start in
-[coordination/](coordination/README.md), which identifies standing orders, the
-maintained working account and the optional turnover brief.
-That folder also owns the operating constraints applicable to dispatched workers.
+task, organizing work, integrating changes and verifying the result. The user
+retains purpose, scope and protected obligations.
+[Coordination guidance](coordination/README.md) sets the working constraints,
+including for dispatched workers. Notes are optional
+support for unfinished work, not a routine deliverable or a session history.
 
 [CONTRACTS.md](CONTRACTS.md) states the behavior Stewart is decided to have,
 with each contract's implementation status and the reasons for declined
@@ -36,7 +35,8 @@ For user-relayed consultation, [riker/RIKER.md](riker/RIKER.md) defines
 
 Preserve unrelated working-tree changes. Active plans are ordinary tracked
 working documents with stable paths; discover them by the `*-PLAN.md` naming
-convention. Update their current account as work changes; Git preserves history.
+convention. Update a plan when decisions or remaining work change; Git preserves
+history.
 At completion or abandonment, give unfinished work an explicit disposition,
 move enduring contracts and explanations into documentation and tests, and
 delete the plan. There is no obligation to retain every planning paragraph.

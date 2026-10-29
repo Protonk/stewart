@@ -1,28 +1,16 @@
-# Coordinating Stewart
+# Working on Stewart
 
-Read [standing orders](STANDING-ORDERS.md), [the current account](COORDINATOR-NOTES.md)
-and any populated [turnover supplement](TURNOVER.md). The current account records
-active work and interruption state; it is not a transcript or a second design.
+The coordinator's job is to deliver and verify the requested work. Start with
+the user's request, [the design](../DESIGN.md), [contracts](../CONTRACTS.md)
+and the working tree. [ACCEPTANCE.md](../ACCEPTANCE.md) defines the required
+evidence. Discover active plans by the `*-PLAN.md` convention, outside historical
+evidence packets. The design review is closed; old conversations are not needed.
 
-The design review is closed. The maintained product entry points are:
+[Working guidance](STANDING-ORDERS.md) covers authority, workers and integration.
+[Notes](COORDINATOR-NOTES.md) are optional context for unfinished work. There is
+no routine note-taking or turnover requirement; keep only what helps the next
+action and is not already clear elsewhere.
 
-| Document | Owns |
-| --- | --- |
-| [Design and vision](../DESIGN.md) | The system, responsibilities and workflow. |
-| [Contracts](../CONTRACTS.md) | Decided behavior, scope and reasons for exclusions. |
-| [Acceptance](../ACCEPTANCE.md) | Required evidence and failure/control cases. |
-| [Form specification brief](../docs/QUESTION-FORMS.md) | Concrete inputs to the three families' exact specification. |
-
-Discover the one current implementation path through the tracked `*-PLAN.md`
-convention. Captured copies inside evidence packets are historical inputs, not
-active plans. No old conversation, candidate architecture, worker review or
-retired plan is prerequisite reading. Do not reconstruct the design from history.
-
-[AGENTS.md](../AGENTS.md) contains project development constraints. One coordinator
-owns integration, Git and continuity; the user retains purpose and consequential
-semantic choices. Keep durable guidance current and stateless. A turnover is a
-thin supplement, never a growing runbook or extra source of authority.
-
-Subdirectories not named by the current account retain completed development
-evidence. [EVIDENCE.md](EVIDENCE.md) indexes retention obligations for work that
-actually needs those records; it is not another queue or design reading list.
+Other subdirectories hold completed study records, not current assignments.
+[The evidence index](EVIDENCE.md) is for work that touches those retained records,
+not routine intake reading.

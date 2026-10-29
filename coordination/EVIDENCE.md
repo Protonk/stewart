@@ -1,34 +1,14 @@
 # Retained development evidence
 
-This is a retention index, not a design or work queue. Completed study directories
-retain raw packets, actor outputs, checks and their provenance unchanged. Their
-briefs describe their historical commissions, not new instructions. Relative
-references to retired design files are historical coordinates at their recorded
-source revision; do not recreate those files as current guidance.
-
-The [closure report](../reports/design-review-closure/RESULT.md) records the
-extraction/deletion boundary. Runtime reports, audit receipts, corpus sources,
-independent witnesses, local refs and `.scratch` run records are retained under
-DEVELOPMENT.md. The [retired-document run index](../reports/design-review-closure/RETAINED-RUNS.md)
-owns their otherwise orphaned local run references. No artifact directory or
-evidence ref was removed in this consolidation.
-
-The question-family paper review remains under question-examples-01/review-01/;
-it contains exact original packets and outputs. Its finding was a small comparison
-and presentation improvement, with 52 paper calls, 20 entries and 41 checked
-citation ranges across four actor attempts. That is not runtime qualification.
-The fresh reader was run once; neither missing expected sections nor empty
-submission was exercised by an actor. The interface spec and acceptance cases
-carry those gaps forward without another open-ended design-review cycle.
+Use this index only when work touches retained studies or local runs. Their
+packets and outputs remain historical evidence; old briefs and links are not
+current instructions. The [closure report](../reports/design-review-closure/RESULT.md)
+records their disposition. Retention follows DEVELOPMENT.md.
 
 ## Recovery-critical local evidence
 
-The three original audit outcome commits were not ancestors of main and had no
-containing refs when inspected. Local development-evidence refs and exact text
-copies protect them. [Corpus retention](successor-inquiry-01/CORPUS-RETENTION.md)
-names the refs, hashes and source copies; a main-only clone does not carry them.
-Retained runs under `.scratch` are local and untracked, and follow DEVELOPMENT.md's
-retention rules. No evidence is pruned by design closure.
+[Corpus retention](successor-inquiry-01/CORPUS-RETENTION.md) identifies the protected
+local refs and exact source copies. A main-only clone does not carry all of them.
 
 ## Local records this index owns
 

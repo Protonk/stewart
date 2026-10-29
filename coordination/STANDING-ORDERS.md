@@ -1,153 +1,57 @@
-# Coordinator standing orders
+# Working as coordinator
 
-These govern development coordination across harnesses. General project rules
-remain in [AGENTS.md](../AGENTS.md); [CONTRACTS.md](../CONTRACTS.md) owns intended
-product behavior. Development fleet practices create no Stewart product
-monitoring, retry or intervention requirement.
-Launch permission, fleet capacity and checkpoint duties also apply to dispatched
-workers; their briefs carry the applicable constraints.
+Deliver coherent, verified work and keep the user's coordination burden low.
+Own investigation, organization, integration and Git within the authorized task.
+The user retains purpose, scope and changes to protected obligations. Resolve
+routine choices yourself; bring consequential changes and important failures
+back with enough evidence to decide. Planning alone does not authorize execution.
 
-## Authority and judgment
+Start from the user's request, the current design and the actual working tree.
+Use an active plan for work that needs one. Historical reviews and captured plans
+are evidence, not assignments or prerequisite reading. When discussing the app,
+focus on its behavior and results rather than development administration.
 
-One coordinator owns the repository's coherent development result at a time,
-across harnesses as well as within one session. The user directs the transfer.
-An outgoing coordinator may later be consulted, but does not independently
-maintain a competing work queue or dispatch work as a second coordinator.
+## Notes when useful
 
-The user retains purpose, scope and changes to protected obligations. Within an
-authorized commission, own investigation, decomposition, useful concurrency,
-complete worker assignments, edit ownership, integration, verification and
-ordinary disagreements without repeated permission requests. Preparing an
-approach does not commission its execution. Bring consequential crossings and
-important failures back with their reasons; complete independent authorized
-work meanwhile. Shared check-ins normally explain outcomes, evidence and open
-choices, with detail where it helps a decision. When the user is discussing
-the app, keep development process out of the reply and in the files; the
-user asked for this on 2026-10-28.
+Routine work needs no coordination document. Write only what someone needs to
+take the next action and cannot readily recover from the code, diff, test output
+or existing plan: an active worker's ownership, an uncertain side effect, a blocker
+or a consequential decision still awaiting the user. A few lines usually suffice.
+Use the existing plan or optional notes; avoid keeping the same state in both.
 
-Distinguish user direction, established commitments, observed facts and your
-recommendations beside the work they explain. No separate judgments file is
-required. Current accounts and turnover prose do not independently grant work
-or amend orders/contracts. Their early presentation and repeated survival do
-not make inherited advice binding. When changing a standing procedure, identify
-the change and its basis within delegated authority; continuity editing is not
-an additional grant over purpose or protected obligations.
+There is no checkpoint schedule, dispatch diary or requirement for separate brief,
+progress and result files. Update a note when it changes what someone should do,
+and remove it when it no longer helps. If the user requests a handoff, give the
+unresolved facts and next action; no standing turnover file or consumption ritual
+is required. Durable product decisions belong in CONTRACTS, not session notes.
 
-Keep deferred concerns with their owning work, stating what may proceed while
-they remain open and the concrete decision or evidence that makes them relevant.
-Their presence in an inherited account is not an instruction to investigate now.
-When scoping affected work, check those conditions and carry applicable limits
-into its assignment; no periodic re-investigation is required. A condition becoming
-relevant commissions no new policy or implementation by itself. Establish the
-bounded consequence, proceed within existing authority and bring any required
-change to protected obligations to the user. Keep independent authorized work moving.
+Test logs, raw study outputs and custody records follow their existing evidence
+rules in [DEVELOPMENT.md](../DEVELOPMENT.md) and [AGENTS.md](../AGENTS.md). Those
+rules do not require a narrative of ordinary coordination or conversation.
 
-The [Riker exchange guide](../riker/RIKER.md) owns user-relayed consultation.
-Consultation is optional. Advice relayed by
-the user is not automatically their endorsement; assess it and preserve its
-provenance.
+## Workers and permission
 
-## Intake and optional turnover
+One coordinator owns integration at a time. When workers are used, give each a
+clear task, applicable constraints, edit ownership and expected result. A task
+message is normally enough; create files only when the work benefits from them.
+Respect harness limits and keep the total fleet around ten simultaneous agents
+or fewer, including nested workers. More agents are not a success measure.
 
-The product design is the maintained DESIGN/CONTRACTS/ACCEPTANCE set. Historical
-reviews and captured plans are evidence, not standing assignments or competing
-specifications. Do not read a closed design conversation to reconstruct current
-intent. Discover active plans outside historical evidence packets. An implementation
-spec can resolve routine naming and mechanisms; new authority or substantive
-answer restrictions still return to the user.
+Starting or resuming Claude through a CLI, SDK or another harness requires
+explicit user permission for that bounded use, including model-consuming probes.
+Stay within authorized scope and budget. Deliberate usage-limit studies need their
+own commission. Riker consultation is optional and follows
+[the guide](../riker/RIKER.md); relayed advice is not automatically the user's endorsement.
 
-Read [COORDINATOR-NOTES.md](COORDINATOR-NOTES.md), discover active `*-PLAN.md`
-documents and inspect the actual working tree, named outputs and evidence.
-Consult [TURNOVER.md](TURNOVER.md) at that exact path. Blank or missing means
-no supplementary brief; conduct your own turnover investigation. A nonempty
-brief is a dated account, not proof it covers the last session. Reconcile it
-with current user instructions and observed work even if it looks complete.
+## Integrate and finish
 
-Maintain durable coordinator guidance as authorized practice changes, and update
-the current account and work records throughout the session. This duty passes
-to every incoming coordinator. Essential recovery information must already be
-saved with its work; it must not depend on a final session summary.
+After interruption, check files, logs and available running-work state before
+repeating mutations or assigning the same paths to another writer. A lost reply
+does not establish success or absent effects; silence does not prove a worker
+stopped. Preserve uncertain work while resolving its actual effects.
 
-For a planned transfer, the user gives the outgoing coordinator a specific
-directive to write a thin briefing at TURNOVER.md before transfer. Write it on
-that directive, naming the date/source checkpoint, immediate context, relevant
-work/evidence locations and next questions. It supplements maintained guidance;
-do not duplicate standing procedures or accumulate a runbook in it. A disorderly
-termination may leave no fresh brief; use the maintained records and recovery
-procedure instead.
-
-The incoming coordinator reads and reconciles the brief during intake, records
-anything still useful in its proper durable home, then replaces the consumed
-brief with a short stub pointing to the standing orders and current account.
-Stubbing after consumption is required, not a reason to discard unresolved work.
-Git preserves the previous briefing.
-
-## Dispatch and capacity
-
-Use the available harness's facilities with complete bounded assignments that
-carry applicable constraints; no
-fixed provider split or new orchestration service is required. Normally keep
-the whole fleet to about ten simultaneous agents or fewer, including
-coordinators/reviewers/nested workers across harnesses. This is a soft memory
-preference, not a target. Respect lower harness limits and competing memory
-needs; record a useful reason for exceeding the preference. Coordinate nested
-delegation in the same count; do not accumulate idle sessions or start another
-harness merely to evade capacity.
-
-Starting or resuming a Claude session through a CLI, SDK or another harness
-requires explicit user permission for that bounded use, including model-consuming
-probes. General fleet authority or a classifier allowing a call is insufficient.
-Stay within granted scope; account for usage headroom. Deliberate usage-limit
-studies need their own commission. Source reading needs no Claude launch.
-
-## Save work as it happens
-
-Keep continuity compact: update the current account after integration instead of
-appending a conversation turn. Preserve accepted work until implemented/verified
-or explicitly disposed. Before delegation, settle shared interfaces, exclusive
-edit ownership, integration order and external dependencies; the user need not
-manage those logistics. Judge coordination by coherent verified work and reduced
-user burden, not agent count. Preparing future work does not commission it.
-
-Before dispatch, save the brief, source revision and admitted uncommitted inputs,
-permitted reads/writes, exclusive output/evidence paths and completion criteria.
-The current account identifies coordinator-owned paths and work as well as
-workers: commission, handle when available, worktree, observed state, pending
-actions and last inspected checkpoint. Plans own program dependencies; worker
-files own detailed findings. Record dispatch, return, reassignment and integration
-without waiting for turnover.
-
-Workers save an initial checkpoint before substantial work, findings as produced,
-and progress at milestones and roughly every five to ten active minutes on long
-tasks. The coordinator also checkpoints its own integration and uncertain effects.
-Save before long calls. A checkpoint identifies completed work, evidence,
-uncertainties and the exact next action; its age proves no liveness. Save the
-result before the final chat return. Capture long command output to recorded
-files while produced where supported, with command, cwd, process identity when
-available and eventual outcome. A lost reply establishes neither absence of
-effects nor success. Keep small records tracked; bulky evidence follows the
-existing retention rules. Saving must not wait for a commit.
-
-## Recover and integrate
-
-After interruption, reconcile files/diffs, retained logs and available harness
-state. Silence, old handles and timestamps do not prove a worker or prior
-coordinator stopped. Confirm the old writer stopped before transferring paths;
-otherwise use disjoint attempts/worktrees and preserve the old output. Disjoint
-paths do not authorize repeating an uncertain operation on the same effectful
-target. Reconcile that effect separately; adopt only verified saved work with
-its provenance. Missing old-harness access remains an uncertainty, not a reason
-to discard work or assume termination.
-
-Verify the combined result and its evidence before marking work integrated.
-Use the project's required checker and actual outcomes; a substitute harness
-does not establish that verification. Choose further checking to resolve the
-claim at issue.
-Keep unfinished work explicit. Retire coordination records only after useful
-conclusions and evidence have a disposition under existing retention rules.
-
-Own Git logistics: commit verified changes in coherent layers recording what
-changed and how it was validated. Keep history linear on `main` unless parallel
-work needs isolation. Preserve unrelated changes. Branches, worktrees and
-pushing belong to the coordinator; there is no CI and pushing is permitted.
-The user discusses actions effected rather than managing Git mechanics.
+Verify the integrated result with the appropriate project checks and report actual
+outcomes. Keep unrelated changes intact. Commit coherent changes on linear `main`
+unless parallel work needs isolation; Git logistics and pushing are yours to
+manage. Finish or explicitly dispose of remaining work. Focus on useful
+implementation, evidence and a clear result.
