@@ -1,161 +1,62 @@
 # Current coordinator account
 
-Updated 2026-10-28 UTC at the incoming coordinator's intake, the second transfer
-that day. This is a working account of observed work, authority received and
-remaining questions. [Standing orders](STANDING-ORDERS.md) own operating
-instructions; [the directory entry](README.md) identifies intake documents. The
-optional [turnover](TURNOVER.md) is supplementary. Reconcile these observations
-with actual files, user instructions and available harness state after
-interruption.
+Updated 2026-10-28 UTC at the end of the design review, by the coordinator who
+closed it (Claude Code, Fable 5.1). This is a working account of observed work,
+authority received and remaining questions. [Standing orders](STANDING-ORDERS.md)
+own operating instructions; [the directory entry](README.md) identifies intake
+documents. The optional [turnover](TURNOVER.md) is supplementary. Reconcile these
+observations with actual files, user instructions and available harness state
+after interruption.
 
-The account was condensed at the first 2026-10-28 turnover to current state, open
-work and the local records it owns. The full earlier narrative, covering every
-completed commission since 2026-10-24, is in Git:
-`git show 313c4e3:coordination/COORDINATOR-NOTES.md`. Each completed commission's
-own RESULT or COMPLETION record owns its findings and evidence.
+**A note for the next coordinator.** During the design review this account was
+appended turn by turn as the conversation went. That habit ends with the review.
+The conversation under [linux-mvp-01/](linux-mvp-01/README.md) is closed; its
+decisions are in CONTRACTS and its program is in
+[TRANSITION-PLAN.md](../TRANSITION-PLAN.md). Do not add turns to the conversation
+file or turn-by-turn entries here. Keep this account to current state, dispatched
+work and the index of local records, and keep it short. The full earlier
+narrative is in Git: `git show 313c4e3:coordination/COORDINATOR-NOTES.md` for
+the commissions before 2026-10-28, and `git show 8daac52:coordination/COORDINATOR-NOTES.md`
+for the turn-by-turn account of the review.
 
-## Current checkpoint: intake and the mission pitch
+## Current state
 
-**Tenure.** The user directed the transfer in this session's first message:
-"You are assuming the coordinator role for now. You should find a turnover brief
-in the repo." Intake ran on 2026-10-28 at clean HEAD `05a21d4` (Claude Code,
-Fable 5.1; record in `.scratch/coordinator-intake-20261028-02/`). The brief was
-consumed and stubbed; Git holds it at `05a21d4`.
+- **The design is decided and recorded.** CONTRACTS.md has the Mission (the
+  user's words) and "Successor interfaces decided 2026-10-28". ROUTER.md and
+  END-TO-END.md under `linux-mvp-01/` are the settled sketch and test design, with
+  the revising turns noted at their tops. The README is framed as the frozen
+  Python tool's manual under the new mission.
+- **The program is TRANSITION-PLAN.md**: stages T0–T9, the disposition of the
+  earlier program, evidence owed and open questions. DEVELOPMENT-PLAN.md is
+  marked superseded and kept until its disposition is confirmed item by item;
+  VISION-PLAN.md carries a dated note on what is overtaken.
+- **Nothing is commissioned for execution.** The plan prepares; the user
+  commissions each stage. No code changed this tenure. `successor/` still holds
+  the `stewart-commission` binary, which seeds T2.
+- **Git.** Everything is committed on `main`; nothing has been pushed
+  (`origin/main` is at `3442f84`). The Python suite was not run this tenure; it
+  was green at the previous tenure's end (1140, 1 skipped).
 
-**User direction at intake** (quoted in full as turn 17 of
-[linux-mvp-01/CONVERSATION.md](linux-mvp-01/CONVERSATION.md); condensed here):
+## Dispatched work
 
-- The coupling library stays provisional. `survey` and `claim-check` were
-  proposals developed in the conversation; their concrete presentation does not
-  settle their design as instruments of inquiry.
-- Stewart remains agnostic about auditors' conclusions; we remain responsible
-  for judging the arrangements it offers them.
-- Protocol conformance (whether a real auditor can work in the arrangement) is a
-  distinct question from that design question.
-- Consequential choices about answer forms and stopping rules come to the user.
-- The first deliverable is a new mission statement for the successor code,
-  pitched in chat with the README left unchanged. Stewart is still a custodian;
-  manager and auditor are still cooperative; the point is still to let the
-  manager focus on their problem rather than on how to ask a question when asker
-  and answerer have different contexts; Git no longer matters.
+| Assignment | State | Records |
+| --- | --- | --- |
+| `contracts-disposition-01` — a fresh-eyes, read-only disposition of every CONTRACTS section under the 2026-10-28 decisions, with what would be lost silently (RESERVATIONS.md item 16's check). Pinned to `7e49301`. One general-purpose agent through the harness; no Claude launch, no network, no Git state changes. | Dispatched 2026-10-28 after the brief was committed at `5bebe98`. Return expected in `RETURN.md` with a `PROGRESS.md` checkpoint. On return: integrate as a **Proposed** transition-status section in CONTRACTS, awaiting the user's confirmation of each retirement; do not rewrite retired sections before that. | [BRIEF](contracts-disposition-01/BRIEF.md), `PROGRESS.md`, `RETURN.md` |
 
-**Delivered.** The mission pitch, the changes from the README's mission, what is
-held provisional and the choices to bring to the user are recorded as the
-coordinator's reply in turn 17. The user answered with their own three-paragraph
-mission text, recorded verbatim as turn 18. On the user's direction in turn 19
-it is recorded as CONTRACTS' Mission section and the README's Mission section.
-Turn 19 also holds the user's statement of the submission tool's character (a
-ledger; uninteresting; knobless except the dry-run confirm; auditor retry over
-tool recovery; the hard side of a boundary object in Star and Griesemer's
-sense) and the coordinator's reply: three updates it implies (ledger truth
-replaces unresolved-operation settlement; orientation as form instructions; a
-fillable-from-where-they-stand test for slots), where they would go (CONTRACTS,
-ROUTER.md's protocol, END-TO-END C3/C4), and a capsule for the manager side
-(the manager's unit of keeping: the inquiry as a catalog). None of those edits
-is made; the user said action is not yet wanted.
-
-**Turn 20 (user decisions, not yet in CONTRACTS):** the manager's unit is the
-inquiry as far as Stewart is concerned; after the question, the manager's
-operations are receipt, "is it done?" and close, nothing more; Stewart must
-allow for an agent manager extracting the run command and handing it to the
-user as pro forma manager, who runs it while the original manager waits and
-returns after completion, with mixed cases within one session. The user's
-focus is now the pre-audit manager surface: the app teaching how to ask, how
-to attach material, and flexible acceptance that is not a chore to learn. The
-coordinator's reply proposes commission/run split at the network boundary,
-the receipt as handoff, help/new/preview/receipt as the lesson, "flexible at
-the mouth, exact in the record", and lists five choices (problem file format,
-index names, advisory versus blocking checks, default excludes, foreground
-run).
-
-**Turn 21 (user decisions, recorded in CONTRACTS):** Markdown problem file with
-front matter; refuse on name collision; advisory checks, with the reason that
-Stewart is less entitled to be strict about a manager's material than about
-an auditor's retry; default excludes, listed; foreground run by default; plan
-around harness escalation without demanding or enforcing it. On the direction
-"update our materials": ROUTER.md and END-TO-END.md revised in place (turns
-19–21 noted at their tops; prior text at `05a21d4`), and CONTRACTS gained
-"Successor interfaces decided 2026-10-28" with three earlier successor
-paragraphs marked superseded or narrowed in place. The reply asked the two
-manager questions the user requested: what `run` does after a dead run, and
-whether the auditor's conversation travels in the return. The user said the
-design conversation is nearly done.
-
-**Turn 22:** the user decided the return is only what the auditor submitted
-and prepare accepted, nothing else, so that a return looks the same from a
-model or a person; recorded in CONTRACTS (narrowing the 2026-10-27 return
-contents), ROUTER.md and END-TO-END C5. On the dead run the user asked for
-help; the coordinator recommended that an audit is its ledger and a run is one
-placement, so `run` after a dead run continues from the ledger in a new
-conversation with cumulative limits and every run recorded. That is a
-recommendation awaiting the user's decision.
-
-**Coordinator's reading of the design** (from ROUTER.md and END-TO-END.md under
-the user's direction; the folder's AGENTS file governs attribution):
-
-- A problem is what the manager writes: the question verbatim, selected files,
-  an answer form, auditor settings and a destination. Stewart builds an
-  arrangement from it, places an auditor in it through an adapter, and returns
-  the answer with its record.
-- The arrangement is the auditor's whole world: for a model, the protocol tools
-  plus the form's slots; for a person, a packet and an agreement.
-- One protocol call restores everything an auditor is working with, so provider
-  compaction is harmless by construction.
-- Records are write-once; Stewart deletes nothing; close is a record.
-- Responsiveness is a product requirement for manager commands and protocol
-  calls, never for audits.
-- One static Linux binary ships; build, test and experiment containers never do.
-- Decided by the user in the conversation: the auditor has only Stewart's tools;
-  Stewart runs the auditor; Linux only; no Python baseline; no Git; material
-  injection is disallowed by design and the manager owns wording and selection;
-  the submission tool makes compaction harmless; fast means the app; containers
-  for development; a real-model conformance gate.
-- Proposed by coordinators, not decided: the coupling mechanism and its two
-  starter couplings, slots as tools, mechanical citation checks, the reminder and
-  near-limit warning, the access log in the return, never deleting, the home
-  layout, the command set and the response budgets' numbers.
-
-**State.** No worker, workflow, background command, container or Claude launch is
-active or pending, and none ran this tenure. Nothing has been pushed:
-`origin/main` is at `3442f84`.
-
-## Paused: first-leg preparation
-
-The earlier first-leg preparation is paused, not retired, until the user decides
-on the router: [PLAN-FIT](custody-delivery-01/PLAN-FIT.md) (now marked paused),
-[NEXT-LEG](submission-design-01/NEXT-LEG.md),
-[AUDITOR-CASES](custody-delivery-01/AUDITOR-CASES.md),
-[ORIENTATION-TRIAL](custody-delivery-01/ORIENTATION-TRIAL.md) and
-[ANSWER-STRUCTURE](custody-delivery-01/ANSWER-STRUCTURE.md). Much of their content
-(signs, re-entry, answer structure, the auditor-case table) carries into the
-router. Their open questions on access routes and containment are largely
-dissolved by it.
+No other worker, workflow, background command, container or Claude launch is
+active or pending.
 
 ## Next
 
-1. **The manager side.** The dead-run recommendation (turn 22) awaits the
-   user's decision; record it when given. The user intends to end the design
-   conversation soon; after that, consolidate. The
-   two points raised on the mission wording in turn 18 ("separate context"
-   against the only-Stewart's-tools decision; the dropped no-Git sentence)
-   are unanswered. Adoption of the router as a whole is still the user's call.
-2. **Done at turn 21:** CONTRACTS records turns 19–21; ROUTER.md and
-   END-TO-END.md carry ledger truth and the reduced manager command set.
-3. **If adopted:** restate the principles in CONTRACTS under the recorded
-   mission (the neutrality restatement drafted in conversation turn 12),
-   retire the Python baseline and the Git-dependent contracts, and
-   rewrite DEVELOPMENT-PLAN. CLAUDE.md/AGENTS.md encode the old design's custody
-   rules and belong to the user; change them only at the user's direction.
-4. **Answer forms and stopping rules.** Bring each consequential choice to the
-   user before building: typed slots versus free-form elements, stated versus
-   checked stopping rules, shown versus sealed prior, citation checking, and the
-   two submission nudges. Turn 17 lists them.
-5. **Open questions from the conversation:** resuming a dead run; the person
-   adapter and transport; how form opinions get added to the library.
-6. **The apparatus:** build, test and experiment container images, with build
-   dependencies the coordinator selects.
-7. **Model use needs permission.** The real-model conformance gate and any
-   experiment calls the model provider. Those are model-consuming sessions and
+1. Integrate the disposition review (above), then write the turnover brief the
+   user directed: the next coordinator familiarizes themselves with
+   TRANSITION-PLAN.md and its sequence and prepares to manage the transition.
+2. T0 of the plan is the next coordinator's first work: confirm the dispositions
+   with the user, retire what depends on Git, the Python baseline, the checkout or
+   removal at close, confirm and delete DEVELOPMENT-PLAN.md, retire VISION-PLAN.md
+   into coordination guidance, and draft replacement development guidance for the
+   root AGENTS.md (the user's to adopt).
+3. T1 onward as commissioned. T7 and any experiment call the model provider and
    need the user's explicit, bounded permission and a budget under the standing
    orders.
 
@@ -169,9 +70,7 @@ Inherited observations from the previous tenure; not re-tested at this intake.
 - Apple `container` 1.6.1 is installed. The alpine, rust and python images pulled
   by digest for the Linux check remain, and the container services the user
   started may still be running.
-- The full Python suite was green in the checkout at the previous tenure's end
-  (1140, 1 skipped). `test_runner_withholds_rustc_from_provisioning` can flake
-  under load.
+- `test_runner_withholds_rustc_from_provisioning` can flake under load.
 
 ## Recovery-critical local evidence
 
@@ -189,7 +88,7 @@ stays with that report under the retention rules.
 
 | Records | Owner of findings |
 | --- | --- |
-| `coordinator-intake-20261028-02/` | This tenure's intake. |
+| `coordinator-intake-20261028-02/` | This tenure's intake record. The review's own records are tracked under `coordination/linux-mvp-01/` and `coordination/contracts-disposition-01/`. |
 | `alignment-20261028-01/`, `coordinator-intake-20261028-01/` | The design-conversation tenure. The alignment notes are copied verbatim into `linux-mvp-01/`. |
 | `route-research-01/`, `plan-fit-review-01/`, `answer-structure-check-01/`, `auditor-cases-01/` | PLAN-FIT, ANSWER-STRUCTURE and AUDITOR-CASES (paused first-leg work) |
 | `linux-first-light-01/`, `linux-check-01/`, `stale-tests-01/`, `fifo-hygiene-01/` | This account. `linux-check-01/RESULTS.md` holds the Linux findings that DEVELOPMENT-PLAN cites. |
