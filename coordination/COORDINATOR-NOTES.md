@@ -1,7 +1,7 @@
 # Current coordinator account
 
-Updated 2026-10-28 UTC at the end of the design review, by the coordinator who
-closed it (Claude Code, Fable 5.1). This is a working account of observed work,
+Updated 2026-10-28 UTC at the turnover after the design review, by the
+coordinator who closed it (Claude Code, Fable 5.1). This is a working account of observed work,
 authority received and remaining questions. [Standing orders](STANDING-ORDERS.md)
 own operating instructions; [the directory entry](README.md) identifies intake
 documents. The optional [turnover](TURNOVER.md) is supplementary. Reconcile these
@@ -22,7 +22,11 @@ for the turn-by-turn account of the review.
 ## Current state
 
 - **The design is decided and recorded.** CONTRACTS.md has the Mission (the
-  user's words) and "Successor interfaces decided 2026-10-28". ROUTER.md and
+  user's words), "Successor interfaces decided 2026-10-28" (including the
+  platform, no-Git, no-baseline and auditor's-world decisions), and a
+  **Proposed** "Transition status of the earlier contracts" section listing
+  eight decisions the user has not made and the restatements proposed on
+  confirmation. ROUTER.md and
   END-TO-END.md under `linux-mvp-01/` are the settled sketch and test design, with
   the revising turns noted at their tops. The README is framed as the frozen
   Python tool's manual under the new mission.
@@ -41,17 +45,18 @@ for the turn-by-turn account of the review.
 
 | Assignment | State | Records |
 | --- | --- | --- |
-| `contracts-disposition-01` — a fresh-eyes, read-only disposition of every CONTRACTS section under the 2026-10-28 decisions, with what would be lost silently (RESERVATIONS.md item 16's check). Pinned to `7e49301`. One general-purpose agent through the harness; no Claude launch, no network, no Git state changes. | Dispatched 2026-10-28 after the brief was committed at `5bebe98`. Return expected in `RETURN.md` with a `PROGRESS.md` checkpoint. On return: integrate as a **Proposed** transition-status section in CONTRACTS, awaiting the user's confirmation of each retirement; do not rewrite retired sections before that. | [BRIEF](contracts-disposition-01/BRIEF.md), `PROGRESS.md`, `RETURN.md` |
+| `contracts-disposition-01` — a fresh-eyes, read-only disposition of every CONTRACTS section under the 2026-10-28 decisions, with what would be lost silently (RESERVATIONS.md item 16's check). Pinned to `7e49301`. One general-purpose agent through the harness; no Claude launch, no network, no Git state changes. | Returned and integrated 2026-10-28 at `f2ca3f4`. 105 rows (75 required): Carry 25, Restate 23, Retire 21, Undecided 6 of the required set; fifteen "lost silently" items; nine contradictions. Integrated as CONTRACTS' Proposed transition-status section, three wording fixes and two realized deferrals, plus markers in ROUTER.md and END-TO-END.md and claim C14. Retired sections are untouched pending the user. | [BRIEF](contracts-disposition-01/BRIEF.md), `PROGRESS.md`, `RETURN.md` |
 
 No other worker, workflow, background command, container or Claude launch is
 active or pending.
 
 ## Next
 
-1. Integrate the disposition review (above), then write the turnover brief the
-   user directed: the next coordinator familiarizes themselves with
-   TRANSITION-PLAN.md and its sequence and prepares to manage the transition.
-2. T0 of the plan is the next coordinator's first work: confirm the dispositions
+1. The turnover brief is written at the user's direction; the next coordinator
+   familiarizes themselves with TRANSITION-PLAN.md and its sequence and
+   prepares to manage the transition.
+2. T0 of the plan is the next coordinator's first work: bring the eight
+   pending decisions in CONTRACTS' transition status to the user, then confirm the dispositions
    with the user, retire what depends on Git, the Python baseline, the checkout or
    removal at close, confirm and delete DEVELOPMENT-PLAN.md, retire VISION-PLAN.md
    into coordination guidance, and draft replacement development guidance for the
