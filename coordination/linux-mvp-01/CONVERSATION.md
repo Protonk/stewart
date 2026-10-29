@@ -1477,3 +1477,61 @@ Where it goes, on your word:
 The trapper staples the bird to the form and mails it. What settles the manager side is what the institute does when the parcel arrives, and that comes down to one question: **what is the manager's unit of keeping?** If it is the single return, the manager side is a mailbox with a receipt, and commission, status, deliver and close are each about one audit. If it is the line of inquiry the return belongs to, the manager side is a catalog. An inquiry holds the problems sent out, the returns that came back, what each was varied from, and the manager's notes in the manager's own attributed voice; commission, compare, status and close answer where the inquiry stands. The router already leans that way with `--like`, `compare` and "what it was varied from", but never says so, and a repeated engagement after a poor question then reads as a line rather than a failure. The hard side is standardized; the soft side is where the manager's local needs get room: grouping, naming, annotation, interpretation.
 
 My candidate: the manager's unit is the inquiry, Stewart keeps the catalog and never reads it, and every manager command answers "where does this inquiry stand." Argue with that.
+
+---
+
+## 20. The inquiry, the escalated run, and before the audit
+
+> I think this is a good capsule. The manager's unit is the inquiry, at least
+> insofar as stewart is concerned. We have an interesting wrinkle which is that
+> due to the nature of stewart (the auditor calls an external service) managers
+> who are agents in an automation harness may have a curious relationship to this
+> inquiry. We will need to allow for the manager extracting the audit run command
+> and passing it to the user, who is then acting as pro forma manager while the
+> command runs. In that case the originally intended manager does nothing while
+> the whole command run. They return to the audit after completion. Because we
+> can't control when classifiers make decision like that, a single session with a
+> manager could have one manager issued/consumed audit, one escalated to the
+> user, and one handed back and forth. I also suspect that our trap-door design
+> ideas push "where does this inquiry stand" to "are we there yet?" I think in
+> terms of operations, the manager<->stewart tools stays simple. Once they ask a
+> question (the hard part), stewart returns a receipt for custody and calls the
+> auditor. Once the manager gets the receipt, they should be able to ask if the
+> audit is done and close the audit. That's it. BEFORE they call the audit is
+> where I want to focus. We need to use the app to teach a manager how to ask a
+> question, how to attach materials, and to decide how to be flexible enough in
+> how we accept them to not be a chore to learn.
+
+The coordinator's reply, as given:
+
+Agreed on all three, and they fit together. The inquiry is the unit; the operations after the question are receipt, done yet, close; and the escalation wrinkle is what makes the split between commissioning and running load-bearing.
+
+### What the wrinkle requires
+
+- Commission and run are separate commands, and the line between them is the network. Commission copies files and writes records locally. Run is the only step that touches the provider and needs the key. A classifier that lets the agent commission and escalates the run is doing exactly what the design expects.
+- The receipt is the handoff. It carries the reference, the exact run command, and what run needs from the environment. An agent passes that line to the user without explanation.
+- Run takes the reference and nothing else. It works from any directory, needs no session, and refuses with a sign if the audit is already running or ended.
+- Status takes the reference and works for whoever holds it. The agent manager comes back after the run, asks "done?" with the reference from the receipt, and finds the return at the destination the problem named.
+- Stewart records what it observed about each invocation (user, process, time) as observations and never labels who the manager is. The manager is whoever holds the reference; original or pro forma is the harness's distinction, not Stewart's.
+- The problem file names its inquiry, and `new --like` copies an earlier problem in it. That is the whole of Stewart's catalog: audits grouped by inquiry, each with its receipt and where its return went. With "done?" and close as the only operations after the receipt, the router's `collect`, `deliver` and `compare` leave the command list. Close from any state covers stopping and sealing, delivery happens at the end of the run, and comparing returns is something the manager does with files it owns.
+
+### Before the audit: the app is the lesson
+
+The whole lesson is four replies the manager will read anyway.
+
+- `stewart help` is one screen: write a problem file, preview it, commission it; then run, done?, close. It lists the forms with one "ask this when" line each, and the limits. There is no manual behind it.
+- `stewart new <form>` writes the problem file with every field commented: what it is for, what the auditor will and will not see because of it, and an example. The body is the question. These comments are the only place Stewart explains how to ask, and they are written against the gap: the auditor knows nothing the manager does not put here or in the material.
+- `stewart preview` is the mirror. It renders exactly what the auditor will meet: the orientation, the form's wrapper, the question verbatim, the materials index with sizes, the tools and the limits. Seeing that is how a manager learns what the question has to carry. Preview also runs the checks: names in the question that appear in no material; material the question mentions that is not attached; directories that expanded to nothing; files skipped and why; the total against the limits. Each check says what the auditor would experience, not what the manager did wrong.
+- The receipt confirms: this is the question, this is the material as copied, this is the run command.
+
+Flexible at the mouth, exact in the record. The problem file accepts the question inline or by path, material as a list in the file or as extra arguments, directories as well as files, and labels for anything whose path would make a poor name. Directories expand with sensible excludes by default, such as version-control administration, build output and binaries over the per-file limit, with every exclusion listed and an explicit way to include. Whatever the manager wrote, the preview and the receipt show one canonical problem, and that is what the manager learns from. Unknown keys and bad values are refused with a sign that names the field and the fix, never silently dropped.
+
+### Choices for you
+
+1. Problem file format: Markdown with a front-matter header and the question as the body, with JSON accepted as an equivalent for agents, or JSON only. I recommend the first. The question is prose and belongs in a body, and agents have seen front matter far more than any schema of ours.
+2. Names in the auditor's index: paths as the manager gave them, relative to the problem file, with labels for absolute paths and refusal on collision, or a flat renamed set.
+3. Checks: advisory only, or some block commission. I recommend advisory, with the preview's findings recorded in the receipt so the manager owns the decision to proceed past a warning.
+4. Default excludes when a directory is attached: sensible defaults with the exclusion set listed, or nothing excluded unless asked. I recommend defaults, listed.
+5. Run in the foreground with a detached option, or detached by default. Escalation to a person argues for foreground.
+
+Your three decisions in this turn (inquiry as the unit, the post-receipt operations, allowing for the escalated run) are recorded in the conversation; I will bring them into CONTRACTS together with the rest of the manager side once it settles, unless you want them there now.

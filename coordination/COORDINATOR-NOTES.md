@@ -54,6 +54,20 @@ ROUTER.md's protocol, END-TO-END C3/C4), and a capsule for the manager side
 (the manager's unit of keeping: the inquiry as a catalog). None of those edits
 is made; the user said action is not yet wanted.
 
+**Turn 20 (user decisions, not yet in CONTRACTS):** the manager's unit is the
+inquiry as far as Stewart is concerned; after the question, the manager's
+operations are receipt, "is it done?" and close, nothing more; Stewart must
+allow for an agent manager extracting the run command and handing it to the
+user as pro forma manager, who runs it while the original manager waits and
+returns after completion, with mixed cases within one session. The user's
+focus is now the pre-audit manager surface: the app teaching how to ask, how
+to attach material, and flexible acceptance that is not a chore to learn. The
+coordinator's reply proposes commission/run split at the network boundary,
+the receipt as handoff, help/new/preview/receipt as the lesson, "flexible at
+the mouth, exact in the record", and lists five choices (problem file format,
+index names, advisory versus blocking checks, default excludes, foreground
+run).
+
 **Coordinator's reading of the design** (from ROUTER.md and END-TO-END.md under
 the user's direction; the folder's AGENTS file governs attribution):
 
@@ -97,13 +111,16 @@ dissolved by it.
 
 ## Next
 
-1. **The manager side.** The user is settling it in conversation; turn 19's
-   capsule (unit of keeping: return or inquiry) is the opening question. The
+1. **The manager side.** The user is settling it in conversation. Turn 20
+   decided the unit (the inquiry) and the post-receipt operations; the
+   pre-audit surface is the current focus and turn 20's five choices are
+   open. The
    two points raised on the mission wording in turn 18 ("separate context"
    against the only-Stewart's-tools decision; the dropped no-Git sentence)
    are unanswered. Adoption of the router as a whole is still the user's call.
-2. **On the user's word:** record the submission tool's character in CONTRACTS
-   and carry the ledger-truth change into ROUTER.md and END-TO-END C3/C4.
+2. **On the user's word:** record in CONTRACTS the submission tool's character
+   (turn 19) and the turn 20 decisions, and carry the ledger-truth change and
+   the reduced manager command set into ROUTER.md and END-TO-END C3/C4/C8.
 3. **If adopted:** restate the principles in CONTRACTS under the recorded
    mission (the neutrality restatement drafted in conversation turn 12),
    retire the Python baseline and the Git-dependent contracts, and
