@@ -1,5 +1,11 @@
 # Three paths for questions crossing Stewart
 
+**Disposition, 2026-10-29:** the user selected C as the organizing model, B as a
+specific question type, and A roughly as the open question type. The current
+decision and its limits are in [CONTRACTS.md](../../CONTRACTS.md#successor-question-families-and-open-inquiry).
+The proposals below are preserved as presented, including their then-open status;
+their examples and detailed schemas were not all adopted by this selection.
+
 Discussion proposals, 2026-10-29. The user asked for three distinct approaches
 without a preference signal or classification by degree of change. None is adopted.
 The manager custody/material contracts and auditor retry/re-entry agreement stand;

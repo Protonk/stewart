@@ -18,10 +18,12 @@ text reader and limits, and preparation inspection without a separate preview.
 ROUTER and END-TO-END are synchronized, including C17-C19. These are specification
 changes, not executed runtime qualification. The user has now accepted the separate
 retry/re-entry recommendation; CONTRACTS and C3/C4 record bounded orientation,
-exact targets, distinct fresh adds and known-result replay. The current discussion
-is [three question-design paths](coordination/question-types-01/PATHS.md), presented
-without a preference or ranking. None is selected. The stage sequence remains
-planning, not a runtime commission or an old checklist to replay.
+exact targets, distinct fresh adds and known-result replay. The user selected a
+synthesis of [three question-design paths](coordination/question-types-01/PATHS.md):
+C supplies the family library, B becomes a specific inquiry-framing family, and
+A roughly describes open inquiry with optional evidence modules. CONTRACTS owns
+the architecture and its limits; concrete forms remain unfinished. The stage
+sequence remains planning, not a runtime commission or an old checklist to replay.
 
 ## What is decided, and where
 
@@ -30,6 +32,8 @@ planning, not a runtime commission or an old checklist to replay.
   acceptance**, **successor custody, retention and manager access**, and
   **successor initial materials and preparation inspection** are in CONTRACTS.
   **Successor auditor retry and re-entry** records the subsequent agreement.
+  **Successor question families and open inquiry** records the selected organizing
+  model and distinguishes it from the concrete form choices still open.
   The later decisions supersede earlier workflows and proposals.
 - **The settled design sketch** is
   [coordination/linux-mvp-01/ROUTER.md](coordination/linux-mvp-01/ROUTER.md)
@@ -60,15 +64,17 @@ reaches it, and the consequential ones go to the user:
   only versus checked at submit; the prior shown or
   sealed, per form or per problem; mechanical citation checking versus
   report-only versus none; the reminder after an unsubmitted stop and the
-  warning near a limit. The coupling library is provisional; the user requires
-  a separate discussion of question typing/coupling itself, not just repairs to
-  `claim-check`. `survey` and `claim-check` are proposals, not assumed instruments.
+  warning near a limit. The family library is selected, with open inquiry and
+  inquiry framing as distinct types. Their concrete forms and any additional
+  families remain unfinished. `survey` and `claim-check` are prior proposals,
+  not assumed instruments or schemas to repair into the new library.
   One test for a slot: the auditor must be able to fill it from where it stands,
   with the evidence attached.
-- **Question-design paths.** `coordination/question-types-01/PATHS.md` compares
-  evidence modules, auditor framing and question families. Each includes a usable
-  residual route. No path, combination, schema or substantive stopping rule is
-  chosen. The library examples and old C7 sketches must not settle that choice.
+- **Family definitions.** Specify the common expectations, open inquiry's optional
+  evidence modules and the explicit inquiry-framing task as coherent instruments.
+  Final names, module interactions and the rest of the release roster are open.
+  The preserved paths and older C7 sketches do not select their detailed schemas
+  or substantive stopping rules.
 - **Mechanics:** the access log; archive record layout within the designated root; command
   spellings except the now-specified receipt/readback and delivery-redirection
   routes; response-budget numbers; default model, effort and run limits;
@@ -139,11 +145,12 @@ says.
 
 ## Open questions carried
 
-- Question typing/coupling: retry/re-entry is settled, so this is the current
-  final design discussion. The three paths in `coordination/question-types-01/PATHS.md`
-  explore where Stewart's opinions shape asking, material expectations and answers,
-  with a usable residual route and no ranking or choice. Discuss the arrangement
-  itself rather than repairing the illustrative claim-check slots as if adopted.
+- Concrete question forms: the library architecture is selected, with inquiry
+  framing as a named type and open inquiry roughly following the optional-module
+  proposal. Specify their asking/material/answer expectations, tools and rendering;
+  decide which expectations are instructions and which are mechanical checks.
+  Optional modules must leave open inquiry usable with none. The preserved paths
+  and illustrative claim-check slots do not supply an adopted schema.
 - The person adapter and transport (post-MVP; T9).
 - The rule for adding form opinions to the library (T9).
 - Whether read-only investigation is enough (T9).

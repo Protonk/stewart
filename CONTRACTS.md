@@ -808,7 +808,8 @@ draft-reference replacement and proposed repeated-commission behavior, and
 qualifies close before launch. It changes no frozen Python or historical records.
 The later custody and initial-material contracts settle storage, retention, live
 manager access, material support and arrangement inspection. The later auditor
-retry contract settles re-entry; question typing remains a separate discussion.
+retry contract settles re-entry; the later question-family contract selects the
+organizing model while leaving concrete forms for separate specification.
 
 **One folder, one acceptance boundary, one close action.** The manager prepares
 the question and materials in an ordinary directory, using ordinary tools. Even
@@ -1165,6 +1166,71 @@ not repeated additions or auditor repair of private custody. Operational failure
 remain in Stewart's operating account; they do not become fabricated conclusions
 or mandatory answer fields. No retry changes the material world, resets limits,
 revives a closed reference or grants another investigation.
+
+## Successor question families and open inquiry
+
+Decided with the user, 2026-10-29. **Decided organizing model; concrete forms,
+implementation and qualification pending.** Stewart uses a library of question
+families. Auditor formulation of an investigable question is one specific family;
+open inquiry roughly follows the proposal for an open question with optional
+evidence modules. This selects the relationship among the three proposals, not
+every example, field or validation rule in them. It changes no frozen Python or
+captured historical record.
+
+**The family carries the pairing.** A family brings together preparation guidance,
+expected material roles, auditor instructions and answer expectations. These are
+where Stewart expresses opinions about asking and answering that kind of question.
+The manager chooses the family; a suggestion does not silently change the choice
+or rewrite the question. Its versioned instructions and means of answering belong
+in the pinned arrangement already available through preparation. Family selection
+is not certification that the question is good, its evidence sufficient or its
+eventual answer correct.
+
+**Open inquiry is an ordinary family.** It admits a broad request without requiring
+the manager to justify avoiding a more specialized family, accept reduced custody
+or investigative means, or perform another commissioning step. Its instructions
+can ask what was examined, what the evidence supports and what remains unresolved.
+Optional evidence modules can add useful prompts and structure; choosing none is
+a complete route. Modules are not a second compulsory taxonomy, and any selected
+module must be explicit rather than inferred silently from the question. Exact
+modules and their interactions are still to be designed; the user's "roughly"
+does not adopt the proposal's example module catalogue or detailed schemas.
+
+**Inquiry framing is an explicit task.** This family commissions the auditor to
+formulate a working question from the manager's concern and investigate it within
+the same commission. The original question remains intact. The working question,
+its relationship to the request, the work performed and its limitations are
+attributed to the auditor. A precise original question can remain the working
+question. This is not a mandatory preliminary audit whose only product is a
+better question; useful bounded investigation belongs in the same undertaking
+when the material permits it. Inability to do that remains an expressible result.
+The choice grants no additional material, tools, budget, investigation or live
+approval channel. Other families still allow challenging a premise, explaining a
+poor fit or reporting missing evidence; they do not silently acquire this
+family's task of formulating a substitute working question.
+
+**Guidance must leave a usable route.** A broad request such as "audit our app to
+make sure there are no bugs" can be commissioned through open inquiry under the
+ordinary mechanical intake rules. Material-role prompts can expose missing
+declared mappings without treating an unmapped role as proof that evidence is
+absent from all attached files. They do not force invented evidence or repeated
+justification to proceed. Actual invalid references, unsupported bytes and intake
+limits remain mechanical refusals. Every family must permit disagreement with
+its framing, missing evidence, no supported finding and qualifications; neither
+a defect nor a particular substantive conclusion is mandatory. A bounded
+assurance remains the auditor's attributed claim, not Stewart's guarantee.
+
+**Still to specify.** Open inquiry and inquiry framing have selected roles, with
+their final names and detailed forms unfinished. Comparison, behavior check and
+claim examination remain illustrative candidates, not an adopted release roster.
+The earlier `survey` and `claim-check` sketches do not supply default schemas;
+in particular, `first_unbound` and `smallest_addition` are not inherited answer
+obligations. Concrete fields and tools, common answer expectations, module
+composition, citation handling, stopping instructions and checks, treatment of a
+manager-supplied prior, and rendered-answer packaging still need a coherent
+specification under the outcome-deliberation principle. Choosing the library
+does not settle these questions or replace the provisional custody format by
+implication. The rule for admitting future families also remains open.
 
 ## Transition status of the earlier contracts
 

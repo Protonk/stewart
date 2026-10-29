@@ -22,7 +22,9 @@ in CONTRACTS: C1/C2/C8/C11/C16 follow prepared selection and close before launch
 C17 covers exceptional state, C18 designated retained custody and C19 literal
 text materials and preparation inspection. These are acceptance designs, not
 executed checks. The subsequent accepted auditor retry/re-entry contract updates
-C3/C4 below. Question types remain proposals; their choice is not made by a test.
+C3/C4 below. The subsequent question-family decision updates C7: the library is
+selected, inquiry framing is one family, and open inquiry permits optional evidence
+modules. Concrete forms remain to be specified; tests do not choose their schemas.
 
 ## What we care about
 
@@ -38,7 +40,7 @@ failing.
 | C4 | After context loss, bounded re-entry recovers recorded work and access without inventing missing memory. |
 | C5 | The delivered return is complete, verified and faithful to what was recorded. |
 | C6 | The record is honest: write-once, nothing deleted, the access log matches what happened. |
-| C7 | Couplings wrap the question, expose their slots, and check citations. |
+| C7 | Question families preserve the request, express their evidence expectations and leave open inquiry usable. |
 | C8 | Close works from every state. |
 | C9 | Stewart answers quickly and every reply says what it did. |
 | C10 | Real models can actually use the arrangement and finish. |
@@ -209,22 +211,33 @@ authoring request is handed down as part of the auditor's answer.
   on retry/close, or skips logging a search. Independent inventories remain outside
   the archive so a passing result cannot conceal deletion of the witness.
 
-### C7 — Couplings
+### C7 — Question families
 
-- **Pass:** for `survey` and `claim-check`, the frame contains the manager's
-  question verbatim and the coupling's wrapper. The slots appear as tools. Filled
-  slots render in the return as the coupling specifies.
-- **Citations:** a citation to real lines passes. One off by a line, one naming a
-  missing material, and one quoting text that isn't there are each refused with a
-  sign and never recorded as valid. (The mechanical check is one of the
-  answer-form choices; this item stands only if it is adopted. Under C14 the
-  refused call is still recorded with its bytes and reason.)
-- **Exits:** *wrong question*, *missing evidence* and *nothing found* each seal and
-  deliver like any other answer.
-- **Prior:** `claim-check` shows the manager's claim. A coupling that seals the
-  prior keeps it out of every request and delivers it only in the return.
-- **Sabotage:** a build that paraphrases the question, and one that accepts an
-  off-by-one citation.
+These are acceptance obligations for the selected organizing model. Concrete
+schemas, tools and rendered fixtures follow the remaining form specification.
+
+- **Pass:** each selected family preserves the manager's question verbatim and
+  pins its versioned guidance, material expectations and answer instructions in
+  the prepared arrangement. A broad request commissions through open inquiry
+  with no modules and no extra justification or reduced service.
+- **Differing:** selecting inquiry framing explicitly commissions formulation
+  and investigation within the same undertaking. The original request and the
+  auditor's working question remain distinguishable. Once modules are specified,
+  selecting one changes only its declared prompts and answer expectations.
+- **Invariance:** changing the family or selecting no module never silently
+  rewrites the question or expands material access, tools beyond the declared
+  form, budget or investigation. Missing declared material-role mappings do not
+  block commissioning or become claims that no attached file contains evidence.
+- **Permitted answers:** disagreement with the framing, missing evidence,
+  no supported finding and qualified support can each be expressed and submitted
+  without inventing a defect or repair. Inquiry framing permits an account that
+  useful bounded investigation was impossible. No test grades agreement with an
+  expected substantive conclusion as successful compliance.
+- **Sabotage:** a build that paraphrases the manager's question, requires a module
+  for open inquiry, or silently gives another family the inquiry-framing task.
+- **Still pending:** concrete field/tool checks, citation handling, stopping
+  rules/checks, treatment of a prior and rendering. The former `survey` and
+  `claim-check` examples do not select these by becoming fixtures.
 
 ### C8 — Close from every state
 
@@ -499,8 +512,10 @@ the case counts, the timings and every control that fired.
 
 This tier answers C10. It checks procedure, never answer quality.
 
-**Fixed commissions.** Two small commissions live in the apparatus, each with a
-known structure:
+**Fixed commissions.** The apparatus will contain small commissions covering the
+selected forms, with known structures. Exact fixtures await the form specification.
+The earlier examples below remain candidates for comparison, not a release roster
+or inherited answer schema:
 
 - a `survey` over a handful of files with one planted fact relevant to the
   question;
@@ -518,11 +533,12 @@ midway and continued.
 
 - the run ends sealed by the auditor's own submission, not by a limit, a close,
   or a second unsubmitted stop;
-- every citation in the answer resolves;
+- citations follow the subsequently specified handling rules; this does not
+  preselect mechanical refusal as that rule;
 - after compaction, and after a kill and continuation, no element recorded
   before it is added again, and the submission still contains them;
-- for `claim-check`, the answer uses the coupling's slots rather than only
-  free-form elements.
+- the answer follows its family's subsequently specified response procedure,
+  without requiring a particular substantive finding.
 
 **Reported but not gating:** whether the planted fact or the unsupported premise
 was found, turns and tokens used, how often `what_am_i_working_with` was called and

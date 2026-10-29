@@ -24,17 +24,17 @@ for the turn-by-turn account of the review.
 The user's delegated custody/retention and initial-material settlement is recorded
 in CONTRACTS and synchronized into AGENTS, ROUTER, END-TO-END and TRANSITION-PLAN.
 The user has accepted the [auditor retry/re-entry recommendation](auditor-reentry-01/BRIEFING.md),
-now recorded in CONTRACTS and C3/C4. The current commission is three question-design
-paths with no preference or degree-of-change labels. They are recorded in
-[PATHS](question-types-01/PATHS.md); none is adopted. The user wants Stewart to
-express opinions about question/material/evidence pairings and teach through its
-tool interface without making broad requests unusable. A usable residual type is
-central to the alternatives. This is specification and discussion work; no runtime
+now recorded in CONTRACTS and C3/C4. From the [three question-design paths](question-types-01/PATHS.md),
+the user selected C as the family-library architecture, B as a specific
+inquiry-framing type, and A roughly as open inquiry with optional evidence modules.
+CONTRACTS records that synthesis; concrete forms remain unfinished. Stewart's
+opinions about question/material/evidence pairings must leave broad requests usable
+and the residual type an ordinary service. This is specification and discussion work; no runtime
 implementation or model call was commissioned or run.
 Historical conversations, prototypes and frozen implementation are unchanged.
 Verification: `git diff --check` passed; an isolated Python documentation check
-validated 13 local link targets and code-fence balance in the two discussion
-documents, router and transition plan. No runtime test cases were selected or claimed.
+validated 30 local link targets and code-fence balance in the six changed documents.
+No runtime test cases were selected or claimed.
 
 **Agreed working model:** one submission folder, one acceptance boundary and one
 close action. A failed submission leaves the folder editable; an accepted
@@ -93,13 +93,17 @@ completed result redelivered, but equal arguments do not recover lost intent.
 No request-key knob, mandatory re-entry stage or recovery console. CONTRACTS owns
 the limits and C3/C4 the qualification design; no runtime qualification is claimed.
 
-**Current question paths:** open inquiry with evidence modules; auditor framing
-of the investigable question within the original commission; and a library of
-question families with open inquiry alongside them. Each preserves the manager's
-original words, current material/tool grants and a usable broad-request route.
-No option or mixture, slot schema, citation refusal, substantive stopping rule or
-answer rendering has been chosen. Present them without a preference or a mapping
-to the user's requested labels. Human transport and optional studies remain later.
+**Agreed question architecture:** the family library organizes distinct pairings
+of preparation guidance, material expectations, auditor instructions and answer
+expectations. Open inquiry is a normal residual route with optional evidence
+modules; no compulsory module selection or justification. Inquiry framing explicitly
+commissions formulation and useful bounded investigation within the same commission,
+preserving the original question and attributing the framing to the auditor. Other
+families can contest a premise or report missing evidence without silently acquiring
+that task. Final names, slots/tools, common expectations, module interactions,
+citation handling, stopping rules/checks, priors and rendering remain open. The
+other example families are not an adopted release roster, and the old claim-check
+slots are not inherited obligations. Human transport and optional studies remain later.
 
 **Historical review findings, coordinator assessment:**
 

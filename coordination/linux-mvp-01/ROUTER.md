@@ -22,7 +22,10 @@ ordinary preparation, explicit prepare/commission, cooperative checks and
 contextual errors; a designated non-removing archive; literal text materials and
 preparation inspection without a separate preview. The user subsequently accepted
 bounded auditor re-entry, exact edit targets and known-invocation result replay;
-the corresponding CONTRACTS section governs. Question types remain under discussion.
+the corresponding CONTRACTS section governs. The user then selected question
+families as the organizing model, with inquiry framing as a specific family and
+open inquiry roughly following the optional-evidence-module proposal. CONTRACTS'
+"Successor question families and open inquiry" governs; detailed forms remain open.
 
 ## The idea
 
@@ -165,43 +168,34 @@ part of content identity or replicated execution grants.
 
 ## Answer forms and couplings
 
-An answer form is what the manager picks. The library file that defines it is a
-**coupling**: a small versioned file that wraps the manager's question without
-rewriting it. It contributes:
+The manager chooses from a library of question families. A **coupling** is the
+versioned definition pairing a family's preparation guidance, material-role
+prompts, auditor instructions and answer expectations. It wraps the manager's
+question without rewriting it and is pinned in the arrangement. The library is
+the chosen organizing model; its concrete forms are not yet specified.
 
-- **an answer shape:** named slots, which the protocol exposes as tools;
-- **a stopping rule:** stated so that every conclusion finishes at the same point;
-- **the universal exits:** *wrong question*, *missing evidence*, *nothing found*;
-- **the prior:** whether a claim the manager supplies is shown to the auditor as
-  its subject or kept sealed.
+Two roles are selected, with names provisional:
 
-The library is provisional. `survey` and `claim-check` were proposed in the
-conversation; their concrete shape does not settle their design as instruments of
-inquiry, and consequential choices about answer forms and stopping rules are
-made in discussion, not by the library. One test for a slot: the auditor must be
-able to fill it from where it stands, with the evidence attached. A field that
-needs the manager's categories belongs to the manager.
-
-```
-coupling: claim-check@1          (illustrative)
-asks:     claim
-frame:    "You are given a question and a claim someone relies on. Lay out
-           the premises the claim needs, and for each say whether the
-           material binds it."
-slots:    premise {text, binding: bound|unbound|unclear, citations[]}
-          first_unbound
-          smallest_addition
-stop:     every premise the claim relies on is accounted for, or missing
-          material prevents that
-prior:    shown
-```
-
-| Coupling | For | Answer shape |
+| Family | Commissioned work | Boundary |
 | --- | --- | --- |
-| `survey` | "What here bears on this?" | Findings, gaps, and what the material can't speak to |
-| `claim-check` | "Does the material support this claim?" | Premises with binding, the first unbound premise, the smallest addition that would bind it |
+| Open inquiry | Answer the manager's question with an account of the evidence and limits; optional evidence modules can supply useful structure | No compulsory module selection, justification for choosing open, reduced service or extra commissioning step |
+| Inquiry framing | Formulate a working question from the concern, then investigate it within the same commission | Preserve the original request and attribute the framing and its limitations to the auditor; no expanded materials, tools, budget or live approval |
 
-New couplings join when returns keep asking for them. Every return records its
+Open inquiry with no modules is a complete route for broad requests. Material-role
+prompts may expose unassigned roles without treating them as proof that evidence
+is absent or blocking commissioning. Mechanical intake refusals still apply.
+Every family permits challenging the framing, missing evidence, no supported
+finding and qualifications. Only selecting inquiry framing commissions formulation
+as part of the task; the other families do not silently inherit it.
+
+Comparison, behavior check and claim examination are candidates, not the release
+roster. The old `survey` and `claim-check` illustrations do not select schemas;
+`first_unbound` and `smallest_addition` are not inherited obligations. Concrete
+slots/tools, module interactions, citation handling, stopping rules/checks, a
+manager-supplied prior and rendering remain to be settled together. One test for
+any slot: the auditor can fill it from where it stands, including an account of
+what cannot be established. Selecting a family certifies no substantive outcome.
+The rule for adding families remains open. Every return identifies its selected
 coupling and version.
 
 ## The arrangement
@@ -524,8 +518,9 @@ to.
 ## First release
 
 - The model adapter.
-- The forms selected in the separate typing/coupling discussion; the illustrated
-  `survey` and `claim-check` do not select the release library.
+- A question-family library including open inquiry and inquiry framing; concrete
+  forms, modules and any additional families remain to be specified. The earlier
+  `survey` and `claim-check` illustrations do not select the release library.
 - `help`, `new`, manager `prepare`, `commission`, `receipt`, `run`, `status` and `close`,
   all within the response budgets.
 - Release binaries for Linux x86_64 and aarch64, built and tested in the apparatus.
