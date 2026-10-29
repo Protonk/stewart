@@ -37,17 +37,30 @@ cannot complete; repeating close is the supported continuation. Acceptance and
 its receipt must be reconciled after interruption before another capture is
 attempted. Exact storage, retention and interruption mechanisms remain open.
 
-**Current copying discussion:** source stability cannot be proved by ordinary
-before/after scans. The user favors a cooperative arrangement, with hashing to
-detect likely interference, rather than a promise of an atomic source snapshot.
-The new proposal is manager `prepare()` followed by `commission(handle,
-I_AM_FINISHED=true)`, analogous to auditor preparation and explicit submission.
-The manager would participate by declaring preparation finished; Stewart would
-perform the hashing. This interface is under discussion, not yet a contract:
-what the handle binds, what the acknowledgment means, and the source/copy checks
-need definition. Manager declarations and Stewart's observations must remain
-separately attributed. No separate preview interface or runtime work is settled
-by this proposal.
+**Agreed cooperative preparation:** source stability cannot be proved by ordinary
+before/after scans. Manager `prepare()` inventories and hashes the question and
+materials, checks mechanical intake rules, and binds the relevant submission
+settings in a handle. It does not accept the commission or preserve source bytes.
+`commission(handle, I_AM_FINISHED=true)` requests acceptance of that selection;
+copied bytes and a final source scan, including membership, must match it.
+The manager declares preparation finished and agrees to leave the folder alone
+through commissioning; the instruction precedes prepare because hashing also
+takes time. Edits require fresh preparation when the selection no longer matches;
+there is no unprepare action. The calls may be composed without an inspection
+pause. Manager declarations and Stewart's matching observations remain separately
+attributed; this is cooperative interference detection, not an atomic snapshot
+guarantee. Reconcile the product contracts/sketch with this direction; no runtime
+implementation is commissioned.
+
+**Current discussion:** how exceptional conditions throughout prepare/commission
+reach Stewart's own error presentation. The user's example is an accidental
+permission change racing commissioning, not adversarial behavior. The user wants
+to shape the presentation and responsibility principles, not enumerate every
+failure branch. Review found structured errors in the Rust intake slice, but a
+broad filesystem-to-`unreadable` mapping and direct output calls are not evidence
+that all failures pass through a coherent presentation. Operation outcome,
+partial effects, uncertainty and failures to record or deliver a diagnostic need
+explicit treatment. These mechanisms remain design and qualification work.
 
 **Historical review findings, coordinator assessment:**
 

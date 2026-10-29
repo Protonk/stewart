@@ -139,10 +139,17 @@ says.
   with this direction once the copying interface is settled. The user favors
   cooperative source stability with before/after hashing as interference
   detection, not an atomic snapshot guarantee. Manager `prepare()` and
-  `commission(handle, I_AM_FINISHED=true)` are now proposed, not decided. Define
-  the handle, acknowledgment, checks and interrupted-acceptance behavior before
-  choosing the remaining preview surface. Historical review distinguishes the
-  preparation folder, each immutable attempt and the accepted commission; edits
+  `commission(handle, I_AM_FINISHED=true)` are agreed: preparation binds an
+  observed selection and settings; commissioning checks copied bytes and final
+  source membership/contents against it. The explicit acknowledgment declares
+  preparation finished and cooperation in keeping the folder unchanged, beginning
+  before prepare. It is separate from Stewart's verification observations and
+  supplies no snapshot guarantee. No inspection pause or unprepare is required.
+  The current discussion concerns contextual error presentation for exceptional
+  state, including permission races, uncertain acceptance and failure to record
+  or deliver diagnostics. Specify and qualify these mechanisms before claiming
+  coverage; settle the remaining preview surface separately. Historical review
+  distinguishes the preparation folder, each immutable attempt and the accepted commission; edits
   cannot rewrite old intent. Identity, retention and storage still need exact
   treatment; this creates no general manager-resource service or runtime commission.
 - Auditor retry and re-entry: brief the lost-reply cases and large-answer
