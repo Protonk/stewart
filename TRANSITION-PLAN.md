@@ -131,7 +131,17 @@ says.
 
 - Preview: whether to omit it, limit it to mechanical intake, or retain an
   arrangement view and/or asking advice. Brief separately before changing the
-  current preview contract; manager recall and status/close are independent.
+  current preview contract. The current candidate is ordinary editable manager
+  preparation in a directory, with preflight/copying/sealing only at commission;
+  it is not adopted. The user requires accounting for failed copies, defining
+  close against the directory's actual ownership, and Stewart owning the
+  submission boundary (possibly by rejecting commissioning). Historical review
+  distinguishes the preparation folder, each attempted intake and the accepted
+  commission. An edited draft cannot rewrite a failed attempt's fixed intent.
+  Draft discoverability/identity, preservation promises, source changes during
+  copying and the role of the previously deferred manager-resource service need
+  explicit treatment. Existing receipt/status design does not by itself decide
+  close before acceptance; no new runtime work is commissioned.
 - Auditor retry and re-entry: brief the lost-reply cases and large-answer
   presentation separately. No authoring semantics changed in the manager fixes.
 - Question typing/coupling: discuss the arrangement itself rather than treating

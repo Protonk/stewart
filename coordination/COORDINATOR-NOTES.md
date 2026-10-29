@@ -21,43 +21,71 @@ for the turn-by-turn account of the review.
 
 ## Current commission
 
-The user delegated resolution of the interface review's manager recall and
-status/close concerns (1 and 2). Their design is complete in CONTRACTS'
-"Successor manager readback, status and close", synchronized into ROUTER,
-END-TO-END and TRANSITION-PLAN. No runtime implementation stage is commissioned;
-`successor/` still implements commission bundles only. The two past design
-sessions and their conversation/recording habit stay closed.
+The user commissioned a historical review of manager/worker drafting and
+commissioning, going behind today's router conversation, to identify inherited
+assumptions relevant to an ordinary preparation directory. The review is
+source/document research, not runtime qualification or implementation.
 
-- `receipt REF` supplies the fixed commission and stable readback IDs;
-  `--read ITEM` retrieves selected verified original bytes, independently of
-  the old session, live inputs or currently installed form.
-- Status distinguishes run observations, the answer seal, delivery and closure.
-  Close continues owed delivery at a replacement destination when necessary,
-  preserves failed copies and recovers its own recorded effects. A copy first
-  produced through close requires its bound confirmation; a lost reply followed
-  by a bare repeat cannot become confirmation merely because the copy now exists.
-- The acceptance design adds C15/C16 and expands C5/C8/C12. No runtime tests,
-  model calls or workers ran. Documentation consistency and whitespace were
-  checked; implementation and qualification remain pending.
+**Candidate under discussion, not a decision:** Stewart may create an ordinary
+editable preparation directory. The manager assembles the question and material
+with ordinary tools; commissioning performs preflight, copies and seals, then
+issues the receipt before the auditor is summoned. The draft label need not be
+an exposed workflow state. The user explicitly wants failed copies accounted
+for, the modest meaning of close worked out against actual directory ownership,
+and Stewart responsible for the submission boundary, possibly by refusing
+commissioning. No preview removal, directory ownership or disposal rule is decided.
 
-Three separate discussions remain, at the user's direction:
+**Historical review findings, coordinator assessment:**
 
-- **Preview (3), next briefing:** distinguish mechanical intake forecasting,
-  showing the auditor's arrangement, and advice about the question. Commission
-  is already local and receipt readback is available before run, so a separate
-  preview's value needs stating. Consider omission or a sharply limited preview
-  as well as the fuller view. No preview contract has changed yet.
-- **Auditor retry/re-entry (4):** brief the different consequences of repeating
-  an addition and a confirmed submission, recoverable identities/revisions,
-  and useful re-entry at admitted artifact sizes. No authoring semantics changed.
-- **Question typing/coupling (5):** discuss the arrangement itself. The user put
-  the claim-check asymmetry in the broader history of arguing about retaining
-  question types and reaching this coupling proposal. Do not treat the current
-  proposal as an assumed answer or repair its slots in isolation.
+- Frozen Python already separated editable prompt/support files, the prompt-only
+  commit, prepared session and external launch. The manager was an expert
+  publisher/operator. The 2026-10-18/19 narrative records an unissued prompt
+  amendment and the manual Git work; it is observed history, not a requirement.
+- The supplied checkout and the permitted reading selection were different:
+  prose constrained a worker amid a larger accessible project. Exact selected
+  material as the auditor's whole world is a different submission boundary.
+- Registered drafts had audit IDs, start/outcome records and digest observations,
+  but no promise to preserve their file bytes. Draft references deliberately
+  became stale on preparation. Preserve identity safety without assuming that
+  those public draft/session transitions belong in the new manager experience.
+- Python preparation failure had no in-place retry. Releasing the audit ID
+  required a recorded early failure, no issued handoff and only preparation's
+  footprint. Stewart did not launch the auditor, so handoff issuance mattered
+  before any verified launch. Do not import that proxy boundary automatically
+  into an adapter Stewart operates.
+- The Rust commission slice accepts an already enumerated, size/digest-pinned
+  request; it is not a drafting workspace. Intent is bound before copying and
+  changed request bytes are refused. Editing a draft after failed copying cannot
+  silently rewrite the old attempt's intended selection or adopt its partial
+  copies as a new selection. The ordinary interaction remains to be designed.
+- Python's general manager-resource service distinguished creation from
+  enrollment and independent/shared lifetimes; it was later deferred from the
+  successor. A preparation folder needs bounded custody/close semantics, not an
+  automatic revival of that service or an assumption that creation grants
+  disposal of everything subsequently placed there.
+- Auditor answer drafts were a separate discussion: initially disposable
+  staging was considered; later successful additions undertook durable custody
+  with no promotion step. Those answer-side decisions do not prohibit an
+  ordinary manager preparation directory or decide its preservation promise.
 
-Independent manager work can proceed when commissioned; preview, retry and form
-implementation depend on their respective discussions. The turnover's proposed
-T0 work remains background, not a present instruction.
+Source route: frozen `src/stewart/resources/README.md` (assignment lifecycle,
+recorded drafts, references, failure recovery, resources), `assignment.py`,
+`prepare.py`, `auditor_scope.py`, `close.py`, and corresponding discovery/close
+source tests; the self-audit session narrative and manual-Git-friction report
+under `reports/self-audit-2026-10-18-19/`; historical identity/closeout and
+orchestration plans at `22c6693` and `4c92c97`; `CUSTODIAL-CORE-FINDINGS.md`,
+`KEYHOLE-OBLIGATIONS-FINDINGS.md`, `MANAGER-CLOSE-FLOW.md`,
+`RETURN-CUSTODY-DESIGN.md`; `successor/README.md` and `successor/src/main.rs`;
+`coordination/submission-design-01/RESULT.md`. The archived Click docs/request
+surface was checked and supplied no separate preparation design. Historical
+files, frozen code and contracts are unchanged; no runtime tests or model calls ran.
+
+The earlier delegated manager recall and status/close design fixes are recorded
+in CONTRACTS and synchronized into the sketch/test design at `eff8126`.
+Their application to an uncommissioned preparation directory is now open;
+never-run accepted commissions and unaccepted preparation are not interchangeable.
+Auditor retry/re-entry and question typing/coupling still need separate discussions.
+The two past design conversations remain closed. No transition stage is commissioned.
 
 ## Inherited product state
 
@@ -92,10 +120,11 @@ active or pending.
 
 ## Next
 
-Discuss preview's scope, then brief auditor retry and question typing/coupling
-separately. The manager-interface design fixes are complete; no runtime stage
-follows automatically. Model-consuming work still requires explicit, bounded
-permission and a budget under the standing orders.
+Discuss the preparation-directory candidate and the historical assumptions it
+changes, especially submission selection, failed copy attempts and close before
+acceptance. Keep auditor retry/re-entry and question typing/coupling separate.
+No runtime stage follows automatically. Model-consuming work still requires
+explicit, bounded permission and a budget under the standing orders.
 
 ## Environment notes
 
