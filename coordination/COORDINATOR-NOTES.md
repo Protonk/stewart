@@ -3,7 +3,8 @@
 Updated 2026-10-29. The user accepted the machine-interface recommendations and
 directed closure of the design review: extract the current design, vision and
 path, commit them, then delete the superseded review material. Root owns that
-documentation integration. No runtime build or model run is commissioned by it.
+documentation integration. No Rust audit-service implementation or model run is
+commissioned by it.
 
 ## Current state
 
@@ -17,16 +18,19 @@ documentation integration. No runtime build or model run is commissioned by it.
   examples/questions/ and docs/. Their paper review is complete and does not
   establish real tool conformance, empty/missing-section usability or runtime
   custody. No repeat agent cycle is pending.
-- Frozen Python and the existing scoped Rust intake binary remain unchanged.
-  No worker, provider run, container job or background command was started by
-  this consolidation. Previously retained runtime/evidence bytes remain protected.
+- Frozen Python runtime and the existing scoped Rust intake binary remain unchanged.
+  No worker, provider run or container job was started. The isolated packaging
+  check completed: 1 selected, 1 passed. Previously retained runtime/evidence
+  bytes remain protected.
 
 ## Integration checkpoint
 
-Extraction source: `db4e02d`. Current documents are written; validation and the
-extraction commit precede deletion. The closure report owns exact dispositions
-and verification; this paragraph is replaced with the completed checkpoint after
-the deletion commit. No agent has edit ownership or pending work.
+Extraction source: `db4e02d`; extraction committed as `d7caecb` before removing
+the 67 enumerated superseded files. The closure report owns exact dispositions
+and verification. Maintained guidance has no route into a retired review. Runtime
+code, tests, issued records and raw study evidence are unchanged. The source
+distribution includes the relocated user guide and new maintained design docs.
+No agent has edit ownership or pending work.
 
 ## Next
 

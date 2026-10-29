@@ -37,6 +37,7 @@ stays with that report under the retention rules.
 
 | Records | Owner of findings |
 | --- | --- |
+| `design-review-closure-20261029/` | [Design closure](../reports/design-review-closure/RESULT.md): preservation inventory, packaging check and documentation validation. |
 | `coordinator-intake-20261028-02/` | The outgoing coordinator's intake record. The review prose is retired; its decisions and acceptance obligations are in the maintained product docs. |
 | `alignment-20261028-01/`, `coordinator-intake-20261028-01/` | The design-conversation tenure. Conversation prose is retired; the source checkpoint is recorded in the closure report. |
 | `route-research-01/`, `plan-fit-review-01/`, `answer-structure-check-01/`, `auditor-cases-01/` | This index; the first-leg program is abandoned and applicable cases are in ACCEPTANCE.md |

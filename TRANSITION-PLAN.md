@@ -2,8 +2,8 @@
 
 Current account, 2026-10-29. The design review is closed. The user accepted the
 machine-interface rules and commissioned consolidation and retirement of review
-exhaust. That documentation work is complete when its verification/deletion commit
-is recorded. It commissions no model runs or runtime implementation by itself.
+exhaust. The extraction is committed and the superseded material is removed.
+That closure commissions no model runs or runtime implementation by itself.
 
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in

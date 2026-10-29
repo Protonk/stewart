@@ -53,10 +53,10 @@ or released by this documentation action.
 
 ## Deletion and preservation boundary
 
-[REMOVED-PATHS.txt](REMOVED-PATHS.txt) lists the exact tracked review/plan files
-to remove after the extraction commit. The user's specific instruction supersedes
+[REMOVED-PATHS.txt](REMOVED-PATHS.txt) lists the 67 tracked review/plan files
+removed after extraction commit `d7caecb`. The user's specific instruction supersedes
 the old review folder's instruction to preserve conversation prose. It does not
-authorize disposal of runtime custody or independent evidence. No source, bundled
+authorize disposal of runtime custody or independent evidence. No runtime source, bundled
 manual, test, issued audit record, raw actor output, independent witness, local
 corpus ref or `.scratch` artifacts directory is removed. Existing evidence packets
 retain their original paths/text even when a historical link points to retired
@@ -76,6 +76,23 @@ entry documents are separately accounted for. Verified the mission verbatim,
 the generated Git-guide body unchanged, all 12 relocated submission files exact,
 the CLAUDE guidance symlink intact and all three protected corpus refs unchanged.
 
-The extraction commit precedes the planned removal of 67 tracked files. Final
-post-deletion verification will replace this checkpoint. No runtime test or model
-run was needed for documentation changes; no runtime qualification is claimed.
+The extraction commit `d7caecb` precedes removal of all 67 listed paths. Final
+post-deletion checks are recorded in [VERIFICATION.json](VERIFICATION.json).
+No maintained entry point depends on a removed file. The only active plan is
+TRANSITION-PLAN.md; a captured historical plan inside an issued audit remains
+unchanged evidence.
+
+The source-distribution manifest was updated to include the relocated guide and
+current design/example docs. The ordinary installed-wheel checker ran
+`tests/test_distribution.py::test_sdist_builds_same_wheel_without_git_or_network`
+with Python 3.14.9: **1 collected/selected, 1 passed, 0 skipped**, exit 0.
+It rebuilt the wheel from the source distribution offline and compared exact
+members/bytes against the wheel built from this checkout. Hatchling's actual
+source-member enumeration separately includes all 21 required new/relocated
+documentation members and excludes plans, review directories and scratch.
+
+The run record, build/pytest output, wheel and packaging enumeration are retained
+under `.scratch/design-review-closure-20261029/`, owned by this report. The checker
+reduced its own passing-case artifacts under the normal policy; its artifacts
+directory remains and no prune command ran. Full-suite or successor-runtime
+qualification was not needed or claimed. No model/provider run occurred.
