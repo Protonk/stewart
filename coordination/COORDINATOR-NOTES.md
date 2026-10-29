@@ -1,7 +1,7 @@
 # Current coordinator account
 
-Updated 2026-10-28 UTC at the turnover after the design review, by the
-coordinator who closed it (Claude Code, Fable 5.1). This is a working account of observed work,
+Updated 2026-10-28 by the incoming coordinator (Codex) for the manager/auditor
+interface review. This is a working account of observed work,
 authority received and remaining questions. [Standing orders](STANDING-ORDERS.md)
 own operating instructions; [the directory entry](README.md) identifies intake
 documents. The optional [turnover](TURNOVER.md) is supplementary. Reconcile these
@@ -19,7 +19,42 @@ narrative is in Git: `git show 313c4e3:coordination/COORDINATOR-NOTES.md` for
 the commissions before 2026-10-28, and `git show 8daac52:coordination/COORDINATOR-NOTES.md`
 for the turn-by-turn account of the review.
 
-## Current state
+## Current commission
+
+The user commissioned a review of the manager and auditor tool interfaces and
+concerns brought back in conversation. The two design sessions are historical;
+their conversation and recording habit stay closed. The turnover's proposed
+next work is information, not an instruction to execute T0 or any other stage.
+Intake read the named historical accounts at `313c4e3` and `8daac52`, the current
+contracts, sketch, test design and plan, and checked the successor's actual
+command surface. The successor still implements commission bundles only.
+
+Coordinator concerns for discussion, not decisions or implementation work:
+
+- Manager recall needs an explicit supported route from the reference to the
+  original question, arrangement and copied input bytes; the proposed command
+  list does not yet describe that route.
+- Status and close need plain distinctions between an interrupted placement,
+  unsubmitted work, a sealed answer, verified delivery and completed close.
+  Delivery failure must have a usable path within close, including a destination
+  that is no longer usable, without implying another investigation.
+- Material acceptance and preview need to distinguish copied bytes from what
+  the auditor's read/search interface can actually present, and account for
+  changed inputs between preview and commission.
+- Retry guidance must distinguish a new addition from a handle-bound submission
+  lookup and make recorded identities/revisions easy to recover after a lost
+  reply; blanket "try again" guidance can duplicate an addition.
+- Re-entry must restore a usable working position at admitted size limits;
+  returning every answer byte in one reply is not a scalable specification.
+- The illustrative claim-check slots steer toward finding and repairing missing
+  support. A refuted claim, a supported claim and an indeterminate claim need
+  equally ordinary expression, and the stopping instruction needs scrutiny.
+
+These are specification concerns, not demonstrated runtime defects. No runtime
+tests, model calls or workers were launched. Product contracts, plans and the
+closed design record are unchanged.
+
+## Inherited product state
 
 - **The design is decided and recorded.** CONTRACTS.md has the Mission (the
   user's words), "Successor interfaces decided 2026-10-28" (including the
@@ -34,12 +69,12 @@ for the turn-by-turn account of the review.
   earlier program, evidence owed and open questions. DEVELOPMENT-PLAN.md is
   marked superseded and kept until its disposition is confirmed item by item;
   VISION-PLAN.md carries a dated note on what is overtaken.
-- **Nothing is commissioned for execution.** The plan prepares; the user
-  commissions each stage. No code changed this tenure. `successor/` still holds
+- **No implementation stage is commissioned.** The plan prepares; the user
+  commissions each stage. No code changed in this review. `successor/` still holds
   the `stewart-commission` binary, which seeds T2.
-- **Git.** Everything is committed on `main`; nothing has been pushed
-  (`origin/main` is at `3442f84`). The Python suite was not run this tenure; it
-  was green at the previous tenure's end (1140, 1 skipped).
+- **Git at intake.** Clean `main` at `218d5ba`; the turnover reported nothing
+  pushed and `origin/main` at `3442f84`. The Python suite was not run in this
+  review; the inherited result is 1140 passed, 1 skipped.
 
 ## Dispatched work
 
@@ -52,18 +87,11 @@ active or pending.
 
 ## Next
 
-1. The turnover brief is written at the user's direction; the next coordinator
-   familiarizes themselves with TRANSITION-PLAN.md and its sequence and
-   prepares to manage the transition.
-2. T0 of the plan is the next coordinator's first work: bring the eight
-   pending decisions in CONTRACTS' transition status to the user, then confirm the dispositions
-   with the user, retire what depends on Git, the Python baseline, the checkout or
-   removal at close, confirm and delete DEVELOPMENT-PLAN.md, retire VISION-PLAN.md
-   into coordination guidance, and draft replacement development guidance for the
-   root AGENTS.md (the user's to adopt).
-3. T1 onward as commissioned. T7 and any experiment call the model provider and
-   need the user's explicit, bounded permission and a budget under the standing
-   orders.
+Discuss the interface concerns with the user. No transition stage follows
+automatically from this review. TRANSITION-PLAN.md retains the prior coordinator's
+sequence and CONTRACTS' Proposed transition section retains the pending
+dispositions; neither is the present commission. Model-consuming work still
+requires explicit, bounded permission and a budget under the standing orders.
 
 ## Environment notes
 
@@ -93,7 +121,7 @@ stays with that report under the retention rules.
 
 | Records | Owner of findings |
 | --- | --- |
-| `coordinator-intake-20261028-02/` | This tenure's intake record. The review's own records are tracked under `coordination/linux-mvp-01/` and `coordination/contracts-disposition-01/`. |
+| `coordinator-intake-20261028-02/` | The outgoing coordinator's intake record. The closed design review's records are tracked under `coordination/linux-mvp-01/` and `coordination/contracts-disposition-01/`. |
 | `alignment-20261028-01/`, `coordinator-intake-20261028-01/` | The design-conversation tenure. The alignment notes are copied verbatim into `linux-mvp-01/`. |
 | `route-research-01/`, `plan-fit-review-01/`, `answer-structure-check-01/`, `auditor-cases-01/` | PLAN-FIT, ANSWER-STRUCTURE and AUDITOR-CASES (paused first-leg work) |
 | `linux-first-light-01/`, `linux-check-01/`, `stale-tests-01/`, `fifo-hygiene-01/` | This account. `linux-check-01/RESULTS.md` holds the Linux findings that DEVELOPMENT-PLAN cites. |
