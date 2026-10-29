@@ -301,7 +301,7 @@ midway and continued.
 
 **The gate passes when, for every run:**
 
-- the run ends sealed by the auditor's own submission, not by a limit, a collect,
+- the run ends sealed by the auditor's own submission, not by a limit, a close,
   or a second unsubmitted stop;
 - every citation in the answer resolves;
 - after compaction, and after a kill and continuation, no element recorded
