@@ -5,6 +5,12 @@ machine-interface rules and commissioned consolidation and retirement of review
 exhaust. The extraction is committed and the superseded material is removed.
 That closure commissions no model runs or runtime implementation by itself.
 
+**Current commission (2026-10-29): steps 1–6, the local scripted build.** Its
+endpoint is the first integrated end-to-end audit against the fake provider.
+No model-consuming run is included. The coordinator's shell sandbox cannot reach
+Apple `container` (its Rosetta check is denied), so the coordinator prepares
+container commands and scripts and the user runs them with `!`.
+
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
 [ACCEPTANCE.md](ACCEPTANCE.md). This is the only active development plan. No

@@ -293,8 +293,9 @@ launch; each must fail.
 
 ### C9 — Quick, and sure of what it says
 
-- **Response budgets**, measured in the test image on material at the size
-  limits and reported as actual timings:
+- **Response budgets**, measured natively in the test image on material at the
+  size limits and reported as actual timings. Timings under emulation are
+  reported but do not gate:
   - startup, `status` and `help` answer within tens of milliseconds;
   - every protocol call except a full-material search does too;
   - manager preparation and source scanning report scope and progress; intake,

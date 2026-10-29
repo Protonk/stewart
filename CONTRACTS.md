@@ -199,6 +199,18 @@ or reduce this set. Unexpected entries at the submission root are refused with
 instructions to put intended material under `materials/` or move it outside the
 submission. Stewart's own metadata is stored in the archive, not this folder.
 
+**Settings live in the question file's front matter.** It names the family, the
+provider model, the run limits, the answer destination and, optionally, the
+earlier audit this one varies. Prepare decodes it strictly and binds every
+setting with the selection. Commission takes only the prepared handle and the
+affirmation, and `run` takes only the reference. The auditor receives the
+question body, never the front matter. The pinned model serves every placement
+of the audit; a release names the models that passed its conformance gate. Run
+limits are cumulative counts the provider reports: model turns, input tokens and
+output tokens. Stewart sets no money limit, since prices are not facts it
+observes. The destination is an existing directory in which each delivery
+attempt creates its own new package.
+
 `new` may scaffold an absent folder or use an explicitly supplied existing
 folder without replacing its contents. An existing folder's shape is checked at
 prepare; neither operation grants removal authority. Another commission requires
@@ -313,7 +325,13 @@ acknowledged responsibility. The manager is responsible for the storage's ongoin
 availability, capacity and independent backup. Stewart is responsible for its
 writes, verification, attribution, retention behavior and diagnoses. Local
 synchronization is qualified on supported filesystems; this is no replication,
-backup, protection against the owner or hardware-loss guarantee.
+backup, protection against the owner or hardware-loss guarantee. Qualification
+kills processes at each publication boundary; durability through power loss
+rests on the filesystem's synchronization and is not separately qualified.
+Supported archive filesystems are local ext4, xfs and btrfs. The archive needs
+exclusive links, advisory locks and directory synchronization, so network, FUSE
+and Windows-mounted filesystems such as WSL's `/mnt/` are refused for it. An
+answer destination may be on them.
 
 Three locations have separate meanings: the ordinary manager preparation folder;
 the designated Stewart archive; and an independently verified answer-delivery
@@ -410,7 +428,10 @@ reference continues the audit: a new conversation, the same arrangement and
 ledger, limits counted across runs, and the auditor told that it is continuing
 and that the re-entry call shows what it has recorded. Stewart records every
 run, status says how many there were, and the return is unaffected. `run`
-refuses while another run holds the audit and after submission or close. This
+refuses while another run holds the audit and once authoring has ended: by
+submission, by an ordinary ending without submission, by an exhausted limit or
+by close. Continuation serves placements that died; after an ordinary ending,
+close seals the recorded selection with manager attribution. This
 is continuation of one undertaking, not a restart facility: one ledger, one
 answer sealed once, limits that never reset, no second investigation. It
 settles the restart-from-start convenience left open under the principles as
@@ -590,13 +611,22 @@ compares the stored bytes with the result of the pinned rendering rules, without
 rewriting the sealed answer. Exact field layout, generated filenames and bounded
 rendering mechanics remain implementation/form-specification work.
 
+Each recorded citation keeps the auditor's operands beside Stewart's own
+attributed additions: the source's public name, digest and line span. The
+rendering presents the name and lines, so a reader can follow a citation in the
+delivered return without the archive.
+
 Close after launch applies the same rendering rule when it seals unsubmitted
 recorded work as the manager's. It does not claim auditor inspection or submission.
-Rendering failures retain their evidence and use the existing supported custody
-continuation; they do not silently omit an owed member or invent a successful
-seal. Close before launch still creates no auditor return. The later enforcement
-decision keeps answer-form omissions nonblocking; rendering adds no completeness
-gate.
+Rendering failures retain their evidence and never silently omit an owed member.
+When close must seal a selection containing an element it cannot read or verify,
+the manager seal binds the recorded identities and digests of the whole
+selection. The unreadable element and the rendering that depends on it become
+named, unproduced members of the return: delivery supplies what verifies, and
+the manager may surrender those members under the named-loss rule. Their bytes
+are never invented. Close before launch still creates no auditor return. The
+later enforcement decision keeps answer-form omissions nonblocking; rendering
+adds no completeness gate.
 
 ## Successor auditor form enforcement and prompting
 
@@ -605,9 +635,10 @@ interpretable entries and references, makes incomplete form coverage visible,
 and gives bounded procedural prompts. It does not certify intellectual completion.
 
 **Entry validity.** Apply the existing contextual refusals to malformed calls,
-stale targets, unsupported bytes and exceeded limits. Structured material citations
-must identify captured material and an admissible range. When an explicitly
-verbatim quote is supplied, its bytes must match that range. Refuse a mutation
+stale targets, unsupported bytes and exceeded limits. Structured citations must
+identify captured material or the captured question body, and an admissible
+range. When an explicitly verbatim quote is supplied, its bytes must match that
+range. Refuse a mutation
 with an invalid locator or mismatching quote, naming the defect, actual effect
 and ordinary correction route. A validation refusal creates no answer element;
 preserve the attempted call under the raw-capture contract. Recording or storage
@@ -648,10 +679,11 @@ give at most one procedural reminder across the audit, if allowance remains:
 > If you intend to submit it, use prepare and confirm its handle with submit.
 
 The reminder permits the ordinary next response without demanding immediate
-submission or another conclusion. Another unsubmitted stop ends the placement
-under the existing rules. Continuing the audit does not reset the reminder's
-allowance. Provider failures, interrupted calls and hard limits are different
-events, not occasions to issue this reminder indiscriminately.
+submission or another conclusion. Another unsubmitted stop is an ordinary
+ending: no further run follows, and close seals the recorded selection.
+Continuing a dead placement does not reset the reminder's allowance. Provider
+failures, interrupted calls and hard limits are different events, not occasions
+to issue this reminder indiscriminately.
 
 Give at most one factual near-limit notice across the audit, tied to a configured
 threshold and the allowance Stewart actually accounts for. State the remaining
@@ -726,7 +758,10 @@ the retrieved bytes independently.
 
 **Status answers with distinct facts.** `status REF` gives one short headline
 and separately identifies the observed run, recorded answer seal and its actor,
-delivery verification and location, and closure. The JSON presentation preserves
+delivery verification and location, and closure. The headline leads with the
+facts a manager tracks, in order: commission accepted, auditor launched, answer
+sealed and by whom, delivery verified and confirmed, audit closed. Diagnostics
+and next actions follow it. The JSON presentation preserves
 the same distinctions and diagnostics. A process ending does not establish a
 submission; a seal does not establish delivery; delivery does not close the
 audit. An empty recorded selection is not the auditor's claim of "nothing found."
@@ -866,7 +901,10 @@ identity, exact entry/version, manager preparation, auditor preparation, prepare
 member read and seal reference. They may have readable prefixes, but callers do
 not construct, parse, increment or retarget them. Validate audit/store identity,
 purpose and version on every use. A handle is neither a filesystem path nor a
-new host-owner authentication mechanism.
+new host-owner authentication mechanism. The manager's audit reference carries
+the archive's location and identity with the audit identity, so it works from
+any directory without configuration. Stewart verifies both on every use and
+never treats the reference as a path to records.
 
 The exact entry handle is the edit operand; displayed entry ID/version/revision
 help orientation. Display names and equal content never identify edits or retries.
@@ -987,7 +1025,15 @@ identities are distinct; a matching digest does not imply a supported writer or
 authorize execution of recorded code. Verify the pinned arrangement before use.
 Unsupported writers/records retain their diagnostics; no silent upgrade, fallback
 to current definitions, invocation of recorded code or cross-writer takeover.
-The spec must define the supported writer population and refusal/handoff route.
+
+**One writer per audit.** The exact binary that created a reference, identified
+by its SHA-256, is the only writer for that audit. Another binary, including a
+later release, may read supported receipt and status records but refuses every
+mutation, including run and close, naming the recorded binary. The receipt's run
+line names that binary's recorded path. Managers keep it until its audits close;
+an upgrade neither continues nor closes older audits. This was chosen over a
+format-compatibility class for simplicity, accepting that an upgrade can leave
+open audits waiting for their original binary.
 
 The frozen Python implementation remains available under its own bundled manual
 and existing custody rules until retirement. It is not a successor reference
