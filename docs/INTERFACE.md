@@ -83,7 +83,7 @@ only, never an audit or an answer. The envelope's keys, in this order:
 | `reason` | refused, failed | Stable identifier (Appendix A). Tests assert on it. |
 | `message` | refused, failed | One or two plain sentences: what Stewart could not do and why. |
 | `effects` | always | Operation-specific facts (1.4), on completed replies too. |
-| `retained` | manager refused or failed | Archive locations holding attempts, partials and diagnostics: every location this invocation created and kept, such as a capture attempt, a preparation directory, a seal manifest, a delivery plan or package, and its diagnostic when that was written. |
+| `retained` | manager refused or failed | Archive locations holding attempts, partials and diagnostics: every location this invocation created and kept, each directory it created (a capture attempt, a preparation, a run directory, a delivery package) and each file it created in a directory it did not create (an entry payload, a seal manifest, a delivery plan, its diagnostic when that was written); and, on `log_damaged`, the log directory. Log records and stage files are not listed: the log holds the records, and status reports a stage file without its record as an interrupted publication (4.3). |
 | `causes` | failed, or `effects.diagnostic` is `reported_only` | The original cause first, then any reporting failure. |
 | `next` | always | Supported next calls, each with an explanation (1.5). May be empty. |
 | `data` | completed; refused or failed when useful | Operation data, such as the current entry handle on a stale target. |

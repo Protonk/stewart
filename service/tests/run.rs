@@ -1595,7 +1595,13 @@ fn an_ending_that_cannot_be_recorded_fails_with_its_cause_and_locations() {
     let retained = common::strs(j, &["retained"]);
     let dir = e.audit_dir(&r);
     assert!(retained.contains(&format!("{dir}/runs/1")), "{retained:?}");
-    assert!(retained.contains(&format!("{dir}/stage")), "{retained:?}");
+    // The unpublished record's stage file is reported by status, not listed.
+    assert!(
+        !retained
+            .iter()
+            .any(|x| x.starts_with(&format!("{dir}/stage"))),
+        "{retained:?}"
+    );
     assert!(
         retained
             .iter()

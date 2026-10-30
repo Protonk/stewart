@@ -316,9 +316,9 @@ fn reconcile(audit: &Audit, state: &LogState, run: u64, started_n: u64) -> Resul
             "record_failed",
             format!("The ending of placement {run}, whose process is gone, could not be recorded; no run was started."),
         )
-        .cause(c)
-        // The failed publication's stage file stays in stage/ as evidence.
-        .retain(audit.abs("stage")),
+        // The failed publication's stage file stays in stage/; status reports
+        // it as an interrupted publication, so `retained` does not list it.
+        .cause(c),
     })
 }
 
@@ -581,18 +581,15 @@ pub fn run(reference: &str) -> Reply {
                 "record_failed",
                 "run_started could not be recorded, so no placement started.",
             )
-            .cause(c)
-            .retain(audit.abs("stage"));
+            .cause(c);
             return refuse(&audit, f, Some(&state));
         }
         Err(PubErr::Uncertain { n, cause }) => {
             let mut reply = Fail::failed(
                 "record_failed",
-                "run_started was linked but its durability could not be confirmed; the run did not continue.",
+                format!("run_started was linked as log/{n}.json but its durability could not be confirmed; the run did not continue."),
             )
             .cause(cause)
-            .retain(audit.abs(&format!("log/{n}.json")))
-            .retain(audit.abs("stage"))
             .next(status_next(&audit))
             .into_reply(
                 OP,
@@ -801,9 +798,9 @@ fn finish(audit: &Audit, world: &World, run: u64, started_n: u64, e: Ended) -> R
                     e.ending.as_str()
                 ),
             )
-            .cause(cause)
-            // The unrecorded ending's stage file stays in stage/.
-            .retain(audit.abs("stage"));
+            // The unrecorded ending's stage file stays in stage/, where
+            // status reports it; `retained` lists only created locations.
+            .cause(cause);
             let mut reply = kept
                 .iter()
                 .fold(reply, |f, k| f.retain(k.clone()))
