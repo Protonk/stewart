@@ -759,18 +759,6 @@ fn talk<S: Read + Write>(
     });
 }
 
-/// A test build's request timeout: whole seconds, 1–600 (Appendix C).
-#[cfg(feature = "fault-injection")]
-pub fn parse_test_timeout(v: &str) -> Result<Duration, String> {
-    let ok = !v.is_empty() && v.len() <= 3 && v.bytes().all(|c| c.is_ascii_digit());
-    match v.parse::<u64>() {
-        Ok(n) if ok && (1..=600).contains(&n) => Ok(Duration::from_secs(n)),
-        _ => Err(format!(
-            "the test request timeout {v:?} is not a whole number of seconds from 1 to 600"
-        )),
-    }
-}
-
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
@@ -1270,16 +1258,6 @@ pub(crate) mod tests {
         assert!(Client::new(route.clone(), t.clone(), "k", "v", Duration::ZERO).is_err());
         assert!(Client::new(route, t, "k", "v", REQUEST_TIMEOUT).is_ok());
         assert_eq!(REQUEST_TIMEOUT, Duration::from_secs(600));
-    }
-
-    #[cfg(feature = "fault-injection")]
-    #[test]
-    fn test_timeout_values() {
-        assert_eq!(parse_test_timeout("1").unwrap(), Duration::from_secs(1));
-        assert_eq!(parse_test_timeout("600").unwrap(), Duration::from_secs(600));
-        for bad in ["0", "601", "", "-1", "1.5", " 5", "0005"] {
-            assert!(parse_test_timeout(bad).is_err(), "{bad}");
-        }
     }
 
     /// Bind a loopback listener, or `None` when this environment forbids it

@@ -103,7 +103,11 @@ Commands
       Read-only facts: accepted, launched, sealed, delivered, closed, with the
       evidence behind them and the supported next calls.
   stewart run REF [--json]
-      Place the auditor (needs ANTHROPIC_API_KEY and the network).
+      Place the auditor, in the foreground until the placement ends. Needs
+      ANTHROPIC_API_KEY and the network; STEWART_PROVIDER_URL (https://, or
+      http:// to a loopback host) and HTTPS_PROXY (http://host:port) are
+      optional. An interrupted run exits 5; run again to continue under the
+      same cumulative limits.
   stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--json]
       End the reference. See: stewart help close.
 

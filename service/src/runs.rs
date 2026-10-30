@@ -298,6 +298,62 @@ pub fn parse_request_capture(bytes: &[u8]) -> RequestCapture {
     }
 }
 
+/// The appended messages of a complete request capture: the bytes between
+/// its header's `"appended":[` and the final `]}` and LF.
+pub fn request_appended(bytes: &[u8]) -> Option<&[u8]> {
+    let RequestCapture::Complete(h) = parse_request_capture(bytes) else {
+        return None;
+    };
+    let prefix = format!(
+        "{{\"request\":{},\"max_tokens\":{},\"body_bytes\":{},\"body_sha256\":\"{}\",\"appended\":[",
+        h.request, h.max_tokens, h.body_bytes, h.body_sha256
+    );
+    let rest = bytes.strip_prefix(prefix.as_bytes())?;
+    rest.strip_suffix(b"]}\n")
+}
+
+/// Rebuild the body of the last of `captures` (requests 1…k of a placement,
+/// in order) from the arrangement's pinned bytes and every capture's
+/// appended messages, and check it against that capture's length and digest
+/// (4.5). A reader holding the captures can show what each request sent.
+pub fn rebuild_body(
+    model: &[u8],
+    system: &[u8],
+    tools: &[u8],
+    extra: &[&[u8]],
+    captures: &[&[u8]],
+) -> Result<Vec<u8>, String> {
+    let mut appended = Vec::with_capacity(captures.len());
+    let mut last = None;
+    for (i, c) in captures.iter().enumerate() {
+        let k = i as u64 + 1;
+        let h = match parse_request_capture(c) {
+            RequestCapture::Complete(h) => h,
+            RequestCapture::CutOff => return Err(format!("request capture {k} was cut off")),
+            RequestCapture::Unreadable => {
+                return Err(format!("request capture {k} is not in Stewart's layout"));
+            }
+        };
+        if h.request != k {
+            return Err(format!("request capture {k} names request {}", h.request));
+        }
+        appended.push(
+            request_appended(c)
+                .ok_or_else(|| format!("request capture {k} is not in Stewart's layout"))?,
+        );
+        last = Some(h);
+    }
+    let last = last.ok_or("there is no request capture")?;
+    let body = request_body(model, last.max_tokens, system, tools, extra, &appended);
+    if body.len() as u64 != last.body_bytes || util::sha256_hex(&body) != last.body_sha256 {
+        return Err(format!(
+            "the rebuilt body of request {} does not match its capture's length and digest",
+            last.request
+        ));
+    }
+    Ok(body)
+}
+
 /// Read `request-<k>.json` tolerantly without reading its messages: only
 /// its header and its last bytes decide what it is.
 pub fn read_request_capture(dir: &Dir, k: u64) -> Result<RequestCapture, ReadError> {

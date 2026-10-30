@@ -3,8 +3,9 @@
 //! The release verifies the provider against the web PKI roots built into it
 //! (`webpki-roots`), with the `ring` provider and rustls's safe default
 //! protocol versions. A test build can add roots from a PEM file
-//! (Appendix C, `STEWART_TEST_TLS_ROOT`); the code that adds them is compiled
-//! only into test builds, so the release has no way to trust anything else.
+//! (Appendix C; `fault::transport` reads it); the code that adds them is
+//! compiled only into test builds, so the release has no way to trust
+//! anything else.
 
 use std::sync::Arc;
 
@@ -64,42 +65,6 @@ fn web_roots() -> RootCertStore {
     RootCertStore {
         roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
     }
-}
-
-/// Largest test root file accepted (Appendix C).
-#[cfg(feature = "fault-injection")]
-pub const TEST_ROOT_FILE_LIMIT: u64 = 1024 * 1024;
-
-/// Read a test build's extra roots: an absolute path to a PEM file of at most
-/// 1 MiB holding one or more certificates. A missing, unreadable, oversized or
-/// certificate-free file is an error, which `run` reports before any request
-/// (`test_tls_root_invalid`).
-#[cfg(feature = "fault-injection")]
-pub fn load_test_roots(path: &std::path::Path) -> Result<Vec<CertificateDer<'static>>, String> {
-    use std::io::Read;
-    if !path.is_absolute() {
-        return Err(format!(
-            "the test root file {} is not an absolute path",
-            path.display()
-        ));
-    }
-    let f = std::fs::File::open(path).map_err(|e| {
-        format!(
-            "the test root file {} cannot be opened: {e}",
-            path.display()
-        )
-    })?;
-    let mut bytes = Vec::new();
-    f.take(TEST_ROOT_FILE_LIMIT + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|e| format!("the test root file {} cannot be read: {e}", path.display()))?;
-    if bytes.len() as u64 > TEST_ROOT_FILE_LIMIT {
-        return Err(format!(
-            "the test root file {} is larger than 1 MiB",
-            path.display()
-        ));
-    }
-    pem_certificates(&bytes).map_err(|e| format!("the test root file {}: {e}", path.display()))
 }
 
 /// The certificates of a PEM text, in order. Sections of other kinds are
@@ -186,38 +151,5 @@ pub(crate) mod tests {
                 .unwrap_err()
                 .contains("not usable")
         );
-    }
-
-    #[cfg(feature = "fault-injection")]
-    #[test]
-    fn test_root_files() {
-        let dir = std::env::temp_dir().join(format!("stewart-tls-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let good = dir.join("roots.pem");
-        std::fs::write(&good, CA_PEM).unwrap();
-        assert_eq!(load_test_roots(&good).unwrap().len(), 1);
-        assert!(
-            load_test_roots(std::path::Path::new("roots.pem"))
-                .unwrap_err()
-                .contains("absolute")
-        );
-        assert!(
-            load_test_roots(&dir.join("missing.pem"))
-                .unwrap_err()
-                .contains("cannot be opened")
-        );
-        let empty = dir.join("empty.pem");
-        std::fs::write(&empty, b"no pem here\n").unwrap();
-        assert!(
-            load_test_roots(&empty)
-                .unwrap_err()
-                .contains("no certificate")
-        );
-        let big = dir.join("big.pem");
-        let mut b = CA_PEM.to_vec();
-        b.resize(TEST_ROOT_FILE_LIMIT as usize + 1, b'\n');
-        std::fs::write(&big, &b).unwrap();
-        assert!(load_test_roots(&big).unwrap_err().contains("1 MiB"));
-        let _ = std::fs::remove_dir_all(&dir);
     }
 }

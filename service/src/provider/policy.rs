@@ -6,7 +6,10 @@
 //! watching for close are the loop's.
 
 use crate::provider::response::StopReason;
+use crate::provider::transport::Written;
 use crate::provider::{Cause, Ending, Outcome};
+use crate::runs::ReportedUsage;
+use crate::usage::Charge;
 
 /// HTTP statuses retried (6.6).
 pub const RETRYABLE_STATUSES: [u16; 7] = [408, 429, 500, 502, 503, 504, 529];
@@ -42,31 +45,41 @@ impl RetryPolicy {
     }
 }
 
-/// A test build's retry delays: three comma-separated whole numbers of
-/// milliseconds, each 0–30,000 (Appendix C).
-#[cfg(feature = "fault-injection")]
-pub fn parse_test_delays(v: &str) -> Result<[u64; 3], String> {
-    let bad = || {
-        format!(
-            "the test retry delays {v:?} are not three comma-separated milliseconds from 0 to 30000"
-        )
-    };
-    let parts: Vec<&str> = v.split(',').collect();
-    if parts.len() != 3 {
-        return Err(bad());
-    }
-    let mut out = [0u64; 3];
-    for (slot, p) in out.iter_mut().zip(parts) {
-        if p.is_empty() || p.len() > 5 || !p.bytes().all(|c| c.is_ascii_digit()) {
-            return Err(bad());
+/// The charge for an attempt (6.4's table). `usage` is the decoded
+/// message's report, present for `response`:
+///
+/// - `response`: reported, one turn, input plus both cache counts, output;
+/// - `response_undecodable`, `connection_lost`; and `timeout`,
+///   `aborted_by_close` and `aborted_by_signal` once any request byte was
+///   written: estimated, one turn, the request's `max_tokens` output tokens
+///   and ceil(body bytes / 3) input tokens;
+/// - `http_error`, `connection_failed`, and the others when no request byte
+///   was written: none.
+pub fn charge(
+    outcome: Outcome,
+    written: Written,
+    usage: Option<&ReportedUsage>,
+    body_bytes: u64,
+    max_tokens: u64,
+) -> Charge {
+    let estimated = Charge::estimated(max_tokens, body_bytes);
+    match outcome {
+        Outcome::Response => match usage {
+            Some(u) => u.charge(),
+            // A response always carries its decoded usage; without it the
+            // request may still have been processed, so it is estimated.
+            None => estimated,
+        },
+        Outcome::ResponseUndecodable | Outcome::ConnectionLost => estimated,
+        Outcome::Timeout | Outcome::AbortedByClose | Outcome::AbortedBySignal => {
+            if written == Written::None {
+                Charge::NONE
+            } else {
+                estimated
+            }
         }
-        let n: u64 = p.parse().map_err(|_| bad())?;
-        if n > 30_000 {
-            return Err(bad());
-        }
-        *slot = n;
+        Outcome::HttpError | Outcome::ConnectionFailed => Charge::NONE,
     }
-    Ok(out)
 }
 
 /// The `retry-after` header's first value as whole seconds, when it is a
@@ -222,6 +235,53 @@ mod tests {
     const UNAVAILABLE: Then = Then::End(Ending::Interrupted(Cause::ProviderUnavailable));
 
     #[test]
+    fn charges_follow_the_table() {
+        use crate::usage::Basis;
+        let u = ReportedUsage {
+            input_tokens: 100,
+            cache_creation_input_tokens: 20,
+            cache_read_input_tokens: 3,
+            output_tokens: 40,
+        };
+        let reported = Charge {
+            basis: Basis::Reported,
+            turns: 1,
+            input_tokens: 123,
+            output_tokens: 40,
+        };
+        // ceil(10 / 3) = 4.
+        let estimated = Charge {
+            basis: Basis::Estimated,
+            turns: 1,
+            input_tokens: 4,
+            output_tokens: 16_000,
+        };
+        assert_eq!(
+            charge(Outcome::Response, Written::Complete, Some(&u), 10, 16_000),
+            reported
+        );
+        for o in [Outcome::ResponseUndecodable, Outcome::ConnectionLost] {
+            for w in [Written::Partial, Written::Complete] {
+                assert_eq!(charge(o, w, None, 10, 16_000), estimated, "{o:?}");
+            }
+        }
+        for o in [
+            Outcome::Timeout,
+            Outcome::AbortedByClose,
+            Outcome::AbortedBySignal,
+        ] {
+            assert_eq!(charge(o, Written::Partial, None, 10, 16_000), estimated);
+            assert_eq!(charge(o, Written::Complete, None, 10, 16_000), estimated);
+            assert_eq!(charge(o, Written::None, None, 10, 16_000), Charge::NONE);
+        }
+        for o in [Outcome::HttpError, Outcome::ConnectionFailed] {
+            for w in [Written::None, Written::Partial, Written::Complete] {
+                assert_eq!(charge(o, w, None, 10, 16_000), Charge::NONE, "{o:?}");
+            }
+        }
+    }
+
+    #[test]
     fn retry_after_parsing() {
         assert_eq!(retry_after_seconds(&ra(&["5"])), Some(5));
         assert_eq!(retry_after_seconds(&ra(&["0"])), Some(0));
@@ -335,24 +395,6 @@ mod tests {
             decide(Outcome::HttpError, Some(503), &ra(&["2"]), 1, &p),
             Then::Retry { delay_ms: 2_000 }
         );
-    }
-
-    #[cfg(feature = "fault-injection")]
-    #[test]
-    fn test_delay_values() {
-        assert_eq!(parse_test_delays("0,10,30000").unwrap(), [0, 10, 30_000]);
-        for bad in [
-            "",
-            "1,2",
-            "1,2,3,4",
-            "1,2,30001",
-            "1, 2,3",
-            "a,b,c",
-            "-1,2,3",
-            "1,,3",
-        ] {
-            assert!(parse_test_delays(bad).is_err(), "{bad}");
-        }
     }
 
     #[test]

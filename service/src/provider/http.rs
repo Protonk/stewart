@@ -12,12 +12,12 @@
 
 use std::io::{self, Read, Write};
 
-use crate::json::J;
 use crate::provider::StopCause;
 use crate::provider::url::Endpoint;
+use crate::runs::{self, Headers};
 
-/// Most body bytes captured and decoded (Appendix B).
-pub const BODY_LIMIT: usize = 32 * 1024 * 1024;
+/// Most body bytes captured and decoded (Appendix B): `runs::RESPONSE_LIMIT`.
+pub const BODY_LIMIT: usize = runs::RESPONSE_LIMIT as usize;
 /// Most bytes of a response head (status line and header lines). A longer
 /// head is malformed; nothing in 6.1 needs more.
 pub const HEAD_LIMIT: usize = 256 * 1024;
@@ -40,58 +40,6 @@ pub fn request_head(
     .into_bytes()
 }
 
-/// The headers an attempt record keeps (4.5): for each name, the values
-/// received in the final response head, in order.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct RecordedHeaders {
-    pub content_type: Vec<String>,
-    pub request_id: Vec<String>,
-    pub retry_after: Vec<String>,
-}
-
-impl RecordedHeaders {
-    /// `{"content-type":[…],"request-id":[…],"retry-after":[…]}`.
-    pub fn to_j(&self) -> J {
-        let strs = |v: &[String]| J::Arr(v.iter().map(|s| J::Str(s.clone())).collect());
-        J::obj()
-            .with("content-type", strs(&self.content_type))
-            .with("request-id", strs(&self.request_id))
-            .with("retry-after", strs(&self.retry_after))
-    }
-
-    fn take(&mut self, name: &str, raw: &[u8]) {
-        let slot = match name {
-            "content-type" => &mut self.content_type,
-            "request-id" => &mut self.request_id,
-            "retry-after" => &mut self.retry_after,
-            _ => return,
-        };
-        slot.push(record_value(raw));
-    }
-}
-
-/// A header value as recorded: leading and trailing spaces and tabs removed,
-/// and each byte outside 0x20–0x7E written `%XX` in upper-case hex.
-pub fn record_value(raw: &[u8]) -> String {
-    let start = raw
-        .iter()
-        .position(|c| *c != b' ' && *c != b'\t')
-        .unwrap_or(raw.len());
-    let end = raw
-        .iter()
-        .rposition(|c| *c != b' ' && *c != b'\t')
-        .map_or(start, |i| i + 1);
-    let mut s = String::with_capacity(end - start);
-    for &c in &raw[start..end] {
-        if (0x20..=0x7E).contains(&c) {
-            s.push(c as char);
-        } else {
-            s.push_str(&format!("%{c:02X}"));
-        }
-    }
-    s
-}
-
 /// How the body ended.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BodyEnd {
@@ -107,10 +55,13 @@ pub enum BodyEnd {
 }
 
 /// A response whose status line was received.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Reply {
     pub status: u16,
-    pub headers: RecordedHeaders,
+    /// `content-type`, `request-id` and `retry-after` from the final head,
+    /// matched without regard to case, each value as `runs::header_value`
+    /// records it, in order.
+    pub headers: Headers,
     /// Why the body's codings make it undecodable: a `content-encoding` other
     /// than `identity`, or a transfer coding other than `chunked`.
     pub coding: Option<String>,
@@ -347,7 +298,7 @@ pub(crate) fn read_response<R: Read + ?Sized>(
         };
         let mut reply = Reply {
             status,
-            headers: RecordedHeaders::default(),
+            headers: Headers::default(),
             coding: None,
             body: Vec::new(),
             end: BodyEnd::Complete,
@@ -399,10 +350,16 @@ pub(crate) fn read_response<R: Read + ?Sized>(
     }
 }
 
-fn recorded(fields: &[(String, Vec<u8>)]) -> RecordedHeaders {
-    let mut h = RecordedHeaders::default();
+fn recorded(fields: &[(String, Vec<u8>)]) -> Headers {
+    let mut h = Headers::default();
     for (name, v) in fields {
-        h.take(name, v);
+        let slot = match name.as_str() {
+            "content-type" => &mut h.content_type,
+            "request-id" => &mut h.request_id,
+            "retry-after" => &mut h.retry_after,
+            _ => continue,
+        };
+        slot.push(runs::header_value(v));
     }
     h
 }
@@ -851,25 +808,6 @@ pub(crate) mod tests {
         assert_eq!(h.request_id, ["req_1"]);
         assert_eq!(h.retry_after, ["5", "7"]);
         assert_eq!(h.content_type, ["application/json folded part"]);
-        assert_eq!(
-            h.to_j().string(),
-            r#"{"content-type":["application/json folded part"],"request-id":["req_1"],"retry-after":["5","7"]}"#
-        );
-        assert_eq!(
-            RecordedHeaders::default().to_j().string(),
-            r#"{"content-type":[],"request-id":[],"retry-after":[]}"#
-        );
-    }
-
-    #[test]
-    fn recorded_values_escape_bytes_outside_visible_ascii() {
-        assert_eq!(
-            record_value(b" \tA b\x7f\xc3\xa9\x01% \t"),
-            "A b%7F%C3%A9%01%"
-        );
-        assert_eq!(record_value(b"   "), "");
-        assert_eq!(record_value(b""), "");
-        assert_eq!(record_value(b"x\ty"), "x%09y");
     }
 
     #[test]

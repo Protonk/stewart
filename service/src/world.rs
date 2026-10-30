@@ -8,10 +8,10 @@
 //! the preparation folder and never from a path opened again later.
 
 use crate::archive::{Audit, RECORD_LIMIT};
-use crate::forms::{self, Pinned};
 use crate::fsx::{Dir, ReadError};
 use crate::json::J;
 use crate::log::{Body, LogState};
+use crate::provider::request::{Pinned, decode_arrangement};
 use crate::records;
 use crate::util;
 use sha2::{Digest, Sha256};
@@ -217,7 +217,7 @@ pub fn load(audit: &Audit, state: &LogState) -> Result<World, Vec<ItemProblem>> 
                         format!("{arr_rel} does not match its recorded SHA-256"),
                     ))
                 }
-                Ok(()) => forms::decode_arrangement(&bytes)
+                Ok(()) => decode_arrangement(&bytes)
                     .map(|p| (p, r.manifest.arrangement_sha256.clone()))
                     .map_err(|e| ItemProblem::new("arrangement", format!("{arr_rel}: {e}"))),
             }
