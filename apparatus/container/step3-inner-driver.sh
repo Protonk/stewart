@@ -36,7 +36,8 @@ fi
 echo "${EMULATION:-none}" >/out/emulation.txt
 
 mkdir -p /work/driver /work/tmp /work/run || exit 1
-tar -xf /in/source.tar -C /work/driver apparatus/driver/stewart_driver.py || exit 1
+# The driver is several modules plus test data (apparatus/driver/); extract all of it.
+tar -xf /in/source.tar -C /work/driver apparatus/driver || exit 1
 if ! id -u stewartdrv >/dev/null 2>&1; then
     if command -v useradd >/dev/null 2>&1; then
         rec user-add useradd -u 1000 -M -d /work/tmp -s /bin/sh stewartdrv
