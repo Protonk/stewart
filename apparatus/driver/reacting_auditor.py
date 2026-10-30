@@ -729,8 +729,12 @@ class ReactingAuditor:
         if d.get("materials") != {"count": len(self.materials), "bytes": sum(len(b) for b in self.materials.values())}:
             self.anomaly("reentry.materials", d.get("materials"))
         want = self.expected_allowances(ex)
-        if want is not None and d.get("allowances") != want:
-            self.anomaly("reentry.allowances", {"expected": want, "got": d.get("allowances")})
+        if want is None:
+            self.event("allowances not compared", reason="no provider or limits")
+        else:
+            self.event("allowances compared", run=(d.get("run") or {}).get("number"), ok=d.get("allowances") == want)
+            if d.get("allowances") != want:
+                self.anomaly("reentry.allowances", {"expected": want, "got": d.get("allowances")})
         nu = d.get("notices_used") or {}
         if self.reminders_seen and nu.get("reminder") is not True:
             self.anomaly("reentry.notices-used.reminder", nu)

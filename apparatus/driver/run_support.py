@@ -78,6 +78,11 @@ class ProviderFixture:
         self.provider.charge_overrides = {}
         self.provider.extra_charges = {}
         self.responder = responder
+        # A responder that judges allowances and notices (the reacting auditor) needs the fake's
+        # charges; give it this provider unless it already has one. Without it those
+        # comparisons would be skipped silently.
+        if hasattr(responder, "provider") and getattr(responder, "provider") is None:
+            responder.provider = self.provider
         self.cert, self.proxy_refuse, self.url_port = cert, proxy_refuse, url_port
         self.listeners = []
         self.proxy = None
@@ -796,6 +801,21 @@ def _selftest_harness():
     out.append(("harness.checks-pass", not bad and len(t.checks) > 50, bad[:3]))
     out.append(("harness.protocol-timings", len(t.protocol_timings) > 5 and all(x["ms"] >= 0 for x in t.protocol_timings),
                 t.protocol_timings[:3]))
+    # The fixture gives a reacting auditor its fake, so allowance and notice checks run.
+    import tempfile
+    import reacting_auditor as ra
+    root = tempfile.mkdtemp(prefix="stewart-driver-wire-")
+    try:
+        q, mats = ra._scenario_material()
+        aud = ra.ReactingAuditor([], question=q, materials=mats,
+                                 limits={"turns": 1, "input_tokens": 1, "output_tokens": 1})
+        fx = ProviderFixture(_StubT(root), aud, mode="http").start()
+        fx.stop()
+        out.append(("harness.auditor-gets-provider", aud.provider is fx.provider))
+    except Skip as exc:
+        out.append(("harness.auditor-gets-provider", None, "skipped: %s" % exc))
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
     for fault, prefix in (("body_whitespace", ".spliced"), ("extra_header", ".header-names"),
                           ("extra_tool", ".tools"), ("drop_history", ".prefix")):
         _, _, t = _harness_round((fault,))

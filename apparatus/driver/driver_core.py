@@ -1287,7 +1287,12 @@ class T:
         # Protocol-call timings measured by the fake provider (C9): dicts with tool, ms, gated.
         self.protocol_timings = []
         self.writer = binary["path"]
-        self.faults = self.mkdir("faults")
+        # Each command given a fault gets its own fault directory under faults/ (fault_dir): a
+        # pause point pauses once per process, and a .paused or .go file left by an earlier
+        # process must never be seen by a later one (Appendix C.1).
+        self.faults_base = self.mkdir("faults")
+        self.faults = self.faults_base
+        self.fault_seq = 0
         self.home = self.fresh_dir("home")
         self.cwd = self.fresh_dir("cwd")
         self.tmp = self.fresh_dir("tmp")
@@ -1444,7 +1449,7 @@ class T:
             env["STEWART_TEST_SABOTAGE"] = self.sabotage
         if fault:
             env["STEWART_TEST_FAULT"] = fault
-            env["STEWART_TEST_FAULT_DIR"] = self.faults
+            env["STEWART_TEST_FAULT_DIR"] = self.fault_dir()
         for k, v in (extra or {}).items():
             if v is None:
                 env.pop(k, None)
@@ -1543,15 +1548,26 @@ class T:
             self.expect(rep, expect, reason, prefix or h["name"])
         return rep
 
+    def fault_dir(self):
+        """A new, empty fault directory for one process; it also becomes self.faults."""
+        self.fault_seq += 1
+        d = os.path.join(self.faults_base, "f%03d" % self.fault_seq)
+        os.makedirs(d)
+        self.faults = d
+        return d
+
     def wait_paused(self, point, h=None, timeout=30.0):
-        """Wait until a pause fault created <point...>.paused; return its stem."""
+        """Wait until a pause fault created <point...>.paused in the fault directory of the
+        background handle h (else the most recent one); return the stem as an absolute path,
+        which release() takes."""
+        fdir = (h or {}).get("env", {}).get("STEWART_TEST_FAULT_DIR") or self.faults
         deadline = time.time() + timeout
         while time.time() < deadline:
-            for name in sorted(os.listdir(self.faults)):
+            for name in sorted(os.listdir(fdir)):
                 if name.endswith(".paused") and name.startswith(point):
                     stem = name[:-len(".paused")]
-                    if not os.path.exists(os.path.join(self.faults, stem + ".go")):
-                        return stem
+                    if not os.path.exists(os.path.join(fdir, stem + ".go")):
+                        return os.path.join(fdir, stem)
             if h is not None and not h["proc"].running():
                 self.check("fault.%s.paused" % point, False, "process exited before pausing")
                 return None
@@ -1560,6 +1576,8 @@ class T:
         return None
 
     def release(self, stem):
+        """Create <stem>.go for a stem from wait_paused (absolute; a bare name is taken in
+        the most recent fault directory)."""
         if stem:
             with open(os.path.join(self.faults, stem + ".go"), "wb"):
                 pass

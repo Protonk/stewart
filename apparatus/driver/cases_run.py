@@ -807,16 +807,20 @@ def c_edits(t):
       "kills while appending, before the seal link and after it: only complete records count",
       mode="test", needs=("loopback", "lock"),
       linux_reason="interruption is observed through the free OFD lock, a Linux-only expectation",
-      controls=[Control("torn_as_entry", [r"^int\.torn\.status-entries$", r"^auditor\."])])
+      controls=[Control("torn_as_entry", [r"^int\.(torn|unlinked)\.status-entries$",
+                                          r"^int\.unlinked\.(reentry-empty|selection-recorded)$", r"^auditor\."])])
 def c_interruptions(t):
-    """stage.torn:entry=kill leaves a torn stage file and no entry: status (interrupted) counts
-    no entry and reports the interrupted publication; run continues and the reacting auditor
-    adds each goal once. log.publish:seal=kill dies before the seal: status shows no seal; run
+    """stage.torn:entry=kill leaves a half-written stage file and no entry; log.publish:entry=kill
+    leaves a complete, decodable entry stage file that was never linked. In both, status
+    (interrupted) counts no entry and reports the interrupted publication, and in the
+    continuation re-entry shows no entry, so the reacting auditor adds each goal once; every
+    entry of the sealed answer has its entry record in the log (an unlinked stage file is never
+    an element, 4.3). log.publish:seal=kill dies before the seal: status shows no seal; run
     continues and the auditor seals. seal.after_link=kill dies after it: status shows the
     auditor seal undelivered, and run refuses authoring_ended (ended_by seal) with effects
     run ended, seal existing."""
-    for label, fault in (("torn", "stage.torn:entry=kill"), ("pre-seal", "log.publish:seal=kill"),
-                         ("post-seal", "seal.after_link=kill")):
+    for label, fault in (("torn", "stage.torn:entry=kill"), ("unlinked", "log.publish:entry=kill"),
+                         ("pre-seal", "log.publish:seal=kill"), ("post-seal", "seal.after_link=kill")):
         pre = "int." + label
         sub = run_submission(t)
         aud = auditor_for(t, sub, scenario_goals(sub))
@@ -824,7 +828,7 @@ def c_interruptions(t):
         rs.run(t, sub, fx, name=pre + ".run-1", fault=fault, killed=True)
         st = t.status(sub, name=pre + ".status")
         hl = st.data.get("headline") or {}
-        if label == "torn":
+        if label in ("torn", "unlinked"):
             t.eq(pre + ".no-entry-record", len(rs.entry_bodies(t, sub)), 0)
             t.eq(pre + ".condition", st.data.get("condition"), "interrupted")
             t.eq(pre + ".status-entries", (st.data.get("answer") or {}).get("entries"), 0)
@@ -849,6 +853,18 @@ def c_interruptions(t):
                            seal_actor="auditor", delivery_outcome="verified")
         rs.check_auditor(t, aud, pre)
         rs.check_run_ended_usage(t, sub, fx, [pre + ".run-1", pre + ".run-2"], pre)
+        if label in ("torn", "unlinked"):
+            seen = [e.get("entries") for e in aud.events
+                    if e["event"] == "re-entry identified entries" and e["conversation"] == 2]
+            t.eq(pre + ".reentry-empty", seen[:1], [{}])
+            recorded = {(b.get("id"), b.get("version")) for b in rs.entry_bodies(t, sub) if b.get("id")}
+            data = answer_of(t, r2, pre)
+            try:
+                sel = [(e.get("id"), e.get("version")) for e in json.loads(data.decode("utf-8")).get("entries", [])]
+            except (ValueError, AttributeError):
+                sel = None
+            t.check(pre + ".selection-recorded", sel is not None and all(x in recorded for x in sel),
+                    {"selection": sel, "entry_records": sorted(recorded)})
 
 
 @case("c3.submit-races-close", ["C3", "C8", "C5"],
@@ -1429,7 +1445,8 @@ def c_run_refusals(t):
       "kills during a request, while a result is written and between turns: the continuation finishes once",
       mode="test", needs=("loopback", "lock"),
       linux_reason="interruption is observed through the free OFD lock, a Linux-only expectation",
-      controls=[Control("reset_limits_on_continuation", [r"^c13\.cont\..*\.allowances$", r"^auditor\.reentry\.allowances$"]),
+      controls=[Control("reset_limits_on_continuation", [r"^c13\.cont\..*\.allowances$", r"^auditor\.reentry\.allowances$",
+                                                         r"^c13\.cont\..*\.auditor-clean$"]),
                 Control("fresh_ledger_on_continuation", [r"^auditor\.", r"^c13\.cont\..*\.(same-answer|auditor-clean)$"])])
 def c_continuation(t):
     """A reference audit seals the reacting auditor's goals. Three more are killed at
@@ -1462,6 +1479,10 @@ def c_continuation(t):
         rs.check_run_reply(t, r2, sub, pre + ".run-2", ending="sealed", run_number=2, fx=fx, limits=rs.limits_of(sub),
                            seal_actor="auditor", delivery_outcome="verified")
         rs.check_auditor(t, aud, pre)
+        # The continuation's re-entry must have been compared with the fake's cumulative charges
+        # (the killed request's estimate included); a reset to placement-2 usage fails there.
+        cmp2 = [e for e in aud.events if e["event"] == "allowances compared" and e["conversation"] == 2]
+        t.check(pre + ".reentry-allowances-compared", bool(cmp2), [e for e in aud.events if "allowances" in e["event"]])
         second = fx.exchanges_of(pre + ".run-2")
         if first and second:
             a, b = first[0].body_node(), second[0].body_node()
