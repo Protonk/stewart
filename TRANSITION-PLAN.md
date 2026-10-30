@@ -5,8 +5,9 @@ machine-interface rules and commissioned consolidation and retirement of review
 exhaust. The extraction is committed and the superseded material is removed.
 That closure commissions no model runs or runtime implementation by itself.
 
-**Current commission (2026-10-29): steps 1–6, the local scripted build.** Its
-endpoint is the first integrated end-to-end audit against the fake provider.
+**Commission of 2026-10-29: steps 1–6, the local scripted build; completed
+2026-10-30** (evidence below). Its endpoint was the first integrated
+end-to-end audit against the fake provider.
 No model-consuming run is included. The coordinator's shell sandbox cannot reach
 Apple `container` (its Rosetta check is denied), so the coordinator prepares
 container commands and scripts and the user runs them with `!`.
@@ -99,7 +100,21 @@ what the control breaks. All fixed by `dc85948` (the driver's reacting
 auditor had been skipping its allowance comparison in every case, found
 through the unfired continuation control); native check of `dc85948`: every
 service test passes, driver 95/95 runnable cases, 61 controls fired, exit 0.
-Second milestone run: `.scratch/acceptance-02`, in progress.
+Steps 4–6 milestone met by `.scratch/acceptance-02` (source `dc85948`,
+2026-10-30): `failures=0`. Every apparatus check and control passed on both
+architectures; driver self-test 246/246 on both. aarch64 native: 110/110
+cases, all 66 sabotage control variants fired (every one of the 62 Appendix
+C.2 controls), 8/8 driver controls, timing gate passed (worst 2.0 ms).
+x86_64 under Rosetta: 108/108 cases, 66/66 and 8/8, timings reported only
+(worst 40 ms). The integrated end-to-end audit (`e2e.reacting-audit`: prepare,
+commission, a reacting fake auditor working through the run, submit and seal,
+verified delivery, close) passed 764/764 checks on the release binary of each
+architecture. Release binaries: aarch64
+`5b3c40b802a9a03c71691d7dbee1c39ad81cd54b4c1290ba57d4706725dcb46d`, x86_64
+`c30ff785d7c0e6ac7d1b91dd3fa9cbeec7fe1795ab1e21d5e2e1666aefd7e6d6`. This is
+the endpoint of the current commission (steps 1–6, no model spend). Next
+steps (7: whole-suite qualification and the WSL handoff; 8: real-model
+conformance with a named budget) need a new commission.
 
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
