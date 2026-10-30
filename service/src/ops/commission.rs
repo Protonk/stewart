@@ -49,6 +49,12 @@ pub fn run(reference: &str, handle: &str, affirmed: bool) -> Reply {
     if let Err(f) = audit.require_mutation() {
         return f.into_reply(OP, eff(acceptance_now, "none"));
     }
+    #[cfg(feature = "sabotage")]
+    if crate::sabotage!("commission_over_network") {
+        if let Err(f) = super::sabotage_reach_provider() {
+            return f.into_reply(OP, eff(acceptance_now, "none"));
+        }
+    }
     let mut reply = commission(&audit, handle, affirmed, state);
     audit.diagnose(
         &mut reply,
@@ -81,10 +87,7 @@ fn accepted_data(
             "materials",
             J::obj().with("count", count).with("bytes", bytes),
         )
-        .with(
-            "run_line",
-            json::strs(&audit.argv(&["run", &audit.reference])),
-        )
+        .with("run_line", super::run_line(audit))
         .with("run_needs", super::run_needs())
         .with(
             "receipt_line",

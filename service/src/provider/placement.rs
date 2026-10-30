@@ -825,6 +825,9 @@ impl State<'_, '_> {
                 source: "commissioned",
             },
             retries_losses_of: None,
+            // A stop signal after the seal ends the delivery attempt
+            // `failed` with cause `signal`; the placement still ends `sealed`.
+            stop: Some(live.flags.signalled.clone()),
         };
         let d = delivery::deliver(live.audit, &state, &request);
         let outcome = d

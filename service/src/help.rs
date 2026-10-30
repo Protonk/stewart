@@ -250,35 +250,66 @@ case-sensitive, and an incomplete search never reports absence.
 
 fn close() -> String {
     "\
+stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR]
+
 Close is available in every state. It is one algorithm: repeating it resumes from
-the recorded state. It never removes anything and leaves your folder alone.
+the recorded state, so after a lost reply you simply run it again, from any
+directory. It never removes anything: not at a destination, not in the archive
+and not in your folder. --surrender is accepted only with --confirm, and
+--destination only without it.
 
 Before launch (no run has started):
   Close records the request, waits up to 10 s for a commission that is capturing,
   records the end of any intake whose process is gone, and records the reference
   as closed, saying whether a commission had been accepted. No answer, seal or
-  confirmation is created, and no run can start afterwards.
-  If the intake is still running after 10 s: unfinished, intake_still_running.
-  Run close again.
+  confirmation is created, and no run can start afterwards. --confirm,
+  --surrender and --destination are refused: nothing is owed for delivery.
 
-After launch:
-  Stop    Close records its request; a run notices and stops. If a run still
-          holds the audit after 30 s: unfinished, run_still_held. Run close again.
-  Seal    An auditor's seal is kept. Otherwise close seals the recorded answer
-          with manager attribution; an unreadable entry becomes a named,
-          unproduced member.
-  Deliver Close delivers the sealed return to the commissioned destination, or
-          presents a delivery that already verified. A partial or failed
-          delivery leaves close unfinished (delivery_incomplete); continue with
-          close, or close --destination DIR for a replacement destination.
-  Confirm A delivery close produced must be confirmed:
-          close REF --confirm TOKEN (status shows the token). A delivery that
-          verified before you first asked to close needs no confirmation.
-  Surrender  If members could not be produced, confirmation also needs
-          --surrender LOSS for each named loss.
+After launch, in order:
+  Stop     Close records its request, which ends authoring; a run notices it
+           and stops. A seal alone never counts as a stopped run.
+  Seal     An existing seal is kept, whoever made it. Otherwise close seals the
+           answer recorded when you asked to close, attributed to you, the
+           manager, never to the auditor. An entry whose bytes cannot be read
+           or verified becomes a named, unproduced member, and so does the
+           rendering that depends on it.
+  Deliver  Close delivers the sealed return into a fresh package at the
+           destination, or presents a delivery that already verified. Each
+           attempt uses a new package; earlier attempts stay where they are.
+  Confirm  A delivery that verified before you first asked to close is placed
+           by the ordinary close itself. A delivery close produced, or one with
+           losses, waits for close REF --confirm TOKEN; status shows the token.
+           Confirming places the copy; it does not accept the answer.
+  Surrender  When the delivery has losses (members that could not be produced
+           or supplied), --confirm also needs --surrender LOSS naming each one,
+           so you give each up explicitly. Status lists the loss IDs. A closure
+           with surrendered losses is never a complete delivery.
 
-Other unfinished reasons: close_in_progress (another close holds the audit) and
-log_damaged (close publishes nothing to a damaged log; restore your storage).
+Unfinished closes and how to continue (the reply's unfinished_reason):
+  intake_still_running   A commission still holds the reference after 10 s.
+                         Run close again.
+  run_still_held         A run still holds the audit after 30 s; the reply names
+                         its holder. Run close again once it has stopped.
+  close_in_progress      Another close holds the audit. Run close again.
+  delivery_incomplete    No delivery attempt verified. Run close again to retry
+                         at the last destination, or, after an attempt that
+                         was partial or failed, close REF --destination DIR to
+                         deliver to another existing directory. A destination
+                         is never replaced after a delivery verified.
+  awaiting_confirmation  A delivery verified and needs your confirmation:
+                         close REF --confirm TOKEN, with --surrender LOSS for
+                         each loss. Repeating close without the token only
+                         presents the same delivery again.
+  log_damaged            The audit log is damaged; close publishes nothing to
+                         it. Status names the bad records; restore your own
+                         storage, or start a new reference.
+
+When the seal's manifest cannot be read, membership is unknown: delivery fails,
+no loss IDs exist and close stays unfinished. Unknown membership is never
+treated as an empty answer.
+
+Closed (closure complete): repeating close returns the recorded outcome with
+already_closed true. The receipt stays readable through status.
 "
     .to_string()
 }

@@ -276,10 +276,7 @@ pub fn run(reference: &str, verify: bool) -> Reply {
                 .with("archive", audit.archive.path.as_str())
                 .with("location", audit.abs(&format!("intake/{}", r.attempt))),
         )
-        .with(
-            "run_line",
-            json::strs(&audit.argv(&["run", &audit.reference])),
-        )
+        .with("run_line", super::run_line(&audit))
         .with("run_needs", super::run_needs())
         .with("items", J::Arr(item_js));
     let verification = if verify {

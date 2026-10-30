@@ -255,13 +255,22 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             )?;
             a.exactly(1, "REF")?;
             let r = a.positionals[0].clone();
+            let confirm = a.value("--confirm");
+            let surrender = a.all("--surrender");
             let destination = a.value("--destination");
-            if let Some(d) = &destination {
-                absolute("DIR", d)?;
+            // A surrender is part of a confirmation, and a replacement
+            // destination serves only a delivery still owed. Whether DIR is an
+            // existing absolute directory is close's refusal
+            // (destination_invalid), checked against the records.
+            if !surrender.is_empty() && confirm.is_none() {
+                return Err(usage("--surrender is accepted only with --confirm"));
+            }
+            if destination.is_some() && confirm.is_some() {
+                return Err(usage("--destination is accepted only without --confirm"));
             }
             let flags = ops::close::Flags {
-                confirm: a.value("--confirm"),
-                surrender: a.all("--surrender"),
+                confirm,
+                surrender,
                 destination,
             };
             Ok(Plan::Reply {

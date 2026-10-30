@@ -404,12 +404,16 @@ macro_rules! fault {
     };
 }
 
-/// `fault_corrupt!("point")`: whether to alter the bytes just written.
+/// `fault_corrupt!("point")` or `fault_corrupt!("point", arg)`: whether to
+/// alter the bytes just written.
 #[cfg(feature = "fault-injection")]
 #[macro_export]
 macro_rules! fault_corrupt {
     ($point:expr) => {
         $crate::fault::points::corrupt($point, None)
+    };
+    ($point:expr, $arg:expr) => {
+        $crate::fault::points::corrupt($point, Some($arg))
     };
 }
 
@@ -417,6 +421,9 @@ macro_rules! fault_corrupt {
 #[macro_export]
 macro_rules! fault_corrupt {
     ($point:expr) => {
+        false
+    };
+    ($point:expr, $arg:expr) => {
         false
     };
 }
