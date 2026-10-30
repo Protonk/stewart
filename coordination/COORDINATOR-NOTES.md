@@ -1,4 +1,8 @@
 # Unfinished work
 
-No active workers or uncertain operations. The commission, its progress and the
-step 2 evidence are recorded in TRANSITION-PLAN.md. Step 3 awaits the user's go.
+Step 3 workers (no commits; coordinator integrates):
+- implementation worker owns `service/` (except `service/vendor`);
+- driver worker owns `apparatus/driver/`, `apparatus/step3.sh`,
+  `apparatus/container/step3-*` and a new step 3 section in `apparatus/README.md`.
+The frozen test-build protocol (fault points, sabotage names) is in both briefs;
+change it only through the coordinator.

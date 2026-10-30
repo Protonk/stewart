@@ -27,6 +27,15 @@ Neither requests a program interpreter, and both ran in their toolchain image an
 in alpine. The run had no firing controls for its static and reproducibility
 checks; the step 3 driver adds them (a glibc build must fail the static check).
 
+Working arrangement from step 3 on (agreed 2026-10-30): the coordinator iterates
+natively on the development Mac with the vendored crates, with small
+development-only fallbacks for the Linux-only calls. The user runs one Linux
+container suite per milestone; only that suite counts as evidence. The
+implementation (`service/`) and the independent driver (`apparatus/driver/`) are
+written separately from the spec, and the driver's author does not read the
+implementation. Test builds use the `fault-injection` and `sabotage` features;
+the release binary contains neither.
+
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
 [ACCEPTANCE.md](ACCEPTANCE.md). This is the only active development plan. No

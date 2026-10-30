@@ -1591,3 +1591,64 @@ effects state what is known). Notices: `section_unfilled`, `answer_empty`,
 | Near-limit threshold | 20% remaining |
 | Front matter limits | turns 1–10,000; input 1–2×10⁹; output 1–2×10⁸ |
 | Scaffold defaults | 200 turns; 20,000,000 input; 400,000 output |
+
+## Appendix C. Test builds
+
+Acceptance needs deterministic failure points and sabotage controls (ACCEPTANCE,
+"Rules every check follows"). They exist only in a test build, compiled with
+the cargo features `fault-injection` and `sabotage` and named `stewart-test`.
+The release binary is built without them and contains neither the code nor the
+environment variable names below; the suite checks this against the test build
+as its firing control.
+
+### C.1 Fault points
+
+`STEWART_TEST_FAULT` holds comma-separated `point=action` items. A point may take
+one argument after a colon. Actions:
+
+| Action | Effect at the point |
+| --- | --- |
+| `kill` | The process sends itself SIGKILL |
+| `eio`, `enospc`, `epipe` | The operation at the point fails with that error |
+| `corrupt` | The bytes just written are altered by one bit after writing and before verification |
+| `pause` | The process creates `$STEWART_TEST_FAULT_DIR/<point>.paused` exclusively, then waits until `<point>.go` exists there (polling every 10 ms; after 60 s it aborts) |
+
+Points for the manager foundation (more are added with later operations):
+
+| Point | Where |
+| --- | --- |
+| `prepare.before_prepared_link` | After prepare's records are written, before `prepared` is linked |
+| `commission.after_capture:<k>` | After the k-th capture file (1-based) is written and synced |
+| `commission.source_read:<name>` | Reading the source file with that public name |
+| `commission.capture_write` | Writing any capture file |
+| `commission.capture_corrupt` | After writing a capture file (use with `corrupt`) |
+| `commission.receipt_write` | Writing the attempt's receipt |
+| `commission.before_accepted_link` | Before `accepted` is linked |
+| `commission.accepted_dirsync` | Syncing the log directory after linking `accepted` |
+| `commission.after_accepted_link` | After `accepted` is published, before the reply |
+| `log.publish:<kind>` | Immediately before linking a log record of that kind |
+| `close.before_closed_link` | Before `closed` is linked |
+| `diag.write` | Writing any diagnostic record |
+| `reply.write` | Writing the reply to stdout |
+
+### C.2 Sabotage controls
+
+`STEWART_TEST_SABOTAGE` names one control. Each breaks exactly one property, so
+the check for that property must fail.
+
+| Name | Broken property |
+| --- | --- |
+| `accept_without_affirmation` | Commission accepts without `--i-am-finished` (C11) |
+| `accept_changed_source` | Commission skips the digest comparison and final rescan (C11, C17) |
+| `skip_hidden_entries` | The scan omits names beginning with `.` (C19) |
+| `normalize_newlines` | Captures convert CRLF to LF (C2, C19) |
+| `follow_symlinks` | The scan follows symlinks instead of refusing them (C19) |
+| `readback_live_source` | `receipt --read` reads the preparation folder instead of the capture (C15) |
+| `regenerate_arrangement` | `receipt --read arrangement` regenerates the arrangement instead of returning the pinned bytes (C15, C19) |
+| `rewrite_record_in_place` | Publishing a log record overwrites an existing name (C6) |
+| `remove_partial_on_retry` | A new intake attempt removes the previous attempt's captures (C6, C17) |
+| `unknown_as_absent` | An unreadable log is treated as acceptance absent (C17) |
+| `select_newer_store` | A store identifier mismatch is ignored (C18) |
+| `accept_unknown_field` | Unknown front matter keys are ignored (C20) |
+| `omit_effects_on_refusal` | Refusals omit `effects` (C9, C20) |
+| `whole_from_one_member` | `receipt --verify` reports the whole commission verified after one member verifies (C15) |
