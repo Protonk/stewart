@@ -116,6 +116,50 @@ the endpoint of the current commission (steps 1–6, no model spend). Next
 steps (7: whole-suite qualification and the WSL handoff; 8: real-model
 conformance with a named budget) need a new commission.
 
+## Not done, and why (2026-10-30)
+
+The steps 1–6 commission ended at its endpoint. Nothing below is in progress;
+each item needs the decision or commission named.
+
+- **Opus effort default: decided, not implemented.** The user decided at the
+  end of the commission that requests to Opus models should carry effort
+  `high` by default. Today the arrangement pins `request_extra` as `{}` and the
+  release allowlist is empty (INTERFACE 6.2), so requests set no effort and
+  Opus 5.5 runs at its API default, `medium`. Implementing it changes the
+  pinned arrangement bytes and the request shape: INTERFACE 6.2 (allowlist and
+  how the arrangement pins effort per model), the arrangement and its readable
+  form, the driver's request witness (C1), and a container suite run. It was
+  decided after the milestone and is the first change for whoever builds the
+  real-model apparatus.
+- **Step 7, qualification and the WSL2 handoff: not commissioned.** The whole
+  scripted suite already passes on both Linux architectures
+  (`.scratch/acceptance-02`). Still owed: a claim-by-claim check of the driver
+  plan (apparatus/README.md, "Driver plan") against ACCEPTANCE for anything not
+  covered, the binary/driver/fake-provider handoff for native WSL2, and the
+  user's WSL run, which is an external dependency.
+- **Step 8, real-model conformance: not commissioned.** Needs named models,
+  settings (including the effort default above) and an explicit budget before
+  any model-consuming run. The release's TLS path to the real provider with its
+  built-in web PKI roots has not been exercised: the scripted tier reaches TLS
+  and the CONNECT proxy only through the test build's extra trust root.
+  `max_tokens_per_request` (16,000) and the 600 s timeout are pinned but
+  unqualified against real responses.
+- **Step 9, retiring Python: not started**, by design (it follows step 8).
+- **Fat-LTO `getrandom`: unexplained, worked around.** In the fat-LTO static
+  musl release build, musl's `getrandom` was absent from the linked binary and
+  calls to it misbehaved; Stewart calls the raw syscall instead
+  (`service/src/platform.rs`). A reproduction and evidence for an upstream
+  report are in `.scratch/fat-lto-getrandom-01/REPORT.md`. Other libc wrappers
+  used today work in every build tested; that is evidence about those
+  functions, not a guarantee.
+- **Decisions made during the build that a reviewer may revisit** (reported to
+  the user, not contested): damaged commissioned material refuses `run`
+  (`commission_damaged`) rather than running with that material refused;
+  members damaged after the seal become surrenderable delivery-stage losses,
+  and a later close retries them if they verify again.
+- **Development setting on the user's machine:** loopback listening was
+  enabled for native iteration. The container suite does not need it.
+
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
 [ACCEPTANCE.md](ACCEPTANCE.md). This is the only active development plan. No

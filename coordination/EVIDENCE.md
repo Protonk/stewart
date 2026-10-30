@@ -25,6 +25,8 @@ stays with that report under the retention rules.
 | `opus-intake-01/`, `opus-readiness-01/`, `opus-turnover-run-012/`, `astra-turnover-20261027-01/`, `coordinator-intake-run-012/`, `coordinator-transfer-guidance-01/`, `first-leg-riker-brief-01/` | This index (earlier intakes and turnovers) |
 | `custody-shakedown-01/`, `custody-concern-routing-01/`, `interaction-simplifications-01/`, `manager-return-direction-01/`, `manager-collect-discussion-01/`, `manager-collect-authority-01/`, `return-completeness-01/`, `authoring-boundary-01/`, `commission-recall-plan-01/`, `forward-program/` | This index (earlier decision records) |
 | `coordinator-intake-20261026-01.json`, `coordinator-intake-recording-01.json`, `coordinator-discussion-20261026-01.json` | This index |
+| `apparatus-01/`, `step3-01/`, `step3-02/`, `step3-03/`, `diag-linux-01/`, `diag-linux-02/`, `diag-linux-03/`, `acceptance-01/`, `acceptance-02/` | [TRANSITION-PLAN.md](../TRANSITION-PLAN.md): the step 2–6 container runs and Linux diagnostics it cites |
+| `fat-lto-getrandom-01/` | Its `REPORT.md`: the fat-LTO `getrandom` reproduction and evidence |
 | `submission-prototype-01/` | [submission-design-01/RESULT.md](submission-design-01/RESULT.md) |
 | `opus-preparation-audit-01/` | [reports/opus-preparation-audit-2026-10-27/RESULT.md](../reports/opus-preparation-audit-2026-10-27/RESULT.md) |
 | `commission-intake-01/` | [reports/commission-self-audit-2026-10-27/RESULT.md](../reports/commission-self-audit-2026-10-27/RESULT.md) |
