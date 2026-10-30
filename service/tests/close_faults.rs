@@ -550,3 +550,82 @@ fn a_close_that_fails_right_after_its_request_says_only_that() {
     assert_eq!(s(&j, &["effects", "closure"]), "unfinished");
     assert!(e.log_kinds(r).contains(&"run_ended".to_string()));
 }
+
+/// Start `close REF --json` with a pause armed in `faults`.
+fn close_paused(e: &Env, r: &str, fault: &str, faults: &str) -> std::process::Child {
+    std::process::Command::new(bin())
+        .args(["close", r, "--json"])
+        .current_dir(&e.cwd)
+        .env("STEWART_TEST_FAULT", fault)
+        .env("STEWART_TEST_FAULT_DIR", faults)
+        .env_remove("STEWART_TEST_SABOTAGE")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap()
+}
+
+#[test]
+fn a_stale_pause_file_aborts_instead_of_continuing_unpaused() {
+    let e = Env::new();
+    let (r, _) = e.prepared(&[("a", b"a")]);
+    let faults = e.path("faults");
+    std::fs::create_dir(&faults).unwrap();
+    let point = "log.publish:close_requested";
+    // A file left by an earlier process: the pause cannot be observed.
+    let stale = format!("{faults}/{point}.paused");
+    std::fs::write(&stale, b"").unwrap();
+    let out = close_paused(&e, &r, &format!("{point}=pause"), &faults)
+        .wait_with_output()
+        .unwrap();
+    assert!(out.status.code().is_none(), "the process aborts");
+    assert!(out.stdout.is_empty());
+    let err = String::from_utf8_lossy(&out.stderr);
+    assert!(err.contains(&stale), "{err}");
+    assert_eq!(
+        e.log_kinds(&r),
+        ["reference", "prepared"],
+        "it did not continue"
+    );
+
+    // With a directory free of the point's files, the same call pauses.
+    let fresh = e.path("faults-fresh");
+    std::fs::create_dir(&fresh).unwrap();
+    let child = close_paused(&e, &r, &format!("{point}=pause"), &fresh);
+    wait_for_file(&format!("{fresh}/{point}.paused"));
+    assert_eq!(
+        e.log_kinds(&r),
+        ["reference", "prepared"],
+        "paused before the link"
+    );
+    std::fs::write(format!("{fresh}/{point}.go"), b"").unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let j = stewart::json::parse(&out.stdout).unwrap();
+    assert_eq!(s(&j, &["data", "closure"]), "complete");
+}
+
+#[test]
+fn a_point_pauses_once_per_process() {
+    // `log.publish` without an argument matches both records close publishes
+    // before launch; only the first hit pauses, and the second continues
+    // although its `.paused` file exists, because this process created it.
+    let e = Env::new();
+    let (r, _) = e.prepared(&[("a", b"a")]);
+    let faults = e.path("faults");
+    std::fs::create_dir(&faults).unwrap();
+    let child = close_paused(&e, &r, "log.publish=pause", &faults);
+    wait_for_file(&format!("{faults}/log.publish.paused"));
+    std::fs::write(format!("{faults}/log.publish.go"), b"").unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(
+        e.log_kinds(&r),
+        ["reference", "prepared", "close_requested", "closed"]
+    );
+}

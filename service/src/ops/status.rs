@@ -906,7 +906,22 @@ pub fn run(reference: &str) -> Reply {
                 .with("output_tokens", one(limits.output_tokens))
         }
         Some(limits) => {
-            let (used, problems) = crate::runs::cumulative_usage(&audit, &state);
+            // A placement without its ending is live while it holds the
+            // lock: only its attempt records count, since a request in
+            // flight is charged when its attempt ends. Once the lock is free
+            // its process is gone, and the in-flight estimate that
+            // reconciliation will record is added (6.4). When the lock
+            // cannot be tested, only the records are counted and the
+            // diagnostics say so.
+            let open = state.latest_placement().is_some_and(|p| p.ended.is_none());
+            if open && v.lock == Lock::Unknown {
+                diagnostics.push(J::obj().with("record", archive::LOCK_FILE).with(
+                    "cause",
+                    "allowances count the open placement's attempt records only: whether its process is gone cannot be established, so no estimate for a request in flight is added",
+                ));
+            }
+            let live = v.lock != Lock::Free;
+            let (used, problems) = crate::runs::cumulative_usage(&audit, &state, live);
             for p in problems {
                 diagnostics.push(J::obj().with("record", "runs").with(
                     "cause",

@@ -995,8 +995,12 @@ pub struct Account {
     pub requests: u64,
     /// Attempt records.
     pub attempts: u64,
-    /// The charges of the attempt records, plus one estimated attempt for
-    /// each complete request capture whose latest attempt has no record.
+    /// The charges of the attempt records only: the usage of a live
+    /// placement, whose request in flight is charged when its attempt ends.
+    pub recorded: Usage,
+    /// `recorded` plus one estimated attempt for each complete request
+    /// capture whose latest attempt has no record: the usage of a placement
+    /// whose process is gone, exactly what reconciliation records.
     pub usage: Usage,
     /// The last readable attempt record in (request, attempt) order.
     pub last: Option<ProviderAttempt>,
@@ -1023,15 +1027,28 @@ impl Account {
 }
 
 /// The audit's cumulative usage (5.6, 6.4): every `run_ended` usage plus
-/// the accounting of each placement that has none. The second value lists
-/// what could not be read, so a caller can report the figure as uncertain.
-pub fn cumulative_usage(audit: &Audit, state: &crate::log::LogState) -> (Usage, Vec<String>) {
+/// the accounting of each placement that has none. `live` says the latest
+/// placement, if it has no `run_ended`, holds the active lock: it is then
+/// counted by its attempt records only. Any other placement without an
+/// ending has a process that is gone, and its in-flight estimate is added.
+/// The second value lists what could not be read, so a caller can report
+/// the figure as uncertain.
+pub fn cumulative_usage(
+    audit: &Audit,
+    state: &crate::log::LogState,
+    live: bool,
+) -> (Usage, Vec<String>) {
     let mut used = state.recorded_usage();
     let mut problems = Vec::new();
+    let latest = state.latest_placement().map(|p| p.run);
     for p in state.placements().iter().filter(|p| p.ended.is_none()) {
         match account(audit, p.run) {
             Ok(a) => {
-                used.add(&a.usage);
+                if live && Some(p.run) == latest {
+                    used.add(&a.recorded);
+                } else {
+                    used.add(&a.usage);
+                }
                 problems.extend(a.problems);
             }
             Err(e) => problems.push(e),
@@ -1085,6 +1102,7 @@ pub fn account(audit: &Audit, run: u64) -> Result<Account, String> {
         for &(_, a) in l.attempts.iter().filter(|(kk, _)| *kk == k) {
             match read_attempt(audit, &dir, k, a) {
                 Ok(p) => {
+                    acc.recorded.charge(&p.charged);
                     acc.usage.charge(&p.charged);
                     seen.written |= p.request_written != "none";
                     latest_recorded_then = Some(p.then.clone());
@@ -1095,9 +1113,11 @@ pub fn account(audit: &Audit, run: u64) -> Result<Account, String> {
                         .push(format!("{}/{}: {e}", dir_name(run), attempt_name(k, a)));
                     seen.unreadable_attempt = true;
                     latest_recorded_then = None;
+                    // The record exists but its charge cannot be known.
                     if let Some(h) = &header {
-                        acc.usage
-                            .charge(&Charge::estimated(h.max_tokens, h.body_bytes));
+                        let c = Charge::estimated(h.max_tokens, h.body_bytes);
+                        acc.recorded.charge(&c);
+                        acc.usage.charge(&c);
                     }
                 }
             }
@@ -1332,6 +1352,20 @@ mod tests {
         assert_eq!(acc.usage.input_tokens.reported, 120);
         assert_eq!(acc.usage.input_tokens.estimated, 11, "ceil(31 / 3)");
         assert_eq!(acc.usage.output_tokens.estimated, 5000);
+        // While the placement is live, only its records count: the retry of
+        // request 2 is in flight and is charged when its attempt ends.
+        assert_eq!(acc.recorded.turns.reported, 1);
+        assert_eq!(acc.recorded.turns.estimated, 0);
+        assert_eq!(acc.recorded.input_tokens.reported, 120);
+        assert_eq!(acc.recorded.input_tokens.estimated, 0);
+        assert_eq!(acc.recorded.output_tokens.estimated, 0);
+        assert_eq!(
+            (
+                acc.recorded.output_tokens.reported,
+                acc.usage.output_tokens.reported
+            ),
+            (7, 7)
+        );
         assert_eq!(
             acc.last.as_ref().map(|a| (a.request, a.attempt)),
             Some((2, 1))

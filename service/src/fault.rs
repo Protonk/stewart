@@ -228,9 +228,17 @@ pub mod points {
 
     /// Create `$STEWART_TEST_FAULT_DIR/<point>.paused` exclusively, then wait
     /// until `<point>.go` exists there, polling every 10 ms. After 60 s the
-    /// process aborts. A point pauses once per process: a second hit finds
-    /// its `.paused` file taken and continues.
+    /// process aborts. A point pauses once per process: a later hit of a
+    /// point this process already paused at continues. A `.paused` file this
+    /// process did not create is stale, left by an earlier process: the
+    /// process names it and aborts rather than continue unpaused, which
+    /// would silently defeat the synchronization a test relies on.
     fn pause(spec: &str) {
+        static PAUSED: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+        let mut done = PAUSED.lock().unwrap_or_else(|e| e.into_inner());
+        if done.iter().any(|s| s == spec) {
+            return;
+        }
         let Ok(dir) = std::env::var("STEWART_TEST_FAULT_DIR") else {
             eprintln!("stewart-test: pause at {spec} needs STEWART_TEST_FAULT_DIR; aborting");
             std::process::abort();
@@ -242,8 +250,14 @@ pub mod points {
             .create_new(true)
             .open(&paused)
         {
-            Ok(_) => {}
-            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => return,
+            Ok(_) => done.push(spec.to_string()),
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {
+                eprintln!(
+                    "stewart-test: {} already exists, so the pause at {spec} cannot be observed; use a fault directory without this point's files; aborting",
+                    paused.display()
+                );
+                std::process::abort();
+            }
             Err(e) => {
                 eprintln!(
                     "stewart-test: cannot create {}: {e}; aborting",
@@ -252,6 +266,8 @@ pub mod points {
                 std::process::abort();
             }
         }
+        // Another thread may pause at another point meanwhile.
+        drop(done);
         let start = std::time::Instant::now();
         while !go.exists() {
             if start.elapsed() > std::time::Duration::from_secs(60) {

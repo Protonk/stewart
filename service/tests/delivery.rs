@@ -968,3 +968,82 @@ fn close_and_status_change_only_by_addition() {
         );
     }
 }
+
+/// The allowances of one quantity in a status reply: used, reported,
+/// estimated.
+fn allowance(j: &Json, k: &str) -> (u64, u64, u64) {
+    let f = |part: &str| {
+        at(j, &["data", "allowances", k, part])
+            .as_u64()
+            .unwrap_or_else(|| panic!("{k}.{part}"))
+    };
+    (f("used"), f("reported"), f("estimated"))
+}
+
+#[test]
+fn status_counts_a_live_placement_by_its_records_and_a_gone_one_with_its_estimate() {
+    let e = Env::new();
+    let r = accepted(&e);
+    let a = open(&r);
+    start_run(&a, 1);
+    // One completed turn, then request 2 captured and in flight.
+    record_turn(&a, 1, 1, 1_000, 50);
+    capture_request(&a, 1, 2, 16_000, 3_000);
+
+    // Run A is live: it holds the lock from its own open file description.
+    let (ready_tx, ready_rx) = std::sync::mpsc::channel::<()>();
+    let (release_tx, release_rx) = std::sync::mpsc::channel::<()>();
+    let r2 = r.clone();
+    let h = std::thread::spawn(move || {
+        let a = open(&r2);
+        let lock = a.try_lock().unwrap().expect("free");
+        ready_tx.send(()).unwrap();
+        release_rx.recv().unwrap();
+        drop(lock);
+    });
+    ready_rx.recv().unwrap();
+    let j = status(&e, &r);
+    assert_eq!(s(&j, &["data", "condition"]), "run_active");
+    // The request in flight is charged when its attempt ends.
+    assert_eq!(allowance(&j, "turns"), (1, 1, 0));
+    assert_eq!(allowance(&j, "input_tokens"), (1_000, 1_000, 0));
+    assert_eq!(allowance(&j, "output_tokens"), (50, 50, 0));
+
+    // Its process is gone (the lock is free and run_ended is missing): the
+    // in-flight request is estimated, as reconciliation will record it.
+    release_tx.send(()).unwrap();
+    h.join().unwrap();
+    let gone = status(&e, &r);
+    assert_eq!(s(&gone, &["data", "condition"]), "interrupted");
+    assert_eq!(allowance(&gone, "turns"), (2, 1, 1));
+    assert_eq!(allowance(&gone, "input_tokens"), (2_000, 1_000, 1_000));
+    assert_eq!(allowance(&gone, "output_tokens"), (16_050, 50, 16_000));
+
+    // Reconciliation records exactly those figures, and status then reads
+    // the same totals from run_ended.
+    close(&e, &r, &[]);
+    let kinds = e.log_kinds(&r);
+    let n = kinds.iter().position(|k| k == "run_ended").unwrap() + 1;
+    let ended = e.log_record(&r, n);
+    assert_eq!(s(&ended, &["body", "cause"]), "process_gone");
+    let u = |k: &str, part: &str| at(&ended, &["body", "usage", k, part]).as_u64().unwrap();
+    assert_eq!((u("turns", "reported"), u("turns", "estimated")), (1, 1));
+    assert_eq!(
+        (
+            u("input_tokens", "reported"),
+            u("input_tokens", "estimated")
+        ),
+        (1_000, 1_000)
+    );
+    assert_eq!(
+        (
+            u("output_tokens", "reported"),
+            u("output_tokens", "estimated")
+        ),
+        (50, 16_000)
+    );
+    let after = status(&e, &r);
+    for k in ["turns", "input_tokens", "output_tokens"] {
+        assert_eq!(allowance(&after, k), allowance(&gone, k), "{k}");
+    }
+}
