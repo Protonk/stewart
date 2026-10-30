@@ -358,7 +358,12 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
     }
     let idir = match intake_root.open_dir(&attempt.to_string()) {
         Ok(d) => d,
-        Err(e) => return capture_dir_failed(audit, &e),
+        Err(e) => {
+            // The attempt's directory was claimed and stays: it is retained.
+            let mut r = capture_dir_failed(audit, &e);
+            r.retained.push(audit.abs(&format!("intake/{attempt}")));
+            return r;
+        }
     };
     let attempt_path = audit.abs(&format!("intake/{attempt}"));
 
@@ -445,7 +450,9 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
                 .into_reply(OP, eff(acc, "none"));
         }
         Err(PubErr::Damaged(st)) => {
-            return log::damaged_fail(audit, &st).into_reply(OP, eff("unknown", "none"));
+            return log::damaged_fail(audit, &st)
+                .retain(attempt_path)
+                .into_reply(OP, eff("unknown", "none"));
         }
         Err(PubErr::NotPublished(c)) => {
             return Fail::failed(

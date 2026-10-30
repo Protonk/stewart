@@ -289,7 +289,8 @@ fn a_killed_publication_leaves_an_unlinked_stage_file_not_a_record() {
     );
     let j = o.json();
     assert_eq!(s(&j, &["outcome"]), "failed");
-    assert_eq!(s(&j, &["effects", "closure"]), "unfinished");
+    // This invocation published close_requested and then failed (1.4).
+    assert_eq!(s(&j, &["effects", "closure"]), "requested");
     assert_eq!(
         s(
             &e.run(&["status", &r, "--json"]).json(),

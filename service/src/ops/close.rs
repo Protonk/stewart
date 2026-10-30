@@ -30,8 +30,9 @@ use crate::bodies::{
 use crate::delivery::{self, AttemptView, By, Destination, Request};
 use crate::json::J;
 use crate::log::{self, LogState, PubErr};
-use crate::reply::{Cause, Next, Reply};
+use crate::reply::{Cause, Next, Outcome, Reply};
 use crate::util;
+use std::cell::{Cell, RefCell};
 use std::time::{Duration, Instant};
 
 const OP: &str = "close";
@@ -80,12 +81,86 @@ pub fn run(reference: &str, flags: &Flags) -> Reply {
     if let Err(f) = audit.require_mutation() {
         return f.into_reply(OP, eff_unknown("unknown"));
     }
-    let mut reply = close(&audit, flags);
+    let ctx = Ctx::default();
+    let mut reply = close(&audit, flags, &ctx);
+    ctx.account(&audit, &mut reply);
     audit.diagnose(
         &mut reply,
         J::obj().with("reference", audit.reference.as_str()),
     );
     reply
+}
+
+/// The archive directories whose new entries close attributes to itself:
+/// a preparation of the answer and a seal manifest.
+const CREATED_DIRS: [&str; 2] = ["prepared", "seal"];
+
+/// What one close invocation did that a failed or refused reply must
+/// account for: whether it published `close_requested` (1.4) and which
+/// locations it created and kept (1.3).
+#[derive(Default)]
+struct Ctx {
+    /// This invocation published `close_requested`.
+    requested: Cell<bool>,
+    /// The entries of `CREATED_DIRS` when this close took the active lock.
+    /// Under the lock no run or other close adds to them, so an entry there
+    /// afterwards was created by this invocation.
+    before: RefCell<Option<[Vec<String>; 2]>>,
+    /// The delivery plans and packages this invocation created.
+    delivered: RefCell<Vec<String>>,
+}
+
+fn entries(audit: &Audit, dir: &str) -> Vec<String> {
+    audit
+        .dir
+        .open_dir(dir)
+        .and_then(|d| d.names())
+        .unwrap_or_default()
+}
+
+impl Ctx {
+    /// Note the entries that exist when close takes the active lock.
+    fn snapshot(&self, audit: &Audit) {
+        *self.before.borrow_mut() = Some(CREATED_DIRS.map(|d| entries(audit, d)));
+    }
+
+    /// Every location this invocation created, as absolute paths.
+    fn created(&self, audit: &Audit) -> Vec<String> {
+        let mut out = Vec::new();
+        if let Some(before) = &*self.before.borrow() {
+            for (dir, had) in CREATED_DIRS.iter().zip(before) {
+                for n in entries(audit, dir) {
+                    if !had.contains(&n) {
+                        out.push(audit.abs(&format!("{dir}/{n}")));
+                    }
+                }
+            }
+        }
+        out.extend(self.delivered.borrow().iter().cloned());
+        out
+    }
+
+    /// Account for this invocation in a failed or refused reply: closure is
+    /// `requested` when it published `close_requested` and failed, wherever
+    /// the failure happened (an `unknown` closure stays unknown), and
+    /// `retained` lists every location it created, ahead of the diagnostic
+    /// that `diagnose` adds.
+    fn account(&self, audit: &Audit, reply: &mut Reply) {
+        if reply.outcome == Outcome::Completed {
+            return;
+        }
+        if reply.outcome == Outcome::Failed
+            && self.requested.get()
+            && reply.effect("closure") != Some("unknown")
+        {
+            reply.set_effect("closure", "requested");
+        }
+        for p in self.created(audit) {
+            if !reply.retained.contains(&p) {
+                reply.retained.push(p);
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -247,7 +322,7 @@ fn close_next(audit: &Audit, why: &str) -> Next {
 // ---------------------------------------------------------------------------
 // The algorithm.
 
-fn close(audit: &Audit, flags: &Flags) -> Reply {
+fn close(audit: &Audit, flags: &Flags, ctx: &Ctx) -> Reply {
     let state = log::read(audit);
     // Step 1: a damaged log gets nothing published, so never `closed`.
     if state.damaged() {
@@ -258,9 +333,9 @@ fn close(audit: &Audit, flags: &Flags) -> Reply {
         return closed_reply(audit, &state, c, true, "existing");
     }
     if !state.launched() {
-        return before_launch(audit, flags, &state);
+        return before_launch(audit, flags, &state, ctx);
     }
-    after_launch(audit, flags, state)
+    after_launch(audit, flags, state, ctx)
 }
 
 fn damaged_reply(audit: &Audit, state: &LogState) -> Reply {
@@ -333,8 +408,9 @@ fn closed_reply(
 }
 
 /// Publish `close_requested`, recording this call's options. `Ok(true)`
-/// when this call published it, `Ok(false)` when another close did first.
-fn request_close(audit: &Audit, flags: &Flags) -> Result<bool, Reply> {
+/// when this call published it (noted in `ctx`), `Ok(false)` when another
+/// close did first.
+fn request_close(audit: &Audit, flags: &Flags, ctx: &Ctx) -> Result<bool, Reply> {
     let body = CloseRequested {
         flags: CloseFlags {
             confirm: flags.confirm.clone(),
@@ -350,7 +426,10 @@ fn request_close(audit: &Audit, flags: &Flags) -> Result<bool, Reply> {
         Ok(body.to_j())
     });
     match p {
-        Ok(_) => Ok(true),
+        Ok(_) => {
+            ctx.requested.set(true);
+            Ok(true)
+        }
         Err(PubErr::Refused(_)) => Ok(false),
         Err(PubErr::Damaged(st)) => Err(damaged_reply(audit, &st)),
         Err(PubErr::NotPublished(c)) => Err(Fail::failed(
@@ -411,7 +490,7 @@ fn publication_failure(audit: &Audit, what: &str, e: PubErr, effects: Effects) -
 // ---------------------------------------------------------------------------
 // Before launch.
 
-fn before_launch(audit: &Audit, flags: &Flags, state: &LogState) -> Reply {
+fn before_launch(audit: &Audit, flags: &Flags, state: &LogState, ctx: &Ctx) -> Reply {
     // Nothing is owed for delivery, so the after-launch options have
     // nothing to act on.
     let closure_now = if state.close_requested().is_some() {
@@ -437,7 +516,7 @@ fn before_launch(audit: &Audit, flags: &Flags, state: &LogState) -> Reply {
     }
     // Step 4: record the request. From here no intake may be accepted.
     if state.close_requested().is_none() {
-        if let Err(r) = request_close(audit, flags) {
+        if let Err(r) = request_close(audit, flags, ctx) {
             return r;
         }
         let _ = crate::fault!("close.after_requested");
@@ -448,7 +527,7 @@ fn before_launch(audit: &Audit, flags: &Flags, state: &LogState) -> Reply {
             return damaged_reply(audit, &st);
         }
         if st.launched() {
-            return after_launch(audit, flags, st);
+            return after_launch(audit, flags, st, ctx);
         }
     }
     // Step 5: wait for an intake holding the lock to end.
@@ -913,24 +992,37 @@ enum Stop {
 /// Step 6, stop: wait up to 30 s for a held run to observe
 /// `close_requested` and exit. Only the lock, tested without taking it, is
 /// evidence of a live holder; elapsed time never is.
-fn stop(audit: &Audit) -> Stop {
+///
+/// A run publishes `run_ended` and then releases the lock as it exits, so
+/// for a moment the lock is held while every placement has its ending. Once
+/// close is waiting for a run (`run_open`: a placement had no ending when
+/// this close read the log), that moment is the run exiting, and close
+/// keeps waiting for the release instead of taking the holder for another
+/// close. A held lock with every placement ended, when close waited for no
+/// run, is another close.
+fn stop(audit: &Audit, run_open: bool) -> Stop {
     let start = Instant::now();
     let mut announced = false;
+    let mut waiting_for_run = run_open;
     loop {
         match audit.lock_held() {
             Ok(false) => return Stop::Free,
             Err(e) => return Stop::Unknown(e),
             Ok(true) => {
                 let st = log::read(audit);
-                if st.open_placement().is_none() {
+                let open = st.open_placement().is_some();
+                if !open && !waiting_for_run {
                     return Stop::CloseHeld;
                 }
+                waiting_for_run = true;
                 #[cfg(feature = "sabotage")]
                 if crate::sabotage!("seal_as_stopped") && st.seal().is_some() {
                     return Stop::SealedAsStopped;
                 }
                 if start.elapsed() >= RUN_WAIT {
-                    return Stop::RunHeld;
+                    // Still held: by the run that has not stopped, or, once
+                    // every placement has its ending, by whatever holds it now.
+                    return if open { Stop::RunHeld } else { Stop::CloseHeld };
                 }
                 if !announced {
                     eprintln!(
@@ -1003,7 +1095,7 @@ fn unfinished_after(
     r
 }
 
-fn after_launch(audit: &Audit, flags: &Flags, state: LogState) -> Reply {
+fn after_launch(audit: &Audit, flags: &Flags, state: LogState, ctx: &Ctx) -> Reply {
     // Step 3: options, against the records as they stand.
     let confirmed = match check_options(audit, &state, flags) {
         Ok(c) => c,
@@ -1011,7 +1103,7 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState) -> Reply {
     };
     // Step 4: the request.
     let requested_now = if state.close_requested().is_none() {
-        match request_close(audit, flags) {
+        match request_close(audit, flags, ctx) {
             Ok(b) => b,
             Err(r) => return r,
         }
@@ -1021,17 +1113,15 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState) -> Reply {
     if requested_now {
         let _ = crate::fault!("close.after_requested");
     }
-    // A failure while stopping, locking or reconciling: this call requested
-    // the close and failed before establishing more (1.4), or an earlier
-    // request stands unfinished.
-    let closure_failed = if requested_now {
-        "requested"
-    } else {
-        "unfinished"
-    };
+    // The closure a failed reply states from here on. When this invocation
+    // published the request, `Ctx::account` reports `requested` instead,
+    // wherever the failure happened (1.4).
+    let closure_failed = "unfinished";
 
-    // Stop.
-    match stop(audit) {
+    // Stop. Whether a placement was open is read from the records as they
+    // stood before the request, so a run that ends meanwhile is still one
+    // close waits for.
+    match stop(audit, state.open_placement().is_some()) {
         Stop::Free => {}
         Stop::RunHeld => {
             let st = log::read(audit);
@@ -1114,6 +1204,9 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState) -> Reply {
             );
         }
     };
+    // From here this close is the only writer: what appears in `prepared/`
+    // and `seal/` is its own, for a failed reply's `retained`.
+    ctx.snapshot(audit);
     let st = log::read(audit);
     if let Err(r) = reconcile(
         audit,
@@ -1121,9 +1214,6 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState) -> Reply {
     ) {
         return r;
     }
-    // Stopped and reconciled under the lock: a later failure leaves an
-    // unfinished close with those facts established.
-    let closure_failed = "unfinished";
 
     // Seal.
     let st = log::read(audit);
@@ -1145,6 +1235,7 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState) -> Reply {
     let deliver = |request: Request, made: &mut Vec<u64>| -> Result<(), Reply> {
         let d = delivery::deliver(audit, &log::read(audit), &request);
         made.extend(d.attempts.iter().map(|a| a.attempt));
+        ctx.delivered.borrow_mut().extend(d.created);
         if let Some(cause) = d.stopped {
             return Err(Fail::failed(
                 "record_failed",
@@ -1154,7 +1245,6 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState) -> Reply {
                 ),
             )
             .cause(cause)
-            .retain(audit.abs("delivery"))
             .next(status_next(audit, "Status reports which delivery records exist."))
             .next(close_next(audit, "Close again; it resumes from the recorded state."))
             .into_reply(OP, eff("ended", seal_effect, "unknown", closure_failed)));

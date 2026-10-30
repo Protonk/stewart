@@ -219,6 +219,10 @@ pub struct Delivered {
     /// plan, `delivery_planned` or `delivery_ended` could not be recorded);
     /// effects then state `unknown` where the outcome cannot be established.
     pub stopped: Option<Cause>,
+    /// The absolute paths of every delivery plan and package this invocation
+    /// created, in order, whatever became of their attempts: a failed or
+    /// refused reply lists them in `retained` (1.3).
+    pub created: Vec<String>,
 }
 
 /// Deliver the recorded seal (8.3): claim and write the plan, publish
@@ -236,6 +240,7 @@ pub fn deliver(audit: &Audit, state: &LogState, request: &Request) -> Delivered 
     let mut out = Delivered {
         attempts: Vec::new(),
         stopped: None,
+        created: Vec::new(),
     };
     // The seal never changes once published, so the caller's view of it
     // serves every attempt; everything else is re-read before each attempt.
@@ -253,7 +258,15 @@ pub fn deliver(audit: &Audit, state: &LogState, request: &Request) -> Delivered 
             ));
             return out;
         }
-        match attempt(audit, &now, &seal_name, seal, request, &stop) {
+        match attempt(
+            audit,
+            &now,
+            &seal_name,
+            seal,
+            request,
+            &stop,
+            &mut out.created,
+        ) {
             Step::Ended(view) => {
                 let again = view.outcome.as_deref() == Some("name_taken");
                 out.attempts.push(view);
@@ -310,6 +323,7 @@ fn attempt(
     seal: &SealRec,
     request: &Request,
     stop: &dyn Fn() -> bool,
+    created: &mut Vec<String>,
 ) -> Step {
     let membership = plan_members(audit, state, seal);
     let dest = Dir::open_follow(&request.destination.path);
@@ -353,6 +367,7 @@ fn attempt(
             Ok(x) => x,
             Err(c) => return Step::Stopped(None, c),
         };
+    created.push(audit.abs(&names::plan_name(attempt)));
     let plan = plan_for(attempt);
     let planned = DeliveryPlanned {
         attempt,
@@ -387,6 +402,8 @@ fn attempt(
     }
 
     let work = carry_out(audit, &plan, membership, dest, stop, previous_package);
+    // `package` is set exactly when this attempt created the package.
+    created.extend(work.package.clone());
     let ended = DeliveryEnded {
         attempt,
         outcome: work.outcome.to_string(),

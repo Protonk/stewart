@@ -301,13 +301,234 @@ fn a_closing_record_that_cannot_be_published_leaves_close_resumable() {
     assert_eq!(o.code, Some(4), "{}", o.text());
     let j = o.json();
     assert_eq!(s(&j, &["reason"]), "record_failed");
-    // The request, the stop and the lock were established before the
-    // failure, so the close stands unfinished.
-    assert_eq!(s(&j, &["effects", "closure"]), "unfinished");
+    // This invocation published the request and failed at its very end; its
+    // other effects say what else it established.
+    assert_eq!(s(&j, &["effects", "closure"]), "requested");
+    assert_eq!(s(&j, &["effects", "seal"]), "existing");
+    assert_eq!(s(&j, &["effects", "delivery"]), "verified");
     assert_eq!(s(&j, &["effects", "diagnostic"]), "durable");
+    // It created nothing but its diagnostic.
+    let retained = strs(&j, &["retained"]);
+    assert_eq!(retained.len(), 1, "{retained:?}");
+    assert!(retained[0].contains("/diag/"), "{retained:?}");
     let j = close_with(&e, r, &[], "").json();
     assert_eq!(s(&j, &["data", "closure"]), "complete");
     assert_eq!(s(&j, &["data", "placement"]), "delivered_before_close");
+}
+
+/// Wait until `path` exists (a `pause` point's `.paused` file).
+fn wait_for_file(path: &str) {
+    let start = std::time::Instant::now();
+    while !std::path::Path::new(path).exists() {
+        assert!(
+            start.elapsed() < std::time::Duration::from_secs(20),
+            "{path} never appeared"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+}
+
+#[test]
+fn t13_a_run_that_recorded_its_ending_is_waited_for_until_it_exits() {
+    use std::io::BufRead;
+    let e = Env::new();
+    let sc = launched_with_entries(&e);
+    let r = sc.r.clone();
+    let sealed = seal(&sc.audit, Actor::Auditor, None, 1);
+    let faults = e.path("faults");
+    std::fs::create_dir(&faults).unwrap();
+
+    // Run A: it holds the lock, delivers and records its ending when told,
+    // and releases the lock only when told, as a run exiting does just after
+    // its run_ended.
+    let (to_holder, holder_rx) = std::sync::mpsc::channel::<&'static str>();
+    let (holder_tx, from_holder) = std::sync::mpsc::channel::<()>();
+    let (r2, dest, record) = (r.clone(), e.dest.clone(), sealed.record);
+    let h = std::thread::spawn(move || {
+        let a = open(&r2);
+        let lock = a.try_lock().unwrap().expect("free");
+        holder_tx.send(()).unwrap();
+        assert_eq!(holder_rx.recv().unwrap(), "end");
+        let d = deliver_without_lock(&a, &dest);
+        assert_eq!(d.attempts[0].outcome.as_deref(), Some("verified"));
+        end_run(&a, 1, "sealed", None, Some(record));
+        holder_tx.send(()).unwrap();
+        assert_eq!(holder_rx.recv().unwrap(), "release");
+        drop(lock);
+    });
+    from_holder.recv().unwrap();
+
+    // Close pauses right after publishing its request, while run A is open.
+    let mut child = std::process::Command::new(bin())
+        .args(["close", &r, "--json"])
+        .current_dir(&e.cwd)
+        .env("STEWART_TEST_FAULT", "close.after_requested=pause")
+        .env("STEWART_TEST_FAULT_DIR", &faults)
+        .env_remove("STEWART_TEST_SABOTAGE")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    wait_for_file(&format!("{faults}/close.after_requested.paused"));
+    // Run A records its ending and still holds the lock when close resumes.
+    to_holder.send("end").unwrap();
+    from_holder.recv().unwrap();
+    std::fs::write(format!("{faults}/close.after_requested.go"), b"").unwrap();
+    // Close finds the lock held with every placement ended. It says it is
+    // waiting for the run to stop, rather than taking the holder for another
+    // close and replying close_in_progress.
+    let mut err = std::io::BufReader::new(child.stderr.take().unwrap());
+    let mut waiting = false;
+    let mut line = String::new();
+    while err.read_line(&mut line).unwrap() > 0 {
+        if line.contains("waiting up to 30 s for the run") {
+            waiting = true;
+            break;
+        }
+        line.clear();
+    }
+    to_holder.send("release").unwrap();
+    h.join().unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert!(
+        waiting,
+        "close stopped waiting: {}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    let j = stewart::json::parse(&out.stdout).unwrap();
+    assert_eq!(
+        s(&j, &["data", "unfinished_reason"]),
+        "awaiting_confirmation"
+    );
+    assert_eq!(s(&j, &["effects", "run"]), "ended");
+    assert_package(&package(&e, &r, 1), &sealed);
+}
+
+/// The run's delivery from a thread that already holds the lock.
+fn deliver_without_lock(a: &stewart::archive::Audit, dest: &str) -> stewart::delivery::Delivered {
+    stewart::delivery::deliver(
+        a,
+        &stewart::log::read(a),
+        &stewart::delivery::Request {
+            by: stewart::delivery::By::Run,
+            destination: stewart::delivery::Destination::commissioned(dest),
+            retries_losses_of: None,
+            stop: None,
+        },
+    )
+}
+
+fn audit_path(e: &Env, r: &str, rel: &str) -> String {
+    format!("{}/{rel}", e.audit_dir(r))
+}
+
+#[test]
+fn a_failed_close_reports_requested_only_when_it_published_the_request() {
+    let e = Env::new();
+    let sc = launched_with_entries(&e);
+    let r = &sc.r;
+    end_run(&sc.audit, 1, "ended_unsubmitted", None, None);
+    // The manager seal's preparation cannot be written.
+    let o = close_with(&e, r, &[], "prepared.write=eio");
+    assert_eq!(o.code, Some(4), "{}", o.text());
+    let j = o.json();
+    assert_eq!(s(&j, &["reason"]), "record_failed");
+    for (k, v) in [
+        ("run", "ended"),
+        ("seal", "none"),
+        ("delivery", "none"),
+        ("closure", "requested"),
+        ("diagnostic", "durable"),
+    ] {
+        assert_eq!(s(&j, &["effects", k]), v, "{k}");
+    }
+    // The claimed preparation directory stays and is retained, ahead of the
+    // diagnostic.
+    let retained = strs(&j, &["retained"]);
+    assert_eq!(retained[0], audit_path(&e, r, "prepared/1"), "{retained:?}");
+    assert!(retained[1].contains("/diag/"), "{retained:?}");
+    assert_eq!(retained.len(), 2, "{retained:?}");
+
+    // A later close that did not publish the request reports unfinished,
+    // and retains only what it created itself.
+    let j = close_with(&e, r, &[], "prepared.write=eio").json();
+    assert_eq!(s(&j, &["outcome"]), "failed");
+    assert_eq!(s(&j, &["effects", "closure"]), "unfinished");
+    let retained = strs(&j, &["retained"]);
+    assert_eq!(retained[0], audit_path(&e, r, "prepared/2"), "{retained:?}");
+    assert!(!retained.contains(&audit_path(&e, r, "prepared/1")));
+
+    // Without the fault, close seals and delivers.
+    let j = close_with(&e, r, &[], "").json();
+    assert_eq!(
+        s(&j, &["data", "unfinished_reason"]),
+        "awaiting_confirmation"
+    );
+    assert_eq!(s(&j, &["effects", "seal"]), "recorded");
+}
+
+#[test]
+fn a_failed_seal_retains_the_preparation_and_manifest_it_wrote() {
+    // The manifest cannot be written, and neither can the diagnostic: the
+    // preparation with its answer and rendering is still retained.
+    let e = Env::new();
+    let sc = launched_with_entries(&e);
+    let r = &sc.r;
+    end_run(&sc.audit, 1, "ended_unsubmitted", None, None);
+    let o = close_with(&e, r, &[], "seal.manifest_write=eio,diag.write=eio");
+    assert_eq!(o.code, Some(4), "{}", o.text());
+    let j = o.json();
+    assert_eq!(s(&j, &["effects", "closure"]), "requested");
+    assert_eq!(s(&j, &["effects", "seal"]), "none");
+    assert_eq!(s(&j, &["effects", "diagnostic"]), "reported_only");
+    let prepared = audit_path(&e, r, "prepared/1");
+    assert_eq!(strs(&j, &["retained"]), std::slice::from_ref(&prepared));
+    assert_eq!(package_members(&prepared), ["answer.json", "answer.md"]);
+    assert_eq!(at(&j, &["causes"]).as_arr().unwrap().len(), 2);
+
+    // The manifest is written but the seal record cannot be published.
+    let e = Env::new();
+    let sc = launched_with_entries(&e);
+    let r = &sc.r;
+    end_run(&sc.audit, 1, "ended_unsubmitted", None, None);
+    let j = close_with(&e, r, &[], "log.publish:seal=eio").json();
+    assert_eq!(s(&j, &["outcome"]), "failed");
+    assert_eq!(s(&j, &["effects", "closure"]), "requested");
+    let retained = strs(&j, &["retained"]);
+    assert_eq!(retained[0], audit_path(&e, r, "prepared/1"), "{retained:?}");
+    assert_eq!(
+        retained[1],
+        audit_path(&e, r, "seal/manifest-1.json"),
+        "{retained:?}"
+    );
+}
+
+#[test]
+fn a_failed_delivery_record_retains_the_plan_and_package() {
+    let e = Env::new();
+    let (sc, sealed) = sealed_by_auditor(&e);
+    let r = &sc.r;
+    let o = close_with(&e, r, &[], "log.publish:delivery_ended=eio");
+    assert_eq!(o.code, Some(4), "{}", o.text());
+    let j = o.json();
+    assert_eq!(s(&j, &["reason"]), "record_failed");
+    assert_eq!(s(&j, &["effects", "closure"]), "requested");
+    assert_eq!(s(&j, &["effects", "delivery"]), "unknown");
+    let retained = strs(&j, &["retained"]);
+    assert_eq!(
+        retained[0],
+        audit_path(&e, r, "delivery/1.json"),
+        "{retained:?}"
+    );
+    assert_eq!(retained[1], package(&e, r, 1), "{retained:?}");
+    assert!(retained[2].contains("/diag/"), "{retained:?}");
+    // The next close records that attempt's end and copies afresh.
+    let j = close_with(&e, r, &[], "").json();
+    assert_eq!(
+        s(&j, &["data", "unfinished_reason"]),
+        "awaiting_confirmation"
+    );
+    assert_package(&package(&e, r, 2), &sealed);
 }
 
 #[test]
