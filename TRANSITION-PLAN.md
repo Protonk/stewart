@@ -36,6 +36,15 @@ written separately from the spec, and the driver's author does not read the
 implementation. Test builds use the `fault-injection` and `sabotage` features;
 the release binary contains neither.
 
+Step 3 milestone run `.scratch/step3-01` (source `e714629`): the Linux code
+compiled and every apparatus control fired on both architectures, but the
+driver failed on both: all-zero identifiers on aarch64 (stage-name collisions)
+and SIGSEGV in `new` on x86_64. Diagnostics `.scratch/diag-linux-01` to `-03`
+located it: every Linux-only call worked in isolation; only the fat-LTO release
+build failed; in it musl's `getrandom` was absent from the binary while thin LTO
+linked it. Calling the raw `SYS_getrandom` syscall fixed both architectures under
+fat LTO. The mechanism behind the missing symbol is not established.
+
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
 [ACCEPTANCE.md](ACCEPTANCE.md). This is the only active development plan. No

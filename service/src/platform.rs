@@ -24,9 +24,22 @@ use std::os::fd::{AsRawFd, FromRawFd};
 pub fn random_fill(buf: &mut [u8]) -> io::Result<()> {
     #[cfg(target_os = "linux")]
     {
+        // The raw syscall, not musl's getrandom() wrapper. In the fat-LTO
+        // static release build musl's getrandom was absent from the linked
+        // binary although this code called it: the call returned without
+        // writing (all-zero identifiers) on aarch64 and crashed on x86_64.
+        // Thin-LTO and non-LTO builds linked it and worked. Why fat LTO drops
+        // the symbol is not established; the syscall needs no library symbol.
         let mut off = 0;
         while off < buf.len() {
-            let rc = unsafe { libc::getrandom(buf[off..].as_mut_ptr().cast(), buf.len() - off, 0) };
+            let rc = unsafe {
+                libc::syscall(
+                    libc::SYS_getrandom,
+                    buf[off..].as_mut_ptr(),
+                    (buf.len() - off) as libc::c_long,
+                    0 as libc::c_long,
+                )
+            };
             if rc < 0 {
                 let e = io::Error::last_os_error();
                 if e.raw_os_error() == Some(libc::EINTR) {
