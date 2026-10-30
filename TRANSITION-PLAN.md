@@ -146,12 +146,11 @@ each item needs the decision or commission named.
   `max_tokens_per_request` (16,000) and the 600 s timeout are pinned but
   unqualified against real responses.
 - **Step 9, retiring Python: not started**, by design (it follows step 8).
-- **Fat-LTO `getrandom`: worked around; mechanism traced in source and
-  confirmed at the LLVM level, not yet in Rust.** In the fat-LTO static musl
-  release build Stewart's `libc::getrandom` call linked to nothing
-  (observations and reproduction
-  steps: `.scratch/fat-lto-getrandom-01/REPORT.md`). The toolchain sources at
-  rustc `b940084d7` account for every observation
+- **Fat-LTO `getrandom`: worked around; mechanism confirmed.** In the
+  fat-LTO static musl release build Stewart's `libc::getrandom` call linked
+  to nothing (observations and reproduction steps:
+  `.scratch/fat-lto-getrandom-01/REPORT.md`). The toolchain sources at rustc
+  `b940084d7` account for every observation
   (`.scratch/fat-lto-getrandom-02/ANALYSIS.md`). std declares `getrandom`
   `extern_weak` for its own syscall fallback. Fat LTO links every other
   module into the binary's three-line `main` module in name order, and LLVM
@@ -164,11 +163,14 @@ each item needs the decision or commission named.
   found the account supported and confirmed the ELF consequences without
   Rust, but could not run Rust. `.scratch/fat-lto-getrandom-03/RESULT.md`
   confirms the LLVM step with `llvm-link`: whichever module declares the
-  symbol first fixes its linkage. The deciding Rust comparison (identical
-  code, the library crate named to sort before or after `std`) is prepared
-  as `.scratch/fat-lto-getrandom-04/run.sh` for the user to run; not yet run.
-  Exposure: only direct libc calls to functions std declares weak for the
-  target; for the musl targets at this toolchain `getrandom`,
+  symbol first fixes its linkage. The deciding Rust comparison confirms the
+  whole account on both architectures (`.scratch/fat-lto-getrandom-04/RESULT.md`):
+  with identical code, a library crate named to sort after `std` lost its
+  `getrandom` (silent no-op on aarch64, SIGSEGV on x86_64) and one named to
+  sort before it kept it, in the order rustc's own log records. Static glibc
+  linked `getrandom` anyway in that run (cause not recorded). Exposure: only
+  direct libc calls to functions std declares weak for the target; for the
+  musl targets at this toolchain `getrandom`,
   `copy_file_range`, `gettid`, `pidfd_spawnp` and `pidfd_getpid`
   (`.scratch/fat-lto-getrandom-02/std-weak-symbols-linux-musl.txt`; `statx`
   is weak only on glibc). Stewart makes none today. The user adopted a rule

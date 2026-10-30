@@ -29,7 +29,7 @@ stays with that report under the retention rules.
 | `fat-lto-getrandom-01/` | Its `REPORT.md`: the fat-LTO `getrandom` reproduction and evidence |
 | `fat-lto-getrandom-02/` | Its `ANALYSIS.md`: the source-level account of that failure, with the toolchain sources it cites, the Riker request and reply, and the web-agent brief |
 | `fat-lto-getrandom-03/` | Its `RESULT.md`: the LLVM-only declaration-merge experiment |
-| `fat-lto-getrandom-04/` | [TRANSITION-PLAN.md](../TRANSITION-PLAN.md): the prepared Rust confirmation run |
+| `fat-lto-getrandom-04/` | Its `RESULT.md`: the Rust comparison confirming the account on both architectures |
 | `submission-prototype-01/` | [submission-design-01/RESULT.md](submission-design-01/RESULT.md) |
 | `opus-preparation-audit-01/` | [reports/opus-preparation-audit-2026-10-27/RESULT.md](../reports/opus-preparation-audit-2026-10-27/RESULT.md) |
 | `commission-intake-01/` | [reports/commission-self-audit-2026-10-27/RESULT.md](../reports/commission-self-audit-2026-10-27/RESULT.md) |
