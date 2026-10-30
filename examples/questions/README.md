@@ -18,3 +18,9 @@ semantic support and include empty/conflicting answer cases. Expected substantiv
 conclusions are never acceptance criteria. The final schema spec must supply real
 request/reply and rendering fixtures; these walkthroughs cannot establish a
 machine round trip, empty-submission usability or runtime custody.
+
+These examples predate [the interface specification](../../docs/INTERFACE.md).
+Their front matter (`stewart: problem/1`, `form:`), material IDs (`m1`) and
+`add`/`answer_read` calls are earlier sketches. Under the specification they are
+`question/1` front matter, `materials/<name>` sources, `record_artifact` and
+`read`. They remain illustrations of expression, not runnable input.

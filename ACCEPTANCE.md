@@ -69,7 +69,7 @@ and never block a release.
   everything it supplied (question, material) and everything the fake auditor sent
   (each element's bytes, each citation). It compares the delivered return against
   those copies, never against Stewart's own records. The witness sits outside
-  Stewart's home and outside anything a test removes.
+  Stewart's archive and outside anything a test removes.
 - **Counts are reported, not assumed.** Every run reports how many cases ran,
   passed, failed and were skipped, and which controls fired. Schema checks and
   ordinary positive cases alone do not establish enforcement.
@@ -82,16 +82,31 @@ can also produce a compaction block, a refusal, a rate limit, a server error, a
 dropped stream, and a model that ends its turn without submitting. The binary
 points at it through its provider URL setting and doesn't know it's fake.
 
+For re-entry and continuation the fake also runs a *reacting auditor*: a small
+deterministic policy in the driver with a goal list of entries, whose bytes the
+driver keeps as the witness. It chooses each call from Stewart's actual replies.
+After a forced compaction or a kill and continuation it discards its memory,
+rebuilds its view only from the continuation notice, `what_am_i_working_with`
+and its reads, and adds only the goals it cannot see recorded. The return must
+contain each goal exactly once, so a re-entry that omits an element produces a
+duplicate that the witness comparison catches. Fixed scripts remain for exact
+protocol-shape cases. This shows that re-entry carries enough for a mechanical
+agent to resume; whether real models use it well is the conformance tier's
+question.
+
 ### C1 — The world is the arrangement
 
 - **Pass:** every recorded request to the provider carries exactly the
-  arrangement's tools (the protocol plus the coupling's slots), its frame and its
-  limits. The accepted receipt names the same arrangement digest as the first
-  request actually sent; its settings agree with the prepared selection.
-- **Differing:** a problem with a different coupling changes the tool list exactly
-  by that coupling's slots.
+  arrangement's tools (the common tools plus the family's recording tools), its
+  system blocks (orientation and family instructions), its pinned model and
+  request parameters, and `max_tokens` within its limits. The accepted receipt
+  names the arrangement whose pinned bytes the first request actually carried;
+  its settings agree with the prepared selection.
+- **Differing:** a commission with a different family changes the tool list
+  exactly by that family's recording tools, and the system blocks by its
+  instructions.
 - **Invariance:** changing the material changes the materials index but not the
-  tool list or frame.
+  tool list or system blocks.
 - **Also:** read, search and list given paths outside the material (`../`,
   absolute paths, names that only exist on the host) are refused with a sign, and
   nothing outside the material appears in any reply.
@@ -107,9 +122,9 @@ points at it through its provider URL setting and doesn't know it's fake.
   difference.
 - **Invariance:** the same material supplied under a different directory path
   serves identical content under the same names.
-- **Also:** empty files, very long lines and files at the size limit, with reader
-  checks for each supported format. Non-UTF-8 content follows the decided format
-  contract rather than an assumed text reader. Symbolic links, special files and
+- **Also:** empty files, very long lines and files at the size limit, read
+  through the `utf8-text/1` reader. Non-UTF-8 content and NUL bytes refuse
+  intake under the reader contract rather than being read approximately. Symbolic links, special files and
   other unsupported entries refuse intake rather than silently reducing it.
 - **Sabotage:** material changed between intake and read in a test build, and a
   normalizing read. Both must fail.
@@ -146,10 +161,10 @@ authoring request is handed down as part of the auditor's answer.
 
 ### C4 — Re-entry restores recorded work and access
 
-- **Pass:** the fake emits a compaction block midway. The script then calls
-  `what_am_i_working_with`, which returns bounded state/revision/allowances,
+- **Pass:** the fake emits a compaction block midway. The reacting auditor then
+  calls `what_am_i_working_with`, which returns bounded state/revision/allowances,
   exact question/material access, element/version handles, recent completed
-  receipts and relevant refusals. The script follows explicit pages/read handles
+  receipts and relevant refusals. It follows explicit pages/read handles
   and verifies all bytes against an independent witness, then continues without
   re-adding its prior work. Include an answer and question/index exceeding one
   reply, with essential content on the last page. Re-entry is not a mutation gate.
@@ -166,9 +181,9 @@ authoring request is handed down as part of the auditor's answer.
 - **Pass:** the driver compares each delivered return against its witness: every
   element's bytes and order, the typed structure and artifact identities, the form and version named, the
   audit reference, and who sealed it. The manifest digest printed at seal equals
-  the delivered one. An inventory of the delivered directory holds the manifest
-  and the elements and nothing else: no question, receipt, arrangement, access
-  log, run summary or conversation. The preparation-generated Markdown rendering
+  the delivered one. An inventory of the delivered package holds the manifest,
+  the structured answer, the rendering and artifact members, and nothing else:
+  no question, receipt, arrangement, access log, run summary or conversation. The preparation-generated Markdown rendering
   is a sealed member, attributed to Stewart and reproducible from the exact
   structured answer and elements under the pinned rendering rules. The auditor
   can inspect those same bytes before confirming submission.
@@ -197,12 +212,13 @@ authoring request is handed down as part of the auditor's answer.
 
 ### C6 — The record is honest
 
-- **Pass:** an inventory of Stewart's home before and after every command shows
+- **Pass:** an inventory of the archive before and after every command shows
   only additions: no file is rewritten and none removed, through to and after
   close. This is the decided first-release retention policy, not a proposal.
   An in-progress new file may be incomplete; it never replaces an earlier record.
-  The access log equals the sequence of read, list and search calls in the
-  script. The run summary's turns and usage equal what the fake reported.
+  The access log (the `list`, `read` and `search` calls captured in each run)
+  equals the sequence in the script. Each `run_ended` record's turns and usage
+  equal what the fake reported.
 - **Sabotage:** a build that rewrites a record in place, removes a retained partial
   on retry/close, or skips logging a search. Independent inventories remain outside
   the archive so a passing result cannot conceal deletion of the witness.
@@ -355,7 +371,7 @@ launch; each must fail.
   observable process), never as an inference from elapsed time; the liveness
   mechanism is for design. `run REF`
   continues: the first request of the new conversation carries the continuation
-  notice and the same arrangement digest as the first run; the ledger's elements
+  notice and the same pinned system and tools bytes as the first run; the ledger's elements
   are unchanged; the limits reported to the auditor are cumulative across runs;
   the final submission contains every element recorded before the kill exactly
   once; the record holds every run.

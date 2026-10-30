@@ -1,137 +1,289 @@
-# Question forms: specification brief
+# Question forms and rendering
 
-The initial library and behavioral policy are settled in
-[CONTRACTS.md](../CONTRACTS.md). This brief supplies the concrete starting point
-for specification: open inquiry, inquiry framing and comparison; common reading,
-exact-version editing and explicit submission; faithful deterministic rendering.
-Exact tool names, complete wire schemas and byte encoding are the spec agent's
-work. They may improve these examples within the decided semantics without
-reopening the design or introducing a new outcome/completeness gate.
+This specifies the three initial families, the exact text the auditor sees, the
+tool descriptions and input schemas, the structured answer and the Markdown
+renderer. The policy is in [CONTRACTS.md](../CONTRACTS.md). The tools' input
+rules, replies and refusals are in [INTERFACE.md](INTERFACE.md) section 7.
 
-Keep section names with prose and structured citations as the initial shape.
-Comparison needs an auxiliary observation route for one-sided evidence; it does
-not count as a comparison coverage section. The account should lead with the
-direct answer or inability and explain its reach. Distinguish supplied criteria
-from the auditor's interpretation and explain opaque requirement labels. These
-are authoring instructions, not renderer-generated conclusions or admission tests.
+Texts in quoted blocks are exact; they are pinned byte for byte in each
+arrangement and change only with a new version. In the pinned bytes, the lines
+of a quoted paragraph are joined by single spaces, paragraphs are joined by two
+LF bytes (`\n\n`), and a text has no trailing LF.
 
-The [worked examples](../examples/questions/README.md) include inadequate evidence.
-Their paper replies are illustrative, not a completed protocol specification.
-The bounded paper review supported these small expression/presentation choices;
-it did not exercise a real tool round trip, empty/missing-section submission,
-large/multiple-question answers or real runtime interruption. Carry those paths
-into executable acceptance. No broader taxonomy is justified by that exercise.
+The families are open inquiry (`open-inquiry/1`), inquiry framing
+(`inquiry-framing/1`) and comparison (`comparison/1`). The manager names one in
+the front matter. The auditor never sees the family name. It sees the
+orientation, its family's instructions and its tools.
 
-The auditor has the captured question, listed materials and the selected family's
-instructions/tools. It cannot execute the supplied code, fetch other material,
-ask the manager a live question or change the family. Supplied reports are claims
-by their authors. Code reasoning is not a witnessed execution.
+## System blocks
 
-## Reading and ordinary authoring
+The request's `system` array has two text blocks: the orientation, then the
+family instructions. It is pinned as the compact JSON
+`[{"type":"text","text":<orientation>},{"type":"text","text":<family instructions>}]`,
+each text a JSON string escaped as in the structured answer (below).
 
-- `list()` returns the explicitly listed material IDs, names and byte counts.
-- `read(material, start=0, end=file_size)` returns exact UTF-8 bytes and a usable
-  citation object `{material, start, end}`. Ranges are zero-based and end-exclusive.
-  These tiny fixtures fit in a page. Production pagination follows CONTRACTS.
-- `search(text)` is literal, case-sensitive search over captured materials and
-  returns matching ranges, scope and continuation status. It does not search the
-  live preparation directory.
-- Each family recording tool takes `{text: string, citations: Citation[] = []}`.
-  `text` is required as an argument, but may be empty. Citations are optional.
-  A citation is `{material: string, start: integer, end: integer, quote?: string}`.
-  Its range must exist in that audit's captured material; an explicit quote must
-  equal the range bytes. No semantic support check occurs. Ordinary prose is
-  not scanned for citations.
-- A successful recording call appends one entry and returns its exact handle,
-  version and answer revision, e.g. `{entry:"e1", version:1, revision:1}`.
-  Repeating a recording call makes another entry. Every entry remains attributed
-  to the auditor. Multiple entries of the same kind are permitted; no last-one-wins.
-- `add(name, text)` records an additional free-form text artifact with an opaque
-  label. It is available in every family. It satisfies no family-section count
-  merely because its label or prose resembles a section name.
-- `replace(handle, value)` replaces exactly that version, retains its entry kind,
-  and returns a new version/revision. `value` is the complete replacement
-  `{text, citations}` for a family entry, or `{name, text}` for a free-form artifact.
-  All members of the replacement value are explicit; omitted members are an
-  invalid call, not a guess to preserve or erase previous content.
-- `delete(handle)` removes exactly that version from current membership under
-  the settled repeated-delete rules. Retained old bytes are not physically removed.
-- `answer_read(handle)` retrieves the explicitly named current entry/version or,
-  for a prepared-member handle, the exact prepared rendering/manifest bytes. A
-  stale entry handle receives a diagnostic and the current handle; it does not
-  silently select a newer version. Historical entry browsing is not added here.
-- `what_am_i_working_with()` supplies state, revision, cumulative allowances,
-  question/material access, entry handles and recent completed effects. It cannot
-  restore thoughts that were never recorded. Reads and mutations obey CONTRACTS'
-  bounds, stale-target rules and exceptional-state presentation.
+### Orientation (`stewart.orientation/1`)
 
-The typed entries and readable rendering both belong to the sealed answer.
-They add no judgment or completion grade. Specify their exact serialization and
-the raw-byte artifact API together: this text-only example does not remove raw
-artifact support or the existing custody guarantees.
+> You are the auditor in a Stewart audit. The first user message is the
+> manager's question, exactly as they wrote it. The materials they selected can
+> be read with the list, read and search tools. The question and those materials
+> are your whole world: you have no shell, no other files, no network, no way to
+> run code and no way to ask the manager anything. Reports, logs and test results
+> in the materials are claims by their authors, not executions you witnessed.
+>
+> Your answer is the entries you record with the record tools, and each entry is
+> attributed to you. You may record that the material is inadequate, that you are
+> uncertain, that you disagree with the question's premise or that you found no
+> supported finding. None of these needs a defect, a winner or a repair. An
+> answer with missing sections, or with no entries, can be submitted.
+>
+> Record your account early, even briefly, and replace it as your work develops.
+> Replacing an entry keeps its place. To cite, use the ranges that read and
+> search return, or give a quote of exact text. Searching for distinctive text
+> gives a ready citation. Citations are checked only for exact location and
+> quotation, never for whether they support what you say.
+>
+> Use handles exactly as tools return them. If a tool says a handle is stale,
+> read the current one before replacing it. If your context was summarized, or
+> you are unsure what you have recorded, call what_am_i_working_with.
+>
+> When you are ready, call prepare to see exactly what would be sealed, then call
+> submit with that handle and confirm set to true. Submitting seals your answer,
+> and it cannot be edited afterwards. Your limits are cumulative across the whole
+> audit; what_am_i_working_with shows what remains.
 
-## Family tools and instructions to specify
+### Family instructions
 
-Only the selected row's recording tools join the common reading/editing/submission
-tools. The manager selects the family. Review agents receive just the selected
-instructions; the family's name is a coordination label here, not an extra
-manager-purpose briefing for the auditor.
+Open inquiry (`open-inquiry/1`):
 
-| Family | Recording tools | Instructions |
+> Address the question from the supplied materials. Begin your account with your
+> direct response to the question and its reach, including when you cannot
+> answer it as asked; do not leave a decisive inability only in a final
+> limitation. Record observations that connect what you found to its basis in
+> the materials. Record limits on what the materials let you establish. No
+> positive finding and no universal assurance is required. When you use a label
+> from the materials, such as a requirement number, explain it in ordinary words
+> the first time.
+
+Inquiry framing (`inquiry-framing/1`):
+
+> The manager has described a concern. Formulate a working question that the
+> supplied materials can bear on, record it, and record how it relates to the
+> original concern. Then investigate it in this audit and record what you find.
+> The manager's question stays as written; if it is already precise, it can be
+> your working question. If useful bounded investigation is not possible with
+> these materials, say so and explain why. Begin your account with your direct
+> response and its reach. Record observations with their basis and record the
+> limits of what you could establish. When you use a label from the materials,
+> explain it in ordinary words the first time.
+
+Comparison (`comparison/1`):
+
+> Compare the alternatives the question names, using the supplied evidence.
+> Record the criterion, saying what the manager supplied and what is your
+> interpretation of it. Use a comparison entry for a finding that relates the
+> alternatives to each other, and an observation for a finding about one
+> alternative or about the materials. Distinguish what you reasoned from the
+> source yourself from what supplied materials report. If the evidence is unequal,
+> the criterion is unavailable or a comparison is not possible, say so; no winner
+> is required. Begin your account with your direct response and its reach, and
+> record the limits of what you could establish. When you use a label from the
+> materials, explain it in ordinary words the first time.
+
+## Tools
+
+The `tools` array lists, in this order: `list`, `read`, `search`, the family's
+recording tools in table order, `record_artifact`, `replace`, `delete`,
+`what_am_i_working_with`, `prepare`, `submit`.
+
+| Family | Recording tools | Expected sections for prepare's notices |
 | --- | --- | --- |
-| Open inquiry | `record_account`, `record_observation`, `record_limit` | Address the question from the supplied materials. Connect observations to their basis and state the reach and limits of the account. No positive finding or universal assurance is required. |
-| Inquiry framing | `record_working_question`, `record_relation`, `record_observation`, `record_account`, `record_limit` | Formulate a working question that the supplied material can bear on, explain its relationship to the original concern, and investigate it in this commission. Preserve the original request. Explain inability when useful bounded investigation is not possible. |
-| Comparison | `record_criterion`, `record_comparison`, `record_observation`, `record_account`, `record_limit` | Identify the criterion, distinguishing what the manager supplied from the auditor's interpretation. Compare the requested alternatives using supplied evidence. Use observations for findings about one alternative; a comparison entry relates alternatives. Distinguish source reasoning from reported observations. State unequal evidence, an unavailable criterion or inability to compare without inventing a winner. |
+| Open inquiry | `record_account`, `record_observation`, `record_limit` | all three |
+| Inquiry framing | `record_working_question`, `record_relation`, `record_observation`, `record_account`, `record_limit` | all five |
+| Comparison | `record_criterion`, `record_comparison`, `record_observation`, `record_account`, `record_limit` | criterion, comparison, account, limit |
 
-There is no required entry count. Named recording kinds are expected sections
-for preparation's factual coverage display, not submission prerequisites, except
-that comparison's auxiliary `record_observation` is not an expected section.
-Its coverage list remains criterion, comparison, account and limit. Counts may
-include auxiliary observations without implying that a comparison was performed.
-The text can contest a premise, state inability, contain uncertainty or disagree
-with other entries. This deliberately starts with section names and prose rather
-than a deeper taxonomy of claims; the pressure test should examine whether it
-provides enough useful guidance and preserves relationships between entries.
+Comparison's observation tool is auxiliary. Its entries are counted but they are
+not a coverage section, and they never imply that a comparison took place. There
+is no required entry count, and multiple entries of a kind are permitted.
 
-In every family, use the account to state the direct response and its reach,
-including an inability to answer the requested question. Put that account before
-supporting detail when it helps the reader locate the answer; do not leave a
-decisive inability only in the final limitation. Explain a requirement label such
-as R1 in ordinary words when first using it. These are authoring instructions,
-not ordering, citation or substantive-completeness gates. The renderer never
-reorders entries or judges whether an observation "really" compares alternatives.
+Tool descriptions (exact):
 
-## Preparation, submission and rendering
+| Tool | Description |
+| --- | --- |
+| `list` | List the captured materials: their names (materials/…), sizes and line counts. Long lists come in pages. |
+| `read` | Read exact text from the question (source "question"), a material (materials/…), one of your entries (its handle) or a prepared view. Returns up to 64 KiB per call, and a next call when more remains. For the question and materials, the reply's cite is a ready citation for what was returned. The exact text is the second content block, or the reply's text field when the page is blank; bytes recorded as base64 come in its base64 field. |
+| `search` | Find exact, case-sensitive text in the question and all materials, or in the sources you name. Each hit's cite is a ready citation. The reply says whether the whole scope was searched; an incomplete search does not show that text is absent. |
+| `record_account` | Record your account: the direct response to the question and its reach, including any inability to answer it as asked. |
+| `record_observation` | Record one observation and its basis in the materials. |
+| `record_limit` | Record a limit on what the materials let you establish. |
+| `record_working_question` | Record the working question you will investigate. |
+| `record_relation` | Record how the working question relates to the manager's original concern. |
+| `record_criterion` | Record the criterion for the comparison, saying what the manager supplied and what is your interpretation. |
+| `record_comparison` | Record a finding that relates the alternatives to each other. |
+| `record_artifact` | Record a free-form artifact with a label: text, or base64 for bytes that are not text. It belongs to your answer but fills no section. |
+| `replace` | Replace exactly one version of an entry, given its handle. Supply every field: text, citations and label for a recorded entry; label and text or base64 for an artifact. The entry keeps its place. |
+| `delete` | Remove exactly one version of an entry from your answer. |
+| `what_am_i_working_with` | Show the audit's state: what you have recorded and its handles, recent edits and refusals, the question and materials, and your remaining allowances. Use it when continuing or after your context was summarized. |
+| `prepare` | Make the exact candidate that submit would seal, with its Markdown rendering and factual notes on empty sections. It changes nothing, and you can keep editing. |
+| `submit` | Seal a prepared candidate as your answer. Without confirm set to true this is a dry run. After a confirmed submit the answer cannot be edited. |
 
-`prepare()` makes an inspectable selection inventory and Markdown rendering for the current
-revision. It returns a handle, member read handles, entry counts and observations
-such as `No record_comparison entries are recorded.` It does not edit the answer
-or seal it. Missing sections and a completely empty answer do not refuse it.
+Input schemas (normative). Each tool's `input_schema` is
+`{"type":"object","properties":{…},"required":[…],"additionalProperties":false}`
+with exactly these properties, `required` listing those marked yes. Each
+property schema carries its `type` and the description below, plus `minimum` for
+integers and `items` and `maxItems` for arrays. Other bounds, and requirements
+that depend on another field or on the entry's kind, are checked by Stewart and
+refused as INTERFACE section 7 states. Descriptions are exact.
 
-`submit(handle, confirm=false)` is a dry run by default. With `confirm=true`, it
-seals the exact prepared selection and rendering. An intervening edit makes that
-handle stale; an already accepted handle retrieves its recorded outcome. No
-reading/inspection pause or additional omission acknowledgment is required.
+| Tool | Property | Type | Required | Bounds | Description |
+| --- | --- | --- | --- | --- | --- |
+| `list` | `cursor` | string | no | An `ls.` cursor | Cursor from the previous list reply's next call, for the next page. |
+| `read` | `source` | string | yes | 1–1,034 bytes: `question`, `materials/<name>`, an entry handle or a prepared view | What to read: question, materials/<name>, one of your entry handles or a prepared view. |
+| `read` | `start` | integer, `minimum` 0 | no; default 0 | At most the source's size, on a UTF-8 boundary | Byte offset to start from. Default 0; use the start that a reply's next call gives. |
+| `search` | `text` | string | yes | 1–1,024 bytes | Exact text to find. Matching is literal and case-sensitive. |
+| `search` | `sources` | array of string, `maxItems` 128 | no; default the question, then every material | Each `question` or `materials/<name>` | Sources to search. Default: the question and every material. |
+| `search` | `cursor` | string | no | An `sc.` cursor | Cursor from the previous search reply's next call. Give it with the same text and sources. |
+| `record_<kind>` | `text` | string | yes | May be empty | Entry text. It may be empty. |
+| `record_<kind>` | `citations` | array of citation, `maxItems` 64 | no; default empty | Citation rules (INTERFACE 7.3) | Citations: {source, start, end, quote?} from read or search, or {source, quote} with exact text. |
+| `record_<kind>` | `label` | string | no; default empty | 0–200 characters, no control characters | Optional short label shown in the rendering. |
+| `record_artifact` | `label` | string | yes | 1–200 characters, no control characters | Required short label for the artifact, shown in the rendering. |
+| `record_artifact` | `text` | string | exactly one of `text`, `base64` | — | Artifact content as text. |
+| `record_artifact` | `base64` | string | exactly one of `text`, `base64` | Canonical RFC 4648 with padding, no whitespace | Artifact bytes as base64, for content that is not text. |
+| `replace` | `entry` | string | yes | An entry handle | The exact handle of the entry version to replace. |
+| `replace` | `label` | string | yes | 0–200 characters for a recorded entry, 1–200 for an artifact; no control characters | Required label for the replacement, shown in the rendering. Give the current label to keep it. |
+| `replace` | `text` | string | for a recorded entry; for an artifact, exactly one of `text`, `base64` | May be empty for a recorded entry | Replacement text. |
+| `replace` | `citations` | array of citation, `maxItems` 64 | for a recorded entry; not for an artifact | Citation rules (INTERFACE 7.3) | Replacement citations, as for the record tools. Use [] for none. |
+| `replace` | `base64` | string | for an artifact, exactly one of `text`, `base64`; not for a recorded entry | Canonical RFC 4648 with padding, no whitespace | Replacement artifact bytes as base64. |
+| `delete` | `entry` | string | yes | An entry handle | The exact handle of the entry version to remove. |
+| `what_am_i_working_with` | `page` | string | no | A `pg.` cursor | Cursor from the previous reply's next call, for the next page of entries. |
+| `prepare` | none | — | — | — | — |
+| `submit` | `prepared` | string | yes | An auditor preparation handle | The handle that prepare returned. |
+| `submit` | `confirm` | boolean | no; default false | — | Set to true to seal. Otherwise this is a dry run. |
 
-For the examples, the exact renderer convention is the line
-`Rendered by Stewart. Entry text is attributed to the auditor.`, followed by a
-blank line and each entry in recorded order. The level-two heading is the tool
-name with `record_` removed, underscores replaced by spaces and the initial letter
-capitalized (for example, `Working question`). After a blank line, emit the exact
-entry text. If citations exist, add a blank line and
-`Citations: m1 [50, 120); m2 [0, 175).` using the actual IDs and end-exclusive
-ranges in recorded order. An explicit quote, if present, follows its range as a
-JSON-escaped string. Separate entries with a blank line and end with one newline.
-This is a proposed deterministic presentation rule, not a final product wire
-schema. It does not insert the manager's
-question, infer a conclusion, combine repeated sections or resolve contradictions.
-An empty selection gets only the factual presentation `No answer entries recorded.`
-The sealer and form version belong in the manifest; no fake receipt digest is
-printed in these walkthroughs. Complete preparation/selection/seal response schemas
-are specification work under the accepted machine interface; do not claim a machine round trip
-from their symbolic representations in this exercise.
+So `required` is `[]` for `list`, `what_am_i_working_with` and `prepare`;
+`["source"]` for `read`; `["text"]` for `search` and `record_<kind>`;
+`["label"]` for `record_artifact`; `["entry","label"]` for `replace`;
+`["entry"]` for `delete`; and `["prepared"]` for `submit`. The schema's
+`required` never lists a field that is conditional on another field or on the
+entry's kind.
 
-The settled one unsubmitted-stop reminder and one factual near-limit notice
-apply across the audit and within its cumulative budget. They are not extra
-authoring stages in these walkthroughs. At a hard stop an unsealed answer remains
-unsubmitted, and manager close can seal recorded work with manager attribution.
+A citation item has this schema:
+
+```json
+{"type":"object","properties":{"source":{"type":"string","description":"question or materials/<name>."},"start":{"type":"integer","minimum":0,"description":"Byte offset where the cited span begins."},"end":{"type":"integer","minimum":1,"description":"Byte offset just after the cited span."},"quote":{"type":"string","description":"Exact text of the cited span."}},"required":["source"],"additionalProperties":false}
+```
+
+Stewart accepts exactly two forms: `start` and `end`, with an optional `quote`;
+or `quote` without `start` and `end`. Any other combination is refused
+(`citation_invalid`). The schema states this single object shape rather than a
+`oneOf`.
+
+## Notices
+
+The reminder, sent at most once per audit after a turn ends without submission
+while no limit is exhausted (text from CONTRACTS):
+
+> This turn ended without a submission. Your recorded answer remains unsealed.
+> If you intend to submit it, use prepare and confirm its handle with submit.
+
+The near-limit notice, sent at most once per audit, with each value filled in as
+the decimal integer max(0, limit − used):
+
+> Allowance notice: {turns} turns, {input_tokens} input tokens and
+> {output_tokens} output tokens remain for this audit. When an allowance runs
+> out the run stops, and an unsubmitted answer stays unsubmitted.
+
+The continuation notice, the second block of a continuing placement's first
+message:
+
+> This audit is continuing in a new conversation after an earlier run ended.
+> Your recorded work is preserved, but this conversation does not contain it.
+> Call what_am_i_working_with to see what you have recorded. Your last action
+> before the interruption may or may not have been recorded; check before
+> repeating it.
+
+## The structured answer (`stewart.answer/1`)
+
+`answer.json` is the prepared selection. It is the `selection` view the auditor
+can read and the `answer.json` return member.
+
+```json
+{"schema":"stewart.answer/1","revision":7,"entries":[
+{"id":"e1","version":2,"kind":"record_account","label":"","text":"The supplied excerpts support one restart-related duplicate-delivery concern.","citations":[{"source":"materials/a.py","start":0,"end":175,"stewart":{"name":"materials/a.py","sha256":"…","lines":[1,8]}},{"source":"materials/a.py","quote":"R1. A reminder ID","stewart":{"name":"materials/a.py","sha256":"…","range":[50,67],"lines":[4,4]}}]},
+{"id":"e4","version":1,"kind":"record_artifact","label":"trace","encoding":"utf-8","member":"artifact-e4.bin","size":120,"sha256":"…"}]}
+```
+
+Serialization is pinned so the bytes are reproducible:
+
+- Keys appear in the order shown. There is no whitespace between tokens, and
+  each entry begins on a new line as shown. The file ends with `]}` and one LF.
+  An empty selection is the single line
+  `{"schema":"stewart.answer/1","revision":<n>,"entries":[]}` and one LF.
+- Strings escape `"` and `\` with a backslash. Of the control characters,
+  exactly U+0000–U+001F are escaped: `\b \f \n \r \t` for those five and
+  `\u00xx` in lowercase hex for the rest. All other characters, including
+  U+007F and non-ASCII, are written as raw UTF-8.
+- A citation holds the auditor's operands at its top level and Stewart's
+  additions under `stewart` (INTERFACE 7.3). Its keys appear in the order
+  `source`, `start`, `end`, `quote`, `stewart`, and inside `stewart` in the
+  order `name`, `sha256`, `range`, `lines`. Absent keys are omitted; `range` is
+  present only when Stewart located the citation from a quote.
+- Artifact entries carry `encoding`, `member`, `size` and `sha256`. `encoding`
+  follows the input field: `utf-8` for `text`, `binary` for `base64`, even when
+  the base64 bytes happen to be UTF-8. The artifact bytes are a separate member,
+  never inlined.
+- An entry whose bytes close could not read or verify when it sealed
+  (INTERFACE 8.1) is written
+  `{"id","version","kind","label","unproduced":{"sha256","size","failure"}}` in
+  that key order. `sha256` and `size` are the recorded digest and size of its
+  payload, and `failure` is `missing`, `unreadable` or `damaged`. Every other
+  entry keeps its ordinary form, so the file still binds the whole selection's
+  identities and digests.
+
+## The rendering (`stewart.render/1`)
+
+`answer.md` is generated from the selection by these rules alone. It never
+reorders, combines or judges entries, never inserts the question or operating
+history, and never fills a gap.
+
+```
+Rendered by Stewart. Entry text is attributed to the auditor.
+
+## Observation — e3 · restart duplicate
+
+> Implementation A can send the same reminder twice if the worker stops
+> after sending but before recording the sent marker.
+
+Citations: materials/a.py lines 4–6 [50, 119) "R1. A reminder ID …"; question line 1 [0, 46).
+```
+
+1. First line: `Rendered by Stewart. Entry text is attributed to the auditor.`
+2. For each entry in selection order, a blank line, then the heading `## <Kind>
+   — <id>`, followed by ` · <label>` when the label is non-empty. Kind is the
+   tool name without `record_`, with underscores as spaces and the first letter
+   capitalized (`Working question`). Artifacts use `Artifact`.
+3. A blank line, then the text as a blockquote. The text is split at each LF,
+   and a final LF does not add a line. Each line is written as `> ` plus the
+   line, or as `>` alone if the line is empty. Other bytes, including CR, are kept.
+   Empty text is written `*No text recorded.*`. A binary artifact is written
+   `Binary artifact, <size> bytes, SHA-256 <hex>, delivered as <member>.`
+4. If the entry has citations, a blank line, then `Citations: ` followed by
+   each citation joined with `; ` and ended with `.`. A citation is the source
+   name; then `line N` or `lines N–M` (an en dash) from `stewart.lines`; then
+   the byte range `[start, end)`, from the citation's `start` and `end` when
+   present and otherwise from `stewart.range`; then, if a quote was given, a
+   space and the quote as a JSON string with the escapes above.
+5. The file ends with one LF.
+
+An empty selection renders as the single line `No answer entries recorded.` and
+an LF. The renderer is not run when any entry is unproduced: `answer.md` is then
+itself an unproduced member of the return (INTERFACE 8.1), and its bytes are
+never invented.
+
+## Worked examples
+
+The [worked examples](../examples/questions/README.md) predate this
+specification. Their paper replies use symbolic material IDs (`m1`) and an
+`answer_read` tool. Under this specification those are `materials/<name>`
+sources and `read`. They remain illustrations of expression, including
+inadequate evidence. They are not wire fixtures.

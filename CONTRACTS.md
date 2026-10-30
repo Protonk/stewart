@@ -207,9 +207,10 @@ affirmation, and `run` takes only the reference. The auditor receives the
 question body, never the front matter. The pinned model serves every placement
 of the audit; a release names the models that passed its conformance gate. Run
 limits are cumulative counts the provider reports: model turns, input tokens and
-output tokens. Stewart sets no money limit, since prices are not facts it
-observes. The destination is an existing directory in which each delivery
-attempt creates its own new package.
+output tokens. When a response is lost, Stewart charges a stated conservative
+estimate and records it as estimated. Stewart sets no money limit, since prices
+are not facts it observes. The destination is an existing directory in which
+each delivery attempt creates its own new package.
 
 `new` may scaffold an absent folder or use an explicitly supplied existing
 folder without replacing its contents. An existing folder's shape is checked at
@@ -613,8 +614,10 @@ rendering mechanics remain implementation/form-specification work.
 
 Each recorded citation keeps the auditor's operands beside Stewart's own
 attributed additions: the source's public name, digest and line span. The
-rendering presents the name and lines, so a reader can follow a citation in the
-delivered return without the archive.
+rendering presents the name and lines, so a reader can locate each citation in
+any copy of the material and, using the digest, check whether that copy is the
+commissioned one. The return does not carry the material; receipt readback
+recovers the commissioned bytes.
 
 Close after launch applies the same rendering rule when it seals unsubmitted
 recorded work as the manager's. It does not claim auditor inspection or submission.
@@ -729,8 +732,8 @@ continuation, destination replacement and narrowly named loss disposition.
 **The receipt is retrievable.** `stewart receipt REF` retrieves the recorded
 commission: the original question, accepted material index, arrangement identity,
 grants and limits, recorded intake qualifications and exact run line. It lists
-stable item IDs and the readback command for the original problem, question,
-recorded arrangement and each copied input. `stewart receipt REF --read ITEM`
+stable item IDs and the readback command for the original question file,
+question body, recorded arrangement and each copied input. `stewart receipt REF --read ITEM`
 returns the selected item's verified original bytes, not its live source or a
 rendering reconstructed with the currently installed form. Raw readback writes
 bytes to stdout and qualifications to stderr; ordinary receipt inspection has
@@ -896,15 +899,18 @@ the same failure and do not disclose the manager's private operating records.
 
 ### Opaque handles bind purpose and exact work
 
-Keep distinct handle kinds for a manager's stable audit reference, material
-identity, exact entry/version, manager preparation, auditor preparation, prepared
-member read and seal reference. They may have readable prefixes, but callers do
-not construct, parse, increment or retarget them. Validate audit/store identity,
+Keep distinct handle kinds for a manager's stable audit reference, exact
+entry/version, manager preparation, auditor preparation, prepared member read
+and seal reference. They may have readable prefixes, but callers do not
+construct, parse, increment or retarget them. Validate audit/store identity,
 purpose and version on every use. A handle is neither a filesystem path nor a
 new host-owner authentication mechanism. The manager's audit reference carries
 the archive's location and identity with the audit identity, so it works from
 any directory without configuration. Stewart verifies both on every use and
-never treats the reference as a path to records.
+never treats the reference as a path to records. Material and question sources
+are addressed by their exact public names (`question`, `materials/<name>`): a
+name reaches only material already in the auditor's world, so it needs no
+handle.
 
 The exact entry handle is the edit operand; displayed entry ID/version/revision
 help orientation. Display names and equal content never identify edits or retries.

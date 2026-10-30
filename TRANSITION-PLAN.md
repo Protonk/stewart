@@ -11,6 +11,22 @@ No model-consuming run is included. The coordinator's shell sandbox cannot reach
 Apple `container` (its Rosetta check is denied), so the coordinator prepares
 container commands and scripts and the user runs them with `!`.
 
+Progress: step 1 is specified in [docs/INTERFACE.md](docs/INTERFACE.md) and
+[docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md). The new crate is `service/`
+(binary `stewart`); the commission-bundle slice stays in `successor/`.
+
+Step 2 run `.scratch/apparatus-01` (driver `apparatus/step2.sh`, source
+`47e5a59`, 2026-10-30): `failures=0`. Toolchain images
+`stewart-toolchain:1-arm64` `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a`
+and `-amd64` `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4`
+(rustc 1.99.0, musl 1.2.5). Two offline builds per architecture were identical:
+aarch64 `5febe49834927c764a1433a430615949c69d1c00a8c8dcc97f0b00ada7c8702b`
+(static executable), x86_64
+`a028cba9713f87b25b59993e8cbaa00cdc101b19401e9cb0c8441238babf0be1` (static PIE).
+Neither requests a program interpreter, and both ran in their toolchain image and
+in alpine. The run had no firing controls for its static and reproducibility
+checks; the step 3 driver adds them (a glibc build must fail the static check).
+
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
 [ACCEPTANCE.md](ACCEPTANCE.md). This is the only active development plan. No
