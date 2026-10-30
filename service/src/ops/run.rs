@@ -23,6 +23,7 @@ use crate::bodies::{NoticeReport, ProviderUse, RunEnded, RunObservations, RunSta
 use crate::ids;
 use crate::json::J;
 use crate::log::{self, Body, EndedBy, LogState, PubErr};
+use crate::ops::close::delivery_value;
 use crate::provider::placement::{self, Ended, Live};
 use crate::provider::request::Parts;
 use crate::provider::stop::{self, Flags};
@@ -40,8 +41,17 @@ use crate::world::{self, World};
 const OP: &str = "run";
 
 /// Effects of an invocation that started nothing: the recorded facts as
-/// they stand. `held` is whether the active lock is held, when known.
+/// they stand. `held` is whether the active lock is held, when known. A
+/// refusal makes and presents no delivery, so `delivery` is the outcome of
+/// the newest recorded attempt, or `none` without one (1.4).
 fn eff(state: Option<&LogState>, held: Option<bool>) -> Vec<(&'static str, &'static str)> {
+    let delivery = match state {
+        Some(s) if !s.damaged() => s
+            .deliveries()
+            .last()
+            .map_or("none", |d| delivery_value(d.outcome())),
+        _ => "unknown",
+    };
     let (run, seal) = match state {
         Some(s) if !s.damaged() => (
             if !s.launched() {
@@ -67,7 +77,7 @@ fn eff(state: Option<&LogState>, held: Option<bool>) -> Vec<(&'static str, &'sta
         ("run", run),
         ("answer", "unchanged"),
         ("seal", seal),
-        ("delivery", "none"),
+        ("delivery", delivery),
     ]
 }
 
@@ -231,7 +241,13 @@ fn tls(audit: &Audit) -> Result<Tls, Fail> {
         }
         #[cfg(not(feature = "fault-injection"))]
         Some(_) => Err(invalid("test roots exist only in a test build.".into())),
-        None => Tls::web_pki().map_err(|e| Fail::failed("record_failed", e)),
+        None => Tls::web_pki().map_err(|e| {
+            Fail::failed(
+                "record_failed",
+                "The TLS configuration could not be built; nothing was started.",
+            )
+            .cause(Cause::new("build TLS configuration", e))
+        }),
     }
 }
 
@@ -300,7 +316,9 @@ fn reconcile(audit: &Audit, state: &LogState, run: u64, started_n: u64) -> Resul
             "record_failed",
             format!("The ending of placement {run}, whose process is gone, could not be recorded; no run was started."),
         )
-        .cause(c),
+        .cause(c)
+        // The failed publication's stage file stays in stage/ as evidence.
+        .retain(audit.abs("stage")),
     })
 }
 
@@ -496,16 +514,21 @@ pub fn run(reference: &str) -> Reply {
     // signal thread receives them.
     let abort = AbortHandle::new();
     let flags = Flags::default();
-    if let Err(e) =
-        stop::block_signals().and_then(|_| stop::receive_signals(abort.clone(), flags.clone()))
-    {
+    let signals = stop::block_signals()
+        .map_err(|e| Cause::io("block stop signals", &e))
+        .and_then(|_| {
+            stop::receive_signals(abort.clone(), flags.clone())
+                .map_err(|e| Cause::io("start the signal thread", &e))
+        });
+    if let Err(c) = signals {
         let f = Fail::failed(
             "record_failed",
             format!(
                 "The run could not prepare its signal handling ({}); nothing was started.",
-                util::describe(&e)
+                c.error
             ),
-        );
+        )
+        .cause(c);
         return refuse(&audit, f, Some(&state));
     }
 
@@ -558,15 +581,18 @@ pub fn run(reference: &str) -> Reply {
                 "record_failed",
                 "run_started could not be recorded, so no placement started.",
             )
-            .cause(c);
+            .cause(c)
+            .retain(audit.abs("stage"));
             return refuse(&audit, f, Some(&state));
         }
-        Err(PubErr::Uncertain { cause, .. }) => {
+        Err(PubErr::Uncertain { n, cause }) => {
             let mut reply = Fail::failed(
                 "record_failed",
                 "run_started was linked but its durability could not be confirmed; the run did not continue.",
             )
             .cause(cause)
+            .retain(audit.abs(&format!("log/{n}.json")))
+            .retain(audit.abs("stage"))
             .next(status_next(&audit))
             .into_reply(
                 OP,
@@ -574,7 +600,7 @@ pub fn run(reference: &str) -> Reply {
                     ("run", "unknown"),
                     ("answer", "unchanged"),
                     ("seal", "none"),
-                    ("delivery", "none"),
+                    ("delivery", eff(Some(&state), None)[3].1),
                 ],
             );
             audit.diagnose(&mut reply, J::obj().with("run", run));
@@ -639,37 +665,76 @@ pub fn run(reference: &str) -> Reply {
             })
         }
     };
-    let _ = started_n;
-    finish(&audit, &world, run, ended)
+    finish(&audit, &world, run, started_n, ended)
+}
+
+/// Every location a placement created and kept, for a failed reply's
+/// `retained` (1.3): its run directory, the payloads of its entries, the
+/// sealed preparation and its manifest, and its delivery plans and packages.
+/// Auditor preparations that were never sealed are inspection candidates no
+/// record names, and are not listed.
+fn kept(audit: &Audit, run: u64, started_n: u64, e: &Ended) -> Vec<String> {
+    let mut out = Vec::new();
+    if runs::open(audit, run).is_ok() {
+        out.push(audit.abs(&format!("runs/{run}")));
+    }
+    let state = log::read(audit);
+    for (r, entry) in state.entries() {
+        if r.n > started_n && entry.invocation.run == run {
+            if let Some(v) = &entry.created {
+                out.push(audit.abs(&v.payload.file));
+            }
+        }
+    }
+    if let Some((r, s)) = state.seal() {
+        if r.n > started_n {
+            out.push(audit.abs(&crate::names::prepared_dir(s.prepared)));
+            out.push(audit.abs(&s.manifest));
+        }
+    }
+    if let Some(d) = &e.delivered {
+        for a in &d.attempts {
+            out.push(audit.abs(&crate::names::plan_name(a.attempt)));
+            if let Some(l) = &a.location {
+                out.push(l.clone());
+            }
+        }
+    }
+    out.dedup();
+    out
 }
 
 /// Record the placement's ending and build the reply.
-fn finish(audit: &Audit, world: &World, run: u64, e: Ended) -> Reply {
+fn finish(audit: &Audit, world: &World, run: u64, started_n: u64, e: Ended) -> Reply {
+    // The newest attempt this invocation made; `unknown` when delivery
+    // stopped before an attempt's outcome could be established.
     let delivery_effect = match &e.delivered {
         None => "none",
-        Some(d) => match d.attempts.last().and_then(|v| v.outcome.as_deref()) {
-            Some("verified") => "verified",
-            Some("verified_with_losses") => "verified_with_losses",
-            Some("partial") => "partial",
-            Some("failed") | Some("name_taken") => "failed",
-            _ => "unknown",
+        Some(d) => match d.attempts.last() {
+            Some(v) => delivery_value(v.outcome.as_deref()),
+            None if d.stopped.is_some() => "unknown",
+            None => "none",
         },
     };
+    let kept = kept(audit, run, started_n, &e);
     let seal_effect = if e.seal.is_some() { "recorded" } else { "none" };
     let answer_effect = if e.entries { "changed" } else { "unchanged" };
     if e.log_damaged {
-        let mut reply = Fail::failed("log_damaged", e.message.clone())
-            .retain(audit.abs("log"))
-            .next(status_next(audit))
-            .into_reply(
-                OP,
-                vec![
-                    ("run", "started"),
-                    ("answer", answer_effect),
-                    ("seal", seal_effect),
-                    ("delivery", delivery_effect),
-                ],
-            );
+        let mut f = Fail::failed("log_damaged", e.message.clone())
+            .cause(Cause::new("read the audit log", e.message.clone()).at(audit.abs("log")))
+            .retain(audit.abs("log"));
+        for k in &kept {
+            f = f.retain(k.clone());
+        }
+        let mut reply = f.next(status_next(audit)).into_reply(
+            OP,
+            vec![
+                ("run", "started"),
+                ("answer", answer_effect),
+                ("seal", seal_effect),
+                ("delivery", delivery_effect),
+            ],
+        );
         audit.diagnose(&mut reply, J::obj().with("run", run));
         return reply;
     }
@@ -708,6 +773,16 @@ fn finish(audit: &Audit, world: &World, run: u64, e: Ended) -> Reply {
         Err(PubErr::Damaged(s)) => {
             let mut reply = log::damaged_fail(audit, &s);
             reply.outcome = crate::reply::Outcome::Failed;
+            let mut reply = reply.cause(
+                Cause::new(
+                    "publish run_ended",
+                    format!("the audit log is damaged ({})", s.bad_names()),
+                )
+                .at(audit.abs("log")),
+            );
+            for k in &kept {
+                reply = reply.retain(k.clone());
+            }
             let mut reply = reply.into_reply(OP, effects("started"));
             audit.diagnose(&mut reply, J::obj().with("run", run));
             return reply;
@@ -719,7 +794,7 @@ fn finish(audit: &Audit, world: &World, run: u64, e: Ended) -> Reply {
                 PubErr::Refused(f) => (Cause::new("publish run_ended", f.message), "unknown"),
                 PubErr::Damaged(_) => unreachable!("handled above"),
             };
-            let mut reply = Fail::failed(
+            let reply = Fail::failed(
                 "record_failed",
                 format!(
                     "Placement {run} ended {} but its ending could not be recorded; the next run or close records it.",
@@ -727,9 +802,13 @@ fn finish(audit: &Audit, world: &World, run: u64, e: Ended) -> Reply {
                 ),
             )
             .cause(cause)
-            .retain(audit.abs(&format!("runs/{run}")))
-            .next(status_next(audit))
-            .into_reply(OP, effects(run_effect));
+            // The unrecorded ending's stage file stays in stage/.
+            .retain(audit.abs("stage"));
+            let mut reply = kept
+                .iter()
+                .fold(reply, |f, k| f.retain(k.clone()))
+                .next(status_next(audit))
+                .into_reply(OP, effects(run_effect));
             audit.diagnose(&mut reply, J::obj().with("run", run));
             return reply;
         }

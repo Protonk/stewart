@@ -94,7 +94,7 @@ pub fn run(reference: &str, flags: &Flags) -> Reply {
 /// The `effects.delivery` value of an attempt's recorded outcome. A
 /// `name_taken` attempt is a failed placement of the package; an attempt
 /// without a recorded outcome is unknown.
-fn delivery_value(outcome: Option<&str>) -> &'static str {
+pub(crate) fn delivery_value(outcome: Option<&str>) -> &'static str {
     match outcome {
         Some("verified") => "verified",
         Some("verified_with_losses") => "verified_with_losses",
