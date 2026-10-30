@@ -1701,7 +1701,7 @@ class T:
                 if isinstance(r["obj"], dict) and r["obj"].get("kind") == kind]
 
     # Folders whose entries are locations a manager reply's `retained` must list (1.3).
-    RETAINED_DIRS = ("intake", "prep", "prepared", "seal", "delivery", "diag")
+    RETAINED_DIRS = ("intake", "prep", "prepared", "seal", "delivery", "diag", "runs", "payload")
 
     def audit_locations(self, sub):
         """Absolute paths of the entries of the audit's location folders (RETAINED_DIRS), taken
@@ -1716,15 +1716,20 @@ class T:
         return out
 
     def check_retained(self, rep, sub, name, before, outside=()):
-        """1.3 (amended in 7788cc8): `retained` on a refused or failed manager reply lists every
-        location this invocation created and kept (a capture attempt, a preparation directory,
-        a seal manifest, a delivery plan or package, and its diagnostic when that was written).
-        Compared exactly with the new entries of the audit's location folders since `before`
-        (an audit_locations() taken before the command), plus `outside` (created locations
-        elsewhere, such as a package at a destination). Log records and stage files are records,
-        not retained locations, and are not part of the comparison."""
+        """1.3 (as amended in 2c927ab): `retained` on a refused or failed manager reply lists
+        every location this invocation created and kept: each directory it created (a capture
+        attempt, a preparation, a run directory runs/<n>, a delivery package) and each file it
+        created in a directory it did not create (an entry payload, a seal manifest, a delivery
+        plan, its diagnostic when written); and, on log_damaged, the log directory. Log records
+        and stage files are not listed.
+
+        Compared exactly with the new entries of the audit's location folders (RETAINED_DIRS)
+        since `before` (an audit_locations() taken before the command), plus `outside`
+        (created locations elsewhere, such as a package at a destination)."""
         ret = (rep.obj or {}).get("retained") or []
         created = (self.audit_locations(sub) - set(before)) | set(outside)
+        if rep.reason == "log_damaged":
+            created.add(os.path.join(sub.audit_dir, "log"))
         self.eq(name + ".retained", sorted(set(ret)), sorted(created))
         self.check(name + ".retained-kept", all(os.path.lexists(x) for x in ret), ret)
         if rep.effects.get("diagnostic") == "durable":
