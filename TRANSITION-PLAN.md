@@ -145,11 +145,15 @@ each item needs the decision or commission named.
   `max_tokens_per_request` (16,000) and the 600 s timeout are pinned but
   unqualified against real responses.
 - **Step 9, retiring Python: not started**, by design (it follows step 8).
-- **Fat-LTO `getrandom`: unexplained, worked around.** In the fat-LTO static
-  musl release build, musl's `getrandom` was absent from the linked binary and
-  calls to it misbehaved; Stewart calls the raw syscall instead
-  (`service/src/platform.rs`). A reproduction and evidence for an upstream
-  report are in `.scratch/fat-lto-getrandom-01/REPORT.md`. Other libc wrappers
+- **Fat-LTO `getrandom`: worked around, cause upstream and not established.**
+  In the fat-LTO static musl release build the post-LTO IR declares
+  `getrandom` `extern_weak`, so ld never links musl's definition and the call
+  misbehaves; Stewart calls the raw syscall instead
+  (`service/src/platform.rs`). The bug report, steps to reproduce and evidence
+  are in `.scratch/fat-lto-getrandom-01/REPORT.md` (run 2026-10-30). Six small
+  programs did not reproduce it; the only known reproducer is Stewart's
+  revision `e714629`, so filing upstream needs either that source or further
+  reduction. Other libc wrappers
   used today work in every build tested; that is evidence about those
   functions, not a guarantee.
 - **Decisions made during the build that a reviewer may revisit** (reported to

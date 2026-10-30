@@ -26,11 +26,12 @@ pub fn random_fill(buf: &mut [u8]) -> io::Result<()> {
     #[cfg(target_os = "linux")]
     {
         // The raw syscall, not musl's getrandom() wrapper. In the fat-LTO
-        // static release build musl's getrandom was absent from the linked
-        // binary although this code called it: the call returned without
-        // writing (all-zero identifiers) on aarch64 and crashed on x86_64.
-        // Thin-LTO and non-LTO builds linked it and worked. Why fat LTO drops
-        // the symbol is not established; the syscall needs no library symbol.
+        // static release build the post-LTO IR declared getrandom extern_weak,
+        // so the linker never took musl's definition from libc.a and the call
+        // had no definition: it returned without writing (all-zero
+        // identifiers) on aarch64 and crashed on x86_64. Thin-LTO and non-LTO
+        // builds linked it and worked. Where the weak linkage comes from is
+        // not established; the syscall needs no library symbol.
         let mut off = 0;
         while off < buf.len() {
             let rc = unsafe {
