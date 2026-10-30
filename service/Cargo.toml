@@ -16,3 +16,9 @@ codegen-units = 1
 lto = true
 panic = "abort"
 strip = "symbols"
+
+[features]
+# Test builds only (INTERFACE Appendix C). The release binary is built without
+# them and contains neither their code nor their environment variable names.
+fault-injection = []
+sabotage = []
