@@ -68,6 +68,23 @@ first; then implementation (answer protocol; run adapter; seal, delivery and
 close after launch) and the independent driver with its fake provider proceed
 in parallel from that text.
 
+Steps 4–6 status (2026-10-30): built and integrated on main at `1bd98bf`
+(specification amended through `2c927ab`). Native development runs on macOS
+against `2c927ab` (not evidence): every service test passes in both
+configurations; the independent driver passes all 95 cases that can run
+natively (82 run and foundation cases, 13 after-launch cases); every
+sabotage control variant that ran natively fired (50 and 11 as the two
+authors' runs report them) and every driver control fired. Not yet exercised:
+six cases that need Linux OFD locks (T7, interruptions, the submit/close race,
+continuation, stopping, close while running), the five control variants that
+only they carry, and two heavy bound cases. First contact between the driver
+and the implementation produced eight specification amendments and three
+implementation defects, all settled: a linked but uncertain seal was not
+delivered, refusal and failure effects misreported delivery, closure and
+retained locations, and close misread a run's exit as another close. The
+milestone run is `apparatus/acceptance.sh` (container suite, both
+architectures), pending.
+
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
 [ACCEPTANCE.md](ACCEPTANCE.md). This is the only active development plan. No

@@ -1,17 +1,17 @@
 # Coordinator notes
 
-Steps 4–6 milestone in progress from the specification committed in `bad341f`.
-Active workers and edit ownership:
+Steps 4–6 milestone in progress. All implementation fixes from first
+contact are on main at `2c927ab` (run loop: seal read from the log, refusal
+delivery effect; close: closure and retained, and the exiting-run race;
+retained rule in 1.3). Every service test passes in both configurations.
 
-- Foundation (post-launch record bodies, shared records, component
-  interfaces as stubs, Appendix C names, the `2026-10-21` pin): `service/` in
-  the main tree.
-- Provider transport and the loop's pure parts: new files under
-  `service/src/provider/` in its own worktree under `.claude/worktrees/`;
-  merged after the foundation.
-- Independent driver, stage A (fake provider, reacting auditor, run harness,
-  case plan): `apparatus/` in the main tree; builds binaries only from
-  committed revisions.
+Active workers: driver authors 1 and 2, running all cases natively against
+`2c927ab` (author 1 also extends `T.check_retained` to `runs/`, `payload/`
+and the damaged log). Remaining after their reports: settle any last
+disagreements, then the user runs `apparatus/acceptance.sh`.
+
+Agent worktrees may be created at an old base commit; check and fast-forward
+before work starts.
 
 Loopback listening was enabled by the user on 2026-10-30, so the fake
 provider runs natively; only the milestone container suite counts as evidence.
