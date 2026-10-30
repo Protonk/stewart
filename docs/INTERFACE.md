@@ -1663,11 +1663,11 @@ estimated, and its notices (4.4).
 | Attempt outcome | Meaning | Retried |
 | --- | --- | --- |
 | `response` | HTTP 200 with a decodable message | — |
-| `response_undecodable` | HTTP 200 whose body is not a decodable message (6.2), was cut off or exceeds 32 MiB | no |
+| `response_undecodable` | HTTP 200 whose complete body is not a decodable message (6.2), or whose body exceeds 32 MiB | no |
 | `http_error` | Any other status, its body captured | for 408, 429, 500, 502, 503, 504 and 529 |
 | `timeout` | No complete response within the request timeout, counted from the start of the connection | yes |
 | `connection_failed` | Resolution, connection, proxy `CONNECT` or TLS failed before any request byte was written | yes |
-| `connection_lost` | The connection failed after request bytes were written and before the response was complete | yes |
+| `connection_lost` | The connection failed after request bytes were written and before the response was complete, including an HTTP 200 body cut off by the connection ending or being reset; another status that arrived is `http_error` even if its body was cut off | yes |
 | `aborted_by_close`, `aborted_by_signal` | The stop path shut the connection down (6.8) | no |
 
 Each request is attempted at most 4 times. The delays before attempts 2, 3 and 4
