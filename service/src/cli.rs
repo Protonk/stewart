@@ -18,6 +18,7 @@ usage: stewart new FOLDER [--archive ROOT] [--json]
        stewart receipt REF --read ITEM
        stewart status REF [--json]
        stewart status --archive ROOT [--json]
+       stewart run REF [--json]
        stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--json]
        stewart help [commands | forms | limits | reader | close]";
 
@@ -232,6 +233,17 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
                 json: a.flag("--json"),
                 reference: Some(r),
                 mutating: false,
+            })
+        }
+        "run" => {
+            let a = parse(rest, &["--json"], &[], &[])?;
+            a.exactly(1, "REF")?;
+            let r = a.positionals[0].clone();
+            Ok(Plan::Reply {
+                reply: ops::run::run(&r),
+                json: a.flag("--json"),
+                reference: Some(r),
+                mutating: true,
             })
         }
         "close" => {

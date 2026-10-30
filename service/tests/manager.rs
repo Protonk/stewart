@@ -702,7 +702,12 @@ fn help_and_usage() {
             .contains("Formulate a working question")
     );
     assert_eq!(e.run(&["help", "nope"]).code, Some(2));
-    assert_eq!(e.run(&["run", "stw1:x"]).code, Some(2));
+    assert_eq!(e.run(&["run"]).code, Some(2));
+    assert_eq!(e.run(&["run", "stw1:x", "--detach"]).code, Some(2));
+    let o = e.run(&["run", "stw1:x", "--json"]);
+    assert_eq!(o.code, Some(3), "{}", o.text());
+    assert_eq!(s(&o.json(), &["reason"]), "reference_invalid");
+    assert_eq!(s(&o.json(), &["effects", "answer"]), "unchanged");
     assert_eq!(e.run(&[]).code, Some(2));
     assert_eq!(e.run(&["status", "--jsn"]).code, Some(2));
     assert_eq!(
@@ -734,4 +739,46 @@ fn commission_uses_only_the_verified_pinned_arrangement() {
     )
     .to_string();
     assert_eq!(e.commission(&r, &h2).code, Some(0));
+}
+
+#[test]
+fn a_placements_world_is_the_verified_captures_and_pinned_arrangement() {
+    let e = Env::new();
+    let (r, h) = e.prepared(&[("a.py", b"one\r\ntwo"), ("sub/b.txt", b"")]);
+    assert_eq!(e.commission(&r, &h).code, Some(0));
+    // The live folder changes after acceptance; the world never consults it.
+    std::fs::write(e.path("q/materials/a.py"), b"edited").unwrap();
+    let audit = stewart::archive::Audit::open(&r).unwrap();
+    let state = stewart::log::read(&audit);
+    let w = stewart::world::load(&audit, &state).unwrap_or_else(|p| panic!("{p:?}"));
+    assert_eq!(
+        w.question.bytes().unwrap(),
+        b"Audit our app to make sure there are no bugs.\n"
+    );
+    assert_eq!(w.question.lines, 1);
+    let names: Vec<&str> = w.materials.iter().map(|m| m.name.as_str()).collect();
+    assert_eq!(names, ["materials/a.py", "materials/sub/b.txt"]);
+    let a = w.source("materials/a.py").unwrap();
+    assert_eq!(a.bytes().unwrap(), b"one\r\ntwo");
+    assert_eq!((a.size, a.lines), (8, 2));
+    assert_eq!(a.read(5, 100).unwrap(), b"two");
+    assert_eq!(w.source("materials/sub/b.txt").unwrap().lines, 0);
+    assert!(w.source("materials/nope").is_none());
+    assert_eq!(w.arrangement.family, "open-inquiry/1");
+    assert_eq!(w.arrangement.anthropic_version, "2026-10-21");
+    assert_eq!(w.arrangement.tool_names[0], "list");
+    assert_eq!(w.directories, ["materials", "materials/sub"]);
+
+    // A damaged capture is named by its receipt item; the others still load.
+    let cap = format!("{}/intake/1/m0001.bin", e.audit_dir(&r));
+    std::fs::remove_file(&cap).unwrap();
+    std::fs::write(&cap, b"one\ntwo").unwrap();
+    let problems = match stewart::world::load(&audit, &state) {
+        Ok(_) => panic!("a damaged capture loaded"),
+        Err(p) => p,
+    };
+    assert_eq!(
+        problems.iter().map(|p| p.item.as_str()).collect::<Vec<_>>(),
+        ["materials/a.py"]
+    );
 }

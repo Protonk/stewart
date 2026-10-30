@@ -88,6 +88,7 @@ impl Fail {
             retained: self.retained,
             causes: self.causes,
             next: self.next,
+            tool_next: Vec::new(),
             data: self.data,
         }
     }

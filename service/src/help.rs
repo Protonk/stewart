@@ -107,8 +107,9 @@ Commands
   stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--json]
       End the reference. See: stewart help close.
 
-Replies: exit 0 completed, 2 usage, 3 refused, 4 failed. A missing reply means
-the effects are unknown; status reconciles from the records.
+Replies: exit 0 completed, 2 usage, 3 refused, 4 failed; run exits 5 when its
+placement was interrupted and recorded, and run continues it. A missing reply
+means the effects are unknown; status reconciles from the records.
 "
     .to_string()
 }

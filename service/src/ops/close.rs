@@ -7,7 +7,8 @@
 
 use super::headline;
 use crate::archive::{self, Audit, Fail};
-use crate::json::{self, J};
+use crate::bodies::{CloseFlags, CloseRequested, Closed};
+use crate::json::J;
 use crate::log::{self, Body, PubErr};
 use crate::reply::{Cause, Next, Reply};
 use crate::util;
@@ -16,6 +17,8 @@ use std::time::{Duration, Instant};
 const OP: &str = "close";
 /// How long close waits for an intake that holds the lock (Appendix B).
 const INTAKE_WAIT: Duration = Duration::from_secs(10);
+/// How long close waits for a run to observe `close_requested` and exit.
+pub const RUN_WAIT: Duration = Duration::from_secs(30);
 
 fn eff(closure: &'static str) -> Vec<(&'static str, &'static str)> {
     vec![
@@ -58,11 +61,8 @@ pub fn run(reference: &str, flags: &Flags) -> Reply {
 }
 
 fn closed_reply(rec: &log::LogRec, already: bool, state: &log::LogState) -> Reply {
-    let (before, accepted) = match rec.body {
-        Body::Closed {
-            before_launch,
-            accepted,
-        } => (before_launch, accepted),
+    let (before, accepted) = match &rec.body {
+        Body::Closed(c) => (c.before_launch(), c.accepted),
         _ => (true, false),
     };
     let data = J::obj()
@@ -161,18 +161,19 @@ fn close(audit: &Audit, flags: &Flags) -> Reply {
     }
     // Step 3: record the request. From here no intake may be accepted.
     if state.close_requested().is_none() {
-        let flags_j = J::obj()
-            .with("confirm", flags.confirm.clone())
-            .with("surrender", json::strs(&flags.surrender))
-            .with("destination", flags.destination.clone());
+        let body = CloseRequested {
+            flags: CloseFlags {
+                confirm: flags.confirm.clone(),
+                surrender: flags.surrender.clone(),
+                destination: flags.destination.clone(),
+            },
+        };
         let p = log::publish(audit, "close_requested", |st| {
             if st.close_requested().is_some() {
                 // Another close recorded it first; that request stands.
                 return Err(Fail::refused("already_requested", ""));
             }
-            Ok(J::obj()
-                .with("flags", flags_j.clone())
-                .with("observations", archive::observations()))
+            Ok(body.to_j())
         });
         match p {
             Ok(_) | Err(PubErr::Refused(_)) => {}
@@ -330,18 +331,7 @@ fn close(audit: &Audit, flags: &Flags) -> Reply {
                 format!("intake {open} has no outcome"),
             ));
         }
-        let accepted = s.accepted().is_some();
-        Ok(J::obj()
-            .with("before_launch", true)
-            .with("accepted", accepted)
-            .with(
-                "outcome",
-                if accepted {
-                    "closed_after_acceptance_before_launch"
-                } else {
-                    "closed_without_acceptance"
-                },
-            ))
+        Ok(Closed::before(s.accepted().is_some()).to_j())
     });
     drop(lock);
     match p {

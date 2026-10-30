@@ -148,11 +148,8 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
             }
         }
     } else if let Some(c) = state.closed() {
-        let (before, was_accepted) = match c.body {
-            Body::Closed {
-                before_launch,
-                accepted,
-            } => (before_launch, accepted),
+        let (before, was_accepted) = match &c.body {
+            Body::Closed(c) => (c.before_launch(), c.accepted),
             _ => (true, false),
         };
         evidence.push(ev("closed", format!("closed record log/{}.json", c.n)));

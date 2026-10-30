@@ -138,7 +138,7 @@ For `run`, `close` and the auditor tools the values mean:
 
 | Key | Meaning |
 | --- | --- |
-| `run` | `not_started`: no placement has started; `started`: this run's placement started and its ending could not be recorded; `ended`: every placement has a recorded ending; `still_held`: a placement still holds the active lock |
+| `run` | `not_started`: no placement has started; `started`: this run's placement started and its ending could not be recorded; `ended`: no placement is live, because each has a recorded ending or its process is gone with the active lock free (the next `run` or `close` records that ending); `still_held`: a placement still holds the active lock |
 | `answer` | `changed`: this invocation recorded at least one entry; `unchanged`: it recorded none |
 | `seal` | `none`: no seal exists; `recorded`: this invocation published the seal; `existing`: a seal existed before it |
 | `delivery` | The outcome (8.3) of the newest delivery attempt this invocation made or presented, or `none` |
@@ -228,7 +228,7 @@ delivery attempt.
 | `seal` | SHA-256 of the return manifest |
 | `cf` | SHA-256 of the return manifest and of the attempt's `delivery_ended` record |
 | `loss` | SHA-256 of the return manifest and of the failure record (8.4) |
-| `sc` | SHA-256 of the search text, the scope searched, and the position |
+| `sc` | SHA-256 of the search text; SHA-256 of the scope searched, its source names in search order, each followed by LF; and the position |
 | `pg` | The bound answer revision and the position |
 | `ls` | SHA-256 of the material index and the position |
 
@@ -1515,13 +1515,18 @@ which must appear exactly once in its object:
 - in each `content` element: `type`. An element that is not an object, or whose
   `type` is missing, repeated or not a string, is a block of unknown type.
 - in a `tool_use` block: `id`, `name` and `input`. A missing, repeated or
-  non-string `id` makes the block unanswerable (6.3). A missing, repeated or
-  non-string `name` is refused `tool_unknown`, and a missing or repeated `input`
-  `input_invalid`. The `input` value is decoded strictly from its raw bytes
+  non-string `id`, or one containing U+0000, makes the block unanswerable
+  (6.3). A missing, repeated or non-string `name`, or one containing U+0000, is
+  refused `tool_unknown`, and a missing or repeated `input` `input_invalid`. The `input` value is decoded strictly from its raw bytes
   (1.2) when the call runs.
 - in an error body `{"type":"error","error":{"type":…,"message":…},"request_id":…}`:
   `error.type`, `error.message` and `request_id`, recorded when they are
   strings.
+
+Records hold only strings that strict decoding accepts (1.2). A `model`,
+`error.type`, `error.message` or `request_id` containing U+0000 is recorded as
+null, and a `stop_reason` containing it is an unknown stop reason; the raw
+capture keeps the bytes.
 
 `stop_details` and every other member stay in the raw capture. Stewart does not
 summarize or trim history. When the model's context window is exhausted the
@@ -1658,11 +1663,11 @@ estimated, and its notices (4.4).
 | Attempt outcome | Meaning | Retried |
 | --- | --- | --- |
 | `response` | HTTP 200 with a decodable message | — |
-| `response_undecodable` | HTTP 200 whose body is not a decodable message (6.2), was cut off or exceeds 32 MiB | no |
+| `response_undecodable` | HTTP 200 whose complete body is not a decodable message (6.2), or whose body exceeds 32 MiB | no |
 | `http_error` | Any other status, its body captured | for 408, 429, 500, 502, 503, 504 and 529 |
 | `timeout` | No complete response within the request timeout, counted from the start of the connection | yes |
 | `connection_failed` | Resolution, connection, proxy `CONNECT` or TLS failed before any request byte was written | yes |
-| `connection_lost` | The connection failed after request bytes were written and before the response was complete | yes |
+| `connection_lost` | The connection failed after request bytes were written and before the response was complete, including an HTTP 200 body cut off by the connection ending or being reset; another status that arrived is `http_error` even if its body was cut off | yes |
 | `aborted_by_close`, `aborted_by_signal` | The stop path shut the connection down (6.8) | no |
 
 Each request is attempted at most 4 times. The delays before attempts 2, 3 and 4
@@ -2420,8 +2425,8 @@ Provider and transport, for the fake provider:
 | Variable | Effect |
 | --- | --- |
 | `STEWART_TEST_TLS_ROOT` | Absolute path of a PEM file, at most 1 MiB, holding one or more certificates. They are added to the trust roots for the provider connection, directly or through `HTTPS_PROXY`. A missing, unreadable or certificate-free file refuses `run` before any request (`test_tls_root_invalid`). |
-| `STEWART_TEST_PROVIDER_TIMEOUT` | Request timeout in seconds, 1–600, in place of the pinned 600; attempt records state the value used |
-| `STEWART_TEST_RETRY_DELAYS` | Three comma-separated delays in milliseconds, each 0–30,000, in place of 2, 8 and 30 seconds; a `retry-after` value still applies |
+| `STEWART_TEST_PROVIDER_TIMEOUT` | Request timeout in seconds, 1–600, in place of the pinned 600; attempt records state the value used. Any other value refuses `run` before any request (`test_variable_invalid`). |
+| `STEWART_TEST_RETRY_DELAYS` | Three comma-separated delays in milliseconds, each 0–30,000, in place of 2, 8 and 30 seconds; a `retry-after` value still applies. Any other value refuses `run` before any request (`test_variable_invalid`). |
 
 ### C.2 Sabotage controls
 
