@@ -1090,8 +1090,10 @@ The other members of `data`, in order after `evidence`:
 - `allowances`: null before acceptance. Each allowance gives `reported` (usage
   the provider reported), `estimated` (usage charged without a provider report,
   6.4), `used`, their sum, which is what the limit counts, and `limit`. The
-  totals are the `run_ended` usage of every ended placement plus the `charged`
-  amounts of the attempt records of a placement that has none.
+  totals are the `run_ended` usage of every ended placement plus, for a
+  placement that has none, its usage as 6.4 accounts it: its attempt records'
+  `charged` amounts while it is live, and also the estimate for an in-flight
+  request once its process is gone.
 - `answer`: null before launch; else `revision` and `entries`, the number of
   entries in the current selection. Status never shows answer content.
 - `seal`: null, or the seal's `handle`, `actor`, `sealed_at` (the manifest's),
@@ -1594,10 +1596,12 @@ Each attempt record states its charge (4.5):
 | `response_undecodable`, `connection_lost`; `timeout`, `aborted_by_close` and `aborted_by_signal` once any request byte was written | Estimated: one turn, the request's `max_tokens` output tokens and ceil(body bytes / 3) input tokens |
 | `http_error`, `connection_failed`; the others when no request byte was written | None |
 
-A placement without `run_ended` is accounted from its run directory: the
-charges of its attempt records, plus one estimated attempt for each complete
-request capture whose latest attempt has no record. Reconciliation records
-exactly that in `run_ended`. Reported and estimated usage are kept separately
+A placement without `run_ended` is accounted from its run directory. While it
+is live (it holds the active lock), that is the charges of its attempt records
+only: a request still in flight is charged when its attempt ends. Once its
+process is gone (the lock is free), it is those charges plus one estimated
+attempt for each complete request capture whose latest attempt has no record,
+which is exactly what reconciliation records in `run_ended`. Reported and estimated usage are kept separately
 for turns, input and output, in `run_ended`, in status allowances (5.6) and in
 re-entry (7.5); a limit counts their sum. Totals are cumulative across
 placements.
@@ -2372,7 +2376,7 @@ of its point. Actions:
 | `kill` | The process sends itself SIGKILL |
 | `eio`, `enospc`, `epipe` | The operation at the point fails with that error |
 | `corrupt` | The bytes just written are altered by one bit after writing and before verification |
-| `pause` | The process creates `$STEWART_TEST_FAULT_DIR/<point>.paused` exclusively, then waits until `<point>.go` exists there (polling every 10 ms; after 60 s it aborts). A point pauses once per process. |
+| `pause` | The process creates `$STEWART_TEST_FAULT_DIR/<point>.paused` exclusively, then waits until `<point>.go` exists there (polling every 10 ms; after 60 s it aborts). A point pauses once per process. If `<point>.paused` already exists, the process names it on stderr and aborts instead of continuing unpaused, so each pausing process needs a fault directory without that point's files. |
 
 Manager foundation:
 
