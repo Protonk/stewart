@@ -86,7 +86,7 @@ only, never an audit or an answer. The envelope's keys, in this order:
 | `retained` | manager refused or failed | Archive locations holding attempts, partials and diagnostics. |
 | `causes` | failed, or `effects.diagnostic` is `reported_only` | The original cause first, then any reporting failure. |
 | `next` | always | Supported next calls, each with an explanation (1.5). May be empty. |
-| `data` | completed; refused when useful | Operation data, such as the current entry handle on a stale target. |
+| `data` | completed; refused or failed when useful | Operation data, such as the current entry handle on a stale target. |
 
 `next` is always this top-level field, never a member of `data`. On the wire a
 reply is compact JSON: no whitespace between tokens, keys in the order above.
@@ -619,8 +619,10 @@ Steps:
    `acceptance: "unknown"`, naming the bad records. Stewart diagnoses the damage
    and never repairs the log or restarts the audit; the manager may restore its
    own storage or start a new reference. If `accepted` exists for this handle,
-   return the recorded receipt with `data.already_accepted: true`. This is the
-   lost-reply case, and it holds even if the source has changed since. If
+   return the recorded receipt with `data.already_accepted: true` and effects
+   `acceptance: accepted`, `attempt: none` (this invocation made no attempt).
+   This is the lost-reply case, and it holds even if the source has changed
+   since. If
    `accepted` exists for another handle, refuse `reference_already_accepted`. A
    readable log without `accepted` is the evidence that acceptance is absent.
 2. Take the active lock. If it cannot be taken, refuse `intake_in_progress`.

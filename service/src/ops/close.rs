@@ -57,7 +57,7 @@ pub fn run(reference: &str, flags: &Flags) -> Reply {
     reply
 }
 
-fn closed_reply(audit: &Audit, rec: &log::LogRec, already: bool, state: &log::LogState) -> Reply {
+fn closed_reply(rec: &log::LogRec, already: bool, state: &log::LogState) -> Reply {
     let (before, accepted) = match rec.body {
         Body::Closed {
             before_launch,
@@ -72,14 +72,9 @@ fn closed_reply(audit: &Audit, rec: &log::LogRec, already: bool, state: &log::Lo
         .with("accepted", accepted)
         .with("closed_at", rec.at.as_str())
         .with("headline", headline(state).to_j());
-    let mut r = Reply::completed(OP, eff("complete"), data);
-    if accepted {
-        r.next.push(Next::new(
-            audit.argv(&["receipt", &audit.reference]),
-            "Read the accepted commission; its captured bytes remain in the archive.",
-        ));
-    }
-    r
+    // A closed audit owes nothing further, so no next call is offered; the
+    // receipt stays readable through the status reply's receipt line.
+    Reply::completed(OP, eff("complete"), data)
 }
 
 fn unfinished(
@@ -137,7 +132,7 @@ fn close(audit: &Audit, flags: &Flags) -> Reply {
     }
     // Step 2: already closed.
     if let Some(c) = state.closed() {
-        return closed_reply(audit, c, true, &state);
+        return closed_reply(c, true, &state);
     }
     if state.launched() {
         // Not reachable in this build: no run can start, so no run_started exists.
@@ -353,7 +348,7 @@ fn close(audit: &Audit, flags: &Flags) -> Reply {
         Ok(_) | Err(PubErr::Refused(_)) => {
             let st = log::read(audit);
             match st.closed() {
-                Some(c) => closed_reply(audit, c, false, &st),
+                Some(c) => closed_reply(c, false, &st),
                 None => unfinished(audit, "close_in_progress", "unknown", J::obj(), &st),
             }
         }

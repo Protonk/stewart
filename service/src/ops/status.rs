@@ -160,12 +160,6 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
             .with("closed_at", c.at.as_str())
             .with("before_launch", before)
             .with("accepted", was_accepted);
-        if was_accepted {
-            next.push(n(
-                &["receipt", r],
-                "Read the accepted commission; its captured bytes remain in the archive.",
-            ));
-        }
         (
             "closed_before_launch",
             if was_accepted {
