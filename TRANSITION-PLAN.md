@@ -83,7 +83,19 @@ implementation defects, all settled: a linked but uncertain seal was not
 delivered, refusal and failure effects misreported delivery, closure and
 retained locations, and close misread a run's exit as another close. The
 milestone run is `apparatus/acceptance.sh` (container suite, both
-architectures), pending.
+architectures).
+
+First milestone run `.scratch/acceptance-01` (source `1e061a6`): every
+apparatus check and control passed on both architectures, and the driver
+self-test passed (245/245). Driver: aarch64 108/110 cases (timing gate on,
+worst 3.2 ms), x86_64 106/108, identical failures on both, all in the
+Linux-only cases first run here: two driver errors (a race case reusing pause
+files across repetitions; an aborted request expected uncharged), one
+specification conflict (status charged a live placement's in-flight request
+as if the process were gone; settled in `a1515e7`), a test-build pause that
+continued silently on a stale file (now aborts), and two sabotage controls
+(`torn_as_entry`, `reset_limits_on_continuation`) whose cases did not observe
+what the control breaks. Fixes in progress; a second run follows.
 
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
