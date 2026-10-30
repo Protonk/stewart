@@ -67,10 +67,10 @@ pub fn handle(store: &str, audit: &str, kind: &str, object: &str, binding: &[&st
     format!("{object}.{}", check(store, audit, kind, object, binding))
 }
 
-/// Split a manager preparation handle `mp<n>.<check>` into its number and check.
-/// Anything not of that exact shape is `None`.
-pub fn parse_mp(h: &str) -> Option<(u64, &str)> {
-    let rest = h.strip_prefix("mp")?;
+/// Split `<prefix><n>.<check>` into its number and check. Anything not of
+/// that exact shape is `None`.
+fn parse_numbered<'a>(h: &'a str, prefix: &str) -> Option<(u64, &'a str)> {
+    let rest = h.strip_prefix(prefix)?;
     let (num, chk) = rest.split_once('.')?;
     if num.is_empty()
         || num.len() > 9
@@ -79,10 +79,148 @@ pub fn parse_mp(h: &str) -> Option<(u64, &str)> {
     {
         return None;
     }
-    if chk.len() != 6 || !is_b32(chk) {
-        return None;
-    }
+    is_check(chk).then_some(())?;
     Some((num.parse().ok()?, chk))
+}
+
+fn is_check(chk: &str) -> bool {
+    chk.len() == 6 && is_b32(chk)
+}
+
+/// Split a manager preparation handle `mp<n>.<check>` into its number and check.
+/// Anything not of that exact shape is `None`.
+pub fn parse_mp(h: &str) -> Option<(u64, &str)> {
+    parse_numbered(h, "mp")
+}
+
+// Handles after launch (2.3). Each `*_handle` builds the one valid handle
+// for an object and its binding; a presented handle is valid exactly when it
+// equals the handle rebuilt from the records it names. The `parse_*`
+// functions only split a handle's shape, so a caller can find the records to
+// rebuild it from; they establish nothing.
+
+/// An entry version's handle `<id>.v<version>.<check>`, binding the SHA-256
+/// of the `entry` record that created the version.
+pub fn entry_handle(
+    store: &str,
+    audit: &str,
+    id: &str,
+    version: u64,
+    record_sha256: &str,
+) -> String {
+    handle(
+        store,
+        audit,
+        "entry",
+        &format!("{id}.v{version}"),
+        &[record_sha256],
+    )
+}
+
+/// Split `e<n>.v<version>.<check>` into the entry ID and version.
+pub fn parse_entry_handle(h: &str) -> Option<(&str, u64)> {
+    let (object, chk) = h.rsplit_once('.')?;
+    let (id, version) = object.split_once(".v")?;
+    crate::names::parse_entry_id(id)?;
+    let version = crate::names::parse_num(version)?;
+    is_check(chk).then_some((id, version))
+}
+
+/// An auditor preparation handle `ap<n>.<check>`, binding the SHA-256 of
+/// `prepared/<n>/answer.json`, of `prepared/<n>/answer.md` and the answer
+/// revision.
+pub fn ap_handle(
+    store: &str,
+    audit: &str,
+    n: u64,
+    answer_sha256: &str,
+    rendering_sha256: &str,
+    revision: u64,
+) -> String {
+    handle(
+        store,
+        audit,
+        "ap",
+        &format!("ap{n}"),
+        &[answer_sha256, rendering_sha256, &revision.to_string()],
+    )
+}
+
+pub fn parse_ap(h: &str) -> Option<u64> {
+    parse_numbered(h, "ap").map(|(n, _)| n)
+}
+
+/// A prepared view: `<auditor preparation>/rendering` or `/selection`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum View {
+    /// `answer.md`.
+    Rendering,
+    /// `answer.json`.
+    Selection,
+}
+
+/// Split a prepared view source into the preparation handle and the view.
+pub fn parse_view(source: &str) -> Option<(&str, View)> {
+    let (ap, view) = source.split_once('/')?;
+    parse_ap(ap)?;
+    match view {
+        "rendering" => Some((ap, View::Rendering)),
+        "selection" => Some((ap, View::Selection)),
+        _ => None,
+    }
+}
+
+/// The seal handle `seal.<check>`, binding the SHA-256 of the return manifest.
+pub fn seal_handle(store: &str, audit: &str, manifest_sha256: &str) -> String {
+    handle(store, audit, "seal", "seal", &[manifest_sha256])
+}
+
+/// A confirmation token `cf<n>.<check>` for delivery attempt `n`, binding
+/// the manifest's SHA-256 and that of the attempt's `delivery_ended` record.
+pub fn cf_handle(
+    store: &str,
+    audit: &str,
+    attempt: u64,
+    manifest_sha256: &str,
+    ended_sha256: &str,
+) -> String {
+    handle(
+        store,
+        audit,
+        "cf",
+        &format!("cf{attempt}"),
+        &[manifest_sha256, ended_sha256],
+    )
+}
+
+pub fn parse_cf(h: &str) -> Option<u64> {
+    parse_numbered(h, "cf").map(|(n, _)| n)
+}
+
+/// A loss ID `loss.<member token>.<check>`, binding the manifest's SHA-256
+/// and that of the failure record, the attempt's `delivery_ended` (8.4). The
+/// token is `names::member_token` of the member.
+pub fn loss_handle(
+    store: &str,
+    audit: &str,
+    token: &str,
+    manifest_sha256: &str,
+    failure_sha256: &str,
+) -> String {
+    handle(
+        store,
+        audit,
+        "loss",
+        &format!("loss.{token}"),
+        &[manifest_sha256, failure_sha256],
+    )
+}
+
+/// The member token of a loss ID.
+pub fn parse_loss(h: &str) -> Option<&str> {
+    let (object, chk) = h.rsplit_once('.')?;
+    let token = object.strip_prefix("loss.")?;
+    (!token.is_empty() && is_check(chk)).then_some(token)
 }
 
 // ---------------------------------------------------------------------------
@@ -257,6 +395,43 @@ mod tests {
         ] {
             assert_eq!(parse_mp(bad), None, "{bad}");
         }
+    }
+
+    #[test]
+    fn handles_after_launch_bind_their_objects() {
+        let sha = "a".repeat(64);
+        let e = entry_handle("s", "a", "e3", 2, &sha);
+        assert!(e.starts_with("e3.v2."));
+        assert_eq!(&e[6..], check("s", "a", "entry", "e3.v2", &[&sha]));
+        assert_eq!(parse_entry_handle(&e), Some(("e3", 2)));
+        assert_ne!(e, entry_handle("s", "a", "e3", 2, &"b".repeat(64)));
+        for bad in [
+            "e3.v2",
+            "e3.v02.abcdef",
+            "e03.v2.abcdef",
+            "x3.v2.abcdef",
+            "e3v2.abcdef",
+        ] {
+            assert_eq!(parse_entry_handle(bad), None, "{bad}");
+        }
+        let ap = ap_handle("s", "a", 4, &sha, &sha, 7);
+        assert_eq!(&ap[4..], check("s", "a", "ap", "ap4", &[&sha, &sha, "7"]));
+        assert_ne!(ap, ap_handle("s", "a", 4, &sha, &sha, 8));
+        assert_eq!(parse_ap(&ap), Some(4));
+        let view = format!("{ap}/rendering");
+        assert_eq!(parse_view(&view), Some((ap.as_str(), View::Rendering)));
+        assert_eq!(parse_view(&format!("{ap}/other")), None);
+        let seal = seal_handle("s", "a", &sha);
+        assert_eq!(
+            seal,
+            format!("seal.{}", check("s", "a", "seal", "seal", &[&sha]))
+        );
+        let cf = cf_handle("s", "a", 1, &sha, &"c".repeat(64));
+        assert_eq!(parse_cf(&cf), Some(1));
+        let loss = loss_handle("s", "a", "answer-md", &sha, &sha);
+        assert!(loss.starts_with("loss.answer-md."));
+        assert_eq!(parse_loss(&loss), Some("answer-md"));
+        assert_eq!(parse_loss("loss..abcdef"), None);
     }
 
     #[test]

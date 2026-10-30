@@ -367,3 +367,68 @@ fn close_racing_an_intake_agrees_with_it() {
     );
     assert_eq!(s(&e.log_record(&r, 5), &["body", "outcome"]), "closed");
 }
+
+#[test]
+fn a_torn_stage_file_is_an_interrupted_publication_and_never_a_record() {
+    let e = Env::new();
+    let (r, _) = e.prepared(&[("a", b"a")]);
+    let stage = format!("{}/stage", e.audit_dir(&r));
+    let staged = || std::fs::read_dir(&stage).unwrap().count();
+    let before = staged();
+    // Armed for another kind, the point does not fire.
+    let o = e.run_env(
+        &["prepare", &r, "--json"],
+        &[(FAULT, "stage.torn:close_requested=kill")],
+    );
+    assert_eq!(o.code, Some(0), "{}", o.text());
+    assert_eq!(staged(), before + 1);
+    // Armed for this kind, half the record is written and synced, then the
+    // process dies.
+    let o = e.run_env(
+        &["prepare", &r, "--json"],
+        &[(FAULT, "stage.torn:prepared=kill")],
+    );
+    assert!(killed(&o));
+    assert_eq!(staged(), before + 2);
+    let torn: Vec<Vec<u8>> = std::fs::read_dir(&stage)
+        .unwrap()
+        .map(|d| std::fs::read(d.unwrap().path()).unwrap())
+        .filter(|b| stewart::json::parse(b).is_err())
+        .collect();
+    assert_eq!(torn.len(), 1, "exactly one stage file is torn");
+    let torn = &torn[0];
+    let whole = std::fs::read(format!("{}/log/3.json", e.audit_dir(&r))).unwrap();
+    assert!(torn.len() * 2 <= whole.len() + 64, "about half a record");
+    assert_eq!(e.log_kinds(&r), ["reference", "prepared", "prepared"]);
+    let j = e.run(&["status", &r, "--json"]).json();
+    let diags = at(&j, &["data", "diagnostics"]).as_arr().unwrap();
+    assert_eq!(
+        diags
+            .iter()
+            .filter(|d| s(d, &["cause"]).starts_with("interrupted_publication"))
+            .count(),
+        1,
+        "{diags:?}"
+    );
+}
+
+#[test]
+fn an_unconfirmed_log_sync_is_reported_for_any_kind() {
+    let e = Env::new();
+    let (r, _) = e.prepared(&[("a", b"a")]);
+    let o = e.run_env(
+        &["close", &r, "--json"],
+        &[(FAULT, "log.dirsync:close_requested=eio")],
+    );
+    assert_eq!(o.code, Some(4), "{}", o.text());
+    let j = o.json();
+    assert_eq!(s(&j, &["reason"]), "record_failed");
+    assert_eq!(s(&j, &["effects", "closure"]), "unknown");
+    assert_eq!(s(&j, &["causes", "0", "operation"]), "fsync log directory");
+    assert_eq!(s(&j, &["causes", "0", "error"]), "EIO");
+    // The record was linked; status reads it.
+    assert_eq!(
+        e.log_kinds(&r),
+        ["reference", "prepared", "close_requested"]
+    );
+}

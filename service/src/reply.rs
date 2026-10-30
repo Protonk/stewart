@@ -43,6 +43,31 @@ impl Next {
     }
 }
 
+/// One supported next call in an auditor reply (1.5): a tool call with its
+/// input, and why. Auditor replies never carry manager argv.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ToolNext {
+    pub tool: String,
+    pub input: J,
+    pub why: String,
+}
+
+impl ToolNext {
+    pub fn new(tool: impl Into<String>, input: J, why: impl Into<String>) -> ToolNext {
+        ToolNext {
+            tool: tool.into(),
+            input,
+            why: why.into(),
+        }
+    }
+    pub fn to_j(&self) -> J {
+        J::obj()
+            .with("tool", self.tool.as_str())
+            .with("input", self.input.clone())
+            .with("why", self.why.as_str())
+    }
+}
+
 /// One cause of a failure: what operation, and the error observed.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cause {
@@ -85,8 +110,112 @@ pub struct Reply {
     pub effects: Vec<(&'static str, &'static str)>,
     pub retained: Vec<String>,
     pub causes: Vec<Cause>,
+    /// Manager next calls; used by `to_j`.
     pub next: Vec<Next>,
+    /// Auditor next calls; used by `auditor_j`.
+    pub tool_next: Vec<ToolNext>,
     pub data: Option<J>,
+}
+
+/// The closed set of effect values (1.4).
+pub const EFFECT_VALUES: [(&str, &[&str]); 11] = [
+    ("reference", &["none", "created", "unknown"]),
+    ("preparation", &["none", "recorded", "unknown"]),
+    ("attempt", &["none", "recorded", "partial", "unknown"]),
+    ("acceptance", &["absent", "accepted", "unknown"]),
+    (
+        "run",
+        &["not_started", "started", "ended", "still_held", "unknown"],
+    ),
+    ("answer", &["unchanged", "changed", "unknown"]),
+    ("seal", &["none", "recorded", "existing", "unknown"]),
+    (
+        "delivery",
+        &[
+            "none",
+            "failed",
+            "partial",
+            "verified_with_losses",
+            "verified",
+            "unknown",
+        ],
+    ),
+    (
+        "closure",
+        &["none", "requested", "unfinished", "complete", "unknown"],
+    ),
+    ("raw_capture", &["recorded", "failed", "not_applicable"]),
+    ("diagnostic", &["durable", "reported_only"]),
+];
+
+/// The effect keys each manager operation reports, in order (1.4).
+/// `diagnostic` may follow any of them.
+pub const MANAGER_EFFECTS: [(&str, &[&str]); 7] = [
+    ("new", &["reference"]),
+    ("prepare", &["preparation"]),
+    ("commission", &["acceptance", "attempt"]),
+    ("receipt", &[]),
+    ("status", &[]),
+    ("run", &["run", "answer", "seal", "delivery"]),
+    ("close", &["run", "seal", "delivery", "closure"]),
+];
+
+/// The effect keys an auditor tool's reply reports (1.4): the record tools,
+/// `replace` and `delete` report `answer` and `raw_capture`; `submit`
+/// reports `seal` and `raw_capture`; every other tool, including a name no
+/// tool has, reports `raw_capture`.
+pub fn auditor_effect_keys(tool: &str) -> &'static [&'static str] {
+    if tool.starts_with("record_") || tool == "replace" || tool == "delete" {
+        &["answer", "raw_capture"]
+    } else if tool == "submit" {
+        &["seal", "raw_capture"]
+    } else {
+        &["raw_capture"]
+    }
+}
+
+/// Check a reply's effects against 1.4: exactly the operation's keys in
+/// order, then optionally `diagnostic`, each with a value from its set.
+pub fn check_effects(
+    operation: &str,
+    effects: &[(&'static str, &'static str)],
+    auditor: bool,
+) -> Result<(), String> {
+    let want: &[&str] = if auditor {
+        auditor_effect_keys(operation)
+    } else {
+        MANAGER_EFFECTS
+            .iter()
+            .find(|(op, _)| *op == operation)
+            .map(|(_, k)| *k)
+            .ok_or_else(|| format!("no effect keys are defined for operation {operation}"))?
+    };
+    let keys: Vec<&str> = effects
+        .iter()
+        .map(|(k, _)| *k)
+        .filter(|k| *k != "diagnostic")
+        .collect();
+    if keys != want {
+        return Err(format!(
+            "{operation} reports effects {keys:?}; 1.4 gives {want:?}"
+        ));
+    }
+    if let Some(i) = effects.iter().position(|(k, _)| *k == "diagnostic") {
+        if i + 1 != effects.len() {
+            return Err(format!("{operation}: diagnostic follows the other effects"));
+        }
+    }
+    for (k, v) in effects {
+        let values = EFFECT_VALUES
+            .iter()
+            .find(|(key, _)| key == k)
+            .map(|(_, v)| *v)
+            .unwrap_or(&[]);
+        if !values.contains(v) {
+            return Err(format!("{operation}: effect {k} has no value {v:?}"));
+        }
+    }
+    Ok(())
 }
 
 impl Reply {
@@ -104,6 +233,7 @@ impl Reply {
             retained: Vec::new(),
             causes: Vec::new(),
             next: Vec::new(),
+            tool_next: Vec::new(),
             data: Some(data),
         }
     }
@@ -123,16 +253,41 @@ impl Reply {
         }
     }
 
-    /// Exit status (INTERFACE 1.6).
+    /// Exit status (INTERFACE 1.6). A completed `run` whose placement ended
+    /// `interrupted` exits 5: the ending is recorded and `run` may continue it.
     pub fn exit_code(&self) -> i32 {
         match self.outcome {
+            Outcome::Completed
+                if self.operation == "run"
+                    && self.data.as_ref().and_then(|d| d.get("ending"))
+                        == Some(&J::Str("interrupted".into())) =>
+            {
+                5
+            }
             Outcome::Completed => 0,
             Outcome::Refused => 3,
             Outcome::Failed => 4,
         }
     }
 
+    /// The manager envelope (1.3).
     pub fn to_j(&self) -> J {
+        self.envelope(false)
+    }
+
+    /// The auditor envelope, the first text block of a `tool_result` (7.1):
+    /// the same envelope without `retained`, with tool next calls. The
+    /// caller keeps host and archive paths out of every member.
+    pub fn auditor_j(&self) -> J {
+        self.envelope(true)
+    }
+
+    fn envelope(&self, auditor: bool) -> J {
+        debug_assert!(
+            check_effects(self.operation, &self.effects, auditor).is_ok(),
+            "{}",
+            check_effects(self.operation, &self.effects, auditor).unwrap_err()
+        );
         let mut o = J::obj()
             .with("schema", "stewart.reply/1")
             .with("operation", self.operation)
@@ -156,7 +311,7 @@ impl Reply {
                 ),
             );
         }
-        if failing {
+        if failing && !auditor {
             o.push("retained", crate::json::strs(&self.retained));
         }
         if self.outcome == Outcome::Failed || self.effect("diagnostic") == Some("reported_only") {
@@ -165,7 +320,12 @@ impl Reply {
                 J::Arr(self.causes.iter().map(|c| c.to_j()).collect()),
             );
         }
-        o.push("next", J::Arr(self.next.iter().map(|n| n.to_j()).collect()));
+        let next = if auditor {
+            self.tool_next.iter().map(|n| n.to_j()).collect()
+        } else {
+            self.next.iter().map(|n| n.to_j()).collect()
+        };
+        o.push("next", J::Arr(next));
         match &self.data {
             Some(d) if self.outcome == Outcome::Completed => o.push("data", d.clone()),
             Some(d) if !d.is_empty_obj() => o.push("data", d.clone()),
@@ -376,6 +536,7 @@ mod tests {
             retained: vec!["/a/intake/1".into()],
             causes: vec![Cause::new("fsync log directory", "EIO")],
             next: vec![],
+            tool_next: vec![],
             data: None,
         };
         assert_eq!(
@@ -384,6 +545,123 @@ mod tests {
         );
         assert_eq!(f.exit_code(), 4);
         assert!(f.human().contains("acceptance unknown"));
+    }
+
+    #[test]
+    fn auditor_envelopes_drop_retained_and_carry_tool_calls() {
+        let mut r = Reply::completed(
+            "read",
+            vec![("raw_capture", "recorded")],
+            J::obj().with("complete", false),
+        );
+        r.retained.push("/archive/path".into());
+        r.next.push(Next::new(vec!["/x".into()], "manager only"));
+        r.tool_next.push(ToolNext::new(
+            "read",
+            J::obj().with("source", "question").with("start", 65536u64),
+            "Read the rest.",
+        ));
+        assert_eq!(
+            r.auditor_j().string(),
+            r#"{"schema":"stewart.reply/1","operation":"read","outcome":"completed","effects":{"raw_capture":"recorded"},"next":[{"tool":"read","input":{"source":"question","start":65536},"why":"Read the rest."}],"data":{"complete":false}}"#
+        );
+        r.outcome = Outcome::Refused;
+        r.reason = Some("range_invalid".into());
+        r.message = Some("m".into());
+        assert!(!r.auditor_j().string().contains("retained"));
+    }
+
+    #[test]
+    fn effects_follow_the_closed_sets() {
+        assert!(
+            check_effects(
+                "commission",
+                &[
+                    ("acceptance", "unknown"),
+                    ("attempt", "recorded"),
+                    ("diagnostic", "durable")
+                ],
+                false
+            )
+            .is_ok()
+        );
+        assert!(
+            check_effects(
+                "commission",
+                &[("attempt", "recorded"), ("acceptance", "unknown")],
+                false
+            )
+            .is_err()
+        );
+        assert!(
+            check_effects(
+                "close",
+                &[
+                    ("run", "ended"),
+                    ("seal", "recorded"),
+                    ("delivery", "verified_with_losses"),
+                    ("closure", "unfinished")
+                ],
+                false
+            )
+            .is_ok()
+        );
+        assert!(
+            check_effects(
+                "close",
+                &[
+                    ("run", "ended"),
+                    ("seal", "sealed"),
+                    ("delivery", "none"),
+                    ("closure", "none")
+                ],
+                false
+            )
+            .is_err()
+        );
+        assert!(check_effects("prepare", &[("raw_capture", "recorded")], true).is_ok());
+        assert!(check_effects("prepare", &[("raw_capture", "recorded")], false).is_err());
+        assert!(
+            check_effects(
+                "record_observation",
+                &[("answer", "changed"), ("raw_capture", "recorded")],
+                true
+            )
+            .is_ok()
+        );
+        assert!(
+            check_effects(
+                "submit",
+                &[
+                    ("seal", "unknown"),
+                    ("raw_capture", "recorded"),
+                    ("diagnostic", "reported_only")
+                ],
+                true
+            )
+            .is_ok()
+        );
+        assert!(check_effects("status", &[], false).is_ok());
+    }
+
+    #[test]
+    fn an_interrupted_run_exits_five() {
+        let mut r = Reply::completed(
+            "run",
+            vec![
+                ("run", "ended"),
+                ("answer", "unchanged"),
+                ("seal", "none"),
+                ("delivery", "none"),
+            ],
+            J::obj().with("run", 1u64).with("ending", "interrupted"),
+        );
+        assert_eq!(r.exit_code(), 5);
+        r.data = Some(J::obj().with("ending", "sealed"));
+        assert_eq!(r.exit_code(), 0);
+        r.operation = "close";
+        r.data = Some(J::obj().with("ending", "interrupted"));
+        assert_eq!(r.exit_code(), 0);
     }
 
     #[test]

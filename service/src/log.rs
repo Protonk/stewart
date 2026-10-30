@@ -12,9 +12,15 @@
 //! re-check and either try the next number or refuse with the state found.
 
 use crate::archive::{Audit, Fail, RECORD_LIMIT, decode_record};
+use crate::bodies::{
+    Action, CloseRequested, Closed, DeliveryEnded, DeliveryPlanned, EntryRec, Notice, RunEnded,
+    RunStarted, SealRec, Version,
+};
 use crate::fsx::Dir;
 use crate::json::{self, J, JsonError, Obj};
+use crate::names;
 use crate::reply::Cause;
+use crate::usage::{Limits, Usage};
 use crate::util;
 
 pub const KINDS: [&str; 14] = [
@@ -73,11 +79,15 @@ pub enum Body {
         receipt: String,
         receipt_sha256: String,
     },
-    CloseRequested,
-    Closed {
-        before_launch: bool,
-        accepted: bool,
-    },
+    RunStarted(RunStarted),
+    RunEnded(RunEnded),
+    Entry(EntryRec),
+    Seal(SealRec),
+    Notice(Notice),
+    DeliveryPlanned(DeliveryPlanned),
+    DeliveryEnded(DeliveryEnded),
+    CloseRequested(CloseRequested),
+    Closed(Closed),
 }
 
 pub struct LogRec {
@@ -216,7 +226,358 @@ impl LogState {
     }
 }
 
-fn decode_body(kind: &str, b: &Obj) -> Result<Body, JsonError> {
+// ---------------------------------------------------------------------------
+// Queries after launch. Every fact here is computed from the records in log
+// order, never from a count a record states about itself.
+
+impl LogRec {
+    pub fn run_started(&self) -> Option<&RunStarted> {
+        match &self.body {
+            Body::RunStarted(b) => Some(b),
+            _ => None,
+        }
+    }
+    pub fn run_ended(&self) -> Option<&RunEnded> {
+        match &self.body {
+            Body::RunEnded(b) => Some(b),
+            _ => None,
+        }
+    }
+    pub fn entry(&self) -> Option<&EntryRec> {
+        match &self.body {
+            Body::Entry(b) => Some(b),
+            _ => None,
+        }
+    }
+    pub fn seal(&self) -> Option<&SealRec> {
+        match &self.body {
+            Body::Seal(b) => Some(b),
+            _ => None,
+        }
+    }
+    pub fn notice(&self) -> Option<&Notice> {
+        match &self.body {
+            Body::Notice(b) => Some(b),
+            _ => None,
+        }
+    }
+    pub fn delivery_planned(&self) -> Option<&DeliveryPlanned> {
+        match &self.body {
+            Body::DeliveryPlanned(b) => Some(b),
+            _ => None,
+        }
+    }
+    pub fn delivery_ended(&self) -> Option<&DeliveryEnded> {
+        match &self.body {
+            Body::DeliveryEnded(b) => Some(b),
+            _ => None,
+        }
+    }
+    pub fn closed_body(&self) -> Option<&Closed> {
+        match &self.body {
+            Body::Closed(b) => Some(b),
+            _ => None,
+        }
+    }
+}
+
+/// A placement: its `run_started` and, once recorded, its `run_ended`.
+pub struct Placement<'a> {
+    pub run: u64,
+    pub started: &'a LogRec,
+    pub start: &'a RunStarted,
+    pub ended: Option<(&'a LogRec, &'a RunEnded)>,
+}
+
+/// One entry version: the `entry` record that created it, and the version.
+#[derive(Clone, Copy)]
+pub struct Current<'a> {
+    pub record: &'a LogRec,
+    pub version: &'a Version,
+}
+
+/// Where one entry version stands at the end of the log (7.2, 7.4).
+pub enum VersionState<'a> {
+    /// No `entry` record created this version.
+    Unknown,
+    /// The version is in the current selection.
+    Current(Current<'a>),
+    /// Its entry is current at a later version, `current`.
+    Replaced { current: Current<'a> },
+    /// Its entry is not in the current selection; `by` is the `delete`
+    /// record that removed the entry's last version (the one its target
+    /// names, which may be this version or a later one).
+    Removed { by: &'a LogRec },
+}
+
+/// One delivery attempt: its `delivery_planned` and, once recorded, its
+/// `delivery_ended`.
+pub struct Delivery<'a> {
+    pub attempt: u64,
+    pub planned: &'a LogRec,
+    pub plan: &'a DeliveryPlanned,
+    pub ended: Option<(&'a LogRec, &'a DeliveryEnded)>,
+}
+
+impl Delivery<'_> {
+    pub fn outcome(&self) -> Option<&str> {
+        self.ended.map(|(_, e)| e.outcome.as_str())
+    }
+    /// Ended `verified` or `verified_with_losses` (5.8).
+    pub fn verified(&self) -> bool {
+        self.outcome()
+            .is_some_and(|o| crate::bodies::VERIFIED_OUTCOMES.contains(&o))
+    }
+    /// Ended `partial`, `failed` or `name_taken` (8.3).
+    pub fn incomplete(&self) -> bool {
+        self.outcome()
+            .is_some_and(|o| crate::bodies::INCOMPLETE_OUTCOMES.contains(&o))
+    }
+}
+
+/// What ended authoring (5.7, 7.1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EndedBy {
+    /// A `seal` record.
+    Seal,
+    /// A placement ended `ended_unsubmitted`.
+    OrdinaryEnding,
+    /// A placement ended `limit_reached`.
+    Limit,
+    /// A placement ended `damaged`.
+    Damage,
+    /// A `close_requested` record.
+    Close,
+}
+
+impl EndedBy {
+    /// The `data.ended_by` value of an `authoring_ended` refusal.
+    pub fn name(self) -> &'static str {
+        match self {
+            EndedBy::Seal => "seal",
+            EndedBy::OrdinaryEnding => "ordinary_ending",
+            EndedBy::Limit => "limit",
+            EndedBy::Damage => "damage",
+            EndedBy::Close => "close",
+        }
+    }
+}
+
+pub struct AuthoringEnd<'a> {
+    pub by: EndedBy,
+    /// The record that ended authoring.
+    pub record: &'a LogRec,
+}
+
+impl LogState {
+    /// Every placement in order of its `run_started`.
+    pub fn placements(&self) -> Vec<Placement<'_>> {
+        let mut out = Vec::new();
+        for r in &self.recs {
+            if let Some(start) = r.run_started() {
+                let ended = self
+                    .recs
+                    .iter()
+                    .find_map(|e| e.run_ended().filter(|b| b.run == start.run).map(|b| (e, b)));
+                out.push(Placement {
+                    run: start.run,
+                    started: r,
+                    start,
+                    ended,
+                });
+            }
+        }
+        out
+    }
+    pub fn latest_placement(&self) -> Option<Placement<'_>> {
+        self.placements().pop()
+    }
+    /// A placement without `run_ended`: live while a process holds the
+    /// active lock, its process gone when the lock is free (4.6).
+    pub fn open_placement(&self) -> Option<Placement<'_>> {
+        self.placements().into_iter().find(|p| p.ended.is_none())
+    }
+    /// The placement number the next `run_started` takes.
+    pub fn next_run(&self) -> u64 {
+        self.placements().last().map_or(1, |p| p.run + 1)
+    }
+
+    /// Every `entry` record in log order.
+    pub fn entries(&self) -> impl Iterator<Item = (&LogRec, &EntryRec)> {
+        self.recs.iter().filter_map(|r| r.entry().map(|e| (r, e)))
+    }
+    /// The answer revision: the number of `entry` records so far.
+    pub fn revision(&self) -> u64 {
+        self.entries().count() as u64
+    }
+    /// The answer revision at log position `n` (records 1 to `n`).
+    pub fn revision_through(&self, n: u64) -> u64 {
+        self.entries().filter(|(r, _)| r.n <= n).count() as u64
+    }
+    /// The identifier the next add creates: entries are numbered from 1 in
+    /// order of creation.
+    pub fn next_entry_id(&self) -> String {
+        let adds = self
+            .entries()
+            .filter(|(_, e)| e.action == Action::Add)
+            .count() as u64;
+        names::entry_id(adds + 1)
+    }
+    /// The current selection: every entry added and not since deleted, at
+    /// its latest version, in order of first creation.
+    pub fn selection(&self) -> Vec<Current<'_>> {
+        self.selection_through(u64::MAX)
+    }
+    /// The selection at log position `n` (records 1 to `n`), such as the
+    /// selection current at `close_requested`.
+    pub fn selection_through(&self, n: u64) -> Vec<Current<'_>> {
+        let mut sel: Vec<Current<'_>> = Vec::new();
+        for (r, e) in self.entries().filter(|(r, _)| r.n <= n) {
+            match (e.action, &e.created, &e.target) {
+                (Action::Add, Some(v), _) => sel.push(Current {
+                    record: r,
+                    version: v,
+                }),
+                (Action::Replace, Some(v), _) => {
+                    if let Some(slot) = sel.iter_mut().find(|c| c.version.id == v.id) {
+                        *slot = Current {
+                            record: r,
+                            version: v,
+                        };
+                    }
+                }
+                (Action::Delete, _, Some(t)) => sel.retain(|c| c.version.id != t.id),
+                _ => {}
+            }
+        }
+        sel
+    }
+    /// The record that created entry version `id`.v`version`, if any.
+    pub fn version_created(&self, id: &str, version: u64) -> Option<Current<'_>> {
+        self.entries().find_map(|(r, e)| {
+            e.created
+                .as_ref()
+                .filter(|v| v.id == id && v.version == version)
+                .map(|v| Current {
+                    record: r,
+                    version: v,
+                })
+        })
+    }
+    /// Where entry version `id`.v`version` stands now.
+    pub fn version_state(&self, id: &str, version: u64) -> VersionState<'_> {
+        if self.version_created(id, version).is_none() {
+            return VersionState::Unknown;
+        }
+        if let Some(c) = self.selection().into_iter().find(|c| c.version.id == id) {
+            return if c.version.version == version {
+                VersionState::Current(c)
+            } else {
+                VersionState::Replaced { current: c }
+            };
+        }
+        match self
+            .entries()
+            .filter(|(_, e)| {
+                e.action == Action::Delete && e.target.as_ref().is_some_and(|t| t.id == id)
+            })
+            .last()
+        {
+            Some((r, _)) => VersionState::Removed { by: r },
+            None => VersionState::Unknown,
+        }
+    }
+
+    /// The seal, if one exists. At most one `seal` record is ever published.
+    pub fn seal(&self) -> Option<(&LogRec, &SealRec)> {
+        self.recs.iter().find_map(|r| r.seal().map(|s| (r, s)))
+    }
+    /// Every `notice` record in log order.
+    pub fn notices(&self) -> Vec<(&LogRec, &Notice)> {
+        self.recs
+            .iter()
+            .filter_map(|r| r.notice().map(|n| (r, n)))
+            .collect()
+    }
+    /// Whether a notice of this type (`reminder`, `near_limit`) has been
+    /// used: each is sent at most once per audit, so a published record
+    /// uses it whether or not its request was sent (6.4).
+    pub fn notice_used(&self, kind: &str) -> bool {
+        self.notices().iter().any(|(_, n)| n.kind == kind)
+    }
+    /// Every delivery attempt in order of its `delivery_planned`.
+    pub fn deliveries(&self) -> Vec<Delivery<'_>> {
+        let mut out = Vec::new();
+        for r in &self.recs {
+            if let Some(plan) = r.delivery_planned() {
+                let ended = self.recs.iter().find_map(|e| {
+                    e.delivery_ended()
+                        .filter(|b| b.attempt == plan.attempt)
+                        .map(|b| (e, b))
+                });
+                out.push(Delivery {
+                    attempt: plan.attempt,
+                    planned: r,
+                    plan,
+                    ended,
+                });
+            }
+        }
+        out
+    }
+    /// The newest attempt that ended `verified` or `verified_with_losses`.
+    pub fn newest_verified(&self) -> Option<Delivery<'_>> {
+        self.deliveries().into_iter().rev().find(|d| d.verified())
+    }
+    /// What ended authoring, if anything has: the earliest seal,
+    /// `close_requested`, or placement ending `ended_unsubmitted`,
+    /// `limit_reached` or `damaged`.
+    pub fn authoring_end(&self) -> Option<AuthoringEnd<'_>> {
+        self.recs.iter().find_map(|r| {
+            let by = match &r.body {
+                Body::Seal(_) => EndedBy::Seal,
+                Body::CloseRequested(_) => EndedBy::Close,
+                Body::RunEnded(e) => match e.ending.as_str() {
+                    "ended_unsubmitted" => EndedBy::OrdinaryEnding,
+                    "limit_reached" => EndedBy::Limit,
+                    "damaged" => EndedBy::Damage,
+                    _ => return None,
+                },
+                _ => return None,
+            };
+            Some(AuthoringEnd { by, record: r })
+        })
+    }
+    /// The usage recorded in every `run_ended`. A placement without one is
+    /// accounted from its run directory (`runs::account`), and the totals add
+    /// that to this.
+    pub fn recorded_usage(&self) -> Usage {
+        let mut u = Usage::default();
+        for r in &self.recs {
+            if let Some(e) = r.run_ended() {
+                u.add(&e.usage);
+            }
+        }
+        u
+    }
+    /// The accepted commission's cumulative limits, from the `prepared`
+    /// record of the accepted preparation.
+    pub fn limits(&self) -> Option<Limits> {
+        let prep = match &self.accepted()?.body {
+            Body::Accepted { prep, .. } => *prep,
+            _ => return None,
+        };
+        let p = self.prepared(prep)?;
+        let l = p.body_obj().obj("settings").ok()?.obj("limits").ok()?;
+        Some(Limits {
+            turns: l.u64("turns", u64::MAX).ok()?,
+            input_tokens: l.u64("input_tokens", u64::MAX).ok()?,
+            output_tokens: l.u64("output_tokens", u64::MAX).ok()?,
+        })
+    }
+}
+
+fn decode_body(kind: &str, b: &Obj, audit: &str) -> Result<Body, JsonError> {
     Ok(match kind {
         "reference" => {
             b.only(&["prev", "file", "file_sha256", "folder", "writer"])?;
@@ -343,31 +704,20 @@ fn decode_body(kind: &str, b: &Obj) -> Result<Body, JsonError> {
                 receipt_sha256: b.str("receipt_sha256")?.to_string(),
             }
         }
-        "close_requested" => {
-            b.only(&["prev", "flags", "observations"])?;
-            let f = b.obj("flags")?;
-            f.only(&["confirm", "surrender", "destination"])?;
-            f.str_or_null("confirm")?;
-            f.strs("surrender")?;
-            f.str_or_null("destination")?;
-            b.obj("observations")?;
-            Body::CloseRequested
-        }
-        "closed" => {
-            b.only(&["prev", "before_launch", "accepted", "outcome"])?;
-            b.str("outcome")?;
-            Body::Closed {
-                before_launch: b.bool("before_launch")?,
-                accepted: b.bool("accepted")?,
-            }
-        }
+        "run_started" => Body::RunStarted(RunStarted::decode(b)?),
+        "run_ended" => Body::RunEnded(RunEnded::decode(b)?),
+        "entry" => Body::Entry(EntryRec::decode(b)?),
+        "seal" => Body::Seal(SealRec::decode(b)?),
+        "notice" => Body::Notice(Notice::decode(b)?),
+        "delivery_planned" => Body::DeliveryPlanned(DeliveryPlanned::decode(b, audit)?),
+        "delivery_ended" => Body::DeliveryEnded(DeliveryEnded::decode(b)?),
+        "close_requested" => Body::CloseRequested(CloseRequested::decode(b)?),
+        "closed" => Body::Closed(Closed::decode(b)?),
         other => {
             return Err(json::value_err(
                 "/kind",
                 0,
-                format!(
-                    "records of kind {other:?} are not supported by this writer, which writes only the manager-foundation kinds"
-                ),
+                format!("records of kind {other:?} are not log records"),
             ));
         }
     })
@@ -513,7 +863,7 @@ fn decode_log_record(
     if (n == 1) != (r.kind == "reference") {
         return Err("the log begins with exactly one reference record".into());
     }
-    let typed = decode_body(&r.kind, &body).map_err(|e| e.to_string())?;
+    let typed = decode_body(&r.kind, &body, &audit.id).map_err(|e| e.to_string())?;
     Ok((r.kind.clone(), r.at.clone(), typed, r.json))
 }
 
@@ -588,7 +938,7 @@ where
             crate::ids::random_token()
                 .map_err(|e| PubErr::NotPublished(Cause::io("random stage name", &e)))?
         );
-        stage_dir.write_excl(&stage_name, &bytes).map_err(|e| {
+        write_stage(&stage_dir, &stage_name, &bytes, kind).map_err(|e| {
             PubErr::NotPublished(
                 Cause::io(format!("write stage record ({})", e.step.name()), &e.err)
                     .at(audit.abs(&format!("stage/{stage_name}"))),
@@ -626,7 +976,10 @@ where
                 }
             }
         }
+        // `commission.accepted_dirsync` names the same point as
+        // `log.dirsync:accepted`.
         let synced = log_dir.sync().and_then(|_| {
+            crate::fault!("log.dirsync", kind)?;
             if kind == "accepted" {
                 crate::fault!("commission.accepted_dirsync")
             } else {
@@ -649,6 +1002,35 @@ where
         format!("link {kind} record"),
         "too many concurrent publications",
     )))
+}
+
+/// Write a linked record's stage file exclusively (4.3). With the fault
+/// point `stage.torn:<kind>` armed, the first half of the bytes is written and
+/// synced, then the point's action runs (`kill` leaves a torn stage file);
+/// if the process continues, the rest is written.
+pub fn write_stage(
+    stage: &Dir,
+    name: &str,
+    bytes: &[u8],
+    kind: &str,
+) -> Result<(), crate::fsx::WriteError> {
+    #[cfg(feature = "fault-injection")]
+    if crate::fault_armed!("stage.torn", kind) {
+        use crate::fsx::{Step, WriteError};
+        use std::io::Write;
+        let fail = |step: Step| move |err| WriteError { step, err };
+        let mut f = stage.create_excl(name).map_err(fail(Step::Create))?;
+        let half = bytes.len() / 2;
+        f.write_all(&bytes[..half]).map_err(fail(Step::Write))?;
+        f.sync_all().map_err(fail(Step::SyncFile))?;
+        crate::fault!("stage.torn", kind).map_err(fail(Step::Write))?;
+        f.write_all(&bytes[half..]).map_err(fail(Step::Write))?;
+        f.sync_all().map_err(fail(Step::SyncFile))?;
+        return stage.sync().map_err(fail(Step::SyncDir));
+    }
+    #[cfg(not(feature = "fault-injection"))]
+    let _ = kind;
+    stage.write_excl(name, bytes)
 }
 
 fn at_of(bytes: &[u8]) -> String {
@@ -683,7 +1065,7 @@ pub fn damaged_fail(audit: &Audit, state: &LogState) -> Fail {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::archive::{Archive, RefFile};
     use crate::platform::Exe;
@@ -746,7 +1128,7 @@ mod tests {
                     .with("surrender", J::Arr(vec![]))
                     .with("destination", J::Null),
             )
-            .with("observations", J::obj())
+            .with("observations", crate::archive::observations())
     }
 
     #[test]
@@ -819,6 +1201,285 @@ mod tests {
         let unlinked = unlinked_stage(&a, &state);
         let stage_count = std::fs::read_dir(p.join("a/stage")).unwrap().count();
         assert_eq!(stage_count, 81 + unlinked.len());
+        std::fs::remove_dir_all(p).unwrap();
+    }
+
+    /// Publish a body after `prev` and return its record number.
+    fn put(a: &Audit, kind: &'static str, body: J) -> u64 {
+        match publish(a, kind, |_| Ok(body.clone())) {
+            Ok(p) => p.n,
+            Err(e) => panic!("{kind}: {}", e.describe()),
+        }
+    }
+
+    fn started(run: u64) -> J {
+        RunStarted {
+            run,
+            arrangement_sha256: "a".repeat(64),
+            provider: crate::bodies::ProviderUse {
+                base_url: "https://api.anthropic.com".into(),
+                overridden: false,
+                proxy: None,
+                anthropic_version: crate::forms::ANTHROPIC_VERSION.into(),
+            },
+            observations: crate::bodies::RunObservations::current(),
+        }
+        .to_j()
+    }
+
+    fn ended(run: u64, ending: &str, cause: Option<&str>, seal: Option<&str>, turns: u64) -> J {
+        let mut usage = Usage::default();
+        usage.turns.reported = turns;
+        usage.output_tokens.estimated = 100 * turns;
+        RunEnded {
+            run,
+            ending: ending.into(),
+            cause: cause.map(str::to_string),
+            recorded_by: "run".into(),
+            provider: None,
+            requests: turns,
+            attempts: turns,
+            usage,
+            notices: vec![],
+            seal: seal.map(str::to_string),
+            message: "m".into(),
+        }
+        .to_j()
+    }
+
+    fn edit(
+        action: Action,
+        id: &str,
+        version: u64,
+        target: Option<(u64, u64)>,
+        revision: u64,
+    ) -> J {
+        use crate::bodies::{Invocation, Payload, Target};
+        let created = (action != Action::Delete).then(|| Version {
+            id: id.into(),
+            version,
+            kind: "record_observation".into(),
+            label: String::new(),
+            payload: Payload {
+                file: crate::names::payload_name(id, version, 1),
+                sha256: "b".repeat(64),
+                size: 1,
+            },
+            encoding: None,
+            citations: Some(vec![]),
+        });
+        EntryRec {
+            action,
+            tool: match action {
+                Action::Add => "record_observation",
+                Action::Replace => "replace",
+                Action::Delete => "delete",
+            }
+            .into(),
+            invocation: Invocation {
+                run: 1,
+                tool_use_id: format!("toolu_{revision}"),
+                call: revision,
+            },
+            target: target.map(|(v, rec)| Target {
+                id: id.into(),
+                version: v,
+                record: crate::names::log_name(rec),
+            }),
+            created,
+            revision,
+        }
+        .to_j()
+    }
+
+    #[test]
+    fn queries_follow_the_records_after_launch() {
+        use crate::bodies::{
+            Actor, CloseFlags, DeliveryEnded, DeliveryPlanned, Invocation, MemberResult, Notice,
+            SealRec,
+        };
+        let (p, a) = scratch_audit();
+        put(&a, "reference", reference_body());
+        assert_eq!(put(&a, "run_started", started(1)), 2);
+        let e1 = put(&a, "entry", edit(Action::Add, "e1", 1, None, 1));
+        put(&a, "entry", edit(Action::Add, "e2", 1, None, 2));
+        put(
+            &a,
+            "entry",
+            edit(Action::Replace, "e1", 2, Some((1, e1)), 3),
+        );
+        let before_e3 = 5;
+        put(&a, "entry", edit(Action::Add, "e3", 1, None, 4));
+        let del = put(&a, "entry", edit(Action::Delete, "e2", 0, Some((1, 4)), 5));
+        let notice = Notice {
+            kind: "reminder".into(),
+            run: 1,
+            request: 3,
+            text: crate::forms::REMINDER.into(),
+            remaining: None,
+        };
+        put(&a, "notice", notice.to_j());
+        put(
+            &a,
+            "run_ended",
+            ended(1, "interrupted", Some("signal"), None, 2),
+        );
+        let open = read(&a);
+        assert!(
+            open.authoring_end().is_none(),
+            "an interruption does not end authoring"
+        );
+        put(&a, "run_started", started(2));
+        assert!(read(&a).open_placement().is_some_and(|p| p.run == 2));
+        let seal = SealRec {
+            actor: Actor::Auditor,
+            prepared: 1,
+            answer_sha256: "c".repeat(64),
+            rendering_sha256: Some("d".repeat(64)),
+            revision: 5,
+            manifest: "seal/manifest-1.json".into(),
+            manifest_sha256: "e".repeat(64),
+            invocation: Some(Invocation {
+                run: 2,
+                tool_use_id: "toolu_s".into(),
+                call: 1,
+            }),
+        };
+        let seal_n = put(&a, "seal", seal.to_j());
+        put(
+            &a,
+            "run_ended",
+            ended(2, "sealed", None, Some(&crate::names::log_name(seal_n)), 3),
+        );
+        let planned = |attempt: u64, replaces: Option<u64>| DeliveryPlanned {
+            attempt,
+            plan_sha256: "f".repeat(64),
+            by: "run".into(),
+            destination: "/d".into(),
+            destination_source: "commissioned".into(),
+            package: crate::names::package_name(&a.id, attempt),
+            replaces,
+        };
+        let finished = |attempt: u64, outcome: &str| DeliveryEnded {
+            attempt,
+            outcome: outcome.into(),
+            recorded_by: "run".into(),
+            cause: (outcome == "failed").then(|| Cause::new("deliver", "ENOENT")),
+            manifest_sha256: "e".repeat(64),
+            package: None,
+            members: Some(vec![MemberResult {
+                name: "manifest.json".into(),
+                role: "manifest".into(),
+                written: outcome != "failed",
+                verified: outcome != "failed",
+                failure: None,
+            }]),
+            losses: Some(vec![]),
+        };
+        put(&a, "delivery_planned", planned(1, None).to_j());
+        put(&a, "delivery_ended", finished(1, "failed").to_j());
+        put(&a, "delivery_planned", planned(2, Some(1)).to_j());
+        let ended2 = put(&a, "delivery_ended", finished(2, "verified").to_j());
+        put(
+            &a,
+            "close_requested",
+            CloseRequested {
+                flags: CloseFlags::default(),
+            }
+            .to_j(),
+        );
+
+        let s = read(&a);
+        assert!(!s.damaged(), "{}", s.bad_names());
+        let ps = s.placements();
+        assert_eq!(ps.iter().map(|p| p.run).collect::<Vec<_>>(), [1, 2]);
+        assert!(ps.iter().all(|p| p.ended.is_some()));
+        assert!(s.open_placement().is_none());
+        assert_eq!(s.next_run(), 3);
+        assert!(ps[1].start.continuing());
+
+        // Order of first creation; a replace keeps its place; a delete removes.
+        let ids = |sel: Vec<Current>| {
+            sel.iter()
+                .map(|c| format!("{}.v{}", c.version.id, c.version.version))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(ids(s.selection()), ["e1.v2", "e3.v1"]);
+        assert_eq!(ids(s.selection_through(before_e3)), ["e1.v2", "e2.v1"]);
+        assert_eq!(s.revision(), 5);
+        assert_eq!(s.revision_through(before_e3), 3);
+        assert_eq!(s.next_entry_id(), "e4");
+        assert!(
+            matches!(s.version_state("e1", 1), VersionState::Replaced { current } if current.version.version == 2)
+        );
+        assert!(matches!(s.version_state("e1", 2), VersionState::Current(_)));
+        assert!(matches!(s.version_state("e2", 1), VersionState::Removed { by } if by.n == del));
+        assert!(matches!(s.version_state("e9", 1), VersionState::Unknown));
+        assert!(matches!(s.version_state("e1", 3), VersionState::Unknown));
+
+        assert!(s.notice_used("reminder"));
+        assert!(!s.notice_used("near_limit"));
+        assert_eq!(
+            s.seal().map(|(r, b)| (r.n, b.actor)),
+            Some((seal_n, Actor::Auditor))
+        );
+        let end = s.authoring_end().expect("sealed");
+        assert_eq!(
+            (end.by, end.by.name(), end.record.n),
+            (EndedBy::Seal, "seal", seal_n)
+        );
+
+        let d = s.deliveries();
+        assert_eq!(d.len(), 2);
+        assert!(d[0].incomplete() && !d[0].verified());
+        assert_eq!(d[1].plan.replaces, Some(1));
+        assert_eq!(s.newest_verified().map(|d| d.attempt), Some(2));
+        let rec2 = &s.recs[ended2 as usize - 1];
+        assert_eq!(
+            crate::delivery::confirmation(&a, &s, 2),
+            Some(crate::ids::cf_handle(
+                &a.archive.store,
+                &a.id,
+                2,
+                &"e".repeat(64),
+                &rec2.sha256
+            ))
+        );
+        assert_eq!(crate::delivery::confirmation(&a, &s, 1), None);
+
+        let u = s.recorded_usage();
+        assert_eq!((u.turns.reported, u.output_tokens.estimated), (5, 500));
+        let (cumulative, problems) = crate::runs::cumulative_usage(&a, &s);
+        assert_eq!(cumulative, u, "every placement has its run_ended");
+        assert!(problems.is_empty());
+        std::fs::remove_dir_all(p).unwrap();
+    }
+
+    #[test]
+    fn ordinary_endings_limits_and_damage_end_authoring() {
+        for (ending, by) in [
+            ("ended_unsubmitted", EndedBy::OrdinaryEnding),
+            ("limit_reached", EndedBy::Limit),
+            ("damaged", EndedBy::Damage),
+        ] {
+            let (p, a) = scratch_audit();
+            put(&a, "reference", reference_body());
+            put(&a, "run_started", started(1));
+            let n = put(&a, "run_ended", ended(1, ending, None, None, 1));
+            put(&a, "close_requested", close_body());
+            let s = read(&a);
+            let end = s.authoring_end().unwrap();
+            assert_eq!((end.by, end.record.n), (by, n), "{ending}");
+            std::fs::remove_dir_all(p).unwrap();
+        }
+        let (p, a) = scratch_audit();
+        put(&a, "reference", reference_body());
+        let n = put(&a, "close_requested", close_body());
+        let s = read(&a);
+        assert_eq!(
+            s.authoring_end().map(|e| (e.by, e.record.n)),
+            Some((EndedBy::Close, n))
+        );
         std::fs::remove_dir_all(p).unwrap();
     }
 

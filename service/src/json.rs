@@ -639,6 +639,72 @@ impl<'a> Obj<'a> {
     pub fn ptr(&self, k: &str) -> String {
         self.child_ptr(k)
     }
+    /// Require exactly these keys: an unknown key is refused (naming the
+    /// expected keys) and every listed key must be present, including those
+    /// whose value may be `null`. Order is not checked here; writers emit the
+    /// listed order.
+    pub fn exactly(&self, keys: &[&str]) -> Result<(), JsonError> {
+        self.only(keys)?;
+        for k in keys {
+            self.req(k)?;
+        }
+        Ok(())
+    }
+    /// An integer or `null`; the key itself must be present.
+    pub fn u64_or_null(&self, k: &str, max: u64) -> Result<Option<u64>, JsonError> {
+        if self.req(k)?.is_null() {
+            Ok(None)
+        } else {
+            self.u64(k, max).map(Some)
+        }
+    }
+    /// An array or `null`; the key itself must be present.
+    pub fn arr_or_null(&self, k: &str) -> Result<Option<&'a [Json]>, JsonError> {
+        if self.req(k)?.is_null() {
+            Ok(None)
+        } else {
+            self.arr(k).map(Some)
+        }
+    }
+    /// A string from a closed set of values.
+    pub fn one_of(&self, k: &str, values: &[&str]) -> Result<&'a str, JsonError> {
+        let s = self.str(k)?;
+        if values.contains(&s) {
+            Ok(s)
+        } else {
+            Err(value_err(
+                &self.child_ptr(k),
+                self.req(k)?.start,
+                format!("{s:?} is not one of: {}", values.join(", ")),
+            ))
+        }
+    }
+    /// A lowercase hexadecimal SHA-256 digest.
+    pub fn sha256(&self, k: &str) -> Result<&'a str, JsonError> {
+        let s = self.str(k)?;
+        if crate::util::is_hex64(s) {
+            Ok(s)
+        } else {
+            Err(value_err(
+                &self.child_ptr(k),
+                self.req(k)?.start,
+                "expected a lowercase hexadecimal SHA-256 digest",
+            ))
+        }
+    }
+    /// A digest or `null`.
+    pub fn sha256_or_null(&self, k: &str) -> Result<Option<&'a str>, JsonError> {
+        if self.req(k)?.is_null() {
+            Ok(None)
+        } else {
+            self.sha256(k).map(Some)
+        }
+    }
+    /// A rule about a member's value that its type does not express.
+    pub fn invalid(&self, k: &str, detail: impl Into<String>) -> JsonError {
+        let at = self.get(k).map(|v| v.start).unwrap_or(self.at);
+        value_err(&self.child_ptr(k), at, detail)
+    }
 }
 
 /// Build a schema error at a pointer (used by record decoders for value rules).

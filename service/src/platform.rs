@@ -14,6 +14,7 @@
 //! | Filesystem allowlist | `fstatfs` `f_type` magic: ext4, xfs, btrfs | `fstatfs` `f_fstypename` "apfs" |
 //! | Random bytes | `getrandom(2)` | `getentropy(3)` |
 //! | errno reset | `__errno_location` | `__error` |
+//! | Process start time | `/proc/self/stat` field 22 | none (recorded as null) |
 
 use std::ffi::CString;
 use std::fs::File;
@@ -400,6 +401,25 @@ pub fn boot_id() -> Option<String> {
     {
         let s = std::fs::read_to_string("/proc/sys/kernel/random/boot_id").ok()?;
         Some(s.trim().to_string())
+    }
+    #[cfg(target_os = "macos")]
+    {
+        None
+    }
+}
+
+/// This process's start time in clock ticks since boot: field 22 of
+/// `/proc/self/stat`, recorded in `run_started` with the other holder
+/// observations (INTERFACE 4.6). `None` where it cannot be read, including
+/// the macOS development fallback, which has no `/proc`.
+pub fn start_ticks() -> Option<u64> {
+    #[cfg(target_os = "linux")]
+    {
+        let s = std::fs::read_to_string("/proc/self/stat").ok()?;
+        // Field 2 (comm) is parenthesized and may contain spaces or
+        // parentheses; the fields after the last `)` start at field 3.
+        let rest = &s[s.rfind(')')? + 1..];
+        rest.split_ascii_whitespace().nth(22 - 3)?.parse().ok()
     }
     #[cfg(target_os = "macos")]
     {

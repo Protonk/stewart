@@ -137,7 +137,10 @@ impl Env {
             .current_dir(&self.cwd)
             .env_remove("STEWART_ARCHIVE")
             .env_remove("STEWART_TEST_FAULT")
-            .env_remove("STEWART_TEST_SABOTAGE");
+            .env_remove("STEWART_TEST_SABOTAGE")
+            .env_remove("STEWART_TEST_TLS_ROOT")
+            .env_remove("STEWART_TEST_PROVIDER_TIMEOUT")
+            .env_remove("STEWART_TEST_RETRY_DELAYS");
         for (k, v) in &self.extra_env {
             c.env(k, v);
         }

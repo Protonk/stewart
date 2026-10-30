@@ -6,6 +6,7 @@ pub mod commission;
 pub mod new;
 pub mod prepare;
 pub mod receipt;
+pub mod run;
 pub mod status;
 
 use crate::archive::Fail;
