@@ -146,41 +146,19 @@ each item needs the decision or commission named.
   `max_tokens_per_request` (16,000) and the 600 s timeout are pinned but
   unqualified against real responses.
 - **Step 9, retiring Python: not started**, by design (it follows step 8).
-- **Fat-LTO `getrandom`: worked around; mechanism confirmed.** In the
-  fat-LTO static musl release build Stewart's `libc::getrandom` call linked
-  to nothing (observations and reproduction steps:
-  `.scratch/fat-lto-getrandom-01/REPORT.md`). The toolchain sources at rustc
-  `b940084d7` account for every observation
-  (`.scratch/fat-lto-getrandom-02/ANALYSIS.md`). std declares `getrandom`
-  `extern_weak` for its own syscall fallback. Fat LTO links every other
-  module into the binary's three-line `main` module in name order, and LLVM
-  keeps the first declaration's linkage, so std's weak declaration, sorting
-  before the `stewart` library's strong one, governs the library's call.
-  ld then links no definition and the call resolves to address 0. The six
-  small programs and the in-crate example worked because they made the call
-  from the binary crate itself. Stewart calls the raw syscall instead
-  (`service/src/platform.rs`). Riker (`RIKER-REPLY.md` beside the request)
-  found the account supported and confirmed the ELF consequences without
-  Rust, but could not run Rust. `.scratch/fat-lto-getrandom-03/RESULT.md`
-  confirms the LLVM step with `llvm-link`: whichever module declares the
-  symbol first fixes its linkage. The deciding Rust comparison confirms the
-  whole account on both architectures (`.scratch/fat-lto-getrandom-04/RESULT.md`):
-  with identical code, a library crate named to sort after `std` lost its
-  `getrandom` (silent no-op on aarch64, SIGSEGV on x86_64) and one named to
-  sort before it kept it, in the order rustc's own log records. Static glibc
-  linked `getrandom` anyway in that run (cause not recorded). Exposure: only
-  direct libc calls to functions std declares weak for the target; for the
-  musl targets at this toolchain `getrandom`,
-  `copy_file_range`, `gettid`, `pidfd_spawnp` and `pidfd_getpid`
-  (`.scratch/fat-lto-getrandom-02/std-weak-symbols-linux-musl.txt`; `statx`
-  is weak only on glibc). Stewart makes none today. The user adopted a rule
-  for future calls, stated in the crate docs (`service/src/lib.rs`): make
-  them through `libc::syscall`. A release-build guard and a switch to thin
-  LTO were offered and not chosen; Riker's further suggestions (a byte-count
-  check in the loop, `-Wl,--require-defined`, a release sentinel test) are
-  undecided. **Upstream report:** the user decided it goes first to a Claude
-  web agent for routing advice and a draft, with no AI-written public issue;
-  the user decides routing. The brief is
+- **Fat-LTO `getrandom`: closed locally (the user, 2026-10-30).** In the
+  fat-LTO static musl release build, a library's call to a libc function that
+  std also declares weak can link to nothing; Stewart's `libc::getrandom` call
+  did (a silent no-op on aarch64, SIGSEGV on x86_64). The mechanism is
+  confirmed on both architectures (`.scratch/fat-lto-getrandom-04/RESULT.md`;
+  the source account is `-02/ANALYSIS.md`, the LLVM step `-03/RESULT.md` and
+  the original observations `-01/REPORT.md`). Stewart calls the raw syscall
+  (`service/src/platform.rs`), and the crate docs (`service/src/lib.rs`) state
+  the rule for future calls and the functions it covers. No further local
+  work: a release-build guard, thin LTO and Riker's further suggestions (a
+  byte-count check, `-Wl,--require-defined`, a release sentinel test) are not
+  pursued. **Upstream report:** with the user, who decides routing after a
+  Claude web agent's advice; no AI-written public issue. The brief is
   `.scratch/fat-lto-getrandom-02/WEB-AGENT-REQUEST.md`.
 - **Decisions made during the build that a reviewer may revisit** (reported to
   the user, not contested): damaged commissioned material refuses `run`
