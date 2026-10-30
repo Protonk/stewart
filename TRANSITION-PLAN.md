@@ -44,7 +44,8 @@ and SIGSEGV in `new` on x86_64. Diagnostics `.scratch/diag-linux-01` to `-03`
 located it: every Linux-only call worked in isolation; only the fat-LTO release
 build failed; in it musl's `getrandom` was absent from the binary while thin LTO
 linked it. Calling the raw `SYS_getrandom` syscall fixed both architectures under
-fat LTO. The mechanism behind the missing symbol is not established.
+fat LTO. The mechanism, traced later in the toolchain sources, is under "Not
+done, and why".
 
 Step 3 milestone met by `.scratch/step3-03` (source `3c4e795`, 2026-10-30):
 `failures=0`. aarch64 native: 70/70 cases, 16/16 sabotage and 8/8 driver
@@ -145,17 +146,26 @@ each item needs the decision or commission named.
   `max_tokens_per_request` (16,000) and the 600 s timeout are pinned but
   unqualified against real responses.
 - **Step 9, retiring Python: not started**, by design (it follows step 8).
-- **Fat-LTO `getrandom`: worked around, cause upstream and not established.**
-  In the fat-LTO static musl release build the post-LTO IR declares
-  `getrandom` `extern_weak`, so ld never links musl's definition and the call
-  misbehaves; Stewart calls the raw syscall instead
-  (`service/src/platform.rs`). The bug report, steps to reproduce and evidence
-  are in `.scratch/fat-lto-getrandom-01/REPORT.md` (run 2026-10-30). Six small
-  programs did not reproduce it; the only known reproducer is Stewart's
-  revision `e714629`, so filing upstream needs either that source or further
-  reduction. Other libc wrappers
-  used today work in every build tested; that is evidence about those
-  functions, not a guarantee.
+- **Fat-LTO `getrandom`: worked around; mechanism traced in source, not yet
+  confirmed by a run.** In the fat-LTO static musl release build Stewart's
+  `libc::getrandom` call linked to nothing (observations and reproduction
+  steps: `.scratch/fat-lto-getrandom-01/REPORT.md`). The toolchain sources at
+  rustc `b940084d7` account for every observation
+  (`.scratch/fat-lto-getrandom-02/ANALYSIS.md`). std declares `getrandom`
+  `extern_weak` for its own syscall fallback. Fat LTO links every other
+  module into the binary's three-line `main` module in name order, and LLVM
+  keeps the first declaration's linkage, so std's weak declaration, sorting
+  before the `stewart` library's strong one, governs the library's call.
+  ld then links no definition and the call resolves to address 0. The six
+  small programs and the in-crate example worked because they made the call
+  from the binary crate itself. Stewart calls the raw syscall instead
+  (`service/src/platform.rs`). The deciding comparison (the same code with
+  the library crate named to sort after or before `std`) is written as a
+  request to Riker, `.scratch/fat-lto-getrandom-02/RIKER-REQUEST.md`; it
+  has been neither sent nor run. Exposure: only direct libc calls to
+  functions std declares weak (`.scratch/fat-lto-getrandom-02/std-weak-symbols.txt`).
+  Stewart makes none today, since `getrandom` and `statx` are raw syscalls,
+  but a toolchain upgrade can add to std's list.
 - **Decisions made during the build that a reviewer may revisit** (reported to
   the user, not contested): damaged commissioned material refuses `run`
   (`commission_damaged`) rather than running with that material refused;

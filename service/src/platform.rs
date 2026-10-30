@@ -26,12 +26,17 @@ pub fn random_fill(buf: &mut [u8]) -> io::Result<()> {
     #[cfg(target_os = "linux")]
     {
         // The raw syscall, not musl's getrandom() wrapper. In the fat-LTO
-        // static release build the post-LTO IR declared getrandom extern_weak,
-        // so the linker never took musl's definition from libc.a and the call
-        // had no definition: it returned without writing (all-zero
-        // identifiers) on aarch64 and crashed on x86_64. Thin-LTO and non-LTO
-        // builds linked it and worked. Where the weak linkage comes from is
-        // not established; the syscall needs no library symbol.
+        // static release build the wrapper call linked to nothing: it
+        // returned without writing (all-zero identifiers) on aarch64 and
+        // crashed on x86_64; thin-LTO and non-LTO builds worked. The likely
+        // mechanism, from the toolchain sources: std declares getrandom
+        // extern_weak for its own fallback, fat LTO links every library's
+        // module into the binary's own module in name order, and LLVM keeps
+        // the first declaration's linkage. std's weak one sorts before this library's
+        // strong one, so the merged reference was weak, ld took nothing from
+        // libc.a and the call resolved to address 0. The same applies to any
+        // libc function std declares weak (statx, copy_file_range, splice,
+        // gettid, ...). The syscall needs no library symbol.
         let mut off = 0;
         while off < buf.len() {
             let rc = unsafe {
