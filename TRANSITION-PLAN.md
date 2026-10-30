@@ -95,7 +95,11 @@ specification conflict (status charged a live placement's in-flight request
 as if the process were gone; settled in `a1515e7`), a test-build pause that
 continued silently on a stale file (now aborts), and two sabotage controls
 (`torn_as_entry`, `reset_limits_on_continuation`) whose cases did not observe
-what the control breaks. Fixes in progress; a second run follows.
+what the control breaks. All fixed by `dc85948` (the driver's reacting
+auditor had been skipping its allowance comparison in every case, found
+through the unfired continuation control); native check of `dc85948`: every
+service test passes, driver 95/95 runnable cases, 61 controls fired, exit 0.
+Second milestone run: `.scratch/acceptance-02`, in progress.
 
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
