@@ -7,10 +7,8 @@
 //! compared with them. Each test runs the real binary from an unrelated
 //! working directory with its own folder, archive and destination.
 //!
-//! Tests marked `#[ignore]` with "expected to fail on the stub" exercise the
-//! auditor's tools or delivery through their interfaces (`answer::execute`,
-//! `delivery::deliver`), which this build declares but does not implement.
-//! Run them with `--ignored` once those land.
+//! The tool-calling and seal cases run the auditor's tools and delivery
+//! through their interfaces (`answer::execute`, `delivery::deliver`).
 
 // The crate's log writer refuses with its full account by value.
 #![allow(clippy::result_large_err)]
@@ -977,6 +975,11 @@ fn refusals_before_launch_change_nothing() {
         assert_eq!(sj(&o.reply, &["reason"]), reason);
         assert_eq!(sj(&o.reply, &["effects", "run"]), "not_started");
         assert_eq!(sj(&o.reply, &["effects", "answer"]), "unchanged");
+        assert_eq!(
+            sj(&o.reply, &["effects", "delivery"]),
+            "none",
+            "no attempt is recorded"
+        );
         assert_eq!(sj(&o.reply, &["next", "0", "argv", "1"]), "run");
     };
     let url = p.url();
@@ -1076,7 +1079,6 @@ fn a_damaged_capture_refuses_commission_damaged() {
 // The auditor's tools and delivery, through their interfaces.
 
 #[test]
-#[ignore = "expected to fail on the stub: needs answer::execute"]
 fn tool_calls_are_captured_executed_replayed_and_answered() {
     let content = r#"[{"type":"thinking","thinking":"plan","signature":"c2ln"},{"type":"tool_use","id":"toolu_1","name":"list","input":{}},{"type":"tool_use","id":"toolu_1","name":"list","input":{}},{"type":"tool_use","id":"toolu_1","name":"list","input":{"page":2}}]"#;
     let p = provider!(
@@ -1124,9 +1126,9 @@ fn prepared_handle(body: &[u8]) -> String {
     s[at..].split('\\').next().unwrap().to_string()
 }
 
-#[test]
-#[ignore = "expected to fail on the stub: needs answer::execute, answer::seal and delivery::deliver"]
-fn a_confirmed_submit_seals_and_the_run_delivers_before_ending() {
+/// A provider that records an account, prepares, then confirms a submit of
+/// the handle that prepare returned, and would otherwise end its turn.
+fn submitting_provider(test: &str) -> Option<Provider> {
     let submit: Responder = Arc::new(|body: &[u8]| {
         let h = prepared_handle(body);
         message(
@@ -1138,16 +1140,25 @@ fn a_confirmed_submit_seals_and_the_run_delivers_before_ending() {
             10,
         )
     });
-    let p = provider!(
-        "a_confirmed_submit_seals_and_the_run_delivers_before_ending",
-        vec![
-            ok(
-                r#"[{"type":"tool_use","id":"t1","name":"record_account","input":{"text":"The restart path re-sends one reminder."}},{"type":"tool_use","id":"t2","name":"prepare","input":{}}]"#,
-                "tool_use",
-            ),
-            Act::Respond(submit),
-        ]
-    );
+    let script = vec![
+        ok(
+            r#"[{"type":"tool_use","id":"t1","name":"record_account","input":{"text":"The restart path re-sends one reminder."}},{"type":"tool_use","id":"t2","name":"prepare","input":{}}]"#,
+            "tool_use",
+        ),
+        Act::Respond(submit),
+        text_turn("end_turn"),
+        text_turn("end_turn"),
+    ];
+    listener(test).map(|l| Provider::start(l, script))
+}
+
+#[test]
+fn a_confirmed_submit_seals_and_the_run_delivers_before_ending() {
+    let Some(p) =
+        submitting_provider("a_confirmed_submit_seals_and_the_run_delivers_before_ending")
+    else {
+        return;
+    };
     let e = Env::new();
     let r = commissioned(&e, DEFAULT_LIMITS);
     let o = run(&e, &r, &p, &[]);
@@ -1169,9 +1180,100 @@ fn a_confirmed_submit_seals_and_the_run_delivers_before_ending() {
     assert!(kinds[seal..ended].iter().any(|k| k == "delivery_ended"));
     let ended = body_of(&e, &r, ended + 1);
     assert_eq!(sj(&ended, &["seal"]), format!("log/{}.json", seal + 1));
-    // Authoring ended with the seal.
+    // Authoring ended with the seal. The refusal makes no delivery and
+    // reports the newest recorded attempt's outcome (1.4).
     let o = run(&e, &r, &p, &[]);
+    assert_eq!(o.code, Some(3));
     assert_eq!(sj(&o.reply, &["data", "ended_by"]), "seal");
+    assert_eq!(sj(&o.reply, &["effects", "seal"]), "existing");
+    assert_eq!(sj(&o.reply, &["effects", "delivery"]), "verified");
+}
+
+/// A seal whose publication is uncertain to the submit but was in fact
+/// linked: the run reads the log, delivers and ends `sealed`, and sends no
+/// further request and no reminder.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn an_uncertain_seal_that_was_linked_is_delivered_and_ends_sealed() {
+    let Some(p) =
+        submitting_provider("an_uncertain_seal_that_was_linked_is_delivered_and_ends_sealed")
+    else {
+        return;
+    };
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let o = run(
+        &e,
+        &r,
+        &p,
+        &[("STEWART_TEST_FAULT", "log.dirsync:seal=eio")],
+    );
+    assert_eq!(o.code, Some(0), "{}", o.stderr);
+    let j = &o.reply;
+    assert_eq!(sj(j, &["data", "ending"]), "sealed");
+    assert_eq!(sj(j, &["effects", "seal"]), "recorded");
+    assert_eq!(sj(j, &["effects", "delivery"]), "verified");
+    assert_eq!(sj(j, &["data", "seal", "actor"]), "auditor");
+    // The submit itself replied seal_uncertain (7.6).
+    let submit = record_body(&run_file(&e, &r, 1, "result-3.json"));
+    assert_eq!(sj(&submit, &["tool"]), "submit");
+    assert_eq!(sj(&submit, &["outcome"]), "failed");
+    assert_eq!(sj(&submit, &["reason"]), "seal_uncertain");
+    // Nothing followed the seal but its delivery and the ending.
+    assert_eq!(p.requests().len(), 2, "no request after the seal");
+    let kinds = e.log_kinds(&r);
+    let seal = kinds
+        .iter()
+        .position(|k| k == "seal")
+        .expect("the seal was linked");
+    assert!(
+        !kinds.iter().any(|k| k == "notice"),
+        "no reminder: {kinds:?}"
+    );
+    assert_eq!(
+        kinds[seal + 1..],
+        ["delivery_planned", "delivery_ended", "run_ended"],
+        "{kinds:?}"
+    );
+    let ended = body_of(&e, &r, kinds.len());
+    assert_eq!(sj(&ended, &["ending"]), "sealed");
+    assert_eq!(sj(&ended, &["seal"]), format!("log/{}.json", seal + 1));
+    // Control: the same provider without the fault seals as ordinarily
+    // (a_confirmed_submit_seals_and_the_run_delivers_before_ending); with the
+    // seal unlinked, nothing is sealed and the turn continues.
+}
+
+/// The differing case: a submit whose seal is not linked at all fails
+/// `record_failed`, which ends the placement `archive_write_failed`; the log
+/// holds no seal, so nothing is delivered.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_seal_that_was_not_linked_is_not_delivered() {
+    let Some(p) = submitting_provider("a_seal_that_was_not_linked_is_not_delivered") else {
+        return;
+    };
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let o = run(
+        &e,
+        &r,
+        &p,
+        &[("STEWART_TEST_FAULT", "log.publish:seal=eio")],
+    );
+    assert_eq!(o.code, Some(5), "{}", o.stderr);
+    assert_eq!(sj(&o.reply, &["data", "ending"]), "interrupted");
+    assert_eq!(sj(&o.reply, &["data", "cause"]), "archive_write_failed");
+    assert_eq!(sj(&o.reply, &["effects", "seal"]), "none");
+    assert_eq!(sj(&o.reply, &["effects", "delivery"]), "none");
+    let submit = record_body(&run_file(&e, &r, 1, "result-3.json"));
+    assert_eq!(sj(&submit, &["reason"]), "record_failed");
+    let kinds = e.log_kinds(&r);
+    assert!(
+        !kinds
+            .iter()
+            .any(|k| k == "seal" || k.starts_with("delivery"))
+    );
+    assert_eq!(p.requests().len(), 2);
 }
 
 #[test]
@@ -1461,6 +1563,51 @@ fn run_fault_points_are_recorded_or_reconciled() {
         (n(&between, &["requests"]), n(&between, &["attempts"])),
         (1, 1)
     );
+}
+
+/// A placement whose ending cannot be recorded: the run fails
+/// `record_failed` with its cause, lists the locations it created and kept,
+/// and the next run records the ending as a dead placement's.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn an_ending_that_cannot_be_recorded_fails_with_its_cause_and_locations() {
+    let p = provider!(
+        "an_ending_that_cannot_be_recorded_fails_with_its_cause_and_locations",
+        vec![text_turn("max_tokens"), text_turn("max_tokens")]
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let o = run(
+        &e,
+        &r,
+        &p,
+        &[("STEWART_TEST_FAULT", "log.publish:run_ended=eio")],
+    );
+    assert_eq!(o.code, Some(4), "{}", o.stderr);
+    let j = &o.reply;
+    assert_eq!(sj(j, &["outcome"]), "failed");
+    assert_eq!(sj(j, &["reason"]), "record_failed");
+    assert_eq!(sj(j, &["effects", "run"]), "started");
+    assert_eq!(
+        sj(j, &["causes", "0", "operation"]),
+        "link run_ended record"
+    );
+    let retained = common::strs(j, &["retained"]);
+    let dir = e.audit_dir(&r);
+    assert!(retained.contains(&format!("{dir}/runs/1")), "{retained:?}");
+    assert!(retained.contains(&format!("{dir}/stage")), "{retained:?}");
+    assert!(
+        retained
+            .iter()
+            .any(|x| x.starts_with(&format!("{dir}/diag/"))),
+        "{retained:?}"
+    );
+    assert_eq!(e.log_kinds(&r).last().unwrap(), "run_started");
+    let o = run(&e, &r, &p, &[]);
+    assert_eq!(o.code, Some(5), "{}", o.stderr);
+    let kinds = e.log_kinds(&r);
+    let first_end = kinds.iter().position(|k| k == "run_ended").unwrap() + 1;
+    assert_eq!(sj(&body_of(&e, &r, first_end), &["cause"]), "process_gone");
 }
 
 /// Whether request 1 carried exactly the pinned system, tools and question.

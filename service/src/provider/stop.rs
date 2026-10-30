@@ -91,7 +91,7 @@ pub fn receive_signals(abort: AbortHandle, flags: Flags) -> std::io::Result<()> 
 }
 
 /// The close watcher: every 250 ms it reads the log, and when a
-/// `close_requested` record is there and no seal has been recorded, it fires
+/// `close_requested` record is there and the log holds no seal, it fires
 /// the stop path with [`StopCause::Close`]. Dropping the returned guard
 /// stops the watcher.
 pub struct Watcher {
@@ -119,7 +119,9 @@ pub fn watch<'scope, 'env>(
                 return;
             }
             let state = crate::log::read(audit);
-            if state.close_requested().is_some() && !flags.sealed() {
+            // The stop path applies only while no seal exists, whatever the
+            // submit that linked one replied.
+            if state.close_requested().is_some() && state.seal().is_none() && !flags.sealed() {
                 abort.abort(StopCause::Close);
                 return;
             }

@@ -6,9 +6,15 @@
 //! capture the request, send it with retries, account usage
 //! no response to use → end as 6.5 states
 //! execute every tool_use block of the response in order
-//! if a seal was recorded during this response → deliver, then end sealed
+//! if the log holds a seal recorded during this response → deliver, then end sealed
 //! otherwise follow the stop reason (policy::after_response)
 //! ```
+//!
+//! Whether a seal was recorded is read from the log, never from the calls'
+//! replies: a submit that replied `seal_uncertain` while its seal was in fact
+//! linked still leads to delivery and the ending `sealed`. While the log holds
+//! a seal the placement sends no request and publishes no notice, and the
+//! stop path no longer applies (6.3, 6.8).
 //!
 //! Every raw capture is written before what it captures is used: the request
 //! capture before its first attempt, the response capture before its body is
@@ -30,7 +36,7 @@ use crate::archive::{Audit, Fail};
 use crate::bodies::{Notice, ProviderFacts};
 use crate::delivery::{self, By, Delivered, Destination};
 use crate::json::J;
-use crate::log::{self, PubErr};
+use crate::log::{self, LogState, PubErr};
 use crate::provider::policy::{self, Next, RetryPolicy, Then};
 use crate::provider::request::{Conversation, Parts, first_user_message, turn, user_message};
 use crate::provider::response::{Message, classify};
@@ -143,6 +149,13 @@ fn archive_failed(c: &reply::Cause) -> Stop {
     )
 }
 
+fn damaged(state: &LogState) -> Stop {
+    Stop::LogDamaged(format!(
+        "The audit log was found damaged ({}); the run published nothing more.",
+        state.bad_names()
+    ))
+}
+
 fn stopped(cause: StopCause) -> Stop {
     match cause {
         StopCause::Close => Stop::Ending(
@@ -242,17 +255,19 @@ impl State<'_, '_> {
         u
     }
 
-    /// The checks before each request and after each retry delay.
-    fn before_request(&self) -> Option<Stop> {
-        if let Some(c) = self.live.abort.cause() {
-            return Some(stopped(c));
-        }
+    /// The checks before each request and after each retry delay. No
+    /// request is sent while the log holds a seal: the placement delivers it
+    /// and ends `sealed`, and the stop path no longer applies.
+    fn before_request(&mut self) -> Option<Stop> {
         let state = log::read(self.live.audit);
         if state.damaged() {
-            return Some(Stop::LogDamaged(format!(
-                "The audit log was found damaged ({}); the run published nothing more.",
-                state.bad_names()
-            )));
+            return Some(damaged(&state));
+        }
+        if let Some(stop) = self.sealed_in_log(&state) {
+            return Some(stop);
+        }
+        if let Some(c) = self.live.abort.cause() {
+            return Some(stopped(c));
         }
         if state.close_requested().is_some() {
             return Some(stopped(StopCause::Close));
@@ -262,6 +277,16 @@ impl State<'_, '_> {
             return Some(Stop::Ending(Ending::LimitReached, self.limit_message()));
         }
         None
+    }
+
+    /// When the log holds a seal, take it as this placement's seal (the run
+    /// refuses to start once a seal exists, so any seal in the log was
+    /// recorded during this placement), deliver it and end `sealed`.
+    fn sealed_in_log(&mut self, state: &LogState) -> Option<Stop> {
+        let (rec, _) = state.seal()?;
+        self.seal = Some(rec.name());
+        self.live.flags.set_sealed();
+        Some(self.deliver())
     }
 
     fn limit_message(&self) -> String {
@@ -467,6 +492,12 @@ impl State<'_, '_> {
         };
         let reset = crate::sabotage!("reset_notice_allowance") && live.run > 1;
         let published = log::publish(live.audit, "notice", |state| {
+            if state.seal().is_some() {
+                return Err(Fail::refused(
+                    "sealed",
+                    "The log holds a seal; no notice follows it.",
+                ));
+            }
             if !reset && state.notice_used(kind) {
                 return Err(Fail::refused(
                     "notice_used",
@@ -494,6 +525,16 @@ impl State<'_, '_> {
                     request,
                 });
                 Ok(Some(record))
+            }
+            Err(PubErr::Refused(f)) if f.reason == "sealed" => {
+                let state = log::read(live.audit);
+                if state.damaged() {
+                    return Err(damaged(&state));
+                }
+                match self.sealed_in_log(&state) {
+                    Some(stop) => Err(stop),
+                    None => Ok(None),
+                }
             }
             Err(PubErr::Refused(_)) => Ok(None),
             Err(PubErr::Damaged(state)) => Err(Stop::LogDamaged(format!(
@@ -568,10 +609,15 @@ impl State<'_, '_> {
         msg: &Message,
     ) -> Result<(), Stop> {
         let (results, early) = self.execute_blocks(k, a, body, msg);
-        if self.seal.is_some() {
-            // A seal recorded during this response is delivered before the
-            // placement ends, whatever else happened (6.3, 6.8).
-            return Err(self.deliver());
+        // Whether a seal was recorded is read from the log, whatever the
+        // calls replied; a seal is delivered before the placement ends,
+        // whatever else happened (6.3, 6.8).
+        let state = log::read(self.live.audit);
+        if state.damaged() {
+            return Err(damaged(&state));
+        }
+        if let Some(stop) = self.sealed_in_log(&state) {
+            return Err(stop);
         }
         if let Some(stop) = early {
             return Err(stop);
@@ -631,9 +677,14 @@ impl State<'_, '_> {
         let live = self.live;
         let mut results = Vec::new();
         for (block, tu) in msg.tool_uses() {
-            if self.seal.is_none() {
+            if !live.flags.sealed() {
                 if let Some(c) = live.abort.cause() {
-                    return (results, Some(stopped(c)));
+                    // The stop path applies only while no seal exists; a
+                    // submit's reply may not say that its seal was linked.
+                    if log::read(live.audit).seal().is_none() {
+                        return (results, Some(stopped(c)));
+                    }
+                    live.flags.set_sealed();
                 }
             }
             self.calls += 1;
@@ -765,9 +816,6 @@ impl State<'_, '_> {
         self.revision = ex.revision;
         if ex.sealed {
             self.live.flags.set_sealed();
-            if self.seal.is_none() {
-                self.seal = ex.log_record.clone();
-            }
         } else if ex.log_record.is_some() {
             self.entries = true;
         }
