@@ -27,7 +27,9 @@ stays with that report under the retention rules.
 | `coordinator-intake-20261026-01.json`, `coordinator-intake-recording-01.json`, `coordinator-discussion-20261026-01.json` | This index |
 | `apparatus-01/`, `step3-01/`, `step3-02/`, `step3-03/`, `diag-linux-01/`, `diag-linux-02/`, `diag-linux-03/`, `acceptance-01/`, `acceptance-02/` | [TRANSITION-PLAN.md](../TRANSITION-PLAN.md): the step 2–6 container runs and Linux diagnostics it cites |
 | `fat-lto-getrandom-01/` | Its `REPORT.md`: the fat-LTO `getrandom` reproduction and evidence |
-| `fat-lto-getrandom-02/` | Its `ANALYSIS.md`: the source-level account of that failure, with the toolchain sources it cites and the request to Riker |
+| `fat-lto-getrandom-02/` | Its `ANALYSIS.md`: the source-level account of that failure, with the toolchain sources it cites, the Riker request and reply, and the web-agent brief |
+| `fat-lto-getrandom-03/` | Its `RESULT.md`: the LLVM-only declaration-merge experiment |
+| `fat-lto-getrandom-04/` | [TRANSITION-PLAN.md](../TRANSITION-PLAN.md): the prepared Rust confirmation run |
 | `submission-prototype-01/` | [submission-design-01/RESULT.md](submission-design-01/RESULT.md) |
 | `opus-preparation-audit-01/` | [reports/opus-preparation-audit-2026-10-27/RESULT.md](../reports/opus-preparation-audit-2026-10-27/RESULT.md) |
 | `commission-intake-01/` | [reports/commission-self-audit-2026-10-27/RESULT.md](../reports/commission-self-audit-2026-10-27/RESULT.md) |

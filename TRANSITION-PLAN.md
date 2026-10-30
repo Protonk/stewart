@@ -146,9 +146,10 @@ each item needs the decision or commission named.
   `max_tokens_per_request` (16,000) and the 600 s timeout are pinned but
   unqualified against real responses.
 - **Step 9, retiring Python: not started**, by design (it follows step 8).
-- **Fat-LTO `getrandom`: worked around; mechanism traced in source, not yet
-  confirmed by a run.** In the fat-LTO static musl release build Stewart's
-  `libc::getrandom` call linked to nothing (observations and reproduction
+- **Fat-LTO `getrandom`: worked around; mechanism traced in source and
+  confirmed at the LLVM level, not yet in Rust.** In the fat-LTO static musl
+  release build Stewart's `libc::getrandom` call linked to nothing
+  (observations and reproduction
   steps: `.scratch/fat-lto-getrandom-01/REPORT.md`). The toolchain sources at
   rustc `b940084d7` account for every observation
   (`.scratch/fat-lto-getrandom-02/ANALYSIS.md`). std declares `getrandom`
@@ -159,16 +160,26 @@ each item needs the decision or commission named.
   ld then links no definition and the call resolves to address 0. The six
   small programs and the in-crate example worked because they made the call
   from the binary crate itself. Stewart calls the raw syscall instead
-  (`service/src/platform.rs`). The deciding comparison (the same code with
-  the library crate named to sort after or before `std`) is written as a
-  request to Riker, `.scratch/fat-lto-getrandom-02/RIKER-REQUEST.md`; it
-  has been neither sent nor run. Exposure: only direct libc calls to
-  functions std declares weak (`.scratch/fat-lto-getrandom-02/std-weak-symbols.txt`).
-  Stewart makes none today, since `getrandom` and `statx` are raw syscalls,
-  but a toolchain upgrade can add to std's list. The user adopted a rule for
-  future calls, stated in the crate docs (`service/src/lib.rs`): call such
-  functions through `libc::syscall`. A release-build guard and a switch to
-  thin LTO were offered and not chosen.
+  (`service/src/platform.rs`). Riker (`RIKER-REPLY.md` beside the request)
+  found the account supported and confirmed the ELF consequences without
+  Rust, but could not run Rust. `.scratch/fat-lto-getrandom-03/RESULT.md`
+  confirms the LLVM step with `llvm-link`: whichever module declares the
+  symbol first fixes its linkage. The deciding Rust comparison (identical
+  code, the library crate named to sort before or after `std`) is prepared
+  as `.scratch/fat-lto-getrandom-04/run.sh` for the user to run; not yet run.
+  Exposure: only direct libc calls to functions std declares weak for the
+  target; for the musl targets at this toolchain `getrandom`,
+  `copy_file_range`, `gettid`, `pidfd_spawnp` and `pidfd_getpid`
+  (`.scratch/fat-lto-getrandom-02/std-weak-symbols-linux-musl.txt`; `statx`
+  is weak only on glibc). Stewart makes none today. The user adopted a rule
+  for future calls, stated in the crate docs (`service/src/lib.rs`): make
+  them through `libc::syscall`. A release-build guard and a switch to thin
+  LTO were offered and not chosen; Riker's further suggestions (a byte-count
+  check in the loop, `-Wl,--require-defined`, a release sentinel test) are
+  undecided. **Upstream report:** the user decided it goes first to a Claude
+  web agent for routing advice and a draft, with no AI-written public issue;
+  the user decides routing. The brief is
+  `.scratch/fat-lto-getrandom-02/WEB-AGENT-REQUEST.md`.
 - **Decisions made during the build that a reviewer may revisit** (reported to
   the user, not contested): damaged commissioned material refuses `run`
   (`commission_damaged`) rather than running with that material refused;
