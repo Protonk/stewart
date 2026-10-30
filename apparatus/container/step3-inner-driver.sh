@@ -25,6 +25,15 @@ rec env-python python3 -VV
 rec env-mountinfo cat /proc/self/mountinfo
 rec env-network sh -c 'cat /proc/net/route; ls /sys/class/net'
 rec env-binaries sha256sum /bin-in/stewart /bin-in/stewart-test
+rec env-cpuinfo sh -c 'head -20 /proc/cpuinfo'
+# Under Rosetta (an x86_64 kernel on a VirtualApple CPU) the emulator writes its
+# own translation cache to $HOME/.cache/rosetta; the driver records that as an
+# emulator artifact rather than as a write by Stewart.
+EMULATION=""
+if [ "$(uname -m)" = x86_64 ] && grep -q VirtualApple /proc/cpuinfo 2>/dev/null; then
+    EMULATION="--emulator-home-artifact .cache/rosetta"
+fi
+echo "${EMULATION:-none}" >/out/emulation.txt
 
 mkdir -p /work/driver /work/tmp /work/run || exit 1
 tar -xf /in/source.tar -C /work/driver apparatus/driver/stewart_driver.py || exit 1
@@ -52,7 +61,7 @@ rec env-unprivileged "$@" id
 rec driver "$@" env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/work/tmp \
     python3 -I -B /work/driver/apparatus/driver/stewart_driver.py \
     --binary /bin-in/stewart --test-binary /bin-in/stewart-test \
-    --evidence /work/run/evidence --work /work/tmp --timing-gate "$GATE"
+    --evidence /work/run/evidence --work /work/tmp --timing-gate "$GATE" $EMULATION
 rc=$(cat /out/driver.exit)
 cp -R /work/run/evidence /out/evidence || rc=1
 echo "$rc" >/out/driver-final.exit

@@ -68,6 +68,19 @@ if sys.version_info < (3, 8):  # pragma: no cover
     sys.exit(2)
 
 DRIVER_SCHEMA = "stewart.step3-driver/1"
+# Paths an emulator creates under HOME on its own account (for example Rosetta's
+# translation cache, .cache/rosetta, when x86_64 binaries run on Apple silicon).
+# Set by --emulator-home-artifact; additions at these paths, their ancestors or
+# their descendants in a watched home are recorded as emulator artifacts, not as
+# writes by Stewart. Every other change to a home remains a violation.
+EMULATOR_HOME_ARTIFACTS = []
+
+
+def emulator_artifact(rel):
+    for a in EMULATOR_HOME_ARTIFACTS:
+        if rel == a or a.startswith(rel + "/") or rel.startswith(a + "/"):
+            return True
+    return False
 REPLY_SCHEMA = "stewart.reply/1"
 RECORD_SCHEMA = "stewart.record/1"
 
@@ -1250,6 +1263,12 @@ class T:
             snap = snapshot(path, self.cache)
             only_add = w["mode"] == "archive"
             violations, added = compare_snapshots(w["last"], snap, only_add)
+            if not only_add and EMULATOR_HOME_ARTIFACTS and "home" in str(w["label"]):
+                artifacts = [v for v in violations if v[0] == "added" and emulator_artifact(v[1])]
+                if artifacts:
+                    violations = [v for v in violations if v not in artifacts]
+                    self.inventory_log.append({"at": label, "watch": w["label"], "path": path,
+                                               "emulator_artifacts": artifacts[:50]})
             if readonly and only_add and added:
                 violations = violations + [("added_by_read_only", a) for a in added]
             if violations or added:
@@ -4662,7 +4681,8 @@ class Driver:
                          "work_filesystem": fs_type_of(self.work), "linux": is_linux()}
         start = {"schema": DRIVER_SCHEMA, "started_at": self.started_at, "argv": sys.argv,
                  "platform": platform_info, "binaries": {"release": self.release, "test": self.test},
-                 "selected": [s.id for s in selected], "timing_gate": self.gate}
+                 "selected": [s.id for s in selected], "timing_gate": self.gate,
+                 "emulator_home_artifacts": list(EMULATOR_HOME_ARTIFACTS)}
         with open(os.path.join(self.evidence, "START.json"), "w", encoding="utf-8") as f:
             json.dump(start, f, ensure_ascii=False, indent=1)
         interrupted = False
@@ -4949,6 +4969,9 @@ def parse_args(argv):
                    help="gate startup, status and help at under 100 ms (only for native runs in the Linux test "
                         "image); default off, which reports timings without gating")
     p.add_argument("--skip-heavy", action="store_true", help="skip the 16 MiB and 128 MiB bound cases")
+    p.add_argument("--emulator-home-artifact", action="append", default=[], metavar="RELPATH",
+                   help="a path an emulator creates under HOME by itself (e.g. .cache/rosetta); "
+                        "recorded as an emulator artifact instead of a write by Stewart")
     p.add_argument("--keep-work", choices=("failed", "all"), default="failed",
                    help="'failed' (default) removes the work directory of each passing variant after recording it "
                         "and copies small failing ones into the evidence; 'all' keeps every work directory")
@@ -4988,6 +5011,7 @@ def list_cases():
 
 def main(argv=None):
     args = parse_args(sys.argv[1:] if argv is None else argv)
+    EMULATOR_HOME_ARTIFACTS[:] = [a.strip('/') for a in args.emulator_home_artifact]
     if args.list:
         list_cases()
         return 0
