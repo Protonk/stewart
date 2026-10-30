@@ -38,6 +38,7 @@ pub mod json;
 pub mod log;
 pub mod ops;
 pub mod platform;
+pub mod provider;
 pub mod records;
 pub mod reply;
 pub mod scan;
