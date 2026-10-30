@@ -410,6 +410,7 @@ def run_cmd(t, a, name, *, expect="completed", reason=None, fault=None, cwd=None
     fx = a.fx
     if fx is not None and mark:
         fx.mark(name)
+    pre = locations_before(t, a)
     rep = t.cmd(["run", a.sub.ref], name=name, env=rs.run_env(t, fx, env), fault=fault, cwd=cwd,
                 timeout=timeout, writer=a.sub.writer, envelope=not killed,
                 expect=None if killed else expect, reason=None if killed else reason)
@@ -418,18 +419,65 @@ def run_cmd(t, a, name, *, expect="completed", reason=None, fault=None, cwd=None
     if killed:
         t.eq(name + ".killed", rep.rc, -signal.SIGKILL)
         t.eq(name + ".no-reply", rep.stdout, b"")
+    else:
+        check_retained(t, a, name, rep, pre)
     return rep
 
 
 def close_cmd(t, a, name, opts=(), *, expect="completed", reason=None, fault=None, cwd=None, env=None,
               killed=False, timeout=180):
+    pre = locations_before(t, a)
     rep = t.cmd(["close", a.sub.ref] + list(opts), name=name, fault=fault, cwd=cwd, env=env, timeout=timeout,
                 writer=a.sub.writer, envelope=not killed, expect=None if killed else expect,
                 reason=None if killed else reason)
     if killed:
         t.eq(name + ".killed", rep.rc, -signal.SIGKILL)
         t.eq(name + ".no-reply", rep.stdout, b"")
+    else:
+        check_retained(t, a, name, rep, pre)
     return rep
+
+
+# ---------------------------------------------------------------------------
+# Retained locations (INTERFACE 1.3 as amended): a failed or refused manager reply lists every
+# location the invocation created and kept. Judged by driver_core's T.check_retained against the
+# driver's own listings taken around the command; packages new at a destination are passed as
+# `outside`.
+# ---------------------------------------------------------------------------
+
+def locations_before(t, a):
+    """The audit's location folders and every watched destination's entries, before a command."""
+    dests = {}
+    for p, w in t.watches.items():
+        if w.get("mode") == "additions":
+            try:
+                dests[p] = set(os.listdir(p))
+            except OSError:
+                dests[p] = set()
+    return {"audit": t.audit_locations(a.sub) if a.sub.audit else set(), "dests": dests, "live": t.writer_live()}
+
+
+def new_packages(pre):
+    """Entries that appeared at a watched destination since `pre` (packages, 8.2)."""
+    out = []
+    for d, names in pre["dests"].items():
+        try:
+            now = set(os.listdir(d))
+        except OSError:
+            continue
+        out += [os.path.join(d, n) for n in sorted(now - names)]
+    return out
+
+
+def check_retained(t, a, name, rep, pre):
+    if rep.outcome not in ("refused", "failed"):
+        return
+    if pre["live"] or t.writer_live():
+        # Another Stewart process of this case was writing, so what this invocation created
+        # cannot be told from the listings.
+        t.skip_part(name + ".retained", "a background Stewart process was writing during the command")
+        return
+    t.check_retained(rep, a.sub, name, pre["audit"], outside=new_packages(pre))
 
 
 def scenario(t, label, fn, *args, **kw):
@@ -1419,6 +1467,8 @@ def _close_failures(t, a):
         t.eq(name + ".effects.run", eff.get("run"), "ended")
         t.check(name + ".effects.seal", eff.get("seal") in ("none", "unknown"), eff)
         t.eq(name + ".effects.delivery", eff.get("delivery"), "none")
+        # 1.4 as amended: requested when this invocation published close_requested and its reply is
+        # failed, whatever else it established; a later failing close reports unfinished.
         t.eq(name + ".effects.closure", eff.get("closure"), closure)
         t.eq(name + ".effects.diagnostic", eff.get("diagnostic"), diag)
         causes = rep.obj.get("causes") if isinstance(rep.obj, dict) else None
@@ -1426,9 +1476,10 @@ def _close_failures(t, a):
                 and causes[0].get("error") == "EIO", causes)
         if diag == "reported_only":
             t.check(name + ".causes.diagnostic-second", isinstance(causes, list) and len(causes) >= 2, causes)
+        # retained (1.3 as amended) is checked exactly by close_cmd against the locations the
+        # inventories show this close created: its claimed preparation, any seal manifest it
+        # claimed and its diagnostic when that was written.
         ret = rep.obj.get("retained") if isinstance(rep.obj, dict) else None
-        t.check(name + ".retained", isinstance(ret, list) and ret and all(
-            isinstance(p, str) and p.startswith(a.sub.audit_dir + os.sep) for p in ret), ret)
         retained += [p for p in ret or [] if isinstance(p, str)]
         t.check(name + ".next-close", [a.sub.writer, "close", a.sub.ref] in rep.next_argvs(), rep.next)
         st = status_point(t, a, name + ".status", condition="close_unfinished", sealed="none", closed="unfinished",
