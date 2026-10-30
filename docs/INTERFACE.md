@@ -141,7 +141,7 @@ For `run`, `close` and the auditor tools the values mean:
 | `run` | `not_started`: no placement has started; `started`: this run's placement started and its ending could not be recorded; `ended`: no placement is live, because each has a recorded ending or its process is gone with the active lock free (the next `run` or `close` records that ending); `still_held`: a placement still holds the active lock |
 | `answer` | `changed`: this invocation recorded at least one entry; `unchanged`: it recorded none |
 | `seal` | `none`: no seal exists; `recorded`: this invocation published the seal; `existing`: a seal existed before it |
-| `delivery` | The outcome (8.3) of the newest delivery attempt this invocation made or presented, or `none` |
+| `delivery` | The outcome (8.3) of the newest delivery attempt this invocation made or presented; on a refusal, which makes and presents nothing, the outcome of the newest recorded attempt; `none` when there is no such attempt. An attempt that ended `name_taken` is reported `failed`. |
 | `closure` | `none`: no close requested; `requested`: this invocation published `close_requested` and then failed before establishing more; `unfinished`: requested and not closed; `complete`: closed |
 | `raw_capture` | `recorded`: the call capture (4.5) was written before the call ran; `failed`: it could not be, and the call did not run |
 

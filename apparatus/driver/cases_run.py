@@ -62,7 +62,7 @@ def scenario_goals(sub):
 
 def auditor_for(t, sub, goals, **kw):
     sources = {sub.public(rel): w["data"] for rel, w in sub.files.items() if "data" in w}
-    forbidden = [sub.archive, sub.folder, sub.ref, sub.store, sub.family, sub.dest]
+    forbidden = forbidden_for(sub)
     return ReactingAuditor(goals, question=sub.body, materials=sources, family=sub.family,
                            limits=rs.limits_of(sub), forbidden=forbidden, model=sub.model, **kw)
 
@@ -205,9 +205,7 @@ def c_t7(t):
     sub = run_submission(t)
     aud = auditor_for(t, sub, scenario_goals(sub), calls_per_turn=1)
     fx = rs.provider(t, aud)
-    r1 = rs.run(t, sub, fx, name="t7.run-1", fault="entry.after_link=kill")
-    t.eq("t7.run-1.killed", r1.rc, -signal.SIGKILL)
-    t.eq("t7.run-1.no-reply", r1.stdout, b"")
+    rs.run(t, sub, fx, name="t7.run-1", fault="entry.after_link=kill", killed=True)
     st = t.status(sub, name="t7.status")
     t.eq("t7.status.condition", st.data.get("condition"), "interrupted")
     runs = st.data.get("runs") or {}
@@ -388,8 +386,9 @@ def c_test_variables(t):
 
 def forbidden_for(sub):
     """Strings no auditor reply may carry (7.1, C20 views): host and archive paths, the
-    reference, the store ID, the family name and the destination."""
-    return [sub.archive, sub.folder, sub.ref, sub.store, sub.family, sub.dest]
+    reference, the store ID, the destination, and the family: its versioned identifier
+    anywhere, its bare name as a whole value (the bare word is also part of tool names)."""
+    return [sub.archive, sub.folder, sub.ref, sub.store, sub.dest, sub.family + "/1", "=" + sub.family]
 
 
 def proc(sub, body, **kw):
@@ -660,8 +659,8 @@ def c_paging(t):
         p.check("range.mid-codepoint.boundaries", has_int(mid.data, 2) and has_int(mid.data, 5), mid.env)
         p.eq("range.past-end", (past.outcome, past.reason), ("refused", "range_invalid"))
         p.eq("range.at-end", (at_end.outcome, at_end.data.get("range"), at_end.data.get("complete"),
-                              at_end.data.get("lines"), at_end.data.get("text"), at_end.blocks),
-             ("completed", [len(multi), len(multi)], True, None, "", 1))
+                              at_end.data.get("lines"), at_end.data.get("cite"), at_end.data.get("text"), at_end.blocks),
+             ("completed", [len(multi), len(multi)], True, None, None, "", 1))
         hits, spages = yield from p.search_all("aa", ["materials/hits.txt"])
         want = witness_hits("aa", ["materials/hits.txt"])
         p.eq("search.hits", core(hits), want)
@@ -822,8 +821,7 @@ def c_interruptions(t):
         sub = run_submission(t)
         aud = auditor_for(t, sub, scenario_goals(sub))
         fx = rs.provider(t, aud, label=label)
-        r1 = rs.run(t, sub, fx, name=pre + ".run-1", fault=fault)
-        t.eq(pre + ".killed", r1.rc, -signal.SIGKILL)
+        rs.run(t, sub, fx, name=pre + ".run-1", fault=fault, killed=True)
         st = t.status(sub, name=pre + ".status")
         hl = st.data.get("headline") or {}
         if label == "torn":
@@ -1453,8 +1451,7 @@ def c_continuation(t):
         sub = run_submission(t)
         aud = auditor_for(t, sub, scenario_goals(sub), calls_per_turn=1)
         fx = rs.provider(t, aud, label=label)
-        r1 = rs.run(t, sub, fx, name=pre + ".run-1", fault=fault)
-        t.eq(pre + ".killed", r1.rc, -signal.SIGKILL)
+        rs.run(t, sub, fx, name=pre + ".run-1", fault=fault, killed=True)
         first = fx.exchanges_of(pre + ".run-1")
         if sent_k is not None and t.check(pre + ".request-sent", len(first) >= sent_k, len(first)):
             fx.provider.charge_overrides[first[sent_k - 1].n] = "estimated"
@@ -1557,7 +1554,10 @@ def c_provider_shapes(t):
         atts = [rd.attempts[k] for k in sorted(rd.attempts)]
         bodies = [(a or {}).get("body") or {} for a in atts]
         t.eq(pre + ".attempt-outcomes", [b.get("outcome") for b in bodies], outcomes)
-        t.eq(pre + ".last-then", bodies[-1].get("then") if bodies else None, "end")
+        # 4.5 (amended): then is the decision about the attempt; a decoded response that is acted
+        # on is use even when the placement then ends; end means no response is used.
+        t.eq(pre + ".last-then", bodies[-1].get("then") if bodies else None,
+             "use" if outcomes[-1] == "response" else "end")
         for b, o in zip(bodies, outcomes):
             basis = {"response": "reported", "http_error": "none"}.get(o, "estimated")
             t.eq("%s.charged.%s.%s" % (pre, b.get("request"), b.get("attempt")), (b.get("charged") or {}).get("basis"), basis)
@@ -1829,7 +1829,13 @@ def c_tool_inputs(t):
     p2 = proc(sub2, unc)
     fx2 = rs.provider(t, p2, label="uncertain")
     rep = rs.run(t, sub2, fx2, name="c20.uncertain.run", fault="log.dirsync:seal=eio")
-    t.check("c20.uncertain.ending", rep.data.get("ending") in ("sealed", "interrupted"), rep.data.get("ending"))
+    # 6.3 (amended): whether a seal was recorded is read from the log after the blocks run; the
+    # seal was linked, so the run delivers and ends sealed, and no request or reminder follows.
+    t.eq("c20.uncertain.ending", rep.data.get("ending"), "sealed")
+    t.eq("c20.uncertain.seal-actor", [b.get("actor") for b in t.log_bodies(sub2, "seal") if isinstance(b, dict)],
+         ["auditor"])
+    t.eq("c20.uncertain.no-reminder", [b.get("type") for b in t.log_bodies(sub2, "notice") if isinstance(b, dict)], [])
+    rs.check_procedure(t, p2, "c20.uncertain", fx2)
     tid = last_call(p2, "submit")
     res = rs.result_for(sub2, tid)
     env = rs.result_envelope(res[3]) if res and res[3] else {}

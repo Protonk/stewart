@@ -125,6 +125,9 @@ class Audit:
         self.fx = self.aud = None
         self.entries = self.revision = self.actor = self.sealed_at = None
         self.files = None
+        # Set when a case has made the archived seal manifest unreadable (5.6: the seal's
+        # sealed_at and unproduced are the manifest's, so they can no longer be established).
+        self.manifest_unreadable = False
 
     @property
     def manifest(self):
@@ -460,7 +463,12 @@ def check_seal_view(t, name, view, a):
         return
     t.eq(name + ".keys", sorted(view), sorted(SEAL_VIEW_KEYS))
     sa = view.get("sealed_at")
-    t.check(name + ".sealed_at", isinstance(sa, str) and bool(AT_RE.match(sa)), sa)
+    if getattr(a, "manifest_unreadable", False):
+        # 5.6: "sealed_at (the manifest's)" and "unproduced, the names of the manifest's
+        # unproduced members"; a fact that cannot be established is unknown, never a guess.
+        t.eq(name + ".sealed_at", sa, "unknown")
+    else:
+        t.check(name + ".sealed_at", isinstance(sa, str) and bool(AT_RE.match(sa)), sa)
     if not a.files:
         return
     ms = sha256_hex(a.manifest)
@@ -468,7 +476,8 @@ def check_seal_view(t, name, view, a):
     t.eq(name + ".revision", view.get("revision"), a.revision)
     t.eq(name + ".manifest_sha256", view.get("manifest_sha256"), ms)
     t.eq(name + ".handle", view.get("handle"), seal_handle(a.sub.store, a.sub.audit, a.manifest))
-    t.eq(name + ".unproduced", view.get("unproduced"), unproduced_names(a))
+    t.eq(name + ".unproduced", view.get("unproduced"),
+         "unknown" if getattr(a, "manifest_unreadable", False) else unproduced_names(a))
 
 
 def check_delivery_view(t, name, v, a, *, attempt, outcome, in_status=False, dest=None, by=None, source=None,
@@ -1343,6 +1352,7 @@ def _unknown(t, a):
     t.require("c5.unknown.archived-manifest", a.manifest is not None and
               rs.read_package_member(os.path.dirname(mpath), "manifest-1.json") == a.manifest, mpath)
     t.flip_bit(mpath, 20)
+    a.manifest_unreadable = True
     rep = close_cmd(t, a, "c5.unknown.close")
     check_close_obj(t, a, "c5.unknown.close", rep.obj, closure="unfinished", reason="delivery_incomplete",
                     effects={"run": "ended", "seal": "existing", "delivery": "failed", "closure": "unfinished"},
@@ -1353,7 +1363,7 @@ def _unknown(t, a):
     fail1 = dict(attempt=1, outcome="failed", by="close", source="commissioned", replaces=None,
                  cause="manifest_unavailable", verified=[])
     status_point(t, a, "c5.unknown.status", condition="close_unfinished", sealed="manager", closed="unfinished",
-                 last=log_last(t, a.sub), seal="skip", deliveries=[fail1],
+                 last=log_last(t, a.sub), seal="manager", deliveries=[fail1],
                  closure={"unfinished_reason": "delivery_incomplete"}, next_cmds=("close", "status"),
                  destination_offered=True)
     d2 = t.dest_path()
@@ -2472,6 +2482,16 @@ def _selftest_views():
         bad["data"]["seal"]["manifest_sha256"] = "0" * 64
         f = status_round(bad, **exp)
         out.append(("after-launch.status.seal-binding", "s.seal.manifest_sha256" in f, f))
+        # A seal whose manifest cannot be read: its time and unproduced list are unknown, never kept.
+        a.manifest_unreadable = True
+        st = _ST()
+        check_seal_view(st, "u", dict(sv, sealed_at="unknown", unproduced="unknown"), a)
+        out.append(("after-launch.seal.manifest-unreadable", not st.failed(), st.failed()))
+        st = _ST()
+        check_seal_view(st, "u", sv, a)
+        out.append(("after-launch.seal.manifest-unreadable-no-guess",
+                    "u.sealed_at" in st.failed() and "u.unproduced" in st.failed(), st.failed()))
+        a.manifest_unreadable = False
         # awaiting_confirmation with a token: the confirm next call must name it.
         tok = "cf1.abcdef"
         dl = {"attempt": 1, "by": "close", "destination": sub.dest, "destination_source": "commissioned",

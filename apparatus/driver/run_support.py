@@ -206,12 +206,20 @@ def run_env(t, fx, env=None, retry_delays="0,0,0", timeout=None):
 
 
 def run(t, sub, fx=None, *, name="run", expect="completed", reason=None, env=None, fault=None, timeout=600,
-        cwd=None, binary=None, retry_delays="0,0,0", provider_timeout=None):
+        cwd=None, binary=None, retry_delays="0,0,0", provider_timeout=None, killed=False):
+    """`stewart run REF` in the foreground. killed=True is for a run a case kills on purpose
+    (a `kill` fault point): no reply exists, so the envelope and outcome are not judged; the
+    run must instead have died by SIGKILL with nothing on stdout (checks <name>.killed and
+    <name>.no-reply)."""
     if fx is not None:
         fx.mark(name)
-    rep = t.cmd(["run", sub.ref], name=name, expect=expect, reason=reason,
+    rep = t.cmd(["run", sub.ref], name=name, expect=None if killed else expect, reason=None if killed else reason,
                 env=run_env(t, fx, env, retry_delays, provider_timeout), fault=fault, timeout=timeout, cwd=cwd,
-                binary=binary, writer=sub.writer)
+                binary=binary, writer=sub.writer, envelope=not killed)
+    if killed:
+        import signal as _signal
+        t.eq(name + ".killed", rep.rc, -_signal.SIGKILL)
+        t.eq(name + ".no-reply", rep.stdout, b"")
     if fx is not None:
         collect_protocol_timings(t, fx, name)
     return rep

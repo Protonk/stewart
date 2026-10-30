@@ -30,7 +30,7 @@ import threading
 import fake_provider as fp
 import rawjson
 from driver_core import CONTINUATION, REMINDER, StrictJSONError, short, strict_loads
-from reacting_auditor import _btype, _sval, tool_envelope_problems
+from reacting_auditor import _btype, _sval, own_input_strings, tool_envelope_problems
 
 
 class Reply:
@@ -323,7 +323,8 @@ class Procedure:
             if r.problem:
                 self.anomaly("reply.%s" % call["tool"], r.problem)
                 continue
-            for problem in tool_envelope_problems(r.env, call["tool"], r.raw_text, self.forbidden):
+            for problem in tool_envelope_problems(r.env, call["tool"], r.raw_text, self.forbidden,
+                                                  own_input_strings(call.get("input"), call.get("raw_input"))):
                 self.anomaly("reply.envelope.%s" % call["tool"], problem)
             if r.is_error is not (r.outcome != "completed"):
                 self.anomaly("reply.is_error.%s" % call["tool"], {"outcome": r.outcome, "is_error": r.is_error})

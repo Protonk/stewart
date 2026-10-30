@@ -347,7 +347,8 @@ class ReactingAuditor:
         except (StrictJSONError, AttributeError) as exc:
             self.anomaly("reply.strict-json", {"tool": tool, "error": str(exc), "text": (env_text or "")[:300]})
             return
-        for problem in tool_envelope_problems(env, tool, env_text, self.forbidden):
+        for problem in tool_envelope_problems(env, tool, env_text, self.forbidden,
+                                              own_input_strings(call.get("input"), call.get("raw_input"))):
             self.anomaly("reply.envelope", {"tool": tool, "problem": problem})
         outcome = env.get("outcome")
         if is_error is None or is_error.raw != (b"false" if outcome == "completed" else b"true"):
@@ -623,7 +624,8 @@ class ReactingAuditor:
                 self.anomaly("read.bytes", {"source": src, "range": rng})
             if d.get("size") != size:
                 self.anomaly("read.size", {"source": src, "got": d.get("size"), "expected": size})
-            if d.get("cite") != {"source": src, "start": start, "end": end}:
+            want_cite = None if start == end else {"source": src, "start": start, "end": end}
+            if d.get("cite") != want_cite:
                 self.anomaly("read.cite", {"source": src, "cite": d.get("cite"), "range": rng})
             if d.get("lines") != aw.lines_span(verify, start, end):
                 self.anomaly("read.lines", {"source": src, "lines": d.get("lines"),
@@ -902,7 +904,22 @@ class ReactingAuditor:
 # Tool reply envelope rules (INTERFACE 1.3, 1.4, 1.5, 7.1), shared with run_support.
 # ---------------------------------------------------------------------------
 
-def tool_envelope_problems(env, tool, raw_text=None, forbidden=()):
+def own_input_strings(input_value=None, raw_input=None):
+    """Every string in a call's input (decoded), longest first: 7.1 lets a refusal repeat the
+    auditor's own input verbatim, so these are removed before the disclosure check."""
+    v = input_value
+    if v is None and raw_input is not None:
+        try:
+            v = json.loads(raw_input.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            v = raw_input.decode("utf-8", "replace")
+    out = [x for x in iter_values(v) if isinstance(x, str) and x]
+    return sorted(set(out), key=len, reverse=True)
+
+
+def tool_envelope_problems(env, tool, raw_text=None, forbidden=(), own=()):
+    """Envelope rules for one tool reply. own: the strings of the call's own input, which a
+    reply may repeat (7.1); any other occurrence of a forbidden string is a disclosure."""
     out = []
     if not isinstance(env, dict):
         return ["not an object"]
@@ -953,8 +970,13 @@ def tool_envelope_problems(env, tool, raw_text=None, forbidden=()):
         if not is_compact_json(raw_text):
             out.append("not compact")
     for v in _scan_strings(env):
+        whole = v
+        for s in own:
+            v = v.replace(s, "")
         for f in forbidden:
-            if f in v:
+            # "=x" forbids x only as a whole value: a family name such as "comparison" is also
+            # part of tool names (record_comparison) that every arrangement legitimately shows.
+            if (f[1:] == whole) if f.startswith("=") else (f in v):
                 out.append("discloses %r" % f)
     return out
 
@@ -1091,6 +1113,30 @@ def reacting_auditor_selftests():
     out.append(("auditor.ordinary.one-reminder", aud.reminders_seen == 1))
     aud, sim, endings = _run_scenario(finish="ordinary", after_reminder="submit")
     clean("reminder-then-submit", aud, sim, endings)
+
+    # The disclosure check: an echo of the call's own input is allowed (7.1); anything else fires.
+    path = "/srv/archive/root"
+    env = {"schema": REPLY_SCHEMA, "operation": "read", "outcome": "refused", "reason": "source_unknown",
+           "message": "No source is named \"%s/STORE.json\"." % path, "effects": {"raw_capture": "recorded"},
+           "next": [], "data": {"source": path + "/STORE.json"}}
+    own = own_input_strings({"source": path + "/STORE.json"})
+    out.append(("auditor.leak.echo-allowed", not tool_envelope_problems(env, "read", None, [path], own),
+                tool_envelope_problems(env, "read", None, [path], own)))
+    out.append(("auditor.leak.control.not-own", bool(tool_envelope_problems(env, "read", None, [path],
+                                                                              own_input_strings({"source": "x"})))))
+    env2 = dict(env, data={"source": path + "/STORE.json", "archive": "/srv/archive/root"})
+    out.append(("auditor.leak.control.extra-path", bool(tool_envelope_problems(env2, "read", None, [path], own)),
+                "an archive path added beside the echo must be a disclosure"))
+    leak = dict(env, data={"source": path + "/STORE.json", "where": "found under /srv/archive/root/audits"})
+    out.append(("auditor.leak.control.beyond-echo", bool(tool_envelope_problems(leak, "read", None, [path], own)),
+                "a path beyond the echoed input must still be a disclosure"))
+
+    fam = dict(env, data={"counts": {"record_comparison": 0}, "family": "comparison"})
+    probs = tool_envelope_problems(fam, "read", None, ["=comparison", "comparison/1"], ())
+    out.append(("auditor.leak.family-whole-value", len(probs) == 1, probs))
+    fam2 = dict(env, data={"counts": {"record_comparison": 0}})
+    out.append(("auditor.leak.family-in-tool-name-allowed", not tool_envelope_problems(fam2, "read", None,
+                                                                                         ["=comparison", "comparison/1"], ())))
 
     # Firing controls: each simulated sabotage must produce the named anomaly.
     def fires(label, check_prefix, **kw):

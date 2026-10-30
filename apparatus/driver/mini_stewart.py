@@ -200,7 +200,7 @@ class MiniStewart:
         page = data[start:end].decode("utf-8")
         d = {"source": src, "kind": kind, "size": len(data), "range": [start, end],
              "lines": aw.lines_span(data, start, end), "complete": complete,
-             "cite": {"source": src, "start": start, "end": end} if cite else None}
+             "cite": {"source": src, "start": start, "end": end} if cite and end > start else None}
         if extra:
             d.update(extra)
         blank = not page.strip()
