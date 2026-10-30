@@ -1348,7 +1348,7 @@ leaves the preparation folder and every archive byte alone.
   After launch it adds `outcome`, `runs`, `seal`, `delivery`, `placement` and
   `surrendered`, from the `closed` record and the records it names.
 - **Unfinished**: `closure: "unfinished"`, `unfinished_reason` and `headline`.
-  Before launch it adds `intake` (the attempt still holding the lock, or null)
+  Before launch it adds `intake` (the number of the intake attempt still holding the lock, or null)
   for `intake_still_running` and `close_in_progress`. After launch it adds
   `runs`, `seal`, `delivery`, `confirmation` (the token, only for
   `awaiting_confirmation`, else null) and `holder` (the live placement's
@@ -1771,12 +1771,13 @@ handle, or a prepared view (`ap<n>.<check>/rendering` or `/selection`).
   `{source, start, end}` for the page, `null` for entry and view reads; and
   `text` or `base64` when the page is carried in the envelope (7.1). While the
   read is incomplete, the envelope's `next` is a ready `read` call for the rest.
-- Entry reads add `entry`, `id`, `version`, `kind` (the record kind), `label`
-  and `citations`, and for an artifact `encoding`. A replaced entry handle is
-  refused (`stale_entry`) with the current handle. A deleted one is refused
-  (`entry_deleted`). An artifact recorded from `base64` (`encoding: "binary"`)
-  is returned as base64 pages of 49,152 bytes in `data.base64`, marked
-  `encoding: "base64"`.
+- Entry reads add `entry`, `id`, `version`, `entry_kind` (the recording tool,
+  such as `record_account` or `record_artifact`), `label` and `citations`, and
+  for an artifact `artifact_encoding` (`utf-8` or `binary`, 7.4). `kind` stays
+  `entry`. A replaced entry handle is refused (`stale_entry`) with the current
+  handle. A deleted one is refused (`entry_deleted`). An artifact recorded from
+  `base64` (`artifact_encoding: "binary"`) is returned as base64 pages of 49,152
+  bytes in `data.base64`.
 - Reading an entry first checks its payload's size and digest. Damaged bytes of
   a current entry refuse the call (`answer_damaged`) with an empty `next`, and
   the placement ends `damaged` (6.5): the auditor stops.
