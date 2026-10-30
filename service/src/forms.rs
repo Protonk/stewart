@@ -441,151 +441,6 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
     Arrangement { body, readable }
 }
 
-/// A pinned arrangement read back from `prep/<n>/arrangement.json` (6.2):
-/// what the run splices into requests, as exact bytes, and what the tools
-/// and the seal need. The run loads it through the `accepted` record, the
-/// receipt and the receipt's `arrangement` member, checking each digest.
-#[derive(Debug, Clone)]
-pub struct Pinned {
-    /// The family ID and version, `open-inquiry/1`.
-    pub family: String,
-    pub model: String,
-    /// The exact bytes of the `model` value (a JSON string).
-    pub model_raw: Vec<u8>,
-    pub anthropic_version: String,
-    pub max_tokens_per_request: u64,
-    /// The exact bytes of the `system` array.
-    pub system_raw: Vec<u8>,
-    /// The exact bytes of the `tools` array.
-    pub tools_raw: Vec<u8>,
-    /// The tool names, in `tools` order.
-    pub tool_names: Vec<String>,
-    /// Each member of `request_extra` as its raw `"key":value` bytes. The
-    /// release's allowlist is empty, so an arrangement with members is refused.
-    pub request_extra: Vec<Vec<u8>>,
-    pub reminder: String,
-    /// The near-limit template, with `{turns}`, `{input_tokens}` and
-    /// `{output_tokens}` to fill.
-    pub near_limit: String,
-    pub continuation: String,
-    pub limits: crate::usage::Limits,
-    pub near_limit_percent: u64,
-    pub retry_attempts: u64,
-    pub retry_delays_seconds: Vec<u64>,
-    pub retry_after_ceiling_seconds: u64,
-    pub request_timeout_seconds: u64,
-    pub reader: String,
-    pub renderer: String,
-    pub question_body_sha256: String,
-    pub material_index_sha256: String,
-}
-
-impl Pinned {
-    /// The family this arrangement pins, if this release knows it.
-    pub fn family(&self) -> Option<&'static Family> {
-        let (id, version) = self.family.split_once('/')?;
-        family(id).filter(|f| f.version.to_string() == version)
-    }
-}
-
-/// Decode an arrangement record strictly, keeping the pinned members' bytes.
-pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
-    use crate::json::{JsonError, value_err};
-    let r = crate::archive::decode_record(bytes)?;
-    if r.kind != "arrangement" {
-        return Err(format!("the arrangement has kind {:?}", r.kind));
-    }
-    let b = r.body();
-    let raw = |k: &str| -> Result<Vec<u8>, JsonError> {
-        let v = b.req(k)?;
-        Ok(bytes[v.start..v.end].to_vec())
-    };
-    let res = (|| {
-        b.exactly(&[
-            "schema",
-            "family",
-            "orientation",
-            "model",
-            "anthropic_version",
-            "max_tokens_per_request",
-            "system",
-            "tools",
-            "request_extra",
-            "texts",
-            "limits",
-            "near_limit_percent",
-            "retry",
-            "request_timeout_seconds",
-            "reader",
-            "renderer",
-            "reading",
-            "bindings",
-        ])?;
-        if b.str("schema")? != ARRANGEMENT_SCHEMA {
-            return Err(b.invalid("schema", format!("expected {ARRANGEMENT_SCHEMA}")));
-        }
-        let mut tool_names = Vec::new();
-        for (i, t) in b.arr("tools")?.iter().enumerate() {
-            tool_names.push(t.obj(&format!("/body/tools/{i}"))?.str("name")?.to_string());
-        }
-        b.arr("system")?;
-        let extra = b.obj("request_extra")?;
-        if !extra.members.is_empty() {
-            return Err(value_err(
-                "/body/request_extra",
-                extra.at,
-                "this release's request_extra allowlist is empty",
-            ));
-        }
-        let t = b.obj("texts")?;
-        t.exactly(&["reminder", "near_limit", "continuation"])?;
-        let l = b.obj("limits")?;
-        l.exactly(&["turns", "input_tokens", "output_tokens"])?;
-        let retry = b.obj("retry")?;
-        retry.exactly(&["attempts", "delays_seconds", "retry_after_ceiling_seconds"])?;
-        let delays = retry
-            .arr("delays_seconds")?
-            .iter()
-            .map(|d| {
-                d.as_u64().ok_or_else(|| {
-                    value_err("/body/retry/delays_seconds", d.start, "expected integers")
-                })
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        let bind = b.obj("bindings")?;
-        bind.exactly(&["question_body_sha256", "material_index_sha256"])?;
-        Ok::<_, JsonError>(Pinned {
-            family: b.str("family")?.to_string(),
-            model: b.str("model")?.to_string(),
-            model_raw: raw("model")?,
-            anthropic_version: b.str("anthropic_version")?.to_string(),
-            max_tokens_per_request: b.u64("max_tokens_per_request", u64::MAX)?,
-            system_raw: raw("system")?,
-            tools_raw: raw("tools")?,
-            tool_names,
-            request_extra: Vec::new(),
-            reminder: t.str("reminder")?.to_string(),
-            near_limit: t.str("near_limit")?.to_string(),
-            continuation: t.str("continuation")?.to_string(),
-            limits: crate::usage::Limits {
-                turns: l.u64("turns", crate::frontmatter::MAX_TURNS)?,
-                input_tokens: l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?,
-                output_tokens: l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?,
-            },
-            near_limit_percent: b.u64("near_limit_percent", 100)?,
-            retry_attempts: retry.u64("attempts", u64::MAX)?,
-            retry_delays_seconds: delays,
-            retry_after_ceiling_seconds: retry.u64("retry_after_ceiling_seconds", u64::MAX)?,
-            request_timeout_seconds: b.u64("request_timeout_seconds", u64::MAX)?,
-            reader: b.str("reader")?.to_string(),
-            renderer: b.str("renderer")?.to_string(),
-            question_body_sha256: bind.sha256("question_body_sha256")?.to_string(),
-            material_index_sha256: bind.sha256("material_index_sha256")?.to_string(),
-        })
-    })();
-    res.map_err(|e| e.to_string())
-}
-
 fn quoted_block(text: &str) -> String {
     text.split('\n')
         .map(|l| {
@@ -733,7 +588,7 @@ mod tests {
             material_index_sha256: &"2".repeat(64),
         });
         let bytes = crate::archive::record_bytes("arrangement", Some("a"), &"0".repeat(64), a.body);
-        let p = decode_arrangement(&bytes).unwrap();
+        let p = crate::provider::request::decode_arrangement(&bytes).unwrap();
         assert_eq!(p.family, "comparison/1");
         assert_eq!(p.family().map(|f| f.id), Some("comparison"));
         assert_eq!(p.model_raw, br#""claude-opus-5-5""#);
@@ -749,7 +604,7 @@ mod tests {
         let text = String::from_utf8(bytes).unwrap();
         let extra = text.replace(r#""request_extra":{}"#, r#""request_extra":{"x":1}"#);
         assert!(
-            decode_arrangement(extra.as_bytes())
+            crate::provider::request::decode_arrangement(extra.as_bytes())
                 .unwrap_err()
                 .contains("allowlist")
         );
