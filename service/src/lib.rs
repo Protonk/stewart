@@ -1,14 +1,10 @@
 //! Stewart: bounded audit commissions with faithful custody and verified return.
 //!
 //! This crate is the Rust audit service. `docs/INTERFACE.md` is the exact
-//! interface it implements and `CONTRACTS.md` the behavioral authority. This
-//! build holds the manager foundation (the reference and archive, the
-//! submission folder, prepare and commission, receipt readback, status, and
-//! close before launch) and the records and interfaces every later component
-//! shares: the log record bodies after launch, run captures, the return
-//! manifest and delivery plans. The run adapter, the auditor's tools and
-//! delivery are declared by their interfaces and not yet implemented; `run`
-//! fails without recording anything.
+//! interface it implements and `CONTRACTS.md` the behavioral authority. It
+//! holds the whole audit: the reference and archive, the submission folder,
+//! prepare and commission, receipt readback, the run adapter and the
+//! auditor's tools, seal, delivery, status, and close from every state.
 //!
 //! Layout:
 //! - `json`: strict control JSON and the deterministic writer.
@@ -21,8 +17,8 @@
 //! - `runs`: run directories, raw captures and their linked records.
 //! - `returns`: the return manifest and delivery plans.
 //! - `world`: a placement's verified captures and pinned arrangement.
-//! - `answer`, `delivery`, `provider`: the auditor's tools, delivery and the
-//!   provider transport.
+//! - `answer`, `delivery`: the auditor's tools, preparation and seal; delivery.
+//! - `provider`: the provider transport and the placement loop.
 //! - `frontmatter`, `scan`, `forms`: the submission folder and the arrangement.
 //! - `ops`, `help`, `cli`: manager operations and their presentation.
 //! - `fault`: test-build failure points and sabotage controls.

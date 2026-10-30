@@ -111,6 +111,8 @@ fn relative_to(path: &str, from: &str) -> String {
 /// The `commission_over_network` sabotage control: commission demands the
 /// provider key and opens a connection to the provider before accepting.
 /// The product's commission is local; only `run` reaches the provider.
+/// The control connects only to an explicit `STEWART_PROVIDER_URL` (a test's
+/// fake provider) and never to the real provider's default address.
 #[cfg(feature = "sabotage")]
 pub fn sabotage_reach_provider() -> Result<(), Fail> {
     let key = std::env::var("ANTHROPIC_API_KEY").unwrap_or_default();
@@ -120,8 +122,9 @@ pub fn sabotage_reach_provider() -> Result<(), Fail> {
             "ANTHROPIC_API_KEY is not set.",
         ));
     }
-    let base = std::env::var("STEWART_PROVIDER_URL")
-        .unwrap_or_else(|_| "https://api.anthropic.com".to_string());
+    let Ok(base) = std::env::var("STEWART_PROVIDER_URL") else {
+        return Ok(());
+    };
     let (rest, port) = match base.split_once("://") {
         Some(("http", r)) => (r, 80),
         Some((_, r)) => (r, 443),
