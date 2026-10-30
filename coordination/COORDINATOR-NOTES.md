@@ -1,7 +1,5 @@
 # Unfinished work
 
-No active workers. Step 3 is implemented (`service/`) with its independent driver
-(`apparatus/driver/`); the native run passes but is not evidence. The step 3
-milestone evidence is the user's run of `apparatus/step3.sh` into
-`.scratch/step3-01`; the Linux-only code in `service/src/platform.rs` is first
-compiled there.
+No active workers or uncertain operations. Step 3 is complete (evidence in
+TRANSITION-PLAN.md). Step 4, the answer protocol, is next under the same working
+arrangement: native iteration, one user-run container suite per milestone.

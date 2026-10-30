@@ -45,6 +45,17 @@ build failed; in it musl's `getrandom` was absent from the binary while thin LTO
 linked it. Calling the raw `SYS_getrandom` syscall fixed both architectures under
 fat LTO. The mechanism behind the missing symbol is not established.
 
+Step 3 milestone met by `.scratch/step3-03` (source `3c4e795`, 2026-10-30):
+`failures=0`. aarch64 native: 70/70 cases, 16/16 sabotage and 8/8 driver
+controls fired, timing gate passed (worst 2.3 ms). x86_64 under Rosetta: 69/69
+cases, 16/16 and 8/8 controls, timings reported only (worst 29 ms). Every
+apparatus control fired on both. Release binaries: aarch64
+`909accb9833c74709fd6bac36ce16a97e85022c309bf6ff072af4fc1f94e477f`, x86_64
+`dcf0c2267988987f7c45d35cf0d5c2f02850e48f7b8285a7a28cae93e943d13b`. The run
+before it, `.scratch/step3-02`, passed on aarch64; on x86_64 the driver counted
+Rosetta's own `$HOME/.cache/rosetta` as a write by Stewart, now recorded as an
+emulator artifact under detected emulation only. Next: step 4.
+
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
 [ACCEPTANCE.md](ACCEPTANCE.md). This is the only active development plan. No
