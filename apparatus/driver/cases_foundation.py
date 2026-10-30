@@ -397,6 +397,7 @@ def c_changed(t):
         t.prepare(sub, name="prepare-before-%s" % label)
         h = sub.handles[-1]
         change()
+        before = t.audit_locations(sub)
         rep = t.commission(sub, h, name="changed.%s" % label, expect="refused", reason="selection_changed")
         p = "changed.%s" % label
         t.eq(p + ".effects", no_diag(rep.effects), {"acceptance": "absent", "attempt": "partial"})
@@ -407,8 +408,7 @@ def c_changed(t):
         bodies = t.log_bodies(sub, "intake_ended")
         t.check(p + ".intake-ended-outcome", bodies and isinstance(bodies[-1], dict) and bodies[-1].get("outcome") == "selection_changed",
                 bodies[-1:] if bodies else None)
-        ret = (rep.obj or {}).get("retained") or []
-        t.check(p + ".retained-attempt", any(re.search(r"/intake/[^/]+$", x) and x.startswith(sub.audit_dir) for x in ret), ret)
+        t.check_retained(rep, sub, p, before)
         argvs = rep.next_argvs()
         t.check(p + ".next-prepare", [sub.writer, "prepare", sub.ref] in argvs, rep.next)
         t.check(p + ".next-close", [sub.writer, "close", sub.ref] in argvs, rep.next)
@@ -848,12 +848,11 @@ def c_t4(t):
     t.new_ref(sub)
     t.prepare(sub)
     h = sub.handles[-1]
+    before = t.audit_locations(sub)
     rep = t.commission(sub, h, name="t4.uncertain", expect="failed", reason="acceptance_record_uncertain",
                        fault="commission.accepted_dirsync=eio")
     t.eq("t4.effects", rep.effects, {"acceptance": "unknown", "attempt": "recorded", "diagnostic": "durable"})
-    ret = (rep.obj or {}).get("retained") or []
-    t.check("t4.retained-intake", any(x.startswith(sub.audit_dir + "/intake/") for x in ret), ret)
-    t.check("t4.retained-diagnostic", any(x.startswith(sub.audit_dir + "/diag/") for x in ret), ret)
+    t.check_retained(rep, sub, "t4", before)
     causes = (rep.obj or {}).get("causes") or [{}]
     t.eq("t4.cause-error", causes[0].get("error") if isinstance(causes[0], dict) else None, "EIO")
     argvs = rep.next_argvs()
@@ -960,6 +959,7 @@ def c_source_unreadable(t):
     t.prepare(sub)
     h = sub.handles[-1]
     fault = "commission.source_read:b.txt=eio,commission.source_read:materials/b.txt=eio"
+    before = t.audit_locations(sub)
     rep = t.commission(sub, h, name="unreadable", expect="refused", reason="source_unreadable", fault=fault)
     t.eq("unreadable.effects", no_diag(rep.effects), {"acceptance": "absent", "attempt": "partial"})
     text = json.dumps(rep.obj, ensure_ascii=False) if rep.obj else ""
@@ -967,8 +967,7 @@ def c_source_unreadable(t):
     t.check("unreadable.names-error", "EIO" in text, text[:400])
     bodies = t.log_bodies(sub, "intake_ended")
     t.check("unreadable.intake-ended", bodies and bodies[-1].get("outcome") == "source_unreadable", bodies)
-    ret = (rep.obj or {}).get("retained") or []
-    t.check("unreadable.retained", any(x.startswith(sub.audit_dir + "/intake/") for x in ret), ret)
+    t.check_retained(rep, sub, "unreadable", before)
     atts = t.intake_dirs(sub)
     d1 = os.path.join(sub.audit_dir, "intake", atts[0]) if atts else None
     files1 = {n: sha256_file(os.path.join(d1, n)) for n in sorted(os.listdir(d1))} if d1 else {}
@@ -1020,14 +1019,13 @@ def c_capture_failures(t):
               ("receipt-eio", "commission.receipt_write=eio", "receipt_record_failed", "EIO", ("partial", "recorded"))]
     for label, fault, reason, err, attempts in cases_:
         n0 = len(t.intake_dirs(sub))
+        before = t.audit_locations(sub)
         rep = t.commission(sub, h, name="failure.%s" % label, expect="failed", reason=reason, fault=fault)
         p = "failure.%s" % label
         t.eq(p + ".acceptance", rep.effects.get("acceptance"), "absent")
         t.check(p + ".attempt", rep.effects.get("attempt") in attempts, rep.effects)
         t.eq(p + ".diagnostic", rep.effects.get("diagnostic"), "durable")
-        ret = (rep.obj or {}).get("retained") or []
-        t.check(p + ".retained", any(x.startswith(sub.audit_dir + "/intake/") for x in ret)
-                and any(x.startswith(sub.audit_dir + "/diag/") for x in ret), ret)
+        t.check_retained(rep, sub, p, before)
         if err:
             t.check(p + ".cause", err in json.dumps((rep.obj or {}).get("causes")), (rep.obj or {}).get("causes"))
         t.check(p + ".next", bool(rep.next), "a failure must offer a supported next action")

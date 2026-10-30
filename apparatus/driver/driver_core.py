@@ -1700,6 +1700,36 @@ class T:
         return [r["obj"].get("body") for r in self.read_log(sub)
                 if isinstance(r["obj"], dict) and r["obj"].get("kind") == kind]
 
+    # Folders whose entries are locations a manager reply's `retained` must list (1.3).
+    RETAINED_DIRS = ("intake", "prep", "prepared", "seal", "delivery", "diag")
+
+    def audit_locations(self, sub):
+        """Absolute paths of the entries of the audit's location folders (RETAINED_DIRS), taken
+        by the driver itself, to compare `retained` with what an invocation actually created."""
+        out = set()
+        for d in self.RETAINED_DIRS:
+            base = os.path.join(sub.audit_dir, d)
+            try:
+                out |= {os.path.join(base, n) for n in os.listdir(base)}
+            except OSError:
+                pass
+        return out
+
+    def check_retained(self, rep, sub, name, before, outside=()):
+        """1.3 (amended in 7788cc8): `retained` on a refused or failed manager reply lists every
+        location this invocation created and kept (a capture attempt, a preparation directory,
+        a seal manifest, a delivery plan or package, and its diagnostic when that was written).
+        Compared exactly with the new entries of the audit's location folders since `before`
+        (an audit_locations() taken before the command), plus `outside` (created locations
+        elsewhere, such as a package at a destination). Log records and stage files are records,
+        not retained locations, and are not part of the comparison."""
+        ret = (rep.obj or {}).get("retained") or []
+        created = (self.audit_locations(sub) - set(before)) | set(outside)
+        self.eq(name + ".retained", sorted(set(ret)), sorted(created))
+        self.check(name + ".retained-kept", all(os.path.lexists(x) for x in ret), ret)
+        if rep.effects.get("diagnostic") == "durable":
+            self.check(name + ".retained-diagnostic", any(os.sep + "diag" + os.sep in x for x in ret), ret)
+
     def intake_dirs(self, sub):
         d = os.path.join(sub.audit_dir, "intake")
         try:
