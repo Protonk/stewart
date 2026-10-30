@@ -1,84 +1,65 @@
-//! Request bodies by splicing pinned bytes, and request captures
-//! (INTERFACE 4.5, 6.2).
+//! The pinned arrangement and the messages of a placement (INTERFACE 4.5,
+//! 6.2).
 //!
-//! The body of request `k` of a placement is exactly
-//!
-//! ```text
-//! {"model":<M>,"max_tokens":<T>,"system":<S>,"tools":<U><X>,"messages":[<A_1>,…,<A_k>]}
-//! ```
-//!
-//! where `M`, `S` and `U` are the bytes of the arrangement's `model`, `system`
-//! and `tools` values, `X` is a comma and the bytes of each `request_extra`
-//! member (none in this release), `T` is the request's `max_tokens`, and
-//! `A_i` is what request `i` appends, its messages joined by commas. Nothing
-//! is re-serialized from a parsed structure: pinned values and captured
-//! response content are copied as bytes, and Stewart's own strings (the
-//! question, notices, tool use IDs) are written with the pinned escaping of
-//! `stewart.answer/1`.
+//! The body of request `k` of a placement is spliced by
+//! `runs::request_body` from the arrangement's exact bytes for `model`,
+//! `system`, `tools` and `request_extra`, the request's `max_tokens`, and
+//! what requests 1 to `k` appended. This module decodes the arrangement once,
+//! keeping those exact bytes, and builds the appended messages. Nothing is
+//! re-serialized from a parsed structure: captured response content is copied
+//! as bytes, and Stewart's own strings (the question, notices, tool use IDs)
+//! are written with the pinned escaping of `stewart.answer/1`.
 //!
 //! Request 1 appends the first user message. Each later request appends the
 //! assistant message of the previous response and the user message that
 //! answers it.
 
-use crate::archive::decode_record;
-use crate::forms;
-use crate::json::{self, JsonError, Obj};
-use crate::provider::Span;
-use crate::provider::account::Limits;
+use std::time::Duration;
+
+use crate::forms::{self, ARRANGEMENT_SCHEMA, Family};
+use crate::json::{self, JsonError, value_err};
 use crate::provider::policy::RetryPolicy;
-use crate::util;
+use crate::runs;
+use crate::usage::Limits;
 
-/// The notice texts the arrangement pins.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Texts {
-    pub reminder: String,
-    /// The near-limit template, with `{turns}`, `{input_tokens}` and `{output_tokens}`.
-    pub near_limit: String,
-    pub continuation: String,
-}
-
-/// What a run takes from the pinned arrangement.
+/// A pinned arrangement read back from `prep/<n>/arrangement.json` (6.2):
+/// what the run splices into requests, as exact bytes, and what the tools
+/// and the seal need. The run loads it through the `accepted` record, the
+/// receipt and the receipt's `arrangement` member, checking each digest.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pinned {
-    /// The exact bytes of the `model` value (a JSON string, quotes included).
-    pub model: Vec<u8>,
-    /// The exact bytes of the `system` array.
-    pub system: Vec<u8>,
-    /// The exact bytes of the `tools` array.
-    pub tools: Vec<u8>,
-    /// The exact bytes of each `request_extra` member (`"key":value`); empty,
-    /// since this release's allowlist is empty.
-    pub extra: Vec<Vec<u8>>,
+    /// The family ID and version, `open-inquiry/1`.
+    pub family: String,
+    pub model: String,
+    /// The exact bytes of the `model` value (a JSON string).
+    pub model_raw: Vec<u8>,
     pub anthropic_version: String,
     pub max_tokens_per_request: u64,
-    pub texts: Texts,
+    /// The exact bytes of the `system` array.
+    pub system_raw: Vec<u8>,
+    /// The exact bytes of the `tools` array.
+    pub tools_raw: Vec<u8>,
+    /// The tool names, in `tools` order.
+    pub tool_names: Vec<String>,
+    /// Each member of `request_extra` as its raw `"key":value` bytes. The
+    /// release's allowlist is empty, so an arrangement with members is refused.
+    pub request_extra: Vec<Vec<u8>>,
+    pub reminder: String,
+    /// The near-limit template, with `{turns}`, `{input_tokens}` and
+    /// `{output_tokens}` to fill.
+    pub near_limit: String,
+    pub continuation: String,
     pub limits: Limits,
     pub near_limit_percent: u64,
-    pub retry: RetryPolicy,
+    pub retry_attempts: u64,
+    pub retry_delays_seconds: Vec<u64>,
+    pub retry_after_ceiling_seconds: u64,
     pub request_timeout_seconds: u64,
+    pub reader: String,
+    pub renderer: String,
+    pub question_body_sha256: String,
+    pub material_index_sha256: String,
 }
-
-/// The members of a `stewart.arrangement/1` body.
-const ARRANGEMENT_KEYS: [&str; 18] = [
-    "schema",
-    "family",
-    "orientation",
-    "model",
-    "anthropic_version",
-    "max_tokens_per_request",
-    "system",
-    "tools",
-    "request_extra",
-    "texts",
-    "limits",
-    "near_limit_percent",
-    "retry",
-    "request_timeout_seconds",
-    "reader",
-    "renderer",
-    "reading",
-    "bindings",
-];
 
 /// Top-level request parameters `request_extra` may hold. Empty in this
 /// release: no provider feature may put model-visible content outside the
@@ -86,134 +67,194 @@ const ARRANGEMENT_KEYS: [&str; 18] = [
 pub const REQUEST_EXTRA_ALLOWLIST: [&str; 0] = [];
 
 impl Pinned {
-    /// Take the pinned members from the arrangement record's exact bytes,
-    /// which the caller has already checked against the digest the receipt
-    /// binds. The record is decoded strictly (1.2); spliced members keep
-    /// their stored bytes.
-    pub fn from_arrangement(record: &[u8]) -> Result<Pinned, String> {
-        let rec = decode_record(record).map_err(|e| format!("the arrangement record: {e}"))?;
-        if rec.kind != "arrangement" {
-            return Err(format!(
-                "the record is a {:?} record, not an arrangement",
-                rec.kind
-            ));
+    /// The family this arrangement pins, if this release knows it.
+    pub fn family(&self) -> Option<&'static Family> {
+        let (id, version) = self.family.split_once('/')?;
+        forms::family(id).filter(|f| f.version.to_string() == version)
+    }
+
+    /// The pinned retry policy (6.6).
+    pub fn retry_policy(&self) -> RetryPolicy {
+        RetryPolicy {
+            attempts: self.retry_attempts as u32,
+            delays_ms: self.retry_delays_seconds.iter().map(|s| s * 1000).collect(),
+            retry_after_ceiling_seconds: self.retry_after_ceiling_seconds,
         }
-        decode_body(record, &rec.body()).map_err(|e| format!("the arrangement: {e}"))
+    }
+
+    /// The pinned request timeout.
+    pub fn request_timeout(&self) -> Duration {
+        Duration::from_secs(self.request_timeout_seconds)
     }
 }
 
-fn decode_body(raw: &[u8], b: &Obj) -> Result<Pinned, String> {
-    let e = |e: JsonError| e.to_string();
-    b.only(&ARRANGEMENT_KEYS).map_err(e)?;
-    let schema = b.str("schema").map_err(e)?;
-    if schema != forms::ARRANGEMENT_SCHEMA {
-        return Err(format!(
-            "schema {schema:?} is not {}",
-            forms::ARRANGEMENT_SCHEMA
-        ));
+/// Decode an arrangement record strictly (1.2), keeping the pinned members'
+/// bytes. `bytes` are the record's exact bytes, which the caller has checked
+/// against the digest the receipt binds.
+pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
+    let r = crate::archive::decode_record(bytes)?;
+    if r.kind != "arrangement" {
+        return Err(format!("the arrangement has kind {:?}", r.kind));
     }
-    b.str("model").map_err(e)?;
-    b.arr("system").map_err(e)?;
-    b.arr("tools").map_err(e)?;
-    let extra = b.obj("request_extra").map_err(e)?;
-    let mut extra_members = Vec::new();
-    for (k, v) in extra.members {
-        if !REQUEST_EXTRA_ALLOWLIST.contains(&k.as_str()) {
-            return Err(format!(
-                "request_extra holds {k:?}, which this release does not allow"
+    let b = r.body();
+    let raw = |k: &str| -> Result<Vec<u8>, JsonError> {
+        let v = b.req(k)?;
+        Ok(bytes[v.start..v.end].to_vec())
+    };
+    let res = (|| {
+        b.exactly(&[
+            "schema",
+            "family",
+            "orientation",
+            "model",
+            "anthropic_version",
+            "max_tokens_per_request",
+            "system",
+            "tools",
+            "request_extra",
+            "texts",
+            "limits",
+            "near_limit_percent",
+            "retry",
+            "request_timeout_seconds",
+            "reader",
+            "renderer",
+            "reading",
+            "bindings",
+        ])?;
+        if b.str("schema")? != ARRANGEMENT_SCHEMA {
+            return Err(b.invalid("schema", format!("expected {ARRANGEMENT_SCHEMA}")));
+        }
+        let mut tool_names = Vec::new();
+        for (i, t) in b.arr("tools")?.iter().enumerate() {
+            tool_names.push(t.obj(&format!("/body/tools/{i}"))?.str("name")?.to_string());
+        }
+        b.arr("system")?;
+        let extra = b.obj("request_extra")?;
+        if let Some((k, _)) = extra
+            .members
+            .iter()
+            .find(|(k, _)| !REQUEST_EXTRA_ALLOWLIST.contains(&k.as_str()))
+        {
+            return Err(value_err(
+                &extra.ptr(k),
+                extra.at,
+                "this release's request_extra allowlist is empty",
             ));
         }
-        // Unreachable while the allowlist is empty: a future member would be
-        // spliced as `"key":value`, its key written with the pinned escaping
-        // and its value as stored.
-        let mut m = json::quote(k).into_bytes();
-        m.push(b':');
-        m.extend_from_slice(&raw[v.start..v.end]);
-        extra_members.push(m);
-    }
-    let span = |k: &str| -> Result<Vec<u8>, String> {
-        let v = b.req(k).map_err(e)?;
-        Ok(raw[v.start..v.end].to_vec())
-    };
-    let anthropic_version = b.str("anthropic_version").map_err(e)?.to_string();
-    if anthropic_version.is_empty()
-        || !anthropic_version
-            .bytes()
-            .all(|c| (0x21..=0x7E).contains(&c))
-    {
-        return Err("anthropic_version is not a header value".into());
-    }
-    let max_tokens_per_request = b
-        .u64("max_tokens_per_request", u32::MAX as u64)
-        .map_err(e)?;
-    if max_tokens_per_request == 0 {
-        return Err("max_tokens_per_request is 0".into());
-    }
-    let t = b.obj("texts").map_err(e)?;
-    t.only(&["reminder", "near_limit", "continuation"])
-        .map_err(e)?;
-    let texts = Texts {
-        reminder: t.str("reminder").map_err(e)?.to_string(),
-        near_limit: t.str("near_limit").map_err(e)?.to_string(),
-        continuation: t.str("continuation").map_err(e)?.to_string(),
-    };
-    let l = b.obj("limits").map_err(e)?;
-    l.only(&["turns", "input_tokens", "output_tokens"])
-        .map_err(e)?;
-    let limits = Limits {
-        turns: l.u64("turns", crate::frontmatter::MAX_TURNS).map_err(e)?,
-        input_tokens: l
-            .u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)
-            .map_err(e)?,
-        output_tokens: l
-            .u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)
-            .map_err(e)?,
-    };
-    if limits.turns == 0 || limits.input_tokens == 0 || limits.output_tokens == 0 {
-        return Err("a limit is 0".into());
-    }
-    let near_limit_percent = b.u64("near_limit_percent", 100).map_err(e)?;
-    let r = b.obj("retry").map_err(e)?;
-    r.only(&["attempts", "delays_seconds", "retry_after_ceiling_seconds"])
-        .map_err(e)?;
-    let attempts = r.u64("attempts", 16).map_err(e)?;
-    let delays = r.arr("delays_seconds").map_err(e)?;
-    if attempts == 0 || delays.len() as u64 != attempts - 1 {
-        return Err("retry.delays_seconds does not have one delay per retry".into());
-    }
-    let mut delays_ms = Vec::with_capacity(delays.len());
-    for (i, d) in delays.iter().enumerate() {
-        match d.as_u64() {
-            Some(s) if s <= 86_400 => delays_ms.push(s * 1000),
-            _ => {
-                return Err(format!(
-                    "retry.delays_seconds/{i} is not a whole number of seconds up to 86400"
-                ));
-            }
+        let anthropic_version = b.str("anthropic_version")?;
+        if anthropic_version.is_empty()
+            || !anthropic_version
+                .bytes()
+                .all(|c| (0x21..=0x7E).contains(&c))
+        {
+            return Err(b.invalid("anthropic_version", "expected a header value"));
+        }
+        let max_tokens_per_request = b.u64("max_tokens_per_request", u32::MAX as u64)?;
+        if max_tokens_per_request == 0 {
+            return Err(b.invalid("max_tokens_per_request", "expected at least 1"));
+        }
+        let t = b.obj("texts")?;
+        t.exactly(&["reminder", "near_limit", "continuation"])?;
+        let l = b.obj("limits")?;
+        l.exactly(&["turns", "input_tokens", "output_tokens"])?;
+        let limits = Limits {
+            turns: l.u64("turns", crate::frontmatter::MAX_TURNS)?,
+            input_tokens: l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?,
+            output_tokens: l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?,
+        };
+        // Bounds that keep the run's arithmetic and waits finite; the release
+        // pins 4 attempts, 2, 8 and 30 s, 60 s and 600 s.
+        let retry = b.obj("retry")?;
+        retry.exactly(&["attempts", "delays_seconds", "retry_after_ceiling_seconds"])?;
+        let attempts = retry.u64("attempts", 16)?;
+        let delays = retry
+            .arr("delays_seconds")?
+            .iter()
+            .map(|d| {
+                d.as_u64().filter(|s| *s <= 86_400).ok_or_else(|| {
+                    value_err(
+                        "/body/retry/delays_seconds",
+                        d.start,
+                        "expected whole seconds up to 86400",
+                    )
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        if attempts == 0 || delays.len() as u64 != attempts - 1 {
+            return Err(retry.invalid(
+                "delays_seconds",
+                "expected one delay before each attempt after the first",
+            ));
+        }
+        let timeout = b.u64("request_timeout_seconds", 86_400)?;
+        if timeout == 0 {
+            return Err(b.invalid("request_timeout_seconds", "expected at least 1"));
+        }
+        let bind = b.obj("bindings")?;
+        bind.exactly(&["question_body_sha256", "material_index_sha256"])?;
+        Ok::<_, JsonError>(Pinned {
+            family: b.str("family")?.to_string(),
+            model: b.str("model")?.to_string(),
+            model_raw: raw("model")?,
+            anthropic_version: anthropic_version.to_string(),
+            max_tokens_per_request,
+            system_raw: raw("system")?,
+            tools_raw: raw("tools")?,
+            tool_names,
+            request_extra: Vec::new(),
+            reminder: t.str("reminder")?.to_string(),
+            near_limit: t.str("near_limit")?.to_string(),
+            continuation: t.str("continuation")?.to_string(),
+            limits,
+            near_limit_percent: b.u64("near_limit_percent", 100)?,
+            retry_attempts: attempts,
+            retry_delays_seconds: delays,
+            retry_after_ceiling_seconds: retry.u64("retry_after_ceiling_seconds", 86_400)?,
+            request_timeout_seconds: timeout,
+            reader: b.str("reader")?.to_string(),
+            renderer: b.str("renderer")?.to_string(),
+            question_body_sha256: bind.sha256("question_body_sha256")?.to_string(),
+            material_index_sha256: bind.sha256("material_index_sha256")?.to_string(),
+        })
+    })();
+    res.map_err(|e| e.to_string())
+}
+
+/// The pinned bytes a request body splices: the arrangement's, unless a
+/// test build's sabotage control alters what is sent (never what is pinned).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Parts {
+    pub model: Vec<u8>,
+    pub system: Vec<u8>,
+    pub tools: Vec<u8>,
+    pub extra: Vec<Vec<u8>>,
+}
+
+impl Parts {
+    pub fn of(p: &Pinned) -> Parts {
+        Parts {
+            model: p.model_raw.clone(),
+            system: p.system_raw.clone(),
+            tools: p.tools_raw.clone(),
+            extra: p.request_extra.clone(),
         }
     }
-    let retry = RetryPolicy {
-        attempts: attempts as u32,
-        delays_ms,
-        retry_after_ceiling_seconds: r.u64("retry_after_ceiling_seconds", 86_400).map_err(e)?,
-    };
-    let request_timeout_seconds = b.u64("request_timeout_seconds", 86_400).map_err(e)?;
-    if request_timeout_seconds == 0 {
-        return Err("request_timeout_seconds is 0".into());
+
+    /// The body of a request with `max_tokens`, appending `appended` (what
+    /// requests 1…k appended, in order).
+    pub fn body<A: AsRef<[u8]>>(&self, max_tokens: u64, appended: &[A]) -> Vec<u8> {
+        let extra: Vec<&[u8]> = self.extra.iter().map(Vec::as_slice).collect();
+        let messages: Vec<&[u8]> = appended.iter().map(AsRef::as_ref).collect();
+        runs::request_body(
+            &self.model,
+            max_tokens,
+            &self.system,
+            &self.tools,
+            &extra,
+            &messages,
+        )
     }
-    Ok(Pinned {
-        model: span("model")?,
-        system: span("system")?,
-        tools: span("tools")?,
-        extra: extra_members,
-        anthropic_version,
-        max_tokens_per_request,
-        texts,
-        limits,
-        near_limit_percent,
-        retry,
-        request_timeout_seconds,
-    })
 }
 
 /// `{"type":"text","text":<text>}`.
@@ -242,36 +283,11 @@ pub fn assistant_message(content: &[u8]) -> Vec<u8> {
     out
 }
 
-/// The parts of a `tool_result` block, as its result record holds them.
-#[derive(Debug, Clone, Copy)]
-pub struct ToolResult<'a> {
-    pub tool_use_id: &'a str,
-    /// The exact bytes of the result record's `content` value.
-    pub content: &'a [u8],
-    pub is_error: bool,
-}
-
-/// `{"type":"tool_result","tool_use_id":<ID>,"content":<content>,"is_error":<is_error>}`.
-pub fn tool_result_block(r: &ToolResult) -> Vec<u8> {
-    let mut out = br#"{"type":"tool_result","tool_use_id":"#.to_vec();
-    json::escape_into(r.tool_use_id, &mut out);
-    out.extend_from_slice(br#","content":"#);
-    out.extend_from_slice(r.content);
-    out.extend_from_slice(br#","is_error":"#);
-    out.extend_from_slice(if r.is_error { b"true" } else { b"false" });
-    out.push(b'}');
-    out
-}
-
 /// The user message answering a response: one `tool_result` block per
-/// `tool_use` block, in order, then the reminder when it is sent, then the
-/// near-limit notice when it is pending.
-pub fn user_message(
-    results: &[ToolResult],
-    reminder: Option<&str>,
-    notice: Option<&str>,
-) -> Vec<u8> {
-    let mut blocks: Vec<Vec<u8>> = results.iter().map(tool_result_block).collect();
+/// `tool_use` block, in order (`runs::tool_result_block`), then the reminder
+/// when it is sent, then the near-limit notice when it is pending.
+pub fn user_message(results: &[Vec<u8>], reminder: Option<&str>, notice: Option<&str>) -> Vec<u8> {
+    let mut blocks: Vec<Vec<u8>> = results.to_vec();
     if let Some(r) = reminder {
         blocks.push(text_block(r));
     }
@@ -296,31 +312,6 @@ pub fn turn(assistant_content: &[u8], user: &[u8]) -> Vec<u8> {
     let mut out = assistant_message(assistant_content);
     out.push(b',');
     out.extend_from_slice(user);
-    out
-}
-
-/// The body of a request appending `appended[k-1]` after the earlier ones.
-pub fn body<A: AsRef<[u8]>>(p: &Pinned, max_tokens: u64, appended: &[A]) -> Vec<u8> {
-    let mut out = br#"{"model":"#.to_vec();
-    out.extend_from_slice(&p.model);
-    out.extend_from_slice(br#","max_tokens":"#);
-    out.extend_from_slice(max_tokens.to_string().as_bytes());
-    out.extend_from_slice(br#","system":"#);
-    out.extend_from_slice(&p.system);
-    out.extend_from_slice(br#","tools":"#);
-    out.extend_from_slice(&p.tools);
-    for m in &p.extra {
-        out.push(b',');
-        out.extend_from_slice(m);
-    }
-    out.extend_from_slice(br#","messages":["#);
-    for (i, a) in appended.iter().enumerate() {
-        if i > 0 {
-            out.push(b',');
-        }
-        out.extend_from_slice(a.as_ref());
-    }
-    out.extend_from_slice(b"]}");
     out
 }
 
@@ -354,146 +345,21 @@ impl Conversation {
     }
 
     /// The latest request's body.
-    pub fn body(&self, p: &Pinned, max_tokens: u64) -> Vec<u8> {
-        body(p, max_tokens, &self.appended)
+    pub fn body(&self, parts: &Parts, max_tokens: u64) -> Vec<u8> {
+        parts.body(max_tokens, &self.appended)
     }
-}
-
-/// `request-<k>.json`: one compact JSON line binding the body, then an LF.
-pub fn request_capture(k: u64, max_tokens: u64, body: &[u8], appended: &[u8]) -> Vec<u8> {
-    let mut out = format!(
-        r#"{{"request":{k},"max_tokens":{max_tokens},"body_bytes":{},"body_sha256":"{}","appended":["#,
-        body.len(),
-        util::sha256_hex(body)
-    )
-    .into_bytes();
-    out.extend_from_slice(appended);
-    out.extend_from_slice(b"]}\n");
-    out
-}
-
-/// A request capture read back by its layout.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RequestCapture {
-    pub request: u64,
-    pub max_tokens: u64,
-    pub body_bytes: u64,
-    pub body_sha256: String,
-    /// What the request appended, between the capture's `[` and `]`.
-    pub appended: Span,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum CaptureDefect {
-    /// The capture does not end with `]}` and an LF: a kill cut it off, and
-    /// its request was never sent.
-    CutOff,
-    /// The capture does not have the layout Stewart writes.
-    Malformed(String),
-}
-
-/// Read a request capture by its exact layout. Captures are raw evidence,
-/// decoded by their layout, never as control records.
-pub fn parse_request_capture(bytes: &[u8]) -> Result<RequestCapture, CaptureDefect> {
-    if !bytes.ends_with(b"]}\n") {
-        return Err(CaptureDefect::CutOff);
-    }
-    let bad = |m: &str| CaptureDefect::Malformed(m.to_string());
-    let mut at = 0usize;
-    let lit = |want: &[u8], at: &mut usize| -> Result<(), CaptureDefect> {
-        if bytes[*at..].starts_with(want) {
-            *at += want.len();
-            Ok(())
-        } else {
-            Err(bad(&format!(
-                "expected {} at byte {at}",
-                String::from_utf8_lossy(want)
-            )))
-        }
-    };
-    let num = |at: &mut usize| -> Result<u64, CaptureDefect> {
-        let start = *at;
-        while bytes.get(*at).is_some_and(u8::is_ascii_digit) {
-            *at += 1;
-        }
-        let digits = &bytes[start..*at];
-        if digits.is_empty() || (digits.len() > 1 && digits[0] == b'0') {
-            return Err(bad(&format!("expected a number at byte {start}")));
-        }
-        std::str::from_utf8(digits)
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .ok_or_else(|| bad(&format!("the number at byte {start} is too large")))
-    };
-    lit(br#"{"request":"#, &mut at)?;
-    let request = num(&mut at)?;
-    lit(br#","max_tokens":"#, &mut at)?;
-    let max_tokens = num(&mut at)?;
-    lit(br#","body_bytes":"#, &mut at)?;
-    let body_bytes = num(&mut at)?;
-    lit(br#","body_sha256":""#, &mut at)?;
-    let digest = bytes
-        .get(at..at + 64)
-        .and_then(|d| std::str::from_utf8(d).ok())
-        .filter(|d| util::is_hex64(d))
-        .ok_or_else(|| bad("body_sha256 is not a SHA-256 digest"))?
-        .to_string();
-    at += 64;
-    lit(br#"","appended":["#, &mut at)?;
-    let end = bytes.len() - 3;
-    if end < at {
-        return Err(bad("the capture ends inside its fields"));
-    }
-    if bytes[at..end].contains(&b'\n') {
-        return Err(bad("the capture has more than one line"));
-    }
-    Ok(RequestCapture {
-        request,
-        max_tokens,
-        body_bytes,
-        body_sha256: digest,
-        appended: Span { start: at, end },
-    })
-}
-
-/// Rebuild the body of the last of `captures` (requests 1…k of a placement,
-/// in order) from the arrangement and every capture's appended messages, and
-/// check it against the last capture's length and digest.
-pub fn rebuild_body(p: &Pinned, captures: &[&[u8]]) -> Result<Vec<u8>, String> {
-    let mut appended = Vec::with_capacity(captures.len());
-    let mut last = None;
-    for (i, c) in captures.iter().enumerate() {
-        let k = i as u64 + 1;
-        let cap = parse_request_capture(c).map_err(|d| match d {
-            CaptureDefect::CutOff => format!("request capture {k} was cut off"),
-            CaptureDefect::Malformed(m) => format!("request capture {k} is malformed: {m}"),
-        })?;
-        if cap.request != k {
-            return Err(format!("request capture {k} names request {}", cap.request));
-        }
-        appended.push(cap.appended.of(c));
-        last = Some(cap);
-    }
-    let last = last.ok_or("there is no request capture")?;
-    let b = body(p, last.max_tokens, &appended);
-    if b.len() as u64 != last.body_bytes || util::sha256_hex(&b) != last.body_sha256 {
-        return Err(format!(
-            "the rebuilt body of request {} does not match its capture's length and digest",
-            last.request
-        ));
-    }
-    Ok(b)
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
-    use crate::archive::record_bytes;
+    use crate::archive::{decode_record, record_bytes};
     use crate::forms::{ArrangementInput, arrangement};
     use crate::frontmatter::Settings;
     use crate::json::J;
+    use crate::util;
 
-    fn settings(family: &str, model: &str) -> Settings {
+    pub fn settings(family: &str, model: &str) -> Settings {
         Settings {
             family: family.into(),
             model: model.into(),
@@ -506,7 +372,7 @@ mod tests {
         }
     }
 
-    fn arrangement_record(s: &Settings) -> Vec<u8> {
+    pub fn arrangement_record(s: &Settings) -> Vec<u8> {
         let a = arrangement(&ArrangementInput {
             settings: s,
             question_body_sha256: &"a".repeat(64),
@@ -520,8 +386,8 @@ mod tests {
         )
     }
 
-    fn pinned() -> Pinned {
-        Pinned::from_arrangement(&arrangement_record(&settings(
+    pub fn pinned() -> Pinned {
+        decode_arrangement(&arrangement_record(&settings(
             "open-inquiry",
             "claude-test-1",
         )))
@@ -532,17 +398,21 @@ mod tests {
     fn pinned_members_are_the_arrangement_bytes() {
         let s = settings("comparison", "claude-\"quoted\"-model");
         let rec = arrangement_record(&s);
-        let p = Pinned::from_arrangement(&rec).unwrap();
+        let p = decode_arrangement(&rec).unwrap();
         let f = forms::family("comparison").unwrap();
-        assert_eq!(p.model, json::quote("claude-\"quoted\"-model").into_bytes());
-        assert_eq!(p.system, forms::system(f));
-        assert_eq!(p.tools, forms::tools(f).bytes());
-        assert!(p.extra.is_empty());
+        assert_eq!(p.family().map(|x| x.versioned_id()), Some(f.versioned_id()));
+        assert_eq!(
+            p.model_raw,
+            json::quote("claude-\"quoted\"-model").into_bytes()
+        );
+        assert_eq!(p.system_raw, forms::system(f));
+        assert_eq!(p.tools_raw, forms::tools(f).bytes());
+        assert!(p.request_extra.is_empty());
         assert_eq!(p.anthropic_version, forms::ANTHROPIC_VERSION);
         assert_eq!(p.max_tokens_per_request, 16_000);
-        assert_eq!(p.texts.reminder, forms::REMINDER);
-        assert_eq!(p.texts.near_limit, forms::NEAR_LIMIT);
-        assert_eq!(p.texts.continuation, forms::CONTINUATION);
+        assert_eq!(p.reminder, forms::REMINDER);
+        assert_eq!(p.near_limit, forms::NEAR_LIMIT);
+        assert_eq!(p.continuation, forms::CONTINUATION);
         assert_eq!(
             p.limits,
             Limits {
@@ -552,18 +422,19 @@ mod tests {
             }
         );
         assert_eq!(p.near_limit_percent, 20);
-        assert_eq!(p.retry, RetryPolicy::default());
-        assert_eq!(p.request_timeout_seconds, 600);
+        assert_eq!(p.retry_policy(), RetryPolicy::default());
+        assert_eq!(p.request_timeout(), Duration::from_secs(600));
+        assert_eq!(p.question_body_sha256, "a".repeat(64));
         // Every spliced member occurs verbatim in the record.
         let hay = String::from_utf8(rec).unwrap();
-        for m in [&p.model, &p.system, &p.tools] {
+        for m in [&p.model_raw, &p.system_raw, &p.tools_raw] {
             assert!(hay.contains(std::str::from_utf8(m).unwrap()));
         }
     }
 
     fn replace_body_member(rec: &[u8], key: &str, value: J) -> Vec<u8> {
         let r = decode_record(rec).unwrap();
-        let J::Obj(mut members) = r.body_j() else {
+        let J::Obj(mut members) = r.json.obj("").unwrap().get("body").unwrap().to_j() else {
             unreachable!()
         };
         match members.iter_mut().find(|(k, _)| k == key) {
@@ -578,20 +449,11 @@ mod tests {
         )
     }
 
-    trait BodyJ {
-        fn body_j(&self) -> J;
-    }
-    impl BodyJ for crate::archive::Record {
-        fn body_j(&self) -> J {
-            self.json.obj("").unwrap().get("body").unwrap().to_j()
-        }
-    }
-
     #[test]
     fn arrangement_refusals() {
         let rec = arrangement_record(&settings("open-inquiry", "m"));
         let refuse = |bytes: Vec<u8>, why: &str| {
-            let e = Pinned::from_arrangement(&bytes).unwrap_err();
+            let e = decode_arrangement(&bytes).unwrap_err();
             assert!(e.contains(why), "{why}: {e}");
         };
         refuse(
@@ -600,12 +462,9 @@ mod tests {
                 "request_extra",
                 J::Raw(br#"{"stream":true}"#.to_vec()),
             ),
-            "does not allow",
+            "allowlist is empty",
         );
-        refuse(
-            replace_body_member(&rec, "surprise", J::Int(1)),
-            "unknown key",
-        );
+        refuse(replace_body_member(&rec, "surprise", J::Int(1)), "surprise");
         refuse(replace_body_member(&rec, "model", J::Int(1)), "/body/model");
         refuse(
             replace_body_member(&rec, "schema", "stewart.arrangement/9".into()),
@@ -613,7 +472,7 @@ mod tests {
         );
         refuse(
             replace_body_member(&rec, "max_tokens_per_request", J::Int(0)),
-            "0",
+            "at least 1",
         );
         refuse(
             replace_body_member(&rec, "anthropic_version", "2026 10 21".into()),
@@ -628,11 +487,11 @@ mod tests {
                     .with("delays_seconds", J::Arr(vec![J::Int(2)]))
                     .with("retry_after_ceiling_seconds", 60u64),
             ),
-            "one delay per retry",
+            "one delay before each attempt",
         );
         let other = record_bytes("receipt", None, &"c".repeat(64), J::obj());
-        refuse(other, "not an arrangement");
-        refuse(b"{}".to_vec(), "arrangement record");
+        refuse(other, "kind");
+        assert!(decode_arrangement(b"{}").is_err());
     }
 
     /// An independent assembly of a body, by string formatting over the
@@ -653,49 +512,70 @@ mod tests {
     #[test]
     fn splicing_is_byte_exact() {
         let p = pinned();
+        let parts = Parts::of(&p);
         // Captured response content with odd spacing, unknown blocks and a
         // signed thinking block: copied as is, never re-serialized.
         let content = r#"[ {"type":"thinking","thinking":"hmm","signature":"c2ln+/=="} ,{"type":"tool_use","id":"toolu_1","name":"read","input":{"source" : "materials/a.py"}},{"type":"mystery","x":1.50e3}]"#;
         let question =
             "Is the restart safe?\n\tLine two with \"quotes\" and a \\ and \u{1}\u{7f} é.";
-        let mut conv = Conversation::new(first_user_message(question, Some(&p.texts.continuation)));
+        let mut conv = Conversation::new(first_user_message(question, Some(&p.continuation)));
         let result_content = br#"[{"type":"text","text":"{\"schema\":\"stewart.reply/1\"}"}]"#;
-        let results = [ToolResult {
-            tool_use_id: "toolu_1",
-            content: result_content,
-            is_error: false,
-        }];
+        let results = vec![runs::tool_result_block("toolu_1", result_content, false)];
         let notice =
             "Allowance notice: 1 turns, 2 input tokens and 3 output tokens remain for this audit.";
         conv.push(turn(
             content.as_bytes(),
-            &user_message(&results, Some(&p.texts.reminder), Some(notice)),
+            &user_message(&results, Some(&p.reminder), Some(notice)),
         ));
         assert_eq!(conv.request(), 2);
-        let got = conv.body(&p, 12_345);
+        let got = conv.body(&parts, 12_345);
 
         let first = format!(
             "{{\"role\":\"user\",\"content\":[{{\"type\":\"text\",\"text\":{}}},{{\"type\":\"text\",\"text\":{}}}]}}",
             "\"Is the restart safe?\\n\\tLine two with \\\"quotes\\\" and a \\\\ and \\u0001\u{7f} é.\"",
-            json::quote(&p.texts.continuation),
+            json::quote(&p.continuation),
         );
         let assistant = format!("{{\"role\":\"assistant\",\"content\":{content}}}");
         let user = format!(
             "{{\"role\":\"user\",\"content\":[{{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_1\",\"content\":{},\"is_error\":false}},{{\"type\":\"text\",\"text\":{}}},{{\"type\":\"text\",\"text\":{}}}]}}",
             std::str::from_utf8(result_content).unwrap(),
-            json::quote(&p.texts.reminder),
+            json::quote(&p.reminder),
             json::quote(notice),
         );
         let want = independent_body(
             "\"claude-test-1\"",
             12_345,
-            std::str::from_utf8(&p.system).unwrap(),
-            std::str::from_utf8(&p.tools).unwrap(),
+            std::str::from_utf8(&p.system_raw).unwrap(),
+            std::str::from_utf8(&p.tools_raw).unwrap(),
             &[first, assistant, user],
         );
         assert_eq!(String::from_utf8(got.clone()).unwrap(), want);
         // The assembled body is one JSON text.
         crate::provider::tolerant::validate(&got).unwrap();
+        // A capture of it rebuilds to exactly the body sent.
+        let c1 = runs::request_capture(
+            1,
+            16_000,
+            &parts.body(
+                16_000,
+                &[first_user_message(question, Some(&p.continuation))],
+            ),
+            &[&first_user_message(question, Some(&p.continuation))],
+        );
+        let c2 = runs::request_capture(2, 12_345, &got, &[conv.latest()]);
+        let extra: Vec<&[u8]> = Vec::new();
+        assert_eq!(
+            runs::rebuild_body(
+                &p.model_raw,
+                &p.system_raw,
+                &p.tools_raw,
+                &extra,
+                &[&c1, &c2]
+            )
+            .unwrap(),
+            got
+        );
+        assert_eq!(util::sha256_hex(&got).len(), 64);
     }
 
     #[test]
@@ -708,17 +588,9 @@ mod tests {
             user_message(&[], Some("r"), None),
             br#"{"role":"user","content":[{"type":"text","text":"r"}]}"#
         );
-        let two = [
-            ToolResult {
-                tool_use_id: "a\"b",
-                content: b"[]",
-                is_error: true,
-            },
-            ToolResult {
-                tool_use_id: "c",
-                content: b"[]",
-                is_error: false,
-            },
+        let two = vec![
+            runs::tool_result_block("a\"b", b"[]", true),
+            runs::tool_result_block("c", b"[]", false),
         ];
         assert_eq!(
             user_message(&two, None, None),
@@ -728,106 +600,5 @@ mod tests {
             assistant_message(b"[]"),
             br#"{"role":"assistant","content":[]}"#
         );
-    }
-
-    #[test]
-    fn extra_members_follow_tools() {
-        let mut p = pinned();
-        p.extra = vec![br#""a":1"#.to_vec(), br#""b":{"c":[]}"#.to_vec()];
-        let b = body(&p, 5, &[b"{}".to_vec()]);
-        let s = String::from_utf8(b).unwrap();
-        let tools = std::str::from_utf8(&p.tools).unwrap();
-        assert!(s.ends_with(&format!(
-            r#""tools":{tools},"a":1,"b":{{"c":[]}},"messages":[{{}}]}}"#
-        )));
-    }
-
-    #[test]
-    fn capture_layout_and_rebuild() {
-        let p = pinned();
-        let mut conv = Conversation::new(first_user_message("question", None));
-        let b1 = conv.body(&p, 16_000);
-        let c1 = request_capture(1, 16_000, &b1, conv.latest());
-        let first = br#"{"role":"user","content":[{"type":"text","text":"question"}]}"#;
-        assert_eq!(
-            c1,
-            [
-                format!(
-                    r#"{{"request":1,"max_tokens":16000,"body_bytes":{},"body_sha256":"{}","appended":["#,
-                    b1.len(),
-                    util::sha256_hex(&b1)
-                )
-                .as_bytes(),
-                first,
-                b"]}\n"
-            ]
-            .concat()
-        );
-        conv.push(turn(
-            br#"[{"type":"text","text":"done"}]"#,
-            &user_message(&[], Some("remind"), None),
-        ));
-        let b2 = conv.body(&p, 9_000);
-        let c2 = request_capture(2, 9_000, &b2, conv.latest());
-
-        let cap = parse_request_capture(&c2).unwrap();
-        assert_eq!(
-            (cap.request, cap.max_tokens, cap.body_bytes),
-            (2, 9_000, b2.len() as u64)
-        );
-        assert_eq!(cap.body_sha256, util::sha256_hex(&b2));
-        assert_eq!(cap.appended.of(&c2), conv.latest());
-        assert_eq!(rebuild_body(&p, &[&c1, &c2]).unwrap(), b2);
-        assert_eq!(rebuild_body(&p, &[&c1]).unwrap(), b1);
-
-        // Order, numbering and completeness are checked.
-        assert!(
-            rebuild_body(&p, &[&c2])
-                .unwrap_err()
-                .contains("names request 2")
-        );
-        assert!(
-            rebuild_body(&p, &[&c1, &c2[..c2.len() - 1]])
-                .unwrap_err()
-                .contains("cut off")
-        );
-        assert!(rebuild_body(&p, &[]).is_err());
-        let mut other = p.clone();
-        other.model = b"\"another\"".to_vec();
-        assert!(
-            rebuild_body(&other, &[&c1, &c2])
-                .unwrap_err()
-                .contains("does not match")
-        );
-    }
-
-    #[test]
-    fn capture_defects() {
-        let p = pinned();
-        let conv = Conversation::new(first_user_message("q", None));
-        let b = conv.body(&p, 1);
-        let c = request_capture(1, 1, &b, conv.latest());
-        for n in [0, 1, 10, c.len() - 2, c.len() - 1] {
-            assert_eq!(
-                parse_request_capture(&c[..n]),
-                Err(CaptureDefect::CutOff),
-                "{n}"
-            );
-        }
-        let malformed = |bytes: &[u8]| {
-            assert!(
-                matches!(
-                    parse_request_capture(bytes),
-                    Err(CaptureDefect::Malformed(_))
-                ),
-                "{}",
-                String::from_utf8_lossy(bytes)
-            )
-        };
-        malformed(b"{\"request\":01,\"max_tokens\":1,\"body_bytes\":1,\"body_sha256\":\"x\",\"appended\":[]}\n");
-        malformed(b"{\"request\":1, \"max_tokens\":1}\n]}\n");
-        malformed(format!("{{\"request\":1,\"max_tokens\":1,\"body_bytes\":1,\"body_sha256\":\"{}\",\"appended\":[]}}\n", "g".repeat(64)).as_bytes());
-        malformed(format!("{{\"request\":1,\"max_tokens\":1,\"body_bytes\":1,\"body_sha256\":\"{}\",\"appended\":[\n]}}\n", "a".repeat(64)).as_bytes());
-        malformed(b"]}\n");
     }
 }

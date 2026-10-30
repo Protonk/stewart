@@ -9,7 +9,7 @@
 //! 2. send it with an [`transport::AbortHandle`] the watcher can fire
 //!    ([`transport::Client::send`]);
 //! 3. classify the attempt ([`response::classify`]);
-//! 4. charge it against the allowances ([`account`]);
+//! 4. charge it against the allowances ([`policy::charge`], `usage`);
 //! 5. decide whether to use the response, retry or end ([`policy`]).
 //!
 //! Nothing here touches the archive. Captures, records and the log belong to
@@ -21,17 +21,19 @@
 //! - `tls`: the TLS client configuration and, in test builds, extra roots.
 //! - `http`: request head, response framing and the recorded header subset.
 //! - `transport`: connections, the CONNECT tunnel, timeouts and abort.
-//! - `request`: splicing pinned bytes into request bodies and captures (4.5, 6.2).
+//! - `request`: the pinned arrangement and the messages of a placement (4.5, 6.2).
 //! - `tolerant`: the tolerant JSON scanner for provider bodies.
 //! - `response`: message and error body decoding, attempt classification (6.2, 6.6).
-//! - `account`: charges, usage, limits and the near-limit notice (6.4).
-//! - `policy`: retry decisions and the step after a response (6.3, 6.5, 6.6).
+//! - `policy`: charges, retry decisions and the step after a response (6.3–6.6).
+//! - `placement`: the loop of one placement (6.3), driving the above.
+//! - `stop`: the close watcher and signal handling (6.8).
 
-pub mod account;
 pub mod http;
+pub mod placement;
 pub mod policy;
 pub mod request;
 pub mod response;
+pub mod stop;
 pub mod tls;
 mod tolerant;
 pub mod transport;

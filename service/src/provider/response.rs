@@ -20,20 +20,23 @@
 //!
 //! "A string" means a JSON string that decodes to Unicode: a string holding a
 //! lone surrogate escape counts as another type, because no record or reply
-//! could carry it faithfully.
+//! could carry it faithfully. Records hold only strings strict decoding
+//! accepts (1.2), so a string containing U+0000 is never recorded: an `id`
+//! with it makes the block unanswerable, a `name` with it is refused
+//! `tool_unknown`, a `stop_reason` with it is an unknown stop reason recorded
+//! as null, and `model` and the error members with it are recorded as null.
+//! The raw capture keeps the bytes.
 //!
-//! Integers are written with digits only and fit in 64 bits; a sign, fraction
-//! or exponent makes a usage count another type.
+//! Integers are written with digits only and are at most `usage::FIGURE_MAX`,
+//! the bound every recorded usage figure has; a sign, fraction, exponent or
+//! larger value makes a usage count another type.
 
-use crate::json::J;
 use crate::provider::Outcome;
 use crate::provider::StopCause;
 use crate::provider::http::BodyEnd;
 use crate::provider::tolerant::{self, Kind, Member, Span};
 use crate::provider::transport::{Attempt, Failure, Written};
-
-/// Most bytes of `error.message` recorded (Appendix B), cut on a character boundary.
-pub const ERROR_MESSAGE_LIMIT: usize = 1024;
+use crate::runs::{self, ErrorFacts, ReportedUsage};
 
 /// A message's `stop_reason`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -45,7 +48,8 @@ pub enum StopReason {
     PauseTurn,
     Refusal,
     ModelContextWindowExceeded,
-    /// Any other string, kept as received.
+    /// Any other string, kept as received (it may contain U+0000, and is
+    /// then recorded as null).
     Other(String),
 }
 
@@ -75,36 +79,17 @@ impl StopReason {
             StopReason::Other(s) => s,
         }
     }
+
+    /// The attempt record's `stop_reason`: the string, or `None` when it
+    /// contains U+0000.
+    pub fn recorded(&self) -> Option<String> {
+        recordable(self.as_str().to_string())
+    }
 }
 
-/// A message's usage report. An absent or null cache count is 0.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct Usage {
-    pub input_tokens: u64,
-    pub cache_creation_input_tokens: u64,
-    pub cache_read_input_tokens: u64,
-    pub output_tokens: u64,
-}
-
-impl Usage {
-    /// The input charge: `input_tokens` plus both cache counts (6.4).
-    pub fn input_charge(&self) -> u64 {
-        self.input_tokens
-            .saturating_add(self.cache_creation_input_tokens)
-            .saturating_add(self.cache_read_input_tokens)
-    }
-
-    /// The attempt record's `usage`.
-    pub fn to_j(&self) -> J {
-        J::obj()
-            .with("input_tokens", self.input_tokens)
-            .with(
-                "cache_creation_input_tokens",
-                self.cache_creation_input_tokens,
-            )
-            .with("cache_read_input_tokens", self.cache_read_input_tokens)
-            .with("output_tokens", self.output_tokens)
-    }
+/// A string a record can hold: `None` when it contains U+0000.
+pub fn recordable(s: String) -> Option<String> {
+    (!s.contains('\0')).then_some(s)
 }
 
 /// The interpreted members of a `tool_use` block.
@@ -144,8 +129,9 @@ pub struct Message {
     pub content: Span,
     pub blocks: Vec<Block>,
     pub stop_reason: StopReason,
+    /// `model` when it is a recordable string that appears once.
     pub model: Option<String>,
-    pub usage: Usage,
+    pub usage: ReportedUsage,
 }
 
 impl Message {
@@ -201,7 +187,9 @@ pub fn decode_message(body: &[u8]) -> Result<Message, String> {
             ));
         }
     };
-    let model = tolerant::as_string(body, tolerant::once(&ms, "model")).ok();
+    let model = tolerant::as_string(body, tolerant::once(&ms, "model"))
+        .ok()
+        .and_then(recordable);
 
     let mut blocks = Vec::new();
     for (index, span) in tolerant::elements(body, content)?.into_iter().enumerate() {
@@ -220,12 +208,13 @@ pub fn decode_message(body: &[u8]) -> Result<Message, String> {
     })
 }
 
-fn usage(b: &[u8], s: Span) -> Result<Usage, String> {
+fn usage(b: &[u8], s: Span) -> Result<ReportedUsage, String> {
     let ms = tolerant::members(b, s)?;
+    let figure = |v: Span| tolerant::integer(b, v).filter(|n| *n <= crate::usage::FIGURE_MAX);
     let required = |k: &str| -> Result<u64, String> {
         match tolerant::once(&ms, k) {
-            Member::Present(v) => tolerant::integer(b, v)
-                .ok_or_else(|| format!("usage.{k} is not a non-negative integer")),
+            Member::Present(v) => figure(v)
+                .ok_or_else(|| format!("usage.{k} is not a non-negative integer up to 2^48")),
             m => Err(format!("usage.{k} is {}", m.defect().unwrap_or(""))),
         }
     };
@@ -233,17 +222,27 @@ fn usage(b: &[u8], s: Span) -> Result<Usage, String> {
         match tolerant::once(&ms, k) {
             Member::Missing => Ok(0),
             Member::Present(v) if tolerant::kind(b, v) == Kind::Null => Ok(0),
-            Member::Present(v) => tolerant::integer(b, v)
-                .ok_or_else(|| format!("usage.{k} is not a non-negative integer or null")),
+            Member::Present(v) => figure(v).ok_or_else(|| {
+                format!("usage.{k} is not a non-negative integer up to 2^48, or null")
+            }),
             m => Err(format!("usage.{k} is {}", m.defect().unwrap_or(""))),
         }
     };
-    Ok(Usage {
+    Ok(ReportedUsage {
         input_tokens: required("input_tokens")?,
         cache_creation_input_tokens: cache("cache_creation_input_tokens")?,
         cache_read_input_tokens: cache("cache_read_input_tokens")?,
         output_tokens: required("output_tokens")?,
     })
+}
+
+/// A string member that records may hold: one that contains U+0000 counts as
+/// another type.
+fn recordable_member(b: &[u8], m: Member<Span>) -> Member<String> {
+    match tolerant::as_string(b, m) {
+        Member::Present(s) if s.contains('\0') => Member::WrongType,
+        other => other,
+    }
 }
 
 fn block_kind(b: &[u8], s: Span) -> Result<BlockKind, String> {
@@ -256,37 +255,19 @@ fn block_kind(b: &[u8], s: Span) -> Result<BlockKind, String> {
         _ => return Ok(BlockKind::Other),
     }
     Ok(BlockKind::ToolUse(ToolUse {
-        id: tolerant::as_string(b, tolerant::once(&ms, "id")),
-        name: tolerant::as_string(b, tolerant::once(&ms, "name")),
+        id: recordable_member(b, tolerant::once(&ms, "id")),
+        name: recordable_member(b, tolerant::once(&ms, "name")),
         input: tolerant::once(&ms, "input"),
     }))
-}
-
-/// The members of an error body that are recorded.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ErrorBody {
-    pub error_type: Option<String>,
-    /// Cut to at most 1,024 bytes on a character boundary.
-    pub message: Option<String>,
-    pub request_id: Option<String>,
-}
-
-impl ErrorBody {
-    /// The attempt record's `error`.
-    pub fn to_j(&self) -> J {
-        J::obj()
-            .with("type", self.error_type.clone())
-            .with("message", self.message.clone())
-            .with("request_id", self.request_id.clone())
-    }
 }
 
 /// Decode `{"type":"error","error":{"type":…,"message":…},"request_id":…}`.
 /// A body decodes as an error body when it is a JSON object whose `error`
 /// member appears once and is an object; the top-level `type` is not
-/// interpreted. Each recorded member is `None` unless it is a string that
-/// appears once in its object.
-pub fn decode_error_body(body: &[u8]) -> Option<ErrorBody> {
+/// interpreted. Each recorded member is `None` unless it is a recordable
+/// string that appears once in its object; the message is cut to at most
+/// 1,024 bytes on a character boundary.
+pub fn decode_error_body(body: &[u8]) -> Option<ErrorFacts> {
     let top = tolerant::validate(body).ok()?;
     if tolerant::kind(body, top) != Kind::Object {
         return None;
@@ -297,36 +278,24 @@ pub fn decode_error_body(body: &[u8]) -> Option<ErrorBody> {
         return None;
     }
     let es = tolerant::members(body, err).ok()?;
-    Some(ErrorBody {
-        error_type: tolerant::as_string(body, tolerant::once(&es, "type")).ok(),
-        message: tolerant::as_string(body, tolerant::once(&es, "message"))
-            .ok()
-            .map(|m| cut(&m, ERROR_MESSAGE_LIMIT).to_string()),
-        request_id: tolerant::as_string(body, tolerant::once(&ms, "request_id")).ok(),
+    let string = |m: Member<Span>| recordable_member(body, m).ok();
+    Some(ErrorFacts {
+        kind: string(tolerant::once(&es, "type")),
+        message: string(tolerant::once(&es, "message"))
+            .map(|m| runs::cut(&m, runs::ERROR_MESSAGE_BYTES).to_string()),
+        request_id: string(tolerant::once(&ms, "request_id")),
     })
 }
 
-/// The longest prefix of `s` of at most `max` bytes that ends on a character boundary.
-pub fn cut(s: &str, max: usize) -> &str {
-    if s.len() <= max {
-        return s;
-    }
-    let mut end = max;
-    while !s.is_char_boundary(end) {
-        end -= 1;
-    }
-    &s[..end]
-}
-
 /// An attempt's outcome and what was decoded from it.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Classified {
     pub outcome: Outcome,
     /// The decoded message when the outcome is `response`.
     pub message: Option<Message>,
     /// The error body's members when the body decodes as one (any outcome
     /// other than `response`).
-    pub error: Option<ErrorBody>,
+    pub error: Option<ErrorFacts>,
     /// Why a status-200 body was undecodable; `None` otherwise.
     pub problem: Option<String>,
 }
@@ -337,11 +306,15 @@ pub struct Classified {
 /// 1. the stop path shut the connection down: `aborted_by_close` or
 ///    `aborted_by_signal`, at whatever stage;
 /// 2. the request timeout passed before the response was complete: `timeout`;
-/// 3. a status line was received: status 200 is `response` when its body is
-///    complete, within 32 MiB, in identity coding and decodes as a message,
-///    else `response_undecodable` (which includes a body cut off by the
-///    connection ending or failing); any other status is `http_error`;
-/// 4. no status line: `connection_failed` when no request byte was written,
+/// 3. a status line other than 200 was received: `http_error`, even when its
+///    body was cut off;
+/// 4. status 200 whose body was cut off by the connection ending or failing:
+///    `connection_lost`;
+/// 5. status 200 whose body is complete: `response` when it is in identity
+///    coding and decodes as a message, else `response_undecodable`; a body
+///    over 32 MiB, or one whose framing cannot be followed, is
+///    `response_undecodable` too;
+/// 6. no status line: `connection_failed` when no request byte was written,
 ///    else `connection_lost`.
 pub fn classify(a: &Attempt) -> Classified {
     let simple = |outcome| Classified {
@@ -379,6 +352,7 @@ pub fn classify(a: &Attempt) -> Classified {
         };
     }
     let problem = match &r.end {
+        BodyEnd::CutOff => return simple(Outcome::ConnectionLost),
         BodyEnd::Complete => match &r.coding {
             Some(c) => c.clone(),
             None => match decode_message(&r.body) {
@@ -392,10 +366,6 @@ pub fn classify(a: &Attempt) -> Classified {
                 }
                 Err(p) => p,
             },
-        },
-        BodyEnd::CutOff => match &a.failure {
-            Some(Failure::Broken(m)) => format!("the body was cut off ({m})"),
-            _ => "the body was cut off".into(),
         },
         BodyEnd::TooLarge => "the body exceeds 32 MiB".into(),
         BodyEnd::Malformed(m) => format!("the response framing is malformed: {m}"),
@@ -411,7 +381,8 @@ pub fn classify(a: &Attempt) -> Classified {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::provider::http::{RecordedHeaders, Reply};
+    use crate::provider::http::Reply;
+    use crate::runs::Headers;
     use std::time::{Duration, SystemTime};
 
     /// A JSON escape (backslash, u, four hex digits) built at run time.
@@ -440,14 +411,14 @@ mod tests {
         assert_eq!(m.model.as_deref(), Some("claude-test"));
         assert_eq!(
             m.usage,
-            Usage {
+            ReportedUsage {
                 input_tokens: 120,
                 cache_creation_input_tokens: 0,
                 cache_read_input_tokens: 30,
                 output_tokens: 45
             }
         );
-        assert_eq!(m.usage.input_charge(), 150);
+        assert_eq!(m.usage.charge().input_tokens, 150);
         assert_eq!(m.blocks.len(), 8);
         assert_eq!(m.blocks[0].span.of(b), THINKING.as_bytes());
         assert_eq!(m.blocks[0].kind, BlockKind::Other);
@@ -588,21 +559,20 @@ mod tests {
             br#"{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011"}"#,
         )
         .unwrap();
-        assert_eq!(e.error_type.as_deref(), Some("overloaded_error"));
+        assert_eq!(e.kind.as_deref(), Some("overloaded_error"));
         assert_eq!(e.message.as_deref(), Some("Overloaded"));
         assert_eq!(e.request_id.as_deref(), Some("req_011"));
-        assert_eq!(
-            e.to_j().string(),
-            r#"{"type":"overloaded_error","message":"Overloaded","request_id":"req_011"}"#
-        );
         let e = decode_error_body(
             br#"{"error":{"type":1,"message":"a","message":"b"},"request_id":null}"#,
         )
         .unwrap();
-        assert_eq!(e, ErrorBody::default());
         assert_eq!(
-            e.to_j().string(),
-            r#"{"type":null,"message":null,"request_id":null}"#
+            e,
+            ErrorFacts {
+                kind: None,
+                message: None,
+                request_id: None
+            }
         );
         assert_eq!(decode_error_body(b"<html>bad gateway</html>"), None);
         assert_eq!(decode_error_body(br#"{"error":"text"}"#), None);
@@ -613,8 +583,6 @@ mod tests {
         let body = format!(r#"{{"error":{{"message":"{long}"}}}}"#);
         let e = decode_error_body(body.as_bytes()).unwrap();
         assert_eq!(e.message.unwrap(), "a".repeat(1023));
-        assert_eq!(cut("abc", 2), "ab");
-        assert_eq!(cut("é", 1), "");
     }
 
     fn attempt(written: Written, reply: Option<Reply>, failure: Option<Failure>) -> Attempt {
@@ -633,7 +601,7 @@ mod tests {
     fn reply(status: u16, body: &str, end: BodyEnd) -> Reply {
         Reply {
             status,
-            headers: RecordedHeaders::default(),
+            headers: Headers::default(),
             coding: None,
             body: body.as_bytes().to_vec(),
             end,
@@ -668,7 +636,7 @@ mod tests {
                     Some(reply(200, &good[..20], BodyEnd::CutOff)),
                     broken.clone(),
                 ),
-                Outcome::ResponseUndecodable,
+                Outcome::ConnectionLost,
             ),
             (
                 attempt(
@@ -765,10 +733,7 @@ mod tests {
         let c = classify(&cases[0].0);
         assert!(c.message.is_some() && c.error.is_none() && c.problem.is_none());
         let c = classify(&cases[5].0);
-        assert_eq!(
-            c.error.unwrap().error_type.as_deref(),
-            Some("overloaded_error")
-        );
+        assert_eq!(c.error.unwrap().kind.as_deref(), Some("overloaded_error"));
         assert!(c.problem.is_none());
         assert!(
             classify(&cases[1].0)
@@ -776,12 +741,7 @@ mod tests {
                 .unwrap()
                 .contains("content is missing")
         );
-        assert!(
-            classify(&cases[2].0)
-                .problem
-                .unwrap()
-                .contains("cut off (reset)")
-        );
+        assert_eq!(classify(&cases[2].0).problem, None);
         assert!(classify(&cases[3].0).problem.unwrap().contains("32 MiB"));
         assert!(classify(&cases[4].0).problem.unwrap().contains("malformed"));
     }
@@ -811,26 +771,79 @@ mod tests {
             None,
         ));
         assert_eq!(c.outcome, Outcome::ResponseUndecodable);
-        assert_eq!(c.error.unwrap().error_type.as_deref(), Some("api_error"));
+        assert_eq!(c.error.unwrap().kind.as_deref(), Some("api_error"));
     }
 
     #[test]
-    fn usage_record_shape() {
-        let u = Usage {
-            input_tokens: 1,
-            cache_creation_input_tokens: 2,
-            cache_read_input_tokens: 3,
-            output_tokens: 4,
-        };
-        assert_eq!(
-            u.to_j().string(),
-            r#"{"input_tokens":1,"cache_creation_input_tokens":2,"cache_read_input_tokens":3,"output_tokens":4}"#
+    fn strings_with_nul_are_never_recorded() {
+        let nul = u("0000");
+        let content = format!(
+            r#"[{{"type":"tool_use","id":"a{nul}b","name":"read","input":{{}}}},{{"type":"tool_use","id":"ok","name":"re{nul}ad","input":{{}}}}]"#
         );
-        let big = Usage {
-            input_tokens: u64::MAX,
-            cache_creation_input_tokens: 1,
-            ..Usage::default()
-        };
-        assert_eq!(big.input_charge(), u64::MAX);
+        let body = format!(
+            r#"{{"model":"m{nul}","content":{content},"stop_reason":"end{nul}","usage":{{"input_tokens":1,"output_tokens":2}}}}"#
+        );
+        let m = decode_message(body.as_bytes()).unwrap();
+        let uses: Vec<&ToolUse> = m.tool_uses().map(|(_, t)| t).collect();
+        assert_eq!(
+            uses[0].id,
+            Member::WrongType,
+            "an id with NUL is unanswerable"
+        );
+        assert_eq!(uses[0].name, Member::Present("read".into()));
+        assert_eq!(uses[1].id, Member::Present("ok".into()));
+        assert_eq!(
+            uses[1].name,
+            Member::WrongType,
+            "a name with NUL is tool_unknown"
+        );
+        assert_eq!(m.model, None);
+        assert_eq!(m.stop_reason, StopReason::Other("end\0".into()));
+        assert_eq!(m.stop_reason.recorded(), None);
+        assert_eq!(StopReason::EndTurn.recorded().as_deref(), Some("end_turn"));
+        let e = decode_error_body(
+            format!(r#"{{"error":{{"type":"x{nul}","message":"m{nul}"}},"request_id":"r{nul}"}}"#)
+                .as_bytes(),
+        )
+        .unwrap();
+        assert_eq!((e.kind, e.message, e.request_id), (None, None, None));
+    }
+
+    #[test]
+    fn usage_figures_are_bounded_like_records() {
+        let max = crate::usage::FIGURE_MAX;
+        let ok = format!(
+            r#"{{"content":[],"stop_reason":"end_turn","usage":{{"input_tokens":{max},"output_tokens":0}}}}"#
+        );
+        assert_eq!(
+            decode_message(ok.as_bytes()).unwrap().usage.input_tokens,
+            max
+        );
+        let over = format!(
+            r#"{{"content":[],"stop_reason":"end_turn","usage":{{"input_tokens":{},"output_tokens":0}}}}"#,
+            max + 1
+        );
+        assert!(
+            decode_message(over.as_bytes())
+                .unwrap_err()
+                .contains("2^48")
+        );
+    }
+
+    #[test]
+    fn a_200_cut_off_in_its_head_is_a_lost_connection() {
+        let c = classify(&attempt(
+            Written::Complete,
+            Some(reply(200, "", BodyEnd::CutOff)),
+            Some(Failure::Broken("closed".into())),
+        ));
+        assert_eq!(c.outcome, Outcome::ConnectionLost);
+        // Another status that arrived stays an HTTP error, cut off or not.
+        let c = classify(&attempt(
+            Written::Complete,
+            Some(reply(503, "{\"err", BodyEnd::CutOff)),
+            Some(Failure::Broken("closed".into())),
+        ));
+        assert_eq!((c.outcome, c.error), (Outcome::HttpError, None));
     }
 }
