@@ -89,6 +89,70 @@ pub fn start_run_with(a: &Audit, run: u64, provider: ProviderUse) -> u64 {
     n
 }
 
+/// The run directory of placement `run`, for writing its captures.
+fn run_dir(a: &Audit, run: u64) -> stewart::runs::RunDir {
+    let dir = stewart::runs::open(a, run).unwrap();
+    let stage = dir.open_dir("stage").unwrap();
+    stewart::runs::RunDir {
+        run,
+        dir,
+        stage,
+        path: a.abs(&stewart::runs::dir_name(run)),
+    }
+}
+
+/// Capture request `k` of placement `run` with a body of `body_bytes`
+/// bytes and `max_tokens`, as the run does before its first attempt.
+pub fn capture_request(a: &Audit, run: u64, k: u64, max_tokens: u64, body_bytes: usize) {
+    let body = vec![b'x'; body_bytes];
+    let capture = stewart::runs::request_capture(k, max_tokens, &body, &[b"{}"]);
+    if let Err(c) = run_dir(a, run).write_request(k, &capture) {
+        panic!("{}: {}", c.operation, c.error);
+    }
+}
+
+/// Request `k` of placement `run`, captured and answered by one used
+/// response whose usage the provider reported.
+pub fn record_turn(a: &Audit, run: u64, k: u64, input: u64, output: u64) {
+    use stewart::runs::{Headers, ProviderAttempt, ReportedUsage};
+    use stewart::usage::Charge;
+    capture_request(a, run, k, 16_000, 300);
+    let attempt = ProviderAttempt {
+        request: k,
+        attempt: 1,
+        started_at: "2026-11-02T14:03:11.402Z".into(),
+        ended_at: "2026-11-02T14:03:12.214Z".into(),
+        elapsed_ms: 812,
+        timeout_seconds: 600,
+        request_written: "complete".into(),
+        outcome: "response".into(),
+        status: Some(200),
+        headers: Headers {
+            content_type: vec!["application/json".into()],
+            request_id: vec![],
+            retry_after: vec![],
+        },
+        response: None,
+        error: None,
+        stop_reason: Some("tool_use".into()),
+        model: None,
+        usage: Some(ReportedUsage {
+            input_tokens: input,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 0,
+            output_tokens: output,
+        }),
+        charged: Charge::reported(input, 0, 0, output),
+        problem: None,
+        then: "use".into(),
+        delay_ms: None,
+    };
+    let name = stewart::runs::attempt_name(k, 1);
+    if let Err(c) = run_dir(a, run).publish(a, "provider_attempt", &name, attempt.to_j()) {
+        panic!("{}: {}", c.operation, c.error);
+    }
+}
+
 /// One recorded entry the witness keeps: its ID, kind, label and bytes.
 #[derive(Clone, Debug)]
 pub struct Entry {

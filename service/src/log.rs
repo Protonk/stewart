@@ -1449,8 +1449,12 @@ pub(crate) mod tests {
 
         let u = s.recorded_usage();
         assert_eq!((u.turns.reported, u.output_tokens.estimated), (5, 500));
-        let (cumulative, problems) = crate::runs::cumulative_usage(&a, &s);
-        assert_eq!(cumulative, u, "every placement has its run_ended");
+        for live in [false, true] {
+            let (cumulative, problems) = crate::runs::cumulative_usage(&a, &s, live);
+            assert_eq!(cumulative, u, "every placement has its run_ended");
+            assert!(problems.is_empty());
+        }
+        let (_, problems) = crate::runs::cumulative_usage(&a, &s, false);
         assert!(problems.is_empty());
         std::fs::remove_dir_all(p).unwrap();
     }
