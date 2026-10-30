@@ -134,6 +134,17 @@ write, a diagnostic (4.8).
 `unknown` is used whenever Stewart cannot establish the fact, including after a
 failure partway through publication. It is never replaced by the absent value.
 
+For `run`, `close` and the auditor tools the values mean:
+
+| Key | Meaning |
+| --- | --- |
+| `run` | `not_started`: no placement has started; `started`: this run's placement started and its ending could not be recorded; `ended`: every placement has a recorded ending; `still_held`: a placement still holds the active lock |
+| `answer` | `changed`: this invocation recorded at least one entry; `unchanged`: it recorded none |
+| `seal` | `none`: no seal exists; `recorded`: this invocation published the seal; `existing`: a seal existed before it |
+| `delivery` | The outcome (8.3) of the newest delivery attempt this invocation made or presented, or `none` |
+| `closure` | `none`: no close requested; `requested`: this invocation published `close_requested` and then failed before establishing more; `unfinished`: requested and not closed; `complete`: closed |
+| `raw_capture` | `recorded`: the call capture (4.5) was written before the call ran; `failed`: it could not be, and the call did not run |
+
 ### 1.5 Next calls
 
 Manager `next` items are `{"argv": [...], "why": "..."}`. Auditor `next` items
@@ -147,7 +158,7 @@ writer path (4.7), never a bare `stewart`; examples use `/usr/local/bin/stewart`
 
 | Code | Meaning |
 | --- | --- |
-| 0 | Completed. For `run`: the placement ended and its ending is recorded, other than interrupted. |
+| 0 | Completed, including an unfinished close. For `run`: the placement ended and its ending is recorded, other than interrupted. |
 | 2 | Usage: the arguments could not be parsed. No operation began. |
 | 3 | Refused. |
 | 4 | Failed; `effects` states what is known. |
@@ -366,11 +377,11 @@ and at every delivery attempt (`location_overlap`).
     stage/                      fully written records before publication; kept
     prep/<n>/                   manager preparation: manifest.json, arrangement.json, arrangement.md
     intake/<attempt>/           captured bytes: q.bin, m0001.bin, …; receipt.json
-    payload/                    answer entry bytes, one exclusive file per version
-    prepared/<n>/               auditor preparation: answer.json, answer.md
-    seal/manifest-<k>.json      return manifest written at seal
-    runs/<n>/                   per placement: provider exchanges, tool calls, observations
-    delivery/<attempt>.json     delivery attempt detail
+    payload/                    entry bytes: <id>.v<version>.bin, one exclusive file per version (7.4)
+    prepared/<n>/               a preparation of the answer: answer.json, answer.md (7.6, 8.1)
+    seal/manifest-<k>.json      return manifest written at seal (8.2)
+    runs/<n>/                   per placement: requests, responses, attempts, calls, results (4.5)
+    delivery/<attempt>.json     delivery plan (8.3)
     diag/                       diagnostics
 ```
 
@@ -398,17 +409,25 @@ Records are never rewritten or removed. Two publication methods are used:
   directory. `EEXIST` means the name is taken. The stage file stays as evidence.
   A record is visible under its final name only when complete, so readers never
   see a torn record. A stage file without a final name is reported as an
-  interrupted publication, never as a record.
+  interrupted publication, never as a record. Log records are staged in the
+  audit's `stage/`; run records (4.5) in their run's `runs/<n>/stage/`.
 
-Every numbered name is claimed, never assumed free: `prep/<n>`, `prepared/<n>`,
-`seal/manifest-<k>.json`, `intake/<attempt>`, `delivery/<attempt>.json`,
-`runs/<n>` and the files in `runs/<n>/` and `diag/`. A file is claimed with
-`O_EXCL` and a directory with `mkdirat`; on `EEXIST` the writer advances to the
-next number. The log record that uses a claimed name names it. Stage files are
-created with `O_EXCL` under random names.
+A record ends with one LF. Payloads, raw captures (4.5), the answer files in
+`prepared/<n>` (QUESTION-FORMS) and return manifests (8.2) are not
+`stewart.record/1` records; each has its own layout.
 
-A file that no log record names, such as a receipt, a manifest or prepared
-files, is reported by status as an unpublished candidate, never as a record.
+Every numbered name outside `runs/` is claimed, never assumed free: `prep/<n>`,
+`prepared/<n>`, `seal/manifest-<k>.json`, `intake/<attempt>`,
+`delivery/<attempt>.json`, payload files (7.4) and the files in `diag/`. A file
+is claimed with `O_EXCL` and a directory with `mkdirat`; on `EEXIST` the writer
+advances to the next number. The log record that uses a claimed name names it.
+Stage files are created with `O_EXCL` under random names. Names in `runs/`
+follow 4.5.
+
+A preparation directory, receipt, manifest, delivery plan or payload file that
+no log record names is reported by status as an unpublished candidate, never as
+a record. An auditor preparation is an inspection candidate by design: no log
+record names it unless it is sealed, and status does not report it.
 
 ### 4.4 The audit log
 
@@ -440,20 +459,19 @@ Log record kinds:
 | `intake_planned` | commission | A matching `prepared`; no `accepted`, no `close_requested`; no live intake |
 | `intake_ended` | commission; the next commission's or close's reconciliation | Its `intake_planned` has no outcome |
 | `accepted` | commission | Its `intake_planned` has no outcome; no `accepted`, no `close_requested` |
-| `run_started` | run | `accepted`; not ended (6.5); no `close_requested` |
-| `entry` | auditor tools | A live placement; no seal, no `close_requested` |
-| `seal` | submit, close | No earlier `seal`; for submit, no `close_requested`; for close, after its `close_requested` |
+| `run_started` | run | `accepted`; authoring not ended (5.7); no `close_requested`; every earlier `run_started` has its `run_ended` |
+| `entry` | auditor tools | The invocation's placement is the latest `run_started` and has no `run_ended`; no `seal`, no `close_requested` |
+| `seal` | submit, close | No earlier `seal`; for submit, the preparation's revision is current and no `close_requested`; for close, after its `close_requested` |
 | `run_ended` | run; the next run's or close's reconciliation | Its `run_started` has no `run_ended` |
-| `delivery_planned` | run, close | A `seal`; no `delivery_planned` without an outcome |
-| `delivery_ended` | run; close, including its reconciliation | Its `delivery_planned` has no outcome |
-| `notice` | run | No earlier notice of the same type (6.4) |
+| `delivery_planned` | run, close | A `seal`; every earlier `delivery_planned` has its `delivery_ended` |
+| `delivery_ended` | run; close, including its reconciliation | Its `delivery_planned` has no `delivery_ended` |
+| `notice` | run | No earlier `notice` of the same type; its placement has no `run_ended` |
 | `close_requested` | close | None earlier |
 | `closed` | close | `close_requested`; none earlier; close's own conditions (5.8) |
 
-`entry` covers add, replace and delete. Its body names the action, the
-invocation (run number and `tool_use` ID), the target and resulting version,
-the payload file and digest, and the resulting answer revision. The answer
-revision is the number of `entry` records so far.
+`entry` covers add, replace and delete. The answer revision is the number of
+`entry` records so far. The current selection at a log position is every entry
+added and not since deleted, at its latest version, in order of first creation.
 
 The launch point is the first `run_started`. Before it, close creates no answer.
 After it, close seals the recorded selection if no seal exists. A crash between
@@ -461,19 +479,307 @@ After it, close seals the recorded selection if no seal exists. A crash between
 seals an empty selection with manager attribution, which is an honest empty
 return.
 
-### 4.5 Unordered streams
+#### Record bodies
 
-Raw provider requests and responses, tool calls and their results, observations
-and diagnostics are exclusive files under `runs/<n>/` and `diag/`, numbered
-within their directory. Only the holder of the active lock writes in a run's
-directory. Each request is captured as `runs/<n>/request-<k>.json`, holding its
-`max_tokens`, the messages appended since the previous request and the SHA-256
-of the full body; the full body is reconstructible from the arrangement and the
-earlier captures. Each response is captured whole, one file per attempt. Each
-tool call's raw `tool_use` block is captured as
-`runs/<n>/call-<k>.json` before it is decoded. Its result is captured as
-`runs/<n>/result-<k>.json`. The access log of C6 is the sequence of `list`,
-`read` and `search` calls in these files. The run summary is the `run_ended`
+A body is a compact JSON object whose keys appear in the order listed, after
+`prev`, which comes first in every body. A key described as "or null" is always
+present. Names such as `log/9.json`, `runs/2` or `payload/e2.v2.bin` are relative
+to the audit directory. The manager-foundation kinds:
+
+| Kind | Body keys after `prev` |
+| --- | --- |
+| `reference` | `file`, `file_sha256`, `folder`, `writer` {`path`, `sha256`} |
+| `prepared` | `prep`, `manifest`, `manifest_sha256`, `arrangement_sha256`, `readable_sha256`, `settings` {`family`, `model`, `destination`, `limits` {`turns`, `input_tokens`, `output_tokens`}, then `inquiry` and `varies` only when given}, `question` {`file_bytes`, `file_sha256`, `body_bytes`, `body_sha256`}, `materials` {`count`, `bytes`} |
+| `intake_planned` | `attempt`, `prepared` (the handle), `prep`, `declaration` {`i_am_finished`}, `captures` [{`item`, `file`}], `observations` |
+| `intake_ended` | `attempt`, `outcome`, `recorded_by` (`commission` or `close`), `message`, `cause` ({`operation`, `error`} or null), `changes` ({`added`, `removed`, `changed`} or null) |
+| `accepted` | `attempt`, `prepared`, `prep`, `receipt` (`intake/<attempt>/receipt.json`), `receipt_sha256` |
+| `close_requested` | `flags` {`confirm`, `surrender`, `destination`}: the options of the close call that published it, `null` or `[]` when absent; `observations` |
+
+`observations` is {`pid`, `uid`, `host`, `boot_id`}: the process ID, the real
+user ID, the host name and the kernel boot ID
+(`/proc/sys/kernel/random/boot_id`), `host` and `boot_id` null when unavailable.
+They record what Stewart observed about an invocation, never who the manager is.
+`close_requested` has this body in every state; the selection close seals is
+determined by its log position.
+
+**`run_started`**
+
+```json
+{"prev": "…", "run": 2, "continuing": true, "dir": "runs/2", "arrangement_sha256": "…",
+ "provider": {"base_url": "https://api.anthropic.com", "override": false, "proxy": null,
+              "anthropic_version": "2026-10-21"},
+ "observations": {"pid": 4182, "start_ticks": 912873, "uid": 1000, "host": "ana-laptop", "boot_id": "6c1f…"}}
+```
+
+`run` is the placement number and `continuing` is true when it is above 1.
+`base_url` is the provider base in use, `override` whether
+`STEWART_PROVIDER_URL` supplied it, and `proxy` the `HTTPS_PROXY` value in use
+or null (6.1). `start_ticks` is field 22 of `/proc/self/stat`, the process start
+time in clock ticks since boot.
+
+**`run_ended`**
+
+```json
+{"prev": "…", "run": 2, "ending": "interrupted", "cause": "provider_unavailable", "recorded_by": "run",
+ "provider": {"status": 529, "error_type": "overloaded_error", "request_id": "req_011…", "request": 6, "attempt": 4},
+ "requests": 6, "attempts": 9,
+ "usage": {"turns": {"reported": 5, "estimated": 0}, "input_tokens": {"reported": 412003, "estimated": 0},
+           "output_tokens": {"reported": 18201, "estimated": 0}},
+ "notices": [{"type": "near_limit", "record": "log/40.json", "sent": "not_sent"}],
+ "seal": null, "message": "The provider was unavailable on 4 attempts of request 6."}
+```
+
+- `ending` and `cause` are from 6.5; `cause` is null for an ending without one.
+- `recorded_by` is the operation that published the record, `run` or `close`,
+  as for `intake_ended`. A placement whose process was gone is recorded by the
+  next `run` or by `close` with cause `process_gone`.
+- `provider` is the last attempt's facts when the cause is
+  `provider_unavailable` or `provider_rejected`, else null. `status`,
+  `error_type` (the error body's `error.type`) and `request_id` (the
+  `request-id` header, else the error body's `request_id`) are null when not
+  observed.
+- `requests` counts the placement's complete request captures and `attempts` its
+  attempt records (4.5). `usage` is the placement's charge, split as 6.4 states.
+- `notices` lists each `notice` record published during the placement; `sent` is
+  `sent`, `not_sent` or `unknown` (6.4).
+- `seal` is the `seal` record published during the placement, or null.
+  `message` is prose.
+
+**`entry`**
+
+```json
+{"prev": "…", "action": "replace", "tool": "replace",
+ "invocation": {"run": 2, "tool_use_id": "toolu_01A…", "call": 14},
+ "target": {"id": "e2", "version": 1, "record": "log/9.json"},
+ "id": "e2", "version": 2, "kind": "record_observation", "label": "restart duplicate",
+ "payload": {"file": "payload/e2.v2.bin", "sha256": "…", "size": 132}, "encoding": null,
+ "citations": [{"source": "materials/a.py", "start": 50, "end": 119,
+                "stewart": {"name": "materials/a.py", "sha256": "…", "lines": [4, 6]}}],
+ "revision": 8}
+```
+
+| Key | add | replace | delete |
+| --- | --- | --- | --- |
+| `action` | `add` | `replace` | `delete` |
+| `tool` | the record tool | `replace` | `delete` |
+| `invocation` | `run`, `tool_use_id` and `call`: the placement, the block's ID and its call number (4.5) | same | same |
+| `target` | null | the replaced version: `id`, `version` and the `record` that created it | the removed version, likewise |
+| `id`, `version` | the new ID, 1 | the target's ID, its version + 1 | null |
+| `kind` | the tool name (`record_observation`, `record_artifact`) | the target's kind | null |
+| `label` | as given; `""` when omitted | as given | null |
+| `payload` | `file`, `sha256` and `size` of the stored bytes (7.4) | same | null |
+| `encoding` | `utf-8` or `binary` for an artifact (7.4); null otherwise | same | null |
+| `citations` | the recorded citations (7.3), `[]` when none; null for an artifact | same | null |
+| `revision` | the resulting answer revision | same | same |
+
+An entry version's handle binds the SHA-256 of the `entry` record that created
+it (2.3), so no record contains its own handle.
+
+**`seal`**
+
+```json
+{"prev": "…", "actor": "auditor", "prepared": 3, "answer_sha256": "…", "rendering_sha256": "…",
+ "revision": 7, "manifest": "seal/manifest-1.json", "manifest_sha256": "…",
+ "invocation": {"run": 2, "tool_use_id": "toolu_01B…", "call": 31}}
+```
+
+`actor` is `auditor` (submit) or `manager` (close). `prepared` names the sealed
+`prepared/<n>` and the two digests are its files'; `rendering_sha256` is null
+when the rendering is unproduced (8.1). `invocation` is null for a manager seal.
+
+**`notice`**
+
+```json
+{"prev": "…", "type": "near_limit", "run": 2, "request": 9, "text": "Allowance notice: 40 turns, …",
+ "remaining": {"turns": 40, "input_tokens": 3900000, "output_tokens": 79000}}
+```
+
+`type` is `reminder` or `near_limit`. `request` is the request of placement
+`run` planned to carry the text, and `text` the exact text. `remaining` is null
+for the reminder.
+
+**`delivery_planned`**
+
+```json
+{"prev": "…", "attempt": 3, "plan": "delivery/3.json", "plan_sha256": "…", "by": "close",
+ "destination": "/home/ana/returns2", "destination_source": "replacement",
+ "package": "stewart-return-aqm3x7kd2hz5vw4ny-003", "replaces": 2}
+```
+
+`by` is `run` or `close`. `destination_source` is `commissioned`, or
+`replacement` for a destination given with `--destination` or inherited from a
+replacement attempt (5.8). `replaces` is as 8.3 states.
+
+**`delivery_ended`**
+
+```json
+{"prev": "…", "attempt": 1, "outcome": "verified_with_losses", "recorded_by": "close", "cause": null,
+ "manifest_sha256": "…", "package": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001",
+ "members": [{"name": "manifest.json", "role": "manifest", "written": true, "verified": true, "failure": null},
+             {"name": "answer.json", "role": "answer", "written": true, "verified": true, "failure": null}],
+ "losses": [{"member": "e3", "role": "entry", "failure": "damaged", "stage": "seal"},
+            {"member": "answer.md", "role": "rendering", "failure": "not_rendered", "stage": "seal"}]}
+```
+
+- `recorded_by` is `run` or `close`. An attempt whose process was gone is
+  recorded by close as `failed` with cause
+  `{"operation": "deliver", "error": "process_gone"}`.
+- `cause` is null unless the outcome is `failed`, `partial` or `name_taken`.
+  `manifest_sha256` is the seal's. `package` is the package directory's
+  absolute path, or null when none was created.
+- `members` follows the plan (8.3); it and `losses` are null when membership is
+  unknown. A member's `failure` is null, `source_missing`, `source_unreadable`,
+  `source_damaged`, `write_failed`, `not_verified` or `not_attempted`.
+- `losses` are the members the return owes but this attempt could not supply:
+  each unproduced at seal (`stage: "seal"`, with the manifest's failure), and
+  each the archive could not supply (`stage: "delivery"`, failure `missing`,
+  `unreadable` or `damaged`). `member` is the entry ID of an unproduced entry,
+  else a member name.
+
+**`closed`**
+
+Before launch the body is `before_launch` (true), `accepted` and `outcome`
+(`closed_without_acceptance` or `closed_after_acceptance_before_launch`). After
+launch:
+
+```json
+{"prev": "…", "before_launch": false, "accepted": true, "outcome": "closed_with_surrendered_losses",
+ "seal": {"record": "log/22.json", "actor": "manager", "manifest_sha256": "…"},
+ "delivery": {"attempt": 1, "record": "log/24.json", "outcome": "verified_with_losses",
+              "package": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001"},
+ "placement": "confirmed", "confirmation": "cf1.h3d7ws",
+ "surrendered": [{"loss": "loss.e3.p6w2ze", "member": "e3", "role": "entry", "failure": "damaged", "stage": "seal"},
+                 {"loss": "loss.answer-md.t4n6qa", "member": "answer.md", "role": "rendering", "failure": "not_rendered", "stage": "seal"}],
+ "runs": 2}
+```
+
+`outcome` is `closed_delivered` when nothing was surrendered, else
+`closed_with_surrendered_losses`. `delivery` is the attempt whose placement was
+confirmed. `placement` is `confirmed` (by `--confirm`) or
+`delivered_before_close` (5.8); `confirmation` is the token given, or null.
+`surrendered` lists each loss given up with `--surrender`; `runs` counts the
+placements.
+
+### 4.5 Run captures
+
+Each placement `n` has the directory `runs/<n>`, created with `mkdirat` right
+after its `run_started` is published. Only the holder of the active lock writes
+there, so names in it are assigned in sequence rather than claimed: a name that
+already exists, including `runs/<n>` itself, is an archive write failure (6.5),
+never overwritten or skipped.
+
+| Name | Form | Written |
+| --- | --- | --- |
+| `request-<k>.json` | Raw capture in the layout below | Before the first attempt of request `k` |
+| `response-<k>-<a>.bin` | Raw: the body of attempt `a` as received | When attempt `a` received a status line, once its body ended or was cut off |
+| `attempt-<k>-<a>.json` | Linked record, kind `provider_attempt` | When attempt `a` ends |
+| `call-<c>.json` | Raw: the exact bytes of one `tool_use` block | Before the block is executed |
+| `result-<c>.json` | Linked record, kind `tool_result` | After the block is executed, before the next block |
+| `stage/` | Stage files of this placement's linked records | Created with the directory |
+
+`k` numbers the placement's requests from 1, `a` the attempts of one request
+from 1 (6.6), and `c` the `tool_use` blocks the placement executes, in execution
+order, from 1. A raw capture is an exclusive file that a kill can leave cut off.
+The record written after a response or call capture binds its size and SHA-256;
+a request capture shows its own completeness by its layout. Raw captures are
+decoded tolerantly, never as control records.
+
+**Request capture.** One line of compact JSON, then an LF:
+
+```
+{"request":<k>,"max_tokens":<T>,"body_bytes":<B>,"body_sha256":"<hex>","appended":[<A_k>]}
+```
+
+`A_k` is the messages request `k` appends (6.2), exactly as they appear in its
+body, joined by commas. The body of request `k` is exactly
+
+```
+{"model":<M>,"max_tokens":<T>,"system":<S>,"tools":<U><X>,"messages":[<A_1>,<A_2>,…,<A_k>]}
+```
+
+`M`, `S` and `U` are the bytes of the arrangement's `model`, `system` and `tools`
+values; `X` is, for each member of its `request_extra` object, a comma followed
+by that member's bytes (nothing in this release); and the `A_i` are joined by
+commas. There is no other whitespace and no trailing LF. `B` and the digest let
+a reader check the reconstruction. A request capture that does not end with
+`]}` and an LF was cut off, and its request was never sent.
+
+**Response capture.** The body as received, after removing chunked transfer
+coding and nothing else, and at most 32 MiB of it. No byte is decoded before the
+capture is written.
+
+**Attempt record** (`provider_attempt`):
+
+```json
+{"request": 6, "attempt": 2, "started_at": "…", "ended_at": "…", "elapsed_ms": 812, "timeout_seconds": 600,
+ "request_written": "complete", "outcome": "http_error", "status": 529,
+ "headers": {"content-type": ["application/json"], "request-id": ["req_011…"], "retry-after": ["0"]},
+ "response": {"file": "response-6-2.bin", "bytes": 105, "sha256": "…", "complete": true},
+ "error": {"type": "overloaded_error", "message": "Overloaded", "request_id": "req_011…"},
+ "stop_reason": null, "model": null, "usage": null,
+ "charged": {"basis": "none", "turns": 0, "input_tokens": 0, "output_tokens": 0},
+ "problem": null, "then": "retry", "delay_ms": 0}
+```
+
+- `request_written` is `none`, `partial` or `complete`: how much of the request
+  reached the connection. `timeout_seconds` is the timeout in force.
+- `outcome` is one of 6.6's. `status` is the HTTP status, or null without a
+  status line.
+- `headers` holds exactly `content-type`, `request-id` and `retry-after`,
+  matched without regard to case: for each, the values received in order, `[]`
+  when absent. Leading and trailing spaces and tabs are removed, and each byte
+  outside 0x20–0x7E is written `%XX` in uppercase hex.
+- `response` is null when no status line was received. Its `complete` is false
+  when the body was cut off or exceeded 32 MiB.
+- `error` holds the error body's `error.type`, `error.message` (cut to at most
+  1,024 bytes on a character boundary) and `request_id`, each null when absent,
+  when the body decodes as an error body (6.2); else null.
+- `stop_reason`, `model` and `usage` come from a decoded message, `usage` as
+  {`input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`,
+  `output_tokens`} with an absent or null cache count written 0; else null.
+- `charged` is what the attempt added to the allowances (6.4), with `basis`
+  `reported`, `estimated` or `none`.
+- `problem` is prose saying why a response was undecodable, else null.
+- `then` is `use` (the response is used), `retry` (another attempt follows after
+  `delay_ms` milliseconds) or `end` (the placement ends). `delay_ms` is null
+  unless `then` is `retry`.
+
+**Call capture.** The bytes of the `tool_use` block in the response body, from
+its `{` to its `}`.
+
+**Result record** (`tool_result`):
+
+```json
+{"call": 14, "request": 6, "attempt": 2, "block": 3, "call_file": "call-14.json", "call_bytes": 412,
+ "call_sha256": "…", "tool_use_id": "toolu_01A…", "tool": "replace", "input_sha256": "…",
+ "replay_of": null, "outcome": "completed", "reason": null, "revision": 8, "log_record": "log/31.json",
+ "is_error": false, "content": [{"type": "text", "text": "{\"schema\":\"stewart.reply/1\",…}"}]}
+```
+
+- `request`, `attempt` and `block` locate the block: element `block`, counted
+  from 0, of the `content` of `response-<request>-<attempt>.bin`.
+- `tool` is the block's `name` when it is a string, else null. `input_sha256` is
+  the SHA-256 of the raw bytes of the block's `input` value, or null when it has
+  none.
+- `replay_of` is the call whose recorded result this one redelivers (6.3), or
+  null.
+- `outcome` and `reason` are the reply envelope's, `reason` null when completed.
+  `revision` is the answer revision after the call. `log_record` is the `entry`
+  or `seal` record the call published, or null.
+- `is_error` and `content` are exactly what the `tool_result` block carries
+  (7.1). The block sent is
+  `{"type":"tool_result","tool_use_id":<ID>,"content":<content>,"is_error":<is_error>}`,
+  where `<ID>` is `tool_use_id` written as in this record and `<content>` is the
+  bytes of this record's `content` value.
+
+**Access log.** The access log of ACCEPTANCE C6 is, over placements in order and
+calls in order, every call capture whose block names `list`, `read` or
+`search`, with its input and the `outcome` of its result record, or `unknown`
+when that record is missing or unreadable. It includes refused calls and replays.
+
+Re-entry's `receipts` come from `entry` records and its `latest_refusals` from
+result records across placements (7.5). Status reports a file in a run's
+`stage/` that no run record shares as an interrupted publication, never as a
 record.
 
 ### 4.6 The active lock and liveness
@@ -486,8 +792,9 @@ close before it takes the lock, test it with `F_OFD_GETLK`, which acquires
 nothing. A held lock is current evidence of a live holder. A free lock together
 with a `run_started` that has no `run_ended` is the evidence of an interrupted
 placement. Elapsed time is never evidence. The kernel releases the lock when
-the holder exits or is killed. The holder's process ID, start time, host name,
-boot ID and invoking user ID are recorded in `run_started` as observations.
+the holder exits or is killed. The holder's process ID, start time
+(`start_ticks`), host name, boot ID and invoking user ID are recorded in
+`run_started` as observations (4.4).
 
 ### 4.7 The writer
 
@@ -503,7 +810,9 @@ no particular writer and read any record whose schema they support.
 A failure is recorded in `diag/` before the reply is written. If the diagnostic
 cannot be written, the reply carries both causes in `causes`, with `diagnostic`
 set to `reported_only`. If the reply cannot be written either, the diagnostic
-remains the account; later status reads it.
+remains the account; later status reads it. Manager refusals are recorded the
+same way. An auditor call's account is its result record (4.5); a failed
+auditor call also writes a diagnostic, and a refused one does not.
 
 ### 4.9 Store marker
 
@@ -723,40 +1032,96 @@ and the currently installed forms are never consulted.
 ### 5.6 `status`
 
 `stewart status REF` is read-only. It never launches, repairs, seals, copies or
-closes anything. It reports:
+closes anything. Here it reports an audit whose auditor sealed in its second run
+and whose run delivered the return:
 
 ```json
 {"schema": "stewart.reply/1", "operation": "status", "outcome": "completed",
  "effects": {},
- "next": [{"argv": ["/usr/local/bin/stewart", "run", "stw1:…"], "why": "Continue the audit under the same limits."},
-          {"argv": ["/usr/local/bin/stewart", "close", "stw1:…"], "why": "End authoring; the manager seals the recorded answer."}],
- "data": {"headline": {"accepted": "yes", "launched": "yes", "sealed": {"by": "none"},
-                       "delivered": {"verified": false, "confirmed": false}, "closed": "no"},
-          "condition": "interrupted",
-          "summary": "Run 2 was interrupted before submission. The answer is not sealed.",
-          "evidence": [{"fact": "run 2 interrupted", "evidence": "run_started without run_ended; lock free"}],
-          "runs": {"count": 2, "held": false, "last": {"number": 2, "ending": "interrupted"}},
+ "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…"],
+           "why": "Close the audit. An ordinary close confirms where the delivered copy is."}],
+ "data": {"headline": {"accepted": "yes", "launched": "yes", "sealed": {"by": "auditor"},
+                       "delivered": {"verified": true, "confirmed": false,
+                                     "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001"},
+                       "closed": "no"},
+          "condition": "delivered_open",
+          "summary": "The auditor sealed its answer in run 2, and the return was delivered and verified. The audit is open.",
+          "evidence": [{"fact": "sealed by the auditor", "evidence": "seal log/30.json"},
+                       {"fact": "delivery 1 verified", "evidence": "delivery_ended log/32.json"}],
+          "runs": {"count": 2, "held": false, "holder": null,
+                   "last": {"number": 2, "started_at": "2026-11-02T15:01:12.204Z", "ending": "sealed", "cause": null,
+                            "ended_at": "2026-11-02T15:20:09.551Z", "recorded_by": "run"}},
           "allowances": {"turns": {"used": 41, "reported": 40, "estimated": 1, "limit": 200},
                          "input_tokens": {"used": 1830211, "reported": 1801300, "estimated": 28911, "limit": 20000000},
                          "output_tokens": {"used": 59214, "reported": 51022, "estimated": 8192, "limit": 400000}},
-          "answer": {"revision": 7, "entries": 5},
-          "seal": null, "deliveries": [], "closure": null, "diagnostics": [],
-          "provider_url_override": null,
+          "answer": {"revision": 9, "entries": 6},
+          "seal": {"handle": "seal.r2m6vd", "actor": "auditor", "sealed_at": "2026-11-02T15:20:04.118Z",
+                   "revision": 9, "manifest_sha256": "…", "unproduced": []},
+          "deliveries": [{"attempt": 1, "by": "run", "destination": "/home/ana/returns",
+                          "destination_source": "commissioned", "package": "stewart-return-aqm3x7kd2hz5vw4ny-001",
+                          "replaces": null, "outcome": "verified", "cause": null,
+                          "verified_members": ["manifest.json", "answer.json", "answer.md"],
+                          "unverified_members": [], "losses": [], "confirmation": null}],
+          "closure": null, "diagnostics": [],
+          "provider_url_override": null, "provider_proxy": null,
           "receipt_line": ["/usr/local/bin/stewart", "receipt", "stw1:…"]}}
 ```
 
 Headline values: `accepted` is `yes`, `no` or `unknown`; `launched` is `yes`,
 `no` or `unknown`; `sealed.by` is `auditor`, `manager`, `none` or `unknown`;
 `delivered` has `verified`, `confirmed` and, once a delivery is `verified` or
-`verified_with_losses`, `location`. `delivered.verified` is true only for a
-`verified` delivery. For `verified_with_losses` it is false, and `delivered`
-adds `losses`, the list of loss IDs (8.4). `closed` is `no`, `unfinished`, `yes`
-or `unknown`.
+`verified_with_losses`, `location`, the newest such attempt's package path.
+`delivered.verified` is true only for a `verified` delivery. For
+`verified_with_losses` it is false, and `delivered` adds `losses`, the list of
+loss IDs (8.4). `delivered.confirmed` is true once `closed` records the
+delivery's placement. `verified` and `confirmed` are the string `unknown` when
+the log is damaged. `closed` is `no`, `unfinished`, `yes` or `unknown`.
 
-Each allowance gives `reported` (usage the provider reported), `estimated`
-(usage charged without a provider report, 6.4) and `used`, their sum, which is
-what the limit counts. `evidence` lists the observations behind the condition,
-each `{fact, evidence}`.
+The other members of `data`, in order after `evidence`:
+
+- `runs`: `count`, the number of `run_started` records; `held`, whether a
+  placement holds the active lock now; `holder`, that placement's
+  `run_started` observations while it holds the lock, else null; and `last`,
+  null before launch, else the latest placement's `number` and `started_at`
+  with `ending`, `cause`, `ended_at` and `recorded_by` from its `run_ended`,
+  those four null while it has none.
+- `allowances`: null before acceptance. Each allowance gives `reported` (usage
+  the provider reported), `estimated` (usage charged without a provider report,
+  6.4), `used`, their sum, which is what the limit counts, and `limit`. The
+  totals are the `run_ended` usage of every ended placement plus the `charged`
+  amounts of the attempt records of a placement that has none.
+- `answer`: null before launch; else `revision` and `entries`, the number of
+  entries in the current selection. Status never shows answer content.
+- `seal`: null, or the seal's `handle`, `actor`, `sealed_at` (the manifest's),
+  `revision`, `manifest_sha256` and `unproduced`, the names of the manifest's
+  unproduced members.
+- `deliveries`: every delivery attempt in order, with `attempt`, `by`,
+  `destination`, `destination_source`, `package` and `replaces` from its plan;
+  `outcome` and `cause` from its `delivery_ended`, both null while it has none;
+  `verified_members`, the names verified at the destination;
+  `unverified_members`, each `{name, failure}` for a member written or
+  attempted and not verified; `losses`, each
+  `{loss, member, role, failure, stage}`, present only for a
+  `verified_with_losses` attempt and otherwise `[]`; and `confirmation`, the
+  attempt's token while it is outstanding (8.4), else null.
+- `closure`: null without `close_requested`. Otherwise `requested_at`;
+  `before_launch` (no `run_started` precedes `close_requested`); `accepted`;
+  `unfinished_reason` while not closed, else null; and `closed_at`, `outcome`,
+  `placement` and `surrendered` from `closed`, each null while not closed.
+- `diagnostics`: as below.
+- `provider_url_override` and `provider_proxy`: the override and the proxy that
+  the latest `run_started` recorded, else null.
+- `receipt_line`: the receipt argv once accepted, else null.
+
+`evidence` lists the observations behind the condition, each `{fact, evidence}`.
+
+Status derives a close's `unfinished_reason` the way close would report it
+(5.8): with the lock held, `intake_still_running` when an intake has no
+outcome, `run_still_held` when a placement has no `run_ended`, else
+`close_in_progress`; with the lock free, `awaiting_confirmation` when the
+newest verified attempt awaits confirmation (8.4), `delivery_incomplete` when a
+seal exists and no verified attempt does, and otherwise null: the last close
+stopped before recording more, and repeating close continues it.
 
 Conditions, matching the CONTRACTS status table:
 
@@ -768,17 +1133,19 @@ Conditions, matching the CONTRACTS status table:
 | `acceptance_uncertain` | Log damaged; no `accepted` among the readable records before the damage | status after the manager restores its storage; `new` for a new reference |
 | `log_damaged` | Log damaged after a readable `accepted` | receipt; status after the manager restores its storage |
 | `not_started` | Accepted; no `run_started` | run, close |
-| `run_active` | Run holds the lock | close |
-| `interrupted` | Placement ended interrupted, or `run_started` without `run_ended` and the lock free | run, close |
-| `ended_unsubmitted` | Ordinary ending without submission | close |
-| `limit_reached` | Cumulative limit exhausted | close |
-| `damaged` | Run stopped on unrepairable damage | close |
-| `sealed_undelivered` | Seal; no verified delivery | close, or close with a new destination after a partial or failed attempt |
-| `delivered_open` | Verified delivery before any close request | close |
-| `awaiting_confirmation` | Close produced the verified delivery | close with the token; status shows the token |
-| `close_unfinished` | Close requested; stop, seal or delivery incomplete | close (with its specific continuation) |
+| `run_active` | A placement holds the lock | status, close |
+| `interrupted` | The latest placement ended `interrupted`, or has no `run_ended` and the lock is free; authoring has not ended | run, close |
+| `ended_unsubmitted` | The latest placement ended `ended_unsubmitted` | close |
+| `limit_reached` | The latest placement ended `limit_reached` | close |
+| `damaged` | The latest placement ended `damaged` | close |
+| `sealed_undelivered` | Seal; no verified attempt | close, whose explanation offers `--destination DIR` after an incomplete attempt (8.3) |
+| `delivered_open` | A verified attempt; no close request | close |
+| `awaiting_confirmation` | Close requested; the newest verified attempt awaits confirmation; status shows its token and loss IDs | close with `--confirm` and, for each loss, `--surrender`; status |
+| `close_unfinished` | Close requested; stop, seal or delivery incomplete | close (with its specific continuation), status |
 | `closed_before_launch` | Closed with no `run_started`; states whether a commission had been accepted | none |
 | `closed` | Closed after launch; names the delivery, or the surrendered losses | none |
+
+A verified attempt is one that ended `verified` or `verified_with_losses`.
 
 `condition` is the first of these that applies:
 
@@ -801,7 +1168,9 @@ Conditions, matching the CONTRACTS status table:
 When a fact cannot be established, its value is `unknown` and `diagnostics`
 names the record and the cause. A damaged record is never read as absent. When
 the log is damaged, `diagnostics` names the bad records, and every headline
-value that depends on the unreadable part is `unknown`.
+value that depends on the unreadable part is `unknown`. `diagnostics` also
+lists interrupted publications (stage files no record shares, 4.3, 4.5),
+unpublished candidates (4.3) and the diagnostics recorded in `diag/`.
 
 `stewart status --archive ROOT` lists every reference in the archive in
 creation order with its folder, `inquiry` label, `varies` note and headline. It
@@ -810,102 +1179,225 @@ selects nothing.
 ### 5.7 `run`
 
 `stewart run REF` places the auditor into the arrangement in the foreground and
-exits when the placement ends (section 6). It needs `ANTHROPIC_API_KEY`.
-`STEWART_PROVIDER_URL` optionally overrides the provider base URL. It must be
-`https://`, or `http://` to a loopback address. The override is recorded and
-shown by status. Missing key or a bad URL is refused before any request
-(`provider_key_missing`, `provider_url_invalid`,
-`provider_proxy_invalid`).
+exits when the placement ends (section 6). It needs `ANTHROPIC_API_KEY`;
+`STEWART_PROVIDER_URL` and `HTTPS_PROXY` are optional (6.1).
 
-Refusals: `not_accepted`, `run_held`, `authoring_ended` (naming the ending:
-sealed, ordinary ending, limit, damage or close), `reference_closed`,
-`writer_mismatch`, `log_damaged`. Once a placement has started, `run` replies
-`completed` whenever it recorded the placement's ending, whatever the ending:
-`interrupted` (exit 5), `damaged`, or `sealed` with a failed delivery, which the
-data reports. It replies `failed` when it could not record an ending. The reply
-data names the run number, the ending, the allowances, and the seal and delivery
-if any; the envelope's `next` gives the next calls.
+Before it launches anything, `run` checks, in this order. A refusal changes
+nothing; its effects state the recorded facts (1.4), with `answer: "unchanged"`.
+
+1. The reference, archive and writer (`reference_invalid`,
+   `reference_unknown`, `archive_*`, `writer_mismatch`) and the log
+   (`log_damaged`).
+2. The audit's state: `not_accepted`; `reference_closed` when `close_requested`
+   exists; `authoring_ended` when authoring has ended, which a seal or a
+   placement ending `ended_unsubmitted`, `limit_reached` or `damaged`
+   establishes, with `data.ended_by` (`seal`, `ordinary_ending`, `limit` or
+   `damage`) and `data.record`, the record that ended it.
+3. The environment: `provider_key_missing` (unset or empty),
+   `provider_key_invalid` (a byte outside 0x21–0x7E), `provider_url_invalid`
+   and `provider_proxy_invalid` (6.1).
+4. The lock: `run_held` when another process holds it, with `data.run` and
+   `data.holder` (that placement's observations) when a placement holds it.
+5. The commission: it reads the `accepted` record's receipt, the arrangement the
+   receipt names and every capture through descriptors, checking each size and
+   digest. Any failure refuses `commission_damaged`, with `data.items`, each
+   `{item, problem}` using receipt item IDs (2.4).
+
+It then reconciles a dead placement (6.7), publishes `run_started`, creates
+`runs/<n>` and runs the loop (6.3). Once `run_started` is published, `run`
+replies `completed` whenever it recorded the placement's ending, whatever the
+ending, and `failed` when it could not: `record_failed`, or `log_damaged` when
+it found the log damaged (6.5), with `effects.run` `started`. Exit status is 5
+for an `interrupted` ending and 0 for any other recorded ending (1.6).
+
+```json
+{"schema": "stewart.reply/1", "operation": "run", "outcome": "completed",
+ "effects": {"run": "ended", "answer": "changed", "seal": "recorded", "delivery": "verified"},
+ "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…"],
+           "why": "Close the audit. An ordinary close confirms where the delivered copy is."}],
+ "data": {"run": 2, "continuing": true, "ending": "sealed", "cause": null, "provider": null,
+          "usage": {"turns": {"reported": 12, "estimated": 0}, "input_tokens": {"reported": 640117, "estimated": 0},
+                    "output_tokens": {"reported": 20410, "estimated": 0}},
+          "allowances": {"turns": {…}, "input_tokens": {…}, "output_tokens": {…}},
+          "answer": {"revision": 9, "entries": 6},
+          "seal": {"handle": "seal.r2m6vd", "actor": "auditor", "sealed_at": "2026-11-02T15:20:04.118Z",
+                   "revision": 9, "manifest_sha256": "…", "unproduced": []},
+          "delivery": {"attempt": 1, "outcome": "verified",
+                       "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001",
+                       "verified_members": ["manifest.json", "answer.json", "answer.md"],
+                       "unverified_members": [], "losses": [], "cause": null},
+          "notices": [{"type": "reminder", "sent": "sent"}]}}
+```
+
+`data` holds `run` and `continuing`; `ending`, `cause` and `provider` as in
+`run_ended`; `usage`, this placement's charge; `allowances`, the cumulative
+allowances as status gives them; `answer` and `seal` as in status; `delivery`,
+the attempt this run made (`attempt`, `outcome`, `location`, the package path or
+null, `verified_members`, `unverified_members`, `losses` and `cause`, as in
+status), or null; and `notices`, as in `run_ended` without `record`.
+
+| Ending | `next` |
+| --- | --- |
+| `interrupted` | `run` (continues under the same limits), `close` |
+| `ended_unsubmitted`, `limit_reached`, `damaged` | `close` (seals the recorded selection with manager attribution) |
+| `stopped_by_close` | `status`, `close` (continues the close another invocation requested) |
+| `sealed` | `close`; after an incomplete delivery its explanation offers `--destination DIR` |
+
+Refusals carry the next calls that fit: `close` (and `status`) for
+`authoring_ended` and `reference_closed`; `status` and `close` for `run_held`;
+`receipt REF --verify` and `close` for `commission_damaged`; for the
+environment refusals, the same `run` once the environment is set.
 
 ### 5.8 `close`
 
 `close` is available in every state. One algorithm serves every call; repeating
 it resumes where the recorded state stands. An unfinished close is outcome
 `completed` with `data.closure: "unfinished"` and `data.unfinished_reason`
-naming what remains; it carries no top-level `reason`. Here a verified delivery
-is one that ended `verified` or `verified_with_losses` (8.3).
+naming what remains; it carries no top-level `reason`. A verified attempt is
+one that ended `verified` or `verified_with_losses` (8.3); the newest verified
+attempt of the seal is the one close presents and confirms.
+
+`--surrender` is accepted only with `--confirm`, and `--destination` only
+without it; anything else is a usage error (exit 2).
 
 Close reconciles under a free lock: it records the end of work whose process is
 gone. An `intake_planned` without an outcome gets `intake_ended` with
 `outcome: "process_gone"`; a `run_started` without a `run_ended` gets
-`run_ended` `interrupted` with cause `process_gone`; a `delivery_planned`
-without an outcome gets `delivery_ended` `failed` with cause `process_gone`.
+`run_ended` `interrupted` with cause `process_gone`, its usage computed as 6.4
+states; a `delivery_planned` without an outcome gets `delivery_ended` `failed`
+with cause `process_gone`. Each records `recorded_by: "close"`.
 
 1. If the log is damaged (4.4), reply unfinished with
    `unfinished_reason: "log_damaged"`, naming the bad records. Close publishes
    nothing to a damaged log, so it never publishes `closed`.
-2. If `closed` exists, return its recorded outcome with `data.already_closed: true`.
-3. If no `close_requested` exists, publish it. From this log position, authoring
-   ends, no run may start and no intake may be accepted. Its body records the
-   flags given.
-4. **Before launch** (no `run_started` before `close_requested`): wait up to 10
+2. If `closed` exists, return its recorded outcome with
+   `data.already_closed: true`. Options are not evaluated.
+3. Check the options against the records as they stand. A refusal here
+   publishes nothing.
+   - Before launch: `--confirm` or `--surrender` is refused
+     (`confirmation_mismatch`) and `--destination` is refused
+     (`destination_not_replaceable`): nothing is owed for delivery.
+   - `--confirm TOKEN` must be the token of the newest verified attempt, which
+     therefore ended before this call; otherwise it is refused
+     (`confirmation_mismatch`). A pre-delivery request never supplies
+     confirmation. Each `--surrender LOSS` must be a loss ID of that attempt
+     (`handle_invalid` otherwise). When the attempt has losses, the given set
+     must name every one of them (`surrender_required`, with `data.losses`).
+   - `--destination DIR` is refused with `delivery_already_verified` when a
+     verified attempt exists: close completes an owed delivery and is not a copy
+     service. It is refused with `destination_not_replaceable` before any
+     incomplete attempt of the seal (8.3), including before a seal exists:
+     a replacement serves only a delivery that could not complete. It is
+     refused with `destination_invalid` unless DIR is absolute, exists and is a
+     directory.
+4. If no `close_requested` exists, publish it, recording this call's options.
+   From this log position authoring ends, no run may start and no intake may be
+   accepted.
+5. **Before launch** (no `run_started` before `close_requested`): wait up to 10
    seconds for an intake holding the lock to end. If it still holds the lock,
    reply unfinished with `unfinished_reason: "intake_still_running"`. Otherwise
    reconcile, then publish `closed` with `before_launch: true` and whether a
    commission had been accepted. No answer, seal or confirmation is created.
-5. **After launch**, in order:
+6. **After launch**, in order:
    - **Stop.** If the lock is held and a `run_started` has no `run_ended`, wait
      up to 30 seconds for the run to observe `close_requested` and exit (6.8). If
      it is still held, reply unfinished, `run_still_held`, with the holder
-     observations. If the lock is held and every `run_started` has its
-     `run_ended`, another close holds it: reply unfinished, `close_in_progress`.
+     observations. A seal alone never counts as stopped execution. If the lock
+     is held and every `run_started` has its `run_ended`, another close holds
+     it: reply unfinished, `close_in_progress`.
    - **Lock.** Take the active lock (4.6) and hold it for the seal and delivery
      work. If another close holds it, reply unfinished, `close_in_progress`.
      Otherwise reconcile.
-   - **Seal.** An existing auditor seal is kept. Otherwise close prepares the
-     selection current at `close_requested` and seals it with
-     `actor: "manager"` (8.1). An entry that cannot be read or verified
-     becomes a named, unproduced member, and so does the rendering that
-     depends on it.
-   - **Deliver.** If a verified delivery of the seal exists, close presents it.
-     It needs no confirmation if it was verified before the first
-     `close_requested`: ordinary close is the manager's placement decision, and
-     close publishes `closed`. Otherwise close presents its confirmation token.
-     Only when none exists does close deliver (8.3), to `--destination DIR` if
-     given, else to the commissioned destination. A verified delivery is
-     presented with its package and confirmation token, and closure stays
-     unfinished. A `partial` or `failed` delivery has no token: closure stays
-     unfinished with `delivery_incomplete`, continued by `close` or
-     `close --destination DIR`.
-   - **Confirm.** `close REF --confirm TOKEN` with the token for the newest
-     verified delivery publishes `closed`. A token for another seal or delivery is
-     refused (`confirmation_mismatch`). Repeating close without the token only
-     presents the same result again.
-   - **Surrender.** If that delivery is `verified_with_losses`, confirmation
-     also needs `--surrender LOSS` for each unproduced member; without them it is
-     refused (`surrender_required`), naming the loss IDs. Each loss ID names one
-     unproduced member (8.4). `closed` then records the surrendered members.
-     Unknown membership offers no loss IDs, and close stays unfinished.
+   - **Seal.** An existing seal is kept, whoever made it. Otherwise close
+     prepares the selection current at `close_requested` into a new
+     `prepared/<n>` and seals it with `actor: "manager"` (8.1). An entry that
+     cannot be read or verified becomes a named, unproduced member, and so does
+     the rendering that depends on it.
+   - **Deliver.** With an accepted `--confirm`, close presents the confirmed
+     attempt. Otherwise, if a verified attempt exists, close presents the newest
+     one; but when its losses include any with `stage: "delivery"`, close first
+     re-reads those members in the archive, and if every one now verifies
+     against the manifest it makes a new attempt to that attempt's destination,
+     which `replaces` it, and presents that instead. If no verified attempt
+     exists, close delivers (8.3) to `--destination DIR` if given, else to the
+     newest attempt's destination, else to the commissioned destination. When
+     no attempt verifies, reply unfinished, `delivery_incomplete`: `close`
+     continues, and so does `close --destination DIR` after an incomplete
+     attempt. When the manifest cannot be read, membership is unknown: attempts
+     end `failed`, no loss IDs exist, and close stays unfinished.
+   - **Complete.** Publish `closed` when every placement has its `run_ended`
+     and either:
+     - `--confirm` was accepted and still names the newest verified attempt
+       (`placement: "confirmed"`, with the surrendered losses), or
+     - no `--confirm` was given and the presented attempt ended `verified`
+       before the first `close_requested` (`placement: "delivered_before_close"`):
+       an ordinary close is then the manager's decision about that copy.
 
-`--destination DIR` is accepted only after a `partial` or `failed` attempt of the
-seal and while no verified delivery of it exists. With a verified delivery it is
-refused (`delivery_already_verified`): close completes an owed delivery and is
-not a copy service. Before any partial or failed attempt it is refused
-(`destination_not_replaceable`): a replacement serves only a delivery that could
-not complete at the commissioned destination. Every delivery attempt uses a
-fresh package and keeps earlier attempts.
+     Otherwise reply unfinished, `awaiting_confirmation`, presenting the attempt,
+     its token and its loss IDs. Repeating close without the token only presents
+     the same result again: a copy existing now does not turn a repeat into
+     confirmation. Unknown membership offers no loss IDs.
+
+Every delivery attempt uses a fresh package and keeps earlier attempts. Close
+leaves the preparation folder and every archive byte alone.
+
+`data` of a completed reply, by path:
+
+- **Closed** (including `already_closed`): `closure: "complete"`,
+  `already_closed`, `before_launch`, `accepted`, `closed_at` and `headline`.
+  After launch it adds `outcome`, `runs`, `seal`, `delivery`, `placement` and
+  `surrendered`, from the `closed` record and the records it names.
+- **Unfinished**: `closure: "unfinished"`, `unfinished_reason` and `headline`.
+  Before launch it adds `intake` (the attempt still holding the lock, or null)
+  for `intake_still_running` and `close_in_progress`. After launch it adds
+  `runs`, `seal`, `delivery`, `confirmation` (the token, only for
+  `awaiting_confirmation`, else null) and `holder` (the live placement's
+  observations, only for `run_still_held`, else null).
+- **Damaged log**: `closure: "unfinished"`, `unfinished_reason: "log_damaged"`,
+  `bad_records` and `headline`.
+
+`runs` is `{count, held, last_ending}`; `seal` is as in status, or null;
+`delivery` is the presented or newest attempt as in the `run` reply, its losses
+carrying loss IDs, or null.
+
+| Path | `run` | `seal` | `delivery` | `closure` |
+| --- | --- | --- | --- | --- |
+| Before launch | `not_started` | `none` | `none` | `complete` or `unfinished` |
+| `run_still_held` | `still_held` | `none` or `existing` | newest attempt's outcome, or `none` | `unfinished` |
+| Other paths after launch | `ended` | `recorded` when this call sealed, else `existing` | presented or newest attempt's outcome, or `none` | `complete` or `unfinished` |
+| Damaged log | `unknown` | `unknown` | `unknown` | `unfinished` if `close_requested` is readable, else `unknown` |
+
+| `unfinished_reason` | `next` |
+| --- | --- |
+| `intake_still_running`, `run_still_held`, `close_in_progress` | `close`, `status` |
+| `delivery_incomplete` | `close`, whose explanation offers `--destination DIR` after an incomplete attempt (8.3) |
+| `awaiting_confirmation` | `close --confirm TOKEN`, with `--surrender LOSS` for each loss and an explanation naming what each surrender gives up; `status` |
+| `log_damaged` | `status` |
+
+A closed reply has no next calls; the receipt stays readable through status's
+`receipt_line`. Refusals offer `close` without the refused option, and
+`surrender_required` also offers the confirmation with every loss named.
 
 ```json
 {"schema": "stewart.reply/1", "operation": "close", "outcome": "completed",
  "effects": {"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"},
  "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…", "--confirm", "cf1.h3d7ws"],
-           "why": "Confirm that this delivered copy is where you want the return."}],
- "data": {"closure": "unfinished", "awaiting": "confirmation",
+           "why": "Confirm that this delivered copy is where you want the return."},
+          {"argv": ["/usr/local/bin/stewart", "status", "stw1:…"],
+           "why": "Status keeps showing the delivery and its token until you confirm."}],
+ "data": {"closure": "unfinished", "unfinished_reason": "awaiting_confirmation",
           "headline": {"accepted": "yes", "launched": "yes", "sealed": {"by": "manager"},
                        "delivered": {"verified": true, "confirmed": false,
                                      "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001"},
                        "closed": "unfinished"},
-          "seal": "seal.r2m6vd", "manifest_sha256": "…", "run": "ended",
-          "confirmation": "cf1.h3d7ws"}}
+          "runs": {"count": 1, "held": false, "last_ending": "ended_unsubmitted"},
+          "seal": {"handle": "seal.r2m6vd", "actor": "manager", "sealed_at": "2026-11-02T15:31:40.020Z",
+                   "revision": 7, "manifest_sha256": "…", "unproduced": []},
+          "delivery": {"attempt": 1, "outcome": "verified",
+                       "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001",
+                       "verified_members": ["manifest.json", "answer.json", "answer.md"],
+                       "unverified_members": [], "losses": [], "cause": null},
+          "confirmation": "cf1.h3d7ws", "holder": null}}
 ```
 
 ### 5.9 `help`
@@ -921,20 +1413,50 @@ archive.
 
 ### 6.1 Provider
 
-The first adapter speaks the Anthropic Messages API: non-streaming
-`POST <base>/v1/messages` with `x-api-key`, the pinned `anthropic-version` and
-`content-type: application/json`. The base is `https://api.anthropic.com` unless
-overridden (5.7). Field names below follow that API. They are verified against
-the provider's current published specification when the adapter is built, and
-any difference is corrected here before implementation.
+The first adapter speaks the Anthropic Messages API, non-streaming, pinned to API
+version `2026-10-21`. Field names below follow that version's published
+specification. Each attempt opens a new connection and sends one HTTP/1.1
+request:
+
+```
+POST <path>/v1/messages HTTP/1.1
+host: <host>[:<port>]
+x-api-key: <ANTHROPIC_API_KEY>
+anthropic-version: 2026-10-21
+content-type: application/json
+content-length: <body bytes>
+connection: close
+```
+
+followed by the body (4.5, 6.2). No other header is sent; in particular there is
+no `anthropic-beta` header. `host` carries the port only when the URL names one.
+The response is read to its end by `content-length`, chunked transfer coding or
+the connection closing. A `content-encoding` other than `identity` makes the
+response undecodable.
+
+The base is `https://api.anthropic.com` unless `STEWART_PROVIDER_URL` overrides
+it. An override is `https://`, or `http://` for a loopback host only, then a
+host (a DNS name, an IPv4 address or a bracketed IPv6 address), an optional
+`:port` and an optional path without a trailing `/`, and no user information,
+query or fragment. Loopback hosts are `localhost`, which is connected at
+127.0.0.1 without consulting the resolver, addresses in 127.0.0.0/8 and
+`[::1]`. Anything else is refused before any request (`provider_url_invalid`).
+The override is recorded in `run_started` and shown by status.
 
 If `HTTPS_PROXY` (or `https_proxy`) is set, the adapter reaches an `https://`
-provider through that proxy with HTTP `CONNECT`. TLS runs end to end inside the
-tunnel, so the proxy never sees the key. The proxy value must be
-`http://host:port`, without credentials; anything else is refused before any
+provider with a non-loopback host through that proxy: it sends
+`CONNECT <host>:<port> HTTP/1.1` with the header `host: <host>:<port>`, and a
+2xx reply opens the tunnel. Stewart resolves only the proxy's host; the proxy
+resolves the provider's. TLS runs end to end inside the tunnel, so the proxy
+never sees the key. The proxy value must be `http://host:port`, optionally with
+one trailing `/`, without credentials; anything else is refused before any
 request (`provider_proxy_invalid`). `NO_PROXY` is not consulted, and loopback
-provider URLs never use the proxy. The proxy in use is recorded in `run_started`
-and shown by status.
+provider URLs never use the proxy. The proxy in use is recorded in
+`run_started` and shown by status.
+
+TLS verifies the provider against the web PKI roots built into the release and
+sends the host as SNI unless it is an IP address. A test build can add roots
+(Appendix C).
 
 ### 6.2 Requests and responses
 
@@ -943,146 +1465,220 @@ and shown by status.
 | Member | Content |
 | --- | --- |
 | `model` | From front matter |
-| `anthropic_version` | Pinned by the release |
-| `max_tokens_per_request` | Pinned by the release |
+| `anthropic_version` | `2026-10-21`, pinned by the release |
+| `max_tokens_per_request` | 16,000, pinned by the release, so a non-streaming response fits the request timeout |
 | `system` | Exact JSON array: orientation block, family instruction block (QUESTION-FORMS) |
 | `tools` | Exact JSON array of tool definitions for the family (section 7) |
-| `request_extra` | Exact JSON object of further top-level request parameters, limited to the release's allowlist |
+| `request_extra` | Exact JSON object of further top-level request parameters, limited to the release's allowlist. This release's allowlist is empty, so it is `{}`. |
 | `texts` | Reminder, near-limit template and continuation notice |
 | `limits`, `near_limit_percent` | From front matter; 20 |
 | `retry`, `request_timeout_seconds` | 6.6 policy; 600 |
 | `reader`, `renderer`, `family` | `utf8-text/1`, `stewart.render/1`, family ID and version |
 | `bindings` | SHA-256 of the question body and of the material index |
 
-Each request body is assembled by splicing pinned bytes, never by re-serializing
-a parsed structure: `model`, `max_tokens` (6.4), `system`, `tools`, the
-`request_extra` members and `messages`. No provider feature may be enabled that
+The run loads the arrangement through the `accepted` record, the receipt it
+names and the receipt's `arrangement` member, checking each digest (5.7). Each
+request body is assembled by splicing pinned bytes, never by re-serializing a
+parsed structure, exactly as 4.5 states. No provider feature may be enabled that
 puts model-visible content outside the arrangement, such as server tools,
-fallback to another model or budget countdowns.
+fallback to another model, provider-side context management or budget
+countdowns; with `request_extra` empty, none is.
 
-Messages are append-only within a placement:
+Messages are append-only within a placement, each a compact object with keys
+`role` and `content`:
 
-- The first user message is one text block holding the question body exactly.
+- The first user message holds one text block with the question body exactly.
   In a continuing placement a second text block holds the continuation notice.
-- Each assistant message is the `content` array copied byte for byte from the
-  captured response.
-- Each following user message holds one `tool_result` block per `tool_use` block,
-  in order. A pending near-limit notice follows them as a text block.
-- The reminder (6.4) is a user message holding the reminder text block and, if
-  the near-limit notice is pending, that notice's text block after it.
+- Each assistant message is `{"role":"assistant","content":` followed by the
+  bytes of the response's `content` value, copied byte for byte from the
+  response capture, and `}`. It carries every block the provider returned,
+  including `thinking` blocks with their signatures, the progress notes models
+  return between tool calls as `thinking` blocks, and blocks of unknown types.
+- Each following user message holds first one `tool_result` block per
+  `tool_use` block of the preceding assistant message, in order (7.1), then the
+  reminder text block when the reminder is sent (6.4), then the near-limit
+  notice text block when it is pending.
+- A text block is `{"type":"text","text":<text>}`, the string escaped as in
+  `stewart.answer/1` (QUESTION-FORMS).
 
-Each response is captured raw before decoding. The envelope is decoded
-tolerantly: unknown fields and block types are kept in the capture and echoed in
-history, never interpreted. Stewart does not summarize or trim history.
-Provider-side context management applies only if the arrangement enables it.
-Otherwise context exhaustion interrupts the placement (6.5), and continuation
-starts a fresh conversation.
+Each response body is captured raw before decoding (4.5). It is decoded
+tolerantly: unknown members and block types are kept in the capture and echoed
+in history, never interpreted. Stewart interprets only these members, each of
+which must appear exactly once in its object:
+
+- in a message: `content`, an array; `stop_reason`, a string; and `usage`, with
+  integer `input_tokens` and `output_tokens` and with
+  `cache_creation_input_tokens` and `cache_read_input_tokens` each an integer,
+  null or absent. `model` is recorded when it is a string. An HTTP 200 body
+  that is not a JSON object, or in which one of these is missing, of another
+  type or repeated, is undecodable.
+- in each `content` element: `type`. An element that is not an object, or whose
+  `type` is missing, repeated or not a string, is a block of unknown type.
+- in a `tool_use` block: `id`, `name` and `input`. A missing, repeated or
+  non-string `id` makes the block unanswerable (6.3). A missing, repeated or
+  non-string `name` is refused `tool_unknown`, and a missing or repeated `input`
+  `input_invalid`. The `input` value is decoded strictly from its raw bytes
+  (1.2) when the call runs.
+- in an error body `{"type":"error","error":{"type":…,"message":…},"request_id":…}`:
+  `error.type`, `error.message` and `request_id`, recorded when they are
+  strings.
+
+`stop_details` and every other member stay in the raw capture. Stewart does not
+summarize or trim history. When the model's context window is exhausted the
+placement is interrupted (6.5), and continuation starts a fresh conversation.
 
 ### 6.3 The loop and invocation identity
 
 ```
 before each request: if close_requested → end stopped_by_close
-                     if a limit is exhausted → end limit_reached
-send (6.6); account usage (6.4)
-execute every tool_use block in order
+                     if a limit is exhausted (6.4) → end limit_reached
+capture the request, send it with retries (6.6), account usage (6.4)
+no response to use → end as 6.5 states
+execute every tool_use block of the response in order (section 7)
 if a seal was recorded during this response → deliver (8.3), then end sealed
 stop_reason tool_use   → send results, continue
             end_turn, stop_sequence → if a limit is exhausted, end limit_reached;
-                                      else reminder if unused; else end ended_unsubmitted
-            max_tokens → if any tool_use was executed, send results and continue; else end interrupted
-            refusal    → end interrupted
-            other      → end interrupted (protocol_anomaly)
+                                      else send the reminder if unused (6.4); else end ended_unsubmitted
+            max_tokens → if the response has a tool_use block, send results and continue;
+                         else end interrupted (max_tokens)
+            model_context_window_exceeded → end interrupted (context_exhausted)
+            refusal    → end interrupted (provider_refusal)
+            other, including pause_turn → end interrupted (protocol_anomaly)
 ```
+
+A response's `tool_use` blocks are executed whatever its stop reason, so every
+call the model made is recorded even when the placement then ends; results that
+are not sent stay in their result records. A `tool_use` block without a string
+`id` cannot be answered: it is captured, no later block is executed, and the
+placement ends `interrupted` (`protocol_anomaly`). So does `stop_reason`
+`tool_use` with no `tool_use` block.
+
+Execution of a response's blocks stops early when a call fails with
+`record_failed` (7.1), when a read or prepare finds damaged answer bytes (7.2,
+7.6) or when the stop path applies (6.8). Later blocks of that response are
+neither captured nor executed; they remain in the response capture.
 
 Once a seal is recorded, the run completes its delivery, or records the
 delivery's failure, before publishing `run_ended` `sealed`, even if
 `close_requested` appears meanwhile (6.8).
 
-A tool invocation's identity is the placement number plus the `tool_use` ID. Before
-executing, the raw block is captured (`call-<k>.json`). After executing, the
-result is captured (`result-<k>.json`). A second block in the same placement with
-an executed ID and the same input digest receives the recorded result without
-another execution. With a different input it is refused
-(`invocation_id_reused`). Retries resend recorded results, so a retried request
-is byte-identical. A new call with matching arguments is a new invocation.
+A tool invocation's identity is the placement number plus the `tool_use` ID.
+Before executing, the raw block is captured (`call-<c>.json`). After executing,
+its result is recorded (`result-<c>.json`). A later block in the same placement
+with an executed ID, the same `name` and identical raw `input` bytes is a
+replay: it receives the recorded result's `content` and `is_error` without
+another execution, and its result record names the original in `replay_of`.
+With a different `name` or `input` it is refused (`invocation_id_reused`).
+Retries resend recorded results, so a retried request is byte-identical. A new
+call with matching arguments is a new invocation.
 
 ### 6.4 Limits, reminder and notice
 
-After each response: turns +1; input tokens + `input_tokens` +
-`cache_creation_input_tokens` + `cache_read_input_tokens`; output tokens +
-`output_tokens`. An attempt that was sent and got no response is charged one
-estimated turn, `max_tokens` estimated output tokens and ceil(request body bytes
-/ 3) estimated input tokens. An HTTP error response is charged nothing. Reported
-and estimated usage are recorded separately for turns, input and output, in
-`run_ended`, in status allowances (5.6) and in re-entry (7.5); a limit counts
-their sum. Totals are cumulative across placements.
+Each attempt record states its charge (4.5):
+
+| Attempt outcome | Charge |
+| --- | --- |
+| `response` | Reported: one turn; `input_tokens` + `cache_creation_input_tokens` + `cache_read_input_tokens` input tokens; `output_tokens` output tokens |
+| `response_undecodable`, `connection_lost`; `timeout`, `aborted_by_close` and `aborted_by_signal` once any request byte was written | Estimated: one turn, the request's `max_tokens` output tokens and ceil(body bytes / 3) input tokens |
+| `http_error`, `connection_failed`; the others when no request byte was written | None |
+
+A placement without `run_ended` is accounted from its run directory: the
+charges of its attempt records, plus one estimated attempt for each complete
+request capture whose latest attempt has no record. Reconciliation records
+exactly that in `run_ended`. Reported and estimated usage are kept separately
+for turns, input and output, in `run_ended`, in status allowances (5.6) and in
+re-entry (7.5); a limit counts their sum. Totals are cumulative across
+placements.
 
 Each request's `max_tokens` is the lesser of `max_tokens_per_request` and the
-remaining output allowance. A limit is exhausted, and no request is sent, when
-any of the following holds:
+remaining output allowance, fixed when the request is captured; every attempt of
+a request sends the same body. A limit is exhausted, and no request or retry is
+sent, when any of the following holds:
 
 - no turn remains;
 - the input allowance is used up;
 - fewer than 1,024 output tokens remain.
 
-Output tokens therefore never exceed their limit. Input tokens can exceed theirs
-by at most one request, since a request's input size is known only from its
-response. Pending `tool_use` blocks of the last response are executed before the
-placement ends `limit_reached`.
+Reported output tokens therefore never exceed their limit. Estimates for lost
+responses can take the counted output past it, and the run then stops at the
+next check. Input tokens can exceed their limit, since a request's input size is
+known only from its response. Pending `tool_use` blocks of the last response are
+executed before the placement ends `limit_reached`.
 
 The reminder is the CONTRACTS text, sent at most once per audit. After an
-`end_turn` without a seal, if any limit is exhausted the placement ends
-`limit_reached` and no reminder is planned. Otherwise, if the reminder is
-unused, a `notice` log record with `type: "reminder"` is published, then the
-reminder message is sent: the reminder block, followed by the near-limit notice
-block if that notice is pending. If the reminder is already used, the placement
-ends `ended_unsubmitted`.
+`end_turn` or `stop_sequence` without a seal, if any limit is exhausted the
+placement ends `limit_reached` and no reminder is planned. Otherwise, if the
+reminder is unused, a `notice` record with `type: "reminder"` is published, then
+the next request carries it: the tool results of that response if any, the
+reminder block, and the near-limit notice block if that notice is pending. If
+the reminder is already used, the placement ends `ended_unsubmitted`.
 
 The near-limit notice is sent at most once per audit. With remaining =
-max(0, limit − used), it is triggered when, after accounting, remaining × 100 ≤
-`near_limit_percent` × limit for any limit. Its template values are the
-remaining amounts. Its `notice` record is published before the message that
-carries it. If the placement ends first, the record stands, and `run_ended`
-reports the notice as not delivered. Both allowances are audit-wide and survive
-continuation.
+max(0, limit − used), it is triggered when, after an attempt is accounted,
+remaining × 100 ≤ `near_limit_percent` × limit for any limit. Its template
+values are the remaining amounts. Its `notice` record is published when it is
+triggered, naming the next request, which carries it. If the placement ends
+first, the record stands and the notice is not sent.
+
+`run_ended` reports each notice record of its placement as `sent` when an
+attempt record of the planned request has `request_written` other than `none`,
+`not_sent` when that request was never captured, and `unknown` otherwise. Both
+allowances are audit-wide: a continuing placement neither resets nor resends
+them.
 
 ### 6.5 Endings
 
 | Event | Recorded ending | `run` may continue |
 | --- | --- | --- |
 | Auditor confirmed submit | `sealed` | no |
-| `end_turn` with the reminder already used | `ended_unsubmitted` | no |
+| `end_turn` or `stop_sequence` with the reminder already used | `ended_unsubmitted` | no |
 | Limit reached | `limit_reached` | no |
 | `close_requested` observed | `stopped_by_close` | no |
-| Unrepairable damage to recorded answer bytes | `damaged` | no |
-| SIGTERM, SIGINT, SIGHUP | `interrupted`, cause `signal` | yes |
-| Connection failure, timeout, or HTTP 408, 429, 500, 502, 503, 504 or 529, after retries or with a `retry-after` over 60 seconds (6.6) | `interrupted`, cause `provider_unavailable` | yes |
-| Any other HTTP error, including context too long and bad key | `interrupted`, cause `provider_rejected` with status and error type | yes |
+| Damaged answer bytes found by a read or prepare (7.2, 7.6) | `damaged` | no |
+| SIGTERM, SIGINT, SIGHUP before a seal | `interrupted`, cause `signal` | yes |
+| A retryable attempt outcome on the last attempt, or a `retry-after` over 60 seconds (6.6) | `interrupted`, cause `provider_unavailable` | yes |
+| Any other HTTP error, including 400, 401 and 413 `request_too_large` | `interrupted`, cause `provider_rejected`; `run_ended.provider` holds the status and `error.type` | yes |
+| `stop_reason` `model_context_window_exceeded` | `interrupted`, cause `context_exhausted` | yes |
 | `stop_reason` `refusal` | `interrupted`, cause `provider_refusal` | yes |
 | `max_tokens` with no `tool_use` | `interrupted`, cause `max_tokens` | yes |
-| `pause_turn`, unknown stop reason, undecodable response | `interrupted`, cause `protocol_anomaly` | yes |
+| `pause_turn`, an unknown stop reason, an undecodable response, an unanswerable `tool_use` block | `interrupted`, cause `protocol_anomaly` | yes |
 | Archive write failure | `interrupted`, cause `archive_write_failed` | yes |
 | The log is found damaged (4.4) | none: the run publishes nothing, sends no further request, releases the lock and exits 4; status reports the damage | no |
 | Process killed or crashed | no `run_ended`; the next `run` or `close` records `interrupted`, cause `process_gone` | yes |
 
-`run_ended` records the ending, cause, the placement's turns, input and output
-usage, each split into reported and estimated (6.4), and whether a planned
-notice was delivered. The reminder is used only for an ordinary `end_turn`.
+`run` may continue only while authoring has not ended. A placement that sealed
+and then died is reconciled as `interrupted` (`process_gone`), and `run` still
+refuses because the seal ended authoring. The reminder is used only for an
+ordinary `end_turn` or `stop_sequence`. `run_ended` records the ending, its
+cause, the provider facts, the placement's usage split into reported and
+estimated, and its notices (4.4).
 
 ### 6.6 Provider retry
 
-Each request is attempted at most 4 times. A retry follows a connection failure
-before a response, a timeout, or HTTP 408, 429, 500, 502, 503, 504 or 529. The
-delays are 2, 8 and 30 seconds, or the `retry-after` value when one is given. A
-`retry-after` over 60 seconds is not waited for: the request is not retried, and
-the placement ends `interrupted` with cause `provider_unavailable`. Each attempt
-is captured. A `close_requested` seen while waiting ends the placement.
+| Attempt outcome | Meaning | Retried |
+| --- | --- | --- |
+| `response` | HTTP 200 with a decodable message | — |
+| `response_undecodable` | HTTP 200 whose body is not a decodable message (6.2), was cut off or exceeds 32 MiB | no |
+| `http_error` | Any other status, its body captured | for 408, 429, 500, 502, 503, 504 and 529 |
+| `timeout` | No complete response within the request timeout, counted from the start of the connection | yes |
+| `connection_failed` | Resolution, connection, proxy `CONNECT` or TLS failed before any request byte was written | yes |
+| `connection_lost` | The connection failed after request bytes were written and before the response was complete | yes |
+| `aborted_by_close`, `aborted_by_signal` | The stop path shut the connection down (6.8) | no |
+
+Each request is attempted at most 4 times. The delays before attempts 2, 3 and 4
+are 2, 8 and 30 seconds, or the `retry-after` value when one is given: the
+header's first value, used when it is a decimal integer of seconds and ignored
+otherwise. A `retry-after` over 60 seconds is not waited for: the request is not
+retried, and the placement ends `interrupted` with cause `provider_unavailable`.
+A `close_requested` or a signal seen while waiting ends the placement; after
+waiting, the limits are checked again (6.4). Each attempt is captured.
 
 ### 6.7 Continuation
 
-`run` on an interrupted audit first records `run_ended` (`process_gone`) for a
-dead placement, then publishes `run_started` for placement `n+1`. The new
-conversation uses the same pinned arrangement bytes. The question is in the
+`run` on an interrupted audit first records `run_ended` (`process_gone`,
+`recorded_by: "run"`) for a dead placement, with its usage
+accounted as 6.4 states, then publishes `run_started` for placement `n+1`. The
+new conversation uses the same pinned arrangement bytes. The question is in the
 first message and the continuation notice follows it (QUESTION-FORMS). The
 ledger, limits and notice allowances carry over unchanged. No prior
 conversation is replayed.
@@ -1093,20 +1689,24 @@ A watcher thread checks every 250 milliseconds whether the log's next record is
 a `close_requested`. Its stop path applies only while no seal exists; once a
 seal is recorded, the run finishes its delivery first (6.3). When the stop path
 applies, the adapter aborts any in-flight provider request by shutting down its
-socket, stops executing tool calls, publishes `run_ended` (`stopped_by_close`),
-releases the lock and exits 0. An in-progress
-mutation fails to claim its log slot and is reported to the model as
-`authoring_ended`. On SIGTERM, SIGINT or SIGHUP the adapter takes the same path,
-records `interrupted` with cause `signal` and exits 5. The `run_needs` of the
-commission and receipt replies says that the run is in the foreground until the
-placement ends, and that callers with command timeouts should start it in the
-background.
+socket (`aborted_by_close`), stops executing tool calls, publishes `run_ended`
+(`stopped_by_close`), releases the lock and exits 0. An in-progress mutation
+fails to claim its log slot and is reported to the model as `authoring_ended`.
+
+On SIGTERM, SIGINT or SIGHUP before a seal the adapter takes the same path
+(`aborted_by_signal`), records `interrupted` with cause `signal` and exits 5.
+After a seal a signal ends the delivery attempt `failed` with cause `signal`,
+and the placement ends `sealed`. The `run_needs` of the commission and receipt
+replies says that the run is in the foreground until the placement ends, and
+that callers with command timeouts should start it in the background.
 
 ## 7. The auditor's tools
 
 ### 7.1 Conventions
 
-- Every `tool_result` begins with a text block holding the `stewart.reply/1`
+- Every `tool_result` block is
+  `{"type":"tool_result","tool_use_id":<ID>,"content":[…],"is_error":<bool>}`
+  (4.5). Its content begins with a text block holding the `stewart.reply/1`
   envelope, whose `operation` is the tool name. Text reads add a second text
   block holding the exact text read. Like every text block, it is a JSON string
   on the wire, as CONTRACTS requires. When the page has no non-whitespace
@@ -1115,7 +1715,9 @@ background.
   `data.text`. Base64 pages are always in `data.base64`. `is_error` is true when
   the outcome is not `completed`.
 - Inputs are decoded strictly (1.2) and are at most 4 MiB per call
-  (`input_too_large`).
+  (`input_too_large`). A block naming no tool of the arrangement is refused
+  (`tool_unknown`), naming the tools; an `input` that is not an object is
+  refused (`input_invalid`).
 - Replies never include host or archive paths, front matter, provider details
   or manager identifiers: the reference string, archive path, store ID, inquiry
   label, varies note and family. The audit ID is visible to the auditor.
@@ -1126,22 +1728,24 @@ background.
 - After a seal or close, mutations refuse `authoring_ended`, naming what ended
   authoring and, if a seal exists, who sealed. Reads continue to work until the
   placement ends.
-- When an archive write fails during a call, the call fails with
-  `record_failed`. Its `effects` state what is known, with `unknown` where the
-  write's outcome cannot be established. Any remaining `tool_use` blocks of
-  that response receive the same failure without executing, no further request
-  is sent, and the placement ends `interrupted` with cause
-  `archive_write_failed` (6.5).
+- When an archive write fails during a call (its payload, its log record or its
+  result record), the call fails with `record_failed`. Its `effects` state what
+  is known, with `unknown` where the write's outcome cannot be established. No
+  later block of that response is captured or executed, no further request is
+  sent, and the placement ends `interrupted` with cause `archive_write_failed`
+  (6.5).
+- A call's account is its result record. A failed call also writes a
+  diagnostic (4.8), and its effects add `diagnostic`.
 
 | Tool | Input | Completed `data` |
 | --- | --- | --- |
 | `list` | `cursor?` | `materials[{source,size,lines}]`, `directories[]`, `returned`, `total`, `complete`; while incomplete, `next` is a `list` call with an `ls.` cursor. A page holds at most 128 materials. |
 | `read` | `source`, `start?` | 7.2 |
 | `search` | `text`, `sources?`, `cursor?` | 7.2 |
-| `record_<kind>` | `text`, `citations?`, `label?` | `entry`, `id`, `version`, `revision`, `citations` |
-| `record_artifact` | `label`, exactly one of `text` / `base64` | `entry`, `id`, `version`, `revision` |
-| `replace` | `entry` and every field of its kind | `entry`, `id`, `version`, `revision`, `citations` |
-| `delete` | `entry` | `removed{id,version}`, `revision` |
+| `record_<kind>` | `text`, `citations?`, `label?` | `entry`, `id`, `version`, `revision`, `citations`, `notices` |
+| `record_artifact` | `label`, exactly one of `text` / `base64` | `entry`, `id`, `version`, `revision`, `encoding`, `size`, `notices` |
+| `replace` | `entry` and every field of its kind | as the kind's record tool |
+| `delete` | `entry` | `removed{id,version}`, `revision`, `already_removed` |
 | `what_am_i_working_with` | `page?` | 7.5 |
 | `prepare` | none | 7.6 |
 | `submit` | `prepared`, `confirm?` | 7.6 |
@@ -1162,11 +1766,15 @@ handle, or a prepared view (`ap<n>.<check>/rendering` or `/selection`).
   `{source, start, end}` for the page, `null` for entry and view reads; and
   `text` or `base64` when the page is carried in the envelope (7.1). While the
   read is incomplete, the envelope's `next` is a ready `read` call for the rest.
-- Entry reads add `entry`, `id`, `version`, the record kind, `label` and
-  `citations`. A replaced entry handle is refused (`stale_entry`) with the
-  current handle. A deleted one is refused (`entry_deleted`). An artifact
-  recorded from `base64` (`encoding: "binary"`) is returned as base64 pages of
-  49,152 bytes in `data.base64`, marked `encoding: "base64"`.
+- Entry reads add `entry`, `id`, `version`, `kind` (the record kind), `label`
+  and `citations`, and for an artifact `encoding`. A replaced entry handle is
+  refused (`stale_entry`) with the current handle. A deleted one is refused
+  (`entry_deleted`). An artifact recorded from `base64` (`encoding: "binary"`)
+  is returned as base64 pages of 49,152 bytes in `data.base64`, marked
+  `encoding: "base64"`.
+- Reading an entry first checks its payload's size and digest. Damaged bytes of
+  a current entry refuse the call (`answer_damaged`) with an empty `next`, and
+  the placement ends `damaged` (6.5): the auditor stops.
 - A prepared view remains readable after a later edit. It is its fixed
   selection, never a newer rendering.
 
@@ -1186,6 +1794,10 @@ handle, or a prepared view (`ap<n>.<check>/rendering` or `/selection`).
   `search` call whose `sc.` cursor is bound to the text, the scope and the
   position.
 - An incomplete search never reports absence.
+
+The run checks every capture against the receipt before it places the auditor
+(5.7) and serves reads and searches from those captures through descriptors it
+holds for the placement.
 
 ### 7.3 Citations
 
@@ -1222,8 +1834,8 @@ To cite a span, take `start` from the read or search result at its beginning and
 - `record_<kind>(text, citations = [], label = "")` appends one entry and
   returns its exact handle. `text` may be empty. `label` is at most 200
   characters with no control characters. A label equal to another current
-  entry's label adds the notice `label_duplicate`; it is not refused.
-  Repeating a call creates another entry.
+  entry's label adds the notice `label_duplicate` to `data.notices`; it is not
+  refused. Repeating a call creates another entry.
 - `record_artifact(label, text | base64)` appends a free-form artifact. `label`
   is required, 1–200 characters with no control characters. `base64` is
   canonical RFC 4648 with padding and no whitespace. The artifact's `encoding`
@@ -1251,12 +1863,22 @@ To cite a span, take `start` from the read or search result at its beginning and
   adapter one call carries at most 4 MiB (7.1), so an entry recorded by a model
   is bounded by that; the 64 MiB per-entry bound applies to the core.
 
+Each add and replace stores its bytes in a new payload file before its `entry`
+record is published: the UTF-8 bytes of `text`, or the decoded bytes of
+`base64`, for a recorded entry and an artifact alike. An empty text gives an
+empty file. The file is `payload/<id>.v<version>.bin` (`payload/e2.v2.bin`),
+created with `O_EXCL`; when that name is taken by a payload an interrupted edit
+left behind, the first free name among `payload/<id>.v<version>-2.bin`, `-3`, …
+is used. The `entry` record binds the file's name, size and SHA-256 (4.4).
+Labels and citations live in the record, not the payload. A delete writes no
+payload, and no payload is ever rewritten or removed.
+
 ### 7.5 Re-entry: `what_am_i_working_with(page?)`
 
 The first page's `data`:
 
 ```json
-{"audit": "aqm3x7kd2hz5vw4ny", "condition": "open", "revision": 7,
+{"audit": "aqm3x7kd2hz5vw4ny", "condition": "open", "sealed_by": null, "revision": 7,
  "run": {"number": 2, "continuing": true},
  "allowances": {"turns": {"used": 41, "reported": 40, "estimated": 1, "limit": 200},
                 "input_tokens": {"used": 1830211, "reported": 1801300, "estimated": 28911, "limit": 20000000},
@@ -1264,21 +1886,37 @@ The first page's `data`:
  "notices_used": {"reminder": false, "near_limit": false},
  "question": {"source": "question", "size": 46, "lines": 1},
  "materials": {"count": 3, "bytes": 1428},
- "entries": [{"id": "e1", "entry": "e1.v2.k7q4m2", "kind": "record_account", "label": "",
-              "size": 132, "preview": "The supplied excerpts support one restart…", "preview_complete": false}],
- "receipts": [{"run": 1, "tool": "replace", "target": "e1.v1.x2p7aa", "entry": "e1.v2.k7q4m2", "revision": 7}],
- "latest_refusals": [{"tool": "record_observation", "reason": "citation_invalid", "revision": 6, "run": 1}],
- "page": {"bound_revision": 7, "returned": 5, "total": 5, "complete": true}}
+ "entries": [{"id": "e1", "entry": "e1.v2.k7q4m2", "kind": "record_account", "label": "", "encoding": null,
+              "size": 132, "preview": "The supplied excerpts support one restart…", "preview_complete": false,
+              "problem": null}],
+ "receipts": [{"run": 1, "tool_use_id": "toolu_01A…", "tool": "replace", "action": "replace",
+               "target": "e1.v1.x2p7aa", "entry": "e1.v2.k7q4m2", "revision": 7}],
+ "latest_refusals": [{"run": 1, "tool_use_id": "toolu_01C…", "tool": "record_observation",
+                      "outcome": "refused", "reason": "citation_invalid", "revision": 6}],
+ "gaps": [],
+ "page": {"bound_revision": 7, "returned": 1, "total": 1, "complete": true}}
 ```
 
 The envelope's `next` offers `list` for the materials and, while `complete` is
 false, a `what_am_i_working_with` call with the `pg.` cursor for the next page.
 
-- `condition` is `open`, `sealed` (with `sealed_by`) or `closed`.
-- Previews are the first 200 bytes on a character boundary and are marked as
-  previews.
-- `receipts` lists the 16 most recent completed mutations across placements.
-  `latest_refusals` lists the most recent refusal for each tool.
+- `condition` is `open`, `sealed` (with `sealed_by` `auditor` or `manager`) or
+  `closed` (close was requested before any seal). `sealed_by` is null otherwise.
+- `entries` lists the current selection in order. A preview is the first 200
+  bytes on a character boundary and is marked as a preview; it is null for a
+  `binary` artifact. `problem` is `missing` or `unreadable` when the payload
+  could not be read for the preview, else null; digests are checked by `read`
+  and `prepare`.
+- `receipts` lists the 16 most recent `entry` records across placements, newest
+  first: `run` and `tool_use_id` from its invocation, `tool`, `action`,
+  `target` (the replaced or removed version's handle, null for an add), `entry`
+  (the resulting handle, null for a delete) and `revision`.
+- `latest_refusals` lists, newest first, for each tool of the arrangement, the
+  latest result record across placements whose outcome is `refused` or
+  `failed`, other than a replay: `run`, `tool_use_id`, `tool`, `outcome`,
+  `reason` and `revision`.
+- `gaps` lists each result record that could not be read, as `{run, call,
+  problem}`: recorded data Stewart could not read, distinct from lost context.
 - `allowances` split usage into reported and estimated as status does (5.6).
 - A page holds up to 64 entries; later pages carry only `entries` and `page`.
   A page cursor is bound to its revision. After an intervening edit it is
@@ -1288,9 +1926,10 @@ false, a `what_am_i_working_with` call with the `pg.` cursor for the next page.
 
 ### 7.6 Prepare and submit
 
-`prepare()` re-verifies the current selection's payload digests and writes
-`prepared/<n>/answer.json` and `answer.md` (QUESTION-FORMS) as exclusive files.
-It returns:
+`prepare()` re-verifies the size and digest of each payload in the current
+selection, claims `prepared/<n>` (4.3) and writes `answer.json` and `answer.md`
+(QUESTION-FORMS) in it as exclusive files. No log record names an auditor
+preparation unless it is sealed. It returns:
 
 ```json
 {"prepared": "ap3.x6h2kq", "revision": 7, "entry_count": 5,
@@ -1301,10 +1940,13 @@ It returns:
  "selection": {"source": "ap3.x6h2kq/selection", "size": 3904}}
 ```
 
-Missing sections and an empty answer never refuse. An empty selection gives the
-notice `answer_empty` ("No answer entries are recorded.") and the rendering
-`No answer entries recorded.` Damaged selected bytes refuse (`answer_damaged`).
-The run then ends `damaged`, and the reply's `next` is empty: the auditor stops.
+`counts` has one key per recording tool of the family, then `record_artifact`,
+in tools order. `notices` has one `section_unfilled` per expected section with
+no entry, in tools order. Missing sections and an empty answer never refuse. An
+empty selection gives the single notice `answer_empty` ("No answer entries are
+recorded.") and the rendering `No answer entries recorded.` Damaged selected
+bytes refuse (`answer_damaged`). The run then ends `damaged`, and the reply's
+`next` is empty: the auditor stops.
 
 `submit(prepared, confirm = false)`:
 
@@ -1312,108 +1954,155 @@ The run then ends `damaged`, and the reply's `next` is empty: the auditor stops.
 | --- | --- |
 | Dry run, current handle | completed: `dry_run: true`, `revision`, `entry_count`, `rendering` |
 | Revision changed since prepare | refused `stale_preparation`: `revision_now`, next `prepare` |
-| `confirm: true`, current, slot won | completed: `seal`, `sealer: "auditor"`, `revision`, `manifest_sha256` |
+| `confirm: true`, current, slot won | completed: `seal`, `sealer: "auditor"`, `sealed_at`, `revision`, `manifest_sha256` |
 | Repeat of an accepted confirmed submit | completed: the same `seal`, `already_sealed: true` |
 | Manager close won the order | refused `authoring_ended`: `{"ended_by": "close", "close_requested_at": …, "seal": <handle or null>, "sealer": <"auditor", "manager" or null>}` |
 | Seal publication uncertain | failed `seal_uncertain`, `effects.seal: "unknown"`; next: the same submit, which returns the recorded seal or seals |
 
-Neither reply claims delivery, a stopped process or close.
+Neither reply claims delivery, a stopped process or close. After a confirmed
+submit the run delivers and ends (6.3), so its reply is recorded but not sent.
 
 ## 8. Seal, return and delivery
 
 ### 8.1 Seal
 
-A seal binds one prepared selection. The auditor seals the selection of its
-prepared handle. Close first runs the same preparation over the selection
-current at `close_requested`. To seal, Stewart:
+A seal binds one preparation. The auditor seals the preparation of its handle.
+Close prepares the selection current at its `close_requested` the same way, into
+a new `prepared/<n>`, and seals that. To seal, Stewart:
 
-1. re-verifies each selected payload's digest;
-2. writes `seal/manifest-<k>.json` as an exclusive file;
-3. publishes the `seal` log record naming the manifest and its digest.
+1. re-verifies the preparation's files against their digests, and each selected
+   payload's size and digest;
+2. writes `seal/manifest-<k>.json` (8.2) as an exclusive file, claiming `k`;
+3. publishes the `seal` record naming the preparation, the manifest and its
+   digest (4.4).
 
 If the slot is taken by an edit, the auditor's submit is stale. If it is taken by
 `close_requested`, authoring has ended. If it is taken by another `seal`, that
-seal stands. The prepared bytes never change.
+seal stands. The prepared bytes never change. The seal handle `seal.<check>`
+binds the manifest's SHA-256 (2.3).
 
 When close cannot read or verify a selected entry's payload, it still seals. The
 manager seal binds the recorded identities and digests of the whole selection:
-`answer.json` writes that entry in its unproduced form (QUESTION-FORMS), and the
-manifest's `unproduced` lists the entry (role `entry`, named by its ID) and
-`answer.md` (role `rendering`), each with its failure. The renderer is not run
-when any entry is unproduced.
+the preparation's `answer.json` writes that entry in its unproduced form
+(QUESTION-FORMS), no `answer.md` is written, and the manifest's `unproduced`
+lists the entry (role `entry`, named by its ID) and `answer.md` (role
+`rendering`), each with its failure. The renderer is not run when any entry is
+unproduced.
 
 ### 8.2 The return package
 
 A package is a new directory `stewart-return-<audit-id>-<nnn>` inside the
 destination, where `nnn` is the delivery attempt number, zero-padded to at least
-three digits (attempt 1 is `001`). It contains only:
+three digits (attempt 1 is `001`). It is created with mode 0700 and its files
+with 0600. It contains only:
 
-| Member | Content |
-| --- | --- |
-| `manifest.json` | The seal manifest, byte for byte |
-| `answer.json` | The structured answer (`stewart.answer/1`, QUESTION-FORMS) |
-| `answer.md` | The prepared rendering |
-| `artifact-<id>.bin` | Each selected artifact's exact bytes (`artifact-e4.bin`) |
+| Member | Role | Content |
+| --- | --- | --- |
+| `manifest.json` | `manifest`, in delivery records only | The seal manifest, byte for byte |
+| `answer.json` | `answer` | The structured answer (`stewart.answer/1`, QUESTION-FORMS) |
+| `answer.md` | `rendering` | The prepared rendering |
+| `artifact-<id>.bin` | `artifact` | Each selected artifact's exact bytes (`artifact-e4.bin`); a text artifact's are UTF-8 |
 
-The manifest (`stewart.return/1`) holds:
+The manifest (`stewart.return/1`) is one line of compact JSON followed by an LF,
+with keys in the order shown and strings escaped as in `stewart.answer/1`:
 
-- the audit and store identifiers;
-- the family ID and version, and the renderer version;
-- the writer digest;
-- the seal: actor and time;
-- the answer revision;
-- the ordered members, each with name, role, size and SHA-256;
-- the `unproduced` members, each with its name, role, failure and dependency.
+```
+{"schema":"stewart.return/1","audit":"aqm3x7kd2hz5vw4ny","store":"s7tq2bk6xm3ra4pfe","family":"open-inquiry/1","renderer":"stewart.render/1","writer":"3f1c…","seal":{"actor":"auditor","sealed_at":"2026-11-02T15:20:04.118Z"},"revision":9,"members":[{"name":"answer.json","role":"answer","size":3904,"sha256":"…"},{"name":"answer.md","role":"rendering","size":2210,"sha256":"…"},{"name":"artifact-e4.bin","role":"artifact","size":120,"sha256":"…"}],"unproduced":[]}
+```
+
+- `audit` and `store` are the identifiers; `family` is the family ID and
+  version; `renderer` the renderer version; `writer` the SHA-256 of the sealing
+  executable (4.7).
+- `seal.actor` is `auditor` or `manager`. `sealed_at` is when Stewart wrote the
+  manifest, immediately before publishing the seal (UTC, milliseconds).
+- `revision` is the sealed selection's answer revision.
+- `members` lists `answer.json`, then `answer.md` unless it is unproduced, then
+  each artifact of a produced entry in selection order, each with `name`,
+  `role`, `size` and `sha256`. Digests are lowercase hex.
+- `unproduced` lists, in selection order, each unproduced entry as
+  `{"name":"e3","role":"entry","failure":"damaged","dependency":null}`, with
+  failure `missing`, `unreadable` or `damaged`; then an unproduced rendering as
+  `{"name":"answer.md","role":"rendering","failure":"not_rendered","dependency":["e3"]}`,
+  naming the unproduced entries. An unproduced artifact entry covers its
+  `artifact-<id>.bin`. It is `[]` when everything was produced.
 
 The manifest does not contain the seal handle; the handle binds the manifest
-(2.3).
-
-It verifies the package without the archive. The question, receipt,
+(2.3). It verifies the package without the archive. The question, receipt,
 arrangement, access log, run summaries and conversations are never members.
 
 ### 8.3 Delivery
 
-1. Publish `delivery_planned`, naming the attempt, the destination (path,
-   device and inode), the package name and `replaces`: the latest earlier
-   attempt of this seal, which ended `partial`, `failed` or `name_taken`, or
-   `null` for the first attempt.
-2. Check location overlap (`location_overlap`). Create the package with
-   `mkdirat`. If the name is taken, publish `delivery_ended` `name_taken` for
-   this attempt and plan a new attempt from step 1. An existing path is never
-   adopted, emptied or overwritten.
-3. Write `manifest.json` first, then each member, as exclusive files, each
-   synced. Then sync the package and the destination.
-4. Reopen each member by name through descriptors and verify its size and
-   digest.
-5. Publish `delivery_ended` with one outcome:
+1. Claim `delivery/<attempt>.json` (4.3) and write the attempt's plan in it, a
+   record of kind `delivery_plan`:
+
+   ```json
+   {"attempt": 3, "seal": "log/22.json", "manifest": "seal/manifest-1.json", "manifest_sha256": "…",
+    "destination": {"path": "/home/ana/returns2", "source": "replacement", "device": 64769, "inode": 1835011},
+    "package": "stewart-return-aqm3x7kd2hz5vw4ny-003", "replaces": 2, "by": "close",
+    "members": [{"name": "manifest.json", "role": "manifest", "size": 611, "sha256": "…", "source": "seal/manifest-1.json"},
+                {"name": "answer.json", "role": "answer", "size": 3904, "sha256": "…", "source": "prepared/3/answer.json"},
+                {"name": "answer.md", "role": "rendering", "size": 2210, "sha256": "…", "source": "prepared/3/answer.md"},
+                {"name": "artifact-e4.bin", "role": "artifact", "size": 120, "sha256": "…", "source": "payload/e4.v1.bin"}]}
+   ```
+
+   `members` is `manifest.json`, then the manifest's members in order, each with
+   its archive source; it is null when the manifest cannot be read and checked
+   against the seal's digest (membership unknown). `device` and `inode` are null
+   when the destination cannot be opened. `replaces` is the newest earlier
+   attempt of the seal that ended `partial`, `failed` or `name_taken`, or the
+   `verified_with_losses` attempt whose delivery-stage losses this attempt
+   retries (5.8), else null.
+2. Publish `delivery_planned` (4.4).
+3. If membership is unknown or the destination cannot be opened, end `failed`.
+   Otherwise check location overlap (4.1; `failed`, cause `location_overlap`)
+   and create the package with `mkdirat`. If the name is taken, publish
+   `delivery_ended` `name_taken` and plan a new attempt from step 1; one
+   invocation plans at most 16 attempts, then reports the delivery incomplete.
+   An existing path is never adopted, emptied or overwritten.
+4. Write `manifest.json` first, then each member in plan order, as exclusive
+   files, each synced. Each member's source is read through descriptors and
+   checked for size and digest before it is written. A source that is missing,
+   unreadable or damaged is not written (`source_missing`, `source_unreadable`,
+   `source_damaged`), and the next member follows; for `manifest.json` this
+   makes membership unknown. A write failure stops the attempt, and later
+   members are `not_attempted`. Then sync the package and the destination.
+5. Reopen each written member by name through descriptors and verify its size
+   and digest (`not_verified` on a mismatch).
+6. Publish `delivery_ended` with one outcome:
 
 | Outcome | Meaning | Confirmation token | Loss IDs |
 | --- | --- | --- | --- |
-| `verified` | Every member verified; nothing unproduced | yes | none |
-| `verified_with_losses` | Every produced member verified; the unproduced members listed | yes | one per unproduced member |
-| `partial` | A produced member failed, or did not verify at the destination | no | none |
-| `failed` | The attempt failed, with its cause | no | none |
-| `name_taken` | The package name existed (step 2) | no | none |
+| `verified` | Every member written and verified; nothing unproduced | yes | none |
+| `verified_with_losses` | Every member the archive supplied was written and verified; some members were unproduced at seal or could not be supplied from the archive | yes | one per loss |
+| `partial` | The package and manifest were written, but a member the archive supplied was not written or not verified | no | none |
+| `failed` | Membership unknown, the destination unusable, the package not created or the manifest not written; with its cause | no | none |
+| `name_taken` | The package name existed (step 3) | no | none |
 
-A `partial` or `failed` attempt continues through `close` or
-`close --destination DIR` (5.8).
+A `failed` attempt's `cause.error` is an errno name, `manifest_unavailable`,
+`location_overlap`, `signal` or `process_gone`. An attempt that ended `partial`,
+`failed` or `name_taken` is incomplete; the delivery continues through `close`
+or `close --destination DIR` (5.8).
 
 A run delivers after an auditor seal, before exiting. Close delivers any other
 owed copy. Continuation after a lost reply reads these records rather than
-copying again.
+copying again. Stewart never removes anything at a destination.
 
 ### 8.4 Confirmation and loss
 
 The confirmation token for delivery attempt `n` is `cf<n>.<check>`, issued for a
 `verified` or `verified_with_losses` attempt. Its check binds the manifest digest
-and the attempt's `delivery_ended` record (2.3). Status shows the token while it
-is outstanding.
+and the attempt's `delivery_ended` record (2.3). The token is outstanding while
+the attempt is the newest verified one, `closed` is not published and
+confirmation is required: the attempt ended after the first `close_requested`,
+or it has losses. Status shows the token while it is outstanding.
 
-A loss ID is issued for each unproduced member of a `verified_with_losses`
-attempt, and only then. Its record, the failure record, is that attempt's
-`delivery_ended`: it names the member, its failure, the seal and the verified
-members delivered. Status lists loss IDs only for known members; unknown
-membership has none.
+A loss ID is issued for each loss of a `verified_with_losses` attempt, and only
+then. Its member token (2.3) is the entry ID of an unproduced entry, or the
+member name with `.` replaced by `-` (`loss.answer-md.p6w2ze`,
+`loss.artifact-e4-bin.k2d7xq`). Its failure record is that attempt's
+`delivery_ended`: it names the member, its failure and stage, the seal and the
+verified members delivered. Status lists loss IDs only for known members;
+unknown membership has none.
 
 ## 9. Failure traces
 
@@ -1463,7 +2152,8 @@ The reverse ordering → the auditor seal stands and close keeps it. Across
 repeated runs each outcome names its actual actor.
 
 **T7. Kill after an entry, before its result.** The driver kills the run after
-`[log 12: entry add e5]` is linked and before `result-<k>.json`. `status` →
+`[log 12: entry add e5]` is linked and before its `result-<c>.json`
+(`entry.after_link=kill`). `status` →
 `interrupted`. `run REF` → `[run_ended process_gone]`, `[run_started 2]`, first
 message with question and continuation notice. The reacting fake calls
 `what_am_i_working_with`, finds `e5` in `entries` and `receipts`, and does not add
@@ -1472,15 +2162,17 @@ it again. The sealed return contains each goal entry once.
 **T8. Ordinary ending.** The fake ends a turn without submitting → reminder
 `[notice reminder]`. It ends again → `[run_ended ended_unsubmitted]`, exit 0.
 `run REF` → refused `authoring_ended` ("ordinary ending without submission"),
-next `close`. `close REF` → manager seal, delivery, `awaiting: "confirmation"`,
-`cf1…`. `close REF --confirm cf1…` → completed, `closure: complete`.
+next `close`. `close REF` → manager seal, delivery, closure `unfinished`,
+`unfinished_reason: "awaiting_confirmation"`, `confirmation: "cf1…"`.
+`close REF --confirm cf1…` → completed, `closure: complete`,
+`placement: "confirmed"`.
 
 **T9. Delivery to an unavailable destination.** The destination is removed after
 commission. Auditor seal → run delivery attempt 1 `[delivery_ended failed]`,
 then `[run_ended sealed]`. `close REF` → delivery attempt 2 at the commissioned
 destination, `[delivery_planned replaces: 1]` `[delivery_ended failed]`;
 completed, closure `unfinished`, `unfinished_reason: "delivery_incomplete"`, no
-token, next `close` and `close --destination DIR`. `close REF --destination
+token, next `close`, whose explanation offers `--destination DIR`. `close REF --destination
 /home/ana/returns2` → attempt 3, `[delivery_planned replaces: 2]`, verified in
 `stewart-return-<audit-id>-003`, token `cf3…`. `close REF --confirm cf3…` →
 closed. All three attempts stay recorded.
@@ -1512,6 +2204,31 @@ run A is stopped with SIGSTOP, close replies unfinished,
 `unfinished_reason: "run_still_held"`, and a later `close REF` resumes after the
 lock is released.
 
+**T14. Lost close replies.** After an ordinary ending, `close REF` with
+`delivery.after_ended=kill` publishes `[close_requested]`, `[seal]`,
+`[delivery_planned]` and `[delivery_ended verified]`, then dies without a reply.
+`status` → `awaiting_confirmation`, `deliveries[0].confirmation: "cf1…"`.
+`close REF` from another directory → the same attempt and token, closure
+`unfinished`, no new attempt. `close REF --confirm cf1…` with
+`close.after_closed_link=kill` → `[closed]`, no reply. `status` → `closed`;
+`close REF` → `already_closed: true` with the recorded outcome.
+
+**T15. Context window exhausted.** The fake answers with `stop_reason`
+`model_context_window_exceeded` and one `record_observation` call. Stewart
+executes it (`[entry add]`), sends no further request, records
+`[run_ended interrupted context_exhausted]` and exits 5; the call's result stays
+in its result record. `run REF` → `[run_started 2]`, whose first message holds
+the question and the continuation notice.
+
+**T16. Provider unavailable.** The fake answers request 1 with HTTP 529,
+`retry-after: 0` and an `overloaded_error` body, four times. The run records
+four attempt records with `then: "retry"` three times and `"end"` once, charges
+nothing, records `[run_ended interrupted provider_unavailable]` with
+`provider.status: 529` and `error_type: "overloaded_error"`, and exits 5. A
+`retry-after: 61` on the first attempt ends the placement the same way after one
+attempt. A 413 `request_too_large` ends it after one attempt with cause
+`provider_rejected`.
+
 ## Appendix A. Reasons
 
 Manager:
@@ -1534,9 +2251,10 @@ Manager:
 | `unexpected_root_entry`, `unsupported_entry`, `name_invalid`, `material_not_text`, `bound_exceeded` | Intake mechanical rules (3.1–3.3) |
 | `source_unreadable` | A source file could not be opened or read during prepare or commission |
 | `front_matter_invalid` | Missing or malformed `---` delimiters, mixed line endings, or a duplicate or unknown key (3.2) |
-| `setting_missing`, `setting_invalid`, `destination_invalid`, `question_empty` | Front matter and body (3.2) |
+| `setting_missing`, `setting_invalid`, `question_empty` | Front matter and body (3.2) |
+| `destination_invalid` | The front matter's destination (3.2), or `close --destination DIR` (5.8), is not an existing absolute directory |
 | `affirmation_missing` | `commission` without `--i-am-finished` |
-| `handle_invalid` | Handle of wrong kind, store, audit or check |
+| `handle_invalid` | Handle of wrong kind, store, audit or check, including a loss ID that is not one of the confirmed attempt's |
 | `selection_changed` | Source differs from the prepared selection |
 | `intake_in_progress` | Commission could not take the active lock |
 | `acceptance_uncertain` | Status condition: acceptance cannot be established, because the log is damaged before any readable `accepted` (5.6); commission then refuses `log_damaged` |
@@ -1546,31 +2264,42 @@ Manager:
 | `reference_already_accepted` | This reference already has an accepted commission (prepare; commission with a different handle) |
 | `reference_closed` | Close was requested |
 | `not_accepted` | Receipt or run before acceptance |
-| `run_held` | Another run holds the lock |
-| `authoring_ended` | Sealed, ordinary ending, limit, damage or close (named) |
-| `provider_key_missing`, `provider_url_invalid`, `provider_proxy_invalid` | Run environment |
-| `intake_still_running`, `run_still_held`, `close_in_progress`, `delivery_incomplete` | Close unfinished, as `data.unfinished_reason` (continue with `close`) |
+| `run_held` | Another process holds the active lock |
+| `authoring_ended` | Run after a seal, an ordinary ending, a limit stop or damage (named in `data.ended_by`) |
+| `commission_damaged` | Run found the accepted receipt, arrangement or a capture missing, unreadable or not matching its digest (5.7) |
+| `provider_key_missing`, `provider_key_invalid`, `provider_url_invalid`, `provider_proxy_invalid` | Run environment (5.7, 6.1) |
+| `record_failed` | An archive write failed; effects state what is known |
+| `intake_still_running`, `run_still_held`, `close_in_progress`, `delivery_incomplete`, `awaiting_confirmation` | Close unfinished, as `data.unfinished_reason` (continue with `close`) |
 | `log_damaged` as `data.unfinished_reason` | Close unfinished on a damaged log; close publishes nothing |
-| `confirmation_mismatch` | Token for another seal or delivery |
-| `surrender_required` | Unproduced members; name each loss |
-| `delivery_already_verified` | `--destination` after verified delivery |
-| `destination_not_replaceable` | `--destination` before any partial or failed attempt of the seal |
+| `confirmation_mismatch` | A token that is not the newest verified attempt's, or a confirmation before launch |
+| `surrender_required` | The confirmed attempt has losses the call did not name |
+| `delivery_already_verified` | `--destination` after a verified attempt |
+| `destination_not_replaceable` | `--destination` before any incomplete attempt of the seal |
 | `item_unknown`, `item_damaged`, `item_missing`, `item_unreadable`, `item_unsupported` | Receipt readback |
 
 Auditor: `input_invalid` (with JSON pointer), `input_too_large`,
-`source_unknown` (with hints), `range_invalid`, `citation_invalid`,
-`quote_not_found`, `quote_ambiguous`, `stale_entry`, `entry_deleted`,
-`fields_invalid`, `stale_view`, `stale_preparation`, `answer_damaged`,
-`retained_payload_cap`, `retained_payload_reserve_exhausted`,
-`entry_limit`, `selection_limit`, `authoring_ended`, `invocation_id_reused`,
-`handle_invalid`, `seal_uncertain`, `record_failed` (an archive write failed;
-effects state what is known). Notices: `section_unfilled`, `answer_empty`,
-`label_duplicate`, `folder_already_referenced`.
+`tool_unknown`, `source_unknown` (with hints), `range_invalid`,
+`citation_invalid`, `quote_not_found`, `quote_ambiguous`, `stale_entry`,
+`entry_deleted`, `fields_invalid`, `stale_view`, `stale_preparation`,
+`answer_damaged`, `retained_payload_cap`, `retained_payload_reserve_exhausted`,
+`entry_limit`, `selection_limit`, `authoring_ended` (seal or close, named),
+`invocation_id_reused`, `handle_invalid`, `seal_uncertain`, `record_failed` (an
+archive write failed; effects state what is known). Notices:
+`section_unfilled`, `answer_empty`, `label_duplicate`,
+`folder_already_referenced`.
 
-`intake_ended` outcomes: `selection_changed`, `source_unreadable`,
-`capture_failed`, `capture_unverified`, `receipt_record_failed`, `closed`,
-`process_gone`. `delivery_ended` outcomes: `verified`, `verified_with_losses`,
-`partial`, `failed`, `name_taken`.
+Recorded values:
+
+| Field | Values |
+| --- | --- |
+| `intake_ended.outcome` | `selection_changed`, `source_unreadable`, `capture_failed`, `capture_unverified`, `receipt_record_failed`, `closed`, `process_gone` |
+| `run_ended.ending` | `sealed`, `ended_unsubmitted`, `limit_reached`, `stopped_by_close`, `damaged`, `interrupted` |
+| `run_ended.cause` | for `interrupted`: `signal`, `provider_unavailable`, `provider_rejected`, `context_exhausted`, `provider_refusal`, `max_tokens`, `protocol_anomaly`, `archive_write_failed`, `process_gone`; otherwise null |
+| `provider_attempt.outcome` | `response`, `response_undecodable`, `http_error`, `timeout`, `connection_failed`, `connection_lost`, `aborted_by_close`, `aborted_by_signal` |
+| `delivery_ended.outcome` | `verified`, `verified_with_losses`, `partial`, `failed`, `name_taken` |
+| Delivery member `failure` | `source_missing`, `source_unreadable`, `source_damaged`, `write_failed`, `not_verified`, `not_attempted` |
+| Loss and unproduced `failure` | `missing`, `unreadable`, `damaged`; `not_rendered` for the rendering |
+| `closed.outcome` | `closed_without_acceptance`, `closed_after_acceptance_before_launch`, `closed_delivered`, `closed_with_surrendered_losses` |
 
 ## Appendix B. Bounds and constants
 
@@ -1588,9 +2317,14 @@ effects state what is known). Notices: `section_unfilled`, `answer_empty`,
 | Answer | 256 entries; 64 MiB per entry; 256 MiB selection; 1 GiB retained cap; 64 MiB reserve |
 | Close waits | 10 s for intake, 30 s for a run |
 | Watcher interval | 250 ms |
+| API version; `max_tokens` per request | `2026-10-21`; 16,000 |
 | Provider attempts; delays; retry-after ceiling; request timeout | 4; 2, 8, 30 s; 60 s; 600 s |
+| Response body captured and decoded | 32 MiB |
+| Recorded response headers | `content-type`, `request-id`, `retry-after` |
+| Recorded error message | 1,024 bytes |
 | Minimum output allowance for a request | 1,024 tokens |
 | Near-limit threshold | 20% remaining |
+| Delivery attempts planned by one invocation | 16 |
 | Front matter limits | turns 1–10,000; input 1–2×10⁹; output 1–2×10⁸ |
 | Scaffold defaults | 200 turns; 20,000,000 input; 400,000 output |
 
@@ -1601,21 +2335,25 @@ Acceptance needs deterministic failure points and sabotage controls (ACCEPTANCE,
 the cargo features `fault-injection` and `sabotage` and named `stewart-test`.
 The release binary is built without them and contains neither the code nor the
 environment variable names below; the suite checks this against the test build
-as its firing control.
+as its firing control. The names are `STEWART_TEST_FAULT`,
+`STEWART_TEST_FAULT_DIR`, `STEWART_TEST_SABOTAGE`, `STEWART_TEST_TLS_ROOT`,
+`STEWART_TEST_PROVIDER_TIMEOUT` and `STEWART_TEST_RETRY_DELAYS`; the last three
+are compiled with `fault-injection`.
 
 ### C.1 Fault points
 
 `STEWART_TEST_FAULT` holds comma-separated `point=action` items. A point may take
-one argument after a colon. Actions:
+one argument after a colon; an item without an argument matches every argument
+of its point. Actions:
 
 | Action | Effect at the point |
 | --- | --- |
 | `kill` | The process sends itself SIGKILL |
 | `eio`, `enospc`, `epipe` | The operation at the point fails with that error |
 | `corrupt` | The bytes just written are altered by one bit after writing and before verification |
-| `pause` | The process creates `$STEWART_TEST_FAULT_DIR/<point>.paused` exclusively, then waits until `<point>.go` exists there (polling every 10 ms; after 60 s it aborts) |
+| `pause` | The process creates `$STEWART_TEST_FAULT_DIR/<point>.paused` exclusively, then waits until `<point>.go` exists there (polling every 10 ms; after 60 s it aborts). A point pauses once per process. |
 
-Points for the manager foundation (more are added with later operations):
+Manager foundation:
 
 | Point | Where |
 | --- | --- |
@@ -1633,10 +2371,62 @@ Points for the manager foundation (more are added with later operations):
 | `diag.write` | Writing any diagnostic record |
 | `reply.write` | Writing the reply to stdout |
 
+Records, the answer protocol and the run:
+
+| Point | Where |
+| --- | --- |
+| `stage.torn:<kind>` | Writing the stage file of a linked record of that kind (a log kind, `provider_attempt` or `tool_result`): the first half of its bytes is written and synced, then the action runs. With `kill` it leaves a torn stage file. |
+| `log.dirsync:<kind>` | Syncing the log directory after linking a record of that kind; for `accepted`, `commission.accepted_dirsync` names the same point. With `eio` on `seal` it gives `seal_uncertain`. |
+| `runs.publish:<kind>` | Immediately before linking a `provider_attempt` or `tool_result` record |
+| `run.after_started` | After `run_started` is published and `runs/<n>` created, before the first request |
+| `provider.request_capture` | Writing a request capture |
+| `provider.sent:<k>` | After request k's body is written to the connection, before its response is read |
+| `provider.response_capture` | Writing a response capture |
+| `run.between_turns:<k>` | After every block of response k is executed and recorded, before request k+1 is captured |
+| `tool.before:<tool>` | After a call to that tool is captured, before it runs |
+| `entry.payload_write` | Writing an entry payload |
+| `entry.payload_corrupt` | After writing an entry payload (use with `corrupt`); the entry records the intended digest |
+| `entry.after_link` | After an `entry` record is linked, before the call's result record |
+| `prepared.write` | Writing a file under `prepared/<n>`, for the auditor or close |
+| `seal.manifest_write` | Writing the seal manifest |
+| `seal.after_link` | After a `seal` is published, before the reply or delivery |
+
+Delivery and close:
+
+| Point | Where |
+| --- | --- |
+| `delivery.source_read:<member>` | Reading that member's archive source |
+| `delivery.member_write:<member>` | Writing that member at the destination |
+| `delivery.member_corrupt:<member>` | After writing that member (use with `corrupt`) |
+| `delivery.after_member:<k>` | After the k-th planned member (1 is `manifest.json`) is written and synced |
+| `delivery.after_ended` | After `delivery_ended` is published, before the run or close continues |
+| `close.after_requested` | After `close_requested` is published |
+| `close.after_seal` | After close's seal is published, before delivery |
+| `close.after_closed_link` | After `closed` is published, before the reply |
+
+The ACCEPTANCE kill points map to these: during a provider request,
+`provider.sent:<k>`; while a tool reply is being written,
+`stage.torn:tool_result`; between turns, `run.between_turns:<k>`; while a record
+is being appended, `stage.torn:<kind>`; after an entry is linked and before its
+result, `entry.after_link`; just before the seal `linkat`, `log.publish:seal`
+(with `pause` for the races of T6); kill before and after sealing,
+`log.publish:seal` and `seal.after_link`; during delivery after the k-th member,
+`delivery.after_member:<k>`; after copying and before close's reply,
+`delivery.after_ended`; after confirmation and before its reply,
+`close.after_closed_link`.
+
+Provider and transport, for the fake provider:
+
+| Variable | Effect |
+| --- | --- |
+| `STEWART_TEST_TLS_ROOT` | Absolute path of a PEM file, at most 1 MiB, holding one or more certificates. They are added to the trust roots for the provider connection, directly or through `HTTPS_PROXY`. A missing, unreadable or certificate-free file refuses `run` before any request (`test_tls_root_invalid`). |
+| `STEWART_TEST_PROVIDER_TIMEOUT` | Request timeout in seconds, 1–600, in place of the pinned 600; attempt records state the value used |
+| `STEWART_TEST_RETRY_DELAYS` | Three comma-separated delays in milliseconds, each 0–30,000, in place of 2, 8 and 30 seconds; a `retry-after` value still applies |
+
 ### C.2 Sabotage controls
 
 `STEWART_TEST_SABOTAGE` names one control. Each breaks exactly one property, so
-the check for that property must fail.
+the check for that property must fail. The claims are ACCEPTANCE's.
 
 | Name | Broken property |
 | --- | --- |
@@ -1652,5 +2442,61 @@ the check for that property must fail.
 | `unknown_as_absent` | An unreadable log is treated as acceptance absent (C17) |
 | `select_newer_store` | A store identifier mismatch is ignored (C18) |
 | `accept_unknown_field` | Unknown front matter keys are ignored (C20) |
-| `omit_effects_on_refusal` | Refusals omit `effects` (C9, C20) |
+| `omit_effects_on_refusal` | Refusals, manager and auditor, omit `effects` (C9, C20) |
 | `whole_from_one_member` | `receipt --verify` reports the whole commission verified after one member verifies (C15) |
+| `extra_tool` | Requests carry one tool definition beyond the arrangement's (C1) |
+| `arrangement_mismatch` | Requests carry an orientation block differing by one word from the pinned one, which stays recorded unchanged (C1) |
+| `read_live_source` | `read` serves the preparation folder's current file instead of the capture (C2) |
+| `normalize_read` | `read` returns CRLF as LF (C2, C19) |
+| `paraphrase_question` | The first message carries the question body with leading and trailing whitespace removed (C2, C7) |
+| `read_truncate_silently` | A `read` page that ends before the source's end reports `complete: true` with no next call (C19) |
+| `search_omit_last_page` | The page before a search's last page reports `complete: true` (C19, C20) |
+| `torn_as_entry` | An unlinked `entry` stage file counts as a recorded entry (C3) |
+| `merge_equal_adds` | An add equal in kind, label, text and citations to a current entry returns that entry and records nothing (C3) |
+| `replay_reexecutes` | A repeated `tool_use` ID with the same input is executed again (C3) |
+| `stale_target_overwrites` | `replace` and `delete` of a superseded version act on the current version (C3, C20) |
+| `manager_seal_as_auditor` | Close's seal records `actor: "auditor"` (C3, C5) |
+| `reentry_omit_entry` | Re-entry omits the last current entry (C4) |
+| `reentry_truncate_page` | A re-entry page stops after 32 entries and reports `complete: true` (C4) |
+| `reentry_omit_last_page` | The re-entry page before the last reports `complete: true` (C4, C20) |
+| `reentry_mix_revisions` | A page cursor bound to an earlier revision serves the current revision instead of `stale_view` (C4, C20) |
+| `reentry_placement_allowances` | Re-entry reports the current placement's usage instead of the cumulative usage (C4) |
+| `drop_last_entry` | Preparation's selection and rendering omit the last current entry (C5) |
+| `skip_delivery_verification` | Delivery records its outcome without reading members back (C5) |
+| `deliver_conversation` | Delivery adds `conversation.json`, the run's request captures, to the package (C5) |
+| `regenerate_rendering` | Delivery writes a fresh rendering with a changed first line in place of the sealed `answer.md` (C5) |
+| `render_conclusion` | The renderer appends a line `No issues found.` to every rendering (C5, C7) |
+| `remove_superseded_payload` | `replace` removes the superseded payload file (C6, C18) |
+| `remove_partial_package` | A new delivery attempt removes the previous attempt's package (C5, C6, C8) |
+| `skip_search_capture` | `search` calls get no call capture or result record (C6) |
+| `framing_task_elsewhere` | Open inquiry and comparison arrangements pin the inquiry-framing instructions (C7) |
+| `grade_support` | Recorded citations gain `"supports":true` under `stewart` (C7, C14) |
+| `block_incomplete` | Auditor `prepare` refuses when a section is unfilled (C7) |
+| `reset_notice_allowance` | A continuing placement treats the reminder and the near-limit notice as unused (C7, C13) |
+| `skip_confirmation` | Close publishes `closed` right after a delivery it made (C8) |
+| `seal_as_stopped` | With a seal recorded, close does not wait for a held run and reports `run: "ended"` (C8) |
+| `empty_return_before_launch` | Close before launch seals an empty selection as manager and delivers it (C8) |
+| `slow_list` | `list` sleeps 500 ms before replying (C9) |
+| `relative_run_line` | The commission reply and receipt give the run line with the writer path relative to the commissioning directory (C12) |
+| `commission_over_network` | Commission refuses without `ANTHROPIC_API_KEY` and connects to the provider before accepting (C12) |
+| `reset_limits_on_continuation` | A continuing placement counts usage from zero (C13) |
+| `fresh_ledger_on_continuation` | A continuing placement ignores entries recorded before its `run_started` (C13) |
+| `drop_refused_capture` | A refused `record_<kind>` call gets no call capture or result record (C14) |
+| `manifest_verdict` | The return manifest gains `"verdict":"complete"` (C14) |
+| `ended_as_submitted` | Status reports `sealed.by: "auditor"` after an ordinary ending or a limit stop without a seal (C16) |
+| `seal_as_delivered` | Status reports `delivered.verified: true` whenever a seal exists (C16, C20) |
+| `unknown_membership_empty` | With the manifest unreadable, delivery writes an empty return and records it `verified` (C5, C16) |
+| `stale_preparation_retargets` | `submit` with a stale auditor preparation handle seals the current selection (C20) |
+| `prepare_claims_seal` | Auditor `prepare` replies add `"sealer":"auditor"` (C20) |
+| `leak_custody_path` | Auditor `read` replies add the archive path as `data.archive` (C20) |
+| `accept_unknown_tool_field` | Auditor tool inputs ignore unknown keys (C20) |
+| `seal_uncertain_as_none` | A seal whose publication is uncertain is reported with `effects.seal: "none"` (C20) |
+| `submit_claims_delivery` | A confirmed `submit` reply adds `"delivered":true` to its data (C20) |
+
+Sabotage items in ACCEPTANCE that are not build flags:
+
+| Item | Disposition |
+| --- | --- |
+| C7, "requires a module for open inquiry" | Not applicable in this release: no module mechanism exists, so no build can require one. The C7 open-inquiry pass case stands with its differing and invariance cases. |
+| C19, "auto-expand an archive" | Not applicable: no expansion code exists to enable. Archive-format materials are raw text cases under C19. |
+| C5, "a payload corrupted in Stewart's storage before delivery" | A deliberately broken input (an "Also" case): the driver alters a payload file, or uses `entry.payload_corrupt` or `delivery.source_read`. |

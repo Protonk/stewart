@@ -1,5 +1,6 @@
-# Unfinished work
+# Coordinator notes
 
-No active workers or uncertain operations. Step 3 is complete (evidence in
-TRANSITION-PLAN.md). Step 4, the answer protocol, is next under the same working
-arrangement: native iteration, one user-run container suite per milestone.
+Steps 4–6 milestone in progress. A specification worker is adding the exact
+schemas for steps 4–6 to docs/INTERFACE.md (it edits only docs/). No code
+workers are active yet; implementation and driver workers start from the
+reviewed specification.

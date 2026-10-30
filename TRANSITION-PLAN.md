@@ -54,7 +54,19 @@ apparatus control fired on both. Release binaries: aarch64
 `dcf0c2267988987f7c45d35cf0d5c2f02850e48f7b8285a7a28cae93e943d13b`. The run
 before it, `.scratch/step3-02`, passed on aarch64; on x86_64 the driver counted
 Rosetta's own `$HOME/.cache/rosetta` as a write by Stewart, now recorded as an
-emulator artifact under detected emulation only. Next: step 4.
+emulator artifact under detected emulation only.
+
+Steps 4–6 are being built as one milestone (decided 2026-10-30): a run must
+deliver after an auditor seal, and close after launch shares the seal and
+delivery code, so the answer protocol, run adapter, delivery and close after
+launch are built together and qualified by one container suite ending in the
+integrated end-to-end audit. Provider specification checked 2026-10-30: the
+adapter pins `anthropic-version: 2026-10-21` and handles the
+`model_context_window_exceeded` stop reason. Order: exact schemas for records,
+captures, manifest, replies and test-build controls are added to INTERFACE
+first; then implementation (answer protocol; run adapter; seal, delivery and
+close after launch) and the independent driver with its fake provider proceed
+in parallel from that text.
 
 There is one design in [DESIGN.md](DESIGN.md), one behavioral authority in
 [CONTRACTS.md](CONTRACTS.md) and one acceptance specification in
