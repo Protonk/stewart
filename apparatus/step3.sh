@@ -1,13 +1,15 @@
 #!/bin/sh
-# Step 3 container suite for the Stewart Rust service (Apple `container` 1.6.1).
-# Run it from your own shell (or with `!` in Claude Code): the coordinator's
-# command sandbox cannot reach the container service.
+# A narrower driver suite for the Stewart Rust service (Apple `container`
+# 1.6.1); apparatus/acceptance.sh makes every check this one makes. Run it on
+# the host from your own shell: it needs the container services, which a
+# sandboxed command shell may not be able to reach.
 #
 #   sh apparatus/step3.sh [EVIDENCE_DIR]
 #
-# EVIDENCE_DIR defaults to .scratch/step3-01 and must not exist yet.
-# Prerequisites from step 2: the images stewart-toolchain:1-arm64 and
-# stewart-toolchain:1-amd64, and service/vendor.
+# EVIDENCE_DIR, an absolute path, must not exist yet; it defaults to
+# .scratch/step3-01 in the repository, which therefore serves only once.
+# Needs the images stewart-toolchain:1-arm64 and stewart-toolchain:1-amd64 and
+# service/vendor, which apparatus/step2.sh produces.
 # Footprint: writes under EVIDENCE_DIR only. Pulls the pinned python image for
 # linux/arm64 and linux/amd64; that pull is the only network use. Every build
 # and every driver run is offline (--network none) in a container removed on
@@ -23,8 +25,10 @@
 #      STEWART_TEST_SABOTAGE while the test binary contains them;
 #   3. runs apparatus/driver/stewart_driver.py in the pinned python image as an
 #      unprivileged user, binaries mounted read-only, archives and homes on the
-#      container's own disk. The timing gate is on only for the host's native
-#      architecture; emulated timings are reported, not gated.
+#      container's own disk: every case, without the driver's --self-test,
+#      --network-isolated or --require-all-controls. The timing gate is on only
+#      for the host's native architecture; emulated timings are reported, not
+#      gated.
 # host/DONE reports failures=N; host/SUMMARY collects the driver counts.
 set -u
 

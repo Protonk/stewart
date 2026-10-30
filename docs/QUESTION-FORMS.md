@@ -209,7 +209,7 @@ can read and the `answer.json` return member.
 
 ```json
 {"schema":"stewart.answer/1","revision":7,"entries":[
-{"id":"e1","version":2,"kind":"record_account","label":"","text":"The supplied excerpts support one restart-related duplicate-delivery concern.","citations":[{"source":"materials/a.py","start":0,"end":175,"stewart":{"name":"materials/a.py","sha256":"…","lines":[1,8]}},{"source":"materials/a.py","quote":"R1. A reminder ID","stewart":{"name":"materials/a.py","sha256":"…","range":[50,67],"lines":[4,4]}}]},
+{"id":"e1","version":2,"kind":"record_account","label":"","text":"The supplied excerpts support one restart-related duplicate-delivery concern.","citations":[{"source":"materials/a.py","start":0,"end":175,"stewart":{"name":"materials/a.py","sha256":"…","lines":[1,5]}},{"source":"materials/requirements.txt","quote":"R1. A reminder ID","stewart":{"name":"materials/requirements.txt","sha256":"…","range":[50,67],"lines":[2,2]}}]},
 {"id":"e4","version":1,"kind":"record_artifact","label":"trace","encoding":"utf-8","member":"artifact-e4.bin","size":120,"sha256":"…"}]}
 ```
 
@@ -254,7 +254,7 @@ Rendered by Stewart. Entry text is attributed to the auditor.
 > Implementation A can send the same reminder twice if the worker stops
 > after sending but before recording the sent marker.
 
-Citations: materials/a.py lines 4–6 [50, 119) "R1. A reminder ID …"; question line 1 [0, 46).
+Citations: materials/requirements.txt line 2 [50, 119) "R1. A reminder ID should cause at most one recipient-visible message."; question line 1 [0, 46).
 ```
 
 1. First line: `Rendered by Stewart. Entry text is attributed to the auditor.`
@@ -282,8 +282,10 @@ never invented.
 
 ## Worked examples
 
-The [worked examples](../examples/questions/README.md) predate this
-specification. Their paper replies use symbolic material IDs (`m1`) and an
-`answer_read` tool. Under this specification those are `materials/<name>`
-sources and `read`. They remain illustrations of expression, including
-inadequate evidence. They are not wire fixtures.
+The [worked examples](../examples/questions/README.md) give one submission
+folder per family over a small invented reminder service, each a valid
+`question/1` question with its materials. Their walkthroughs show an auditor's
+calls, written by hand, with the replies and the rendering this specification
+and INTERFACE section 7 give for them, and a variant with inadequate evidence.
+They illustrate expression; they are not wire fixtures, and no conclusion in
+them is an expected answer.

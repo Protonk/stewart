@@ -12,7 +12,7 @@ The driver is several modules in this directory: driver_core (framework),
 rawjson, answer_witness, fake_provider, reacting_auditor, procedure and run_support
 (run support), and the case modules cases_*.py, imported here in name order. A new
 group of cases is a new cases_<name>.py file; nothing here needs editing.
-See apparatus/README.md for the case plan.
+See apparatus/README.md for the cases, their controls and the evidence.
 """
 import os
 import sys

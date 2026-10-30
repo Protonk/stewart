@@ -1,9 +1,9 @@
 //! Strict control JSON (INTERFACE 1.2) and the deterministic compact writer.
 //!
 //! The decoder is used for every JSON value Stewart interprets as control data:
-//! archive records read back and, in later steps, auditor tool inputs. It keeps
-//! the raw byte span of every value so that digests can be taken over the exact
-//! stored bytes, never over a re-serialization.
+//! archive records read back and auditor tool inputs. It keeps the raw byte
+//! span of every value so that digests can be taken over the exact stored
+//! bytes, never over a re-serialization.
 //!
 //! Rules: UTF-8 only, no byte-order mark, one top-level value followed only by
 //! JSON whitespace; a key repeated at any depth is refused after escape

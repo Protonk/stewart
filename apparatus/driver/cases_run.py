@@ -9,7 +9,7 @@ expected bytes. Written from docs/INTERFACE.md, docs/QUESTION-FORMS.md,
 CONTRACTS.md and ACCEPTANCE.md without reading service/.
 
 Delivery, close and status after launch (C5, C8, C16, C18 after launch, T8-T10,
-T14) belong in their own module; they reuse run_support the same way.
+T14) are in cases_after_launch.py, which uses run_support the same way.
 """
 from __future__ import annotations
 

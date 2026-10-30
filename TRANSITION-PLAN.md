@@ -1,6 +1,6 @@
 # Transition plan: implement the decided Stewart design
 
-Current account, 2026-10-29. The design review is closed. The user accepted the
+Current account, 2026-10-30. The design review is closed. The user accepted the
 machine-interface rules and commissioned consolidation and retirement of review
 exhaust. The extraction is committed and the superseded material is removed.
 That closure commissions no model runs or runtime implementation by itself.
@@ -14,7 +14,7 @@ container commands and scripts and the user runs them with `!`.
 
 Progress: step 1 is specified in [docs/INTERFACE.md](docs/INTERFACE.md) and
 [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md). The new crate is `service/`
-(binary `stewart`); the commission-bundle slice stays in `successor/`.
+(binary `stewart`).
 
 Step 2 run `.scratch/apparatus-01` (driver `apparatus/step2.sh`, source
 `47e5a59`, 2026-10-30): `failures=0`. Toolchain images
@@ -58,7 +58,7 @@ before it, `.scratch/step3-02`, passed on aarch64; on x86_64 the driver counted
 Rosetta's own `$HOME/.cache/rosetta` as a write by Stewart, now recorded as an
 emulator artifact under detected emulation only.
 
-Steps 4–6 are being built as one milestone (decided 2026-10-30): a run must
+Steps 4–6 were built as one milestone (decided 2026-10-30): a run must
 deliver after an auditor seal, and close after launch shares the seal and
 delivery code, so the answer protocol, run adapter, delivery and close after
 launch are built together and qualified by one container suite ending in the
@@ -117,6 +117,17 @@ the endpoint of the current commission (steps 1–6, no model spend). Next
 steps (7: whole-suite qualification and the WSL handoff; 8: real-model
 conformance with a named budget) need a new commission.
 
+Python retirement (step 9) is done, on 2026-10-30, ahead of step 8, by the
+user's decision; no Python audit was open. The frozen Python tool and the older
+Rust commission-bundle slice (`successor/`) left the tree, and so did the
+historical records (coordination studies, reports, audit packets, past Riker
+threads): Git history holds them, and the last commit containing them is
+`267aaf0`. The slice's ignored local evidence moved to
+`.scratch/successor-local/`. The root, specification and coordination
+documents, the worked examples and stale code comments were revised so the
+repository reads as one current product. There is one `main` branch, moving
+forward; coordinators organize in-flight work in Git as suits it.
+
 ## Not done, and why (2026-10-30)
 
 The steps 1–6 commission ended at its endpoint. Nothing below is in progress;
@@ -134,8 +145,8 @@ each item needs the decision or commission named.
   real-model apparatus.
 - **Step 7, qualification and the WSL2 handoff: not commissioned.** The whole
   scripted suite already passes on both Linux architectures
-  (`.scratch/acceptance-02`). Still owed: a claim-by-claim check of the driver
-  plan (apparatus/README.md, "Driver plan") against ACCEPTANCE for anything not
+  (`.scratch/acceptance-02`). Still owed: a claim-by-claim check of the driver's
+  cases (apparatus/README.md, "Cases") against ACCEPTANCE for anything not
   covered, the binary/driver/fake-provider handoff for native WSL2, and the
   user's WSL run, which is an external dependency.
 - **Step 8, real-model conformance: not commissioned.** Needs named models,
@@ -145,7 +156,23 @@ each item needs the decision or commission named.
   and the CONNECT proxy only through the test build's extra trust root.
   `max_tokens_per_request` (16,000) and the 600 s timeout are pinned but
   unqualified against real responses.
-- **Step 9, retiring Python: not started**, by design (it follows step 8).
+- **Retirement of the frozen tool's independent resources: disposition
+  proposed, awaiting the user.** The tool's state in `.git/stewart/` shows all
+  five of its audits closed, no open session and every one of its nine
+  requests with an outcome, so no undertaking is live. It also records 24
+  independent resources (11 exports, 6 retained copies, 6 worktrees, 1 branch),
+  none claimed or disposed. Twenty name places in `stewart-fieldwork`, which
+  the coordinator cannot read. Four are files that left the tree with the
+  historical records (`reports/opus-preparation-audit-2026-10-27/` and
+  `reports/commission-self-audit-2026-10-27/` return manifests, and the reports
+  under `audits/opus-preparation/` and `audits/commission-recall/`); Git
+  history holds their bytes. The proposed disposition is that every resource
+  stays where it is, undisposed, with its records in `.git/stewart/` untouched,
+  and no tool removes it. The user decides.
+- **Remote branches from the earlier project: the user decides.** GitHub still
+  carries `click-integration` (not merged into `main`) and
+  `review/1-rehome-close` besides `main`. Deleting them is an outward-facing
+  change.
 - **Fat-LTO `getrandom`: closed locally (the user, 2026-10-30).** In the
   fat-LTO static musl release build, a library's call to a libc function that
   std also declares weak can link to nothing; Stewart's `libc::getrandom` call
@@ -177,9 +204,6 @@ abandonment, moving enduring material into documentation/tests.
 
 ## Starting state
 
-- Frozen Python remains the usable legacy audit tool; it is not a parity baseline.
-- `successor/` supplies a working, separately scoped commission-bundle binary.
-  Reuse useful primitives, not its old public workflow or qualification claims.
 - The paper examples have completed a bounded review. They support expression
   and presentation choices only, not executable protocol or model conformance.
 - No worker, runtime build or model experiment is pending from the design review.
@@ -189,14 +213,14 @@ abandonment, moving enduring material into documentation/tests.
 | Step | Deliverable and exit evidence |
 | --- | --- |
 | 1. Specify the interfaces | Exact manager CLI and auditor-tool request/reply schemas; role-visible fields; handle bindings; records and publication boundaries; supported writer rules; strict decoding; pagination and limits; literal success/failure fixtures. Specify the three forms and deterministic renderer under `docs/QUESTION-FORMS.md`. Include dry run, empty/missing sections, stale targets/preparation, lost replies, manager seal, partial custody and uncertain acceptance. Naming and encoding are engineering choices; new authority, material access or substantive restrictions return to the user. |
-| 2. Build the apparatus | Pinned Linux Rust/musl toolchain, small recorded dependency set and offline reproducible builds for aarch64/x86_64; test image with independent driver/fake provider; separate real-model apparatus. Build/test a trivial binary on both architectures and record binary/image identities. Preserve command outputs, witnesses, counts and controls under DEVELOPMENT.md's evidence rules; add successor-specific commands alongside implementation. |
-| 3. Build the manager foundation | Explicit reference/archive, ordinary folder scaffold, strict local prepare/confirmed commission, safe captured bytes, pinned arrangement, receipt/raw readback, factual status and contextual failures. C2/C6/C9/C11/C15 and relevant C16–C20 cases. Reconcile interrupted acceptance before recapture; do not qualify merely by exercising the older intake binary. |
+| 2. Build the apparatus | Pinned Linux Rust/musl toolchain, small recorded dependency set and offline reproducible builds for aarch64/x86_64; test image with independent driver/fake provider; separate real-model apparatus. Build/test a trivial binary on both architectures and record binary/image identities. Preserve command outputs, witnesses, counts and controls under DEVELOPMENT.md's evidence rules; add the service's commands alongside implementation. |
+| 3. Build the manager foundation | Explicit reference/archive, ordinary folder scaffold, strict local prepare/confirmed commission, safe captured bytes, pinned arrangement, receipt/raw readback, factual status and contextual failures. C2/C6/C9/C11/C15 and relevant C16–C20 cases. Reconcile interrupted acceptance before recapture; do not qualify merely by exercising the retired intake binary. |
 | 4. Build the answer protocol | Durable typed entries/raw artifacts, exact edits, bounded reads/re-entry, immutable prepared selection/rendering, actual seal and known-result replay. Selected families, citation checks, nonblocking omissions and empty submissions. C3/C4/C7/C20, relevant C5/C9. Faults and races use controlled synchronization and independent witnesses. |
 | 5. Build the run adapter | Thin provider loop bound to the pinned arrangement, network/key boundary, run exclusion, limits and prompt allowances across placements, bounded provider retry, continuation and recorded observations. C1/C4/C12/C13; fake provider first. Qualify actual access and stopping control, including a run invoked by another process. |
 | 6. Complete delivery and close | One close across preparation/intake/never-launched/live/sealed/delivered/damaged states; no answer before launch; actual seal actor; verified independent delivery; exact confirmation and named-loss surrender; unfinished close continuation; no removal. C5/C8/C16–C20. Exit is the first integrated end-to-end audit with honest failure routes. |
 | 7. Qualify the scripted release and WSL | Entire acceptance suite on both Linux architectures, every control firing, actual response timings and counts. Prepare binary/driver/fake-provider handoff for native WSL2; qualify actual filesystem behavior and record environment. The user's WSL handoff timing is an external dependency. |
 | 8. Qualify supported models | Separately authorized, bounded real-provider conformance: fixed commissions, compaction and kill/continuation, procedure rather than answer grading. Name models, settings, actual coverage and cost. Paper agents or fake-provider success cannot replace this gate. |
-| 9. Retire Python | After the integrated audit service and at least one model-conformance pass, inventory live audits, independent resources/claims, recoveries, holds and partial requests. Settle their obligations under their writer, then obtain the user's retirement confirmation. Only then remove Python runtime/tests/manual/checker and revise installation guidance. No rewritten historical receipts or inferred transfer of execution authority. |
+| 9. Retire Python | Done 2026-10-30 ahead of step 8 by the user's decision (above). As written: after the integrated audit service and at least one model-conformance pass, inventory live audits, independent resources/claims, recoveries, holds and partial requests. Settle their obligations under their writer, then obtain the user's retirement confirmation. Only then remove Python runtime/tests/manual/checker and revise installation guidance. No rewritten historical receipts or inferred transfer of execution authority. |
 
 User help, structured error messages, documentation and acceptance fixtures grow
 with each step. Freeze shared schemas before parallel operation implementations.
@@ -223,12 +247,13 @@ specific unmet promise if qualification shows the design cannot support it.
 The old five-stage program, alternative workspace/history arrangements, separate
 custody-first stage, unrun Python parity comparisons and orientation trial are
 abandoned as programs. Applicable identity, custody, interruption, expression and
-platform cases are in CONTRACTS/ACCEPTANCE. The Linux check remains historical
-apparatus evidence, not release qualification. General resources, executor,
+platform cases are in CONTRACTS/ACCEPTANCE. The Linux check of the retired
+Python tool (`.scratch/linux-check-01`) remains historical apparatus evidence,
+not release qualification. General resources, executor,
 restart convenience, removal and a generic legacy reader are outside this build.
 
 Person transport, hidden priors, larger form catalogues/module composition,
 family-admission research and whether read-only inquiry is sufficient are later
 work only if separately commissioned. They are not unfinished prerequisites.
-Legacy obligations remain the retirement gate above. Retained evidence and local
-run ownership are indexed in coordination/EVIDENCE.md, not another design queue.
+Retained evidence and local run ownership are indexed in
+coordination/EVIDENCE.md, not another design queue.

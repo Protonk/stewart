@@ -1,9 +1,9 @@
 # For the next coordinator
 
 2026-10-29, from the coordinator who completed the design review and cleanup.
-Source checkpoint: `dc3a675`. Updated 2026-10-30, at `aa029bd`, after the
-steps 1–6 build: the state below is current; the context bullets are the
-earlier coordinator's and still apply.
+Source checkpoint: `dc3a675`. Updated 2026-10-30, after the Python retirement:
+the state below is current; the context bullets are the earlier coordinator's
+and still apply.
 
 Stewart has graduated from an extended design conversation into a lighter working
 style aimed at implementation. The user explicitly closed the review, asked for
@@ -20,12 +20,18 @@ The old conversations and alternative designs were deliberately removed after
 extraction. Their absence is not a gap to repair by reconstructing history.
 
 No worker or uncertain operation is pending. The Rust audit service in
-`service/` (binary `stewart`) is built through step 6 of the plan: the manager
-commands, the run adapter, the auditor's tools, seal, delivery and close. Its
-scripted acceptance suite (`apparatus/acceptance.sh`, an independent driver
-against a fake provider) passed on Linux aarch64 and x86_64. No real model has
-been run against it. Python remains frozen. What is not done, and why, is in
-TRANSITION-PLAN under "Not done, and why"; steps 7–9 are not commissioned.
+`service/` (binary `stewart`) is the product. Its manager commands, run adapter,
+auditor's tools, seal, delivery and close are built, and its scripted acceptance
+suite (`apparatus/acceptance.sh`, an independent driver against a fake provider)
+passed on Linux aarch64 and x86_64. No real model has been run against it. The
+frozen Python tool, the older commission-bundle slice and the in-tree study
+records are retired; Git history holds them (last present at `267aaf0`). There
+is one `main` branch, and it moves forward. What is next, and what each item
+needs, is in TRANSITION-PLAN under "Not done, and why".
+
+The coordinator's shell sandbox cannot reach Apple `container` (its Rosetta
+check is denied), so the coordinator prepares container commands and scripts
+and the user runs them with `!`.
 
 Some context I can offer beyond those documents:
 

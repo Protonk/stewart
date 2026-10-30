@@ -1,17 +1,20 @@
 #!/bin/sh
-# Step 2 apparatus check for the Stewart Rust service (Apple `container` 1.6.1).
-# Run it from your own shell (or with `!` in Claude Code): the coordinator's
-# command sandbox cannot reach the container service.
+# Toolchain images, vendored crates and a reproducible static build for the
+# Stewart Rust service (Apple `container` 1.6.1). Run it on the host from your
+# own shell: it needs the container services, which a sandboxed command shell
+# may not be able to reach.
 #
 #   sh apparatus/step2.sh [EVIDENCE_DIR]
 #
-# EVIDENCE_DIR defaults to .scratch/apparatus-01 and must not exist yet.
+# EVIDENCE_DIR, an absolute path, must not exist yet; it defaults to
+# .scratch/apparatus-01 in the repository, which therefore serves only once.
 # Footprint: writes under EVIDENCE_DIR, and creates service/vendor from
 # service/Cargo.lock (refused if it exists). Pulls the pinned rust and alpine
-# images for linux/amd64, builds the toolchain images stewart-toolchain:1-arm64
-# and stewart-toolchain:1-amd64, and runs containers with --rm. The network is
-# used only for pulls, toolchain image builds and crate vendoring; every build
-# and run of the binary has no network. Nothing on the host is deleted.
+# images for linux/arm64 and linux/amd64, builds the toolchain images
+# stewart-toolchain:1-arm64 and stewart-toolchain:1-amd64, and runs containers
+# with --rm. The network is used only for pulls, toolchain image builds and
+# crate vendoring; every build and run of the binary has no network. Nothing on
+# the host is deleted.
 set -u
 
 REPO=$(cd "$(dirname "$0")/.." && pwd)
@@ -109,9 +112,11 @@ for p in $PLATFORMS; do
     if [ -f "$a" ]; then
         mkdir -p "$OUT/alpine-$p"
         cp "$a" "$OUT/alpine-$p/stewart"
+        # `help` exits 0 and involves no archive (INTERFACE 1.6, 5.9); with no
+        # command stewart is a usage error and exits 2.
         hstep "alpine-run-$p" container run --rm --network none --platform "linux/$p" \
             --mount "type=bind,source=$OUT/alpine-$p,target=/b,readonly" \
-            "$ALPINE" /b/stewart || fail "alpine-run-$p"
+            "$ALPINE" /b/stewart help || fail "alpine-run-$p"
     fi
 done
 

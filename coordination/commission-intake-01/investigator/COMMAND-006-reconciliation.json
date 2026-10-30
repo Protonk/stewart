@@ -1,8 +1,0 @@
-{
-  "outer_process_exit": 1,
-  "reason": "Investigator logging variable tag was reused by the C read loop. Both C reads had completed and their raw streams and end records were saved; outer finalization attempted to exclusively create the existing C-READ-question-end.json and refused.",
-  "combined_stdout_saved_as": "C-READ-question-stdout.txt",
-  "combined_stderr_saved_as": "C-READ-question-stderr.txt",
-  "corrective_action": "Use a separate log_tag in subsequent investigator wrappers; no delivery or binary change and no C rerun.",
-  "at": "2026-10-27T17:48:32.554198+00:00"
-}

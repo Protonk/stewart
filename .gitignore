@@ -2,9 +2,6 @@
 .venv/
 __pycache__/
 *.pyc
-.pytest_cache/
-dist/
-build/
 .DS_Store
 .tmp/*
 !.tmp/AGENTS.md

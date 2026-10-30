@@ -1,4 +1,4 @@
-//! States after launch, built with the foundation's own writers: log
+//! States after launch, built with the crate's own writers: log
 //! publication of the post-launch record bodies, payload and preparation
 //! claims, and the return manifest. They stand in for the run and the
 //! answer protocol, so delivery, close after a seal and status can be

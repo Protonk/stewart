@@ -1,1 +1,0 @@
-{"error":{"message":"This bundle is bound to different request bytes","next_step":"Preserve the records; use the recorded original request or a fresh bundle for a new commission.","paths":["INTENT.json"],"reason":"binding_mismatch"}}

@@ -7,9 +7,10 @@ authority, and is exercised by [ACCEPTANCE.md](../ACCEPTANCE.md). The question
 families, their instruction texts and the renderer are specified in
 [QUESTION-FORMS.md](QUESTION-FORMS.md).
 
-Status: specified, not implemented. Where this document and CONTRACTS differ,
-CONTRACTS wins and this document is corrected. Linux is the only platform; the
-filesystem calls named here are Linux calls.
+Status: implemented by the crate in [`service/`](../service/README.md); its test
+status is in [README.md](../README.md). Where this document and CONTRACTS
+differ, CONTRACTS wins and this document is corrected. Linux is the only
+platform; the filesystem calls named here are Linux calls.
 
 Examples use illustrative identifiers. Tests match identifiers, digests, times
 and paths by their stated patterns and every other value exactly, except prose:
@@ -553,8 +554,8 @@ time in clock ticks since boot.
  "target": {"id": "e2", "version": 1, "record": "log/9.json"},
  "id": "e2", "version": 2, "kind": "record_observation", "label": "restart duplicate",
  "payload": {"file": "payload/e2.v2.bin", "sha256": "…", "size": 132}, "encoding": null,
- "citations": [{"source": "materials/a.py", "start": 50, "end": 119,
-                "stewart": {"name": "materials/a.py", "sha256": "…", "lines": [4, 6]}}],
+ "citations": [{"source": "materials/requirements.txt", "start": 50, "end": 119,
+                "stewart": {"name": "materials/requirements.txt", "sha256": "…", "lines": [2, 2]}}],
  "revision": 8}
 ```
 
@@ -892,14 +893,14 @@ log record binding their digests.
  "next": [{"argv": ["/usr/local/bin/stewart", "commission", "stw1:…", "mp1.k4q7xa", "--i-am-finished"],
            "why": "Accept exactly this selection. Leave the folder unchanged until commission returns."}],
  "data": {"prepared": "mp1.k4q7xa",
-          "question": {"file_bytes": 389, "file_sha256": "…", "body_bytes": 46, "body_sha256": "…"},
+          "question": {"file_bytes": 539, "file_sha256": "…", "body_bytes": 46, "body_sha256": "…"},
           "settings": {"family": "open-inquiry", "model": "claude-opus-5-5",
                        "destination": "/home/ana/returns",
                        "limits": {"turns": 200, "input_tokens": 20000000, "output_tokens": 400000}},
           "materials": {"count": 3, "bytes": 1428, "directories": ["materials"],
-                        "files": [{"name": "materials/a.py", "size": 175, "sha256": "…", "lines": 8},
-                                  {"name": "materials/requirements.txt", "size": 662, "sha256": "…", "lines": 9},
-                                  {"name": "materials/supplied-report.txt", "size": 591, "sha256": "…", "lines": 6}]},
+                        "files": [{"name": "materials/a.py", "size": 175, "sha256": "…", "lines": 5},
+                                  {"name": "materials/requirements.txt", "size": 662, "sha256": "…", "lines": 10},
+                                  {"name": "materials/supplied-report.txt", "size": 591, "sha256": "…", "lines": 8}]},
           "reader": {"id": "utf8-text/1", "transformations": "none"},
           "bounds": {"question_bytes": 262144, "files": 128, "file_bytes": 16777216, "total_bytes": 134217728,
                      "directories": 256, "path_bytes": 1024, "path_components": 32, "component_bytes": 255},
@@ -1911,7 +1912,7 @@ The first page's `data`:
  "question": {"source": "question", "size": 46, "lines": 1},
  "materials": {"count": 3, "bytes": 1428},
  "entries": [{"id": "e1", "entry": "e1.v2.k7q4m2", "kind": "record_account", "label": "", "encoding": null,
-              "size": 132, "preview": "The supplied excerpts support one restart…", "preview_complete": false,
+              "size": 612, "preview": "The supplied excerpts support one restart…", "preview_complete": false,
               "problem": null}],
  "receipts": [{"run": 1, "tool_use_id": "toolu_01A…", "tool": "replace", "action": "replace",
                "target": "e1.v1.x2p7aa", "entry": "e1.v2.k7q4m2", "revision": 7}],

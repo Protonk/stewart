@@ -2,14 +2,15 @@
 # The scripted acceptance tier for the Stewart Rust service, as one container
 # suite (Apple `container` 1.6.1): every case of the independent driver, against
 # a fake provider, on Linux aarch64 (native) and x86_64 (Rosetta), offline.
-# Run it from your own shell (or with `!` in Claude Code): the coordinator's
-# command sandbox cannot reach the container service.
+# Run it on the host from your own shell: it needs the container services, which
+# a sandboxed command shell may not be able to reach.
 #
 #   sh apparatus/acceptance.sh [EVIDENCE_DIR]
 #
-# EVIDENCE_DIR defaults to .scratch/acceptance-01 and must not exist yet.
-# Prerequisites from step 2: the images stewart-toolchain:1-arm64 and
-# stewart-toolchain:1-amd64, and service/vendor.
+# EVIDENCE_DIR, an absolute path, must not exist yet; it defaults to
+# .scratch/acceptance-01 in the repository, which therefore serves only once.
+# Needs the images stewart-toolchain:1-arm64 and stewart-toolchain:1-amd64 and
+# service/vendor, which apparatus/step2.sh produces.
 # Footprint: writes under EVIDENCE_DIR only. Pulls the pinned python image for
 # linux/arm64 and linux/amd64; that pull is the only network use. Every build
 # and every driver run is offline (--network none) in a container removed on

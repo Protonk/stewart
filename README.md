@@ -1,44 +1,126 @@
 # Stewart
 
 Stewart is a custodian for bounded inquiries between cooperative parties. The
-manager supplies a question, selected files, an answer family and limits. Stewart
-places an auditor in that arrangement and returns its answer faithfully, without
-judging its conclusions.
+manager supplies a question, selected files, an answer family and limits.
+Stewart places an AI auditor in that arrangement and returns its answer
+faithfully, without judging its conclusions.
 
 The manager's working model is one submission folder, one acceptance boundary
 and one close action. Stewart's opinions live in its question families and
 instructions; missing evidence, no finding and disagreement remain ordinary
 answers. Records preserve who said what and what Stewart actually did.
 
-## Current design
+## What it is
 
-- [Design and vision](DESIGN.md): responsibilities, workflow and architecture.
-- [Decided contracts](CONTRACTS.md): the behavioral specification.
-- [Acceptance specification](ACCEPTANCE.md): the evidence the implementation owes.
-- [Question forms](docs/QUESTION-FORMS.md) and [worked examples](examples/questions/README.md): concrete inputs to detailed specification.
+Stewart is a command-line program written in Rust, the crate in
+[`service/`](service/README.md). It is built as one statically linked binary,
+`stewart`, for Linux x86_64 and aarch64; Linux is the only supported platform.
+An audit goes through these commands:
 
-The design review is closed. These maintained documents are the design; prior
-conversations and alternative sketches are not required reading.
+1. `stewart new FOLDER [--archive ROOT]` creates a reference to the audit in
+   the archive that `--archive` names, or else `STEWART_ARCHIVE`. An absent
+   FOLDER is created as the submission folder: `question.md` (settings and the
+   question) and `materials/` (the files the auditor may read). An existing
+   folder is used unchanged.
+2. `stewart prepare REF` scans and hashes the folder, checks the intake rules
+   and pins the arrangement: instructions, tools and limits. It accepts
+   nothing.
+3. `stewart commission REF HANDLE --i-am-finished` copies and verifies the
+   prepared selection. Acceptance fixes that copy; later edits to the folder
+   cannot change it.
+4. `stewart run REF` places the auditor. Only `run` uses the network and the
+   provider key; it speaks the Anthropic Messages API. The auditor works only
+   through Stewart's tools on the captured copies, recording, preparing and
+   submitting its answer. A submitted answer is sealed, copied to the
+   manager's destination and read back to verify it. If a run dies, `run`
+   again continues the same audit with its records and cumulative limits.
+5. `stewart close REF` ends the audit from any state. Before launch it creates
+   no answer. After launch it stops any run, seals the recorded answer for the
+   manager if the auditor did not, and delivers the copy if one is still owed.
+   A plain close finishes only when a copy without losses was verified before
+   the first close request. Otherwise close stops unfinished, awaiting
+   confirmation, and the audit ends with `stewart close REF --confirm TOKEN`,
+   adding `--surrender LOSS` for each loss the copy names.
 
-## Implementation status
+`stewart receipt` and `stewart status` read the fixed commission and the
+audit's state at any time, and `stewart help` explains the rest. Stewart keeps
+its records in the manager's archive and removes nothing.
 
-The complete Rust audit service is decided but not yet implemented. It will ship
-as one static Linux binary for x86_64 and aarch64, with WSL2 qualification. Its
-auditor has only Stewart's tools, and materials are copied files rather than a
-Git checkout.
+## Status (2026-10-30)
 
-Two narrower implementations currently exist:
+**Built:** the manager commands above, the auditor's tools and answer protocol,
+the run adapter, seal, verified delivery and close. The crate is at version
+0.1.0.
 
-- The [frozen Python audit tool](docs/FROZEN-PYTHON.md), with its
-  [bundled manual](src/stewart/resources/README.md), remains available until the
-  successor and legacy-retirement gates are satisfied. It is not a parity baseline.
-- The [Rust commission-bundle slice](successor/README.md) accepts and independently
-  reads original-input bundles. It does not run an auditor or hold audit results.
+**Tested on Linux against a fake provider.** On 2026-10-30 the scripted
+acceptance suite ([`apparatus/acceptance.sh`](apparatus/acceptance.sh)) passed
+at source commit `dc85948`. It builds the release binary and a test build with
+fault points and sabotage controls in pinned Linux containers, then runs an
+independent black-box driver against them. The driver is written in Python
+from the specification by an author who does not read the implementation, and
+a fake provider stands in for the model. On aarch64, run natively, all 110
+driver cases passed; on x86_64, under Rosetta emulation and without the two
+timing gates, all 108 passed. On both, all 66 sabotage control variants and
+all 8 driver controls fired, showing that the checks catch the failures they
+look for. The integrated end-to-end audit (prepare, commission, a fake auditor
+working through the run, submit and seal, verified delivery, close) passed all
+764 of its checks on each architecture's release binary. Since `dc85948` the
+crate's source and tests have changed in comments only.
 
-## Development
+**Not yet done:**
 
-[Coordination](coordination/README.md) is the entry point for a new coordinator.
-[AGENTS.md](AGENTS.md) contains development constraints and
-[DEVELOPMENT.md](DEVELOPMENT.md) documents existing build/check commands and
-evidence retention. Active implementation work is organized by the tracked
-`*-PLAN.md` convention; plans are working accounts, not additional product specs.
+- Native WSL2 qualification with the same binary, driver and fake provider.
+- A claim-by-claim check of the suite's coverage against
+  [ACCEPTANCE.md](ACCEPTANCE.md).
+- Real-model conformance: whether named models can use the arrangement and
+  finish. It needs named models and a budget. Stewart has not been run against
+  a real model, and the release's TLS path to the real provider, with its
+  built-in roots, is unexercised.
+- The decided default of effort `high` for requests to Opus models is not
+  implemented; requests currently set no effort.
+
+## Where to read next
+
+- [DESIGN.md](DESIGN.md): design and vision: responsibilities, the manager's
+  path and the architecture.
+- [CONTRACTS.md](CONTRACTS.md): the decided behavior, its status and the
+  reasons for declined changes.
+- [ACCEPTANCE.md](ACCEPTANCE.md): the evidence the implementation owes.
+- [docs/INTERFACE.md](docs/INTERFACE.md): the exact CLI, auditor tools, records
+  and test builds.
+- [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md): the three question forms,
+  the exact texts the auditor sees and the answer renderer.
+- [examples/questions/](examples/questions/README.md): worked examples of the
+  three forms: submission folders that prepare as written, with hand-written
+  walkthroughs of an auditor's calls and the rendered answers.
+- [service/README.md](service/README.md): a guide to the crate.
+- [DEVELOPMENT.md](DEVELOPMENT.md): building, testing and evidence retention.
+- [AGENTS.md](AGENTS.md) (CLAUDE.md links to it) and
+  [coordination/](coordination/README.md): rules and working guidance for
+  development agents.
+- [riker/](riker/RIKER.md): user-relayed consultation with Riker.
+
+## Repository map
+
+| Entry | Contents |
+| --- | --- |
+| `service/` | The Rust crate: the product. |
+| `apparatus/` | Build and test apparatus: the Containerfile from which `step2.sh` builds the pinned Linux toolchain images, the container scripts, and the independent driver with its fake provider (Python, standard library only). It does not ship. |
+| `docs/` | `INTERFACE.md` and `QUESTION-FORMS.md`. |
+| `examples/` | Worked question examples. |
+| `DESIGN.md`, `CONTRACTS.md`, `ACCEPTANCE.md` | The design, the decided behavior and the evidence owed. |
+| `DEVELOPMENT.md` | Building, testing and evidence retention. |
+| `AGENTS.md`, `CLAUDE.md` | Development rules; `CLAUDE.md` is a link to `AGENTS.md`. |
+| `coordination/` | Working guidance for the development coordinator. |
+| `riker/` | User-relayed consultation with Riker. |
+| `*-PLAN.md` | Active development plans: working accounts, not specification. |
+| `.tmp/` | Ignored temporary storage; only its note, `AGENTS.md`, and a `CLAUDE.md` link to it are tracked. |
+| `LICENSE` | The license. |
+
+Earlier versions of Stewart were a Python tool, with a separate Rust intake
+program; both were retired on 2026-10-30. Their code and the design-era records
+remain in Git history (the last commit containing them is `267aaf0`).
+
+## License
+
+MIT. See [LICENSE](LICENSE).

@@ -20,4 +20,4 @@ step copy cp "/work/service/target/$TARGET/release/stewart" /out/stewart
 step sha256 sha256sum /out/stewart
 step readelf readelf -lh /out/stewart
 step static sh -c '! grep -q "program interpreter" /out/readelf.stdout'
-step run /out/stewart
+step run /out/stewart help

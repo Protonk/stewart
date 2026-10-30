@@ -1,5 +1,5 @@
 #!/bin/sh
-# Step 3 builds, inside stewart-toolchain:1-<arch> with no network.
+# Builds for apparatus/step3.sh, inside stewart-toolchain:1-<arch> with no network.
 # Inputs: /in/source.tar (git archive of HEAD), /vendor (the vendored crates,
 # read-only). Output: /out.
 #

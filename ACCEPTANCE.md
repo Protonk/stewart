@@ -1,16 +1,19 @@
-# Successor acceptance specification
+# Stewart's acceptance specification
 
 This is the current acceptance design for the [Stewart design](DESIGN.md), under
-[CONTRACTS.md](CONTRACTS.md). It specifies evidence still owed, not executed
+[CONTRACTS.md](CONTRACTS.md). It specifies the evidence owed, not executed
 results. End to end means a manager's submission through the actual release
 binary to an independently verified return; only the provider is replaced in
 the scripted tier. Real-model conformance uses the real provider.
 
-Every case below is read under the accepted machine interface. Exact schema
-fixtures, numerical response budgets, deterministic failure-injection points and
-supported filesystem/writer populations are implementation-specification work.
-Do not turn an illustrative command spelling, old form or arbitrary test quantity
-into a new product obligation. No model-consuming run is commissioned here.
+Every case below is read under the accepted machine interface:
+[docs/INTERFACE.md](docs/INTERFACE.md) and
+[docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) give the exact schemas and
+fixtures, the deterministic failure-injection points and the supported
+filesystem and writer populations. The numerical response budgets are the
+apparatus's timing gates ([apparatus/README.md](apparatus/README.md)). Do not
+turn an illustrative command spelling, old form or arbitrary test quantity into
+a new product obligation. No model-consuming run is commissioned here.
 
 ## Acceptance claims
 
@@ -266,10 +269,9 @@ closed design, not open policy choices.
   for open inquiry, silently gives another family the inquiry-framing task,
   grades evidential support, blocks an incomplete selection, or resets a prompt
   allowance after continuation.
-- **Still pending:** concrete field/tool schemas, orientation wording and any
-  optional modules. Hidden-prior machinery is unselected. C5 owns rendering.
-  The former `survey` and `claim-check` examples do not select schemas by becoming
-  fixtures.
+- **Specification:** [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) gives the
+  concrete field/tool schemas and orientation wording. Optional modules and
+  hidden-prior machinery are unselected. C5 owns rendering.
 
 ### C8 — Close from every state
 
@@ -369,12 +371,12 @@ launch; each must fail.
   `status` then reports the audit interrupted with its run count, as an
   observation with its evidence (a run record without an end record and no
   observable process), never as an inference from elapsed time; the liveness
-  mechanism is for design. `run REF`
-  continues: the first request of the new conversation carries the continuation
-  notice and the same pinned system and tools bytes as the first run; the ledger's elements
-  are unchanged; the limits reported to the auditor are cumulative across runs;
-  the final submission contains every element recorded before the kill exactly
-  once; the record holds every run.
+  mechanism is the active lock of [docs/INTERFACE.md](docs/INTERFACE.md) 4.6.
+  `run REF` continues: the first request of the new conversation carries the
+  continuation notice and the same pinned system and tools bytes as the first
+  run; the ledger's elements are unchanged; the limits reported to the auditor
+  are cumulative across runs; the final submission contains every element
+  recorded before the kill exactly once; the record holds every run.
 - **Differing:** a run killed after a confirmed submit leaves the audit ended;
   `run` refuses with a sign and `close` delivers. A provider that fails past the
   bounded retry ends the run as interrupted, and `run` again continues.
@@ -571,9 +573,9 @@ The scripted tier runs, unchanged, on:
   a native aarch64 container and an emulated x86_64 one.
 - WSL2 natively, through the handoff package: the same binary, driver and fake
   provider, with the home on the WSL filesystem and a destination under `/mnt/`.
-  Archive placement is qualified on its actual filesystem semantics; the build
-  specification must name supported locations and refusals, not infer safety
-  solely from a path prefix.
+  Archive placement is qualified on its actual filesystem semantics:
+  [docs/INTERFACE.md](docs/INTERFACE.md) 4.1 names the supported filesystems
+  and refuses others by the type `statfs` observes, not by a path prefix.
 
 Each run records the binary's digest, the image digests or WSL environment
 (Windows and WSL versions, distribution, kernel, architecture, filesystem types),
@@ -588,8 +590,7 @@ three selected families: open inquiry, inquiry framing and comparison. Each
 specimen includes a manager submission, actual auditor tools and an example
 return, with an inadequate-evidence case. Executable fixtures follow the form
 specification; planted evidence may help inspection but finding it is not a
-required substantive outcome. The earlier `survey` and `claim-check` examples
-are not inherited schemas.
+required substantive outcome.
 
 Each is sized so that forcing compaction is practical, either through a low
 compaction trigger or a run long enough to reach it.

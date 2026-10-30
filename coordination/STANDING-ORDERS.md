@@ -25,8 +25,9 @@ and remove it when it no longer helps. If the user requests a handoff, give the
 unresolved facts and next action; no standing turnover file or consumption ritual
 is required. Durable product decisions belong in CONTRACTS, not session notes.
 
-Test logs, raw study outputs and custody records follow their existing evidence
-rules in [DEVELOPMENT.md](../DEVELOPMENT.md) and [AGENTS.md](../AGENTS.md). Those
+Test logs and raw study outputs follow the evidence rules in
+[DEVELOPMENT.md](../DEVELOPMENT.md) and [AGENTS.md](../AGENTS.md); the product's
+own records follow [CONTRACTS.md](../CONTRACTS.md). Those
 rules do not require a narrative of ordinary coordination or conversation.
 
 ## Workers and permission
@@ -50,8 +51,9 @@ repeating mutations or assigning the same paths to another writer. A lost reply
 does not establish success or absent effects; silence does not prove a worker
 stopped. Preserve uncertain work while resolving its actual effects.
 
-Verify the integrated result with the appropriate project checks and report actual
-outcomes. Keep unrelated changes intact. Commit coherent changes on linear `main`
-unless parallel work needs isolation; Git logistics and pushing are yours to
-manage. Finish or explicitly dispose of remaining work. Focus on useful
+Verify the integrated result with the appropriate project checks and report
+actual outcomes. Keep unrelated changes intact. There is one `main` branch, and
+it moves forward. Organize in-flight work in Git as suits it, such as branches
+or worktrees, and land coherent changes on `main`; Git logistics and pushing are
+yours to manage. Finish or explicitly dispose of remaining work. Focus on useful
 implementation, evidence and a clear result.

@@ -81,8 +81,8 @@ The family name and manager-only custody metadata do not enter this view.
 The initial library is open inquiry, inquiry framing and comparison. Framing
 explicitly commissions formation of a working question and useful investigation
 within the same limits. Other families can question premises without silently
-acquiring that task. [The form specification brief](docs/QUESTION-FORMS.md)
-gives the concrete starting points and their limits.
+acquiring that task. [The form specification](docs/QUESTION-FORMS.md) gives
+their exact instructions, tools and rendering.
 
 The auditor records elements, replaces/deletes exact versions and prepares its
 current answer. Preparation creates an immutable candidate and an inspectable,
@@ -115,20 +115,27 @@ limits. Presentation never changes substantive records or manufactures success.
 The first adapter is a thin model-provider loop. A person adapter is later work;
 the answer format does not depend on model conversation metadata. Ship one static
 Linux binary for x86_64 and aarch64. Linux containers hold the build and test
-apparatus; WSL2 is qualified with the same shipped binary.
+apparatus; WSL2 is to be qualified with the same shipped binary.
 
-## What remains to build
+## What is built and what remains
 
 The review settled behavior, not complete wire schemas or runtime mechanisms.
-Specification must now enumerate calls, records, failure variants, exact bindings,
-pagination and writer support; then implementation must qualify publication,
-stopping and custody across interruption. These are engineering work under the
-design, not another general design review. Any genuinely new authority or
-substantive restriction still needs the user's decision.
+[docs/INTERFACE.md](docs/INTERFACE.md) and
+[docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) now specify the calls, records,
+failure variants, exact bindings, pagination and writer support. The Rust
+service in `service/` implements them: the manager commands, the auditor's tools
+and answer protocol, the run adapter for the provider's Messages API, the seal,
+verified delivery and close. That specification and its implementation are
+engineering work under the design, not another general design review. Any
+genuinely new authority or substantive restriction still needs the user's
+decision.
 
 [ACCEPTANCE.md](ACCEPTANCE.md) defines the executable evidence: the release
 binary against an independently witnessed fake provider, followed by separately
-authorized real-model procedural conformance. Paper examples and older prototypes
-are useful inputs, not proof that the new service works. The frozen Python tool
-and existing Rust intake slice remain available under their own documented scope
-until the successor and the legacy-retirement gates are satisfied.
+authorized real-model procedural conformance. The scripted acceptance suite has
+passed on Linux aarch64 and x86_64. Still owed are a claim-by-claim check of its
+coverage against ACCEPTANCE, the same suite run natively under WSL2, and
+real-model conformance, which needs named models, their settings and an
+explicit budget before any model-consuming run; [CONTRACTS.md](CONTRACTS.md)
+records the current status in full. Paper walkthroughs are useful inputs, not
+proof that the service works.

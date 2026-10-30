@@ -365,8 +365,9 @@ def answer_witness_selftests():
     e3 = Entry("e3", 1, "record_observation", "restart duplicate",
                b"Implementation A can send the same reminder twice if the worker stops\n"
                b"after sending but before recording the sent marker.",
-               citations=[{"source": "materials/a.py", "start": 50, "end": 119, "quote": "R1. A reminder ID …",
-                           "stewart": {"name": "materials/a.py", "sha256": "x", "lines": [4, 6]}},
+               citations=[{"source": "materials/requirements.txt", "start": 50, "end": 119,
+                           "quote": "R1. A reminder ID should cause at most one recipient-visible message.",
+                           "stewart": {"name": "materials/requirements.txt", "sha256": "x", "lines": [2, 2]}},
                           {"source": "question", "start": 0, "end": 46,
                            "stewart": {"name": "question", "sha256": "y", "lines": [1, 1]}}])
     out.append(("witness.render.example", example is not None and render([e3]) == example,
@@ -377,10 +378,10 @@ def answer_witness_selftests():
     e1 = Entry("e1", 2, "record_account", "",
                b"The supplied excerpts support one restart-related duplicate-delivery concern.",
                citations=[{"source": "materials/a.py", "start": 0, "end": 175,
-                           "stewart": {"name": "materials/a.py", "sha256": "…", "lines": [1, 8]}},
-                          {"source": "materials/a.py", "quote": "R1. A reminder ID",
-                           "stewart": {"name": "materials/a.py", "sha256": "…", "range": [50, 67],
-                                       "lines": [4, 4]}}])
+                           "stewart": {"name": "materials/a.py", "sha256": "…", "lines": [1, 5]}},
+                          {"source": "materials/requirements.txt", "quote": "R1. A reminder ID",
+                           "stewart": {"name": "materials/requirements.txt", "sha256": "…", "range": [50, 67],
+                                       "lines": [2, 2]}}])
     e4 = Entry("e4", 1, "record_artifact", "trace", b"", encoding="utf-8", sha256="…", size=120)
     out.append(("witness.answer.example", ex_json is not None and answer_json(7, [e1, e4]) == ex_json,
                 {"expected": ex_json, "got": answer_json(7, [e1, e4])}))

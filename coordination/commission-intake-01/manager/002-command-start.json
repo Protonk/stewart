@@ -1,4 +1,0 @@
-{
-  "started_utc": "2026-10-27T17:32:55.061289+00:00",
-  "operation": "Enumerate saved pinned inspection; recover every member through pinned read into recovered; compare bytes to inspection; display question and issued guidance"
-}

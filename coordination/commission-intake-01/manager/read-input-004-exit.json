@@ -1,8 +1,0 @@
-{
-  "finished_utc": "2026-10-27T17:32:55.113611+00:00",
-  "returncode": 0,
-  "stdout_file": "recovered/input-004.bin",
-  "stdout_size": 33063,
-  "stdout_sha256": "5b4f5e28725757dcd633e987763a77757c5cd1c8a0ff4134e986555c8435b70c",
-  "matches_pinned_inspection": true
-}

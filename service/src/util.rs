@@ -1,4 +1,4 @@
-//! Small shared helpers: digests, UTC timestamps and errno names.
+//! Shared helpers: digests, UTC timestamps, errno names and edit distance.
 
 use sha2::{Digest, Sha256};
 use std::io;

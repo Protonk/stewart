@@ -1,2 +1,0 @@
-Saved INVESTIGATION.md, READ-ACCOUNT.md, READ-INDEX.json and TOOLING-FRICTION.json exclusively.
-Bounded investigation complete; no new delivery reads in finalization.

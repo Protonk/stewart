@@ -7,8 +7,9 @@
 //! compared with them. Each test runs the real binary from an unrelated
 //! working directory with its own folder, archive and destination.
 //!
-//! The tool-calling and seal cases run the auditor's tools and delivery
-//! through their interfaces (`answer::execute`, `delivery::deliver`).
+//! The tool-calling and seal cases also exercise what the run calls: the
+//! auditor's tools (`answer::execute`) and, after a seal, delivery
+//! (`delivery::deliver`).
 
 // The crate's log writer refuses with its full account by value.
 #![allow(clippy::result_large_err)]
@@ -414,8 +415,9 @@ fn kill(child: &Child, sig: i32) {
     assert_eq!(rc, 0);
 }
 
-/// Publish `close_requested` the way a concurrent close would, through the
-/// crate's log writer (this build's close stops before launch).
+/// Publish `close_requested` the way a concurrent close does, through the
+/// crate's log writer. Only the request is published, so the run's reaction
+/// is observed without the seal and delivery a full close goes on to make.
 fn request_close(r: &str) {
     let audit = stewart::archive::Audit::open(r).unwrap_or_else(|f| panic!("{}", f.message));
     let body = stewart::bodies::CloseRequested {
@@ -1076,7 +1078,7 @@ fn a_damaged_capture_refuses_commission_damaged() {
 }
 
 // ---------------------------------------------------------------------------
-// The auditor's tools and delivery, through their interfaces.
+// The auditor's tools and delivery, as the run calls them.
 
 #[test]
 fn tool_calls_are_captured_executed_replayed_and_answered() {

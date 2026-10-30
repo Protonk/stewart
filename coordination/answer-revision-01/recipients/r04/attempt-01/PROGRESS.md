@@ -1,7 +1,0 @@
-# r04 first-return progress
-
-Initial checkpoint: read only the recipient brief. The admitted packet has not yet been inspected. I will read its inventory and question, inspect the selected return against the supplied static source, and save FIRST.md and READS-FIRST.json. No subject execution, source expansion, network, Git, or nested agents is planned or authorized.
-
-Final checkpoint: read all 21 packet files and the recipient brief, independently inspected the source/report pairs, and confirmed all 20 inventory entries plus selected text and pair-byte checks. Saved FIRST.md and READS-FIRST.json as exclusive first-pass files; saved static inspection support in the assigned scratch attempt. The full consumer question remains undecidable; the conditional validator claim is supported by static tracing. No further work is authorized in this phase.
-
-Second-phase final checkpoint: read SECOND-GRANT.md, the frozen first memo/read ledger, all 21 second-packet files, and 17 explicitly named prior-packet files for comparison. The new consumer resolves the prior evidence gap; full nested validation supports the supplied manager use with the specified availability qualifications. All 20 current inventory entries and selected text checks matched; 14 common subject files are unchanged. Saved SECOND.md and READS-SECOND.json exclusively, with STATIC-SECOND-INSPECTION.json in owned scratch. FIRST.md and READS-FIRST.json hashes remained unchanged. Stopped after this bounded static inspection.

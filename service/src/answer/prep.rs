@@ -824,7 +824,8 @@ fn submit_inner(ctx: &Ctx, v: &Json) -> Result<Out, Fail> {
                 .map_or(0, |p| p.started.n);
             let mut out = with_seal(Out::done(sealed_data(&sealed, true)));
             // A seal published earlier in this placement (whose first reply
-            // was uncertain) still needs its delivery.
+            // may have been uncertain) marks this call sealed too, so the stop
+            // path no longer applies; the run delivers the seal from the log.
             out.sealed = rec.n > started;
             out.log_record = Some(names::log_name(rec.n));
             return Ok(out);

@@ -6,11 +6,20 @@ machine interface; historical conversations and superseded sketches are not
 specification inputs. [DESIGN.md](DESIGN.md) explains the system and
 [ACCEPTANCE.md](ACCEPTANCE.md) states the evidence required of its implementation.
 
-**Status: decided; full audit-service implementation and qualification pending.**
-Exact wire schemas, record layout, process control and platform support must be
-specified and tested within these boundaries. A design decision is not a passing
-test. The existing Rust commission-bundle slice and frozen Python tool have the
-separate, limited status described at the end of this document.
+**Status (2026-10-30): decided and built; the scripted acceptance suite passed
+on Linux; WSL2 and real-model qualification are owed.** The Rust audit service
+in `service/` implements these contracts. [docs/INTERFACE.md](docs/INTERFACE.md)
+and [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) specify its exact wire
+schemas, record layout, process control and forms within these boundaries. The
+scripted suite (`apparatus/acceptance.sh`) passed at source `dc85948` against
+the fake provider on Linux aarch64 and x86_64, the latter under emulation: every
+control fired, and the integrated end-to-end audit passed on each architecture's
+release binary. Still owed: a claim-by-claim check of the suite's coverage
+against [ACCEPTANCE.md](ACCEPTANCE.md), native WSL2 qualification and real-model
+conformance, which needs named models and a budget. The release's TLS path to
+the real provider is unexercised, and the decided default of effort `high` for
+requests to Opus models is not yet implemented. A design decision is not a
+passing test.
 
 ## Mission
 
@@ -81,7 +90,7 @@ reliable rather than claiming protection against a hostile archive owner.
 Ship one statically linked Rust binary for Linux x86_64 and aarch64, without
 runtime language dependencies. WSL2 runs that binary. Build, test and experiment
 in Linux containers; the development apparatus does not ship. Native macOS is
-not a successor target. The frozen Python tool is not a parity/reference baseline.
+not a supported target.
 
 Stewart has no version-control relationship. History, diffs, logs and test results
 are manager-supplied files, with their authors' attribution. It neither executes
@@ -100,7 +109,7 @@ unselected material are absent from its interface. After sealing, closure or
 unrepairable damage, stopping is its final route; no further authoring channel
 is added. A person adapter is deferred and grants no unqualified access promise.
 
-## Successor manager preparation and acceptance
+## Manager preparation and acceptance
 
 **One folder, one acceptance boundary, one close action.** The manager prepares
 the question and materials in an ordinary directory, using ordinary tools. Even
@@ -134,7 +143,8 @@ verifies the captured bytes, and compares a final source scan, including directo
 membership, against the preparation. A mismatch prevents acceptance; newer
 material cannot silently replace the prepared selection. Changed selection needs
 fresh preparation. There is no unprepare action or required inspection pause;
-the calls may be composed. Exact CLI spellings remain implementation design.
+the calls may be composed. Exact CLI spellings are implementation design,
+specified in [docs/INTERFACE.md](docs/INTERFACE.md).
 
 These are cooperative interference checks, not proof that the live directory
 never changed or that the source had this complete state at one instant. The
@@ -186,7 +196,7 @@ folder, but never needs to edit receipts, delete partial captures or improvise
 repairs to private state. Qualify this behavior with controlled failures at the
 operation boundaries, independent evidence and unaffected comparison cases.
 
-## Successor initial materials and preparation inspection
+## Initial materials and preparation inspection
 
 **The folder has two entries.** The submission root contains `question.md` and
 `materials/`. `question.md` holds the front matter and verbatim question body;
@@ -303,7 +313,7 @@ step. After acceptance the receipt recovers the original question, materials
 and arrangement. Built-in help describes available forms and reader limits;
 the initial family library and enforcement rules are specified below.
 
-## Successor custody, retention and manager access
+## Custody, retention and manager access
 
 **The manager designates an archive, not a cache.** One explicit storage root
 holds Stewart's records for the manager. It is selected when a reference is
@@ -376,15 +386,14 @@ Moving/removing it may make its references unavailable; the product diagnoses
 that condition rather than starting over under the old identity.
 
 **Holds do not create a new manager workflow in this release.** A hold/release
-or generic condition-note facility is declined for this non-removing successor:
+or generic condition-note facility is declined for this non-removing service:
 there is no destructive operation for a new hold to gate. This does not release
 existing holds, erase attributed conditions, or turn copying/closure into a
-disposition of earlier undertakings. Live legacy obligations remain with their
-own writer and must be accounted for before its withdrawal. A future deletion
-service requires a new explicit contract covering authority, finite selections,
-dependencies, holds, verified preservation and failure; none is inherited merely
-by adding a delete command. Frozen removal protections remain preserved for that
-review and for the legacy implementation.
+disposition of earlier undertakings. A future deletion service requires a new
+explicit contract covering authority, finite selections, dependencies, holds,
+verified preservation and failure; none is inherited merely by adding a delete
+command. The earlier Python tool's removal protections remain preserved in Git
+history for that review.
 
 **The manager's live product interface stays narrow.** `receipt` reads the fixed
 commission; `status` states operating and custody facts; `close` ends work. There
@@ -442,7 +451,7 @@ to a model so it keeps its reading is an adapter optimization to weigh only on
 conformance-tier evidence that re-reading after a kill is costly; it would
 change nothing in the record.
 
-## Successor answer construction and atomic artifact edits
+## Answer construction and atomic artifact edits
 
 Successful additions undertake durable custody of the exact recorded bytes and
 identity beyond the originating call/process. There is no separate upload or
@@ -457,7 +466,7 @@ Stewart-generated. There is no general answer-history browser or directory/link
 artifact. Raw artifact support remains alongside typed family entries; detailed
 encoding and tool schemas belong to specification, not implicit text-only scope.
 Typed entry kinds organize the selected form and do not certify substantive
-claims. The earlier generic account-marker sketch does not prohibit these entries.
+claims.
 
 Initial payload bounds remain 256 elements, 64 MiB per element and 256 MiB in the
 current selection. At 1 GiB of retained superseded/deleted payloads, edits larger
@@ -477,7 +486,7 @@ concurrent manager close and auditor submit have one winner with its real actor.
 The machine-interface contract below distinguishes the prepared candidate from
 the later seal record. Sealing is not delivery, process termination or close.
 
-## Successor auditor retry and re-entry
+## Auditor retry and re-entry
 
 **A new addition is a new item.** Repeating add with equal text and labels can
 create another element; equality never establishes intent or authorizes merging.
@@ -534,7 +543,7 @@ remain in Stewart's operating account; they do not become fabricated conclusions
 or mandatory answer fields. No retry changes the material world, resets limits,
 revives a closed reference or grants another investigation.
 
-## Successor question families and open inquiry
+## Question families and open inquiry
 
 **The family carries the pairing.** A family brings together preparation guidance,
 expected material roles, auditor instructions and answer expectations. These are
@@ -583,13 +592,15 @@ assurance remains the auditor's attributed claim, not Stewart's guarantee.
 are the first families. Comparison relates the supplied alternatives to a criterion
 and allows unequal evidence or inability without requiring a winner. Its tools
 must accommodate observations about one alternative without implying a comparison.
-Use the [form brief](docs/QUESTION-FORMS.md) and [worked examples](examples/questions/README.md)
-to specify the exact fields, tools, orientation and rendering. They are concrete
-inputs under the settled policy, not permission for a new completeness gate.
+The [form specification](docs/QUESTION-FORMS.md) fixes the exact fields, tools,
+orientation and rendering; the [worked examples](examples/questions/README.md)
+are valid submissions whose hand-written walkthroughs illustrate expression, not
+expected answers. Both work within the settled policy;
+neither is permission for a new completeness gate.
 No hidden-prior mechanism, larger catalogue or elaborate module composition is
 required for this build. Future family admission is separate optional work.
 
-## Successor readable answer rendering
+## Readable answer rendering
 
 Preserve the structured answer and its recorded elements. Auditor
 preparation also produces a deterministic Markdown rendering from that exact
@@ -610,7 +621,9 @@ Delivery and later readback verify and return the stored rendering; they do not
 substitute a new rendering from the installed form. A reproducibility check
 compares the stored bytes with the result of the pinned rendering rules, without
 rewriting the sealed answer. Exact field layout, generated filenames and bounded
-rendering mechanics remain implementation/form-specification work.
+rendering mechanics are specified in
+[docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) and
+[docs/INTERFACE.md](docs/INTERFACE.md).
 
 Each recorded citation keeps the auditor's operands beside Stewart's own
 attributed additions: the source's public name, digest and line span. The
@@ -631,7 +644,7 @@ are never invented. Close before launch still creates no auditor return. The
 later enforcement decision keeps answer-form omissions nonblocking; rendering
 adds no completeness gate.
 
-## Successor auditor form enforcement and prompting
+## Auditor form enforcement and prompting
 
 Stewart checks mechanically
 interpretable entries and references, makes incomplete form coverage visible,
@@ -727,7 +740,7 @@ empty selection. Verified delivery, the manager's placement confirmation and
 stopped execution are separate facts. The close contract below supplies supported
 continuation, destination replacement and narrowly named loss disposition.
 
-## Successor manager readback, status and close
+## Manager readback, status and close
 
 **The receipt is retrievable.** `stewart receipt REF` retrieves the recorded
 commission: the original question, accepted material index, arrangement identity,
@@ -798,7 +811,8 @@ the recorded selection for manager sealing through close. Close prevents further
 authoring, preserves a submission that won the seal race, and otherwise seals
 with manager attribution. It reports run termination separately from the seal;
 completed close requires the applicable stopping evidence. The mechanism for
-reaching a run held by another process still needs qualification.
+reaching a run held by another process has passed the scripted suite on Linux;
+its native WSL2 qualification is still owed.
 
 If delivery cannot complete at the commissioned destination, the same interface
 accepts `close REF --destination DIR` to continue the copying undertaking at a
@@ -841,10 +855,11 @@ loss despite the undertaking, cannot release a legacy hold and authorizes no
 deletion. Unknown membership stays diagnosed and unfinished; do not invent a
 missing list or accept a blanket discard.
 
-## Successor machine interface
+## Machine interface
 
-Accepted 2026-10-29. The following semantics are decided; exact field spellings
-and complete schemas are specification work within them.
+Accepted 2026-10-29. The following semantics are decided;
+[docs/INTERFACE.md](docs/INTERFACE.md) specifies exact field spellings and
+complete schemas within them.
 
 ### One operation core, explicit audience and transport
 
@@ -1020,7 +1035,7 @@ implementation identity. Changes to one do not silently redefine the others.
 Pin the arrangement and exact stored bytes. Do not promise universal historical
 compatibility, negotiate down to a different form, rewrite old records or execute
 recorded code. Unsupported data retains its diagnostics. Exact wire schemas and
-encoding rules are part of the spec agent's deliverable, not incidental output
+encoding rules are part of the interface specification, not incidental output
 of a Rust serializer.
 
 
@@ -1041,29 +1056,25 @@ an upgrade neither continues nor closes older audits. This was chosen over a
 format-compatibility class for simplicity, accepting that an upgrade can leave
 open audits waiting for their original binary.
 
-The frozen Python implementation remains available under its own bundled manual
-and existing custody rules until retirement. It is not a successor reference
-baseline. No old live audit, independent resource, hold, recovery or partial
-request is imported into Rust merely because its record can be read. Before
-withdrawing Python, inventory the finite relevant population, close live audits
-with their writer and explicitly dispose of remaining undertakings. No historical
-receipt is rewritten, hold silently released or unresolved exception called done.
-The successor need not implement a general Python-record reader or removal service.
-Any future legacy reader needs a named consumer, finite supported records and
-verified claims; interpretation grants no execution or mutation authority.
-
-The separately scoped [Rust commission-bundle slice](successor/README.md) is
-implemented and locally qualified for its documented intake/readback behavior.
-It does not launch audits or provide result custody. Its accept/complete/abandon
-workflow is not the new manager interface. Reuse verified-read, strict-JSON and
-exclusive-write mechanisms where they fit; qualify the actual successor rather
-than inheriting the slice's test result as audit-service evidence.
+**Earlier implementations are history, not baselines.** A Python audit tool
+and a separately scoped Rust commission-bundle binary (`stewart-commission`)
+preceded this service. Both were retired on 2026-10-30, when no Python audit
+remained open; the Python tool's recorded independent resources were left where
+they were, undisposed. Both remain in Git history (the last commit containing
+them is `267aaf0`). Neither is a reference baseline, and neither one's test results
+are evidence for this service. No old live audit, independent resource, hold,
+recovery or partial request is imported into Rust merely because its record can
+be read. No historical receipt is rewritten, hold silently released or
+unresolved exception called done. The Rust service need not implement a general
+Python-record reader or removal service. Any future legacy reader needs a named
+consumer, finite supported records and verified claims; interpretation grants no
+execution or mutation authority.
 
 ## Declined and deferred scope
 
 - No dedicated program executor, Git/worktree/history service or general manager
   workspace service. The manager supplies exported files; a source folder is not
-  a resource-disposal grant. Existing implementation effort does not justify
+  a resource-disposal grant. Earlier implementation effort does not justify
   preserving those operating stages.
 - No restart-from-start, general recovery console or request-key controls for
   the auditor. Continue one interrupted undertaking with one ledger and cumulative

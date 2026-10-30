@@ -1,10 +1,6 @@
 //! Close's manager seal through the answer module's `prepare` and `seal`
-//! (INTERFACE 5.8 "Seal", 8.1; traces T8 and T10 in full).
-//!
-//! EXPECTED TO FAIL in a build whose `answer::prepare` and `answer::seal` are
-//! still interface stubs: close then stops at its seal step. It passes once
-//! the answer module is implemented. Every other close path is covered with
-//! fixture seals in `delivery.rs`.
+//! (INTERFACE 5.8 "Seal", 8.1; traces T8 and T10 in full). The close paths in
+//! `delivery.rs` start instead from seals the fixture writes.
 
 mod common;
 mod fixture;

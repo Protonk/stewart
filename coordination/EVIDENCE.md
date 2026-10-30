@@ -1,46 +1,40 @@
-# Retained development evidence
+# Local development evidence
 
-Use this index only when work touches retained studies or local runs. Their
-packets and outputs remain historical evidence; old briefs and links are not
-current instructions. The [closure report](../reports/design-review-closure/RESULT.md)
-records their disposition. Retention follows DEVELOPMENT.md.
+This index lists the local records that current work cites. Each is under
+`.scratch/`, which Git ignores, so the records exist only in the working copy
+where they were made; a clone does not carry them. Retention follows the
+[Evidence and retention](../DEVELOPMENT.md#evidence-and-retention) section of
+DEVELOPMENT.md.
 
-## Recovery-critical local evidence
+## Protected local refs
 
-[Corpus retention](successor-inquiry-01/CORPUS-RETENTION.md) identifies the protected
-local refs and exact source copies. A main-only clone does not carry all of them.
+The local refs `refs/development-evidence/successor-inquiry-01/a1`, `a2` and
+`a3` keep three historical outcome commits reachable that no branch contains.
+Do not delete them. A main-only clone does not carry them.
+`coordination/successor-inquiry-01/CORPUS-RETENTION.md` at `267aaf0` explains
+what they protect. The same note marks local records that must not be pruned as
+run scratch: the 21 original product-audit source copies under
+`.scratch/successor-inquiry-01/answers/attempt-01/sources/` (identities in
+`CORPUS.json` beside them), and
+`.scratch/successor-inquiry-01/history-reachability-01.json` with its
+correction, `history-preservation-01.json`.
 
-## Local records this index owns
+## Records current work cites
 
-Each entry is under `.scratch/`. Where a report owns a run's findings, the run
-stays with that report under the retention rules.
-
-| Records | Owner of findings |
+| Records | What they hold |
 | --- | --- |
-| `design-review-closure-20261029/` | [Design closure](../reports/design-review-closure/RESULT.md): preservation inventory, packaging check and documentation validation. |
-| `coordinator-intake-20261028-02/` | The outgoing coordinator's intake record. The review prose is retired; its decisions and acceptance obligations are in the maintained product docs. |
-| `alignment-20261028-01/`, `coordinator-intake-20261028-01/` | The design-conversation tenure. Conversation prose is retired; the source checkpoint is recorded in the closure report. |
-| `route-research-01/`, `plan-fit-review-01/`, `answer-structure-check-01/`, `auditor-cases-01/` | This index; the first-leg program is abandoned and applicable cases are in ACCEPTANCE.md |
-| `linux-first-light-01/`, `linux-check-01/`, `stale-tests-01/`, `fifo-hygiene-01/` | This index. `linux-check-01/RESULTS.md` holds the Linux findings from the retired development plan. |
-| `opus-intake-01/`, `opus-readiness-01/`, `opus-turnover-run-012/`, `astra-turnover-20261027-01/`, `coordinator-intake-run-012/`, `coordinator-transfer-guidance-01/`, `first-leg-riker-brief-01/` | This index (earlier intakes and turnovers) |
-| `custody-shakedown-01/`, `custody-concern-routing-01/`, `interaction-simplifications-01/`, `manager-return-direction-01/`, `manager-collect-discussion-01/`, `manager-collect-authority-01/`, `return-completeness-01/`, `authoring-boundary-01/`, `commission-recall-plan-01/`, `forward-program/` | This index (earlier decision records) |
-| `coordinator-intake-20261026-01.json`, `coordinator-intake-recording-01.json`, `coordinator-discussion-20261026-01.json` | This index |
-| `apparatus-01/`, `step3-01/`, `step3-02/`, `step3-03/`, `diag-linux-01/`, `diag-linux-02/`, `diag-linux-03/`, `acceptance-01/`, `acceptance-02/` | [TRANSITION-PLAN.md](../TRANSITION-PLAN.md): the step 2–6 container runs and Linux diagnostics it cites |
-| `fat-lto-getrandom-01/` | Its `REPORT.md`: the fat-LTO `getrandom` reproduction and evidence |
-| `fat-lto-getrandom-02/` | Its `ANALYSIS.md`: the source-level account of that failure, with the toolchain sources it cites, the Riker request and reply, and the web-agent brief |
-| `fat-lto-getrandom-03/` | Its `RESULT.md`: the LLVM-only declaration-merge experiment |
-| `fat-lto-getrandom-04/` | Its `RESULT.md`: the Rust comparison confirming the account on both architectures |
-| `submission-prototype-01/` | [submission-design-01/RESULT.md](submission-design-01/RESULT.md) |
-| `opus-preparation-audit-01/` | [reports/opus-preparation-audit-2026-10-27/RESULT.md](../reports/opus-preparation-audit-2026-10-27/RESULT.md) |
-| `commission-intake-01/` | [reports/commission-self-audit-2026-10-27/RESULT.md](../reports/commission-self-audit-2026-10-27/RESULT.md) |
-| `receipt-challenge-01/` | [receipt-challenge-01/RESULT.md](receipt-challenge-01/RESULT.md) |
-| `answer-revision-01/` | [answer-revision-01/RESULT.md](answer-revision-01/RESULT.md) |
-| `construction-execution-01/` | [construction-execution-01/RESULT.md](construction-execution-01/RESULT.md) |
-| `fresh-authoring-01/`, `fresh-authoring-preparation-01/` | [fresh-authoring-01/RESULT.md](fresh-authoring-01/RESULT.md) |
-| `return-boundary-01/` | [return-boundary-01/RESULT.md](return-boundary-01/RESULT.md) |
-| `answer-representation-01/` | [answer-representation-01/RESULT.md](answer-representation-01/RESULT.md) |
-| `handoff-transition-01/` | [handoff-transition-01/RESULT.md](handoff-transition-01/RESULT.md) |
-| `successor-inquiry-01/` | [successor-inquiry-01/COORDINATOR-PROGRESS.md](successor-inquiry-01/COORDINATOR-PROGRESS.md) |
+| `apparatus-01/` | The toolchain image builds, two offline builds per architecture and runs in alpine (`apparatus/step2.sh`) |
+| `step3-01/`, `step3-02/`, `step3-03/` | Container suite runs of the manager foundation (`apparatus/step3.sh`); `step3-03` passed on both architectures |
+| `diag-linux-01/`, `diag-linux-02/`, `diag-linux-03/` | The Linux diagnostics that traced `step3-01`'s failures to the fat-LTO release build |
+| `acceptance-01/`, `acceptance-02/` | Acceptance suite runs (`apparatus/acceptance.sh`); `acceptance-02` at `dc85948` is the current qualification |
+| `fat-lto-getrandom-01/` | `REPORT.md`: the fat-LTO `getrandom` reproduction and original observations |
+| `fat-lto-getrandom-02/` | `ANALYSIS.md`: the source-level account of that failure, with the toolchain sources it cites, the Riker request and reply, and the web-agent brief |
+| `fat-lto-getrandom-03/` | `RESULT.md`: the LLVM-only declaration-merge experiment |
+| `fat-lto-getrandom-04/` | `RESULT.md`: the Rust comparison confirming the account on both architectures |
+| `successor-local/` | Local evidence of the retired commission-bundle slice, moved there from its ignored `successor/evidence/` directory |
 
-Additional runs cited by retired plans/findings are assigned to the closure
-report's RETAINED-RUNS index. No source or witness is disposed by deletion of a plan.
+[TRANSITION-PLAN.md](../TRANSITION-PLAN.md) records what these runs established.
+
+Older records under `.scratch/` belong to retired studies. Their index and
+reports are in Git history (`coordination/EVIDENCE.md` at `267aaf0`). They stay
+unless the user decides otherwise.

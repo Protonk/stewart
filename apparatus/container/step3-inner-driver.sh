@@ -1,12 +1,13 @@
 #!/bin/sh
-# Step 3 driver run, inside the pinned python image with no network.
+# Driver run for apparatus/step3.sh, inside the pinned python image with no network.
 #   sh step3-inner-driver.sh GATE        GATE: on (native architecture) or off
 # Inputs: /in/source.tar (git archive of HEAD), /bin-in/stewart and
 # /bin-in/stewart-test (read-only). Output: /out.
 #
 # Starts as root only to record the environment, create an unprivileged user
 # (uid 1000) and its work folder on the container's own disk, then runs the
-# driver as that user. Archives, folders and homes live under /work/tmp; the
+# driver's cases as that user, without --self-test, --network-isolated or
+# --require-all-controls. Archives, folders and homes live under /work/tmp; the
 # driver's evidence is written under /work and copied to /out/evidence at the end.
 set -u
 GATE=${1:-off}

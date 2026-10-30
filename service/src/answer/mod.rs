@@ -149,7 +149,9 @@ pub struct Executed {
     pub revision: u64,
     /// The `entry` or `seal` record the call published, `log/<n>.json`.
     pub log_record: Option<String>,
-    /// This call published the seal: the run delivers after executing the
+    /// The call published the seal, or repeated a submit whose seal was
+    /// published earlier in this placement: the stop path no longer applies
+    /// (6.8). The run delivers the seal it reads from the log after the
     /// response's blocks, then ends `sealed` (6.3).
     pub sealed: bool,
     /// The placement must end after this call; no later block of the

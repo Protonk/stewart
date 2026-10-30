@@ -1,1 +1,0 @@
-{"error":{"message":"A prior intent has no completed acceptance","next_step":"Inspect this same bundle, then use complete with the original request or abandon with an attributed acknowledgment.","paths":["/private/tmp/stewart-commission-check-3kqpvn49/interrupted/bundle"],"reason":"intake_incomplete"}}

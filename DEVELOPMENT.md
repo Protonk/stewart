@@ -1,285 +1,285 @@
 # Developing Stewart
 
-This document covers the existing frozen Python build/checker, the scoped Rust
-commission slice and retained evidence. The complete successor service follows
-[DESIGN.md](DESIGN.md) and [ACCEPTANCE.md](ACCEPTANCE.md); its Linux apparatus
-commands must be added as implemented, without claiming parity with Python.
-[AGENTS.md](AGENTS.md) states the development rules and custody contracts that
-changes must keep, and the [manual](src/stewart/resources/README.md) documents
-the installed tool. Development commands name an explicit interpreter and use
-isolated startup (`-I`, plus `-B` where bytecode must stay unwritten).
+Stewart is the Rust audit service in [`service/`](service): one crate, binary
+`stewart`. [`apparatus/`](apparatus) holds what builds and tests it: pinned
+Linux toolchain images, container scripts and an independent acceptance driver
+with a fake provider. The apparatus does not ship. What to build and what
+evidence is owed are in [DESIGN.md](DESIGN.md),
+[CONTRACTS.md](CONTRACTS.md), [ACCEPTANCE.md](ACCEPTANCE.md) and
+[docs/INTERFACE.md](docs/INTERFACE.md); [AGENTS.md](AGENTS.md) states the
+development rules.
 
-## Build and provisioning
+The product is one statically linked binary for Linux x86_64 and aarch64
+(CONTRACTS, "Platform and auditor access"), built and qualified in Linux
+containers. Native macOS is not a target. The crate builds and tests on the
+development Mac so that work can iterate quickly there, but nothing run natively
+on a development machine counts as evidence.
 
-Build and test dependencies are hash-locked in
-[`requirements.lock`](requirements.lock). Builds use Hatchling's
-[wheel builder](https://hatch.pypa.io/1.13/plugins/builder/wheel/) and
-[version-file selection](https://hatch.pypa.io/1.13/version/), without Git
-metadata: the version comes from `src/stewart/_version.py`, and no `.git`
-directory or VCS plugin is needed.
+## Layout
 
-Provision the build environment and wheelhouse, and build and install a wheel,
-as the frozen guide's [Installation](docs/FROZEN-PYTHON.md#installation) section shows. The
-commands below reuse its absolute-path variables `STEWART_SOURCE`,
-`STEWART_BUILD` and `STEWART_WHEELS`. Provision while network access is
-available: `scripts/check.py` performs no network downloads, and its nested
-boundary tests reuse the same provisioned wheelhouse.
+- `service/src/`: the service. The crate documentation in `service/src/lib.rs`
+  maps its modules.
+- `service/tests/`: integration tests. Most run the real binary from an
+  unrelated working directory; the auditor-tool tests drive the tools in
+  process against an audit the real binary commissioned. Each test has its own
+  fresh temporary directory.
+- `service/Cargo.toml`, `service/Cargo.lock`, `service/.cargo/config.toml`:
+  the pinned dependencies and the vendored-source replacement.
+- `apparatus/step2.sh`, `apparatus/step3.sh`, `apparatus/acceptance.sh`: the
+  host scripts that run the container suites.
+- `apparatus/container/`: the toolchain `Containerfile` and the scripts that
+  run inside the containers.
+- `apparatus/driver/`: the independent driver and its fake provider.
 
-## Running the suite
+## Toolchain and dependencies
 
-Run the standalone suite against a fresh wheel with Python 3.14:
+The toolchain images `stewart-toolchain:1-arm64` and `stewart-toolchain:1-amd64`
+are built by `apparatus/step2.sh` from
+[`apparatus/container/Containerfile`](apparatus/container/Containerfile): the
+Rust image pinned by digest, plus the native musl target and the musl C
+toolchain (`ring` compiles C and assembly for the target). The target and the
+musl packages are fetched when the image is built, so a built image's digest is
+the actual pin. `step2.sh` records each image's inspection, and every other
+suite records the inspection of the images it used. Inside the image,
+`/toolchain-versions.txt` lists the compiler, Cargo, the installed targets and
+the musl package versions, and every container build keeps a copy of it.
 
-```sh
-"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/check.py" --wheelhouse "$STEWART_WHEELS" --result /absolute/stewart-results.json
-```
+Release binaries are built for `aarch64-unknown-linux-musl` and
+`x86_64-unknown-linux-musl`, each in its own architecture's image. A glibc build
+for `<arch>-unknown-linux-gnu` exists only as the firing control for the static
+check, which must reject it.
 
-The runner builds a wheel, installs it into a private venv, and copies the
-tests to an unrelated directory, where it tests the installed wheel. It selects
-that copy's pytest configuration explicitly and disables inherited plugins and
-options. Only the selected pytest's built-in plugins and the staged suite's own
-conftest are admitted; containing-project and third-party plugins refuse.
-Without `--wheelhouse` the runner uses `$STEWART_WHEELHOUSE`, else
-`<project>/.scratch/wheelhouse`; without `--result` it writes
-`<project>/.scratch/check-result.json`. `scripts/check.py --help` describes
-every option.
+The release profile in `service/Cargo.toml` uses one codegen unit, fat LTO,
+`panic = "abort"` and stripped symbols. Fat LTO has one known hazard, described
+in the crate documentation in `service/src/lib.rs`: in the static musl release
+build, a call through `libc::` to a function that std also declares weak can
+link to nothing, and debug, thin-LTO and macOS builds never show it. Such calls
+go through `libc::syscall`, as `platform::random_fill` does.
 
-A shell sandbox that refuses creating `.gitconfig` files in the run's artifacts
-directory stops every node at fixture setup, because the staged conftest writes
-one into each node's private HOME there. Such a sandbox also refuses unlinking
-those files, so `scripts/prune.py` cannot remove the artifacts directory from
-inside it. Run the checker and the prune outside such a sandbox or permit those
-operations; the receipt of a run stopped this way records setup failures and no
-executed test body, and a refused prune records the failure and leaves the
-remaining entries.
+The dependencies are four crates pinned to exact versions in
+`service/Cargo.toml` (`libc`, `sha2`, `rustls` with its `ring` provider, and
+`webpki-roots`), and `service/Cargo.lock` pins the whole graph. Builds never
+reach crates.io: `service/.cargo/config.toml` replaces it with the vendored
+sources in `service/vendor`, and every build here passes `--locked --offline`.
 
-For a short development check, add `--fast` to select only `smoke and not
-heavy`. Full validation omits that flag. `--fast` owns the marker selection,
-so it cannot be combined with `-m`.
+`service/vendor` is not tracked (`service/.gitignore`), so a new clone or
+worktree has none. `step2.sh` produces it: with network access, it runs
+`cargo vendor --locked --versioned-dirs` in the arm64 toolchain image against a
+`git archive` of `HEAD`, records the SHA-256 of every vendored file in its
+evidence (`host/vendor.sha256`) and copies the tree into `service/vendor`. It
+refuses to start while `service/vendor` exists; after a `Cargo.lock` change the
+vendored tree has to be produced again from the new lock. The other suites
+record the digests of the vendored files they mount.
 
-### Selecting tests
+Run Cargo from `service/`. Cargo looks for `.cargo/config.toml` from its working
+directory upward, so `--manifest-path service/Cargo.toml` from the repository
+root misses the source replacement, and an offline build cannot resolve the
+crates.
 
-Other arguments go to pytest unchanged: `-k` expressions, or test files and
-node IDs named relative to the staged suite root, which mirrors the project
-root:
+## Building and testing natively
 
-```sh
-"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/check.py" --wheelhouse "$STEWART_WHEELS" --result /absolute/stewart-runner.json tests/test_runner.py::test_budget_charges_all_phases_and_ignores_node_names
-```
-
-A selection that collects a node more than once, such as a file together with
-one of its node IDs, is refused, as is an empty selection, and so is a test
-outside the staged `tests` directory named beside a staged path. pytest loads
-the staged conftest only for staged paths: a selection naming only outside
-paths runs those tests without the suite's boundary checks or private HOME, and
-the invocation then fails because it wrote no receipt. Options that end pytest
-before a session (`--version`, `--markers`) fail the same way.
-
-### Time budgets
-
-Add `--test-budget-seconds 4` to fail on any test whose setup, call and
-teardown exceed four seconds; add `--total-budget-seconds 120` to bound the
-complete invocation, including the private environment and wheel build. The
-total budget is compared with the elapsed time once pytest ends; it does not
-stop a run early. Choose budgets appropriate to the host. Test success does not
-erase a budget failure.
-
-```sh
-"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/check.py" --wheelhouse "$STEWART_WHEELS" --result /absolute/stewart-budget.json --test-budget-seconds 4 --total-budget-seconds 120
-```
-
-## Git selection
-
-The tests reach Git through PATH. On macOS `/usr/bin/git` is Apple's shim,
-which locates the developer tools' Git on every call. `--git-executable`
-chooses which Git the tests reach:
-
-- **`auto`** (the default). When git on PATH is that shim, the check resolves
-  `xcrun --find git` once and requires a regular executable that reports the
-  shim's `--version` and an existing `--exec-path`, both inside the
-  `xcode-select -p` developer directory. It writes a private `git` script that
-  `exec`s that binary by absolute path (`/bin/dash`, or `/bin/sh` without it),
-  and inserts the script's directory immediately before the PATH entry that
-  supplied the shim, so earlier entries keep precedence and only `git` changes.
-  Apple's Git derives its exec path and templates from the path it was invoked
-  by, so a link or copy would break them, and the binary's own directory
-  (`<developer>/usr/bin`) holds other tools, `python3.9` among them. On other
-  platforms, when git resolves elsewhere, or without a verified binary, PATH is
-  unchanged and the reason is recorded.
-- **`path`** leaves PATH alone.
-- **`/absolute/dir/git`**, such as a wrapper that logs each call, inserts that
-  executable's whole directory at the same place, or appends it when no Git
-  resolves. Use a directory holding only `git`, and make a wrapper `exec` the
-  real Git by absolute path: under the tests' PATH a wrapper that runs `git` by
-  name finds itself. A different path to the same file, such as a link, does
-  not count as already selected; a request the insertion cannot reach is
-  refused.
-
-The check prints the selection, writes it to the `.log` and records it as
-`git_selection` in the result, with the version and exec path that Git reports
-under the tests' PATH and every name whose resolution changed. Stewart itself
-still runs `git` by name, so inside the tests it reaches the selected Git, and
-the experiment launcher passes that PATH to auditor children. Tests that build
-PATH without the inherited value (for example from `os.defpath`) do not see the
-selection; those that extend the inherited PATH do.
-
-## PATH for provisioning commands
-
-The provisioning commands (`ensurepip`, both pip installs, the wheel build and
-any `--parity-output` run) get the inherited PATH minus every entry in which
-`rustc` resolves: pip runs `rustc --version` for its user-agent string even
-with `--no-index`, and under a test's empty HOME a rustup proxy would start
-installing a toolchain from the network. The check records those entries in
-the `.log` and as `provisioning_path_removed` in the result. The tests keep the
-inherited PATH; a test that starts pip itself gives it `path_without_rustc`
-from `tests/support.py`.
-
-## Results and retained evidence
-
-Beside `<name>.json` (the `--result` path) a run keeps:
-
-- `<name>.log`: the Git selection, the PATH entries withheld from
-  provisioning, then provisioning and build;
-- `<name>.pytest.log`: pytest's argv and cwd, then its stdout and stderr with
-  each line labelled by stream, kept even when pytest stops before writing a
-  result;
-- `<name>-dist/`: the tested wheel;
-- `<name>-artifacts-*/`: pytest's base temporary directory.
-
-Each invocation replaces the two logs and adds an artifacts directory; a run
-that writes no result leaves an earlier `<name>.json` in place, so use a fresh
-result name per run.
-
-The result records all collected and selected nodes, outcomes, plugin origins,
-per-phase durations and budget overruns. It also records every phase outcome,
-the markers and the owned test directory and private HOME of each node, the
-installed member population, the wheel and its digest, the interpreter, digests
-of the staged suite and of `check.py`, and the project's commit and
-`git status` when the project is the top of its own Git work tree.
-
-Once pytest has written this invocation's result, `check.py` removes the
-directories of each node whose setup, call and teardown all passed within any
-`--test-budget-seconds`, recording its plan in the result before the first
-removal and each path's outcome after it. Failed, skipped, interrupted and
-over-budget nodes and entries no node owns stay, and a run that leaves no
-result of its own keeps everything. Add `--keep-node NODEID`, repeatable, to
-keep passing evidence such as a comparison's controls. A named node with no
-executed call on record (no call phase, or a skipped one, which is how pytest
-reports skips and expected failures, or no usable result) fails the invocation
-and nothing is removed, because an evidence run that lost its control is not
-evidence. `--keep-artifacts all` removes nothing. Removal failures are printed
-and recorded but change neither the exit status nor any test outcome.
-
-## Retained runs and their removal
-
-A run is what `check.py` leaves beside `<name>.json`. Its **record** is the
-receipt, `<name>.log`, `<name>.pytest.log`, the tested wheel under
-`<name>-dist/` and whatever the caller put beside them, such as an `.out`
-stream. Its **artifacts directory**, `<name>-artifacts-*/`, is working state:
-the test directories and private HOMEs the receipt describes. Left whole, a
-full run's artifacts hold about 3.6 GB in 200,000 entries, nearly half of it
-runtime capture archives and a third copies of the package, so two rules bound
-them and nothing else is deleted:
-
-1. **Each invocation reduces its own run.** The default `--keep-artifacts
-   failed` removes the directories of every node that passed within budget
-   once the receipt is written, as the previous section describes. A run made
-   with `--keep-artifacts all` or `--keep-node` is an evidence run; the plan
-   or report that needs it names it.
-2. **An artifacts directory leaves when the run's purpose is served; the
-   record stays.** `scripts/prune.py` is the only mechanism, and it never
-   removes a record. Records stay beside the plan or report that cites them
-   and are removed by hand with that plan, as [AGENTS.md](AGENTS.md) says of
-   completed plans; they are never rewritten. Prune once a plan's findings are
-   recorded, and before removing the plan.
+On the development Mac (Apple silicon) the crate builds and tests with a native
+Rust toolchain and the vendored crates. The Linux-only calls are gathered in
+`service/src/platform.rs`, whose module documentation lists each one beside its
+macOS fallback: `flock` for the OFD lock, `st_birthtime` for `statx`,
+`getentropy` for `getrandom`, no process start time, and so on. The fallbacks
+exist only for development; they are not supported behavior.
 
 ```sh
-"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/prune.py"
-"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/prune.py" --apply
-"$STEWART_BUILD/bin/python" -I -B "$STEWART_SOURCE/scripts/prune.py" --run identity/repair-314 --orphans --apply
+cd service
+cargo test --locked --offline
+CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-injection,sabotage
 ```
 
-Without `--apply` the script prints the plan and writes nothing. It walks
-`--root` (default `<project>/.scratch`) without entering any run's
-directories. Only a receipt binds an artifacts directory: the directory it
-names must be a real directory beside it named `<name>-artifacts-*`. The
-default plan takes every bound run whose outcomes all passed or were skipped,
-with pytest and the runner exiting 0 and no budget exceeded, that selected no
-evidence, and whose stem no tracked file of the project names (`git grep`,
-which requires the project to be the top of its own Git work tree; the default
-stem `check-result` is always named by this document). Everything else is kept
-and its reason printed: a failed, over-budget or cited run, an evidence run, a
-receipt naming a directory elsewhere or a link, a directory a running process
-names, and an orphan no receipt binds. `--run NAME` plans the named run
-whatever its outcomes and citations, where NAME is the receipt's path relative
-to the root without `.json` or its bare stem when unique; a name matching no
-receipt, an unbound run or one a running process names refuses the whole
-invocation, and nothing is removed. `--orphans` plans unbound directories no
-running process names.
+The first run tests release behavior. The second compiles the test-only code of
+INTERFACE Appendix C: `fault-injection` adds the failure points and the
+test-only TLS root, provider timeout and retry delays, and `sabotage` adds the
+controls that each break exactly one property. The test files for them
+(`faults.rs`, `sabotage.rs` and their `answer_` and `close_` counterparts) run
+only in that configuration. Fault and sabotage settings are read once per
+process, so some checks are ignored tests that a runner test executes in a
+child process of its own with the setting it needs; an ordinary run lists them
+as ignored. The separate target folder keeps the two configurations from
+rebuilding over each other.
 
-With `--apply` the plan goes to `<root>/pruned/<timestamp>-<pid>.json` before
-the first removal and each directory's result after it, and
-`<name>.pruned.json` beside each pruned receipt names that record. Removal
-checks each directory's device and inode against the plan, follows no links,
-and restores owner permissions a test took away, as the retention pass does; a
-refused removal is recorded, printed and fails the invocation.
+The tests take their scratch space from the system temporary directory, or
+from `STEWART_IT_TMP` when it is set. On Linux the archive must be on ext4, xfs
+or btrfs, so point `STEWART_IT_TMP` at such a directory when `/tmp` is tmpfs or
+overlayfs. The container suites build the crate but run the driver, not these
+tests.
 
-## Qualification
-
-### Rust commission-input slice
-
-The independent crate under `successor/` supplies `stewart-commission`; its
-[user guide](successor/README.md) states the admitted inputs and custody boundary.
-Use the pinned Cargo.lock and locally provisioned dependency cache:
+The driver below takes a release binary and a test build:
 
 ```sh
-cargo test --locked --offline --manifest-path successor/Cargo.toml
-cargo build --locked --offline --release --manifest-path successor/Cargo.toml
-"$STEWART_BUILD/bin/python" -I -B scripts/check_commission.py --binary /absolute/stewart/successor/target/release/stewart-commission --evidence /absolute/new-commission-check
+cd service
+cargo build --locked --offline --release
+CARGO_TARGET_DIR=target-test cargo build --locked --offline --release --features fault-injection,sabotage
 ```
 
-The external checker copies the executable, records its identity, and drives it
-from a fresh unrelated directory. It preserves exact small input witnesses,
-large-input identities, command streams and real process-interruption evidence.
-The chosen evidence directory must be new. Its START/RESULT records locate the
-retained working directory; do not remove that witness or the interrupted
-specimens during review. Rust integration tests retain their fixtures/streams
-under `successor/evidence/`, with unique run names; these are development evidence,
-not product storage. The citing report/plan owns their retention. Neither route
-deletes its artifacts or interprets an old passing result as a new run.
+These leave the release binary at `service/target/release/stewart` and the test
+build at `service/target-test/release/stewart`. The test build needs its own
+target folder; built into the same one, it would replace the release binary.
+By Appendix C the release binary contains neither feature's code nor the six
+test-only environment variable names; `acceptance.sh` checks the names, with
+the test build as the firing control.
 
-Current qualification is Apple Silicon macOS with Rust 1.99.0. Linux/WSL support,
-host-wide confinement, storage replication and power-loss behavior are not
-established by the local comparisons. File/directory synchronization is part of
-the implementation, not a proof of the underlying device's durability. The Python
-installed-wheel checker qualifies only Python; it is used separately when that
-frozen writer operates an audit. No test of result inspection is a release gate
-for this commission-input slice.
+## The independent driver
 
-### Python baseline and wider successor
+[`apparatus/driver/`](apparatus/driver) is the black-box acceptance driver,
+written in Python with the standard library only; `stewart_driver.py` is its
+entry point. Its author writes it from INTERFACE, QUESTION-FORMS, CONTRACTS and
+ACCEPTANCE and does not read `service/`, and the service is written from the
+same specification, not from the driver. Keeping the two apart means a
+misreading of the specification has to be made twice, independently, to pass
+unnoticed. Disagreements between them have been settled against the
+specification: an unclear point was clarified in its text, which both then
+follow, and a misreading was corrected on the side that made it.
 
-Development and acceptance target Apple Silicon macOS with Python 3.14.
-POSIX APIs alone do not establish Linux or other-host support; qualify those
-hosts separately. Harness enforcement also needs its own explicit
-qualification, separate from the settings a launch profile constructs. The
-manual's [launch profile](src/stewart/resources/README.md#launch-profile)
-section describes an opt-in check to run after a harness update, which drives
-a profile's probe through the real harness and is skipped otherwise because it
-spends a request. Socket checks require a host that permits a local Unix
-socket, and unreadable-file controls require an unprivileged user.
+The driver uses the two binaries only through their command line. It serves a
+fake Messages API on loopback, runs a reacting fake auditor, and keeps its own
+witness of everything it supplies outside Stewart's archive.
 
-## Running from source
-
-The source bootstrap runs Stewart from a source checkout without installing
-it:
+Run it with an explicit interpreter and isolated startup (`-I -B`); the entry
+point puts its own directory on `sys.path`:
 
 ```sh
-<python> -I -B /absolute/project/src/stewart/_bootstrap.py source -- ...
+python3 -I -B apparatus/driver/stewart_driver.py --list
+python3 -I -B apparatus/driver/stewart_driver.py --self-test
+python3 -I -B apparatus/driver/stewart_driver.py \
+    --binary /abs/stewart --test-binary /abs/stewart-test \
+    --evidence /abs/new-folder [--case 'c17.*'] [--exclude 'close.*'] [--skip-heavy]
 ```
 
-Do not use `PYTHONPATH` to select a source installation; isolated mode ignores
-it. The installed interpreter and its environment hooks remain trusted:
-isolated mode ignores caller Python variables and the user site, but
-environment `.pth` files and `sitecustomize` can still execute. The manual's
-[manager quick start](src/stewart/resources/README.md#manager-quick-start)
-describes the private deployment the source launcher makes under
-`~/.local/state/stewart/managers`.
+`--list` prints the case inventory. `--self-test` checks the driver's own
+helpers without a binary, including its rendering, answer and manifest
+witnesses against the examples in `docs/QUESTION-FORMS.md` and
+`docs/INTERFACE.md`, byte for byte. A run against binaries needs an evidence
+folder that does not exist yet, and a work directory (`--work`, default the
+system temporary directory) outside the repository. Its exit status is 0 only
+when no case failed and every control fired.
+
+Run natively on the development Mac, the driver is for iteration. Cases with
+Linux-only expectations (the OFD lock, `/proc` observations, the archive
+filesystem allowlist, byte-string names) are skipped with their reason, as are
+cases needing the fake provider where loopback listening is not permitted, and
+the timing gate is off unless `--timing-gate on` is given.
+[apparatus/README.md](apparatus/README.md) describes the driver's modules,
+cases, controls and evidence in detail.
+
+## Container suites
+
+The suites run under Apple `container` 1.6.1 on the development Mac. They are
+host scripts, run from an ordinary shell; a sandboxed command shell may be
+denied access to the container services. Each script checks the version and
+that the container services are running, and stops otherwise. `step3.sh` and
+`acceptance.sh` also need the toolchain images and `service/vendor` from
+`step2.sh`. The network is used only to pull pinned images, build the toolchain
+images and vendor crates; every build and driver run is offline
+(`--network none`) in a container removed on exit, and nothing on the host is
+deleted.
+
+Each script takes one optional argument, its evidence folder, which must not
+exist yet. Without it the script uses a fixed default under `.scratch/`
+(`apparatus-01`, `step3-01`, `acceptance-01`), and those defaults are already
+taken on the development Mac. Pass a new folder as an absolute path, for
+example from the repository root:
+
+```sh
+sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-NN"   # NN not yet used
+```
+
+Each script builds from a `git archive` of `HEAD` and records the commit, so it
+sees only committed files; uncommitted changes under the archived paths are
+noted, not used. Commit the work before running a suite. A suite run from
+another checkout uses that checkout's own `service/vendor`.
+
+- `step2.sh` builds the two toolchain images and `service/vendor`, then builds
+  the release binary twice per architecture in fresh containers, compares the
+  two builds byte for byte, checks that the binary is static, runs it in its
+  toolchain image, and runs `stewart help` in the pinned alpine image.
+- `acceptance.sh` runs the whole scripted tier of ACCEPTANCE. Per architecture
+  it builds the release binary, the test build and a glibc control, and checks
+  that both musl binaries are static and the glibc control is not, that `cmp`
+  tells the release and test binaries apart, and that only the test build
+  contains the six test-only variable names. Then, in the pinned python image
+  with no network and as an unprivileged user, it runs the driver's self-test
+  and every case with `--network-isolated --require-all-controls`, so every
+  sabotage control of Appendix C.2 must be assigned to a case and fire.
+- `step3.sh` is a narrower suite: it builds the same three binaries, checks
+  only two of the test-only variable names, and runs the driver's cases without
+  the self-test, `--network-isolated` or `--require-all-controls`.
+  `acceptance.sh` makes every check that `step3.sh` makes.
+
+Each writes `host/DONE` with `failures=N`; `step3.sh` and `acceptance.sh` also
+write `host/SUMMARY` with the driver's counts per architecture, and
+`acceptance.sh` adds the self-test's summary line.
+[apparatus/README.md](apparatus/README.md) gives each script's steps and
+evidence layout.
+
+Evidence comes from a Linux container suite and, under ACCEPTANCE
+("Platforms"), from the scripted tier run natively on WSL2 from a handoff
+package of the same binary, driver and fake provider; these scripts cover the
+Linux containers only. Native runs on a development machine such as the Mac are
+not evidence. On the development Mac the x86_64 containers run under Rosetta
+emulation: their timings are reported but do not gate (ACCEPTANCE C9), and the
+driver records Rosetta's own cache under the home as an emulator artifact rather
+than a write by Stewart.
+
+Every suite uses the fake provider. The real-model conformance tier of
+ACCEPTANCE needs its own apparatus, and a model-consuming run needs the user's
+explicit permission, with its models and budget named.
+
+## Evidence and retention
+
+Runs write their records under `.scratch/<run>/` in the repository: container
+suite evidence, driver evidence folders, and the outputs of commands run by hand
+for a study. `.scratch/` is ignored by Git, so records stay on the machine that
+made them and do not travel with the repository.
+
+- **A new attempt gets a new directory.** The suites and the driver refuse an
+  existing evidence folder. The suites' default folders
+  (`.scratch/apparatus-01`, `.scratch/step3-01`, `.scratch/acceptance-01`)
+  therefore serve once; give each later run its own name.
+- **Records are never rewritten.** A correction or reinterpretation goes in the
+  document that cites the run, or into a new run.
+- **Retention follows citation.** A run's record stays while an active plan or
+  a tracked document cites it. It is removed by hand, and only together with
+  the plan that cites it, once that plan's findings are in documentation or
+  tests. No script removes records.
+
+An evidence run keeps what ACCEPTANCE requires until its results have been
+reviewed ("What a test run keeps", C18): the witness, and the damaged originals
+and bulky material that review needs, under the rules above. The driver writes
+its witness, each variant's checks and inventories, and each command's argv,
+streams, exit status and timing into the evidence folder, and removes nothing
+there. The archives, folders and homes a case works on are in its work
+directory (`--work`). With the default `--keep-work failed`, once a variant has
+served its purpose (it passed, or its control fired) and its results are
+written, the driver removes that variant's work and lists the removal in the
+run's `RESULT.json`; a variant that did not serve its purpose keeps its work,
+and up to 64 MiB of it is copied into the evidence. `--keep-work all` keeps
+every variant's work. The container suites run the driver with the default, in
+a work directory on the container's own disk that is discarded with the
+container, and copy out the evidence folder. The service's integration tests
+remove their temporary trees as each test finishes.
+
+What a run must show:
+
+- A clean result needs a firing control, a case differing in the measured
+  property and an invariance case (ACCEPTANCE, "Rules every check follows"). A
+  control that does not fire is a broken check, and a run that lost its control
+  is not evidence of the property it guards.
+- The witness sits outside whatever the run under test may change or remove,
+  as the driver keeps its own outside Stewart's archive.
+- Preserve command outputs. The scripts keep every step's stdout, stderr and
+  exit status; commands run by hand for a study keep theirs beside its record.
+- Report actual counts: cases run, passed, failed and skipped, and the controls
+  that fired, as the run's own summary gives them (`host/SUMMARY`, the driver's
+  `RESULTS.md`), never as what should have run.
+- A run qualifies the commit it archived (a suite's `host/commit.stdout`) and
+  the binaries whose digests it recorded; by itself it says nothing about a
+  later source.
+- Qualify actual access and stopping, not merely the settings meant to produce
+  them.
+- An explanation remains a hypothesis until a comparison distinguishes it from
+  its rivals.

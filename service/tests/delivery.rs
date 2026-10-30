@@ -1,6 +1,6 @@
 //! Delivery, close after launch and status after launch, through the real
 //! binary (release behavior; no fault or sabotage controls are set). States
-//! after launch are built with the foundation's writers (`fixture`); each
+//! after launch are built with the crate's own writers (`fixture`); each
 //! delivered package is compared against the test's own witness.
 
 mod common;

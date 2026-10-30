@@ -15,6 +15,7 @@
 //! | Random bytes | `getrandom(2)` | `getentropy(3)` |
 //! | errno reset | `__errno_location` | `__error` |
 //! | Process start time | `/proc/self/stat` field 22 | none (recorded as null) |
+//! | Boot identity | `/proc/sys/kernel/random/boot_id` | none (recorded as null) |
 
 use std::ffi::CString;
 use std::fs::File;
@@ -28,9 +29,10 @@ pub fn random_fill(buf: &mut [u8]) -> io::Result<()> {
         // The raw syscall, not musl's getrandom() wrapper. In the fat-LTO
         // static release build the wrapper call linked to nothing: it
         // returned without writing (all-zero identifiers) on aarch64 and
-        // crashed on x86_64; thin-LTO and non-LTO builds worked. The likely
-        // mechanism, from the toolchain sources: std declares getrandom
-        // extern_weak for its own fallback, fat LTO links every library's
+        // crashed on x86_64; thin-LTO and non-LTO builds worked. The
+        // mechanism, traced in the toolchain sources and confirmed by
+        // experiment: std declares getrandom extern_weak for its own
+        // fallback, fat LTO links every library's
         // module into the binary's own module in name order, and LLVM keeps
         // the first declaration's linkage. std's weak one sorts before this
         // library's strong one, so the merged reference was weak, ld took

@@ -1,1 +1,0 @@
-{"error":{"message":"Observed bytes differ from the recorded size/digest","next_step":"Preserve the records; use the recorded original request or a fresh bundle for a new commission.","paths":["copy-000001-001.bin"],"reason":"binding_mismatch"}}

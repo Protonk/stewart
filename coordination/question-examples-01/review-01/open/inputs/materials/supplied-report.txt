@@ -1,8 +1,0 @@
-Illustrative supplied report for implementation A
-This report is invented for the design example. No tests ran to produce it.
-Author: fixture operator. Scope: the listed serial-worker scenarios only.
-- Normal delivery of reminder R7: one visible message; sent marker present.
-- Retry R7 after that completed delivery: still one visible message.
-- Fresh R8: stop the worker after gateway.send returns and before mark_sent starts.
-  Restart the worker with R8: two visible messages total; sent marker present.
-No observations of implementation B or gateway failure within a call are supplied.
