@@ -6,6 +6,8 @@ Riker is accessed through a separate Project conversation. Requests and replies 
 
 The user's “We should ask Riker for help” requests a message they can relay. For a new conversation, prepare a ready-to-paste opening using [the template](THREAD-ONRAMP-TEMPLATE.md), with the question or task, relevant context, and necessary excerpts or command outputs. Identify any files the user needs to attach; a local filesystem path alone does not make its contents available to Riker. For an existing conversation, prepare a follow-up message. The user relays messages in both directions. After receiving the reply, continue the local task in light of that assistance.
 
+Break lines in a message for Riker only at the end of a paragraph, list item, table row or heading, and inside code blocks. Never wrap prose to a column width: the user pastes these messages into another interface, where hard-wrapped lines read badly.
+
 ## Sending a request
 
 1. Ask the local agent to prepare the opening message and identify any attachments.
