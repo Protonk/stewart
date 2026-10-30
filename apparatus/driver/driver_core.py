@@ -2902,6 +2902,8 @@ def parse_args(argv):
             p.error("--evidence %s exists; each run needs a new evidence folder" % args.evidence)
         if not os.path.isdir(os.path.dirname(os.path.abspath(args.evidence))):
             p.error("the parent of --evidence %s does not exist" % args.evidence)
+        if args.work and not os.path.isdir(args.work):
+            p.error("--work %s is not an existing directory" % args.work)
     return args
 
 

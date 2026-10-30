@@ -429,15 +429,6 @@ def close_cmd(t, a, name, opts=(), *, expect="completed", reason=None, fault=Non
     return rep
 
 
-def wait_for(cond, timeout=30.0, interval=0.02):
-    deadline = time.time() + timeout
-    while True:
-        v = cond()
-        if v or time.time() >= deadline:
-            return v
-        time.sleep(interval)
-
-
 def scenario(t, label, fn, *args, **kw):
     """Run one scenario of a case; a failed requirement or an unexpected exception ends only it."""
     try:
@@ -457,16 +448,6 @@ def no_diag(effects):
 
 def log_len(t, sub):
     return len(t.read_log(sub))
-
-
-def check_fake(t, a, name):
-    """The fake itself worked: no responder exception and no exhausted script."""
-    if a.fx is None:
-        return
-    t.check(name + ".fake-responder", not a.fx.provider.anomalies, a.fx.provider.anomalies[:3])
-    ex = getattr(a.fx.responder, "exhausted", None)
-    if ex is not None:
-        t.check(name + ".fake-script", not ex, {"exhausted_at_exchanges": ex})
 
 
 # ---------------------------------------------------------------------------
@@ -804,7 +785,17 @@ def run_ordinary(t, a, name, *, run_number=1):
     if a.aud is not None:
         rs.check_auditor(t, a.aud, name)
         t.eq(name + ".reminder-once", a.aud.reminders_seen, 1)
-    check_fake(t, a, name)
+    rs.check_fake(t, a.fx, name)
+    return rep
+
+
+def run_scripted_ending(t, a, name):
+    """A fixed script that ends its turn until the run ends ended_unsubmitted (6.4, T8)."""
+    rep = run_cmd(t, a, name)
+    t.require(name + ".completed", rep.outcome == "completed", rep.obj)
+    rs.check_run_reply(t, rep, a.sub, name, ending="ended_unsubmitted", run_number=1, fx=a.fx,
+                       limits=rs.limits_of(a.sub))
+    rs.check_fake(t, a.fx, name)
     return rep
 
 
@@ -816,7 +807,7 @@ def run_sealed(t, a, name, *, delivery="verified", run_number=1, cwd=None, env=N
                        limits=rs.limits_of(a.sub), seal_actor="auditor", delivery_outcome=delivery)
     t.eq(name + ".exit", rep.rc, 0)
     rs.check_auditor(t, a.aud, name)
-    check_fake(t, a, name)
+    rs.check_fake(t, a.fx, name)
     seal = rep.data.get("seal") if isinstance(rep.data.get("seal"), dict) else {}
     rev = witness_revision(a.aud)
     t.eq(name + ".seal.revision-witness", seal.get("revision"), rev)
@@ -1234,6 +1225,8 @@ def close_damaged(t, a, name, entries, rev, bad_ids, confirm_status=True):
                         outcome="verified_with_losses", losses=losses)
     loc = check_package_at(t, a, name + ".copy-1", 1)
     t.check(name + ".no-answer-md", not os.path.lexists(os.path.join(loc, "answer.md")), loc)
+    # The steps below confirm and surrender by these handles; without them they cannot be judged.
+    t.require(name + ".handles-known", bool(tok) and bool(ids) and all(ids), {"token": tok, "losses": ids})
     with_losses = {"verified": False, "confirmed": False, "location": loc, "losses": ids}
     if confirm_status:
         status_point(t, a, name + ".status-awaiting", condition="awaiting_confirmation", sealed="manager",
@@ -1347,8 +1340,8 @@ def _unknown(t, a):
                  closed="unfinished", last=log_last(t, a.sub), seal="manager",
                  closure={"unfinished_reason": "delivery_incomplete"}, next_cmds=("close", "status"))
     mpath = os.path.join(a.sub.audit_dir, "seal", "manifest-1.json")
-    t.eq("c5.unknown.archived-manifest", rs.read_package_member(os.path.dirname(mpath), "manifest-1.json"),
-         a.manifest)
+    t.require("c5.unknown.archived-manifest", a.manifest is not None and
+              rs.read_package_member(os.path.dirname(mpath), "manifest-1.json") == a.manifest, mpath)
     t.flip_bit(mpath, 20)
     rep = close_cmd(t, a, "c5.unknown.close")
     check_close_obj(t, a, "c5.unknown.close", rep.obj, closure="unfinished", reason="delivery_incomplete",
@@ -1432,7 +1425,9 @@ def _close_failures(t, a):
                           last=log_last(t, a.sub), seal=None, closure={"unfinished_reason": None},
                           next_cmds=("close", "status"))
         t.check(name + ".status.diagnostics", mentions(st.data.get("diagnostics"), "diag/"), st.data.get("diagnostics"))
-    rep = close_cmd(t, a, "c17.close.reply-lost", fault="reply.write=epipe", killed=False, expect=None)
+    # 1.6: a missing reply is unknown, not a code; only the absence of the reply is judged here.
+    rep = t.cmd(["close", a.sub.ref], name="c17.close.reply-lost", fault="reply.write=epipe", envelope=False,
+                writer=a.sub.writer)
     t.eq("c17.close.reply-lost.no-reply", rep.stdout, b"")
     sv = status_seal(t, a, "c17.close.seal")
     manager_sealed(t, a, sv, "c17.close.seal", entries, rev)
@@ -1728,7 +1723,7 @@ def _interrupted_close(t, a):
     rs.check_run_reply(t, rep, a.sub, "c8.interrupted.run", ending="interrupted", cause="provider_unavailable",
                        run_number=1, fx=a.fx, limits=rs.limits_of(a.sub))
     t.eq("c8.interrupted.run.exit", rep.rc, 5)
-    check_fake(t, a, "c8.interrupted.run")
+    rs.check_fake(t, a.fx, "c8.interrupted.run")
     status_point(t, a, "c8.interrupted.status", condition="interrupted",
                  last={"ending": "interrupted", "cause": "provider_unavailable", "recorded_by": "run"},
                  answer={"revision": 1, "entries": 1}, seal=None, next_cmds=("run", "close"))
@@ -1746,10 +1741,7 @@ def _interrupted_close(t, a):
 
 def _empty_answer(t, a):
     with_script(t, a, [end_step("Nothing to record yet."), end_step("Stopping.")])
-    rep = run_cmd(t, a, "c8.empty.run")
-    rs.check_run_reply(t, rep, a.sub, "c8.empty.run", ending="ended_unsubmitted", run_number=1, fx=a.fx,
-                       limits=rs.limits_of(a.sub))
-    check_fake(t, a, "c8.empty.run")
+    run_scripted_ending(t, a, "c8.empty.run")
     rep = close_cmd(t, a, "c8.empty.close")
     manager_sealed(t, a, rep.data.get("seal"), "c8.empty.close.seal", [], 0)
     tok = cf_token(t, a, 1)
@@ -1765,7 +1757,7 @@ def _empty_answer(t, a):
 
 def _damaged_log(t, a):
     with_script(t, a, [end_step("Nothing to record."), end_step("Stopping.")])
-    run_cmd(t, a, "c8.damaged-log.run")
+    run_scripted_ending(t, a, "c8.damaged-log.run")
     n = log_len(t, a.sub)
     bad = os.path.join(a.sub.audit_dir, "log", "%d.json" % (n + 1))
     t.tampered_logs.add(a.sub.audit)
@@ -1828,7 +1820,7 @@ def c_close_faults(t):
 
 def _after_requested(t, a):
     with_script(t, a, [end_step("Nothing yet."), end_step("Stopping.")])
-    run_cmd(t, a, "c8.after-requested.run")
+    run_scripted_ending(t, a, "c8.after-requested.run")
     close_cmd(t, a, "c8.after-requested.close", fault="close.after_requested=kill", killed=True)
     t.eq("c8.after-requested.log-tail", t.log_kinds(a.sub)[-1:], ["close_requested"])
     status_point(t, a, "c8.after-requested.status", condition="close_unfinished", closed="unfinished",
@@ -1849,7 +1841,7 @@ def _after_requested(t, a):
 def _after_seal(t, a):
     text = "Recorded before the run stopped."
     with_script(t, a, [record_step("toolu_a1", "kept", text), end_step("Done."), end_step("Stopping.")])
-    run_cmd(t, a, "c8.after-seal.run")
+    run_scripted_ending(t, a, "c8.after-seal.run")
     close_cmd(t, a, "c8.after-seal.close", fault="close.after_seal=kill", killed=True)
     sv = status_seal(t, a, "c8.after-seal.seal")
     manager_sealed(t, a, sv, "c8.after-seal.seal", [observation("e1", "kept", text)], 1)
@@ -2000,7 +1992,7 @@ def _t13(t, a):
     text = "Recorded before close."
     with_script(t, a, [record_step("toolu_t1", "first", text), fp.Stall(120)])
     h = rs.start_run(t, a.sub, a.fx, name="c8.t13.run", timeout=300)
-    stalled = wait_for(lambda: len(a.fx.exchanges) >= 2 and a.fx.exchanges[1].outcome == "stalled", 60)
+    stalled = rs.wait_for(lambda: len(a.fx.exchanges) >= 2 and a.fx.exchanges[1].outcome == "stalled", 60)
     t.require("c8.t13.stalled", stalled, [e.outcome for e in a.fx.exchanges])
     obs = _started_observations(t, a.sub)
     t.check("c8.t13.observations-pid", isinstance(obs, dict) and obs.get("pid") == h["proc"].p.pid, obs)
@@ -2036,7 +2028,7 @@ def _t13(t, a):
 def _t13_stopped(t, a):
     with_script(t, a, [fp.Stall(180)])
     h = rs.start_run(t, a.sub, a.fx, name="c8.t13-stopped.run", timeout=400)
-    stalled = wait_for(lambda: len(a.fx.exchanges) >= 1 and a.fx.exchanges[0].outcome == "stalled", 60)
+    stalled = rs.wait_for(lambda: len(a.fx.exchanges) >= 1 and a.fx.exchanges[0].outcome == "stalled", 60)
     t.require("c8.t13-stopped.stalled", stalled, [e.outcome for e in a.fx.exchanges])
     t.require("c8.t13-stopped.sigstop", t.signal(h, signal.SIGSTOP), "SIGSTOP")
     try:
@@ -2211,8 +2203,10 @@ def _st_limit(t, a):
     rs.check_run_reply(t, rep, a.sub, "c16.limit.run", ending="limit_reached", run_number=1, fx=a.fx,
                        limits=rs.limits_of(a.sub))
     t.eq("c16.limit.run.exit", rep.rc, 0)
+    # 6.4: the last response's calls run before the placement ends, so their entries count.
     status_point(t, a, "c16.limit.status", condition="limit_reached",
                  last={"ending": "limit_reached", "cause": None, "recorded_by": "run"}, seal=None,
+                 answer={"revision": witness_revision(a.aud), "entries": witness_entry_count(a.aud)},
                  next_cmds=("close",), again=True)
     rep = run_cmd(t, a, "c16.limit.run-again", expect="refused", reason="authoring_ended", mark=False)
     t.eq("c16.limit.run-again.ended_by", rep.data.get("ended_by"), "limit")
@@ -2262,7 +2256,10 @@ def _st_surrendered(t, a):
     rev = witness_revision(a.aud)
     target = next((e for e in entries if e.kind == "record_artifact" and e.encoding == "binary"), None)
     t.require("c16.surrendered.target", target is not None, [e.label for e in entries])
-    t.flip_bit(payload_path(a.sub, target), 0)
+    path = payload_path(a.sub, target)
+    t.require("c16.surrendered.payload-recorded", rs.read_package_member(os.path.dirname(path),
+                                                                        os.path.basename(path)) == target.data, path)
+    t.flip_bit(path, 0)
     ids = close_damaged(t, a, "c16.surrendered", entries, rev, [target.id])
     loc = pkg_path(a.sub, 1)
     hum = t.cmd(["status", a.sub.ref], json_reply=False, envelope=False, name="c16.surrendered.status-human")

@@ -93,7 +93,7 @@ def c_run_environment(t):
     t.prepare(pre, name="env.pre.prepare")
     fx = rs.provider(t, fp.Script([]))
     rep = rs.run(t, pre, fx, name="env.not-accepted", expect="refused", reason="not_accepted")
-    rs.check_refused_before_request(t, rep, pre, fx, "env.not-accepted")
+    rs.check_refused_before_request(t, rep, pre, fx, "env.not-accepted", next_run=False)
     sub = run_submission(t)
     port = fx.url.rsplit(":", 1)[1]
     specimens = [
@@ -671,8 +671,15 @@ def c_paging(t):
                                       for r in spages[:-1]), [r.next for r in spages])
         p.check("search.cites", all(h.get("cite") == {"source": h.get("source"), "start": h.get("start"), "end": h.get("end")}
                                     for h in hits or []), (hits or [])[:3])
-        p.check("search.context", all(isinstance(h.get("context"), str) and "aa" in h["context"] for h in hits or []),
-                (hits or [])[:2])
+        # 7.2: "context is the hit's line, clipped to 240 bytes around the hit ..., with truncated
+        # flags". The shape is not fixed: accept the clipped text directly or as an object's text,
+        # and require truncation flags somewhere in the hit.
+        def ctx_text(h):
+            c = h.get("context")
+            return c if isinstance(c, str) else (c.get("text") if isinstance(c, dict) else None)
+        p.check("search.context", all(isinstance(ctx_text(h), str) and "aa" in ctx_text(h)
+                                      and any("truncated" in k for v in (h, h.get("context")) if isinstance(v, dict)
+                                              for k in v) for h in hits or []), (hits or [])[:2])
         dhits, dpages = yield from p.search_all("aa")
         scope = default_scope(sub)
         p.eq("search.default-scope-hits", core(dhits), witness_hits("aa", scope))
@@ -1770,7 +1777,9 @@ def c_tool_inputs(t):
         p.eq("constructed-handles", [(r.outcome, r.reason) for r in turn.replies],
              [("refused", "handle_invalid"), ("refused", "handle_invalid")])
         turn = yield p.calls_step(("record_observation", {"text": "second"}))
-        turn = yield p.calls_step(("submit", {"prepared": ap1, "confirm": True}))
+        step = p.calls_step(("submit", {"prepared": ap1, "confirm": True}))
+        box["stale_submit"] = p.pending[0] if p.pending else None
+        turn = yield step
         r = turn.reply(0)
         p.eq("stale-preparation", (r.outcome, r.reason, r.data.get("revision_now")), ("refused", "stale_preparation", 2))
         p.check("stale-preparation.next", any(n.get("tool") == "prepare" for n in r.next), r.next)
@@ -1794,6 +1803,16 @@ def c_tool_inputs(t):
         res = rs.result_for(sub, tid)
         t.check("c20.inputs.raw-kept.%s" % lab, res is not None and res[2] == p.calls[tid]["raw_block"],
                 res and res[2][:200])
+    # The stale submit, judged from the archive too: had it sealed, the run would have ended
+    # there and the procedure's own check would never have been recorded.
+    res = rs.result_for(sub, box.get("stale_submit"))
+    env = rs.result_envelope(res[3]) if res and res[3] else None
+    t.eq("c20.inputs.stale-preparation.recorded", ((env or {}).get("outcome"), (env or {}).get("reason")),
+         ("refused", "stale_preparation"))
+    t.check("c20.inputs.reached-final-submit", sum(1 for c in p.calls.values() if c["tool"] == "submit") >= 4,
+            [c["input"] for c in p.calls.values() if c["tool"] == "submit"])
+    seals = [b for b in t.log_bodies(sub, "seal") if isinstance(b, dict)]
+    t.eq("c20.inputs.stale-preparation.seal-revision", [b.get("revision") for b in seals], [2])
     tid = last_call(p, "submit")
     res = rs.result_for(sub, tid)
     env = rs.result_envelope(res[3]) if res and res[3] else None

@@ -234,14 +234,17 @@ def finish_run(t, h, *, expect="completed", reason=None, timeout=None, envelope=
     return rep
 
 
-def check_refused_before_request(t, rep, sub, fx, name):
-    """A run refused before launching: nothing reached the provider, nothing was published (5.7)."""
+def check_refused_before_request(t, rep, sub, fx, name, next_run=True):
+    """A run refused before launching: nothing reached the provider, nothing was published (5.7).
+    next_run: 5.7 offers "the same run once the environment is set" only for the environment
+    refusals; pass False for the others (it names no next call for not_accepted)."""
     t.eq(name + ".effects", {k: v for k, v in rep.effects.items() if k != "diagnostic"},
          {"run": "not_started", "answer": "unchanged", "seal": "none", "delivery": "none"})
     if fx is not None:
         t.eq(name + ".no-provider-request", len(fx.exchanges_of(name)), 0)
     t.check(name + ".no-run-started", "run_started" not in t.log_kinds(sub), t.log_kinds(sub))
-    t.check(name + ".next-run", [sub.writer, "run", sub.ref] in rep.next_argvs(), rep.next)
+    if next_run:
+        t.check(name + ".next-run", [sub.writer, "run", sub.ref] in rep.next_argvs(), rep.next)
 
 
 def check_run_reply(t, rep, sub, name, *, ending, cause=None, run_number=None, fx=None, limits=None,
