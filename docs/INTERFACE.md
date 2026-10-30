@@ -1792,9 +1792,13 @@ handle, or a prepared view (`ap<n>.<check>/rendering` or `/selection`).
   states the scope searched.
 - Every occurrence is reported, including overlapping ones, in source order and
   then by position.
-- A hit is `{source, start, end, line, context, cite}`. `context` is the hit's
-  line, clipped to 240 bytes around the hit on character boundaries, with
-  `truncated` flags. `cite` is a ready citation `{source, start, end}`.
+- The completed `data` is `{text, scope, hits, returned, complete}`: the search
+  text, the sources searched in order, this page's hits, their number and
+  whether the whole scope was scanned.
+- A hit is `{source, start, end, line, context, cite}`. `context` is
+  `{text, truncated_before, truncated_after}`: the hit's line, clipped to 240
+  bytes around the hit on character boundaries, and whether bytes were clipped
+  before and after it. `cite` is a ready citation `{source, start, end}`.
 - A page holds at most 128 hits and 32 KiB of context text. `complete: true`
   means the whole scope was scanned. Otherwise the envelope's `next` is a ready
   `search` call whose `sc.` cursor is bound to the text, the scope and the
@@ -2284,7 +2288,8 @@ Manager:
 | `item_unknown`, `item_damaged`, `item_missing`, `item_unreadable`, `item_unsupported` | Receipt readback |
 
 Auditor: `input_invalid` (with JSON pointer), `input_too_large`,
-`tool_unknown`, `source_unknown` (with hints), `range_invalid`,
+`tool_unknown`, `source_unknown` (with hints), `source_unreadable` (a
+verified capture could not be read during the placement), `range_invalid`,
 `citation_invalid`, `quote_not_found`, `quote_ambiguous`, `stale_entry`,
 `entry_deleted`, `fields_invalid`, `stale_view`, `stale_preparation`,
 `answer_damaged`, `retained_payload_cap`, `retained_payload_reserve_exhausted`,

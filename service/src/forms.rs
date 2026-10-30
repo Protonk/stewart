@@ -323,12 +323,21 @@ pub fn tools(f: &Family) -> J {
     J::Arr(out)
 }
 
+/// The family instructions an arrangement pins.
+fn instructions(f: &Family) -> &'static str {
+    if crate::sabotage!("framing_task_elsewhere") && f.id != "inquiry-framing" {
+        // Sabotage control: another family's task is pinned.
+        return INQUIRY_FRAMING;
+    }
+    f.instructions
+}
+
 /// The exact `system` array: orientation block, then family instructions.
 pub fn system(f: &Family) -> Vec<u8> {
     format!(
         r#"[{{"type":"text","text":{}}},{{"type":"text","text":{}}}]"#,
         quote(ORIENTATION),
-        quote(f.instructions)
+        quote(instructions(f))
     )
     .into_bytes()
 }
@@ -627,7 +636,7 @@ fn readable(f: &Family, input: &ArrangementInput, tools_bytes: &[u8]) -> String 
     md.push_str("## Orientation (first system block)\n\n");
     md.push_str(&quoted_block(ORIENTATION));
     md.push_str("\n\n## Family instructions (second system block)\n\n");
-    md.push_str(&quoted_block(f.instructions));
+    md.push_str(&quoted_block(instructions(f)));
     md.push_str("\n\n## Stopping and notices\n\n");
     md.push_str("After an ordinary turn ends without submission, at most once per audit and only while no limit is exhausted, the auditor receives this reminder:\n\n");
     md.push_str(&quoted_block(REMINDER));

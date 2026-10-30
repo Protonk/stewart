@@ -15,14 +15,26 @@
 //! selection current at its `close_requested` and seals it with manager
 //! attribution (5.8, 8.1).
 
-use crate::archive::Audit;
-use crate::bodies::{Actor, Invocation};
+use crate::archive::{Audit, Fail};
+use crate::bodies::{Actor, Invocation, Payload};
 use crate::forms::Family;
+use crate::json::J;
 use crate::log::{EndedBy, LogState};
-use crate::reply::{Cause, Outcome};
+use crate::reply::{Cause, Outcome, Reply};
 use crate::returns::{Member, Unproduced};
 use crate::usage::{Limits, Usage};
 use crate::world::World;
+
+mod b64;
+mod common;
+mod edit;
+mod input;
+mod prep;
+mod reading;
+mod reentry;
+
+pub use edit::retained;
+pub use prep::{answer_json, existing_seal, render};
 
 // Bounds of recording and re-entry (7.3, 7.4, 7.5; Appendix B). Reading
 // bounds are in `forms`.
@@ -145,6 +157,97 @@ pub struct Executed {
     pub end: Option<End>,
 }
 
+/// Every tool name a family's arrangement can hold.
+const TOOLS: [&str; 16] = [
+    "list",
+    "read",
+    "search",
+    "record_account",
+    "record_observation",
+    "record_limit",
+    "record_working_question",
+    "record_relation",
+    "record_criterion",
+    "record_comparison",
+    "record_artifact",
+    "replace",
+    "delete",
+    "what_am_i_working_with",
+    "prepare",
+    "submit",
+];
+
+/// The operation name a reply uses internally for a block that names no
+/// tool of the arrangement; the envelope shows the name the block gave.
+const NO_TOOL: &str = "tool_unknown";
+
+fn known(name: Option<&str>) -> Option<&'static str> {
+    TOOLS.iter().copied().find(|t| Some(*t) == name)
+}
+
+/// Assemble the account of a call: the envelope (with `effects` for the
+/// tool), the content blocks and the result record's facts. A failed call
+/// writes a diagnostic (4.8); a refused one does not.
+fn finish(
+    audit: Option<&Audit>,
+    op: &'static str,
+    shown: Option<&str>,
+    call: &Call,
+    raw_capture: &'static str,
+    revision: u64,
+    out: common::Out,
+) -> Executed {
+    let effects: Vec<(&'static str, &'static str)> = crate::reply::auditor_effect_keys(op)
+        .iter()
+        .map(|k| {
+            (
+                *k,
+                match *k {
+                    "answer" => out.answer,
+                    "seal" => out.seal,
+                    _ => raw_capture,
+                },
+            )
+        })
+        .collect();
+    let mut reply = match out.result {
+        Ok(data) => Reply::completed(op, effects, data),
+        Err(f) => f.into_reply(op, effects),
+    };
+    reply.tool_next = out.next;
+    if reply.outcome == Outcome::Failed {
+        if let Some(a) = audit {
+            a.diagnose(
+                &mut reply,
+                J::obj()
+                    .with("tool", shown.unwrap_or(op))
+                    .with("tool_use_id", call.tool_use_id)
+                    .with("call", call.call),
+            );
+        }
+    }
+    let mut env = reply.auditor_j();
+    if let (Some(name), J::Obj(m)) = (shown, &mut env) {
+        if let Some(slot) = m.iter_mut().find(|(k, _)| k == "operation") {
+            slot.1 = J::Str(name.to_string());
+        }
+    }
+    let mut blocks = vec![J::obj().with("type", "text").with("text", env.string())];
+    if let Some(t) = out.text {
+        blocks.push(J::obj().with("type", "text").with("text", t));
+    }
+    Executed {
+        content: J::Arr(blocks).bytes(),
+        is_error: reply.outcome != Outcome::Completed,
+        outcome: reply.outcome,
+        reason: reply.reason.clone(),
+        revision: out.revision.unwrap_or(revision),
+        log_record: out.log_record,
+        sealed: out.sealed,
+        end: out.end,
+    }
+}
+
 /// Execute one block of a live placement and return its account. Never
 /// panics on auditor input; every refusal or failure is an envelope with
 /// `effects` (a failed call also writes a diagnostic, 4.8). Mutations refuse
@@ -152,24 +255,140 @@ pub struct Executed {
 /// in-progress mutation that loses its log slot to `close_requested`
 /// reports `authoring_ended` too (6.8).
 pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call) -> Executed {
-    let _ = (audit, world, placement, call);
-    unimplemented!("the auditor's tools are not implemented in this build")
+    let state = crate::log::read(audit);
+    let revision = state.revision();
+    let tool = known(call.name).filter(|t| world.arrangement.tool_names.iter().any(|n| n == t));
+    let Some(tool) = tool else {
+        let tools = &world.arrangement.tool_names;
+        let out: common::Out = common::refused(
+            "tool_unknown",
+            match call.name {
+                Some(n) => format!(
+                    "No tool is named {n:?}. The tools are: {}.",
+                    tools.join(", ")
+                ),
+                None => format!(
+                    "The tool_use block names no tool. The tools are: {}.",
+                    tools.join(", ")
+                ),
+            },
+        )
+        .data(
+            J::obj()
+                .with("tool", call.name)
+                .with("tools", crate::json::strs(tools)),
+        )
+        .into();
+        let shown = call.name.unwrap_or("");
+        return finish(
+            Some(audit),
+            NO_TOOL,
+            Some(shown),
+            call,
+            "recorded",
+            revision,
+            out,
+        );
+    };
+    if state.damaged() {
+        let out = common::Out::fail(Fail::failed(
+            "log_damaged",
+            format!(
+                "The audit log is damaged ({}); Stewart records nothing more in this placement.",
+                state.bad_names()
+            ),
+        ))
+        .end(End::LogDamaged);
+        return finish(Some(audit), tool, None, call, "recorded", revision, out);
+    }
+    let v = match input::decode(call.input) {
+        Ok(v) => v,
+        Err(f) => {
+            return finish(
+                Some(audit),
+                tool,
+                None,
+                call,
+                "recorded",
+                revision,
+                f.into(),
+            );
+        }
+    };
+    let ctx = common::Ctx {
+        audit,
+        world,
+        placement,
+        call,
+        tool,
+        state,
+    };
+    let mut out = match tool {
+        "list" => reading::list(&ctx, &v),
+        "read" => reading::read(&ctx, &v),
+        "search" => reading::search(&ctx, &v),
+        "record_artifact" => edit::artifact(&ctx, &v),
+        "replace" => edit::replace(&ctx, &v),
+        "delete" => edit::delete(&ctx, &v),
+        "what_am_i_working_with" => reentry::what_am_i_working_with(&ctx, &v),
+        "prepare" => prep::prepare_tool(&ctx, &v),
+        "submit" => prep::submit(&ctx, &v),
+        _ => edit::record(&ctx, &v),
+    };
+    if out.revision.is_none() && (out.answer == "unknown" || out.seal == "unknown") {
+        let st = crate::log::read(audit);
+        if !st.damaged() {
+            out.revision = Some(st.revision());
+        }
+    }
+    finish(Some(audit), tool, None, call, "recorded", revision, out)
 }
 
 /// The account of a block whose call capture could not be written: the call
 /// did not run (`raw_capture: failed`), it fails `record_failed` with
-/// `cause`, and the placement ends `archive_write_failed` (1.4, 7.1).
+/// `cause`, and the placement ends `archive_write_failed` (1.4, 7.1). No
+/// diagnostic is attempted here: the archive is failing, and the run's own
+/// account of the ending covers it.
 pub fn capture_failed(call: &Call, cause: &Cause, revision: u64) -> Executed {
-    let _ = (call, cause, revision);
-    unimplemented!("the auditor's tools are not implemented in this build")
+    let op = known(call.name).unwrap_or(NO_TOOL);
+    let mut out = common::Out::fail(
+        Fail::failed(
+            "record_failed",
+            format!(
+                "The call could not be captured ({}: {}), so it did not run.",
+                cause.operation, cause.error
+            ),
+        )
+        .cause(cause.clone()),
+    )
+    .end(End::ArchiveWriteFailed);
+    out.seal = "unknown";
+    let shown = (op == NO_TOOL).then(|| call.name.unwrap_or(""));
+    finish(None, op, shown, call, "failed", revision, out)
 }
 
 /// The refusal of a block that reuses an executed `tool_use` ID of this
 /// placement with a different name or input (`invocation_id_reused`, 6.3).
 /// `original` is the call number that executed the ID.
 pub fn reused(call: &Call, original: u64, revision: u64) -> Executed {
-    let _ = (call, original, revision);
-    unimplemented!("the auditor's tools are not implemented in this build")
+    let op = known(call.name).unwrap_or(NO_TOOL);
+    let mut out = common::Out::fail(
+        common::refused(
+            "invocation_id_reused",
+            format!(
+                "The tool_use ID {:?} was already executed in this placement (call {original}) with a different name or input; it was not executed again. A new call needs a new ID.",
+                call.tool_use_id
+            ),
+        )
+        .data(
+            J::obj()
+                .with("tool_use_id", call.tool_use_id)
+                .with("original_call", original),
+        ),
+    );
+    out.seal = "unknown";
+    let shown = (op == NO_TOOL).then(|| call.name.unwrap_or(""));
+    finish(None, op, shown, call, "recorded", revision, out)
 }
 
 // ---------------------------------------------------------------------------
@@ -208,6 +427,8 @@ pub struct Prepared {
     /// Prepare's notices, in tools order: `section_unfilled` per expected
     /// section without an entry, or the single `answer_empty`.
     pub notices: Vec<PrepareNotice>,
+    /// The payloads of the produced entries, which the seal re-verifies.
+    pub payloads: Vec<Payload>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -250,8 +471,7 @@ pub fn prepare(
     through: u64,
     preparer: Preparer,
 ) -> Result<Prepared, PrepareError> {
-    let _ = (audit, family, state, through, preparer);
-    unimplemented!("preparing the answer is not implemented in this build")
+    prep::prepare(audit, family, state, through, preparer)
 }
 
 /// Who seals.
@@ -315,6 +535,5 @@ pub fn seal(
     prepared: &Prepared,
     sealer: Sealer,
 ) -> Result<Sealed, SealError> {
-    let _ = (audit, family, prepared, sealer);
-    unimplemented!("sealing is not implemented in this build")
+    prep::seal(audit, family, prepared, sealer)
 }
