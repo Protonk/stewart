@@ -83,7 +83,7 @@ only, never an audit or an answer. The envelope's keys, in this order:
 | `reason` | refused, failed | Stable identifier (Appendix A). Tests assert on it. |
 | `message` | refused, failed | One or two plain sentences: what Stewart could not do and why. |
 | `effects` | always | Operation-specific facts (1.4), on completed replies too. |
-| `retained` | manager refused or failed | Archive locations holding attempts, partials and diagnostics. |
+| `retained` | manager refused or failed | Archive locations holding attempts, partials and diagnostics: every location this invocation created and kept, such as a capture attempt, a preparation directory, a seal manifest, a delivery plan or package, and its diagnostic when that was written. |
 | `causes` | failed, or `effects.diagnostic` is `reported_only` | The original cause first, then any reporting failure. |
 | `next` | always | Supported next calls, each with an explanation (1.5). May be empty. |
 | `data` | completed; refused or failed when useful | Operation data, such as the current entry handle on a stale target. |
@@ -142,7 +142,7 @@ For `run`, `close` and the auditor tools the values mean:
 | `answer` | `changed`: this invocation recorded at least one entry; `unchanged`: it recorded none |
 | `seal` | `none`: no seal exists; `recorded`: this invocation published the seal; `existing`: a seal existed before it |
 | `delivery` | The outcome (8.3) of the newest delivery attempt this invocation made or presented; on a refusal, which makes and presents nothing, the outcome of the newest recorded attempt; `none` when there is no such attempt. An attempt that ended `name_taken` is reported `failed`. |
-| `closure` | `none`: no close requested; `requested`: this invocation published `close_requested` and then failed before establishing more; `unfinished`: requested and not closed; `complete`: closed |
+| `closure` | `none`: no close requested; `requested`: this invocation published `close_requested` and its reply is `failed` (its other effects say what else it established); `unfinished`: requested and not closed, otherwise; `complete`: closed |
 | `raw_capture` | `recorded`: the call capture (4.5) was written before the call ran; `failed`: it could not be, and the call did not run |
 
 ### 1.5 Next calls
