@@ -2049,6 +2049,13 @@ def _attempt_body(sub, run, request, attempt=1):
     return rec.get("body") if isinstance(rec, dict) and isinstance(rec.get("body"), dict) else {}
 
 
+def attempt_unrecorded(sub, run, request, attempt=1):
+    """The request's capture exists and the attempt has no record yet (4.5)."""
+    d = os.path.join(sub.audit_dir, "runs", str(run))
+    return (os.path.isfile(os.path.join(d, "request-%d.json" % request))
+            and not os.path.lexists(os.path.join(d, "attempt-%d-%d.json" % (request, attempt))))
+
+
 def _t13(t, a):
     text = "Recorded before close."
     with_script(t, a, [record_step("toolu_t1", "first", text), fp.Stall(120)])
@@ -2061,6 +2068,10 @@ def _t13(t, a):
                       allowances=fp.allowances(a.fx.totals(upto=1), rs.limits_of(a.sub)),
                       next_cmds=("close", "status"))
     t.eq("c8.t13.status-held.holder", (st.data.get("runs") or {}).get("holder"), obs)
+    # 5.6, 6.4 (a1515e7): a live placement counts only its attempt records; the request still in
+    # flight has none yet, so the expected allowances above leave it out. Witness that it has none.
+    t.check("c8.t13.status-held.in-flight-unrecorded", attempt_unrecorded(a.sub, 1, 2), sorted(
+        os.listdir(os.path.join(a.sub.audit_dir, "runs", "1"))))
     rep = t.cmd(["run", a.sub.ref], name="c8.t13.second-run", env=rs.run_env(t, a.fx), expect="refused",
                 reason="run_held", writer=a.sub.writer)
     t.eq("c8.t13.second-run.holder", [rep.data.get("run"), rep.data.get("holder")], [1, obs])
@@ -2104,6 +2115,12 @@ def _t13_stopped(t, a):
                           next_cmds=("close", "status"))
         t.eq("c8.t13-stopped.status.holder", (st.data.get("runs") or {}).get("holder"),
              _started_observations(t, a.sub))
+        # The stopped run still holds the lock (status: held, run_still_held), so its placement is
+        # live and its in-flight request has no attempt record yet (5.6, 6.4 as amended in a1515e7):
+        # the expected allowances are zero. The aborted_by_close estimate is charged only when the
+        # attempt ends, after SIGCONT. Witness the missing record at the time of the status.
+        t.check("c8.t13-stopped.status.in-flight-unrecorded", attempt_unrecorded(a.sub, 1, 1), sorted(
+            os.listdir(os.path.join(a.sub.audit_dir, "runs", "1"))))
     finally:
         t.signal(h, signal.SIGCONT)
     rr = rs.finish_run(t, h, expect="completed")
