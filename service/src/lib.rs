@@ -28,12 +28,12 @@
 //! crate calls it through `libc::`, because LTO merges the two declarations
 //! and std's weak one wins. Such a call silently does nothing on aarch64 and
 //! crashes on x86_64, and debug, thin-LTO and macOS builds never show it.
-//! Call these functions through `libc::syscall` instead, as
-//! `platform::random_fill` does. With the pinned toolchain they include
-//! `getrandom`, `statx`, `copy_file_range`, `splice`, `gettid`,
-//! `preadv`/`pwritev`, `pidfd_*`, `posix_spawn_file_actions_addchdir_np` and
-//! `futimens`/`utimensat`; when the toolchain changes, recheck std's `weak!`
-//! and `syscall!` uses under `library/std/src/sys`.
+//! Make these calls through `libc::syscall` instead, as
+//! `platform::random_fill` does. For the musl targets and the pinned
+//! toolchain they are `getrandom`, `copy_file_range`, `gettid`,
+//! `pidfd_spawnp` and `pidfd_getpid`. The list depends on target and
+//! toolchain: when either changes, recheck which of std's `weak!` and
+//! `syscall!` uses under `library/std/src/sys` compile for it.
 
 // Refusals carry their account (reason, message, retained locations, causes,
 // data, next calls) by value; boxing them would add noise without benefit.

@@ -32,11 +32,11 @@ pub fn random_fill(buf: &mut [u8]) -> io::Result<()> {
         // mechanism, from the toolchain sources: std declares getrandom
         // extern_weak for its own fallback, fat LTO links every library's
         // module into the binary's own module in name order, and LLVM keeps
-        // the first declaration's linkage. std's weak one sorts before this library's
-        // strong one, so the merged reference was weak, ld took nothing from
-        // libc.a and the call resolved to address 0. The same applies to any
-        // libc function std declares weak (statx, copy_file_range, splice,
-        // gettid, ...). The syscall needs no library symbol.
+        // the first declaration's linkage. std's weak one sorts before this
+        // library's strong one, so the merged reference was weak, ld took
+        // nothing from libc.a and the call resolved to address 0. The crate
+        // docs list the other functions this applies to. The syscall needs no
+        // library symbol.
         let mut off = 0;
         while off < buf.len() {
             let rc = unsafe {
