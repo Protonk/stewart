@@ -165,7 +165,10 @@ each item needs the decision or commission named.
   has been neither sent nor run. Exposure: only direct libc calls to
   functions std declares weak (`.scratch/fat-lto-getrandom-02/std-weak-symbols.txt`).
   Stewart makes none today, since `getrandom` and `statx` are raw syscalls,
-  but a toolchain upgrade can add to std's list.
+  but a toolchain upgrade can add to std's list. The user adopted a rule for
+  future calls, stated in the crate docs (`service/src/lib.rs`): call such
+  functions through `libc::syscall`. A release-build guard and a switch to
+  thin LTO were offered and not chosen.
 - **Decisions made during the build that a reviewer may revisit** (reported to
   the user, not contested): damaged commissioned material refuses `run`
   (`commission_damaged`) rather than running with that material refused;
