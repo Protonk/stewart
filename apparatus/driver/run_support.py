@@ -16,7 +16,18 @@
   package against answer_witness.
 
 Cases call these with their `T`; nothing here decides a case's verdict except
-through `t.check`.
+through `t.check`. The functions and classes without a leading underscore are a
+stable API shared by every cases_*.py module; change them only compatibly.
+
+Typical use:
+
+    sub = t.submission(entries, dest_watch="additions"); t.accept(sub)
+    p = procedure.Procedure(body, forbidden=[...])   # or reacting_auditor.ReactingAuditor(...)
+    fx = run_support.provider(t, p)                   # mode="https-proxy" etc.
+    rep = run_support.run(t, sub, fx, name="x.run")
+    run_support.check_run_reply(t, rep, sub, "x.run", ending="sealed", run_number=1, fx=fx, ...)
+    run_support.check_procedure(t, p, "x", fx)
+    run_support.check_requests(t, fx, sub, "x"); run_support.check_history(t, fx, "x")
 """
 from __future__ import annotations
 
@@ -585,6 +596,120 @@ def check_package(t, path, expected, name):
                     {"member": n, "got_sha256": sha256_hex(data), "expected_sha256": sha256_hex(expected[n]),
                      "got": short(data[:300].decode("utf-8", "replace")),
                      "expected": short(expected[n][:300].decode("utf-8", "replace"))})
+
+
+# ---------------------------------------------------------------------------
+# Procedure results, archive lookups and scans (stable API, also for cases_after_launch).
+# ---------------------------------------------------------------------------
+
+def check_fake(t, fx, prefix):
+    """The fake itself worked: no responder exception or bad step (they are answered 400 and
+    would otherwise look like a provider rejection), and no script exhausted."""
+    t.check(prefix + ".fake-responder", not fx.provider.anomalies, fx.provider.anomalies[:3])
+    ex = getattr(fx.responder, "exhausted", None)
+    if ex is not None:
+        t.check(prefix + ".fake-script", not ex, {"exhausted_at_exchanges": ex})
+
+
+def check_procedure(t, p, prefix, fx=None):
+    """Turn a procedure.Procedure's recorded checks into checks named <prefix>.<name>, and
+    each anomaly (envelope, is_error, ordering, request after the end) into a failed check
+    <prefix>.<anomaly>. With fx, also check_fake."""
+    for name, ok, detail in p.checks:
+        t.check("%s.%s" % (prefix, name), ok, detail)
+    seen = set()
+    for a in p.anomalies:
+        nm = "%s.%s" % (prefix, a["check"])
+        if nm not in seen:
+            seen.add(nm)
+            t.check(nm, False, a)
+    if fx is not None:
+        check_fake(t, fx, prefix)
+
+
+def calls_and_results(sub):
+    """[(run, call number, call capture bytes, result record or None)] over every placement."""
+    out = []
+    for n, rd in sorted(run_dirs(sub).items()):
+        for c in sorted(set(rd.calls) | set(rd.results)):
+            out.append((n, c, rd.calls.get(c), rd.results.get(c)))
+    return out
+
+
+def result_for(sub, tid, which=-1):
+    """(run, call, capture bytes, result body) of the which-th call with this tool_use_id, or None."""
+    if tid is None:
+        return None
+    rows = []
+    for n, c, raw, rec in calls_and_results(sub):
+        body = rec.get("body") if isinstance(rec, dict) else None
+        node = rawjson.try_parse(raw) if raw else None
+        cid = node.get("id") if node is not None and node.kind == "object" else None
+        try:
+            cid = cid.value() if cid is not None else (body or {}).get("tool_use_id")
+        except ValueError:
+            cid = None
+        if cid == tid:
+            rows.append((n, c, raw, body))
+    try:
+        return rows[which]
+    except IndexError:
+        return None
+
+
+def result_envelope(body):
+    """The reply envelope a result record carries in its first content block (4.5, 7.1)."""
+    try:
+        return strict_loads(body["content"][0]["text"].encode("utf-8"))
+    except (KeyError, IndexError, TypeError, StrictJSONError, AttributeError):
+        return None
+
+
+def entry_bodies(t, sub):
+    return [b for b in t.log_bodies(sub, "entry") if isinstance(b, dict)]
+
+
+def package_of(rep):
+    """The package path a run or close reply's delivery names (5.7), or None."""
+    d = rep.data.get("delivery") if isinstance(rep.data, dict) else None
+    loc = d.get("location") if isinstance(d, dict) else None
+    return loc if isinstance(loc, str) else None
+
+
+VERDICT_KEYS = ("verdict", "grade", "graded", "supports", "supported", "score", "quality", "passed", "assurance",
+                "complete_answer", "correct")
+
+
+def verdict_keys(obj, path=""):
+    """Keys anywhere in obj that would grade an answer (C14); [] when none."""
+    out = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k in VERDICT_KEYS:
+                out.append(path + "/" + k)
+            out += verdict_keys(v, path + "/" + k)
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            out += verdict_keys(v, "%s/%d" % (path, i))
+    return out
+
+
+def wait_for(cond, timeout=15.0, interval=0.02):
+    """Poll cond() until true or timeout; returns its last value."""
+    import time
+    deadline = time.time() + timeout
+    while True:
+        v = cond()
+        if v or time.time() >= deadline:
+            return v
+        time.sleep(interval)
+
+
+def read_package_member(loc, name):
+    try:
+        return read_bytes(os.path.join(loc, name))
+    except (OSError, TypeError):
+        return None
 
 
 # ---------------------------------------------------------------------------

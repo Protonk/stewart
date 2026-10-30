@@ -548,6 +548,29 @@ class ReactingAuditor:
         self._take_page(call, env, page_text, verify=self.sources.get(call["source"]))
 
     def _reply_read_entry(self, call, env, page_text, ex):
+        # 7.2 (amended): kind stays "entry"; entry_kind names the recording tool, an artifact adds
+        # artifact_encoding; a base64 page is marked only by data.base64.
+        d = env.get("data") if isinstance(env.get("data"), dict) else {}
+        if env.get("outcome") == "completed":
+            h = call["source"]
+            if d.get("kind") != "entry" or d.get("entry") != h or d.get("cite") is not None:
+                self.anomaly("read-entry.data", {"entry": h, "kind": d.get("kind"), "data_entry": d.get("entry"),
+                                                 "cite": d.get("cite")})
+            ek = d.get("entry_kind")
+            if not (isinstance(ek, str) and ek.startswith("record_")):
+                self.anomaly("read-entry.entry_kind", ek)
+            if ek == "record_artifact":
+                if d.get("artifact_encoding") not in ("utf-8", "binary"):
+                    self.anomaly("read-entry.artifact_encoding", d.get("artifact_encoding"))
+                if (d.get("artifact_encoding") == "binary") != ("base64" in d):
+                    self.anomaly("read-entry.base64-page", {"artifact_encoding": d.get("artifact_encoding"),
+                                                            "has_base64": "base64" in d})
+            elif "artifact_encoding" in d or "base64" in d:
+                self.anomaly("read-entry.not-an-artifact", sorted(d))
+            if "encoding" in d:
+                self.anomaly("read-entry.encoding-key", "7.2 marks a base64 page only by data.base64")
+            if d.get("id") != h.split(".")[0] or d.get("version") != _version_of(h):
+                self.anomaly("read-entry.identity", {"entry": h, "id": d.get("id"), "version": d.get("version")})
         self._take_page(call, env, page_text, verify=None)
 
     def _reply_read_view(self, call, env, page_text, ex):

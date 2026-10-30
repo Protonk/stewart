@@ -65,7 +65,9 @@ The driver is a directory of modules; `stewart_driver.py` is the entrypoint and
 puts its own directory on `sys.path` (isolated mode does not). The framework
 (`driver_core.py`) holds the case registry, the per-case context, inventories
 and evidence; support modules hold the fake Messages API (`fake_provider.py`),
-the reacting auditor (`reacting_auditor.py`), the expected answer, rendering
+the reacting auditor (`reacting_auditor.py`), a scripted auditor for exact
+protocol-shape cases (`procedure.py`: a case writes its calls as a generator
+and reads Stewart's actual replies), the expected answer, rendering
 and manifest bytes (`answer_witness.py`), byte-exact JSON spans (`rawjson.py`)
 and the run harness (`run_support.py`). Cases live in `cases_*.py` files, which
 the entrypoint imports in name order, so a new group of cases is a new file.
@@ -121,6 +123,33 @@ unprivileged user, with the binaries mounted read-only and archives on the
 container's own disk. `host/DONE` reports `failures=N`; `host/SUMMARY` gives
 the driver's counts per architecture, and `driver-<arch>/evidence/` holds its
 full results. Timings under x86_64 emulation are reported but do not gate.
+
+## The acceptance suite: the whole scripted tier
+
+```sh
+sh apparatus/acceptance.sh                 # evidence in .scratch/acceptance-01
+sh apparatus/acceptance.sh /abs/new/folder # or a folder you choose
+```
+
+It generalizes the step 3 suite (which stays as it was) to the whole driver.
+It needs the step 2 toolchain images and `service/vendor`, and pulls the pinned
+python image (its only network use). It archives `service`, `apparatus` and
+`docs` from `HEAD`, and for each architecture, offline:
+
+1. builds the release binary, the test binary and the glibc control;
+2. checks that both musl binaries are static and the glibc build is not, that
+   `cmp` tells the release and test binaries apart, and that only the test
+   binary contains the six test-only variable names of INTERFACE Appendix C;
+3. in the pinned python image with `--network none` (loopback only), as an
+   unprivileged user, runs the driver's `--self-test`, then every case with
+   `--network-isolated --require-all-controls`: every Appendix C.2 sabotage
+   control must be assigned to a case and fire. The timing gates (startup,
+   `status` and `help`; protocol calls) are on only for the native
+   architecture; Rosetta's home cache is recorded as an emulator artifact.
+
+`host/DONE` reports `failures=N`; `host/SUMMARY` gives the self-test line and
+the driver's counts per architecture; `driver-<arch>/evidence/` holds the
+driver's full results, and `driver-<arch>/selftest.stdout` its self-test.
 
 ## Driver plan: run, answer protocol, seal, delivery and close
 
@@ -185,10 +214,10 @@ again).
 
 ### Cases
 
-`cases_run.py` (run adapter and answer protocol) and a separate
-`cases_after_launch.py` (delivery, close and status after launch, for a second
-author) both build on `run_support.py`. "Have" marks cases already written;
-the rest are this plan. Fault points are Appendix C.1 names; controls are C.2
+`cases_run.py` (run adapter and answer protocol, all written) and a separate
+`cases_after_launch.py` (delivery, close and status after launch, T8–T10, T13
+and T14, by a second author) both build on `run_support.py`, whose public
+functions are a stable API. Fault points are Appendix C.1 names; controls are C.2
 names. Every C.2 name is assigned to at least one case (the manager-foundation
 cases already hold fourteen); a name may serve a manager and an auditor case.
 
@@ -196,7 +225,7 @@ cases already hold fourteen); a name may serve a manager and an auditor case.
 | --- | --- | --- | --- | --- |
 | C1 | `c1.requests` | Every request: 6.1 line and exactly the six headers, the 4.5 splice of pinned model, system and tools bytes, tools equal the family's, `max_tokens` within limits; receipt's arrangement is the one carried. Differing: comparison family changes tools by exactly its recording tools and the second system block. Invariance: other materials, same tools and system bytes. | `extra_tool`, `arrangement_mismatch` | none |
 | C1 | `c1.outside-paths` | `read`, `search`, `list` with `../`, absolute and host-only names refuse `source_unknown`; no archive path, folder, reference, store or family name in any reply. | none (C20 holds the custody-path control) | none |
-| C1, C12 | `c1.tls-proxy` (have) | HTTPS through CONNECT `provider.test:443`, SNI, key never in clear, run_started and status show URL and proxy. Differing: untrusted certificate fails every attempt (`connection_failed`). | none | none |
+| C1, C12 | `c1.tls-proxy` | HTTPS through CONNECT `provider.test:443`, SNI, key never in clear, run_started and status show URL and proxy. Differing: untrusted certificate fails every attempt (`connection_failed`). | none | none |
 | C2 | `c2.question-and-reads` | First message holds the body bytes exactly; every material read over every page equals the witness (CRLF, BOM, multibyte, long lines, blank pages in `data.text`). Differing: a one-byte different question differs in exactly that byte. Invariance: same materials from another folder path read identically. | `read_live_source`, `normalize_read`, `paraphrase_question` | none |
 | C2, C19 | `c19.paging` | Long lines span read pages without lost bytes or split code points; search reports every literal hit (overlapping ones too) with positions, scope, bounded pages and explicit completion; an incomplete search never claims absence. | `read_truncate_silently`, `search_omit_last_page` | none |
 | C3 | `c3.edits` (T5) | Stale `replace`/`delete` refused with the current handle; repeated delete `already_removed`; equal-byte adds distinct; a repeated `tool_use` ID with identical raw input is a replay (`replay_of`), with other input `invocation_id_reused`. | `merge_equal_adds`, `replay_reexecutes`, `stale_target_overwrites` | none |
@@ -205,16 +234,17 @@ cases already hold fourteen); a name may serve a manager and an auditor case.
 | C3 | `c3.limits` (heavy) | 256 entries admitted, the 257th `entry_limit`; a 4 MiB+1 call `input_too_large`; edits allowed at the limits. | none | none |
 | C4 | `c4.reentry` | Compaction midway; 65+ entries over two re-entry pages and a question over one read page with its essential text last; stale page cursor after an edit `stale_view`; a damaged result record appears in `gaps`. Differing: a refusal keeps its operation and revision. Invariance: the same goals without compaction seal the same `answer.json` bytes. | `reentry_omit_entry`, `reentry_truncate_page`, `reentry_omit_last_page`, `reentry_mix_revisions`, `reentry_placement_allowances` | none |
 | C6 | `c6.records` | Inventories around every command (archives and destinations only grow); access log equals the auditor's list/read/search calls with exact input bytes, refused calls and replays included; `run_ended` usage equals the fake's charges. | `rewrite_record_in_place` (run records), `remove_superseded_payload`, `skip_search_capture` | none |
-| C7 | `c7.families` | Each family's instructions and tools; a broad open-inquiry request runs; comparison's observations counted but not a section; prepare notices; empty answer (T12) `answer_empty` and `No answer entries recorded.`; citation controls (valid, changed range, irrelevant but valid); reminder once and near-limit once with exact values, not reset by continuation. | `framing_task_elsewhere`, `grade_support`, `block_incomplete`, `reset_notice_allowance` | none |
+| C7 | `c7.families` | Each family's instructions and tools; inability as an ordinary account; comparison's observations counted but not a section; prepare notices; empty answer (T12) `answer_empty` and `No answer entries recorded.`; citation controls (range, quote, both, irrelevant but valid; changed range, missing and ambiguous quotes refused with no entry; prose not scraped). | `framing_task_elsewhere`, `grade_support`, `block_incomplete` | none |
+| C7 | `c7.prompts` | The reminder once per audit, not resent by a continuation; `max_tokens` the lesser of 16,000 and the remaining output; the near-limit notice once with exact remaining amounts; `limit_reached` after the last call, no seal, then `authoring_ended` (limit). | `reset_notice_allowance` | none |
 | C9 | `c9.protocol-timing` | Interval per call (above); every auditor and manager reply passes the envelope schema. | `slow_list`, `omit_effects_on_refusal` (auditor refusal) | none |
-| C12 | `c12.run-environment` (have) | Not accepted; missing, empty or invalid key; invalid URL; invalid proxy: each refused before any request, nothing published, same run line offered. | none | none |
-| C12 | `c12.test-variables` (have) | Test build: invalid `STEWART_TEST_PROVIDER_TIMEOUT` or `STEWART_TEST_RETRY_DELAYS` refuses `test_variable_invalid`, an invalid `STEWART_TEST_TLS_ROOT` `test_tls_root_invalid`, before any request. Differing: the release build ignores the same environment and runs. | none | none |
-| C12 | `e2e.reacting-audit` (have) | The receipt's run line from another directory and HOME runs to a sealed, verified delivery; status from a third directory; ordinary close. | none | none |
-| C12 | `c12.run-refusals` (T13) | `run_held` with holder observations while a run holds the lock; `authoring_ended` with `ended_by`; `reference_closed`; commission needs no key or network. Close stops the held run (`stopped_by_close`); with the run SIGSTOPped close is `run_still_held`, then resumes. | `relative_run_line`, `commission_over_network` | none |
-| C13 | `c13.t7-kill-after-entry` (have) | Killed after an entry: status `interrupted`; `run` reconciles `process_gone`, continues with the notice, re-adds nothing, seals each goal once. | none | `entry.after_link` |
+| C12 | `c12.run-environment` | Not accepted; missing, empty or invalid key; invalid URL; invalid proxy: each refused before any request, nothing published, same run line offered. | none | none |
+| C12 | `c12.test-variables` | Test build: invalid `STEWART_TEST_PROVIDER_TIMEOUT` or `STEWART_TEST_RETRY_DELAYS` refuses `test_variable_invalid`, an invalid `STEWART_TEST_TLS_ROOT` `test_tls_root_invalid`, before any request. Differing: the release build ignores the same environment and runs. | none | none |
+| C12 | `e2e.reacting-audit` | The receipt's run line from another directory and HOME runs to a sealed, verified delivery; status from a third directory; ordinary close. | none | none |
+| C12 | `c12.run-refusals` | `authoring_ended` with `ended_by` and its record (ordinary ending, limit, seal); `reference_closed`; `run_held` with the holder's observations while a paused run holds the lock; commission needs no key or network. Invariance: another directory and HOME change only `run_started` observations. (T13's close behaviour is in `cases_after_launch.py`.) | `relative_run_line`, `commission_over_network` | `run.after_started=pause` |
+| C13 | `c13.t7-kill-after-entry` | Killed after an entry: status `interrupted`; `run` reconciles `process_gone`, continues with the notice, re-adds nothing, seals each goal once. | none | `entry.after_link` |
 | C13 | `c13.continuation` | Kills during a request, while a result is written and between turns; the continuation carries the same system and tools bytes, cumulative limits and every earlier element once. Differing: killed after a confirmed submit, `run` refuses and close delivers. Invariance: the same goals without a kill seal the same answer. | `reset_limits_on_continuation`, `fresh_ledger_on_continuation` | `provider.sent:<k>`, `stage.torn:tool_result`, `run.between_turns:<k>`, `seal.after_link` |
 | C13 | `c13.provider-shapes` (T15) | Thinking, redacted, compaction and unknown blocks echoed; `max_tokens` with and without a tool call; `refusal`, `pause_turn`, unknown stop reason, `model_context_window_exceeded`; undecodable complete 200s (not JSON, missing usage, repeated member, gzip) as `response_undecodable`, a 200 cut off mid-body or by a reset as `connection_lost` (retried), a cut-off error body as `http_error`; U+0000 in a `tool_use` ID (unanswerable) or name (`tool_unknown`), in `model` or `error.*` (recorded null) and in `stop_reason` (unknown stop reason); chunked and close-delimited bodies; timeout (`STEWART_TEST_PROVIDER_TIMEOUT`); `tool_use` without an ID; limits: `max_tokens` lowered near the output limit, `limit_reached` below 1,024. | none | none |
-| C13 | `t16.provider-unavailable` (have) | 529 four times; retry-after 61; 413. | none | none |
+| C13 | `t16.provider-unavailable` | 529 four times; retry-after 61; 413. | none | none |
 | C13 | `c13.stopping` | Close during a stalled request (`aborted_by_close`, `stopped_by_close`); SIGTERM, SIGINT, SIGHUP (`aborted_by_signal`, exit 5); a signal after the seal fails delivery with cause `signal`, ending `sealed`. | none | none |
 | C14 | `c14.refusals-recorded` | Every refused call keeps its call capture and result record with reason and bytes; gaps listed with dispositions; no verdict fields. Differing: another refusal kind has its own reason. Invariance: without the refused call, the same sealed answer. | `drop_refused_capture`, `manifest_verdict` | none |
 | C20 | `c20.tool-inputs` | Duplicate and escape-equivalent keys, unknown fields, `"true"`, out-of-bound integers, NUL, non-object input refuse `input_invalid` with a JSON pointer; raw bytes kept; prepare has no sealer; uncertain seal `seal_uncertain`; submit claims no delivery. | `accept_unknown_tool_field`, `leak_custody_path`, `prepare_claims_seal`, `stale_preparation_retargets`, `seal_uncertain_as_none`, `submit_claims_delivery` | `log.dirsync:seal=eio` |

@@ -186,7 +186,7 @@ class MiniStewart:
         if binary:   # 7.2: base64 pages of 49,152 bytes in data.base64
             end = min(len(data), start + aw.PAGE_BINARY)
             d = {"source": src, "kind": kind, "size": len(data), "range": [start, end], "lines": None,
-                 "complete": end == len(data), "cite": None, "encoding": "base64",
+                 "complete": end == len(data), "cite": None,
                  "base64": base64.b64encode(data[start:end]).decode("ascii")}
             if extra:
                 d.update(extra)
@@ -223,7 +223,9 @@ class MiniStewart:
                 if src != self.handle(e):
                     return self.env(tool, "refused", reason="stale_entry", data={"current": self.handle(e)}), None
                 return self._page(tool, src, e["data"], start, "entry", cite=False,
-                                  extra={"entry": src, "id": e["id"], "version": e["version"], "label": e["label"]},
+                                  extra={"entry": src, "id": e["id"], "version": e["version"],
+                                         "entry_kind": e["kind"], "label": e["label"], "citations": e["citations"],
+                                         **({"artifact_encoding": e["encoding"]} if e["kind"] == "record_artifact" else {})},
                                   binary=e["encoding"] == "binary")
         return self.env(tool, "refused", reason="source_unknown"), None
 

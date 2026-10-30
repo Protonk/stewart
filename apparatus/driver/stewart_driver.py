@@ -9,8 +9,8 @@
         --evidence /abs/new-evidence-folder [--case PATTERN]... [--exclude PATTERN]...
 
 The driver is several modules in this directory: driver_core (framework),
-rawjson, answer_witness, fake_provider, reacting_auditor and run_support (run
-support), and the case modules cases_*.py, imported here in name order. A new
+rawjson, answer_witness, fake_provider, reacting_auditor, procedure and run_support
+(run support), and the case modules cases_*.py, imported here in name order. A new
 group of cases is a new cases_<name>.py file; nothing here needs editing.
 See apparatus/README.md for the case plan.
 """
@@ -32,6 +32,7 @@ import answer_witness  # noqa: E402,F401
 import fake_provider  # noqa: E402,F401
 import reacting_auditor  # noqa: E402,F401
 import run_support  # noqa: E402,F401
+import procedure  # noqa: E402,F401
 
 
 def load_case_modules():
