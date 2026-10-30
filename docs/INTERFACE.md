@@ -740,9 +740,11 @@ capture is written.
 - `charged` is what the attempt added to the allowances (6.4), with `basis`
   `reported`, `estimated` or `none`.
 - `problem` is prose saying why a response was undecodable, else null.
-- `then` is `use` (the response is used), `retry` (another attempt follows after
-  `delay_ms` milliseconds) or `end` (the placement ends). `delay_ms` is null
-  unless `then` is `retry`.
+- `then` is the decision about this attempt: `use` (its response was decoded
+  and acted on, even when the placement then ends because of its stop reason),
+  `retry` (another attempt follows after `delay_ms` milliseconds) or `end` (no
+  response is used and the placement ends). `delay_ms` is null unless `then` is
+  `retry`.
 
 **Call capture.** The bytes of the `tool_use` block in the response body, from
 its `{` to its `}`.
@@ -1540,7 +1542,7 @@ before each request: if close_requested → end stopped_by_close
 capture the request, send it with retries (6.6), account usage (6.4)
 no response to use → end as 6.5 states
 execute every tool_use block of the response in order (section 7)
-if a seal was recorded during this response → deliver (8.3), then end sealed
+if the log holds a seal recorded during this response → deliver (8.3), then end sealed
 stop_reason tool_use   → send results, continue
             end_turn, stop_sequence → if a limit is exhausted, end limit_reached;
                                       else send the reminder if unused (6.4); else end ended_unsubmitted
@@ -1550,6 +1552,11 @@ stop_reason tool_use   → send results, continue
             refusal    → end interrupted (provider_refusal)
             other, including pause_turn → end interrupted (protocol_anomaly)
 ```
+
+Whether a seal was recorded is read from the log after the blocks run, not
+from the calls' replies: a submit that replied `seal_uncertain` while its seal
+was in fact linked still leads to delivery and the ending `sealed`. Once the log
+holds a seal, the placement sends no further request and no reminder.
 
 A response's `tool_use` blocks are executed whatever its stop reason, so every
 call the model made is recorded even when the placement then ends; results that
@@ -1725,7 +1732,9 @@ that callers with command timeouts should start it in the background.
   refused (`input_invalid`).
 - Replies never include host or archive paths, front matter, provider details
   or manager identifiers: the reference string, archive path, store ID, inquiry
-  label, varies note and family. The audit ID is visible to the auditor.
+  label, varies note and family. The audit ID is visible to the auditor. A
+  refusal may repeat the auditor's own input verbatim, such as an unknown
+  source name, since that reveals nothing the auditor did not send.
 - Every tool definition is `{"name", "description", "input_schema"}`. The input
   schema is `{"type": "object", "properties": {…}, "required": […],
   "additionalProperties": false}`, with the properties and descriptions given in
@@ -1768,7 +1777,8 @@ handle, or a prepared view (`ap<n>.<check>/rendering` or `/selection`).
 - `data`: `source`; `kind` (`question`, `material`, `entry` or `view`); `size`;
   `range` [start, end); `lines` [first, last] (1-based lines of the first and
   last byte, `null` when empty); `complete`; `cite`, a ready citation
-  `{source, start, end}` for the page, `null` for entry and view reads; and
+  `{source, start, end}` for the page, `null` for entry and view reads and for
+  an empty page, which no citation can name (7.3); and
   `text` or `base64` when the page is carried in the envelope (7.1). While the
   read is incomplete, the envelope's `next` is a ready `read` call for the rest.
 - Entry reads add `entry`, `id`, `version`, `entry_kind` (the recording tool,
