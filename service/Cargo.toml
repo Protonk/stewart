@@ -1,0 +1,18 @@
+[package]
+name = "stewart"
+version = "0.1.0"
+edition = "2024"
+description = "Stewart: bounded audit commissions with faithful custody and verified return"
+publish = false
+
+[dependencies]
+libc = "=0.2.178"
+sha2 = "=0.10.9"
+rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
+webpki-roots = "=1.0.11"
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = "symbols"

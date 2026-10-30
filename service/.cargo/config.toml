@@ -1,0 +1,7 @@
+# Builds use the vendored sources only. apparatus/step2.sh creates vendor/
+# from Cargo.lock; see apparatus/README.md.
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"
