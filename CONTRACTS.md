@@ -610,8 +610,9 @@ its framing, missing evidence, no supported finding and qualifications; neither
 a defect nor a particular substantive conclusion is mandatory. A bounded
 assurance remains the auditor's attributed claim, not Stewart's guarantee.
 
-**Initial library and specification.** Open inquiry, inquiry framing and comparison
-are the first families. Comparison relates the supplied alternatives to a criterion
+**Implemented library and specification.** Open inquiry, inquiry framing and
+comparison are the implemented first families. Comparison relates the supplied
+alternatives to a criterion
 and allows unequal evidence or inability without requiring a winner. Its tools
 must accommodate observations about one alternative without implying a comparison.
 The [form specification](docs/QUESTION-FORMS.md) fixes the exact fields, tools,
@@ -619,8 +620,21 @@ orientation and rendering; the [worked examples](examples/questions/README.md)
 are valid submissions whose hand-written walkthroughs illustrate expression, not
 expected answers. Both work within the settled policy;
 neither is permission for a new completeness gate.
-No hidden-prior mechanism, larger catalogue or elaborate module composition is
-required for this build. Future family admission is separate optional work.
+
+**Selected five-family direction (2026-10-31).** The principal selected claim
+examination and experimental inquiry alongside the implemented three, with five
+as the limit for this work. Freeze the questions' purposes before specifying
+material guidance and mechanically enforceable tool checks. The additions are
+not implemented; their precise prompts, schemas and conformance specimens remain
+to be settled. Claim examination considers support, counterevidence, assumptions
+and qualifications for a stated claim, without requiring a defect or repair.
+Experimental inquiry uses supplied subject material and captured primary sources
+to develop an informative experiment. Its current form remains within read-only
+access: reasoning and authored answer artifacts do not become executed trials.
+The exact useful return and the work left to the manager remain to be decided.
+A future form with execution is deferred; this choice grants no executor,
+network retrieval or live manager channel. No hidden-prior mechanism or elaborate
+module composition is selected.
 
 ## Readable answer rendering
 
@@ -1118,7 +1132,7 @@ execution or mutation authority.
   claiming to fulfill it.
 - No generic additional-copy service after verified delivery/close or monitoring
   of a delivered copy's present safety. Delivery records describe verified events.
-- Person transport, hidden priors, a larger family catalogue and elaborate module
+- Person transport, hidden priors, further family expansion and elaborate module
   composition are unselected extensions, each requiring its own concrete need.
 - Whether read-only inquiry is intellectually useful, and how to admit new family
   opinions on evidence, remain optional studies, not gates on this design.

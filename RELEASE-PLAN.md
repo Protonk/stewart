@@ -85,7 +85,9 @@ user.
 
 Discussion agenda reviewed 2026-10-31, excluding question-type design, wording
 and answer-quality evaluation. This section owns the preparation questions for
-the current Messages API adapter. The later runtime work is staged in
+the current Messages API adapter. [QUESTION-FREEZE-PLAN.md](QUESTION-FREEZE-PLAN.md)
+owns the five-family discussion and read-only utility questions. The later
+runtime work is staged in
 [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md); none of its implementation is a
 prerequisite to the first API test. The following recommendations do not add
 release gates or authorize a model call.
