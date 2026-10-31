@@ -81,6 +81,61 @@ not reasons to reopen settled manager or answer policy. If qualification shows
 the design cannot support a promise, bring that specific unmet promise to the
 user.
 
+### Before the first live API test
+
+Discussion agenda reviewed 2026-10-31, excluding question-type design, wording
+and answer-quality evaluation. This section owns the preparation questions for
+the current Messages API adapter. The later runtime work is staged in
+[CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md); none of its implementation is a
+prerequisite to the first API test. The following recommendations do not add
+release gates or authorize a model call.
+
+| Topic for the next discussion | Decision or concrete preparation needed |
+| --- | --- |
+| What the first run should establish | Choose a bounded compatibility/procedure probe or a commissioned part of the full conformance tier. A useful first probe follows one existing commission through real provider requests, auditor tool use, explicit submission, verified delivery and close. Decide whether effort, actual compaction and forced interruption/continuation belong in that first budget or in subsequent runs. Keep claims limited to operations actually exercised. |
+| Model, settings and spending | Name the exact model, effort setting or deliberate omission, provider/account route, total spending authority and run/token allowances. Include the permitted retries, continuations and stop conditions in the bounded commission. Stewart counts tokens and turns; it does not enforce a dollar ceiling. Recheck current provider support and pricing when costing the proposed run. |
+| Binary and execution environment | Identify the committed source and release-binary digest, Linux environment, supported archive filesystem, destinations, endpoint/proxy configuration and credential delivery. The release's built-in TLS roots have not reached the real provider. Use explicit API authentication and record non-secret configuration. Decide the scripted qualification baseline for the first run. |
+| Live runner and retained observations | Build a small, reviewable launch/observation procedure. The existing suites all use local fakes with `--network none`; they are not a live runner. Preserve original input copies independently, raw conversations and attempt records, stdout/stderr, run/status/receipt results, delivered bytes, actual usage and available provider cost records in a fresh retained run folder. Record observer scope and timing; credential values are not evidence artifacts. |
+| Stopping, failures and recovery | Identify who operates close/interrupt and how the running process is observed. Distinguish request rejection, exhausted allowance, interrupted placement, unsubmitted ending, sealed answer and incomplete delivery. Check actual effects before retrying. A manager close must not turn an unsubmitted run into a claimed conformance pass. Studies of interruption or missing capture need an independent witness and controls retained through review. |
+
+**Recommended preparation before spending:**
+
+- Batch the pending effort and compaction changes into the next Linux
+  `acceptance.sh` run, including the compaction-stopping case skipped on macOS.
+  The checked qualification record still covers `dc85948`, not these changes.
+  If the principal instead chooses an earlier compatibility probe, identify the
+  build as unqualified and preserve that limitation in its result.
+- Prepare the bounded live command, observation/retention procedure and offline
+  checks of the commissioned input and destinations. The live apparatus is
+  currently absent; this is concrete preparation still to do.
+- Check the pinned provider interface against the chosen model: API version
+  `2026-10-21`, compaction beta `compact-2026-09-04`, at most 16,000 output tokens
+  per request, 600-second timeout and optional effort. Refusal is an observable
+  outcome; changing a model or settings changes the proposed commission.
+- Budget the actual compaction specimen deliberately. It must reach the fixed
+  150,000-token context trigger, and cumulative input consumption can be much
+  larger than that figure. A short successful probe will not establish
+  compaction conformance.
+- Preserve every relevant working copy for the new evidence. The existing
+  container suite retains driver evidence but discards working copies; the
+  [retention item](#retention-of-damaged-originals) needs a disposition before
+  using a new suite run to claim C18 coverage. A live runner should retain its
+  own originals and observations from the outset.
+
+**Keep separate from first-run blockers:** the WSL2 package and native platform
+runs, service-wide two-build reproducibility, the broad claim-by-claim coverage
+audit, Linux runs of all Cargo tests, toolchain rebuild policy and the public
+release schedule remain release work below. They do not automatically have to
+finish before a bounded first provider probe. The known help/schema-example
+slips should be corrected when they affect the chosen runbook; they are not a
+reason to reopen question types. Full C10 coverage remains owed before naming
+a model as supported, whatever the first probe shows.
+
+Once the launch commission and procedure are agreed, record the exact bounded
+run where its results will be kept. Replace this discussion agenda with the
+remaining work after that run is reviewed; do not keep a second account of its
+state in the Claude Code plan.
+
 ### Effort setting: built, unqualified
 
 On 2026-10-31 the user replaced the earlier plan for an Opus default: Stewart
@@ -304,8 +359,8 @@ notice boundary. The second host run above verifies that correction.
 Needs: the user's next scheduled `acceptance.sh` container run, including the
 Linux stopping case, and separately budgeted real-model conformance. Native
 iteration does not qualify the change. No model call was made or authorized.
-Claude Code as a peer runtime is the next discussion; human and Codex/OpenAI
-adapters remain future possibilities (CONTRACTS).
+The later Claude Code work is staged in [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md);
+human and Codex/OpenAI adapters remain future possibilities (CONTRACTS).
 
 ### To discuss: what acceptance testing Stewart needs
 

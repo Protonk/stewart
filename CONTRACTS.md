@@ -429,6 +429,11 @@ peer adapter; human and Codex/OpenAI runtimes are future possibilities. Those
 adapters have not been commissioned for implementation and do not inherit a
 claim that their access, context or stopping mechanisms have been qualified.
 
+The distributed AI integrations use explicit API or supported cloud-provider
+authentication. Subscription login and routing through a user's Claude
+subscription stay outside Stewart's main interface. This is the chosen product
+boundary, independent of which runtime performs the audit.
+
 The manager's unit is an inquiry: a line of questions about a concern. Each audit
 has its own explicit reference and can record which earlier problem it varies.
 Status never chooses an audit by recency. Constructing another question is the
