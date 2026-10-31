@@ -86,15 +86,23 @@ user.
 Discussion agenda reviewed 2026-10-31, excluding question-type design, wording
 and answer-quality evaluation. This section owns the preparation questions for
 the current Messages API adapter. [QUESTION-FREEZE-PLAN.md](QUESTION-FREEZE-PLAN.md)
-owns the five-family discussion and read-only utility questions. The later
+holds the narrow five-purpose freeze proposal. Family recipes, tool optimization
+and intellectual utility are later dogfooding work. The later
 runtime work is staged in
 [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md); none of its implementation is a
 prerequisite to the first API test. The following recommendations do not add
 release gates or authorize a model call.
 
+The first paid Messages API test is a bounded sanity check: a simple commission
+travels through the real model loop, exercises named tools and reaches a properly
+preserved outcome. It can use an already implemented family. It does not wait for
+the two additional families' final recording tools, prove five sets of
+instructions optimal, or replace the release conformance tier. Preserve failed
+outcomes honestly without calling an unexercised submission path successful.
+
 | Topic for the next discussion | Decision or concrete preparation needed |
 | --- | --- |
-| What the first run should establish | Choose a bounded compatibility/procedure probe or a commissioned part of the full conformance tier. A useful first probe follows one existing commission through real provider requests, auditor tool use, explicit submission, verified delivery and close. Decide whether effort, actual compaction and forced interruption/continuation belong in that first budget or in subsequent runs. Keep claims limited to operations actually exercised. |
+| What the first run should establish | Select one simple specimen using an existing family, preferably open inquiry, and name the procedural observations for real provider requests, auditor tool use, explicit submission and preserved delivery/close. Keep claims limited to operations actually exercised. Effort comparisons, actual compaction and forced interruption/continuation remain separately scoped follow-up work, not implied parts of this first sanity check. |
 | Model, settings and spending | Name the exact model, effort setting or deliberate omission, provider/account route, total spending authority and run/token allowances. Include the permitted retries, continuations and stop conditions in the bounded commission. Stewart counts tokens and turns; it does not enforce a dollar ceiling. Recheck current provider support and pricing when costing the proposed run. |
 | Binary and execution environment | Identify the committed source and release-binary digest, Linux environment, supported archive filesystem, destinations, endpoint/proxy configuration and credential delivery. The release's built-in TLS roots have not reached the real provider. Use explicit API authentication and record non-secret configuration. Decide the scripted qualification baseline for the first run. |
 | Live runner and retained observations | Build a small, reviewable launch/observation procedure. The existing suites all use local fakes with `--network none`; they are not a live runner. Preserve original input copies independently, raw conversations and attempt records, stdout/stderr, run/status/receipt results, delivered bytes, actual usage and available provider cost records in a fresh retained run folder. Record observer scope and timing; credential values are not evidence artifacts. |
@@ -114,7 +122,7 @@ release gates or authorize a model call.
   `2026-10-21`, compaction beta `compact-2026-09-04`, at most 16,000 output tokens
   per request, 600-second timeout and optional effort. Refusal is an observable
   outcome; changing a model or settings changes the proposed commission.
-- Budget the actual compaction specimen deliberately. It must reach the fixed
+- For a later live compaction run, budget the specimen deliberately. It must reach the fixed
   150,000-token context trigger, and cumulative input consumption can be much
   larger than that figure. A short successful probe will not establish
   compaction conformance.

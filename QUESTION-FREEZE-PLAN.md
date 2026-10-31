@@ -1,100 +1,110 @@
-# Freeze the question families for read-only live testing
+# Narrow question-family freeze proposal
 
-Working plan, 2026-10-31. The principal has chosen a five-family direction:
-open inquiry, inquiry framing, comparison, claim examination and experimental
-inquiry. Freeze what each question commissions before deciding its material
-guidance and mechanically enforceable tool rules. This is planning and
-consultation work, not an implementation or model-spending commission.
+Prepared from the principal's narrow-freeze commission, 2026-10-31. The Riker
+consultation led to this reduced scope: settle what accepting a question
+promises before the first paid Messages API sanity test. Detailed recipes,
+tool vocabulary and intellectual utility remain later work. This proposal
+replaces the earlier sequence that put all five implementations before live
+work. It authorizes no implementation or model spending.
 
-## Starting point and purpose
+## Five purposes
 
-The current service implements only the first three families. Their exact
-instructions, tools and rendering are in [QUESTION-FORMS](docs/QUESTION-FORMS.md);
-the policy and selected additions are in [CONTRACTS](CONTRACTS.md#question-families-and-open-inquiry).
-Claim examination and experimental inquiry have no implemented family identifier,
-pinned prompt, dedicated recording tools or conformance specimens yet.
-
-Keep the library at five for this work. Earlier evidence recipes can inform
-material guidance within these families; they are not an automatic extra
-catalogue. Distinct names should commission useful differences in work, without
-requiring every possible question to fit an exclusive intellectual category.
-
-## The selected five
-
-| Family | Question and undertaking to preserve |
+| Family | What the manager commissions |
 | --- | --- |
-| Open inquiry | Address the manager's question from the supplied materials; give the account, its basis and reach, including inability or no supported finding. It remains a full ordinary route for broad requests. |
-| Inquiry framing | Formulate a working question from the concern and investigate it in the same commission. Preserve the original question and explain the relationship; a useful investigation need not wait for another commission. |
-| Comparison | Relate the named alternatives to a criterion, distinguishing the manager's criterion from the auditor's interpretation. Unequal evidence and inability to compare remain expressible; no winner is required. |
-| Claim examination | Examine how far the materials support a stated claim, including counterevidence, assumptions and qualifications. A defective premise or a repair is not a required result. |
-| Experimental inquiry | Use the supplied subject material and captured primary sources to develop an informative experiment. Preserve the auditor's freedom to discover a relevant testable uncertainty. The current form works through reading, reasoning and authored artifacts; actual execution is unavailable. Its exact read-only return is the main question still to freeze. |
+| Open inquiry | Investigate the supplied question, without needing to justify choosing a general inquiry. |
+| Inquiry framing | Formulate and investigate a working question from the manager's concern, preserving the original question and explaining their relationship. |
+| Comparison | Relate alternatives to a criterion, distinguishing the manager's criterion from the auditor's interpretation, without requiring a winner. |
+| Claim examination | Examine support, counterevidence, assumptions and qualifications for a stated claim, without requiring a defect, repair or verdict. |
+| Experimental inquiry | Discover and develop an informative experiment from the supplied subject material and captured sources, without requiring the manager to supply a finished hypothesis or the auditor to execute the experiment. |
 
-## The experimental family under today's boundary
+## Shared contractual invariants
 
-The principal has retained the read-only auditor as a hard current boundary.
-It can read captured UTF-8 material and write its answer/artifacts. It has no
-shell, project executor, general filesystem or network retrieval, and no live
-manager steering channel. A supplied URL alone does not supply its contents;
-primary-source text must be captured before commissioning with the applicable
-version/context identified. No automatic fetch feature is commissioned here.
+- A family specifies the inquiry, not a required result. `answer`,
+  `needs-evidence` and `reframe` are legitimate intellectual returns across all
+  five, distinct from whether authoring ended, submission occurred, delivery
+  verified or close completed. These names do not introduce a mandatory label,
+  mutually exclusive schema, or automatic classification of content.
+- The original question remains intact. A reframe may explain a poor fit and
+  propose a better question; it neither replaces the captured commission nor
+  silently grants another investigation. Inquiry framing explicitly includes
+  developing and investigating a working question within the same commission.
+- Family selection grants no additional permissions, material access or budget.
+  The auditor remains read-only over captured materials while able to author
+  its answer/artifacts. Even if execution becomes available later, selecting
+  experimental inquiry will not itself authorize execution.
+- Questions, evidence, artifacts and intellectual returns have the same meaning
+  across Messages API and later Claude Code arrangements. Family-specific tools
+  and expected sections may guide authoring; they do not establish different
+  custody, attribution or submission contracts.
+- Mechanical validity and substantive judgment remain separate. Citation
+  checks establish locations and exact quotations, not support. Missing-entry
+  notices remain nonblocking; incomplete and empty selections remain admissible
+  and are not automatically findings of no issue. A proposed check requiring a
+  particular conclusion or excluding a legitimate return must be brought back
+  as a change to the commission, not added as routine validation.
 
-The motivating specimen is part of a Python application plus captured Python
-subprocess documentation. The auditor uses the relationship between those
-materials to identify a question worth testing. A possible current return is
-an inspectable experiment, authored specimen/script, predicted distinguishing
-observations and limits. Supplied trial records may be examined as attributed
-evidence; authored scripts and predictions must not be presented as newly run
-experiments. This is a working interpretation to refine, not a final tool schema
-or a requirement to produce code for every inquiry.
+## Complete experimental contribution without execution
 
-The principal's concern has two sides. Removing Git management avoided turning
-custody into a reimplementation of Git; an executor could cause a similar
-expansion of responsibilities. Read-only operation may help bound cost and
-complexity, but that is not yet a measured utility result. It could also exclude
-valuable inquiries or return first drafts that require substantial manager
-repair. Preserve this tension in the review rather than assuming either success
-or failure from the access policy alone. A future auditor with execution may
-give experimental inquiry a different final form; it is deferred, not a condition
-for defining a useful current form.
+Depending on the materials, an experiment design, concrete specimen, or precise
+account of the evidence needed to develop an informative test may be a complete
+intellectual contribution. Explain what the auditor accomplished and what remains
+for the manager or a later executor. Runnable code, a fixed hypothesis format,
+new observations and a successful experimental result are not required.
 
-## Sequence and remaining decisions
+Keep captured source claims, application-source interpretation, auditor inference,
+proposed experiments, predictions and supplied observations distinguishable.
+An authored script is not a witnessed execution; a supplied report remains
+attributed evidence. These distinctions concern the account's meaning, not six
+mandatory fields or a new substantive grading mechanism.
 
-1. **Consult Riker.** Relay [the prepared question](riker/QUESTION-FREEZE.md)
-   under [the Riker procedure](riker/RIKER.md). It is self-contained and needs no
-   attachments. Its status is ready for the principal to send; no reply has been
-   received. Treat the advice as assistance, not endorsement or a new commission.
-2. **Freeze the questions with the principal.** For each family agree its
-   purpose, the useful work/return it commissions, and how inability or an
-   unsuitable premise can be expressed. Resolve the experimental family's
-   read-only promise and the manager work it deliberately leaves. Use concrete
-   specimens, including inadequate materials, to expose overlapping or empty
-   promises. Decide which issues need resolution before a live probe and which
-   should be observed in it.
-3. **Then specify materials and checks.** Identify useful material roles and
-   why they matter. Distinguish malformed-input/reference/custody refusals from
-   factual omission notices and from judgments Stewart cannot establish.
-   Existing nonblocking omissions, empty-answer admission and mechanical
-   citation checks stand unless the principal explicitly changes them. Do not
-   derive a compulsory completeness gate merely from an expected answer shape.
-4. **Implement the agreed forms under a later commission.** Update the exact
-   specification, service, help/examples and independent driver consistently,
-   with the separation of authorship and checks in [AGENTS](AGENTS.md) and
-   [DEVELOPMENT](DEVELOPMENT.md#what-to-run-for-what-you-changed). Reconcile the
-   three-family conformance roster when the additions are specified; selecting
-   five in this plan does not claim that five are ready to run.
-5. **Commission bounded live testing.** The [release agenda](RELEASE-PLAN.md#before-the-first-live-api-test)
-   owns model/settings, spending, launch procedure and retention. Name the forms
-   actually exercised. Observe usability, source/observation attribution and
-   manager repair effort separately from procedural conformance. Neither a
-   successful seal nor agreement with an expected conclusion establishes utility.
-   The [Claude Code plan](CLAUDE-CODE-PLAN.md) retains the API-first staging.
+## Minimum material guidance
 
-Update this plan when the consultation and principal's decisions change the
-remaining work. At completion or abandonment, give each open item a disposition,
-move enduring decisions into the specification and tests, and delete the plan.
-Remove the consultation file when its useful conclusions have been extracted;
-Git retains the earlier question.
+Ask managers for their question/concern and the relevant captured subject and
+evidence. For comparison, identify alternatives and any criterion the manager
+has supplied; for claim examination, identify the claim. For experimental
+inquiry, include the captured primary-source material that may inform a test,
+with available version/context. A link alone does not provide its contents.
+Managers need not preselect the finding, solve the comparison, enumerate every
+premise, or provide the experiment's finished hypothesis. Missing evidence can
+itself be the return; these suggestions are not new intake gates.
 
-Local planning checks are retained in `.scratch/question-freeze-01` and
-`.scratch/question-freeze-02` while this plan is active; the latter also holds
-the host commit helper.
+## Before the first paid API sanity test
+
+No further family-design decision is needed to prepare a simple sanity run on
+this basis. The current service implements open inquiry, inquiry framing and
+comparison; dedicated claim-examination and experimental-inquiry forms remain
+unimplemented. Use one existing family, preferably open inquiry, and name the
+actual operations the probe is intended to exercise. Do not simulate support
+for an unimplemented family or require its final vocabulary first.
+
+The remaining launch decisions are the bounded specimen and procedural success
+observations; exact model/settings, provider route and spending/retry authority;
+and the binary/environment, launch, retention and stop/recovery procedure.
+The [release agenda](RELEASE-PLAN.md#before-the-first-live-api-test) owns that
+preparation. A successful probe establishes the exercised real-model/tool/
+submission/preservation path. A failure must retain its actual outcome; honest
+preservation of failure does not establish a successful submission path. This
+is not five-family qualification or proof of useful reasoning. Full release
+conformance obligations remain separate.
+
+## Later dogfooding and disposition
+
+Use later [Claude Code dogfooding](CLAUDE-CODE-PLAN.md) to investigate material
+recipes, prompts, recording vocabulary, expected sections, useful experimental
+artifacts, manager repair effort and model utility. Do not optimize those as a
+condition of this freeze or expand beyond five families. Any executor design
+remains outside this work. Formal deployment of new families will need coherent
+specification, service and independent-driver changes and the relevant checks;
+that is not part of the first simple API probe.
+
+This is the short proposal for review, not a change to the service's pinned
+forms. On adoption, move its contractual meanings into
+[CONTRACTS](CONTRACTS.md#question-families-and-open-inquiry), retain later work in
+the relevant runtime/release plans, and delete this plan and the now-answered
+[Riker request](riker/QUESTION-FREEZE.md). The principal's returned instructions
+supply the consultation's disposition; no further reply is needed to prepare
+this proposal.
+
+Local check records remain in `.scratch/question-freeze-01`,
+`.scratch/question-freeze-02` and `.scratch/question-freeze-03`; the last folder
+holds this revision's checks and host commit helper.
