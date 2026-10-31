@@ -621,20 +621,67 @@ are valid submissions whose hand-written walkthroughs illustrate expression, not
 expected answers. Both work within the settled policy;
 neither is permission for a new completeness gate.
 
-**Selected five-family direction (2026-10-31).** The principal selected claim
-examination and experimental inquiry alongside the implemented three, with five
-as the limit for this work. Freeze the questions' purposes before specifying
-material guidance and mechanically enforceable tool checks. The additions are
-not implemented; their precise prompts, schemas and conformance specimens remain
-to be settled. Claim examination considers support, counterevidence, assumptions
-and qualifications for a stated claim, without requiring a defect or repair.
-Experimental inquiry uses supplied subject material and captured primary sources
-to develop an informative experiment. Its current form remains within read-only
-access: reasoning and authored answer artifacts do not become executed trials.
-The exact useful return and the work left to the manager remain to be decided.
-A future form with execution is deferred; this choice grants no executor,
-network retrieval or live manager channel. No hidden-prior mechanism or elaborate
-module composition is selected.
+**Five purposes, frozen 2026-10-31.** The commission's meaning is settled;
+the best intellectual guidance and recording vocabulary are not. Keep the
+library at five. Claim examination and experimental inquiry remain unimplemented
+as dedicated families, with their exact prompts, tools and specimens still open.
+
+| Family | What the manager commissions |
+| --- | --- |
+| Open inquiry | Investigate the supplied question, without needing to justify choosing a general inquiry. |
+| Inquiry framing | Formulate and investigate a working question from the manager's concern, preserving the original question and explaining their relationship. |
+| Comparison | Relate alternatives to a criterion, distinguishing the manager's criterion from the auditor's interpretation, without requiring a winner. |
+| Claim examination | Examine support, counterevidence, assumptions and qualifications for a stated claim, without requiring a defect, repair or verdict. |
+| Experimental inquiry | Discover and develop an informative experiment from the supplied subject material and captured sources, without requiring the manager to supply a finished hypothesis or the auditor to execute the experiment. |
+
+**Shared meanings and permissions.** A family determines the inquiry, not its
+required result. `answer`, `needs-evidence` and `reframe` are legitimate
+intellectual returns across all five, independently of whether authoring ended,
+submission occurred, delivery verified or close completed. These descriptions
+introduce no mandatory label, mutually exclusive schema or automatic content
+classification. A reframe can explain a poor fit and propose another question;
+it neither replaces the captured question nor silently grants another
+investigation. Inquiry framing explicitly includes developing and investigating
+a working question within the same commission.
+
+Family selection grants no additional permissions, material access or budget.
+Even if execution becomes available later, experimental inquiry does not itself
+authorize it. Questions, evidence, artifacts and intellectual returns retain
+their meanings across Messages API and later Claude Code arrangements.
+Family-specific recording tools and expected sections may guide authoring;
+they do not establish different custody, attribution or submission contracts.
+Mechanical checks remain distinct from substantive judgments under the
+enforcement policy below. Any proposed check requiring a particular conclusion
+or excluding an otherwise legitimate return is a change to the commission for
+the principal to decide, not routine validation.
+
+**Experimental inquiry without execution.** Depending on the materials, an
+experiment design, concrete specimen, or precise account of the evidence needed
+to develop an informative test may be a complete intellectual contribution.
+Explain what the auditor accomplished and what remains for the manager or a
+later executor. Runnable code, a fixed hypothesis format, invented observations
+and a successful experimental result are not required.
+Keep captured source claims, application-source interpretation, auditor inference,
+proposed experiments, predictions and supplied observations distinguishable.
+An authored script is not a witnessed execution; a supplied report remains
+attributed evidence. These distinctions concern meaning, not mandatory fields
+or a substantive grading mechanism. The current read-only access boundary stands.
+
+**Minimum material guidance.** Ask for the concern and relevant captured subject
+material and evidence. For comparison, identify the alternatives and any supplied
+criterion; for claim examination, identify the claim. For experimental inquiry,
+include captured primary-source material that may inform the test, with available
+version/context. A link alone does not provide its contents. Managers need not
+preselect findings, solve the comparison, enumerate every premise or supply the
+experiment's finished hypothesis. Missing evidence may itself be the return;
+these suggestions introduce no new intake gates.
+
+The freeze does not require optimized recipes, mandatory answer structures or
+live qualification of all five families. Later dogfooding can investigate tools,
+material guidance, useful returns and manager repair effort. A first paid API
+sanity probe may use an already implemented family to exercise the real model,
+tools and preserved outcome; it is distinct from full release conformance.
+No hidden-prior mechanism or elaborate module composition is selected.
 
 ## Readable answer rendering
 

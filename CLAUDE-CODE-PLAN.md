@@ -68,6 +68,23 @@ The existing release obligations remain in [ACCEPTANCE](ACCEPTANCE.md#the-real-m
    helper and its installation/versioning explicitly against the current static
    binary product. Generic advice about multi-tenant hosting is not new scope.
 
+## Later question-family dogfooding
+
+The [five purposes and shared meanings](CONTRACTS.md#question-families-and-open-inquiry)
+are frozen. After the first API sanity test, use separately commissioned
+dogfooding to investigate material recipes, prompts, recording vocabulary,
+expected sections, useful experimental artifacts, manager repair effort and
+model utility. These are open questions, not prerequisites to that API probe
+or new conformance grades. Dedicated claim-examination and experimental-inquiry
+forms remain unimplemented; final vocabulary and mandatory structures have not
+been selected. Formal deployment needs consistent specification, service,
+help/examples and independent-driver changes with the applicable checks.
+
+Preserve the read-only experimental promise and the common custody/attribution
+contract across runtimes. A family choice must never implicitly grant execution.
+Do not expand the library beyond five or treat an attractive answer structure
+as authority to add a substantive submission gate.
+
 ## Next decisions and references
 
 - Settle stage 1 through the release plan's focused agenda. Question-type work

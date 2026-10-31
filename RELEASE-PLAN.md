@@ -85,9 +85,10 @@ user.
 
 Discussion agenda reviewed 2026-10-31, excluding question-type design, wording
 and answer-quality evaluation. This section owns the preparation questions for
-the current Messages API adapter. [QUESTION-FREEZE-PLAN.md](QUESTION-FREEZE-PLAN.md)
-holds the narrow five-purpose freeze proposal. Family recipes, tool optimization
-and intellectual utility are later dogfooding work. The later
+the current Messages API adapter. The adopted
+[five-purpose freeze](CONTRACTS.md#question-families-and-open-inquiry) settles the
+commission's meanings. Family recipes, tool optimization and intellectual utility
+are later dogfooding work. The later
 runtime work is staged in
 [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md); none of its implementation is a
 prerequisite to the first API test. The following recommendations do not add
