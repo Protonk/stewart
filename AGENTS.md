@@ -58,6 +58,10 @@ next such run, which the user schedules; it need not wait for that run to land.
 Findings that could be sensitive outside the project, such as a security
 weakness in a toolchain, go to the user, who decides how to route them.
 
+Git history holds earlier material, including the retired Python tool (last
+present at `267aaf0`); do not restore it to the tree. Do not add compatibility
+shims or rewrite historical receipts to fit a newer schema.
+
 ## Larger work
 
 Subagents are optional, and more agents are not a success measure. Give each a
@@ -100,9 +104,10 @@ qualified without such a run. Retained runs under `.scratch` follow
 DEVELOPMENT.md's [Evidence and retention](DEVELOPMENT.md#evidence-and-retention)
 section. A clean result needs a firing control, a case differing in the measured
 property and an invariance case. An explanation remains a hypothesis until a
-comparison distinguishes it from its rivals. Qualify real harness enforcement
-separately from settings construction. Write useful CLI help, comments and
-failure messages along with implementation and tests.
+comparison distinguishes it from its rivals. Qualify the enforcement the binary
+actually performs, such as access and stopping, not merely the settings that
+request it. Write useful CLI help, comments and failure messages along with
+implementation and tests.
 
 For studies of missing capture, extraction or deletion, keep an independent
 witness and controls through review under the evidence-run retention rules; an
@@ -116,49 +121,6 @@ denied), so prepare the command and ask the user to run it with `!`. Run Python,
 such as the acceptance driver, with an explicit interpreter and isolated startup
 (`-I`, plus `-B` where bytecode must stay unwritten). Isolated mode ignores
 `PYTHONPATH`, so documented commands do not set it.
-
-## Product principles
-
-Development workers do not inherit Stewart's manager/auditor workflow.
-Conversely, the product does not inherit development agents' steering and
-supervision practices. Stewart serves a bounded commission and structured
-return; additional intervention facilities need a specific commission or custody
-reason, not parity with a harness-managed swarm. After product handoff, the
-manager receives a structured return through the agreed interface; live product
-access is restricted to commission readback, operating status and close. The
-first Rust release's manager-designated archive remains readable by its owner;
-no live answer viewer, steering channel or secrecy from the host owner is
-promised. Rich selected context and investigative latitude remain compatible
-with a narrow question. The auditor has only Stewart's commission-bound tools,
-without a private-location inventory. Qualify actual access and stopping, not
-merely the settings. Exact wire and process mechanisms instantiate CONTRACTS;
-they do not select an extra intervention channel.
-
-Stewart stays agnostic about the intellectual utility of audits, including in
-development evaluation. Its major intellectual influence belongs in question
-types and the constrained audit space. Examine whether answer restrictions let
-participants express, inspect and contest permitted responses; do not use
-agreement with a preferred outcome as the success criterion. Restrictions that
-privilege or exclude substantive outcomes need explicit design deliberation.
-Auditor and manager judgments remain attributed. CONTRACTS.md owns the
-principle.
-
-The design separates recording a commission from promising its replay; the
-manager owns constructing another question. There is no restart-from-start
-facility. An interrupted run continues the same ledger and cumulative limits;
-earlier code or tests do not justify restoring a staged workflow. Stewart must
-account for its incomplete custody operations through supported paths:
-agent-managers should not need to improvise repairs to private state. Recovery
-cannot grant another investigative execution or conceal uncertainty, and a
-family of retries is not simplified by renaming it recovery. Stewart has no
-dedicated program executor or staged program release/run workflow. Permitted
-auditor tool use remains bounded by its commission and actual access grants;
-supplied execution reports retain their attribution. Continuation grants no
-fresh investigation or reset allowance.
-
-Git history holds earlier material, including the retired Python tool (last
-present at `267aaf0`); do not restore it to the tree. Do not add compatibility
-shims or rewrite historical receipts to fit a newer schema.
 
 ## Riker
 
