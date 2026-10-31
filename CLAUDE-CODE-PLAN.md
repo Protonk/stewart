@@ -17,9 +17,11 @@ authentication. Subscription login/routing stays outside Stewart's main
 interface. This product decision is recorded in [CONTRACTS](CONTRACTS.md#run-and-continuation).
 
 The Messages API loop gained provider compaction in `8cbd307`. Native checks
-passed; container and live-provider qualification remain outstanding. The
-[release plan](RELEASE-PLAN.md#provider-compaction-built-unqualified) owns those
-results and pending checks. No Claude Code adapter or live conformance run exists.
+and the Linux acceptance suite at `faa5579` passed; live-provider qualification
+remains outstanding. The
+[release plan](RELEASE-PLAN.md#provider-compaction-linux-qualified-live-check-pending)
+owns those results and pending checks. No Claude Code adapter or live conformance
+run exists.
 
 ## Stages
 

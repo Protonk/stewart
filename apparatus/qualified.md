@@ -20,8 +20,8 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-02](#acceptance-02) | 2026-10-30T18:04:19Z | `dc85948` | qualified | latest |
-| acceptance | linux-x86_64 | [acceptance-02](#acceptance-02) | 2026-10-30T18:04:19Z | `dc85948` | qualified | latest |
+| acceptance | linux-aarch64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest |
+| acceptance | linux-x86_64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest |
 | toolchain | linux-aarch64 | [apparatus-01](#apparatus-01) | 2026-10-30T00:14:38Z | `47e5a59` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-01](#apparatus-01) | 2026-10-30T00:14:38Z | `47e5a59` | qualified | latest |
 
@@ -33,15 +33,15 @@ not carry them.
 
 ## Records
 
-### acceptance-02
+### acceptance-03
 
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `8565133b3fd4c6b670d37dd87ddd436adb2b257c51c48715d1f983e59ac8da8f` at the source commit)
-- Source commit: `dc85948446583e9addd572e1cdcc3b0aa1b5e4a9`; archive SHA-256 `59c778db925cf230e36ac07d6346f3767183eac125dd97212a792074d3b1e80f`
-- Finished: 2026-10-30T18:04:19Z
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
+- Source commit: `faa55798ebbda86e5b759ae357e4745d6cb3976b`; archive SHA-256 `a40c2f8fd7fcafb12fe344e869513d8f55ac16d65fa8a6a1475c0688de596ba5`
+- Finished: 2026-10-31T20:31:09Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-02` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/acceptance-03` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -51,19 +51,19 @@ not carry them.
 | Failures | none | none |
 | Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 21/21, controls 8/8 | 21/21, controls 8/8 |
-| Driver self-test | 246/246 | 246/246 |
-| Cases passed | 110/110 | 108/108 |
-| Cases | selected 110, ran 110, passed 110, failed 0, skipped 0 | selected 108, ran 108, passed 108, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 204, passed 138, failed 66, skipped 0 | ran 204, passed 138, failed 66, skipped 0 |
-| Checks | passed 108097, failed outside controls 0, failed inside controls 731 | passed 108097, failed outside controls 0, failed inside controls 731 |
-| Sabotage control variants fired (INTERFACE C.2) | 66/66 | 66/66 |
+| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
+| Driver self-test | 298/298 | 298/298 |
+| Cases passed | 121/121 | 119/119 |
+| Cases | selected 121, ran 121, passed 121, failed 0, skipped 0 | selected 119, ran 119, passed 119, failed 0, skipped 0 |
+| Variants (a fired control's variant fails) | ran 226, passed 152, failed 74, skipped 0 | ran 226, passed 152, failed 74, skipped 0 |
+| Checks | passed 149139, failed outside controls 0, failed inside controls 994 | passed 149139, failed outside controls 0, failed inside controls 994 |
+| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
 | Driver controls fired | 8/8 | 8/8 |
-| Timing gate | on, passed: worst 2.025 ms; protocol worst 95.214 ms; threshold 100.0 ms | off (reported, not gated): worst 40.229 ms; protocol worst 158.753 ms; threshold 100.0 ms |
-| End to end (`e2e.reacting-audit`) | pass, 764/764 checks | pass, 764/764 checks |
-| Release binary SHA-256 | `5b3c40b802a9a03c71691d7dbee1c39ad81cd54b4c1290ba57d4706725dcb46d` | `c30ff785d7c0e6ac7d1b91dd3fa9cbeec7fe1795ab1e21d5e2e1666aefd7e6d6` |
-| Test binary SHA-256 | `29e732d033d315c1b55c732322ce879ecd49aff589426a6d7ed1c953b811dabf` | `801cac467684f62ebe310bc632c314ad23db1909a9745982d45b68935595fc7b` |
-| RESULT.json SHA-256 | `949b2103705e26fcf88026ad9cfb0851b96c5ff15571e2fa97c65fbe48bf7099` | `e69468ca1b1e1dab575b43420e680dd101104c29bd7148cc67121de84cb15d24` |
+| Timing gate | on, passed: worst 4.274 ms; protocol worst 92.542 ms; threshold 100.0 ms | off (reported, not gated): worst 46.046 ms; protocol worst 136.122 ms; threshold 100.0 ms |
+| End to end (`e2e.reacting-audit`) | pass, 828/828 checks | pass, 828/828 checks |
+| Release binary SHA-256 | `294561ae86f757191d6c19dd6b543ab45edebaaee7b5da25acb897f166bc3b96` | `29452b673bf2cf57a22d7e3d34dc966b9b8d9aa44fc15e4bf50a5200de7f6d79` |
+| Test binary SHA-256 | `a343723e57d696e51fd1da050457699c04a0533bb4097758dbb210a5c0173db0` | `4b08e2014fde70617f29659f19b03922d7fc2d6c8426b1c180cc665b7ba0ebfd` |
+| RESULT.json SHA-256 | `639c90ff76d9aaea29d186cb31bf45f1aca06938d9aea4cf77a8fd08240d78d6` | `e01e3b3eae1d55ad21b579929b08dd86eb375afa643cc3877bb3f07d06d25bb1` |
 
 ### apparatus-01
 

@@ -65,12 +65,14 @@ a fake provider stands in for the model. The suite's sabotage and driver
 controls show that the checks catch the failures they look for, and an
 integrated end-to-end audit (prepare, commission, a fake auditor working
 through the run, submit and seal, verified delivery, close) runs on each
-architecture's release binary. The suite passed at source `dc85948`: on
+architecture's release binary. The suite passed at source `faa5579`: on
 aarch64 natively, with its timing gate on, and on x86_64 under Rosetta
-emulation, where the gate is reported but not enforced. Since that run the
-service has gained the manager's optional effort setting, reports the
-provider's error message with a refusal, and enables provider compaction;
-those changes and the matching driver cases await the next suite run.
+emulation, where the gate is reported but not enforced. This includes the
+manager's optional effort setting, provider error reporting and provider
+compaction, including stopping during compaction. All 121 native and 119
+emulated cases passed, with no failed or skipped cases; all 74 sabotage
+variants and 8 driver controls fired on each architecture. Working copies
+were exported and the original driver containers retained for review.
 [`apparatus/qualified.md`](apparatus/qualified.md) records the latest runs of
 each suite, the source commits they cover and their results, and
 `python3 -I -B apparatus/qualified.py check` reports what has changed since.
@@ -83,11 +85,6 @@ each suite, the source commits they cover and their results, and
   development Mac, where the Linux-only calls use development fallbacks.
 - The two-build reproducibility comparison on the service. It has run only on
   an early skeleton of the crate.
-- Retention of damaged originals for review (ACCEPTANCE C18): the suites
-  discard a variant's working copies once it has passed or its control has
-  fired.
-- Container runs of the service and apparatus changes made since the last
-  suite run; `qualified.py check` lists them.
 - A claim-by-claim check of the suite's coverage against
   [ACCEPTANCE.md](ACCEPTANCE.md).
 - Real-model conformance: whether named models can use the arrangement and

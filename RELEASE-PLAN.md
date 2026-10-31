@@ -30,16 +30,16 @@ A first release needs:
 The first three come from ACCEPTANCE. The discussion of what acceptance testing
 Stewart needs ("To discuss", below) may change them.
 
-## Current account (2026-10-30)
+## Current account (2026-10-31)
 
 [apparatus/qualified.md](apparatus/qualified.md) records what the container
 suites have shown: each run's source commit, counts, digests and outcome, and,
 through `python3 -I -B apparatus/qualified.py check`, the changes since each
-run's source commit. Its front is `acceptance-02` (`apparatus/acceptance.sh` at
-`dc85948`) and `apparatus-01` (`apparatus/step2.sh` at `47e5a59`), both
+run's source commit. Its front is `acceptance-03` (`apparatus/acceptance.sh` at
+`faa5579`) and `apparatus-01` (`apparatus/step2.sh` at `47e5a59`), both
 qualified on both architectures. No run has consumed a model. The earlier runs,
-`acceptance-01` and `step3-01` to `-03`, are superseded; their account is in
-TRANSITION-PLAN.md at `aafcb57`. Run records are under `.scratch/` on the
+including `acceptance-02`, are superseded; Git retains their accounts and
+qualification records. Run records are under `.scratch/` on the
 development Mac, which Git ignores, and stay while they are on the front,
 pinned or cited (DEVELOPMENT.md, "Evidence and retention"). This section keeps
 what the record does not hold.
@@ -48,15 +48,17 @@ what the record does not hold.
 release dependency set, not the service. Its static and reproducibility checks
 had no firing controls. `acceptance.sh` adds one for the static check (a glibc
 build must fail it) and shows that `cmp` tells the release and test binaries
-apart, but the two-build comparison runs only in `step2.sh`. In `acceptance-02`
-the 66 sabotage control variants cover all 62 controls of INTERFACE Appendix
-C.2.
+apart, but the two-build comparison runs only in `step2.sh`. In `acceptance-03`
+the 74 sabotage control variants cover all 70 controls of INTERFACE Appendix
+C.2. All 121 aarch64 and 119 emulated x86_64 cases passed, with no failed or
+skipped cases; each architecture passed 149,139 checks with no failure outside
+controls. All 8 driver controls fired and each self-test passed 298/298 checks.
 
 The protocol timing gate, `c9.protocol-timing-gate`, requires every gated
 protocol call, as the fake provider measures it, to take under 100 ms; a
 full-material search is not gated. It passed natively on aarch64 in
-`acceptance-02` with a worst call of 95.2 ms, a `record_observation` call in
-`c3.limits`. Under Rosetta on x86_64
+`acceptance-03`; the release's slowest gated tool kind was
+`record_observation`, at 92.542 ms. Under Rosetta on x86_64
 the gate is off and timings are only reported.
 
 ### Not yet exercised
@@ -111,11 +113,9 @@ outcomes honestly without calling an unexercised submission path successful.
 
 **Recommended preparation before spending:**
 
-- Batch the pending effort and compaction changes into the next Linux
-  `acceptance.sh` run, including the compaction-stopping case skipped on macOS.
-  The checked qualification record still covers `dc85948`, not these changes.
-  If the principal instead chooses an earlier compatibility probe, identify the
-  build as unqualified and preserve that limitation in its result.
+- **Done:** `acceptance-03` qualifies `faa5579` on both Linux architectures,
+  including effort, compaction and the compaction-stopping case skipped on
+  macOS. Its retained release binaries can supply the first live run.
 - Prepare the bounded live command, observation/retention procedure and offline
   checks of the commissioned input and destinations. The live apparatus is
   currently absent; this is concrete preparation still to do.
@@ -130,8 +130,8 @@ outcomes honestly without calling an unexercised submission path successful.
 - Preserve every relevant working copy for the new evidence. The revised
   wrapper retains all driver work, exports an archive and leaves the original
   driver containers available through review; the
-  [retention item](#retention-of-damaged-originals) still needs verification in
-  the next container run. A live runner should retain its own originals and
+  [retention item](#retention-of-damaged-originals) is verified for
+  `acceptance-03`. A live runner should retain its own originals and
   observations from the outset.
 
 **Keep separate from first-run blockers:** the WSL2 package and native platform
@@ -191,7 +191,7 @@ out then. Findings apply to the tested arrangement; transfer to another model
 or runtime remains something to check. No default prompt, renderer or
 substantive submission rule changes merely because this study is planned.
 
-### Effort setting: built, unqualified
+### Effort setting: Linux-qualified; live check pending
 
 On 2026-10-31 the user replaced the earlier plan for an Opus default: Stewart
 has no effort default of its own. A manager may set `effort:` in the front
@@ -207,8 +207,8 @@ cases (ACCEPTANCE C1 and C9), and four sabotage controls show the checks fire.
 A provider that silently ignores the parameter goes unreported; finding that
 is out-of-band work, such as the conformance run below.
 
-Needs: the user's container run of `acceptance.sh` ("Container runs for
-recent changes").
+The Linux checks passed in `acceptance-03` at `faa5579`. Needs: separately
+commissioned real-provider compatibility and effort conformance.
 
 ### Claim-by-claim coverage check
 
@@ -236,7 +236,7 @@ takes a release binary and a test build (`--binary`, `--test-binary`); an
 the exact bytes a container suite qualified.
 
 A risk: the WSL2 run is native, so the protocol timing gate applies, and its
-margin so far is small: a worst call of 95.2 ms against 100 ms (above). The
+margin so far is small: a release tool call of 92.542 ms against 100 ms (above). The
 gate has not yet been applied on x86_64, where every driver run so far was
 emulated. Slower hardware or a slower filesystem could fail it.
 
@@ -274,32 +274,18 @@ budget; the provider check; the real-model apparatus.
 
 ### Container runs for recent changes
 
-These changes have not run in a container:
+`acceptance-03` at `faa5579` completes the pending acceptance-suite run:
+the driver self-test, effort and provider-error cases, provider compaction and
+its stopping case, and the revised working-copy retention all passed on both
+architectures. This does not exercise the separate `step2.sh` toolchain suite.
 
-- `aafcb57` changed nine apparatus code files and `apparatus/README.md`
-  (`git show --stat aafcb57 -- apparatus`). Two changed behavior:
-  `apparatus/step2.sh` and `apparatus/container/inner-build.sh` run
-  `stewart help` where they ran bare `stewart`, because the binary now exits 2
-  (usage, INTERFACE 1.6) without arguments. `apparatus/driver/answer_witness.py`
-  changed its self-test data to follow corrected specification examples; the
-  self-test passes natively (246/246, not evidence). The other six changed in
-  comments or docstrings only: `acceptance.sh`, `driver/cases_run.py`,
-  `driver/stewart_driver.py`, and three files since retired with `step3.sh`.
-- The two suites take their evidence folder as a required argument (2026-10-30).
-- The effort setting and the provider's error message in run results
-  (2026-10-31): the service, the specification and the driver's cases and
-  controls ("Effort setting", above).
-- Provider compaction (2026-10-31): summary requests, signed-summary resumption,
-  retained request reconstruction, iteration usage, failure paths and four
-  controls ("Provider compaction", below).
-
-The next `acceptance.sh` runs the self-test in a container. `step2.sh` refuses
-to start while `service/vendor` exists, needs the network, and rebuilds both
-toolchain images under the tags the other suites use, so a run can change the
-images (see "Toolchain image rebuilds"). It would also repeat the two-build
-comparison, this time on the service. Needs: the user's container runs;
-`step2.sh` waits on the image question, which the acceptance-testing
-discussion takes up.
+Still pending for `step2.sh`: its required evidence-folder argument, the change
+from bare `stewart` to `stewart help`, and the two-build comparison on the
+service rather than the old crate skeleton. It refuses to start while
+`service/vendor` exists, needs the network, and rebuilds both toolchain images
+under the tags other suites use, so a run can change the images (see
+"Toolchain image rebuilds"). Needs: the image discussion and the user's
+separately scheduled toolchain run.
 
 ### Retention of damaged originals
 
@@ -308,17 +294,21 @@ through review. The previous wrapper used the driver's `--keep-work failed`
 default and removed the container after copying only the independent evidence;
 successful variants' working originals did not reach review.
 
-For the user's next Linux check, the wrapper now uses `--keep-work all`, exports
-the independent witness separately and archives `/work/tmp` to `work.tar` with
-its listing, digest and observation times. Named driver containers remain until
-review, including if export fails; the suite records their identities and fails
-on a failed export. This keeps special specimens and the actual originals
-available as well as the host archive. No driver or service code changed.
-The prior run is not retroactively repaired. Needs: verify the next full run's
-empty removal list, exported work and retained-container identities, then decide
-container disposal after review. Preparation records are in
-`.scratch/linux-acceptance-prep-01`; the planned fresh suite is
-`.scratch/acceptance-03`.
+The wrapper now uses `--keep-work all`, exports the independent witness
+separately and archives `/work/tmp` to `work.tar` with its listing, digest and
+observation times. Named driver containers remain until review, including if
+export fails; the suite records their identities and fails on a failed export.
+No driver or service code changed for this retention correction.
+
+Verified in `acceptance-03`: both removal lists are empty, all 226 variant work
+directories per architecture are present in the archives, both archive digests
+match, and all export steps returned 0. Tar reported three omitted Unix socket
+specimens per architecture; the original driver containers remain retained,
+observed stopped by the host worker after the suite. Their names are in the
+run's `host/driver-<arch>.container`. Review records and host inspections are in
+`.scratch/linux-acceptance-prep-01`. Retain these containers and the run evidence
+until the user decides their review is complete; no disposal is authorized by
+this successful run. The prior run is not retroactively repaired.
 
 ### The service's tests on Linux
 
@@ -374,7 +364,7 @@ correctly. Of its findings, these are small fixes:
   check that prepares the examples, and skips that Cargo reports as skips (for
   example `#[ignore]` with a reason).
 
-### Provider compaction: built, unqualified
+### Provider compaction: Linux-qualified; live check pending
 
 On 2026-10-31 the user commissioned keeping the Messages API loop and enabling
 provider compaction. The earlier mismatch is resolved in specification and code:
@@ -416,9 +406,10 @@ triggered compaction. The fixture was corrected to use a 16,000-token allowance
 and 14,976-token first response, preserving the same 1,024-token remainder and
 notice boundary. The second host run above verifies that correction.
 
-Needs: the user's next scheduled `acceptance.sh` container run, including the
-Linux stopping case, and separately budgeted real-model conformance. Native
-iteration does not qualify the change. No model call was made or authorized.
+Linux qualification is complete in `acceptance-03` at `faa5579`: all eight
+provider-compaction cases passed on both architectures, including the Linux
+stopping case, with no skipped cases. Needs: separately budgeted real-model
+conformance. No model call was made or authorized.
 The later Claude Code work is staged in [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md);
 human and Codex/OpenAI adapters remain future possibilities (CONTRACTS).
 
@@ -435,14 +426,13 @@ wants and needs. Until it happens, these items wait on it:
 - **The endpoint** above: Linux container qualification of the release commit,
   native WSL2 and real-model conformance, and with them the claim-by-claim
   coverage check and the WSL2 bundle.
-- **What the suites keep and check:** damaged originals for review (C18), the
-  service's cargo tests on Linux, whether suites compare the toolchain images
+- **What the suites check:** the service's cargo tests on Linux, whether suites compare the toolchain images
   against recorded digests, and whether `step2.sh` records native or emulated
   execution (the record now gives it as not recorded).
 - **The record's outcome rules,** which are conservative by design: a skipped
   case or a native run with the timing gate off fails qualification, and a
   failure on one platform fails the run. The gate's native margin so far is
-  95.2 ms against 100 ms.
+  92.542 ms against 100 ms in `acceptance-03`.
 - **Where the apparatus runs.** The suites need macOS with Apple `container`;
   no route for a Linux host is documented.
 
