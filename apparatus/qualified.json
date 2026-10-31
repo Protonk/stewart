@@ -251,25 +251,6 @@
         "reason": "recovery-critical design-era records",
         "until": "the user decides they are no longer needed"
       }
-    },
-    {
-      "id": "fat-lto-getrandom-04",
-      "kind": "experiment",
-      "date": "2026-10-30T19:47:17Z",
-      "date_from": "DONE",
-      "summary": "the Rust comparison confirming how fat LTO dropped a library's getrandom",
-      "result": {
-        "path": "RESULT.md",
-        "sha256": "3875dd8f680427333cf8c694dbddc23b6e421a9b82494b6279e2ae023d81a7e1"
-      },
-      "evidence": {
-        "path": ".scratch/fat-lto-getrandom-04",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "the evidence the upstream fat-LTO getrandom report rests on",
-        "until": "the user has routed the upstream report"
-      }
     }
   ]
 }

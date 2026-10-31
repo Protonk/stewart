@@ -30,7 +30,6 @@ not carry them.
 | Record | Kind | Reason | Until |
 | --- | --- | --- | --- |
 | [successor-inquiry-01](#successor-inquiry-01) | experiment | recovery-critical design-era records | the user decides they are no longer needed |
-| [fat-lto-getrandom-04](#fat-lto-getrandom-04) | experiment | the evidence the upstream fat-LTO getrandom report rests on | the user has routed the upstream report |
 
 ## Records
 
@@ -97,11 +96,3 @@ not carry them.
 - Result: `.`, every regular file under it (97 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `6528b39f1bffc9e362c96f905d257ec9eb7777ef020a24f80fc833b6cdf8cf20`
 - Evidence: `.scratch/successor-inquiry-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: recovery-critical design-era records; until the user decides they are no longer needed
-
-### fat-lto-getrandom-04
-
-- Experiment: the Rust comparison confirming how fat LTO dropped a library's getrandom
-- Date: 2026-10-30T19:47:17Z (from DONE)
-- Result: `RESULT.md`, SHA-256 `3875dd8f680427333cf8c694dbddc23b6e421a9b82494b6279e2ae023d81a7e1`
-- Evidence: `.scratch/fat-lto-getrandom-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: the evidence the upstream fat-LTO getrandom report rests on; until the user has routed the upstream report
