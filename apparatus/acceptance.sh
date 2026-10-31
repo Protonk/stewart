@@ -5,10 +5,11 @@
 # Run it on the host from your own shell: it needs the container services, which
 # a sandboxed command shell may not be able to reach.
 #
-#   sh apparatus/acceptance.sh [EVIDENCE_DIR]
+#   sh apparatus/acceptance.sh EVIDENCE_DIR
 #
-# EVIDENCE_DIR, an absolute path, must not exist yet; it defaults to
-# .scratch/acceptance-01 in the repository, which therefore serves only once.
+# EVIDENCE_DIR is required and must not exist yet, so each run gets its own:
+# give a new folder directly under .scratch/ in the repository, as an absolute
+# path. Without it the script prints its usage and exits 2.
 # Needs the images stewart-toolchain:1-arm64 and stewart-toolchain:1-amd64 and
 # service/vendor, which apparatus/step2.sh produces.
 # Footprint: writes under EVIDENCE_DIR only. Pulls the pinned python image for
@@ -33,8 +34,10 @@
 # host/DONE reports failures=N; host/SUMMARY collects the self-test and driver counts.
 set -u
 
+# The evidence folder is required; nothing else runs before this check.
+[ -n "${1:-}" ] || { echo "usage: sh apparatus/acceptance.sh EVIDENCE_DIR (a new folder directly under .scratch/, as an absolute path)" >&2; exit 2; }
 REPO=$(cd "$(dirname "$0")/.." && pwd)
-OUT=${1:-$REPO/.scratch/acceptance-01}
+OUT=$1
 PYTHON=docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb
 TAG=stewart-toolchain:1
 PLATFORMS="arm64 amd64"

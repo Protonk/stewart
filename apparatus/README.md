@@ -4,24 +4,30 @@ Development apparatus for the Rust audit service in [`service/`](../service).
 It does not ship. Linux containers hold the builds and the scripted acceptance
 tier of [ACCEPTANCE.md](../ACCEPTANCE.md): `step2.sh` builds the toolchain
 images and vendors the crates, and `acceptance.sh` builds the release and test
-binaries and runs the independent driver against them. `step3.sh` is a narrower
-driver suite; `acceptance.sh` makes every check that `step3.sh` makes.
+binaries and runs the independent driver against them.
+
+[`check_links.py`](check_links.py) checks the relative links and anchors in the
+repository's Markdown.
+
+The qualification record, [`qualified.json`](qualified.json), is the tracked
+account of what the suites have shown; [`qualified.py`](qualified.py) keeps it
+and generates [`qualified.md`](qualified.md) from it.
 
 ## Running the scripts
 
 On the development Mac the containers run under Apple `container` 1.6.1. Each
 script checks that version and that the container services are running, and
-stops otherwise. The scripts are host scripts that a person runs from an
-ordinary shell; a sandboxed command shell, such as an agent's, may be denied
-access to the container services. Each script takes one optional argument, a
-new evidence folder given as an absolute path, and refuses to reuse an existing
-one. Without the argument it uses a fixed default under `.scratch/`, which
-therefore serves only once.
+stops otherwise. The scripts need Apple `container` on the host. An agent whose
+shell is sandboxed cannot reach it, so the agent prepares the command and the
+user runs it. Each script requires one argument, its evidence folder, and
+refuses one that exists; give a new folder directly under `.scratch/` as an
+absolute path. Without the argument a script prints its usage and exits 2
+before doing anything else.
 
 ## `step2.sh`: toolchain images, vendored crates and a static build
 
 ```sh
-sh apparatus/step2.sh /abs/new/folder  # without it: .scratch/apparatus-01
+sh apparatus/step2.sh "$PWD/.scratch/apparatus-NN"  # from the repository root; NN not yet used
 ```
 
 It creates `service/vendor` and refuses to start while that folder exists. The
@@ -109,7 +115,7 @@ python3 -I -B apparatus/driver/stewart_driver.py \
 
 Build the test binary into its own target folder, for example with
 `CARGO_TARGET_DIR`, so the two builds never share artifacts. Linux-only
-expectations (the ext4/xfs/btrfs allowlist, OFD lock behaviour, byte-string
+expectations (the ext4/xfs/btrfs allowlist, OFD lock behavior, byte-string
 file names) are skipped with their reason elsewhere. The C9 timing gate (under
 100 ms for startup, `status` and `help`) applies only with `--timing-gate on`,
 which the container suites set for the native architecture. The evidence
@@ -199,7 +205,7 @@ name may serve a manager and an auditor case.
 | C12 | `c12.run-environment` | Before acceptance `run` refuses `not_accepted`. After it, a missing or empty key, a key with bytes outside 0x21–0x7E, a provider URL with another scheme, user information, a query, a fragment or a trailing slash (a non-loopback `http://` URL only with `--network-isolated`) and an invalid proxy are each refused before any request, publishing nothing and offering the same run line; status stays `not_started`. | none | none |
 | C12 | `c12.test-variables` | Test build: invalid `STEWART_TEST_PROVIDER_TIMEOUT` or `STEWART_TEST_RETRY_DELAYS` refuses `test_variable_invalid`, an invalid `STEWART_TEST_TLS_ROOT` `test_tls_root_invalid`, before any request. Differing: the release build ignores the same environment and runs. | none | none |
 | C12 | `e2e.reacting-audit` | The receipt's run line, from another directory and HOME, runs the reacting auditor with a compaction to a sealed, verified delivery equal to the witness; every request's shape, the echoed history, the access log and `run_ended` usage are checked; status from a third directory; an ordinary close. | none | none |
-| C12 | `c12.run-refusals` | Commission succeeds with no key while the provider URL names the fake, which sees no connection, and its run line names the absolute writer. `run` refuses `authoring_ended` with `ended_by` `ordinary_ending` (naming its record), `limit` or `seal`; `reference_closed` after close; `run_held` with the holder's observations while a paused run holds the lock. Invariance: the same ordinary run from other directories and HOMEs gives the same ending, usage and notices, and `run_started` observations name a process and user ID. (T13's close behaviour is in `cases_after_launch.py`.) | `relative_run_line`, `commission_over_network` | `run.after_started=pause` |
+| C12 | `c12.run-refusals` | Commission succeeds with no key while the provider URL names the fake, which sees no connection, and its run line names the absolute writer. `run` refuses `authoring_ended` with `ended_by` `ordinary_ending` (naming its record), `limit` or `seal`; `reference_closed` after close; `run_held` with the holder's observations while a paused run holds the lock. Invariance: the same ordinary run from other directories and HOMEs gives the same ending, usage and notices, and `run_started` observations name a process and user ID. (T13's close behavior is in `cases_after_launch.py`.) | `relative_run_line`, `commission_over_network` | `run.after_started=pause` |
 | C13 | `c13.t7-kill-after-entry` | Killed after an entry: status `interrupted`; `run` reconciles `process_gone`, continues with the notice, re-adds nothing, seals each goal once. | none | `entry.after_link=kill` |
 | C13 | `c13.continuation` | Killed with a request in flight (its answer never read, charged an estimate), while a result is written and between turns: each status `interrupted` with one run; the continuation carries the same system and tools bytes and the continuation notice, cumulative allowances and every earlier element once; both `run_ended` usages equal the fake's charges. Invariance: each continuation seals the same `answer.json` bytes as an unkilled reference. | `reset_limits_on_continuation`, `fresh_ledger_on_continuation` | `provider.sent:12=kill`, `stage.torn:tool_result=kill`, `run.between_turns:11=kill` |
 | C13 | `c13.provider-shapes` (T15) | One audit, one placement per shape, each continuing the last: thinking, redacted, compaction and unknown blocks echoed byte for byte through chunked and close-delimited bodies; `max_tokens` with a call continues and without one interrupts; `refusal`, `pause_turn`, an unknown stop reason; T15: `model_context_window_exceeded` with one call executes and records it and sends no further request; complete but undecodable 200s (not JSON, missing usage, repeated member, gzip, and over 32 MiB unless `--skip-heavy`) as `response_undecodable`; a 200 cut off mid-body as `connection_lost` (retried) and a cut-off 500 as `http_error`; timeouts under `STEWART_TEST_PROVIDER_TIMEOUT=1`; a `tool_use` without an ID or with U+0000 in it, captured and not executed; stop reason `tool_use` without a `tool_use` block; U+0000 in a tool name (`tool_unknown`), in `model` (recorded null) and `stop_reason`, and in an error body (recorded null); a retry-after date ignored for the test delay. Each ending, cause, attempt outcome and charge as 6.3 to 6.6 state. | none | none |
@@ -250,7 +256,7 @@ placement.
 ## `acceptance.sh`: the scripted acceptance tier
 
 ```sh
-sh apparatus/acceptance.sh /abs/new/folder  # without it: .scratch/acceptance-01
+sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-NN"  # from the repository root; NN not yet used
 ```
 
 One container suite runs the whole driver on Linux aarch64 and x86_64 (on the
@@ -282,28 +288,12 @@ ACCEPTANCE also requires the scripted tier natively on WSL2, from a handoff
 package of the same binary, driver and fake provider; no script here builds or
 runs that package.
 
-## `step3.sh`: a narrower driver suite
-
-```sh
-sh apparatus/step3.sh /abs/new/folder  # without it: .scratch/step3-01
-```
-
-`acceptance.sh` makes every check this suite makes. `step3.sh` needs the
-toolchain images and `service/vendor` from `step2.sh`, and pulls the pinned
-python image (its only network use). It archives `service` and `apparatus` from
-`HEAD`, and for each architecture, offline, builds the release binary, the test
-binary and a glibc control build; checks that both musl binaries are static and
-the glibc build is not, that `cmp` tells the release and test binaries apart,
-and that only the test binary contains `STEWART_TEST_FAULT` and
-`STEWART_TEST_SABOTAGE`; then runs the driver's cases in the python image as an
-unprivileged user, with the binaries mounted read-only and archives on the
-container's own disk, without the driver's self-test, `--network-isolated` or
-`--require-all-controls`. `host/DONE` reports `failures=N`; `host/SUMMARY`
-gives the driver's counts per architecture, and `driver-<arch>/evidence/` holds
-its full results. Timings under x86_64 emulation are reported but do not gate.
-
 ## Evidence retention
 
 Evidence folders under `.scratch/` follow "Evidence and retention" in
-[DEVELOPMENT.md](../DEVELOPMENT.md#evidence-and-retention). The plan or tracked
-document that cites a run keeps its record.
+[DEVELOPMENT.md](../DEVELOPMENT.md#evidence-and-retention). After a run of
+`acceptance.sh` or `step2.sh`, `qualified.py extract` reads it into the
+qualification record (`--suite acceptance` or `--suite toolchain`); commit
+`qualified.json` and `qualified.md` together. `qualified.py candidates` lists
+the folders that nothing keeps, under the rules in DEVELOPMENT.md, as removal
+candidates; removal is by hand, and only after a run that exits 0.

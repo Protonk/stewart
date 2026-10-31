@@ -10,12 +10,11 @@ specification inputs. [DESIGN.md](DESIGN.md) explains the system and
 on Linux; WSL2 and real-model qualification are owed.** The Rust audit service
 in `service/` implements these contracts. [docs/INTERFACE.md](docs/INTERFACE.md)
 and [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) specify its exact wire
-schemas, record layout, process control and forms within these boundaries. The
-scripted suite (`apparatus/acceptance.sh`) passed at source `dc85948` against
-the fake provider on Linux aarch64 and x86_64, the latter under emulation: every
-control fired, and the integrated end-to-end audit passed on each architecture's
-release binary. Still owed: a claim-by-claim check of the suite's coverage
-against [ACCEPTANCE.md](ACCEPTANCE.md), native WSL2 qualification and real-model
+schemas, record layout, process control and forms within these boundaries.
+[apparatus/qualified.md](apparatus/qualified.md) records the latest runs of
+the container suites, the source commits they cover and their results. Still
+owed: a claim-by-claim check of the suite's coverage against
+[ACCEPTANCE.md](ACCEPTANCE.md), native WSL2 qualification and real-model
 conformance, which needs named models and a budget. The release's TLS path to
 the real provider is unexercised, and the decided default of effort `high` for
 requests to Opus models is not yet implemented. A design decision is not a
@@ -1090,6 +1089,7 @@ execution or mutation authority.
 - No first-release deletion, prune/purge or new hold/release service. Keeping
   custody scope explicit avoids importing legacy removal machinery. Existing
   holds and independent obligations remain effective.
+- No generic legacy reader (see "Versions and legacy obligations").
 - No automatic source repair, silent exclusion, regenerated original or current-
   form replacement for sealed bytes. These would change the undertaking while
   claiming to fulfill it.

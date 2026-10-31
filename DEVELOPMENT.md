@@ -15,6 +15,52 @@ containers. Native macOS is not a target. The crate builds and tests on the
 development Mac so that work can iterate quickly there, but nothing run natively
 on a development machine counts as evidence.
 
+## What to run for what you changed
+
+Find each kind of change you made in the table and run what its row names, from
+the repository root unless it says otherwise. Native runs are for iteration. A
+container suite builds from a `git archive` of `HEAD`, so commit before one is
+run. The suites need Apple `container` on the host; an agent whose shell is
+sandboxed cannot reach it, so the agent prepares the command and the user runs
+it ([Container suites](#container-suites)).
+
+The link check, the driver's self-test and its case list:
+
+```sh
+python3 -I -B apparatus/check_links.py
+python3 -I -B apparatus/driver/stewart_driver.py --self-test
+python3 -I -B apparatus/driver/stewart_driver.py --list
+```
+
+Both cargo configurations, from `service/` ([Building and testing
+natively](#building-and-testing-natively)):
+
+```sh
+cargo test --locked --offline
+CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-injection,sabotage
+```
+
+| What changed | What to run |
+| --- | --- |
+| Prose or Markdown anywhere | The link check. |
+| `docs/INTERFACE.md` or `docs/QUESTION-FORMS.md` | The link check, both cargo configurations and the driver's self-test. A test in `service/src/forms.rs` compares the service's pinned texts and tool descriptions with QUESTION-FORMS; one in `service/src/fault.rs`, built only in the fault and sabotage configuration, compares its failure points, actions and sabotage controls, and the names in its variable table, with INTERFACE Appendix C. The driver's self-test compares its own copies of the pinned texts and tool descriptions with QUESTION-FORMS, and its answer witness reproduces the structured answer and rendering examples of QUESTION-FORMS and the manifest example of INTERFACE 8.2 byte for byte. A changed pinned text or tool description needs the service's copy changed too (then the `service/` row applies); a changed pinned text or example needs the driver's copy updated, under the driver-independence rule in [AGENTS.md](AGENTS.md). |
+| Worked example materials: `question.md` and `materials/` under `examples/questions/*/submission/` | No check reads them. The walkthroughs, `CITATION-CONTROLS.md`, QUESTION-FORMS and INTERFACE cite their sizes, byte ranges and line numbers, and the driver's answer witness pins the examples in those docs, so recheck every citation of a changed file; a changed example in the docs then needs the row above. |
+| `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. Changing what Stewart promises is the user's decision. |
+| `service/src/` or `service/tests/` | Both cargo configurations. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once both configurations pass. |
+| `apparatus/driver/` | The driver's self-test and `--list`, which loads every case module. The change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once those two pass. Edit the driver only under the driver-independence rule in [AGENTS.md](AGENTS.md). |
+| Shell scripts in `apparatus/` or `apparatus/container/` | `sh -n` on each changed script. The change is unqualified until the next container run of the suite that uses it, which the user schedules and batches; it can land and be pushed once `sh -n` passes. `step2.sh` runs `container/inner-build.sh` and `acceptance.sh` the `acceptance-inner-` scripts. |
+| `apparatus/check_links.py` | `python3 -I -B apparatus/check_links.py --self-test`, then the link check. |
+| `apparatus/qualified.py` | `python3 -I -B apparatus/qualified.py --self-test`, then `python3 -I -B apparatus/qualified.py check`. |
+| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | The user's run of `step2.sh`, which rebuilds the toolchain images, vendors the crates named by the committed `Cargo.lock` into `service/vendor`, and builds and checks the release binary for both architectures. It refuses while `service/vendor` exists, so the old tree has to be moved out of the way first. Then both cargo configurations, and the next container run of `acceptance.sh`. The change is unqualified until those container runs, which the user schedules and batches; it can land and be pushed once both cargo configurations pass, which after a dependency change needs the tree that `step2.sh` vendors. |
+
+`apparatus/qualified.py` keeps the qualification record ([Evidence and
+retention](#evidence-and-retention)). After a container run of `acceptance.sh`
+or `step2.sh`, record it with
+`python3 -I -B apparatus/qualified.py extract .scratch/<run> --suite acceptance`
+(`--suite toolchain` for `step2.sh`) and commit `apparatus/qualified.json` and
+`apparatus/qualified.md` together.
+Before citing the record, run `python3 -I -B apparatus/qualified.py check`.
+
 ## Layout
 
 - `service/src/`: the service. The crate documentation in `service/src/lib.rs`
@@ -25,11 +71,15 @@ on a development machine counts as evidence.
   fresh temporary directory.
 - `service/Cargo.toml`, `service/Cargo.lock`, `service/.cargo/config.toml`:
   the pinned dependencies and the vendored-source replacement.
-- `apparatus/step2.sh`, `apparatus/step3.sh`, `apparatus/acceptance.sh`: the
-  host scripts that run the container suites.
+- `apparatus/step2.sh`, `apparatus/acceptance.sh`: the host scripts that run
+  the container suites.
 - `apparatus/container/`: the toolchain `Containerfile` and the scripts that
   run inside the containers.
 - `apparatus/driver/`: the independent driver and its fake provider.
+- `apparatus/check_links.py`: the link check for the repository's Markdown.
+- `apparatus/qualified.json`: the qualification record of what the container
+  suites have shown. `apparatus/qualified.py` keeps it and generates
+  `apparatus/qualified.md` from it.
 
 ## Toolchain and dependencies
 
@@ -168,21 +218,20 @@ cases, controls and evidence in detail.
 
 ## Container suites
 
-The suites run under Apple `container` 1.6.1 on the development Mac. They are
-host scripts, run from an ordinary shell; a sandboxed command shell may be
-denied access to the container services. Each script checks the version and
-that the container services are running, and stops otherwise. `step3.sh` and
-`acceptance.sh` also need the toolchain images and `service/vendor` from
+The suites run under Apple `container` 1.6.1 on the development Mac and need it
+on the host. An agent whose shell is sandboxed cannot reach it, so the agent
+prepares the command and the user runs it. Each script checks the version and
+that the container services are running, and stops otherwise. `acceptance.sh`
+also needs the toolchain images and `service/vendor` from
 `step2.sh`. The network is used only to pull pinned images, build the toolchain
 images and vendor crates; every build and driver run is offline
 (`--network none`) in a container removed on exit, and nothing on the host is
 deleted.
 
-Each script takes one optional argument, its evidence folder, which must not
-exist yet. Without it the script uses a fixed default under `.scratch/`
-(`apparatus-01`, `step3-01`, `acceptance-01`), and those defaults are already
-taken on the development Mac. Pass a new folder as an absolute path, for
-example from the repository root:
+Each script takes one required argument, its evidence folder, and refuses one
+that exists; give a new folder directly under `.scratch/` as an absolute path.
+Without the argument a script prints its usage and exits 2 before doing
+anything else. For example, from the repository root:
 
 ```sh
 sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-NN"   # NN not yet used
@@ -205,16 +254,14 @@ another checkout uses that checkout's own `service/vendor`.
   with no network and as an unprivileged user, it runs the driver's self-test
   and every case with `--network-isolated --require-all-controls`, so every
   sabotage control of Appendix C.2 must be assigned to a case and fire.
-- `step3.sh` is a narrower suite: it builds the same three binaries, checks
-  only two of the test-only variable names, and runs the driver's cases without
-  the self-test, `--network-isolated` or `--require-all-controls`.
-  `acceptance.sh` makes every check that `step3.sh` makes.
 
-Each writes `host/DONE` with `failures=N`; `step3.sh` and `acceptance.sh` also
-write `host/SUMMARY` with the driver's counts per architecture, and
+Each writes `host/DONE` with `failures=N`; `acceptance.sh` also writes
+`host/SUMMARY` with the driver's counts per architecture, and
 `acceptance.sh` adds the self-test's summary line.
 [apparatus/README.md](apparatus/README.md) gives each script's steps and
-evidence layout.
+evidence layout. `apparatus/qualified.py extract` reads a run of `acceptance.sh`
+or `step2.sh` into the qualification record ([Evidence and
+retention](#evidence-and-retention)).
 
 Evidence comes from a Linux container suite and, under ACCEPTANCE
 ("Platforms"), from the scripted tier run natively on WSL2 from a handoff
@@ -236,16 +283,58 @@ suite evidence, driver evidence folders, and the outputs of commands run by hand
 for a study. `.scratch/` is ignored by Git, so records stay on the machine that
 made them and do not travel with the repository.
 
-- **A new attempt gets a new directory.** The suites and the driver refuse an
-  existing evidence folder. The suites' default folders
-  (`.scratch/apparatus-01`, `.scratch/step3-01`, `.scratch/acceptance-01`)
-  therefore serve once; give each later run its own name.
-- **Records are never rewritten.** A correction or reinterpretation goes in the
-  document that cites the run, or into a new run.
-- **Retention follows citation.** A run's record stays while an active plan or
-  a tracked document cites it. It is removed by hand, and only together with
-  the plan that cites it, once that plan's findings are in documentation or
-  tests. No script removes records.
+The qualification record is the tracked account of what the suites have shown:
+[`apparatus/qualified.json`](apparatus/qualified.json), with
+[`apparatus/qualified.md`](apparatus/qualified.md) generated from it by
+`apparatus/qualified.py`. Never edit the Markdown by hand. The script's
+`extract` reads a run of `acceptance.sh` or `step2.sh` from its own evidence
+and decides its outcome mechanically. For each suite and platform the record
+keeps the latest run and, when that run did not qualify, the latest run that
+did (the front). Any other record stays only while it is pinned, with a reason
+and a condition for its release; Git history keeps the records that leave.
+`check` fails when the Markdown differs from a fresh render, a source commit is
+missing from the repository or a record no longer matches the evidence on this
+machine, and it reports the changes under `service/` and `apparatus/` since
+each front run's source commit.
+
+- **A new attempt gets a new directory.** The suites take their evidence folder
+  as a required argument, and the suites and the driver refuse an existing one;
+  give each run its own name directly under `.scratch/`.
+- **Run records are never rewritten.** A correction or reinterpretation goes in
+  the document that cites the run, or into a new run.
+- **Retention follows the record and citation.** An entry directly under
+  `.scratch/` stays while it is on the front, pinned (`qualified.py pin`, or
+  `pin --experiment` for evidence that is not a suite run), or cited as
+  `.scratch/NAME`, in any letter case, by a tracked or untracked-but-not-ignored
+  file outside `.scratch/` other than the record's own files.
+  `qualified.py candidates` lists every entry with its size, marking each as
+  kept, with its reasons, or as a removal candidate. It also keeps a folder
+  that holds the digests a record entry recorded, so renaming an entry cannot
+  expose its folder, and it exits 1 when an entry's folder is absent and no
+  folder holds its digests, as on a machine without the evidence. Act only on a
+  run that exits 0. Removal is by hand and the user's decision; no script
+  removes records.
+
+**Protected local records.** Keep these:
+
+- The refs `refs/development-evidence/successor-inquiry-01/a1`, `a2` and `a3`,
+  which keep three historical outcome commits reachable that no branch
+  contains. Do not delete them; a main-only clone does not carry them.
+- The 21 original product-audit source copies under
+  `.scratch/successor-inquiry-01/answers/attempt-01/sources/`, and the records
+  `history-reachability-01.json` and its correction
+  `history-preservation-01.json` in `.scratch/successor-inquiry-01/`. Do not
+  prune them.
+
+The record pins the `.scratch/successor-inquiry-01` folder, which holds the
+second item, but not the refs: they are Git state outside `.scratch`, kept by
+this rule alone. `coordination/successor-inquiry-01/CORPUS-RETENTION.md` at
+commit `267aaf0` explains what they protect.
+
+Two earlier indexes are in Git history. `coordination/EVIDENCE.md` at commit
+`267aaf0` indexes the records of the retired studies under `.scratch/`. At
+commit `aafcb57` the same file listed the then-current runs, whose account is
+`TRANSITION-PLAN.md` at `aafcb57`.
 
 An evidence run keeps what ACCEPTANCE requires until its results have been
 reviewed ("What a test run keeps", C18): the witness, and the damaged originals

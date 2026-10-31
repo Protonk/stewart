@@ -1,0 +1,275 @@
+{
+  "schema": "stewart.qualified/1",
+  "entries": [
+    {
+      "id": "acceptance-02",
+      "kind": "suite",
+      "suite": "acceptance",
+      "script": {
+        "path": "apparatus/acceptance.sh",
+        "sha256": "8565133b3fd4c6b670d37dd87ddd436adb2b257c51c48715d1f983e59ac8da8f"
+      },
+      "source_commit": "dc85948446583e9addd572e1cdcc3b0aa1b5e4a9",
+      "source_archive_sha256": "59c778db925cf230e36ac07d6346f3767183eac125dd97212a792074d3b1e80f",
+      "date": "2026-10-30T18:04:19Z",
+      "outcome": "qualified",
+      "failures": [],
+      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+      "platforms": {
+        "linux-aarch64": {
+          "execution": "native",
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 21,
+            "total": 21,
+            "controls_fired": 8,
+            "controls_total": 8
+          },
+          "self_test": {
+            "checks": 246,
+            "passed": 246,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 110,
+            "ran": 110,
+            "passed": 110,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 204,
+            "passed": 138,
+            "failed": 66,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 108097,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 731
+          },
+          "controls": {
+            "fired": 66,
+            "total": 66
+          },
+          "driver_controls": {
+            "fired": 8,
+            "total": 8
+          },
+          "timing_gate": {
+            "enabled": true,
+            "passed": true,
+            "threshold_ms": 100.0,
+            "worst_ms": 2.025,
+            "protocol_passed": true,
+            "protocol_worst_ms": 95.214
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 764,
+            "checks_failed": 0
+          },
+          "release_sha256": "5b3c40b802a9a03c71691d7dbee1c39ad81cd54b4c1290ba57d4706725dcb46d",
+          "test_sha256": "29e732d033d315c1b55c732322ce879ecd49aff589426a6d7ed1c953b811dabf",
+          "result_sha256": "949b2103705e26fcf88026ad9cfb0851b96c5ff15571e2fa97c65fbe48bf7099"
+        },
+        "linux-x86_64": {
+          "execution": "emulated (Rosetta)",
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 21,
+            "total": 21,
+            "controls_fired": 8,
+            "controls_total": 8
+          },
+          "self_test": {
+            "checks": 246,
+            "passed": 246,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 108,
+            "ran": 108,
+            "passed": 108,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 204,
+            "passed": 138,
+            "failed": 66,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 108097,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 731
+          },
+          "controls": {
+            "fired": 66,
+            "total": 66
+          },
+          "driver_controls": {
+            "fired": 8,
+            "total": 8
+          },
+          "timing_gate": {
+            "enabled": false,
+            "passed": null,
+            "threshold_ms": 100.0,
+            "worst_ms": 40.229,
+            "protocol_passed": null,
+            "protocol_worst_ms": 158.753
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 764,
+            "checks_failed": 0
+          },
+          "release_sha256": "c30ff785d7c0e6ac7d1b91dd3fa9cbeec7fe1795ab1e21d5e2e1666aefd7e6d6",
+          "test_sha256": "801cac467684f62ebe310bc632c314ad23db1909a9745982d45b68935595fc7b",
+          "result_sha256": "e69468ca1b1e1dab575b43420e680dd101104c29bd7148cc67121de84cb15d24"
+        }
+      },
+      "evidence": {
+        "path": ".scratch/acceptance-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": null
+    },
+    {
+      "id": "apparatus-01",
+      "kind": "suite",
+      "suite": "toolchain",
+      "script": {
+        "path": "apparatus/step2.sh",
+        "sha256": "6b556b0bdb9ae4dd71c3b733e6204292cc46a7666acbe950c3b99a5a7d12c463"
+      },
+      "source_commit": "47e5a596bcdb6a069916c7084186fcf7e78c5a20",
+      "source_archive_sha256": "3b17dfbaa8fcb8b86c4e1beb349ce12f7fc601563648a0b7aa65c7840111b883",
+      "date": "2026-10-30T00:14:38Z",
+      "outcome": "qualified",
+      "failures": [],
+      "vendor": {
+        "files": 1608,
+        "listing_sha256": "134cd83b48366c1e10a97e6b33e703152468daa48eb42477ad5e1c558b54e6fd"
+      },
+      "platforms": {
+        "linux-aarch64": {
+          "execution": null,
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "builds": [
+            {
+              "name": "build-arm64-1",
+              "steps_passed": 9,
+              "steps_total": 9,
+              "static": true,
+              "run_exit": 0,
+              "offline": true,
+              "sha256": "5febe49834927c764a1433a430615949c69d1c00a8c8dcc97f0b00ada7c8702b"
+            },
+            {
+              "name": "build-arm64-2",
+              "steps_passed": 9,
+              "steps_total": 9,
+              "static": true,
+              "run_exit": 0,
+              "offline": true,
+              "sha256": "5febe49834927c764a1433a430615949c69d1c00a8c8dcc97f0b00ada7c8702b"
+            }
+          ],
+          "reproducible": true,
+          "release_sha256": "5febe49834927c764a1433a430615949c69d1c00a8c8dcc97f0b00ada7c8702b",
+          "alpine_run_exit": 0
+        },
+        "linux-x86_64": {
+          "execution": null,
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "builds": [
+            {
+              "name": "build-amd64-1",
+              "steps_passed": 9,
+              "steps_total": 9,
+              "static": true,
+              "run_exit": 0,
+              "offline": true,
+              "sha256": "a028cba9713f87b25b59993e8cbaa00cdc101b19401e9cb0c8441238babf0be1"
+            },
+            {
+              "name": "build-amd64-2",
+              "steps_passed": 9,
+              "steps_total": 9,
+              "static": true,
+              "run_exit": 0,
+              "offline": true,
+              "sha256": "a028cba9713f87b25b59993e8cbaa00cdc101b19401e9cb0c8441238babf0be1"
+            }
+          ],
+          "reproducible": true,
+          "release_sha256": "a028cba9713f87b25b59993e8cbaa00cdc101b19401e9cb0c8441238babf0be1",
+          "alpine_run_exit": 0
+        }
+      },
+      "evidence": {
+        "path": ".scratch/apparatus-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": null
+    },
+    {
+      "id": "successor-inquiry-01",
+      "kind": "experiment",
+      "date": "2026-10-26T16:02:35Z",
+      "date_from": "history-preservation-01.json field at",
+      "summary": "the 21 original product-audit source copies and the history-reachability records that the protected refs refs/development-evidence/successor-inquiry-01/a1 to a3 depend on",
+      "result": {
+        "path": ".",
+        "files": 97,
+        "sha256": "6528b39f1bffc9e362c96f905d257ec9eb7777ef020a24f80fc833b6cdf8cf20"
+      },
+      "evidence": {
+        "path": ".scratch/successor-inquiry-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "recovery-critical design-era records",
+        "until": "the user decides they are no longer needed"
+      }
+    },
+    {
+      "id": "fat-lto-getrandom-04",
+      "kind": "experiment",
+      "date": "2026-10-30T19:47:17Z",
+      "date_from": "DONE",
+      "summary": "the Rust comparison confirming how fat LTO dropped a library's getrandom",
+      "result": {
+        "path": "RESULT.md",
+        "sha256": "3875dd8f680427333cf8c694dbddc23b6e421a9b82494b6279e2ae023d81a7e1"
+      },
+      "evidence": {
+        "path": ".scratch/fat-lto-getrandom-04",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "the evidence the upstream fat-LTO getrandom report rests on",
+        "until": "the user has routed the upstream report"
+      }
+    }
+  ]
+}

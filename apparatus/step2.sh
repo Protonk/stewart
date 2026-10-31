@@ -4,10 +4,11 @@
 # own shell: it needs the container services, which a sandboxed command shell
 # may not be able to reach.
 #
-#   sh apparatus/step2.sh [EVIDENCE_DIR]
+#   sh apparatus/step2.sh EVIDENCE_DIR
 #
-# EVIDENCE_DIR, an absolute path, must not exist yet; it defaults to
-# .scratch/apparatus-01 in the repository, which therefore serves only once.
+# EVIDENCE_DIR is required and must not exist yet, so each run gets its own:
+# give a new folder directly under .scratch/ in the repository, as an absolute
+# path. Without it the script prints its usage and exits 2.
 # Footprint: writes under EVIDENCE_DIR, and creates service/vendor from
 # service/Cargo.lock (refused if it exists). Pulls the pinned rust and alpine
 # images for linux/arm64 and linux/amd64, builds the toolchain images
@@ -17,8 +18,10 @@
 # the host is deleted.
 set -u
 
+# The evidence folder is required; nothing else runs before this check.
+[ -n "${1:-}" ] || { echo "usage: sh apparatus/step2.sh EVIDENCE_DIR (a new folder directly under .scratch/, as an absolute path)" >&2; exit 2; }
 REPO=$(cd "$(dirname "$0")/.." && pwd)
-OUT=${1:-$REPO/.scratch/apparatus-01}
+OUT=$1
 RUST=docker.io/library/rust@sha256:81015672d6939b0265f09adf96d5de125482bb1330106076956b0518e74edc90
 ALPINE=docker.io/library/alpine@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
 TAG=stewart-toolchain:1

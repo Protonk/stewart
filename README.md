@@ -52,20 +52,20 @@ its records in the manager's archive and removes nothing.
 the run adapter, seal, verified delivery and close. The crate is at version
 0.1.0.
 
-**Tested on Linux against a fake provider.** On 2026-10-30 the scripted
-acceptance suite ([`apparatus/acceptance.sh`](apparatus/acceptance.sh)) passed
-at source commit `dc85948`. It builds the release binary and a test build with
-fault points and sabotage controls in pinned Linux containers, then runs an
-independent black-box driver against them. The driver is written in Python
+**Tested on Linux against a fake provider.** The scripted acceptance suite
+([`apparatus/acceptance.sh`](apparatus/acceptance.sh)) builds the release
+binary and a test build with fault points and sabotage controls in pinned Linux
+containers, then runs an independent black-box driver against them, on aarch64
+natively and on x86_64 under Rosetta emulation. The driver is written in Python
 from the specification by an author who does not read the implementation, and
-a fake provider stands in for the model. On aarch64, run natively, all 110
-driver cases passed; on x86_64, under Rosetta emulation and without the two
-timing gates, all 108 passed. On both, all 66 sabotage control variants and
-all 8 driver controls fired, showing that the checks catch the failures they
-look for. The integrated end-to-end audit (prepare, commission, a fake auditor
-working through the run, submit and seal, verified delivery, close) passed all
-764 of its checks on each architecture's release binary. Since `dc85948` the
-crate's source and tests have changed in comments only.
+a fake provider stands in for the model. The suite's sabotage and driver
+controls show that the checks catch the failures they look for, and an
+integrated end-to-end audit (prepare, commission, a fake auditor working
+through the run, submit and seal, verified delivery, close) runs on each
+architecture's release binary. The suite has passed on both architectures.
+[`apparatus/qualified.md`](apparatus/qualified.md) records the latest runs of
+each suite, the source commits they cover and their results, and
+`python3 -I -B apparatus/qualified.py check` reports what has changed since.
 
 **Not yet done:**
 
@@ -95,9 +95,8 @@ crate's source and tests have changed in comments only.
   walkthroughs of an auditor's calls and the rendered answers.
 - [service/README.md](service/README.md): a guide to the crate.
 - [DEVELOPMENT.md](DEVELOPMENT.md): building, testing and evidence retention.
-- [AGENTS.md](AGENTS.md) (CLAUDE.md links to it) and
-  [coordination/](coordination/README.md): rules and working guidance for
-  development agents.
+- [AGENTS.md](AGENTS.md) (CLAUDE.md links to it): the guide for development
+  agents.
 - [riker/](riker/RIKER.md): user-relayed consultation with Riker.
 
 ## Repository map
@@ -105,13 +104,12 @@ crate's source and tests have changed in comments only.
 | Entry | Contents |
 | --- | --- |
 | `service/` | The Rust crate: the product. |
-| `apparatus/` | Build and test apparatus: the Containerfile from which `step2.sh` builds the pinned Linux toolchain images, the container scripts, and the independent driver with its fake provider (Python, standard library only). It does not ship. |
+| `apparatus/` | Build and test apparatus: the Containerfile from which `step2.sh` builds the pinned Linux toolchain images, the container scripts, the independent driver with its fake provider (Python, standard library only), the repository checks (`check_links.py`) and the qualification record of tested runs (`qualified.py`, `qualified.json`, `qualified.md`). It does not ship. |
 | `docs/` | `INTERFACE.md` and `QUESTION-FORMS.md`. |
 | `examples/` | Worked question examples. |
 | `DESIGN.md`, `CONTRACTS.md`, `ACCEPTANCE.md` | The design, the decided behavior and the evidence owed. |
 | `DEVELOPMENT.md` | Building, testing and evidence retention. |
 | `AGENTS.md`, `CLAUDE.md` | Development rules; `CLAUDE.md` is a link to `AGENTS.md`. |
-| `coordination/` | Working guidance for the development coordinator. |
 | `riker/` | User-relayed consultation with Riker. |
 | `*-PLAN.md` | Active development plans: working accounts, not specification. |
 | `.tmp/` | Ignored temporary storage; only its note, `AGENTS.md`, and a `CLAUDE.md` link to it are tracked. |
