@@ -147,6 +147,49 @@ run where its results will be kept. Replace this discussion agenda with the
 remaining work after that run is reviewed; do not keep a second account of its
 state in the Claude Code plan.
 
+### Haiku framing study after API sanity
+
+Planned follow-on, 2026-10-31. Use inexpensive Haiku trials to find how much
+guidance helps the auditor answer the manager's question without repeating
+Stewart's harness structure. This follows the first API sanity check; it is
+exploration, not an additional gate for that check or proof of five-family
+utility. It can use the Messages API path and inform later Claude Code
+dogfooding without waiting for that adapter.
+
+Vary instructions and presentation separately:
+
+| | Current presentation | Plain presentation |
+| --- | --- | --- |
+| Current instructions | Baseline | Presentation change alone |
+| Lean instructions | Instruction change alone | Both changes |
+
+Lean instructions retain the commission, evidence/access boundaries and
+submission mechanics while removing duplicated coaching. Plain presentation
+foregrounds the auditor's own text without automatically added Account,
+Observation or Limit headings. Preserve the underlying records, citations,
+attribution and custody behavior. Initially keep recording tools unchanged,
+along with the question, materials and model/settings within each comparison.
+
+Use a few small commissions with repeated runs. Inspect model-authored prose
+separately from the rendered answer: direct engagement with the question,
+relevant uncertainty, unnecessary harness discussion, and successful tool use
+and submission. Fewer words or qualifications are not automatically better.
+Recording-tool categories and preparation notices remain possible influences
+to investigate later, rather than changing everything at once.
+
+Record whether the auditor reads the prepared rendering; it is optional and
+can influence subsequent edits. For the manager's reading experience alone,
+compare both presentations of the same recorded answer without another model
+call. Such comparison views are study artifacts, not replacements for sealed
+returns. Keep original outputs and conditions available for review.
+
+Needs: a bounded study commission naming the exact Haiku model/settings,
+variants, specimens, repetitions and spending/retry limits before execution.
+Prompt wording, renderer implementation and trial counts remain to be worked
+out then. Findings apply to the tested arrangement; transfer to another model
+or runtime remains something to check. No default prompt, renderer or
+substantive submission rule changes merely because this study is planned.
+
 ### Effort setting: built, unqualified
 
 On 2026-10-31 the user replaced the earlier plan for an Opus default: Stewart

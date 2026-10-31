@@ -70,6 +70,11 @@ The existing release obligations remain in [ACCEPTANCE](ACCEPTANCE.md#the-real-m
 
 ## Later question-family dogfooding
 
+The focused [Haiku framing study](RELEASE-PLAN.md#haiku-framing-study-after-api-sanity)
+is staged after the first API sanity check and may use that API path before this
+adapter exists. Its instruction/presentation comparisons can inform later
+dogfooding; they are not a prerequisite to runtime conformance.
+
 The [five purposes and shared meanings](CONTRACTS.md#question-families-and-open-inquiry)
 are frozen. After the first API sanity test, use separately commissioned
 dogfooding to investigate material recipes, prompts, recording vocabulary,
