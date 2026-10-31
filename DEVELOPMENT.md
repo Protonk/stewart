@@ -181,9 +181,8 @@ entry point. Its author writes it from INTERFACE, QUESTION-FORMS, CONTRACTS and
 ACCEPTANCE and does not read `service/`, and the service is written from the
 same specification, not from the driver. Keeping the two apart means a
 misreading of the specification has to be made twice, independently, to pass
-unnoticed. Disagreements between them have been settled against the
-specification: an unclear point was clarified in its text, which both then
-follow, and a misreading was corrected on the side that made it.
+unnoticed. Resolve disagreements against the specification: clarify an unclear
+contract in its text, or correct the implementation that misreads it.
 
 The driver uses the two binaries only through their command line. It serves a
 fake Messages API on loopback, runs a reacting fake auditor, and keeps its own
@@ -332,11 +331,6 @@ second item, but not the refs: they are Git state outside `.scratch`, kept by
 this rule alone. `coordination/successor-inquiry-01/CORPUS-RETENTION.md` at
 commit `267aaf0` explains what they protect.
 
-Two earlier indexes are in Git history. `coordination/EVIDENCE.md` at commit
-`267aaf0` indexes the records of the retired studies under `.scratch/`. At
-commit `aafcb57` the same file listed the then-current runs, whose account is
-`TRANSITION-PLAN.md` at `aafcb57`.
-
 An evidence run keeps what ACCEPTANCE requires until its results have been
 reviewed ("What a test run keeps", C18): the witness, and the damaged originals
 and bulky material that review needs, under the rules above. The driver writes
@@ -356,8 +350,8 @@ about special specimens remain recorded. Original working trees, including
 special files, remain in the named driver containers until review, even if
 export fails. Export failures fail the suite. Removing those containers after
 review is a separate, explicit disposal; the suite does not remove them.
-The service's integration tests
-remove their temporary trees as each test finishes.
+The service's integration tests remove their temporary trees as each test
+finishes.
 
 What a run must show:
 

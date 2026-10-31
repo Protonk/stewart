@@ -314,7 +314,7 @@ The work archive keeps regular-file bytes and Linux names/modes/links in a
 single host file; tar warnings about special specimens are retained. Original
 working trees, including special files, remain in the named driver containers.
 Their later removal is a separate explicit disposal after evidence review.
-Build containers are still removed on exit.
+Build containers are removed on exit.
 
 ACCEPTANCE also requires the scripted tier natively on WSL2, from a handoff
 package of the same binary, driver and fake provider; no script here builds or

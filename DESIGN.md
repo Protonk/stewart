@@ -8,9 +8,7 @@ keeps the records and returns the answer faithfully, without judging it.
 The manager should need to care about the question, the materials, whether an
 auditor has been launched and whether its answer has returned. One submission
 folder, one acceptance boundary and one close action carry the machinery behind
-those concerns. This is the current design; the design review is closed.
-[CONTRACTS.md](CONTRACTS.md) supplies its binding details. No conversation,
-retired proposal or earlier implementation is needed to reconstruct it.
+those concerns. [CONTRACTS.md](CONTRACTS.md) supplies the binding details.
 
 ## Responsibilities
 
@@ -122,25 +120,13 @@ access and stopping rules. Ship one static Linux binary for x86_64 and aarch64.
 Linux containers hold the build and test apparatus; WSL2 is to be qualified with
 the same shipped binary.
 
-## What is built and what remains
+## Specifications and evidence
 
-The review settled behavior, not complete wire schemas or runtime mechanisms.
 [docs/INTERFACE.md](docs/INTERFACE.md) and
-[docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) now specify the calls, records,
-failure variants, exact bindings, pagination and writer support. The Rust
-service in `service/` implements them: the manager commands, the auditor's tools
-and answer protocol, the run adapter for the provider's Messages API, the seal,
-verified delivery and close. That specification and its implementation are
-engineering work under the design, not another general design review. Any
-genuinely new authority or substantive restriction still needs the user's
-decision.
-
-[ACCEPTANCE.md](ACCEPTANCE.md) defines the executable evidence: the release
-binary against an independently witnessed fake provider, followed by separately
-authorized real-model procedural conformance. The scripted acceptance suite has
-passed on Linux aarch64 and x86_64. Still owed are a claim-by-claim check of its
-coverage against ACCEPTANCE, the same suite run natively under WSL2, and
-real-model conformance, which needs named models, their settings and an
-explicit budget before any model-consuming run; [CONTRACTS.md](CONTRACTS.md)
-records the current status in full. Paper walkthroughs are useful inputs, not
-proof that the service works.
+[docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) specify the calls, records,
+failure variants, exact bindings, pagination, writer support and question forms.
+[ACCEPTANCE.md](ACCEPTANCE.md) defines the evidence required of the release
+binary: independently witnessed scripted checks and separately authorized
+real-model procedural conformance. Paper walkthroughs illustrate expression;
+they do not establish that the service works. [README.md](README.md#status)
+states implementation and qualification status.

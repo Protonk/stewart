@@ -1,10 +1,10 @@
 # Worked question examples
 
-One example for each of the three question families. The invented reminder
+One example for each of the three deployed question forms. The invented reminder
 service supplies a small common world. Each example has:
 
-- `submission/`: a submission folder, `question.md` with `question/1` front
-  matter and `materials/`, that `stewart prepare` accepts as written;
+- `submission/`: a submission folder containing `question.md` with `question/1`
+  front matter and `materials/`;
 - `WALKTHROUGH.md`: an auditor's calls written by hand, with Stewart's replies
   and the rendered answer, then a variant with inadequate evidence.
 
@@ -46,9 +46,9 @@ ext4, xfs or btrfs. A variant is another audit: a new folder with the same
 
 Two front matter settings depend on where the example is used:
 
-- `destination: /var/tmp` names a directory present on standard Linux systems,
-  so the examples prepare as written. Set it to the absolute path of the
-  existing directory where the return package should go. The folder, the
+- `destination: /var/tmp` names a directory present on standard Linux systems.
+  Set it to the absolute path of the existing directory where the return package
+  should go. The folder, the
   archive and the destination must not contain one another
   (`location_overlap`).
 - `model: claude-opus-5-5` is the provider model for every run of the audit.

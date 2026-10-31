@@ -6,14 +6,13 @@ work, submission, delivery and close. The specimen is
 Its meaning is open inquiry; no finding, tie-breaking recommendation or answer
 section is mandatory. It asks for an explanation of the code, not execution.
 
-## What is ready and what remains
+## Commission settings
 
-The specimen and offline rehearsal are prepared. A real launch still needs the
-API-key handling review, its implementation and canary audit; an exact model;
-current provider compatibility/pricing checks; and the principal's bounded
-spending and continuation authority. The model/destination placeholders prevent
-commissioning this template unchanged. The 8-turn, 80,000-input, 6,000-output
-limits are rehearsal settings, not an approved paid budget. Effort is omitted.
+The model/destination placeholders prevent commissioning the template unchanged.
+The 8-turn, 80,000-input, 6,000-output limits are rehearsal settings, not an
+approved paid budget. Effort is omitted. A live commission must name the model,
+credential mechanism, provider route, allowances, spending authority and stopping
+conditions; the procedure below records those choices.
 
 No command in the rehearsal can select a real provider. The synthetic model
 name is `rehearsal-only`; the fake binds a newly allocated loopback port. The
@@ -29,7 +28,7 @@ build, and the qualified arm64 release binary. Apple `container` 1.6.1 and its
 services must be available in the host shell.
 
 ```sh
-python3 -I -B apparatus/sanity/rehearse.py "$PWD/.scratch/sanity-rehearsal-01"
+python3 -I -B apparatus/sanity/rehearse.py "$PWD/.scratch/sanity-rehearsal-NN"
 ```
 
 Use a fresh absolute directory directly under `.scratch` for every attempt.
@@ -73,10 +72,9 @@ prove real-provider compatibility, or qualify a model.
    for each command. Read the arrangement. Run `receipt --verify` and byte-compare
    `receipt --read` for the question and both materials against the independent
    input copies. Save `status`. These operations consume no model tokens.
-3. **Launch once.** Only after the bounded commission is approved and key
-   handling is audited, run that same executable's `run REF --json` under the
-   approved credential mechanism. Retain the run process identity and provide
-   a separate `status REF --json` and `close REF --json` command. Close ends
+3. **Launch once.** Run that same executable's `run REF --json` under the
+   commissioned bounds and credential mechanism. Retain the run process identity
+   and provide a separate `status REF --json` and `close REF --json` command. Close ends
    authoring and may seal unfinished work as manager. Stewart's existing
    retries (up to four attempts per request) belong in the allowance decision;
    no wrapper repeats a placement or selects another model on failure.
@@ -107,7 +105,5 @@ objects. The notes do not settle the desired display policy for equal timestamps
 or supply execution evidence. These observations are for the manager's inspection;
 this run sheet and the fake's authored answer are not commissioned materials.
 
-The first paid result may reveal other relevant qualifications. Its phrasing,
-coverage and usefulness can inform later work without changing the procedural
-outcome. Haiku framing comparisons, long-context compaction, forced interruption
-and additional question families belong to separate commissions.
+Assess the answer's phrasing, coverage and usefulness separately from whether
+submission, delivery and close succeeded.

@@ -49,33 +49,21 @@ An audit goes through these commands:
 audit's state at any time, and `stewart help` explains the rest. Stewart keeps
 its records in the manager's archive and removes nothing.
 
-## Status (2026-10-31)
+## Status
 
 **Built:** the manager commands above, the auditor's tools and answer protocol,
 the run adapter, seal, verified delivery and close. The crate is at version
 0.1.0.
 
 **Tested on Linux against a fake provider.** The scripted acceptance suite
-([`apparatus/acceptance.sh`](apparatus/acceptance.sh)) builds the release
-binary and a test build with fault points and sabotage controls in pinned Linux
-containers, then runs an independent black-box driver against them, on aarch64
-natively and on x86_64 under Rosetta emulation. The driver is written in Python
-from the specification by an author who does not read the implementation, and
-a fake provider stands in for the model. The suite's sabotage and driver
-controls show that the checks catch the failures they look for, and an
-integrated end-to-end audit (prepare, commission, a fake auditor working
-through the run, submit and seal, verified delivery, close) runs on each
-architecture's release binary. The suite passed at source `faa5579`: on
-aarch64 natively, with its timing gate on, and on x86_64 under Rosetta
-emulation, where the gate is reported but not enforced. This includes the
-manager's optional effort setting, provider error reporting and provider
-compaction, including stopping during compaction. All 121 native and 119
-emulated cases passed, with no failed or skipped cases; all 74 sabotage
-variants and 8 driver controls fired on each architecture. Working copies
-were exported and the original driver containers retained for review.
-[`apparatus/qualified.md`](apparatus/qualified.md) records the latest runs of
-each suite, the source commits they cover and their results, and
-`python3 -I -B apparatus/qualified.py check` reports what has changed since.
+has passed on native aarch64 and on x86_64 under Rosetta emulation. It exercises
+the release binary through an independently witnessed audit, with fault and
+sabotage controls in a separate test build. The native timing gate passed;
+emulated timings are reported without enforcing that gate.
+[`apparatus/qualified.md`](apparatus/qualified.md) owns the detailed results,
+case and control counts, source and binary identities, and retained evidence.
+Those results qualify the recorded source, not later changes;
+`python3 -I -B apparatus/qualified.py check` reports source drift.
 
 **Not yet done:**
 
@@ -98,8 +86,8 @@ each suite, the source commits they cover and their results, and
 
 - [DESIGN.md](DESIGN.md): design and vision: responsibilities, the manager's
   path and the architecture.
-- [CONTRACTS.md](CONTRACTS.md): the decided behavior, its status and the
-  reasons for declined changes.
+- [CONTRACTS.md](CONTRACTS.md): the behavioral contract and reasons for its
+  scope boundaries.
 - [ACCEPTANCE.md](ACCEPTANCE.md): the evidence the implementation owes.
 - [docs/INTERFACE.md](docs/INTERFACE.md): the exact CLI, auditor tools, records
   and test builds.
@@ -130,10 +118,6 @@ each suite, the source commits they cover and their results, and
 | `*-PLAN.md` | Active development plans: working accounts, not specification. |
 | `.tmp/` | Ignored temporary storage; only its note, `AGENTS.md`, and a `CLAUDE.md` link to it are tracked. |
 | `LICENSE` | The license. |
-
-Earlier versions of Stewart were a Python tool, with a separate Rust intake
-program; both were retired on 2026-10-30. Their code and the design-era records
-remain in Git history (the last commit containing them is `267aaf0`).
 
 ## License
 

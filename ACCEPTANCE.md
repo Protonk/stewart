@@ -241,7 +241,7 @@ authoring request is handed down as part of the auditor's answer.
 
 - **Pass:** an inventory of the archive before and after every command shows
   only additions: no file is rewritten and none removed, through to and after
-  close. This is the decided first-release retention policy, not a proposal.
+  close, under the first-release retention policy.
   An in-progress new file may be incomplete; it never replaces an earlier record.
   The access log (the `list`, `read` and `search` calls captured in each run)
   equals the sequence in the script. Each `run_ended` record's turns and usage
@@ -326,7 +326,7 @@ unfinished and never becomes an empty return. Replacing the destination repairs
 no missing source bytes. A stop whose completion cannot be established keeps
 close unfinished with its evidence.
 
-Under the decided first-release retention rule, none removes anything (C6). There is
+Under the first-release retention rule, none removes anything (C6). There is
 no separate collect or deliver command. The differing case is delivery before
 versus during close; the invariance case changes the invoking directory and
 process after a lost reply. Sabotage controls skip post-copy confirmation,

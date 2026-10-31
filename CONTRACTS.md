@@ -1,22 +1,15 @@
 # Stewart's decided contracts
 
-This is the single current behavioral contract for the Rust audit service.
-The design review closed on 2026-10-29. These decisions include the accepted
-machine interface; historical conversations and superseded sketches are not
-specification inputs. [DESIGN.md](DESIGN.md) explains the system and
+This is the behavioral contract for the Rust audit service.
+[DESIGN.md](DESIGN.md) explains the system and
 [ACCEPTANCE.md](ACCEPTANCE.md) states the evidence required of its implementation.
 
-**Status (2026-10-30): decided and built; the scripted acceptance suite passed
-on Linux; WSL2 and real-model qualification are owed.** The Rust audit service
-in `service/` implements these contracts. [docs/INTERFACE.md](docs/INTERFACE.md)
-and [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) specify its exact wire
+[docs/INTERFACE.md](docs/INTERFACE.md) and
+[docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) specify the exact wire
 schemas, record layout, process control and forms within these boundaries.
-[apparatus/qualified.md](apparatus/qualified.md) records the latest runs of
-the container suites, the source commits they cover and their results. Still
-owed: a claim-by-claim check of the suite's coverage against
-[ACCEPTANCE.md](ACCEPTANCE.md), native WSL2 qualification and real-model
-conformance, which needs named models and a budget. The release's TLS path to
-the real provider is unexercised. A design decision is not a passing test.
+[README.md](README.md#status) states implementation and qualification status;
+[apparatus/qualified.md](apparatus/qualified.md) records detailed test results
+and their source identities. A design decision is not a passing test.
 
 ## Mission
 
@@ -77,8 +70,7 @@ reporting also fails. Pin the last required check to the value actually publishe
 or used. Use verified, descriptor-relative regular-file reads and exclusive writes;
 never follow a caller-planted link or read a FIFO, socket or device.
 
-The product serves a bounded commission and structured return. It does not inherit
-the development team's supervision, steering or swarm practices. Managers and
+The product serves a bounded commission and structured return. Managers and
 auditors are cooperative but fallible; access constraints make normal operation
 reliable rather than claiming protection against a hostile archive owner.
 
@@ -112,7 +104,7 @@ is added. A person adapter is deferred and grants no unqualified access promise.
 the question and materials in an ordinary directory, using ordinary tools. Even
 when Stewart creates the scaffold, the folder remains the manager's; close leaves
 it alone. Preparation does not undertake preservation of its evolving file bytes
-or revive the general manager-workspace service. Stewart constructs a separate
+or provide a general manager-workspace service. Stewart constructs a separate
 captured commission; acceptance fixes that copy, not the source directory.
 Later source edits cannot change an accepted commission.
 
@@ -394,8 +386,7 @@ existing holds, erase attributed conditions, or turn copying/closure into a
 disposition of earlier undertakings. A future deletion service requires a new
 explicit contract covering authority, finite selections, dependencies, holds,
 verified preservation and failure; none is inherited merely by adding a delete
-command. The earlier Python tool's removal protections remain preserved in Git
-history for that review.
+command.
 
 **The manager's live product interface stays narrow.** `receipt` reads the fixed
 commission; `status` states operating and custody facts; `close` ends work. There
@@ -414,20 +405,19 @@ private-location inventory or protection from a hostile host owner is promised.
 
 ## Run and continuation
 
-**Provider compaction within a run.** Decided 2026-10-31. The Messages API adapter
+**Provider compaction within a run.** The Messages API adapter
 asks the provider to compact a large active context and continues from its signed
 summary. Stewart does not author that summary or treat it as submitted work.
 Original exchanges remain retained, the ledger and limits stay unchanged, and
 summary calls consume the same cumulative allowances. Re-entry supplies recorded
 facts the summary may omit. Compaction is distinct from the fresh conversation
 used after an interrupted placement. The trigger, captures, usage and failure
-behavior are specified in INTERFACE 6.2. This change awaits container and
-real-model qualification.
+behavior are specified in INTERFACE 6.2.
 
 The Messages API remains the current runtime. Claude Code is intended as a future
 peer adapter; human and Codex/OpenAI runtimes are future possibilities. Those
-adapters have not been commissioned for implementation and do not inherit a
-claim that their access, context or stopping mechanisms have been qualified.
+adapters are unimplemented and have no qualification claim for their access,
+context or stopping mechanisms.
 
 The distributed AI integrations use explicit API or supported cloud-provider
 authentication. Subscription login and routing through a user's Claude
@@ -465,10 +455,9 @@ submission, by an ordinary ending without submission, by an exhausted limit or
 by close. Continuation serves placements that died; after an ordinary ending,
 close seals the recorded selection with manager attribution. This
 is continuation of one undertaking, not a restart facility: one ledger, one
-answer sealed once, limits that never reset, no second investigation. It
-settles the restart-from-start convenience left open under the principles as
-none. The same continuation is what a person auditor does on returning to the
-work, so one protocol serves both adapters. Replaying the earlier conversation
+answer sealed once, limits that never reset, no second investigation. The same
+continuation is what a person auditor does on returning to the work, so one
+protocol serves both adapters. Replaying the earlier conversation
 to a model so it keeps its reading is an adapter optimization to weigh only on
 conformance-tier evidence that re-reading after a kill is costly; it would
 change nothing in the record.
@@ -618,10 +607,10 @@ must accommodate observations about one alternative without implying a compariso
 The [form specification](docs/QUESTION-FORMS.md) fixes the exact fields, tools,
 orientation and rendering; the [worked examples](examples/questions/README.md)
 are valid submissions whose hand-written walkthroughs illustrate expression, not
-expected answers. Both work within the settled policy;
+expected answers. Both work within this contract;
 neither is permission for a new completeness gate.
 
-**Five purposes, frozen 2026-10-31.** The commission's meaning is settled;
+**Five purposes.** The commission's meaning is fixed;
 the best intellectual guidance and recording vocabulary are not. Keep the
 library at five. Claim examination and experimental inquiry remain unimplemented
 as dedicated families, with their exact prompts, tools and specimens still open.
@@ -676,11 +665,9 @@ preselect findings, solve the comparison, enumerate every premise or supply the
 experiment's finished hypothesis. Missing evidence may itself be the return;
 these suggestions introduce no new intake gates.
 
-The freeze does not require optimized recipes, mandatory answer structures or
-live qualification of all five families. Later dogfooding can investigate tools,
-material guidance, useful returns and manager repair effort. A first paid API
-sanity probe may use an already implemented family to exercise the real model,
-tools and preserved outcome; it is distinct from full release conformance.
+These purposes require neither optimized recipes nor mandatory answer structures.
+The effectiveness of recording tools, material guidance and intellectual returns
+remains an empirical question, separate from procedural conformance.
 No hidden-prior mechanism or elaborate module composition is selected.
 
 ## Readable answer rendering
@@ -768,8 +755,8 @@ structure but cannot fill gaps or produce a completeness grade. The existing
 confirmed submit is the effectful acknowledgment; inspection remains optional.
 Invalid, damaged or unverifiable selected bytes still refuse under custody rules.
 This deliberately tolerates incomplete and unhelpful returns. Requiring an entry
-for every family obligation was considered and declined because it can reward
-filler, invented support and loops over how to express inability.
+for every family obligation can reward filler, invented support and loops over
+how to express inability.
 
 **Bounded prompting.** After an ordinary model turn ends without submission,
 give at most one procedural reminder across the audit, if allowance remains:
@@ -893,9 +880,7 @@ automatically only after an answer has been sealed. An unsubmitted stop leaves
 the recorded selection for manager sealing through close. Close prevents further
 authoring, preserves a submission that won the seal race, and otherwise seals
 with manager attribution. It reports run termination separately from the seal;
-completed close requires the applicable stopping evidence. The mechanism for
-reaching a run held by another process has passed the scripted suite on Linux;
-its native WSL2 qualification is still owed.
+completed close requires the applicable stopping evidence.
 
 If delivery cannot complete at the commissioned destination, the same interface
 accepts `close REF --destination DIR` to continue the copying undertaking at a
@@ -940,7 +925,7 @@ missing list or accept a blanket discard.
 
 ## Machine interface
 
-Accepted 2026-10-29. The following semantics are decided;
+The following semantics bind the machine interface;
 [docs/INTERFACE.md](docs/INTERFACE.md) specifies exact field spellings and
 complete schemas within them.
 
@@ -1018,7 +1003,7 @@ revision, selected entry versions and generated rendering bytes. Manager
 preparation binds its different source selection and settings. They cannot be
 interchanged just because both operations are called prepare.
 
-Do not invent universal request-key controls. Keep the settled distinctions:
+Do not invent universal request-key controls. Keep these distinctions:
 fresh additions are distinct, a known invocation's completed result may be
 redelivered by the adapter, and an accepted preparation handle retrieves its
 recorded seal/acceptance. Repeated preparation need not produce the same token;
@@ -1079,7 +1064,7 @@ repeat the accepted confirmed call
   -> that same recorded seal, no new mutation
 ```
 
-Explicit true is required for effect. Use the manager's separately decided
+Explicit true is required for effect. Use the manager's separate
 finished-material acknowledgment for commission; do not give a vague universal
 `force` flag several meanings. Neither response promises delivery, stopped
 processes or close. If manager close won the race, return the actual manager seal
@@ -1135,30 +1120,25 @@ by its SHA-256, is the only writer for that audit. Another binary, including a
 later release, may read supported receipt and status records but refuses every
 mutation, including run and close, naming the recorded binary. The receipt's run
 line names that binary's recorded path. Managers keep it until its audits close;
-an upgrade neither continues nor closes older audits. This was chosen over a
-format-compatibility class for simplicity, accepting that an upgrade can leave
+an upgrade neither continues nor closes older audits. Binding an audit to its
+writer avoids a format-compatibility class, accepting that an upgrade can leave
 open audits waiting for their original binary.
 
-**Earlier implementations are history, not baselines.** A Python audit tool
-and a separately scoped Rust commission-bundle binary (`stewart-commission`)
-preceded this service. Both were retired on 2026-10-30, when no Python audit
-remained open; the Python tool's recorded independent resources were left where
-they were, undisposed. Both remain in Git history (the last commit containing
-them is `267aaf0`). Neither is a reference baseline, and neither one's test results
-are evidence for this service. No old live audit, independent resource, hold,
-recovery or partial request is imported into Rust merely because its record can
-be read. No historical receipt is rewritten, hold silently released or
-unresolved exception called done. The Rust service need not implement a general
-Python-record reader or removal service. Any future legacy reader needs a named
-consumer, finite supported records and verified claims; interpretation grants no
-execution or mutation authority.
+**Legacy records confer no new authority.** Earlier implementations and their
+test results are not evidence for this service. Previously recorded independent
+resources remain undisposed unless explicitly accounted for. No old live audit,
+independent resource, hold, recovery or partial request is imported into Rust
+merely because its record can be read. No historical receipt is rewritten, hold
+silently released or unresolved exception called done. The Rust service need not
+implement a general Python-record reader or removal service. Any future legacy
+reader needs a named consumer, finite supported records and verified claims;
+interpretation grants no execution or mutation authority.
 
 ## Declined and deferred scope
 
 - No dedicated program executor, Git/worktree/history service or general manager
   workspace service. The manager supplies exported files; a source folder is not
-  a resource-disposal grant. Earlier implementation effort does not justify
-  preserving those operating stages.
+  a resource-disposal grant.
 - No restart-from-start, general recovery console or request-key controls for
   the auditor. Continue one interrupted undertaking with one ledger and cumulative
   limits; the manager constructs another commission when that is wanted.

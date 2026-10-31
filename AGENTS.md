@@ -5,14 +5,11 @@ Stewart is the Rust audit service in [`service/`](service) (binary `stewart`),
 specified by [DESIGN.md](DESIGN.md), [CONTRACTS.md](CONTRACTS.md),
 [ACCEPTANCE.md](ACCEPTANCE.md), [docs/INTERFACE.md](docs/INTERFACE.md) and
 [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md); [README.md](README.md) states
-its status. The design review is closed: start product work from the
-specification, not historical conversations or prototype briefs. Exact schemas
-and mechanisms are engineering work within its decisions. Historical reviews and
-captured plans are evidence, not assignments, prerequisite reading or a
-competing design, and material removed after extraction is not a gap to repair.
-CONTRACTS.md states the decided behavior, its implementation status and the
-reasons for declined changes, and records changes to Stewart's intended
-responsibilities and other durable product decisions.
+its status. Start product work from the specification. Exact schemas and
+mechanisms are engineering work within its decisions. CONTRACTS.md states the
+decided behavior, its implementation status and the reasons for product
+boundaries. Historical conversations, reviews and captured plans are evidence,
+not assignments or a competing design; removed material is not a gap to repair.
 
 "The user" in development guidance is the development principal. Stewart's
 users are the people who supply material and operate it; today they are the same
@@ -58,9 +55,8 @@ next such run, which the user schedules; it need not wait for that run to land.
 Findings that could be sensitive outside the project, such as a security
 weakness in a toolchain, go to the user, who decides how to route them.
 
-Git history holds earlier material, including the retired Python tool (last
-present at `267aaf0`); do not restore it to the tree. Do not add compatibility
-shims or rewrite historical receipts to fit a newer schema.
+Do not add compatibility shims or rewrite historical receipts to fit a newer
+schema.
 
 ## Larger work
 
@@ -71,16 +67,31 @@ ten or fewer simultaneous agents in total, including nested ones. The agent
 that dispatches integrates. Freeze shared schemas or interfaces before parallel
 implementations start.
 
+## Documentation and plans
+
+Documentation describes the current product and how to work on it. It is not a
+development diary. Prefer a direct statement of the present behavior, reason or
+limit to an account of what changed, who requested it or which discussion led
+there. Delete obsolete explanation; do not accumulate corrections, completed
+work reports, superseded proposals or reminders of removed features. Git keeps
+that history. Preserve provenance when it is needed to interpret or retrieve
+evidence, and never rewrite historical receipts or run records as editorial
+cleanup.
+
 Work that needs a plan, for example because it spans sessions, gets one. Active
-plans are ordinary tracked working
-documents with stable paths; discover them by the `*-PLAN.md` naming convention.
-Update a plan when decisions or remaining work change; Git preserves history. At
-completion or abandonment, give unfinished work an explicit disposition, move
-enduring contracts and explanations into documentation and tests, and delete the
-plan. There is no obligation to retain every planning paragraph. Keep durable
-guidance stateless: maintained AGENTS and README files must not route readers to
-particular plans, and product code and tests must stand without them. Explain
-mechanisms and reasons without temporary planning coordinates.
+plans are ordinary tracked documents with stable `*-PLAN.md` paths. Each plan
+owns its remaining work, decisions and necessary inputs. State cross-plan order
+once in a coordinating plan; topic plans do not repeat that staging, one
+another's status or prerequisite narratives. Link to the concrete contracts,
+code or materials the work needs, without mutual plan links or a prose dependency
+chain. Give shared status and sequencing a single owner.
+
+Update plans in place as decisions or remaining work change. At completion or
+abandonment, give unfinished work an explicit disposition, move enduring
+contracts and explanations into documentation and tests, and delete the plan.
+Keep durable guidance stateless: maintained AGENTS and README files must not
+route readers to particular plans, and product code and tests must stand without
+them. Explain mechanisms and reasons without temporary planning coordinates.
 
 Notes are optional support for unfinished work, not a routine deliverable or a
 session history. Write only what the next action needs and the code, diff, test
