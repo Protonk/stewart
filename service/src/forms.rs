@@ -387,6 +387,17 @@ pub struct ArrangementInput<'a> {
     pub material_index_sha256: &'a str,
 }
 
+/// The arrangement's `request_extra` (INTERFACE 6.2): the manager's effort as
+/// the provider's `output_config` parameter, or `{}` when the front matter
+/// sets none. It is a request parameter only: no system block, tool or
+/// message carries it.
+pub fn request_extra(effort: Option<&str>) -> Vec<u8> {
+    match effort {
+        Some(level) => format!(r#"{{"output_config":{{"effort":"{level}"}}}}"#).into_bytes(),
+        None => b"{}".to_vec(),
+    }
+}
+
 pub fn arrangement(input: &ArrangementInput) -> Arrangement {
     let s = input.settings;
     let f = family(&s.family).expect("family validated by the front matter parser");
@@ -401,7 +412,7 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
         .with("max_tokens_per_request", MAX_TOKENS_PER_REQUEST)
         .with("system", J::Raw(system.clone()))
         .with("tools", J::Raw(tools.clone()))
-        .with("request_extra", J::Raw(b"{}".to_vec()))
+        .with("request_extra", J::Raw(request_extra(s.effort.as_deref())))
         .with(
             "texts",
             J::obj()
@@ -470,6 +481,10 @@ fn readable(f: &Family, input: &ArrangementInput, tools_bytes: &[u8]) -> String 
     md.push_str(&format!("- Reader: {READER_ID}: the exact UTF-8 bytes of each file, with no transformation (no newline normalization, transcoding, extraction or execution).\n"));
     md.push_str(&format!("- Renderer: {RENDERER_ID}\n"));
     md.push_str(&format!("- Model: {} (every run of this audit)\n", s.model));
+    match &s.effort {
+        Some(level) => md.push_str(&format!("- Effort: {level}, sent with every request as the provider parameter output_config.effort. The auditor does not receive it as text.\n")),
+        None => md.push_str("- Effort: not set. No effort is sent, so the provider's default for the model applies.\n"),
+    }
     md.push_str(&format!("- Provider API version: {ANTHROPIC_VERSION}; at most {MAX_TOKENS_PER_REQUEST} output tokens per request\n\n"));
     md.push_str("## Limits\n\n");
     md.push_str("Cumulative across every run of the audit, from the provider's usage reports, with stated estimates for lost responses:\n\n");
@@ -575,6 +590,7 @@ mod tests {
         let settings = crate::frontmatter::Settings {
             family: "comparison".into(),
             model: "claude-opus-5-5".into(),
+            effort: None,
             destination: "/d".into(),
             turns: 200,
             input_tokens: 20_000_000,

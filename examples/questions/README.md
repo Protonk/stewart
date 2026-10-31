@@ -60,3 +60,7 @@ It sends no request once a limit in the front matter is exhausted, but counted
 usage can pass a limit: a request's input size is known only from its
 response, and estimates for lost responses can take counted output past its
 limit ([INTERFACE](../../docs/INTERFACE.md) 6.4).
+
+An optional `effort:` line (`low`, `medium`, `high`, `xhigh` or `max`) asks
+the provider for that effort on every request of the audit. The examples set
+none, so the model's provider default applies.

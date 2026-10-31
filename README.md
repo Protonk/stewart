@@ -65,7 +65,9 @@ through the run, submit and seal, verified delivery, close) runs on each
 architecture's release binary. The suite passed at source `dc85948`: on
 aarch64 natively, with its timing gate on, and on x86_64 under Rosetta
 emulation, where the gate is reported but not enforced. Since that run the
-service's code has changed only in comments.
+service has gained the manager's optional effort setting and reports the
+provider's error message with a refusal; those changes and the matching driver
+cases await the next suite run.
 [`apparatus/qualified.md`](apparatus/qualified.md) records the latest runs of
 each suite, the source commits they cover and their results, and
 `python3 -I -B apparatus/qualified.py check` reports what has changed since.
@@ -81,17 +83,16 @@ each suite, the source commits they cover and their results, and
 - Retention of damaged originals for review (ACCEPTANCE C18): the suites
   discard a variant's working copies once it has passed or its control has
   fired.
-- Container runs of the apparatus changes made since the last suite run;
-  `qualified.py check` lists them.
+- Container runs of the service and apparatus changes made since the last
+  suite run; `qualified.py check` lists them.
 - A claim-by-claim check of the suite's coverage against
   [ACCEPTANCE.md](ACCEPTANCE.md).
 - Real-model conformance: whether named models can use the arrangement and
   finish. It needs named models and a budget. Stewart has not been run against
   a real model, the release's TLS path to the real provider, with its built-in
   roots, is unexercised, and the pinned request settings (16,000 `max_tokens`
-  per request, a 600 s timeout) are untested against real responses.
-- The decided default of effort `high` for requests to Opus models is not
-  implemented; requests currently set no effort.
+  per request, a 600 s timeout) are untested against real responses, as is
+  the effort parameter.
 
 ## Where to read next
 

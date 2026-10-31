@@ -69,7 +69,7 @@ the gate is off and timings are only reported.
 - Native WSL2.
 - The service's own cargo tests on Linux.
 - The two-build comparison on the service rather than the crate skeleton.
-- The Opus effort default, which is not implemented.
+- The effort parameter against the real provider.
 
 ## Work items
 
@@ -81,36 +81,24 @@ not reasons to reopen settled manager or answer policy. If qualification shows
 the design cannot support a promise, bring that specific unmet promise to the
 user.
 
-### Opus effort default: decided, not implemented, deferred
+### Effort setting: built, unqualified
 
-The user decided that requests to Opus models carry effort `high` by default.
-Today the arrangement pins `request_extra` as `{}` and the release's allowlist
-is empty (INTERFACE 6.2), so requests set no effort and Opus 5.5 runs at its
-API default, `medium`. Implementing it changes the pinned arrangement bytes and
-the request shape: INTERFACE 6.2 (the allowlist and how the arrangement pins
-effort per model), the arrangement and its readable form, the service's tests,
-and the driver's request witness (C1), which the driver's author changes from
-the amended INTERFACE text. Conformance runs use the release's default effort
-(ACCEPTANCE), so this comes before them.
+On 2026-10-31 the user replaced the earlier plan for an Opus default: Stewart
+has no effort default of its own. A manager may set `effort:` in the front
+matter (INTERFACE 3.2), and Stewart sends it as `output_config.effort` on every
+request of that audit, never as text the auditor reads; without it no effort
+is sent and the provider's default applies. Prepare refuses unknown level
+names; Stewart does not check which levels a model accepts. A provider that
+refuses the parameter or a level is reported as it answered, with its message
+(INTERFACE 6.5). The crate's tests model provider drift with a declarative
+fake (`Surface` in `service/tests/run.rs`): a renamed or removed parameter, a
+withdrawn level and a refusal without an error object. The driver has matching
+cases (ACCEPTANCE C1 and C9), and four sabotage controls show the checks fire.
+A provider that silently ignores the parameter goes unreported; finding that
+is out-of-band work, such as the conformance run below.
 
-On 2026-10-31 the user deferred it, to be settled later. When it is taken up,
-these need settling before it becomes contract text:
-
-- What counts as an Opus model: for example every model ID beginning
-  `claude-opus-`, including models whose provider default is already `high`.
-- Whether "default" means a fixed release setting or implies a manager
-  override. An override would change the `question/1` grammar and what
-  managers can express.
-- How the allowlist admits it. Effort is a member of the top-level
-  `output_config` object, and admitting `output_config` would also admit its
-  other members, such as a task budget, so INTERFACE 6.2's allowlist would have
-  to be value-level.
-- Whether the arrangement's version (`stewart.arrangement/1`) changes.
-- That thinking at `high` effort counts toward `max_tokens_per_request`
-  (16,000), and whether that limit still fits.
-
-Needs, when taken up: those decisions, a check of the provider's current
-specification of effort, the implementation, and the user's container run.
+Needs: the user's container run of `acceptance.sh` ("Container runs for
+recent changes").
 
 ### Claim-by-claim coverage check
 
@@ -149,13 +137,13 @@ user's timing.
 ### Real-model conformance
 
 ACCEPTANCE's conformance tier (C10) checks procedure, never answer quality:
-fixed commissions for the three families, each run three times per model at
-the release's default effort, plus one run with compaction forced and one
-killed midway and continued. Its apparatus does not exist yet. Before any
-model-consuming run the user names the models, their settings (including the
-effort default) and an explicit budget. This plan authorizes no particular
-Claude launch, and ACCEPTANCE's run counts are planning quantities, not
-authorization to spend. A model named in an example, such as
+fixed commissions for the three families, each run three times per model without
+an effort setting, plus one run with an effort set, one with compaction forced
+and one killed midway and continued. Its apparatus does not exist yet. Before
+any model-consuming run the user names the models, their settings (including the
+effort for the effort run) and an explicit budget. This plan authorizes no
+particular Claude launch, and ACCEPTANCE's run counts are planning quantities,
+not authorization to spend. A model named in an example, such as
 `claude-opus-5-5`, is not thereby supported; a release lists only the models
 that passed the gate.
 
@@ -163,15 +151,18 @@ Verify the provider's current specifications first. They were last checked on
 2026-10-30; the adapter pins `anthropic-version: 2026-10-21` and handles the
 `model_context_window_exceeded` stop reason. The release's TLS path with its
 built-in roots is unexercised, and `max_tokens_per_request` and the 600 s
-timeout are unqualified (above). The tier's forced-compaction run waits on
-"To investigate: compaction and re-entry" (below).
+timeout are unqualified (above). Thinking counts toward `max_tokens`, so at a
+high effort a response is more likely to end `max_tokens` (which interrupts the
+run, visibly and continuably); the effort run shows whether 16,000 still fits.
+The tier's forced-compaction run waits on "To investigate: compaction and
+re-entry" (below).
 
 Needs: the acceptance-testing discussion; the user's models, settings and
-budget; the provider check; the real-model apparatus; the effort default.
+budget; the provider check; the real-model apparatus.
 
-### Container runs for today's script changes
+### Container runs for recent changes
 
-These changes to the apparatus have not run in a container:
+These changes have not run in a container:
 
 - `aafcb57` changed nine apparatus code files and `apparatus/README.md`
   (`git show --stat aafcb57 -- apparatus`). Two changed behavior:
@@ -183,6 +174,9 @@ These changes to the apparatus have not run in a container:
   comments or docstrings only: `acceptance.sh`, `driver/cases_run.py`,
   `driver/stewart_driver.py`, and three files since retired with `step3.sh`.
 - The two suites take their evidence folder as a required argument (2026-10-30).
+- The effort setting and the provider's error message in run results
+  (2026-10-31): the service, the specification and the driver's cases and
+  controls ("Effort setting", above).
 
 The next `acceptance.sh` runs the self-test in a container. `step2.sh` refuses
 to start while `service/vendor` exists, needs the network, and rebuilds both

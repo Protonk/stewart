@@ -6,7 +6,8 @@ compaction, kill and continuation, the reminder, paging and the prepared views.
 It follows INTERFACE 6.2-7.6 loosely and simply; it is not a reference
 implementation, says nothing about Stewart and is never run against a binary.
 Its `faults` simulate a few sabotage controls of Appendix C.2 so the self-test
-can show that the auditor's checks fire.
+can show that the auditor's checks fire. With an `effort` it sends the 6.2
+request_extra member `output_config` after `tools`.
 """
 from __future__ import annotations
 
@@ -53,9 +54,9 @@ def http_sender(port, key, host=None):
 
 class MiniStewart:
     def __init__(self, auditor, question, materials, family="open-inquiry", limits=None, faults=(), send=None,
-                 ledger=None, model="claude-opus-5-5"):
+                 ledger=None, model="claude-opus-5-5", effort=None):
         self.auditor, self.question, self.materials = auditor, question, dict(materials)
-        self.family, self.model = family, model
+        self.family, self.model, self.effort = family, model, effort
         self.limits = limits or {"turns": 200, "input_tokens": 20000000, "output_tokens": 400000}
         self.faults = set(faults)
         self.send = send
@@ -67,8 +68,12 @@ class MiniStewart:
             tools = tools + [{"name": "shell", "description": "Run a command.",
                               "input_schema": {"type": "object", "properties": {}, "required": [],
                                                "additionalProperties": False}}]
+        extra = b""
+        if effort is not None and "effort_in_prompt" not in self.faults:
+            name = b"eefort" if "misspell_effort" in self.faults else b"effort"
+            extra = b',"output_config":{"' + name + b'":' + fp.jstr(effort) + b"}"
         self.prefix = (b'{"model":' + fp.jstr(model) + b',"max_tokens":16000,"system":' + expected_system_bytes(family)
-                       + b',"tools":' + rawjson.compact(tools) + b',"messages":[')
+                       + b',"tools":' + rawjson.compact(tools) + extra + b',"messages":[')
         self.entries = []
         self.revision = 0
         self.preps = []
@@ -95,7 +100,10 @@ class MiniStewart:
     def run(self, kill_after_mutations=None, kill_after_reminder=False):
         self.placement += 1
         self.placement_first_exchange = len(self.provider.exchanges) + 1
-        first = [_text_block(self.question.decode("utf-8"))]
+        question = self.question.decode("utf-8")
+        if self.effort is not None and "effort_in_prompt" in self.faults:
+            question += "\nEffort: %s." % self.effort
+        first = [_text_block(question)]
         if self.placement > 1:
             first.append(_text_block(CONTINUATION))
         msgs = [b'{"role":"user","content":[' + b",".join(first) + b"]}"]

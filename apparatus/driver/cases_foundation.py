@@ -327,6 +327,14 @@ def c_scaffold(t):
     t.check("scaffold.fields", all(p > 0 for p in pos) and pos == sorted(pos), dict(zip([f.decode() for f in SCAFFOLD_FIELDS], pos)))
     for c in SCAFFOLD_COMMENTS:
         t.check("scaffold.comment", c in lines, c.decode())
+    # 3.2: the template explains the optional effort in two comment lines after the model field,
+    # before the destination's comment, and the scaffold sets no effort.
+    i_model = lines.index(b"model: REPLACE-WITH-MODEL") if b"model: REPLACE-WITH-MODEL" in lines else -1
+    t.check("scaffold.effort-comments-placed", i_model > 0
+            and lines[i_model + 1:i_model + 4] == SCAFFOLD_EFFORT_COMMENTS + [SCAFFOLD_DESTINATION_COMMENT],
+            [l.decode("utf-8", "replace") for l in lines[i_model:i_model + 4]] if i_model > 0 else None)
+    t.check("scaffold.no-effort-field", not any(l.startswith(b"effort:") for l in lines),
+            [l.decode("utf-8", "replace") for l in lines if l.startswith(b"effort")])
     t.check("scaffold.split", split_question(q) == b"", "body is not empty")
     t.eq("scaffold.materials-empty", sorted(os.listdir(os.path.join(folder, "materials"))), [])
     t.eq("scaffold.folder-entries", sorted(os.listdir(folder)), ["materials", "question.md"])
@@ -343,6 +351,8 @@ def c_scaffold(t):
     t.prepare(sub, name="scaffold.empty-body", expect="refused", reason="question_empty")
     t.edit(os.path.join(folder, "question.md"), filled + body)
     rep = t.prepare(sub, name="scaffold.filled", expect="completed")
+    # The scaffold sets no effort: the prepared record's settings carry none (4.4).
+    t.check_prepared_settings(sub, "scaffold.filled")
 
 
 # ---------------------------------------------------------------------------
@@ -2005,6 +2015,15 @@ def check_arrangement(t, sub, handle, family, p, limits):
         t.check(p + ".texts.%s" % label, text in strings, "pinned %s text missing" % label)
     for n in limits:
         t.check(p + ".limits", mentions(members.get("limits"), str(n)), {"limit": n, "limits": members.get("limits")})
+    # 6.2: request_extra holds output_config only when the front matter sets an effort; these
+    # questions set none, so it is the empty object.
+    rx = members.get("request_extra")
+    if isinstance(rx, str):
+        try:
+            rx = strict_loads(rx.encode("utf-8"))
+        except StrictJSONError:
+            pass
+    t.eq(p + ".request_extra", rx, {} if sub.effort is None else {"output_config": {"effort": sub.effort}})
     t.eq(p + ".near_limit_percent", members.get("near_limit_percent"), 20)
     t.eq(p + ".request_timeout_seconds", members.get("request_timeout_seconds"), 600)
     t.check(p + ".reader", mentions(members.get("reader"), "utf8-text/1"), members.get("reader"))

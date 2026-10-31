@@ -65,6 +65,8 @@ The submission folder
     stewart: question/1
     family: open-inquiry | inquiry-framing | comparison
     model: the provider model for every run of this audit
+    effort: optional low | medium | high | xhigh | max, sent to the provider
+      with every request; without it the model's provider default applies
     destination: an existing absolute directory for the return package
     limit-turns, limit-input-tokens, limit-output-tokens: cumulative limits
     inquiry: optional label for your own line of questions

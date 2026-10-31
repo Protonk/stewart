@@ -238,9 +238,11 @@ def c_t7(t):
 def c_t16(t):
     """Run 1: four 529 overloaded_error answers with retry-after 0. Four attempts, three with
     then retry and one with then end, none charged; run_ended interrupted provider_unavailable
-    with provider status 529 and error_type overloaded_error; exit 5. Every attempt carries the
-    same request bytes. Run 2 (a continuation): retry-after 61 ends after one attempt, also
-    provider_unavailable. Run 3: 413 request_too_large ends after one attempt, provider_rejected."""
+    with the last attempt's provider facts (status 529, error_type overloaded_error, its
+    error_message and request ID, request 1, attempt 4) in the reply and run_ended; exit 5.
+    Every attempt carries the same request bytes. Run 2 (a continuation): retry-after 61 ends
+    after one attempt, also provider_unavailable. Run 3: 413 request_too_large ends after one
+    attempt, provider_rejected."""
     sub = run_submission(t)
     steps = [fp.HttpError(529, retry_after="0") for _ in range(4)]
     steps += [fp.HttpError(529, retry_after="61"), fp.HttpError(413)]
@@ -249,14 +251,17 @@ def c_t16(t):
                                                             ("t16.run-2", 1, "provider_unavailable", 529),
                                                             ("t16.run-3", 1, "provider_rejected", 413)), 1):
         rep = rs.run(t, sub, fx, name=label, retry_delays=None)
-        rs.check_run_reply(t, rep, sub, label, ending="interrupted", cause=cause, run_number=i, fx=fx,
-                           limits=rs.limits_of(sub))
-        t.eq(label + ".exit", rep.rc, 5)
         exs = fx.exchanges_of(label)
+        want = rs.provider_expected(exs[-1] if exs else None, 1, n_attempts)
+        rs.check_run_reply(t, rep, sub, label, ending="interrupted", cause=cause, run_number=i, fx=fx,
+                           limits=rs.limits_of(sub), provider=want)
+        rs.check_run_ended(t, sub, i, label, ending="interrupted", cause=cause, provider=want, requests=1,
+                           attempts=n_attempts)
+        t.eq(label + ".exit", rep.rc, 5)
         t.eq(label + ".attempts", len(exs), n_attempts)
         t.check(label + ".same-bytes", len({e.body for e in exs}) == 1, [e.body_sha256() for e in exs])
-        prov = rep.data.get("provider") or {}
-        t.eq(label + ".provider", [prov.get("status"), prov.get("error_type")],
+        t.eq(label + ".provider-sent", [(want or {}).get("status"), (want or {}).get("error_type")]
+             if isinstance(want, dict) else want,
              [status, "overloaded_error" if status == 529 else "request_too_large"])
         rd = rs.run_dirs(sub).get(i)
         if t.check(label + ".run-dir", rd is not None, sorted(rs.run_dirs(sub))):
@@ -312,8 +317,11 @@ def c_tls_proxy(t):
     sub2 = run_submission(t)
     fx2 = rs.provider(t, fp.Script([]), mode="https-proxy", cert="untrusted", label="untrusted")
     rep = rs.run(t, sub2, fx2, name="tls.untrusted")
+    # 4.4: with no status line observed, every provider fact is null; request 1, attempt 4.
     rs.check_run_reply(t, rep, sub2, "tls.untrusted", ending="interrupted", cause="provider_unavailable",
-                       run_number=1, fx=fx2, limits=rs.limits_of(sub2))
+                       run_number=1, fx=fx2, limits=rs.limits_of(sub2),
+                       provider={"status": None, "error_type": None, "error_message": None, "request_id": None,
+                                 "request": 1, "attempt": 4})
     t.eq("tls.untrusted.no-exchange", len(fx2.exchanges), 0)
     t.check("tls.untrusted.handshakes-failed", len([e for e in fx2.provider.events
                                                     if e.get("event") == "tls_handshake_failed"]) == 4,
@@ -1598,8 +1606,11 @@ def c_provider_shapes(t):
                  "tool_unknown")
             t.eq(pre + ".model-null", bodies[-1].get("model") if bodies else "missing", None)
         if label == "nul-error":
-            t.eq(pre + ".error-null", (bodies[0].get("error") or {}).get("type") if bodies else "missing", None)
-            t.eq(pre + ".provider", (rep.data.get("provider") or {}).get("error_type", "missing"), None)
+            t.eq(pre + ".error-null", [(bodies[0].get("error") or {}).get(k) for k in ("type", "message")]
+                 if bodies else "missing", [None, None])
+            prov = rep.data.get("provider") or {}
+            t.eq(pre + ".provider", [prov.get("error_type", "missing"), prov.get("error_message", "missing")],
+                 [None, None])
         if label == "retry-after-date":
             t.eq(pre + ".retry", (bodies[0].get("then"), bodies[0].get("delay_ms")) if bodies else None, ("retry", 0))
     t.eq("shape.fake-responder", fx.provider.anomalies, [])

@@ -217,7 +217,8 @@ SABOTAGES = ("accept_without_affirmation", "accept_changed_source", "skip_hidden
              "regenerate_arrangement", "rewrite_record_in_place", "remove_partial_on_retry",
              "unknown_as_absent", "select_newer_store", "accept_unknown_field",
              "omit_effects_on_refusal", "whole_from_one_member",
-             "extra_tool", "arrangement_mismatch", "read_live_source", "normalize_read",
+             "extra_tool", "misspell_effort", "effort_in_prompt", "arrangement_mismatch", "read_live_source",
+             "normalize_read",
              "paraphrase_question", "read_truncate_silently", "search_omit_last_page", "torn_as_entry",
              "merge_equal_adds", "replay_reexecutes", "stale_target_overwrites", "manager_seal_as_auditor",
              "reentry_omit_entry", "reentry_truncate_page", "reentry_omit_last_page", "reentry_mix_revisions",
@@ -225,7 +226,8 @@ SABOTAGES = ("accept_without_affirmation", "accept_changed_source", "skip_hidden
              "deliver_conversation", "regenerate_rendering", "render_conclusion", "remove_superseded_payload",
              "remove_partial_package", "skip_search_capture", "framing_task_elsewhere", "grade_support",
              "block_incomplete", "reset_notice_allowance", "skip_confirmation", "seal_as_stopped",
-             "empty_return_before_launch", "slow_list", "relative_run_line", "commission_over_network",
+             "empty_return_before_launch", "slow_list", "hide_provider_message", "rejection_as_unavailable",
+             "relative_run_line", "commission_over_network",
              "reset_limits_on_continuation", "fresh_ledger_on_continuation", "drop_refused_capture",
              "manifest_verdict", "ended_as_submitted", "seal_as_delivered", "unknown_membership_empty",
              "stale_preparation_retargets", "prepare_claims_seal", "leak_custody_path",
@@ -246,14 +248,26 @@ SCAFFOLD_FIELDS = [b"stewart: question/1", b"family: open-inquiry",
                    b"destination: REPLACE-WITH-ABSOLUTE-DIRECTORY",
                    b"limit-turns: 200", b"limit-input-tokens: 20000000",
                    b"limit-output-tokens: 400000"]
+# The two comment lines of the 3.2 template about the optional effort, between the model
+# field and the destination comment. The scaffold carries them and no `effort` field.
+SCAFFOLD_EFFORT_COMMENTS = [
+    b"# Optional effort for every request: low, medium, high, xhigh or max, as a",
+    b"# line such as \"effort: high\". Without one, the model's provider default applies.",
+]
+SCAFFOLD_DESTINATION_COMMENT = b"# Existing directory in which Stewart creates the return package."
 SCAFFOLD_COMMENTS = [
     b"# Question family: open-inquiry, inquiry-framing or comparison.",
     b"# Run `stewart help forms` to read each family's instructions.",
     b"# Provider model used for every run of this audit.",
-    b"# Existing directory in which Stewart creates the return package.",
+] + SCAFFOLD_EFFORT_COMMENTS + [
+    SCAFFOLD_DESTINATION_COMMENT,
     b"# Cumulative limits across all runs, from the provider's usage reports.",
     b"# Write your question below the closing --- line.",
 ]
+# The effort levels of the `effort` front matter key (3.2), in the table's order. Stewart knows
+# these names, not which levels a model accepts (CONTRACTS); a provider refusing one is a
+# provider rejection (6.5).
+EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
 
 # QUESTION-FORMS pinned texts: lines of a quoted paragraph joined by one space,
 # paragraphs by two LF bytes, no trailing LF.
@@ -992,12 +1006,16 @@ def material_witness(entries):
 def question_md(body=b"Audit our app to make sure there are no bugs.\n", *, family="open-inquiry",
                 model="claude-opus-5-5", dest="/nonexistent", turns="200",
                 input_tokens="20000000", output_tokens="400000", inquiry=None, varies=None,
-                nl=b"\n", bom=False, extra=(), omit=(), comments=True):
+                nl=b"\n", bom=False, extra=(), omit=(), comments=True, effort=None):
+    """A question.md. effort, when given, is written as an `effort` field after `model`,
+    where the 3.2 template documents it."""
     def enc(v):
         return v if isinstance(v, bytes) else str(v).encode("utf-8")
 
-    fields = [("stewart", b"question/1"), ("family", enc(family)), ("model", enc(model)),
-              ("destination", enc(dest)), ("limit-turns", enc(turns)),
+    fields = [("stewart", b"question/1"), ("family", enc(family)), ("model", enc(model))]
+    if effort is not None:
+        fields.append(("effort", enc(effort)))
+    fields += [("destination", enc(dest)), ("limit-turns", enc(turns)),
               ("limit-input-tokens", enc(input_tokens)), ("limit-output-tokens", enc(output_tokens))]
     if inquiry is not None:
         fields.append(("inquiry", enc(inquiry)))
@@ -1221,13 +1239,17 @@ class Reply:
 class Sub:
     """One submission: a folder the driver built, its destination and its reference."""
 
-    def __init__(self, t, folder, dest, archive, question, entries, root_entries, family, model, limits):
+    def __init__(self, t, folder, dest, archive, question, entries, root_entries, family, model, limits,
+                 effort=None):
         self.t, self.folder, self.dest, self.archive = t, folder, dest, archive
         self.question = question
         self.body = split_question(question)
         self.entries = list(entries)
         self.root_entries = list(root_entries)
         self.family, self.model, self.limits = family, model, limits
+        # The front matter's effort level (3.2), or None when the question sets none. A case
+        # that edits question.md to change it updates this too.
+        self.effort = effort
         self.files, self.dirs = material_witness(entries)
         self.ref = self.audit = self.store = None
         self.handles = []
@@ -1764,9 +1786,10 @@ class T:
     def submission(self, entries, *, question=None, body=b"Audit our app to make sure there are no bugs.\n",
                    family="open-inquiry", model="claude-opus-5-5", archive=None, root_entries=(),
                    q=None, folder=None, dest=None, make_question=True, make_materials=True,
-                   dest_watch="frozen"):
+                   dest_watch="frozen", effort=None):
         """Build a submission folder and its witness. dest_watch is 'frozen' before launch
-        (nothing may appear) and 'additions' where a run or close may deliver."""
+        (nothing may appear) and 'additions' where a run or close may deliver. effort sets the
+        front matter's effort level (3.2); None leaves the key out."""
         folder = folder or self.folder_path()
         dest = dest or self.dest_path()
         q = dict(q or {})
@@ -1774,7 +1797,7 @@ class T:
                   int(q.get("input_tokens", 20000000)) if str(q.get("input_tokens", 20000000)).isdigit() else None,
                   int(q.get("output_tokens", 400000)) if str(q.get("output_tokens", 400000)).isdigit() else None)
         if question is None:
-            question = question_md(body, family=family, model=model, dest=q.pop("dest", dest), **q)
+            question = question_md(body, family=family, model=model, dest=q.pop("dest", dest), effort=effort, **q)
         os.makedirs(folder)
         if make_question:
             with open(os.path.join(folder, "question.md"), "wb") as f:
@@ -1785,7 +1808,7 @@ class T:
         if root_entries:
             build_entries(folder, root_entries)
         sub = Sub(self, folder, dest, archive or self.archive_path(), question, entries, root_entries,
-                  family, model, limits)
+                  family, model, limits, effort=effort)
         self.watch(folder, "frozen", "folder")
         self.watch(dest, dest_watch, "destination")
         self.save_witness(sub)
@@ -1957,8 +1980,56 @@ class T:
         self.eq("%s.settings.destination" % name, s.get("destination"), sub.dest)
         self.eq("%s.settings.limits" % name, s.get("limits"),
                 {"turns": sub.limits[0], "input_tokens": sub.limits[1], "output_tokens": sub.limits[2]})
+        # 5.3 does not list the reply's settings members beyond its example; the prepared record
+        # (check_prepared_settings) is exact. Here: no effort member without an effort, and the
+        # given level when the reply shows one.
+        if sub.effort is None:
+            self.check("%s.settings.no-effort" % name, "effort" not in s, s)
+        elif "effort" in s:
+            self.eq("%s.settings.effort" % name, s.get("effort"), sub.effort)
         self.eq("%s.reader" % name, d.get("reader"), {"id": "utf8-text/1", "transformations": "none"})
         self.eq("%s.bounds" % name, d.get("bounds"), BOUNDS)
+
+    def check_prepared_settings(self, sub, name, inquiry=False, varies=False):
+        """The latest `prepared` record's settings (4.4), in order: family, model, destination,
+        limits {turns, input_tokens, output_tokens}, then effort, inquiry and varies only when
+        given. sub.effort is the level the question sets, or None; inquiry and varies say whether
+        the question gives them (4.4 does not spell out their recorded form, so only their
+        presence and place are judged)."""
+        bodies = [b for b in self.log_bodies(sub, "prepared") if isinstance(b, dict)]
+        s = bodies[-1].get("settings") if bodies else None
+        want = {"family": sub.family, "model": sub.model, "destination": sub.dest,
+                "limits": {"turns": sub.limits[0], "input_tokens": sub.limits[1], "output_tokens": sub.limits[2]}}
+        if sub.effort is not None:
+            want["effort"] = sub.effort
+        for key, given in (("inquiry", inquiry), ("varies", varies)):
+            if given:
+                want[key] = "given"
+        got = {k: ("given" if k in ("inquiry", "varies") else v) for k, v in s.items()} if isinstance(s, dict) else s
+        self.eq("%s.record.settings" % name, got, want)
+        order = lambda v: ([(k, order(x)) for k, x in v.items()] if isinstance(v, dict) else None)
+        self.eq("%s.record.settings-order" % name, order(got), order(want))
+        return s
+
+    def request_extra_of(self, sub, handle=None):
+        """The `request_extra` member of the arrangement pinned at prepare (6.2), decoded, or the
+        string 'missing' when the arrangement or the member is unavailable."""
+        arr = sub.arrangement.get(handle or (sub.handles[-1] if sub.handles else None))
+        if not arr:
+            return "missing"
+        try:
+            obj = strict_loads(arr["machine"])
+        except StrictJSONError:
+            return "missing"
+        members = obj if isinstance(obj, dict) and "request_extra" in obj else (
+            obj.get("body") if isinstance(obj, dict) and isinstance(obj.get("body"), dict) else {})
+        v = members.get("request_extra", "missing") if isinstance(members, dict) else "missing"
+        if isinstance(v, str) and v != "missing":
+            try:
+                v = strict_loads(v.encode("utf-8"))
+            except StrictJSONError:
+                pass
+        return v
 
     def commission(self, sub, handle, *, flag=True, name="commission", expect="completed", reason=None,
                    fault=None, env=None, binary=None, writer=None, already=False, timeout=120):
@@ -2755,6 +2826,61 @@ class Driver:
 # Self-test of the driver's helpers (no Stewart binary needed).
 # ---------------------------------------------------------------------------
 
+def _section(text, heading):
+    """The lines of a Markdown section after its heading, to the next heading outside a code
+    fence (a fenced `# comment` line is not a heading)."""
+    lines = text.split("\n")
+    try:
+        i = lines.index(heading)
+    except ValueError:
+        return []
+    out, fenced = [], False
+    for line in lines[i + 1:]:
+        if line.startswith("```"):
+            fenced = not fenced
+        elif not fenced and re.match(r"^#{1,6} ", line):
+            break
+        out.append(line)
+    return out
+
+
+def _interface_copies(text):
+    """(name, ok, detail) comparing the driver's copies of INTERFACE facts with docs/INTERFACE.md:
+    the C.2 sabotage names in order, the 3.2 effort levels, and the 3.2 template's comment lines
+    (the scaffold's) with the effort comments between the model field and the destination comment."""
+    out = []
+    c2 = _section(text, "### C.2 Sabotage controls")
+    names = [m.group(1) for m in (re.match(r"^\| `([a-z_]+)` \|", l) for l in c2) if m]
+    out.append(("docs.interface.sabotage-names", tuple(names) == SABOTAGES,
+                {"missing_here": [n for n in names if n not in SABOTAGES],
+                 "not_in_docs": [n for n in SABOTAGES if n not in names]}))
+    s32 = _section(text, "### 3.2 Front matter (`question/1`)")
+    row = next((l for l in s32 if l.startswith("| `effort` |")), "")
+    levels = re.findall(r"`([a-z]+)`", row.split("|")[3]) if row.count("|") >= 4 else []
+    out.append(("docs.interface.effort-levels", tuple(levels) == EFFORT_LEVELS, levels))
+    block, inside = [], False
+    for l in s32:
+        if l.startswith("```"):
+            if inside:
+                break
+            inside = True
+            continue
+        if inside:
+            block.append(l.encode("utf-8"))
+    missing = [c.decode() for c in SCAFFOLD_COMMENTS[:-1] if c not in block]
+    out.append(("docs.interface.template-comments", block and not missing, missing))
+    try:
+        i_model = next(i for i, l in enumerate(block) if l.startswith(b"model: "))
+        i_effort = block.index(SCAFFOLD_EFFORT_COMMENTS[0])
+        placed = (i_effort == i_model + 1 and block[i_effort + 1] == SCAFFOLD_EFFORT_COMMENTS[1]
+                  and block[i_effort + 2] == SCAFFOLD_DESTINATION_COMMENT)
+    except (StopIteration, ValueError, IndexError):
+        placed = False
+    out.append(("docs.interface.template-effort-comments", placed, block))
+    out.append(("docs.interface.template-no-effort-field", not any(l.startswith(b"effort:") for l in block), block))
+    return out
+
+
 def self_test():
     results = []
 
@@ -2881,6 +3007,12 @@ def self_test():
             ok("docs.tool.%s" % name, ("| `%s` | %s |" % (name, desc)) in text, name)
     else:
         results.append(("docs.available", True, "docs/QUESTION-FORMS.md not beside the driver; skipped"))
+    iface = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "INTERFACE.md")
+    if os.path.isfile(iface):
+        for item in _interface_copies(open(iface, encoding="utf-8").read()):
+            ok(*item)
+    else:
+        results.append(("docs.interface-available", True, "docs/INTERFACE.md not beside the driver; skipped"))
     # Self-tests registered by the driver's other modules (fake provider, auditor, witness).
     for fn in SELF_TESTS:
         try:

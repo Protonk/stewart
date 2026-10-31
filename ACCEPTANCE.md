@@ -113,8 +113,15 @@ question.
 - **Also:** read, search and list given paths outside the material (`../`,
   absolute paths, names that only exist on the host) are refused with a sign, and
   nothing outside the material appears in any reply.
-- **Sabotage:** a test build that adds one extra tool, and one where the recorded
-  arrangement differs from the one sent. Both must fail.
+- **Effort:** a commission whose front matter sets `effort` sends it on every
+  request as the top-level `output_config` parameter and nowhere else. Its
+  system blocks, tools and messages are byte for byte those of the same
+  commission without the setting, which sends no `output_config`. An unknown
+  level is refused at prepare.
+- **Sabotage:** a test build that adds one extra tool, one where the recorded
+  arrangement differs from the one sent, one that sends the effort under a
+  misspelled name, and one that sends it as text in the first message instead
+  of as a parameter. Each must fail.
 
 ### C2 — Question and material arrive unchanged
 
@@ -323,8 +330,21 @@ launch; each must fail.
   carries a reason, its effect and the next call. Every manager command's JSON
   output carries what changed and what was verified. A schema check runs over
   every reply the suite produces.
-- **Sabotage:** a build with an injected delay in one protocol call, and one that
-  omits the established/uncertain effect on one refusal.
+- **Provider rejections:** a provider that refuses a request is reported as it
+  answered. The fake provider plays one that has moved away from what the
+  release sends: it no longer knows the effort parameter's name, no longer
+  accepts the parameter at all, no longer accepts one of the levels, and, in a
+  graceless case, refuses with a body that is not an error object. Each time
+  the run makes one attempt, ends `interrupted` with cause `provider_rejected`,
+  and gives the status, error type and message as the fake sent them (a long
+  message cut only where INTERFACE cuts it), or null where it sent none, in
+  the run reply and `run_ended`; the raw
+  response is captured, and `run` again reports the same refusal. Against a
+  provider that accepts the request, the same commission runs normally.
+- **Sabotage:** a build with an injected delay in one protocol call, one that
+  omits the established/uncertain effect on one refusal, one that hides the
+  provider's error message, and one that retries a rejection and reports the
+  provider as unavailable.
 
 ### C11 — The app teaches
 
@@ -595,10 +615,11 @@ required substantive outcome.
 Each is sized so that forcing compaction is practical, either through a low
 compaction trigger or a run long enough to reach it.
 
-**Runs.** For each model a release supports: each commission three times at the
-release's default effort, plus one run with compaction forced and one run killed
-midway and continued. These are planning quantities, not authorization to spend;
-the bounded conformance commission fixes model coverage and budget before launch.
+**Runs.** For each model a release supports: each commission three times without
+an effort setting, so at the provider's default, plus one run with an effort
+set, one with compaction forced and one killed midway and continued. These are
+planning quantities, not authorization to spend; the bounded conformance
+commission fixes model coverage and budget before launch.
 
 **The gate passes when, for every run:**
 

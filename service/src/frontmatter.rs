@@ -5,10 +5,11 @@ use crate::json::J;
 use crate::util;
 
 pub const FAMILIES: [&str; 3] = ["open-inquiry", "inquiry-framing", "comparison"];
-pub const KEYS: [&str; 9] = [
+pub const KEYS: [&str; 10] = [
     "stewart",
     "family",
     "model",
+    "effort",
     "destination",
     "limit-turns",
     "limit-input-tokens",
@@ -25,6 +26,9 @@ const REQUIRED: [&str; 7] = [
     "limit-input-tokens",
     "limit-output-tokens",
 ];
+/// The effort levels of the pinned API version (INTERFACE 3.2). Which levels
+/// a model accepts is the provider's to say, not Stewart's.
+pub const EFFORT_LEVELS: [&str; 5] = ["low", "medium", "high", "xhigh", "max"];
 pub const MODEL_PLACEHOLDER: &str = "REPLACE-WITH-MODEL";
 pub const DESTINATION_PLACEHOLDER: &str = "REPLACE-WITH-ABSOLUTE-DIRECTORY";
 
@@ -42,6 +46,8 @@ pub fn scaffold() -> String {
         "family: open-inquiry",
         "# Provider model used for every run of this audit.",
         &format!("model: {MODEL_PLACEHOLDER}"),
+        "# Optional effort for every request: low, medium, high, xhigh or max, as a",
+        "# line such as \"effort: high\". Without one, the model's provider default applies.",
         "# Existing directory in which Stewart creates the return package.",
         &format!("destination: {DESTINATION_PLACEHOLDER}"),
         "# Cumulative limits across all runs, from the provider's usage reports.",
@@ -61,6 +67,9 @@ pub fn scaffold() -> String {
 pub struct Settings {
     pub family: String,
     pub model: String,
+    /// The manager's effort level, sent as a request parameter; `None` sends
+    /// no effort, so the provider's default for the model applies.
+    pub effort: Option<String>,
     pub destination: String,
     pub turns: u64,
     pub input_tokens: u64,
@@ -83,6 +92,9 @@ impl Settings {
                     .with("input_tokens", self.input_tokens)
                     .with("output_tokens", self.output_tokens),
             );
+        if let Some(e) = &self.effort {
+            o.push("effort", e.as_str());
+        }
         if let Some(i) = &self.inquiry {
             o.push("inquiry", i.as_str());
         }
@@ -306,6 +318,7 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
     let mut settings = Settings {
         family: String::new(),
         model: String::new(),
+        effort: None,
         destination: String::new(),
         turns: 0,
         input_tokens: 0,
@@ -356,6 +369,20 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
             );
         } else {
             settings.model = v.to_string();
+        }
+    }
+    if let Some((v, l)) = get("effort") {
+        if EFFORT_LEVELS.contains(&v) {
+            settings.effort = Some(v.to_string());
+        } else {
+            invalid(
+                "effort",
+                l,
+                format!(
+                    "line {l}: effort must be low, medium, high, xhigh or max; {v:?} is none of these (nearest: {}).",
+                    util::nearest(v, &EFFORT_LEVELS)
+                ),
+            );
         }
     }
     if let Some((v, l)) = get("destination") {
@@ -614,6 +641,58 @@ mod tests {
             reasons(&GOOD.replace("# comment", "varies: elsewhere")),
             ["setting_invalid"]
         );
+    }
+
+    #[test]
+    fn effort_is_optional_and_only_a_known_level() {
+        assert_eq!(parse(GOOD.as_bytes()).unwrap().settings.effort, None);
+        for level in EFFORT_LEVELS {
+            let q = parse(
+                GOOD.replace("# comment", &format!("effort: {level}"))
+                    .as_bytes(),
+            )
+            .unwrap();
+            assert_eq!(q.settings.effort.as_deref(), Some(level));
+        }
+        for bad in ["hgih", "High", "HIGH", "extra-high", "high!"] {
+            let d = parse(
+                GOOD.replace("# comment", &format!("effort: {bad}"))
+                    .as_bytes(),
+            )
+            .unwrap_err();
+            assert_eq!(d.len(), 1, "{bad}");
+            assert_eq!(
+                (d[0].reason, d[0].key.as_deref(), d[0].line),
+                ("setting_invalid", Some("effort"), Some(3)),
+                "{bad}"
+            );
+        }
+        let d = parse(GOOD.replace("# comment", "effort: hgih").as_bytes()).unwrap_err();
+        assert!(d[0].message.contains("(nearest: high)"), "{}", d[0].message);
+        let twice = GOOD.replace("# comment", "effort: high\neffort: low");
+        assert_eq!(reasons(&twice), ["front_matter_invalid"]);
+        // Reported after the limits, before the optional labels, only when given.
+        let q = parse(
+            GOOD.replace("# comment", "effort: max\ninquiry: reminders")
+                .as_bytes(),
+        )
+        .unwrap();
+        let j = q.settings.to_j().string();
+        assert!(
+            j.ends_with(r#""output_tokens":400000},"effort":"max","inquiry":"reminders"}"#),
+            "{j}"
+        );
+        let plain = parse(GOOD.as_bytes()).unwrap().settings.to_j().string();
+        assert!(!plain.contains("effort"), "{plain}");
+    }
+
+    #[test]
+    fn the_scaffold_sets_no_effort() {
+        // The scaffold explains the setting in comments only: an effort line
+        // would be a Stewart default, and there is none.
+        let text = scaffold();
+        assert!(text.contains("# Optional effort for every request"));
+        assert!(!text.lines().any(|l| l.starts_with("effort")));
     }
 
     #[test]

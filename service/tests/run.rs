@@ -49,6 +49,10 @@ enum Act {
     /// Read the request and answer 200 with the body this computes from
     /// the request's body.
     Respond(Responder),
+    /// Read the request and judge its body by what this provider accepts:
+    /// answer 200 with the given body when it passes, else the Messages
+    /// API's 400 naming the field (`Surface`).
+    Judge(Surface, String),
 }
 
 struct Provider {
@@ -103,21 +107,38 @@ fn read_request(s: &mut impl Read) -> Vec<u8> {
     got
 }
 
+fn reply(s: &mut TcpStream, status: u16, headers: &[(String, String)], body: &str) {
+    let mut head = format!(
+        "HTTP/1.1 {status} X\r\ncontent-type: application/json\r\ncontent-length: {}\r\n",
+        body.len()
+    );
+    for (k, v) in headers {
+        head.push_str(&format!("{k}: {v}\r\n"));
+    }
+    head.push_str("connection: close\r\n\r\n");
+    let _ = s.write_all(head.as_bytes());
+    let _ = s.write_all(body.as_bytes());
+}
+
 fn serve(mut s: TcpStream, act: Act, requests: Arc<Mutex<Vec<Vec<u8>>>>) {
     let req = read_request(&mut s);
     requests.lock().unwrap().push(req.clone());
     match act {
-        Act::Reply(status, headers, body) => {
-            let mut head = format!(
-                "HTTP/1.1 {status} X\r\ncontent-type: application/json\r\ncontent-length: {}\r\n",
-                body.len()
-            );
-            for (k, v) in headers {
-                head.push_str(&format!("{k}: {v}\r\n"));
+        Act::Reply(status, headers, body) => reply(&mut s, status, &headers, &body),
+        Act::Judge(surface, accepted) => {
+            let at = req
+                .windows(4)
+                .position(|w| w == b"\r\n\r\n")
+                .map_or(req.len(), |i| i + 4);
+            match surface.judge(&req[at..]) {
+                None => reply(&mut s, 200, &[], &accepted),
+                Some(why) => reply(
+                    &mut s,
+                    400,
+                    &[("request-id".into(), "req_drift".into())],
+                    &rejection(&why),
+                ),
             }
-            head.push_str("connection: close\r\n\r\n");
-            let _ = s.write_all(head.as_bytes());
-            let _ = s.write_all(body.as_bytes());
         }
         Act::Hang => {
             let mut sink = Vec::new();
@@ -253,9 +274,15 @@ fn error(status: u16, retry_after: Option<&str>, kind: &str) -> Act {
 
 /// A commissioned audit with custom limits.
 fn commissioned(e: &Env, limits: (u64, u64, u64)) -> String {
+    commissioned_with(e, limits, "").0
+}
+
+/// A commissioned audit with custom limits and further front-matter lines
+/// (each ending with LF), and prepare's reply as printed.
+fn commissioned_with(e: &Env, limits: (u64, u64, u64), lines: &str) -> (String, String) {
     let r = e.new_ref();
     let q = format!(
-        "---\nstewart: question/1\nfamily: open-inquiry\nmodel: claude-opus-5-5\ndestination: {}\nlimit-turns: {}\nlimit-input-tokens: {}\nlimit-output-tokens: {}\n---\n  Is the restart path safe?  \n",
+        "---\nstewart: question/1\nfamily: open-inquiry\nmodel: claude-opus-5-5\n{lines}destination: {}\nlimit-turns: {}\nlimit-input-tokens: {}\nlimit-output-tokens: {}\n---\n  Is the restart path safe?  \n",
         e.dest, limits.0, limits.1, limits.2
     );
     std::fs::write(format!("{}/question.md", e.folder), q).unwrap();
@@ -267,10 +294,11 @@ fn commissioned(e: &Env, limits: (u64, u64, u64)) -> String {
     .unwrap();
     let o = e.run(&["prepare", &r, "--json"]);
     assert_eq!(o.code, Some(0), "{}{}", o.text(), o.stderr);
+    let prepared = o.text();
     let h = s(&o.json(), &["data", "prepared"]).to_string();
     let o = e.commission(&r, &h);
     assert_eq!(o.code, Some(0), "{}{}", o.text(), o.stderr);
-    r
+    (r, prepared)
 }
 
 const DEFAULT_LIMITS: (u64, u64, u64) = (200, 20_000_000, 400_000);
@@ -373,15 +401,35 @@ fn attempt(e: &Env, r: &str, run: u64, k: u64, a: u64) -> Json {
     record_body(&run_file(e, r, run, &format!("attempt-{k}-{a}.json")))
 }
 
-/// The pinned arrangement's spliced members, read independently.
-fn arrangement(e: &Env, r: &str) -> (Vec<u8>, Vec<u8>, Vec<u8>, String) {
+/// The latest preparation's folder, `prep/<n>`.
+fn latest_prep(e: &Env, r: &str) -> String {
     let dir = format!("{}/prep", e.audit_dir(r));
     let mut preps: Vec<u64> = std::fs::read_dir(&dir)
         .unwrap()
         .filter_map(|d| d.ok()?.file_name().to_str()?.parse().ok())
         .collect();
     preps.sort();
-    let bytes = std::fs::read(format!("{dir}/{}/arrangement.json", preps.last().unwrap())).unwrap();
+    format!("{dir}/{}", preps.last().unwrap())
+}
+
+/// The pinned `request_extra`'s members as raw `"key":value` bytes, read
+/// independently: none for `{}`, else the bytes inside its braces (this
+/// release admits at most the one effort member).
+fn pinned_extra(e: &Env, r: &str) -> Vec<Vec<u8>> {
+    let bytes = std::fs::read(format!("{}/arrangement.json", latest_prep(e, r))).unwrap();
+    let v = json::parse(&bytes).unwrap();
+    let x = at(&v, &["body", "request_extra"]);
+    let raw = &bytes[x.start..x.end];
+    if raw == b"{}" {
+        Vec::new()
+    } else {
+        vec![raw[1..raw.len() - 1].to_vec()]
+    }
+}
+
+/// The pinned arrangement's spliced members, read independently.
+fn arrangement(e: &Env, r: &str) -> (Vec<u8>, Vec<u8>, Vec<u8>, String) {
+    let bytes = std::fs::read(format!("{}/arrangement.json", latest_prep(e, r))).unwrap();
     let v = json::parse(&bytes).unwrap();
     let b = at(&v, &["body"]);
     let raw = |k: &str| {
@@ -400,11 +448,13 @@ fn arrangement(e: &Env, r: &str) -> (Vec<u8>, Vec<u8>, Vec<u8>, String) {
 /// placement's captures rebuild, from the arrangement's pinned bytes.
 fn captures_match_what_was_sent(e: &Env, r: &str, run: u64, sent: &[Vec<u8>]) {
     let (model, system, tools, _) = arrangement(e, r);
+    let extra = pinned_extra(e, r);
+    let extra: Vec<&[u8]> = extra.iter().map(Vec::as_slice).collect();
     let mut caps = Vec::new();
     for (i, body) in sent.iter().enumerate() {
         caps.push(run_file(e, r, run, &format!("request-{}.json", i + 1)));
         let refs: Vec<&[u8]> = caps.iter().map(Vec::as_slice).collect();
-        let rebuilt = stewart::runs::rebuild_body(&model, &system, &tools, &[], &refs).unwrap();
+        let rebuilt = stewart::runs::rebuild_body(&model, &system, &tools, &extra, &refs).unwrap();
         assert_eq!(&rebuilt, body, "request {} differs from its capture", i + 1);
     }
 }
@@ -704,6 +754,13 @@ fn a_rejected_request_ends_interrupted_with_the_provider_facts() {
         (1, 1)
     );
     assert_eq!(n(&o.reply, &["data", "provider", "status"]), 400);
+    // The provider's own words reach the manager, in the reply and the record.
+    for v in [&ended, at(&o.reply, &["data"])] {
+        assert_eq!(
+            sj(v, &["provider", "error_message"]),
+            "invalid_request_error message"
+        );
+    }
     assert_eq!(sj(&attempt(&e, &r, 1, 1, 1), &["then"]), "end");
 }
 
@@ -1703,4 +1760,409 @@ fn continuation_sabotage_resets_limits_and_notices() {
         results.push((second.contains(r#""max_tokens":5000,"#), notices));
     }
     assert_eq!(results, [(true, 1), (false, 1), (true, 2)]);
+}
+
+// ---------------------------------------------------------------------------
+// Effort, and a provider that has moved.
+//
+// The manager's effort travels only as the top-level `output_config` request
+// parameter, never as text the auditor reads (INTERFACE 3.2, 6.2). What the
+// release sends can stop matching what the provider accepts: the provider may
+// rename the parameter, withdraw it or one of its levels, or refuse without an
+// error object. Stewart cannot prevent that, so it must report the refusal as
+// the provider gave it, without retrying, hiding or reclassifying it (6.5).
+// `Surface` models what a provider accepts, so each kind of drift is one
+// changed fact, and a parameter added later joins the model the same way.
+
+/// What the fake provider accepts, as far as these tests model it: the
+/// top-level request members, the members of `output_config` and the effort
+/// levels. `current()` is the provider this release was written against.
+#[derive(Clone)]
+struct Surface {
+    top: Vec<&'static str>,
+    output_config: Vec<&'static str>,
+    levels: Vec<&'static str>,
+}
+
+impl Surface {
+    fn current() -> Surface {
+        Surface {
+            top: vec![
+                "model",
+                "max_tokens",
+                "system",
+                "tools",
+                "output_config",
+                "messages",
+            ],
+            output_config: vec!["effort"],
+            levels: vec!["low", "medium", "high", "xhigh", "max"],
+        }
+    }
+
+    /// The provider's complaint about a request body, worded as the Messages
+    /// API words one, or `None` when it accepts the body.
+    fn judge(&self, body: &[u8]) -> Option<String> {
+        let Ok(v) = json::parse(body) else {
+            return Some("There was an error parsing the body of your request.".into());
+        };
+        let top = v.obj("").expect("a request body is an object");
+        if let Some((k, _)) = top
+            .members
+            .iter()
+            .find(|(k, _)| !self.top.contains(&k.as_str()))
+        {
+            return Some(format!("{k}: Extra inputs are not permitted"));
+        }
+        // Without output_config there is nothing more to judge.
+        let oc = top.get("output_config")?;
+        let oc = oc
+            .obj("/output_config")
+            .expect("output_config is an object");
+        if let Some((k, _)) = oc
+            .members
+            .iter()
+            .find(|(k, _)| !self.output_config.contains(&k.as_str()))
+        {
+            return Some(format!("output_config.{k}: Extra inputs are not permitted"));
+        }
+        let level = oc.get("effort")?.as_str().expect("effort is a string");
+        if self.levels.contains(&level) {
+            return None;
+        }
+        let names: Vec<String> = self.levels.iter().map(|l| format!("'{l}'")).collect();
+        Some(format!(
+            "output_config.effort: Input should be {}",
+            names.join(", ")
+        ))
+    }
+
+    /// Answer one request: `accepted` when it passes, else the API's 400.
+    fn act(&self, accepted: &str) -> Act {
+        Act::Judge(self.clone(), accepted.to_string())
+    }
+}
+
+/// The Messages API's error body for an invalid request.
+fn rejection(why: &str) -> String {
+    format!(
+        r#"{{"type":"error","error":{{"type":"invalid_request_error","message":{}}},"request_id":"req_drift_body"}}"#,
+        json::quote(why)
+    )
+}
+
+/// An ordinary turn that ends without a tool call.
+fn ended_turn() -> String {
+    message(
+        r#"[{"type":"text","text":"Thinking about it."}]"#,
+        "end_turn",
+        100,
+        10,
+    )
+}
+
+/// `body` with `member` spliced in after `tools`, where 4.5 puts `X`.
+fn with_extra(body: &[u8], member: &[u8]) -> Vec<u8> {
+    let tools_end = b"],\"messages\":[";
+    let i = body
+        .windows(tools_end.len())
+        .position(|w| w == tools_end)
+        .expect("tools then messages")
+        + 1;
+    [&body[..i], b",", member, &body[i..]].concat()
+}
+
+/// The top-level member names of a request body, in order, and the raw bytes
+/// of the members the model reads: `system`, `tools` and `messages`.
+fn request_shape(body: &[u8]) -> (Vec<String>, Vec<Vec<u8>>) {
+    let v = json::parse(body).unwrap();
+    let top = v.obj("").unwrap();
+    let names = top.members.iter().map(|(k, _)| k.clone()).collect();
+    let read = ["system", "tools", "messages"]
+        .iter()
+        .map(|k| {
+            let x = top.get(k).unwrap();
+            body[x.start..x.end].to_vec()
+        })
+        .collect();
+    (names, read)
+}
+
+#[test]
+fn effort_travels_only_as_a_top_level_parameter() {
+    let mut sent = Vec::new();
+    for lines in ["", "effort: high\n"] {
+        let turn = Surface::current().act(&ended_turn());
+        let p = provider!(
+            "effort_travels_only_as_a_top_level_parameter",
+            vec![turn.clone(), turn]
+        );
+        let e = Env::new();
+        let (r, prepared) = commissioned_with(&e, DEFAULT_LIMITS, lines);
+        // The current provider accepts both; the run ends ordinarily.
+        let o = run(&e, &r, &p, &[]);
+        assert_eq!(o.code, Some(0), "{}", o.stderr);
+        assert_eq!(sj(&o.reply, &["data", "ending"]), "ended_unsubmitted");
+        let bodies = p.bodies();
+        assert_eq!(bodies.len(), 2);
+        captures_match_what_was_sent(&e, &r, 1, &bodies);
+        let readable =
+            std::fs::read_to_string(format!("{}/arrangement.md", latest_prep(&e, &r))).unwrap();
+        sent.push((bodies, prepared, pinned_extra(&e, &r), readable));
+    }
+    let (plain, with) = (&sent[0], &sent[1]);
+    let member = br#""output_config":{"effort":"high"}"#;
+    // Pinned once at prepare, shown before commissioning, and only when set.
+    assert_eq!(plain.2, Vec::<Vec<u8>>::new());
+    assert_eq!(with.2, [member.to_vec()]);
+    assert!(!plain.1.contains("\"effort\""), "{}", plain.1);
+    assert!(with.1.contains(r#""effort":"high""#), "{}", with.1);
+    assert!(plain.3.contains("- Effort: not set."), "{}", plain.3);
+    assert!(
+        with.3.contains("- Effort: high, sent with every request as the provider parameter output_config.effort."),
+        "{}",
+        with.3
+    );
+    for k in 0..2 {
+        // Every request differs only by the one top-level member, after tools.
+        assert_eq!(
+            String::from_utf8(with.0[k].clone()).unwrap(),
+            String::from_utf8(with_extra(&plain.0[k], member)).unwrap(),
+            "request {}",
+            k + 1
+        );
+        let (names, read) = request_shape(&with.0[k]);
+        assert_eq!(
+            names,
+            [
+                "model",
+                "max_tokens",
+                "system",
+                "tools",
+                "output_config",
+                "messages"
+            ]
+        );
+        // Nothing the model reads mentions it.
+        assert_eq!(read, request_shape(&plain.0[k]).1);
+        for part in read {
+            let text = String::from_utf8(part).unwrap();
+            assert!(!text.to_lowercase().contains("effort"), "{text}");
+        }
+    }
+}
+
+/// One way a provider can have moved, the answer it gives, and what the
+/// manager must then see: the status, error type, message and request id,
+/// or `None` where the provider gave none.
+struct Drift {
+    name: &'static str,
+    effort: &'static str,
+    act: Act,
+    body: String,
+    error_type: Option<&'static str>,
+    error_message: Option<String>,
+    request_id: Option<&'static str>,
+}
+
+fn drift(name: &'static str, effort: &'static str, surface: Surface) -> Drift {
+    let probe = format!(r#"{{"output_config":{{"effort":"{effort}"}}}}"#);
+    let why = surface
+        .judge(probe.as_bytes())
+        .expect("the drift refuses the effort");
+    Drift {
+        name,
+        effort,
+        act: surface.act(&ended_turn()),
+        body: rejection(&why),
+        error_type: Some("invalid_request_error"),
+        error_message: Some(why),
+        request_id: Some("req_drift"),
+    }
+}
+
+#[test]
+fn a_provider_that_has_moved_is_reported_as_it_answered() {
+    let mut renamed = Surface::current();
+    renamed.output_config = vec!["reasoning_effort"];
+    let mut removed = Surface::current();
+    removed.top.retain(|k| *k != "output_config");
+    let mut withdrawn = Surface::current();
+    withdrawn.levels.retain(|l| *l != "max");
+    let graceless = "<html><body><h1>400 Bad Request</h1></body></html>";
+    let drifts = [
+        drift("renamed", "high", renamed),
+        drift("removed", "high", removed),
+        drift("level withdrawn", "max", withdrawn),
+        Drift {
+            name: "graceless",
+            effort: "high",
+            act: Act::Reply(400, vec![], graceless.into()),
+            body: graceless.into(),
+            error_type: None,
+            error_message: None,
+            request_id: None,
+        },
+    ];
+    assert_eq!(
+        drifts[0].error_message.as_deref(),
+        Some("output_config.effort: Extra inputs are not permitted")
+    );
+    assert_eq!(
+        drifts[1].error_message.as_deref(),
+        Some("output_config: Extra inputs are not permitted")
+    );
+    for d in drifts {
+        let p = provider!(
+            "a_provider_that_has_moved_is_reported_as_it_answered",
+            vec![d.act.clone(), d.act.clone()]
+        );
+        let e = Env::new();
+        let (r, _) = commissioned_with(&e, DEFAULT_LIMITS, &format!("effort: {}\n", d.effort));
+        for run_no in [1u64, 2] {
+            let o = run(&e, &r, &p, &[]);
+            let ctx = format!("{} run {run_no}: {}", d.name, o.stderr);
+            assert_eq!(o.code, Some(5), "{ctx}");
+            assert_eq!(n(&o.reply, &["data", "run"]), run_no, "{ctx}");
+            assert_eq!(
+                sj(&o.reply, &["data", "cause"]),
+                "provider_rejected",
+                "{ctx}"
+            );
+            // One attempt per placement: a refusal is not retried.
+            assert_eq!(p.requests().len() as u64, run_no, "{ctx}");
+            let body = String::from_utf8(p.bodies()[run_no as usize - 1].clone()).unwrap();
+            assert!(
+                body.contains(&format!(r#","output_config":{{"effort":"{}"}},"#, d.effort)),
+                "{ctx}"
+            );
+            let ended = body_of(&e, &r, last_of(&e, &r, "run_ended"));
+            for v in [&ended, at(&o.reply, &["data"])] {
+                assert_eq!(n(v, &["provider", "status"]), 400, "{ctx}");
+                let fact = |k: &str| at(v, &["provider", k]).as_str().map(str::to_string);
+                assert_eq!(fact("error_type").as_deref(), d.error_type, "{ctx}");
+                assert_eq!(fact("error_message"), d.error_message, "{ctx}");
+                assert_eq!(fact("request_id").as_deref(), d.request_id, "{ctx}");
+                assert_eq!(
+                    (
+                        n(v, &["provider", "request"]),
+                        n(v, &["provider", "attempt"])
+                    ),
+                    (1, 1),
+                    "{ctx}"
+                );
+            }
+            // The raw answer is kept, byte for byte.
+            assert_eq!(
+                run_file(&e, &r, run_no, "response-1-1.bin"),
+                d.body.as_bytes(),
+                "{ctx}"
+            );
+            assert_eq!(
+                sj(&attempt(&e, &r, run_no, 1, 1), &["then"]),
+                "end",
+                "{ctx}"
+            );
+        }
+    }
+}
+
+#[cfg(all(feature = "fault-injection", feature = "sabotage"))]
+#[test]
+fn effort_and_rejection_sabotage_break_only_their_own_property() {
+    let sab = |c| {
+        [
+            ("STEWART_TEST_SABOTAGE", c),
+            ("STEWART_TEST_RETRY_DELAYS", "0,0,0"),
+        ]
+    };
+    let turn = || Surface::current().act(&ended_turn());
+    let question = r#""text":"  Is the restart path safe?  \n""#;
+    let member = r#","output_config":{"effort":"high"},"#;
+
+    // misspell_effort: the request names a parameter the provider does not
+    // know; the arrangement still pins the right one, and the provider's
+    // refusal reaches the manager as it gave it.
+    for (control, code, misspelled) in [("", 0, false), ("misspell_effort", 5, true)] {
+        let p = provider!(
+            "effort_and_rejection_sabotage_break_only_their_own_property",
+            vec![turn(), turn()]
+        );
+        let e = Env::new();
+        let (r, _) = commissioned_with(&e, DEFAULT_LIMITS, "effort: high\n");
+        let o = run(&e, &r, &p, &sab(control));
+        assert_eq!(o.code, Some(code), "{control}: {}", o.stderr);
+        let body = String::from_utf8(p.bodies()[0].clone()).unwrap();
+        assert_eq!(body.contains(r#""eefort":"high""#), misspelled, "{control}");
+        assert_eq!(
+            pinned_extra(&e, &r),
+            [br#""output_config":{"effort":"high"}"#.to_vec()]
+        );
+        if misspelled {
+            assert_eq!(
+                sj(&o.reply, &["data", "provider", "error_message"]),
+                "output_config.eefort: Extra inputs are not permitted"
+            );
+        }
+    }
+
+    // effort_in_prompt: the effort leaves the parameters for the question.
+    for (control, as_parameter, in_question) in
+        [("", true, false), ("effort_in_prompt", false, true)]
+    {
+        let p = provider!(
+            "effort_and_rejection_sabotage_break_only_their_own_property",
+            vec![turn(), turn()]
+        );
+        let e = Env::new();
+        let (r, _) = commissioned_with(&e, DEFAULT_LIMITS, "effort: high\n");
+        let o = run(&e, &r, &p, &sab(control));
+        assert_eq!(o.code, Some(0), "{control}: {}", o.stderr);
+        let body = String::from_utf8(p.bodies()[0].clone()).unwrap();
+        assert_eq!(body.contains(member), as_parameter, "{control}");
+        assert_eq!(body.contains(question), !in_question, "{control}");
+        assert_eq!(
+            body.contains(r#""text":"  Is the restart path safe?  \nEffort: high.\n""#),
+            in_question,
+            "{control}"
+        );
+    }
+
+    // hide_provider_message: the manager loses the provider's words, which
+    // the attempt record still holds.
+    for (control, shown) in [("", true), ("hide_provider_message", false)] {
+        let p = provider!(
+            "effort_and_rejection_sabotage_break_only_their_own_property",
+            vec![error(400, None, "invalid_request_error")]
+        );
+        let e = Env::new();
+        let r = commissioned(&e, DEFAULT_LIMITS);
+        let o = run(&e, &r, &p, &sab(control));
+        assert_eq!(o.code, Some(5), "{control}: {}", o.stderr);
+        let words = "invalid_request_error message";
+        assert_eq!(
+            !is_null(&o.reply, &["data", "provider", "error_message"]),
+            shown,
+            "{control}"
+        );
+        assert_eq!(sj(&attempt(&e, &r, 1, 1, 1), &["error", "message"]), words);
+    }
+
+    // rejection_as_unavailable: a refusal is retried and reported as an
+    // unavailable provider.
+    for (control, requests, cause) in [
+        ("", 1, "provider_rejected"),
+        ("rejection_as_unavailable", 4, "provider_unavailable"),
+    ] {
+        let p = provider!(
+            "effort_and_rejection_sabotage_break_only_their_own_property",
+            vec![error(400, None, "invalid_request_error"); 4]
+        );
+        let e = Env::new();
+        let r = commissioned(&e, DEFAULT_LIMITS);
+        let o = run(&e, &r, &p, &sab(control));
+        assert_eq!(o.code, Some(5), "{control}: {}", o.stderr);
+        assert_eq!(sj(&o.reply, &["data", "cause"]), cause, "{control}");
+        assert_eq!(p.requests().len(), requests, "{control}");
+    }
 }

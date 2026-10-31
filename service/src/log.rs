@@ -609,6 +609,7 @@ fn decode_body(kind: &str, b: &Obj, audit: &str) -> Result<Body, JsonError> {
                 "model",
                 "destination",
                 "limits",
+                "effort",
                 "inquiry",
                 "varies",
             ])?;
@@ -620,6 +621,11 @@ fn decode_body(kind: &str, b: &Obj, audit: &str) -> Result<Body, JsonError> {
             l.u64("turns", crate::frontmatter::MAX_TURNS)?;
             l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?;
             l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?;
+            if let Some(e) = s.opt_str("effort")? {
+                if !crate::frontmatter::EFFORT_LEVELS.contains(&e) {
+                    return Err(s.invalid("effort", "expected an effort level"));
+                }
+            }
             s.opt_str("inquiry")?;
             s.opt_str("varies")?;
             let q = b.obj("question")?;

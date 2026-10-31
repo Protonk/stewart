@@ -41,8 +41,8 @@ pub struct Pinned {
     pub tools_raw: Vec<u8>,
     /// The tool names, in `tools` order.
     pub tool_names: Vec<String>,
-    /// Each member of `request_extra` as its raw `"key":value` bytes. The
-    /// release's allowlist is empty, so an arrangement with members is refused.
+    /// Each member of `request_extra` as its raw `"key":value` bytes: none,
+    /// or the manager's effort as `output_config` (see `admitted_extra`).
     pub request_extra: Vec<Vec<u8>>,
     pub reminder: String,
     /// The near-limit template, with `{turns}`, `{input_tokens}` and
@@ -61,10 +61,20 @@ pub struct Pinned {
     pub material_index_sha256: String,
 }
 
-/// Top-level request parameters `request_extra` may hold. Empty in this
-/// release: no provider feature may put model-visible content outside the
-/// arrangement.
-pub const REQUEST_EXTRA_ALLOWLIST: [&str; 0] = [];
+/// The members of a `request_extra` object this release admits (6.2), or
+/// `None` when it admits none of it. The allowlist is exact bytes: `{}`, or
+/// `{"output_config":{"effort":"<level>"}}` for a level of 3.2, as the
+/// arrangement writes it. Effort adds nothing the model reads; no provider
+/// feature may put model-visible content outside the arrangement.
+pub fn admitted_extra(raw: &[u8]) -> Option<Vec<Vec<u8>>> {
+    if raw == b"{}" {
+        return Some(Vec::new());
+    }
+    crate::frontmatter::EFFORT_LEVELS
+        .iter()
+        .any(|level| raw == forms::request_extra(Some(level)).as_slice())
+        .then(|| vec![raw[1..raw.len() - 1].to_vec()])
+}
 
 impl Pinned {
     /// The family this arrangement pins, if this release knows it.
@@ -131,17 +141,13 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         }
         b.arr("system")?;
         let extra = b.obj("request_extra")?;
-        if let Some((k, _)) = extra
-            .members
-            .iter()
-            .find(|(k, _)| !REQUEST_EXTRA_ALLOWLIST.contains(&k.as_str()))
-        {
-            return Err(value_err(
-                &extra.ptr(k),
+        let request_extra = admitted_extra(&raw("request_extra")?).ok_or_else(|| {
+            value_err(
+                &extra.pointer,
                 extra.at,
-                "this release's request_extra allowlist is empty",
-            ));
-        }
+                "this release's request_extra allowlist admits only {} or the effort as {\"output_config\":{\"effort\":<level>}}",
+            )
+        })?;
         let anthropic_version = b.str("anthropic_version")?;
         if anthropic_version.is_empty()
             || !anthropic_version
@@ -202,7 +208,7 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
             system_raw: raw("system")?,
             tools_raw: raw("tools")?,
             tool_names,
-            request_extra: Vec::new(),
+            request_extra,
             reminder: t.str("reminder")?.to_string(),
             near_limit: t.str("near_limit")?.to_string(),
             continuation: t.str("continuation")?.to_string(),
@@ -363,6 +369,7 @@ pub(crate) mod tests {
         Settings {
             family: family.into(),
             model: model.into(),
+            effort: None,
             destination: "/tmp/returns".into(),
             turns: 200,
             input_tokens: 20_000_000,
@@ -432,6 +439,46 @@ pub(crate) mod tests {
         }
     }
 
+    #[test]
+    fn the_effort_is_one_pinned_top_level_member() {
+        let plain = settings("open-inquiry", "claude-opus-5-5");
+        let mut with = plain.clone();
+        with.effort = Some("xhigh".into());
+        let p0 = decode_arrangement(&arrangement_record(&plain)).unwrap();
+        let p1 = decode_arrangement(&arrangement_record(&with)).unwrap();
+        assert!(p0.request_extra.is_empty());
+        assert_eq!(
+            p1.request_extra,
+            [br#""output_config":{"effort":"xhigh"}"#.to_vec()]
+        );
+        // Everything the model reads is the same with and without the effort.
+        assert_eq!(
+            (&p0.system_raw, &p0.tools_raw, &p0.model_raw),
+            (&p1.system_raw, &p1.tools_raw, &p1.model_raw)
+        );
+        let appended = [br#"{"role":"user","content":[{"type":"text","text":"Q"}]}"#.to_vec()];
+        let b0 = Parts::of(&p0).body(16_000, &appended);
+        let b1 = Parts::of(&p1).body(16_000, &appended);
+        let tools_end = b"],\"messages\":[";
+        let at = b0
+            .windows(tools_end.len())
+            .position(|w| w == tools_end)
+            .unwrap()
+            + 1;
+        let mut expected = b0[..at].to_vec();
+        expected.extend_from_slice(br#","output_config":{"effort":"xhigh"}"#);
+        expected.extend_from_slice(&b0[at..]);
+        assert_eq!(
+            String::from_utf8(b1).unwrap(),
+            String::from_utf8(expected).unwrap()
+        );
+        for level in crate::frontmatter::EFFORT_LEVELS {
+            let raw = forms::request_extra(Some(level));
+            assert_eq!(admitted_extra(&raw).map(|m| m.len()), Some(1), "{level}");
+        }
+        assert_eq!(admitted_extra(b"{}"), Some(Vec::new()));
+    }
+
     fn replace_body_member(rec: &[u8], key: &str, value: J) -> Vec<u8> {
         let r = decode_record(rec).unwrap();
         let J::Obj(mut members) = r.json.obj("").unwrap().get("body").unwrap().to_j() else {
@@ -456,14 +503,22 @@ pub(crate) mod tests {
             let e = decode_arrangement(&bytes).unwrap_err();
             assert!(e.contains(why), "{why}: {e}");
         };
-        refuse(
-            replace_body_member(
-                &rec,
-                "request_extra",
-                J::Raw(br#"{"stream":true}"#.to_vec()),
-            ),
-            "allowlist is empty",
-        );
+        for extra in [
+            r#"{"stream":true}"#,
+            r#"{"output_config":{"effort":"hgih"}}"#,
+            r#"{"output_config":{"effort":"High"}}"#,
+            r#"{"output_config":{"eefort":"high"}}"#,
+            r#"{"output_config":{"effort":"high","task_budget":{"type":"tokens","total":20000}}}"#,
+            r#"{"output_config":{"effort":"high"},"stream":true}"#,
+            r#"{"output_config":{}}"#,
+            r#"{"output_config": {"effort":"high"}}"#,
+            r#"{"output_config":{"effort":"high" }}"#,
+        ] {
+            refuse(
+                replace_body_member(&rec, "request_extra", J::Raw(extra.as_bytes().to_vec())),
+                "allowlist admits only",
+            );
+        }
         refuse(replace_body_member(&rec, "surprise", J::Int(1)), "surprise");
         refuse(replace_body_member(&rec, "model", J::Int(1)), "/body/model");
         refuse(

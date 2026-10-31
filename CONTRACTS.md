@@ -16,9 +16,7 @@ the container suites, the source commits they cover and their results. Still
 owed: a claim-by-claim check of the suite's coverage against
 [ACCEPTANCE.md](ACCEPTANCE.md), native WSL2 qualification and real-model
 conformance, which needs named models and a budget. The release's TLS path to
-the real provider is unexercised, and the decided default of effort `high` for
-requests to Opus models is not yet implemented. A design decision is not a
-passing test.
+the real provider is unexercised. A design decision is not a passing test.
 
 ## Mission
 
@@ -209,17 +207,22 @@ instructions to put intended material under `materials/` or move it outside the
 submission. Stewart's own metadata is stored in the archive, not this folder.
 
 **Settings live in the question file's front matter.** It names the family, the
-provider model, the run limits, the answer destination and, optionally, the
-earlier audit this one varies. Prepare decodes it strictly and binds every
-setting with the selection. Commission takes only the prepared handle and the
-affirmation, and `run` takes only the reference. The auditor receives the
-question body, never the front matter. The pinned model serves every placement
-of the audit; a release names the models that passed its conformance gate. Run
-limits are cumulative counts the provider reports: model turns, input tokens and
-output tokens. When a response is lost, Stewart charges a stated conservative
-estimate and records it as estimated. Stewart sets no money limit, since prices
-are not facts it observes. The destination is an existing directory in which
-each delivery attempt creates its own new package.
+provider model, the run limits, the answer destination and, optionally, an
+effort level and the earlier audit this one varies. Prepare decodes it strictly
+and binds every setting with the selection. Commission takes only the prepared
+handle and the affirmation, and `run` takes only the reference. The auditor
+receives the question body, never the front matter. The pinned model serves
+every placement of the audit; a release names the models that passed its
+conformance gate. An effort level is the manager's choice for that audit alone.
+Stewart sends it as a request parameter on every request and never as text the
+auditor reads. Without one Stewart sends none and the provider's default for the
+model applies; Stewart has no effort default of its own. It knows the documented
+level names, not which levels a model accepts, and reports a provider's refusal
+as the provider gave it. Run limits are cumulative counts the provider reports:
+model turns, input tokens and output tokens. When a response is lost, Stewart
+charges a stated conservative estimate and records it as estimated. Stewart sets
+no money limit, since prices are not facts it observes. The destination is an
+existing directory in which each delivery attempt creates its own new package.
 
 `new` may scaffold an absent folder or use an explicitly supplied existing
 folder without replacing its contents. An existing folder's shape is checked at

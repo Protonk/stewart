@@ -28,14 +28,22 @@ pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
         "model",
         "destination",
         "limits",
+        "effort",
         "inquiry",
         "varies",
     ])?;
     let l = s.obj("limits")?;
     l.only(&["turns", "input_tokens", "output_tokens"])?;
+    let effort = s.opt_str("effort")?;
+    if let Some(e) = effort {
+        if !crate::frontmatter::EFFORT_LEVELS.contains(&e) {
+            return Err(s.invalid("effort", "expected an effort level"));
+        }
+    }
     Ok(Settings {
         family: s.str("family")?.to_string(),
         model: s.str("model")?.to_string(),
+        effort: effort.map(|x| x.to_string()),
         destination: s.str("destination")?.to_string(),
         turns: l.u64("turns", crate::frontmatter::MAX_TURNS)?,
         input_tokens: l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?,

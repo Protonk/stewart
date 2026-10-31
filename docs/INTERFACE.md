@@ -269,6 +269,8 @@ stewart: question/1
 family: open-inquiry
 # Provider model used for every run of this audit.
 model: claude-opus-5-5
+# Optional effort for every request: low, medium, high, xhigh or max, as a
+# line such as "effort: high". Without one, the model's provider default applies.
 # Existing directory in which Stewart creates the return package.
 destination: /home/ana/returns
 # Cumulative limits across all runs, from the provider's usage reports.
@@ -304,6 +306,7 @@ Fields:
 | `stewart` | yes | Exactly `question/1` |
 | `family` | yes | `open-inquiry`, `inquiry-framing` or `comparison` |
 | `model` | yes | 1–128 characters from `A–Z a–z 0–9 . _ : -` |
+| `effort` | no | `low`, `medium`, `high`, `xhigh` or `max` |
 | `destination` | yes | Absolute UTF-8 path, at most 1,024 bytes, no control characters |
 | `limit-turns` | yes | Integer 1–10,000 |
 | `limit-input-tokens` | yes | Integer 1–2,000,000,000 |
@@ -317,6 +320,13 @@ with the nearest known key. Prepare refuses a missing required key
 does not exist or is not a directory (`destination_invalid`), and a destination
 that overlaps the folder or archive (`location_overlap`). The `varies` reference
 is not resolved; it is the manager's note about its inquiry.
+
+`effort` asks the provider for that effort on every request of the audit, as
+a request parameter (6.2); the auditor never receives it as text. Without it
+Stewart sends no effort, and the provider's default for the model applies.
+The levels are the ones the pinned API version (6.1) documents. Stewart does not
+check which levels a model accepts: a provider that refuses a level, or the
+parameter itself, is reported as it answered (6.5).
 
 The scaffold created by `new` contains the front matter above with
 `model: REPLACE-WITH-MODEL` and `destination: REPLACE-WITH-ABSOLUTE-DIRECTORY`,
@@ -490,7 +500,7 @@ to the audit directory. The manager-foundation kinds:
 | Kind | Body keys after `prev` |
 | --- | --- |
 | `reference` | `file`, `file_sha256`, `folder`, `writer` {`path`, `sha256`} |
-| `prepared` | `prep`, `manifest`, `manifest_sha256`, `arrangement_sha256`, `readable_sha256`, `settings` {`family`, `model`, `destination`, `limits` {`turns`, `input_tokens`, `output_tokens`}, then `inquiry` and `varies` only when given}, `question` {`file_bytes`, `file_sha256`, `body_bytes`, `body_sha256`}, `materials` {`count`, `bytes`} |
+| `prepared` | `prep`, `manifest`, `manifest_sha256`, `arrangement_sha256`, `readable_sha256`, `settings` {`family`, `model`, `destination`, `limits` {`turns`, `input_tokens`, `output_tokens`}, then `effort`, `inquiry` and `varies` only when given}, `question` {`file_bytes`, `file_sha256`, `body_bytes`, `body_sha256`}, `materials` {`count`, `bytes`} |
 | `intake_planned` | `attempt`, `prepared` (the handle), `prep`, `declaration` {`i_am_finished`}, `captures` [{`item`, `file`}], `observations` |
 | `intake_ended` | `attempt`, `outcome`, `recorded_by` (`commission` or `close`), `message`, `cause` ({`operation`, `error`} or null), `changes` ({`added`, `removed`, `changed`} or null) |
 | `accepted` | `attempt`, `prepared`, `prep`, `receipt` (`intake/<attempt>/receipt.json`), `receipt_sha256` |
@@ -522,7 +532,8 @@ time in clock ticks since boot.
 
 ```json
 {"prev": "…", "run": 2, "ending": "interrupted", "cause": "provider_unavailable", "recorded_by": "run",
- "provider": {"status": 529, "error_type": "overloaded_error", "request_id": "req_011…", "request": 6, "attempt": 4},
+ "provider": {"status": 529, "error_type": "overloaded_error", "error_message": "Overloaded", "request_id": "req_011…",
+              "request": 6, "attempt": 4},
  "requests": 6, "attempts": 9,
  "usage": {"turns": {"reported": 5, "estimated": 0}, "input_tokens": {"reported": 412003, "estimated": 0},
            "output_tokens": {"reported": 18201, "estimated": 0}},
@@ -536,7 +547,8 @@ time in clock ticks since boot.
   next `run` or by `close` with cause `process_gone`.
 - `provider` is the last attempt's facts when the cause is
   `provider_unavailable` or `provider_rejected`, else null. `status`,
-  `error_type` (the error body's `error.type`) and `request_id` (the
+  `error_type` (the error body's `error.type`), `error_message` (its
+  `error.message`, cut as in the attempt record) and `request_id` (the
   `request-id` header, else the error body's `request_id`) are null when not
   observed.
 - `requests` counts the placement's complete request captures and `attempts` its
@@ -698,12 +710,13 @@ body, joined by commas. The body of request `k` is exactly
 {"model":<M>,"max_tokens":<T>,"system":<S>,"tools":<U><X>,"messages":[<A_1>,<A_2>,…,<A_k>]}
 ```
 
-`M`, `S` and `U` are the bytes of the arrangement's `model`, `system` and `tools`
-values; `X` is, for each member of its `request_extra` object, a comma followed
-by that member's bytes (nothing in this release); and the `A_i` are joined by
+`M`, `S` and `U` are the bytes of the arrangement's `model`, `system` and
+`tools` values; `X` is, for each member of its `request_extra` object, a comma
+followed by that member's bytes (`,"output_config":{"effort":"high"}` for
+`effort: high`, and nothing without an effort); and the `A_i` are joined by
 commas. There is no other whitespace and no trailing LF. `B` and the digest let
-a reader check the reconstruction. A request capture that does not end with
-`]}` and an LF was cut off, and its request was never sent.
+a reader check the reconstruction. A request capture that does not end with `]}`
+and an LF was cut off, and its request was never sent.
 
 **Response capture.** The body as received, after removing chunked transfer
 coding and nothing else, and at most 32 MiB of it. No byte is decoded before the
@@ -908,6 +921,9 @@ log record binding their digests.
                           "machine": "/home/ana/stewart-archive/audits/aqm3…/prep/1/arrangement.json"}}}
 ```
 
+`settings` is the `prepared` record's (4.3): `effort`, `inquiry` and `varies`
+appear only when the front matter gives them.
+
 Refusals: `folder_incomplete`, `front_matter_invalid`, `setting_missing`,
 `setting_invalid`, `destination_invalid`, `question_empty`,
 `unexpected_root_entry`, `unsupported_entry`, `location_overlap`,
@@ -1011,13 +1027,13 @@ assumed:
 ### 5.5 `receipt`
 
 `stewart receipt REF` returns the fixed commission: reference, acceptance time
-and handle, question sizes and digests, settings, material index and
-directories, arrangement digest and readable location, the checks that matched,
-the declaration, the run line, `run_needs` (as in the commission reply) and the
-item list. Each item has an ID, size, SHA-256 and its readback argv. Before
-acceptance it refuses `not_accepted`. Readback is local, read-only and allowed
-while a run is active and after close. It never shows the live answer or
-conversation.
+and handle, question sizes and digests, settings (as prepare gives them),
+material index and directories, arrangement digest and readable location, the
+checks that matched, the declaration, the run line, `run_needs` (as in the
+commission reply) and the item list. Each item has an ID, size, SHA-256 and its
+readback argv. Before acceptance it refuses `not_accepted`. Readback is local,
+read-only and allowed while a run is active and after close. It never shows the
+live answer or conversation.
 
 By default the receipt reports recorded facts and says that the bytes were not
 re-verified. `--verify` reads and hashes every item and reports each as
@@ -1474,7 +1490,7 @@ sends the host as SNI unless it is an IP address. A test build can add roots
 | `max_tokens_per_request` | 16,000, pinned by the release, so a non-streaming response fits the request timeout |
 | `system` | Exact JSON array: orientation block, family instruction block (QUESTION-FORMS) |
 | `tools` | Exact JSON array of tool definitions for the family (section 7) |
-| `request_extra` | Exact JSON object of further top-level request parameters, limited to the release's allowlist. This release's allowlist is empty, so it is `{}`. |
+| `request_extra` | Exact JSON object of further top-level request parameters, limited to the release's allowlist. The allowlist admits one member, `output_config`, whose value is exactly `{"effort":"<level>"}` with a level of 3.2. It holds that member when the front matter sets `effort`, and is `{}` otherwise. |
 | `texts` | Reminder, near-limit template and continuation notice |
 | `limits`, `near_limit_percent` | From front matter; 20 |
 | `retry`, `request_timeout_seconds` | 6.6 policy; 600 |
@@ -1487,7 +1503,9 @@ request body is assembled by splicing pinned bytes, never by re-serializing a
 parsed structure, exactly as 4.5 states. No provider feature may be enabled that
 puts model-visible content outside the arrangement, such as server tools,
 fallback to another model, provider-side context management or budget
-countdowns; with `request_extra` empty, none is.
+countdowns. `request_extra` can hold only the effort, which sets how much the
+model reasons and adds nothing for it to read; the effort never appears in the
+system blocks, tools or messages.
 
 Messages are append-only within a placement, each a compact object with keys
 `role` and `content`:
@@ -1654,7 +1672,7 @@ them.
 | Damaged answer bytes found by a read or prepare (7.2, 7.6) | `damaged` | no |
 | SIGTERM, SIGINT, SIGHUP before a seal | `interrupted`, cause `signal` | yes |
 | A retryable attempt outcome on the last attempt, or a `retry-after` over 60 seconds (6.6) | `interrupted`, cause `provider_unavailable` | yes |
-| Any other HTTP error, including 400, 401 and 413 `request_too_large` | `interrupted`, cause `provider_rejected`; `run_ended.provider` holds the status and `error.type` | yes |
+| Any other HTTP error, including 400, 401 and 413 `request_too_large` | `interrupted`, cause `provider_rejected`; `run_ended.provider` holds the status, `error.type` and `error.message` | yes |
 | `stop_reason` `model_context_window_exceeded` | `interrupted`, cause `context_exhausted` | yes |
 | `stop_reason` `refusal` | `interrupted`, cause `provider_refusal` | yes |
 | `max_tokens` with no `tool_use` | `interrupted`, cause `max_tokens` | yes |
@@ -1662,6 +1680,12 @@ them.
 | Archive write failure | `interrupted`, cause `archive_write_failed` | yes |
 | The log is found damaged (4.4) | none: the run publishes nothing, sends no further request, releases the lock and exits 4; status reports the damage | no |
 | Process killed or crashed | no `run_ended`; the next `run` or `close` records `interrupted`, cause `process_gone` | yes |
+
+A rejection is reported as the provider gave it. Stewart does not interpret
+its error type or message, retry it or report it under another cause, so a
+request parameter the provider no longer accepts, such as an effort it has
+renamed or withdrawn, ends `provider_rejected` with the provider's own words.
+Only a provider that ignores a parameter without saying so goes unreported.
 
 `run` may continue only while authoring has not ended. A placement that sealed
 and then died is reconciled as `interrupted` (`process_gone`), and `run` still
@@ -2471,6 +2495,8 @@ the check for that property must fail. The claims are ACCEPTANCE's.
 | `omit_effects_on_refusal` | Refusals, manager and auditor, omit `effects` (C9, C20) |
 | `whole_from_one_member` | `receipt --verify` reports the whole commission verified after one member verifies (C15) |
 | `extra_tool` | Requests carry one tool definition beyond the arrangement's (C1) |
+| `misspell_effort` | Requests carry the effort as `output_config.eefort`; the pinned arrangement stays unchanged (C1) |
+| `effort_in_prompt` | With an effort set, requests omit `output_config`, and the question text in the first message gains a final line `Effort: <level>.`; without one it changes nothing (C1, C2) |
 | `arrangement_mismatch` | Requests carry an orientation block differing by one word from the pinned one, which stays recorded unchanged (C1) |
 | `read_live_source` | `read` serves the preparation folder's current file instead of the capture (C2) |
 | `normalize_read` | `read` returns CRLF as LF (C2, C19) |
@@ -2503,6 +2529,8 @@ the check for that property must fail. The claims are ACCEPTANCE's.
 | `seal_as_stopped` | With a seal recorded, close does not wait for a held run and reports `run: "ended"` (C8) |
 | `empty_return_before_launch` | Close before launch seals an empty selection as manager and delivers it (C8) |
 | `slow_list` | `list` sleeps 500 ms before replying (C9) |
+| `hide_provider_message` | `run_ended.provider` and the run reply give `error_message` as null (C9) |
+| `rejection_as_unavailable` | An HTTP 400 is retried like a 529, and the run ends `provider_unavailable` (C9) |
 | `relative_run_line` | The commission reply and receipt give the run line with the writer path relative to the commissioning directory (C12) |
 | `commission_over_network` | Commission refuses without `ANTHROPIC_API_KEY` and connects to the provider before accepting (C12) |
 | `reset_limits_on_continuation` | A continuing placement counts usage from zero (C13) |

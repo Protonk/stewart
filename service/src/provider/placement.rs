@@ -448,6 +448,11 @@ impl State<'_, '_> {
                         self.provider = Some(ProviderFacts {
                             status: attempt.status().map(u64::from),
                             error_type: c.error.as_ref().and_then(|e| e.kind.clone()),
+                            error_message: if crate::sabotage!("hide_provider_message") {
+                                None
+                            } else {
+                                c.error.as_ref().and_then(|e| e.message.clone())
+                            },
                             request_id: attempt
                                 .request_id()
                                 .map(str::to_string)

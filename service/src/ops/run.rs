@@ -339,7 +339,8 @@ fn publish_ended(audit: &Audit, run: u64, body: &RunEnded) -> Result<log::Publis
 }
 
 /// Apply the test build's request sabotage to what is sent (never to what
-/// is pinned): an extra tool, a changed orientation word, a trimmed question.
+/// is pinned): an extra tool, a changed orientation word, a trimmed question,
+/// a misspelled effort parameter, or the effort moved into the question.
 fn sabotaged(mut parts: Parts, mut question: String) -> (Parts, String) {
     if crate::sabotage!("extra_tool") && parts.tools.ends_with(b"]") {
         parts.tools.pop();
@@ -359,6 +360,27 @@ fn sabotaged(mut parts: Parts, mut question: String) -> (Parts, String) {
     }
     if crate::sabotage!("paraphrase_question") {
         question = question.trim().to_string();
+    }
+    if crate::sabotage!("misspell_effort") {
+        for m in &mut parts.extra {
+            *m = String::from_utf8_lossy(m)
+                .replacen(r#""effort":"#, r#""eefort":"#, 1)
+                .into_bytes();
+        }
+    }
+    if crate::sabotage!("effort_in_prompt") {
+        let level = parts.extra.iter().find_map(|m| {
+            let m = std::str::from_utf8(m).ok()?;
+            let rest = m.strip_prefix(r#""output_config":{"effort":""#)?;
+            Some(rest.strip_suffix(r#""}"#)?.to_string())
+        });
+        if let Some(level) = level {
+            parts.extra.clear();
+            if !question.ends_with('\n') {
+                question.push('\n');
+            }
+            question.push_str(&format!("Effort: {level}.\n"));
+        }
     }
     (parts, question)
 }

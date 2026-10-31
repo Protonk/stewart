@@ -147,7 +147,8 @@ pub fn decide(
             return Then::End(Ending::Interrupted(Cause::ProtocolAnomaly));
         }
         Outcome::HttpError => {
-            if !status.is_some_and(|s| RETRYABLE_STATUSES.contains(&s)) {
+            let reclassified = crate::sabotage!("rejection_as_unavailable") && status == Some(400);
+            if !reclassified && !status.is_some_and(|s| RETRYABLE_STATUSES.contains(&s)) {
                 return Then::End(Ending::Interrupted(Cause::ProviderRejected));
             }
         }

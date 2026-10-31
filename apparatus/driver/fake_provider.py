@@ -58,7 +58,7 @@ import traceback
 
 import rawjson
 from rawjson import compact
-from driver_core import API_VERSION, selftest
+from driver_core import API_VERSION, EFFORT_LEVELS, selftest
 
 TLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "testdata", "tls")
 LOOPBACK = "127.0.0.1"
@@ -315,11 +315,13 @@ class Message(Step):
 
 
 class HttpError(Step):
-    """A non-200 answer with an error body {"type":"error","error":{...},"request_id":...}."""
+    """A non-200 answer with an error body {"type":"error","error":{...},"request_id":...}.
+    body= replaces the whole body (a refusal that is not an error object), content_type= its
+    content-type header, request_id_header=False leaves out the request-id header."""
     kind = "http_error"
 
     def __init__(self, status, error_type=None, message=None, retry_after=None, headers=(), body=None,
-                 framing="length", request_id_header=True, delay=0.0):
+                 framing="length", request_id_header=True, delay=0.0, content_type="application/json"):
         self.status = status
         self.error_type = error_type or ERROR_TYPES.get(status, "api_error")
         self.message = message or REASONS.get(status, "Error")
@@ -328,7 +330,7 @@ class HttpError(Step):
         else:
             self.retry_after = [] if retry_after is None else [str(retry_after)]
         self.headers, self.body_override, self.framing = list(headers), body, framing
-        self.request_id_header, self.delay = request_id_header, delay
+        self.request_id_header, self.delay, self.content_type = request_id_header, delay, content_type
 
     def body(self, ex):
         if self.body_override is not None:
@@ -338,10 +340,12 @@ class HttpError(Step):
 
     def describe(self):
         return {"kind": self.kind, "status": self.status, "error_type": self.error_type,
+                "message": self.message if self.body_override is None else None,
+                "body_override": self.body_override is not None, "content_type": self.content_type,
                 "retry_after": self.retry_after, "framing": self.framing}
 
     def framed(self, ex, framing=None):
-        hs = [("content-type", "application/json")]
+        hs = [("content-type", self.content_type)]
         if self.request_id_header:
             hs.append(("request-id", "req_fake_%04d" % ex.n))
         hs += [("retry-after", v) for v in self.retry_after] + self.headers
@@ -481,6 +485,238 @@ class Inject:
 
 
 # ---------------------------------------------------------------------------
+# What the provider accepts: a declarative model of its request schema.
+#
+# The real provider moves: a parameter is renamed or removed, an enumerated value is
+# withdrawn, a gateway in front of it answers with a page instead of an error object.
+# Stewart's promise is to report such a refusal as the provider gave it (INTERFACE 6.5),
+# not to know the provider's schema. To test that, the fake states what it accepts as data
+# (`Accepts`), judges every request body against it (`Gate`) and answers a mismatch the way
+# the Messages API does. A case stands for one kind of drift by changing one fact of the
+# model (`renamed`, `without`, `withdrawn`, `answering`) and keeps the unchanged model as
+# its invariance. A future drift case extends the schema classes or adds an answer style
+# here; it does not script the refusal by hand.
+#
+# The model lists only the members this release may send (6.2: the 4.5 splice and the
+# request_extra allowlist). The real API accepts many more; they are irrelevant here, and
+# any other member a request carries is refused as the API refuses an unknown one.
+# ---------------------------------------------------------------------------
+
+def _either(values):
+    """'a', 'b' or 'c' (the Messages API's wording for an enumerated value)."""
+    q = ["'%s'" % v for v in values]
+    if not q:
+        return "nothing"
+    return q[0] if len(q) == 1 else ", ".join(q[:-1]) + " or " + q[-1]
+
+
+def _at(loc, name):
+    return name if not loc else loc + "." + name
+
+
+class AnyValue:
+    """Any JSON value (a member whose content this model does not judge)."""
+
+    def judge(self, node, loc):
+        return None
+
+    def describe(self):
+        return "any"
+
+
+ANY = AnyValue()
+
+
+class OneOf:
+    """A string from a fixed set, such as the effort levels."""
+
+    def __init__(self, values):
+        self.values = tuple(values)
+
+    def judge(self, node, loc):
+        try:
+            v = node.value() if node.kind == "string" else None
+        except ValueError:
+            v = None
+        return None if v in self.values else (loc, "Input should be %s" % _either(self.values))
+
+    def describe(self):
+        return {"one_of": list(self.values)}
+
+
+class Members:
+    """An object with these members, in order ([(name, schema)]); `required` must appear, and any
+    other member is refused ('Extra inputs are not permitted')."""
+
+    def __init__(self, members, required=()):
+        self.members = list(members.items()) if isinstance(members, dict) else list(members)
+        self.required = tuple(required)
+
+    def schema(self, name):
+        return next((s for n, s in self.members if n == name), None)
+
+    def judge(self, node, loc):
+        if node is None or node.kind != "object":
+            return (loc, "Input should be a valid dictionary")
+        for key, _, _, child in node.members:
+            sch = self.schema(key)
+            if sch is None:
+                return (_at(loc, key), "Extra inputs are not permitted")
+            problem = sch.judge(child, _at(loc, key))
+            if problem is not None:
+                return problem
+        for name in self.required:
+            if node.get(name) is None:
+                return (_at(loc, name), "Field required")
+        return None
+
+    def describe(self):
+        return {"members": {n: s.describe() for n, s in self.members}, "required": list(self.required)}
+
+
+class ErrorObject:
+    """How the Messages API refuses a request: HTTP 400 with
+    {"type":"error","error":{"type":"invalid_request_error","message":"<loc>: <problem>"},"request_id":...}
+    and the same ID in a request-id header. detail is appended to the message (a provider that
+    explains at length)."""
+
+    def __init__(self, status=400, error_type="invalid_request_error", detail=""):
+        self.status, self.error_type, self.detail = status, error_type, detail
+
+    def step(self, problem):
+        loc, what = problem
+        msg = ("%s: %s" % (loc, what) if loc else what) + self.detail
+        return HttpError(self.status, self.error_type, msg)
+
+    def describe(self):
+        return {"answer": "error_object", "status": self.status, "error_type": self.error_type,
+                "detail_bytes": len(self.detail.encode("utf-8"))}
+
+
+GATEWAY_PAGE = (b"<html>\r\n<head><title>400 Bad Request</title></head>\r\n<body>\r\n"
+                b"<center><h1>400 Bad Request</h1></center>\r\n<hr><center>gateway</center>\r\n</body>\r\n</html>\r\n")
+
+
+class Page:
+    """A graceless refusal: a body that is not an error object (an HTML page from a gateway in
+    front of the API), without a request-id header."""
+
+    def __init__(self, status=400, body=GATEWAY_PAGE, content_type="text/html"):
+        self.status, self.body, self.content_type = status, body, content_type
+
+    def step(self, problem):
+        return HttpError(self.status, body=self.body, content_type=self.content_type, request_id_header=False)
+
+    def describe(self):
+        return {"answer": "page", "status": self.status, "content_type": self.content_type,
+                "body_bytes": len(self.body)}
+
+
+class Accepts:
+    """What a provider accepts, as data, and how it says no.
+
+    `request` is a Members schema for the request body; `answer` (default ErrorObject()) makes
+    the Step for a refused request. Each drift method returns a new Accepts that differs in one
+    fact and names it in `drift`:
+
+    - renamed("output_config.effort", "reasoning_effort"): the member is known under another name;
+    - without("output_config"): the member is no longer accepted at all;
+    - withdrawn("output_config.effort", "xhigh"): one enumerated value is no longer accepted;
+    - answering(Page()): refusals are worded differently (here, gracelessly).
+
+    judge(body bytes) is None when accepted, else (location, problem) for the first mismatch."""
+
+    def __init__(self, request, answer=None, name="provider", drift=()):
+        self.request, self.answer, self.name, self.drift = request, answer or ErrorObject(), name, tuple(drift)
+
+    def judge(self, body):
+        node = rawjson.try_parse(body) if body is not None else None
+        if node is None:
+            return ("", "There was an error parsing the body of your request")
+        return self.request.judge(node, "")
+
+    def refusal(self, problem):
+        return self.answer.step(problem)
+
+    def _edit(self, path, fn, note):
+        parts = path.split(".")
+
+        def walk(m, i):
+            if not isinstance(m, Members):
+                raise ValueError("%s: %s is not an object in this model" % (path, ".".join(parts[:i])))
+            if i == len(parts) - 1:
+                return fn(m, parts[i])
+            if m.schema(parts[i]) is None:
+                raise ValueError("%s: no member %s in this model" % (path, parts[i]))
+            return Members([(n, walk(s, i + 1) if n == parts[i] else s) for n, s in m.members], m.required)
+        return Accepts(walk(self.request, 0), self.answer, self.name, self.drift + (note,))
+
+    def renamed(self, path, new_name):
+        def fn(m, name):
+            if m.schema(name) is None:
+                raise ValueError("no member %s to rename" % path)
+            return Members([(new_name if n == name else n, s) for n, s in m.members],
+                           [new_name if r == name else r for r in m.required])
+        return self._edit(path, fn, "%s renamed to %s" % (path, new_name))
+
+    def without(self, path):
+        def fn(m, name):
+            if m.schema(name) is None:
+                raise ValueError("no member %s to remove" % path)
+            return Members([(n, s) for n, s in m.members if n != name], [r for r in m.required if r != name])
+        return self._edit(path, fn, "%s no longer accepted" % path)
+
+    def withdrawn(self, path, value):
+        def fn(m, name):
+            s = m.schema(name)
+            if not isinstance(s, OneOf) or value not in s.values:
+                raise ValueError("%s has no value %r to withdraw" % (path, value))
+            return Members([(n, OneOf([v for v in x.values if v != value]) if n == name else x) for n, x in m.members],
+                           m.required)
+        return self._edit(path, fn, "%s no longer accepts %r" % (path, value))
+
+    def answering(self, answer):
+        return Accepts(self.request, answer, self.name, self.drift + ("refuses as %s" % answer.describe()["answer"],))
+
+    def describe(self):
+        return {"name": self.name, "drift": list(self.drift), "request": self.request.describe(),
+                "answer": self.answer.describe()}
+
+
+def messages_api():
+    """The request schema of the pinned API version (INTERFACE 6.1) as far as this release may
+    use it: the five spliced members and request_extra's one allowed member, output_config with
+    an effort of 3.2's levels (6.2)."""
+    return Accepts(Members([("model", ANY), ("max_tokens", ANY), ("system", ANY), ("tools", ANY),
+                            ("output_config", Members([("effort", OneOf(EFFORT_LEVELS))])),
+                            ("messages", ANY)], required=("model", "max_tokens", "messages")),
+                   name="messages-api/%s" % API_VERSION)
+
+
+MESSAGES_API = messages_api()
+
+
+class Gate:
+    """A responder that first judges each request against `accepts` (an Accepts). A refused
+    request gets the model's refusal and never reaches `base`; an accepted one is answered by
+    base(exchange). Each verdict is kept on the exchange (`verdict`) and in `verdicts`. A case
+    may replace `accepts` between runs (the provider moved, or moved back)."""
+
+    def __init__(self, accepts, base):
+        self.accepts, self.base = accepts, base
+        self.verdicts = []
+
+    def __call__(self, ex):
+        problem = self.accepts.judge(ex.body)
+        ex.verdict = {"model": self.accepts.name, "drift": list(self.accepts.drift),
+                      "accepted": problem is None, "problem": list(problem) if problem else None}
+        self.verdicts.append((ex.n, problem))
+        if problem is not None:
+            return self.accepts.refusal(problem)
+        return self.base(ex)
+
+
+# ---------------------------------------------------------------------------
 # Exchanges and the server.
 # ---------------------------------------------------------------------------
 
@@ -506,6 +742,7 @@ class Exchange:
         self.content_raw = None    # exact bytes of the response's content array, when a message
         self.outcome = None
         self.send_error = None
+        self.verdict = None        # a Gate's judgement of the request against what the provider accepts
         self._node = None
 
     # -- request views --
@@ -541,7 +778,8 @@ class Exchange:
                 "request_line": self.request_line, "headers": self.headers,
                 "request_bytes": len(self.raw), "request_sha256": hashlib.sha256(self.raw).hexdigest(),
                 "body_bytes": None if self.body is None else len(self.body), "body_sha256": self.body_sha256(),
-                "max_tokens": self.max_tokens(), "problem": self.problem, "step": self.step_desc,
+                "max_tokens": self.max_tokens(), "problem": self.problem, "verdict": self.verdict,
+                "step": self.step_desc,
                 "charge": self.charge, "outcome": self.outcome, "send_error": self.send_error,
                 "response_bytes": len(self.response_raw),
                 "response_sha256": hashlib.sha256(self.response_raw).hexdigest(),
@@ -978,6 +1216,67 @@ def allowances(usage_totals, limits):
 
 
 # ---------------------------------------------------------------------------
+# Provider facts witness (INTERFACE 4.4 run_ended.provider, 4.5 attempt error, 6.2).
+# ---------------------------------------------------------------------------
+
+ERROR_MESSAGE_BYTES = 1024    # Appendix B, "Recorded error message"
+
+
+def cut_message(s, limit=ERROR_MESSAGE_BYTES):
+    """error.message as Stewart records it (4.5): at most `limit` UTF-8 bytes, cut on a
+    character boundary."""
+    b = s.encode("utf-8")
+    return s if len(b) <= limit else b[:limit].decode("utf-8", "ignore")
+
+
+def recorded_string(v):
+    """A string as records hold it (6.2): one containing U+0000 is null, as is a non-string."""
+    return v if isinstance(v, str) and "\u0000" not in v else None
+
+
+def error_body_facts(body):
+    """(error.type, error.message, request_id) of an error body (6.2), each None when absent, not
+    a string or holding U+0000; all None when the body is not a JSON object with an object
+    `error`. The message is not cut here."""
+    node = rawjson.try_parse(body) if body else None
+    if node is None or node.kind != "object":
+        return None, None, None
+    err = node.get("error")
+
+    def sval(n):
+        try:
+            return recorded_string(n.value()) if n is not None and n.kind == "string" else None
+        except ValueError:
+            return None
+    rid = sval(node.get("request_id"))
+    if err is None or err.kind != "object":
+        return None, None, rid
+    return sval(err.get("type")), sval(err.get("message")), rid
+
+
+def provider_facts(ex):
+    """What run_ended.provider and the run reply should say about the attempt this exchange
+    answered, from the bytes the fake actually sent: {status, error_type, error_message,
+    request_id}. error_message is cut as in the attempt record; request_id is the request-id
+    header, else the error body's request_id; each is None where the fake sent none, all four
+    when no status line was sent. The caller adds `request` and `attempt`."""
+    status, headers, body, _, _ = parse_response(ex.response_raw or b"")
+    if status is None:
+        return {"status": None, "error_type": None, "error_message": None, "request_id": None}
+    etype, emsg, body_rid = error_body_facts(body)
+    hdr = [v for n, v in headers if n.lower() == "request-id"]
+    rid = recorded_string(hdr[0]) if hdr else body_rid
+    return {"status": status, "error_type": etype, "error_message": None if emsg is None else cut_message(emsg),
+            "request_id": rid}
+
+
+def response_body(ex):
+    """The body the fake sent for an exchange (chunked coding removed), or None."""
+    status, _, body, _, _ = parse_response(ex.response_raw or b"")
+    return None if status is None else body
+
+
+# ---------------------------------------------------------------------------
 # A reference HTTP client for self-tests (the shape INTERFACE 6.1 prescribes).
 # ---------------------------------------------------------------------------
 
@@ -1001,7 +1300,12 @@ def read_response(sock, timeout=10.0):
             raw += chunk
     except (socket.timeout, OSError, ssl.SSLError):
         pass
-    raw = bytes(raw)
+    return parse_response(bytes(raw))
+
+
+def parse_response(raw):
+    """(status, headers, body, complete, raw) for the bytes of one HTTP/1.1 response, such as
+    an exchange's response_raw; status None without a complete status line and headers."""
     end = raw.find(b"\r\n\r\n")
     if not raw.startswith(b"HTTP/1.1 ") or end < 0:
         return None, [], b"", False, raw
@@ -1268,6 +1572,117 @@ def fake_provider_selftests():
     out.append(("fake.allowances", al["turns"] == {"used": 2, "reported": 1, "estimated": 1, "limit": 5}))
 
     out += _loopback_selftests(key, body)
+    return out
+
+
+def long_detail(base, limit=ERROR_MESSAGE_BYTES):
+    """A suffix that makes base + suffix longer than `limit` bytes with a three-byte character
+    straddling the limit, so the recorded message (cut_message) is limit - 2 bytes long. base
+    must be ASCII."""
+    head = " The provider explains at length:"
+    filler = " this parameter belongs to an earlier version of the API."
+    s = head
+    while len(base) + len(s) < limit - 2:
+        s += filler
+    s = s[:limit - 2 - len(base)]
+    return s + "€ and what follows the cut is not recorded."
+
+
+@selftest
+def accepts_selftests():
+    """The declarative provider model: judgement, drift edits, refusals and the facts witness."""
+    out = []
+
+    def req(extra=b"", top=b""):
+        return (b'{"model":"m","max_tokens":16000,"system":[],"tools":[]' + extra + top
+                + b',"messages":[{"role":"user","content":[{"type":"text","text":"q"}]}]}')
+
+    def eff(level, name=b"effort"):
+        return b',"output_config":{"' + name + b'":"' + level.encode() + b'"}'
+
+    cur = MESSAGES_API
+    out.append(("accepts.current.plain", cur.judge(req()) is None, cur.judge(req())))
+    out.append(("accepts.current.levels", all(cur.judge(req(eff(l))) is None for l in EFFORT_LEVELS)))
+    out.append(("accepts.current.unknown-level", cur.judge(req(eff("extreme"))) ==
+                ("output_config.effort", "Input should be 'low', 'medium', 'high', 'xhigh' or 'max'"),
+                cur.judge(req(eff("extreme")))))
+    out.append(("accepts.current.misspelled", cur.judge(req(eff("high", b"eefort"))) ==
+                ("output_config.eefort", "Extra inputs are not permitted")))
+    out.append(("accepts.current.extra-top", cur.judge(req(top=b',"thinking":{}')) ==
+                ("thinking", "Extra inputs are not permitted")))
+    out.append(("accepts.current.required", cur.judge(b'{"model":"m","max_tokens":1}') == ("messages", "Field required")))
+    out.append(("accepts.current.not-json", cur.judge(b"{") is not None))
+    renamed = cur.renamed("output_config.effort", "reasoning_effort")
+    out.append(("accepts.renamed", renamed.judge(req(eff("high"))) ==
+                ("output_config.effort", "Extra inputs are not permitted")
+                and renamed.judge(req(eff("high", b"reasoning_effort"))) is None and renamed.judge(req()) is None,
+                renamed.describe()))
+    removed = cur.without("output_config")
+    out.append(("accepts.removed", removed.judge(req(eff("high"))) == ("output_config", "Extra inputs are not permitted")
+                and removed.judge(req()) is None))
+    withdrawn = cur.withdrawn("output_config.effort", "xhigh")
+    out.append(("accepts.withdrawn", withdrawn.judge(req(eff("xhigh"))) ==
+                ("output_config.effort", "Input should be 'low', 'medium', 'high' or 'max'")
+                and withdrawn.judge(req(eff("max"))) is None))
+    out.append(("accepts.unchanged-after-edits", cur.judge(req(eff("xhigh"))) is None and not cur.drift
+                and len(renamed.drift) == 1 and len(removed.answering(Page()).drift) == 2))
+    for label, fn in (("rename-missing", lambda: cur.renamed("output_config.level", "x")),
+                      ("withdraw-absent", lambda: cur.withdrawn("output_config.effort", "minimal")),
+                      ("path-missing", lambda: cur.without("metadata.user_id"))):
+        try:
+            fn()
+            out.append(("accepts.edit-refused.%s" % label, False, "edit accepted"))
+        except ValueError:
+            out.append(("accepts.edit-refused.%s" % label, True))
+
+    # The gate in front of a responder, over a socket pair, for each answer style.
+    def exchange(gate, body):
+        prov = FakeProvider(gate)
+        c, th = _serve_pair(prov)
+        c.sendall(stewart_request("127.0.0.1:1", "sk-test", body))
+        res = read_response(c)
+        th.join(5)
+        return res, prov.exchanges[0]
+    reached = []
+    base = lambda ex: (reached.append(ex.n), Message([text("accepted")]))[1]
+    (st, hs, rb, complete, _), ex = exchange(Gate(removed, base), req(eff("high")))
+    hm = {}
+    for n, v in hs:
+        hm.setdefault(n.lower(), []).append(v)
+    want_body = (b'{"type":"error","error":{"type":"invalid_request_error","message":'
+                 b'"output_config: Extra inputs are not permitted"},"request_id":"req_fake_0001"}')
+    out.append(("accepts.gate.refusal", st == 400 and complete and rb == want_body and not reached
+                and hm.get("request-id") == ["req_fake_0001"] and hm.get("content-type") == ["application/json"],
+                (st, hm, rb)))
+    out.append(("accepts.gate.verdict", ex.verdict == {"model": cur.name, "drift": ["output_config no longer accepted"],
+                                                       "accepted": False,
+                                                       "problem": ["output_config", "Extra inputs are not permitted"]},
+                ex.verdict))
+    out.append(("accepts.facts.error-object", provider_facts(ex) == {
+        "status": 400, "error_type": "invalid_request_error",
+        "error_message": "output_config: Extra inputs are not permitted", "request_id": "req_fake_0001"},
+        provider_facts(ex)))
+    out.append(("accepts.response-body", response_body(ex) == want_body))
+    (st, _, rb, _, _), ex = exchange(Gate(cur, base), req(eff("high")))
+    out.append(("accepts.gate.accepted", st == 200 and reached == [1] and ex.verdict["accepted"] is True))
+    (st, hs, rb, _, _), ex = exchange(Gate(removed.answering(Page()), base), req(eff("high")))
+    names = [n.lower() for n, _ in hs]
+    out.append(("accepts.page", st == 400 and rb == GATEWAY_PAGE and "request-id" not in names
+                and ("content-type", "text/html") in hs, (st, hs)))
+    out.append(("accepts.facts.page", provider_facts(ex) == {"status": 400, "error_type": None, "error_message": None,
+                                                              "request_id": None}, provider_facts(ex)))
+    base_msg = "output_config: Extra inputs are not permitted"
+    detail = long_detail(base_msg)
+    _, ex = exchange(Gate(removed.answering(ErrorObject(detail=detail)), base), req(eff("high")))
+    f = provider_facts(ex)
+    out.append(("accepts.facts.cut", len((base_msg + detail).encode()) > ERROR_MESSAGE_BYTES
+                and f["error_message"] == (base_msg + detail)[:ERROR_MESSAGE_BYTES - 2]
+                and len(f["error_message"].encode()) == ERROR_MESSAGE_BYTES - 2, f))
+    out.append(("accepts.cut.short", cut_message("é" * 10) == "é" * 10 and cut_message("é" * 600) == "é" * 512))
+    _, ex = exchange(Script([HttpError(400, error_type="bad\u0000type", request_id_header=False)]), req())
+    f = provider_facts(ex)
+    out.append(("accepts.facts.nul-and-body-id", f == {"status": 400, "error_type": None, "error_message": "Bad Request",
+                                                       "request_id": "req_fake_0001"}, f))
     return out
 
 

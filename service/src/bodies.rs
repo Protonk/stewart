@@ -310,6 +310,9 @@ pub struct ProviderFacts {
     pub status: Option<u64>,
     /// The error body's `error.type`.
     pub error_type: Option<String>,
+    /// The error body's `error.message`, cut as in the attempt record: the
+    /// provider's own words, reported as given.
+    pub error_message: Option<String>,
     /// The `request-id` header, else the error body's `request_id`.
     pub request_id: Option<String>,
     pub request: u64,
@@ -321,15 +324,24 @@ impl ProviderFacts {
         J::obj()
             .with("status", self.status)
             .with("error_type", self.error_type.as_deref())
+            .with("error_message", self.error_message.as_deref())
             .with("request_id", self.request_id.as_deref())
             .with("request", self.request)
             .with("attempt", self.attempt)
     }
     pub fn decode(o: &Obj) -> Result<ProviderFacts, JsonError> {
-        o.exactly(&["status", "error_type", "request_id", "request", "attempt"])?;
+        o.exactly(&[
+            "status",
+            "error_type",
+            "error_message",
+            "request_id",
+            "request",
+            "attempt",
+        ])?;
         Ok(ProviderFacts {
             status: o.u64_or_null("status", 999)?,
             error_type: opt_string(o, "error_type")?,
+            error_message: opt_string(o, "error_message")?,
             request_id: opt_string(o, "request_id")?,
             request: o.u64("request", NUM_MAX)?,
             attempt: o.u64("attempt", NUM_MAX)?,
@@ -1627,6 +1639,7 @@ mod tests {
             provider: Some(ProviderFacts {
                 status: Some(529),
                 error_type: Some("overloaded_error".into()),
+                error_message: Some("Overloaded".into()),
                 request_id: Some("req_011".into()),
                 request: 6,
                 attempt: 4,
@@ -1646,7 +1659,7 @@ mod tests {
         assert_eq!(back, r);
         assert_eq!(
             text,
-            r#"{"prev":null,"run":2,"ending":"interrupted","cause":"provider_unavailable","recorded_by":"run","provider":{"status":529,"error_type":"overloaded_error","request_id":"req_011","request":6,"attempt":4},"requests":6,"attempts":9,"usage":{"turns":{"reported":5,"estimated":0},"input_tokens":{"reported":412003,"estimated":0},"output_tokens":{"reported":18201,"estimated":0}},"notices":[{"type":"near_limit","record":"log/40.json","sent":"not_sent"}],"seal":null,"message":"The provider was unavailable on 4 attempts of request 6."}"#
+            r#"{"prev":null,"run":2,"ending":"interrupted","cause":"provider_unavailable","recorded_by":"run","provider":{"status":529,"error_type":"overloaded_error","error_message":"Overloaded","request_id":"req_011","request":6,"attempt":4},"requests":6,"attempts":9,"usage":{"turns":{"reported":5,"estimated":0},"input_tokens":{"reported":412003,"estimated":0},"output_tokens":{"reported":18201,"estimated":0}},"notices":[{"type":"near_limit","record":"log/40.json","sent":"not_sent"}],"seal":null,"message":"The provider was unavailable on 4 attempts of request 6."}"#
         );
         let dec = |o: &Obj| RunEnded::decode(o).map(|_| ());
         // A cause on an ending that has none, a missing cause, provider facts
@@ -1659,7 +1672,7 @@ mod tests {
         assert!(refuses(&other, dec).contains("/provider"));
         let sealed = text
             .replace(r#""interrupted","cause":"provider_unavailable""#, r#""sealed","cause":null"#)
-            .replace(r#""provider":{"status":529,"error_type":"overloaded_error","request_id":"req_011","request":6,"attempt":4}"#, r#""provider":null"#);
+            .replace(r#""provider":{"status":529,"error_type":"overloaded_error","error_message":"Overloaded","request_id":"req_011","request":6,"attempt":4}"#, r#""provider":null"#);
         assert!(refuses(&sealed, dec).contains("/seal"));
         assert!(
             json::parse(
