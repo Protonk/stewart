@@ -1,4 +1,4 @@
-# Developing Stewart
+# Building and testing Stewart
 
 Stewart is the Rust audit service in [`service/`](service): one crate, binary
 `stewart`. [`apparatus/`](apparatus) holds what builds and tests it: pinned
@@ -320,7 +320,7 @@ each front run's source commit.
 - The refs `refs/development-evidence/successor-inquiry-01/a1`, `a2` and `a3`,
   which keep three historical outcome commits reachable that no branch
   contains. Do not delete them; a main-only clone does not carry them.
-- The 21 original product-audit source copies under
+- The 21 original product-audit source copies under `A1/` to `A3/` in
   `.scratch/successor-inquiry-01/answers/attempt-01/sources/`, and the records
   `history-reachability-01.json` and its correction
   `history-preservation-01.json` in `.scratch/successor-inquiry-01/`. Do not

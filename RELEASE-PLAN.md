@@ -171,10 +171,9 @@ These changes to the apparatus have not run in a container:
   `stewart help` where they ran bare `stewart`, because the binary now exits 2
   (usage, INTERFACE 1.6) without arguments. `apparatus/driver/answer_witness.py`
   changed its self-test data to follow corrected specification examples; the
-  self-test passes natively (246/246, not evidence). The other six,
-  `acceptance.sh`, `step3.sh`, `container/step3-inner-build.sh`,
-  `container/step3-inner-driver.sh`, `driver/cases_run.py` and
-  `driver/stewart_driver.py`, changed in comments or docstrings only.
+  self-test passes natively (246/246, not evidence). The other six changed in
+  comments or docstrings only: `acceptance.sh`, `driver/cases_run.py`,
+  `driver/stewart_driver.py`, and three files since retired with `step3.sh`.
 - The two suites take their evidence folder as a required argument (2026-10-30).
 
 The next `acceptance.sh` runs the self-test in a container. `step2.sh` refuses
@@ -329,6 +328,55 @@ Loopback listening was enabled on the user's machine for native iteration;
 natively, the driver skips the cases that need the fake provider where
 loopback listening is not permitted (DEVELOPMENT.md). The container suites do
 not need it. Needs: the user's decision whether to keep it.
+
+### Findings from a cold read of the repository
+
+On 2026-10-31 a fresh reader evaluated the repository at `f3ef7da` from the
+root documents down, as an outside adopter would. It described the product
+correctly; the README's status, the record's sabotage label and two stale lines
+here were fixed after it. These findings remain:
+
+- **Compaction.** ACCEPTANCE C4 has the fake provider emit a compaction block,
+  and the pinned orientation (QUESTION-FORMS) tells the model what to do if its
+  context was summarized. But INTERFACE 6.1 and 6.2 send no `anthropic-beta`
+  header and enable no provider-side context management, and Stewart does not
+  summarize or trim history (6.2): a real run whose context fills ends
+  interrupted. Needs: a decision whether the first release's
+  adapter compacts, then the matching specification edits (this extends the
+  conformance question above).
+- **ACCEPTANCE's tier table** says the scripted tier runs on "every platform,
+  every change" in a "Test image", and the other tiers in an "Experiment
+  image". In practice container runs are batched by the user, the suites mount
+  binaries into a pinned Python image, and no experiment image exists. Needs:
+  the user's decision whether to restate the tiers as release gates.
+- **Inputs to the coverage check** (above): sabotage items in ACCEPTANCE with
+  no control or disposition in INTERFACE Appendix C.2, including C17's
+  "replace the original failure with a secondary logging error", "blindly
+  repeat after a reply failure" and "omit a planned partial effect", C18's
+  "prune on pressure", "treat retained internal bytes as delivered elsewhere"
+  and "declare a missing archive closed and clean", and C11's "present
+  matching scans as proof of a source snapshot".
+- **Small specification and help slips.** CONTRACTS' illustrative prepare and
+  submit example uses field names INTERFACE 7.6 does not (`prepared_handle`,
+  `answer_revision`, a notice key `section`). "Family", "form" and "answer
+  family" name the same thing across README, DESIGN, CONTRACTS and
+  QUESTION-FORMS. INTERFACE 9 says fault traces run against the release
+  binary, but named fault points exist only in the test build. `stewart help`
+  says every command except `help` takes `--json`, but `receipt REF --read`
+  refuses it. Needs: specification edits, and a service change for the help
+  text, which a container run then qualifies.
+- **Driver test data.** `apparatus/driver/testdata/README.md` gives the wrong
+  validity for the expired certificate and calls the wrong-name and expired
+  certificates controls, though only the driver's own TLS self-test uses them.
+  Needs: an agent that has not read the implementation (AGENTS.md).
+- **Unchecked claims in tests.** The worked examples are said to prepare as
+  written, but no test or driver case prepares them. Cargo tests that need
+  loopback print SKIPPED and return, so Cargo counts them as passed. Needs: a
+  check that prepares the examples, and skips that Cargo reports as skips (for
+  example `#[ignore]` with a reason).
+- **Building on a Linux host.** The suites need macOS with Apple `container`;
+  no route for a Linux host is documented. Needs: a decision whether one is
+  wanted before release.
 
 ## Outside this plan
 

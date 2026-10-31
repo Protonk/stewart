@@ -62,20 +62,34 @@ a fake provider stands in for the model. The suite's sabotage and driver
 controls show that the checks catch the failures they look for, and an
 integrated end-to-end audit (prepare, commission, a fake auditor working
 through the run, submit and seal, verified delivery, close) runs on each
-architecture's release binary. The suite has passed on both architectures.
+architecture's release binary. The suite passed at source `dc85948`: on
+aarch64 natively, with its timing gate on, and on x86_64 under Rosetta
+emulation, where the gate is reported but not enforced. Since that run the
+service's code has changed only in comments.
 [`apparatus/qualified.md`](apparatus/qualified.md) records the latest runs of
 each suite, the source commits they cover and their results, and
 `python3 -I -B apparatus/qualified.py check` reports what has changed since.
 
 **Not yet done:**
 
-- Native WSL2 qualification with the same binary, driver and fake provider.
+- Native WSL2 qualification with the same binary, driver and fake provider,
+  and any native x86_64 run: the x86_64 runs so far were emulated.
+- Linux runs of the crate's own cargo tests. They have run only on the
+  development Mac, where the Linux-only calls use development fallbacks.
+- The two-build reproducibility comparison on the service. It has run only on
+  an early skeleton of the crate.
+- Retention of damaged originals for review (ACCEPTANCE C18): the suites
+  discard a variant's working copies once it has passed or its control has
+  fired.
+- Container runs of the apparatus changes made since the last suite run;
+  `qualified.py check` lists them.
 - A claim-by-claim check of the suite's coverage against
   [ACCEPTANCE.md](ACCEPTANCE.md).
 - Real-model conformance: whether named models can use the arrangement and
   finish. It needs named models and a budget. Stewart has not been run against
-  a real model, and the release's TLS path to the real provider, with its
-  built-in roots, is unexercised.
+  a real model, the release's TLS path to the real provider, with its built-in
+  roots, is unexercised, and the pinned request settings (16,000 `max_tokens`
+  per request, a 600 s timeout) are untested against real responses.
 - The decided default of effort `high` for requests to Opus models is not
   implemented; requests currently set no effort.
 
@@ -97,7 +111,8 @@ each suite, the source commits they cover and their results, and
 - [DEVELOPMENT.md](DEVELOPMENT.md): building, testing and evidence retention.
 - [AGENTS.md](AGENTS.md) (CLAUDE.md links to it): the guide for development
   agents.
-- [riker/](riker/RIKER.md): user-relayed consultation with Riker.
+- [riker/](riker/RIKER.md): a development procedure for relaying questions
+  between the local agent and Riker, a separate Claude Project.
 
 ## Repository map
 
@@ -110,7 +125,7 @@ each suite, the source commits they cover and their results, and
 | `DESIGN.md`, `CONTRACTS.md`, `ACCEPTANCE.md` | The design, the decided behavior and the evidence owed. |
 | `DEVELOPMENT.md` | Building, testing and evidence retention. |
 | `AGENTS.md`, `CLAUDE.md` | Development rules; `CLAUDE.md` is a link to `AGENTS.md`. |
-| `riker/` | User-relayed consultation with Riker. |
+| `riker/` | Development procedure: relaying questions to Riker, a separate Claude Project. |
 | `*-PLAN.md` | Active development plans: working accounts, not specification. |
 | `.tmp/` | Ignored temporary storage; only its note, `AGENTS.md`, and a `CLAUDE.md` link to it are tracked. |
 | `LICENSE` | The license. |

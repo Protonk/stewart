@@ -58,7 +58,7 @@ not carry them.
 | Cases | selected 110, ran 110, passed 110, failed 0, skipped 0 | selected 108, ran 108, passed 108, failed 0, skipped 0 |
 | Variants (a fired control's variant fails) | ran 204, passed 138, failed 66, skipped 0 | ran 204, passed 138, failed 66, skipped 0 |
 | Checks | passed 108097, failed outside controls 0, failed inside controls 731 | passed 108097, failed outside controls 0, failed inside controls 731 |
-| Sabotage controls fired | 66/66 | 66/66 |
+| Sabotage control variants fired (INTERFACE C.2) | 66/66 | 66/66 |
 | Driver controls fired | 8/8 | 8/8 |
 | Timing gate | on, passed: worst 2.025 ms; protocol worst 95.214 ms; threshold 100.0 ms | off (reported, not gated): worst 40.229 ms; protocol worst 158.753 ms; threshold 100.0 ms |
 | End to end (`e2e.reacting-audit`) | pass, 764/764 checks | pass, 764/764 checks |

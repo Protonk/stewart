@@ -1547,7 +1547,7 @@ def render_platform_rows(e):
              [counts(pl, "variants", ("ran", "passed", "failed", "skipped")) for pl in pls]),
             ("Checks", [counts(pl, "checks", ("passed", "failed_outside_controls", "failed_inside_controls"))
                         for pl in pls]),
-            ("Sabotage controls fired", [ratio(pl.get("controls"), "fired", "total") for pl in pls]),
+            ("Sabotage control variants fired (INTERFACE C.2)", [ratio(pl.get("controls"), "fired", "total") for pl in pls]),
             ("Driver controls fired", [ratio(pl.get("driver_controls"), "fired", "total") for pl in pls]),
             ("Timing gate", [gate(pl) for pl in pls]),
             ("End to end (`%s`)" % E2E_CASE, [e2e(pl) for pl in pls]),
