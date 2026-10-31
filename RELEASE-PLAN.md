@@ -116,9 +116,13 @@ outcomes honestly without calling an unexercised submission path successful.
 - **Done:** `acceptance-03` qualifies `faa5579` on both Linux architectures,
   including effort, compaction and the compaction-stopping case skipped on
   macOS. Its retained release binaries can supply the first live run.
-- Prepare the bounded live command, observation/retention procedure and offline
-  checks of the commissioned input and destinations. The live apparatus is
-  currently absent; this is concrete preparation still to do.
+- The [sanity packet and run sheet](apparatus/sanity/RUN-SHEET.md) now hold a
+  small code specimen and an offline rehearsal of intake, tool use, outcome
+  classification, delivery verification and close. The rehearsal is awaiting
+  its host container run. The user has made API-key handling a separate task
+  before a paid launch: map, harden and audit the credential path. No live
+  credential loader or paid launch is enabled by the rehearsal. Exact model,
+  settings, allowances and spending authority remain to be settled.
 - Check the pinned provider interface against the chosen model: API version
   `2026-10-21`, compaction beta `compact-2026-09-04`, at most 16,000 output tokens
   per request, 600-second timeout and optional effort. Refusal is an observable

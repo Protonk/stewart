@@ -1,0 +1,8 @@
+This helper summarizes a batch of sensor readings for a display.
+Each reading is a dictionary with sensor, timestamp and value fields.
+Sensor names are strings. Timestamps are integer ticks from the same clock.
+The batch can contain multiple readings from a sensor, and arrival order is
+not guaranteed to match timestamp order.
+
+These files contain no execution results and no specification of what the
+display should do with two different values at the same timestamp.
