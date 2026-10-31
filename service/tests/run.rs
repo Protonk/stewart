@@ -494,6 +494,235 @@ macro_rules! provider {
 // ---------------------------------------------------------------------------
 // Ordinary endings, the reminder and continuation.
 
+const SIGNED_SUMMARY: &str = r#"[{"type":"compaction","content":"The account is recorded. Check it before adding another.","signature":"sig-one","future":{"keep":true}}]"#;
+
+fn summary_reply(content: &str, stop: &str, iterations: &str) -> Act {
+    Act::Reply(
+        200,
+        vec![],
+        format!(
+            r#"{{"content":{content},"stop_reason":"{stop}","usage":{{"input_tokens":0,"output_tokens":0,"iterations":{iterations}}}}}"#
+        ),
+    )
+}
+
+const SUMMARY_USAGE: &str = r#"[{"type":"compaction","input_tokens":200,"cache_creation_input_tokens":5,"cache_read_input_tokens":7,"output_tokens":23}]"#;
+
+fn before_summary(input: u64) -> Act {
+    Act::Reply(
+        200,
+        vec![],
+        message(
+            r#"[{"type":"tool_use","id":"account","name":"record_account","input":{"text":"An account worth retaining."}}]"#,
+            "tool_use",
+            input,
+            10,
+        ),
+    )
+}
+
+#[test]
+fn provider_compaction_preserves_signed_bytes_records_and_cumulative_usage() {
+    let second = SIGNED_SUMMARY.replace("sig-one", "sig-two");
+    let p = provider!(
+        "provider_compaction_preserves_signed_bytes_records_and_cumulative_usage",
+        vec![
+            before_summary(149_990),
+            summary_reply(SIGNED_SUMMARY, "compaction", SUMMARY_USAGE),
+            Act::Reply(
+                200,
+                vec![],
+                message(
+                    r#"[{"type":"tool_use","id":"orient","name":"what_am_i_working_with","input":{}}]"#,
+                    "tool_use",
+                    149_990,
+                    10
+                )
+            ),
+            summary_reply(&second, "compaction", SUMMARY_USAGE),
+            text_turn("end_turn"),
+            text_turn("end_turn"),
+        ]
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let o = run(&e, &r, &p, &[]);
+    assert_eq!(o.code, Some(0), "{:?} {}", o.reply, o.stderr);
+    assert_eq!(sj(&o.reply, &["data", "ending"]), "ended_unsubmitted");
+    assert_eq!(n(&o.reply, &["data", "allowances", "turns", "used"]), 6);
+    assert_eq!(
+        n(&o.reply, &["data", "allowances", "input_tokens", "used"]),
+        300_604
+    );
+    assert_eq!(
+        n(&o.reply, &["data", "allowances", "output_tokens", "used"]),
+        86
+    );
+    assert_eq!(
+        e.log_kinds(&r)
+            .iter()
+            .filter(|k| k.as_str() == "entry")
+            .count(),
+        1
+    );
+    assert_eq!(
+        e.log_kinds(&r)
+            .iter()
+            .filter(|k| k.as_str() == "run_started")
+            .count(),
+        1
+    );
+    let bodies = p.bodies();
+    assert_eq!(bodies.len(), 6);
+    for (i, summary) in [(2, SIGNED_SUMMARY), (4, second.as_str())] {
+        let b = json::parse(&bodies[i]).unwrap();
+        let msgs = at(&b, &["messages"]).as_arr().unwrap();
+        assert_eq!(msgs.len(), 2);
+        assert_eq!(sj(&msgs[0], &["role"]), "assistant");
+        let content = at(&msgs[0], &["content"]);
+        assert_eq!(&bodies[i][content.start..content.end], summary.as_bytes());
+        assert_eq!(
+            sj(&msgs[1], &["content", "0", "text"]),
+            stewart::forms::COMPACTED
+        );
+        assert!(b.obj("").unwrap().get("compaction").is_none());
+        let cap = json::parse(&run_file(&e, &r, 1, &format!("request-{}.json", i + 1))).unwrap();
+        assert_eq!(at(&cap, &["reset"]).v, json::V::Bool(true));
+    }
+    for i in [1, 3] {
+        let b = json::parse(&bodies[i]).unwrap();
+        assert_eq!(sj(&b, &["compaction", "type"]), "summarize");
+        let prev = json::parse(&bodies[i - 1]).unwrap();
+        for key in ["model", "system", "tools"] {
+            assert_eq!(at(&b, &[key]), at(&prev, &[key]), "{key}");
+        }
+        assert_eq!(
+            n(
+                &attempt(&e, &r, 1, i as u64 + 1, 1),
+                &["charged", "input_tokens"]
+            ),
+            212
+        );
+    }
+    captures_match_what_was_sent(&e, &r, 1, &bodies);
+}
+
+#[test]
+fn provider_compaction_failures_do_not_author_or_use_the_reminder() {
+    for (summary, cause, outcome) in [
+        (
+            summary_reply("[]", "compaction", SUMMARY_USAGE),
+            "protocol_anomaly",
+            "response",
+        ),
+        (
+            summary_reply(
+                r#"[{"type":"compaction","content":"text"}]"#,
+                "compaction",
+                SUMMARY_USAGE,
+            ),
+            "protocol_anomaly",
+            "response",
+        ),
+        (
+            summary_reply(
+                r#"[{"type":"tool_use","id":"unwanted","name":"record_account","input":{"text":"must not be written"}}]"#,
+                "tool_use",
+                SUMMARY_USAGE,
+            ),
+            "protocol_anomaly",
+            "response",
+        ),
+        (
+            summary_reply("[]", "max_tokens", SUMMARY_USAGE),
+            "max_tokens",
+            "response",
+        ),
+        (
+            summary_reply("[]", "refusal", SUMMARY_USAGE),
+            "provider_refusal",
+            "response",
+        ),
+        (
+            summary_reply(SIGNED_SUMMARY, "compaction", "null"),
+            "protocol_anomaly",
+            "response_undecodable",
+        ),
+        (
+            summary_reply(SIGNED_SUMMARY, "compaction", "[]"),
+            "protocol_anomaly",
+            "response_undecodable",
+        ),
+        (
+            Act::Reply(400, vec![], rejection("compaction is not supported")),
+            "provider_rejected",
+            "http_error",
+        ),
+    ] {
+        let p = provider!(
+            "provider_compaction_failures_do_not_author_or_use_the_reminder",
+            vec![before_summary(149_990), summary]
+        );
+        let e = Env::new();
+        let r = commissioned(&e, DEFAULT_LIMITS);
+        let o = run(&e, &r, &p, &[]);
+        assert_eq!(o.code, Some(5), "{} {:?}", o.stderr, o.reply);
+        assert_eq!(sj(&o.reply, &["data", "cause"]), cause);
+        assert_eq!(sj(&attempt(&e, &r, 1, 2, 1), &["outcome"]), outcome);
+        assert_eq!(p.bodies().len(), 2);
+        let kinds = e.log_kinds(&r);
+        assert_eq!(kinds.iter().filter(|k| k.as_str() == "entry").count(), 1);
+        assert!(!kinds.iter().any(|k| k == "notice" || k == "seal"));
+        assert!(!std::path::Path::new(&format!("{}/runs/1/call-2.json", e.audit_dir(&r))).exists());
+    }
+}
+
+#[test]
+fn provider_compaction_honors_the_trigger_and_remaining_allowances() {
+    let p = provider!(
+        "provider_compaction_honors_the_trigger_and_remaining_allowances",
+        vec![before_summary(149_989), text_turn("refusal")]
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let o = run(&e, &r, &p, &[]);
+    assert_eq!(sj(&o.reply, &["data", "cause"]), "provider_refusal");
+    assert!(
+        json::parse(&p.bodies()[1])
+            .unwrap()
+            .obj("")
+            .unwrap()
+            .get("compaction")
+            .is_none()
+    );
+    for limits in [
+        (2, 20_000_000, 400_000),
+        (200, 150_100, 400_000),
+        (200, 20_000_000, 1040),
+    ] {
+        let p = provider!(
+            "compaction_limit",
+            vec![
+                before_summary(149_990),
+                summary_reply(SIGNED_SUMMARY, "compaction", SUMMARY_USAGE)
+            ]
+        );
+        let e = Env::new();
+        let r = commissioned(&e, limits);
+        let o = run(&e, &r, &p, &[]);
+        assert_eq!(sj(&o.reply, &["data", "ending"]), "limit_reached");
+        assert_eq!(p.bodies().len(), 2);
+        assert_eq!(
+            n(&json::parse(&p.bodies()[1]).unwrap(), &["max_tokens"]),
+            (limits.2 - 10).min(16000)
+        );
+        assert_eq!(
+            n(&o.reply, &["data", "allowances", "output_tokens", "used"]),
+            33
+        );
+    }
+}
+
 #[test]
 fn end_turn_sends_the_reminder_once_then_ends_unsubmitted() {
     let p = provider!(
@@ -555,7 +784,7 @@ fn end_turn_sends_the_reminder_once_then_ends_unsubmitted() {
     assert_eq!(reqs.len(), 2);
     let head = String::from_utf8_lossy(&reqs[0]);
     assert!(head.starts_with(&format!(
-        "POST /v1/messages HTTP/1.1\r\nhost: 127.0.0.1:{}\r\nx-api-key: sk-test-key\r\nanthropic-version: 2026-10-21\r\ncontent-type: application/json\r\ncontent-length: ",
+        "POST /v1/messages HTTP/1.1\r\nhost: 127.0.0.1:{}\r\nx-api-key: sk-test-key\r\nanthropic-version: 2026-10-21\r\nanthropic-beta: compact-2026-09-04\r\ncontent-type: application/json\r\ncontent-length: ",
         p.port
     )));
     let bodies = p.bodies();
@@ -824,13 +1053,15 @@ fn limits_and_the_near_limit_notice() {
     // After request 1 exactly 1,024 output tokens remain: a request is still
     // sent, with max_tokens 1,024, carrying the reminder and the near-limit
     // notice; after request 2 fewer remain and the run stops.
+    // Keep this ordinary-turn fixture within the request cap and below the
+    // compaction trigger; compaction's allowance boundaries have their own case.
     let p = provider!(
         "limits_and_the_near_limit_notice",
         vec![
             Act::Reply(
                 200,
                 vec![],
-                message(r#"[{"type":"text","text":"a"}]"#, "end_turn", 50, 398_976)
+                message(r#"[{"type":"text","text":"a"}]"#, "end_turn", 50, 14_976)
             ),
             Act::Reply(
                 200,
@@ -840,13 +1071,13 @@ fn limits_and_the_near_limit_notice() {
         ]
     );
     let e = Env::new();
-    let r = commissioned(&e, DEFAULT_LIMITS);
+    let r = commissioned(&e, (200, 20_000_000, 16_000));
     let o = run(&e, &r, &p, &[]);
     assert_eq!(o.code, Some(0), "{}", o.stderr);
     assert_eq!(sj(&o.reply, &["data", "ending"]), "limit_reached");
     assert_eq!(
         n(&o.reply, &["data", "allowances", "output_tokens", "used"]),
-        398_977
+        14_977
     );
     let bodies = p.bodies();
     assert_eq!(bodies.len(), 2);

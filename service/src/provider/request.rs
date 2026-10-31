@@ -49,6 +49,7 @@ pub struct Pinned {
     /// `{output_tokens}` to fill.
     pub near_limit: String,
     pub continuation: String,
+    pub compacted: String,
     pub limits: Limits,
     pub near_limit_percent: u64,
     pub retry_attempts: u64,
@@ -118,6 +119,8 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
             "orientation",
             "model",
             "anthropic_version",
+            "anthropic_beta",
+            "compaction",
             "max_tokens_per_request",
             "system",
             "tools",
@@ -157,11 +160,24 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
             return Err(b.invalid("anthropic_version", "expected a header value"));
         }
         let max_tokens_per_request = b.u64("max_tokens_per_request", u32::MAX as u64)?;
+        if b.str("anthropic_beta")? != forms::ANTHROPIC_BETA {
+            return Err(b.invalid("anthropic_beta", "unsupported compaction beta"));
+        }
+        let compact = b.obj("compaction")?;
+        compact.exactly(&["trigger_tokens", "request"])?;
+        if compact.u64("trigger_tokens", u64::MAX)? != forms::COMPACTION_TRIGGER_TOKENS {
+            return Err(compact.invalid("trigger_tokens", "unsupported compaction trigger"));
+        }
+        let request = compact.obj("request")?;
+        request.exactly(&["type"])?;
+        if request.str("type")? != "summarize" {
+            return Err(request.invalid("type", "expected summarize"));
+        }
         if max_tokens_per_request == 0 {
             return Err(b.invalid("max_tokens_per_request", "expected at least 1"));
         }
         let t = b.obj("texts")?;
-        t.exactly(&["reminder", "near_limit", "continuation"])?;
+        t.exactly(&["reminder", "near_limit", "continuation", "compacted"])?;
         let l = b.obj("limits")?;
         l.exactly(&["turns", "input_tokens", "output_tokens"])?;
         let limits = Limits {
@@ -212,6 +228,7 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
             reminder: t.str("reminder")?.to_string(),
             near_limit: t.str("near_limit")?.to_string(),
             continuation: t.str("continuation")?.to_string(),
+            compacted: t.str("compacted")?.to_string(),
             limits,
             near_limit_percent: b.u64("near_limit_percent", 100)?,
             retry_attempts: attempts,
@@ -325,6 +342,9 @@ pub fn turn(assistant_content: &[u8], user: &[u8]) -> Vec<u8> {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Conversation {
     appended: Vec<Vec<u8>>,
+    request: u64,
+    pub compaction: bool,
+    pub reset: bool,
 }
 
 impl Conversation {
@@ -332,17 +352,23 @@ impl Conversation {
     pub fn new(first_user_message: Vec<u8>) -> Conversation {
         Conversation {
             appended: vec![first_user_message],
+            request: 1,
+            compaction: false,
+            reset: false,
         }
     }
 
     /// Add what the next request appends (see [`turn`]).
     pub fn push(&mut self, appended: Vec<u8>) {
         self.appended.push(appended);
+        self.request += 1;
+        self.reset = false;
+        self.compaction = false;
     }
 
     /// The number of the latest request.
     pub fn request(&self) -> u64 {
-        self.appended.len() as u64
+        self.request
     }
 
     /// What the latest request appends.
@@ -352,7 +378,21 @@ impl Conversation {
 
     /// The latest request's body.
     pub fn body(&self, parts: &Parts, max_tokens: u64) -> Vec<u8> {
+        let mut parts = parts.clone();
+        if self.compaction {
+            parts.extra.push(forms::COMPACTION_REQUEST.to_vec());
+        }
         parts.body(max_tokens, &self.appended)
+    }
+
+    /// Replace only active context. Captures remain an immutable record of
+    /// every earlier request, including the summary request itself.
+    pub fn compacted(&mut self, appended: Vec<u8>) {
+        if !crate::sabotage!("retain_precompaction_context") {
+            self.appended.clear();
+        }
+        self.push(appended);
+        self.reset = !crate::sabotage!("retain_precompaction_context");
     }
 }
 

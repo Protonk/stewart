@@ -34,6 +34,9 @@ An audit goes through these commands:
    submitting its answer. A submitted answer is sealed, copied to the
    manager's destination and read back to verify it. If a run dies, `run`
    again continues the same audit with its records and cumulative limits.
+   During a long run, Stewart asks the provider to summarize its active context
+   and continues from that signed summary. Original exchanges and recorded work
+   remain in the archive; summary calls use the same cumulative allowances.
 5. `stewart close REF` ends the audit from any state. Before launch it creates
    no answer. After launch it stops any run, seals the recorded answer for the
    manager if the auditor did not, and delivers the copy if one is still owed.
@@ -46,7 +49,7 @@ An audit goes through these commands:
 audit's state at any time, and `stewart help` explains the rest. Stewart keeps
 its records in the manager's archive and removes nothing.
 
-## Status (2026-10-30)
+## Status (2026-10-31)
 
 **Built:** the manager commands above, the auditor's tools and answer protocol,
 the run adapter, seal, verified delivery and close. The crate is at version
@@ -65,9 +68,9 @@ through the run, submit and seal, verified delivery, close) runs on each
 architecture's release binary. The suite passed at source `dc85948`: on
 aarch64 natively, with its timing gate on, and on x86_64 under Rosetta
 emulation, where the gate is reported but not enforced. Since that run the
-service has gained the manager's optional effort setting and reports the
-provider's error message with a refusal; those changes and the matching driver
-cases await the next suite run.
+service has gained the manager's optional effort setting, reports the
+provider's error message with a refusal, and enables provider compaction;
+those changes and the matching driver cases await the next suite run.
 [`apparatus/qualified.md`](apparatus/qualified.md) records the latest runs of
 each suite, the source commits they cover and their results, and
 `python3 -I -B apparatus/qualified.py check` reports what has changed since.
@@ -92,7 +95,7 @@ each suite, the source commits they cover and their results, and
   a real model, the release's TLS path to the real provider, with its built-in
   roots, is unexercised, and the pinned request settings (16,000 `max_tokens`
   per request, a 600 s timeout) are untested against real responses, as is
-  the effort parameter.
+  the effort parameter and provider compaction.
 
 ## Where to read next
 

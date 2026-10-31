@@ -217,7 +217,8 @@ SABOTAGES = ("accept_without_affirmation", "accept_changed_source", "skip_hidden
              "regenerate_arrangement", "rewrite_record_in_place", "remove_partial_on_retry",
              "unknown_as_absent", "select_newer_store", "accept_unknown_field",
              "omit_effects_on_refusal", "whole_from_one_member",
-             "extra_tool", "misspell_effort", "effort_in_prompt", "arrangement_mismatch", "read_live_source",
+             "extra_tool", "omit_compaction", "alter_compaction_summary",
+             "retain_precompaction_context", "ignore_compaction_usage", "misspell_effort", "effort_in_prompt", "arrangement_mismatch", "read_live_source",
              "normalize_read",
              "paraphrase_question", "read_truncate_silently", "search_omit_last_page", "torn_as_entry",
              "merge_equal_adds", "replay_reexecutes", "stale_target_overwrites", "manager_seal_as_auditor",
@@ -291,6 +292,8 @@ REMINDER = "This turn ended without a submission. Your recorded answer remains u
 NEAR_LIMIT = "Allowance notice: {turns} turns, {input_tokens} input tokens and {output_tokens} output tokens remain for this audit. When an allowance runs out the run stops, and an unsubmitted answer stays unsubmitted."
 CONTINUATION = "This audit is continuing in a new conversation after an earlier run ended. Your recorded work is preserved, but this conversation does not contain it. Call what_am_i_working_with to see what you have recorded. Your last action before the interruption may or may not have been recorded; check before repeating it."
 
+POST_COMPACTION = "The provider has summarized your earlier conversation. Continue this audit. Call what_am_i_working_with to check your recorded work before repeating an action."
+
 FAMILY_TOOLS = {
     "open-inquiry": ["record_account", "record_observation", "record_limit"],
     "inquiry-framing": ["record_working_question", "record_relation", "record_observation",
@@ -327,7 +330,9 @@ CITATION_SCHEMA = {
     "required": ["source"],
     "additionalProperties": False,
 }
-ARRANGEMENT_MEMBERS = ("model", "anthropic_version", "max_tokens_per_request", "system", "tools",
+ANTHROPIC_BETA = "compact-2026-09-04"
+COMPACTION = {"trigger_tokens": 150000, "request": {"type": "summarize"}}
+ARRANGEMENT_MEMBERS = ("model", "anthropic_version", "anthropic_beta", "compaction", "max_tokens_per_request", "system", "tools",
                        "request_extra", "texts", "limits", "near_limit_percent", "retry",
                        "request_timeout_seconds", "reader", "renderer", "family", "bindings")
 
@@ -3001,7 +3006,7 @@ def self_test():
                 paras.append(" ".join(p))
             texts.append("\n\n".join(paras))
         for label, want in [("orientation", ORIENTATION), ("reminder", REMINDER), ("near-limit", NEAR_LIMIT),
-                            ("continuation", CONTINUATION)] + [("family " + k, v) for k, v in FAMILY_TEXT.items()]:
+                            ("continuation", CONTINUATION), ("post-compaction", POST_COMPACTION)] + [("family " + k, v) for k, v in FAMILY_TEXT.items()]:
             ok("docs.%s" % label, want in texts, "embedded text differs from docs/QUESTION-FORMS.md")
         for name, desc in TOOL_DESC.items():
             ok("docs.tool.%s" % name, ("| `%s` | %s |" % (name, desc)) in text, name)

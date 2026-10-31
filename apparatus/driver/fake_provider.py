@@ -58,7 +58,7 @@ import traceback
 
 import rawjson
 from rawjson import compact
-from driver_core import API_VERSION, EFFORT_LEVELS, selftest
+from driver_core import ANTHROPIC_BETA, API_VERSION, EFFORT_LEVELS, selftest
 
 TLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "testdata", "tls")
 LOOPBACK = "127.0.0.1"
@@ -80,7 +80,7 @@ def own_connect(addr, timeout=10):
         raise NotOwnPort("refusing to connect to %r: only this run's own 127.0.0.1 listeners" % (addr,))
     return socket.create_connection((LOOPBACK, port), timeout=timeout)
 # The request header names INTERFACE 6.1 lists, in its order. "No other header is sent."
-REQUEST_HEADER_NAMES = ("host", "x-api-key", "anthropic-version", "content-type", "content-length",
+REQUEST_HEADER_NAMES = ("host", "x-api-key", "anthropic-version", "anthropic-beta", "content-type", "content-length",
                         "connection")
 ABSENT = object()
 REASONS = {200: "OK", 400: "Bad Request", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found",
@@ -152,10 +152,13 @@ def redacted_thinking(data):
     return Block(b'{"type":"redacted_thinking","data":' + jstr(data) + b"}", "redacted_thinking")
 
 
-def compaction(content):
-    """A provider compaction block. Stewart enables no context management (6.2), so for it
-    this is a block of a kind it does not interpret, echoed in history like any other."""
-    return Block(b'{"type":"compaction","content":' + jstr(content) + b"}", "compaction")
+def compaction(content, signature=ABSENT):
+    """A provider block; signature is required for an on-demand summary success (6.2).
+    An unsigned block in an ordinary response remains an opaque echoed block."""
+    raw = b'{"type":"compaction","content":' + jstr(content)
+    if signature is not ABSENT:
+        raw += b',"signature":' + jstr(signature)
+    return Block(raw + b"}", "compaction")
 
 
 def unknown_block(type_, **fields):
@@ -167,9 +170,11 @@ def unknown_block(type_, **fields):
 class Usage:
     """Reported usage. cache counts may be ABSENT (member left out) or None (null)."""
 
-    def __init__(self, input_tokens, output_tokens, cache_creation=ABSENT, cache_read=ABSENT):
+    def __init__(self, input_tokens, output_tokens, cache_creation=ABSENT, cache_read=ABSENT,
+                 iterations=ABSENT):
         self.input, self.output = input_tokens, output_tokens
         self.cache_creation, self.cache_read = cache_creation, cache_read
+        self.iterations = iterations
 
     def raw(self):
         parts = [b'"input_tokens":%d' % self.input]
@@ -179,22 +184,31 @@ class Usage:
                 continue
             parts.append(b'"' + name.encode() + b'":' + (b"null" if v is None else str(v).encode()))
         parts.append(b'"output_tokens":%d' % self.output)
+        if self.iterations is not ABSENT:
+            parts.append(b'"iterations":' + compact(self.iterations))
         return b"{" + b",".join(parts) + b"}"
 
+    def counts(self):
+        """Expected decoded counts for deliberately valid fixtures, never top-level plus sums."""
+        names = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")
+        if self.iterations is not ABSENT and self.iterations is not None:
+            return {k: sum(it.get(k) or 0 for it in self.iterations) for k in names}
+        return dict(zip(names, (self.input, 0 if self.cache_creation is ABSENT else self.cache_creation or 0,
+                               0 if self.cache_read is ABSENT else self.cache_read or 0, self.output)))
+
     def charged_input(self):
-        """input_tokens + cache_creation + cache_read, absent or null counted 0 (6.4)."""
-        extra = 0
-        for v in (self.cache_creation, self.cache_read):
-            if v is not ABSENT and v is not None:
-                extra += v
-        return self.input + extra
+        counts = self.counts()
+        return sum(counts[k] for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+
+    def charged_output(self):
+        return self.counts()["output_tokens"]
 
     def describe(self):
         def show(v):
             return "absent" if v is ABSENT else v
         return {"input_tokens": self.input, "output_tokens": self.output,
                 "cache_creation_input_tokens": show(self.cache_creation),
-                "cache_read_input_tokens": show(self.cache_read)}
+                "cache_read_input_tokens": show(self.cache_read), "iterations": show(self.iterations)}
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +219,7 @@ def charge_of(basis, ex, usage=None):
     """The charge INTERFACE 6.4 assigns to an attempt with this basis."""
     if basis == "reported":
         return {"basis": "reported", "turns": 1, "input_tokens": usage.charged_input(),
-                "output_tokens": usage.output}
+                "output_tokens": usage.charged_output()}
     if basis == "estimated":
         mt = ex.max_tokens()
         return {"basis": "estimated", "turns": 1,
@@ -689,6 +703,7 @@ def messages_api():
     an effort of 3.2's levels (6.2)."""
     return Accepts(Members([("model", ANY), ("max_tokens", ANY), ("system", ANY), ("tools", ANY),
                             ("output_config", Members([("effort", OneOf(EFFORT_LEVELS))])),
+                            ("compaction", Members([("type", OneOf(("summarize",)))], required=("type",))),
                             ("messages", ANY)], required=("model", "max_tokens", "messages")),
                    name="messages-api/%s" % API_VERSION)
 
@@ -1282,8 +1297,8 @@ def response_body(ex):
 
 def stewart_request(host, key, body, path=""):
     head = ("POST %s/v1/messages HTTP/1.1\r\nhost: %s\r\nx-api-key: %s\r\nanthropic-version: %s\r\n"
-            "content-type: application/json\r\ncontent-length: %d\r\nconnection: close\r\n\r\n"
-            % (path, host, key, API_VERSION, len(body))).encode("latin-1")
+            "anthropic-beta: %s\r\ncontent-type: application/json\r\ncontent-length: %d\r\nconnection: close\r\n\r\n"
+            % (path, host, key, API_VERSION, ANTHROPIC_BETA, len(body))).encode("latin-1")
     return head + body
 
 

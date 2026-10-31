@@ -202,6 +202,13 @@ message:
 > before the interruption may or may not have been recorded; check before
 > repeating it.
 
+The post-compaction notice, after the provider's signed summary in the same
+placement (it consumes neither the reminder nor the near-limit allowance):
+
+> The provider has summarized your earlier conversation. Continue this audit.
+> Call what_am_i_working_with to check your recorded work before repeating an
+> action.
+
 ## The structured answer (`stewart.answer/1`)
 
 `answer.json` is the prepared selection. It is the `selection` view the auditor

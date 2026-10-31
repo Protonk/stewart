@@ -40,7 +40,7 @@ import shutil
 import answer_witness as aw
 import fake_provider as fp
 import rawjson
-from driver_core import (API_VERSION, LOG_KINDS, MAX_TOKENS_PER_REQUEST, RECORD_SCHEMA, RUN_CAUSES, RUN_ENDINGS,
+from driver_core import (ANTHROPIC_BETA, API_VERSION, COMPACTION, POST_COMPACTION, LOG_KINDS, MAX_TOKENS_PER_REQUEST, RECORD_SCHEMA, RUN_CAUSES, RUN_ENDINGS,
                          StrictJSONError, Skip, expected_system_bytes, expected_tools, read_bytes, sha256_hex,
                          short, strict_loads)
 
@@ -546,7 +546,7 @@ def pinned_request_extra(sub):
 
 
 def check_requests(t, fx, sub, name, *, family=None, exchanges=None):
-    """6.1 and 6.2 for every request the fake received: request line, exactly the six headers in
+    """6.1 and 6.2 for every request the fake received: request line, exactly the seven headers in
     the listed order (literal reading of 6.1), and a body spliced as 4.5 states from the pinned
     model, system and tools bytes and the request_extra members (the effort: `output_config`
     after `tools` exactly when the front matter sets one), with nothing else and no whitespace."""
@@ -560,6 +560,9 @@ def check_requests(t, fx, sub, name, *, family=None, exchanges=None):
     pinned_extra = pinned_request_extra(sub)
     if sub.accepted_handle and sub.arrangement.get(sub.accepted_handle):
         t.eq(name + ".request-extra-pinned", pinned_extra, want_extra)
+        for member, expected in (("anthropic_beta", ANTHROPIC_BETA), ("compaction", COMPACTION)):
+            raw = arrangement_member_raw(sub, member)
+            t.eq(name + "." + member + "-pinned", rawjson.parse(raw).value() if raw else None, expected)
     for ex in exchanges if exchanges is not None else fx.exchanges:
         p = "%s.request-%d" % (name, ex.n)
         t.check(p + ".complete", ex.problem is None, ex.problem)
@@ -569,19 +572,24 @@ def check_requests(t, fx, sub, name, *, family=None, exchanges=None):
         t.eq(p + ".host", hv.get("host"), fx.host_header)
         t.check(p + ".key", hv.get("x-api-key") == fx.key, "x-api-key is not the key given")
         t.eq(p + ".version", hv.get("anthropic-version"), API_VERSION)
+        t.eq(p + ".beta", hv.get("anthropic-beta"), ANTHROPIC_BETA)
         t.eq(p + ".content-type", hv.get("content-type"), "application/json")
         t.eq(p + ".content-length", hv.get("content-length"), str(len(ex.body or b"")))
         t.eq(p + ".connection", hv.get("connection"), "close")
         node = ex.body_node()
         if not t.check(p + ".body-json", node is not None and node.kind == "object", (ex.body or b"")[:200]):
             continue
+        summary = node.get("compaction") is not None
+        cx = b',"compaction":{"type":"summarize"}' if summary else b""
+        if summary:
+            t.eq(p + ".compaction", node.get("compaction").raw, b'{"type":"summarize"}')
         t.eq(p + ".body-keys", node.keys(), ["model", "max_tokens", "system", "tools"]
-             + (["output_config"] if want_x else []) + ["messages"])
+             + (["output_config"] if want_x else []) + (["compaction"] if summary else []) + ["messages"])
         oc = node.get("output_config")
         t.eq(p + ".effort", None if oc is None else b',"output_config":' + oc.raw, want_x or None)
         if pinned_extra is not None:
             sent = {k: c.value() for k, _, _, c in node.members
-                    if k not in ("model", "max_tokens", "system", "tools", "messages")}
+                    if k not in ("model", "max_tokens", "system", "tools", "compaction", "messages")}
             t.eq(p + ".request-extra-sent", sent, pinned_extra)
         mt = ex.max_tokens()
         t.check(p + ".max-tokens", isinstance(mt, int) and 1024 <= mt <= MAX_TOKENS_PER_REQUEST, mt)
@@ -599,10 +607,82 @@ def check_requests(t, fx, sub, name, *, family=None, exchanges=None):
         msgs = node.get("messages")
         if msgs is not None and tools is not None:
             splice = (b'{"model":' + fp.jstr(sub.model) + b',"max_tokens":%d' % (mt if isinstance(mt, int) else -1)
-                      + b',"system":' + want_sys + b',"tools":' + tools.raw + want_x + b',"messages":' + msgs.raw
+                      + b',"system":' + want_sys + b',"tools":' + tools.raw + want_x + cx + b',"messages":' + msgs.raw
                       + b"}")
             t.check(p + ".spliced", ex.body == splice, "body is not exactly the 4.5 splice (whitespace or extra members)")
             t.check(p + ".messages-compact", b"\n" not in msgs.raw, "newline in messages")
+
+
+def is_compaction_request(ex):
+    node = ex.body_node()
+    return node is not None and node.get("compaction") is not None
+
+
+def reconstruct_request(sub, capture, active):
+    """Rebuild 4.5 bytes from retained captures and the independently saved arrangement.
+    Returns (active messages, body, capture header); raises for malformed captures.
+    No provider witness is consulted here: the caller compares against that witness."""
+    if not capture.endswith(b"]}\n"):
+        raise ValueError("incomplete request capture")
+    node = rawjson.parse(capture[:-1])
+    keys = ["request", "max_tokens", "body_bytes", "body_sha256", "compaction", "reset", "appended"]
+    if node.keys() != keys:
+        raise ValueError("request capture keys/order differ: %r" % node.keys())
+    header = node.value()
+    if type(header["compaction"]) is not bool or type(header["reset"]) is not bool:
+        raise ValueError("compaction/reset must be booleans")
+    arr = node.get("appended")
+    if arr is None or arr.kind != "array":
+        raise ValueError("appended is not an array")
+    active = ([] if header["reset"] else list(active)) + [m.raw for m in arr.items]
+    pinned = {k: arrangement_member_raw(sub, k) for k in ("model", "system", "tools", "request_extra")}
+    if any(v is None for v in pinned.values()):
+        raise ValueError("missing arrangement bytes")
+    extra = rawjson.parse(pinned["request_extra"])
+    x = b"".join(b"," + pinned["request_extra"][start:child.end] for _, start, _, child in extra.members)
+    if header["compaction"]:
+        x += b',"compaction":{"type":"summarize"}'
+    body = (b'{"model":' + pinned["model"] + b',"max_tokens":%d' % header["max_tokens"]
+            + b',"system":' + pinned["system"] + b',"tools":' + pinned["tools"] + x
+            + b',"messages":[' + b",".join(active) + b"]}")
+    if header["body_bytes"] != len(body) or header["body_sha256"] != sha256_hex(body):
+        raise ValueError("reconstructed size/digest differs from capture")
+    return active, body, header
+
+
+def check_captures(t, sub, fx, name, run_number=1, exchanges=None):
+    """Every original request remains reconstructable, and responses/charges match the fake.
+    The fake's external witness survives even if the service loses a reset or an old capture."""
+    rd = run_dirs(sub).get(run_number)
+    if not t.check(name + ".captures.present", rd is not None, "no run directory"):
+        return
+    exs = list(exchanges if exchanges is not None else fx.exchanges_of(name))
+    active, previous, k, a = [], None, 0, 0
+    for ex in exs:
+        if previous is None or previous.body != ex.body:
+            k, a = k + 1, 1
+            pre = "%s.capture.%d" % (name, k)
+            try:
+                active, body, header = reconstruct_request(sub, rd.requests.get(k, b""), active)
+                t.eq(pre + ".body", body, ex.body)
+                t.eq(pre + ".request", header["request"], k)
+                t.eq(pre + ".compaction", header["compaction"], is_compaction_request(ex))
+                t.eq(pre + ".reset", header["reset"], previous is not None and is_compaction_request(previous))
+            except (ValueError, TypeError, KeyError) as exc:
+                t.check(pre + ".reconstruct", False, str(exc))
+        else:
+            a += 1
+        pre = "%s.capture.%d.%d" % (name, k, a)
+        body = fp.response_body(ex)
+        if body is not None:
+            t.eq(pre + ".response", rd.responses.get((k, a)), body)
+        rec = (rd.attempts.get((k, a)) or {}).get("body") or {}
+        t.eq(pre + ".charged", rec.get("charged"), ex.charge)
+        if isinstance(ex.step, fp.Message) and ex.charge and ex.charge.get("basis") == "reported":
+            t.eq(pre + ".usage", rec.get("usage"), ex.step.usage.counts())
+        previous = ex
+    t.eq(name + ".captures.requests", sorted(rd.requests), list(range(1, k + 1)))
+    t.eq(name + ".captures.attempts", len(rd.attempts), len(exs))
 
 
 def conversations(exchanges):
@@ -628,13 +708,22 @@ def conversations(exchanges):
 
 
 def check_history(t, fx, name, exchanges=None):
-    """6.2: within a conversation messages are append-only; each assistant message is the previous
-    response's content bytes; the next user message answers each tool_use in order."""
+    """6.2: append exact responses and tool results, or replace context after a signed summary."""
     for ci, conv in enumerate(conversations(exchanges if exchanges is not None else fx.exchanges), 1):
         for i in range(1, len(conv)):
             (prev_req, prev_ans), (req, _) = conv[i - 1], conv[i]
             p = "%s.history.c%d.r%d" % (name, ci, i + 1)
             pm, m = prev_req.messages() or [], req.messages() or []
+            if is_compaction_request(prev_req):
+                t.eq(p + ".reset-two", len(m), 2)
+                if prev_ans is not None and prev_ans.content_raw is not None:
+                    t.eq(p + ".summary-exact", m[0].raw if m else None,
+                         b'{"role":"assistant","content":' + prev_ans.content_raw + b"}")
+                items = m[1].get("content") if len(m) > 1 else None
+                first = items.items[0].value() if items is not None and items.kind == "array" and items.items else None
+                t.eq(p + ".post-compaction", first, {"type": "text", "text": POST_COMPACTION})
+                t.eq(p + ".after-summary-ordinary", is_compaction_request(req), False)
+                continue
             t.eq(p + ".appended-two", len(m), len(pm) + 2)
             t.check(p + ".prefix", [x.raw for x in m[:len(pm)]] == [x.raw for x in pm], "earlier messages changed")
             if prev_ans is None or prev_ans.content_raw is None or len(m) < len(pm) + 2:

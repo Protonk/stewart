@@ -414,6 +414,21 @@ private-location inventory or protection from a hostile host owner is promised.
 
 ## Run and continuation
 
+**Provider compaction within a run.** Decided 2026-10-31. The Messages API adapter
+asks the provider to compact a large active context and continues from its signed
+summary. Stewart does not author that summary or treat it as submitted work.
+Original exchanges remain retained, the ledger and limits stay unchanged, and
+summary calls consume the same cumulative allowances. Re-entry supplies recorded
+facts the summary may omit. Compaction is distinct from the fresh conversation
+used after an interrupted placement. The trigger, captures, usage and failure
+behavior are specified in INTERFACE 6.2. This change awaits container and
+real-model qualification.
+
+The Messages API remains the current runtime. Claude Code is intended as a future
+peer adapter; human and Codex/OpenAI runtimes are future possibilities. Those
+adapters have not been commissioned for implementation and do not inherit a
+claim that their access, context or stopping mechanisms have been qualified.
+
 The manager's unit is an inquiry: a line of questions about a concern. Each audit
 has its own explicit reference and can record which earlier problem it varies.
 Status never chooses an audit by recency. Constructing another question is the

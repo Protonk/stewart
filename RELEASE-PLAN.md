@@ -138,7 +138,7 @@ user's timing.
 
 ACCEPTANCE's conformance tier (C10) checks procedure, never answer quality:
 fixed commissions for the three families, each run three times per model without
-an effort setting, plus one run with an effort set, one with compaction forced
+an effort setting, plus one run with an effort set, one long enough to compact
 and one killed midway and continued. Its apparatus does not exist yet. Before
 any model-consuming run the user names the models, their settings (including the
 effort for the effort run) and an explicit budget. This plan authorizes no
@@ -148,14 +148,16 @@ not authorization to spend. A model named in an example, such as
 that passed the gate.
 
 Verify the provider's current specifications first. They were last checked on
-2026-10-30; the adapter pins `anthropic-version: 2026-10-21` and handles the
+2026-10-31 for compaction; the adapter pins `anthropic-version: 2026-10-21`,
+`anthropic-beta: compact-2026-09-04` and handles the
 `model_context_window_exceeded` stop reason. The release's TLS path with its
 built-in roots is unexercised, and `max_tokens_per_request` and the 600 s
 timeout are unqualified (above). Thinking counts toward `max_tokens`, so at a
 high effort a response is more likely to end `max_tokens` (which interrupts the
 run, visibly and continuably); the effort run shows whether 16,000 still fits.
-The tier's forced-compaction run waits on "To investigate: compaction and
-re-entry" (below).
+The compaction specimen must reach the release's fixed 150,000-token trigger
+and show an actual provider summary and its usage; a fake summary or a changed
+test-only trigger does not establish real-provider conformance.
 
 Needs: the acceptance-testing discussion; the user's models, settings and
 budget; the provider check; the real-model apparatus.
@@ -177,6 +179,9 @@ These changes have not run in a container:
 - The effort setting and the provider's error message in run results
   (2026-10-31): the service, the specification and the driver's cases and
   controls ("Effort setting", above).
+- Provider compaction (2026-10-31): summary requests, signed-summary resumption,
+  retained request reconstruction, iteration usage, failure paths and four
+  controls ("Provider compaction", below).
 
 The next `acceptance.sh` runs the self-test in a container. `step2.sh` refuses
 to start while `service/vendor` exists, needs the network, and rebuilds both
@@ -254,41 +259,53 @@ correctly. Of its findings, these are small fixes:
   check that prepares the examples, and skips that Cargo reports as skips (for
   example `#[ignore]` with a reason).
 
-### To investigate: compaction and re-entry
+### Provider compaction: built, unqualified
 
-Left by the user on 2026-10-31, so that no decision rests on a
-misinterpretation. Nothing has been decided.
+On 2026-10-31 the user commissioned keeping the Messages API loop and enabling
+provider compaction. The earlier mismatch is resolved in specification and code:
+the provider writes the summary, and Stewart resumes from its exact signed
+block while preserving original captures, answer records and cumulative limits.
+INTERFACE 6.2 specifies the on-demand API, automatically requested at 150,000
+context tokens. Its explicit output cap keeps the summary within the existing
+request allowance. A failed summary interrupts visibly without executing tools,
+silently disabling compaction or changing models. Interrupted placements still
+continue in a fresh conversation.
 
-The user's understanding, in their words: "Stewart doesn't summarize. Stewart
-is designed instead to be resilient to an auditing agent compacting. They'll
-receive their own summary/whatever from the harness. The submission tool should
-merely need to have available clear status reports."
+ACCEPTANCE C4 and the independent driver now distinguish actual provider-summary
+transitions from the existing simulated memory-loss test of re-entry. Eight new
+driver cases cover repeated compaction, byte preservation, retained captures,
+usage, limits, notices, refusals, retry and stopping. Four sabotage controls
+break the trigger, signed bytes, context replacement and usage accounting.
 
-What the specification says:
+Native verification is complete. The user's host run in
+`.scratch/compaction-host-02` ran both full Cargo configurations, both exit 0,
+with no loopback skips. The default run reported 158 library tests and 21 run
+integration tests passed; the feature run reported 159 and 31 respectively,
+with all other test binaries passing. The feature run's 9 and 26 ignored
+fault/sabotage child tests are invoked by their own runner tests (DEVELOPMENT).
 
-- Stewart does not summarize or trim history. When the model's context window
-  is exhausted the placement is interrupted, and continuation starts a fresh
-  conversation (INTERFACE 6.2).
-- `what_am_i_working_with` restores recorded work, not unrecorded thoughts,
-  "across compaction/dead-run continuation" (CONTRACTS). The pinned orientation
-  tells the model to call it "if your context was summarized"
-  (QUESTION-FORMS).
-- ACCEPTANCE C4 has the fake provider emit a compaction block midway, after
-  which the reacting auditor rebuilds its view from that call; the conformance
-  tier (C10) asks for one run with compaction forced "through a low compaction
-  trigger or a run long enough to reach it".
-- The first release's adapter is itself the loop that calls the provider
-  (DESIGN, "Implementation shape"). It sends no `anthropic-beta` header
-  (INTERFACE 6.1) and enables no provider-side context management (6.2).
+The host C4 driver run in `.scratch/compaction-host-01/driver` exited 0:
+9 cases selected, 8 passed, 0 failed and 1 skipped (the Linux-only compaction
+stopping case); 29,125 checks passed, 0 failed outside controls. All 9 controls
+fired, including the four new compaction controls. Its independent witness and
+every variant's working copies remain retained with `--keep-work all`.
+The driver's self-test reported 281 checks, 279 passed, 0 failed and 2 skipped
+in the agent shell (loopback unavailable); `--list` loaded 119 cases.
+Formatting, the link check and `git diff --check` passed.
 
-The question to investigate: in the first release, what, if anything, compacts
-an auditor's context? The adapter is the only loop around the model, so the
-event the design guards against may in practice be only the fresh conversation
-after an interrupted placement, which the same re-entry call serves. If so, C4's
-compaction block and C10's forced-compaction run may describe an event the
-release cannot produce. A cold read of the repository raised this; the
-investigation should establish which reading the specification intends before
-anything changes.
+Earlier outputs remain in `.scratch/compaction-native-01`,
+`.scratch/compaction-driver-01` and `.scratch/compaction-host-01`. Agent-shell
+loopback tests could not run. The first host Cargo runs each found one old
+allowance fixture reporting 398,976 output tokens in one response; this now
+triggered compaction. The fixture was corrected to use a 16,000-token allowance
+and 14,976-token first response, preserving the same 1,024-token remainder and
+notice boundary. The second host run above verifies that correction.
+
+Needs: the user's next scheduled `acceptance.sh` container run, including the
+Linux stopping case, and separately budgeted real-model conformance. Native
+iteration does not qualify the change. No model call was made or authorized.
+Claude Code as a peer runtime is the next discussion; human and Codex/OpenAI
+adapters remain future possibilities (CONTRACTS).
 
 ### To discuss: what acceptance testing Stewart needs
 

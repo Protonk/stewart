@@ -208,6 +208,10 @@ The scaffold starts at 200 turns, 20,000,000 input and 400,000 output tokens.
 A request is not sent when no turn remains, the input allowance is used up or
 fewer than 1,024 output tokens remain. One near-limit notice is given per audit
 when {}% or less of an allowance remains. Stewart sets no money limit.
+Provider compaction automatically summarizes a large active context at 150,000
+tokens. Summary calls consume these same turns and token allowances. Original
+exchanges and the recorded answer remain retained. A provider refusal is reported
+as given; Stewart does not silently disable compaction or change the model.
 
 Auditor reading bounds: 64 KiB of text per read page; 128 search hits and 32 KiB
 of context per page; 128 materials per list page; 4 MiB per tool call. Answers:

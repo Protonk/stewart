@@ -15,6 +15,9 @@ pub const ARRANGEMENT_SCHEMA: &str = "stewart.arrangement/1";
 /// `anthropic-version` header of every request and the arrangement's
 /// `anthropic_version` member.
 pub const ANTHROPIC_VERSION: &str = "2026-10-21";
+pub const ANTHROPIC_BETA: &str = "compact-2026-09-04";
+pub const COMPACTION_TRIGGER_TOKENS: u64 = 150_000;
+pub const COMPACTION_REQUEST: &[u8] = br#""compaction":{"type":"summarize"}"#;
 /// Output tokens requested per provider request (before the remaining
 /// allowance lowers it). Pinned by the release.
 pub const MAX_TOKENS_PER_REQUEST: u64 = 16_000;
@@ -49,6 +52,7 @@ pub const REMINDER: &str = "This turn ended without a submission. Your recorded 
 pub const NEAR_LIMIT: &str = "Allowance notice: {turns} turns, {input_tokens} input tokens and {output_tokens} output tokens remain for this audit. When an allowance runs out the run stops, and an unsubmitted answer stays unsubmitted.";
 
 pub const CONTINUATION: &str = "This audit is continuing in a new conversation after an earlier run ended. Your recorded work is preserved, but this conversation does not contain it. Call what_am_i_working_with to see what you have recorded. Your last action before the interruption may or may not have been recorded; check before repeating it.";
+pub const COMPACTED: &str = "The provider has summarized your earlier conversation. Continue this audit. Call what_am_i_working_with to check your recorded work before repeating an action.";
 
 pub struct Family {
     pub id: &'static str,
@@ -409,6 +413,13 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
         .with("orientation", ORIENTATION_ID)
         .with("model", s.model.as_str())
         .with("anthropic_version", ANTHROPIC_VERSION)
+        .with("anthropic_beta", ANTHROPIC_BETA)
+        .with(
+            "compaction",
+            J::obj()
+                .with("trigger_tokens", COMPACTION_TRIGGER_TOKENS)
+                .with("request", J::obj().with("type", "summarize")),
+        )
         .with("max_tokens_per_request", MAX_TOKENS_PER_REQUEST)
         .with("system", J::Raw(system.clone()))
         .with("tools", J::Raw(tools.clone()))
@@ -418,7 +429,8 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
             J::obj()
                 .with("reminder", REMINDER)
                 .with("near_limit", NEAR_LIMIT)
-                .with("continuation", CONTINUATION),
+                .with("continuation", CONTINUATION)
+                .with("compacted", COMPACTED),
         )
         .with(
             "limits",
@@ -516,8 +528,10 @@ fn readable(f: &Family, input: &ArrangementInput, tools_bytes: &[u8]) -> String 
     md.push_str(&quoted_block(NEAR_LIMIT));
     md.push_str("\n\nWhen an interrupted audit continues in a new conversation, its first message holds the question and then:\n\n");
     md.push_str(&quoted_block(CONTINUATION));
-    md.push_str("\n\nAnother turn that ends without submission ends the run; close then seals the recorded answer with manager attribution. When a limit is exhausted the run stops and the answer stays unsubmitted.\n\n");
-    md.push_str("## Reading, truncation and continuation\n\n");
+    md.push_str("\n\nAnother turn that ends without submission ends the run; close then seals the recorded answer with manager attribution. When a limit is exhausted the run stops and the answer stays unsubmitted.");
+    md.push_str(&format!("\n\n## Provider compaction\n\nThe run requests a provider summary at {COMPACTION_TRIGGER_TOKENS} context tokens (beta {ANTHROPIC_BETA}). Summary calls count against the same limits. The signed summary replaces active model context; original captures and the recorded answer remain retained. After a summary the model receives:\n\n"));
+    md.push_str(&quoted_block(COMPACTED));
+    md.push_str("\n\n## Reading, truncation and continuation\n\n");
     md.push_str("- read returns at most 65,536 bytes of text per page, ending at the source's end, or just after the last LF in the window, or at the last UTF-8 boundary; a ready next call continues it. Binary artifacts come in 49,152-byte base64 pages.\n");
     md.push_str("- search is literal and case-sensitive, 1–1,024 bytes of text, at most 128 hits and 32 KiB of context per page, with 240 bytes of context per hit. An incomplete search never reports absence.\n");
     md.push_str("- list returns at most 128 materials per page.\n");
@@ -691,6 +705,7 @@ mod tests {
             REMINDER,
             NEAR_LIMIT,
             CONTINUATION,
+            COMPACTED,
         ] {
             assert!(
                 joined.iter().any(|j| j == text),

@@ -322,13 +322,20 @@ impl State<'_, '_> {
                 .limits
                 .max_tokens(&self.cumulative(), pinned.max_tokens_per_request);
             let body = conv.body(&self.live.parts, max_tokens);
-            let capture = runs::request_capture(k, max_tokens, &body, &[conv.latest()]);
+            let capture = runs::request_capture_context(
+                k,
+                max_tokens,
+                &body,
+                &[conv.latest()],
+                conv.compaction,
+                conv.reset,
+            );
             if let Err(c) = self.live.dir.write_request(k, &capture) {
                 return archive_failed(&c);
             }
             self.requests += 1;
             self.seen.entry(k).or_default().captured = true;
-            let (a, attempt, msg) = match self.send(k, &body, max_tokens) {
+            let (a, attempt, msg) = match self.send(k, &body, max_tokens, conv.compaction) {
                 Ok(x) => x,
                 Err(stop) => return stop,
             };
@@ -351,6 +358,7 @@ impl State<'_, '_> {
         k: u64,
         body: &[u8],
         max_tokens: u64,
+        compacting: bool,
     ) -> Result<(u64, Attempt, Message), Stop> {
         let live = self.live;
         let mut a = 0u64;
@@ -359,7 +367,6 @@ impl State<'_, '_> {
             let attempt = live.client.send(body, live.abort, &mut || {
                 crate::fault!("provider.sent", k.to_string().as_str())
             });
-            let c = classify(&attempt);
             let estimated = Charge::estimated(max_tokens, body.len() as u64);
             let response = match &attempt.reply {
                 Some(r) => match live.dir.write_response(k, a, &r.body) {
@@ -378,6 +385,13 @@ impl State<'_, '_> {
                 },
                 None => None,
             };
+            let mut c = classify(&attempt);
+            if compacting && c.message.as_ref().is_some_and(|m| !m.compaction_usage) {
+                c.outcome = crate::provider::Outcome::ResponseUndecodable;
+                c.message = None;
+                c.problem =
+                    Some("Provider compaction response has no compaction usage iteration.".into());
+            }
             let usage = c.message.as_ref().map(|m| m.usage);
             let charge = policy::charge(
                 c.outcome,
@@ -613,6 +627,9 @@ impl State<'_, '_> {
         body: &[u8],
         msg: &Message,
     ) -> Result<(), Stop> {
+        if conv.compaction {
+            return self.respond_compaction(conv, k, body, msg);
+        }
         let (results, early) = self.execute_blocks(k, a, body, msg);
         // Whether a seal was recorded is read from the log, whatever the
         // calls replied; a seal is delivered before the placement ends,
@@ -644,6 +661,8 @@ impl State<'_, '_> {
                     content,
                     &user_message(&results, None, notice.as_deref()),
                 ));
+                conv.compaction = msg.context_tokens >= crate::forms::COMPACTION_TRIGGER_TOKENS
+                    && !crate::sabotage!("omit_compaction");
                 between_turns(k);
                 Ok(())
             }
@@ -664,10 +683,51 @@ impl State<'_, '_> {
                     content,
                     &user_message(&results, Some(&reminder), notice.as_deref()),
                 ));
+                conv.compaction = msg.context_tokens >= crate::forms::COMPACTION_TRIGGER_TOKENS
+                    && !crate::sabotage!("omit_compaction");
                 between_turns(k);
                 Ok(())
             }
         }
+    }
+
+    /// Summary calls cannot author answers or consume the ordinary-stop reminder.
+    /// Their usage was already charged; before_request checks all limits again.
+    fn respond_compaction(
+        &mut self,
+        conv: &mut Conversation,
+        k: u64,
+        body: &[u8],
+        msg: &Message,
+    ) -> Result<(), Stop> {
+        if !msg.valid_summary(body) {
+            let cause = match msg.stop_reason.as_str() {
+                "max_tokens" => Cause::MaxTokens,
+                "refusal" => Cause::ProviderRefusal,
+                "model_context_window_exceeded" => Cause::ContextExhausted,
+                _ => Cause::ProtocolAnomaly,
+            };
+            return Err(Stop::Ending(
+                Ending::Interrupted(cause),
+                format!(
+                    "Provider compaction did not return a complete signed summary (stop reason {}). The response is retained; continuing starts a fresh conversation.",
+                    msg.stop_reason.as_str()
+                ),
+            ));
+        }
+        let notice = self.take_pending(k + 1);
+        let mut content = msg.content.of(body).to_vec();
+        if crate::sabotage!("alter_compaction_summary") {
+            content =
+                br#"[{"type":"compaction","content":"altered summary","signature":"altered"}]"#
+                    .to_vec();
+        }
+        conv.compacted(turn(
+            &content,
+            &user_message(&[], Some(&self.pinned().compacted), notice.as_deref()),
+        ));
+        between_turns(k);
+        Ok(())
     }
 
     /// Execute every `tool_use` block in order. Returns the `tool_result`

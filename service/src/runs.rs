@@ -188,9 +188,9 @@ impl RunDir {
 
 /// The body of request `k` (4.5), spliced from pinned bytes and never
 /// re-serialized: `{"model":<M>,"max_tokens":<T>,"system":<S>,"tools":<U><X>,
-/// "messages":[<A_1>,…,<A_k>]}`. `extra` holds each member of the
-/// arrangement's `request_extra` object as its raw `"key":value` bytes (none
-/// in this release); `messages` every message so far, each compact JSON.
+/// "messages":[…]}`. `extra` holds each member of the arrangement's
+/// `request_extra` object as its raw `"key":value` bytes, followed by the
+/// compaction parameter for a summary request; `messages` holds active context.
 pub fn request_body(
     model: &[u8],
     max_tokens: u64,
@@ -227,11 +227,24 @@ fn join_into(b: &mut Vec<u8>, parts: &[&[u8]]) {
 
 /// A request capture: one line of compact JSON and an LF,
 /// `{"request":<k>,"max_tokens":<T>,"body_bytes":<B>,"body_sha256":"<hex>",
-/// "appended":[<A_k>]}`, where `appended` holds the messages request `k`
-/// appends exactly as they appear in `body`.
+/// "compaction":false,"reset":false,"appended":[<A_k>]}`, where `appended`
+/// holds the messages request `k` appends exactly as they appear in `body`.
 pub fn request_capture(k: u64, max_tokens: u64, body: &[u8], appended: &[&[u8]]) -> Vec<u8> {
+    request_capture_context(k, max_tokens, body, appended, false, false)
+}
+
+/// Capture an ordinary or compaction request and whether its appended messages
+/// replace active context. This never replaces any earlier capture.
+pub fn request_capture_context(
+    k: u64,
+    max_tokens: u64,
+    body: &[u8],
+    appended: &[&[u8]],
+    compaction: bool,
+    reset: bool,
+) -> Vec<u8> {
     let mut b = format!(
-        "{{\"request\":{k},\"max_tokens\":{max_tokens},\"body_bytes\":{},\"body_sha256\":\"{}\",\"appended\":[",
+        "{{\"request\":{k},\"max_tokens\":{max_tokens},\"body_bytes\":{},\"body_sha256\":\"{}\",\"compaction\":{compaction},\"reset\":{reset},\"appended\":[",
         body.len(),
         util::sha256_hex(body)
     )
@@ -248,6 +261,8 @@ pub struct RequestHeader {
     pub max_tokens: u64,
     pub body_bytes: u64,
     pub body_sha256: String,
+    pub compaction: bool,
+    pub reset: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -284,12 +299,22 @@ pub fn parse_request_capture(bytes: &[u8]) -> RequestCapture {
         if !util::is_hex64(sha) {
             return None;
         }
-        r[64..].strip_prefix(b"\",\"appended\":[")?;
+        fn flag(r: &[u8]) -> Option<(bool, &[u8])> {
+            r.strip_prefix(b"true")
+                .map(|s| (true, s))
+                .or_else(|| r.strip_prefix(b"false").map(|s| (false, s)))
+        }
+        let r = r[64..].strip_prefix(b"\",\"compaction\":")?;
+        let (compaction, r) = flag(r)?;
+        let (reset, r) = flag(r.strip_prefix(b",\"reset\":")?)?;
+        r.strip_prefix(b",\"appended\":[")?;
         Some(RequestHeader {
             request,
             max_tokens,
             body_bytes,
             body_sha256: sha.to_string(),
+            compaction,
+            reset,
         })
     };
     match parse() {
@@ -305,8 +330,8 @@ pub fn request_appended(bytes: &[u8]) -> Option<&[u8]> {
         return None;
     };
     let prefix = format!(
-        "{{\"request\":{},\"max_tokens\":{},\"body_bytes\":{},\"body_sha256\":\"{}\",\"appended\":[",
-        h.request, h.max_tokens, h.body_bytes, h.body_sha256
+        "{{\"request\":{},\"max_tokens\":{},\"body_bytes\":{},\"body_sha256\":\"{}\",\"compaction\":{},\"reset\":{},\"appended\":[",
+        h.request, h.max_tokens, h.body_bytes, h.body_sha256, h.compaction, h.reset
     );
     let rest = bytes.strip_prefix(prefix.as_bytes())?;
     rest.strip_suffix(b"]}\n")
@@ -314,7 +339,7 @@ pub fn request_appended(bytes: &[u8]) -> Option<&[u8]> {
 
 /// Rebuild the body of the last of `captures` (requests 1…k of a placement,
 /// in order) from the arrangement's pinned bytes and every capture's
-/// appended messages, and check it against that capture's length and digest
+/// appended messages since the last reset, and check its length and digest
 /// (4.5). A reader holding the captures can show what each request sent.
 pub fn rebuild_body(
     model: &[u8],
@@ -337,6 +362,9 @@ pub fn rebuild_body(
         if h.request != k {
             return Err(format!("request capture {k} names request {}", h.request));
         }
+        if h.reset {
+            appended.clear();
+        }
         appended.push(
             request_appended(c)
                 .ok_or_else(|| format!("request capture {k} is not in Stewart's layout"))?,
@@ -344,7 +372,11 @@ pub fn rebuild_body(
         last = Some(h);
     }
     let last = last.ok_or("there is no request capture")?;
-    let body = request_body(model, last.max_tokens, system, tools, extra, &appended);
+    let mut extra = extra.to_vec();
+    if last.compaction {
+        extra.push(crate::forms::COMPACTION_REQUEST);
+    }
+    let body = request_body(model, last.max_tokens, system, tools, &extra, &appended);
     if body.len() as u64 != last.body_bytes || util::sha256_hex(&body) != last.body_sha256 {
         return Err(format!(
             "the rebuilt body of request {} does not match its capture's length and digest",
@@ -1205,7 +1237,7 @@ mod tests {
         );
         let cap = request_capture(2, 16000, &body, &[m2]);
         let want = format!(
-            r#"{{"request":2,"max_tokens":16000,"body_bytes":{},"body_sha256":"{}","appended":[{}]}}"#,
+            r#"{{"request":2,"max_tokens":16000,"body_bytes":{},"body_sha256":"{}","compaction":false,"reset":false,"appended":[{}]}}"#,
             body.len(),
             util::sha256_hex(&body),
             String::from_utf8_lossy(m2)
@@ -1218,6 +1250,8 @@ mod tests {
                 max_tokens: 16000,
                 body_bytes: body.len() as u64,
                 body_sha256: util::sha256_hex(&body),
+                compaction: false,
+                reset: false,
             })
         );
         assert_eq!(

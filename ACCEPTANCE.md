@@ -171,7 +171,18 @@ authoring request is handed down as part of the auditor's answer.
 
 ### C4 — Re-entry restores recorded work and access
 
-- **Pass:** the fake emits a compaction block midway. The reacting auditor then
+- **Pass:** exercise the adapter's provider-compaction path: a response's usage
+  reaches the pinned trigger, the next request asks for a summary with the same
+  model/effort/system/tools and the compaction beta header, and includes all tool
+  results. Return a signed summary with separate compaction usage. The next
+  ordinary request contains that exact block first, without earlier messages,
+  and the post-compaction notice. Repeat compaction, and check that every original
+  capture still reconstructs its request. The summary does not become an answer
+  entry, seal or new run. Summary input/cache/output usage counts once against
+  the same limits; reaching a limit prevents a further request. Malformed usage,
+  a missing/invalid summary, provider refusal and interrupted summary work stay
+  visible without tool execution or a consumed ordinary-stop reminder.
+  Separately, the fake can discard its own memory midway. The reacting auditor then
   calls `what_am_i_working_with`, which returns bounded state/revision/allowances,
   exact question/material access, element/version handles, recent completed
   receipts and relevant refusals. It follows explicit pages/read handles
@@ -181,10 +192,16 @@ authoring request is handed down as part of the auditor's answer.
 - **Differing:** a relevant refusal retains its operation/revision; an intervening
   edit invalidates an old page rather than silently mixing two answer revisions.
   Missing or damaged recorded data is distinct from lost model context.
+  A below-trigger response sends no summary request. An ordinary response with
+  absent/null iteration data uses its top-level usage; valid iterations replace
+  those totals, never double-count them. A provider that refuses the compaction
+  parameter or beta is reported as it answered; no silent fallback is allowed.
 - **Invariance:** the same run without compaction produces the same sealed answer.
 - **Sabotage:** omit an element, truncate without continuation, omit the last
   page, mix revisions or reset allowances after compaction. Each must fail.
   These checks preserve recorded work, not thoughts never submitted to the ledger.
+  Also omit the summary request, alter its signed block, retain pre-summary
+  context, and ignore compaction usage: each provider-compaction check must fire.
 
 ### C5 — The return is complete and faithful
 
@@ -612,8 +629,10 @@ return, with an inadequate-evidence case. Executable fixtures follow the form
 specification; planted evidence may help inspection but finding it is not a
 required substantive outcome.
 
-Each is sized so that forcing compaction is practical, either through a low
-compaction trigger or a run long enough to reach it.
+The compaction specimen must run long enough to reach the arrangement's pinned
+trigger. A successful run must show an actual provider summary request, the
+signed summary reused on the next ordinary request and its accounted usage;
+forgetting state inside the fake auditor is not real-model compaction evidence.
 
 **Runs.** For each model a release supports: each commission three times without
 an effort setting, so at the provider's default, plus one run with an effort

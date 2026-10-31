@@ -1928,7 +1928,7 @@ def c_c19_invariance(t):
 def c_arrangement(t):
     """For each family the machine arrangement pins the exact system bytes (orientation
     and family instructions), the family's tools in order with exact descriptions and
-    schemas, the three notice texts, the limits, reader, renderer and bindings; the
+    schemas, the four notice texts, the limits, reader, renderer and bindings; the
     readable arrangement shows the same texts. Families differ exactly in recording
     tools and the second system block; different materials change neither."""
     got = {}
@@ -1978,6 +1978,8 @@ def check_arrangement(t, sub, handle, family, p, limits):
     if not isinstance(members, dict):
         return out
     t.eq(p + ".model", members.get("model"), sub.model)
+    t.eq(p + ".anthropic-beta", members.get("anthropic_beta"), ANTHROPIC_BETA)
+    t.eq(p + ".compaction", members.get("compaction"), COMPACTION)
     sysv = members.get("system")
     expect_sys = expected_system_bytes(family)
     if isinstance(sysv, str):
@@ -2011,7 +2013,8 @@ def check_arrangement(t, sub, handle, family, p, limits):
         t.check(p + ".tools", False, "tools is not an array: %r" % (type(tools),))
     out["tools"] = tools
     strings = [v for v in iter_values(members.get("texts")) if isinstance(v, str)]
-    for label, text in (("reminder", REMINDER), ("near-limit", NEAR_LIMIT), ("continuation", CONTINUATION)):
+    for label, text in (("reminder", REMINDER), ("near-limit", NEAR_LIMIT), ("continuation", CONTINUATION),
+                        ("post-compaction", POST_COMPACTION)):
         t.check(p + ".texts.%s" % label, text in strings, "pinned %s text missing" % label)
     for n in limits:
         t.check(p + ".limits", mentions(members.get("limits"), str(n)), {"limit": n, "limits": members.get("limits")})

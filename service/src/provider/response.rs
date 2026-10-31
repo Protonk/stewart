@@ -132,9 +132,28 @@ pub struct Message {
     /// `model` when it is a recordable string that appears once.
     pub model: Option<String>,
     pub usage: ReportedUsage,
+    /// Top-level input/cache/output counts estimate the next ordinary context.
+    /// These are distinct from billed totals when iterations are present.
+    pub context_tokens: u64,
+    pub compaction_usage: bool,
 }
 
 impl Message {
+    /// A summary is usable only with its complete signed block. Preserve the
+    /// array's raw bytes on success; never decode/re-encode its signed content.
+    pub fn valid_summary(&self, body: &[u8]) -> bool {
+        if self.stop_reason.as_str() != "compaction" || self.blocks.len() != 1 {
+            return false;
+        }
+        let Ok(members) = tolerant::members(body, self.blocks[0].span) else {
+            return false;
+        };
+        let text = |name| tolerant::as_string(body, tolerant::once(&members, name)).ok();
+        text("type").as_deref() == Some("compaction")
+            && text("content").is_some_and(|s| !s.is_empty())
+            && text("signature").is_some_and(|s| !s.is_empty())
+    }
+
     /// Whether any block is a `tool_use` block.
     pub fn has_tool_use(&self) -> bool {
         self.tool_uses().next().is_some()
@@ -177,8 +196,8 @@ pub fn decode_message(body: &[u8]) -> Result<Message, String> {
             ));
         }
     };
-    let usage = match tolerant::once(&ms, "usage") {
-        Member::Present(s) if tolerant::kind(body, s) == Kind::Object => usage(body, s)?,
+    let (usage, context_tokens, compaction_usage) = match tolerant::once(&ms, "usage") {
+        Member::Present(s) if tolerant::kind(body, s) == Kind::Object => usage_iterations(body, s)?,
         Member::Present(_) => return Err("the message's usage is not an object".into()),
         m => {
             return Err(format!(
@@ -205,7 +224,69 @@ pub fn decode_message(body: &[u8]) -> Result<Message, String> {
         stop_reason,
         model,
         usage,
+        context_tokens,
+        compaction_usage,
     })
+}
+
+fn usage_iterations(b: &[u8], s: Span) -> Result<(ReportedUsage, u64, bool), String> {
+    let top = usage(b, s)?;
+    let context = top.charge().input_tokens + top.output_tokens;
+    let ms = tolerant::members(b, s)?;
+    let span = match tolerant::once(&ms, "iterations") {
+        Member::Missing => return Ok((top, context, false)),
+        Member::Present(v) if tolerant::kind(b, v) == Kind::Null => {
+            return Ok((top, context, false));
+        }
+        Member::Present(v) if tolerant::kind(b, v) == Kind::Array => v,
+        _ => return Err("usage.iterations must be one nonempty array or null".into()),
+    };
+    let iterations = tolerant::elements(b, span)?;
+    if iterations.is_empty() {
+        return Err("usage.iterations is empty".into());
+    }
+    let mut sum = ReportedUsage {
+        input_tokens: 0,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        output_tokens: 0,
+    };
+    let mut compaction = false;
+    let add = |a: u64, v: u64| {
+        a.checked_add(v)
+            .filter(|n| *n <= crate::usage::FIGURE_MAX)
+            .ok_or_else(|| "summed usage.iterations count exceeds 2^48".to_string())
+    };
+    for span in iterations {
+        if tolerant::kind(b, span) != Kind::Object {
+            return Err("usage.iterations member is not an object".into());
+        }
+        let members = tolerant::members(b, span)?;
+        match tolerant::as_string(b, tolerant::once(&members, "type"))
+            .ok()
+            .as_deref()
+        {
+            Some("message") => {}
+            Some("compaction") => compaction = true,
+            _ => {
+                return Err(
+                    "usage.iterations type must occur once and be message or compaction".into(),
+                );
+            }
+        }
+        let u = usage(b, span)?;
+        sum.input_tokens = add(sum.input_tokens, u.input_tokens)?;
+        sum.cache_creation_input_tokens = add(
+            sum.cache_creation_input_tokens,
+            u.cache_creation_input_tokens,
+        )?;
+        sum.cache_read_input_tokens = add(sum.cache_read_input_tokens, u.cache_read_input_tokens)?;
+        sum.output_tokens = add(sum.output_tokens, u.output_tokens)?;
+    }
+    if crate::sabotage!("ignore_compaction_usage") {
+        sum = top;
+    }
+    Ok((sum, context, compaction))
 }
 
 fn usage(b: &[u8], s: Span) -> Result<ReportedUsage, String> {
@@ -391,6 +472,79 @@ mod tests {
     }
 
     const THINKING: &str = r#"{"type":"thinking","thinking":"Let me look at a.py first.","signature":"EqQBCkYIBxgCKkB4Zm9v+/=="}"#;
+
+    #[test]
+    fn iteration_usage_is_counted_once_and_malformed_usage_is_not_ignored() {
+        let response = |iterations: &str| {
+            format!(
+                r#"{{"content":[],"stop_reason":"tool_use","usage":{{"input_tokens":40,"output_tokens":5,"iterations":{iterations}}}}}"#
+            )
+        };
+        let valid = r#"[{"type":"compaction","input_tokens":100,"output_tokens":20,"cache_read_input_tokens":7},{"type":"message","input_tokens":40,"output_tokens":5,"cache_creation_input_tokens":3}]"#;
+        let m = decode_message(response(valid).as_bytes()).unwrap();
+        assert_eq!(m.usage.input_tokens, 140);
+        assert_eq!(m.usage.output_tokens, 25);
+        assert_eq!(m.usage.charge().input_tokens, 150);
+        assert_eq!(m.context_tokens, 45);
+        assert!(m.compaction_usage);
+        assert_eq!(
+            decode_message(response("null").as_bytes())
+                .unwrap()
+                .usage
+                .input_tokens,
+            40
+        );
+        for bad in [
+            "[]",
+            "{}",
+            "[null]",
+            r#"[{"type":"unknown","input_tokens":1,"output_tokens":2}]"#,
+            r#"[{"type":"message","type":"compaction","input_tokens":1,"output_tokens":2}]"#,
+            r#"[{"type":"compaction","input_tokens":1,"output_tokens":2,"output_tokens":3}]"#,
+            r#"[{"type":"compaction","input_tokens":281474976710656,"output_tokens":0},{"type":"message","input_tokens":1,"output_tokens":0}]"#,
+            r#"[{"type":"compaction","input_tokens":-1,"output_tokens":2}]"#,
+            r#"[{"type":"compaction","input_tokens":1,"output_tokens":"2"}]"#,
+        ] {
+            assert!(decode_message(response(bad).as_bytes()).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn signed_summary_requires_unique_complete_fields() {
+        for (content, valid) in [
+            (
+                r#"[{"type":"compaction","content":"Remember the question.","signature":"signed","future":true}]"#,
+                true,
+            ),
+            (
+                r#"[{"type":"compaction","content":null,"signature":"signed"}]"#,
+                false,
+            ),
+            (
+                r#"[{"type":"compaction","content":"text","signature":""}]"#,
+                false,
+            ),
+            (
+                r#"[{"type":"compaction","content":"text","signature":"a","signature":"b"}]"#,
+                false,
+            ),
+            (r#"[{"type":"compaction","content":"text"}]"#, false),
+            (
+                r#"[{"type":"compaction","content":"text","signature":"a"},{"type":"tool_use"}]"#,
+                false,
+            ),
+            (r#"[7]"#, false),
+        ] {
+            let bytes = message(content, "compaction");
+            assert_eq!(
+                decode_message(bytes.as_bytes())
+                    .unwrap()
+                    .valid_summary(bytes.as_bytes()),
+                valid,
+                "{content}"
+            );
+        }
+    }
 
     fn message(content: &str, stop: &str) -> String {
         format!(

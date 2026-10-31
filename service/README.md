@@ -61,11 +61,13 @@ each tool call, then `delivery/` and `ops/close.rs`.
 **Provider and run adapter**
 
 - `provider/mod.rs`: the request loop in outline (6).
-- `provider/placement.rs`: the loop of one placement.
+- `provider/placement.rs`: the loop of one placement, including provider
+  summary requests and resumption from the signed summary under the same limits.
 - `provider/request.rs`: the pinned arrangement, decoded once with its exact
-  bytes kept, and the messages each request appends (4.5, 6.2).
+  bytes kept, and the active messages each request appends or replaces after
+  successful compaction (4.5, 6.2).
 - `provider/response.rs`, `provider/tolerant.rs`: tolerant decoding and
-  classification of responses (6.2, 6.6).
+  classification of responses, signed summaries and iteration usage (6.2, 6.6).
 - `provider/policy.rs`: pure retry and next-step decisions.
 - `provider/transport.rs`, `provider/http.rs`, `provider/tls.rs`,
   `provider/url.rs`: one attempt over a fresh connection, HTTP/1.1 framing, TLS
@@ -73,7 +75,8 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `provider/stop.rs`: the stop path: the close watcher and signals (6.8).
 - `runs.rs`: each placement's `runs/<n>` directory, raw captures and linked
   records (4.5); `runs::request_body`, which splices each request body from
-  the arrangement's pinned bytes and the appended messages; and the
+  the arrangement's pinned bytes and captured messages, honoring recorded
+  context replacements without discarding earlier captures; and the
   accounting of a placement without `run_ended` (6.4).
 - `usage.rs`: usage, charges and cumulative allowances (6.4).
 

@@ -857,7 +857,7 @@ pub(crate) mod tests {
         let sent = rx.recv().unwrap();
         assert_eq!(
             sent,
-            b"POST /v1/messages HTTP/1.1\r\nhost: 127.0.0.1:8080\r\nx-api-key: sk-test-key\r\nanthropic-version: 2026-10-21\r\ncontent-type: application/json\r\ncontent-length: 7\r\nconnection: close\r\n\r\n{\"x\":1}"
+            b"POST /v1/messages HTTP/1.1\r\nhost: 127.0.0.1:8080\r\nx-api-key: sk-test-key\r\nanthropic-version: 2026-10-21\r\nanthropic-beta: compact-2026-09-04\r\ncontent-type: application/json\r\ncontent-length: 7\r\nconnection: close\r\n\r\n{\"x\":1}"
         );
         assert_eq!(a.written, Written::Complete);
         assert_eq!(a.failure, None);

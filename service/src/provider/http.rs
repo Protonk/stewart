@@ -33,7 +33,8 @@ pub fn request_head(
     body_len: usize,
 ) -> Vec<u8> {
     format!(
-        "POST {target} HTTP/1.1\r\nhost: {host}\r\nx-api-key: {api_key}\r\nanthropic-version: {anthropic_version}\r\ncontent-type: application/json\r\ncontent-length: {body_len}\r\nconnection: close\r\n\r\n",
+        "POST {target} HTTP/1.1\r\nhost: {host}\r\nx-api-key: {api_key}\r\nanthropic-version: {anthropic_version}\r\nanthropic-beta: {beta}\r\ncontent-type: application/json\r\ncontent-length: {body_len}\r\nconnection: close\r\n\r\n",
+        beta = crate::forms::ANTHROPIC_BETA,
         target = endpoint.target(),
         host = endpoint.host_header(),
     )
@@ -655,11 +656,15 @@ pub(crate) mod tests {
         let head = request_head(&e, "sk-test", "2026-10-21", 42);
         assert_eq!(
             head,
-            b"POST /base/v1/messages HTTP/1.1\r\nhost: 127.0.0.1:8080\r\nx-api-key: sk-test\r\nanthropic-version: 2026-10-21\r\ncontent-type: application/json\r\ncontent-length: 42\r\nconnection: close\r\n\r\n"
+            b"POST /base/v1/messages HTTP/1.1\r\nhost: 127.0.0.1:8080\r\nx-api-key: sk-test\r\nanthropic-version: 2026-10-21\r\nanthropic-beta: compact-2026-09-04\r\ncontent-type: application/json\r\ncontent-length: 42\r\nconnection: close\r\n\r\n"
         );
         let head = request_head(&Endpoint::default_base(), "k", "v", 0);
         assert!(head.starts_with(b"POST /v1/messages HTTP/1.1\r\nhost: api.anthropic.com\r\n"));
-        assert!(!String::from_utf8(head).unwrap().contains("anthropic-beta"));
+        assert!(
+            String::from_utf8(head)
+                .unwrap()
+                .contains("anthropic-beta: compact-2026-09-04")
+        );
     }
 
     #[test]

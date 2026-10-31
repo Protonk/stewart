@@ -700,11 +700,16 @@ decoded tolerantly, never as control records.
 **Request capture.** One line of compact JSON, then an LF:
 
 ```
-{"request":<k>,"max_tokens":<T>,"body_bytes":<B>,"body_sha256":"<hex>","appended":[<A_k>]}
+{"request":<k>,"max_tokens":<T>,"body_bytes":<B>,"body_sha256":"<hex>","compaction":<bool>,"reset":<bool>,"appended":[<A_k>]}
 ```
 
 `A_k` is the messages request `k` appends (6.2), exactly as they appear in its
-body, joined by commas. The body of request `k` is exactly
+body, joined by commas. `compaction` distinguishes a provider summary request
+from an ordinary message request. `reset` is true only for the first request
+after a successful compaction: its appended messages replace the earlier active
+conversation. Earlier captures remain unchanged. To reconstruct the active
+messages, clear the accumulated messages at each `reset`, then append `A_k`.
+The body of request `k` is exactly
 
 ```
 {"model":<M>,"max_tokens":<T>,"system":<S>,"tools":<U><X>,"messages":[<A_1>,<A_2>,…,<A_k>]}
@@ -713,8 +718,10 @@ body, joined by commas. The body of request `k` is exactly
 `M`, `S` and `U` are the bytes of the arrangement's `model`, `system` and
 `tools` values; `X` is, for each member of its `request_extra` object, a comma
 followed by that member's bytes (`,"output_config":{"effort":"high"}` for
-`effort: high`, and nothing without an effort); and the `A_i` are joined by
-commas. There is no other whitespace and no trailing LF. `B` and the digest let
+`effort: high`, and nothing without an effort), followed, only when `compaction`
+is true, by `,"compaction":{"type":"summarize"}`; and the active `A_i` since
+the latest reset are joined by commas. There is no other whitespace and no
+trailing LF. `B` and the digest let
 a reader check the reconstruction. A request capture that does not end with `]}`
 and an LF was cut off, and its request was never sent.
 
@@ -750,7 +757,8 @@ capture is written.
   when the body decodes as an error body (6.2); else null.
 - `stop_reason`, `model` and `usage` come from a decoded message, `usage` as
   {`input_tokens`, `cache_creation_input_tokens`, `cache_read_input_tokens`,
-  `output_tokens`} with an absent or null cache count written 0; else null.
+  `output_tokens`} with an absent or null cache count written 0, and iteration
+  sums when present (6.2); else null. The raw response retains the breakdown.
 - `charged` is what the attempt added to the allowances (6.4), with `basis`
   `reported`, `estimated` or `none`.
 - `problem` is prose saying why a response was undecodable, else null.
@@ -1444,13 +1452,15 @@ POST <path>/v1/messages HTTP/1.1
 host: <host>[:<port>]
 x-api-key: <ANTHROPIC_API_KEY>
 anthropic-version: 2026-10-21
+anthropic-beta: compact-2026-09-04
 content-type: application/json
 content-length: <body bytes>
 connection: close
 ```
 
-followed by the body (4.5, 6.2). No other header is sent; in particular there is
-no `anthropic-beta` header. `host` carries the port only when the URL names one.
+followed by the body (4.5, 6.2). No other header is sent. The compaction beta is
+sent on every request, including later requests carrying its signed block.
+`host` carries the port only when the URL names one.
 The response is read to its end by `content-length`, chunked transfer coding or
 the connection closing. A `content-encoding` other than `identity` makes the
 response undecodable.
@@ -1487,11 +1497,13 @@ sends the host as SNI unless it is an IP address. A test build can add roots
 | --- | --- |
 | `model` | From front matter |
 | `anthropic_version` | `2026-10-21`, pinned by the release |
+| `anthropic_beta` | `compact-2026-09-04`, pinned by the release |
+| `compaction` | `{"trigger_tokens":150000,"request":{"type":"summarize"}}`, pinned by the release |
 | `max_tokens_per_request` | 16,000, pinned by the release, so a non-streaming response fits the request timeout |
 | `system` | Exact JSON array: orientation block, family instruction block (QUESTION-FORMS) |
 | `tools` | Exact JSON array of tool definitions for the family (section 7) |
 | `request_extra` | Exact JSON object of further top-level request parameters, limited to the release's allowlist. The allowlist admits one member, `output_config`, whose value is exactly `{"effort":"<level>"}` with a level of 3.2. It holds that member when the front matter sets `effort`, and is `{}` otherwise. |
-| `texts` | Reminder, near-limit template and continuation notice |
+| `texts` | Reminder, near-limit template, continuation and post-compaction notices |
 | `limits`, `near_limit_percent` | From front matter; 20 |
 | `retry`, `request_timeout_seconds` | 6.6 policy; 600 |
 | `reader`, `renderer`, `family` | `utf8-text/1`, `stewart.render/1`, family ID and version |
@@ -1502,13 +1514,13 @@ names and the receipt's `arrangement` member, checking each digest (5.7). Each
 request body is assembled by splicing pinned bytes, never by re-serializing a
 parsed structure, exactly as 4.5 states. No provider feature may be enabled that
 puts model-visible content outside the arrangement, such as server tools,
-fallback to another model, provider-side context management or budget
-countdowns. `request_extra` can hold only the effort, which sets how much the
+fallback to another model or budget countdowns. The provider compaction described
+below is enabled explicitly in the arrangement. `request_extra` can hold only the effort, which sets how much the
 model reasons and adds nothing for it to read; the effort never appears in the
 system blocks, tools or messages.
 
-Messages are append-only within a placement, each a compact object with keys
-`role` and `content`:
+Messages append within an active context, each a compact object with keys
+`role` and `content`; successful compaction replaces that context as below:
 
 - The first user message holds one text block with the question body exactly.
   In a continuing placement a second text block holds the continuation notice.
@@ -1535,6 +1547,15 @@ which must appear exactly once in its object:
   null or absent. `model` is recorded when it is a string. An HTTP 200 body
   that is not a JSON object, or in which one of these is missing, of another
   type or repeated, is undecodable.
+- `usage.iterations`, when present and non-null, is a nonempty array of objects.
+  Each has exactly one `type` (`message` or `compaction`), integer `input_tokens`
+  and `output_tokens`, and optional/null integer cache counts as above. Unknown
+  fields are ignored. Each count and each summed count must be in 0–2^48.
+  Sum each of the four counts across iterations instead of adding the top-level
+  totals again. A malformed, repeated, empty or unrecognized iteration is
+  undecodable, never a reason to silently fall back to smaller totals. The attempt
+  record's four `usage` counts hold these sums; raw capture retains the breakdown.
+  With absent/null iterations, ordinary responses use the top-level counts.
 - in each `content` element: `type`. An element that is not an object, or whose
   `type` is missing, repeated or not a string, is a block of unknown type.
 - in a `tool_use` block: `id`, `name` and `input`. A missing, repeated or
@@ -1551,9 +1572,47 @@ Records hold only strings that strict decoding accepts (1.2). A `model`,
 null, and a `stop_reason` containing it is an unknown stop reason; the raw
 capture keeps the bytes.
 
-`stop_details` and every other member stay in the raw capture. Stewart does not
-summarize or trim history. When the model's context window is exhausted the
-placement is interrupted (6.5), and continuation starts a fresh conversation.
+`stop_details` and every other member stay in the raw capture.
+
+**Provider compaction.** After an ordinary response that will be followed by
+another request, add that response's top-level input, cache-creation, cache-read
+and output token counts. At 150,000 or more, the next request asks the provider
+to summarize, with the same model, system, tools and effort plus the pinned
+`compaction.request`. It includes the ordinary response and all its tool results
+and pending notices, so no tool invocation is left unanswered. This count is a
+trigger, not an exact prediction of the next input or a guarantee against context
+exhaustion. The first request of a placement is always ordinary.
+
+The summary request uses the same timeout, retries, output cap, cumulative limits,
+captures and stopping path as an ordinary request. Each response costs one turn;
+the summary's input/output usage is included through `usage.iterations`. A summary
+response must have at least one `compaction` usage iteration; absent/null usage
+iterations on it are undecodable. No summary response executes auditor tools.
+
+Success requires `stop_reason: "compaction"` and exactly one content block with
+unique `type: "compaction"`, nonempty string `content` and nonempty string
+`signature`. Unknown block members are retained. The next request replaces the
+active messages with an assistant message containing that entire content array
+byte for byte, then a user message containing the post-compaction notice and any
+pending near-limit notice. It is an ordinary request. Subsequent ordinary turns
+retain this signed block first until another successful compaction replaces it.
+Stewart writes no summary itself and never alters the provider's block. Original
+requests, responses, tool captures and answer records remain retained; neither
+compaction nor its summary creates an answer entry, a seal or a new placement.
+
+Summary `max_tokens`, `refusal` and `model_context_window_exceeded` responses
+interrupt with their ordinary causes. Every other unsuccessful summary response,
+including a malformed/missing signed block, interrupts with `protocol_anomaly` and
+a message naming the compaction failure. No ordinary-stop reminder is consumed
+by a summary response, and no unsuccessful summary replaces active context.
+Provider HTTP refusals keep their own message (6.5); Stewart never silently
+disables compaction or switches models. If context is exhausted despite the
+trigger, the placement interrupts as before. Continuing a dead/interrupted
+placement still starts a fresh conversation (6.7), distinct from compaction
+within a live placement.
+
+The provider protocol follows [on-demand compaction](https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand),
+checked 2026-10-31. Live compatibility remains a conformance-tier obligation.
 
 ### 6.3 The loop and invocation identity
 
@@ -1562,6 +1621,8 @@ before each request: if close_requested → end stopped_by_close
                      if a limit is exhausted (6.4) → end limit_reached
 capture the request, send it with retries (6.6), account usage (6.4)
 no response to use → end as 6.5 states
+summary response → apply 6.2's success/failure rules without executing tools;
+                   on success replace active context and return to before each request
 execute every tool_use block of the response in order (section 7)
 if the log holds a seal recorded during this response → deliver (8.3), then end sealed
 stop_reason tool_use   → send results, continue
@@ -1572,6 +1633,7 @@ stop_reason tool_use   → send results, continue
             model_context_window_exceeded → end interrupted (context_exhausted)
             refusal    → end interrupted (provider_refusal)
             other, including pause_turn → end interrupted (protocol_anomaly)
+before continuing from an ordinary response: select a summary request if 6.2's trigger is met
 ```
 
 Whether a seal was recorded is read from the log after the blocks run, not
@@ -1579,7 +1641,7 @@ from the calls' replies: a submit that replied `seal_uncertain` while its seal
 was in fact linked still leads to delivery and the ending `sealed`. Once the log
 holds a seal, the placement sends no further request and no reminder.
 
-A response's `tool_use` blocks are executed whatever its stop reason, so every
+An ordinary response's `tool_use` blocks are executed whatever its stop reason, so every
 call the model made is recorded even when the placement then ends; results that
 are not sent stay in their result records. A `tool_use` block without a string
 `id` cannot be answered: it is captured, no later block is executed, and the
@@ -1611,7 +1673,7 @@ Each attempt record states its charge (4.5):
 
 | Attempt outcome | Charge |
 | --- | --- |
-| `response` | Reported: one turn; `input_tokens` + `cache_creation_input_tokens` + `cache_read_input_tokens` input tokens; `output_tokens` output tokens |
+| `response` | Reported: one turn, including a summary call; `input_tokens` + `cache_creation_input_tokens` + `cache_read_input_tokens` input tokens; `output_tokens` output tokens, using iteration sums when present (6.2) |
 | `response_undecodable`, `connection_lost`; `timeout`, `aborted_by_close` and `aborted_by_signal` once any request byte was written | Estimated: one turn, the request's `max_tokens` output tokens and ceil(body bytes / 3) input tokens |
 | `http_error`, `connection_failed`; the others when no request byte was written | None |
 
@@ -2495,6 +2557,10 @@ the check for that property must fail. The claims are ACCEPTANCE's.
 | `omit_effects_on_refusal` | Refusals, manager and auditor, omit `effects` (C9, C20) |
 | `whole_from_one_member` | `receipt --verify` reports the whole commission verified after one member verifies (C15) |
 | `extra_tool` | Requests carry one tool definition beyond the arrangement's (C1) |
+| `omit_compaction` | A context reaching the compaction trigger proceeds with an ordinary request instead of requesting a summary (C4) |
+| `alter_compaction_summary` | The signed summary's content is changed before the next request; raw response capture stays intact (C4) |
+| `retain_precompaction_context` | The next request appends the summary after the old conversation instead of replacing the active context (C4) |
+| `ignore_compaction_usage` | Response charges use only top-level usage, ignoring valid iteration counts (C4) |
 | `misspell_effort` | Requests carry the effort as `output_config.eefort`; the pinned arrangement stays unchanged (C1) |
 | `effort_in_prompt` | With an effort set, requests omit `output_config`, and the question text in the first message gains a final line `Effort: <level>.`; without one it changes nothing (C1, C2) |
 | `arrangement_mismatch` | Requests carry an orientation block differing by one word from the pinned one, which stays recorded unchanged (C1) |
