@@ -14,8 +14,10 @@
 # service/vendor, which apparatus/step2.sh produces.
 # Footprint: writes under EVIDENCE_DIR only. Pulls the pinned python image for
 # linux/arm64 and linux/amd64; that pull is the only network use. Every build
-# and every driver run is offline (--network none) in a container removed on
-# exit (--rm). Nothing on the host is deleted.
+# and every driver run is offline (--network none). Build containers are removed
+# on exit; named driver containers remain until evidence review, including on
+# export failure. Their names are in host/driver-<arch>.container. Nothing on
+# the host is deleted.
 #
 # For each architecture it:
 #   1. builds, from a git archive of HEAD plus service/vendor, the release binary,
@@ -28,7 +30,7 @@
 #   3. in the pinned python image as an unprivileged user, with no network
 #      (loopback only), binaries mounted read-only and archives and homes on the
 #      container's own disk: runs the driver's --self-test, then every case with
-#      --network-isolated --require-all-controls (every Appendix C.2 sabotage
+#      --network-isolated --require-all-controls --keep-work all (every Appendix C.2 sabotage
 #      control assigned and fired). The timing gates are on only for the host's
 #      native architecture; emulated timings are reported, not gated.
 # host/DONE reports failures=N; host/SUMMARY collects the self-test and driver counts.
@@ -142,13 +144,20 @@ for p in $PLATFORMS; do
     [ "$p" = "$NATIVE" ] && gate=on
     d="driver-$p"
     mkdir -p "$OUT/$d"
-    hstep "$d" container run --rm --network none --init --cpus 4 --memory 4G --platform "linux/$p" \
+    driver_container="stewart-acceptance-$p-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+    printf '%s\n' "$driver_container" >"$OUT/host/$d.container"
+    hstep "$d" container run --name "$driver_container" --network none --init --cpus 4 --memory 4G --platform "linux/$p" \
         --mount "type=bind,source=$OUT/staging,target=/in,readonly" \
         --mount "type=bind,source=$OUT/bin-$p,target=/bin-in,readonly" \
         --mount "type=bind,source=$OUT/$d,target=/out" \
         "$PYTHON" sh -c "mkdir -p /tmp/s && tar -xf /in/source.tar -C /tmp/s apparatus/container/acceptance-inner-driver.sh && sh /tmp/s/apparatus/container/acceptance-inner-driver.sh $gate" \
         || fail "$d: the self-test or the driver reported failures or broken checks (see $OUT/$d/)"
     expect "$OUT/$d/selftest.exit" 0 "$p: driver self-test"
+    expect "$OUT/$d/evidence-copy.exit" 0 "$p: independent driver evidence retained"
+    expect "$OUT/$d/retention-archive.exit" 0 "$p: working copies archived for review"
+    expect "$OUT/$d/retention-list.exit" 0 "$p: work archive is readable"
+    expect "$OUT/$d/retention-sha256.exit" 0 "$p: work archive digest recorded"
+    note "$p: original work retained in container $driver_container until review"
     {
         echo "== $p (timing gate $gate) =="
         tail -1 "$OUT/$d/selftest.stdout" 2>/dev/null

@@ -127,11 +127,12 @@ outcomes honestly without calling an unexercised submission path successful.
   150,000-token context trigger, and cumulative input consumption can be much
   larger than that figure. A short successful probe will not establish
   compaction conformance.
-- Preserve every relevant working copy for the new evidence. The existing
-  container suite retains driver evidence but discards working copies; the
-  [retention item](#retention-of-damaged-originals) needs a disposition before
-  using a new suite run to claim C18 coverage. A live runner should retain its
-  own originals and observations from the outset.
+- Preserve every relevant working copy for the new evidence. The revised
+  wrapper retains all driver work, exports an archive and leaves the original
+  driver containers available through review; the
+  [retention item](#retention-of-damaged-originals) still needs verification in
+  the next container run. A live runner should retain its own originals and
+  observations from the outset.
 
 **Keep separate from first-run blockers:** the WSL2 package and native platform
 runs, service-wide two-build reproducibility, the broad claim-by-claim coverage
@@ -303,16 +304,21 @@ discussion takes up.
 ### Retention of damaged originals
 
 ACCEPTANCE C18 requires witnesses and damaged originals to remain retained
-through review. The driver keeps its witness in the evidence folder, but
-with its default `--keep-work failed` it removes a variant's work (the
-archives, folders and homes a case works on) once the variant has served its
-purpose: it passed, or its control fired. The container suites run it with
-that default, in a work directory on the container's own disk that is
-discarded with the container, and copy out only the evidence folder. A passing
-variant's damaged originals therefore do not reach review. `--keep-work all`
-keeps every variant's work, but in the suites that work would still be
-discarded unless copied out. Needs: the acceptance-testing discussion, then a
-container run.
+through review. The previous wrapper used the driver's `--keep-work failed`
+default and removed the container after copying only the independent evidence;
+successful variants' working originals did not reach review.
+
+For the user's next Linux check, the wrapper now uses `--keep-work all`, exports
+the independent witness separately and archives `/work/tmp` to `work.tar` with
+its listing, digest and observation times. Named driver containers remain until
+review, including if export fails; the suite records their identities and fails
+on a failed export. This keeps special specimens and the actual originals
+available as well as the host archive. No driver or service code changed.
+The prior run is not retroactively repaired. Needs: verify the next full run's
+empty removal list, exported work and retained-container identities, then decide
+container disposal after review. Preparation records are in
+`.scratch/linux-acceptance-prep-01`; the planned fresh suite is
+`.scratch/acceptance-03`.
 
 ### The service's tests on Linux
 

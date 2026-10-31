@@ -225,8 +225,9 @@ that the container services are running, and stops otherwise. `acceptance.sh`
 also needs the toolchain images and `service/vendor` from
 `step2.sh`. The network is used only to pull pinned images, build the toolchain
 images and vendor crates; every build and driver run is offline
-(`--network none`) in a container removed on exit, and nothing on the host is
-deleted.
+(`--network none`). Build containers are removed on exit. Acceptance driver
+containers remain until evidence review; their names are recorded in
+`host/driver-<arch>.container`. Nothing on the host is deleted.
 
 Each script takes one required argument, its evidence folder, and refuses one
 that exists; give a new folder directly under `.scratch/` as an absolute path.
@@ -252,7 +253,7 @@ another checkout uses that checkout's own `service/vendor`.
   tells the release and test binaries apart, and that only the test build
   contains the six test-only variable names. Then, in the pinned python image
   with no network and as an unprivileged user, it runs the driver's self-test
-  and every case with `--network-isolated --require-all-controls`, so every
+  and every case with `--network-isolated --require-all-controls --keep-work all`, so every
   sabotage control of Appendix C.2 must be assigned to a case and fire.
 
 Each writes `host/DONE` with `failures=N`; `acceptance.sh` also writes
@@ -347,9 +348,15 @@ served its purpose (it passed, or its control fired) and its results are
 written, the driver removes that variant's work and lists the removal in the
 run's `RESULT.json`; a variant that did not serve its purpose keeps its work,
 and up to 64 MiB of it is copied into the evidence. `--keep-work all` keeps
-every variant's work. The container suites run the driver with the default, in
-a work directory on the container's own disk that is discarded with the
-container, and copy out the evidence folder. The service's integration tests
+every variant's work. The acceptance suite uses `--keep-work all`. After the
+driver returns it copies the independent evidence folder and writes
+`driver-<arch>/work.tar`, its listing, SHA-256 and export start/end times. The
+archive preserves regular-file bytes and Linux names/modes/links; tar warnings
+about special specimens remain recorded. Original working trees, including
+special files, remain in the named driver containers until review, even if
+export fails. Export failures fail the suite. Removing those containers after
+review is a separate, explicit disposal; the suite does not remove them.
+The service's integration tests
 remove their temporary trees as each test finishes.
 
 What a run must show:

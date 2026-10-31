@@ -8,9 +8,10 @@
 # Starts as root only to record the environment, create an unprivileged user
 # (uid 1000) and its work folder on the container's own disk, then, as that user,
 # runs the driver's --self-test (no binary needed) and the whole driver with
-# --network-isolated --require-all-controls. Archives, folders and homes live
-# under /work/tmp; the driver's evidence is written under /work and copied to
-# /out/evidence at the end.
+# --network-isolated --require-all-controls --keep-work all. Archives, folders
+# and homes live under /work/tmp. After the driver returns, copy its independent
+# evidence to /out/evidence and archive the work in /out/work.tar for review.
+# The host retains this container too, including if export fails.
 set -u
 GATE=${1:-off}
 rec() {
@@ -70,9 +71,18 @@ rec driver "$@" env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/work/tmp \
     python3 -I -B /work/driver/apparatus/driver/stewart_driver.py \
     --binary /bin-in/stewart --test-binary /bin-in/stewart-test \
     --evidence /work/run/evidence --work /work/tmp --timing-gate "$GATE" \
-    --network-isolated --require-all-controls $EMULATION
-rc=$(cat /out/driver.exit)
-[ "$(cat /out/selftest.exit)" = 0 ] || rc=1
-cp -R /work/run/evidence /out/evidence || rc=1
-echo "$rc" >/out/driver-final.exit
-exit "$rc"
+    --network-isolated --require-all-controls --keep-work all $EMULATION
+final_rc=$(cat /out/driver.exit)
+[ "$(cat /out/selftest.exit)" = 0 ] || final_rc=1
+rec evidence-copy cp -R /work/run/evidence /out/evidence || final_rc=1
+# Observe after the driver has returned. Keep the independent witness separate
+# from the work archive. tar preserves Linux names, modes and links inside one
+# regular host file; special-file warnings remain in retention-archive.stderr.
+# Original work remains in the retained container even on export failure.
+rec retention-start date -u +%Y-%m-%dT%H:%M:%SZ || final_rc=1
+rec retention-archive tar -cpf /out/work.tar -C /work tmp || final_rc=1
+rec retention-list tar -tf /out/work.tar || final_rc=1
+rec retention-sha256 sha256sum /out/work.tar || final_rc=1
+rec retention-end date -u +%Y-%m-%dT%H:%M:%SZ || final_rc=1
+echo "$final_rc" >/out/driver-final.exit
+exit "$final_rc"

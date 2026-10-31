@@ -297,15 +297,24 @@ examples with `docs/`), and for each architecture, offline:
 3. in the pinned python image with `--network none` (loopback only), as an
    unprivileged user, with the binaries mounted read-only and archives and
    homes on the container's own disk, runs the driver's `--self-test`, then
-   every case with `--network-isolated --require-all-controls`: every Appendix
+   every case with `--network-isolated --require-all-controls --keep-work all`: every Appendix
    C.2 sabotage control must be assigned to a case and fire, and every driver
    control must fire. The timing gates (startup, `status` and `help`; protocol
    calls) are on only for the native architecture; Rosetta's home cache is
-   recorded as an emulator artifact.
+   recorded as an emulator artifact;
+4. copies the independent driver evidence and archives all working copies in
+   `driver-<arch>/work.tar`, with a listing, SHA-256 and export start/end times.
+   Export failure fails the suite. Named driver containers remain until review,
+   even on export failure; `host/driver-<arch>.container` identifies them.
 
 `host/DONE` reports `failures=N`; `host/SUMMARY` gives the self-test line and
 the driver's counts per architecture; `driver-<arch>/evidence/` holds the
 driver's full results, and `driver-<arch>/selftest.stdout` its self-test.
+The work archive keeps regular-file bytes and Linux names/modes/links in a
+single host file; tar warnings about special specimens are retained. Original
+working trees, including special files, remain in the named driver containers.
+Their later removal is a separate explicit disposal after evidence review.
+Build containers are still removed on exit.
 
 ACCEPTANCE also requires the scripted tier natively on WSL2, from a handoff
 package of the same binary, driver and fake provider; no script here builds or
