@@ -1,123 +1,138 @@
 # Stewart
 
-Stewart is a custodian for bounded inquiries between cooperative parties. The
-manager supplies a question, selected files, an answer family and limits.
-Stewart places an AI auditor in that arrangement and returns its answer
-faithfully, without judging its conclusions.
+>Make it *just* so
 
-The manager's working model is one submission folder, one acceptance boundary
-and one close action. Stewart's opinions live in its question families and
-instructions; missing evidence, no finding and disagreement remain ordinary
-answers. Records preserve who said what and what Stewart actually did.
+Stewart is an experimental command-line tool for asking an AI auditor a bounded
+question about files you choose. You supply the question, materials, answer form
+and limits. Stewart preserves that commission, gives the auditor tools to read
+and respond, and returns its recorded answer with verified delivery.
 
-## What it is
-
-Stewart is a command-line program written in Rust, the crate in
-[`service/`](service/README.md). It is built as one statically linked binary,
-`stewart`, for Linux x86_64 and aarch64; Linux is the only supported platform.
-An audit goes through these commands:
-
-1. `stewart new FOLDER [--archive ROOT]` creates a reference to the audit in
-   the archive that `--archive` names, or else `STEWART_ARCHIVE`. An absent
-   FOLDER is created as the submission folder: `question.md` (settings and the
-   question) and `materials/` (the files the auditor may read). An existing
-   folder is used unchanged.
-2. `stewart prepare REF` scans and hashes the folder, checks the intake rules
-   and pins the arrangement: instructions, tools and limits. It accepts
-   nothing.
-3. `stewart commission REF HANDLE --i-am-finished` copies and verifies the
-   prepared selection. Acceptance fixes that copy; later edits to the folder
-   cannot change it.
-4. `stewart run REF` places the auditor. Only `run` uses the network and the
-   provider key; it speaks the Anthropic Messages API. The auditor works only
-   through Stewart's tools on the captured copies, recording, preparing and
-   submitting its answer. A submitted answer is sealed, copied to the
-   manager's destination and read back to verify it. If a run dies, `run`
-   again continues the same audit with its records and cumulative limits.
-   During a long run, Stewart asks the provider to summarize its active context
-   and continues from that signed summary. Original exchanges and recorded work
-   remain in the archive; summary calls use the same cumulative allowances.
-5. `stewart close REF` ends the audit from any state. Before launch it creates
-   no answer. After launch it stops any run, seals the recorded answer for the
-   manager if the auditor did not, and delivers the copy if one is still owed.
-   A plain close finishes only when a copy without losses was verified before
-   the first close request. Otherwise close stops unfinished, awaiting
-   confirmation, and the audit ends with `stewart close REF --confirm TOKEN`,
-   adding `--surrender LOSS` for each loss the copy names.
-
-`stewart receipt` and `stewart status` read the fixed commission and the
-audit's state at any time, and `stewart help` explains the rest. Stewart keeps
-its records in the manager's archive and removes nothing.
+The aim is to make an inquiry easy to commission and possible to account for:
+what the auditor received, what it said, and what Stewart actually did. The
+auditor may find nothing, disagree with the premise or explain that the evidence
+is insufficient. You judge the answer; Stewart does not grade its conclusions.
 
 ## Status
 
-**Built:** the manager commands above, the auditor's tools and answer protocol,
-the run adapter, seal, verified delivery and close. The crate is at version
-0.1.0.
+**Version 0.0.2 — experimental.** The audit lifecycle is implemented, and Linux
+tests with a fake provider have passed. Stewart has not yet been run against a
+real model. Its usefulness in real inquiries and its readiness for routine use
+remain to be established.
 
-**Tested on Linux against a fake provider.** The scripted acceptance suite
-has passed on native aarch64 and on x86_64 under Rosetta emulation. It exercises
-the release binary through an independently witnessed audit, with fault and
-sabotage controls in a separate test build. The native timing gate passed;
-emulated timings are reported without enforcing that gate.
-[`apparatus/qualified.md`](apparatus/qualified.md) owns the detailed results,
-case and control counts, source and binary identities, and retained evidence.
-Those results qualify the recorded source, not later changes;
-`python3 -I -B apparatus/qualified.py check` reports source drift.
+Stewart is written in Rust and built as one statically linked Linux binary for
+x86_64 and aarch64. Native macOS is a development environment, not a product
+target. The current adapter uses the Anthropic Messages API; no model is yet
+qualified, and other auditor runtimes are unimplemented.
 
-**Not yet done:**
+What the evidence establishes:
 
-- Native WSL2 qualification with the same binary, driver and fake provider,
-  and any native x86_64 run: the x86_64 runs so far were emulated.
-- Linux runs of the crate's own cargo tests. They have run only on the
-  development Mac, where the Linux-only calls use development fallbacks.
-- The two-build reproducibility comparison on the service. It has run only on
-  an early skeleton of the crate.
-- A claim-by-claim check of the suite's coverage against
-  [ACCEPTANCE.md](ACCEPTANCE.md).
-- Real-model conformance: whether named models can use the arrangement and
-  finish. It needs named models and a budget. Stewart has not been run against
-  a real model, the release's TLS path to the real provider, with its built-in
-  roots, is unexercised, and the pinned request settings (16,000 `max_tokens`
-  per request, a 600 s timeout) are untested against real responses, as is
-  the effort parameter and provider compaction.
+- **Scripted Linux behavior:** the acceptance suite passed on native aarch64
+  and on x86_64 under Rosetta emulation. It exercises the release build through
+  independently witnessed audits, with faults and deliberately broken controls
+  in a separate test build. Native timing checks passed; emulated timings do not
+  gate the result.
+- **Limits of that result:** real-provider TLS, model tool use, effort settings
+  and provider compaction remain untested against real responses. Credential
+  handling has not had a synthetic-key security audit. Native x86_64 and WSL2
+  qualification, Linux Cargo tests, a service reproducibility comparison and a
+  claim-by-claim coverage review also remain outstanding.
 
-## Where to read next
+[The qualification record](apparatus/qualified.md) holds the exact source and
+binary identities, counts and retained evidence. A result applies to those
+recorded builds, not automatically to this version or the current checkout.
+`python3 -I -B apparatus/qualified.py check` validates the record and reports
+source drift. A release build is a build configuration, not a claim that the
+project has met all of [its release requirements](ACCEPTANCE.md).
 
-- [DESIGN.md](DESIGN.md): design and vision: responsibilities, the manager's
-  path and the architecture.
-- [CONTRACTS.md](CONTRACTS.md): the behavioral contract and reasons for its
-  scope boundaries.
-- [ACCEPTANCE.md](ACCEPTANCE.md): the evidence the implementation owes.
-- [docs/INTERFACE.md](docs/INTERFACE.md): the exact CLI, auditor tools, records
-  and test builds.
-- [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md): the three question forms,
-  the exact texts the auditor sees and the answer renderer.
-- [examples/questions/](examples/questions/README.md): worked examples of the
-  three forms: submission folders that prepare as written, with hand-written
-  walkthroughs of an auditor's calls and the rendered answers.
-- [service/README.md](service/README.md): a guide to the crate.
-- [DEVELOPMENT.md](DEVELOPMENT.md): building, testing and evidence retention.
-- [AGENTS.md](AGENTS.md) (CLAUDE.md links to it): the guide for development
-  agents.
-- [riker/](riker/RIKER.md): a development procedure for relaying questions
-  between the local agent and Riker, a separate Claude Project.
+Interfaces and record formats are still evolving. Each audit is bound to the
+exact binary that created it: keep that binary until its audits close. A newer
+binary cannot continue or close them. Existing records are never upgraded in
+place; see [Versions and legacy obligations](CONTRACTS.md#versions-and-legacy-obligations).
 
-## Repository map
+## What an inquiry looks like
 
-| Entry | Contents |
+You might ask whether supplied code meets stated requirements, compare two
+implementations, or turn a concern into a working question and investigate it.
+Stewart has three answer forms: open inquiry, inquiry framing and comparison. The
+[worked examples](examples/questions/README.md) show their inputs, auditor calls
+and rendered answers; the answers are hand-written illustrations, not model
+results.
+
+The submission is an ordinary folder containing `question.md` (settings and
+your question) and `materials/` (selected UTF-8 text files). Stewart does not
+execute the supplied code or fetch more material. The auditor works through
+Stewart's tools on accepted copies, with no shell, general filesystem access
+or network retrieval.
+
+Run allowances count cumulative turns and input/output tokens. Stewart enforces
+no dollar ceiling.
+
+Three locations have separate roles:
+
+| Location | What it holds |
 | --- | --- |
-| `service/` | The Rust crate: the product. |
-| `apparatus/` | Build and test apparatus: the Containerfile from which `step2.sh` builds the pinned Linux toolchain images, the container scripts, the independent driver with its fake provider (Python, standard library only), the repository checks (`check_links.py`) and the qualification record of tested runs (`qualified.py`, `qualified.json`, `qualified.md`). It does not ship. |
-| `docs/` | `INTERFACE.md` and `QUESTION-FORMS.md`. |
-| `examples/` | Worked question examples. |
-| `DESIGN.md`, `CONTRACTS.md`, `ACCEPTANCE.md` | The design, the decided behavior and the evidence owed. |
-| `DEVELOPMENT.md` | Building, testing and evidence retention. |
-| `AGENTS.md`, `CLAUDE.md` | Development rules; `CLAUDE.md` is a link to `AGENTS.md`. |
-| `riker/` | Development procedure: relaying questions to Riker, a separate Claude Project. |
-| `*-PLAN.md` | Active development plans: working accounts, not specification. |
-| `.tmp/` | Ignored temporary storage; only its note, `AGENTS.md`, and a `CLAUDE.md` link to it are tracked. |
-| `LICENSE` | The license. |
+| Submission folder | Your editable question and materials. |
+| Archive | The accepted copies, instructions, exchanges, recorded work and custody records. |
+| Answer destination | A sealed answer package, copied and read back to verify delivery. |
+
+Stewart retains archive records through close and provides no deletion service.
+You manage storage and backups. Its access boundaries serve cooperative parties;
+they do not protect records against the archive owner.
+
+## The command path
+
+1. **Set up:** `stewart new FOLDER [--archive ROOT]` creates an audit reference.
+   It scaffolds an absent submission folder and leaves an existing one unchanged.
+   The archive comes from `--archive` or `STEWART_ARCHIVE`.
+2. **Prepare:** after editing, `stewart prepare REF` inventories and hashes the
+   files and pins the instructions, tools and limits. It returns a preparation
+   handle; it accepts no commission yet.
+3. **Commission:** `stewart commission REF HANDLE --i-am-finished` copies and
+   verifies that prepared selection. Later edits to your folder cannot change
+   the accepted copy.
+4. **Run:** `stewart run REF` places the auditor. This is the only step that
+   needs the provider key and network. The auditor reads, records, prepares and
+   explicitly submits its answer. Submission seals the answer and initiates
+   verified delivery. An interrupted run can continue the same audit with its
+   records and cumulative limits; `run` again is a continuation, not a reset.
+5. **Close:** `stewart close REF` ends authoring. Before launch it creates no
+   answer. After launch it stops the run and, if needed, seals recorded work
+   with manager attribution and delivers it. If close requests confirmation,
+   inspect the delivered copy and use the returned token to finish. Any known
+   loss needs explicit surrender. Manager preservation is distinct from auditor
+   submission.
+
+`stewart receipt REF` reads the fixed commission; `stewart status REF` reports
+run, seal, delivery and close separately. `stewart help` explains the commands
+and their continuation paths. The exact interface is in
+[docs/INTERFACE.md](docs/INTERFACE.md).
+
+## Working on Stewart
+
+Start with [AGENTS.md](AGENTS.md) for development rules and
+[DEVELOPMENT.md](DEVELOPMENT.md) for setup, builds, checks and evidence retention.
+The crate needs vendored dependencies and the Linux suites use pinned container
+images; DEVELOPMENT describes how to prepare them. Local Mac tests help
+development but do not qualify Linux behavior.
+
+Active work lives in tracked `*-PLAN.md` files. List them with
+`git ls-files '*-PLAN.md'`; the coordinating plan owns work order, and topic
+plans own their remaining decisions and tasks. Plans describe proposed work;
+the specification below defines the product.
+
+| Read | For |
+| --- | --- |
+| [DESIGN.md](DESIGN.md) | Purpose, responsibilities and architecture. |
+| [CONTRACTS.md](CONTRACTS.md) | Decided behavior, boundaries and their reasons. |
+| [ACCEPTANCE.md](ACCEPTANCE.md) | The evidence required to establish those claims. |
+| [docs/INTERFACE.md](docs/INTERFACE.md) | CLI, auditor tools, records and test builds. |
+| [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) | Question forms, exact auditor instructions and answer rendering. |
+| [service/README.md](service/README.md) | The Rust crate and its modules. |
+| [apparatus/README.md](apparatus/README.md) | Build and test apparatus, including the independent acceptance driver. |
+
+`service/` is the product; `apparatus/` does not ship. `examples/` contains worked
+questions. `riker/` describes an optional [consultation procedure](riker/RIKER.md).
+`CLAUDE.md` links to `AGENTS.md` so development agents read the same rules.
 
 ## License
 
