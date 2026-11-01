@@ -27,13 +27,16 @@ The product contract is in [CONTRACTS](CONTRACTS.md#run-and-continuation) and
 
 ## Remaining work
 
-1. Rehearse the final launcher with the executable qualified by `acceptance-05`.
-   The first attempt in `.scratch/sanity-launch-01` refused before credential
-   entry: its shared parent directories allowed traversal but not the read
-   access required by Stewart's archive checks. The corrected launcher makes
-   those ancestors readable and keeps scenario and witness directories private.
-   Both architectures passed Linux acceptance; no service rebuild is needed for
-   this launcher-only change. Preserve
+1. Rehearse the corrected launcher with the executable qualified by
+   `acceptance-05`. The retained component probe in
+   `.scratch/launcher-observer-probe-01` found that the control's optional
+   `PR_SET_PTRACER` call is unsupported, while actual observer reads succeed.
+   Record that setup result and require the actual reads. The export selector
+   must distinguish run metadata from status-command metadata, and failed
+   commands must retain their termination observations. The failed integrated
+   attempt and private witness remain in `.scratch/sanity-launch-02`. Both
+   architectures passed Linux acceptance; no service rebuild is needed for
+   launcher-only changes. Preserve
    the independent credential witness, same-user and different-user observer
    controls, interrupted-run evidence, and withheld/failed exports. Retain the
    original container through review. Local helper/review outputs are in

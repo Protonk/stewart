@@ -450,6 +450,46 @@
         "reason": "Retain the first launcher failure and the private original container until review",
         "until": "The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup"
       }
+    },
+    {
+      "id": "sanity-launch-02",
+      "kind": "experiment",
+      "date": "2026-11-01T19:52:53Z",
+      "date_from": "review/diagnosis.json field finished_at",
+      "summary": "Incomplete launcher rehearsal: observer startup assertion failed and export selector withheld all archives; private originals retained",
+      "result": {
+        "path": ".",
+        "files": 41,
+        "sha256": "cf7646674d8b416128519942b41c7609aaee0948626761c850c4443299a5bcf4"
+      },
+      "evidence": {
+        "path": ".scratch/sanity-launch-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain original private audits and credential witness from the failed integrated rehearsal",
+        "until": "The user has reviewed the corrected rehearsal and authorizes disposal of this container and its witness"
+      }
+    },
+    {
+      "id": "launcher-observer-probe-01",
+      "kind": "experiment",
+      "date": "2026-11-01T20:10:42Z",
+      "date_from": "review.json field finished_at",
+      "summary": "Independent observer controls demonstrate actual procfs reads despite unsupported PR_SET_PTRACER setting",
+      "result": {
+        "path": ".",
+        "files": 8,
+        "sha256": "cdc5e19f3b961dd0eaf8183cb77e1e04598411884efb33ad4a9f9de1ddc61dcd"
+      },
+      "evidence": {
+        "path": ".scratch/launcher-observer-probe-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain firing observer controls and original failure diagnosis supporting the launcher correction",
+        "until": "The user has reviewed the corrected rehearsal and authorizes disposal of these controls"
+      }
     }
   ]
 }

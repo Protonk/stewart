@@ -33,6 +33,8 @@ not carry them.
 | [successor-inquiry-01](#successor-inquiry-01) | experiment | recovery-critical design-era records | the user decides they are no longer needed |
 | [credential-emulation-01](#credential-emulation-01) | experiment | Retain the witnesses and original containers supporting the credential acceptance corrections | The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers |
 | [sanity-launch-01](#sanity-launch-01) | experiment | Retain the first launcher failure and the private original container until review | The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup |
+| [sanity-launch-02](#sanity-launch-02) | experiment | Retain original private audits and credential witness from the failed integrated rehearsal | The user has reviewed the corrected rehearsal and authorizes disposal of this container and its witness |
+| [launcher-observer-probe-01](#launcher-observer-probe-01) | experiment | Retain firing observer controls and original failure diagnosis supporting the launcher correction | The user has reviewed the corrected rehearsal and authorizes disposal of these controls |
 
 ## Records
 
@@ -147,3 +149,19 @@ not carry them.
 - Result: `.`, every regular file under it (30 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `9ff9ac7181d971ba26160d877618588b84f914b5b0ca1cb8754b636cbfccfb4e`
 - Evidence: `.scratch/sanity-launch-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the first launcher failure and the private original container until review; until The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup
+
+### sanity-launch-02
+
+- Experiment: Incomplete launcher rehearsal: observer startup assertion failed and export selector withheld all archives; private originals retained
+- Date: 2026-11-01T19:52:53Z (from review/diagnosis.json field finished_at)
+- Result: `.`, every regular file under it (41 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cf7646674d8b416128519942b41c7609aaee0948626761c850c4443299a5bcf4`
+- Evidence: `.scratch/sanity-launch-02` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain original private audits and credential witness from the failed integrated rehearsal; until The user has reviewed the corrected rehearsal and authorizes disposal of this container and its witness
+
+### launcher-observer-probe-01
+
+- Experiment: Independent observer controls demonstrate actual procfs reads despite unsupported PR_SET_PTRACER setting
+- Date: 2026-11-01T20:10:42Z (from review.json field finished_at)
+- Result: `.`, every regular file under it (8 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cdc5e19f3b961dd0eaf8183cb77e1e04598411884efb33ad4a9f9de1ddc61dcd`
+- Evidence: `.scratch/launcher-observer-probe-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain firing observer controls and original failure diagnosis supporting the launcher correction; until The user has reviewed the corrected rehearsal and authorizes disposal of these controls

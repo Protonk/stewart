@@ -59,10 +59,27 @@ def failure_details(error, phase, scenario=None):
     return result
 
 
+def safe_observation(value):
+    """Expose only numeric identity/access facts from the independent observer."""
+    result = {'access': {}}
+    for key in ['observer_uid', 'observer_pid', 'target_pid', 'status_errno', 'limits_errno']:
+        if type(value.get(key)) is int:
+            result[key] = value[key]
+    if isinstance(value.get('target_uids'), list) and all(type(item) is int for item in value['target_uids']):
+        result['target_uids'] = value['target_uids']
+    if isinstance(value.get('core_limits'), list):
+        result['core_limits'] = [item if isinstance(item, str) and re.fullmatch(r'[0-9]{1,20}|unlimited', item) else 'unknown' for item in value['core_limits']]
+    for name in ['cmdline', 'environ', 'maps', 'mem', 'fd']:
+        access = value.get('access', {}).get(name, {})
+        result['access'][name] = {key: access[key] for key in ['allowed', 'errno', 'read_bytes'] if key in access and (type(access[key]) in [bool, int] or access[key] is None)}
+    return result
+
+
 class Session:
     def __init__(self, binary, root, commission, template, mode, witness=None):
         self.binary, self.root, self.commission, self.mode = binary, root, commission, mode
         self.phase = 'session-setup'
+        self.observer_state = None
         self.witness = witness
         root.mkdir(mode=0o700)
         os.chown(root, 1000, 1000)
@@ -104,6 +121,7 @@ class Session:
             argv += ['--key-fd', str(read_fd)]
         started = time.time()
         timed_out = False
+        proc, primary_error, cleanup_error = None, None, None
         with stem.with_suffix('.stdout').open('xb') as stdout, stem.with_suffix('.stderr').open('xb') as stderr:
             try:
                 proc = subprocess.Popen(argv, cwd=self.root, env=env, stdin=subprocess.DEVNULL,
@@ -139,20 +157,38 @@ class Session:
                     except subprocess.TimeoutExpired:
                         os.killpg(proc.pid, signal.SIGKILL)
                         rc = proc.wait(timeout=10)
+            except BaseException as error:
+                primary_error = error
             finally:
-                for fd in [read_fd, write_fd]:
-                    if fd is not None:
-                        os.close(fd)
-                if self.process is not None and self.process.poll() is None:
-                    os.killpg(self.process.pid, signal.SIGTERM)
-                    try:
-                        self.process.wait(timeout=10)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(self.process.pid, signal.SIGKILL)
-                        self.process.wait(timeout=10)
-        write_json(stem.with_suffix('.json'), {'argv': argv, 'exit': rc, 'pid': proc.pid,
-            'timed_out': timed_out, 'started_at': started, 'ended_at': time.time(),
-            'environment_names': sorted(env), 'credential_channel': 'owned pipe fd' if key is not None else None})
+                try:
+                    for fd in [read_fd, write_fd]:
+                        if fd is not None:
+                            os.close(fd)
+                    if proc is not None and proc.poll() is None:
+                        os.killpg(proc.pid, signal.SIGTERM)
+                        try:
+                            proc.wait(timeout=10)
+                        except subprocess.TimeoutExpired:
+                            os.killpg(proc.pid, signal.SIGKILL)
+                            proc.wait(timeout=10)
+                except BaseException as error:
+                    cleanup_error = error
+                rc = proc.poll() if proc is not None else None
+                metadata = {'argv': argv, 'exit': rc, 'pid': proc.pid if proc is not None else None,
+                    'process_state': 'not_started' if proc is None else 'exited' if rc is not None else 'unknown',
+                    'timed_out': timed_out, 'started_at': started, 'ended_at': time.time(),
+                    'environment_names': sorted(env), 'credential_channel': 'owned pipe fd' if key is not None else None}
+                if primary_error is not None:
+                    metadata['failure'] = failure_details(primary_error, self.phase, self.mode)
+                if cleanup_error is not None:
+                    metadata['cleanup_failure'] = failure_details(cleanup_error, 'process-cleanup', self.mode)
+                # An observer/callback failure must not erase the attempted
+                # command's identity, observed exit, timing or retained streams.
+                write_json(stem.with_suffix('.json'), metadata)
+        if primary_error is not None:
+            raise primary_error
+        if cleanup_error is not None:
+            raise cleanup_error
         content = stem.with_suffix('.stdout').read_bytes()
         if raw:
             if rc != 0:
@@ -169,42 +205,71 @@ class Session:
     def observe_process(self, pid):
         helper = Path(__file__).parents[1] / 'driver' / 'credential_observer.py'
         observations = []
+        initializations = []
         for uid in [1000, 1001]:
-            # This intentionally readable fixture opts out of Yama's sibling
-            # ptrace restriction so a denial cannot masquerade as a firing control.
-            control_code = 'import ctypes,time; c=ctypes.CDLL(None); assert c.prctl(0x59616d61, ctypes.c_ulong(-1), 0, 0, 0)==0; print("ready",flush=True); time.sleep(60)'
+            self.observer_state = {'code': 'control_ready', 'uid': uid, 'role': 'readable-control'}
+            # Request sibling inspection where Yama supports it. Some kernels
+            # reject this optional prctl yet permit all the actual reads below;
+            # retain that result and require the reads themselves to fire.
+            control_code = '''import ctypes,json,os,time
+c=ctypes.CDLL(None,use_errno=True)
+ctypes.set_errno(0)
+rc=c.prctl(0x59616d61,ctypes.c_ulong(-1),0,0,0)
+err=ctypes.get_errno()
+print(json.dumps({'uid':os.getuid(),'euid':os.geteuid(),'gid':os.getgid(),
+    'pr_set_ptracer_return':rc,'errno':err,'dumpable':c.prctl(3,0,0,0,0)}),flush=True)
+time.sleep(60)
+'''
             control = subprocess.Popen(['python3', '-I', '-B', '-c', control_code],
                 env={'PATH': '/usr/local/bin:/usr/bin:/bin', 'STEWART_OBSERVER_CONTROL': 'readable-control'},
                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                 user=uid, group=uid, extra_groups=[], start_new_session=True)
             try:
-                if control.stdout.readline() != b'ready\n':
+                initialized = strict_json(control.stdout.readline())
+                fields = ['uid', 'euid', 'gid', 'pr_set_ptracer_return', 'errno', 'dumpable']
+                if not isinstance(initialized, dict) or set(initialized) != set(fields) or not all(type(initialized[name]) is int for name in fields):
                     raise RuntimeError('readable process control did not initialize')
+                initialization = {'pid': control.pid, 'at': time.time(), **initialized}
+                self.observer_state['initialization'] = initialization
+                write_json(self.evidence / f'observer-{uid}-control-init.json', initialization)
+                initializations.append(initialization)
+                if any(initialized[name] != uid for name in ['uid', 'euid', 'gid']):
+                    raise RuntimeError('readable process control identity differs')
                 for role, target in [('readable-control', control.pid), ('hardened', pid)]:
+                    self.observer_state = {'code': 'observer_exit', 'uid': uid, 'role': role,
+                                           'initialization': initialization}
                     result = subprocess.run(['python3', '-I', '-B', str(helper), str(target)],
                         env={'PATH': '/usr/local/bin:/usr/bin:/bin'}, cwd='/work',
                         stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                         user=uid, group=uid, extra_groups=[], timeout=10)
+                    self.observer_state['exit'] = result.returncode
                     if result.returncode:
                         raise RuntimeError('process observer failed')
                     observation = json.loads(result.stdout)
+                    self.observer_state['observation'] = safe_observation(observation)
                     write_json(self.evidence / f'observer-{uid}-{role}.json', observation)
                     observations.append({'uid': uid, 'role': role, 'observation': observation})
                     access = observation.get('access', {})
                     if role == 'readable-control':
+                        self.observer_state['code'] = 'control_firing'
                         if not all(access.get(name, {}).get('allowed') is True for name in ['cmdline', 'environ', 'maps', 'mem', 'fd']) or access['mem'].get('read_bytes') != 1:
                             raise RuntimeError('readable process control did not fire')
-                    elif not all(access.get(name, {}).get('allowed') is False and access[name].get('errno') in [errno.EACCES, errno.EPERM] for name in ['environ', 'maps', 'mem', 'fd']):
-                        raise RuntimeError('hardened process inspection was not denied')
-                    elif observation.get('core_limits') != ['0', '0'] or observation.get('target_uids') != [1000, 1000, 1000, 1000]:
-                        raise RuntimeError('hardened process identity or core limits differ')
+                    else:
+                        self.observer_state['code'] = 'protection'
+                        if not all(access.get(name, {}).get('allowed') is False and access[name].get('errno') in [errno.EACCES, errno.EPERM] for name in ['environ', 'maps', 'mem', 'fd']):
+                            raise RuntimeError('hardened process inspection was not denied')
+                        self.observer_state['code'] = 'identity'
+                        if observation.get('core_limits') != ['0', '0'] or observation.get('target_uids') != [1000, 1000, 1000, 1000]:
+                            raise RuntimeError('hardened process identity or core limits differ')
             finally:
                 if control.poll() is None:
                     os.killpg(control.pid, signal.SIGTERM)
                 control.wait(timeout=10)
         write_json(self.evidence / 'process-observation-index.json', {'target_pid': pid,
             'observers': [1000, 1001], 'count': len(observations), 'controls_fired': 2,
-            'inspection_denied': True, 'at': time.time()})
+            'control_initializations': initializations, 'inspection_denied': True, 'at': time.time()})
+        self.observer_state = {'code': 'complete', 'observers': [1000, 1001], 'controls_fired': 2,
+                               'control_initializations': initializations, 'inspection_denied': True}
 
     def intake(self):
         new, _, _ = self.command('new', 'new', str(self.folder), '--archive', str(self.archive))
@@ -350,11 +415,19 @@ def export_evidence_state(root):
         result = strict_json((root / 'evidence/RESULT.json').read_bytes())
         if result.get('failure') is not False:
             return 'procedure_not_complete'
-        commands = list((root / 'evidence').glob('*-run.json'))
-        statuses = list((root / 'evidence').glob('*-status-after-run.stdout'))
+        commands = [path for path in (root / 'evidence').iterdir()
+                    if re.fullmatch(r'[0-9]{2,}-run\.json', path.name)]
+        statuses = [path for path in (root / 'evidence').iterdir()
+                    if re.fullmatch(r'[0-9]{2,}-status-after-run\.stdout', path.name)]
         if len(commands) != 1 or len(statuses) != 1:
             return 'missing_run_observation'
         command = strict_json(commands[0].read_bytes())
+        status_command = strict_json(statuses[0].with_suffix('.json').read_bytes())
+        run_argv, status_argv = command.get('argv'), status_command.get('argv')
+        if not isinstance(run_argv, list) or not isinstance(status_argv, list) or len(run_argv) < 3 or len(status_argv) < 3 or run_argv[1] != 'run' or status_argv[1] != 'status' or run_argv[0] != status_argv[0] or run_argv[2] != status_argv[2]:
+            return 'mismatched_run_observation'
+        if type(status_command.get('exit')) is not int or status_command['exit'] != 0 or status_command.get('timed_out') is not False:
+            return 'uncertain_writer_state'
         status = strict_json(statuses[0].read_bytes())['data']['runs']
         if type(command.get('exit')) is not int or command['exit'] < 0 or command.get('timed_out') is not False:
             return 'uncertain_process_exit'
@@ -520,6 +593,8 @@ def main():
                 # Exceptions may contain provider text; never forward them outside.
                 report['failures'].append(session.mode)
                 detail = failure_details(error, session.phase, session.mode)
+                if session.observer_state is not None:
+                    detail['observer'] = session.observer_state
                 report.setdefault('failure_details', []).append(detail)
                 write_json(session.evidence / 'procedure-failure.json', {**detail, 'at': time.time()})
         # Export each scenario independently; a reflected specimen must not prevent

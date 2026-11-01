@@ -4,6 +4,8 @@ import io
 import json
 import os
 from pathlib import Path
+import signal
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -15,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import launch
 import review
 from control import safe_state
-from session import export_evidence_state, export_work, failure_details, safe_choice, safe_usage
+from session import Session, export_evidence_state, export_work, failure_details, safe_choice, safe_observation, safe_usage
 from session_support import credential_bytes, digest, scan_tree, secret_matches, strict_json, validate_commission, write_json
 
 
@@ -24,7 +26,8 @@ class LaunchTests(unittest.TestCase):
         evidence = root / 'evidence'
         evidence.mkdir()
         write_json(evidence / 'RESULT.json', {'failure': False})
-        write_json(evidence / '01-run.json', {'exit': 0, 'timed_out': False})
+        write_json(evidence / '01-run.json', {'argv': ['/bin-in/stewart', 'run', 'stw1:fixture', '--json', '--key-fd', '3'], 'exit': 0, 'timed_out': False, 'pid': 123})
+        write_json(evidence / '02-status-after-run.json', {'argv': ['/bin-in/stewart', 'status', 'stw1:fixture', '--json'], 'exit': 0, 'timed_out': False, 'pid': 124})
         write_json(evidence / '02-status-after-run.stdout', {'data': {'runs': {'held': False, 'count': 1, 'last': {'number': 1, 'ending': 'sealed'}}}})
         audit = root / 'archive/audits/audit'
         (audit / 'log').mkdir(parents=True)
@@ -184,6 +187,23 @@ class LaunchTests(unittest.TestCase):
             self.assertEqual(export_evidence_state(root), 'unaccounted_capture')
             self.assertTrue((run / 'response-9-1.bin').exists())
 
+    def test_run_observation_distinguishes_status_metadata_and_requires_same_audit(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            self.complete_evidence(root)
+            # Both real command records end in '-run.json'; only the exact
+            # numbered run-command filename identifies the launched placement.
+            self.assertEqual(len(list((root / 'evidence').glob('*-run.json'))), 2)
+            self.assertEqual(export_evidence_state(root), 'complete')
+            status = root / 'evidence/02-status-after-run.json'
+            original = status.read_bytes()
+            changed = json.loads(original)
+            changed['argv'][2] = 'stw1:different-audit'
+            status.write_text(json.dumps(changed))
+            self.assertEqual(export_evidence_state(root), 'mismatched_run_observation')
+            status.write_bytes(original)
+            self.assertEqual(export_evidence_state(root), 'complete')
+
     def test_incomplete_response_and_missing_marker_withhold_export(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -267,6 +287,99 @@ class LaunchTests(unittest.TestCase):
         detail = failure_details(KeyError('potential-secret'), 'new-reply', 'submitted')
         self.assertEqual(detail['error_type'], 'KeyError')
         self.assertNotIn('potential-secret', json.dumps(detail))
+
+    def test_observation_summary_excludes_arbitrary_bytes_and_messages(self):
+        value = {'observer_uid': 1001, 'target_uids': [1000] * 4, 'core_limits': ['0', 'potential-secret'],
+            'message': 'potential-secret', 'access': {'mem': {'allowed': False, 'errno': 13, 'raw': 'potential-secret'},
+                                                   'environ': {'allowed': True, 'raw': 'potential-secret'}}}
+        result = safe_observation(value)
+        self.assertEqual(result['observer_uid'], 1001)
+        self.assertEqual(result['access']['mem'], {'allowed': False, 'errno': 13})
+        self.assertEqual(result['core_limits'], ['0', 'unknown'])
+        self.assertNotIn('potential-secret', json.dumps(result))
+
+    def test_observer_failure_retains_command_metadata_and_stops_child(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            case = Session.__new__(Session)
+            case.binary, case.root, case.evidence = Path(sys.executable), root, root
+            case.env = {'PATH': os.environ['PATH'], 'HOME': str(root)}
+            case.commission, case.mode, case.index, case.process = {'stop_after_seconds': 60}, 'submitted', 0, None
+            case.observe_process = mock.Mock(side_effect=RuntimeError('potential-secret'))
+            event, release = mock.Mock(), mock.Mock()
+            event.wait.return_value = True
+            original_popen = subprocess.Popen
+            children = []
+            def local_child(*args, **kwargs):
+                # This test exercises real child termination as the local user;
+                # the UID1000 transition belongs to the Linux rehearsal.
+                for key in ['user', 'group', 'extra_groups']:
+                    kwargs.pop(key, None)
+                child = original_popen(*args, **kwargs)
+                children.append(child)
+                return child
+            try:
+                with mock.patch('session.subprocess.Popen', local_child), self.assertRaises(RuntimeError):
+                    case.command('run', '-I', '-B', '-c', 'import time; time.sleep(60)', observe=(event, release))
+                value = strict_json((root / '01-run.json').read_bytes())
+                self.assertEqual(value['process_state'], 'exited')
+                self.assertEqual(value['pid'], children[0].pid)
+                self.assertEqual(value['exit'], children[0].returncode)
+                self.assertIsNotNone(children[0].poll())
+                self.assertEqual(value['failure']['phase'], 'process-observation')
+                self.assertEqual(value['failure']['error_type'], 'RuntimeError')
+                self.assertNotIn('potential-secret', json.dumps(value))
+                self.assertTrue((root / '01-run.stdout').exists())
+                self.assertTrue((root / '01-run.stderr').exists())
+            finally:
+                for child in children:
+                    if child.poll() is None:
+                        os.killpg(child.pid, signal.SIGKILL)
+                        child.wait(timeout=5)
+
+    def test_observer_control_requires_actual_reads_even_when_prctl_is_unsupported(self):
+        for advisory_errno, readable in [(22, True), (22, False), (0, True)]:
+            with self.subTest(advisory_errno=advisory_errno, readable=readable), tempfile.TemporaryDirectory() as folder:
+                case = Session.__new__(Session)
+                case.evidence = Path(folder)
+                def control(*args, **kwargs):
+                    uid = kwargs['user']
+                    initialized = {'uid': uid, 'euid': uid, 'gid': uid, 'dumpable': 1,
+                        'pr_set_ptracer_return': -1 if advisory_errno else 0, 'errno': advisory_errno}
+                    proc = mock.Mock(pid=uid + 100)
+                    proc.stdout = io.BytesIO(json.dumps(initialized).encode() + b'\n')
+                    proc.poll.return_value = 0
+                    return proc
+                def observer(argv, **kwargs):
+                    uid, target = kwargs['user'], int(argv[-1])
+                    is_control = target == uid + 100
+                    access = {name: {'allowed': readable if is_control else name == 'cmdline'}
+                              for name in ['cmdline', 'environ', 'maps', 'mem', 'fd']}
+                    if is_control:
+                        access['mem']['read_bytes'] = 1 if readable else 0
+                    else:
+                        for name in ['environ', 'maps', 'mem', 'fd']:
+                            access[name]['errno'] = 13
+                    value = {'observer_uid': uid, 'target_pid': target,
+                        'target_uids': [uid if is_control else 1000] * 4,
+                        'core_limits': ['0', '0'], 'access': access}
+                    return subprocess.CompletedProcess(argv, 0, json.dumps(value).encode(), b'')
+                with mock.patch('session.subprocess.Popen', side_effect=control), mock.patch('session.subprocess.run', side_effect=observer) as observations:
+                    if readable:
+                        case.observe_process(123)
+                        self.assertEqual(observations.call_count, 4)
+                        index = strict_json((case.evidence / 'process-observation-index.json').read_bytes())
+                        self.assertEqual(index['controls_fired'], 2)
+                        self.assertTrue(index['inspection_denied'])
+                        self.assertEqual([item['errno'] for item in index['control_initializations']], [advisory_errno] * 2)
+                    else:
+                        with self.assertRaises(RuntimeError):
+                            case.observe_process(123)
+                        self.assertEqual(observations.call_count, 1)
+                        self.assertEqual(case.observer_state['code'], 'control_firing')
+                        self.assertFalse((case.evidence / 'process-observation-index.json').exists())
+                initialization = strict_json((case.evidence / 'observer-1000-control-init.json').read_bytes())
+                self.assertEqual(initialization['errno'], advisory_errno)
 
     def test_review_detects_altered_export_and_keeps_original(self):
         with tempfile.TemporaryDirectory() as folder:
