@@ -16,8 +16,8 @@ conditions; the procedure below records those choices.
 
 [The unpaid commission proposal](COMMISSION.md) names the settings proposed for
 the first real-provider attempt, with dated compatibility and pricing sources.
-It is separate from this historical rehearsal template and requires bounded
-spending authorization before launch.
+The launcher applies those settings to a retained copy of the specimen; they
+require bounded spending authorization before launch.
 
 No command in the rehearsal can select a real provider. The synthetic model
 name is `rehearsal-only`; the fake binds a newly allocated loopback port. The
@@ -39,54 +39,38 @@ operator status/close commands and results. The launcher checks the credential
 path, process-observer controls, interruptions, exact delivery, and withheld or
 failed exports. Its review tool reads retained results without launching a model.
 
-The earlier three-scenario rehearsal remains available below; it pins the older
-binary and exercises that historical procedure, rather than the new credential
-descriptor and launch path.
+The [launcher guide](LAUNCHER.md) describes credential entry, operator commands,
+export checks and offline review. Use it for the exact launch and review commands.
+Each scenario has its own reference and working directory:
 
-Commit the packet before running: the wrapper archives `HEAD`, refuses a dirty
-packet and checks the binary digest against `acceptance-03` in the qualification
-record. It uses the already cached pinned Python image, with no image pull or
-build, and the qualified arm64 release binary. Apple `container` 1.6.1 and its
-services must be available in the host shell.
-
-```sh
-python3 -I -B apparatus/sanity/rehearse.py "$PWD/.scratch/sanity-rehearsal-NN"
-```
-
-Use a fresh absolute directory directly under `.scratch` for every attempt.
-The wrapper retains its named container, source archive, binary/source identity,
-host outputs and inspection. Inside it, an unprivileged process keeps the audit
-on the Linux filesystem. On completion, the wrapper exports an independent
-evidence directory and the entire working tree as `container/work.tar`, with
-digest, listing and observation times. Failed runs keep the same evidence and
-container; nothing is automatically removed or retried.
-
-The three scenarios use separate references and working directories:
-
-| Scenario | Expected observation before close | Expected preservation |
-| --- | --- | --- |
-| Scripted submission | Reads both materials, records a cited account and observation, prepares, confirms submission; auditor seal and verified delivery | Ordinary close completes; return agrees with the sealed manifest |
-| Ordinary ending without submission | Records work, ends twice with Stewart's reminder between; `ended_unsubmitted`, no auditor seal | After observing that state, manager close preserves the work; verification precedes confirmation and the seal remains attributed to the manager |
-| Synthetic HTTP 401 | One rejected request; `interrupted` / `provider_rejected`, no auditor seal | Rejection and raw response retained; no continuation; manager close remains distinct from submission |
+| Scenario | Required observation |
+| --- | --- |
+| Scripted submission | Both materials read; cited answer explicitly submitted, delivery verified and ordinary close complete. Same-user and different-user process controls fire, protected reads are denied. |
+| Ending without submission | `ended_unsubmitted`; recorded work remains open for review. |
+| Synthetic HTTP 401 | One rejected request; `interrupted` / `provider_rejected`; no continuation. |
+| Interrupted request | Signal stops the placement; reported and estimated usage and partial request evidence remain available. |
+| Reflected credential | The exact private capture is marked; further requests and tools stop; export is withheld. |
+| Contaminated export | An independent scan detects the deliberate contamination and withholds export. |
+| Failed export | A real output-file obstruction prevents the export; originals and obstruction remain retained. |
 
 The scripted answer deliberately has no `record_limit` entry. A missing-section
 notice must not prevent submission. The fake reacts to actual read replies and
 preparation handles; its prose is authored fixture text, not a model result.
 It validates returned bytes against independent copies, not intellectual quality.
 
-A separate altered copy of the submitted return must fail manifest verification;
-the original must still verify afterward. Both copies remain available. The
-unsubmitted and rejected scenarios check that successful preservation/close is
-not mistaken for successful auditor submission. This rehearsal supplements
-procedure preparation; it does not replace the independent acceptance driver,
-prove real-provider compatibility, or qualify a model.
+An altered copy of the submitted return must fail manifest verification while
+the original still verifies. Neither an unsubmitted ending nor a manager close
+can establish auditor submission. Rehearsal supplements the independent
+acceptance driver; it does not establish real-provider compatibility or qualify
+a model.
 
 ## Procedure for the later paid run
 
 The credential entry path uses a hidden terminal prompt on the host and a pipe
-to `run --key-fd 0` in the Linux container. It uses no persistent credential
-store. Intake and receipt verification finish before the prompt. The launch
-environment selects the direct provider endpoint explicitly and excludes ambient
+to a one-use inherited descriptor selected with `run --key-fd` in the Linux
+container. It uses no persistent credential store. Intake and receipt
+verification finish before the prompt. The launch environment selects the direct
+provider endpoint explicitly and excludes ambient
 credentials and proxies. The user enters the key locally, never into chat or an
 argument. Retain the qualified executable until this audit is closed.
 
@@ -120,10 +104,12 @@ argument. Retain the qualified executable until this audit is closed.
    state and decide recovery before taking further action. A manager seal is
    preserved work, not a successful auditor submission. Confirm a newly delivered
    manager-sealed copy only after inspecting it. Never surrender a loss silently.
-6. **Retain the result.** Export the whole archive, original input copies,
-   command records and delivered bytes, with export times and digests. Keep
-   the original container through review. Record outcome and limitations before
-   considering a new attempt. No automatic cleanup or continuation.
+6. **Retain the result.** The launcher exports the archive, original input
+   copies, command records and delivered bytes only after its evidence and
+   credential checks pass. It records export times and digests. A withheld or
+   failed export leaves the originals private in the retained container. Keep
+   that container through review, and record outcome and limitations before
+   considering another attempt. Nothing automatically cleans up or continues.
 
 If a response reflects the credential, preserve the exact original privately,
 stop and revoke the key. Ordinary diagnostics explicitly redact provider text;

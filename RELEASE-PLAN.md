@@ -9,8 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next | Choose, harden and audit API-key handling using established components | [API-KEY-PLAN.md](API-KEY-PLAN.md) |
-| Then | Conduct and review one bounded Messages API sanity commission | [Sanity run sheet](apparatus/sanity/RUN-SHEET.md) |
+| Next | Authorize, conduct and review one bounded Messages API sanity commission | [Sanity run sheet](apparatus/sanity/RUN-SHEET.md) |
 | Runtime follow-on | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 | Separately commissioned studies after API sanity | Haiku framing and question-family dogfooding; the Haiku study can use the API route independently of Claude Code | The study sections below |
 
@@ -31,21 +30,19 @@ aarch64 and emulated x86_64.
 The toolchain record establishes service reproducibility on both architectures.
 No real-model result is available.
 
-The sanity rehearsal in `.scratch/sanity-rehearsal-01` passed all three scenarios
-(submission, ordinary ending without submission, provider rejection), with an
-altered-return control and unchanged-original comparison. Its host record pins
-the packet source and qualified binary; `.scratch/sanity-prep-01/review.json`
-records the retained-work check. This establishes the procedure against local
-fakes, not credential safety or real-provider conformance.
+The final launcher rehearsal in `.scratch/sanity-launch-03` passed all seven
+scenarios. Its reviewed evidence is in `review/result.json` within that folder;
+`host/RESULT.json` binds the apparatus source, qualified executable, specimen and
+container. It demonstrates synthetic credential delivery, process-access
+controls, interruption, exact delivery and export withholding. It establishes
+the native Linux path against local fakes, not real-provider conformance.
 
-Retain the acceptance and sanity working copies and stopped containers through
-review. Container identities are recorded in
-`.scratch/acceptance-03/host/driver-<arch>.container`,
-`.scratch/acceptance-04/host/driver-<arch>.container`,
-`.scratch/acceptance-05/host/driver-<arch>.container` and
-`.scratch/sanity-rehearsal-01/host/container.name`; retention review outputs are
-in `.scratch/linux-acceptance-prep-01` and `.scratch/sanity-prep-01`. Disposal is
-the user's decision under [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).
+The qualification record pins that rehearsal, the earlier failed attempts and
+their diagnostic controls. Keep their original containers and independent
+credential witnesses through review. Current acceptance containers are named in
+`.scratch/acceptance-05/host/driver-<arch>.container`; the launcher container is
+named in `.scratch/sanity-launch-03/host/container.name`. Disposal is the user's
+decision under [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).
 
 ## Messages API sanity commission
 
@@ -58,11 +55,9 @@ model call. Remaining preparation:
   account/key's access to the proposed model and workspace. Stewart does not
   enforce a dollar ceiling. Public-document compatibility is checked; actual
   account access, timing, TLS and billing remain live observations.
-- Finish the live launcher and observation procedure for the selected credential
-  mechanism, qualified binary, Linux filesystem, destination and endpoint/proxy
-  choice. Rehearse that final path with synthetic credentials, failure controls,
-  interruption and export withholding. Prepare the offline review summary.
-  Real-provider TLS with the release's built-in roots remains unexercised.
+- Use the [retained launcher](apparatus/sanity/LAUNCHER.md) and bind authorization
+  to the exact completed commission packet. Real-provider TLS with the release's
+  built-in roots remains unexercised until the authorized call.
 - Run once under the approved bounds, review actual effects before retrying,
   and record submission, preservation, delivery and close separately. A manager
   close cannot establish that the auditor submitted.

@@ -490,6 +490,26 @@
         "reason": "Retain firing observer controls and original failure diagnosis supporting the launcher correction",
         "until": "The user has reviewed the corrected rehearsal and authorizes disposal of these controls"
       }
+    },
+    {
+      "id": "sanity-launch-03",
+      "kind": "experiment",
+      "date": "2026-11-01T20:26:07Z",
+      "date_from": "review/result.json field finished_at",
+      "summary": "Seven-scenario retained launcher rehearsal passed: credential delivery, process controls, interruption, exact return, reflection and export controls",
+      "result": {
+        "path": ".",
+        "files": 50,
+        "sha256": "fd35d25502a3c096fd503b68fe5a341a16b5daa2e3d5070eb197ede361f444e1"
+      },
+      "evidence": {
+        "path": ".scratch/sanity-launch-03",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation",
+        "until": "The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness"
+      }
     }
   ]
 }

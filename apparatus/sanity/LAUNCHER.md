@@ -140,6 +140,7 @@ Local helper checks, which consume no model tokens:
 python3 -I -B apparatus/sanity/test_launch.py
 ```
 
-Container qualification and the synthetic credential rehearsal still have to
-exercise the committed apparatus and chosen binary. Local helper checks alone
-do not qualify the Linux path.
+Container qualification and a synthetic credential rehearsal must exercise the
+chosen executable and committed launch code before real-key use. The
+[qualification record](../qualified.md) identifies retained demonstrations;
+local helper checks alone do not qualify the Linux path.

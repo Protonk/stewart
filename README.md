@@ -33,10 +33,13 @@ What the evidence establishes:
   in a separate test build. Native timing checks passed; emulated timings do not
   gate the result.
 - **Limits of that result:** real-provider TLS, model tool use, effort settings
-  and provider compaction remain untested against real responses. Credential
-  handling passed the service checks, but the synthetic-key launcher
-  rehearsal remains outstanding. Native x86_64 and WSL2 qualification, Linux
-  Cargo tests and a claim-by-claim coverage review also remain outstanding.
+  and provider compaction remain untested against real responses. Native x86_64
+  and WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage review
+  also remain outstanding.
+- **Credential launch:** a synthetic-key rehearsal passed on native Linux,
+  including same-user and different-user process-access controls, interrupted
+  requests, exact return verification, and withholding contaminated exports.
+  The private originals and independent credential witness remain retained.
 - **Reproducible builds:** two service builds produced identical static binaries
   for each Linux architecture using the recorded toolchain images.
 

@@ -35,6 +35,7 @@ not carry them.
 | [sanity-launch-01](#sanity-launch-01) | experiment | Retain the first launcher failure and the private original container until review | The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup |
 | [sanity-launch-02](#sanity-launch-02) | experiment | Retain original private audits and credential witness from the failed integrated rehearsal | The user has reviewed the corrected rehearsal and authorizes disposal of this container and its witness |
 | [launcher-observer-probe-01](#launcher-observer-probe-01) | experiment | Retain firing observer controls and original failure diagnosis supporting the launcher correction | The user has reviewed the corrected rehearsal and authorizes disposal of these controls |
+| [sanity-launch-03](#sanity-launch-03) | experiment | Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation | The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness |
 
 ## Records
 
@@ -165,3 +166,11 @@ not carry them.
 - Result: `.`, every regular file under it (8 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cdc5e19f3b961dd0eaf8183cb77e1e04598411884efb33ad4a9f9de1ddc61dcd`
 - Evidence: `.scratch/launcher-observer-probe-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain firing observer controls and original failure diagnosis supporting the launcher correction; until The user has reviewed the corrected rehearsal and authorizes disposal of these controls
+
+### sanity-launch-03
+
+- Experiment: Seven-scenario retained launcher rehearsal passed: credential delivery, process controls, interruption, exact return, reflection and export controls
+- Date: 2026-11-01T20:26:07Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (50 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `fd35d25502a3c096fd503b68fe5a341a16b5daa2e3d5070eb197ede361f444e1`
+- Evidence: `.scratch/sanity-launch-03` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation; until The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness
