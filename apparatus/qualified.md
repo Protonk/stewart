@@ -32,6 +32,7 @@ not carry them.
 | [acceptance-04](#acceptance-04) | acceptance | Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis | The user has reviewed the corrected acceptance result and original failed evidence |
 | [successor-inquiry-01](#successor-inquiry-01) | experiment | recovery-critical design-era records | the user decides they are no longer needed |
 | [credential-emulation-01](#credential-emulation-01) | experiment | Retain the witnesses and original containers supporting the credential acceptance corrections | The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers |
+| [sanity-launch-01](#sanity-launch-01) | experiment | Retain the first launcher failure and the private original container until review | The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup |
 
 ## Records
 
@@ -138,3 +139,11 @@ not carry them.
 - Result: `diagnosis.json`, SHA-256 `6bf0c61298b43f1d5f05cd2a1fb0630a34a48efcbf96b5a2d8f55041476990ad`
 - Evidence: `.scratch/credential-emulation-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the witnesses and original containers supporting the credential acceptance corrections; until The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers
+
+### sanity-launch-01
+
+- Experiment: Launcher refused during credential-free intake because shared ancestor directories were not readable; original container and setup diagnosis retained
+- Date: 2026-11-01T18:56:53Z (from review/diagnosis.json field finished_at)
+- Result: `.`, every regular file under it (30 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `9ff9ac7181d971ba26160d877618588b84f914b5b0ca1cb8754b636cbfccfb4e`
+- Evidence: `.scratch/sanity-launch-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the first launcher failure and the private original container until review; until The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup

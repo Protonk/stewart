@@ -43,9 +43,26 @@ def safe_usage(value):
     return result
 
 
+def failure_details(error, phase, scenario=None):
+    """Report controlled context and exception category, never exception text."""
+    category = type(error).__name__
+    if category not in ['PermissionError', 'FileNotFoundError', 'FileExistsError',
+                        'TimeoutExpired', 'RuntimeError', 'ValueError', 'KeyError',
+                        'TypeError', 'AttributeError', 'OSError', 'JSONDecodeError',
+                        'UnicodeDecodeError', 'BrokenPipeError', 'ProcessLookupError']:
+        category = 'OtherError'
+    result = {'phase': phase, 'error_type': category, 'scenario': scenario,
+              'private_originals_retained': True}
+    number = getattr(error, 'errno', None)
+    if type(number) is int:
+        result['errno'] = number
+    return result
+
+
 class Session:
     def __init__(self, binary, root, commission, template, mode, witness=None):
         self.binary, self.root, self.commission, self.mode = binary, root, commission, mode
+        self.phase = 'session-setup'
         self.witness = witness
         root.mkdir(mode=0o700)
         os.chown(root, 1000, 1000)
@@ -74,6 +91,7 @@ class Session:
         self.process = None
 
     def command(self, label, *args, raw=False, key=None, endpoint=None, interrupt=None, observe=None):
+        self.phase = 'command.' + safe_choice(args[0], ['new', 'prepare', 'commission', 'receipt', 'status', 'run', 'close'])
         self.index += 1
         stem = self.evidence / f'{self.index:02}-{label}'
         argv = [str(self.binary), *args] + ([] if raw else ['--json'])
@@ -101,6 +119,7 @@ class Session:
                     os.close(write_fd)
                     write_fd = None
                 if observe is not None:
+                    self.phase = 'process-observation'
                     event, release = observe
                     if not event.wait(20):
                         raise RuntimeError('process observation witness did not observe the request')
@@ -189,8 +208,10 @@ class Session:
 
     def intake(self):
         new, _, _ = self.command('new', 'new', str(self.folder), '--archive', str(self.archive))
+        self.phase = 'new-reply'
         self.ref = new['data']['reference']
         prepared, _, _ = self.command('prepare', 'prepare', self.ref)
+        self.phase = 'prepare-reply'
         self.command('commission', 'commission', self.ref, prepared['data']['prepared'], '--i-am-finished')
         receipt, _, _ = self.command('receipt-verify', 'receipt', self.ref, '--verify')
         for item, content in {'question-file': (self.folder / 'question.md').read_bytes(), 'question-body': self.question.encode(), **self.materials}.items():
@@ -457,26 +478,32 @@ def main():
     args = parser.parse_args()
     os.umask(0o077)
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-    # Traversal lets uid1000 reach its own mode-0700 scenario; uid1001 cannot
-    # read those directories. The root orchestrator alone owns this parent.
-    args.private.mkdir(mode=0o711)
-    args.private.chmod(0o711)
+    # Stewart opens each ancestor for reading during path validation. This
+    # root-owned parent contains only generic scenario/lock names; payloads
+    # remain behind each uid1000-owned mode-0700 scenario directory.
+    args.private.mkdir(mode=0o755)
+    args.private.chmod(0o755)
     commission = strict_json(args.packet.read_bytes())
     modes = SCENARIOS if args.mode == 'rehearse' else ['live']
     sessions = []
     report = {'schema': 'stewart.sanity-session/1', 'mode': args.mode, 'started_at': time.time(),
               'scenarios': [], 'failures': [], 'model_calls': 0 if args.mode == 'rehearse' else None}
     key = None
+    phase, active_mode, active_session = 'credential-witness-setup', None, None
     try:
         witness = Path('/work/credential-witness') if args.mode == 'rehearse' else None
         if witness is not None:
             witness.mkdir(mode=0o700)
         for mode in modes:
+            phase, active_mode, active_session = 'session-setup', mode, None
             session = Session(args.binary, args.private / mode, commission, Path(__file__).parent / 'submission', mode, witness=witness)
+            active_session = session
             session.intake()
             sessions.append(session)
+        phase, active_mode, active_session = 'publish-readiness', None, None
         write_json(args.out / 'READY.json', {'credential_free_intake_verified': True,
             'scenarios': modes, 'operator_roots': [str(s.root) for s in sessions], 'at': time.time()})
+        phase = 'credential-entry'
         key = credential_bytes(sys.stdin.buffer.read(4098))
         if witness is not None:
             with (witness / 'canary.bin').open('xb') as stream:
@@ -489,13 +516,16 @@ def main():
                 if summary['failure']:
                     report['failures'].append(session.mode)
                 report['scenarios'].append(summary)
-            except Exception:
+            except Exception as error:
                 # Exceptions may contain provider text; never forward them outside.
                 report['failures'].append(session.mode)
-                write_json(session.evidence / 'procedure-failure.json', {'failure': 'procedure failed; inspect private command records', 'at': time.time()})
+                detail = failure_details(error, session.phase, session.mode)
+                report.setdefault('failure_details', []).append(detail)
+                write_json(session.evidence / 'procedure-failure.json', {**detail, 'at': time.time()})
         # Export each scenario independently; a reflected specimen must not prevent
         # the clean scenarios from furnishing their independent witnesses.
         report['exports'] = []
+        phase = 'evidence-export'
         for session in sessions:
             destination = args.out / session.mode
             destination.mkdir(mode=0o700)
@@ -512,9 +542,11 @@ def main():
             if export == 'failed':
                 report['failures'].append('live:export_failed')
             report['outcome'] = 'failed' if report['failures'] else 'observed_review_required'
-    except Exception:
+    except Exception as error:
         report['outcome'] = 'failed'
         report['failures'].append('setup-or-credential; private originals retained')
+        report.setdefault('failure_details', []).append(failure_details(error,
+            active_session.phase if active_session is not None else phase, active_mode))
     report['ended_at'] = time.time()
     write_json(args.out / 'RESULT.json', report)
     print('Sanity session finished; inspect RESULT.json. Originals remain in the container.', flush=True)

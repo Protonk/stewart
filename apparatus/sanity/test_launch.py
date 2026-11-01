@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import launch
 import review
 from control import safe_state
-from session import export_evidence_state, export_work, safe_choice, safe_usage
+from session import export_evidence_state, export_work, failure_details, safe_choice, safe_usage
 from session_support import credential_bytes, digest, scan_tree, secret_matches, strict_json, validate_commission, write_json
 
 
@@ -257,6 +257,16 @@ class LaunchTests(unittest.TestCase):
         self.assertIsNone(safe_usage({'turns': 'potential-secret'}))
         state = safe_state({'outcome': 'completed', 'data': {'ending': 'potential-secret', 'cause': 'potential-secret', 'provider': {'message': 'potential-secret'}}})
         self.assertNotIn('potential-secret', json.dumps(state))
+
+    def test_failure_details_report_safe_phase_type_and_errno_only(self):
+        detail = failure_details(PermissionError(13, 'potential-secret', '/potential-secret'), 'command.new', 'submitted')
+        self.assertEqual(detail['phase'], 'command.new')
+        self.assertEqual(detail['error_type'], 'PermissionError')
+        self.assertEqual(detail['errno'], 13)
+        self.assertNotIn('potential-secret', json.dumps(detail))
+        detail = failure_details(KeyError('potential-secret'), 'new-reply', 'submitted')
+        self.assertEqual(detail['error_type'], 'KeyError')
+        self.assertNotIn('potential-secret', json.dumps(detail))
 
     def test_review_detects_altered_export_and_keeps_original(self):
         with tempfile.TemporaryDirectory() as folder:

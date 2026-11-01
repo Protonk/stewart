@@ -161,7 +161,10 @@ def main():
                 '--mount', f'type=bind,source={staging},target=/in,readonly',
                 '--mount', f'type=bind,source={binary_dir},target=/bin-in,readonly',
                 '--mount', f'type=bind,source={exported},target=/out', image,
-                'sh', '-c', 'umask 077; ulimit -c 0; mkdir -p /work/code && chmod 711 /work && chmod 755 /work/code && tar -xf /in/source.tar -C /work/code && touch /work/code/.ready && exec sleep infinity']
+                # Stewart opens ancestors for reading as part of descriptor path
+                # validation. Shared scaffolding exposes only generic names;
+                # each private scenario and the credential witness stay 0700.
+                'sh', '-c', 'umask 077; ulimit -c 0; mkdir -p /work/code && chmod 755 /work /work/code && tar -xf /in/source.tar -C /work/code && touch /work/code/.ready && exec sleep infinity']
         write_json(host / 'container.argv.json', argv)
         (host / 'container.name').write_text(name + '\n')
         step('container-start', argv)

@@ -27,12 +27,13 @@ The product contract is in [CONTRACTS](CONTRACTS.md#run-and-continuation) and
 
 ## Remaining work
 
-1. Diagnose the launch setup failure retained in `.scratch/sanity-launch-01` and
-   its named container, before trying a fresh rehearsal. The host sent no
-   credential; private setup-command records remain inside the container. The
-   final launcher must exercise the executable qualified by `acceptance-05`.
+1. Rehearse the final launcher with the executable qualified by `acceptance-05`.
+   The first attempt in `.scratch/sanity-launch-01` refused before credential
+   entry: its shared parent directories allowed traversal but not the read
+   access required by Stewart's archive checks. The corrected launcher makes
+   those ancestors readable and keeps scenario and witness directories private.
    Both architectures passed Linux acceptance; no service rebuild is needed for
-   a launcher-only change. Preserve
+   this launcher-only change. Preserve
    the independent credential witness, same-user and different-user observer
    controls, interrupted-run evidence, and withheld/failed exports. Retain the
    original container through review. Local helper/review outputs are in

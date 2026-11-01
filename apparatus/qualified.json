@@ -430,6 +430,26 @@
         "reason": "Retain the witnesses and original containers supporting the credential acceptance corrections",
         "until": "The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers"
       }
+    },
+    {
+      "id": "sanity-launch-01",
+      "kind": "experiment",
+      "date": "2026-11-01T18:56:53Z",
+      "date_from": "review/diagnosis.json field finished_at",
+      "summary": "Launcher refused during credential-free intake because shared ancestor directories were not readable; original container and setup diagnosis retained",
+      "result": {
+        "path": ".",
+        "files": 30,
+        "sha256": "9ff9ac7181d971ba26160d877618588b84f914b5b0ca1cb8754b636cbfccfb4e"
+      },
+      "evidence": {
+        "path": ".scratch/sanity-launch-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the first launcher failure and the private original container until review",
+        "until": "The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup"
+      }
     }
   ]
 }
