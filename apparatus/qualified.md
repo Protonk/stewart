@@ -22,8 +22,8 @@ not carry them.
 | --- | --- | --- | --- | --- | --- | --- |
 | acceptance | linux-aarch64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest |
 | acceptance | linux-x86_64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest |
-| toolchain | linux-aarch64 | [apparatus-01](#apparatus-01) | 2026-10-30T00:14:38Z | `47e5a59` | qualified | latest |
-| toolchain | linux-x86_64 | [apparatus-01](#apparatus-01) | 2026-10-30T00:14:38Z | `47e5a59` | qualified | latest |
+| toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
+| toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 
 ## Pins
 
@@ -65,15 +65,15 @@ not carry them.
 | Test binary SHA-256 | `a343723e57d696e51fd1da050457699c04a0533bb4097758dbb210a5c0173db0` | `4b08e2014fde70617f29659f19b03922d7fc2d6c8426b1c180cc665b7ba0ebfd` |
 | RESULT.json SHA-256 | `639c90ff76d9aaea29d186cb31bf45f1aca06938d9aea4cf77a8fd08240d78d6` | `e01e3b3eae1d55ad21b579929b08dd86eb375afa643cc3877bb3f07d06d25bb1` |
 
-### apparatus-01
+### apparatus-02
 
-- Suite: toolchain, `apparatus/step2.sh` (SHA-256 `6b556b0bdb9ae4dd71c3b733e6204292cc46a7666acbe950c3b99a5a7d12c463` at the source commit)
-- Source commit: `47e5a596bcdb6a069916c7084186fcf7e78c5a20`; archive SHA-256 `3b17dfbaa8fcb8b86c4e1beb349ce12f7fc601563648a0b7aa65c7840111b883`
-- Finished: 2026-10-30T00:14:38Z
+- Suite: toolchain, `apparatus/step2.sh` (SHA-256 `f3b059ccfc72e9fafddb9f930e6c0d2a11892d623c990e0b0bbe3ed2fd855e0a` at the source commit)
+- Source commit: `cb84205552d87cc00489dc83a8d196167fea706c`; archive SHA-256 `2f2997d870e667b1e331789aa656c2a48b177f4ac25e88d0c847efe2b3bb14c4`
+- Finished: 2026-11-01T17:09:18Z
 - Outcome: **qualified**
 - Run-level failures: none
-- Vendored crates: 1608 files, listing SHA-256 `134cd83b48366c1e10a97e6b33e703152468daa48eb42477ad5e1c558b54e6fd`
-- Evidence: `.scratch/apparatus-01` (local: only on the machine that ran it; clones do not carry it)
+- Vendored crates: 1617 files, listing SHA-256 `e4baa31837339022fe586ec42a551ae4df3c3efa56d145840f1c23478c357680`
+- Evidence: `.scratch/apparatus-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -83,10 +83,10 @@ not carry them.
 | Failures | none | none |
 | Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Build 1 | `build-arm64-1`: 9/9 steps; static yes; offline yes; run exit 0; `5febe49834927c764a1433a430615949c69d1c00a8c8dcc97f0b00ada7c8702b` | `build-amd64-1`: 9/9 steps; static yes; offline yes; run exit 0; `a028cba9713f87b25b59993e8cbaa00cdc101b19401e9cb0c8441238babf0be1` |
-| Build 2 | `build-arm64-2`: 9/9 steps; static yes; offline yes; run exit 0; `5febe49834927c764a1433a430615949c69d1c00a8c8dcc97f0b00ada7c8702b` | `build-amd64-2`: 9/9 steps; static yes; offline yes; run exit 0; `a028cba9713f87b25b59993e8cbaa00cdc101b19401e9cb0c8441238babf0be1` |
+| Build 1 | `build-arm64-1`: 9/9 steps; static yes; offline yes; run exit 0; `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `build-amd64-1`: 9/9 steps; static yes; offline yes; run exit 0; `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
+| Build 2 | `build-arm64-2`: 9/9 steps; static yes; offline yes; run exit 0; `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `build-amd64-2`: 9/9 steps; static yes; offline yes; run exit 0; `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
 | Reproducible | yes | yes |
-| Binary SHA-256 (both builds) | `5febe49834927c764a1433a430615949c69d1c00a8c8dcc97f0b00ada7c8702b` | `a028cba9713f87b25b59993e8cbaa00cdc101b19401e9cb0c8441238babf0be1` |
+| Binary SHA-256 (both builds) | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
 | Alpine run exit | 0 | 0 |
 
 ### successor-inquiry-01
