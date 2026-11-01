@@ -27,7 +27,7 @@ Model-consuming work requires the principal's bounded authorization under
 digests, counts and outcomes. Run `python3 -I -B apparatus/qualified.py check`
 before relying on it. Its Linux acceptance front covers effort, provider error
 reporting, compaction and stopping. Current credential checks passed on native
-aarch64; verification of two corrected emulated x86_64 checks remains pending.
+aarch64 and emulated x86_64.
 The toolchain record establishes service reproducibility on both architectures.
 No real-model result is available.
 
@@ -41,7 +41,8 @@ fakes, not credential safety or real-provider conformance.
 Retain the acceptance and sanity working copies and stopped containers through
 review. Container identities are recorded in
 `.scratch/acceptance-03/host/driver-<arch>.container`,
-`.scratch/acceptance-04/host/driver-<arch>.container` and
+`.scratch/acceptance-04/host/driver-<arch>.container`,
+`.scratch/acceptance-05/host/driver-<arch>.container` and
 `.scratch/sanity-rehearsal-01/host/container.name`; retention review outputs are
 in `.scratch/linux-acceptance-prep-01` and `.scratch/sanity-prep-01`. Disposal is
 the user's decision under [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).

@@ -2,152 +2,6 @@
   "schema": "stewart.qualified/1",
   "entries": [
     {
-      "id": "acceptance-03",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4"
-      },
-      "source_commit": "faa55798ebbda86e5b759ae357e4745d6cb3976b",
-      "source_archive_sha256": "a40c2f8fd7fcafb12fe344e869513d8f55ac16d65fa8a6a1475c0688de596ba5",
-      "date": "2026-10-31T20:31:09Z",
-      "outcome": "qualified",
-      "failures": [],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 298,
-            "passed": 298,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 121,
-            "ran": 121,
-            "passed": 121,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 226,
-            "passed": 152,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 149139,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 994
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 8,
-            "total": 8
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 4.274,
-            "protocol_passed": true,
-            "protocol_worst_ms": 92.542
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 828,
-            "checks_failed": 0
-          },
-          "release_sha256": "294561ae86f757191d6c19dd6b543ab45edebaaee7b5da25acb897f166bc3b96",
-          "test_sha256": "a343723e57d696e51fd1da050457699c04a0533bb4097758dbb210a5c0173db0",
-          "result_sha256": "639c90ff76d9aaea29d186cb31bf45f1aca06938d9aea4cf77a8fd08240d78d6"
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 298,
-            "passed": 298,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 119,
-            "ran": 119,
-            "passed": 119,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 226,
-            "passed": 152,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 149139,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 994
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 8,
-            "total": 8
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 46.046,
-            "protocol_passed": null,
-            "protocol_worst_ms": 136.122
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 828,
-            "checks_failed": 0
-          },
-          "release_sha256": "29452b673bf2cf57a22d7e3d34dc966b9b8d9aa44fc15e4bf50a5200de7f6d79",
-          "test_sha256": "4b08e2014fde70617f29659f19b03922d7fc2d6c8426b1c180cc665b7ba0ebfd",
-          "result_sha256": "e01e3b3eae1d55ad21b579929b08dd86eb375afa643cc3877bb3f07d06d25bb1"
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-03",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": null
-    },
-    {
       "id": "acceptance-04",
       "kind": "suite",
       "suite": "acceptance",
@@ -306,6 +160,152 @@
         "reason": "Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis",
         "until": "The user has reviewed the corrected acceptance result and original failed evidence"
       }
+    },
+    {
+      "id": "acceptance-05",
+      "kind": "suite",
+      "suite": "acceptance",
+      "script": {
+        "path": "apparatus/acceptance.sh",
+        "sha256": "99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4"
+      },
+      "source_commit": "f4bbb9c9ef3bcac811427224f6abc7a553459fa8",
+      "source_archive_sha256": "85d6443f01eed64aa393a506300689ca73349b1222d1a48dae2127bc4e8bb41f",
+      "date": "2026-11-01T18:56:51Z",
+      "outcome": "qualified",
+      "failures": [],
+      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+      "platforms": {
+        "linux-aarch64": {
+          "execution": "native",
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 25,
+            "total": 25,
+            "controls_fired": 8,
+            "controls_total": 8
+          },
+          "self_test": {
+            "checks": 319,
+            "passed": 319,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 125,
+            "ran": 125,
+            "passed": 125,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 230,
+            "passed": 156,
+            "failed": 74,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 153471,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 994
+          },
+          "controls": {
+            "fired": 74,
+            "total": 74
+          },
+          "driver_controls": {
+            "fired": 13,
+            "total": 13
+          },
+          "timing_gate": {
+            "enabled": true,
+            "passed": true,
+            "threshold_ms": 100.0,
+            "worst_ms": 3.109,
+            "protocol_passed": true,
+            "protocol_worst_ms": 96.167
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 848,
+            "checks_failed": 0
+          },
+          "release_sha256": "9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09",
+          "test_sha256": "ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6",
+          "result_sha256": "44fbbebbdfae205701ab99990da041f1c20e1bd63fc6946af9e56b11bc66b150"
+        },
+        "linux-x86_64": {
+          "execution": "emulated (Rosetta)",
+          "outcome": "qualified",
+          "failures": [],
+          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 25,
+            "total": 25,
+            "controls_fired": 8,
+            "controls_total": 8
+          },
+          "self_test": {
+            "checks": 319,
+            "passed": 319,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 123,
+            "ran": 123,
+            "passed": 123,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 230,
+            "passed": 156,
+            "failed": 74,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 153471,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 994
+          },
+          "controls": {
+            "fired": 74,
+            "total": 74
+          },
+          "driver_controls": {
+            "fired": 13,
+            "total": 13
+          },
+          "timing_gate": {
+            "enabled": false,
+            "passed": null,
+            "threshold_ms": 100.0,
+            "worst_ms": 49.162,
+            "protocol_passed": null,
+            "protocol_worst_ms": 154.975
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 848,
+            "checks_failed": 0
+          },
+          "release_sha256": "4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5",
+          "test_sha256": "5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b",
+          "result_sha256": "ec96969bd74f2e4a66bf7c50f0173b7e61378ef87c9ebdfbdd53b9af50b710cb"
+        }
+      },
+      "evidence": {
+        "path": ".scratch/acceptance-05",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": null
     },
     {
       "id": "apparatus-02",

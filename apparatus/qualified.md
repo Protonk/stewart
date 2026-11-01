@@ -20,10 +20,8 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-04](#acceptance-04) | 2026-11-01T18:09:08Z | `c4f6d7a` | failed (this platform: qualified) | latest |
-| acceptance | linux-aarch64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest qualified |
-| acceptance | linux-x86_64 | [acceptance-04](#acceptance-04) | 2026-11-01T18:09:08Z | `c4f6d7a` | failed | latest |
-| acceptance | linux-x86_64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest qualified |
+| acceptance | linux-aarch64 | [acceptance-05](#acceptance-05) | 2026-11-01T18:56:51Z | `f4bbb9c` | qualified | latest |
+| acceptance | linux-x86_64 | [acceptance-05](#acceptance-05) | 2026-11-01T18:56:51Z | `f4bbb9c` | qualified | latest |
 | toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 
@@ -36,38 +34,6 @@ not carry them.
 | [credential-emulation-01](#credential-emulation-01) | experiment | Retain the witnesses and original containers supporting the credential acceptance corrections | The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers |
 
 ## Records
-
-### acceptance-03
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
-- Source commit: `faa55798ebbda86e5b759ae357e4745d6cb3976b`; archive SHA-256 `a40c2f8fd7fcafb12fe344e869513d8f55ac16d65fa8a6a1475c0688de596ba5`
-- Finished: 2026-10-31T20:31:09Z
-- Outcome: **qualified**
-- Run-level failures: none
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-03` (local: only on the machine that ran it; clones do not carry it)
-- Pin: none
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **qualified** | **qualified** |
-| Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
-| Driver self-test | 298/298 | 298/298 |
-| Cases passed | 121/121 | 119/119 |
-| Cases | selected 121, ran 121, passed 121, failed 0, skipped 0 | selected 119, ran 119, passed 119, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 226, passed 152, failed 74, skipped 0 | ran 226, passed 152, failed 74, skipped 0 |
-| Checks | passed 149139, failed outside controls 0, failed inside controls 994 | passed 149139, failed outside controls 0, failed inside controls 994 |
-| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
-| Driver controls fired | 8/8 | 8/8 |
-| Timing gate | on, passed: worst 4.274 ms; protocol worst 92.542 ms; threshold 100.0 ms | off (reported, not gated): worst 46.046 ms; protocol worst 136.122 ms; threshold 100.0 ms |
-| End to end (`e2e.reacting-audit`) | pass, 828/828 checks | pass, 828/828 checks |
-| Release binary SHA-256 | `294561ae86f757191d6c19dd6b543ab45edebaaee7b5da25acb897f166bc3b96` | `29452b673bf2cf57a22d7e3d34dc966b9b8d9aa44fc15e4bf50a5200de7f6d79` |
-| Test binary SHA-256 | `a343723e57d696e51fd1da050457699c04a0533bb4097758dbb210a5c0173db0` | `4b08e2014fde70617f29659f19b03922d7fc2d6c8426b1c180cc665b7ba0ebfd` |
-| RESULT.json SHA-256 | `639c90ff76d9aaea29d186cb31bf45f1aca06938d9aea4cf77a8fd08240d78d6` | `e01e3b3eae1d55ad21b579929b08dd86eb375afa643cc3877bb3f07d06d25bb1` |
 
 ### acceptance-04
 
@@ -100,6 +66,38 @@ not carry them.
 | Release binary SHA-256 | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
 | Test binary SHA-256 | `ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6` | `5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b` |
 | RESULT.json SHA-256 | `52b8ebab10e31b2bbcda0340809b851a5c0edea2fa4ef6d3cbfcc0a9a7abcb9f` | `99e7f82797b006287b45831d0dcf5a8161c163c7b918e46f9f39885d8d517572` |
+
+### acceptance-05
+
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
+- Source commit: `f4bbb9c9ef3bcac811427224f6abc7a553459fa8`; archive SHA-256 `85d6443f01eed64aa393a506300689ca73349b1222d1a48dae2127bc4e8bb41f`
+- Finished: 2026-11-01T18:56:51Z
+- Outcome: **qualified**
+- Run-level failures: none
+- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
+- Evidence: `.scratch/acceptance-05` (local: only on the machine that ran it; clones do not carry it)
+- Pin: none
+
+| | linux-aarch64 | linux-x86_64 |
+| --- | --- | --- |
+| Execution | native | emulated (Rosetta) |
+| Outcome | **qualified** | **qualified** |
+| Failures | none | none |
+| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
+| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
+| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
+| Driver self-test | 319/319 | 319/319 |
+| Cases passed | 125/125 | 123/123 |
+| Cases | selected 125, ran 125, passed 125, failed 0, skipped 0 | selected 123, ran 123, passed 123, failed 0, skipped 0 |
+| Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 156, failed 74, skipped 0 |
+| Checks | passed 153471, failed outside controls 0, failed inside controls 994 | passed 153471, failed outside controls 0, failed inside controls 994 |
+| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
+| Driver controls fired | 13/13 | 13/13 |
+| Timing gate | on, passed: worst 3.109 ms; protocol worst 96.167 ms; threshold 100.0 ms | off (reported, not gated): worst 49.162 ms; protocol worst 154.975 ms; threshold 100.0 ms |
+| End to end (`e2e.reacting-audit`) | pass, 848/848 checks | pass, 848/848 checks |
+| Release binary SHA-256 | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
+| Test binary SHA-256 | `ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6` | `5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b` |
+| RESULT.json SHA-256 | `44fbbebbdfae205701ab99990da041f1c20e1bd63fc6946af9e56b11bc66b150` | `ec96969bd74f2e4a66bf7c50f0173b7e61378ef87c9ebdfbdd53b9af50b710cb` |
 
 ### apparatus-02
 

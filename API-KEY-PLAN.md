@@ -27,21 +27,17 @@ The product contract is in [CONTRACTS](CONTRACTS.md#run-and-continuation) and
 
 ## Remaining work
 
-1. Verify the corrected independent driver in a targeted run, then repeat Linux
-   acceptance. `.scratch/credential-emulation-01` explains the two x86_64 failures
-   in `.scratch/acceptance-04`: Rosetta opens descriptor 3 for the executable and
-   descriptor 4 for its interpreter, and prefixes that interpreter to procfs
-   arguments. Native aarch64 passed. The independent witnesses and original
-   failing cases remain retained; the service needs no change. Both host Cargo
-   configurations passed with the new vendor tree in
-   `.scratch/credential-integration-01`. The toolchain run in
-   `.scratch/apparatus-02` established service reproducibility on both platforms.
-2. Exercise the final launcher with the newly qualified executable. Preserve
+1. Diagnose the launch setup failure retained in `.scratch/sanity-launch-01` and
+   its named container, before trying a fresh rehearsal. The host sent no
+   credential; private setup-command records remain inside the container. The
+   final launcher must exercise the executable qualified by `acceptance-05`.
+   Both architectures passed Linux acceptance; no service rebuild is needed for
+   a launcher-only change. Preserve
    the independent credential witness, same-user and different-user observer
    controls, interrupted-run evidence, and withheld/failed exports. Retain the
    original container through review. Local helper/review outputs are in
    `.scratch/launcher-local-02` and `.scratch/launcher-review-01`.
-3. Review the Linux outcomes and residual exposures, update the qualification
+2. Review the Linux outcomes and residual exposures, update the qualification
    record and current product status, and prepare the bound unpaid commission
    packet. Remove this plan when its work is complete. Real-key creation and
    the paid commission remain separate actions.

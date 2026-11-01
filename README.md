@@ -26,18 +26,15 @@ qualified, and other auditor runtimes are unimplemented.
 
 What the evidence establishes:
 
-- **Scripted Linux behavior:** the current acceptance suite passed on native
-  aarch64. On x86_64 under Rosetta emulation, two new credential checks failed
-  because their assumptions about startup descriptors and process arguments did
-  not hold under Rosetta; verification of the corrected checks is pending.
-  Earlier acceptance passed on both architectures. The suite exercises the
-  release build through
+- **Scripted Linux behavior:** the current acceptance suite, including the
+  credential checks, passed on native aarch64 and x86_64 under Rosetta emulation.
+  The suite exercises the release build through
   independently witnessed audits, with faults and deliberately broken controls
   in a separate test build. Native timing checks passed; emulated timings do not
   gate the result.
 - **Limits of that result:** real-provider TLS, model tool use, effort settings
   and provider compaction remain untested against real responses. Credential
-  handling passed the native service checks, but the synthetic-key launcher
+  handling passed the service checks, but the synthetic-key launcher
   rehearsal remains outstanding. Native x86_64 and WSL2 qualification, Linux
   Cargo tests and a claim-by-claim coverage review also remain outstanding.
 - **Reproducible builds:** two service builds produced identical static binaries
