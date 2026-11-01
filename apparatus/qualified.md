@@ -20,8 +20,10 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest |
-| acceptance | linux-x86_64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest |
+| acceptance | linux-aarch64 | [acceptance-04](#acceptance-04) | 2026-11-01T18:09:08Z | `c4f6d7a` | failed (this platform: qualified) | latest |
+| acceptance | linux-aarch64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest qualified |
+| acceptance | linux-x86_64 | [acceptance-04](#acceptance-04) | 2026-11-01T18:09:08Z | `c4f6d7a` | failed | latest |
+| acceptance | linux-x86_64 | [acceptance-03](#acceptance-03) | 2026-10-31T20:31:09Z | `faa5579` | qualified | latest qualified |
 | toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 
@@ -64,6 +66,38 @@ not carry them.
 | Release binary SHA-256 | `294561ae86f757191d6c19dd6b543ab45edebaaee7b5da25acb897f166bc3b96` | `29452b673bf2cf57a22d7e3d34dc966b9b8d9aa44fc15e4bf50a5200de7f6d79` |
 | Test binary SHA-256 | `a343723e57d696e51fd1da050457699c04a0533bb4097758dbb210a5c0173db0` | `4b08e2014fde70617f29659f19b03922d7fc2d6c8426b1c180cc665b7ba0ebfd` |
 | RESULT.json SHA-256 | `639c90ff76d9aaea29d186cb31bf45f1aca06938d9aea4cf77a8fd08240d78d6` | `e01e3b3eae1d55ad21b579929b08dd86eb375afa643cc3877bb3f07d06d25bb1` |
+
+### acceptance-04
+
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
+- Source commit: `c4f6d7a7f3055a2a323cd4c4e96fda8442507163`; archive SHA-256 `5d5024934656600dc573d8a25bc2343012a7c9349bf535c5dc6d5b44499d9a28`
+- Finished: 2026-11-01T18:09:08Z
+- Outcome: **failed**
+- Run-level failures: host/DONE reports failures=1; host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-04/driver-amd64/)
+- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
+- Evidence: `.scratch/acceptance-04` (local: only on the machine that ran it; clones do not carry it)
+- Pin: none
+
+| | linux-aarch64 | linux-x86_64 |
+| --- | --- | --- |
+| Execution | native | emulated (Rosetta) |
+| Outcome | **qualified** | **failed** |
+| Failures | none | host/driver-amd64.exit is 1; driver-amd64/driver.exit is 1; driver-amd64/driver-final.exit is 1; cases: 123 selected, 121 passed, 2 failed, 0 skipped; 2 checks failed outside control variants; failed_cases: credentials.input, credentials.process; driver-amd64/evidence/RESULT.json: driver exit 1 |
+| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
+| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
+| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
+| Driver self-test | 309/309 | 309/309 |
+| Cases passed | 125/125 | 121/123 |
+| Cases | selected 125, ran 125, passed 125, failed 0, skipped 0 | selected 123, ran 123, passed 121, failed 2, skipped 0 |
+| Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 154, failed 76, skipped 0 |
+| Checks | passed 153470, failed outside controls 0, failed inside controls 994 | passed 153468, failed outside controls 2, failed inside controls 994 |
+| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
+| Driver controls fired | 12/12 | 12/12 |
+| Timing gate | on, passed: worst 3.146 ms; protocol worst 99.743 ms; threshold 100.0 ms | off (reported, not gated): worst 44.984 ms; protocol worst 143.847 ms; threshold 100.0 ms |
+| End to end (`e2e.reacting-audit`) | pass, 848/848 checks | pass, 848/848 checks |
+| Release binary SHA-256 | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
+| Test binary SHA-256 | `ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6` | `5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b` |
+| RESULT.json SHA-256 | `52b8ebab10e31b2bbcda0340809b851a5c0edea2fa4ef6d3cbfcc0a9a7abcb9f` | `99e7f82797b006287b45831d0dcf5a8161c163c7b918e46f9f39885d8d517572` |
 
 ### apparatus-02
 

@@ -26,16 +26,20 @@ qualified, and other auditor runtimes are unimplemented.
 
 What the evidence establishes:
 
-- **Scripted Linux behavior:** the acceptance suite passed on native aarch64
-  and on x86_64 under Rosetta emulation. It exercises the release build through
+- **Scripted Linux behavior:** the current acceptance suite passed on native
+  aarch64. On x86_64 under Rosetta emulation, two new credential checks failed;
+  their causes remain under investigation. Earlier acceptance passed on both
+  architectures. The suite exercises the release build through
   independently witnessed audits, with faults and deliberately broken controls
   in a separate test build. Native timing checks passed; emulated timings do not
   gate the result.
 - **Limits of that result:** real-provider TLS, model tool use, effort settings
   and provider compaction remain untested against real responses. Credential
-  handling has not had a synthetic-key security audit. Native x86_64 and WSL2
-  qualification, Linux Cargo tests, a service reproducibility comparison and a
-  claim-by-claim coverage review also remain outstanding.
+  handling passed the native service checks, but the synthetic-key launcher
+  rehearsal remains outstanding. Native x86_64 and WSL2 qualification, Linux
+  Cargo tests and a claim-by-claim coverage review also remain outstanding.
+- **Reproducible builds:** two service builds produced identical static binaries
+  for each Linux architecture using the recorded toolchain images.
 
 [The qualification record](apparatus/qualified.md) holds the exact source and
 binary identities, counts and retained evidence. A result applies to those

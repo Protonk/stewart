@@ -26,8 +26,10 @@ Model-consuming work requires the principal's bounded authorization under
 [The qualification record](apparatus/qualified.md) owns suite identities, binary
 digests, counts and outcomes. Run `python3 -I -B apparatus/qualified.py check`
 before relying on it. Its Linux acceptance front covers effort, provider error
-reporting, compaction and stopping. The toolchain record's reproducibility result
-covers a crate skeleton, not the service. No real-model result is available.
+reporting, compaction and stopping. Current credential checks passed on native
+aarch64; two emulated x86_64 checks failed and remain under investigation.
+The toolchain record establishes service reproducibility on both architectures.
+No real-model result is available.
 
 The sanity rehearsal in `.scratch/sanity-rehearsal-01` passed all three scenarios
 (submission, ordinary ending without submission, provider rejection), with an
@@ -38,7 +40,8 @@ fakes, not credential safety or real-provider conformance.
 
 Retain the acceptance and sanity working copies and stopped containers through
 review. Container identities are recorded in
-`.scratch/acceptance-03/host/driver-<arch>.container` and
+`.scratch/acceptance-03/host/driver-<arch>.container`,
+`.scratch/acceptance-04/host/driver-<arch>.container` and
 `.scratch/sanity-rehearsal-01/host/container.name`; retention review outputs are
 in `.scratch/linux-acceptance-prep-01` and `.scratch/sanity-prep-01`. Disposal is
 the user's decision under [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).
@@ -182,10 +185,6 @@ Needs: the apparatus, selected models/settings and bounded run commissions.
   the Linux suites build the crate and exercise it through the independent driver.
   Add an offline container test route with `STEWART_IT_TMP` on ext4, xfs or btrfs
   if selected in the acceptance review.
-- **Service reproducibility.** Run the two-build comparison on the service.
-  The toolchain suite's evidence-directory argument and `stewart help` invocation
-  also need a container run. `step2.sh` refuses an existing `service/vendor` and
-  rebuilds tagged toolchain images, so schedule its vendor/image handling explicitly.
 - **Toolchain identity.** The Containerfile pins its base image, but target and
   package installation can change a rebuilt image. Built image digests are the
   actual pins. Acceptance records image inspections by tag but does not enforce

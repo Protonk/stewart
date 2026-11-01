@@ -27,11 +27,15 @@ The product contract is in [CONTRACTS](CONTRACTS.md#run-and-continuation) and
 
 ## Remaining work
 
-1. Commit the implementation and apparatus after final review, then run the
-   toolchain and Linux acceptance suites on that source. Both native Cargo
-   configurations and the independent credential cases have host outputs in
-   `.scratch/credential-core-01` and `.scratch/credential-native-driver-01`;
-   those development-machine results do not qualify Linux behavior.
+1. Resolve the two emulated x86_64 credential failures in
+   `.scratch/acceptance-04`: closed descriptor 3 returned `provider_key_invalid`
+   instead of `provider_key_unreadable`, and observed process arguments differed
+   from the launched arguments. The native aarch64 suite passed. Preserve the
+   failed evidence and test the explanation before changing the driver or
+   service. The implementation and apparatus are committed; both host Cargo
+   configurations passed with the new vendor tree in
+   `.scratch/credential-integration-01`. The toolchain run in
+   `.scratch/apparatus-02` established service reproducibility on both platforms.
 2. Exercise the final launcher with the newly qualified executable. Preserve
    the independent credential witness, same-user and different-user observer
    controls, interrupted-run evidence, and withheld/failed exports. Retain the
