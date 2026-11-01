@@ -27,7 +27,7 @@ Model-consuming work requires the principal's bounded authorization under
 digests, counts and outcomes. Run `python3 -I -B apparatus/qualified.py check`
 before relying on it. Its Linux acceptance front covers effort, provider error
 reporting, compaction and stopping. Current credential checks passed on native
-aarch64; two emulated x86_64 checks failed and remain under investigation.
+aarch64; verification of two corrected emulated x86_64 checks remains pending.
 The toolchain record establishes service reproducibility on both architectures.
 No real-model result is available.
 

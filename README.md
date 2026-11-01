@@ -27,9 +27,11 @@ qualified, and other auditor runtimes are unimplemented.
 What the evidence establishes:
 
 - **Scripted Linux behavior:** the current acceptance suite passed on native
-  aarch64. On x86_64 under Rosetta emulation, two new credential checks failed;
-  their causes remain under investigation. Earlier acceptance passed on both
-  architectures. The suite exercises the release build through
+  aarch64. On x86_64 under Rosetta emulation, two new credential checks failed
+  because their assumptions about startup descriptors and process arguments did
+  not hold under Rosetta; verification of the corrected checks is pending.
+  Earlier acceptance passed on both architectures. The suite exercises the
+  release build through
   independently witnessed audits, with faults and deliberately broken controls
   in a separate test build. Native timing checks passed; emulated timings do not
   gate the result.

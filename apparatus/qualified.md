@@ -31,7 +31,9 @@ not carry them.
 
 | Record | Kind | Reason | Until |
 | --- | --- | --- | --- |
+| [acceptance-04](#acceptance-04) | acceptance | Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis | The user has reviewed the corrected acceptance result and original failed evidence |
 | [successor-inquiry-01](#successor-inquiry-01) | experiment | recovery-critical design-era records | the user decides they are no longer needed |
+| [credential-emulation-01](#credential-emulation-01) | experiment | Retain the witnesses and original containers supporting the credential acceptance corrections | The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers |
 
 ## Records
 
@@ -76,7 +78,7 @@ not carry them.
 - Run-level failures: host/DONE reports failures=1; host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-04/driver-amd64/)
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/acceptance-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: none
+- Pin: Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis; until The user has reviewed the corrected acceptance result and original failed evidence
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
@@ -130,3 +132,11 @@ not carry them.
 - Result: `.`, every regular file under it (97 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `6528b39f1bffc9e362c96f905d257ec9eb7777ef020a24f80fc833b6cdf8cf20`
 - Evidence: `.scratch/successor-inquiry-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: recovery-critical design-era records; until the user decides they are no longer needed
+
+### credential-emulation-01
+
+- Experiment: Independent startup descriptor witnesses explain Rosetta credential-test assumptions; unchanged original cases reproduced
+- Date: 2026-11-01T18:22:45Z (from DONE)
+- Result: `diagnosis.json`, SHA-256 `6bf0c61298b43f1d5f05cd2a1fb0630a34a48efcbf96b5a2d8f55041476990ad`
+- Evidence: `.scratch/credential-emulation-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the witnesses and original containers supporting the credential acceptance corrections; until The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers

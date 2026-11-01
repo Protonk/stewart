@@ -302,7 +302,10 @@
         "path": ".scratch/acceptance-04",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
-      "pin": null
+      "pin": {
+        "reason": "Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis",
+        "until": "The user has reviewed the corrected acceptance result and original failed evidence"
+      }
     },
     {
       "id": "apparatus-02",
@@ -407,6 +410,25 @@
       "pin": {
         "reason": "recovery-critical design-era records",
         "until": "the user decides they are no longer needed"
+      }
+    },
+    {
+      "id": "credential-emulation-01",
+      "kind": "experiment",
+      "date": "2026-11-01T18:22:45Z",
+      "date_from": "DONE",
+      "summary": "Independent startup descriptor witnesses explain Rosetta credential-test assumptions; unchanged original cases reproduced",
+      "result": {
+        "path": "diagnosis.json",
+        "sha256": "6bf0c61298b43f1d5f05cd2a1fb0630a34a48efcbf96b5a2d8f55041476990ad"
+      },
+      "evidence": {
+        "path": ".scratch/credential-emulation-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the witnesses and original containers supporting the credential acceptance corrections",
+        "until": "The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers"
       }
     }
   ]

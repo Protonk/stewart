@@ -27,12 +27,12 @@ The product contract is in [CONTRACTS](CONTRACTS.md#run-and-continuation) and
 
 ## Remaining work
 
-1. Resolve the two emulated x86_64 credential failures in
-   `.scratch/acceptance-04`: closed descriptor 3 returned `provider_key_invalid`
-   instead of `provider_key_unreadable`, and observed process arguments differed
-   from the launched arguments. The native aarch64 suite passed. Preserve the
-   failed evidence and test the explanation before changing the driver or
-   service. The implementation and apparatus are committed; both host Cargo
+1. Verify the corrected independent driver in a targeted run, then repeat Linux
+   acceptance. `.scratch/credential-emulation-01` explains the two x86_64 failures
+   in `.scratch/acceptance-04`: Rosetta opens descriptor 3 for the executable and
+   descriptor 4 for its interpreter, and prefixes that interpreter to procfs
+   arguments. Native aarch64 passed. The independent witnesses and original
+   failing cases remain retained; the service needs no change. Both host Cargo
    configurations passed with the new vendor tree in
    `.scratch/credential-integration-01`. The toolchain run in
    `.scratch/apparatus-02` established service reproducibility on both platforms.

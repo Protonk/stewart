@@ -13,12 +13,14 @@ is treated as proof of process memory erasure.
 """
 from __future__ import annotations
 
+import errno
 import json
 import os
 import signal
 import socket
 import subprocess
 import sys
+import tempfile
 
 import credential_observer as observer
 import fake_provider as fp
@@ -27,6 +29,24 @@ from driver_core import *  # noqa: F401,F403
 
 
 REDACTED = "[REDACTED credential]"
+REUSE_CONTROL = b"synthetic-archive-bytes-are-not-a-credential"
+
+
+def descriptor_reuse_witness(path):
+    done = subprocess.run([sys.executable, "-I", "-B", observer.__file__,
+                           "--descriptor-reuse", path],
+                          stdin=subprocess.DEVNULL, capture_output=True, timeout=5,
+                          env={"PATH": "/usr/bin:/bin"})
+    if done.returncode != 0:
+        raise RuntimeError("descriptor witness failed: %r" % done.stderr)
+    return json.loads(done.stdout)
+
+
+def descriptor_reuse_control(witness):
+    return (witness.get("before_errno") == errno.EBADF
+            and witness.get("opened_fd") == witness.get("selected_fd")
+            and witness.get("read_bytes") == len(REUSE_CONTROL)
+            and witness.get("read_sha256") == sha256_hex(REUSE_CONTROL))
 
 
 def canary():
@@ -127,7 +147,19 @@ def c_input(t):
         rs.check_refused_before_request(t, rep, sub, fx, name)
         t.check(name + ".no-value", not present or present.encode() not in rep.stdout + rep.stderr,
                 "source conflict disclosed the supplied value")
-    for fd in (3, 2147483647):
+    # Exercise the lowest closed descriptor, where a delayed credential check
+    # could otherwise read an archive file opened at the same number. Rosetta
+    # occupies 3 and 4 before guest entry; an independent fresh process witnesses
+    # that interpreter and proves both EBADF and subsequent low-number reuse.
+    fixture = os.path.join(t.root, "descriptor-reuse-control")
+    with open(fixture, "wb") as f:
+        f.write(REUSE_CONTROL)
+    witness = descriptor_reuse_witness(fixture)
+    with open(os.path.join(t.evid, "descriptor-reuse-observer.json"), "w", encoding="utf-8") as f:
+        json.dump(witness, f, indent=2)
+    t.driver_control("closed-descriptor-reuse", descriptor_reuse_control(witness),
+                     "the selected low descriptor is EBADF before a file open, then reads that file after reuse")
+    for fd in (witness["selected_fd"], 2147483647):
         name = "credential.closed-fd.%d" % fd
         fx.mark(name)
         rep = t.cmd(["run", sub.ref, "--key-fd", str(fd)], name=name,
@@ -383,8 +415,11 @@ def c_process(t):
             closed = False
         t.check("credential.process.descriptor-closed", closed, "credential descriptor remains open while request waits")
         t.check("credential.process.argv-clean", secret not in json.dumps(h["argv"]), "canary appeared in process argv")
-        expected_cmdline = b"\0".join(os.fsencode(arg) for arg in h["argv"]) + b"\0"
-        t.eq("credential.process.actual-argv", during.get("cmdline_sha256"), sha256_hex(expected_cmdline))
+        during["cmdline_form"] = observer.match_cmdline(during, h["argv"])
+        t.check("credential.process.actual-argv", during["cmdline_form"] is not None,
+                {"actual_sha256": during.get("cmdline_sha256"),
+                 "actual_bytes": during.get("cmdline_bytes"),
+                 "expected_forms": observer.cmdline_forms(h["argv"])})
         t.check("credential.process.environment-clean", secret not in json.dumps(h["env"]), "canary appeared in process environment")
         check_receipt_of_key(t, fx, secret, name)
         # An actual abort must not produce a core, not merely request that it
@@ -416,6 +451,33 @@ def credential_selftests():
     missing = {"access": {n: {"allowed": False, "errno": 2} for n in ("environ", "maps", "mem", "fd")}}
     out += [("credentials.observer-denial", observer.inspection_denied(denied)),
             ("credentials.observer-disappearance-control", not observer.inspection_denied(missing))]
+    argv = ["/synthetic/stewart", "run", "synthetic-reference", "--key-fd", "7", "--json"]
+    def observed_argv(args):
+        data = b"\0".join(os.fsencode(arg) for arg in args) + b"\0"
+        return {"access": {"cmdline": {"allowed": True}},
+                "cmdline_sha256": sha256_hex(data), "cmdline_bytes": len(data)}
+    out += [("credentials.argv-direct", observer.match_cmdline(observed_argv(argv), argv) == "direct"),
+            ("credentials.argv-rosetta", observer.match_cmdline(
+                observed_argv(["/run/rosetta/rosetta"] + argv), argv) == "rosetta")]
+    for label, actual in (("changed-argument", argv[:-1] + ["--other"]),
+                          ("arbitrary-prefix", ["/arbitrary/interpreter"] + argv),
+                          ("repeated-prefix", ["/run/rosetta/rosetta"] * 2 + argv),
+                          ("extra-value", ["/run/rosetta/rosetta"] + argv + [secret])):
+        out.append(("credentials.argv-" + label + "-control",
+                    observer.match_cmdline(observed_argv(actual), argv) is None))
+    unreadable_argv = observed_argv(argv)
+    unreadable_argv["access"]["cmdline"] = {"allowed": False, "errno": 13}
+    out.append(("credentials.argv-unreadable-control", observer.match_cmdline(unreadable_argv, argv) is None))
+    with tempfile.TemporaryDirectory(prefix="stewart-credential-selftest-") as temp:
+        fixture = os.path.join(temp, "descriptor-reuse-control")
+        with open(fixture, "wb") as f:
+            f.write(REUSE_CONTROL)
+        witness = descriptor_reuse_witness(fixture)
+        out.append(("credentials.closed-descriptor-reuse", descriptor_reuse_control(witness)))
+        out.append(("credentials.open-descriptor-control",
+                    not descriptor_reuse_control(dict(witness, before_errno=None))))
+        out.append(("credentials.unrelated-descriptor-control",
+                    not descriptor_reuse_control(dict(witness, opened_fd=witness["selected_fd"] + 1))))
     summaries = T.__new__(T)
     summaries.checks, summaries.private_check_values = [], []
     summaries.protect_check_value("Q" * 4096)
