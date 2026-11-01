@@ -528,6 +528,7 @@ pub struct ProviderAttempt {
     /// The HTTP status, or `None` without a status line.
     pub status: Option<u64>,
     pub headers: Headers,
+    pub credential_reflection: crate::credential::Reflection,
     /// `None` when no status line was received.
     pub response: Option<ResponseFile>,
     /// When the body decodes as an error body.
@@ -602,6 +603,7 @@ impl ProviderAttempt {
             )
             .with("charged", self.charged.to_j())
             .with("problem", self.problem.as_deref())
+            .with("credential_reflection", self.credential_reflection.to_j())
             .with("then", self.then.as_str())
             .with("delay_ms", self.delay_ms)
     }
@@ -618,6 +620,7 @@ impl ProviderAttempt {
             "outcome",
             "status",
             "headers",
+            "credential_reflection",
             "response",
             "error",
             "stop_reason",
@@ -645,6 +648,8 @@ impl ProviderAttempt {
             request_id: strings("request-id")?,
             retry_after: strings("retry-after")?,
         };
+        let credential_reflection =
+            crate::credential::Reflection::decode(&b.obj("credential_reflection")?)?;
         let response = match b.obj_or_null("response")? {
             Some(r) => {
                 r.exactly(&["file", "bytes", "sha256", "complete"])?;
@@ -697,6 +702,12 @@ impl ProviderAttempt {
         if (then == "retry") != delay_ms.is_some() {
             return Err(b.invalid("delay_ms", "a delay is recorded exactly when then is retry"));
         }
+        if credential_reflection.found() && then != "end" {
+            return Err(b.invalid(
+                "then",
+                "credential reflection requires end without using the response or retrying",
+            ));
+        }
         Ok(ProviderAttempt {
             request,
             attempt,
@@ -708,6 +719,7 @@ impl ProviderAttempt {
             outcome: b.one_of("outcome", &ATTEMPT_OUTCOMES)?.to_string(),
             status: b.u64_or_null("status", 999)?,
             headers,
+            credential_reflection,
             response,
             error,
             stop_reason: opt_string(b, "stop_reason")?,
@@ -1187,6 +1199,7 @@ mod tests {
             timeout_seconds: 600,
             request_written: "complete".into(),
             outcome: outcome.into(),
+            credential_reflection: crate::credential::Reflection::default(),
             status: Some(529),
             headers: Headers {
                 content_type: vec!["application/json".into()],

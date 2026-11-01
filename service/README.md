@@ -15,8 +15,9 @@ modules and states a rule for calling libc, and each module opens with its own
 account of what it does and why. This guide is a map for a first reading; those
 comments hold the detail.
 
-The dependencies are four crates pinned to exact versions in `Cargo.toml`:
-`libc`, `sha2`, `rustls` with its `ring` provider, and `webpki-roots`.
+The dependencies are six crates pinned to exact versions in `Cargo.toml`:
+`libc`, `sha2`, `rustls` with its `ring` provider, `webpki-roots`, `secrecy`
+and `zeroize`.
 `Cargo.lock` pins the whole graph, and builds use the vendored sources in
 `vendor/`, which is not tracked.
 
@@ -61,6 +62,9 @@ each tool call, then `delivery/` and `ops/close.rs`.
 **Provider and run adapter**
 
 - `provider/mod.rs`: the request loop in outline (6).
+- `credential.rs`: bounded one-use descriptor input, secret values and
+  credential-reflection detection (6.1). The process protection primitives are
+  in `platform.rs`; raw provider evidence remains exact.
 - `provider/placement.rs`: the loop of one placement, including provider
   summary requests and resumption from the signed summary under the same limits.
 - `provider/request.rs`: the pinned arrangement, decoded once with its exact

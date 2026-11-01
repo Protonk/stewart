@@ -18,7 +18,7 @@ usage: stewart new FOLDER [--archive ROOT] [--json]
        stewart receipt REF --read ITEM
        stewart status REF [--json]
        stewart status --archive ROOT [--json]
-       stewart run REF [--json]
+       stewart run REF [--key-fd FD] [--json]
        stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--json]
        stewart help [commands | forms | limits | reader | close]";
 
@@ -236,11 +236,25 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             })
         }
         "run" => {
-            let a = parse(rest, &["--json"], &[], &[])?;
+            let a = parse(rest, &["--json"], &["--key-fd"], &[])?;
             a.exactly(1, "REF")?;
+            let key_fd = a
+                .value("--key-fd")
+                .map(|v| {
+                    let fd = v.parse::<i32>().map_err(|_| {
+                        usage("--key-fd needs canonical decimal 0 or 3 through 2147483647")
+                    })?;
+                    if fd < 0 || fd == 1 || fd == 2 || fd.to_string() != v {
+                        return Err(usage(
+                            "--key-fd needs canonical decimal 0 or 3 through 2147483647",
+                        ));
+                    }
+                    Ok(fd)
+                })
+                .transpose()?;
             let r = a.positionals[0].clone();
             Ok(Plan::Reply {
-                reply: ops::run::run(&r),
+                reply: ops::run::run(&r, key_fd),
                 json: a.flag("--json"),
                 reference: Some(r),
                 mutating: true,

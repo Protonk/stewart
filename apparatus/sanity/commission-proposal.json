@@ -1,0 +1,28 @@
+{
+  "schema": "stewart.sanity-commission/1",
+  "model": "claude-haiku-5-5",
+  "effort": null,
+  "limits": {
+    "turns": 12,
+    "input_tokens": 160000,
+    "output_tokens": 12000
+  },
+  "endpoint": "https://api.anthropic.com",
+  "proxy": null,
+  "max_placements": 1,
+  "permitted_request_attempts": 4,
+  "automatic_continuation": false,
+  "stop_after_seconds": 900,
+  "spending_authority": null,
+  "account": {
+    "account_label": null,
+    "workspace_id": null,
+    "credential_label": null
+  },
+  "bindings": {
+    "qualification_id": null,
+    "binary_sha256": null,
+    "source_commit": null,
+    "submission_sha256": null
+  }
+}

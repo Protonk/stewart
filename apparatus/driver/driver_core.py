@@ -174,7 +174,7 @@ def tool_effect_keys(tool):
 
 RUN_ENDINGS = ("sealed", "ended_unsubmitted", "limit_reached", "stopped_by_close", "damaged", "interrupted")
 RUN_CAUSES = ("signal", "provider_unavailable", "provider_rejected", "context_exhausted", "provider_refusal",
-              "max_tokens", "protocol_anomaly", "archive_write_failed", "process_gone")
+              "max_tokens", "protocol_anomaly", "archive_write_failed", "process_gone", "credential_reflected")
 ATTEMPT_OUTCOMES = ("response", "response_undecodable", "http_error", "timeout", "connection_failed",
                     "connection_lost", "aborted_by_close", "aborted_by_signal")
 DELIVERY_OUTCOMES = ("verified", "verified_with_losses", "partial", "failed", "name_taken")
@@ -1070,7 +1070,7 @@ class Proc:
 
     KEEP = 64 << 20
 
-    def __init__(self, argv, env, cwd, timeout):
+    def __init__(self, argv, env, cwd, timeout, *, stdin=None, pass_fds=()):
         self.argv, self.env, self.cwd, self.timeout = argv, env, cwd, timeout
         self.out = bytearray()
         self.err = bytearray()
@@ -1082,9 +1082,9 @@ class Proc:
         self.timed_out = False
         self.t0 = time.perf_counter()
         self.started_at = utc_now()
-        self.p = subprocess.Popen(argv, env=env, cwd=cwd, stdin=subprocess.DEVNULL,
+        self.p = subprocess.Popen(argv, env=env, cwd=cwd, stdin=subprocess.DEVNULL if stdin is None else stdin,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  start_new_session=True)
+                                  start_new_session=True, pass_fds=pass_fds)
         self._threads = [threading.Thread(target=self._read_out, daemon=True),
                          threading.Thread(target=self._read_err, daemon=True)]
         self._waiter = threading.Thread(target=self._wait, daemon=True)
@@ -1311,6 +1311,9 @@ class T:
         self.premade_roots = set()
         self.audit_writer = {}
         self.drv_controls = []
+        # Credential cases retain exact synthetic canaries in their private
+        # witness, but ordinary failure summaries must not echo their values.
+        self.private_check_values = []
         # Protocol-call timings measured by the fake provider (C9): dicts with tool, ms, gated.
         self.protocol_timings = []
         self.writer = binary["path"]
@@ -1355,8 +1358,17 @@ class T:
     # -- checks ----------------------------------------------------------
     def check(self, name, cond, detail=None):
         ok = bool(cond)
-        self.checks.append({"name": name, "ok": ok, "detail": None if ok else short(detail, 1500)})
+        shown = None if ok else short(detail, sys.maxsize)
+        if shown is not None:
+            for value in self.private_check_values:
+                shown = shown.replace(value, "[PRIVATE synthetic credential]")
+        self.checks.append({"name": name, "ok": ok, "detail": None if shown is None else short(shown, 1500)})
         return ok
+
+    def protect_check_value(self, value):
+        """Keep a synthetic secret out of ordinary check summaries, not raw evidence."""
+        if value and value not in self.private_check_values:
+            self.private_check_values.append(value)
 
     def eq(self, name, actual, expected):
         return self.check(name, actual == expected, {"actual": actual, "expected": expected})
@@ -1517,7 +1529,7 @@ class T:
 
     def cmd(self, args, *, op=None, json_reply=True, binary=None, env=None, fault=None, cwd=None,
             timeout=120, readonly=None, expect=None, reason=None, name=None, writer=_DEFAULT,
-            envelope=True, prefix=None):
+            envelope=True, prefix=None, stdin=None, pass_fds=()):
         """Run one command with inventories before and after. writer is the path every
         suggested argv must begin with (default: this variant's binary; None skips it)."""
         binary = binary or self.bin["path"]
@@ -1529,7 +1541,7 @@ class T:
         full_env = self.env(env, fault)
         cwd = cwd or self.cwd
         self.sync("before " + name)
-        proc = Proc(argv, full_env, cwd, timeout)
+        proc = Proc(argv, full_env, cwd, timeout, stdin=stdin, pass_fds=pass_fds)
         res = proc.wait()
         if readonly is None:
             readonly = op in READ_ONLY_OPS
@@ -1543,7 +1555,8 @@ class T:
             self.expect(rep, expect, reason, prefix or name)
         return rep
 
-    def start(self, args, *, op=None, binary=None, env=None, fault=None, cwd=None, timeout=120, name=None):
+    def start(self, args, *, op=None, binary=None, env=None, fault=None, cwd=None, timeout=120, name=None,
+              stdin=None, pass_fds=()):
         """Start a command in the background (json reply); finish() collects it."""
         binary = binary or self.bin["path"]
         op = op or args[0]
@@ -1551,7 +1564,7 @@ class T:
         full_env = self.env(env, fault)
         cwd = cwd or self.cwd
         self.sync("before start " + (name or op))
-        proc = Proc(argv, full_env, cwd, timeout)
+        proc = Proc(argv, full_env, cwd, timeout, stdin=stdin, pass_fds=pass_fds)
         h = {"proc": proc, "op": op, "argv": argv, "env": full_env, "cwd": cwd, "name": name or op,
              "fault": fault}
         self.bg.append(h)
@@ -2065,7 +2078,8 @@ class T:
         self.eq("%s.data.receipt_line" % name, d.get("receipt_line"), [writer, "receipt", sub.ref])
         rn = d.get("run_needs")
         self.check("%s.data.run_needs" % name, isinstance(rn, list) and rn and all(isinstance(x, str) for x in rn)
-                   and any("ANTHROPIC_API_KEY" in x for x in rn) and any("background" in x for x in rn), rn)
+                   and any("ANTHROPIC_API_KEY" in x and "--key-fd" in x for x in rn)
+                   and any("background" in x for x in rn), rn)
         argvs = rep.next_argvs()
         self.check("%s.next-run" % name, [writer, "run", sub.ref] in argvs, rep.next)
         self.check("%s.next-close" % name, [writer, "close", sub.ref] in argvs, rep.next)

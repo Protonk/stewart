@@ -22,6 +22,25 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::os::fd::{AsRawFd, FromRawFd};
 
+/// Disable core dumps and, on Linux, ordinary ptrace/proc credential inspection
+/// before a run reads its provider key. The administrator remains trusted.
+pub fn protect_credential() -> io::Result<()> {
+    let limit = libc::rlimit {
+        rlim_cur: 0,
+        rlim_max: 0,
+    };
+    if unsafe { libc::setrlimit(libc::RLIMIT_CORE, &limit) } != 0 {
+        return Err(io::Error::last_os_error());
+    }
+    #[cfg(target_os = "linux")]
+    {
+        if unsafe { libc::syscall(libc::SYS_prctl, libc::PR_SET_DUMPABLE, 0, 0, 0, 0) } != 0 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    Ok(())
+}
+
 /// Fill `buf` with random bytes from the kernel.
 pub fn random_fill(buf: &mut [u8]) -> io::Result<()> {
     #[cfg(target_os = "linux")]

@@ -34,10 +34,11 @@ pub const RUN_ENDINGS: [&str; 6] = [
     "interrupted",
 ];
 /// Causes of an `interrupted` ending; every other ending has a null cause.
-pub const RUN_CAUSES: [&str; 9] = [
+pub const RUN_CAUSES: [&str; 10] = [
     "signal",
     "provider_unavailable",
     "provider_rejected",
+    "credential_reflected",
     "context_exhausted",
     "provider_refusal",
     "max_tokens",

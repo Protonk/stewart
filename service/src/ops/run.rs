@@ -14,7 +14,7 @@
 //! replies `completed` whenever it recorded the placement's ending, and
 //! `failed` when it could not.
 
-use std::os::unix::ffi::OsStrExt;
+use secrecy::SecretString;
 use std::time::Duration;
 
 use crate::answer::NoticesUsed;
@@ -156,7 +156,7 @@ fn state_refusal(audit: &Audit, state: &LogState) -> Option<Fail> {
 
 /// What run takes from its environment (the third check of 5.7).
 struct Environment {
-    key: String,
+    key: SecretString,
     route: Route,
     overridden: bool,
     tls: Tls,
@@ -171,23 +171,10 @@ fn env_fail(audit: &Audit, reason: &'static str, message: String) -> Fail {
     ))
 }
 
-fn environment(audit: &Audit) -> Result<Environment, Fail> {
-    let key = std::env::var_os("ANTHROPIC_API_KEY").unwrap_or_default();
-    if key.is_empty() {
-        return Err(env_fail(
-            audit,
-            "provider_key_missing",
-            "ANTHROPIC_API_KEY is unset or empty; run needs the provider key.".into(),
-        ));
-    }
-    if !key.as_bytes().iter().all(|b| (0x21..=0x7E).contains(b)) {
-        return Err(env_fail(
-            audit,
-            "provider_key_invalid",
-            "ANTHROPIC_API_KEY has a byte outside visible ASCII (0x21-0x7E), so it cannot be sent as a header.".into(),
-        ));
-    }
-    let key = String::from_utf8_lossy(key.as_bytes()).into_owned();
+fn environment(audit: &Audit, input: crate::credential::Input) -> Result<Environment, Fail> {
+    let key = input
+        .read()
+        .map_err(|e| env_fail(audit, e.reason, e.message))?;
     let (endpoint, overridden) = url::provider_setting(
         std::env::var_os("STEWART_PROVIDER_URL").as_deref(),
     )
@@ -385,7 +372,8 @@ fn sabotaged(mut parts: Parts, mut question: String) -> (Parts, String) {
     (parts, question)
 }
 
-pub fn run(reference: &str) -> Reply {
+pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
+    let input = crate::credential::Input::capture(key_fd);
     // 1. The reference, archive, writer and log.
     let mut audit = match Audit::open(reference) {
         Ok(a) => a,
@@ -404,7 +392,7 @@ pub fn run(reference: &str) -> Reply {
         return refuse(&audit, f, Some(&state));
     }
     // 3. The environment.
-    let env = match environment(&audit) {
+    let env = match environment(&audit, input) {
         Ok(e) => e,
         Err(f) => return refuse(&audit, f, Some(&state)),
     };
@@ -506,7 +494,7 @@ pub fn run(reference: &str) -> Reply {
     let client = match Client::new(
         env.route.clone(),
         env.tls.clone(),
-        &env.key,
+        env.key,
         &pinned.anthropic_version,
         env.timeout,
     ) {

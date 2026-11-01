@@ -1,0 +1,92 @@
+"""Record a status or close invocation inside the retained sanity container.
+
+No credential is needed. Close ends authoring; this command never automatically
+confirms a new manager-sealed delivery or surrenders loss on the operator's behalf.
+"""
+import argparse
+import fcntl
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import time
+import re
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from session_support import write_json
+from session import safe_choice, safe_usage
+from exercise import verify_package, digest
+
+
+def safe_state(reply):
+    data = reply.get('data', {})
+    run = data.get('runs', {}).get('last') or {}
+    ending = data.get('ending', run.get('ending'))
+    cause = data.get('cause', run.get('cause'))
+    seal = data.get('seal')
+    headline = data.get('headline', {})
+    delivery = data.get('delivery') or {}
+    return {'outcome': safe_choice(reply.get('outcome'), ['completed', 'failed', 'refused']),
+        'condition': safe_choice(data.get('condition'), ['preparing', 'not_started', 'run_active', 'interrupted', 'ended_unsubmitted', 'limit_reached', 'delivered_open', 'closed', 'close_unfinished', 'damaged', 'sealed_undelivered', 'closing', 'log_damaged']),
+        'ending': safe_choice(ending, ['sealed', 'ended_unsubmitted', 'limit_reached', 'stopped_by_close', 'damaged', 'interrupted']),
+        'cause': safe_choice(cause, ['signal', 'provider_unavailable', 'provider_rejected', 'context_exhausted', 'provider_refusal', 'max_tokens', 'protocol_anomaly', 'archive_write_failed', 'process_gone', 'credential_reflected']),
+        'seal_actor': safe_choice(seal.get('actor') if isinstance(seal, dict) else None, ['auditor', 'manager']),
+        'delivery_verified': headline.get('delivered', {}).get('verified') is True or delivery.get('outcome') == 'verified',
+        'closed': headline.get('closed') == 'yes' or data.get('closure') == 'complete',
+        'usage': safe_usage(data.get('usage'))}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('operation', choices=['status', 'close', 'inspect'])
+    parser.add_argument('--scenario', default='live')
+    parser.add_argument('--confirm', help='close only, after the operator has inspected the newly delivered copy')
+    args = parser.parse_args()
+    if args.scenario not in ['live', 'submitted', 'unsubmitted', 'provider-rejected', 'interrupted', 'reflected-body', 'export-contamination', 'export-failure']:
+        parser.error('unknown scenario')
+    root = Path('/work/private') / args.scenario
+    if args.confirm is not None and (args.operation != 'close' or not re.fullmatch(r'[A-Za-z0-9._:-]{1,512}', args.confirm)):
+        parser.error('--confirm requires close and a valid confirmation handle')
+    operator = json.loads((root / 'operator.json').read_bytes())
+    lock = (root.parent / (root.name + '.operator.lock')).open('a+b')
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    stem = root / 'evidence' / f'operator-{time.time_ns()}-{args.operation}'
+    argv = [operator['binary'], 'status' if args.operation == 'inspect' else args.operation, operator['reference'], '--json']
+    if args.confirm is not None:
+        argv += ['--confirm', args.confirm]
+    with stem.with_suffix('.stdout').open('xb') as stdout, stem.with_suffix('.stderr').open('xb') as stderr:
+        result = subprocess.run(argv, env={'PATH': '/usr/bin:/bin', 'HOME': operator['home']},
+            cwd=root, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
+            user=1000, group=1000, extra_groups=[], umask=0o077)
+    write_json(stem.with_suffix('.json'), {'argv': argv, 'exit': result.returncode, 'at': time.time()})
+    reply = json.loads(stem.with_suffix('.stdout').read_bytes())
+    summary = {'operation': args.operation, 'exit': result.returncode,
+        'reply_retained': str(stem.with_suffix('.stdout')),
+        'confirmation_requested': args.confirm is not None, 'loss_surrendered': False,
+        'state': safe_state(reply)}
+    if args.operation == 'inspect' and result.returncode == 0:
+        data = reply['data']
+        location = data.get('headline', {}).get('delivered', {}).get('location')
+        package = Path(location) if isinstance(location, str) else None
+        if package is None or package.parent != root / 'returns' or not re.fullmatch(r'stewart-return-[a-z0-9-]+', package.name):
+            parser.exit(1, 'No recognized delivered package is available for inspection.\n')
+        manifests = list((root / 'archive').glob('audits/*/seal/manifest-*.json'))
+        if len(manifests) != 1:
+            parser.exit(1, 'One retained seal manifest was expected.\n')
+        manifest = manifests[0].read_bytes()
+        if digest(manifest) != data['seal']['manifest_sha256']:
+            parser.exit(1, 'The retained manifest differs from the seal.\n')
+        verify_package(package, manifest)
+        summary['verified_package'] = str(package)
+        summary['answer_to_inspect_privately'] = str(package / 'answer.md')
+        token = next((item.get('confirmation') for item in reversed(data.get('deliveries', [])) if item.get('confirmation')), None)
+        if token is not None and re.fullmatch(r'[A-Za-z0-9._:-]{1,512}', token):
+            summary['confirmation_after_review'] = token
+        summary['inspection_note'] = 'Read the delivered answer privately before close --confirm. This command verifies bytes but does not perform that human review or export the package.'
+    print(json.dumps(summary, indent=2))
+    return result.returncode
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

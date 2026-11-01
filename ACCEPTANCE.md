@@ -618,6 +618,25 @@ Each run records the binary's digest, the image digests or WSL environment
 (Windows and WSL versions, distribution, kernel, architecture, filesystem types),
 the case counts, the timings and every control that fired.
 
+### Credential handling
+
+Exercise INTERFACE 6.1 with synthetic nonfunctional credentials and an independent
+witness outside Stewart's archive. The witness records receipt of the exact key
+without printing it in ordinary results. Cover descriptor input, source conflict,
+invalid/empty/oversized input, read failure and deadline, closure of the descriptor,
+and preservation of the normal environment route. Check the actual Linux process
+protection with same-user and different-user observers and an intentionally
+readable process as a firing control. Record observer scope and timing.
+
+Echo the credential in bodies and retained headers, including JSON escapes,
+successful responses, provider rejections, and malformed/truncated responses.
+Verify exact private captures, the exposure marker, explicit derived redaction,
+normal usage accounting, and absence of further requests or tool effects. A
+clean response and an unrelated diagnostic remain unchanged. The launch
+procedure also proves that contaminated or uncertain evidence is withheld from
+export, retaining its original container and independent witness through review.
+Literal recursive scanning alone does not establish the process or memory claims.
+
 ## The real-model conformance tier
 
 This tier answers C10. It checks procedure, never answer quality.

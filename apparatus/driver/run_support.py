@@ -512,6 +512,14 @@ def check_run_records(t, sub, name):
                   and rec.get("record") == RECORD_SCHEMA and rec.get("audit") == sub.audit and rec.get("kind") == kind)
             t.check("%s.runs.%d.record-header" % (name, n), ok, {"record": key, "header": {k: rec.get(k) for k in
                                                                                          ("record", "kind", "audit")}})
+            if kind == "provider_attempt":
+                reflection = (rec.get("body") or {}).get("credential_reflection")
+                headers = reflection.get("headers") if isinstance(reflection, dict) else None
+                valid = (isinstance(reflection, dict) and set(reflection) == {"body", "headers"}
+                         and type(reflection.get("body")) is bool and isinstance(headers, list)
+                         and headers == [h for h in ("content-type", "request-id", "retry-after") if h in headers])
+                t.check("%s.runs.%d.credential-marker" % (name, n), valid,
+                        {"record": key, "marker": reflection})
 
 
 # ---------------------------------------------------------------------------

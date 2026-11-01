@@ -45,19 +45,20 @@ the user's decision under [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention
 
 ## Messages API sanity commission
 
-The specimen and procedure are in the run sheet. Remaining preparation:
+The specimen and procedure are in the run sheet. The
+[unpaid commission proposal](apparatus/sanity/COMMISSION.md) fixes proposed
+settings and documents provider compatibility and pricing checked before any
+model call. Remaining preparation:
 
-- Name the exact model, effort setting or deliberate omission, account route,
-  cumulative token/turn allowances, spending authority and permitted retries,
-  continuation and stop conditions. Stewart does not enforce a dollar ceiling.
-- Verify the chosen model against the pinned provider version, compaction beta,
-  request output cap, timeout and optional effort in INTERFACE 6.1–6.2. Check
-  current pricing when costing the commission. A provider rejection remains a
-  recorded outcome; changing settings changes the proposed commission.
+- Obtain the principal's final bounded spending authorization and confirm the
+  account/key's access to the proposed model and workspace. Stewart does not
+  enforce a dollar ceiling. Public-document compatibility is checked; actual
+  account access, timing, TLS and billing remain live observations.
 - Finish the live launcher and observation procedure for the selected credential
   mechanism, qualified binary, Linux filesystem, destination and endpoint/proxy
-  choice. Rehearse that final path with synthetic credentials. Real-provider TLS
-  with the release's built-in roots remains unexercised.
+  choice. Rehearse that final path with synthetic credentials, failure controls,
+  interruption and export withholding. Prepare the offline review summary.
+  Real-provider TLS with the release's built-in roots remains unexercised.
 - Run once under the approved bounds, review actual effects before retrying,
   and record submission, preservation, delivery and close separately. A manager
   close cannot establish that the auditor submitted.

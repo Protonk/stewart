@@ -405,6 +405,30 @@ private-location inventory or protection from a hostile host owner is promised.
 
 ## Run and continuation
 
+**Credentials and exact evidence.** The manager supplies one provider credential
+for a placement through an inherited descriptor or the documented environment
+input. Ambiguous sources refuse. Credential entry is separate from commissioning
+and from model-visible material. The descriptor path supports hidden terminal
+entry without placing a secret in arguments, container configuration or process
+environment. Linux suppresses core dumps and unprivileged access to
+credential-bearing process state before reading the key. This protects against
+accidental disclosure and other unprivileged observers within the tested boundary;
+the host administrator and authenticated provider remain trusted. It does not
+promise complete memory erasure or secrecy from the archive owner. Process
+protection applies after installation; it does not revoke an observer's
+already-open descriptors or protect every startup race. A qualified launch
+records the isolation and observation timing under which access was tested.
+
+A provider can reflect a credential into its response. Stewart keeps exact raw
+response evidence privately, detects literal and JSON-escaped credential echoes,
+and stops before another request or tool execution. Derived diagnostics identify
+their redaction; the recorded attempt marks affected body/header evidence and
+retains the normal usage accounting. The manager reviews that state and revokes
+the exposed key before further provider use. An automatic export must withhold
+contaminated evidence or evidence it cannot establish clean. No historical
+capture is sanitized in place. INTERFACE 6.1 specifies the detection scope and
+input bounds; this is not a promise to detect every possible encoding.
+
 **Provider compaction within a run.** The Messages API adapter
 asks the provider to compact a large active context and continues from its signed
 summary. Stewart does not author that summary or treat it as submitted work.
@@ -433,7 +457,8 @@ manager's work; retaining one does not imply a restart-from-start facility.
 between them is the network: commission copies, verifies and records locally;
 run is the only step that reaches the provider and needs its key. The receipt is
 the handoff and carries the reference, the exact run line and what run needs
-from the environment. Run takes the reference and nothing else, works from any
+from the launch environment. Run takes the reference and an optional credential
+descriptor, works from any
 directory, needs no session, runs in the foreground by default, and refuses with
 a sign when the audit is running or has ended. Status takes a reference and
 answers whoever holds it. Stewart records what it observed about each invocation

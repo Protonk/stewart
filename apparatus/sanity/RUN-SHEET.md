@@ -14,12 +14,34 @@ approved paid budget. Effort is omitted. A live commission must name the model,
 credential mechanism, provider route, allowances, spending authority and stopping
 conditions; the procedure below records those choices.
 
+[The unpaid commission proposal](COMMISSION.md) names the settings proposed for
+the first real-provider attempt, with dated compatibility and pricing sources.
+It is separate from this historical rehearsal template and requires bounded
+spending authorization before launch.
+
 No command in the rehearsal can select a real provider. The synthetic model
 name is `rehearsal-only`; the fake binds a newly allocated loopback port. The
 container has `--network none`. Host credentials and proxy settings are not
 forwarded. All model usage in its report is synthetic.
 
 ## Rehearse on the host
+
+The final credential and launch path is exercised with:
+
+```sh
+python3 -I -B apparatus/sanity/launch.py rehearse "$PWD/.scratch/sanity-launch-NN" --qualification ACCEPTANCE_ID
+```
+
+Use a fresh evidence folder and the qualification ID for the executable being
+tested. Commit the apparatus first. This command uses a synthetic credential and
+an offline Linux container. It retains the container and prints the location of
+operator status/close commands and results. The launcher checks the credential
+path, process-observer controls, interruptions, exact delivery, and withheld or
+failed exports. Its review tool reads retained results without launching a model.
+
+The earlier three-scenario rehearsal remains available below; it pins the older
+binary and exercises that historical procedure, rather than the new credential
+descriptor and launch path.
 
 Commit the packet before running: the wrapper archives `HEAD`, refuses a dirty
 packet and checks the binary digest against `acceptance-03` in the qualification
@@ -61,12 +83,19 @@ prove real-provider compatibility, or qualify a model.
 
 ## Procedure for the later paid run
 
+The credential entry path uses a hidden terminal prompt on the host and a pipe
+to `run --key-fd 0` in the Linux container. It uses no persistent credential
+store. Intake and receipt verification finish before the prompt. The launch
+environment selects the direct provider endpoint explicitly and excludes ambient
+credentials and proxies. The user enters the key locally, never into chat or an
+argument. Retain the qualified executable until this audit is closed.
+
 1. **Freeze the launch packet.** Copy this specimen into a new retained run.
    Fill the exact approved model, destination and cumulative limits; preserve
    the original inputs independently. Record the qualified binary's digest,
    source identity, container image, filesystem, approved endpoint/proxy choice,
    operator, spending authority and stopping conditions. Keep credentials out
-   of these records. The credential-entry mechanism remains to be decided.
+   of these records. Bind launch approval to the exact completed packet.
 2. **Intake without credentials.** Run `new`, `prepare`, then `commission REF
    HANDLE --i-am-finished`. Save JSON stdout, stderr, exit status and timestamps
    for each command. Read the arrangement. Run `receipt --verify` and byte-compare
@@ -95,6 +124,14 @@ prove real-provider compatibility, or qualify a model.
    command records and delivered bytes, with export times and digests. Keep
    the original container through review. Record outcome and limitations before
    considering a new attempt. No automatic cleanup or continuation.
+
+If a response reflects the credential, preserve the exact original privately,
+stop and revoke the key. Ordinary diagnostics explicitly redact provider text;
+the attempt's `credential_reflection` records the affected body/header surfaces.
+The launcher withholds exports when any reflection marker, independent scan match
+or uncertainty prevents establishing a clean export. Only safe operational
+metadata leaves that container. A withheld export is an incomplete preparation
+or test outcome to review, not evidence that the archive vanished or was empty.
 
 ## Review the specimen's intellectual content separately
 

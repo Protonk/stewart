@@ -106,9 +106,9 @@ build, a call through `libc::` to a function that std also declares weak can
 link to nothing, and debug, thin-LTO and macOS builds never show it. Such calls
 go through `libc::syscall`, as `platform::random_fill` does.
 
-The dependencies are four crates pinned to exact versions in
-`service/Cargo.toml` (`libc`, `sha2`, `rustls` with its `ring` provider, and
-`webpki-roots`), and `service/Cargo.lock` pins the whole graph. Builds never
+The dependencies are six crates pinned to exact versions in
+`service/Cargo.toml` (`libc`, `sha2`, `rustls` with its `ring` provider,
+`webpki-roots`, `secrecy` and `zeroize`), and `service/Cargo.lock` pins the whole graph. Builds never
 reach crates.io: `service/.cargo/config.toml` replaces it with the vendored
 sources in `service/vendor`, and every build here passes `--locked --offline`.
 

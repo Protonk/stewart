@@ -31,14 +31,25 @@ pub fn request_head(
     api_key: &str,
     anthropic_version: &str,
     body_len: usize,
-) -> Vec<u8> {
-    format!(
-        "POST {target} HTTP/1.1\r\nhost: {host}\r\nx-api-key: {api_key}\r\nanthropic-version: {anthropic_version}\r\nanthropic-beta: {beta}\r\ncontent-type: application/json\r\ncontent-length: {body_len}\r\nconnection: close\r\n\r\n",
-        beta = crate::forms::ANTHROPIC_BETA,
+) -> zeroize::Zeroizing<Vec<u8>> {
+    let prefix = format!(
+        "POST {target} HTTP/1.1\r\nhost: {host}\r\nx-api-key: ",
         target = endpoint.target(),
         host = endpoint.host_header(),
-    )
-    .into_bytes()
+    );
+    let suffix = format!(
+        "\r\nanthropic-version: {anthropic_version}\r\nanthropic-beta: {beta}\r\ncontent-type: application/json\r\ncontent-length: {body_len}\r\nconnection: close\r\n\r\n",
+        beta = crate::forms::ANTHROPIC_BETA,
+    );
+    // Capacity is fixed before the secret enters the buffer: no reallocation
+    // can leave an earlier secret-bearing header allocation unwiped.
+    let mut head = zeroize::Zeroizing::new(Vec::with_capacity(
+        prefix.len() + api_key.len() + suffix.len(),
+    ));
+    head.extend_from_slice(prefix.as_bytes());
+    head.extend_from_slice(api_key.as_bytes());
+    head.extend_from_slice(suffix.as_bytes());
+    head
 }
 
 /// How the body ended.
@@ -412,10 +423,7 @@ fn read_body<R: Read + ?Sized>(
         .filter(|e| e != "identity")
         .collect();
     if !encodings.is_empty() {
-        reply.coding = Some(format!(
-            "the body has content-encoding {}",
-            encodings.join(", ")
-        ));
+        reply.coding = Some("the body has an unsupported content-encoding".into());
     }
     let status = reply.status;
     if status == 204 || status == 304 || (100..200).contains(&status) {
@@ -426,14 +434,7 @@ fn read_body<R: Read + ?Sized>(
     if !codings.is_empty() {
         let others: Vec<&String> = codings.iter().filter(|c| *c != "chunked").collect();
         if !others.is_empty() && reply.coding.is_none() {
-            reply.coding = Some(format!(
-                "the body has transfer coding {}",
-                others
-                    .iter()
-                    .map(|s| s.as_str())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ));
+            reply.coding = Some("the body has an unsupported transfer coding".into());
         }
         return if codings.last().map(String::as_str) == Some("chunked") {
             read_chunked(w, reply, limit)
@@ -535,10 +536,8 @@ fn read_chunked<R: Read + ?Sized>(
             None
         };
         let Some(size) = size else {
-            reply.end = BodyEnd::Malformed(format!(
-                "the chunked body has an invalid chunk-size line {:?}",
-                String::from_utf8_lossy(&line)
-            ));
+            reply.end =
+                BodyEnd::Malformed("the chunked body has an invalid chunk-size line".into());
             return None;
         };
         if size == 0 {
@@ -655,13 +654,13 @@ pub(crate) mod tests {
         let e = Endpoint::parse("http://127.0.0.1:8080/base").unwrap();
         let head = request_head(&e, "sk-test", "2026-10-21", 42);
         assert_eq!(
-            head,
+            head.as_slice(),
             b"POST /base/v1/messages HTTP/1.1\r\nhost: 127.0.0.1:8080\r\nx-api-key: sk-test\r\nanthropic-version: 2026-10-21\r\nanthropic-beta: compact-2026-09-04\r\ncontent-type: application/json\r\ncontent-length: 42\r\nconnection: close\r\n\r\n"
         );
         let head = request_head(&Endpoint::default_base(), "k", "v", 0);
         assert!(head.starts_with(b"POST /v1/messages HTTP/1.1\r\nhost: api.anthropic.com\r\n"));
         assert!(
-            String::from_utf8(head)
+            std::str::from_utf8(&head)
                 .unwrap()
                 .contains("anthropic-beta: compact-2026-09-04")
         );
@@ -755,7 +754,7 @@ pub(crate) mod tests {
         let (r, _) = read_all(b"HTTP/1.1 200 OK\r\ntransfer-encoding: gzip\r\n\r\nzz");
         let r = r.unwrap();
         assert_eq!(r.body, b"zz");
-        assert!(r.coding.unwrap().contains("gzip"));
+        assert!(r.coding.unwrap().contains("unsupported"));
     }
 
     #[test]
@@ -766,13 +765,32 @@ pub(crate) mod tests {
         assert_eq!(r.unwrap().coding, None);
         let (r, _) =
             read_all(b"HTTP/1.1 200 OK\r\nContent-Encoding: GZIP\r\ncontent-length: 2\r\n\r\nxx");
-        assert!(r.unwrap().coding.unwrap().contains("gzip"));
+        assert!(r.unwrap().coding.unwrap().contains("unsupported"));
         let (r, _) = read_all(
             b"HTTP/1.1 200 OK\r\ntransfer-encoding: gzip, chunked\r\n\r\n2\r\nxx\r\n0\r\n\r\n",
         );
         let r = r.unwrap();
         assert_eq!(r.body, b"xx");
-        assert!(r.coding.unwrap().contains("gzip"));
+        assert!(r.coding.unwrap().contains("unsupported"));
+    }
+
+    #[test]
+    fn framing_diagnostics_do_not_repeat_remote_values() {
+        let canary = "Framing-Canary-Secret";
+        for head in [
+            format!("HTTP/1.1 200 OK\r\ncontent-encoding: {canary}\r\ncontent-length: 0\r\n\r\n"),
+            format!("HTTP/1.1 200 OK\r\ntransfer-encoding: {canary}\r\n\r\n"),
+            format!("HTTP/1.1 200 OK\r\ntransfer-encoding: chunked\r\n\r\n{canary}\r\n"),
+        ] {
+            let (reply, stop) = read_all(head.as_bytes());
+            let diagnosis = format!("{:?} {stop:?}", reply.unwrap());
+            assert!(
+                !diagnosis
+                    .to_ascii_lowercase()
+                    .contains(&canary.to_ascii_lowercase())
+            );
+            assert!(diagnosis.contains("unsupported") || diagnosis.contains("invalid chunk-size"));
+        }
     }
 
     #[test]

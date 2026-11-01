@@ -52,6 +52,7 @@ pub mod answer;
 pub mod archive;
 pub mod bodies;
 pub mod cli;
+pub mod credential;
 pub mod delivery;
 pub mod forms;
 pub mod frontmatter;

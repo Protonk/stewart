@@ -498,7 +498,9 @@ def c_readback(t):
     t.check("readback.declaration", any(v == {"i_am_finished": True} for v in iter_values(d)), "declaration")
     t.check("readback.checks", any(v == COMMISSION_CHECKS for v in iter_values(d)), "matched checks")
     t.check("readback.run_line", any(v == [sub.writer, "run", sub.ref] for v in iter_values(d)), "run line")
-    t.check("readback.run_needs", isinstance(d.get("run_needs"), list) and d.get("run_needs"), d.get("run_needs"))
+    needs = d.get("run_needs")
+    t.check("readback.run_needs", isinstance(needs, list) and
+            any(isinstance(n, str) and "--key-fd" in n and "ANTHROPIC_API_KEY" in n for n in needs), needs)
     for sha in (sha256_hex(sub.question), sha256_hex(sub.body)):
         t.check("readback.question-digests", contains_string(d, sha), sha)
     for item, exp in expected.items():

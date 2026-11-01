@@ -67,6 +67,14 @@ or network retrieval.
 Run allowances count cumulative turns and input/output tokens. Stewart enforces
 no dollar ceiling.
 
+A launcher can supply the provider key through a one-use inherited descriptor
+with `run REF --key-fd FD`; `ANTHROPIC_API_KEY` is an explicit alternative.
+Supplying both refuses. The descriptor path keeps the key out of arguments and
+environment. If the provider reflects it, Stewart stops and marks the exact
+private evidence for review; derived diagnostics are redacted. Review that state
+and revoke the exposed key before further provider use. The input bounds and
+protection limits are in [the credential interface](docs/INTERFACE.md#61-provider).
+
 Three locations have separate roles:
 
 | Location | What it holds |

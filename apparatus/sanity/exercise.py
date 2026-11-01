@@ -50,7 +50,7 @@ def verify_package(package, manifest_bytes):
 
 
 class Fake:
-    def __init__(self, mode, evidence, materials, question):
+    def __init__(self, mode, evidence, materials, question, auth_observer=None):
         self.mode, self.evidence = mode, evidence
         self.materials, self.question = materials, question
         self.key = 'stewart-rehearsal-NOT-A-CREDENTIAL-' + os.urandom(12).hex()
@@ -72,6 +72,8 @@ class Fake:
                         raise ValueError('unexpected endpoint or request size')
                     body = self.rfile.read(size)
                     (evidence / f'request-{n}.json').write_bytes(body)
+                    if auth_observer is not None:
+                        auth_observer(n, (self.headers.get('x-api-key') or '').encode('latin1'))
                     if self.headers.get('x-api-key') != fake.key:
                         raise ValueError('request did not carry the synthetic credential')
                     if self.headers.get('anthropic-version') != '2026-10-21':

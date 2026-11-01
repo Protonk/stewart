@@ -1246,6 +1246,172 @@ fn a_dead_placement_is_reconciled_with_estimated_charges() {
 // Refusals before launch.
 
 #[test]
+fn descriptor_credential_reaches_provider_without_entering_captures() {
+    let p = provider!(
+        "descriptor_credential_reaches_provider_without_entering_captures",
+        vec![text_turn("refusal")]
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let key = "descriptor-only-canary-5deebd";
+    let mut child = run_cmd(&e, &r, &p.url(), &[])
+        .env_remove("ANTHROPIC_API_KEY")
+        .args(["--key-fd", "0"])
+        .stdin(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(format!("{key}\n").as_bytes())
+        .unwrap();
+    let o = finish(child);
+    assert_eq!(o.code, Some(5), "{} {:?}", o.stderr, o.reply);
+    assert_eq!(sj(&o.reply, &["data", "cause"]), "provider_refusal");
+    let requests = p.requests();
+    assert_eq!(requests.len(), 1);
+    assert!(String::from_utf8_lossy(&requests[0]).contains(&format!("x-api-key: {key}\r\n")));
+    fn scan(path: &std::path::Path, key: &[u8]) {
+        if path.is_dir() {
+            for entry in std::fs::read_dir(path).unwrap() {
+                scan(&entry.unwrap().path(), key);
+            }
+        } else {
+            let bytes = std::fs::read(path).unwrap();
+            assert!(
+                !bytes.windows(key.len()).any(|w| w == key),
+                "credential leaked into {}",
+                path.display()
+            );
+        }
+    }
+    scan(&e.base, key.as_bytes());
+    let a = attempt(&e, &r, 1, 1, 1);
+    assert_eq!(
+        matches!(
+            at(&a, &["credential_reflection", "body"]).v,
+            json::V::Bool(false)
+        ),
+        true
+    );
+    assert!(
+        at(&a, &["credential_reflection", "headers"])
+            .as_arr()
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[test]
+fn credential_descriptor_refusals_do_not_launch_or_echo_input() {
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    for (bytes, reason) in [
+        (Vec::new(), "provider_key_missing"),
+        (b"bad key".to_vec(), "provider_key_invalid"),
+        (b"key\r\n".to_vec(), "provider_key_invalid"),
+        (b"key\n\n".to_vec(), "provider_key_invalid"),
+        (vec![b'x'; 4097], "provider_key_invalid"),
+    ] {
+        let mut child = run_cmd(&e, &r, "http://127.0.0.1:9", &[])
+            .env_remove("ANTHROPIC_API_KEY")
+            .args(["--key-fd", "0"])
+            .stdin(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child.stdin.take().unwrap().write_all(&bytes).unwrap();
+        let o = finish(child);
+        assert_eq!(o.code, Some(3), "{} {:?}", o.stderr, o.reply);
+        assert_eq!(sj(&o.reply, &["reason"]), reason);
+        assert_eq!(sj(&o.reply, &["effects", "run"]), "not_started");
+    }
+    let o = finish(
+        run_cmd(&e, &r, "http://127.0.0.1:9", &[])
+            .args(["--key-fd", "0"])
+            .spawn()
+            .unwrap(),
+    );
+    assert_eq!(sj(&o.reply, &["reason"]), "provider_key_source_conflict");
+    // FD 3 would normally be reused by the first archive open. Capturing an
+    // invalid descriptor before those opens must keep it invalid.
+    for fd in ["3", "2147483647"] {
+        let o = finish(
+            run_cmd(&e, &r, "http://127.0.0.1:9", &[])
+                .env_remove("ANTHROPIC_API_KEY")
+                .args(["--key-fd", fd])
+                .spawn()
+                .unwrap(),
+        );
+        assert_eq!(sj(&o.reply, &["reason"]), "provider_key_unreadable");
+    }
+    assert!(!e.log_kinds(&r).iter().any(|k| k == "run_started"));
+    for fd in ["-1", "1", "2", "00", "+3", "2147483648", "key-secret"] {
+        let o = e.run(&["run", &r, "--key-fd", fd, "--json"]);
+        assert_eq!(o.code, Some(2));
+        assert!(o.stdout.is_empty());
+        if fd == "key-secret" {
+            assert!(!o.stderr.contains(fd));
+        }
+    }
+}
+
+#[test]
+fn credential_descriptor_requires_eof_within_deadline() {
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let mut child = run_cmd(&e, &r, "http://127.0.0.1:9", &[])
+        .env_remove("ANTHROPIC_API_KEY")
+        .args(["--key-fd", "0"])
+        .stdin(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut writer = child.stdin.take().unwrap();
+    writer.write_all(b"unfinished-canary").unwrap();
+    let started = Instant::now();
+    let o = finish(child);
+    drop(writer);
+    assert_eq!(o.code, Some(3));
+    assert_eq!(sj(&o.reply, &["reason"]), "provider_key_unreadable");
+    assert!(started.elapsed() >= Duration::from_secs(4));
+    assert!(started.elapsed() < Duration::from_secs(10));
+    assert!(!e.log_kinds(&r).iter().any(|k| k == "run_started"));
+}
+
+#[test]
+fn reflected_credentials_preserve_evidence_usage_and_prevent_tools_or_retries() {
+    let key = "sk-test-key";
+    let tool = r#"[{"type":"tool_use","id":"echo","name":"record_account","input":{"text":"sk-test-\u006bey"}}]"#;
+    for (act, raw, body_match, header_match, charge) in [
+        (ok(tool, "tool_use"), message(tool, "tool_use", 100, 10), true, false, "reported"),
+        (Act::Reply(401, vec![], r#"{"type":"error","error":{"type":"authentication_error","message":"sk-test-key"}}"#.into()), r#"{"type":"error","error":{"type":"authentication_error","message":"sk-test-key"}}"#.into(), true, false, "none"),
+        (Act::Reply(529, vec![("request-id".into(), key.into())], r#"{"type":"error","error":{"type":"overloaded_error","message":"ordinary diagnostic"}}"#.into()), r#"{"type":"error","error":{"type":"overloaded_error","message":"ordinary diagnostic"}}"#.into(), false, true, "none"),
+        (Act::CutOff(r#"{"text":"sk-test-\u006bey"#.into()), r#"{"text":"sk-test-\u006bey"#.into(), true, false, "estimated"),
+    ] {
+        let p = provider!("reflected_credentials_preserve_evidence_usage_and_prevent_tools_or_retries", vec![act]);
+        let e = Env::new();
+        let r = commissioned(&e, DEFAULT_LIMITS);
+        let o = run(&e, &r, &p, &[]);
+        assert_eq!(o.code, Some(5), "{} {:?}", o.stderr, o.reply);
+        assert_eq!(sj(&o.reply, &["data", "cause"]), "credential_reflected");
+        assert!(is_null(&o.reply, &["data", "provider"]));
+        assert_eq!(p.requests().len(), 1);
+        assert_eq!(run_file(&e, &r, 1, "response-1-1.bin"), raw.as_bytes());
+        let a = attempt(&e, &r, 1, 1, 1);
+        assert_eq!(matches!(at(&a, &["credential_reflection", "body"]).v, json::V::Bool(true)), body_match);
+        assert_eq!(!at(&a, &["credential_reflection", "headers"]).as_arr().unwrap().is_empty(), header_match);
+        assert_eq!(sj(&a, &["then"]), "end");
+        assert_eq!(sj(&a, &["charged", "basis"]), charge);
+        if header_match { assert_eq!(sj(&a, &["headers", "request-id", "0"]), key); }
+        assert!(!e.log_kinds(&r).iter().any(|k| k == "entry" || k == "seal" || k == "notice"));
+        let status = e.run(&["status", &r, "--json"]);
+        assert_eq!(status.code, Some(0), "{}", status.stderr);
+        assert!(!status.text().contains(key));
+        assert!(!format!("{:?}{}", o.reply, o.stderr).contains(key));
+    }
+}
+
+#[test]
 fn refusals_before_launch_change_nothing() {
     let p = provider!("refusals_before_launch_change_nothing", vec![Act::Hang]);
     let e = Env::new();

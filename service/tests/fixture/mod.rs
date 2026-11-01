@@ -126,6 +126,7 @@ pub fn record_turn(a: &Audit, run: u64, k: u64, input: u64, output: u64) {
         timeout_seconds: 600,
         request_written: "complete".into(),
         outcome: "response".into(),
+        credential_reflection: stewart::credential::Reflection::default(),
         status: Some(200),
         headers: Headers {
             content_type: vec!["application/json".into()],

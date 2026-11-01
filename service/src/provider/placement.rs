@@ -386,6 +386,7 @@ impl State<'_, '_> {
                 None => None,
             };
             let mut c = classify(&attempt);
+            let credential_reflection = live.client.reflection(&attempt);
             if compacting && c.message.as_ref().is_some_and(|m| !m.compaction_usage) {
                 c.outcome = crate::provider::Outcome::ResponseUndecodable;
                 c.message = None;
@@ -400,14 +401,18 @@ impl State<'_, '_> {
                 body.len() as u64,
                 max_tokens,
             );
-            let then = policy::decide(
-                c.outcome,
-                attempt.status(),
-                attempt.retry_after(),
-                a as u32,
-                &live.retry,
-            );
-            let record = ProviderAttempt {
+            let then = if credential_reflection.found() {
+                Then::End(Ending::Interrupted(Cause::CredentialReflected))
+            } else {
+                policy::decide(
+                    c.outcome,
+                    attempt.status(),
+                    attempt.retry_after(),
+                    a as u32,
+                    &live.retry,
+                )
+            };
+            let mut record = ProviderAttempt {
                 request: k,
                 attempt: a,
                 started_at: attempt.started_at_utc(),
@@ -422,6 +427,7 @@ impl State<'_, '_> {
                     .as_ref()
                     .map(|r| r.headers.clone())
                     .unwrap_or_default(),
+                credential_reflection: credential_reflection.clone(),
                 response,
                 error: c.error.clone(),
                 stop_reason: c.message.as_ref().and_then(|m| m.stop_reason.recorded()),
@@ -432,6 +438,24 @@ impl State<'_, '_> {
                 then: then.as_str().to_string(),
                 delay_ms: then.delay_ms(),
             };
+            if credential_reflection.found() {
+                // Derived strings can have been truncated before this point;
+                // replacing each entire present field also avoids retaining a
+                // credential prefix. Exact body/header evidence remains intact.
+                let redact = |text: &mut Option<String>| {
+                    if text.is_some() {
+                        *text = Some(crate::credential::REDACTED.into());
+                    }
+                };
+                if let Some(error) = &mut record.error {
+                    redact(&mut error.kind);
+                    redact(&mut error.message);
+                    redact(&mut error.request_id);
+                }
+                redact(&mut record.stop_reason);
+                redact(&mut record.model);
+                record.problem = Some("Provider credential reflected; derived provider text redacted. Exact raw response and retained headers require private review.".into());
+            }
             if let Err(cause) = live.dir.publish(
                 live.audit,
                 "provider_attempt",
@@ -445,6 +469,12 @@ impl State<'_, '_> {
             self.usage.charge(&charge);
             if attempt.written != Written::None {
                 self.seen.entry(k).or_default().written = true;
+            }
+            if credential_reflection.found() {
+                return Err(Stop::Ending(
+                    Ending::Interrupted(Cause::CredentialReflected),
+                    "The provider reflected the credential. No response tools or retries were used. Raw evidence remains exact and private; derived provider text was redacted. Revoke the credential and review the retained evidence before continuation or export.".into(),
+                ));
             }
             if let Some(stop) = self.near_limit(k + 1) {
                 return Err(stop);

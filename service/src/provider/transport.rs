@@ -336,7 +336,7 @@ struct Plan<'a> {
     /// `host:port` for a CONNECT tunnel through the proxy.
     tunnel: Option<String>,
     tls: Option<(Arc<ClientConfig>, ServerName<'static>)>,
-    head: Vec<u8>,
+    head: zeroize::Zeroizing<Vec<u8>>,
     body: &'a [u8],
 }
 
@@ -349,11 +349,11 @@ struct Progress {
 }
 
 /// The provider client: a route, TLS roots, the key and the pinned version.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Client {
     route: Route,
     tls: Tls,
-    api_key: String,
+    api_key: secrecy::SecretString,
     anthropic_version: String,
     timeout: Duration,
 }
@@ -365,12 +365,16 @@ impl Client {
     pub fn new(
         route: Route,
         tls: Tls,
-        api_key: &str,
+        api_key: impl Into<secrecy::SecretString>,
         anthropic_version: &str,
         timeout: Duration,
     ) -> Result<Client, String> {
+        use secrecy::ExposeSecret;
+        let api_key = api_key.into();
         let visible = |s: &str| !s.is_empty() && s.bytes().all(|c| (0x21..=0x7E).contains(&c));
-        if !visible(api_key) {
+        if !visible(api_key.expose_secret())
+            || api_key.expose_secret().len() > crate::credential::KEY_LIMIT
+        {
             return Err("the API key is empty or has a byte outside 0x21-0x7E".into());
         }
         if !visible(anthropic_version) {
@@ -382,7 +386,7 @@ impl Client {
         Ok(Client {
             route,
             tls,
-            api_key: api_key.to_string(),
+            api_key,
             anthropic_version: anthropic_version.to_string(),
             timeout,
         })
@@ -394,6 +398,15 @@ impl Client {
 
     pub fn timeout(&self) -> Duration {
         self.timeout
+    }
+
+    pub fn reflection(&self, attempt: &Attempt) -> crate::credential::Reflection {
+        attempt
+            .reply
+            .as_ref()
+            .map_or_else(crate::credential::Reflection::default, |r| {
+                crate::credential::reflection(&r.body, &r.headers, &self.api_key)
+            })
     }
 
     /// Send one attempt of `body` over a new connection. `after_written`
@@ -461,10 +474,11 @@ impl Client {
         }
     }
 
-    fn head(&self, body_bytes: usize) -> Vec<u8> {
+    fn head(&self, body_bytes: usize) -> zeroize::Zeroizing<Vec<u8>> {
+        use secrecy::ExposeSecret;
         http::request_head(
             &self.route.endpoint,
-            &self.api_key,
+            self.api_key.expose_secret(),
             &self.anthropic_version,
             body_bytes,
         )
@@ -1258,6 +1272,21 @@ pub(crate) mod tests {
         assert!(Client::new(route.clone(), t.clone(), "k", "v", Duration::ZERO).is_err());
         assert!(Client::new(route, t, "k", "v", REQUEST_TIMEOUT).is_ok());
         assert_eq!(REQUEST_TIMEOUT, Duration::from_secs(600));
+    }
+
+    #[test]
+    fn client_debug_redacts_the_credential() {
+        let c = Client::new(
+            Route::new(Endpoint::default_base(), None),
+            Tls::web_pki().unwrap(),
+            "debug-canary-credential",
+            "v",
+            REQUEST_TIMEOUT,
+        )
+        .unwrap();
+        let debug = format!("{c:?}");
+        assert!(debug.contains("api_key"));
+        assert!(!debug.contains("debug-canary-credential"));
     }
 
     /// Bind a loopback listener, or `None` when this environment forbids it

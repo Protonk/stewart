@@ -18,7 +18,7 @@ use crate::util;
 /// What `run` needs from its environment (commission and receipt replies).
 pub fn run_needs() -> J {
     crate::json::strs(&[
-        "ANTHROPIC_API_KEY in the environment",
+        "provider credential through --key-fd or ANTHROPIC_API_KEY",
         "network access to the provider",
         "runs in the foreground until the placement ends; callers with command timeouts should start it in the background",
     ])

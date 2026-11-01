@@ -735,6 +735,7 @@ capture is written.
 {"request": 6, "attempt": 2, "started_at": "…", "ended_at": "…", "elapsed_ms": 812, "timeout_seconds": 600,
  "request_written": "complete", "outcome": "http_error", "status": 529,
  "headers": {"content-type": ["application/json"], "request-id": ["req_011…"], "retry-after": ["0"]},
+ "credential_reflection": {"body": false, "headers": []},
  "response": {"file": "response-6-2.bin", "bytes": 105, "sha256": "…", "complete": true},
  "error": {"type": "overloaded_error", "message": "Overloaded", "request_id": "req_011…"},
  "stop_reason": null, "model": null, "usage": null,
@@ -762,11 +763,21 @@ capture is written.
 - `charged` is what the attempt added to the allowances (6.4), with `basis`
   `reported`, `estimated` or `none`.
 - `problem` is prose saying why a response was undecodable, else null.
+- `credential_reflection` is always `{body, headers}`: `body` is a boolean;
+  `headers` lists matching retained header names once each, in `content-type`,
+  `request-id`, `retry-after` order. A clean attempt has false and an empty list.
+  A match marks private evidence containing the selected credential (6.1),
+  including if the process dies before publishing `run_ended`. Raw captures and
+  retained headers are unchanged; derived provider strings are explicitly
+  redacted. `problem` then includes a safe credential-reflection explanation.
 - `then` is the decision about this attempt: `use` (its response was decoded
   and acted on, even when the placement then ends because of its stop reason),
   `retry` (another attempt follows after `delay_ms` milliseconds) or `end` (no
   response is used and the placement ends). `delay_ms` is null unless `then` is
   `retry`.
+
+Credential reflection overrides that decision to `end`, with null `delay_ms`,
+without changing the underlying transport outcome or charge.
 
 **Call capture.** The bytes of the `tool_use` block in the response body, from
 its `{` to its `}`.
@@ -860,7 +871,7 @@ stewart receipt REF [--verify] [--json]
 stewart receipt REF --read ITEM
 stewart status REF [--json]
 stewart status --archive ROOT [--json]
-stewart run REF [--json]
+stewart run REF [--key-fd FD] [--json]
 stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--json]
 stewart help [commands | forms | limits | reader | close]
 ```
@@ -1000,7 +1011,7 @@ outcomes are `selection_changed`, `source_unreadable`, `capture_failed`,
           "declaration": {"i_am_finished": true},
           "materials": {"count": 3, "bytes": 1428},
           "run_line": ["/usr/local/bin/stewart", "run", "stw1:…"],
-          "run_needs": ["ANTHROPIC_API_KEY in the environment", "network access to the provider",
+          "run_needs": ["provider credential through --key-fd or ANTHROPIC_API_KEY", "network access to the provider",
                         "runs in the foreground until the placement ends; callers with command timeouts should start it in the background"],
           "receipt_line": ["/usr/local/bin/stewart", "receipt", "stw1:…"]}}
 ```
@@ -1207,9 +1218,11 @@ selects nothing.
 
 ### 5.7 `run`
 
-`stewart run REF` places the auditor into the arrangement in the foreground and
-exits when the placement ends (section 6). It needs `ANTHROPIC_API_KEY`;
-`STEWART_PROVIDER_URL` and `HTTPS_PROXY` are optional (6.1).
+`stewart run REF [--key-fd FD]` places the auditor into the arrangement in the
+foreground and exits when the placement ends (section 6). It takes its provider
+credential through the named inherited descriptor, or from `ANTHROPIC_API_KEY`
+when the option is absent. Credential entry and process protection are specified
+in 6.1. `STEWART_PROVIDER_URL` and `HTTPS_PROXY` are optional (6.1).
 
 Before it launches anything, `run` checks, in this order. A refusal changes
 nothing; its effects state the recorded facts (1.4), with `answer: "unchanged"`.
@@ -1222,9 +1235,11 @@ nothing; its effects state the recorded facts (1.4), with `answer: "unchanged"`.
    placement ending `ended_unsubmitted`, `limit_reached` or `damaged`
    establishes, with `data.ended_by` (`seal`, `ordinary_ending`, `limit` or
    `damage`) and `data.record`, the record that ended it.
-3. The environment: `provider_key_missing` (unset or empty),
-   `provider_key_invalid` (a byte outside 0x21–0x7E), `provider_url_invalid`
-   and `provider_proxy_invalid` (6.1).
+3. Credential source, protection and input: `provider_key_source_conflict`,
+   `provider_key_protection_failed`, `provider_key_unreadable`,
+   `provider_key_missing` (unset or empty), `provider_key_invalid` (outside the
+   byte or length bounds); then `provider_url_invalid` and
+   `provider_proxy_invalid` (6.1).
 4. The lock: `run_held` when another process holds it, with `data.run` and
    `data.holder` (that placement's observations) when a placement holds it.
 5. The commission: it reads the `accepted` record's receipt, the arrangement the
@@ -1276,6 +1291,11 @@ Refusals carry the next calls that fit: `close` (and `status`) for
 `authoring_ended` and `reference_closed`; `status` and `close` for `run_held`;
 `receipt REF --verify` and `close` for `commission_damaged`; for the
 environment refusals, the same `run` once the environment is set.
+
+After `credential_reflected`, review the retained private evidence and revoke
+the exposed credential before another provider call. A suggested continuation
+does not authorize it. The input descriptor is one-use; a subsequent invocation
+needs a newly supplied credential source.
 
 ### 5.8 `close`
 
@@ -1442,6 +1462,37 @@ archive.
 
 ### 6.1 Provider
 
+**Credential entry.** `--key-fd FD` is a run-only option. `FD` is canonical
+unsigned decimal, at most 2,147,483,647, and either 0 or at least 3; descriptors
+1 and 2, signs and leading zeroes are usage errors. The run takes ownership of
+the already-open descriptor before opening archive files, marks it close-on-exec,
+and closes it on every return path. An invalid descriptor cannot be replaced by
+an archive descriptor subsequently allocated at the same number. Input errors
+are reported at the credential check in 5.7, preserving refusal order.
+
+With `--key-fd`, any presence of `ANTHROPIC_API_KEY`, including an empty value,
+refuses `provider_key_source_conflict`. Without it, an unset or empty environment
+value refuses `provider_key_missing`. A descriptor must supply EOF within five
+seconds of the start of its read. Its value is 1–4,096 bytes in 0x21–0x7E,
+optionally followed by one LF; no other whitespace is stripped. Empty input
+refuses `provider_key_missing`, invalid bytes or excess length
+`provider_key_invalid`, and descriptor/read/deadline failure
+`provider_key_unreadable`. The environment route has the same value bounds,
+without a trailing LF. No refusal prints the supplied value.
+
+Before reading a credential, Linux sets both core-dump limits to zero and makes
+the process non-dumpable. Failure refuses `provider_key_protection_failed` before
+any provider connection. The descriptor route avoids a secret in process
+arguments or environment; the environment route retains those environment
+exposures, including before protection is installed. The key uses an established
+secret-value type, and temporary authentication-header buffers are wiped on
+ordinary drop. This does not promise removal of all memory copies, destructor
+execution after abort, or secrecy from the host administrator. Protection is
+installed at the credential check after reference/state validation; it does not
+revoke already-open inspection descriptors or establish protection against a
+same-user startup race. Launch isolation and observer timing must be recorded
+when assessing that boundary.
+
 The first adapter speaks the Anthropic Messages API, non-streaming, pinned to API
 version `2026-10-21`. Field names below follow that version's published
 specification. Each attempt opens a new connection and sends one HTTP/1.1
@@ -1450,7 +1501,7 @@ request:
 ```
 POST <path>/v1/messages HTTP/1.1
 host: <host>[:<port>]
-x-api-key: <ANTHROPIC_API_KEY>
+x-api-key: <selected provider credential>
 anthropic-version: 2026-10-21
 anthropic-beta: compact-2026-09-04
 content-type: application/json
@@ -1488,6 +1539,29 @@ provider URLs never use the proxy. The proxy in use is recorded in
 TLS verifies the provider against the web PKI roots built into the release and
 sends the host as SNI unless it is an IP address. A test build can add roots
 (Appendix C).
+
+**Reflected credentials.** After preserving the raw response body, Stewart checks
+it and the retained response-header values for the selected credential, both
+literal bytes and JSON-escape-equivalent sequences. The check also covers
+malformed and truncated bodies; it does not claim to recognize arbitrary
+transformations, fragments or encodings. A match records the attempt's
+`credential_reflection` (4.5), suppresses retries and tool execution, and ends the
+placement `interrupted` with cause `credential_reflected`. The normal transport
+classification and charge remain: decodable reported usage is kept; an
+undecodable or lost response uses the existing estimate rules (6.4).
+
+Raw body bytes and retained header values remain exact in the private archive.
+For an exposed attempt, every present derived error `type`, `message` and
+`request_id`, model and stop-reason string is replaced with
+`[REDACTED credential]`; absent values remain null. `problem` is a fixed safe
+explanation of the reflection and redaction. Replacing whole fields avoids
+retaining credential prefixes in shortened diagnostics.
+The ending's `provider` is null; manager output reports the exposure with safe
+fixed text. Later status therefore needs no credential to avoid repeating it.
+Exact captures may contain a usable credential: inspect them privately and revoke
+the key. Automatic evidence export must be withheld when reflection is detected
+or its absence cannot be established. Stewart supplies no general export or
+redaction service and never rewrites a prior capture.
 
 ### 6.2 Requests and responses
 
@@ -1735,6 +1809,7 @@ them.
 | SIGTERM, SIGINT, SIGHUP before a seal | `interrupted`, cause `signal` | yes |
 | A retryable attempt outcome on the last attempt, or a `retry-after` over 60 seconds (6.6) | `interrupted`, cause `provider_unavailable` | yes |
 | Any other HTTP error, including 400, 401 and 413 `request_too_large` | `interrupted`, cause `provider_rejected`; `run_ended.provider` holds the status, `error.type` and `error.message` | yes |
+| Credential reflected in a response body or retained header (6.1) | `interrupted`, cause `credential_reflected`; `run_ended.provider` is null | yes, after review and credential revocation |
 | `stop_reason` `model_context_window_exceeded` | `interrupted`, cause `context_exhausted` | yes |
 | `stop_reason` `refusal` | `interrupted`, cause `provider_refusal` | yes |
 | `max_tokens` with no `tool_use` | `interrupted`, cause `max_tokens` | yes |
@@ -1743,7 +1818,7 @@ them.
 | The log is found damaged (4.4) | none: the run publishes nothing, sends no further request, releases the lock and exits 4; status reports the damage | no |
 | Process killed or crashed | no `run_ended`; the next `run` or `close` records `interrupted`, cause `process_gone` | yes |
 
-A rejection is reported as the provider gave it. Stewart does not interpret
+A rejection without credential reflection is reported as the provider gave it. Stewart does not interpret
 its error type or message, retry it or report it under another cause, so a
 request parameter the provider no longer accepts, such as an effort it has
 renamed or withdrawn, ends `provider_rejected` with the provider's own words.
@@ -2378,7 +2453,7 @@ Manager:
 | `run_held` | Another process holds the active lock |
 | `authoring_ended` | Run after a seal, an ordinary ending, a limit stop or damage (named in `data.ended_by`) |
 | `commission_damaged` | Run found the accepted receipt, arrangement or a capture missing, unreadable or not matching its digest (5.7) |
-| `provider_key_missing`, `provider_key_invalid`, `provider_url_invalid`, `provider_proxy_invalid` | Run environment (5.7, 6.1) |
+| `provider_key_missing`, `provider_key_invalid`, `provider_key_source_conflict`, `provider_key_unreadable`, `provider_key_protection_failed`, `provider_url_invalid`, `provider_proxy_invalid` | Run credential or environment (5.7, 6.1) |
 | `record_failed` | An archive write failed; effects state what is known |
 | `intake_still_running`, `run_still_held`, `close_in_progress`, `delivery_incomplete`, `awaiting_confirmation` | Close unfinished, as `data.unfinished_reason` (continue with `close`) |
 | `log_damaged` as `data.unfinished_reason` | Close unfinished on a damaged log; close publishes nothing |
@@ -2406,7 +2481,7 @@ Recorded values:
 | --- | --- |
 | `intake_ended.outcome` | `selection_changed`, `source_unreadable`, `capture_failed`, `capture_unverified`, `receipt_record_failed`, `closed`, `process_gone` |
 | `run_ended.ending` | `sealed`, `ended_unsubmitted`, `limit_reached`, `stopped_by_close`, `damaged`, `interrupted` |
-| `run_ended.cause` | for `interrupted`: `signal`, `provider_unavailable`, `provider_rejected`, `context_exhausted`, `provider_refusal`, `max_tokens`, `protocol_anomaly`, `archive_write_failed`, `process_gone`; otherwise null |
+| `run_ended.cause` | for `interrupted`: `signal`, `provider_unavailable`, `provider_rejected`, `credential_reflected`, `context_exhausted`, `provider_refusal`, `max_tokens`, `protocol_anomaly`, `archive_write_failed`, `process_gone`; otherwise null |
 | `provider_attempt.outcome` | `response`, `response_undecodable`, `http_error`, `timeout`, `connection_failed`, `connection_lost`, `aborted_by_close`, `aborted_by_signal` |
 | `delivery_ended.outcome` | `verified`, `verified_with_losses`, `partial`, `failed`, `name_taken` |
 | Delivery member `failure` | `source_missing`, `source_unreadable`, `source_damaged`, `write_failed`, `not_verified`, `not_attempted` |
