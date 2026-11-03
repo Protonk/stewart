@@ -669,6 +669,139 @@
         "reason": "Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation",
         "until": "A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses"
       }
+    },
+    {
+      "id": "c10-live-01",
+      "kind": "experiment",
+      "date": "2026-11-03T22:26:14Z",
+      "date_from": "review/result.json field at",
+      "summary": "Haiku pilot 1/6, open-ordinary: auditor submission, exact delivery and close verified; 8 turns, 71095 input and 4314 output tokens; 4 invalid-citation calls refused and corrected; 13 final citations checked. No model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "2ea1da0872cc92ea57b8eedc61eff384dbdda75a770740636909e39c039677af"
+      },
+      "evidence": {
+        "path": ".scratch/c10-live-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation",
+        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+      }
+    },
+    {
+      "id": "c10-live-02",
+      "kind": "experiment",
+      "date": "2026-11-03T22:34:29Z",
+      "date_from": "review/result.json field at",
+      "summary": "Haiku pilot 2/6, open-inadequate: auditor submission, exact delivery and close verified; 5 turns, 28365 input and 1516 output tokens; 7 citations checked, no tool refusals or request retries. No model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "3646274163d843d7302b4f2025ffaceaeefad4ef568d8afc57b0ca79a33a85af"
+      },
+      "evidence": {
+        "path": ".scratch/c10-live-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation",
+        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+      }
+    },
+    {
+      "id": "c10-live-03",
+      "kind": "experiment",
+      "date": "2026-11-03T22:47:15Z",
+      "date_from": "review/result.json field at",
+      "summary": "Haiku pilot 3/6, framing-ordinary: working question and relation recorded; auditor submission, exact delivery and close verified; 5 turns, 37760 input and 2343 output tokens; 11 citations checked, no tool refusals or request retries. No model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "b3e6963876c9a94991e6f24697bf5486f526b34b7028b5fd6de5f6dd38b5d892"
+      },
+      "evidence": {
+        "path": ".scratch/c10-live-03",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation",
+        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+      }
+    },
+    {
+      "id": "c10-live-04",
+      "kind": "experiment",
+      "date": "2026-11-03T22:57:05Z",
+      "date_from": "review/result.json field at",
+      "summary": "Haiku pilot 4/6, framing-inadequate: procedural review, exact delivery and close passed; 6 turns, 42421 input and 2295 output tokens; 12 citations checked, no refusals or retries. inspection.json flags a substantive inference beyond supplied requirements. No model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "de7da6b93e4d086cf63729c616062f6185e63afedc7028c4c0a4db144872990b"
+      },
+      "evidence": {
+        "path": ".scratch/c10-live-04",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain this pilot audit and its substantive inspection concern, reviewed export and private container through the six-audit assessment and billing reconciliation",
+        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+      }
+    },
+    {
+      "id": "c10-live-05",
+      "kind": "experiment",
+      "date": "2026-11-03T23:05:12Z",
+      "date_from": "review/result.json field at",
+      "summary": "Haiku pilot 5/6, comparison-ordinary: auditor submission, exact delivery and close verified; 6 turns, 51053 input and 3437 output tokens; 12 citations checked. Two invalid-quote calls refused, then valid unquoted locators accepted; no request retries. No model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "5073a17cc67180ec887f07616d4f7e6793e5abb4148ed3f5c1a70f7fbb44155c"
+      },
+      "evidence": {
+        "path": ".scratch/c10-live-05",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain this pilot audit, citation-recovery observations, reviewed export and private container through the six-audit assessment and billing reconciliation",
+        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+      }
+    },
+    {
+      "id": "c10-live-06",
+      "kind": "experiment",
+      "date": "2026-11-03T23:12:08Z",
+      "date_from": "review/result.json field at",
+      "summary": "Haiku pilot 6/6, comparison-inadequate: procedural checks passed, auditor submitted, delivered and closed; 7 turns, 50,102 input and 2,318 output tokens; two tool refusals retained; missing B acknowledged; calculated USD 0.0061692, billing unobserved.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "0beae6364d44695d2d3f48787aa78cffeeecffb3af401d2fecf49ab8a9c73778"
+      },
+      "evidence": {
+        "path": ".scratch/c10-live-06",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the final pilot audit, original refusals and A-only answer for six-audit review and billing reconciliation.",
+        "until": "The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence"
+      }
+    },
+    {
+      "id": "c10-haiku-commission-01",
+      "kind": "experiment",
+      "date": "2026-11-03T23:14:17Z",
+      "date_from": "review/result.json field at",
+      "summary": "Six-audit Haiku pilot: all six submitted, delivered and closed; 37 requests/attempts, no provider retries, 280,796 input and 16,223 output tokens; seven citation and one cursor refusal; framing-inadequate content inference flagged; calculated USD 0.0361911, billing unobserved; no model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "a44db5879ef9b98bb476b97a9e2d0a8e88759970b1e74717b77406c75fa9af6f"
+      },
+      "evidence": {
+        "path": ".scratch/c10-haiku-commission-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison.",
+        "until": "The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence"
+      }
     }
   ]
 }

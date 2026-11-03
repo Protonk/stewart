@@ -44,6 +44,13 @@ not carry them.
 | [sanity-live-06](#sanity-live-06) | experiment | Retain the real-provider output-limit evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
 | [sanity-launch-04](#sanity-launch-04) | experiment | Retain the rehearsal that qualifies the current launch code for further real-key use | A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container |
 | [c10-launch-01](#c10-launch-01) | experiment | Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
+| [c10-live-01](#c10-live-01) | experiment | Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
+| [c10-live-02](#c10-live-02) | experiment | Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
+| [c10-live-03](#c10-live-03) | experiment | Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
+| [c10-live-04](#c10-live-04) | experiment | Retain this pilot audit and its substantive inspection concern, reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
+| [c10-live-05](#c10-live-05) | experiment | Retain this pilot audit, citation-recovery observations, reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
+| [c10-live-06](#c10-live-06) | experiment | Retain the final pilot audit, original refusals and A-only answer for six-audit review and billing reconciliation. | The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence |
+| [c10-haiku-commission-01](#c10-haiku-commission-01) | experiment | Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison. | The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence |
 
 ## Records
 
@@ -246,3 +253,59 @@ not carry them.
 - Result: `review/result.json`, SHA-256 `e7cb9e28d5192ff0f73523a9e0e99c234d22181a19d663f2737b930b65ff7200`
 - Evidence: `.scratch/c10-launch-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses
+
+### c10-live-01
+
+- Experiment: Haiku pilot 1/6, open-ordinary: auditor submission, exact delivery and close verified; 8 turns, 71095 input and 4314 output tokens; 4 invalid-citation calls refused and corrected; 13 final citations checked. No model qualification.
+- Date: 2026-11-03T22:26:14Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `2ea1da0872cc92ea57b8eedc61eff384dbdda75a770740636909e39c039677af`
+- Evidence: `.scratch/c10-live-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+
+### c10-live-02
+
+- Experiment: Haiku pilot 2/6, open-inadequate: auditor submission, exact delivery and close verified; 5 turns, 28365 input and 1516 output tokens; 7 citations checked, no tool refusals or request retries. No model qualification.
+- Date: 2026-11-03T22:34:29Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `3646274163d843d7302b4f2025ffaceaeefad4ef568d8afc57b0ca79a33a85af`
+- Evidence: `.scratch/c10-live-02` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+
+### c10-live-03
+
+- Experiment: Haiku pilot 3/6, framing-ordinary: working question and relation recorded; auditor submission, exact delivery and close verified; 5 turns, 37760 input and 2343 output tokens; 11 citations checked, no tool refusals or request retries. No model qualification.
+- Date: 2026-11-03T22:47:15Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `b3e6963876c9a94991e6f24697bf5486f526b34b7028b5fd6de5f6dd38b5d892`
+- Evidence: `.scratch/c10-live-03` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+
+### c10-live-04
+
+- Experiment: Haiku pilot 4/6, framing-inadequate: procedural review, exact delivery and close passed; 6 turns, 42421 input and 2295 output tokens; 12 citations checked, no refusals or retries. inspection.json flags a substantive inference beyond supplied requirements. No model qualification.
+- Date: 2026-11-03T22:57:05Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `de7da6b93e4d086cf63729c616062f6185e63afedc7028c4c0a4db144872990b`
+- Evidence: `.scratch/c10-live-04` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain this pilot audit and its substantive inspection concern, reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+
+### c10-live-05
+
+- Experiment: Haiku pilot 5/6, comparison-ordinary: auditor submission, exact delivery and close verified; 6 turns, 51053 input and 3437 output tokens; 12 citations checked. Two invalid-quote calls refused, then valid unquoted locators accepted; no request retries. No model qualification.
+- Date: 2026-11-03T23:05:12Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `5073a17cc67180ec887f07616d4f7e6793e5abb4148ed3f5c1a70f7fbb44155c`
+- Evidence: `.scratch/c10-live-05` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain this pilot audit, citation-recovery observations, reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+
+### c10-live-06
+
+- Experiment: Haiku pilot 6/6, comparison-inadequate: procedural checks passed, auditor submitted, delivered and closed; 7 turns, 50,102 input and 2,318 output tokens; two tool refusals retained; missing B acknowledged; calculated USD 0.0061692, billing unobserved.
+- Date: 2026-11-03T23:12:08Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `0beae6364d44695d2d3f48787aa78cffeeecffb3af401d2fecf49ab8a9c73778`
+- Evidence: `.scratch/c10-live-06` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the final pilot audit, original refusals and A-only answer for six-audit review and billing reconciliation.; until The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence
+
+### c10-haiku-commission-01
+
+- Experiment: Six-audit Haiku pilot: all six submitted, delivered and closed; 37 requests/attempts, no provider retries, 280,796 input and 16,223 output tokens; seven citation and one cursor refusal; framing-inadequate content inference flagged; calculated USD 0.0361911, billing unobserved; no model qualification.
+- Date: 2026-11-03T23:14:17Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `a44db5879ef9b98bb476b97a9e2d0a8e88759970b1e74717b77406c75fa9af6f`
+- Evidence: `.scratch/c10-haiku-commission-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison.; until The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence

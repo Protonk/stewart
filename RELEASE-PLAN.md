@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next | Prepare and authorize bounded Haiku testing on minimal questions with the current arrangement | The small-commission work in [C10-PLAN.md](C10-PLAN.md) |
+| Current | Review the pilot answers and billing; select the next bounded work | [Pilot follow-through](C10-PLAN.md#pilot-review-follow-through) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Haiku instruction/presentation comparisons and question-family dogfooding | The study sections below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
@@ -17,10 +17,11 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 The Messages API sanity commission has run: one simple commission travelled
 through the real provider loop, used Stewart's tools and reached a faithfully
 preserved outcome. It did not qualify all question families or replace release
-conformance. The small-commission apparatus has a reviewed Linux rehearsal; the
-next step is a concrete bounded packet for minimal-question Haiku tests.
-Full C10 qualification remains a release gate; completing its live
-compaction and recovery runs is not a prerequisite for those initial tests.
+conformance. The small-commission apparatus has a reviewed Linux rehearsal, and
+the six-audit pilot on minimal questions has completed procedural review.
+Its answer assessment and billing reconciliation remain open. Full C10
+qualification remains a release gate; further studies can be commissioned
+before its live compaction and recovery runs are complete.
 Instruction/presentation variants are a separately identified study. These API
 runs do not depend on the Claude Code runtime. The other release backlog is not
 a prerequisite list for this sequence. Model-consuming work requires the
@@ -63,6 +64,13 @@ commissions, failure/export controls, independent input readback, procedural
 review and immutable follow-up collection. The report retains actual counts,
 scope limits and the container identity. It completes small-commission apparatus
 readiness; it makes no model-support claim.
+
+The combined pilot review is pinned at
+`.scratch/c10-haiku-commission-01/review/result.json`, with `report.md` linking
+the six answers and their inspections. It owns aggregate counts, coverage limits,
+calculated cost and the requirements-only framing concern. The individual runs
+`.scratch/c10-live-01` through `.scratch/c10-live-06` are also pinned. The pilot
+establishes no model qualification or authority for further model calls.
 
 The qualification record pins that rehearsal, the earlier failed attempts and
 their diagnostic controls. Keep their original containers and independent

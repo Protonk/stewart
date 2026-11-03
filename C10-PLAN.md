@@ -22,8 +22,9 @@ explicit; it does not implement continuation or real compaction.
 
 Small-commission readiness is demonstrated by the reviewed Linux aarch64 run
 `.scratch/c10-launch-01`, pinned in the qualification record with its review at
-`review/result.json`. The next live commission still needs concrete model,
-settings and budget authorization. The remaining full-gate work is below.
+`review/result.json`. The principal's six-audit Haiku pilot has completed its
+placements and procedural review. Its remaining review decisions are below;
+full-gate work still needs its own bounded authorization.
 
 Native iteration is not qualification. Retain `.scratch/c10-native-01` and
 `.scratch/c10-native-02` (loopback-denied attempts), `.scratch/c10-native-03`
@@ -36,6 +37,33 @@ the actual counts and outcomes; do not rewrite them to match later schemas.
 The [qualification record](apparatus/qualified.md) owns demonstrated Linux
 results; run `python3 -I -B apparatus/qualified.py check` before relying on it.
 The reviewed small-commission rehearsal establishes no model qualification.
+
+## Pilot review follow-through
+
+The qualification record pins the combined review at
+`.scratch/c10-haiku-commission-01/review/result.json` and its readable
+`report.md`, which links all six answers and individual inspections. The frozen
+`commission.json` in that experiment owns the authorization, packets, input
+inventories and source bindings; `compatibility-and-cost.json` owns the dated
+provider checks and estimates. All six authorized placements are complete.
+There are no unused packets or unresolved procedural failures.
+
+- [ ] Obtain the principal's assessment of the six answers, particularly the
+  requirements-only framing answer's unsupported inference about call order and
+  retry behavior. Its inspection is in `.scratch/c10-live-04/review/inspection.json`.
+  Mechanical citation validity does not settle that substantive concern. One
+  observation per case does not establish its cause or frequency.
+- [ ] Reconcile the retained reported usage and calculated cost with available
+  Console billing for `stewart-exp`. Billing is explicitly unobserved; do not
+  label the calculated amount an observed charge.
+- [ ] Give any selected follow-up a separate bounded commission. Repeats,
+  continuations, altered prompts or inputs, and full-gate mechanisms are outside
+  the completed pilot's spending authority. Preserve the original answers when
+  comparing variants; the pilot implies no change to product defaults or gates.
+
+Keep the six original containers and evidence through the principal's review
+and disposal decision. Each `.scratch/c10-live-01` through `.scratch/c10-live-06`
+folder is pinned separately; its `host/container.name` identifies the container.
 
 ## 1. Complete the evidence matrix
 
@@ -209,8 +237,8 @@ For this work, the principal executes commands that change the Git index or
 commit state, and commands that operate containers. Supply those commands with
 `!`. Supply paid launch commands without `!`; the principal runs them and enters
 the API key in a separate terminal. A paid launch command follows the bounded
-authorization above. Prepare and verify all files before handing over Git
-commands, and stage/commit only the intended paths.
+authorization for that commission. Prepare and verify all files before handing
+over Git commands, and stage/commit only the intended paths.
 
 The plan is complete when the apparatus is demonstrated and each commissioned
 model has a reviewed gate outcome with failures and unexercised work explicitly

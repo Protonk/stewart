@@ -15,9 +15,10 @@ is insufficient. You judge the answer; Stewart does not grade its conclusions.
 ## Status
 
 **Version 0.0.2 — experimental.** The audit lifecycle is implemented, and Linux
-tests with a fake provider have passed. One small commission has run against a
-real model and returned a verified answer. Its usefulness in real inquiries and
-its readiness for routine use remain to be established.
+tests with a fake provider have passed. Small commissions have run against a
+real model across all three implemented forms and returned answers with verified
+delivery. Its usefulness in real inquiries and readiness for routine use remain
+to be established.
 
 Stewart is written in Rust and built as one statically linked Linux binary for
 x86_64 and aarch64. Native macOS is a development environment, not a product
@@ -43,9 +44,18 @@ What the evidence establishes:
   rejection recorded without retry, a turn limit with the manager close and
   confirmation path, an accepted effort setting under the request cap, and
   the minimum output allowance ending at its limit.
-- **Limits of that result:** one model, one family, no compaction, no
-  interruption and no `max_tokens` stop against real responses. It is a
-  sanity result, not release conformance, and qualifies no model. Native x86_64 and
+- **Six-audit Haiku pilot:** one ordinary and one inadequate-evidence commission
+  per form ran on `claude-haiku-5-5`. All six passed procedural review, submitted,
+  delivered and closed. Seven citation refusals and one invalid-cursor refusal
+  were retained; all audits finished within their allowances. The requirements-only
+  framing answer inferred a call order and retry path absent from its materials;
+  this content concern remains for the manager's judgment. The qualification
+  record pins the combined review, individual answers, usage and calculated cost;
+  Console billing remains unreconciled.
+- **Limits of live coverage:** one model and one observation per pilot case;
+  full repetitions, real compaction, killed-and-continued audits and a
+  `max_tokens` stop remain unobserved. Live provider captures have no independent
+  direct-TLS witness. These results qualify no model. Native x86_64 and
   WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage review
   also remain outstanding.
 - **Credential launch:** a synthetic-key rehearsal passed on native Linux,
