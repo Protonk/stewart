@@ -9,16 +9,22 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Runtime follow-on | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
-| Separately commissioned studies | Haiku framing and question-family dogfooding; the Haiku study can use the API route independently of Claude Code | The study sections below |
+| Next | Harden the C10 apparatus to small-commission readiness | [C10-PLAN.md](C10-PLAN.md) |
+| Then | Bounded Haiku testing on minimal questions with the current arrangement | The small-commission work in [C10-PLAN.md](C10-PLAN.md) |
+| Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
+| Separately commissioned studies | Haiku instruction/presentation comparisons and question-family dogfooding | The study sections below |
+| Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 
 The Messages API sanity commission has run: one simple commission travelled
 through the real provider loop, used Stewart's tools and reached a faithfully
 preserved outcome. It did not qualify all question families or replace release
-conformance. Both remaining stages are now unblocked; their order is the
-principal's decision. The release backlog below is not a prerequisite list for
-either. Model-consuming work requires the principal's bounded authorization
-under [AGENTS.md](AGENTS.md).
+conformance. The immediate sequence is apparatus hardening, then minimal-question
+Haiku tests. Full C10 qualification remains a release gate; completing its live
+compaction and recovery runs is not a prerequisite for those initial tests.
+Instruction/presentation variants are a separately identified study. These API
+runs do not depend on the Claude Code runtime. The other release backlog is not
+a prerequisite list for this sequence. Model-consuming work requires the
+principal's bounded authorization under [AGENTS.md](AGENTS.md).
 
 ## Evidence and retained work
 
@@ -125,7 +131,7 @@ applicable checks. A proposed substantive restriction requires a product decisio
 | --- | --- |
 | Linux container qualification | Run the scripted acceptance suite on the release source and binaries, on both architectures with the required controls. |
 | Native WSL2 qualification | Package the same binary, driver and fake provider; arrange and review the user's native run. |
-| Real-model conformance | Build the C10 apparatus and qualify each model the release names under an authorized budget. |
+| Real-model conformance | Complete [C10-PLAN.md](C10-PLAN.md) and qualify each model the release names under an authorized budget. |
 | Public release gate | Set the binary release schedule with the principal. |
 
 The requirements remain those of ACCEPTANCE while its review is open.
@@ -165,23 +171,12 @@ Needs: a package builder, instructions and the user's scheduled run.
 
 ### Real-model conformance
 
-Build the procedural tier specified by ACCEPTANCE C10: fixed commissions for
-three implemented families, each repeated three times per named model without
-an effort setting, plus effort, actual compaction and interrupted-continuation
-runs. These quantities specify coverage, not spending authority or answer-quality
-criteria. A model is supported only after its gate passes.
-
-Verify current provider compatibility. Real responses must exercise the release's
-TLS roots, request output cap and timeout. The sanity and mechanism runs above
-observed the TLS roots, the output cap with effort high on a small specimen, a
-401 rejection and the output and turn limits once each on `claude-haiku-5-5`;
-the timeout, `max_tokens` stop, compaction and interrupted continuation remain
-unobserved. The compaction specimen must reach the
-specified trigger and show an actual provider summary and usage; cumulative
-input consumption can greatly exceed the context threshold. A fake summary or a
-lower test-only trigger cannot establish real-provider compaction.
-
-Needs: the apparatus, selected models/settings and bounded run commissions.
+[C10-PLAN.md](C10-PLAN.md) owns the specimens and run matrix, reusable launcher,
+continuation and evidence collection, procedural verifier, compaction and
+provider-coverage work, checks and bounded run packets. Its small-commission and
+full-apparatus milestones distinguish readiness to test from model qualification.
+The gate remains [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
+a model is supported only after it passes that gate.
 
 ### Build and test coverage
 
