@@ -630,6 +630,26 @@
         "reason": "Retain the real-provider output-limit evidence through review",
         "until": "The user has reviewed the mechanism runs and authorizes disposal of this container"
       }
+    },
+    {
+      "id": "sanity-launch-04",
+      "kind": "experiment",
+      "date": "2026-11-03T16:14:57Z",
+      "date_from": "review/result.json field finished_at",
+      "summary": "Seven-scenario offline launcher rehearsal passed on the committed launch code after the condition allowlists were aligned (56a72e6): credential delivery, process controls, interruption, exact return, reflection and export controls",
+      "result": {
+        "path": ".",
+        "files": 44,
+        "sha256": "f96cb3d21c5f5e04dc7f170d13fc20e09e92f219ce39604f83ed8d599428036c"
+      },
+      "evidence": {
+        "path": ".scratch/sanity-launch-04",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the rehearsal that qualifies the current launch code for further real-key use",
+        "until": "A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container"
+      }
     }
   ]
 }

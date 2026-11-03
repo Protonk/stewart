@@ -42,6 +42,7 @@ not carry them.
 | [sanity-live-04](#sanity-live-04) | experiment | Retain the real-provider limit and manager-close evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
 | [sanity-live-05](#sanity-live-05) | experiment | Retain the real-provider effort evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
 | [sanity-live-06](#sanity-live-06) | experiment | Retain the real-provider output-limit evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
+| [sanity-launch-04](#sanity-launch-04) | experiment | Retain the rehearsal that qualifies the current launch code for further real-key use | A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container |
 
 ## Records
 
@@ -228,3 +229,11 @@ not carry them.
 - Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `c8146c19e36bec8f7aaa9aafedf371bc6cec7c1229897d9764ad1db5cc0d8513`
 - Evidence: `.scratch/sanity-live-06` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the real-provider output-limit evidence through review; until The user has reviewed the mechanism runs and authorizes disposal of this container
+
+### sanity-launch-04
+
+- Experiment: Seven-scenario offline launcher rehearsal passed on the committed launch code after the condition allowlists were aligned (56a72e6): credential delivery, process controls, interruption, exact return, reflection and export controls
+- Date: 2026-11-03T16:14:57Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (44 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `f96cb3d21c5f5e04dc7f170d13fc20e09e92f219ce39604f83ed8d599428036c`
+- Evidence: `.scratch/sanity-launch-04` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the rehearsal that qualifies the current launch code for further real-key use; until A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container

@@ -42,8 +42,9 @@ path, effort high, and the minimum output allowance. The `sanity-live-06`
 audit remains open at its limit. Each run's container is named in its
 `host/container.name`.
 
-The final launcher rehearsal in `.scratch/sanity-launch-03` passed all seven
-scenarios. Its reviewed evidence is in `review/result.json` within that folder;
+The launcher rehearsal in `.scratch/sanity-launch-03` passed all seven
+scenarios, and `.scratch/sanity-launch-04` repeated that result on the current
+launch code. Its reviewed evidence is in `review/result.json` within that folder;
 `host/RESULT.json` binds the apparatus source, qualified executable, specimen and
 container. It demonstrates synthetic credential delivery, process-access
 controls, interruption, exact delivery and export withholding. It establishes
@@ -52,8 +53,8 @@ the native Linux path against local fakes, not real-provider conformance.
 The qualification record pins that rehearsal, the earlier failed attempts and
 their diagnostic controls. Keep their original containers and independent
 credential witnesses through review. Current acceptance containers are named in
-`.scratch/acceptance-05/host/driver-<arch>.container`; the launcher container is
-named in `.scratch/sanity-launch-03/host/container.name`. Disposal is the user's
+`.scratch/acceptance-05/host/driver-<arch>.container`; each launcher container is
+named in its `host/container.name`. Disposal is the user's
 decision under [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).
 
 ## Messages API sanity commission
