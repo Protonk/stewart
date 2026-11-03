@@ -510,6 +510,26 @@
         "reason": "Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation",
         "until": "The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness"
       }
+    },
+    {
+      "id": "sanity-live-01",
+      "kind": "experiment",
+      "date": "2026-11-02T20:28:52Z",
+      "date_from": "review/result.json field finished_at",
+      "summary": "First live Messages API launch: intake and readback verified, but all four provider attempts timed out connecting from the container while a host VPN was active; nothing written to the provider, zero usage, no credential exposure; the same connect probe passed once the VPN was off",
+      "result": {
+        "path": ".",
+        "files": 35,
+        "sha256": "c58b80ffe27eabb3a5084f31736bc2311e601d6b2a6b4c4664e0ffd6e709d73e"
+      },
+      "evidence": {
+        "path": ".scratch/sanity-live-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review",
+        "until": "The user has reviewed the completed sanity commission and authorizes disposal of this container"
+      }
     }
   ]
 }

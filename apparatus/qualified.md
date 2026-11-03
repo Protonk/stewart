@@ -36,6 +36,7 @@ not carry them.
 | [sanity-launch-02](#sanity-launch-02) | experiment | Retain original private audits and credential witness from the failed integrated rehearsal | The user has reviewed the corrected rehearsal and authorizes disposal of this container and its witness |
 | [launcher-observer-probe-01](#launcher-observer-probe-01) | experiment | Retain firing observer controls and original failure diagnosis supporting the launcher correction | The user has reviewed the corrected rehearsal and authorizes disposal of these controls |
 | [sanity-launch-03](#sanity-launch-03) | experiment | Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation | The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness |
+| [sanity-live-01](#sanity-live-01) | experiment | Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review | The user has reviewed the completed sanity commission and authorizes disposal of this container |
 
 ## Records
 
@@ -174,3 +175,11 @@ not carry them.
 - Result: `.`, every regular file under it (50 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `fd35d25502a3c096fd503b68fe5a341a16b5daa2e3d5070eb197ede361f444e1`
 - Evidence: `.scratch/sanity-launch-03` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation; until The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness
+
+### sanity-live-01
+
+- Experiment: First live Messages API launch: intake and readback verified, but all four provider attempts timed out connecting from the container while a host VPN was active; nothing written to the provider, zero usage, no credential exposure; the same connect probe passed once the VPN was off
+- Date: 2026-11-02T20:28:52Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `c58b80ffe27eabb3a5084f31736bc2311e601d6b2a6b4c4664e0ffd6e709d73e`
+- Evidence: `.scratch/sanity-live-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review; until The user has reviewed the completed sanity commission and authorizes disposal of this container
