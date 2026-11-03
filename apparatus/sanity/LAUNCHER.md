@@ -65,6 +65,9 @@ Before a paid run, the principal supplies the actual non-secret account,
 workspace and credential labels and authorizes the bounded commission. Record
 that authorization in `spending_authority` and hash the final exact file. A
 changed model, bounds, binary, source or specimen requires a new reviewed packet.
+The source binding is the `HEAD` commit, so bind the packet after the last
+commit before launch; committing anything afterwards, including the
+qualification record, means a new packet and a fresh approval digest.
 See [the run sheet](RUN-SHEET.md) for the decisions and review sequence.
 
 ## Live launch, only after spending authorization

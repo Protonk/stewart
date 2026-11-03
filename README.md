@@ -15,9 +15,9 @@ is insufficient. You judge the answer; Stewart does not grade its conclusions.
 ## Status
 
 **Version 0.0.2 — experimental.** The audit lifecycle is implemented, and Linux
-tests with a fake provider have passed. Stewart has not yet been run against a
-real model. Its usefulness in real inquiries and its readiness for routine use
-remain to be established.
+tests with a fake provider have passed. One small commission has run against a
+real model and returned a verified answer. Its usefulness in real inquiries and
+its readiness for routine use remain to be established.
 
 Stewart is written in Rust and built as one statically linked Linux binary for
 x86_64 and aarch64. Native macOS is a development environment, not a product
@@ -32,9 +32,17 @@ What the evidence establishes:
   independently witnessed audits, with faults and deliberately broken controls
   in a separate test build. Native timing checks passed; emulated timings do not
   gate the result.
-- **Limits of that result:** real-provider TLS, model tool use, effort settings
-  and provider compaction remain untested against real responses. Native x86_64
-  and WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage review
+- **One real-model sanity run:** a single open-inquiry commission on
+  `claude-haiku-5-5` went through the direct Anthropic endpoint with the
+  release's built-in TLS roots. The model read both materials through Stewart's
+  tools, recorded four cited entries, prepared and submitted; the auditor seal,
+  verified delivery and ordinary close were observed, and the credential scans
+  were clean. An earlier attempt under a host VPN never reached the provider
+  and consumed nothing.
+- **Limits of that result:** one model, one family, no effort setting, no
+  compaction and no interruption against real responses. It is a sanity
+  result, not release conformance, and qualifies no model. Native x86_64 and
+  WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage review
   also remain outstanding.
 - **Credential launch:** a synthetic-key rehearsal passed on native Linux,
   including same-user and different-user process-access controls, interrupted

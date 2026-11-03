@@ -80,7 +80,9 @@ for these limits. Preserve reported usage, estimates and available billing recor
 separately.
 [Billing](https://support.claude.com/en/articles/8977456-how-do-i-pay-for-my-claude-api-usage)
 
-Account access, actual provider TLS, latency, model tool use and submission, and
-billing remain unverified. Purchasing credits does not authorize the run. The
-amount available to buy is determined in the Console; this proposal specifies no
+Account access, provider TLS, model tool use and submission were observed once
+under these settings in the retained run `sanity-live-02`, recorded in
+[the qualification record](../qualified.md); billing reconciliation remains the
+user's observation. Purchasing credits does not authorize a run. The amount
+available to buy is determined in the Console; this proposal specifies no
 minimum credit purchase.

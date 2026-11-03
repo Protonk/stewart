@@ -85,8 +85,12 @@ argument. Retain the qualified executable until this audit is closed.
    for each command. Read the arrangement. Run `receipt --verify` and byte-compare
    `receipt --read` for the question and both materials against the independent
    input copies. Save `status`. These operations consume no model tokens.
-3. **Launch once.** Run that same executable's `run REF --json` under the
-   commissioned bounds and credential mechanism. Retain the run process identity
+3. **Launch once.** Before launching, check that a fresh container with the
+   same image and `--network default` can open a TCP connection to the
+   provider endpoint; the container's egress follows the host, and an active
+   host VPN blocked it in the first attempt, which spent four connection
+   timeouts and nothing else. Run that same executable's `run REF --json` under
+   the commissioned bounds and credential mechanism. Retain the run process identity
    and provide a separate `status REF --json` and `close REF --json` command. Close ends
    authoring and may seal unfinished work as manager. Stewart's existing
    retries (up to four attempts per request) belong in the allowance decision;

@@ -9,16 +9,16 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next | Authorize, conduct and review one bounded Messages API sanity commission | [Sanity run sheet](apparatus/sanity/RUN-SHEET.md) |
 | Runtime follow-on | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
-| Separately commissioned studies after API sanity | Haiku framing and question-family dogfooding; the Haiku study can use the API route independently of Claude Code | The study sections below |
+| Separately commissioned studies | Haiku framing and question-family dogfooding; the Haiku study can use the API route independently of Claude Code | The study sections below |
 
-The first paid test establishes that a simple commission can travel through the
-real provider loop, use Stewart's tools and reach a faithfully preserved outcome.
-It does not qualify all question families or replace release conformance. The
-release backlog below is not an additional prerequisite list for that probe.
-Model-consuming work requires the principal's bounded authorization under
-[AGENTS.md](AGENTS.md).
+The Messages API sanity commission has run: one simple commission travelled
+through the real provider loop, used Stewart's tools and reached a faithfully
+preserved outcome. It did not qualify all question families or replace release
+conformance. Both remaining stages are now unblocked; their order is the
+principal's decision. The release backlog below is not a prerequisite list for
+either. Model-consuming work requires the principal's bounded authorization
+under [AGENTS.md](AGENTS.md).
 
 ## Evidence and retained work
 
@@ -28,7 +28,15 @@ before relying on it. Its Linux acceptance front covers effort, provider error
 reporting, compaction and stopping. Current credential checks passed on native
 aarch64 and emulated x86_64.
 The toolchain record establishes service reproducibility on both architectures.
-No real-model result is available.
+
+The first real-model result is `.scratch/sanity-live-02`, pinned in the
+qualification record with its review in `review/result.json`: `claude-haiku-5-5`
+read both materials, recorded four cited entries, submitted, and the auditor
+seal, verified delivery and ordinary close followed, within 8 turns, 55,401
+input and 2,713 output tokens. `.scratch/sanity-live-01` is the
+preceding attempt that never reached the provider because a host VPN was active;
+it consumed nothing and its audit remains open in its retained container. Both
+containers are named in their `host/container.name`.
 
 The final launcher rehearsal in `.scratch/sanity-launch-03` passed all seven
 scenarios. Its reviewed evidence is in `review/result.json` within that folder;
@@ -46,21 +54,13 @@ decision under [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).
 
 ## Messages API sanity commission
 
-The specimen and procedure are in the run sheet. The
-[unpaid commission proposal](apparatus/sanity/COMMISSION.md) fixes proposed
-settings and documents provider compatibility and pricing checked before any
-model call. Remaining preparation:
-
-- Obtain the principal's final bounded spending authorization and confirm the
-  account/key's access to the proposed model and workspace. Stewart does not
-  enforce a dollar ceiling. Public-document compatibility is checked; actual
-  account access, timing, TLS and billing remain live observations.
-- Use the [retained launcher](apparatus/sanity/LAUNCHER.md) and bind authorization
-  to the exact completed commission packet. Real-provider TLS with the release's
-  built-in roots remains unexercised until the authorized call.
-- Run once under the approved bounds, review actual effects before retrying,
-  and record submission, preservation, delivery and close separately. A manager
-  close cannot establish that the auditor submitted.
+Completed; the result is recorded above. The specimen, procedure and
+[commission proposal](apparatus/sanity/COMMISSION.md) remain the template for
+a further bounded run. Remaining observation: reconcile the reported usage with
+the Console's billing records for the `stewart-exp` key, which Stewart cannot
+observe. The retained containers and the open `sanity-live-01` audit await the
+user's review and disposal decision under
+[DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).
 
 ## Haiku framing study
 

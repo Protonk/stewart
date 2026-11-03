@@ -530,6 +530,26 @@
         "reason": "Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review",
         "until": "The user has reviewed the completed sanity commission and authorizes disposal of this container"
       }
+    },
+    {
+      "id": "sanity-live-02",
+      "kind": "experiment",
+      "date": "2026-11-03T15:32:43Z",
+      "date_from": "review/result.json field finished_at",
+      "summary": "First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean",
+      "result": {
+        "path": ".",
+        "files": 35,
+        "sha256": "4a8a9993ecfa643a5f41c433e4cd2b5f9593ba0e56d29d29bdc3715d9ccd7663"
+      },
+      "evidence": {
+        "path": ".scratch/sanity-live-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the first real-provider run, its retained container and private originals through review",
+        "until": "The user has reviewed the sanity commission result and authorizes disposal of this container"
+      }
     }
   ]
 }

@@ -37,6 +37,7 @@ not carry them.
 | [launcher-observer-probe-01](#launcher-observer-probe-01) | experiment | Retain firing observer controls and original failure diagnosis supporting the launcher correction | The user has reviewed the corrected rehearsal and authorizes disposal of these controls |
 | [sanity-launch-03](#sanity-launch-03) | experiment | Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation | The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness |
 | [sanity-live-01](#sanity-live-01) | experiment | Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review | The user has reviewed the completed sanity commission and authorizes disposal of this container |
+| [sanity-live-02](#sanity-live-02) | experiment | Retain the first real-provider run, its retained container and private originals through review | The user has reviewed the sanity commission result and authorizes disposal of this container |
 
 ## Records
 
@@ -183,3 +184,11 @@ not carry them.
 - Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `c58b80ffe27eabb3a5084f31736bc2311e601d6b2a6b4c4664e0ffd6e709d73e`
 - Evidence: `.scratch/sanity-live-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review; until The user has reviewed the completed sanity commission and authorizes disposal of this container
+
+### sanity-live-02
+
+- Experiment: First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean
+- Date: 2026-11-03T15:32:43Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `4a8a9993ecfa643a5f41c433e4cd2b5f9593ba0e56d29d29bdc3715d9ccd7663`
+- Evidence: `.scratch/sanity-live-02` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the first real-provider run, its retained container and private originals through review; until The user has reviewed the sanity commission result and authorizes disposal of this container
