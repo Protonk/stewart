@@ -39,9 +39,13 @@ What the evidence establishes:
   verified delivery and ordinary close were observed, and the credential scans
   were clean. An earlier attempt under a host VPN never reached the provider
   and consumed nothing.
-- **Limits of that result:** one model, one family, no effort setting, no
-  compaction and no interruption against real responses. It is a sanity
-  result, not release conformance, and qualifies no model. Native x86_64 and
+- **Four mechanism runs** on the same specimen then observed a real 401
+  rejection recorded without retry, a turn limit with the manager close and
+  confirmation path, an accepted effort setting under the request cap, and
+  the minimum output allowance ending at its limit.
+- **Limits of that result:** one model, one family, no compaction, no
+  interruption and no `max_tokens` stop against real responses. It is a
+  sanity result, not release conformance, and qualifies no model. Native x86_64 and
   WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage review
   also remain outstanding.
 - **Credential launch:** a synthetic-key rehearsal passed on native Linux,

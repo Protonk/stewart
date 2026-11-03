@@ -38,6 +38,10 @@ not carry them.
 | [sanity-launch-03](#sanity-launch-03) | experiment | Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation | The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness |
 | [sanity-live-01](#sanity-live-01) | experiment | Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review | The user has reviewed the completed sanity commission and authorizes disposal of this container |
 | [sanity-live-02](#sanity-live-02) | experiment | Retain the first real-provider run, its retained container and private originals through review | The user has reviewed the sanity commission result and authorizes disposal of this container |
+| [sanity-live-03](#sanity-live-03) | experiment | Retain the real-provider rejection evidence and the self-inflicted host-scan control through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
+| [sanity-live-04](#sanity-live-04) | experiment | Retain the real-provider limit and manager-close evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
+| [sanity-live-05](#sanity-live-05) | experiment | Retain the real-provider effort evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
+| [sanity-live-06](#sanity-live-06) | experiment | Retain the real-provider output-limit evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
 
 ## Records
 
@@ -192,3 +196,35 @@ not carry them.
 - Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `ac526dc1d13ecd0e587a8bb118508b8a15d3e8ccab949b50ca9b7482b6f0312e`
 - Evidence: `.scratch/sanity-live-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the first real-provider run, its retained container and private originals through review; until The user has reviewed the sanity commission result and authorizes disposal of this container
+
+### sanity-live-03
+
+- Experiment: Mechanism run, provider rejection: a deliberately invalid key drew HTTP 401 authentication_error in 165 ms, not retried, nothing charged, no reflection, ending interrupted (provider_rejected) with the provider's status, type, message and request ID recorded; the launcher's host scan fired on the packet label that quoted the invalid key
+- Date: 2026-11-03T15:56:16Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `06b8c4dd7d1eb8fdb48fade21fc5a590657fb61ac02c1b8057b70419248d3eca`
+- Evidence: `.scratch/sanity-live-03` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the real-provider rejection evidence and the self-inflicted host-scan control through review; until The user has reviewed the mechanism runs and authorizes disposal of this container
+
+### sanity-live-04
+
+- Experiment: Mechanism run, turn limit 3: limit_reached with the last response's record call executed and the near-limit notice published but not sent; manager close sealed, delivered and verified the one recorded entry, returned a confirmation token with status awaiting_confirmation, and close --confirm completed closure
+- Date: 2026-11-03T15:59:32Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cf5eff7c647590fa68be6e540a66571a5e2528197fae8e2feef935c04ac519cf`
+- Evidence: `.scratch/sanity-live-04` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the real-provider limit and manager-close evidence through review; until The user has reviewed the mechanism runs and authorizes disposal of this container
+
+### sanity-live-05
+
+- Experiment: Mechanism run, effort high: the pinned output_config reached the wire (34-byte body difference), every request accepted, auditor seal, verified delivery and close; 8 turns, 67,446 input and 4,361 output tokens, largest response 2,055 output tokens under the 12,000 cap
+- Date: 2026-11-03T16:00:39Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `5b13d580feadace59c38f4e875a24a1298ea7307e25fe6be7668af6db5fb98ed`
+- Evidence: `.scratch/sanity-live-05` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the real-provider effort evidence through review; until The user has reviewed the mechanism runs and authorizes disposal of this container
+
+### sanity-live-06
+
+- Experiment: Mechanism run, output allowance 1,024: one request at max_tokens 1,024, the first response's two tool calls executed, then limit_reached with 945 output tokens remaining; max_tokens stop not reached; audit left open for manager close
+- Date: 2026-11-03T16:03:42Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `c8146c19e36bec8f7aaa9aafedf371bc6cec7c1229897d9764ad1db5cc0d8513`
+- Evidence: `.scratch/sanity-live-06` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the real-provider output-limit evidence through review; until The user has reviewed the mechanism runs and authorizes disposal of this container

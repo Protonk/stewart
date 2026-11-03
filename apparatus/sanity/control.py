@@ -28,7 +28,7 @@ def safe_state(reply):
     headline = data.get('headline', {})
     delivery = data.get('delivery') or {}
     return {'outcome': safe_choice(reply.get('outcome'), ['completed', 'failed', 'refused']),
-        'condition': safe_choice(data.get('condition'), ['preparing', 'not_started', 'run_active', 'interrupted', 'ended_unsubmitted', 'limit_reached', 'delivered_open', 'closed', 'close_unfinished', 'damaged', 'sealed_undelivered', 'closing', 'log_damaged']),
+        'condition': safe_choice(data.get('condition'), ['preparing', 'intake_in_progress', 'intake_failed', 'acceptance_uncertain', 'log_damaged', 'not_started', 'run_active', 'interrupted', 'ended_unsubmitted', 'limit_reached', 'damaged', 'sealed_undelivered', 'delivered_open', 'awaiting_confirmation', 'close_unfinished', 'closed_before_launch', 'closed']),
         'ending': safe_choice(ending, ['sealed', 'ended_unsubmitted', 'limit_reached', 'stopped_by_close', 'damaged', 'interrupted']),
         'cause': safe_choice(cause, ['signal', 'provider_unavailable', 'provider_rejected', 'context_exhausted', 'provider_refusal', 'max_tokens', 'protocol_anomaly', 'archive_write_failed', 'process_gone', 'credential_reflected']),
         'seal_actor': safe_choice(seal.get('actor') if isinstance(seal, dict) else None, ['auditor', 'manager']),

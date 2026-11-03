@@ -35,8 +35,12 @@ read both materials, recorded four cited entries, submitted, and the auditor
 seal, verified delivery and ordinary close followed, within 8 turns, 55,401
 input and 2,713 output tokens. `.scratch/sanity-live-01` is the
 preceding attempt that never reached the provider because a host VPN was active;
-it consumed nothing and its audit remains open in its retained container. Both
-containers are named in their `host/container.name`.
+it consumed nothing and its audit remains open in its retained container.
+`.scratch/sanity-live-03` to `-06` are four mechanism runs, each pinned with a
+`review/result.json`: provider rejection, a turn limit with the manager close
+path, effort high, and the minimum output allowance. The `sanity-live-06`
+audit remains open at its limit. Each run's container is named in its
+`host/container.name`.
 
 The final launcher rehearsal in `.scratch/sanity-launch-03` passed all seven
 scenarios. Its reviewed evidence is in `review/result.json` within that folder;
@@ -167,8 +171,11 @@ runs. These quantities specify coverage, not spending authority or answer-qualit
 criteria. A model is supported only after its gate passes.
 
 Verify current provider compatibility. Real responses must exercise the release's
-TLS roots, request output cap and timeout. An effort run must establish whether
-the cap accommodates that setting. The compaction specimen must reach the
+TLS roots, request output cap and timeout. The sanity and mechanism runs above
+observed the TLS roots, the output cap with effort high on a small specimen, a
+401 rejection and the output and turn limits once each on `claude-haiku-5-5`;
+the timeout, `max_tokens` stop, compaction and interrupted continuation remain
+unobserved. The compaction specimen must reach the
 specified trigger and show an actual provider summary and usage; cumulative
 input consumption can greatly exceed the context threshold. A fake summary or a
 lower test-only trigger cannot establish real-provider compaction.
