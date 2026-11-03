@@ -187,8 +187,8 @@ not carry them.
 
 ### sanity-live-02
 
-- Experiment: First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean
+- Experiment: First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean; Console billing displayed $0.01
 - Date: 2026-11-03T15:32:43Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `4a8a9993ecfa643a5f41c433e4cd2b5f9593ba0e56d29d29bdc3715d9ccd7663`
+- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `ac526dc1d13ecd0e587a8bb118508b8a15d3e8ccab949b50ca9b7482b6f0312e`
 - Evidence: `.scratch/sanity-live-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the first real-provider run, its retained container and private originals through review; until The user has reviewed the sanity commission result and authorizes disposal of this container

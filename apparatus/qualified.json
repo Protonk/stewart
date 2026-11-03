@@ -536,11 +536,11 @@
       "kind": "experiment",
       "date": "2026-11-03T15:32:43Z",
       "date_from": "review/result.json field finished_at",
-      "summary": "First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean",
+      "summary": "First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean; Console billing displayed $0.01",
       "result": {
         "path": ".",
         "files": 35,
-        "sha256": "4a8a9993ecfa643a5f41c433e4cd2b5f9593ba0e56d29d29bdc3715d9ccd7663"
+        "sha256": "ac526dc1d13ecd0e587a8bb118508b8a15d3e8ccab949b50ca9b7482b6f0312e"
       },
       "evidence": {
         "path": ".scratch/sanity-live-02",
