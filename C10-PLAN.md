@@ -12,95 +12,73 @@ for small fixed commissions. Full conformance also needs controlled interruption
 actual provider compaction and a reviewed result for every required run. A model
 is supported only after its whole gate passes.
 
-## Starting points and boundaries
+## Current boundary and retained checks
 
-Reuse the [retained-session launcher](apparatus/sanity/LAUNCHER.md), its qualified
-binary selection, credential-free intake, hidden credential entry, operator
-commands and conservative export checks. The [qualification record](apparatus/qualified.md)
-owns demonstrated results; run `python3 -I -B apparatus/qualified.py check` before
-relying on it. Existing sanity and mechanism results remain supporting evidence,
-with their original scope and records.
+The [small-commission apparatus](apparatus/c10/README.md) now owns the implemented
+packet, specimen, launch, reviewer and operator contracts. It reuses the retained
+session credential boundary and specification-derived driver helpers without
+changing product contracts or historical evidence. Its one-placement scope is
+explicit; it does not implement continuation or real compaction.
 
-The concrete generalization points are:
+The first milestone still needs its committed-source Linux rehearsal. Native
+iteration is not qualification. Retain `.scratch/c10-native-01` and
+`.scratch/c10-native-02` (loopback-denied attempts), `.scratch/c10-native-03`
+(one-case run), `.scratch/c10-native-04` (13-case rehearsal),
+`.scratch/c10-native-05` (seven operator comparisons), and
+`.scratch/c10-review-controls-01`, `.scratch/c10-review-controls-02`, and
+`.scratch/c10-checks-01` until that review. Their original records own
+the actual counts and outcomes; do not rewrite them to match later schemas.
 
-- [Session setup](apparatus/sanity/session.py) fixes open inquiry and enumerates
-  only immediate material files. [Specimen identity and packet validation](apparatus/sanity/session_support.py)
-  bind one fixed specimen and permit exactly one placement.
-- The same session's export checker requires one run and one run directory.
-  [Operator commands](apparatus/sanity/control.py) can add evidence after that
-  session's export; a later review needs those effects too.
-- [Offline review](apparatus/sanity/review.py) verifies the export digest and
-  indexes selected records. It does not implement the C10 gate, and its one-MiB
-  indexing cutoff needs an explicit disposition for larger evidence.
+The [qualification record](apparatus/qualified.md) owns demonstrated Linux
+results; run `python3 -I -B apparatus/qualified.py check` before relying on it.
+No current C10 apparatus or model qualification is implied by the native checks.
 
-Keep the current product contracts, direct provider route and credential boundary.
-Choose the new apparatus layout and shared helpers during implementation; preserve
-the ability to interpret retained sanity evidence without rewriting it or adding
-record-format compatibility shims. No prompt, tool or rendering variant silently
-becomes the release arrangement.
+## 1. Complete the evidence matrix
 
-## 1. Fix the evidence matrix and specimens
+The catalog fixes ordinary and inadequate-evidence commissions for all three
+families, with byte-preserved materials, nested paths and illustrative returns
+kept outside model inputs. Operation coverage and failure dispositions are
+reported separately from answer quality. Empty submissions and missing sections
+remain admissible.
 
-- [ ] Give every case a stable identity and map it to the exact C10 obligation,
-  specimen, family, model/settings, expected mechanism, evidence and verifier.
-  Separate an audit, its placements and its provider request attempts in counts.
-- [ ] Prepare small executable submissions for open inquiry, inquiry framing
-  and comparison, including inadequate-evidence cases and illustrative returns.
-  Use the [worked examples](examples/questions/README.md) and
-  [citation controls](examples/questions/CITATION-CONTROLS.md) as source material;
-  preserve cited material bytes when copying them. Example prose is never an
-  expected model answer. Keep illustrative returns, private inspection notes and
-  controls outside the material supplied to the model.
-- [ ] Enumerate every fixed commission before setting the run total. For `N`
-  commissions, the current requirement is `3*N + 3` completed audits per model:
-  three repetitions each with effort omitted, then one effort-set audit, one
-  compaction audit and one killed-and-continued audit. If ordinary and inadequate
-  evidence are separate commissions for each family, `N=6` means 21 audits, not
-  12. The interrupted audit needs at least two placements. Select the specimens
-  and effort level for the additional audits explicitly in the matrix.
-- [ ] Record operation coverage without making every tool or section mandatory.
-  Missing sections and empty submissions remain admissible. A run that never
-  cites, edits or records an entry supplies no evidence for those unused paths.
-  A recovery run with no pre-event entries cannot establish preservation of
-  recorded work; report the coverage gap without inventing a content grade.
-- [ ] Define failure dispositions before launch: missing evidence, a mechanism
-  not reached, provider rejection, limit stop, unsubmitted ending and manager
-  seal cannot count as a successful C10 audit. Retain every attempt. A replacement
-  run needs an authorized disposition and remains linked to the failed attempt;
-  repeated trials until success cannot erase failures from the gate report.
+- [ ] Extend the six-case inventory into the full obligation matrix: choose
+  specimens and the effort level for the three additional mechanism audits,
+  with each expected mechanism, evidence source and verifier named. The fixed
+  count is 18 default-effort audits plus three additional audits, or 21 per
+  model. Count audits, placements and provider request attempts separately.
+  The killed-and-continued audit needs at least two placements.
+- [ ] Specify how a run with unused edit/citation paths or no recorded work
+  before recovery is reported as an unexercised comparison. It supplies no
+  evidence of preserving recorded work, even if it eventually submits.
+- [ ] Bind any authorized replacement to the failed attempt and its explicit
+  disposition. Missing evidence, a mechanism not reached, provider rejection,
+  a limit stop, an unsubmitted ending and a manager seal cannot count as a
+  successful C10 audit. Repeated trials cannot erase earlier failures.
 
-**Done when:** the case inventory is complete enough to derive exact audit,
-placement and repetition counts, each specimen prepares through the real binary,
-and every claimed check has an evidence source and a control design. A decision
-to change ACCEPTANCE's coverage or gate belongs to the principal.
+**Done when:** every required audit, repetition and placement is derived from
+that matrix and each claimed check has a witness and a control design. A change
+to ACCEPTANCE coverage belongs to the principal.
 
-## 2. Generalize preparation and bounded launch
+## 2. Demonstrate bounded small-commission launch
 
-- [ ] Accept a selected specimen and preserve its family and literal recursive
-  material population. Bind the template and the actual rendered submission;
-  record model, limits, effort and destination substitutions explicitly. Verify
-  accepted question/material readback against an independent input witness.
-- [ ] Define a versioned run manifest and commission packet covering case IDs,
-  repetitions, model/settings, qualified executable, apparatus source, container
-  image, endpoint, input identities and permitted placements. Refuse crossed or
-  changed bindings before credential entry. Keep account labels non-secret.
-- [ ] Track each planned audit and actual attempt in an inventory. A lost host
-  reply leaves unknown effects to reconcile against its retained reference and
-  process records; it never starts a replacement audit automatically. Stop the
-  batch on an unexpected outcome pending its recorded disposition.
-- [ ] Preserve hidden terminal entry and the inherited-descriptor route. Keep
-  per-audit cumulative limits, built-in request retries, watchdog termination
-  and batch spending authority distinct. No wrapper retries, model fallback or
-  continuation beyond the packet's authority. Include a credential-free network
-  preflight so a connectivity failure is diagnosed before a paid placement.
-- [ ] Give the operator exact commands and safe summaries for every audit, with
-  separate run, seal/actor, delivery and closure facts. Cover every specified
-  condition; an unknown condition stays unknown with its private reply retained.
+The implemented launcher binds the catalog, rendered inputs, model/settings,
+qualified binary, source and image before credential entry. It records planned
+identities before intake, verifies independent input readback and allows one
+placement per audit. The current commands and failure behavior are specified in
+[the run instructions](apparatus/c10/README.md).
 
-**Done when:** offline cases exercise all three families, nested materials,
-multiple fresh audit identities, changed-binding refusals and loss of a launcher
-reply. The launcher accounts for all planned work and exposes usable status/close
-commands without repeating a mutation or disclosing credentials.
+- [ ] Run and review the committed-source Linux rehearsal with all 13 audits,
+  process-access controls, reviewer controls and later operator actions. Retain
+  exact environment/filesystem and source/binary/image observations. Check all
+  planned identities, stops, exports and actual skips before calling this
+  milestone ready for a bounded live commission.
+- [ ] Resolve any Linux rehearsal failure against the specification. Preserve
+  the failed run and use a fresh directory for another attempt; do not repeat
+  an uncertain placement or substitute native success for Linux evidence.
+
+**Done when:** the retained Linux run establishes the implemented launch,
+credential, small-commission review and custody paths. It establishes neither
+full C10 conformance nor live-provider compatibility.
 
 ## 3. Preserve evidence through interruption and later actions
 
@@ -117,11 +95,11 @@ commands without repeating a mutation or disclosing credentials.
   partial captures, reconciliation records and later operator actions. Distinguish
   established absence from an unobserved or unreadable member. A killed process
   with no final reply must remain reviewable without fabricating a run result.
-- [ ] Add immutable follow-up exports and review records for later actions;
-  preserve earlier exports as observations of their own intervals. Establish the
-  stopped-writer observation, full membership and credential checks again for
-  each export. Specify how credential scanning works after a terminal session
-  ends, without persisting the live key or weakening withholding on uncertainty.
+- [ ] Extend the implemented immutable follow-up export path to interrupted
+  and multi-placement evidence. Preserve earlier observations, re-establish the
+  stopped writer and full membership, and retain the original-key check without
+  persisting the live key. The current path deliberately withholds incomplete
+  runs; do not weaken that guard merely to obtain an export.
 - [ ] Keep private originals and independent witnesses when export is withheld
   or fails. Rehearse missing captures, reflection, contamination and export
   failure across continuation and follow-up collection. Never copy a retained
@@ -135,6 +113,12 @@ remain explicit manager acts under the existing interface.
 
 ## 4. Implement the procedural verifier and its controls
 
+The small-commission reviewer reconstructs ordinary requests, usage and selected
+answer bytes, checks mechanical citations and exact delivery, and reports witness
+scope and unexercised operations. Its [controls](apparatus/c10/check_review.py)
+retain altered views separately from their originals. Remaining work extends
+that checked scope:
+
 - [ ] Specify each witness's origin, storage, observation time and scope. Input
   copies sit outside Stewart's archive. The fake provider independently retains
   its sent/received bytes. Resolve how live authoring and pre-interruption effects
@@ -142,20 +126,15 @@ remain explicit manager acts under the existing interface.
   run is not an independent observation of what reached it. Identify checks that
   only correlate Stewart-owned captures and bring any unmet acceptance obligation
   to the principal; do not quietly add a TLS proxy or claim independence.
-- [ ] Verify pinned system/tool/model/effort bytes and request output caps,
-  mechanical citations against witnessed sources, accepted authoring effects,
-  preparation/submission bindings, auditor attribution and exact delivered
-  membership/bytes. Reconstruct the selected answer from the observed edit history
-  under the specification, not from an assumed expected conclusion.
 - [ ] Check continuity across compaction and interruption using invocation,
   entry and revision identities. Detect lost work and repeated additions caused
   by re-entry. Legitimate edits and fresh equal-byte entries remain distinct;
   content equality alone cannot establish an accidental replay. Define what
   needs human inspection and report unresolved comparisons explicitly.
-- [ ] Reconcile ordinary and compaction usage, reported versus estimated charges,
-  retries, notices and every placement. Report actual tool operations, re-entry
-  calls and their timing, submission, delivery and close separately. Keep provider
-  usage, calculated cost and independently observed billing distinguishable.
+- [ ] Extend ordinary usage reconciliation to compaction, notices and every
+  placement, including estimates after interruption. Report re-entry calls and
+  their timing, submission, delivery and close separately. Keep provider usage,
+  calculated cost and independently observed billing distinguishable.
 - [ ] Make all required missing, malformed, duplicated, uninspected or conflicting
   evidence visible. Use bounded inspection and streaming hashes where needed;
   large captures cannot silently disappear behind an indexing cutoff. Exercise
@@ -211,20 +190,17 @@ Two apparatus milestones keep completion concrete:
 | Small-commission readiness | Fixed small specimens and case inventory; generalized launch with exact bindings and bounded authority; independent input readback; automated procedural review; loss-of-reply handling and later close/evidence collection; synthetic credential and export controls demonstrated in retained Linux runs. Specialized recovery/compaction coverage remains visibly outstanding. |
 | Full C10 apparatus readiness | The first milestone plus witnessed kill/continuation, multi-placement accounting and export, compaction specimen, summary verification, scale checks and their firing controls. All required cases and budgets can be derived from the manifest. |
 
-- [ ] Freeze schemas and observation rules before dependent implementations.
-  Follow the [driver-independence rule](AGENTS.md#preserve-independent-evidence):
-  a session that reads `service/src` or `service/tests` cannot edit the driver.
-  If both need changes, use separate implementation and specification-only driver
-  authors. Keep apparatus checks derived from the specification.
-- [ ] Add useful help, refusal/failure messages, an operator run sheet and exact
-  offline test commands with the implementation. Extend the existing
-  `python3 -I -B apparatus/sanity/test_launch.py` checks or supply a documented
-  successor; add its applicable check row to DEVELOPMENT when code lands.
+- [ ] Freeze extensions to schemas and observation rules before implementing
+  dependent kill/continuation or compaction paths. Follow the
+  [driver-independence rule](AGENTS.md#preserve-independent-evidence); keep these
+  checks derived from the specification and extend the documented test commands
+  and operator run sheet with each new path.
 - [ ] Run the applicable [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed):
   link check for prose; shell syntax checks for changed scripts; driver self-test
   and case list for driver changes; both Cargo configurations for service changes.
   Driver and service changes also need the scheduled Linux acceptance suite;
-  changed scripts need the container suite that uses them. Qualification-tooling
+  changed scripts and Python launchers need the container rehearsal that uses
+  them. The C10/shared-session rows apply to this tranche. Qualification-tooling
   changes need its self-test and record check. Commit apparatus code before its
   container rehearsal, which runs archived source. Local checks alone establish
   no Linux qualification.

@@ -1,0 +1,47 @@
+{
+  "schema": "stewart.c10-catalog/1",
+  "cases": [
+    {
+      "id": "open-ordinary",
+      "family": "open-inquiry",
+      "variant": "ordinary",
+      "question": "What happens if implementation A stops after sending a reminder and then restarts?\n",
+      "illustrative_return": "A restart can send the reminder again if the durable sent marker was not recorded. This is a source-based account under the supplied assumptions."
+    },
+    {
+      "id": "open-inadequate",
+      "family": "open-inquiry",
+      "variant": "inadequate",
+      "question": "What happens if implementation A stops after sending a reminder and then restarts?\n",
+      "illustrative_return": "The supplied report describes duplicate delivery in one invented scenario. Without the implementation, I cannot independently establish its control flow."
+    },
+    {
+      "id": "framing-ordinary",
+      "family": "inquiry-framing",
+      "variant": "ordinary",
+      "question": "We are concerned about reminders after a restart. Formulate a question these materials can answer and investigate it.\n",
+      "illustrative_return": "A working question is whether a restart between sending and recording the marker can duplicate a reminder. Under the stated assumptions, the supplied implementation permits that sequence."
+    },
+    {
+      "id": "framing-inadequate",
+      "family": "inquiry-framing",
+      "variant": "inadequate",
+      "question": "We are concerned about reminders after a restart. Formulate a question these materials can answer and investigate it.\n",
+      "illustrative_return": "The requirements define duplicate prevention and eventual delivery, but supply no implementation or execution record with which to establish the service behavior."
+    },
+    {
+      "id": "comparison-ordinary",
+      "family": "comparison",
+      "variant": "ordinary",
+      "question": "Compare implementations A and B against R1 and R2 under the supplied restart assumptions.\n",
+      "illustrative_return": "A can duplicate delivery after sending but before marking; B can suppress delivery after marking but before sending. These source-level possibilities trade off the two requirements."
+    },
+    {
+      "id": "comparison-inadequate",
+      "family": "comparison",
+      "variant": "inadequate",
+      "question": "Compare implementations A and B against R1 and R2 under the supplied restart assumptions.\n",
+      "illustrative_return": "Only A is supplied. Its ordering can permit duplicate delivery, but the packet does not establish B or a comparison with it."
+    }
+  ]
+}

@@ -76,6 +76,11 @@ def safe_observation(value):
 
 
 class Session:
+    def spawn(self, argv, **options):
+        """Run the production Linux path as the unprivileged audit owner."""
+        return subprocess.Popen(argv, user=1000, group=1000, extra_groups=[],
+                                umask=0o077, **options)
+
     def __init__(self, binary, root, commission, template, mode, witness=None):
         self.binary, self.root, self.commission, self.mode = binary, root, commission, mode
         self.phase = 'session-setup'
@@ -124,9 +129,9 @@ class Session:
         proc, primary_error, cleanup_error = None, None, None
         with stem.with_suffix('.stdout').open('xb') as stdout, stem.with_suffix('.stderr').open('xb') as stderr:
             try:
-                proc = subprocess.Popen(argv, cwd=self.root, env=env, stdin=subprocess.DEVNULL,
+                proc = self.spawn(argv, cwd=self.root, env=env, stdin=subprocess.DEVNULL,
                     stdout=stdout, stderr=stderr, pass_fds=(() if read_fd is None else (read_fd,)),
-                    start_new_session=True, user=1000, group=1000, extra_groups=[], umask=0o077)
+                    start_new_session=True)
                 self.process = proc
                 if read_fd is not None:
                     os.close(read_fd)

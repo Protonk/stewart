@@ -13,6 +13,12 @@ The qualification record, [`qualified.json`](qualified.json), is the tracked
 account of what the suites have shown; [`qualified.py`](qualified.py) keeps it
 and generates [`qualified.md`](qualified.md) from it.
 
+The [small-commission apparatus](c10/README.md) prepares all three question
+families, runs bounded retained batches and reviews immutable exports. Its
+offline rehearsal uses synthetic credentials and a local fake provider; live
+launch needs a matching rehearsal and an explicitly authorized packet. Its
+reports cover small-commission procedure and do not declare a model qualified.
+
 ## Running the scripts
 
 On the development Mac the containers run under Apple `container` 1.6.1. Each

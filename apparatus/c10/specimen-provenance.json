@@ -1,0 +1,67 @@
+[
+  {
+    "case": "open-ordinary",
+    "source": "examples/questions/open/submission/materials/a.py",
+    "copy": "specimens/open-ordinary/materials/src/a.py"
+  },
+  {
+    "case": "open-ordinary",
+    "source": "examples/questions/open/submission/materials/requirements.txt",
+    "copy": "specimens/open-ordinary/materials/context/requirements.txt"
+  },
+  {
+    "case": "open-ordinary",
+    "source": "examples/questions/open/submission/materials/supplied-report.txt",
+    "copy": "specimens/open-ordinary/materials/context/supplied-report.txt"
+  },
+  {
+    "case": "open-inadequate",
+    "source": "examples/questions/open/submission/materials/supplied-report.txt",
+    "copy": "specimens/open-inadequate/materials/context/supplied-report.txt"
+  },
+  {
+    "case": "framing-ordinary",
+    "source": "examples/questions/framing/submission/materials/a.py",
+    "copy": "specimens/framing-ordinary/materials/src/a.py"
+  },
+  {
+    "case": "framing-ordinary",
+    "source": "examples/questions/framing/submission/materials/requirements.txt",
+    "copy": "specimens/framing-ordinary/materials/context/requirements.txt"
+  },
+  {
+    "case": "framing-ordinary",
+    "source": "examples/questions/framing/submission/materials/supplied-report.txt",
+    "copy": "specimens/framing-ordinary/materials/context/supplied-report.txt"
+  },
+  {
+    "case": "framing-inadequate",
+    "source": "examples/questions/framing/submission/materials/requirements.txt",
+    "copy": "specimens/framing-inadequate/materials/context/requirements.txt"
+  },
+  {
+    "case": "comparison-ordinary",
+    "source": "examples/questions/comparison/submission/materials/a.py",
+    "copy": "specimens/comparison-ordinary/materials/src/a.py"
+  },
+  {
+    "case": "comparison-ordinary",
+    "source": "examples/questions/comparison/submission/materials/b.py",
+    "copy": "specimens/comparison-ordinary/materials/src/b.py"
+  },
+  {
+    "case": "comparison-ordinary",
+    "source": "examples/questions/comparison/submission/materials/requirements.txt",
+    "copy": "specimens/comparison-ordinary/materials/context/requirements.txt"
+  },
+  {
+    "case": "comparison-inadequate",
+    "source": "examples/questions/comparison/submission/materials/a.py",
+    "copy": "specimens/comparison-inadequate/materials/src/a.py"
+  },
+  {
+    "case": "comparison-inadequate",
+    "source": "examples/questions/comparison/submission/materials/requirements.txt",
+    "copy": "specimens/comparison-inadequate/materials/context/requirements.txt"
+  }
+]
