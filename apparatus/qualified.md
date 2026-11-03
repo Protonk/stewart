@@ -43,6 +43,7 @@ not carry them.
 | [sanity-live-05](#sanity-live-05) | experiment | Retain the real-provider effort evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
 | [sanity-live-06](#sanity-live-06) | experiment | Retain the real-provider output-limit evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
 | [sanity-launch-04](#sanity-launch-04) | experiment | Retain the rehearsal that qualifies the current launch code for further real-key use | A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container |
+| [c10-launch-01](#c10-launch-01) | experiment | Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
 
 ## Records
 
@@ -237,3 +238,11 @@ not carry them.
 - Result: `.`, every regular file under it (44 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `f96cb3d21c5f5e04dc7f170d13fc20e09e92f219ce39604f83ed8d599428036c`
 - Evidence: `.scratch/sanity-launch-04` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the rehearsal that qualifies the current launch code for further real-key use; until A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container
+
+### c10-launch-01
+
+- Experiment: C10 small-commission rehearsal on Linux aarch64 at 043a2c4: 13 expected audit outcomes, 14 reviewer comparisons with 12 firing controls, 7 operator comparisons and 2 process-access controls; no model calls or model qualification.
+- Date: 2026-11-03T21:47:04Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `e7cb9e28d5192ff0f73523a9e0e99c234d22181a19d663f2737b930b65ff7200`
+- Evidence: `.scratch/c10-launch-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses

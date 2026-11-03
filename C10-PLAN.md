@@ -20,18 +20,22 @@ session credential boundary and specification-derived driver helpers without
 changing product contracts or historical evidence. Its one-placement scope is
 explicit; it does not implement continuation or real compaction.
 
-The first milestone still needs its committed-source Linux rehearsal. Native
-iteration is not qualification. Retain `.scratch/c10-native-01` and
+Small-commission readiness is demonstrated by the reviewed Linux aarch64 run
+`.scratch/c10-launch-01`, pinned in the qualification record with its review at
+`review/result.json`. The next live commission still needs concrete model,
+settings and budget authorization. The remaining full-gate work is below.
+
+Native iteration is not qualification. Retain `.scratch/c10-native-01` and
 `.scratch/c10-native-02` (loopback-denied attempts), `.scratch/c10-native-03`
 (one-case run), `.scratch/c10-native-04` (13-case rehearsal),
 `.scratch/c10-native-05` (seven operator comparisons), and
 `.scratch/c10-review-controls-01`, `.scratch/c10-review-controls-02`, and
-`.scratch/c10-checks-01` until that review. Their original records own
+`.scratch/c10-checks-01` until the principal authorizes disposal. Their records own
 the actual counts and outcomes; do not rewrite them to match later schemas.
 
 The [qualification record](apparatus/qualified.md) owns demonstrated Linux
 results; run `python3 -I -B apparatus/qualified.py check` before relying on it.
-No current C10 apparatus or model qualification is implied by the native checks.
+The reviewed small-commission rehearsal establishes no model qualification.
 
 ## 1. Complete the evidence matrix
 
@@ -59,28 +63,7 @@ remain admissible.
 that matrix and each claimed check has a witness and a control design. A change
 to ACCEPTANCE coverage belongs to the principal.
 
-## 2. Demonstrate bounded small-commission launch
-
-The implemented launcher binds the catalog, rendered inputs, model/settings,
-qualified binary, source and image before credential entry. It records planned
-identities before intake, verifies independent input readback and allows one
-placement per audit. The current commands and failure behavior are specified in
-[the run instructions](apparatus/c10/README.md).
-
-- [ ] Run and review the committed-source Linux rehearsal with all 13 audits,
-  process-access controls, reviewer controls and later operator actions. Retain
-  exact environment/filesystem and source/binary/image observations. Check all
-  planned identities, stops, exports and actual skips before calling this
-  milestone ready for a bounded live commission.
-- [ ] Resolve any Linux rehearsal failure against the specification. Preserve
-  the failed run and use a fresh directory for another attempt; do not repeat
-  an uncertain placement or substitute native success for Linux evidence.
-
-**Done when:** the retained Linux run establishes the implemented launch,
-credential, small-commission review and custody paths. It establishes neither
-full C10 conformance nor live-provider compatibility.
-
-## 3. Preserve evidence through interruption and later actions
+## 2. Preserve evidence through interruption and later actions
 
 - [ ] Design a witnessed interruption point after actual recorded work and
   before submission. Record the selected point, process identity, signal and
@@ -111,7 +94,7 @@ omitted placements and uncertain exports fire. Later close/confirmation evidence
 can be reviewed with its original run evidence. Confirmation and loss surrender
 remain explicit manager acts under the existing interface.
 
-## 4. Implement the procedural verifier and its controls
+## 3. Extend the procedural verifier and its controls
 
 The small-commission reviewer reconstructs ordinary requests, usage and selected
 answer bytes, checks mechanical citations and exact delivery, and reports witness
@@ -151,7 +134,7 @@ the broken controls and preserves the unchanged comparisons. Reports distinguish
 pass, failure, incomplete evidence and unexercised coverage. Human observations
 about answer quality remain outside the mechanical gate.
 
-## 5. Establish real compaction and provider coverage
+## 4. Establish real compaction and provider coverage
 
 - [ ] Design a separate specimen that reaches the pinned trigger in
   [INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses), currently 150,000
@@ -181,7 +164,7 @@ about answer quality remain outside the mechanical gate.
 observable success/failure criteria and bounded spending proposals. Actual live
 coverage remains outstanding until those authorized runs supply the evidence.
 
-## 6. Rehearse, commission and report
+## 5. Rehearse, commission and report
 
 Two apparatus milestones keep completion concrete:
 
@@ -204,7 +187,7 @@ Two apparatus milestones keep completion concrete:
   changes need its self-test and record check. Commit apparatus code before its
   container rehearsal, which runs archived source. Local checks alone establish
   no Linux qualification.
-- [ ] Retain Linux rehearsal output with exact source, binary/image identities,
+- [ ] For each extension, retain Linux rehearsal output with source, binary/image identities,
   environment/filesystem, command streams, counts, skips, timings, controls,
   witnesses and export outcomes. Recheck qualification bindings before real-key
   use. Record limitations of the observed platform rather than transferring its

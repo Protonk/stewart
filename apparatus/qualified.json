@@ -650,6 +650,25 @@
         "reason": "Retain the rehearsal that qualifies the current launch code for further real-key use",
         "until": "A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container"
       }
+    },
+    {
+      "id": "c10-launch-01",
+      "kind": "experiment",
+      "date": "2026-11-03T21:47:04Z",
+      "date_from": "review/result.json field at",
+      "summary": "C10 small-commission rehearsal on Linux aarch64 at 043a2c4: 13 expected audit outcomes, 14 reviewer comparisons with 12 firing controls, 7 operator comparisons and 2 process-access controls; no model calls or model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "e7cb9e28d5192ff0f73523a9e0e99c234d22181a19d663f2737b930b65ff7200"
+      },
+      "evidence": {
+        "path": ".scratch/c10-launch-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation",
+        "until": "A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses"
+      }
     }
   ]
 }

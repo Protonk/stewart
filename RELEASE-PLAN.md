@@ -9,8 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next | Harden the C10 apparatus to small-commission readiness | [C10-PLAN.md](C10-PLAN.md) |
-| Then | Bounded Haiku testing on minimal questions with the current arrangement | The small-commission work in [C10-PLAN.md](C10-PLAN.md) |
+| Next | Prepare and authorize bounded Haiku testing on minimal questions with the current arrangement | The small-commission work in [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Haiku instruction/presentation comparisons and question-family dogfooding | The study sections below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
@@ -18,8 +17,9 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 The Messages API sanity commission has run: one simple commission travelled
 through the real provider loop, used Stewart's tools and reached a faithfully
 preserved outcome. It did not qualify all question families or replace release
-conformance. The immediate sequence is apparatus hardening, then minimal-question
-Haiku tests. Full C10 qualification remains a release gate; completing its live
+conformance. The small-commission apparatus has a reviewed Linux rehearsal; the
+next step is a concrete bounded packet for minimal-question Haiku tests.
+Full C10 qualification remains a release gate; completing its live
 compaction and recovery runs is not a prerequisite for those initial tests.
 Instruction/presentation variants are a separately identified study. These API
 runs do not depend on the Claude Code runtime. The other release backlog is not
@@ -49,12 +49,20 @@ audit remains open at its limit. Each run's container is named in its
 `host/container.name`.
 
 The launcher rehearsal in `.scratch/sanity-launch-03` passed all seven
-scenarios, and `.scratch/sanity-launch-04` repeated that result on the current
+scenarios, and `.scratch/sanity-launch-04` repeated that result on its recorded
 launch code. Its reviewed evidence is in `review/result.json` within that folder;
 `host/RESULT.json` binds the apparatus source, qualified executable, specimen and
 container. It demonstrates synthetic credential delivery, process-access
 controls, interruption, exact delivery and export withholding. It establishes
 the native Linux path against local fakes, not real-provider conformance.
+
+The small-commission rehearsal `.scratch/c10-launch-01` is pinned with its
+review in `review/result.json`. It binds commit `043a2c4`, the qualified
+`acceptance-05` aarch64 executable and the pinned image. It covers all six fixed
+commissions, failure/export controls, independent input readback, procedural
+review and immutable follow-up collection. The report retains actual counts,
+scope limits and the container identity. It completes small-commission apparatus
+readiness; it makes no model-support claim.
 
 The qualification record pins that rehearsal, the earlier failed attempts and
 their diagnostic controls. Keep their original containers and independent

@@ -52,6 +52,12 @@ What the evidence establishes:
   including same-user and different-user process-access controls, interrupted
   requests, exact return verification, and withholding contaminated exports.
   The private originals and independent credential witness remain retained.
+- **Small-commission apparatus:** a Linux aarch64 rehearsal covered ordinary
+  and inadequate-evidence submissions for all three forms. All 13 audit scenarios,
+  14 reviewer comparisons and seven later-custody comparisons behaved as expected;
+  both process-access controls fired. This demonstrates the bounded launch and
+  review apparatus against a fake provider. Full real-model conformance remains
+  outstanding.
 - **Reproducible builds:** two service builds produced identical static binaries
   for each Linux architecture using the recorded toolchain images.
 
