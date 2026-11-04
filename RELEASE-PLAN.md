@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Prepare the receiving exercise, then authoring and commitment comparisons | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Current | Prepare auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |

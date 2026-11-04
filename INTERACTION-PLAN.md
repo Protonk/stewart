@@ -1,292 +1,191 @@
-# Stewart interaction study
+# Stewart auditor-interface study
 
-Use inexpensive Haiku runs to investigate how Stewart presents an inquiry and
-lets an auditor work. The principal's goal is to make Stewart's machinery
-unobtrusive. The study concerns commissioning, evidence access, authoring,
-submission and reading the return. It does not optimize Haiku's intellectual
-performance or introduce a substantive answer-quality gate.
+Use inexpensive Haiku runs to investigate how Stewart presents and supports an
+inquiry. The principal's goal is unobtrusive auditor-facing machinery, with a
+useful balance between discoverability and verbosity. An equally sufficient
+answer with more natural prose or less mechanical effort can be a substantial
+success. Minimizing tokens, tool calls or answer length is not the objective.
 
-This document owns the study's decisions and remaining work. Writing this plan
-and requesting advice are authorized. Prototype implementation and paid trials
-remain proposed work; a trial count here is not spending authority. The product
-commitments remain in [DESIGN](DESIGN.md), [CONTRACTS](CONTRACTS.md),
+This plan owns local preparation and remaining work. The
+[design advice](riker/INTERACTION-STUDY-ADVICE.md) and
+[scope clarification](riker/INTERACTION-STUDY-CONTEXT.md) inform it.
+Product obligations remain in [DESIGN](DESIGN.md), [CONTRACTS](CONTRACTS.md),
 [INTERFACE](docs/INTERFACE.md) and [QUESTION-FORMS](docs/QUESTION-FORMS.md).
-Planning-check evidence is retained in `.scratch/interaction-plan-01`.
+Planning and inspection evidence is retained in `.scratch/interaction-plan-01`.
 
-The principal endorsed the direction of the
-[relayed Riker advice](riker/INTERACTION-STUDY-ADVICE.md). The sequence below
-incorporates its receiving-first approach, smaller authoring encounters and
-separate commitment experiment. Exact interface semantics and paid packets
-remain to be decided; the advice does not replace the product contracts.
+## Scope and division of work
 
-## What unobtrusive means
+Keep the manager side deliberately uninteresting. Fix the questions, families,
+evidence and other commission settings locally for each comparison. The local
+agent may operate as manager within the principal's authorization, but improving
+manager workflows or designing a manager interface is outside this study.
 
-| Experience | Desired behavior | Who supplies the observation |
+The principal and Riker develop the inquiries and rough standards for answer
+sufficiency. Current candidates include a manageable code-and-evidence inquiry
+in frsrr, with completeness or consistency variants, and a saturated numerical
+question that permits partial answers or inability. These are provisional inputs,
+not local question-development tasks. Do not inspect those projects or invent
+replacement problems just to advance the apparatus.
+
+The local focus is the auditor's initial context, family instructions, tool
+descriptions, evidence presentation, citation handling, recording and revision
+tools, and preparation/submission exchanges. Treat these as a coherent interface
+whose current shape can be questioned. The first intervention, experimental
+sequence, exact interfaces and run counts remain open.
+
+Reading the returned answer is part of assessing the effect on auditor behavior.
+A separate manager-facing receiving redesign is not current work. Existing
+returns remain useful for inspection and explicitly labeled study views.
+A document-oriented answer is a candidate, not a selected destination.
+
+## Design question and boundaries
+
+How much scaffolding should the auditor encounter, in what form, and when?
+Separate what must be readily discoverable from what must be explained in full
+on every request. Test relocation as well as shortening:
+
+| Exposure | Candidate contents | Failure to watch for |
 | --- | --- | --- |
-| Commissioning | The manager can express a request, select its purpose and supply material without learning internal record categories. Scope and spending choices remain intelligible. | The principal working through concrete submission examples. A model simulation cannot establish human usability. |
-| Working | The auditor can read, record, revise and finish without unnecessary copying, categorization, navigation or repair. | Raw model/tool traces, recorded effects and scripted comparisons. |
-| Receiving | The manager can find and read the answer, its basis and its limits naturally, with attribution and provenance accessible. | The principal comparing concrete returns and locating information in them. |
+| Initial context and tool definitions | The assignment, material/access boundary, ways to read and save work, legitimate inability, and how to finish deliberately. Brief routes to further detail. | A capability or necessary distinction becomes undiscoverable. |
+| At the relevant action | Exact citation references with reads/searches; usable revision handles with writes; actionable validation failures; candidate identity and next actions at preparation. | The reply omits information needed to act or repeats a large operating manual. |
+| On inspection | Detailed history, expanded citation metadata, full saved state and less common operating details. | Extra lookup effort or repeated errors outweigh the quieter normal path. |
 
-Normal operation should require little attention to machinery. Failures,
-uncertain effects and changes in authority must remain visible. Short prose,
-few tools and few calls are possible benefits, not definitions of success.
-Removing a useful distinction or making recorded work easier to lose is a cost
-even if the resulting interaction looks simpler.
+These are hypotheses, not prescribed partitions. Tool schema requirements and
+discoverability may limit what can be moved. An on-demand capability still needs
+a clear way to find it; moving a description to a help tool does not make it free.
 
-Distinguish the inquiry from recordkeeping, intellectual outcome from procedural
-state, and authorship from custody. Keep these distinctions in the normal
-experience when they affect interpretation or action; expose internal handles,
-identifiers and transport details on inspection. For each proposed simplification,
-ask whether a participant could reasonably misunderstand what they authorized,
-accomplished, received or became responsible for if the distinction disappeared.
+Preserve custody, attribution, captured evidence integrity, revision history and
+explicit submission. Internal handles may be presented more economically without
+silently overwriting work or committing different content. Do not confuse an
+auditor's submission with a manager's closure of unfinished work. Missing sections,
+partial answers, inability and an empty return remain expressible.
 
-Haiku is an inexpensive participant in the experiment. Its behavior can expose
-friction in an interface; it does not establish a universal model preference or
-decide the manager's experience. The principal judges whether a design fits
-Stewart. Do not optimize a general reasoning score, a planted conclusion or the
-presence of every answer section.
+Question families convey an assignment, not necessarily a report anatomy. The
+authorial artifact, annotations and custody history need not share one shape.
+Keep one authoritative recorded answer with identifiable revisions; a presentation
+or independently generated summary cannot quietly replace it. Annotations must
+distinguish authored claims, mechanical facts and presentation metadata.
 
-## Starting evidence and design question
+Interface choices can influence reasoning. Record when an intervention adds an
+interpretation, suggested investigative sequence or substantive guidance, so its
+effect is not attributed solely to easier operation. Preserve the inquiry's
+purpose without steering the auditor toward reference conclusions or prescribing
+its intellectual procedure.
 
-The six-audit pilot's retained records are in `.scratch/c10-haiku-commission-01`
-and `.scratch/c10-live-01` through `.scratch/c10-live-06`. The combined
-`review/result.json` owns procedural results. The later
-`review/answer-assessment-01.json` in the commission folder records assistant
-observations for discussion, rather than the principal's endorsement.
+## Current evidence and candidate friction
 
-All six audits submitted, delivered and closed. Relevant observations are
-repeated conclusions across recorded categories, the account appearing fifth
-in both framing returns and fourth in the ordinary comparison, seven citation
-refusals and one cursor refusal, and no reads of the prepared rendering. These
-suggest interaction questions; the pilot did not compare interface variants
-and establishes no cause for those behaviors. Its substantive framing concern
-is retained without making repair of that answer the study's objective.
+The six-audit pilot remains in `.scratch/c10-haiku-commission-01` and
+`.scratch/c10-live-01` through `.scratch/c10-live-06`. Its observations include
+repeated conclusions across categories, seven citation refusals and one cursor
+refusal, and no reads of the prepared rendering. These observations suggest
+questions; they do not establish which interface choices caused the behavior.
 
-The current arrangement couples family instructions, specialized recording
-tools, expected-section notices and rendered headings. Family names themselves
-are manager-facing; the auditor receives instructions and tools. Families
-express different assignments before they express document anatomy: a working
-question or comparison criterion must remain recoverable without requiring a
-fixed number of headings.
+Read-only inspection of three retained arrangements is recorded in
+`.scratch/interaction-plan-01/auditor-surface-01.json`. They expose 12 or 14
+tools. Compact-JSON tool definitions occupy 8,087–10,015 UTF-8 bytes, compared
+with 2,318–2,513 bytes for the system blocks. Citation schemas occur in four or
+six tools. These are byte measurements, not token attribution or attention scores.
 
-The design question is whether categories must be the language in which auditors
-compose or can be distinctions preserved around what they compose. An authored
-document and its annotations/history need not have the same shape. Keep one
-authoritative recorded answer with identifiable revisions and derived views;
-do not create competing authoritative summaries. Typed records might support a
-document-like editor, and a document might carry structured annotations. The
-experiments must separate these possibilities from a choice of storage format.
-
-## 1. Start with the receiving experience
-
-Establish what the manager needs to receive before designing a different writing
-interface. This exercise uses existing returns and needs no model calls.
-
-- [ ] Start with the ordinary framing return in `.scratch/c10-live-03`, where
-  the direct account is buried, and the inadequate comparison return in
-  `.scratch/c10-live-06`, which cannot compare the missing alternative. Read
-  their source records before deriving any custody or verification statements.
-- [ ] Make paired study views: the current rendering and a reader-oriented view
-  that brings the existing response or inability forward, with provenance and
-  detailed records accessible. Preserve every authored passage and its citation
-  attachment. Track any movement to its original entry; do not silently abridge,
-  rewrite or generate a more fluent summary. Keep original sealed files unchanged.
-- [ ] Label both as study copies, with neutral variant names and alternating
-  order. Distinguish the auditor's prose from the study presentation and any
-  separately attributed custody facts drawn from records. A viewer around an
-  answer is not a replacement for its sealed rendering.
-- [ ] Ask the principal to identify what was found, what remains unknown, who
-  authored the return and what Stewart actually verified. Record reconstruction
-  effort, misunderstandings and information made harder to find. A presentation
-  that suggests greater certainty or authority is a regression, even if shorter.
-- [ ] Record the principal's reading criteria and unresolved tradeoffs for the
-  authoring comparison. Separate authored repetition from renderer clutter and
-  one person's preferences from general usability claims. Record whether future
-  model trials inspect their prepared rendering; the pilot models did not.
-
-## 2. Compare authoring interfaces
-
-Compare two coherent authoring interfaces over the same small tasks:
-
-| Alternative | Model-facing behavior |
-| --- | --- |
-| A: current typed entries | The current family-specific recording tools, entry revision behavior and factual missing-section notices. Preserve the exact baseline prompt/tool definitions in the study packet. |
-| B: editable answer document | A single saved answer document, with an explicit revision action and citations. The auditor can organize its own prose without allocating it among Account, Observation and Limit tools. Optional annotations must not become compulsory sections. Exact schemas remain to be designed. |
-
-Hold the manager's request, family purpose, source bytes, material-access tools,
-citation validity rules, model/settings, cumulative allowances and finishing
-semantics fixed. Alter tool instructions only as needed to describe B honestly;
-record those differences. Do not also add better reasoning advice, preload
-evidence or simplify citation operands in this comparison.
-
-This is a comparison of authoring packages, not a claim to isolate a single word
-or tool name. Expected-section notices are part of A's package. If a difference
-matters, a later comparison can separate vocabulary, schema and notice effects.
-Do not invisibly translate B's prose back into the typed categories being tested.
-Annotations must identify whether they are auditor-authored claims, mechanically
-derived facts or presentation metadata. Making an annotation available does not
-establish that its intellectual classification is correct.
-
-- [ ] Specify both interfaces, their returned state and an illustrative call
-  sequence before building them. For B, decide citation attachment granularity,
-  exact revision targets and how empty saved work differs from no saved work.
-  These choices must remain observable in the trace.
-- [ ] Preserve saved drafts and revision history in both alternatives. A document
-  alternative must not obtain a shorter trace by retaining nothing until finish.
-  State whether each operation changes recorded work; reject stale revisions
-  without silently replacing a newer draft.
-- [ ] Keep the same explicit preparation and submission meanings in this round:
-  a prepared candidate identifies exact saved content; subsequent edits make it
-  stale; deliberate submission seals that candidate. An empty answer and an
-  inability response remain expressible. Do not force a comparison or a finding.
-- [ ] Write the observation sheet before trials, including what would favor A,
-  what would favor B and what would leave the comparison unresolved. B must be
-  allowed to lose because structure helps navigation, revision or communication.
-  Look for tradeoffs: clearer prose may make a source observation harder to
-  distinguish from an interpretation, while typed entries may preserve useful
-  units of partial work at the cost of composition effort.
-
-### Discriminating encounters and incremental runs
-
-Begin with two encounters with little intellectual difficulty. Freeze their exact
-questions, materials and intended interaction before model calls. Do not reuse
-an answer from a prior conversation as the model's starting state.
-
-| Fixture | Interaction to expose | Interpretation limit |
+| Surface | Opportunity to examine | Necessary comparison |
 | --- | --- | --- |
-| Comparison with one alternative missing | Express inability to compare and any chosen partial work without fabricating categories or a winner. | No particular substantive answer or entry count is required. |
-| A substantial requested revision | Save work, consult a second supplied note, change the answer's organization and citations, then finish the current version. Inspect whether references remain attached to the intended passages and prior work remains recoverable. | This is a scripted interaction probe, not evidence of natural investigative behavior. Both notes are captured at the start; no new material is injected into the commission. |
+| Recording vocabulary and repeated schemas | Fewer overlapping authoring concepts; different tool organization or optional annotations. | Natural composition and preserved partial work versus reduced discoverability or blurred distinctions. |
+| Citation operands | Reuse exact references returned by reads/searches with less copying. | Fewer invalid calls without weakening exact-location and explicit-quotation checks. |
+| Successful write replies | Show actionable saved state and references; make repeated record metadata inspectable. | Less history clutter without hiding actual effects or making revisions harder. |
+| Initial guidance and tool descriptions | Short capability guidance with contextual detail; avoid repeating the same operating advice in several places. | Sufficient discoverability versus clarification calls, refusals and confusion. |
+| Expected-section notices | Different wording, timing or exposure of advisory structure. | Less category-driven repetition while retaining useful orientation and the ability to submit incomplete work. |
+| Revision and preparation/submission | Clear saved versions, optional preview and deliberate commitment with economical exchanges. | Correct revision submitted, recoverable history and explicit intent under normal and stale-state cases. |
+| Evidence discovery | Source organization, indexing, read/search context and presentation of captured material. | Lower discovery effort, with any additional interpretive guidance identified. |
 
-- [ ] Prepare the fixtures and identify a simple observable action for each.
-  Preserve task intent across alternatives. If a fixture creates reasoning
-  ambiguity that obscures interface use, revise it before freezing the batch.
-- [ ] Prepare a small first paid slice: two alternatives x two encounters x one
-  fresh placement, **four proposed placements**. Balance which alternative goes
-  first across encounters and record the order before launch. Review this slice
-  before proposing repetitions or a diagnostic variant. One observation per
-  condition can expose a problem but cannot establish a reliable advantage.
-  Keep a one-fact task available for offline smoke checks rather than adding
-  it to paid scope by default.
-- [ ] Set explicit per-placement and batch allowances, request-attempt policy,
-  watchdog, stop conditions and an exact model/effort setting. Verify current
-  provider compatibility and prices when preparing the paid packet. No automatic
-  retries at the batch level, replacements or extensions follow from this plan.
-  The completed pilot's authorization and cost calculation do not authorize or
-  price these new trials.
+Changes to reply shape, tools or submission gestures may require specification
+and implementation changes. Their current forms are not immutable study
+requirements, but a candidate must state how it preserves the underlying
+obligations. The matrix is a menu, not a mandatory sequence of experiments.
 
-## 3. Test the moment of commitment
+## Local preparation
 
-Use a separate comparison to distinguish informed commitment from exposure of
-internal state transitions. Keep authoring behavior fixed for this experiment.
+- [ ] Prepare the smallest study route for an explicitly supplied submission
+  folder and bounded run packet. The current C10 launcher validates exactly six
+  specimens in [common.py](apparatus/c10/common.py) and instantiates them in
+  [batch.py](apparatus/c10/batch.py). Keep that conformance catalog intact.
+  Identify reuse of launch, intake witnessing, capture, review and custody
+  collection rather than building another general experimental framework.
+- [ ] Preserve question/material identities and source mapping. Establish any
+  conversion to Stewart's current UTF-8 material format when the actual sources
+  are supplied. Keep reviewer sufficiency notes distinguishable from model
+  inputs; any deliberate inclusion in the commission must be explicit.
+- [ ] Identify concrete places to vary the auditor-facing arrangement and
+  replies. Packaging can vary through submissions; instructions, tool definitions
+  and rendering are pinned and may need a new build. Record the actual exposed
+  variant rather than mutating an accepted arrangement in place.
+- [ ] Inspect initial context, repeated replies and relevant-action detail
+  separately. Use retained traces and small offline examples to prepare
+  candidates; question selection need not block this preparation.
+- [ ] Exercise changed operations with appropriate small cases and controls.
+  Include stale revisions, invalid citations, incomplete/empty returns and
+  intervening edits where relevant. A simulator may answer an isolated question
+  but is not evidence of production custody or a substitute for using Stewart.
 
-- [ ] Specify a saved answer, preparation of a candidate and a needed correction
-  before submission. All source material belongs to the initial selection.
-  Define how the correction becomes visible at the intended point in both
-  alternatives, and disclose any scripted cue or seeded state. This is a
-  controlled encounter, not a newly available manager clarification channel.
-- [ ] Compare the current prepare/optional-preview/submit exchange with explicit
-  submission of a named saved revision, with inspection still available. The
-  alternative must bind exactly the intended immutable content and retain the
-  same custody history. Keep the current guard against superseded candidates;
-  never silently submit the newest content or treat preparation as consent.
-  Specify any proposed change to these meanings separately for the principal.
-- [ ] Observe wrong-revision submissions or refusals, attempts to edit sealed
-  content, unnecessary preparation cycles, and confusion about whether an
-  inquiry needs a finding before it can finish. Do not infer consent from a
-  model merely ceasing to speak or running out of allowance.
-- [ ] Include a manager-facing example distinguishing an auditor's submitted
-  return from the manager's closure of unfinished work. Preserve the seal actor
-  and distinguish valuable partial findings from procedural completion. Use
-  scripted evidence for this example; it need not consume a model call.
-- [ ] Rehearse normal, stale and interrupted paths mechanically before proposing
-  a separately bounded live comparison. Its exact placements and spending are
-  not included in the authoring slice.
+Before implementation edits, identify the applicable
+[DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed) and follow
+the independent-driver authoring rule. Reusing a launcher does not transfer its
+qualification to changed paths or larger workloads.
 
-## Prototype only what the comparison needs
+## Lightweight iteration
 
-Use a small study runner with versioned prompts, tool definitions and recorded
-state. A simulator is suitable for early interaction prototypes; do not build
-a general workflow framework or a second custody engine. Reuse the existing
-[launch boundary](apparatus/c10/README.md) where its assumptions fit, after
-checking that reuse rather than assuming its qualification transfers.
+For each intervention, retain a short note: what prompted it, what changed,
+what observable difference was expected, and what happened. Link the note to
+the relevant submission/build and saved traces. Plain text is sufficient.
+The product's `inquiry` label and `varies` reference can associate audits if
+the study route preserves them; the latter is a manager's attributed note,
+not a verified comparison. No scoring service or elaborate report is needed.
 
-- [ ] Choose the smallest execution route and document what is simulated.
-  Exercise the baseline against the specification so an inaccurate baseline
-  cannot make the alternative appear better. A simulator's submission is a
-  study event, not a Stewart seal, verified delivery or closed audit.
-- [ ] Rehearse both alternatives without a paid model. Include a successful
-  save/revise/finish path, empty submission, a stale target, an invalid citation
-  and a finish attempted after an intervening edit. Pair the selected boundary
-  checks with firing controls and an unchanged valid comparison. Record actual
-  outcomes; do not claim production fault coverage from the simulator.
-- [ ] Capture requests, raw responses, calls, replies and state effects. Record
-  any translation performed by the runner. Never silently repair a handle,
-  normalize a citation or supply a missing model step to make a trace succeed.
-- [ ] Freeze versioned prompts, schemas, fixture bytes, runner identity and the
-  run manifest. Give every placement a fresh evidence location. Follow
-  [evidence retention](DEVELOPMENT.md#evidence-and-retention); preserve failed
-  attempts and originals as well as successful traces. Keep study artifacts
-  distinct from the pilot's sealed returns.
+Keep answer sufficiency and interface friction as separate observations. An
+adequate answer can conceal substantial mechanical effort; an insufficient
+answer can still show a useful interface improvement. Resource exhaustion,
+provider problems and apparatus failures need their own account. Returned
+source text does not prove understanding, and one unsuccessful answer does not
+identify reasoning or the interface as its cause.
 
-## Observe friction and decide
+Inspect discoverability, navigation, copying and repair, revision effort,
+category-driven prose, recovery and commitment. Record calls, turns, reported
+or estimated usage and timing when useful. Do not optimize a count in isolation.
+For both proposed inquiries, inability or a partial result must be an available
+intellectual outcome, not a reason to demand filler or automatic continuation.
 
-Record counts alongside the exact interaction that explains them. Avoid one
-aggregate score that rewards a short but confusing or incomplete interaction.
-
-| Observation | How to interpret it |
-| --- | --- |
-| Tool calls, first-call validity, refusals and repair attempts | Separate model operand errors, unfamiliar affordances and runner failures. A refused call can show a necessary boundary working. |
-| Material reads, repeated navigation and citation copying | Identify what each step accomplished before calling it overhead. Evidence inspection is useful work. |
-| First saved work, revisions and surviving draft state | Show whether simplicity came at the expense of preserving work or making changes understandable. |
-| Successful preparation to submission, and stale/empty cases | Measure observable steps. Readiness inside the model is not observable; mark any inferred readiness as such. |
-| Repetition and references to Stewart's machinery in authored prose | Inspect actual passages and their function. A necessary qualification or useful explanation is not automatically noise. |
-| Return order, answer location and source lookup | Ask the principal to locate the response, its basis and its limits. Record concrete difficulty and preference separately from model behavior. |
-| Turns, reported/estimated tokens, elapsed time and cost | Record operating consequences, not an intellectual-quality score. Distinguish calculated cost from attributed billing. |
-
-- [ ] Review all authorized outcomes, including limits, unsubmitted endings and
-  failures. An unreached operation is unexercised coverage. Retain awkward runs
-  instead of replacing them until a preferred design looks successful.
-- [ ] Give each observation a source and distinguish observed behavior, a causal
-  hypothesis and a principal preference. Name plausible competing explanations;
-  use a subsequent controlled comparison when choosing between them matters.
-- [ ] Decide whether to keep, revise, abandon or further distinguish the
-  alternatives. A result of no useful difference is sufficient. Do not tune a
-  fixture-specific prompt until Haiku produces a pleasing answer.
-
-## Candidate later comparisons
-
-Select a next comparison from an observed friction point; this is a menu, not a
-commitment to run every combination.
-
-| Surface | Candidate difference | Meaning to preserve or make explicit |
-| --- | --- | --- |
-| Question types | Plain-language manager choices; concise task brief versus current family instructions. | Manager-selected purpose, original question and legitimate inability. Do not silently select a different family. |
-| Evidence | File listing versus a manager-supplied source index; small captured material shown initially versus read on demand. | Source identity, full available scope and attribution. A source description is not a certification of its claims. |
-| Citations | Current locator operands versus reusable references returned by reading/searching. | Exact resolution to captured bytes. No fuzzy correction or support verdict. |
-| Failure replies | Short action-oriented replies with detail available versus the current envelopes. | Actual effects, uncertainty and the valid recovery route remain inspectable. |
+- [ ] Once a chosen inquiry is supplied, prepare an authorized baseline or
+  initial comparison. Fix exact model/settings, source versions, allowances,
+  request-attempt policy, watchdog and stop conditions. Verify compatibility and
+  costs when freezing the packet; the prior pilot grants no new spending.
+- [ ] Size allowances for the actual workload. Input use is cumulative across
+  requests; repeated evidence can be expensive in context. Do not infer model
+  inability from a limit stop or silently rely on unqualified compaction and
+  continuation paths.
+- [ ] Select changes from observed friction or plausible simplification.
+  Hold commission settings fixed except where an explicit evidence-presentation
+  variant is the intervention. Changes to completeness or consistency are
+  distinct conditions, not invisible differences in an interface comparison.
+- [ ] Review the resulting answer and interaction together. Preserve failures and
+  original records; no silent repairs, replacement trials or automatic extensions.
+  A coherent interface package can vary together, provided its components are
+  identified and any causal claim stays within what the comparison supports.
+- [ ] Keep, revise, abandon or further distinguish a candidate according to the
+  principal's judgment and the evidence. Propose extra comparisons only when
+  they would resolve a material uncertainty.
 
 ## Adoption and completion
 
-- [ ] Require reduced effort or misunderstanding across more than one encounter,
-  preserved custody/authorship/citation/revision guarantees under adverse as well
-  as normal cases, and an intelligible account from the manager's and a human
-  auditor's positions. A handful of Haiku placements supports prototyping and
-  failure discovery, not general behavioral claims or proof of human usability.
-- [ ] Resolve substantive changes to participant authority, expressive freedom,
-  preservation or submission meaning with the principal. Versioned interaction
-  prototypes are proposals, not amendments to existing records or promises.
-- [ ] Before adopting a candidate, implement it in Stewart with aligned
-  contracts, interface, forms, help and examples as applicable. Verify the actual
-  behavior under [DEVELOPMENT](DEVELOPMENT.md#what-to-run-for-what-you-changed),
-  including the independent-driver authoring rule. Simulator success establishes
-  no production qualification; results on Haiku do not automatically establish
-  suitability for another runtime or a human auditor.
+A useful reduction in mechanical effort counts even without an improved
+intellectual answer. Consider discoverability and the risk of confusion as well
+as verbosity. One model on a few inquiries does not establish a universal
+interface preference; broader claims need corresponding evidence.
 
-The first decision package consists of paired receiving views, their source
-mapping and the principal's observations. The subsequent authoring package has
-two specified prototypes, two frozen encounters, the observation sheet and a
-bounded run proposal. After authorized trials, it includes every outcome and
-an explicit design disposition. This plan is complete when the selected rounds
-have those dispositions, adopted behavior is documented and verified, and
-unselected ideas are explicitly deferred or abandoned. Move enduring guidance
-to its owners and delete the plan; retain evidence under the ordinary rules.
+Bring changes to authority, expressive freedom or protected obligations to the
+principal explicitly. Before adopting a design, align the affected contracts,
+interface, forms, help and examples, and verify actual behavior under the required
+normal and adverse checks. Keep custody verification distinct from judging
+claims or evidence support.
+
+Update this plan with selected work and unresolved decisions. At completion,
+give remaining candidates a disposition, move enduring behavior and guidance to
+their owners, and delete the plan. Preserve original evidence under
+[DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention).
