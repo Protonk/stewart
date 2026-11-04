@@ -13,6 +13,12 @@ commitments remain in [DESIGN](DESIGN.md), [CONTRACTS](CONTRACTS.md),
 [INTERFACE](docs/INTERFACE.md) and [QUESTION-FORMS](docs/QUESTION-FORMS.md).
 Planning-check evidence is retained in `.scratch/interaction-plan-01`.
 
+The principal endorsed the direction of the
+[relayed Riker advice](riker/INTERACTION-STUDY-ADVICE.md). The sequence below
+incorporates its receiving-first approach, smaller authoring encounters and
+separate commitment experiment. Exact interface semantics and paid packets
+remain to be decided; the advice does not replace the product contracts.
+
 ## What unobtrusive means
 
 | Experience | Desired behavior | Who supplies the observation |
@@ -26,6 +32,13 @@ uncertain effects and changes in authority must remain visible. Short prose,
 few tools and few calls are possible benefits, not definitions of success.
 Removing a useful distinction or making recorded work easier to lose is a cost
 even if the resulting interaction looks simpler.
+
+Distinguish the inquiry from recordkeeping, intellectual outcome from procedural
+state, and authorship from custody. Keep these distinctions in the normal
+experience when they affect interpretation or action; expose internal handles,
+identifiers and transport details on inspection. For each proposed simplification,
+ask whether a participant could reasonably misunderstand what they authorized,
+accomplished, received or became responsible for if the distinction disappeared.
 
 Haiku is an inexpensive participant in the experiment. Its behavior can expose
 friction in an interface; it does not establish a universal model preference or
@@ -51,11 +64,47 @@ is retained without making repair of that answer the study's objective.
 
 The current arrangement couples family instructions, specialized recording
 tools, expected-section notices and rendered headings. Family names themselves
-are manager-facing; the auditor receives instructions and tools. The initial
-question is whether the authoring interface makes an auditor organize a simple
-return around Stewart's categories more than the task requires.
+are manager-facing; the auditor receives instructions and tools. Families
+express different assignments before they express document anatomy: a working
+question or comparison criterion must remain recoverable without requiring a
+fixed number of headings.
 
-## First comparison: how an answer is written
+The design question is whether categories must be the language in which auditors
+compose or can be distinctions preserved around what they compose. An authored
+document and its annotations/history need not have the same shape. Keep one
+authoritative recorded answer with identifiable revisions and derived views;
+do not create competing authoritative summaries. Typed records might support a
+document-like editor, and a document might carry structured annotations. The
+experiments must separate these possibilities from a choice of storage format.
+
+## 1. Start with the receiving experience
+
+Establish what the manager needs to receive before designing a different writing
+interface. This exercise uses existing returns and needs no model calls.
+
+- [ ] Start with the ordinary framing return in `.scratch/c10-live-03`, where
+  the direct account is buried, and the inadequate comparison return in
+  `.scratch/c10-live-06`, which cannot compare the missing alternative. Read
+  their source records before deriving any custody or verification statements.
+- [ ] Make paired study views: the current rendering and a reader-oriented view
+  that brings the existing response or inability forward, with provenance and
+  detailed records accessible. Preserve every authored passage and its citation
+  attachment. Track any movement to its original entry; do not silently abridge,
+  rewrite or generate a more fluent summary. Keep original sealed files unchanged.
+- [ ] Label both as study copies, with neutral variant names and alternating
+  order. Distinguish the auditor's prose from the study presentation and any
+  separately attributed custody facts drawn from records. A viewer around an
+  answer is not a replacement for its sealed rendering.
+- [ ] Ask the principal to identify what was found, what remains unknown, who
+  authored the return and what Stewart actually verified. Record reconstruction
+  effort, misunderstandings and information made harder to find. A presentation
+  that suggests greater certainty or authority is a regression, even if shorter.
+- [ ] Record the principal's reading criteria and unresolved tradeoffs for the
+  authoring comparison. Separate authored repetition from renderer clutter and
+  one person's preferences from general usability claims. Record whether future
+  model trials inspect their prepared rendering; the pilot models did not.
+
+## 2. Compare authoring interfaces
 
 Compare two coherent authoring interfaces over the same small tasks:
 
@@ -74,6 +123,9 @@ This is a comparison of authoring packages, not a claim to isolate a single word
 or tool name. Expected-section notices are part of A's package. If a difference
 matters, a later comparison can separate vocabulary, schema and notice effects.
 Do not invisibly translate B's prose back into the typed categories being tested.
+Annotations must identify whether they are auditor-authored claims, mechanically
+derived facts or presentation metadata. Making an annotation available does not
+establish that its intellectual classification is correct.
 
 - [ ] Specify both interfaces, their returned state and an illustrative call
   sequence before building them. For B, decide citation attachment granularity,
@@ -90,33 +142,65 @@ Do not invisibly translate B's prose back into the typed categories being tested
 - [ ] Write the observation sheet before trials, including what would favor A,
   what would favor B and what would leave the comparison unresolved. B must be
   allowed to lose because structure helps navigation, revision or communication.
+  Look for tradeoffs: clearer prose may make a source observation harder to
+  distinguish from an interpretation, while typed entries may preserve useful
+  units of partial work at the cost of composition effort.
 
-## Small tasks and repetitions
+### Discriminating encounters and incremental runs
 
-Use three fixtures with little intellectual difficulty. Freeze their exact
+Begin with two encounters with little intellectual difficulty. Freeze their exact
 questions, materials and intended interaction before model calls. Do not reuse
 an answer from a prior conversation as the model's starting state.
 
 | Fixture | Interaction to expose | Interpretation limit |
 | --- | --- | --- |
-| One fact in a short supplied source | Read, save a direct response with its basis, and finish. | A short trace must still account for the source and intended final selection. |
 | Comparison with one alternative missing | Express inability to compare and any chosen partial work without fabricating categories or a winner. | No particular substantive answer or entry count is required. |
-| A deliberately requested draft and revision | Save work, consult a second supplied note, revise the saved response, then finish the current version. | This is a scripted interaction probe, not evidence of natural investigative behavior. Both notes are captured at the start; no new material is injected into the commission. |
+| A substantial requested revision | Save work, consult a second supplied note, change the answer's organization and citations, then finish the current version. Inspect whether references remain attached to the intended passages and prior work remains recoverable. | This is a scripted interaction probe, not evidence of natural investigative behavior. Both notes are captured at the start; no new material is injected into the commission. |
 
 - [ ] Prepare the fixtures and identify a simple observable action for each.
   Preserve task intent across alternatives. If a fixture creates reasoning
   ambiguity that obscures interface use, revise it before freezing the batch.
-- [ ] Plan two alternatives x three fixtures x three fresh placements: **18
-  proposed placements**. Balance A/B order across fixtures and repetitions;
-  record the order before launch. This is exploratory repetition, not a
-  statistically established usability rate. Offline controls and human reading
-  exercises add no model placements.
+- [ ] Prepare a small first paid slice: two alternatives x two encounters x one
+  fresh placement, **four proposed placements**. Balance which alternative goes
+  first across encounters and record the order before launch. Review this slice
+  before proposing repetitions or a diagnostic variant. One observation per
+  condition can expose a problem but cannot establish a reliable advantage.
+  Keep a one-fact task available for offline smoke checks rather than adding
+  it to paid scope by default.
 - [ ] Set explicit per-placement and batch allowances, request-attempt policy,
   watchdog, stop conditions and an exact model/effort setting. Verify current
   provider compatibility and prices when preparing the paid packet. No automatic
   retries at the batch level, replacements or extensions follow from this plan.
   The completed pilot's authorization and cost calculation do not authorize or
   price these new trials.
+
+## 3. Test the moment of commitment
+
+Use a separate comparison to distinguish informed commitment from exposure of
+internal state transitions. Keep authoring behavior fixed for this experiment.
+
+- [ ] Specify a saved answer, preparation of a candidate and a needed correction
+  before submission. All source material belongs to the initial selection.
+  Define how the correction becomes visible at the intended point in both
+  alternatives, and disclose any scripted cue or seeded state. This is a
+  controlled encounter, not a newly available manager clarification channel.
+- [ ] Compare the current prepare/optional-preview/submit exchange with explicit
+  submission of a named saved revision, with inspection still available. The
+  alternative must bind exactly the intended immutable content and retain the
+  same custody history. Keep the current guard against superseded candidates;
+  never silently submit the newest content or treat preparation as consent.
+  Specify any proposed change to these meanings separately for the principal.
+- [ ] Observe wrong-revision submissions or refusals, attempts to edit sealed
+  content, unnecessary preparation cycles, and confusion about whether an
+  inquiry needs a finding before it can finish. Do not infer consent from a
+  model merely ceasing to speak or running out of allowance.
+- [ ] Include a manager-facing example distinguishing an auditor's submitted
+  return from the manager's closure of unfinished work. Preserve the seal actor
+  and distinguish valuable partial findings from procedural completion. Use
+  scripted evidence for this example; it need not consume a model call.
+- [ ] Rehearse normal, stale and interrupted paths mechanically before proposing
+  a separately bounded live comparison. Its exact placements and spending are
+  not included in the authoring slice.
 
 ## Prototype only what the comparison needs
 
@@ -169,21 +253,6 @@ aggregate score that rewards a short but confusing or incomplete interaction.
   alternatives. A result of no useful difference is sufficient. Do not tune a
   fixture-specific prompt until Haiku produces a pleasing answer.
 
-## Human presentation exercise
-
-- [ ] Make separately labeled study views of selected existing returns, using
-  the same attributed prose and source references. Compare the current rendering
-  with a document view that reduces record labels and makes citations easier to
-  consult. Preserve all substantive text; a shorter edited answer is a different
-  comparison. Keep original sealed files unchanged.
-- [ ] Show paired views without preference-signaling names and alternate their
-  order. Ask the principal to find the response and its basis, and identify any
-  information that became harder to notice. Record preferences without treating
-  this single person's judgment as population evidence.
-- [ ] Separate authored repetition from renderer clutter. Record whether future
-  model trials read their prepared rendering; the pilot's models did not, so
-  its traces cannot establish an effect of inspecting that preview.
-
 ## Candidate later comparisons
 
 Select a next comparison from an observed friction point; this is a menu, not a
@@ -194,16 +263,15 @@ commitment to run every combination.
 | Question types | Plain-language manager choices; concise task brief versus current family instructions. | Manager-selected purpose, original question and legitimate inability. Do not silently select a different family. |
 | Evidence | File listing versus a manager-supplied source index; small captured material shown initially versus read on demand. | Source identity, full available scope and attribution. A source description is not a certification of its claims. |
 | Citations | Current locator operands versus reusable references returned by reading/searching. | Exact resolution to captured bytes. No fuzzy correction or support verdict. |
-| Finishing | Different names, previews and ready-to-use next calls; later, a single finish operation if explicitly selected. | Explain what exact draft is sealed, whether inspection is optional, how revision races resolve and who acts. Combining steps can change the product contract and needs that decision stated. |
 | Failure replies | Short action-oriented replies with detail available versus the current envelopes. | Actual effects, uncertainty and the valid recovery route remain inspectable. |
 
-## Design advice and adoption
+## Adoption and completion
 
-- [ ] Relay [the self-contained Riker request](riker/INTERACTION-STUDY-REQUEST.md)
-  under [the consultation procedure](riker/RIKER.md). Seek advice about Stewart's
-  conceptual design: necessary distinctions, avoidable machinery and experiments
-  that would inform those choices. Riker need not read this plan or design the
-  runner. Incorporate useful advice explicitly; it is not the principal's assent.
+- [ ] Require reduced effort or misunderstanding across more than one encounter,
+  preserved custody/authorship/citation/revision guarantees under adverse as well
+  as normal cases, and an intelligible account from the manager's and a human
+  auditor's positions. A handful of Haiku placements supports prototyping and
+  failure discovery, not general behavioral claims or proof of human usability.
 - [ ] Resolve substantive changes to participant authority, expressive freedom,
   preservation or submission meaning with the principal. Versioned interaction
   prototypes are proposals, not amendments to existing records or promises.
@@ -214,9 +282,10 @@ commitment to run every combination.
   no production qualification; results on Haiku do not automatically establish
   suitability for another runtime or a human auditor.
 
-The first decision package consists of two specified authoring prototypes,
-three frozen fixtures, the observation sheet, a bounded run proposal and paired
-human-readable views. After authorized trials, it includes every outcome and
+The first decision package consists of paired receiving views, their source
+mapping and the principal's observations. The subsequent authoring package has
+two specified prototypes, two frozen encounters, the observation sheet and a
+bounded run proposal. After authorized trials, it includes every outcome and
 an explicit design disposition. This plan is complete when the selected rounds
 have those dispositions, adopted behavior is documented and verified, and
 unselected ideas are explicitly deferred or abandoned. Move enduring guidance
