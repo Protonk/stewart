@@ -183,12 +183,16 @@ obligations. The matrix is a menu, not a mandatory sequence of experiments.
 
 ## Local preparation
 
-- [ ] Prepare the smallest study route for an explicitly supplied submission
-  folder and bounded run packet. The current C10 launcher validates exactly six
-  specimens in [common.py](apparatus/c10/common.py) and instantiates them in
-  [batch.py](apparatus/c10/batch.py). Keep that conformance catalog intact.
-  Identify reuse of launch, intake witnessing, capture, review and custody
-  collection rather than building another general experimental framework.
+- [ ] Add a study packet mode to the C10 launcher for an explicitly supplied
+  submission folder. The current launcher validates exactly six specimens in
+  [common.py](apparatus/c10/common.py) and instantiates them in
+  [batch.py](apparatus/c10/batch.py), and its live path requires a rehearsal
+  whose inventory equals the fixed rehearsal packet. Keep that conformance
+  catalog intact: a study packet names its submission by folder and hash, its
+  rehearsal coverage is defined with it, and its rendered front matter carries
+  the `inquiry` label and `varies` reference. Reuse launch, intake witnessing,
+  capture, review and custody collection rather than building another general
+  experimental framework.
 - [ ] Assemble the two submission folders from the frozen question bodies and
   shared materials. Add the run packet's front matter without changing the body.
   Verify exact file membership and hashes against `freeze.json`; exercise the
@@ -210,16 +214,18 @@ obligations. The matrix is a menu, not a mandatory sequence of experiments.
 Before implementation edits, identify the applicable
 [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed) and follow
 the independent-driver authoring rule. Reusing a launcher does not transfer its
-qualification to changed paths or larger workloads.
+qualification to changed paths or larger workloads. The changed apparatus needs
+its retained Linux rehearsal, run by the principal, before the first live
+baseline.
 
 ## Lightweight iteration
 
 For each intervention, retain a short note: what prompted it, what changed,
 what observable difference was expected, and what happened. Link the note to
 the relevant submission/build and saved traces. Plain text is sufficient.
-The product's `inquiry` label and `varies` reference can associate audits if
-the study route preserves them; the latter is a manager's attributed note,
-not a verified comparison. No scoring service or elaborate report is needed.
+The `inquiry` label and `varies` reference in the rendered front matter
+associate audits; the latter is a manager's attributed note, not a verified
+comparison. No scoring service or elaborate report is needed.
 
 Keep answer sufficiency and interface friction as separate observations. An
 adequate answer can conceal substantial mechanical effort; an insufficient
@@ -239,11 +245,17 @@ intellectual outcome, not a reason to demand filler or automatic continuation.
   Fix exact model/effort, allowances, request-attempt policy, watchdog, stop
   conditions and source/binary/apparatus bindings. Verify compatibility and costs
   and obtain bounded spending authorization before launch. The delegated input
-  choices and prior pilot grant no new model calls.
-- [ ] Size allowances for the actual workload. Input use is cumulative across
-  requests; repeated evidence can be expensive in context. Do not infer model
-  inability from a limit stop or silently rely on unqualified compaction and
-  continuation paths.
+  choices and prior pilot grant no new model calls. A and B are separate
+  launches with their own packets, approvals and evidence folders. A launches
+  and is later collected through the saved provider connection and is that
+  route's live check; a connection failure is a launch failure, not a study
+  observation.
+- [ ] Size allowances for the actual workload. A turn is one provider response
+  and each request resends the whole context, so the pilot's allowances do not
+  transfer: reading most of the 132 KB corpus over a few dozen turns consumes
+  far more cumulative input than the pilot packet allowed, and a limit stop
+  confounds the baseline. Do not infer model inability from a limit stop or
+  silently rely on unqualified compaction and continuation paths.
 - [ ] Select changes from observed friction or plausible simplification.
   Hold commission settings fixed except where an explicit evidence-presentation
   variant is the intervention. Changes to completeness or consistency are
@@ -259,6 +271,24 @@ intellectual outcome, not a reason to demand filler or automatic continuation.
 - [ ] Keep, revise, abandon or further distinguish a candidate according to the
   principal's judgment and the evidence. Propose extra comparisons only when
   they would resolve a material uncertainty.
+
+## Unresolved decisions
+
+- **Interface variants and the launch gate.** Orientation text, family
+  instructions and tool descriptions are pinned in the binary. The live launcher
+  accepts only a binary on the qualification front, bound to a matching
+  rehearsal, and the pinned texts are compared with QUESTION-FORMS by the service
+  tests and the independent driver's self-test. Each variant therefore needs a
+  specification edit, a service edit, a split-author driver edit, both Cargo
+  configurations, a Linux acceptance run and a rehearsal before live use. The
+  principal has tabled the choice between a labelled study mode that accepts an
+  identified unqualified build, commission-time arrangement inputs as a product
+  change, and the full cycle for one or two variants. Baselines do not depend
+  on it; the first intervention does.
+- **The receiving-end comparison.** The advice's first experiment presents
+  existing returns through the current rendering and a reader-oriented view
+  without model calls. It is excluded by the scope clarification; the principal
+  has tabled whether to add it as optional offline work.
 
 ## Adoption and completion
 

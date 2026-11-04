@@ -9,8 +9,9 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Implement and verify reusable provider connections, preserving explicit API-key supply | [PROVIDER-CONNECTIONS-PLAN.md](PROVIDER-CONNECTIONS-PLAN.md) |
+| Current | Add a saved provider connection to the launch apparatus, preserving hidden key entry | [PROVIDER-CONNECTIONS-PLAN.md](PROVIDER-CONNECTIONS-PLAN.md) |
 | Next | Run auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| After both | Decide who runs paid work and how that is enforced | A short plan written when the two stages complete |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
@@ -20,10 +21,12 @@ through the real provider loop, used Stewart's tools and reached a faithfully
 preserved outcome. It did not qualify all question families or replace release
 conformance. The small-commission apparatus has a reviewed Linux rehearsal, and
 the six-audit pilot on minimal questions has completed procedural review.
-Complete the provider-connections plan before the next Haiku baselines, so
-routine launches and later evidence collection do not require repeated key
-entry. Its current Anthropic path includes a separately authorized minimal live
-connection check; implementing another model runtime is outside that tranche.
+Complete the connection work's offline items before the Problem A baseline,
+which launches through the saved connection and serves as that route's live
+check. Both stages change the C10 launcher, and each change needs a retained
+Linux rehearsal before live use; whether the two changes share one rehearsal
+awaits the principal's briefing. Until the paid-work decision above is made,
+the principal runs live launches and collections in a separate terminal.
 Offline interface preparation can continue with the already frozen questions
 and evidence while connection work proceeds.
 

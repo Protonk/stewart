@@ -1188,3 +1188,7 @@ interpretation grants no execution or mutation authority.
   composition are unselected extensions, each requiring its own concrete need.
 - Whether read-only inquiry is intellectually useful, and how to admit new family
   opinions on evidence, remain optional studies, not gates on this design.
+- No product-level saved provider connection, bearer or federated
+  authentication or additional provider. The service takes one explicit
+  credential per placement; reuse across launches belongs to the launch
+  environment.
