@@ -11,7 +11,8 @@ This plan owns local preparation and remaining work. The
 [scope clarification](riker/INTERACTION-STUDY-CONTEXT.md) inform it.
 Product obligations remain in [DESIGN](DESIGN.md), [CONTRACTS](CONTRACTS.md),
 [INTERFACE](docs/INTERFACE.md) and [QUESTION-FORMS](docs/QUESTION-FORMS.md).
-Planning and inspection evidence is retained in `.scratch/interaction-plan-01`.
+Planning and inspection evidence is retained in `.scratch/interaction-plan-01`
+and `.scratch/interaction-plan-02`.
 
 ## Scope and division of work
 
@@ -20,23 +21,102 @@ evidence and other commission settings locally for each comparison. The local
 agent may operate as manager within the principal's authorization, but improving
 manager workflows or designing a manager interface is outside this study.
 
-The principal and Riker develop the inquiries and rough standards for answer
-sufficiency. Current candidates include a manageable code-and-evidence inquiry
-in frsrr, with completeness or consistency variants, and a saturated numerical
-question that permits partial answers or inability. These are provisional inputs,
-not local question-development tasks. Do not inspect those projects or invent
-replacement problems just to advance the apparatus.
+The principal supplied the frsrr problems and delegated decisions about what to
+freeze and present to the auditor. The local agent owns source selection,
+packaging and presentation variants without routine reconfirmation. The principal
+retains the study's purpose, spending and protected obligations. Problem A is the
+interface baseline; Problem B examines how the same interface accommodates
+intellectual limits. The initial choices are fixed below.
 
 The local focus is the auditor's initial context, family instructions, tool
 descriptions, evidence presentation, citation handling, recording and revision
 tools, and preparation/submission exchanges. Treat these as a coherent interface
-whose current shape can be questioned. The first intervention, experimental
-sequence, exact interfaces and run counts remain open.
+whose current shape can be questioned. Start with the existing interface on A,
+then B. The first interface intervention remains open until those encounters
+have been reviewed; document authoring is not a prerequisite for starting.
 
 Reading the returned answer is part of assessing the effect on auditor behavior.
 A separate manager-facing receiving redesign is not current work. Existing
 returns remain useful for inspection and explicitly labeled study views.
 A document-oriented answer is a candidate, not a selected destination.
+
+## Frozen questions and evidence
+
+The source is frsrr 1.1.0 at commit
+`212a3ead6479e126dcc58b09a34da53ef729dbe0`, inspected from
+`/Users/raccoon/Desktop/Math/frsrr`. The supplied problem document is
+`/Users/raccoon/Desktop/Scratch/frsrr-problems/frsrr-haiku-problems.md`.
+Its original bytes, the source snapshot and local inspection results are retained
+in `.scratch/frsrr-inspection-01`. These are local development observations,
+not Stewart qualification or evidence of Haiku behavior through Stewart.
+
+The frozen auditor inputs are in `.scratch/frsrr-interface-inputs-01`.
+`freeze.json` owns per-file SHA-256 identities, exclusions and provenance;
+its SHA-256 is
+`8081a561df5145db7fd855722ac08455eeac261ff9acaa6a8f5c101ed3908cb9`.
+Use these retained bytes, not the live frsrr checkout. This is an input freeze,
+not a launch-ready commission: model settings, limits and executable bindings
+still belong in the bounded run packet.
+
+| Input | Frozen choice |
+| --- | --- |
+| Question A | `question-a.txt`: the exact 528 bytes inside Problem A's Prompt fence, including the final LF. Keep its detailed subquestions unchanged for the initial comparison. |
+| Question B | `question-b.txt`: the exact 1,194 bytes inside Problem B's Prompt fence, including the final LF. Keep its request to distinguish computation, estimation and confidence. |
+| Family | `open-inquiry/1` for both baselines. Both already pose an inquiry; neither needs an additional framing or comparison assignment. |
+| Shared evidence | `materials/`: 33 unchanged package files, 132,012 bytes, with repository-relative paths preserved. All tracked source, tests, package metadata and text documentation are included. |
+| Selection notice | Manager-authored `materials/SOURCE.txt` identifies the revision and omissions without giving an answer map. With it, the material set is 34 files and 132,741 bytes. |
+| Initial presentation | The question body is the initial user message. Keep the existing orientation and family/tools; discover material through `list`, `read` and `search`, without inserting the corpus or a bespoke research guide into initial context. |
+
+Exclude exactly four tracked source files: `.Rbuildignore`, `.gitignore`,
+`AGENTS.md` and `man/figures/readme-refinement.png`. The first three are build,
+checkout or contributor guidance; the PNG is outside the current text reader.
+Keep the README and figure-generating R script unchanged, and disclose the
+omitted figure in `SOURCE.txt`. An unresolved document link does not supply
+content. No source text needs conversion, line numbering or normalization.
+Every selected source file fits within one current material read.
+
+The original problem document's reference answers, evidence map, suggested
+variations and prior-trial accounts stay reviewer-only. So do our build/test
+logs, extra thread comparison and four numerical point checks. Test source
+shows what a test checks; it is not evidence that the auditor ran it. No
+execution report is supplied in the baselines. R remains a preparation tool
+on the host; the auditor reads captured text and records its answer through
+Stewart's existing tools, without an execution capability.
+
+Changes to the question, evidence membership, source bytes or added guidance
+create a named new input variant with its own manifest. Preserve the baseline
+bytes and make the changed condition explicit. During an authoring-interface
+comparison, keep each problem's question and material bytes identical. A's
+subquestions can themselves organize prose, so do not attribute every heading
+or repeated statement to Stewart. Shortening the prompt is a separate possible
+intervention, not an unrecorded cleanup.
+
+## Reviewer sufficiency and limits
+
+For A, look for a supported explanation of thread-independent block selection,
+per-task storage, fixed combination order and the smallest-magic exact-tie rule,
+with accurate test coverage. The scope is the same build, floating-point
+environment, sampled inputs and candidates; equal function arguments alone do
+not reset sampling. The suite explicitly compares thread counts in the helper
+and `frsr()`, not at the `frsr_bin()` level. Its recorded `threads` setting can
+differ while the requested columns agree. Judge the substance without requiring
+the reference answer's organization or separate entries for these points.
+
+For B, judge what the answer establishes, how it bounds uncertainty and whether
+it distinguishes supplied claims, deductions, samples and exhaustive coverage.
+A well-supported partial answer or inability is a successful intellectual
+outcome; a bare refusal is not automatically useful. Do not require guessed
+numbers, confidence percentages or a particular conclusion to satisfy the form.
+If the auditor offers an exact result, assess its support rather than rewarding
+agreement with the reference table alone.
+
+The local checks reproduce the table's four errors only at the stated input
+points. They establish neither maxima nor global optimality. The supplied
+account of exhaustive input scans and a candidate window is not a checked
+coverage argument over the full magic domain. Retain that distinction when
+reviewing B; proving the reference optimum or adding execution tools is outside
+this interface study's preparation. Prior Haiku successes are useful motivation,
+not a demonstrated Stewart baseline or a requirement to force a similar result.
 
 ## Design question and boundaries
 
@@ -109,17 +189,19 @@ obligations. The matrix is a menu, not a mandatory sequence of experiments.
   [batch.py](apparatus/c10/batch.py). Keep that conformance catalog intact.
   Identify reuse of launch, intake witnessing, capture, review and custody
   collection rather than building another general experimental framework.
-- [ ] Preserve question/material identities and source mapping. Establish any
-  conversion to Stewart's current UTF-8 material format when the actual sources
-  are supplied. Keep reviewer sufficiency notes distinguishable from model
-  inputs; any deliberate inclusion in the commission must be explicit.
+- [ ] Assemble the two submission folders from the frozen question bodies and
+  shared materials. Add the run packet's front matter without changing the body.
+  Verify exact file membership and hashes against `freeze.json`; exercise the
+  real intake/witness route with these inputs before paid use. Keep provenance
+  and reviewer records outside the submission except for `SOURCE.txt`.
 - [ ] Identify concrete places to vary the auditor-facing arrangement and
   replies. Packaging can vary through submissions; instructions, tool definitions
   and rendering are pinned and may need a new build. Record the actual exposed
   variant rather than mutating an accepted arrangement in place.
 - [ ] Inspect initial context, repeated replies and relevant-action detail
-  separately. Use retained traces and small offline examples to prepare
-  candidates; question selection need not block this preparation.
+  separately. Capture the complete baseline exposure, including tool schemas
+  and returned content, so a quieter variant can be compared with what the
+  auditor actually received. Use small offline examples for proposed changes.
 - [ ] Exercise changed operations with appropriate small cases and controls.
   Include stale revisions, invalid citations, incomplete/empty returns and
   intervening edits where relevant. A simulator may answer an isolated question
@@ -149,13 +231,15 @@ identify reasoning or the interface as its cause.
 Inspect discoverability, navigation, copying and repair, revision effort,
 category-driven prose, recovery and commitment. Record calls, turns, reported
 or estimated usage and timing when useful. Do not optimize a count in isolation.
-For both proposed inquiries, inability or a partial result must be an available
+For both inquiries, inability or a partial result must be an available
 intellectual outcome, not a reason to demand filler or automatic continuation.
 
-- [ ] Once a chosen inquiry is supplied, prepare an authorized baseline or
-  initial comparison. Fix exact model/settings, source versions, allowances,
-  request-attempt policy, watchdog and stop conditions. Verify compatibility and
-  costs when freezing the packet; the prior pilot grants no new spending.
+- [ ] Prepare a proposed first commission of two placements: one current-interface
+  A baseline, then one B baseline on the same interface, reviewing A before B.
+  Fix exact model/effort, allowances, request-attempt policy, watchdog, stop
+  conditions and source/binary/apparatus bindings. Verify compatibility and costs
+  and obtain bounded spending authorization before launch. The delegated input
+  choices and prior pilot grant no new model calls.
 - [ ] Size allowances for the actual workload. Input use is cumulative across
   requests; repeated evidence can be expensive in context. Do not infer model
   inability from a limit stop or silently rely on unqualified compaction and
@@ -164,6 +248,10 @@ intellectual outcome, not a reason to demand filler or automatic continuation.
   Hold commission settings fixed except where an explicit evidence-presentation
   variant is the intervention. Changes to completeness or consistency are
   distinct conditions, not invisible differences in an interface comparison.
+  After baseline review, choose one intervention and the smallest useful
+  comparison; there is no precommitted variant matrix or numerical-search
+  campaign. Preserve model/effort and per-problem allowances across interface
+  comparisons unless their change is itself an identified condition.
 - [ ] Review the resulting answer and interaction together. Preserve failures and
   original records; no silent repairs, replacement trials or automatic extensions.
   A coherent interface package can vary together, provided its components are
