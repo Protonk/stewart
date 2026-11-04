@@ -23,7 +23,7 @@ explicit; it does not implement continuation or real compaction.
 Small-commission readiness is demonstrated by the reviewed Linux aarch64 run
 `.scratch/c10-launch-01`, pinned in the qualification record with its review at
 `review/result.json`. The principal's six-audit Haiku pilot has completed its
-placements and procedural review. Its remaining review decisions are below;
+placements and procedural review. Its review disposition is below;
 full-gate work still needs its own bounded authorization.
 
 Native iteration is not qualification. Retain `.scratch/c10-native-01` and
@@ -38,7 +38,7 @@ The [qualification record](apparatus/qualified.md) owns demonstrated Linux
 results; run `python3 -I -B apparatus/qualified.py check` before relying on it.
 The reviewed small-commission rehearsal establishes no model qualification.
 
-## Pilot review follow-through
+## Pilot review disposition
 
 The qualification record pins the combined review at
 `.scratch/c10-haiku-commission-01/review/result.json` and its readable
@@ -48,18 +48,21 @@ inventories and source bindings; `compatibility-and-cost.json` owns the dated
 provider checks and estimates. All six authorized placements are complete.
 There are no unused packets or unresolved procedural failures.
 
-- [ ] Obtain the principal's assessment of the six answers, particularly the
-  requirements-only framing answer's unsupported inference about call order and
-  retry behavior. Its inspection is in `.scratch/c10-live-04/review/inspection.json`.
-  Mechanical citation validity does not settle that substantive concern. One
-  observation per case does not establish its cause or frequency.
-- [ ] Reconcile the retained reported usage and calculated cost with available
-  Console billing for `stewart-exp`. Billing is explicitly unobserved; do not
-  label the calculated amount an observed charge.
-- [ ] Give any selected follow-up a separate bounded commission. Repeats,
-  continuations, altered prompts or inputs, and full-gate mechanisms are outside
-  the completed pilot's spending authority. Preserve the original answers when
-  comparing variants; the pilot implies no change to product defaults or gates.
+The assistant's substantive assessment and the principal's reported Console
+figures are appended as `review/answer-assessment-01.json` and
+`review/billing-observation-01.json` in the commission folder. The principal
+reports 2 cents with the Console set to the last 30 days and does not request
+further billing investigation for this assessment. Attribution to the pilot
+remains unresolved; the original calculated amount is not an observed charge.
+
+The requirements-only framing concern remains recorded in
+`.scratch/c10-live-04/review/inspection.json`. The principal has redirected the
+next study toward unobtrusive scaffolding, rather than tuning the intellectual
+quality of Haiku's answers. This gives the pilot review a disposition without
+asserting agreement with every assistant judgment or resolving that concern.
+No further pilot placements remain. Repeats, continuations, altered inputs and
+full-gate mechanisms need a separate bounded commission. The pilot implies no
+change to product defaults or acceptance gates.
 
 Keep the six original containers and evidence through the principal's review
 and disposal decision. Each `.scratch/c10-live-01` through `.scratch/c10-live-06`

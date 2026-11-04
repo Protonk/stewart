@@ -9,9 +9,9 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Review the pilot answers and billing; select the next bounded work | [Pilot follow-through](C10-PLAN.md#pilot-review-follow-through) |
+| Current | Design the interaction study and prepare prototype and bounded-run proposals | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
-| Separately commissioned studies | Haiku instruction/presentation comparisons and question-family dogfooding | The study sections below |
+| Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 
 The Messages API sanity commission has run: one simple commission travelled
@@ -19,10 +19,10 @@ through the real provider loop, used Stewart's tools and reached a faithfully
 preserved outcome. It did not qualify all question families or replace release
 conformance. The small-commission apparatus has a reviewed Linux rehearsal, and
 the six-audit pilot on minimal questions has completed procedural review.
-Its answer assessment and billing reconciliation remain open. Full C10
-qualification remains a release gate; further studies can be commissioned
-before its live compaction and recovery runs are complete.
-Instruction/presentation variants are a separately identified study. These API
+The principal has selected interaction design as the next study, using cheap
+model calls to examine Stewart's scaffolding. Its preparation does not depend
+on completing the full C10 apparatus. Full C10 qualification remains a release
+gate; its live compaction and recovery runs need their own commission. These API
 runs do not depend on the Claude Code runtime. The other release backlog is not
 a prerequisite list for this sequence. Model-consuming work requires the
 principal's bounded authorization under [AGENTS.md](AGENTS.md).
@@ -88,41 +88,6 @@ the Console's billing records for the `stewart-exp` key, which Stewart cannot
 observe. The retained containers and the open `sanity-live-01` audit await the
 user's review and disposal decision under
 [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).
-
-## Haiku framing study
-
-Find how much guidance helps an auditor answer the manager's question without
-repeating Stewart's harness structure. Vary instructions and presentation
-separately:
-
-| | Current presentation | Plain presentation |
-| --- | --- | --- |
-| Current instructions | Baseline | Presentation change alone |
-| Lean instructions | Instruction change alone | Both changes |
-
-Lean instructions retain the commission, evidence/access boundaries and
-submission mechanics while removing duplicated coaching. Plain presentation
-foregrounds the auditor's text without automatically added Account, Observation
-or Limit headings. Preserve records, citations, attribution and custody behavior.
-Initially keep recording tools unchanged, along with the question, materials and
-model/settings within each comparison.
-
-Use a few small commissions with repeated runs. Inspect model-authored prose
-separately from the rendering: engagement with the question, relevant uncertainty,
-unnecessary harness discussion, tool use and submission. Fewer words or
-qualifications are not automatically better. Recording categories and preparation
-notices remain possible influences for later comparisons.
-
-Record whether the auditor reads the prepared rendering; that optional exposure
-may affect edits. Compare presentations of the same recorded answer without a
-new model call when studying the manager's reading experience. Such views are
-study artifacts, not replacements for sealed returns. Retain the original
-outputs and conditions.
-
-Needs: exact Haiku model/settings, variants, specimens, repetitions and
-spending/retry limits. Prompt wording and rendering changes remain to be designed.
-Results apply to the tested arrangement; transfer to another runtime or model
-needs checking. Findings do not automatically change defaults or submission rules.
 
 ## Question-family dogfooding
 
