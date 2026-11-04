@@ -9,7 +9,8 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Prepare auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Current | Implement and verify reusable provider connections, preserving explicit API-key supply | [PROVIDER-CONNECTIONS-PLAN.md](PROVIDER-CONNECTIONS-PLAN.md) |
+| Next | Run auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
@@ -19,12 +20,19 @@ through the real provider loop, used Stewart's tools and reached a faithfully
 preserved outcome. It did not qualify all question families or replace release
 conformance. The small-commission apparatus has a reviewed Linux rehearsal, and
 the six-audit pilot on minimal questions has completed procedural review.
-The principal has selected interaction design as the next study, using cheap
-model calls to examine Stewart's scaffolding. Its preparation does not depend
-on completing the full C10 apparatus. Full C10 qualification remains a release
-gate; its live compaction and recovery runs need their own commission. These API
-runs do not depend on the Claude Code runtime. The other release backlog is not
-a prerequisite list for this sequence. Model-consuming work requires the
+Complete the provider-connections plan before the next Haiku baselines, so
+routine launches and later evidence collection do not require repeated key
+entry. Its current Anthropic path includes a separately authorized minimal live
+connection check; implementing another model runtime is outside that tranche.
+Offline interface preparation can continue with the already frozen questions
+and evidence while connection work proceeds.
+
+The following study uses cheap model calls to examine Stewart's auditor-facing
+scaffolding. Neither its preparation nor the connection work requires completing
+the full C10 apparatus. Full C10 qualification remains a release gate; its live
+compaction and recovery runs need their own commission. These API runs do not
+depend on the Claude Code runtime. The other release backlog is not a
+prerequisite list for this sequence. Model-consuming work requires the
 principal's bounded authorization under [AGENTS.md](AGENTS.md).
 
 ## Evidence and retained work
