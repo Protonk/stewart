@@ -21,6 +21,7 @@ from session import Session, export_evidence_state, failure_details
 from control import safe_state
 from fake import Auditor
 from verify import Evidence, inventory_from_evidence, verify
+from study import copy_submission, inspect_submission, resolve_submission, supplied_runs
 
 
 def event(root, kind, **data):
@@ -43,16 +44,24 @@ def check_credential(path, key):
 
 
 class Audit(Session):
-    def __init__(self, binary, root, packet, run, *, mode, local=False):
+    def __init__(self, binary, root, packet, run, *, mode, local=False, submissions=None):
         self.binary, self.root, self.commission, self.mode = Path(binary), Path(root), packet, mode
-        self.specimen, self.run_item, self.local = catalog()[run['case']], run, local
+        supplied = run.get('submission_folder') is not None
+        self.specimen = (inspect_submission(resolve_submission(run, submissions), run['case'], run['submission_sha256'])
+                         if supplied else catalog()[run['case']])
+        self.run_item, self.local = run, local
         self.phase, self.observer_state, self.witness = 'setup', None, None
         self.index, self.ref, self.process = 0, None, None
         self.root.mkdir(mode=0o700)
         self.folder, self.archive, self.destination, self.evidence = [self.root / name for name in ['submission','archive','returns','evidence']]
-        shutil.copytree(self.specimen['root'], self.folder)
+        if supplied:
+            copy_submission(self.specimen['root'], self.folder, run['submission_sha256'])
+        else:
+            shutil.copytree(self.specimen['root'], self.folder)
         self.destination.mkdir(mode=0o700)
         self.evidence.mkdir(mode=0o700)
+        if supplied:
+            copy_submission(self.specimen['root'], self.evidence/'submission-template', run['submission_sha256'])
         (self.root / 'home').mkdir(mode=0o700)
         self.question = self.specimen['question']
         (self.folder / 'question.md').write_bytes(question_file(self.specimen, packet, self.destination))
@@ -66,7 +75,7 @@ class Audit(Session):
         e = Evidence(self.root)
         inputs = inventory_from_evidence(e, 'evidence/input-witness/')
         write_json(self.evidence / 'specimen.json', {'case':{key:value for key,value in self.specimen.items() if key not in ['root','sha256']},
-            'materials':inventory(self.specimen['root'])})
+            'materials':[item for item in inventory(self.specimen['root']) if item['path'] != 'question.md']})
         write_json(self.evidence / 'binding.json', {'schema':'stewart.c10-audit/1',
             'commission':packet, 'run':run, 'family':self.specimen['family'], 'mode':mode,
             'binary_sha256':file_hash(binary), 'input_inventory':inputs, 'destination':str(self.destination),
@@ -233,7 +242,7 @@ def execute_batch(binary, private, out, packet, mode, key, sessions, witness, *,
     return report
 
 
-def prepare_batch(binary, private, out, packet, mode, *, local=False):
+def prepare_batch(binary, private, out, packet, mode, *, local=False, submissions=None):
     private.mkdir(mode=0o755)
     private.chmod(0o755)
     out.mkdir(mode=0o700,exist_ok=True)
@@ -241,7 +250,7 @@ def prepare_batch(binary, private, out, packet, mode, *, local=False):
         'binary_sha256':file_hash(binary), 'audits':[r['id'] for r in packet['runs']]})
     sessions=[]
     for run in packet['runs']:
-        audit = Audit(binary,private/run['id'],packet,run,mode=mode,local=local)
+        audit = Audit(binary,private/run['id'],packet,run,mode=mode,local=local,submissions=submissions)
         sessions.append(audit)
         audit.intake()
     return sessions
@@ -254,6 +263,7 @@ def main():
     parser.add_argument('--packet',type=Path,required=True)
     parser.add_argument('--private',type=Path,default=Path('/work/c10-private'))
     parser.add_argument('--out',type=Path,default=Path('/out'))
+    parser.add_argument('--submissions',type=Path)
     args=parser.parse_args()
     os.umask(0o077)
     resource.setrlimit(resource.RLIMIT_CORE,(0,0))
@@ -262,7 +272,7 @@ def main():
     require(file_hash(args.binary)==packet['bindings']['binary_sha256'],'binary binding changed')
     require(source_hash()==packet['bindings']['apparatus_sha256'],'container apparatus source differs from packet')
     try:
-        sessions=prepare_batch(args.binary,args.private,args.out,packet,args.mode)
+        sessions=prepare_batch(args.binary,args.private,args.out,packet,args.mode,submissions=args.submissions)
         filesystem=subprocess.run(['stat','-f','-c','%T',str(sessions[0].archive)],
             capture_output=True,check=False)
         write_json(args.out/'ENVIRONMENT.json',{'system':platform.system(),'kernel':platform.release(),
@@ -297,6 +307,16 @@ def main():
             require(not scan['files_with_matches'] and not scan['errors'],'review-control export scan failed')
             shutil.copytree(controls_root,args.out/'review-controls')
             require(controls['failed']==0,'reviewer controls failed')
+            if supplied_runs(packet):
+                study_controls=args.private.parent/'c10-study-review-controls'
+                study_controls.mkdir(mode=0o700)
+                for audit in sessions:
+                    if audit.run_item.get('submission_folder') is not None:
+                        result=exercise(audit.root,study_controls/audit.run_item['id'])
+                        require(result['failed']==0,'study reviewer controls failed')
+                scan=scan_tree(study_controls,key)
+                require(not scan['files_with_matches'] and not scan['errors'],'study-review export scan failed')
+                shutil.copytree(study_controls,args.out/'study-review-controls')
         del key
         write_json(args.out/'RESOURCES.json',{'self_maxrss_kib':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
             'children_maxrss_kib':resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,

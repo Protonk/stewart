@@ -13,6 +13,27 @@ instructions belong in the [launcher instructions](apparatus/c10/README.md) once
 implemented. Planning checks are retained in `.scratch/provider-connections-plan-01`
 and `.scratch/provider-connections-plan-02`.
 
+The connection module and CLI are implemented; their operating contract is in
+[the launcher instructions](apparatus/c10/README.md#saved-provider-connections).
+Current local checks are retained in `.scratch/provider-study-checks-01`.
+The principal's native run `.scratch/c10-study-native-03` passed all 15 planned
+audits and seven operator comparisons; its source hash matches the current
+apparatus. The host driver self-test passed 319 checks with no failures or skips.
+Reviewer comparisons passed in `.scratch/c10-study-review-fixed-01` (14/14,
+12 controls fired), `.scratch/c10-study-review-study-a-01` and
+`.scratch/c10-study-review-study-b-01` (18/18 and 16 controls fired each).
+Native Linux process-access checks were skipped; these runs are not qualification.
+The two earlier attempts, `.scratch/c10-study-native-01` and
+`.scratch/c10-study-native-02`, remain retained with their permission failures.
+The principal's 2026-11-05 metadata lookup found the live item in the login
+keychain with service `stewart-provider`, account and display label
+`stewart-haiku`. The principal reports its provider scope as the Stewart project;
+no provider identity or inference access has been checked. No test read its value.
+The agent execution context could not find even the earlier known item after
+escalation; the principal took that harness investigation elsewhere. The planned
+agent-shell observer check is deferred to that separate investigation. Current
+launch and collection checks use the principal's terminal.
+
 ## Decisions
 
 **The apparatus owns the connection.** The binary runs in a Linux container or
@@ -77,7 +98,7 @@ coordinating plan.
 | --- | --- |
 | Selection | The packet names provider, endpoint and the non-secret account, workspace and credential labels. The launcher prints them before launch and labels them as manager-supplied; provider-confirmed identity comes only from a successful run and the Console. |
 | Configuration | No credential in packets, question files, arrangements, records or ordinary configuration. The only persistent secret is the Keychain item. |
-| Private use | The launcher process holds the key between lookup and handoff and for the host scan, then drops it. It never enters argv, environment, container configuration, recorded streams or chat. The `security` tool's standard error is recorded; it carries no secret. |
+| Private use | The launcher process holds the key between lookup and handoff and for the host scan, then drops it. It never enters argv, environment, container configuration, recorded streams or chat. Lookup records retain the exit status and fixed failure classification; raw stdout and stderr stay unrecorded because unexpected tool output may contain a credential. |
 | Lifecycle | `connection status` reports item presence and metadata without reading the value. Disconnect is the principal deleting the item; the launcher states that this removes local access only and that revocation happens in the Console and is not confirmed by Stewart. |
 | Failure | Missing item, locked keychain, denied prompt, missing tool, label mismatch with the packet and wrong key at collection (the existing HMAC refusal) are reported distinctly. No fallback to another source. |
 
@@ -100,41 +121,22 @@ as the relevant limit for Claude subscriptions.
 
 ## Remaining work
 
-### 1. Freeze the launcher interface
+### Verify the supported path
 
-- [ ] Add a connection module under `apparatus/c10/` that performs the lookup
-  with a bounded deadline, classifies the tool's exit status and standard error
-  into the failure cases above, and returns the value only to the caller.
-  `launch.py` is unchanged. Record the macOS and `security` behavior observed
-  with the synthetic item, including the exit status for a missing item and for
-  a denied prompt.
-- [ ] Add `--connection LABEL` to `c10.py live`, `c10.py rehearse` and
-  `c10.py control … collect`, and `c10.py connection status LABEL`. Live and
-  collect refuse a label that differs from the packet's `credential_label`;
-  rehearse refuses a value without the nonfunctional prefix. Keep hidden entry
-  as the default.
-- [ ] Keep the secret out of every record: the lookup runs after verified intake
-  exactly where hidden entry runs today, the value is written only to the
-  container's standard input, the host scan uses it and drops it, and failure
-  reports carry fixed text.
-- [ ] Document setup, status, rotation and disconnect in the launcher README,
-  including the exact creation command with `-T ""` and hidden entry, and the
-  principal-run host checks below.
+The fake-`security` tests cover lookup and fresh-process reuse, metadata-only
+status, distinct failures, deadlines, label mismatch before launch, nonfunctional
+prefix and credential bounds, collection handoff and exclusion of values from
+records and streams. The inherited sanity launcher is unchanged. The local test
+outputs, rather than this implementation account, own actual counts and skips.
 
-### 2. Verify the supported path
-
-- [ ] Offline coverage in `test_c10.py` with a fake `security` executable on the
-  path: successful lookup, missing item, denied access, missing tool, deadline,
-  label mismatch, rehearsal refusal, and absence of the value from every record
-  and stream. The agent can run these.
 - [ ] Host checks against a synthetic item that the principal creates with a
   nonfunctional value: initial setup, reuse by a fresh launcher process, locked
-  keychain, missing item, denied prompt, wrong key at collection, and an observer
-  run of the lookup from the agent's sandboxed shell with its prompt recorded.
+  keychain, missing item, denied prompt and wrong key at collection.
   The real item is never read by a test. Retain the outputs under
-  `.scratch/connection-checks-NN`.
-- [ ] Run the [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed)
-  for `apparatus/c10/` and preserve outputs. Commit, then the principal runs the
+  `.scratch/connection-checks-NN`, including macOS version and the missing-item
+  and denied-prompt exit statuses. The agent-shell observation has the separate
+  disposition above.
+- [ ] Commit the locally checked apparatus, then the principal runs the
   Linux `c10.py rehearse --connection` with the synthetic item and pins the
   result; it supersedes the retained rehearsal and its binding is required
   before live use.

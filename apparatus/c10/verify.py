@@ -11,6 +11,7 @@ from common import (MAX_FILE, LIMITS, compact, digest, file_hash, inventory,
 import answer_witness as answer
 import driver_core as spec
 import rawjson
+from study import case_from_question
 
 
 class Evidence:
@@ -19,7 +20,9 @@ class Evidence:
         self.root = Path(root)
         self.archive = None
         if expected_hash is None:
-            self.names = {item['path'] for item in inventory(root) if item['type'] == 'file'}
+            items = inventory(root)
+            self.names = {item['path'] for item in items if item['type'] == 'file'}
+            self.directories = {item['path'] for item in items if item['type'] == 'directory'}
         else:
             require(file_hash(root) == expected_hash, 'export_digest')
             self.archive = tarfile.open(root, 'r:')
@@ -35,6 +38,8 @@ class Evidence:
                 self.archive.close()
                 raise
             self.names = {name[len('private/'):] for name, item in self.members.items() if item.isfile()}
+            self.directories = {name[len('private/'):] for name, item in self.members.items()
+                                if item.isdir() and name != 'private'}
 
     def read(self, name, limit=MAX_FILE):
         relative(name)
@@ -114,9 +119,16 @@ def _verify(e, report, check):
     packet, run = binding['commission'], binding['run']
     family = binding['family']
     specimen = e.json('evidence/specimen.json')
-    check(digest(compact(specimen)) == run['submission_sha256']
-          and specimen['case']['id'] == run['case'] and specimen['case']['family'] == family,
-          'specimen_binding')
+    if run.get('submission_folder') is not None:
+        check(packet['schema'] == 'stewart.study-commission/1' and run in packet['runs'], 'study_packet_binding')
+        template = tree_inventory_from_evidence(e, 'evidence/submission-template/')
+        check(digest(compact(template)) == run['submission_sha256'], 'study_template_binding')
+        case = case_from_question(e.read('evidence/submission-template/question.md'), run['case'])
+        check(specimen == {'case': case, 'materials': [item for item in template if item['path'] != 'question.md']},
+              'study_specimen_binding')
+    else:
+        check(digest(compact(specimen)) == run['submission_sha256'], 'specimen_binding')
+    check(specimen['case']['id'] == run['case'] and specimen['case']['family'] == family, 'specimen_binding')
     report.update(audit=run['id'], case=run['case'], repetition=run['repetition'], mode=binding['mode'])
     report['witness_scope'] = {'inputs': 'independent copies before intake',
         'provider': 'independent fake exchanges' if binding['mode'] == 'rehearse' else 'Stewart-owned captures; no independent live provider witness',
@@ -425,3 +437,20 @@ def inventory_from_evidence(e, prefix):
     # regular member identities are compared here, directory membership at intake.
     return [{'path': name[len(prefix):], 'bytes': len(e.read(name)), 'sha256': digest(e.read(name))}
             for name in sorted(e.names) if name.startswith(prefix)]
+
+
+def tree_inventory_from_evidence(e, prefix):
+    """Reproduce the template identity, including empty directory membership."""
+    names = {name[len(prefix):] for name in e.names | e.directories if name.startswith(prefix)}
+    result = []
+    def visit(parent):
+        for name in sorted(n for n in names if str(Path(n).parent) == (parent or '.')):
+            if prefix + name in e.directories:
+                result.append({'path': name, 'type': 'directory'})
+                visit(name)
+            else:
+                raw = e.read(prefix + name)
+                result.append({'path': name, 'type': 'file', 'bytes': len(raw), 'sha256': digest(raw)})
+    visit('')
+    require(len(result) == len(names), 'study_template_membership')
+    return result

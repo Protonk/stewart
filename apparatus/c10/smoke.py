@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import rehearsal_packet, write_json, file_hash, require
 from batch import prepare_batch, execute_batch, credential_marker
+from study import study_proposal
 
 
 def main():
@@ -20,10 +21,12 @@ def main():
     parser.add_argument('--case',help='One catalog case; default runs the whole rehearsal')
     parser.add_argument('--audit',help='One named audit/control from the rehearsal inventory')
     parser.add_argument('--check-operations',action='store_true',help='After an unsubmitted control, explicitly test manager close and collection')
+    parser.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
+                        help='Add a hashed study template to the full rehearsal')
     args=parser.parse_args()
     require(args.evidence.is_absolute() and not args.evidence.exists(),'use a new absolute evidence directory')
     args.evidence.mkdir(mode=0o700)
-    packet=rehearsal_packet()
+    packet=study_proposal('rehearsal-only',args.submission,rehearsal=True) if args.submission else rehearsal_packet()
     if args.case:
         packet['runs']=[r for r in packet['runs'] if r['case']==args.case and r['scenario']=='submitted']
         require(bool(packet['runs']),'unknown case')

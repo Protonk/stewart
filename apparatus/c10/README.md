@@ -149,11 +149,142 @@ python3 -I -B apparatus/c10/c10.py live "$PWD/.scratch/c10-live-NN" \
 
 Run an authorized live launch in a separate interactive terminal. The launcher
 first checks bindings, opens a credential-free TCP connection to the provider
-and completes every intake/readback. It then requests the key without echo and
-sends it through an inherited descriptor. Keys never belong in argv, environment
+and completes every intake/readback. It then obtains the key by hidden entry or
+the explicitly selected saved connection and sends it through an inherited
+descriptor. Keys never belong in argv, environment
 variables or chat. Private command records remain in the container. Automatic
 ordinary close occurs only after a checked auditor submission. A failure does
 not authorize restarting the batch.
+
+## Saved provider connections
+
+The macOS host can supply the original credential from its login Keychain for
+launch and collection. Each connection is a generic password with service
+`stewart-provider` and account equal to the packet's `credential_label`.
+Labels contain 1–80 letters, digits, dots, underscores or hyphens, starting with
+a letter or digit. Provider account/workspace labels remain manager-supplied;
+Keychain presence establishes no provider identity or inference access.
+
+Create the item in your own terminal. Keep `-w` last and enter the API key at
+the hidden prompt. The default keychain must be your login keychain; inspect it
+with `security default-keychain -d user` if uncertain.
+
+```sh
+security add-generic-password -s stewart-provider -a stewart-haiku -l stewart-haiku -T "" -w
+python3 -I -B apparatus/c10/c10.py connection status stewart-haiku
+```
+
+`-T ""` removes the creating tool's default trusted access. Retain confirmation
+before access and use the one-time Allow choice for an intended lookup; Always
+Allow changes that policy. Lookup holds the key privately and passes it through
+the existing container standard-input handoff after verified intake. The host
+also uses it for the export scan, then drops its reference. This promises no
+memory erasure or secrecy from the host administrator.
+
+Add `--connection stewart-haiku` to `live` or `control ... collect`. The label
+must equal the packet's credential label; mismatch refuses before lookup.
+Without the option, hidden entry remains available. Neither route reads
+`ANTHROPIC_API_KEY`, and failures never fall back to another credential source.
+Status requests no password and verifies no access policy or provider access.
+Password lookup has a 60-second deadline; metadata status has a 10-second one.
+
+Diagnostics distinguish missing tool, missing item in this execution context,
+denied/cancelled access, locked keychain or unavailable interaction, deadline,
+invalid credential, and unclassified failure. Records keep the exit status and
+fixed classification. Raw stdout and stderr are withheld, since unexpected
+diagnostics could contain credentials. An invalid-parameter error followed by
+item-not-found stays unclassified; it does not establish absence.
+
+Rehearse with a separate item whose value starts with `c10-NONFUNCTIONAL-`.
+Use fresh random characters after the prefix, not text present in the source or
+evidence: the host credential scan must not find the value there. Enter it at
+the prompt below. Never use the real item in a test.
+
+```sh
+security add-generic-password -s stewart-provider -a stewart-synthetic -l stewart-synthetic -T "" -w
+python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
+  --qualification QUALIFICATION_ID --connection stewart-synthetic
+```
+
+Rehearsal refuses a value without that prefix before handoff. After its ordinary
+checks it starts a fresh launcher process, looks up the item again and collects
+`open-ordinary-r1` into a second immutable snapshot. Both lookups may prompt.
+Saved-connection live use requires this successful collection as well as the
+full Linux rehearsal. A failed collection leaves the initial records intact
+and prevents live use. Collection never starts a model.
+
+Host checks use only the synthetic item. Retain commands, streams, exits,
+macOS version, prompt observations and execution context under a new
+`.scratch/connection-checks-NN`. Check metadata; observe the allowed lookup and
+fresh-process collection; deny a lookup; try a missing label; and exercise a
+locked keychain, restoring it afterwards. Existing operator controls test
+wrong-key collection. Offline tests use a fake `security` executable and
+establish no host Keychain behavior.
+
+Rotate by creating an item with a new label and binding new packets to it.
+Keep the old credential until every run using it has been collected. Historical
+packets stay unchanged. To disconnect a chosen item locally:
+
+```sh
+security delete-generic-password -s stewart-provider -a LABEL
+```
+
+This removes local access only. Provider revocation happens separately in the
+Console and is not confirmed by the launcher. It never deletes an item itself.
+
+## Study submissions
+
+Study packets use `stewart.study-commission/1`; the six-case catalog and
+`stewart.c10-commission/1` retain their existing meanings. Supply a folder with
+only `question.md` and `materials/`. It is a hashed template: family, `inquiry`,
+optional `varies`, exact question body and material bytes come from it. The run
+packet supplies model, effort and cumulative allowances; the launcher supplies
+destination. Those front-matter fields are rendered anew. Template settings
+in those positions are not live settings or spending authority.
+
+An inquiry label is required. Omit `varies` for a baseline without an earlier
+audit; a supplied reference is preserved as the manager's attributed note.
+
+```sh
+python3 -I -B apparatus/c10/c10.py propose --model EXACT_MODEL_ID \
+  --submission problem-a /absolute/submission-a \
+  --output "$PWD/.scratch/study-proposal.json"
+```
+
+Each named template becomes one explicit placement. Study proposals cannot
+select catalog cases or implicit repetitions. The defaults are the small
+proposal allowances above; size them for the actual corpus before authorization.
+`packet`, approval by exact digest and `live` follow the same route as C10.
+This mode accepts no experimental or unqualified binary.
+
+The packet binds each absolute folder and its inventory digest, including empty
+directories. The host verifies and stages it; the container verifies it again,
+retains an independent template copy, renders intake, witnesses every rendered
+file and reads it back through the binary's receipt interface before requesting
+a credential. Changes, missing members, links and special files refuse. Failed
+copies remain in the new evidence folder; original source folders are unchanged.
+
+The Linux rehearsal must include each template hash proposed for live use:
+
+```sh
+python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
+  --qualification QUALIFICATION_ID --connection stewart-synthetic \
+  --submission problem-a /absolute/submission-a \
+  --submission problem-b /absolute/submission-b
+```
+
+This runs all 13 fixed scenarios plus one audit per template. The ordinary 14
+reviewer comparisons and seven operator comparisons remain required. Each study
+audit also gets 18 reviewer comparisons, including four template tampering
+controls and two invariance cases. Live launch checks complete coverage and
+successful reviews. Native iteration accepts the same `--submission ID FOLDER`
+arguments on `smoke.py`; run `check_review.py` on each resulting study audit.
+Native checks are not Linux qualification.
+
+The reviewer binds template inventory to the packet, checks deterministic
+rendering, then verifies the captured commission and answer. The auditor gets
+the question body, existing form/tools and ordinary material access. Reviewer
+guidance outside the supplied template is not added to its world.
 
 ## Operate retained audits
 
@@ -174,8 +305,8 @@ verifies package bytes and identifies the answer to read privately; it does not
 judge its contents. If close requires confirmation, inspect the return, then
 issue `close --confirm TOKEN` explicitly. There is no automatic loss surrender.
 
-`collect` needs an interactive terminal to re-enter the original credential for
-scanning. A private HMAC check refuses a different key without storing the key
+`collect` needs the original credential for scanning: hidden terminal entry by
+default, or the selected saved connection. A private HMAC check refuses a different key without storing the key
 itself. It observes the writer stopped under the operator lock, repeats the
 evidence-membership and credential checks, and creates `export-0002`, then
 `export-0003`, and so on. It never changes an earlier snapshot. Uncertain or

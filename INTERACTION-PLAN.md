@@ -184,21 +184,28 @@ obligations. The matrix is a menu, not a mandatory sequence of experiments.
 
 ## Local preparation
 
-- [ ] Add a study packet mode to the C10 launcher for an explicitly supplied
-  submission folder. The current launcher validates exactly six specimens in
-  [common.py](apparatus/c10/common.py) and instantiates them in
-  [batch.py](apparatus/c10/batch.py), and its live path requires a rehearsal
-  whose inventory equals the fixed rehearsal packet. Keep that conformance
-  catalog intact: a study packet names its submission by folder and hash, its
-  rehearsal coverage is defined with it, and its rendered front matter carries
-  the `inquiry` label and `varies` reference. Reuse launch, intake witnessing,
-  capture, review and custody collection rather than building another general
-  experimental framework.
-- [ ] Assemble the two submission folders from the frozen question bodies and
-  shared materials. Add the run packet's front matter without changing the body.
-  Verify exact file membership and hashes against `freeze.json`; exercise the
-  real intake/witness route with these inputs before paid use. Keep provenance
-  and reviewer records outside the submission except for `SOURCE.txt`.
+The implemented [study packet path](apparatus/c10/README.md#study-submissions)
+keeps the six conformance cases intact and adds explicit folder/hash bindings.
+The two offline templates are in `.scratch/frsrr-study-submissions-01`, with
+`assembly.json` recording verification against the frozen manifest, exact question
+bodies and all 34 material files. Their front matter carries the inquiry label;
+`varies` is omitted because these baselines have no earlier audit reference.
+Model/effort, allowances and destination in these templates are offline settings,
+not a proposed live commission. The packet supplies the eventual run settings.
+
+The native run `.scratch/c10-study-native-03` passed all 15 planned audits,
+including both study templates, and all seven operator comparisons. The reviewer
+checks passed in `.scratch/c10-study-review-fixed-01` (14/14),
+`.scratch/c10-study-review-study-a-01` and `.scratch/c10-study-review-study-b-01`
+(18/18 each, including all template controls). The logs and matching source hash
+are in `.scratch/provider-study-checks-01`. This is native iteration, with Linux
+process-access checks skipped. Preserve the earlier permission failures in
+`.scratch/c10-study-native-01` and `.scratch/c10-study-native-02` as well.
+
+- [ ] Run and retain the committed apparatus's
+  Linux rehearsal with both study templates before binding a paid packet.
+  Study template tampering, actual capture/review and later collection must
+  pass; successful intake alone establishes neither an answer nor qualification.
 - [ ] Identify concrete places to vary the auditor-facing arrangement and
   replies. Packaging can vary through submissions; instructions, tool definitions
   and rendering are pinned and may need a new build. Record the actual exposed

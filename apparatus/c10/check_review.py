@@ -19,10 +19,15 @@ class View:
         self.original=original
         self.changes={}
         self.removed=set()
+        self.added_directories=set()
 
     @property
     def names(self):
         return (self.original.names | set(self.changes)) - self.removed
+
+    @property
+    def directories(self):
+        return (self.original.directories | self.added_directories) - self.removed
 
     def read(self,name,limit=64*1024*1024):
         require(name in self.names,'missing_evidence')
@@ -80,7 +85,8 @@ def exercise(root,out):
         for n,(path,raw) in enumerate(sorted(view.changes.items()),1):
             member=f'changed-{n:04d}.bin';(folder/member).write_bytes(raw)
             changes.append({'path':path,'bytes':len(raw),'sha256':digest(raw),'content':member})
-        write_json(folder/'view.json',{'changed':changes,'omitted':sorted(view.removed)})
+        write_json(folder/'view.json',{'changed':changes,'omitted':sorted(view.removed),
+                                     'added_directories':sorted(view.added_directories)})
         write_json(folder/'review.json',result)
         rows.append({'case':name,'control':control,'expected':expected,'outcome':'pass' if ok else 'fail','observed':result['outcome'],'failures':result['failures']})
     case('missing-call',lambda v:v.removed.add(run+'call-1.json'),'call_membership')
@@ -111,6 +117,14 @@ def exercise(root,out):
         view.changes['evidence/fake-provider/response-1.json']=raw
         view.change_json(run+'attempt-1-1.json',lambda r:r['body']['response'].update(bytes=len(raw),sha256=digest(raw)))
     case('large-response-invariance',large_response,None,control=False)
+    if binding['run'].get('submission_folder') is not None:
+        template='evidence/submission-template/'
+        question=template+'question.md'
+        selected=next(n for n in original.names if n.startswith(template+'materials/'))
+        case('changed-template-question',lambda v:v.changes.update({question:v.read(question)+b'changed'}),'study_template_binding')
+        case('changed-template-material',lambda v:v.changes.update({selected:v.read(selected)+b'changed'}),'study_template_binding')
+        case('missing-template-material',lambda v:v.removed.add(selected),'study_template_binding')
+        case('added-template-directory',lambda v:v.added_directories.add(template+'materials/control-empty-directory'),'study_template_binding')
     unchanged=verify(Evidence(root))
     require(unchanged==baseline,'original changed during controls')
     result={'schema':'stewart.c10-review-controls/1','cases':rows,'run':len(rows),

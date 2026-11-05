@@ -152,7 +152,8 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
     fields(packet, ['schema', 'model', 'effort', 'limits', 'endpoint', 'proxy', 'runs',
         'max_placements', 'permitted_request_attempts', 'automatic_continuation',
         'stop_after_seconds', 'spending_authority', 'account', 'bindings'], 'commission')
-    require(packet['schema'] == 'stewart.c10-commission/1', 'unsupported commission schema')
+    require(packet['schema'] in ['stewart.c10-commission/1', 'stewart.study-commission/1'], 'unsupported commission schema')
+    study = packet['schema'] == 'stewart.study-commission/1'
     model = packet['model']
     require(isinstance(model, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}', model), 'invalid model')
     require((model == 'rehearsal-only') == rehearsal and not model.startswith('REPLACE'), 'model does not match launch mode')
@@ -169,16 +170,33 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
     cases = catalog()
     require(isinstance(packet['runs'], list) and 0 < len(packet['runs']) <= 64, 'batch needs 1–64 explicit audits')
     identities, repetitions = set(), set()
+    study_count = 0
     for run in packet['runs']:
-        fields(run, ['id', 'case', 'repetition', 'scenario', 'submission_sha256'], 'run')
+        fields(run, ['id', 'case', 'repetition', 'scenario', 'submission_sha256']
+               + (['submission_folder'] if study else []), 'run')
         require(identifier(run['id']) and run['id'] not in identities, 'invalid or repeated audit identity')
         identities.add(run['id'])
-        require(run['case'] in cases and type(run['repetition']) is int and 1 <= run['repetition'] <= 64, 'invalid case repetition')
+        supplied = study and run['submission_folder'] is not None
+        if supplied:
+            folder = run['submission_folder']
+            require(isinstance(folder, str) and Path(folder).is_absolute()
+                    and not any(ord(c) < 32 for c in folder), 'study submission needs an absolute folder')
+            require(identifier(run['case']) and run['case'] == run['id']
+                    and run['id'] not in cases and not run['id'].startswith('control-'), 'invalid study identity')
+            require(run['repetition'] == 1 and run['scenario'] == 'submitted', 'study packet names each placement once')
+            require(isinstance(run['submission_sha256'], str)
+                    and re.fullmatch(r'[0-9a-f]{64}', run['submission_sha256']), 'invalid submission digest')
+            study_count += 1
+        else:
+            require(not study or rehearsal, 'live study packets cannot select catalog cases')
+            require(run['case'] in cases, 'unknown catalog case')
+            require(run['submission_sha256'] == cases[run['case']]['sha256'], 'specimen differs from packet')
+        require(type(run['repetition']) is int and 1 <= run['repetition'] <= 64, 'invalid case repetition')
         require(run['scenario'] in (SCENARIOS if rehearsal else ['submitted']), 'live packet cannot select a control')
         key = (run['case'], run['repetition'], run['scenario'])
         require(key not in repetitions, 'duplicate case repetition')
         repetitions.add(key)
-        require(run['submission_sha256'] == cases[run['case']]['sha256'], 'specimen differs from packet')
+    require(not study or study_count > 0, 'study packet needs an explicit submission')
     fields(packet['bindings'], BINDINGS, 'bindings')
     fields(packet['account'], ['account_label', 'workspace_id', 'credential_label'], 'account')
     for value in [*packet['bindings'].values(), *packet['account'].values(), packet['spending_authority']]:
@@ -221,5 +239,8 @@ def question_file(case, packet, destination):
             'model: ' + packet['model'], 'destination: ' + str(destination)]
     if packet['effort'] is not None:
         rows.append('effort: ' + packet['effort'])
+    for key in ['inquiry', 'varies']:
+        if case.get(key) is not None:
+            rows.append(key + ': ' + case[key])
     rows += ['limit-' + name.replace('_', '-') + ': ' + str(packet['limits'][name]) for name in LIMITS]
     return ('\n'.join(rows) + '\n---\n' + case['question']).encode()

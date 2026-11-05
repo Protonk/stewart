@@ -2,7 +2,8 @@
 
 Rehearsals use offline Linux containers and synthetic credentials. Live launch
 needs a qualified binary, a matching successful rehearsal, an exact authorized
-commission digest and hidden terminal entry. Nothing resumes a placement.
+commission digest and hidden entry or an explicitly selected saved connection.
+Nothing resumes a placement.
 """
 import argparse
 import json
@@ -19,6 +20,9 @@ from common import (REPO,HERE,SOURCE_PATHS,catalog,compact,digest,file_hash,iden
     proposal,read_file,rehearsal_packet,require,scan_tree,source_hash,strict_json,validate_packet,write_json)
 from launch import hidden_credential,host_environment,select_qualification
 from verify import Evidence,verify
+from connections import ConnectionError, lookup as connection_key, status as connection_status, validate_label
+from study import (copy_submission, inspect_submission, resolve_submission,
+                   study_proposal, supplied_runs)
 
 
 def bindings(qualification_id):
@@ -67,7 +71,19 @@ def review_batch(root):
             'audits':results,'model_qualified':False}
 
 
-def check_rehearsal(path,bound):
+def check_rehearsal_inputs(rehearsed,packet=None):
+    validate_packet(rehearsed,rehearsal=True)
+    expected=rehearsed['runs']
+    fixed=[{k:v for k,v in run.items() if k!='submission_folder'} for run in expected if run.get('submission_folder') is None]
+    require(fixed==rehearsal_packet()['runs'],'rehearsal omitted or changed fixed conformance controls')
+    if packet is not None:
+        coverage={run['submission_sha256'] for run in supplied_runs(rehearsed)}
+        require(all(run['submission_sha256'] in coverage for run in supplied_runs(packet)),
+                'study inputs need their own successful rehearsal intake and review')
+    return expected
+
+
+def check_rehearsal(path,bound,packet=None,*,connection=False):
     host=strict_json(read_file(path/'host/RESULT.json'))
     session=strict_json(read_file(path/'container/RESULT.json'))
     require(host['mode']=='rehearse' and host['outcome']=='completed'
@@ -75,7 +91,12 @@ def check_rehearsal(path,bound):
         'a successful retained Linux rehearsal is required')
     for key in ['apparatus_sha256','binary_sha256','image','catalog_sha256']:
         require(host['bindings'][key]==bound[key],'rehearsal source, binary, image or catalog differs')
-    expected=rehearsal_packet()['runs']
+    rehearsed=strict_json(read_file(path/'container/PLAN.json'))['commission']
+    expected=check_rehearsal_inputs(rehearsed,packet)
+    if connection:
+        require(host.get('credential_source',{}).get('kind')=='keychain'
+                and read_file(path/'host/connection-collect.exit')==b'0\n',
+                'saved connections require a synthetic connection rehearsal and later collection')
     require(session['planned']==len(expected) and session['observed']==len(expected)
         and session['failed']==session['not_started']==0
         and session['skipped_checks']==[]
@@ -90,10 +111,20 @@ def check_rehearsal(path,bound):
     require(operations['failed']==0 and operations['passed']==operations['run']==7
             and operations['original_snapshot_unchanged'] is True,
             'operator controls missing or incomplete')
+    for run in supplied_runs(rehearsed):
+        controls=strict_json(read_file(path/'container/study-review-controls'/run['id']/'RESULT.json'))
+        require(controls['failed']==0 and controls['passed']==controls['run']==18
+                and controls['controls']==controls['controls_fired']==16 and controls['original_unchanged'] is True,
+                'study template controls missing or incomplete')
     for row,item in zip(report['audits'],expected):
         latest=row['snapshots'][0]
         if item['scenario'] in ['submitted','empty','lost-run-reply']:
             require(latest.get('review',{}).get('outcome')=='procedural_checks_passed','rehearsal procedural review failed')
+    if connection:
+        first_audit=report['audits'][0]
+        require(len(first_audit['snapshots'])>=2
+                and first_audit['snapshots'][-1].get('review',{}).get('outcome')=='procedural_checks_passed',
+                'saved-connection follow-up collection is missing or incomplete')
     first=path/'container/open-ordinary-r1/export-0001'
     meta=strict_json(read_file(first/'EXPORT.json'))
     e=Evidence(first/'work.tar',meta['archive']['sha256'])
@@ -111,6 +142,7 @@ def launch_batch(args):
     require(out.is_absolute() and out.parent==REPO/'.scratch' and not out.exists(),
             'use a new absolute evidence folder directly under .scratch')
     if mode=='live':
+        require(not getattr(args,'submission',None),'live submissions come from the approved packet')
         require(args.commission is not None and args.approved_commission is not None and args.rehearsal is not None,
                 'live needs an exact approved commission and a retained rehearsal')
         raw=read_file(args.commission)
@@ -119,11 +151,20 @@ def launch_batch(args):
     else:
         require(args.commission is None and args.approved_commission is None and args.rehearsal is None,
                 'rehearsal accepts no live packet')
-        packet=rehearsal_packet()
+        packet=(study_proposal('rehearsal-only',args.submission,rehearsal=True)
+                if getattr(args,'submission',None) else rehearsal_packet())
+    connection=getattr(args,'connection',None)
+    if connection is not None:
+        validate_label(connection,packet if mode=='live' else None)
+        if mode=='rehearse':
+            packet['account']={'account_label':'synthetic connection rehearsal',
+                'workspace_id':'offline','credential_label':connection}
+    for run in supplied_runs(packet):
+        inspect_submission(resolve_submission(run),run['case'],run['submission_sha256'])
     bound,binaries,checked=bindings(args.qualification)
     if mode=='live':
         require(packet['bindings']==bound,'approved packet bindings changed')
-        check_rehearsal(args.rehearsal,bound)
+        check_rehearsal(args.rehearsal,bound,packet,connection=connection is not None)
     else:
         packet['bindings']=bound
         raw=json.dumps(packet,indent=2).encode()+b'\n'
@@ -140,6 +181,7 @@ def launch_batch(args):
     name=f'stewart-c10-{int(time.time())}-{os.getpid()}'
     report={'schema':'stewart.c10-launch/1','mode':mode,'bindings':bound,'container':name,
         'commission_sha256':digest(raw),'credential_sent':False,'started_at':time.time(),'outcome':'failed'}
+    report['credential_source']={'kind':'keychain','service':'stewart-provider','account':connection} if connection else {'kind':'generated' if mode=='rehearse' else 'hidden-entry'}
     env=host_environment()
     def step(label,argv):
         write_json(host/(label+'.argv.json'),argv)
@@ -150,6 +192,10 @@ def launch_batch(args):
     proc=None
     key=None
     try:
+        if supplied_runs(packet):
+            (staging/'submissions').mkdir(mode=0o700)
+            for run in supplied_runs(packet):
+                copy_submission(resolve_submission(run),staging/'submissions'/run['id'],run['submission_sha256'])
         step('version',['container','--version'])
         require('version 1.6.1 ' in (host/'version.stdout').read_text(),'Apple container 1.6.1 required')
         step('system-status',['container','system','status'])
@@ -173,6 +219,8 @@ def launch_batch(args):
             'close_ends_authoring':True,'automatic_continuation':False})
         argv=['container','exec','--interactive',name,'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','HOME=/work',
               'python3','-I','-B','/work/code/apparatus/c10/batch.py',mode,'--binary','/bin-in/stewart','--packet','/in/commission.json']
+        if supplied_runs(packet):
+            argv+=['--submissions','/in/submissions']
         write_json(host/'session.argv.json',argv)
         print('Retained container '+name+'; operator commands in '+str(host/'operator.json'),flush=True)
         with (host/'container.stdout').open('xb') as stdout,(host/'container.stderr').open('xb') as stderr:
@@ -184,7 +232,11 @@ def launch_batch(args):
                 time.sleep(.1)
             ready=strict_json(read_file(exported/'READY.json'))
             require(ready=={'credential_free_intake_verified':True,'audits':[r['id'] for r in packet['runs']]},'intake readiness differs from packet')
-            key=(b'c10-NONFUNCTIONAL-'+os.urandom(24).hex().encode()) if mode=='rehearse' else hidden_credential()
+            print(json.dumps({'provider':'Anthropic','endpoint':packet['endpoint'],
+                'manager_supplied_account':packet['account'],'credential_source':report['credential_source']}),flush=True)
+            key=(connection_key(connection,rehearsal=mode=='rehearse',record=host/'connection.json')
+                 if connection else (b'c10-NONFUNCTIONAL-'+os.urandom(24).hex().encode())
+                 if mode=='rehearse' else hidden_credential())
             proc.stdin.write(key)
             proc.stdin.close()
             report['credential_sent']=True
@@ -201,8 +253,11 @@ def launch_batch(args):
             controls=strict_json(read_file(exported/'operator-controls/RESULT.json'))
             require(controls['failed']==0,'operator controls failed')
         report['outcome']='completed' if mode=='rehearse' else 'observed_review_required'
-    except (Exception,KeyboardInterrupt):
+    except (Exception,KeyboardInterrupt) as error:
         report['error']='Launch or observation incomplete; inspect retained records and status before another action.'
+        if isinstance(error,ConnectionError):
+            report['connection_error']=error.code
+            report['error']=str(error)
         if proc is not None and proc.stdin is not None and not proc.stdin.closed:
             proc.stdin.close()
         if proc is not None and proc.poll() is None:
@@ -212,6 +267,16 @@ def launch_batch(args):
         report['ended_at']=time.time()
         write_json(host/'RESULT.json',report)
     print(json.dumps(report,indent=2))
+    if mode=='rehearse' and connection and report['outcome']=='completed':
+        # A second launcher process makes a new Keychain lookup for later
+        # collection. Its original placement and first snapshot stay unchanged.
+        argv=[sys.executable,'-I','-B',str(HERE/'c10.py'),'control',str(out),
+              'open-ordinary-r1','collect','--connection',connection]
+        try:
+            step('connection-collect',argv)
+        except (ValueError,OSError):
+            print('Synthetic follow-up collection failed; inspect retained connection-collect records.',file=sys.stderr)
+            return True
     return report['outcome']=='failed'
 
 
@@ -219,6 +284,14 @@ def host_control(args):
     meta=strict_json(read_file(args.evidence/'host/operator.json'))
     require(args.audit in meta['audits'] and identifier(args.audit),'unknown audit')
     require(re.fullmatch(r'stewart-c10-[0-9]+-[0-9]+',meta['container']),'unknown container identity')
+    connection=getattr(args,'connection',None)
+    if connection is not None:
+        require(args.operation=='collect','--connection is only used for collection')
+        raw=read_file(args.evidence/'staging/commission.json')
+        launch_record=strict_json(read_file(args.evidence/'host/RESULT.json'))
+        require(digest(raw)==launch_record['commission_sha256'],'retained packet differs from launch')
+        packet=strict_json(raw)
+        validate_label(connection,packet)
     argv=['container','exec']+(['--interactive'] if args.operation=='collect' else [])+[meta['container'],
         'env','-i','PATH=/usr/local/bin:/usr/bin:/bin','python3','-I','-B',
         '/work/code/apparatus/c10/operations.py',args.audit,args.operation]
@@ -229,7 +302,8 @@ def host_control(args):
     folder.mkdir(mode=0o700,exist_ok=True)
     stem=folder/str(time.time_ns())
     write_json(stem.with_suffix('.argv.json'),argv)
-    key=hidden_credential() if args.operation=='collect' else None
+    key=(connection_key(connection,rehearsal=launch_record['mode']=='rehearse',record=stem.with_suffix('.connection.json'))
+         if connection is not None else hidden_credential() if args.operation=='collect' else None)
     with stem.with_suffix('.stdout').open('xb') as stdout,stem.with_suffix('.stderr').open('xb') as stderr:
         result=subprocess.run(argv,env=host_environment(),input=key,stdout=stdout,stderr=stderr)
     stem.with_suffix('.exit').write_text(str(result.returncode)+'\n')
@@ -254,6 +328,8 @@ def main():
     p.add_argument('--case',action='append',dest='cases')
     p.add_argument('--repetitions',type=int,default=1)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
+                   help='Study submission template; packet settings replace model/effort/limits/destination, preserving body/materials')
     p=subs.add_parser('packet',help='Bind an unpaid proposal to committed apparatus and qualified binary')
     p.add_argument('proposal',type=Path)
     p.add_argument('output',type=Path)
@@ -266,13 +342,21 @@ def main():
         p.add_argument('--commission',type=Path)
         p.add_argument('--approved-commission')
         p.add_argument('--rehearsal',type=Path)
+        p.add_argument('--connection',help='Read the stewart-provider Keychain item; live label must match credential_label')
+        p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
+                       help='Rehearsal only: include these study inputs alongside all conformance controls')
     p=subs.add_parser('review',help='Read all immutable exports without extracting or launching')
     p.add_argument('evidence',type=Path)
-    p=subs.add_parser('control',help='Operate one retained audit; collect requires hidden terminal entry')
+    p=subs.add_parser('control',help='Operate one retained audit; collect needs its original credential')
     p.add_argument('evidence',type=Path)
     p.add_argument('audit')
     p.add_argument('operation',choices=['status','close','inspect','collect'])
     p.add_argument('--confirm')
+    p.add_argument('--connection',help='Collection only: read the original credential from the named Keychain item')
+    p=subs.add_parser('connection',help='Inspect local connection metadata without reading a password')
+    actions=p.add_subparsers(dest='connection_action',required=True)
+    p=actions.add_parser('status',help='Check presence; this does not test password access or provider authorization')
+    p.add_argument('label')
     args=parser.parse_args()
     try:
         if args.command=='list':
@@ -281,7 +365,10 @@ def main():
                             'total_audits_per_model':21,'spending_authorized':False}},indent=2))
         elif args.command=='propose':
             require(args.output.is_absolute(),'proposal output must be absolute')
-            write_json(args.output,proposal(args.model,args.cases,args.repetitions))
+            require(not args.submission or args.cases is None and args.repetitions==1,
+                    'study submissions cannot select catalog cases or implicit repetitions')
+            write_json(args.output,study_proposal(args.model,args.submission) if args.submission
+                       else proposal(args.model,args.cases,args.repetitions))
             print('Unbound proposal written; no spending authority.')
         elif args.command=='packet':
             value=validate_packet(strict_json(read_file(args.proposal)))
@@ -298,7 +385,11 @@ def main():
             return any(not r['snapshots'] or any(s.get('review',{}).get('outcome')=='incomplete' for s in r['snapshots']) for r in report['audits'])
         elif args.command=='control':
             return host_control(args)
+        elif args.command=='connection':
+            print(json.dumps(connection_status(args.label),indent=2))
         return 0
+    except ConnectionError as error:
+        parser.exit(1,error.code+': '+str(error)+'\n')
     except (ValueError,OSError,KeyError,TypeError) as error:
         if args.command in ['live','rehearse','control','review']:
             parser.exit(1,'Operation incomplete; inspect retained records. No automatic retry or continuation.\n')
