@@ -20,9 +20,11 @@ session credential boundary and specification-derived driver helpers without
 changing product contracts or historical evidence. Its one-placement scope is
 explicit; it does not implement continuation or real compaction.
 
-Small-commission readiness is demonstrated by the reviewed Linux aarch64 run
-`.scratch/c10-launch-01`, pinned in the qualification record with its review at
-`review/result.json`. The principal's six-audit Haiku pilot has completed its
+Small-commission readiness, including saved connections and supplied study
+inputs, is demonstrated by the reviewed Linux aarch64 run
+`.scratch/c10-study-launch-01`, pinned in the qualification record with its review
+at `review/result.json`. The earlier `.scratch/c10-launch-01` remains pinned.
+The principal's six-audit Haiku pilot has completed its
 placements and procedural review. Its review disposition is below;
 full-gate work still needs its own bounded authorization.
 

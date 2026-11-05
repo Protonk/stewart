@@ -51,6 +51,7 @@ not carry them.
 | [c10-live-05](#c10-live-05) | experiment | Retain this pilot audit, citation-recovery observations, reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
 | [c10-live-06](#c10-live-06) | experiment | Retain the final pilot audit, original refusals and A-only answer for six-audit review and billing reconciliation. | The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence |
 | [c10-haiku-commission-01](#c10-haiku-commission-01) | experiment | Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison. | The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence |
+| [c10-study-launch-01](#c10-study-launch-01) | experiment | Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
 
 ## Records
 
@@ -309,3 +310,11 @@ not carry them.
 - Result: `review/result.json`, SHA-256 `a44db5879ef9b98bb476b97a9e2d0a8e88759970b1e74717b77406c75fa9af6f`
 - Evidence: `.scratch/c10-haiku-commission-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison.; until The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence
+
+### c10-study-launch-01
+
+- Experiment: Saved-connection and study-input rehearsal on Linux aarch64 at 751aa7c: 15 expected audit outcomes, 50 reviewer comparisons with 44 firing controls, 7 operator comparisons, 2 process-access controls, and fresh-process Keychain collection; no model calls or model qualification.
+- Date: 2026-11-05T19:55:32Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `a06c601e88f489e17f4fe5fa1da5eed71aa32764df9f1e7b4152aae1c4303fae`
+- Evidence: `.scratch/c10-study-launch-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses

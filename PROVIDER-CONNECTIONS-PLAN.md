@@ -16,15 +16,22 @@ and `.scratch/provider-connections-plan-02`.
 The connection module and CLI are implemented; their operating contract is in
 [the launcher instructions](apparatus/c10/README.md#saved-provider-connections).
 Current local checks are retained in `.scratch/provider-study-checks-01`.
-The principal's native run `.scratch/c10-study-native-03` passed all 15 planned
-audits and seven operator comparisons; its source hash matches the current
-apparatus. The host driver self-test passed 319 checks with no failures or skips.
-Reviewer comparisons passed in `.scratch/c10-study-review-fixed-01` (14/14,
-12 controls fired), `.scratch/c10-study-review-study-a-01` and
-`.scratch/c10-study-review-study-b-01` (18/18 and 16 controls fired each).
-Native Linux process-access checks were skipped; these runs are not qualification.
-The two earlier attempts, `.scratch/c10-study-native-01` and
-`.scratch/c10-study-native-02`, remain retained with their permission failures.
+The reviewed Linux aarch64 rehearsal `.scratch/c10-study-launch-01` at `751aa7c`
+is pinned in [the qualification record](apparatus/qualified.md). Its
+`review/result.json` records all 15 expected audit outcomes, 50 reviewer
+comparisons with 44 firing controls, seven operator comparisons and two firing
+process-access controls, with no failed or skipped checks. Both study templates
+and fresh-process collection through `stewart-synthetic` passed. The two Keychain
+lookup records name that account; the principal reported approving two `security`
+prompts and tentatively recalls both naming it. The later collection added
+`export-0002` without changing the original snapshot's files. This qualifies the
+observed apparatus route on Linux aarch64, with no model calls or real-key use.
+
+Retain the native iteration records in `.scratch/c10-study-native-03`,
+`.scratch/c10-study-review-fixed-01`, `.scratch/c10-study-review-study-a-01` and
+`.scratch/c10-study-review-study-b-01`, and the earlier permission failures in
+`.scratch/c10-study-native-01` and `.scratch/c10-study-native-02`. They remain
+development observations, with the Linux process-access checks skipped natively.
 The apparatus landed on `main` as `72ae26b`. The host checks in
 `.scratch/connection-checks-01` used synthetic values on macOS 26.7.1 / kernel
 25.6.0; `review-01.json` indexes the original records and their dispositions.
@@ -146,20 +153,12 @@ as the relevant limit for Claude subscriptions.
 
 ## Remaining work
 
-### Verify the supported path
-
 The fake-`security` tests cover lookup and fresh-process reuse, metadata-only
 status, distinct failures, deadlines, label mismatch before launch, nonfunctional
 prefix and credential bounds, collection handoff and exclusion of values from
 records and streams. The inherited sanity launcher is unchanged. The local test
 outputs, rather than this implementation account, own actual counts and skips.
 
-- [ ] The principal runs the committed apparatus's
-  Linux `c10.py rehearse --connection` with the synthetic item and pins the
-  result; it supersedes the retained rehearsal and its binding is required
-  before live use. Include launch and fresh-process collection through the saved
-  connection and repeat the wrong-key collection control exercised natively.
-  The real item is never read by a test.
 - [ ] Launch the Problem A baseline with `--connection` under its own
   authorization and collect it later with `--connection`. Record both outcomes
   in that run's evidence and cite them here.

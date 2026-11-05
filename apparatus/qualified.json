@@ -802,6 +802,25 @@
         "reason": "Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison.",
         "until": "The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence"
       }
+    },
+    {
+      "id": "c10-study-launch-01",
+      "kind": "experiment",
+      "date": "2026-11-05T19:55:32Z",
+      "date_from": "review/result.json field at",
+      "summary": "Saved-connection and study-input rehearsal on Linux aarch64 at 751aa7c: 15 expected audit outcomes, 50 reviewer comparisons with 44 firing controls, 7 operator comparisons, 2 process-access controls, and fresh-process Keychain collection; no model calls or model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "a06c601e88f489e17f4fe5fa1da5eed71aa32764df9f1e7b4152aae1c4303fae"
+      },
+      "evidence": {
+        "path": ".scratch/c10-study-launch-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation",
+        "until": "A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses"
+      }
     }
   ]
 }

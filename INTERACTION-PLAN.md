@@ -193,19 +193,15 @@ bodies and all 34 material files. Their front matter carries the inquiry label;
 Model/effort, allowances and destination in these templates are offline settings,
 not a proposed live commission. The packet supplies the eventual run settings.
 
-The native run `.scratch/c10-study-native-03` passed all 15 planned audits,
-including both study templates, and all seven operator comparisons. The reviewer
-checks passed in `.scratch/c10-study-review-fixed-01` (14/14),
-`.scratch/c10-study-review-study-a-01` and `.scratch/c10-study-review-study-b-01`
-(18/18 each, including all template controls). The logs and matching source hash
-are in `.scratch/provider-study-checks-01`. This is native iteration, with Linux
-process-access checks skipped. Preserve the earlier permission failures in
-`.scratch/c10-study-native-01` and `.scratch/c10-study-native-02` as well.
+The Linux aarch64 rehearsal `.scratch/c10-study-launch-01` at `751aa7c` is
+reviewed and pinned in [the qualification record](apparatus/qualified.md).
+`review/result.json` binds both templates to the frozen question bodies and
+material bytes, verifies their captured inputs and answers, reproduces all
+template tampering controls, and verifies later collection through the saved
+synthetic connection. It establishes readiness of the apparatus for these
+inputs, not an answer from Haiku or authority to spend. The native preparation
+logs remain in `.scratch/provider-study-checks-01`.
 
-- [ ] Run and retain the committed apparatus's
-  Linux rehearsal with both study templates before binding a paid packet.
-  Study template tampering, actual capture/review and later collection must
-  pass; successful intake alone establishes neither an answer nor qualification.
 - [ ] Identify concrete places to vary the auditor-facing arrangement and
   replies. Packaging can vary through submissions; instructions, tool definitions
   and rendering are pinned and may need a new build. Record the actual exposed
@@ -222,9 +218,8 @@ process-access checks skipped. Preserve the earlier permission failures in
 Before implementation edits, identify the applicable
 [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed) and follow
 the independent-driver authoring rule. Reusing a launcher does not transfer its
-qualification to changed paths or larger workloads. The changed apparatus needs
-its retained Linux rehearsal, run by the principal, before the first live
-baseline.
+qualification to changed paths or larger workloads. Further apparatus changes
+need a matching retained Linux rehearsal, run by the principal, before live use.
 
 ## Study mode for interventions
 

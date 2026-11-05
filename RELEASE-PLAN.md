@@ -24,10 +24,10 @@ conformance. The small-commission apparatus has a reviewed Linux rehearsal, and
 the six-audit pilot on minimal questions has completed procedural review.
 Complete the connection work's offline items before the Problem A baseline,
 which launches through the saved connection and serves as that route's live
-check. Both stages change the C10 launcher. The connection module and the
-study packet mode land as one apparatus tranche, and one Linux rehearsal with
-the synthetic connection, taken after the last apparatus commit, serves both
-before the Problem A packet is bound. The study mode for intervention builds
+check. The connection module and study packet mode have landed as one apparatus
+tranche. The reviewed Linux rehearsal `.scratch/c10-study-launch-01` covers both
+with the synthetic connection and frozen study inputs; the Problem A packet can
+now be prepared for bounded authorization. The study mode for intervention builds
 lands after the baselines. The rapid-iteration design waits for the first
 intervention's measured cycle, and the paid-work decision precedes its build.
 Until that decision is made, the principal runs live launches and collections
@@ -73,13 +73,15 @@ container. It demonstrates synthetic credential delivery, process-access
 controls, interruption, exact delivery and export withholding. It establishes
 the native Linux path against local fakes, not real-provider conformance.
 
-The small-commission rehearsal `.scratch/c10-launch-01` is pinned with its
-review in `review/result.json`. It binds commit `043a2c4`, the qualified
+The current small-commission rehearsal `.scratch/c10-study-launch-01` is pinned
+with its review in `review/result.json`. It binds commit `751aa7c`, the qualified
 `acceptance-05` aarch64 executable and the pinned image. It covers all six fixed
-commissions, failure/export controls, independent input readback, procedural
-review and immutable follow-up collection. The report retains actual counts,
-scope limits and the container identity. It completes small-commission apparatus
-readiness; it makes no model-support claim.
+commissions, both frozen study templates, failure/export controls, independent
+input readback, procedural review and immutable follow-up collection through the
+saved synthetic connection. The report retains actual counts, scope limits and
+the container identity. It establishes apparatus readiness for the baselines;
+it makes no model-support claim. The earlier `.scratch/c10-launch-01` remains
+pinned with its original evidence.
 
 The combined pilot review is pinned at
 `.scratch/c10-haiku-commission-01/review/result.json`, with `report.md` linking
