@@ -218,6 +218,38 @@ qualification to changed paths or larger workloads. The changed apparatus needs
 its retained Linux rehearsal, run by the principal, before the first live
 baseline.
 
+## Study mode for interventions
+
+An interface intervention is a new binary: the orientation, family instructions,
+tool descriptions and schemas are pinned in it and compared with QUESTION-FORMS
+by the service tests and the independent driver's self-test, and the live
+launcher accepts only a binary on the qualification front. The principal has
+decided on a study mode in the C10 launcher for identified unqualified study
+builds. Qualifying each variant would put experimental commits on the product's
+front; making the arrangement a commission input is a product change left to
+the rapid-iteration work.
+
+Each variant is a branch commit. The agent edits QUESTION-FORMS and the service
+and runs both Cargo configurations natively. The principal runs `acceptance.sh`
+on that commit: it builds and digests the Linux binaries and runs every case,
+and its self-test and text-comparison cases fail as expected. That run is pinned
+as an experiment and never extracted into the front. The principal then runs
+`c10.py rehearse` with the study binary, and the packet binds the study digest,
+the variant commit, the qualified base commit and the acceptance folder, all
+labelled unqualified in every record.
+
+Guards: the launcher applies its existing credential-case check to the
+variant's acceptance result, so no real key reaches a build whose credential
+handling failed. The packet names the expected failed cases and the launcher
+refuses any other failure. The driver copies stay untouched on study branches
+and the recorded self-test failure is not hidden. Variant commits stay
+reachable under a ref while their evidence is cited. Adopting a variant goes
+through the full cycle on `main` with an independent driver author.
+
+- [ ] Implement the study mode and its guards after the baselines. The first
+  intervention binary forces a new rehearsal in any case, so landing it later
+  costs no extra rehearsal.
+
 ## Lightweight iteration
 
 For each intervention, retain a short note: what prompted it, what changed,
@@ -274,17 +306,6 @@ intellectual outcome, not a reason to demand filler or automatic continuation.
 
 ## Unresolved decisions
 
-- **Interface variants and the launch gate.** Orientation text, family
-  instructions and tool descriptions are pinned in the binary. The live launcher
-  accepts only a binary on the qualification front, bound to a matching
-  rehearsal, and the pinned texts are compared with QUESTION-FORMS by the service
-  tests and the independent driver's self-test. Each variant therefore needs a
-  specification edit, a service edit, a split-author driver edit, both Cargo
-  configurations, a Linux acceptance run and a rehearsal before live use. The
-  principal has tabled the choice between a labelled study mode that accepts an
-  identified unqualified build, commission-time arrangement inputs as a product
-  change, and the full cycle for one or two variants. Baselines do not depend
-  on it; the first intervention does.
 - **The receiving-end comparison.** The advice's first experiment presents
   existing returns through the current rendering and a reader-oriented view
   without model calls. It is excluded by the scope clarification; the principal

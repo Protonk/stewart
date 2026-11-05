@@ -49,22 +49,27 @@ migration of their records.
 
 **Explicit key supply stays.** Without `--connection`, live launch and collection
 prompt for hidden entry as today. The launcher never reads `ANTHROPIC_API_KEY`;
-its filtered host environment already drops it. Rehearsal never consults the
-Keychain. `--connection LABEL` must equal the approved packet's
-`credential_label`; a different label refuses before any lookup, so a changed
-ambient default cannot select another paying account. Alternate endpoints remain
-a rehearsal-only setting.
+its filtered host environment already drops it. `--connection LABEL` must equal
+the approved packet's `credential_label`; a different label refuses before any
+lookup, so a changed ambient default cannot select another paying account.
+Alternate endpoints remain a rehearsal-only setting.
 
-**The live check is the Problem A baseline.** The first study launch under
-[INTERACTION-PLAN](INTERACTION-PLAN.md) runs with the saved connection and its
-later collection uses it again. A successful lookup proves nothing about
+**Rehearsal may use a synthetic connection.** `rehearse --connection LABEL`
+reads a Keychain item whose value must carry the nonfunctional prefix
+`c10-NONFUNCTIONAL-` and refuses any other value, so a real key never enters
+the rehearsal's plaintext witness. The retained Linux rehearsal then
+demonstrates launch and later collection without entry, with the fake
+provider's witness confirming which bytes arrived.
+
+**The live check is the Problem A baseline.** The interaction study's first
+launch runs with the saved connection and its later collection uses it again. A successful lookup proves nothing about
 inference access; only that authorized run does. No separate model-consuming
 check is planned.
 
 **Who runs paid work is unchanged for now.** The principal runs live launches
 and collections in a separate terminal and the agent prepares the commands. The
-follow-on decision about running and enforcing paid work is staged in
-[RELEASE-PLAN](RELEASE-PLAN.md).
+follow-on decision about running and enforcing paid work is staged in the
+coordinating plan.
 
 ## Connection contract
 
@@ -103,10 +108,11 @@ as the relevant limit for Claude subscriptions.
   `launch.py` is unchanged. Record the macOS and `security` behavior observed
   with the synthetic item, including the exit status for a missing item and for
   a denied prompt.
-- [ ] Add `--connection LABEL` to `c10.py live` and to `c10.py control … collect`,
-  and `c10.py connection status LABEL`. Live and collect refuse a label that
-  differs from the packet's `credential_label` and refuse `--connection` in
-  rehearsal. Keep hidden entry as the default.
+- [ ] Add `--connection LABEL` to `c10.py live`, `c10.py rehearse` and
+  `c10.py control … collect`, and `c10.py connection status LABEL`. Live and
+  collect refuse a label that differs from the packet's `credential_label`;
+  rehearse refuses a value without the nonfunctional prefix. Keep hidden entry
+  as the default.
 - [ ] Keep the secret out of every record: the lookup runs after verified intake
   exactly where hidden entry runs today, the value is written only to the
   container's standard input, the host scan uses it and drops it, and failure
@@ -129,7 +135,8 @@ as the relevant limit for Claude subscriptions.
   `.scratch/connection-checks-NN`.
 - [ ] Run the [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed)
   for `apparatus/c10/` and preserve outputs. Commit, then the principal runs the
-  Linux `c10.py rehearse` for the changed apparatus; its binding is required
+  Linux `c10.py rehearse --connection` with the synthetic item and pins the
+  result; it supersedes the retained rehearsal and its binding is required
   before live use.
 - [ ] Launch the Problem A baseline with `--connection` under its own
   authorization and collect it later with `--connection`. Record both outcomes

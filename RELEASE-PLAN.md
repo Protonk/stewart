@@ -12,6 +12,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 | Current | Add a saved provider connection to the launch apparatus, preserving hidden key entry | [PROVIDER-CONNECTIONS-PLAN.md](PROVIDER-CONNECTIONS-PLAN.md) |
 | Next | Run auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | After both | Decide who runs paid work and how that is enforced | A short plan written when the two stages complete |
+| After the first intervention | Design the rapid question-iteration path against that intervention and build the chosen shape | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
@@ -23,10 +24,14 @@ conformance. The small-commission apparatus has a reviewed Linux rehearsal, and
 the six-audit pilot on minimal questions has completed procedural review.
 Complete the connection work's offline items before the Problem A baseline,
 which launches through the saved connection and serves as that route's live
-check. Both stages change the C10 launcher, and each change needs a retained
-Linux rehearsal before live use; whether the two changes share one rehearsal
-awaits the principal's briefing. Until the paid-work decision above is made,
-the principal runs live launches and collections in a separate terminal.
+check. Both stages change the C10 launcher. The connection module and the
+study packet mode land as one apparatus tranche, and one Linux rehearsal with
+the synthetic connection, taken after the last apparatus commit, serves both
+before the Problem A packet is bound. The study mode for intervention builds
+lands after the baselines. The rapid-iteration design waits for the first
+intervention's measured cycle, and the paid-work decision precedes its build.
+Until that decision is made, the principal runs live launches and collections
+in a separate terminal.
 Offline interface preparation can continue with the already frozen questions
 and evidence while connection work proceeds.
 
