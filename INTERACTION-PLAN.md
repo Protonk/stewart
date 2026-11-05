@@ -11,8 +11,8 @@ This plan owns local preparation and remaining work. The
 [scope clarification](riker/INTERACTION-STUDY-CONTEXT.md) inform it.
 Product obligations remain in [DESIGN](DESIGN.md), [CONTRACTS](CONTRACTS.md),
 [INTERFACE](docs/INTERFACE.md) and [QUESTION-FORMS](docs/QUESTION-FORMS.md).
-Planning and inspection evidence is retained in `.scratch/interaction-plan-01`
-and `.scratch/interaction-plan-02`.
+Planning and inspection evidence is retained in `.scratch/interaction-plan-01`,
+`.scratch/interaction-plan-02` and `.scratch/interaction-plan-03`.
 
 ## Scope and division of work
 
@@ -37,8 +37,9 @@ have been reviewed; document authoring is not a prerequisite for starting.
 
 Reading the returned answer is part of assessing the effect on auditor behavior.
 A separate manager-facing receiving redesign is not current work. Existing
-returns remain useful for inspection and explicitly labeled study views.
-A document-oriented answer is a candidate, not a selected destination.
+returns remain useful for inspection and explicitly labeled study views; the
+receiving-end reading below uses such views. A document-oriented answer is a
+candidate, not a selected destination.
 
 ## Frozen questions and evidence
 
@@ -296,20 +297,55 @@ intellectual outcome, not a reason to demand filler or automatic continuation.
   comparison; there is no precommitted variant matrix or numerical-search
   campaign. Preserve model/effort and per-problem allowances across interface
   comparisons unless their change is itself an identified condition.
-- [ ] Review the resulting answer and interaction together. Preserve failures and
-  original records; no silent repairs, replacement trials or automatic extensions.
+- [ ] Review the resulting answer and interaction together, with the
+  receiving-end reading of its return. Preserve failures and original records;
+  no silent repairs, replacement trials or automatic extensions.
   A coherent interface package can vary together, provided its components are
   identified and any causal claim stays within what the comparison supports.
 - [ ] Keep, revise, abandon or further distinguish a candidate according to the
   principal's judgment and the evidence. Propose extra comparisons only when
   they would resolve a material uncertainty.
 
-## Unresolved decisions
+## Receiving-end reading
 
-- **The receiving-end comparison.** The advice's first experiment presents
-  existing returns through the current rendering and a reader-oriented view
-  without model calls. It is excluded by the scope clarification; the principal
-  has tabled whether to add it as optional offline work.
+The advice's first experiment is adopted in a folded form, without model calls.
+For a return, the agent writes a study view: a derived, labelled document that
+puts the answer or the inability first and keeps provenance and the detailed
+record reachable. It is kept beside the run under `.scratch`, is never a member
+of the return and changes no rendering. The principal reads the current
+rendering and the study view and records what each let them recover. The
+principal is the instrument; the agent, who wrote the view, is not a reader.
+
+The view keeps auditor text and Stewart presentation distinguishable, does not
+merge entries or paraphrase in a way that changes a claim, calls nothing
+verified where Stewart checked only a quotation, and states the seal's actor as
+recorded.
+
+Rubric, one sitting of about ten minutes per return, with the second form
+hidden until the first is done:
+
+1. What did the auditor find?
+2. What remains unknown or unsupported?
+3. Who authored the return, and did the auditor or the manager seal it?
+4. What did Stewart verify, and what did the auditor merely claim?
+
+Answer the four for the first form, then read the second and note what
+changed, what was wrong and what the second form made easier or harder to see.
+Record effort as it happened: how many sections were read to find the answer,
+and where an observation and an inference could not be told apart. A view that
+reads smoothly but leaves the reader more certain than the record justifies is
+a failure. The reader does not grade whether the auditor was right; that
+judgment stays under the reviewer sufficiency section. Alternate which form is
+read first across returns. The reader's notes are the record: the agent files
+them verbatim with the order read and the run they belong to, beside the run,
+cited from here.
+
+- [ ] Warm-up now: write the study view of the pilot's first return,
+  `.scratch/c10-live-01/review/answer.md`, whose observations restate its
+  account, and hold the reading. Its result informs the choice of the first
+  intervention: authoring categories or rendering order.
+- [ ] For each baseline, write the study view of the return during review and
+  hold the reading before the next launch. Three sittings in all.
 
 ## Adoption and completion
 
