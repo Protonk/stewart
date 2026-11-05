@@ -12,6 +12,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 | Current | Run auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | After those experiments | Decide who runs paid work and how that is enforced | A short plan written when that stage completes |
 | After the first intervention | Design the rapid question-iteration path against that intervention and build the chosen shape | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
@@ -24,8 +25,9 @@ the six-audit pilot on minimal questions has completed procedural review.
 Saved-provider-connection work is complete: the reviewed Linux rehearsal
 `.scratch/c10-study-launch-01` covers synthetic reuse and frozen study inputs;
 Problem A has launched and been collected through the live saved connection.
-Its procedural review is complete. The receiving-end readings and a separately
-authorized Problem B baseline are next. The study mode for intervention builds
+Its procedural review, pilot warm-up and Problem A readings are complete, with
+the answer review given a disposition. A separately authorized Problem B
+baseline and its reading are next. The study mode for intervention builds
 lands after the baselines. The rapid-iteration design waits for the first
 intervention's measured cycle, and the paid-work decision precedes its build.
 Until that decision is made, the principal runs live launches and collections

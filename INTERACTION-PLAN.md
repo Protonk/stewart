@@ -293,10 +293,18 @@ pricing and workload estimates. A used `claude-haiku-5-5`, omitted effort
 603,844 input and 8,318 output tokens, with no retries or compaction. The
 calculated cost is USD 0.0645434, not an independently observed charge.
 
-- [ ] Finish the principal's receiving-end readings and reconcile A's calculated
-  cost with an independent Console observation or give that observation an
-  explicit disposition. The assistant's initial substantive review is retained;
-  discuss it after the reading so it does not supply the reader's answers.
+A's answer review has a disposition. Learn from organization, repeated material
+and the placement of known method information without optimizing toward the
+principal's or reviewer's better rewrite of this small, explicit question.
+Changes to organization, reorganization or structured submission remain possible
+study choices. The comment-interpretation issue is outside the project's remit.
+The principal's direction is preserved in
+`review/reading-01/scope-direction-01.txt` beside A's run; it does not prohibit
+retrospective analysis or establish an interface cause for ordinary prose
+problems. No implementation intervention is selected.
+
+- [ ] Reconcile A's calculated cost with an independent Console observation or
+  give that observation an explicit disposition.
 - [ ] After A's review, prepare B's separate packet with current
   source/binary/apparatus bindings and the same interface and commission settings.
   Recheck compatibility and costs and obtain bounded spending authorization
@@ -360,17 +368,35 @@ read first across returns. The reader's notes are the record: the agent files
 them verbatim with the order read and the run they belong to, beside the run,
 cited from here.
 
-- [ ] Hold the warm-up reading of the pilot's first return,
-  `.scratch/c10-live-01/review/answer.md`, original first. Its study view and
-  provenance manifest are prepared in that run's `review/reading-01/`.
-  Its result informs the choice of the first intervention: authoring categories
-  or rendering order. No reader response is recorded yet.
-- [ ] Hold A's reading, study view first. Its derived view and provenance
-  manifest are prepared in `.scratch/frsrr-baseline-a-01/review/reading-01/`;
-  the exact original rendering is in `review/answer.md`. No reader response
-  is recorded yet.
+The pilot warm-up is complete, original first. In
+`.scratch/c10-live-01/review/reading-01/`, `first-form-response.txt` and
+`second-form-response.txt` preserve the principal's words; their adjacent JSON
+records bind the forms and order. `reading-result.json` separates the assistant's
+synthesis from those observations. The principal found less uncertainty about
+authorship, sealing and byte checking, but said the added explanation largely
+concerned things that should be unobtrusive and not mentioned. They reported
+no clear change to the overall answer. This does not establish a preferred
+rendering or an effect attributable solely to entry order: the view also added
+provenance explanation. Carry the objection to foregrounding those details into
+intervention selection; no change to custody obligations follows from it.
+
+A's two responses are recorded in
+`.scratch/frsrr-baseline-a-01/review/reading-01/first-form-response.txt` and
+`second-form-response.txt`, with form bindings and context in their adjacent
+JSON. The study view came first without the question; the principal reported
+difficulty identifying the finding and the relevance of its limits. The original
+form followed with the exact question in `question-context.txt`;
+`second-form-context.json` records that changed condition. With the question,
+the principal found the main answer apparently correct but criticized repeated
+block-count explanations, an ambiguous comment/code relation and a known method
+caveat interrupting linear reading. `reading-result.json` keeps the assistant's
+synthesis separate. The subsequent scope direction above gives the answer
+discussion its disposition. The two responses do not isolate an effect of
+rendering because question context and prior exposure also differ.
+
 - [ ] For B, write the study view during review and hold its reading, original
-  first, before any further launch. Three sittings in all.
+  first, before any further launch. Supply the exact question with both forms
+  from the start; keep A's different exposure recorded. Three sittings in all.
 
 ## Adoption and completion
 
