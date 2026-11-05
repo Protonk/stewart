@@ -9,9 +9,8 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Add a saved provider connection to the launch apparatus, preserving hidden key entry | [PROVIDER-CONNECTIONS-PLAN.md](PROVIDER-CONNECTIONS-PLAN.md) |
-| Next | Run auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
-| After both | Decide who runs paid work and how that is enforced | A short plan written when the two stages complete |
+| Current | Run auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| After those experiments | Decide who runs paid work and how that is enforced | A short plan written when that stage completes |
 | After the first intervention | Design the rapid question-iteration path against that intervention and build the chosen shape | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
@@ -22,22 +21,19 @@ through the real provider loop, used Stewart's tools and reached a faithfully
 preserved outcome. It did not qualify all question families or replace release
 conformance. The small-commission apparatus has a reviewed Linux rehearsal, and
 the six-audit pilot on minimal questions has completed procedural review.
-Complete the connection work's offline items before the Problem A baseline,
-which launches through the saved connection and serves as that route's live
-check. The connection module and study packet mode have landed as one apparatus
-tranche. The reviewed Linux rehearsal `.scratch/c10-study-launch-01` covers both
-with the synthetic connection and frozen study inputs; the Problem A packet can
-now be prepared for bounded authorization. The study mode for intervention builds
+Saved-provider-connection work is complete: the reviewed Linux rehearsal
+`.scratch/c10-study-launch-01` covers synthetic reuse and frozen study inputs;
+Problem A has launched and been collected through the live saved connection.
+Its procedural review is complete. The receiving-end readings and a separately
+authorized Problem B baseline are next. The study mode for intervention builds
 lands after the baselines. The rapid-iteration design waits for the first
 intervention's measured cycle, and the paid-work decision precedes its build.
 Until that decision is made, the principal runs live launches and collections
 in a separate terminal.
-Offline interface preparation can continue with the already frozen questions
-and evidence while connection work proceeds.
 
 The following study uses cheap model calls to examine Stewart's auditor-facing
-scaffolding. Neither its preparation nor the connection work requires completing
-the full C10 apparatus. Full C10 qualification remains a release gate; its live
+scaffolding. Its preparation does not require completing the full C10 apparatus.
+Full C10 qualification remains a release gate; its live
 compaction and recovery runs need their own commission. These API runs do not
 depend on the Claude Code runtime. The other release backlog is not a
 prerequisite list for this sequence. Model-consuming work requires the
@@ -82,6 +78,13 @@ saved synthetic connection. The report retains actual counts, scope limits and
 the container identity. It establishes apparatus readiness for the baselines;
 it makes no model-support claim. The earlier `.scratch/c10-launch-01` remains
 pinned with its original evidence.
+
+The Problem A baseline `.scratch/frsrr-baseline-a-01` is pinned with its
+procedural and saved-connection collection review at `review/result.json`.
+It establishes one authorized live placement and later collection, with the
+original export unchanged, not model qualification. The host synthetic checks
+are pinned separately at `.scratch/connection-checks-01/review-02.json`, which
+preserves the failed attempt and limits on the locked-state observations.
 
 The combined pilot review is pinned at
 `.scratch/c10-haiku-commission-01/review/result.json`, with `report.md` linking

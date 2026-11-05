@@ -275,22 +275,40 @@ or estimated usage and timing when useful. Do not optimize a count in isolation.
 For both inquiries, inability or a partial result must be an available
 intellectual outcome, not a reason to demand filler or automatic continuation.
 
-- [ ] Prepare a proposed first commission of two placements: one current-interface
-  A baseline, then one B baseline on the same interface, reviewing A before B.
-  Fix exact model/effort, allowances, request-attempt policy, watchdog, stop
-  conditions and source/binary/apparatus bindings. Verify compatibility and costs
-  and obtain bounded spending authorization before launch. The delegated input
-  choices and prior pilot grant no new model calls. A and B are separate
-  launches with their own packets, approvals and evidence folders. A launches
-  and is later collected through the saved provider connection and is that
-  route's live check; a connection failure is a launch failure, not a study
-  observation.
-- [ ] Size allowances for the actual workload. A turn is one provider response
-  and each request resends the whole context, so the pilot's allowances do not
-  transfer: reading most of the 132 KB corpus over a few dozen turns consumes
-  far more cumulative input than the pilot packet allowed, and a limit stop
-  confounds the baseline. Do not infer model inability from a limit stop or
-  silently rely on unqualified compaction and continuation paths.
+The first baseline is retained in `.scratch/frsrr-baseline-a-01`, pinned with
+`review/result.json`. Its Problem A placement and later saved-connection
+collection passed procedural review; the auditor sealed the return, delivery
+was verified and the audit closed. All 509 files in the original export remain
+unchanged in the second snapshot. `review/interaction.json` preserves the tool
+exchanges, and `review/answer-assessment-01.json` keeps substantive review separate
+from citation and custody checks. There is no model qualification claim.
+
+The commission record is `.scratch/frsrr-study-commission-01`:
+`packets/problem-a.for-approval.json` fixes the approved bytes,
+`authorization-a.json` records the principal's single-placement permission,
+and `compatibility-and-cost.json` and `sizing.json` record the dated compatibility,
+pricing and workload estimates. A used `claude-haiku-5-5`, omitted effort
+(provider default medium), 48 turns, 5,000,000 cumulative input tokens,
+32,000 output tokens and an 1,800-second watchdog. Sixteen requests used
+603,844 input and 8,318 output tokens, with no retries or compaction. The
+calculated cost is USD 0.0645434, not an independently observed charge.
+
+- [ ] Finish the principal's receiving-end readings and reconcile A's calculated
+  cost with an independent Console observation or give that observation an
+  explicit disposition. The assistant's initial substantive review is retained;
+  discuss it after the reading so it does not supply the reader's answers.
+- [ ] After A's review, prepare B's separate packet with current
+  source/binary/apparatus bindings and the same interface and commission settings.
+  Recheck compatibility and costs and obtain bounded spending authorization
+  before launch. The retained `packets/problem-b.proposed.json` is an unapproved
+  draft, not authority to run. No further placement is authorized by A's approval,
+  the delegated input choices or the prior pilot.
+
+The workload sizing is complete for this pair. A turn is one provider response
+and each request resends the whole context; cumulative input allowances must
+cover that transfer. Do not infer model inability from a limit stop or silently
+rely on unqualified compaction and continuation paths.
+
 - [ ] Select changes from observed friction or plausible simplification.
   Hold commission settings fixed except where an explicit evidence-presentation
   variant is the intervention. Changes to completeness or consistency are
@@ -342,12 +360,17 @@ read first across returns. The reader's notes are the record: the agent files
 them verbatim with the order read and the run they belong to, beside the run,
 cited from here.
 
-- [ ] Warm-up now: write the study view of the pilot's first return,
-  `.scratch/c10-live-01/review/answer.md`, whose observations restate its
-  account, and hold the reading. Its result informs the choice of the first
-  intervention: authoring categories or rendering order.
-- [ ] For each baseline, write the study view of the return during review and
-  hold the reading before the next launch. Three sittings in all.
+- [ ] Hold the warm-up reading of the pilot's first return,
+  `.scratch/c10-live-01/review/answer.md`, original first. Its study view and
+  provenance manifest are prepared in that run's `review/reading-01/`.
+  Its result informs the choice of the first intervention: authoring categories
+  or rendering order. No reader response is recorded yet.
+- [ ] Hold A's reading, study view first. Its derived view and provenance
+  manifest are prepared in `.scratch/frsrr-baseline-a-01/review/reading-01/`;
+  the exact original rendering is in `review/answer.md`. No reader response
+  is recorded yet.
+- [ ] For B, write the study view during review and hold its reading, original
+  first, before any further launch. Three sittings in all.
 
 ## Adoption and completion
 

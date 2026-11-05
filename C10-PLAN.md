@@ -36,6 +36,16 @@ Native iteration is not qualification. Retain `.scratch/c10-native-01` and
 `.scratch/c10-checks-01` until the principal authorizes disposal. Their records own
 the actual counts and outcomes; do not rewrite them to match later schemas.
 
+Also retain the supplied-study iteration records in
+`.scratch/c10-study-native-01` and `.scratch/c10-study-native-02`
+(loopback-denied attempts), `.scratch/c10-study-native-03`,
+`.scratch/c10-study-review-fixed-01`, `.scratch/c10-study-review-study-a-01`,
+`.scratch/c10-study-review-study-b-01`, and `.scratch/provider-study-checks-01`.
+They are development observations; Linux process-access checks were skipped
+natively. The host synthetic checks are pinned at
+`.scratch/connection-checks-01/review-02.json`, including the original failed
+hidden-entry attempt and the limits of the lock/cancellation observations.
+
 The [qualification record](apparatus/qualified.md) owns demonstrated Linux
 results; run `python3 -I -B apparatus/qualified.py check` before relying on it.
 The reviewed small-commission rehearsal establishes no model qualification.

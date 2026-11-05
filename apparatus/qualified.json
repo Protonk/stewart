@@ -821,6 +821,44 @@
         "reason": "Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation",
         "until": "A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses"
       }
+    },
+    {
+      "id": "frsrr-baseline-a-01",
+      "kind": "experiment",
+      "date": "2026-11-05T20:29:20Z",
+      "date_from": "review/result.json field at",
+      "summary": "Problem A Haiku baseline: auditor-sealed, delivered and closed; saved-key launch and later collection reviewed, 509 original files unchanged; no model qualification",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "5a82a48331f8ebd46eee2bfb31d4874e37f3651578a30cf01c10ec850a13a8e2"
+      },
+      "evidence": {
+        "path": ".scratch/frsrr-baseline-a-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Authorized interface-study baseline, original input and return witnesses, and live saved-connection launch and collection",
+        "until": "The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence"
+      }
+    },
+    {
+      "id": "connection-checks-01",
+      "kind": "experiment",
+      "date": "2026-11-05T20:30:11Z",
+      "date_from": "review-02.json field at",
+      "summary": "Saved-connection synthetic host checks: eight passed, one failed, two limited observations; original failures and prompt attribution limits retained",
+      "result": {
+        "path": "review-02.json",
+        "sha256": "3453091829834dbf57b89b474ea9b858dd0cf2ddbb410583e24c7aae7699e580"
+      },
+      "evidence": {
+        "path": ".scratch/connection-checks-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits",
+        "until": "The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition"
+      }
     }
   ]
 }

@@ -52,6 +52,8 @@ not carry them.
 | [c10-live-06](#c10-live-06) | experiment | Retain the final pilot audit, original refusals and A-only answer for six-audit review and billing reconciliation. | The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence |
 | [c10-haiku-commission-01](#c10-haiku-commission-01) | experiment | Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison. | The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence |
 | [c10-study-launch-01](#c10-study-launch-01) | experiment | Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
+| [frsrr-baseline-a-01](#frsrr-baseline-a-01) | experiment | Authorized interface-study baseline, original input and return witnesses, and live saved-connection launch and collection | The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence |
+| [connection-checks-01](#connection-checks-01) | experiment | Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits | The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition |
 
 ## Records
 
@@ -318,3 +320,19 @@ not carry them.
 - Result: `review/result.json`, SHA-256 `a06c601e88f489e17f4fe5fa1da5eed71aa32764df9f1e7b4152aae1c4303fae`
 - Evidence: `.scratch/c10-study-launch-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses
+
+### frsrr-baseline-a-01
+
+- Experiment: Problem A Haiku baseline: auditor-sealed, delivered and closed; saved-key launch and later collection reviewed, 509 original files unchanged; no model qualification
+- Date: 2026-11-05T20:29:20Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `5a82a48331f8ebd46eee2bfb31d4874e37f3651578a30cf01c10ec850a13a8e2`
+- Evidence: `.scratch/frsrr-baseline-a-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Authorized interface-study baseline, original input and return witnesses, and live saved-connection launch and collection; until The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence
+
+### connection-checks-01
+
+- Experiment: Saved-connection synthetic host checks: eight passed, one failed, two limited observations; original failures and prompt attribution limits retained
+- Date: 2026-11-05T20:30:11Z (from review-02.json field at)
+- Result: `review-02.json`, SHA-256 `3453091829834dbf57b89b474ea9b858dd0cf2ddbb410583e24c7aae7699e580`
+- Evidence: `.scratch/connection-checks-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits; until The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition
