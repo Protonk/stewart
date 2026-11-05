@@ -25,6 +25,31 @@ Reviewer comparisons passed in `.scratch/c10-study-review-fixed-01` (14/14,
 Native Linux process-access checks were skipped; these runs are not qualification.
 The two earlier attempts, `.scratch/c10-study-native-01` and
 `.scratch/c10-study-native-02`, remain retained with their permission failures.
+The apparatus landed on `main` as `72ae26b`. The host checks in
+`.scratch/connection-checks-01` used synthetic values on macOS 26.7.1 / kernel
+25.6.0; `review-01.json` indexes the original records and their dispositions.
+All 11 attempts bind the committed apparatus hash: eight passed, one failed and
+two require the observations below. Passing checks cover metadata presence,
+missing item (exit 44), allowed retrieval, matching retrieval in a fresh process,
+denied access (exit 128), explicit hidden entry, a different value under a new
+label, and absence of that label after deletion. The principal confirmed separate
+approval prompts for the initial and fresh-process retrievals. Hidden entry
+passed on its second attempt; the first failure records no cause and remains
+retained without an inferred explanation.
+
+The first locked-state attempt returned a value, but the principal reported that
+locking login was unavailable in the GUI and only the normal allow/deny prompt
+appeared. It is another allowed lookup, not a locked-keychain demonstration.
+The retry after the principal ran `security lock-keychain` returned exit 128 /
+`access_denied`. The principal reported cancelling an unlock request and recalls
+that its requester was not `sharingd`, but cannot recall the name. Refusal after
+the reported cancellation was observed; exact dialog-to-process attribution
+remains unconfirmed, and exit 128 alone cannot distinguish it from ordinary
+denial. `observer-01.json` through `observer-03.json` preserve these accounts.
+The distinct locked/unavailable-interaction classifier has only fake-tool
+coverage. A separate `sharingd` prompt is excluded from these checks. Further
+host Keychain and harness investigation remains outside this tranche unless
+requested.
 The principal's 2026-11-05 metadata lookup found the live item in the login
 keychain with service `stewart-provider`, account and display label
 `stewart-haiku`. The principal reports its provider scope as the Stewart project;
@@ -100,7 +125,7 @@ coordinating plan.
 | Configuration | No credential in packets, question files, arrangements, records or ordinary configuration. The only persistent secret is the Keychain item. |
 | Private use | The launcher process holds the key between lookup and handoff and for the host scan, then drops it. It never enters argv, environment, container configuration, recorded streams or chat. Lookup records retain the exit status and fixed failure classification; raw stdout and stderr stay unrecorded because unexpected tool output may contain a credential. |
 | Lifecycle | `connection status` reports item presence and metadata without reading the value. Disconnect is the principal deleting the item; the launcher states that this removes local access only and that revocation happens in the Console and is not confirmed by Stewart. |
-| Failure | Missing item, locked keychain, denied prompt, missing tool, label mismatch with the packet and wrong key at collection (the existing HMAC refusal) are reported distinctly. No fallback to another source. |
+| Failure | Missing item, denied/cancelled access, locked/unavailable interaction, missing tool, label mismatch with the packet and wrong key at collection (the existing HMAC refusal) have distinct diagnostics. A cancelled unlock can return the same access-denied status as ordinary denial; the classification does not independently establish Keychain state. No fallback to another source. |
 
 ## Evaluated routes
 
@@ -129,17 +154,12 @@ prefix and credential bounds, collection handoff and exclusion of values from
 records and streams. The inherited sanity launcher is unchanged. The local test
 outputs, rather than this implementation account, own actual counts and skips.
 
-- [ ] Host checks against a synthetic item that the principal creates with a
-  nonfunctional value: initial setup, reuse by a fresh launcher process, locked
-  keychain, missing item, denied prompt and wrong key at collection.
-  The real item is never read by a test. Retain the outputs under
-  `.scratch/connection-checks-NN`, including macOS version and the missing-item
-  and denied-prompt exit statuses. The agent-shell observation has the separate
-  disposition above.
-- [ ] Commit the locally checked apparatus, then the principal runs the
+- [ ] The principal runs the committed apparatus's
   Linux `c10.py rehearse --connection` with the synthetic item and pins the
   result; it supersedes the retained rehearsal and its binding is required
-  before live use.
+  before live use. Include launch and fresh-process collection through the saved
+  connection and repeat the wrong-key collection control exercised natively.
+  The real item is never read by a test.
 - [ ] Launch the Problem A baseline with `--connection` under its own
   authorization and collect it later with `--connection`. Record both outcomes
   in that run's evidence and cite them here.
