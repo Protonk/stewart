@@ -26,9 +26,11 @@ Saved-provider-connection work is complete: the reviewed Linux rehearsal
 `.scratch/c10-study-launch-01` covers synthetic reuse and frozen study inputs;
 Problem A has launched and been collected through the live saved connection.
 Its procedural review, pilot warm-up and Problem A readings are complete, with
-the answer review given a disposition. A separately authorized Problem B
-baseline and its reading are next. The study mode for intervention builds
-lands after the baselines. The rapid-iteration design waits for the first
+the answer review given a disposition. The separately authorized Problem B
+placement and follow-up collection have also passed procedural review, and all
+three receiving-end readings are complete. Selecting the first bounded
+intervention is next. The study mode for intervention builds remains to be
+implemented. The rapid-iteration design waits for the first
 intervention's measured cycle, and the paid-work decision precedes its build.
 Until that decision is made, the principal runs live launches and collections
 in a separate terminal.
@@ -87,6 +89,10 @@ It establishes one authorized live placement and later collection, with the
 original export unchanged, not model qualification. The host synthetic checks
 are pinned separately at `.scratch/connection-checks-01/review-02.json`, which
 preserves the failed attempt and limits on the locked-state observations.
+
+The Problem B baseline `.scratch/frsrr-baseline-b-01` is also pinned with its
+review at `review/result.json`, covering the authorized placement and later
+saved-connection collection with all original evidence unchanged.
 
 The combined pilot review is pinned at
 `.scratch/c10-haiku-commission-01/review/result.json`, with `report.md` linking

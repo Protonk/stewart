@@ -303,14 +303,22 @@ The principal's direction is preserved in
 retrospective analysis or establish an interface cause for ordinary prose
 problems. No implementation intervention is selected.
 
-- [ ] Reconcile A's calculated cost with an independent Console observation or
-  give that observation an explicit disposition.
-- [ ] After A's review, prepare B's separate packet with current
-  source/binary/apparatus bindings and the same interface and commission settings.
-  Recheck compatibility and costs and obtain bounded spending authorization
-  before launch. The retained `packets/problem-b.proposed.json` is an unapproved
-  draft, not authority to run. No further placement is authorized by A's approval,
-  the delegated input choices or the prior pilot.
+The separately authorized B placement has completed at `701ce08`, retaining
+the same model, effort, allowances and interface. Its packet and authorization
+are `packets/problem-b.for-approval.json` and `authorization-b.json` in the
+commission folder; `compatibility-and-cost-b.json` owns the dated recheck.
+The review in `.scratch/frsrr-baseline-b-01/review/result.json` is pinned in
+the qualification record. It passed: auditor seal, verified delivery and ordinary
+close, with nine successful requests, no retries or compaction, and four refused
+citation writes followed by accepted revisions. Later saved-connection collection
+preserved all 442 original files and added four collection records. Its calculated
+cost is USD 0.0187986. The original export and interaction remain retained;
+`review/answer-assessment-01.json` keeps the assistant's substantive assessment
+separate from the principal's now-completed reading. Both authorized placements
+are consumed; no further model call is authorized by these packets.
+
+- [ ] Reconcile A's and B's calculated costs with independent Console
+  observations or give those observations explicit dispositions.
 
 The workload sizing is complete for this pair. A turn is one provider response
 and each request resends the whole context; cumulative input allowances must
@@ -394,9 +402,27 @@ synthesis separate. The subsequent scope direction above gives the answer
 discussion its disposition. The two responses do not isolate an effect of
 rendering because question context and prior exposure also differ.
 
-- [ ] For B, write the study view during review and hold its reading, original
-  first, before any further launch. Supply the exact question with both forms
-  from the start; keep A's different exposure recorded. Three sittings in all.
+B's reading is complete, original first, with the same exact question supplied
+with both forms. In `.scratch/frsrr-baseline-b-01/review/reading-01/`,
+`first-form-response.txt` and `second-form-response.txt` preserve the principal's
+words; adjacent JSON binds the forms and context, and `reading-result.json`
+separates the assistant's synthesis. Entry order was unchanged. The original
+made the inability and its stated reason clear, but left sealing and verification
+unclear. The principal found the study view better overall: attribution and
+assembly were clearer, section labels less intrusive than Markdown H2 headings,
+and citation details separated from prose immediately beneficial for this short
+answer. The three agent-added provenance sentences were noisy or undermined
+confidence by explaining routine guarantees and disclaiming substantive judgment.
+The principal cautioned that distant citations might become difficult to relate
+to claims in a much longer answer. Why this run differed from an earlier ad hoc
+trial remains unresolved; no comparison here isolates that cause.
+
+All three planned sittings are complete. Carry quieter attribution and section
+presentation, fewer routine operational explanations, and readable citation
+placement into the next proposal. The benefit of separated citations on these
+short returns does not establish a universal endnote layout; locating the exact
+claim and returning to it remain design questions for longer answers. No new
+rendering contract or implementation intervention is selected by this account.
 
 ## Adoption and completion
 

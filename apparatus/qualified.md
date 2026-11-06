@@ -54,6 +54,7 @@ not carry them.
 | [c10-study-launch-01](#c10-study-launch-01) | experiment | Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
 | [frsrr-baseline-a-01](#frsrr-baseline-a-01) | experiment | Authorized interface-study baseline, original input and return witnesses, and live saved-connection launch and collection | The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence |
 | [connection-checks-01](#connection-checks-01) | experiment | Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits | The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition |
+| [frsrr-baseline-b-01](#frsrr-baseline-b-01) | experiment | Authorized interface-study baseline, original input and return witnesses, and reviewed follow-up collection | The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence |
 
 ## Records
 
@@ -336,3 +337,11 @@ not carry them.
 - Result: `review-02.json`, SHA-256 `3453091829834dbf57b89b474ea9b858dd0cf2ddbb410583e24c7aae7699e580`
 - Evidence: `.scratch/connection-checks-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits; until The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition
+
+### frsrr-baseline-b-01
+
+- Experiment: Problem B Haiku baseline: auditor-sealed, delivered and closed; live placement and later saved-key collection reviewed, 442 original files unchanged; no model qualification
+- Date: 2026-11-05T23:26:56Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `b6a2f5c995fc227ea8a61a5554ced7a99116c4aa12afa8c5cdb15b60febfc62c`
+- Evidence: `.scratch/frsrr-baseline-b-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Authorized interface-study baseline, original input and return witnesses, and reviewed follow-up collection; until The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence
