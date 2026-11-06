@@ -59,6 +59,7 @@ not carry them.
 | [haiku-authoring-acceptance-02](#haiku-authoring-acceptance-02) | experiment | Bind the isolated authoring variant and preserve the limits of its acceptance evidence. | The authoring study is reviewed and the principal releases the variant evidence. |
 | [haiku-authoring-rehearsal-01](#haiku-authoring-rehearsal-01) | experiment | Launcher and frozen-input evidence for the account-composition-01 A/B experiment | The authoring intervention is reviewed and no retained live packet relies on this rehearsal |
 | [haiku-authoring-live-01](#haiku-authoring-live-01) | experiment | Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading | The principal has reviewed the interface comparison and authorizes disposal of its container and evidence |
+| [fable-problem-b-live-01](#fable-problem-b-live-01) | experiment | Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation. | Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then. |
 
 ## Records
 
@@ -381,3 +382,11 @@ not carry them.
 - Result: `review/result.json`, SHA-256 `14b01080fe41d36a4106bad1df1232f8b3f6f5e283a7aaac9cf2cc233c1480d1`
 - Evidence: `.scratch/haiku-authoring-live-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading; until The principal has reviewed the interface comparison and authorizes disposal of its container and evidence
+
+### fable-problem-b-live-01
+
+- Experiment: One authorized Fable Problem B encounter at default effort with no execution on account-composition-01; procedural and collection reviews passed, all 456 original files preserved, principal reading and discussion complete. Principal reports billing reconciles with the displayed USD 3.51 cost; token breakdown unavailable. No model qualification.
+- Date: 2026-11-06T23:11:43Z (from review/encounter-completion-01.json field at)
+- Result: `review/encounter-completion-01.json`, SHA-256 `4b64ef5b0e835b46b9b811c139d8fc5c540a041d8726ecf805ddd3626dd08cc4`
+- Evidence: `.scratch/fable-problem-b-live-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation.; until Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then.

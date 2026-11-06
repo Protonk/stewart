@@ -954,6 +954,25 @@
         "reason": "Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading",
         "until": "The principal has reviewed the interface comparison and authorizes disposal of its container and evidence"
       }
+    },
+    {
+      "id": "fable-problem-b-live-01",
+      "kind": "experiment",
+      "date": "2026-11-06T23:11:43Z",
+      "date_from": "review/encounter-completion-01.json field at",
+      "summary": "One authorized Fable Problem B encounter at default effort with no execution on account-composition-01; procedural and collection reviews passed, all 456 original files preserved, principal reading and discussion complete. Principal reports billing reconciles with the displayed USD 3.51 cost; token breakdown unavailable. No model qualification.",
+      "result": {
+        "path": "review/encounter-completion-01.json",
+        "sha256": "4b64ef5b0e835b46b9b811c139d8fc5c540a041d8726ecf805ddd3626dd08cc4"
+      },
+      "evidence": {
+        "path": ".scratch/fable-problem-b-live-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation.",
+        "until": "Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then."
+      }
     }
   ]
 }

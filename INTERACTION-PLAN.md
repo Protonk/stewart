@@ -1,6 +1,6 @@
 # Stewart auditor-interface study
 
-Use inexpensive Haiku runs to investigate how Stewart presents and supports an
+Use bounded model encounters to investigate how Stewart presents and supports an
 inquiry. The principal's goal is unobtrusive auditor-facing machinery, with a
 useful balance between discoverability and verbosity. An equally sufficient
 answer with more natural prose or less mechanical effort can be a substantial
@@ -62,11 +62,38 @@ selected destination.
   Record the principal's reading before presenting the local agent's substantive
   assessment. Review the encounter before selecting another one.
 
-The last completed pair is `.scratch/haiku-authoring-live-01`:
+The single Fable B encounter is complete at `.scratch/fable-problem-b-live-01`.
+`review/encounter-completion-01.json`, pinned in the qualification record,
+binds the unchanged procedural/collection review in `review/result.json` to
+the completed reading, discussion and billing observation.
+`review/problem-b/reading-response-01.txt` preserves the
+principal's reading with `cat`, and `reading-assessment-01.json` keeps the later
+local assessment separate. The principal found useful partial findings and
+mostly helpful organization, but said the volume could hide an error. The
+default-coefficient search restriction and sampled lower-bound argument are
+supported. The latter concerns one fixed magic and does not conflict with the
+unimodality caveat about varying magic. `exhaustiveness-clarification-01.json`
+distinguishes full-domain justification from evaluating every input for every
+magic, with a concrete pruning example; a wide bracket still needs a coverage
+argument. The principal found that distinction worth pursuing and selected no
+change to future plans; `reading-followup-01.json` records that disposition.
+Four recorded searches
+support the account of looking for saved results, without establishing the
+model's expectation. Separate entries repeated account content before any
+preparation notice. No package, interface or rendering change is selected.
+The authorized setup remains in `.scratch/fable-problem-b-01`; its placement is
+consumed. `review/usage-and-cost-01.json` owns calculated cost and usage.
+`review/billing-reconciliation-01.json` records the principal's report that
+billing reconciles with the displayed USD 3.51 cost. Token breakdowns were not
+yet available; this does not establish token-level agreement or reconcile older
+runs. This is one encounter with prior reader
+exposure, not a paired test or a model qualification result.
+
+The completed Haiku pair is `.scratch/haiku-authoring-live-01`:
 `review/pair-reading-01.json` owns the combined reading and interaction assessment;
 `review/result.json` owns the earlier procedural/collection review. Both audits
-are closed. The baseline packets and intervention packet are consumed, and no
-next launch or collection is pending. Independent Console billing observations
+are closed. The baseline packets and intervention packet are consumed. They
+authorize no further placements. Independent Console billing observations
 or their explicit disposition remain outstanding; this is not an unresolved
 procedural failure or an instruction to repeat a run.
 
