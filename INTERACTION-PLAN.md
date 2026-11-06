@@ -41,6 +41,52 @@ returns remain useful for inspection and explicitly labeled study views; the
 receiving-end reading below uses such views. A document-oriented answer is a
 candidate, not a selected destination.
 
+## Authoring direction and next experiment
+
+The principal's November 6 direction separates question-specific structured
+requirements from the auditor's main explanation. Some question types may demand
+data that Stewart can mechanically check and refuse, or that a manager can use
+in a stated relationship. The main response should otherwise be organized by
+its author. The applicability, schemas, checks and treatment of unavailable
+values remain future design work; the current experiment introduces no new
+required fields or substantive acceptance test.
+
+Post-authoring rearrangement may prove unnecessary. Preserve that possibility:
+the next reading uses the submitted return with its question, without an
+agent-reformulated companion. The principal prefers narrowly scoped linting to
+reformulation if intervention proves useful. The existing linter marker remains
+deferred; neither general rewriting nor a linter implementation is commissioned
+by this study setup. Structured validation and explicit submission remain active.
+
+The next candidate, `account-composition-01`, is prepared in
+`.scratch/haiku-authoring-01`. `interface-02.json` owns the exact proposed wording;
+`variant-02.patch` changes the open-inquiry family instructions, gives that family
+a new version, and updates the two native assertions of its version. The
+instructions invite a connected account containing its basis and limits, make
+separate observation/limit entries optional, and explain that missing-section
+notices do not require more writing. Tools, schemas, the notices themselves,
+citation checks, revision, rendering and submission behavior stay fixed. This
+tests whether changed guidance is enough; it does not establish that the tools
+or their categories are the cause of repetition.
+
+The principal agreed to one new placement each on A and B, using their
+frozen submission templates and the baseline model, effort and allowances.
+The agreement is retained in `.scratch/haiku-authoring-01/round-agreement-01.json`.
+The proposal remains unbound until the study build and Linux rehearsal
+are reviewed. Read each original return with the exact question, then record
+what it establishes, what remains unresolved, any useful or redundant structure,
+and citation navigation. Inspect the saved interaction separately for copying,
+repair, category use and reaction to preparation notices. A supported inability
+remains a useful B outcome. Preserve all attempts; no automatic replacement run
+or continuation follows from an awkward answer.
+
+The principal expects a few more bounded Haiku reading/data-collection rounds,
+then a move beyond this model and problem set. Review this pair before choosing
+the next discriminating encounter. Any later repeat needs a reason and separate
+bounded spending authority; avoid an open-ended campaign to polish these answers.
+Evidence from another model and different material is needed before treating a
+preference found here as general.
+
 ## Frozen questions and evidence
 
 The source is frsrr 1.1.0 at commit
@@ -225,8 +271,8 @@ need a matching retained Linux rehearsal, run by the principal, before live use.
 
 An interface intervention is a new binary: the orientation, family instructions,
 tool descriptions and schemas are pinned in it and compared with QUESTION-FORMS
-by the service tests and the independent driver's self-test, and the live
-launcher accepts only a binary on the qualification front. The principal has
+by the service tests and the independent driver's self-test. The ordinary live
+launcher selects a binary on the qualification front. The principal has
 decided on a study mode in the C10 launcher for identified unqualified study
 builds. Qualifying each variant would put experimental commits on the product's
 front; making the arrangement a commission input is a product change left to
@@ -249,9 +295,23 @@ and the recorded self-test failure is not hidden. Variant commits stay
 reachable under a ref while their evidence is cited. Adopting a variant goes
 through the full cycle on `main` with an independent driver author.
 
-- [ ] Implement the study mode and its guards after the baselines. The first
-  intervention binary forces a new rehearsal in any case, so landing it later
-  costs no extra rehearsal.
+- [ ] Retain and review Linux acceptance and a matching launcher rehearsal for
+  the implemented study mode before binding the live packet. Native checks
+  passed in `.scratch/haiku-authoring-01/host-checks-02`; `native-review-01.json`
+  in the setup folder records the counts, reused passes, expected independent
+  self-test mismatch and limits. The original runner and failed attempts remain
+  intact, including the inherited-mask failure explained by
+  `runner-correction-01.json`. The completed fake-provider rehearsal is in
+  `.scratch/c10-interface-host-02`, with reviewer controls in
+  `.scratch/c10-interface-review-host-02`. Earlier stopped/diagnostic attempts
+  remain in `.scratch/c10-interface-native-01` and
+  `.scratch/haiku-authoring-driver-native-01`.
+  Commit the apparatus on main, then retain the tested four-file patch on branch
+  `study/account-composition-01` in `.scratch/haiku-authoring-worktree-01`.
+  The next acceptance output is `.scratch/haiku-authoring-acceptance-01`.
+  Review every failure before declaring the exact allowed text/version
+  differences; neither an expected nonzero exit nor the native passes qualify
+  this build. Keep the variant branch and worktree while their evidence is used.
 
 ## Lightweight iteration
 

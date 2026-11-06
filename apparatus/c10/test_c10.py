@@ -24,6 +24,154 @@ import connections
 from study import (case_from_question, copy_submission, inspect_submission,
                    study_proposal)
 from verify import tree_inventory_from_evidence
+import study_build
+
+
+class StudyBuildTests(unittest.TestCase):
+    def setUp(self):
+        self.interface={'schema':'stewart.c10-interface/1','id':'guidance-test',
+                        'family':'open-inquiry','version':2,'instructions':'Compose an account.'}
+        self.expected={'failed_cases':{'c19.arrangement':['open.system-bytes']},
+                       'selftest_failures':['docs.family open-inquiry']}
+        def case(name):
+            return {'id':name,'outcome':'pass','variants':[{'binary':'release','sabotage':None,
+                'outcome':'pass','parts_skipped':[],'skip_reason':None,'failed_names':[]}]}
+        cases=[case(name) for name in ['credentials.arguments','credentials.input',
+               'credentials.reflection','credentials.process','c19.arrangement']]
+        self.baseline={'cases':copy.deepcopy(cases)}
+        cases[-1]['outcome']='fail';cases[-1]['variants'][0].update(outcome='fail',failed_names=['open.system-bytes'])
+        self.result={'schema':'stewart.acceptance-driver/1','interrupted':False,'exit':1,
+            'platform':{'system':'Linux','machine':'aarch64','euid':1000},'cases':cases,
+            'failed_cases':['c19.arrangement'], 'controls_unassigned':[], 'controls_never_fired':[],
+            'controls':[],'broken_checks':[],
+            'counts':{'cases':{'selected':5,'ran':5,'skipped':0,'failed':1},
+                      'driver_controls':{'total':1,'fired':1}}}
+
+    def check(self,value):
+        study_build.check_result(value,self.baseline,self.expected,'arm64')
+
+    def test_declared_difference_is_not_qualification(self):
+        self.check(self.result)
+        packet=study_build.attach(rehearsal_packet(),study_build.draft(self.interface))
+        validate_packet(packet,rehearsal=True)
+        self.assertEqual(packet['study_build']['status'],'unqualified')
+        self.assertEqual(study_build.family_id(packet,'open-inquiry'),'open-inquiry/2')
+        self.assertEqual(study_build.family_id(packet,'comparison'),'comparison/1')
+
+    def test_changed_guidance_keeps_orientation_and_other_family(self):
+        packet=study_build.attach(rehearsal_packet(),study_build.draft(self.interface))
+        old=strict_json(study_build.system_bytes({},'open-inquiry'))
+        new=strict_json(study_build.system_bytes(packet,'open-inquiry'))
+        self.assertEqual(new[0],old[0])
+        self.assertEqual(new[1]['text'],self.interface['instructions'])
+        self.assertEqual(study_build.system_bytes(packet,'comparison'),study_build.system_bytes({},'comparison'))
+        self.assertEqual(study_build.system_bytes({},'open-inquiry'),study_build.spec.expected_system_bytes('open-inquiry'))
+
+    def test_draft_and_false_qualification_cannot_reach_live(self):
+        value=study_build.draft(self.interface)
+        with self.assertRaises(ValueError):study_build.validate(value,bound=True)
+        value['status']='qualified'
+        with self.assertRaises(ValueError):study_build.validate(value)
+        packet=rehearsal_packet();packet['study_build']=study_build.draft(self.interface)
+        with self.assertRaises(ValueError):validate_packet(packet,rehearsal=True)
+
+    def test_unexpected_failures_and_skips_are_refused(self):
+        mutations=[lambda r:r['cases'][-1]['variants'][0]['failed_names'].append('custody.failed'),
+            lambda r:r['cases'][0]['variants'][0].update(outcome='fail'),
+            lambda r:r['cases'][0]['variants'][0]['parts_skipped'].append('process'),
+            lambda r:r['cases'].pop(),lambda r:r.update(interrupted=True),
+            lambda r:r['platform'].update(system='Darwin'),
+            lambda r:r['counts']['driver_controls'].update(fired=0),
+            lambda r:r['controls_unassigned'].append('unchecked'),
+            lambda r:r['broken_checks'].append({'case':'unrelated','sabotage':'x','status':'baseline_failed'})]
+        for mutation in mutations:
+            value=copy.deepcopy(self.result);mutation(value)
+            with self.subTest(mutation=mutation),self.assertRaises(ValueError):self.check(value)
+
+    def test_credential_failure_cannot_be_declared_expected(self):
+        expected=copy.deepcopy(self.expected)
+        expected['failed_cases']['credentials.process']=['process.access']
+        with self.assertRaises(ValueError):study_build.expectations(expected)
+
+    def test_changed_text_control_baseline_remains_failed(self):
+        value=copy.deepcopy(self.result)
+        control={'case':'c19.arrangement','sabotage':'changed-text','status':'baseline_failed'}
+        value['controls']=[control];value['controls_never_fired']=['changed-text']
+        value['broken_checks']=[control,{'case':None,'sabotage':'changed-text','status':'never_fired'}]
+        self.check(value)
+        self.assertEqual(value['controls'][0]['status'],'baseline_failed')
+        value['controls'][0]['status']='not_fired'
+        with self.assertRaises(ValueError):self.check(value)
+
+    def test_rehearsal_cannot_be_reused_for_another_variant(self):
+        packet=study_build.attach(rehearsal_packet(),study_build.draft(self.interface))
+        c10.check_rehearsal_inputs(packet,packet)
+        changed=copy.deepcopy(packet);changed['study_build']['interface']['instructions']='Different.'
+        with self.assertRaises(ValueError):c10.check_rehearsal_inputs(packet,changed)
+        with self.assertRaises(ValueError):c10.check_rehearsal_inputs(rehearsal_packet(),packet)
+
+    def test_live_draft_refuses_before_credential_or_container(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            packet=study_build.attach(proposal('example-model'),study_build.draft(self.interface))
+            packet['bindings']={k:'filled' for k in packet['bindings']}
+            packet['account']={k:'approved' for k in packet['account']}
+            packet['spending_authority']='Fixture only.'
+            path=root/'packet.json';write_json(path,packet)
+            args=argparse.Namespace(mode='live',evidence=c10.REPO/'.scratch/study-never-launched',
+                commission=path,approved_commission=digest(read_file(path)),rehearsal=root,
+                qualification='unused',connection=None)
+            with mock.patch.object(c10,'bindings') as bind,mock.patch.object(c10,'hidden_credential') as key:
+                with self.assertRaises(ValueError):c10.launch_batch(args)
+                bind.assert_not_called();key.assert_not_called()
+
+    def test_build_binding_checks_source_binary_and_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);acceptance=root/'study';base=root/'base'
+            def put(path,data):
+                path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(data)
+            qualification={'source_commit':'1'*40,'evidence':{'path':'base'}}
+            put(acceptance/'host/commit.stdout',('2'*40+'\n').encode())
+            put(acceptance/'host/worktree.stdout',b'')
+            put(acceptance/'host/DONE',b'done fixture failures=4\n')
+            put(acceptance/'staging/source.tar',b'archive fixture')
+            for arch in ('arm64','amd64'):
+                r=copy.deepcopy(self.result)
+                r['platform']['machine']='aarch64' if arch=='arm64' else 'x86_64'
+                r['binaries']={'release':{'sha256':digest(b'release fixture')},
+                               'test':{'sha256':digest(b'test fixture')}}
+                put(acceptance/f'bin-{arch}/stewart',b'release fixture')
+                put(acceptance/f'bin-{arch}/stewart-test',b'test fixture')
+                put(acceptance/f'driver-{arch}/evidence/RESULT.json',compact(r))
+                put(base/f'driver-{arch}/evidence/RESULT.json',compact(self.baseline))
+                for name in ('evidence-copy','retention-archive','retention-list','retention-sha256'):
+                    put(acceptance/f'driver-{arch}/{name}.exit',b'0\n')
+                put(acceptance/f'driver-{arch}/selftest.exit',b'1\n')
+                put(acceptance/f'driver-{arch}/selftest.stdout',
+                    b'FAIL docs.family open-inquiry (fixture)\nself-test: 2 checks, 1 passed, 1 failed, 0 skipped\n')
+                for name,code in [('build-release',0),('build-test',0),('static-stewart',0),
+                    ('static-stewart-test',0),('build-glibc',0),('static-stewart-glibc',1),
+                    ('cmp-release-test',1),('run-release',0)]:
+                    put(acceptance/f'build-{arch}/{name}.exit',(str(code)+'\n').encode())
+            def git(argv,**kwargs):
+                if argv[1]=='rev-parse':return ('2'*40+'\n').encode()
+                if argv[1]=='merge-base':return ('1'*40+'\n').encode()
+                if argv[1]=='for-each-ref':return b'refs/heads/study-fixture\n'
+                if argv[1]=='diff':return b'service/src/forms.rs\n' if argv[-1]=='service' else b''
+                if argv[1]=='archive':return b'archive fixture'
+                raise AssertionError(argv)
+            with mock.patch.object(study_build.subprocess,'check_output',side_effect=git):
+                value=study_build.make(root,qualification,self.interface,acceptance,self.expected)
+                self.assertEqual(study_build.select(root,qualification,value),acceptance/'bin-arm64')
+                for name in ['bin-arm64/stewart','bin-amd64/stewart-test',
+                             'driver-arm64/evidence/RESULT.json','staging/source.tar',
+                             'build-arm64/static-stewart.exit','driver-arm64/evidence-copy.exit']:
+                    path=acceptance/name;old=path.read_bytes();path.write_bytes(old+b'changed')
+                    with self.subTest(path=name),self.assertRaises(ValueError):
+                        study_build.select(root,qualification,value)
+                    path.write_bytes(old)
+                changed=copy.deepcopy(value);changed['qualified_base_commit']='3'*40
+                with self.assertRaises(ValueError):study_build.select(root,qualification,changed)
 
 
 class ConnectionTests(unittest.TestCase):

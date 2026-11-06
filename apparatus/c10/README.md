@@ -14,6 +14,62 @@ direct TLS; the reviewer correlates Stewart-owned provider captures there.
 Only rehearsal has an independent provider witness. This limitation must remain
 visible in any live report.
 
+## Experimental family guidance
+
+The optional study-build path admits an explicitly **unqualified** Linux binary
+for an open-inquiry family-guidance experiment. It supports changed family text
+and its version; tool schemas, citation checks, rendering, revision and submission
+keep the ordinary procedural checks. It makes no product or model qualification
+claim and does not update the qualification front.
+
+Keep the variant in a reachable branch commit. Change its specification and
+service together, run both native Cargo configurations, and leave the independent
+driver unchanged. Identify the expected text/version differences in the
+experiment proposal. Run `acceptance.sh` on the
+variant commit and retain its failed result as an experiment; **do not extract
+that run into the qualification front**. Inspect the actual failures and record
+the exact expected case/check and self-test failures before binding them. An
+unexpected difference needs investigation; it cannot simply be included to
+admit the build.
+
+The interface file has schema `stewart.c10-interface/1`, an `id`, family
+`open-inquiry`, an integer `version` greater than 1, and exact `instructions`.
+The expectations file has `failed_cases`, mapping case IDs to sorted distinct
+failed check names, and `selftest_failures`, a sorted list of full failing names
+from the driver's self-test. These are experiment inputs, not product settings.
+
+From the committed apparatus checkout, bind the retained acceptance evidence:
+
+```sh
+python3 -I -B apparatus/c10/c10.py study-build \
+  /absolute/interface.json /absolute/acceptance-folder /absolute/expected.json \
+  /absolute/study-build.json --qualification BASE_QUALIFICATION_ID
+```
+
+The command checks both architectures' complete case inventory, exact expected
+failure names, controls, binary identities and build evidence. It permits only
+the same partial skips already recorded in the qualified base; new skips refuse.
+Credential cases must pass. Source and evidence digests are rechecked on every
+binding or launch. The descriptor records the qualified base commit, variant
+commit, acceptance folder, exact guidance and the unqualified status.
+
+Rehearse with `--study-build /absolute/study-build.json` and the same
+`--submission ID FOLDER` arguments proposed for live use. This runs the ordinary
+offline controls plus two altered-guidance/version reviewer controls; with two
+study templates there are 15 audits and 56 reviewer comparisons. A saved
+connection also needs the ordinary synthetic later-collection check.
+
+Use `packet --study-build /absolute/study-build.json` to bind an unpaid proposal.
+It produces `stewart.interface-commission/1`; its `study_build` member is part of
+the exact packet submitted for authorization. Live launch takes the build from
+that approved packet, requires its matching successful rehearsal, and never
+accepts a replacement `--study-build` argument. Historical packet schemas and
+receipts remain unchanged. Reports identify the binary as `unqualified_study`.
+
+For local iteration only, `smoke.py --interface /absolute/interface.json` accepts
+a native prototype. It labels its result as local and unqualified, skips Linux
+process checks explicitly, and supplies no evidence that can admit a live build.
+
 ## Cases and counts
 
 [`catalog.json`](catalog.json) fixes six commissions. Each has an ordinary and

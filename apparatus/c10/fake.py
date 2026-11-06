@@ -2,16 +2,18 @@
 from common import strict_json, require
 from exercise import Fake
 import driver_core as spec
+from study_build import system_bytes
 
 
 class Auditor(Fake):
-    def __init__(self, scenario, evidence, materials, question, family, auth_observer=None):
+    def __init__(self, scenario, evidence, materials, question, family, auth_observer=None, packet=None):
         super().__init__(scenario, evidence, materials, question, auth_observer)
         self.family = family
+        self.packet = packet or {}
 
     def respond(self, body):
         require(body['model'] == 'rehearsal-only' and 'output_config' not in body, 'fake model/settings changed')
-        require(body['system'] == strict_json(spec.expected_system_bytes(self.family))
+        require(body['system'] == strict_json(system_bytes(self.packet, self.family))
                 and body['tools'] == spec.expected_tools(self.family), 'fake arrangement differs from specification')
         require(body['messages'][0] == {'role':'user', 'content':[{'type':'text','text':self.question}]}, 'fake question changed')
         if self.mode == 'provider-rejected':

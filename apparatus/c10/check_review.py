@@ -89,6 +89,16 @@ def exercise(root,out):
                                      'added_directories':sorted(view.added_directories)})
         write_json(folder/'review.json',result)
         rows.append({'case':name,'control':control,'expected':expected,'outcome':'pass' if ok else 'fail','observed':result['outcome'],'failures':result['failures']})
+    if binding['commission'].get('study_build') is not None:
+        def change_interface(view, name, value):
+            view.change_json('evidence/binding.json', lambda b:
+                b['commission']['study_build']['interface'].update({name:value}))
+        form=binding['commission']['study_build']['interface']
+        require(form['family']==binding['family'],'interface controls need the changed family')
+        case('changed-study-guidance',lambda v:change_interface(v,'instructions',form['instructions']+' Changed.'),
+             'specified_system_and_tools')
+        case('changed-study-version',lambda v:change_interface(v,'version',form['version']+1),
+             'arrangement_settings')
     case('missing-call',lambda v:v.removed.add(run+'call-1.json'),'call_membership')
     case('missing-response',lambda v:v.removed.add(run+'response-1-1.bin'),'missing_evidence')
     case('changed-input',lambda v:v.changes.update({material:v.read(material)+b'changed'}),'input_witness_identity')

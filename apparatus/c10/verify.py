@@ -12,6 +12,7 @@ import answer_witness as answer
 import driver_core as spec
 import rawjson
 from study import case_from_question
+from study_build import family_id, system_bytes
 
 
 class Evidence:
@@ -118,9 +119,16 @@ def _verify(e, report, check):
     check(binding['schema'] == 'stewart.c10-audit/1', 'audit_binding_schema')
     packet, run = binding['commission'], binding['run']
     family = binding['family']
+    versioned_family = family_id(packet, family)
+    if packet.get('study_build') is not None:
+        from common import validate_packet
+        validate_packet(packet, rehearsal=binding['mode'] == 'rehearse', approved=binding['mode'] == 'live')
+        report['binary_status'] = 'unqualified_study'
+        report['study_build'] = packet['study_build']
     specimen = e.json('evidence/specimen.json')
     if run.get('submission_folder') is not None:
-        check(packet['schema'] == 'stewart.study-commission/1' and run in packet['runs'], 'study_packet_binding')
+        check(packet['schema'] in ['stewart.study-commission/1', 'stewart.interface-commission/1']
+              and run in packet['runs'], 'study_packet_binding')
         template = tree_inventory_from_evidence(e, 'evidence/submission-template/')
         check(digest(compact(template)) == run['submission_sha256'], 'study_template_binding')
         case = case_from_question(e.read('evidence/submission-template/question.md'), run['case'])
@@ -195,9 +203,9 @@ def _verify(e, report, check):
     check(digest(arrangement_raw) == receipt['arrangement']['sha256'], 'arrangement_binding')
     arrnode = rawjson.parse(arrangement_raw).get('body')
     arr = arrnode.value()
-    check(arr['family'] == family + '/1' and arr['model'] == packet['model']
+    check(arr['family'] == versioned_family and arr['model'] == packet['model']
           and arr['limits'] == packet['limits'], 'arrangement_settings')
-    check(arrnode.get('system').raw == spec.expected_system_bytes(family)
+    check(arrnode.get('system').raw == system_bytes(packet, family)
           and arrnode.get('tools').raw == compact(spec.expected_tools(family)), 'specified_system_and_tools')
     expected_extra = {} if packet['effort'] is None else {'output_config': {'effort': packet['effort']}}
     check(arr['request_extra'] == expected_extra, 'effort_parameter')
@@ -411,7 +419,7 @@ def _verify(e, report, check):
         manifest = strict_json(manifest_raw)
         check(digest(manifest_raw) == seal['manifest_sha256'] and seal['answer_sha256'] == digest(expected_answer)
               and seal['rendering_sha256'] == digest(expected_render), 'seal_digests')
-        expected_manifest = answer.manifest(audit, receipt['store'], family+'/1', binding['binary_sha256'],
+        expected_manifest = answer.manifest(audit, receipt['store'], versioned_family, binding['binary_sha256'],
             seal['actor'], manifest['seal']['sealed_at'], revision,
             answer.members(list(selected.values()), expected_answer, expected_render))
         check(manifest_raw == expected_manifest, 'manifest_from_witnessed_selection')

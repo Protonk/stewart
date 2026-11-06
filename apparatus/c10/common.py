@@ -149,11 +149,17 @@ def catalog():
 
 
 def validate_packet(packet, *, rehearsal=False, approved=False):
+    interface_study = packet.get('schema') == 'stewart.interface-commission/1'
     fields(packet, ['schema', 'model', 'effort', 'limits', 'endpoint', 'proxy', 'runs',
         'max_placements', 'permitted_request_attempts', 'automatic_continuation',
-        'stop_after_seconds', 'spending_authority', 'account', 'bindings'], 'commission')
-    require(packet['schema'] in ['stewart.c10-commission/1', 'stewart.study-commission/1'], 'unsupported commission schema')
-    study = packet['schema'] == 'stewart.study-commission/1'
+        'stop_after_seconds', 'spending_authority', 'account', 'bindings']
+        + (['study_build'] if interface_study else []), 'commission')
+    require(packet['schema'] in ['stewart.c10-commission/1', 'stewart.study-commission/1',
+                                'stewart.interface-commission/1'], 'unsupported commission schema')
+    study = packet['schema'] != 'stewart.c10-commission/1'
+    if interface_study:
+        from study_build import validate
+        validate(packet['study_build'], bound=approved)
     model = packet['model']
     require(isinstance(model, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}', model), 'invalid model')
     require((model == 'rehearsal-only') == rehearsal and not model.startswith('REPLACE'), 'model does not match launch mode')
@@ -196,7 +202,8 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
         key = (run['case'], run['repetition'], run['scenario'])
         require(key not in repetitions, 'duplicate case repetition')
         repetitions.add(key)
-    require(not study or study_count > 0, 'study packet needs an explicit submission')
+    require(not study or study_count > 0 or interface_study and rehearsal,
+            'study packet needs an explicit submission')
     fields(packet['bindings'], BINDINGS, 'bindings')
     fields(packet['account'], ['account_label', 'workspace_id', 'credential_label'], 'account')
     for value in [*packet['bindings'].values(), *packet['account'].values(), packet['spending_authority']]:

@@ -1,7 +1,7 @@
 """Prepare, launch and review bounded C10 small-commission batches.
 
 Rehearsals use offline Linux containers and synthetic credentials. Live launch
-needs a qualified binary, a matching successful rehearsal, an exact authorized
+needs a qualified binary or explicitly bound unqualified study build, a matching rehearsal, an exact authorized
 commission digest and hidden entry or an explicitly selected saved connection.
 Nothing resumes a placement.
 """
@@ -23,17 +23,20 @@ from verify import Evidence,verify
 from connections import ConnectionError, lookup as connection_key, status as connection_status, validate_label
 from study import (copy_submission, inspect_submission, resolve_submission,
                    study_proposal, supplied_runs)
+import study_build
 
 
-def bindings(qualification_id):
+def bindings(qualification_id,build=None):
     env=host_environment()
     require(not subprocess.check_output(['git','status','--porcelain','--',*SOURCE_PATHS],cwd=REPO,env=env),
             'commit apparatus sources before binding or launching')
     result=subprocess.run(['python3','-I','-B','apparatus/qualified.py','check'],cwd=REPO,env=env,capture_output=True)
     require(result.returncode==0,'qualification record check failed')
     qualification,binaries=select_qualification(REPO,qualification_id)
+    if build is not None:
+        binaries=study_build.select(REPO,qualification,build)
     bound={'qualification_id':qualification_id,
-        'binary_sha256':qualification['platforms']['linux-aarch64']['release_sha256'],
+        'binary_sha256':file_hash(binaries/'stewart'),
         'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,env=env).decode().strip(),
         'apparatus_sha256':source_hash(),'image':'docker.io/library/python@'+qualification['python_image'],
         'catalog_sha256':file_hash(HERE/'catalog.json')}
@@ -68,7 +71,8 @@ def review_batch(root):
         results.append({'audit':item['id'],'case':item['case'],'snapshots':snapshots,
                         'state':'not_exported' if not snapshots else snapshots[-1]['export']})
     return {'schema':'stewart.c10-batch-review/1','planned':len(packet['runs']),
-            'audits':results,'model_qualified':False}
+            'audits':results,'model_qualified':False,
+            'binary_status':'unqualified_study' if packet.get('study_build') else 'qualification_bound'}
 
 
 def check_rehearsal_inputs(rehearsed,packet=None):
@@ -77,6 +81,8 @@ def check_rehearsal_inputs(rehearsed,packet=None):
     fixed=[{k:v for k,v in run.items() if k!='submission_folder'} for run in expected if run.get('submission_folder') is None]
     require(fixed==rehearsal_packet()['runs'],'rehearsal omitted or changed fixed conformance controls')
     if packet is not None:
+        require(rehearsed.get('study_build')==packet.get('study_build'),
+                'study build differs from rehearsal')
         coverage={run['submission_sha256'] for run in supplied_runs(rehearsed)}
         require(all(run['submission_sha256'] in coverage for run in supplied_runs(packet)),
                 'study inputs need their own successful rehearsal intake and review')
@@ -104,8 +110,9 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
         and all(r['expected_observation'] is True for r in session['audits']), 'incomplete rehearsal inventory')
     report=review_batch(path)
     controls=strict_json(read_file(path/'container/review-controls/RESULT.json'))
-    require(controls['failed']==0 and controls['controls']==controls['controls_fired']==12
-            and controls['passed']==controls['run']==14 and controls['original_unchanged'] is True,
+    extra=2 if rehearsed.get('study_build') else 0
+    require(controls['failed']==0 and controls['controls']==controls['controls_fired']==12+extra
+            and controls['passed']==controls['run']==14+extra and controls['original_unchanged'] is True,
             'reviewer controls missing or incomplete')
     operations=strict_json(read_file(path/'container/operator-controls/RESULT.json'))
     require(operations['failed']==0 and operations['passed']==operations['run']==7
@@ -113,8 +120,8 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
             'operator controls missing or incomplete')
     for run in supplied_runs(rehearsed):
         controls=strict_json(read_file(path/'container/study-review-controls'/run['id']/'RESULT.json'))
-        require(controls['failed']==0 and controls['passed']==controls['run']==18
-                and controls['controls']==controls['controls_fired']==16 and controls['original_unchanged'] is True,
+        require(controls['failed']==0 and controls['passed']==controls['run']==18+extra
+                and controls['controls']==controls['controls_fired']==16+extra and controls['original_unchanged'] is True,
                 'study template controls missing or incomplete')
     for row,item in zip(report['audits'],expected):
         latest=row['snapshots'][0]
@@ -142,6 +149,7 @@ def launch_batch(args):
     require(out.is_absolute() and out.parent==REPO/'.scratch' and not out.exists(),
             'use a new absolute evidence folder directly under .scratch')
     if mode=='live':
+        require(getattr(args,'study_build',None) is None,'live study identity comes from the approved packet')
         require(not getattr(args,'submission',None),'live submissions come from the approved packet')
         require(args.commission is not None and args.approved_commission is not None and args.rehearsal is not None,
                 'live needs an exact approved commission and a retained rehearsal')
@@ -153,6 +161,8 @@ def launch_batch(args):
                 'rehearsal accepts no live packet')
         packet=(study_proposal('rehearsal-only',args.submission,rehearsal=True)
                 if getattr(args,'submission',None) else rehearsal_packet())
+        if getattr(args,'study_build',None) is not None:
+            packet=study_build.attach(packet,strict_json(read_file(args.study_build)))
     connection=getattr(args,'connection',None)
     if connection is not None:
         validate_label(connection,packet if mode=='live' else None)
@@ -161,7 +171,7 @@ def launch_batch(args):
                 'workspace_id':'offline','credential_label':connection}
     for run in supplied_runs(packet):
         inspect_submission(resolve_submission(run),run['case'],run['submission_sha256'])
-    bound,binaries,checked=bindings(args.qualification)
+    bound,binaries,checked=bindings(args.qualification,packet.get('study_build'))
     if mode=='live':
         require(packet['bindings']==bound,'approved packet bindings changed')
         check_rehearsal(args.rehearsal,bound,packet,connection=connection is not None)
@@ -181,6 +191,9 @@ def launch_batch(args):
     name=f'stewart-c10-{int(time.time())}-{os.getpid()}'
     report={'schema':'stewart.c10-launch/1','mode':mode,'bindings':bound,'container':name,
         'commission_sha256':digest(raw),'credential_sent':False,'started_at':time.time(),'outcome':'failed'}
+    report['binary_status']='unqualified_study' if packet.get('study_build') else 'qualification_bound'
+    if packet.get('study_build'):
+        report['study_build']=packet['study_build']
     report['credential_source']={'kind':'keychain','service':'stewart-provider','account':connection} if connection else {'kind':'generated' if mode=='rehearse' else 'hidden-entry'}
     env=host_environment()
     def step(label,argv):
@@ -330,8 +343,15 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                    help='Study submission template; packet settings replace model/effort/limits/destination, preserving body/materials')
-    p=subs.add_parser('packet',help='Bind an unpaid proposal to committed apparatus and qualified binary')
+    p=subs.add_parser('packet',help='Bind an unpaid proposal to committed apparatus and a qualified or declared study binary')
     p.add_argument('proposal',type=Path)
+    p.add_argument('output',type=Path)
+    p.add_argument('--qualification',required=True)
+    p.add_argument('--study-build',type=Path,help='Reviewed unqualified build descriptor; qualification names its base')
+    p=subs.add_parser('study-build',help='Bind retained Linux acceptance evidence to declared family guidance; no qualification or spending')
+    p.add_argument('interface',type=Path)
+    p.add_argument('acceptance',type=Path)
+    p.add_argument('expected',type=Path,help='Exact expected case/check and self-test failures after review of the retained run')
     p.add_argument('output',type=Path)
     p.add_argument('--qualification',required=True)
     for mode in ['rehearse','live']:
@@ -342,6 +362,7 @@ def main():
         p.add_argument('--commission',type=Path)
         p.add_argument('--approved-commission')
         p.add_argument('--rehearsal',type=Path)
+        p.add_argument('--study-build',type=Path,help='Rehearsal only: explicit unqualified family-guidance build')
         p.add_argument('--connection',help='Read the stewart-provider Keychain item; live label must match credential_label')
         p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                        help='Rehearsal only: include these study inputs alongside all conformance controls')
@@ -374,9 +395,18 @@ def main():
             value=validate_packet(strict_json(read_file(args.proposal)))
             require(value['spending_authority'] is None and all(v is None for v in value['account'].values()),'bind an unpaid proposal with null account fields')
             require(args.output.is_absolute(),'packet output must be absolute')
-            value['bindings'],_,_=bindings(args.qualification)
+            if args.study_build:
+                value=study_build.attach(value,strict_json(read_file(args.study_build)))
+            value['bindings'],_,_=bindings(args.qualification,value.get('study_build'))
             write_json(args.output,value)
             print(json.dumps({'packet':str(args.output),'sha256':file_hash(args.output),'approved':False},indent=2))
+        elif args.command=='study-build':
+            require(args.output.is_absolute(),'build descriptor output must be absolute')
+            qualification,_=select_qualification(REPO,args.qualification)
+            value=study_build.make(REPO,qualification,strict_json(read_file(args.interface)),
+                                   args.acceptance,strict_json(read_file(args.expected)))
+            write_json(args.output,value)
+            print(json.dumps({'study_build':str(args.output),'status':'unqualified','sha256':file_hash(args.output)}))
         elif args.command in ['rehearse','live']:
             return launch_batch(args)
         elif args.command=='review':

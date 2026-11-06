@@ -9,9 +9,10 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from common import rehearsal_packet, write_json, file_hash, require
+from common import rehearsal_packet, write_json, file_hash, require, read_file, strict_json
 from batch import prepare_batch, execute_batch, credential_marker
 from study import study_proposal
+from study_build import attach, draft
 
 
 def main():
@@ -23,10 +24,13 @@ def main():
     parser.add_argument('--check-operations',action='store_true',help='After an unsubmitted control, explicitly test manager close and collection')
     parser.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                         help='Add a hashed study template to the full rehearsal')
+    parser.add_argument('--interface',type=Path,help='Native-only family-guidance specification; no live authority')
     args=parser.parse_args()
     require(args.evidence.is_absolute() and not args.evidence.exists(),'use a new absolute evidence directory')
     args.evidence.mkdir(mode=0o700)
     packet=study_proposal('rehearsal-only',args.submission,rehearsal=True) if args.submission else rehearsal_packet()
+    if args.interface:
+        packet=attach(packet,draft(strict_json(read_file(args.interface))))
     if args.case:
         packet['runs']=[r for r in packet['runs'] if r['case']==args.case and r['scenario']=='submitted']
         require(bool(packet['runs']),'unknown case')

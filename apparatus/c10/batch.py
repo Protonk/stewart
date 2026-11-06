@@ -121,7 +121,8 @@ class Audit(Session):
                 (witnessed/f'received-{n}.bin').write_bytes(received)
                 write_json(witnessed/f'received-{n}.json', {'matches_canary':received==key,
                     'bytes':len(received), 'observed_at':time.time()})
-            fake = Auditor(scenario, fake_root, self.materials, self.question, self.specimen['family'], auth)
+            fake = Auditor(scenario, fake_root, self.materials, self.question, self.specimen['family'], auth,
+                           packet=self.commission)
             fake.key = key.decode('ascii')
             if not self.local and self.run_item['id'] == 'open-ordinary-r1':
                 seen, release = threading.Event(), threading.Event()
@@ -230,6 +231,7 @@ def execute_batch(binary, private, out, packet, mode, key, sessions, witness, *,
             rows.append({'audit':item['id'],'state':'unknown','failure':detail,'export':None,'expected_observation':False})
             stopped = True
     report = {'schema':'stewart.c10-session/1', 'mode':mode, 'local_iteration_only':local,
+        'binary_status':'unqualified_study' if packet.get('study_build') else 'qualification_bound',
         'outcome':'observed_review_required' if mode=='live' else ('passed' if not stopped else 'failed'),
         'planned':len(sessions), 'observed':sum(r['state'] not in ['not_started','unknown'] for r in rows),
         'failed':sum(r.get('expected_observation') is False for r in rows),

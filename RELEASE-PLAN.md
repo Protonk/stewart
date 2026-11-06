@@ -28,9 +28,12 @@ Problem A has launched and been collected through the live saved connection.
 Its procedural review, pilot warm-up and Problem A readings are complete, with
 the answer review given a disposition. The separately authorized Problem B
 placement and follow-up collection have also passed procedural review, and all
-three receiving-end readings are complete. Selecting the first bounded
-intervention is next. The study mode for intervention builds remains to be
-implemented. The rapid-iteration design waits for the first
+three receiving-end readings are complete. The first candidate is an
+open-inquiry guidance change permitting a connected account with optional
+separate observations and limits. Its setup includes a guarded study mode for
+unqualified intervention builds and passed native checks; Linux acceptance and launcher
+rehearsal remain prerequisites for its bounded live proposal. The
+rapid-iteration design waits for the first
 intervention's measured cycle, and the paid-work decision precedes its build.
 Until that decision is made, the principal runs live launches and collections
 in a separate terminal.
