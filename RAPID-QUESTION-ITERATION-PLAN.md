@@ -39,14 +39,38 @@ recipes for each family.
 
 ## Reference point
 
-The first interface intervention run through the launcher's study mode is
-"what we have". Its measured cycle is the comparison for everything below, so
-the design steps wait for it.
+The completed `account-composition-01` A/B intervention is "what we have".
+Its actual cycle, including failed preparation attempts, is the reference for
+the design comparison. The runs and readings are complete; assembling the
+measured reference and friction record below remains the first task here.
+Do that from retained evidence, without rerunning the completed commissions.
+
+| Reference material | Retained location |
+| --- | --- |
+| Frozen questions/materials, submission assembly, baseline packets and authority | `.scratch/frsrr-interface-inputs-01`, `.scratch/frsrr-study-submissions-01`, `.scratch/frsrr-study-commission-01` |
+| Baseline A/B launches, collections, reviews and principal readings | `.scratch/frsrr-baseline-a-01`, `.scratch/frsrr-baseline-b-01` |
+| Intervention wording, patch, proposal, preparation attempts, commands and study-build descriptor | `.scratch/haiku-authoring-01` |
+| Both Linux acceptance attempts and their dispositions | `.scratch/haiku-authoring-acceptance-01`, `.scratch/haiku-authoring-acceptance-02` |
+| Timing comparisons and the independently authored protocol-budget change | `.scratch/haiku-authoring-timing-01`, `.scratch/haiku-authoring-timing-02`, `.scratch/protocol-budget-120-01` |
+| Matching launcher rehearsal | `.scratch/haiku-authoring-rehearsal-01` |
+| Intervention launch, collection and reading assessment | `.scratch/haiku-authoring-live-01`, particularly `review/result.json` and `review/pair-reading-01.json` |
+
+The apparatus addition is commit `fa21e8c`; ordinary timing maintenance is
+`5d797e4`; the retained candidate is `c76029b` on
+`study/account-composition-01`, with worktree `.scratch/haiku-authoring-worktree-01`.
+It changes only open-inquiry guidance/version and corresponding native
+assertions. The independent driver was not adapted to accept the study text.
+The baseline binary was qualified; the candidate remains explicitly unqualified.
+Preserve the failed checks and their dispositions when costing the cycle.
 
 - [ ] Record that intervention's actual cycle: which files were edited and by
   whom, which runs the principal made, elapsed time, evidence size, the number
   of agents and authorship splits involved, and what the study mode could not
   vary. Record the two baselines' cycle the same way.
+  Separate elapsed calendar time, recorded process durations and principal
+  actions; report active effort as unknown where it was not observed. Separate
+  reusable apparatus setup and incidental timing maintenance from the marginal
+  work of changing the guidance, without dropping either from the record.
 - [ ] Record the friction observed in those runs that bears on structure: where
   the question, materials, family text or arrangement fought one another, and
   where a change was wanted but not cheap.
@@ -58,6 +82,8 @@ the design steps wait for it.
   purposes and the acceptance claims. It does not start from INTERFACE 7 or the
   current launcher. It receives the measured reference, the friction record and
   the candidate elements above.
+  This is the agent that receives the neutral prompt below; a second fresh agent
+  receives the leading version. The design consultations have not been run.
 - [ ] Require it to place each element on the manager side, the app side or the
   study-variable side with a reason; to give the simplest architecture that
   meets the obligations and lets the study-variable side change without a

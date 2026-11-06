@@ -9,40 +9,30 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Run auditor-facing interface experiments with fixed manager-side commissions | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
-| After those experiments | Decide who runs paid work and how that is enforced | A short plan written when that stage completes |
-| After the first intervention | Design the rapid question-iteration path against that intervention and build the chosen shape | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Current | Select the next bounded Haiku encounter; the baselines and first intervention pair are reviewed | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Ready alongside the interface study | Assemble the measured reference from the completed first intervention, then obtain and compare the independent rapid-iteration designs | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| After the bounded interface experiments | Decide who runs paid work and how that is enforced | A short plan written when that stage completes |
+| After the architecture choice and paid-work decision | Build and demonstrate the chosen rapid-iteration path | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 
-The Messages API sanity commission has run: one simple commission travelled
-through the real provider loop, used Stewart's tools and reached a faithfully
-preserved outcome. It did not qualify all question families or replace release
-conformance. The small-commission apparatus has a reviewed Linux rehearsal, and
-the six-audit pilot on minimal questions has completed procedural review.
-Saved-provider-connection work is complete: the reviewed Linux rehearsal
-`.scratch/c10-study-launch-01` covers synthetic reuse and frozen study inputs;
-Problem A has launched and been collected through the live saved connection.
-Its procedural review, pilot warm-up and Problem A readings are complete, with
-the answer review given a disposition. The separately authorized Problem B
-placement and follow-up collection have also passed procedural review, and all
-three receiving-end readings are complete. The first candidate is an
-open-inquiry guidance change permitting a connected account with optional
-separate observations and limits. Its setup includes a guarded study mode for
-unqualified intervention builds and passed native checks. Linux acceptance is
-reviewed, with its exact text/version differences and missing control baselines
-retained as unqualified evidence. The matching Linux launcher rehearsal passed,
-including both study templates and later collection through the saved synthetic
-connection. The agreed live pair, later collections, principal readings and local
-assessment are complete; selection of another bounded encounter remains. The
-study binary remains unqualified. The first intervention's measured cycle is now
-available to inform rapid-iteration design; the paid-work decision precedes its build.
-Until that decision is made, the principal runs live launches and collections
-in a separate terminal.
+The immediate study task is to propose another discriminating question/material
+comparison, not repeat the completed A/B placements. The principal wants a few
+more bounded Haiku encounters before moving beyond this model and problem set;
+no particular next case or additional spending is approved. The topic plan owns
+the findings, candidate build, evidence and remaining decisions.
 
-The following study uses cheap model calls to examine Stewart's auditor-facing
+The first intervention's execution record is now available for rapid-iteration
+design, but its measured reference has not yet been assembled. That plan starts
+with the reference and friction analysis, then independent design comparisons
+for a principal decision. Design can proceed during the remaining readings;
+implementation still follows the architecture and paid-work decisions. Until
+the paid-work decision is made, the principal runs live launches and collections
+in a separate terminal. No previous packet authorizes further placements.
+
+The interface study uses cheap model calls to examine Stewart's auditor-facing
 scaffolding. Its preparation does not require completing the full C10 apparatus.
 Full C10 qualification remains a release gate; its live
 compaction and recovery runs need their own commission. These API runs do not

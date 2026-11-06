@@ -31,15 +31,54 @@ intellectual limits. The initial choices are fixed below.
 The local focus is the auditor's initial context, family instructions, tool
 descriptions, evidence presentation, citation handling, recording and revision
 tools, and preparation/submission exchanges. Treat these as a coherent interface
-whose current shape can be questioned. Start with the existing interface on A,
-then B. The first interface intervention remains open until those encounters
-have been reviewed; document authoring is not a prerequisite for starting.
+whose current shape can be questioned. The existing-interface A/B baselines and
+the first guidance intervention have been reviewed. Their evidence informs the
+next encounter; they are not unfinished commissions to repeat.
 
 Reading the returned answer is part of assessing the effect on auditor behavior.
 A separate manager-facing receiving redesign is not current work. Existing
-returns remain useful for inspection and explicitly labeled study views; the
-receiving-end reading below uses such views. A document-oriented answer is a
-candidate, not a selected destination.
+returns remain useful for inspection. The completed initial receiving-end study
+used labeled companion views; the intervention readings used original returns
+with their exact questions. A document-oriented answer is a candidate, not a
+selected destination.
+
+## Next commission
+
+- [ ] Propose the next discriminating encounter for discussion with the
+  principal. The local agent recommends retaining `account-composition-01` and
+  choosing material with longer claim-to-evidence relationships or mixed
+  answerability. No particular question, corpus, comparison count or new model
+  use has been selected. The principal's direction remains a few more bounded
+  Haiku encounters, followed by evidence beyond this model and problem set.
+- [ ] Once the encounter is selected, freeze its question and material bytes,
+  identify what the comparison varies and what remains fixed, and prepare the
+  bounded packet and cost estimate. Use the existing study build if its guidance
+  is unchanged. New submission hashes need matching Linux rehearsal coverage;
+  an unchanged build does not require repeating its acceptance suite merely to
+  change a question. Changes to code, guidance or apparatus require their own
+  applicable checks and evidence under DEVELOPMENT and the launcher guards.
+- [ ] Obtain bounded spending authority for the concrete packet, then run,
+  collect, review and present each original return with its exact question.
+  Record the principal's reading before presenting the local agent's substantive
+  assessment. Review the encounter before selecting another one.
+
+The last completed pair is `.scratch/haiku-authoring-live-01`:
+`review/pair-reading-01.json` owns the combined reading and interaction assessment;
+`review/result.json` owns the earlier procedural/collection review. Both audits
+are closed. The baseline packets and intervention packet are consumed, and no
+next launch or collection is pending. Independent Console billing observations
+or their explicit disposition remain outstanding; this is not an unresolved
+procedural failure or an instruction to repeat a run.
+
+The ordinary family on `main` remains `open-inquiry/1`. The candidate is
+`open-inquiry/2` on `study/account-composition-01`, not adopted product behavior.
+Its exact build and evidence are identified in the study-mode section below.
+Saved connection `stewart-haiku` uses service `stewart-provider`; the consumed
+packet retains its non-secret organization/workspace labels. The demonstrated
+connection and collection path need no new setup. Prepare fresh packets from
+current bindings; old launch helpers are historical attempts, not reusable
+spending commands. Evidence under `.scratch` is local and retained, not tracked
+in Git; preserve the cited study ref, worktree and containers.
 
 ## Authoring direction and next experiment
 
@@ -52,7 +91,7 @@ values remain future design work; the current experiment introduces no new
 required fields or substantive acceptance test.
 
 Post-authoring rearrangement may prove unnecessary. Preserve that possibility:
-the next reading uses the submitted return with its question, without an
+read the submitted return with its question, without an
 agent-reformulated companion. The principal prefers narrowly scoped linting to
 reformulation if intervention proves useful. The existing linter marker remains
 deferred; neither general rewriting nor a linter implementation is commissioned
@@ -75,16 +114,11 @@ The agreement is retained in `.scratch/haiku-authoring-01/round-agreement-01.jso
 Both placements and later collections have completed and passed procedural
 review. These placements are consumed. Both principal readings and the local
 interaction assessment are complete in the live folder's `review/pair-reading-01.json`.
-Select the next discriminating encounter from that assessment. A supported
-inability remains a useful B outcome. Preserve all attempts; no automatic
-replacement run or continuation follows from an awkward answer.
-
-The principal expects a few more bounded Haiku reading/data-collection rounds,
-then a move beyond this model and problem set. Review this pair before choosing
-the next discriminating encounter. Any later repeat needs a reason and separate
-bounded spending authority; avoid an open-ended campaign to polish these answers.
+A supported inability remains a useful B outcome. Preserve all attempts; no
+automatic replacement run or continuation follows from an awkward answer.
 Evidence from another model and different material is needed before treating a
-preference found here as general.
+preference found here as general. Avoid an open-ended campaign to polish these
+particular answers.
 
 ### Deferred answer-kind question
 
@@ -262,18 +296,15 @@ synthetic connection. It establishes readiness of the apparatus for these
 inputs, not an answer from Haiku or authority to spend. The native preparation
 logs remain in `.scratch/provider-study-checks-01`.
 
-- [ ] Identify concrete places to vary the auditor-facing arrangement and
-  replies. Packaging can vary through submissions; instructions, tool definitions
-  and rendering are pinned and may need a new build. Record the actual exposed
-  variant rather than mutating an accepted arrangement in place.
-- [ ] Inspect initial context, repeated replies and relevant-action detail
-  separately. Capture the complete baseline exposure, including tool schemas
-  and returned content, so a quieter variant can be compared with what the
-  auditor actually received. Use small offline examples for proposed changes.
-- [ ] Exercise changed operations with appropriate small cases and controls.
-  Include stale revisions, invalid citations, incomplete/empty returns and
-  intervening edits where relevant. A simulator may answer an isolated question
-  but is not evidence of production custody or a substitute for using Stewart.
+For a new variant, identify the concrete arrangement or reply changes. Packaging
+can vary through submissions; instructions, tool definitions and rendering are
+pinned and may need a new build. Record the actual exposed variant rather than
+mutating an accepted arrangement in place. Inspect initial context, repeated
+replies and relevant-action detail separately, using the complete captured tool
+schemas and exchanges. Exercise changed operations with small cases and controls,
+including stale revisions, invalid citations, incomplete/empty returns and
+intervening edits where relevant. A simulator can answer an isolated question;
+it does not establish production custody.
 
 Before implementation edits, identify the applicable
 [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed) and follow
@@ -311,21 +342,17 @@ The recorded self-test failure is not hidden. Variant commits stay
 reachable under a ref while their evidence is cited. Adopting a variant goes
 through the full cycle on `main` with an independent driver author.
 
-- [ ] Select the next bounded comparison, retaining or revising this candidate
-  explicitly. The current recommendation is another question/material pair with
-  longer claim-to-evidence relationships or mixed answerability, before product
-  adoption; no packet or further spending authority follows from that recommendation.
-  The reviewed study build is
-  `.scratch/haiku-authoring-01/study-build-02.json`, for variant `c76029b` on
-  `study/account-composition-01` in `.scratch/haiku-authoring-worktree-01`.
-  The matching Linux rehearsal at apparatus commit `5d797e4` is retained in
-  `.scratch/haiku-authoring-rehearsal-01`; `review/result.json` records 15/15
-  audits, 7/7 operator checks and 56/56 reviewer comparisons, with all 50
-  tampering controls firing and six invariance cases preserved. No checks were
-  skipped and no model calls were made. Both frozen submission templates and
-  later collection through the saved synthetic connection passed. Two successful
-  Keychain lookups are recorded; the principal recalls one visible approval
-  prompt. These are different observations, not evidence of two prompts.
+The reviewed study build is
+`.scratch/haiku-authoring-01/study-build-02.json`, for variant `c76029b` on
+`study/account-composition-01` in `.scratch/haiku-authoring-worktree-01`.
+The matching Linux rehearsal at apparatus commit `5d797e4` is retained in
+`.scratch/haiku-authoring-rehearsal-01`; `review/result.json` records 15/15
+audits, 7/7 operator checks and 56/56 reviewer comparisons, with all 50
+tampering controls firing and six invariance cases preserved. No checks were
+skipped and no model calls were made. Both frozen submission templates and
+later collection through the saved synthetic connection passed. Two successful
+Keychain lookups are recorded; the principal recalls one visible approval
+prompt. These are different observations, not evidence of two prompts.
 
 The live pair at apparatus commit `7a3f761` is retained in
 `.scratch/haiku-authoring-live-01`. The setup folder's `commission-01.json`
@@ -379,7 +406,10 @@ fixed-exponent explanation are wrong. Its assertion that only two magic values
 are discussed is contradicted by a third value in a search hit it received.
 Its inability does not establish that exhaustive enumeration is the only method
 that could settle the question. These findings remain separate from the
-principal's reading and do not alter the delivered return.
+principal's reading and do not alter the delivered return. In
+`review/problem-b/reading-followup-01.txt`, the principal agreed with the
+method-necessity criticism and clarified that they valued the response for
+addressing the implicit question at all, rather than establishing that necessity.
 
 The pair supports continuing with an auditor-composed account as an experimental
 candidate. A has one entry instead of the baseline's six; B has two instead of
@@ -486,56 +516,39 @@ and each request resends the whole context; cumulative input allowances must
 cover that transfer. Do not infer model inability from a limit stop or silently
 rely on unqualified compaction and continuation paths.
 
-- [ ] Select changes from observed friction or plausible simplification.
-  Hold commission settings fixed except where an explicit evidence-presentation
-  variant is the intervention. Changes to completeness or consistency are
-  distinct conditions, not invisible differences in an interface comparison.
-  After baseline review, choose one intervention and the smallest useful
-  comparison; there is no precommitted variant matrix or numerical-search
-  campaign. Preserve model/effort and per-problem allowances across interface
-  comparisons unless their change is itself an identified condition.
-- [ ] Review the resulting answer and interaction together, with the
-  receiving-end reading of its return. Preserve failures and original records;
-  no silent repairs, replacement trials or automatic extensions.
-  A coherent interface package can vary together, provided its components are
-  identified and any causal claim stays within what the comparison supports.
-- [ ] Keep, revise, abandon or further distinguish a candidate according to the
-  principal's judgment and the evidence. Propose extra comparisons only when
-  they would resolve a material uncertainty.
+For subsequent comparisons, select a change from observed friction or plausible
+simplification and state the smallest useful comparison. Hold other commission
+settings fixed. Changes to completeness or consistency are distinct conditions,
+not invisible differences in an interface comparison. Preserve model/effort and
+per-problem allowances unless their change is itself an identified condition.
+There is no precommitted variant matrix or numerical-search campaign.
 
-## Receiving-end reading
+Review each answer, interaction and principal reading together. Preserve failures
+and original records; no silent repairs, replacement trials or automatic
+extensions. A coherent interface package can vary together if its components are
+identified and any causal claim stays within the comparison's scope. Keep,
+revise, abandon or further distinguish it according to the principal's judgment
+and the evidence. Additional comparisons need a material uncertainty to resolve.
 
-The advice's first experiment is adopted in a folded form, without model calls.
-For a return, the agent writes a study view: a derived, labelled document that
-puts the answer or the inability first and keeps provenance and the detailed
-record reachable. It is kept beside the run under `.scratch`, is never a member
-of the return and changes no rendering. The principal reads the current
-rendering and the study view and records what each let them recover. The
-principal is the instrument; the agent, who wrote the view, is not a reader.
+## Completed receiving-end comparison
 
-The view keeps auditor text and Stewart presentation distinguishable, does not
-merge entries or paraphrase in a way that changes a claim, calls nothing
-verified where Stewart checked only a quotation, and states the seal's actor as
-recorded.
+The initial three readings compared original renderings with derived, labeled
+study views. Those views preserved auditor wording, separated attribution from
+the local agent's additions, and remained outside the delivered returns. The
+principal was the reader; the agent who wrote the views was not another reader.
+This comparison is complete. It is evidence for the current direction, not an
+assignment to produce more companion views.
 
-Rubric, one sitting of about ten minutes per return, with the second form
-hidden until the first is done:
+The recorded rubric was:
 
 1. What did the auditor find?
 2. What remains unknown or unsupported?
 3. Who authored the return, and did the auditor or the manager seal it?
 4. What did Stewart verify, and what did the auditor merely claim?
 
-Answer the four for the first form, then read the second and note what
-changed, what was wrong and what the second form made easier or harder to see.
-Record effort as it happened: how many sections were read to find the answer,
-and where an observation and an inference could not be told apart. A view that
-reads smoothly but leaves the reader more certain than the record justifies is
-a failure. The reader does not grade whether the auditor was right; that
-judgment stays under the reviewer sufficiency section. Alternate which form is
-read first across returns. The reader's notes are the record: the agent files
-them verbatim with the order read and the run they belong to, beside the run,
-cited from here.
+The records below preserve the actual order and question context, the principal's
+words, and the local agent's separate synthesis. Reading fluency was kept separate
+from substantive assessment and from confidence the records could support.
 
 The pilot warm-up is complete, original first. In
 `.scratch/c10-live-01/review/reading-01/`, `first-form-response.txt` and
