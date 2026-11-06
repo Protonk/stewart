@@ -1310,7 +1310,7 @@ def c_prompts(t):
 # ---------------------------------------------------------------------------
 
 @case("c9.protocol-timing", ["C9", "C20"],
-      "each protocol call is answered within tens of milliseconds; every reply carries its envelope",
+      "protocol calls meet the response budget; every reply carries its envelope",
       needs=("loopback",),
       controls=[Control("slow_list", [r"^c9\.list-relative$"]),
                 Control("omit_effects_on_refusal", [r"^c9\.reply\.envelope\."])])

@@ -290,8 +290,10 @@ labelled unqualified in every record.
 Guards: the launcher applies its existing credential-case check to the
 variant's acceptance result, so no real key reaches a build whose credential
 handling failed. The packet names the expected failed cases and the launcher
-refuses any other failure. The driver copies stay untouched on study branches
-and the recorded self-test failure is not hidden. Variant commits stay
+refuses any other failure. Study branches use the committed apparatus
+checkout's independent driver without study-specific changes;
+ordinary driver maintenance lands in that checkout first.
+The recorded self-test failure is not hidden. Variant commits stay
 reachable under a ref while their evidence is cited. Adopting a variant goes
 through the full cycle on `main` with an independent driver author.
 
@@ -306,12 +308,40 @@ through the full cycle on `main` with an independent driver author.
   `.scratch/c10-interface-review-host-02`. Earlier stopped/diagnostic attempts
   remain in `.scratch/c10-interface-native-01` and
   `.scratch/haiku-authoring-driver-native-01`.
-  Commit the apparatus on main, then retain the tested four-file patch on branch
+  The apparatus is committed at `fa21e8c`; the four-file variant is `aa8a469` on
   `study/account-composition-01` in `.scratch/haiku-authoring-worktree-01`.
-  The next acceptance output is `.scratch/haiku-authoring-acceptance-01`.
-  Review every failure before declaring the exact allowed text/version
-  differences; neither an expected nonzero exit nor the native passes qualify
-  this build. Keep the variant branch and worktree while their evidence is used.
+  `.scratch/haiku-authoring-acceptance-01` completed both architectures but is
+  not ready to support the packet. `acceptance-review-01/RESULT.json` in the
+  setup folder records the actual failures: the old text/version produces
+  request and manifest/confirmation mismatches, and native ARM64 additionally
+  fails the 100 ms protocol gate at 101.081 ms for the 4 MiB recording call.
+  All four credential cases passed on both architectures. The ordinary failure
+  names agree across architectures, but their full inventory and 27 controls
+  without passing baselines still need review before an expected-difference
+  binding. The timing failure is not a permitted text/version difference.
+  Four fixed native comparisons (qualified, variant, variant, qualified) are
+  retained in `.scratch/haiku-authoring-timing-01`, reviewed in
+  `timing-review-01.json` in the setup folder. Both binaries exceeded the
+  protocol timing threshold in both attempts; the selected functional checks
+  and three sabotage controls passed each time. The principal reports battery
+  operation and possible concurrent tests. This does not establish a regression
+  caused by the variant or identify the environmental cause. At the principal's
+  request, `run-timing-02.py` prepares the same comparison after plugging into
+  AC power, allowing other tests to finish and waiting for host activity to
+  settle. It retains new evidence in `.scratch/haiku-authoring-timing-02` and
+  records power source and host load before/after the measured runs. Its logs
+  confirm AC power; both binaries again exceeded the old protocol budget,
+  while the selected functional checks and three controls passed each time.
+  The principal authorized 120 ms as the protocol tripwire. That budget is
+  implemented in the ordinary independent driver and documented in
+  [the apparatus](apparatus/README.md#provider-network-and-witnesses); native
+  check evidence is in `.scratch/protocol-budget-120-01`. The remaining host
+  loopback self-tests precede committing and merging the ordinary driver update
+  into the variant. Then run fresh Linux acceptance in
+  `.scratch/haiku-authoring-acceptance-02`, review its exact text/version
+  differences, and rehearse the launcher. The old runs retain their original
+  failed outcomes; no historical result is regraded. Keep the failed run and the variant
+  branch/worktree while their evidence is used; do not advance the front.
 
 ## Lightweight iteration
 

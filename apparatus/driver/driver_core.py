@@ -2446,10 +2446,13 @@ def _stats(values):
 
 
 class Driver:
+    # C9 apparatus budgets: startup/help/status and protocol calls have separate gates.
+    startup_gate_ms = 100.0
+    protocol_gate_ms = 120.0
+
     def __init__(self, args):
         self.args = args
         self.evidence = os.path.abspath(args.evidence)
-        self.gate_ms = 100.0
         self.gate = args.timing_gate == "on"
         self.aliases = {}
         self.results = []
@@ -2494,9 +2497,10 @@ class Driver:
             return self.aliases[rp]["sha256"]
         return sha256_file(path)
 
-    def timing_gate_ok(self, samples):
+    @staticmethod
+    def timing_gate_ok(samples, threshold_ms):
         worst = max(samples) if samples else None
-        return (worst is not None and worst < self.gate_ms), worst
+        return (worst is not None and worst < threshold_ms), worst
 
     # -- running ------------------------------------------------------------
     def select(self):
@@ -2657,15 +2661,15 @@ class Driver:
         table = {k: _stats(v) for k, v in sorted(by.items())}
         gated = [s for s in samples if s["op"] in GATED_OPS and s["binary"] == "release" and not s["fault"]
                  and not s["sabotage"] and not s["background"] and s["rc"] is not None and s["rc"] >= 0]
-        ok, worst = self.timing_gate_ok([s["wall_ms"] for s in gated])
+        ok, worst = self.timing_gate_ok([s["wall_ms"] for s in gated], self.startup_gate_ms)
         slow = sorted(gated, key=lambda s: -s["wall_ms"])[:10]
-        gate = {"enabled": self.gate, "threshold_ms": self.gate_ms, "ops": list(GATED_OPS),
+        gate = {"enabled": self.gate, "threshold_ms": self.startup_gate_ms, "ops": list(GATED_OPS),
                 "samples": len(gated), "worst_ms": worst, "slowest": slow,
                 "passed": (ok if gated else None) if self.gate else None,
                 "note": ("gated: native run in the test image" if self.gate else
                          "reported, not gated: only native runs in the Linux test image gate (ACCEPTANCE C9)")}
         # Protocol calls (C9): the fake provider measures, for a response holding one tool call,
-        # the time from its last byte sent to the first byte of the next request. That interval
+        # the time from its last byte sent to the next request's connection. That interval
         # bounds the call from above (it also holds Stewart's captures and the new connection).
         # A search over the whole default scope is excluded, as ACCEPTANCE C9 states.
         proto = getattr(self, "protocol_samples", [])
@@ -2679,8 +2683,8 @@ class Driver:
         for k, v in pby.items():
             table[k] = _stats(v)
         pg = [s for s in proto if s.get("gated") and s["binary"] == "release" and not s.get("sabotage")]
-        pok, pworst = self.timing_gate_ok([s["ms"] for s in pg])
-        gate["protocol"] = {"samples": len(pg), "worst_ms": pworst,
+        pok, pworst = self.timing_gate_ok([s["ms"] for s in pg], self.protocol_gate_ms)
+        gate["protocol"] = {"threshold_ms": self.protocol_gate_ms, "samples": len(pg), "worst_ms": pworst,
                             "slowest": sorted(pg, key=lambda s: -s["ms"])[:10],
                             "passed": (pok if pg else None) if self.gate else None}
         return table, gate
@@ -2706,16 +2710,16 @@ class Driver:
         if gate["enabled"]:
             gres = {"id": "c9.timing-gate", "claims": ["C9"], "title": "startup, status and help within tens of milliseconds",
                     "outcome": "pass" if gate["passed"] else ("skipped" if gate["passed"] is None else "fail"),
-                    "variants": [], "controls": [], "doc": "Every gated release-binary invocation under %d ms." % self.gate_ms}
+                    "variants": [], "controls": [], "doc": "Every gated release-binary invocation under %d ms." % self.startup_gate_ms}
             if gate["passed"] is None:
                 gres["skip_reason"] = "no gated samples were collected"
             self.results.append(gres)
             pgate = gate["protocol"]
             pres = {"id": "c9.protocol-timing-gate", "claims": ["C9"],
-                    "title": "every protocol call except a full-material search within tens of milliseconds",
+                    "title": "every protocol call except a full-material search under %d ms" % self.protocol_gate_ms,
                     "outcome": "pass" if pgate["passed"] else ("skipped" if pgate["passed"] is None else "fail"),
                     "variants": [], "controls": [],
-                    "doc": "Every gated single-call interval measured by the fake provider under %d ms." % self.gate_ms}
+                    "doc": "Every gated single-call interval measured by the fake provider under %d ms." % self.protocol_gate_ms}
             if pgate["passed"] is None:
                 pres["skip_reason"] = "no gated protocol samples were collected"
             self.results.append(pres)
@@ -2793,16 +2797,16 @@ class Driver:
                   "- Sabotage names of Appendix C.2: %d, assigned to no case %d, never fired %d." % (
                       len(SABOTAGES), len(r["controls_unassigned"]), len(r["controls_never_fired"])), ""]
         g = r["timing_gate"]
-        lines += ["## Timing gate (C9)", "", "%s. Threshold %d ms over %s; %d samples; worst %s ms; passed %s." % (
+        lines += ["## Timing gates (C9)", "", "%s. Startup, status and help: under %d ms over %s; %d eligible samples; worst %s ms; passed %s." % (
             g["note"], g["threshold_ms"], ", ".join(g["ops"]), g["samples"],
             "-" if g["worst_ms"] is None else "%.1f" % g["worst_ms"], g["passed"]), ""]
         lines += ["| Operation/binary | n | median ms | p95 ms | max ms |", "| --- | --- | --- | --- | --- |"]
         for k, s in r["timings"].items():
             if s:
                 lines.append("| %s | %d | %.1f | %.1f | %.1f |" % (k, s["n"], s["median_ms"], s["p95_ms"], s["max_ms"]))
-        pg = g.get("protocol") or {}
-        lines += ["", "Protocol calls: %s samples gated; worst %s ms; passed %s." % (
-            pg.get("samples", 0), "-" if pg.get("worst_ms") is None else "%.1f" % pg["worst_ms"], pg.get("passed"))]
+        pg = g["protocol"]
+        lines += ["", "Protocol calls except a full-material search: under %d ms; %d eligible samples; worst %s ms; passed %s." % (
+            pg["threshold_ms"], pg["samples"], "-" if pg["worst_ms"] is None else "%.1f" % pg["worst_ms"], pg["passed"])]
         lines += ["", "## Cases by claim", ""]
         claims = {}
         for case_ in r["cases"]:
@@ -2844,6 +2848,69 @@ class Driver:
 # ---------------------------------------------------------------------------
 # Self-test of the driver's helpers (no Stewart binary needed).
 # ---------------------------------------------------------------------------
+
+@selftest
+def timing_selftest():
+    # Exercise the assembled report and its real budgets, without starting a binary
+    # or relying on the host scheduler to land on either side of a millisecond boundary.
+    d = Driver.__new__(Driver)
+    d.gate = True
+
+    def command(ms, **changes):
+        return dict({"op": "help", "binary": "release", "wall_ms": ms, "fault": None,
+                     "sabotage": None, "background": False, "rc": 0}, **changes)
+
+    def protocol(ms, **changes):
+        return dict({"tool": "list", "binary": "release", "ms": ms, "gated": True,
+                     "sabotage": None}, **changes)
+
+    def report(startup_ms, protocol_ms):
+        d.timing_samples = [command(startup_ms)]
+        d.protocol_samples = [protocol(protocol_ms)]
+        return d.timing_report()[1]
+
+    out = []
+    g = report(99.999, 119.999)
+    out.append(("timing.budgets-reported", g["threshold_ms"] == 100.0 and
+                g["protocol"]["threshold_ms"] == 120.0, g))
+    out.append(("timing.below-budgets", g["passed"] is True and g["protocol"]["passed"] is True, g))
+    g = report(110.0, 110.0)
+    out.append(("timing.separate-budgets", g["passed"] is False and g["protocol"]["passed"] is True, g))
+    g = report(100.0, 120.0)
+    out.append(("timing.at-budgets-control", g["passed"] is False and g["protocol"]["passed"] is False, g))
+    g = report(100.001, 120.001)
+    out.append(("timing.over-budgets-control", g["passed"] is False and g["protocol"]["passed"] is False, g))
+    d.timing_samples.insert(0, command(1.0))
+    d.protocol_samples.insert(0, protocol(1.0))
+    _, g = d.timing_report()
+    out.append(("timing.slow-sample-not-averaged", g["passed"] is False and g["protocol"]["passed"] is False and
+                g["worst_ms"] == 100.001 and g["protocol"]["worst_ms"] == 120.001, g))
+
+    report(99.999, 119.999)
+    d.timing_samples += [command(500.0, **changes) for changes in (
+        {"binary": "test"}, {"fault": "reply.write=epipe"}, {"sabotage": "slow_list"},
+        {"background": True}, {"rc": -9}, {"op": "run"})]
+    d.protocol_samples += [protocol(500.0, **changes) for changes in (
+        {"binary": "test"}, {"sabotage": "slow_list"}, {"tool": "search", "gated": False})]
+    table, g = d.timing_report()
+    out.append(("timing.startup-exclusions-invariant", g["passed"] is True and g["samples"] == 1 and
+                g["worst_ms"] == 99.999, g))
+    out.append(("timing.protocol-exclusions-invariant", g["protocol"]["passed"] is True and
+                g["protocol"]["samples"] == 1 and g["protocol"]["worst_ms"] == 119.999, g))
+    out.append(("timing.full-search-still-reported", table["protocol:search/release"]["max_ms"] == 500.0, table))
+
+    d.gate = False
+    g = report(100.0, 120.0)
+    out.append(("timing.disabled-reports-without-verdict", g["passed"] is None and g["protocol"]["passed"] is None and
+                g["threshold_ms"] == 100.0 and g["protocol"]["threshold_ms"] == 120.0 and
+                g["worst_ms"] == 100.0 and g["protocol"]["worst_ms"] == 120.0, g))
+    d.gate = True
+    d.timing_samples, d.protocol_samples = [], []
+    _, g = d.timing_report()
+    out.append(("timing.no-samples-no-verdict", g["passed"] is None and g["protocol"]["passed"] is None and
+                g["samples"] == 0 and g["protocol"]["samples"] == 0, g))
+    return out
+
 
 def _section(text, heading):
     """The lines of a Markdown section after its heading, to the next heading outside a code
@@ -3076,8 +3143,9 @@ def parse_args(argv):
                    help="parent for the temporary work directory (archives, folders, homes); default: the system "
                         "temporary directory. Must be outside the repository; on Linux use ext4, xfs or btrfs.")
     p.add_argument("--timing-gate", choices=("on", "off"), default="off",
-                   help="gate startup, status and help at under 100 ms (only for native runs in the Linux test "
-                        "image); default off, which reports timings without gating")
+                   help="gate startup, status and help at under 100 ms, and protocol calls except a full-material "
+                        "search at under 120 ms (only for native runs in the Linux test image); default off, "
+                        "which reports timings without gating")
     p.add_argument("--skip-heavy", action="store_true", help="skip the 16 MiB and 128 MiB bound cases")
     p.add_argument("--require-all-controls", action="store_true",
                    help="fail unless every sabotage control of INTERFACE Appendix C.2 is assigned to a selected "

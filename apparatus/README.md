@@ -159,7 +159,7 @@ status is 0 only when no case failed and every control fired.
   are compared with those sums. A case that kills a run before an attempt
   record exists overrides that attempt's charge to the estimate 6.4 states.
 - Protocol timing (C9): for a response holding one tool call, the time from
-  its last byte to the next request's connection. Gated under 100 ms on the
+  its last byte to the next request's connection. Gated under 120 ms on the
   native architecture (`c9.protocol-timing-gate`), except a search over the
   whole default scope; the `slow_list` control is judged relatively (list's
   interval against the median of the others), so it fires under emulation too.

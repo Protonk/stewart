@@ -157,7 +157,10 @@ class StudyBuildTests(unittest.TestCase):
                 if argv[1]=='rev-parse':return ('2'*40+'\n').encode()
                 if argv[1]=='merge-base':return ('1'*40+'\n').encode()
                 if argv[1]=='for-each-ref':return b'refs/heads/study-fixture\n'
-                if argv[1]=='diff':return b'service/src/forms.rs\n' if argv[-1]=='service' else b''
+                if argv[1]=='diff':
+                    if argv[-1]=='apparatus/driver':
+                        self.assertEqual(argv[3],'HEAD')
+                    return b'service/src/forms.rs\n' if argv[-1]=='service' else b''
                 if argv[1]=='archive':return b'archive fixture'
                 raise AssertionError(argv)
             with mock.patch.object(study_build.subprocess,'check_output',side_effect=git):
@@ -172,6 +175,13 @@ class StudyBuildTests(unittest.TestCase):
                     path.write_bytes(old)
                 changed=copy.deepcopy(value);changed['qualified_base_commit']='3'*40
                 with self.assertRaises(ValueError):study_build.select(root,qualification,changed)
+                def changed_driver(argv,**kwargs):
+                    if argv[1]=='diff' and argv[-1]=='apparatus/driver':
+                        return b'apparatus/driver/driver_core.py\n'
+                    return git(argv,**kwargs)
+                with mock.patch.object(study_build.subprocess,'check_output',side_effect=changed_driver):
+                    with self.assertRaisesRegex(ValueError,'independent driver'):
+                        study_build.select(root,qualification,value)
 
 
 class ConnectionTests(unittest.TestCase):

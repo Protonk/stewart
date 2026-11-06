@@ -770,6 +770,10 @@ def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
             "threshold_ms": get("timing_gate.threshold_ms", "num"), "worst_ms": get("timing_gate.worst_ms", "num"),
             "protocol_passed": get("timing_gate.protocol.passed", "optbool"),
             "protocol_worst_ms": get("timing_gate.protocol.worst_ms", "num")}
+    recorded_gate = res.get("timing_gate") if isinstance(res, dict) else None
+    protocol = recorded_gate.get("protocol") if isinstance(recorded_gate, dict) else None
+    if isinstance(protocol, dict) and "threshold_ms" in protocol:
+        gate["protocol_threshold_ms"] = get("timing_gate.protocol.threshold_ms", "num")
     if gate["enabled"]:
         if gate["passed"] is not True or gate["protocol_passed"] is not True:
             fails.append("timing gate on and not passed (commands %s, protocol %s)"
@@ -1119,6 +1123,15 @@ def _counts(*keys):
     return _object({k: _OPT_INT for k in keys})
 
 
+def _timing_gate(value, where, probs):
+    # Retain a separate protocol budget only when the run recorded one. Older
+    # records keep their original fields and rendering, without invented data.
+    _fields(value, {"enabled": _OPT_BOOL, "passed": _OPT_BOOL, "threshold_ms": _OPT_NUM,
+                    "worst_ms": _OPT_NUM, "protocol_passed": _OPT_BOOL,
+                    "protocol_worst_ms": _OPT_NUM, "protocol_threshold_ms": _OPT_NUM},
+            where, probs, checked_elsewhere=("protocol_threshold_ms",))
+
+
 # A platform of an acceptance run whose results are absent records only why; otherwise it records everything.
 ACCEPTANCE_NOT_RUN = {"execution": _OPT_STR, "outcome": _OUTCOME, "failures": _FAILURES}
 ACCEPTANCE_PLATFORM = dict(ACCEPTANCE_NOT_RUN, **{
@@ -1130,8 +1143,7 @@ ACCEPTANCE_PLATFORM = dict(ACCEPTANCE_NOT_RUN, **{
     "checks": _counts("passed", "failed_outside_controls", "failed_inside_controls"),
     "controls": _counts("fired", "total"),
     "driver_controls": _counts("fired", "total"),
-    "timing_gate": _object({"enabled": _OPT_BOOL, "passed": _OPT_BOOL, "threshold_ms": _OPT_NUM,
-                            "worst_ms": _OPT_NUM, "protocol_passed": _OPT_BOOL, "protocol_worst_ms": _OPT_NUM}),
+    "timing_gate": _timing_gate,
     "e2e": _object({"case": _STR, "outcome": _SCALAR, "checks_passed": _NUM, "checks_failed": _NUM}),
     "release_sha256": _OPT_STR, "test_sha256": _OPT_STR, "result_sha256": _OPT_SHA,
 })
@@ -1523,6 +1535,10 @@ def render_platform_rows(e):
                 head = "on, %s" % ("passed" if g.get("passed") and g.get("protocol_passed") else "not passed")
             else:
                 head = "off (reported, not gated)"
+            if "protocol_threshold_ms" in g:
+                return "%s: commands worst %s ms (threshold %s ms); protocol worst %s ms (threshold %s ms)" % (
+                    head, cell(g.get("worst_ms")), cell(g.get("threshold_ms")),
+                    cell(g.get("protocol_worst_ms")), cell(g["protocol_threshold_ms"]))
             return "%s: worst %s ms; protocol worst %s ms; threshold %s ms" % (
                 head, cell(g.get("worst_ms")), cell(g.get("protocol_worst_ms")), cell(g.get("threshold_ms")))
 
@@ -2588,6 +2604,33 @@ def _self_test_controls(base, isolated, control):
     _fixture_run(ctx, "run-a", commit, "2026-01-01T00:00:00Z", False)
     _fixture_run(ctx, "run-b", commit, "2026-01-02T00:00:00Z", False)
     _fixture_run(ctx, "run-c", commit, "2026-01-03T00:00:00Z", True)
+    # Separate budgets survive extraction without changing historical records.
+    timing_path = os.path.join(ctx.scratch, "run-0", "driver-arm64/evidence/RESULT.json")
+    timing_original = _read(timing_path)
+    historical = extract_suite(ctx, "run-0", "acceptance")
+    updated_result = json.loads(timing_original)
+    updated_result["timing_gate"]["protocol"].update(threshold_ms=120.0, worst_ms=110.0)
+    _write(os.path.dirname(timing_path), "RESULT.json", dump_json(updated_result))
+    distinct = extract_suite(ctx, "run-0", "acceptance")
+    distinct_record = {"schema": SCHEMA, "entries": [distinct]}
+    distinct_gate = distinct["platforms"]["linux-aarch64"]["timing_gate"]
+    control("timing: records and renders the two observed budgets separately",
+            distinct_gate["threshold_ms"] == 100.0 and distinct_gate["protocol_threshold_ms"] == 120.0
+            and not record_problems(distinct_record)
+            and "protocol worst 110.0 ms (threshold 120.0 ms)" in render(distinct_record),
+            "gate %s" % distinct_gate)
+    distinct_gate["protocol_threshold_ms"] = "not a budget"
+    control("timing: a malformed separate protocol budget is refused",
+            any("protocol_threshold_ms" in p for p in record_problems(distinct_record)),
+            "problems %s" % record_problems(distinct_record))
+    _write(os.path.dirname(timing_path), "RESULT.json", timing_original.decode("utf-8"))
+    restored = extract_suite(ctx, "run-0", "acceptance")
+    control("timing: old evidence retains its original fields and rendering (invariance)",
+            restored == historical
+            and "protocol_threshold_ms" not in restored["platforms"]["linux-aarch64"]["timing_gate"]
+            and render({"schema": SCHEMA, "entries": [restored]})
+                == render({"schema": SCHEMA, "entries": [historical]}),
+            "historical extraction changed")
     ids = lambda: [e["id"] for e in load_record(ctx)["entries"]]
 
     # Front rule.

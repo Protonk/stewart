@@ -23,8 +23,11 @@ keep the ordinary procedural checks. It makes no product or model qualification
 claim and does not update the qualification front.
 
 Keep the variant in a reachable branch commit. Change its specification and
-service together, run both native Cargo configurations, and leave the independent
-driver unchanged. Identify the expected text/version differences in the
+service together, run both native Cargo configurations, and use the independent
+driver from the committed apparatus checkout unchanged on the study branch.
+Ordinary driver maintenance, including an authorized timing-budget change,
+lands in that checkout first; a study build using a different driver is refused.
+Identify the expected text/version differences in the
 experiment proposal. Run `acceptance.sh` on the
 variant commit and retain its failed result as an experiment; **do not extract
 that run into the qualification front**. Inspect the actual failures and record

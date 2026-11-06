@@ -241,8 +241,8 @@ def c_driver_controls(t):
     # Timing gate: a reply delayed by 150 ms must fail the tens-of-milliseconds gate.
     argv = ["/bin/sh", "-c", 'sleep 0.15; exec "$0" "$@"', t.bin["path"], "help"]
     res = Proc(argv, t.env(), t.cwd, 30).wait()
-    ok, worst = t.drv.timing_gate_ok([res["wall_ms"]])
-    t.driver_control("timing_gate_delay", not ok, {"delayed_ms": res["wall_ms"], "threshold_ms": t.drv.gate_ms})
+    ok, worst = t.drv.timing_gate_ok([res["wall_ms"]], t.drv.startup_gate_ms)
+    t.driver_control("timing_gate_delay", not ok, {"delayed_ms": res["wall_ms"], "threshold_ms": t.drv.startup_gate_ms})
 
 
 @case("apparatus.release-ignores-test-env", ["C17"], "the release binary has no fault or sabotage behaviour")

@@ -339,7 +339,8 @@ launch; each must fail.
   size limits and reported as actual timings. Timings under emulation are
   reported but do not gate:
   - startup, `status` and `help` answer within tens of milliseconds;
-  - every protocol call except a full-material search does too;
+  - every protocol call except a full-material search meets the apparatus's
+    protocol response budget;
   - manager preparation and source scanning report scope and progress; intake,
     commission readback, full search and delivery state their known size and
     report progress; raw readback has no progress text in its byte stream.

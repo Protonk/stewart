@@ -31,8 +31,11 @@ placement and follow-up collection have also passed procedural review, and all
 three receiving-end readings are complete. The first candidate is an
 open-inquiry guidance change permitting a connected account with optional
 separate observations and limits. Its setup includes a guarded study mode for
-unqualified intervention builds and passed native checks; Linux acceptance and launcher
-rehearsal remain prerequisites for its bounded live proposal. The
+unqualified intervention builds and passed native checks. Linux acceptance
+completed with text/version comparison failures and an additional native timing
+failure. The authorized protocol-budget adjustment needs the remaining host
+check and fresh Linux evidence before the launcher rehearsal and bounded live
+packet. The
 rapid-iteration design waits for the first
 intervention's measured cycle, and the paid-work decision precedes its build.
 Until that decision is made, the principal runs live launches and collections
@@ -169,6 +172,8 @@ requirements:
 - Review qualification rules for skips, timing gates and failures across
   platforms. Native protocol timings approach the limit; emulated x86_64 has no
   enforced timing gate.
+  Consider retiring the absolute protocol tripwire or moving performance trends
+  into Linux CI; this is a later policy option, not implementation scheduled now.
 - Decide whether to support running the apparatus from a Linux host; the
   documented host route uses macOS and Apple `container`.
 

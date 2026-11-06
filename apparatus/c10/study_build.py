@@ -198,8 +198,8 @@ def select(repo, qualification, value):
             'study commit does not descend from its qualified base')
     require(bool(git('for-each-ref', '--contains', commit, '--format=%(refname)')),
             'keep the study source reachable under a ref')
-    require(not git('diff', '--name-only', qualification['source_commit'], commit, '--',
-                    'apparatus/driver'), 'study builds must retain the independent driver')
+    require(not git('diff', '--name-only', 'HEAD', commit, '--', 'apparatus/driver'),
+            'study builds must retain the committed apparatus checkout\'s independent driver')
     changed = set(git('diff', '--name-only', qualification['source_commit'], commit, '--', 'service').splitlines())
     require('service/src/forms.rs' in changed and changed <= {
                 'service/src/forms.rs', 'service/tests/manager.rs', 'service/tests/manager_seal.rs'},
