@@ -55,6 +55,9 @@ not carry them.
 | [frsrr-baseline-a-01](#frsrr-baseline-a-01) | experiment | Authorized interface-study baseline, original input and return witnesses, and live saved-connection launch and collection | The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence |
 | [connection-checks-01](#connection-checks-01) | experiment | Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits | The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition |
 | [frsrr-baseline-b-01](#frsrr-baseline-b-01) | experiment | Authorized interface-study baseline, original input and return witnesses, and reviewed follow-up collection | The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence |
+| [haiku-authoring-acceptance-01](#haiku-authoring-acceptance-01) | experiment | Preserve the first failed Linux attempt and its controls for the authoring study. | The authoring study is reviewed and the principal releases its evidence. |
+| [haiku-authoring-acceptance-02](#haiku-authoring-acceptance-02) | experiment | Bind the isolated authoring variant and preserve the limits of its acceptance evidence. | The authoring study is reviewed and the principal releases the variant evidence. |
+| [haiku-authoring-rehearsal-01](#haiku-authoring-rehearsal-01) | experiment | Launcher and frozen-input evidence for the account-composition-01 A/B experiment | The authoring intervention is reviewed and no retained live packet relies on this rehearsal |
 
 ## Records
 
@@ -345,3 +348,27 @@ not carry them.
 - Result: `review/result.json`, SHA-256 `b6a2f5c995fc227ea8a61a5554ced7a99116c4aa12afa8c5cdb15b60febfc62c`
 - Evidence: `.scratch/frsrr-baseline-b-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Authorized interface-study baseline, original input and return witnesses, and reviewed follow-up collection; until The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence
+
+### haiku-authoring-acceptance-01
+
+- Experiment: Unqualified authoring variant: old text/version comparisons and a native 100 ms protocol timing failure; retained first attempt.
+- Date: 2026-11-06T15:09:55Z (from driver-amd64/evidence/RESULT.json field ended_at)
+- Result: `host/SUMMARY`, SHA-256 `c5ac60fb678ad75618c4884ca4a076c876e243213f087f058abc97f5227836fc`
+- Evidence: `.scratch/haiku-authoring-acceptance-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Preserve the first failed Linux attempt and its controls for the authoring study.; until The authoring study is reviewed and the principal releases its evidence.
+
+### haiku-authoring-acceptance-02
+
+- Experiment: Reviewed unqualified authoring variant: native 120 ms timing passed; 33 exact text/version/custody-identity comparison failures per architecture and 27 failed control baselines retained.
+- Date: 2026-11-06T19:16:09Z (from driver-amd64/evidence/RESULT.json field ended_at)
+- Result: `review-02.json`, SHA-256 `c47367f536392edb9261019c7c82227a5550a773caf8a18bfdca77b3a2913fb2`
+- Evidence: `.scratch/haiku-authoring-acceptance-02` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Bind the isolated authoring variant and preserve the limits of its acceptance evidence.; until The authoring study is reviewed and the principal releases the variant evidence.
+
+### haiku-authoring-rehearsal-01
+
+- Experiment: Matching Linux authoring-study rehearsal: 15 audits, 7 operator checks, 56 reviewer comparisons; saved synthetic connection and later collection passed; zero model calls, study binary unqualified
+- Date: 2026-11-06T20:04:07Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `bc2683878668b975f62c68c37d6c99e954a40877c3ae45c4c876413ab6faac8e`
+- Evidence: `.scratch/haiku-authoring-rehearsal-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Launcher and frozen-input evidence for the account-composition-01 A/B experiment; until The authoring intervention is reviewed and no retained live packet relies on this rehearsal

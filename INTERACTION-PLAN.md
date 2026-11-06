@@ -72,8 +72,8 @@ or their categories are the cause of repetition.
 The principal agreed to one new placement each on A and B, using their
 frozen submission templates and the baseline model, effort and allowances.
 The agreement is retained in `.scratch/haiku-authoring-01/round-agreement-01.json`.
-The proposal remains unbound until the study build and Linux rehearsal
-are reviewed. Read each original return with the exact question, then record
+The study build and matching Linux rehearsal are reviewed; bind the exact
+packet after recording that evidence. Read each original return with the exact question, then record
 what it establishes, what remains unresolved, any useful or redundant structure,
 and citation navigation. Inspect the saved interaction separately for copying,
 repair, category use and reaction to preparation notices. A supported inability
@@ -297,51 +297,44 @@ The recorded self-test failure is not hidden. Variant commits stay
 reachable under a ref while their evidence is cited. Adopting a variant goes
 through the full cycle on `main` with an independent driver author.
 
-- [ ] Retain and review Linux acceptance and a matching launcher rehearsal for
-  the implemented study mode before binding the live packet. Native checks
-  passed in `.scratch/haiku-authoring-01/host-checks-02`; `native-review-01.json`
-  in the setup folder records the counts, reused passes, expected independent
-  self-test mismatch and limits. The original runner and failed attempts remain
-  intact, including the inherited-mask failure explained by
-  `runner-correction-01.json`. The completed fake-provider rehearsal is in
-  `.scratch/c10-interface-host-02`, with reviewer controls in
-  `.scratch/c10-interface-review-host-02`. Earlier stopped/diagnostic attempts
-  remain in `.scratch/c10-interface-native-01` and
-  `.scratch/haiku-authoring-driver-native-01`.
-  The apparatus is committed at `fa21e8c`; the four-file variant is `aa8a469` on
+- [ ] Bind and run the agreed live pair, then collect and review its returns.
+  The reviewed study build is
+  `.scratch/haiku-authoring-01/study-build-02.json`, for variant `c76029b` on
   `study/account-composition-01` in `.scratch/haiku-authoring-worktree-01`.
-  `.scratch/haiku-authoring-acceptance-01` completed both architectures but is
-  not ready to support the packet. `acceptance-review-01/RESULT.json` in the
-  setup folder records the actual failures: the old text/version produces
-  request and manifest/confirmation mismatches, and native ARM64 additionally
-  fails the 100 ms protocol gate at 101.081 ms for the 4 MiB recording call.
-  All four credential cases passed on both architectures. The ordinary failure
-  names agree across architectures, but their full inventory and 27 controls
-  without passing baselines still need review before an expected-difference
-  binding. The timing failure is not a permitted text/version difference.
-  Four fixed native comparisons (qualified, variant, variant, qualified) are
-  retained in `.scratch/haiku-authoring-timing-01`, reviewed in
-  `timing-review-01.json` in the setup folder. Both binaries exceeded the
-  protocol timing threshold in both attempts; the selected functional checks
-  and three sabotage controls passed each time. The principal reports battery
-  operation and possible concurrent tests. This does not establish a regression
-  caused by the variant or identify the environmental cause. At the principal's
-  request, `run-timing-02.py` prepares the same comparison after plugging into
-  AC power, allowing other tests to finish and waiting for host activity to
-  settle. It retains new evidence in `.scratch/haiku-authoring-timing-02` and
-  records power source and host load before/after the measured runs. Its logs
-  confirm AC power; both binaries again exceeded the old protocol budget,
-  while the selected functional checks and three controls passed each time.
-  The principal authorized 120 ms as the protocol tripwire. That budget is
-  implemented in the ordinary independent driver and documented in
-  [the apparatus](apparatus/README.md#provider-network-and-witnesses); native
-  check evidence is in `.scratch/protocol-budget-120-01`. The remaining host
-  loopback self-tests precede committing and merging the ordinary driver update
-  into the variant. Then run fresh Linux acceptance in
-  `.scratch/haiku-authoring-acceptance-02`, review its exact text/version
-  differences, and rehearse the launcher. The old runs retain their original
-  failed outcomes; no historical result is regraded. Keep the failed run and the variant
-  branch/worktree while their evidence is used; do not advance the front.
+  The matching Linux rehearsal at apparatus commit `5d797e4` is retained in
+  `.scratch/haiku-authoring-rehearsal-01`; `review/result.json` records 15/15
+  audits, 7/7 operator checks and 56/56 reviewer comparisons, with all 50
+  tampering controls firing and six invariance cases preserved. No checks were
+  skipped and no model calls were made. Both frozen submission templates and
+  later collection through the saved synthetic connection passed. Two successful
+  Keychain lookups are recorded; the principal recalls one visible approval
+  prompt. These are different observations, not evidence of two prompts.
+  `finish-01.py` in the setup folder commits only the reviewed plans and record,
+  then binds `commission-01.json` to that commit. It makes no model calls.
+  `cost-02.json` retains the refreshed, unchanged estimates and model settings.
+
+Linux acceptance is reviewed in
+`.scratch/haiku-authoring-acceptance-02/review-02.json`. Native timing passed
+under the authorized protocol budget; credential cases passed on both
+architectures. The 33 ordinary failed cases on each architecture are the exact
+reviewed text/version and derived-identity differences. Their full dispositions
+and byte comparisons are retained in the setup folder's `acceptance-review-02`.
+Twenty-seven sabotage controls lack passing baselines; they remain broken
+checks, and intended closure/fault behavior behind refused old-version tokens
+was not established by those assertions. The matching launcher rehearsal passed;
+the build remains explicitly unqualified. Both acceptance attempts and the
+rehearsal are pinned as experiments; none advances the qualification front.
+
+Keep the earlier evidence needed to interpret this intervention:
+`.scratch/haiku-authoring-acceptance-01`, the timing comparisons in
+`.scratch/haiku-authoring-timing-01` and `.scratch/haiku-authoring-timing-02`, and
+budget-change checks in `.scratch/protocol-budget-120-01`. Native preparation
+and its failed attempts are recorded in `.scratch/haiku-authoring-01`, with
+fake-provider and reviewer controls in `.scratch/c10-interface-host-02` and
+`.scratch/c10-interface-review-host-02`. The earlier stopped/diagnostic runs
+remain in `.scratch/c10-interface-native-01` and
+`.scratch/haiku-authoring-driver-native-01`. Preserve the variant ref and worktree
+while their evidence is used. Historical outcomes are unchanged.
 
 ## Lightweight iteration
 

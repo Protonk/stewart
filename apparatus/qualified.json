@@ -878,6 +878,63 @@
         "reason": "Authorized interface-study baseline, original input and return witnesses, and reviewed follow-up collection",
         "until": "The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence"
       }
+    },
+    {
+      "id": "haiku-authoring-acceptance-01",
+      "kind": "experiment",
+      "date": "2026-11-06T15:09:55Z",
+      "date_from": "driver-amd64/evidence/RESULT.json field ended_at",
+      "summary": "Unqualified authoring variant: old text/version comparisons and a native 100 ms protocol timing failure; retained first attempt.",
+      "result": {
+        "path": "host/SUMMARY",
+        "sha256": "c5ac60fb678ad75618c4884ca4a076c876e243213f087f058abc97f5227836fc"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-authoring-acceptance-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Preserve the first failed Linux attempt and its controls for the authoring study.",
+        "until": "The authoring study is reviewed and the principal releases its evidence."
+      }
+    },
+    {
+      "id": "haiku-authoring-acceptance-02",
+      "kind": "experiment",
+      "date": "2026-11-06T19:16:09Z",
+      "date_from": "driver-amd64/evidence/RESULT.json field ended_at",
+      "summary": "Reviewed unqualified authoring variant: native 120 ms timing passed; 33 exact text/version/custody-identity comparison failures per architecture and 27 failed control baselines retained.",
+      "result": {
+        "path": "review-02.json",
+        "sha256": "c47367f536392edb9261019c7c82227a5550a773caf8a18bfdca77b3a2913fb2"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-authoring-acceptance-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Bind the isolated authoring variant and preserve the limits of its acceptance evidence.",
+        "until": "The authoring study is reviewed and the principal releases the variant evidence."
+      }
+    },
+    {
+      "id": "haiku-authoring-rehearsal-01",
+      "kind": "experiment",
+      "date": "2026-11-06T20:04:07Z",
+      "date_from": "review/result.json field at",
+      "summary": "Matching Linux authoring-study rehearsal: 15 audits, 7 operator checks, 56 reviewer comparisons; saved synthetic connection and later collection passed; zero model calls, study binary unqualified",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "bc2683878668b975f62c68c37d6c99e954a40877c3ae45c4c876413ab6faac8e"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-authoring-rehearsal-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Launcher and frozen-input evidence for the account-composition-01 A/B experiment",
+        "until": "The authoring intervention is reviewed and no retained live packet relies on this rehearsal"
+      }
     }
   ]
 }
