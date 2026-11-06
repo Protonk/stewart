@@ -58,6 +58,7 @@ not carry them.
 | [haiku-authoring-acceptance-01](#haiku-authoring-acceptance-01) | experiment | Preserve the first failed Linux attempt and its controls for the authoring study. | The authoring study is reviewed and the principal releases its evidence. |
 | [haiku-authoring-acceptance-02](#haiku-authoring-acceptance-02) | experiment | Bind the isolated authoring variant and preserve the limits of its acceptance evidence. | The authoring study is reviewed and the principal releases the variant evidence. |
 | [haiku-authoring-rehearsal-01](#haiku-authoring-rehearsal-01) | experiment | Launcher and frozen-input evidence for the account-composition-01 A/B experiment | The authoring intervention is reviewed and no retained live packet relies on this rehearsal |
+| [haiku-authoring-live-01](#haiku-authoring-live-01) | experiment | Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading | The principal has reviewed the interface comparison and authorizes disposal of its container and evidence |
 
 ## Records
 
@@ -372,3 +373,11 @@ not carry them.
 - Result: `review/result.json`, SHA-256 `bc2683878668b975f62c68c37d6c99e954a40877c3ae45c4c876413ab6faac8e`
 - Evidence: `.scratch/haiku-authoring-rehearsal-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Launcher and frozen-input evidence for the account-composition-01 A/B experiment; until The authoring intervention is reviewed and no retained live packet relies on this rehearsal
+
+### haiku-authoring-live-01
+
+- Experiment: Two authorized Haiku authoring-study placements and saved-connection collections passed procedural review; original exports preserved; unqualified study binary
+- Date: 2026-11-06T20:13:37Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `14b01080fe41d36a4106bad1df1232f8b3f6f5e283a7aaac9cf2cc233c1480d1`
+- Evidence: `.scratch/haiku-authoring-live-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading; until The principal has reviewed the interface comparison and authorizes disposal of its container and evidence

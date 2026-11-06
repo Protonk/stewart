@@ -935,6 +935,25 @@
         "reason": "Launcher and frozen-input evidence for the account-composition-01 A/B experiment",
         "until": "The authoring intervention is reviewed and no retained live packet relies on this rehearsal"
       }
+    },
+    {
+      "id": "haiku-authoring-live-01",
+      "kind": "experiment",
+      "date": "2026-11-06T20:13:37Z",
+      "date_from": "review/result.json field at",
+      "summary": "Two authorized Haiku authoring-study placements and saved-connection collections passed procedural review; original exports preserved; unqualified study binary",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "14b01080fe41d36a4106bad1df1232f8b3f6f5e283a7aaac9cf2cc233c1480d1"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-authoring-live-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading",
+        "until": "The principal has reviewed the interface comparison and authorizes disposal of its container and evidence"
+      }
     }
   ]
 }

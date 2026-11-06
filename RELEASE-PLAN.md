@@ -35,9 +35,10 @@ unqualified intervention builds and passed native checks. Linux acceptance is
 reviewed, with its exact text/version differences and missing control baselines
 retained as unqualified evidence. The matching Linux launcher rehearsal passed,
 including both study templates and later collection through the saved synthetic
-connection. The agreed live pair is ready for packet binding and launch; the
-study binary remains unqualified. The rapid-iteration design waits for the first
-intervention's measured cycle, and the paid-work decision precedes its build.
+connection. The agreed live pair, later collections, principal readings and local
+assessment are complete; selection of another bounded encounter remains. The
+study binary remains unqualified. The first intervention's measured cycle is now
+available to inform rapid-iteration design; the paid-work decision precedes its build.
 Until that decision is made, the principal runs live launches and collections
 in a separate terminal.
 

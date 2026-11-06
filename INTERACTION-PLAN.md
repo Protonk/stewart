@@ -58,7 +58,7 @@ reformulation if intervention proves useful. The existing linter marker remains
 deferred; neither general rewriting nor a linter implementation is commissioned
 by this study setup. Structured validation and explicit submission remain active.
 
-The next candidate, `account-composition-01`, is prepared in
+The current candidate, `account-composition-01`, is retained in
 `.scratch/haiku-authoring-01`. `interface-02.json` owns the exact proposed wording;
 `variant-02.patch` changes the open-inquiry family instructions, gives that family
 a new version, and updates the two native assertions of its version. The
@@ -72,13 +72,12 @@ or their categories are the cause of repetition.
 The principal agreed to one new placement each on A and B, using their
 frozen submission templates and the baseline model, effort and allowances.
 The agreement is retained in `.scratch/haiku-authoring-01/round-agreement-01.json`.
-The study build and matching Linux rehearsal are reviewed; bind the exact
-packet after recording that evidence. Read each original return with the exact question, then record
-what it establishes, what remains unresolved, any useful or redundant structure,
-and citation navigation. Inspect the saved interaction separately for copying,
-repair, category use and reaction to preparation notices. A supported inability
-remains a useful B outcome. Preserve all attempts; no automatic replacement run
-or continuation follows from an awkward answer.
+Both placements and later collections have completed and passed procedural
+review. These placements are consumed. Both principal readings and the local
+interaction assessment are complete in the live folder's `review/pair-reading-01.json`.
+Select the next discriminating encounter from that assessment. A supported
+inability remains a useful B outcome. Preserve all attempts; no automatic
+replacement run or continuation follows from an awkward answer.
 
 The principal expects a few more bounded Haiku reading/data-collection rounds,
 then a move beyond this model and problem set. Review this pair before choosing
@@ -86,6 +85,21 @@ the next discriminating encounter. Any later repeat needs a reason and separate
 bounded spending authority; avoid an open-ended campaign to polish these answers.
 Evidence from another model and different material is needed before treating a
 preference found here as general.
+
+### Deferred answer-kind question
+
+The B reading raised `needs_different_execution_context` as a working title for
+an auditor response whose requested work needs unavailable capabilities. The
+principal explicitly deferred this decision, noting the variations and testing
+cost of multiple completed-answer kinds. Decide later whether a distinct kind,
+an optional annotation or ordinary prose would help a reader or manager act.
+[Shared meanings and permissions](CONTRACTS.md#question-families-and-open-inquiry)
+already recognizes `answer`, `needs-evidence` and `reframe` without mandatory
+labels, mutually exclusive schemas or automatic classification. Preserve the
+main account's freedom and distinguish an auditor's claimed need from mechanically
+established facts. The B heading `Limit` came from an explicit `record_limit`
+call before preparation; submission did not classify the whole answer.
+No schema, tool, rendering or execution change is commissioned by this marker.
 
 ## Frozen questions and evidence
 
@@ -297,7 +311,10 @@ The recorded self-test failure is not hidden. Variant commits stay
 reachable under a ref while their evidence is cited. Adopting a variant goes
 through the full cycle on `main` with an independent driver author.
 
-- [ ] Bind and run the agreed live pair, then collect and review its returns.
+- [ ] Select the next bounded comparison, retaining or revising this candidate
+  explicitly. The current recommendation is another question/material pair with
+  longer claim-to-evidence relationships or mixed answerability, before product
+  adoption; no packet or further spending authority follows from that recommendation.
   The reviewed study build is
   `.scratch/haiku-authoring-01/study-build-02.json`, for variant `c76029b` on
   `study/account-composition-01` in `.scratch/haiku-authoring-worktree-01`.
@@ -309,9 +326,70 @@ through the full cycle on `main` with an independent driver author.
   later collection through the saved synthetic connection passed. Two successful
   Keychain lookups are recorded; the principal recalls one visible approval
   prompt. These are different observations, not evidence of two prompts.
-  `finish-01.py` in the setup folder commits only the reviewed plans and record,
-  then binds `commission-01.json` to that commit. It makes no model calls.
-  `cost-02.json` retains the refreshed, unchanged estimates and model settings.
+
+The live pair at apparatus commit `7a3f761` is retained in
+`.scratch/haiku-authoring-live-01`. The setup folder's `commission-01.json`
+binds the exact pair; `cost-02.json` retains its dated prices and estimates.
+The live folder's `review/result.json` records both auditor seals, verified
+deliveries, ordinary closure and successful saved-connection collection. All
+458 original A files and 382 original B files are unchanged in their second
+exports; each collection adds four evidence records. The principal reported
+two Keychain prompts during those collections.
+
+A used 13 provider requests and B used six, with no retries or compaction.
+The calculated pair cost is USD 0.0562753 before taxes; independent billing is
+not yet observed. A had one refused read, B none; the interaction records retain
+the details for assessment. No further placement is authorized by this packet.
+The exact delivered `answer.md` and frozen `question.txt` for each problem are
+under `review/problem-a` and `review/problem-b`, with byte identities in their
+`reading-binding-01.json` files. A was presented first, then B, both with their
+questions. Neither had a rewritten companion. The principal's readings preceded
+the local agent's substantive assessments.
+
+A's response is preserved verbatim in the live folder at
+`review/problem-a/reading-response-01.txt`; its adjacent JSON binds the form and
+question, and `reading-assessment-01.json` separates the local agent's analysis.
+The principal found the question and all subquestions answered and justified,
+the organization almost uniformly helpful, and inline code sufficient to follow
+the claims without consulting the final citation block. Both the immediate
+answer and the later conclusion were useful. The principal asked about the
+practical significance of the recorded thread setting and cautioned that the
+short code examples may make this problem especially suitable for this form.
+The settings sentence concerns result metadata: comparisons including attributes
+can differ while the two requested numeric columns agree. The delivered prose
+and inline examples are the auditor's text. One account carries all 17 citations;
+the two preparation notices did not cause separate observation or limit entries.
+This is one encounter with prior exposure to the baseline, not an isolated
+causal finding or a general preference for dense citation blocks.
+
+B's response is preserved in `review/problem-b/reading-response-01.txt`, with
+the same binding and separate assessment pattern. The principal found the
+inability, related evidence and reasoning easy to interpret, and the whole
+response helpful to comprehension. The `Limit` category had a different meaning
+here from limits on a positive answer, prompting the deferred marker above.
+`Reach:` is auditor-written prose using vocabulary also supplied in the guidance
+and account-tool description. Citation efficacy remains unclear in this example;
+the principal's possible future README edit selects no change to the frozen
+materials or to the deferred linter's scope.
+
+The separate substantive check, `review/problem-b/substantive-checks-01.json`,
+finds errors in that otherwise intelligible explanation. The question's count
+of 2^24 float32 inputs in [1,4) is correct; the auditor's 2^23 correction and
+fixed-exponent explanation are wrong. Its assertion that only two magic values
+are discussed is contradicted by a third value in a search hit it received.
+Its inability does not establish that exhaustive enumeration is the only method
+that could settle the question. These findings remain separate from the
+principal's reading and do not alter the delivered return.
+
+The pair supports continuing with an auditor-composed account as an experimental
+candidate. A has one entry instead of the baseline's six; B has two instead of
+five. Both submitted after the empty-section notices without filling the missing
+categories. That observed behavior is consistent with the changed guidance;
+single stochastic placements, short question-led examples and prior reader
+exposure prevent an isolated causal conclusion. A's local code examples helped
+navigation; B supplies little evidence about longer citation relationships.
+Retain the citation and custody checks. No response rewriting, answer-kind schema,
+linter implementation or product adoption is selected by this pair.
 
 Linux acceptance is reviewed in
 `.scratch/haiku-authoring-acceptance-02/review-02.json`. Native timing passed
@@ -400,7 +478,7 @@ cost is USD 0.0187986. The original export and interaction remain retained;
 separate from the principal's now-completed reading. Both authorized placements
 are consumed; no further model call is authorized by these packets.
 
-- [ ] Reconcile A's and B's calculated costs with independent Console
+- [ ] Reconcile the baseline and intervention pairs' calculated costs with independent Console
   observations or give those observations explicit dispositions.
 
 The workload sizing is complete for this pair. A turn is one provider response
