@@ -1,39 +1,15 @@
-# Apparatus reports and response vocabulary
+# Product response vocabulary
 
-Give a bounded experiment block one coherent account from proposal through
-result. The principal should be able to understand the question, the proposed
-comparison and its limits, then receive a useful finding with its evidence and
-any remaining decision clearly identified. This plan owns the apparatus report
-design and implementation, and the product response-vocabulary work.
-Product behavior is owned by [CONTRACTS](CONTRACTS.md) and
-[INTERFACE](docs/INTERFACE.md); apparatus behavior by
-[the apparatus instructions](apparatus/c10/README.md). Historical receipts and
-retained evidence keep their original bytes and meanings.
+Make Stewart's manager-facing replies easier to understand without obscuring
+custody, authority or uncertainty. This plan owns the remaining product vocabulary
+decisions and implementation. [CONTRACTS](CONTRACTS.md) owns decided behavior;
+[INTERFACE](docs/INTERFACE.md) and [QUESTION-FORMS](docs/QUESTION-FORMS.md) own the
+exact interfaces. The principal decides changes to product obligations and what
+participants can express. Historical receipts retain their original schemas.
 
-## Why
+## Decision inputs
 
-During the stress one-offs a live launch whose audit legitimately ended at its
-turn limit printed `"outcome": "failed"` and `Launch or observation incomplete;
-inspect retained records and status before another action.` while the
-container record said `observed_review_required` and the evidence was intact.
-The principal read it knowing what it meant, but a newcomer would have asked
-whether the run had failed. Reporting also controls which work proceeds, so
-changing the words alone may leave the underlying mismatch intact.
-
-The retained examples are `.scratch/haiku-stress-live-01` through `-05`, with
-their reviews at `review/result.json` and interaction findings under `review/`.
-The planned comparisons are in `.scratch/haiku-stress-01/predictions-01.md`.
-Use retained records and synthetic cases for the report design and checks.
-
-## What the inventory found
-
-The apparatus field ownership, consumers, authority boundaries and selected
-reporting behavior are specified in [Experiment reports](apparatus/c10/REPORTING.md).
-Its implementation separates checked observations from submission, custody,
-placement policy and attributed interpretation. The current live stopping rules
-remain in force; synthetic expectation matching applies only to rehearsals.
-
-Stewart's own replies (specification only):
+The specification inventory identifies these candidates, not settled renames:
 
 - The sealer is reported in six fields (`headline.sealed.by`, `seal.actor`,
   manifest `seal.actor`, submit `sealer`, re-entry `sealed_by`,
@@ -49,145 +25,14 @@ Stewart's own replies (specification only):
 - Tokens the manager types back carry prefixes (`cf1.`, `mp1.`, `loss.`) whose
   meaning lives only in INTERFACE 2.3.
 
-## Design requirements
 
-1. Distinguish execution, evidence sufficiency, the experimental finding and
-   remaining actions. A block can be accounted for while its scientific question
-   remains open. Keep missing evidence, unexercised mechanisms, unresolved
-   judgments and deferred billing visible. An absent observation in complete
-   evidence differs from one made unknowable by missing evidence.
-2. Give observations, interpretations, permissions and decisions their own
-   sources and authority. Before-close and after-close status are different
-   observations. Derived views identify their sources; repeated bindings must
-   serve a consumer or an independently usable artifact. Preserve witness scope
-   and uncertainty. Assembly cannot certify the experimenter's interpretation.
-3. Give the principal one coherent ordinary reading; this need not be one
-   artifact. Human and machine views preserve the same distinctions and sources.
-   A checked technical return may be ready before interpretation; intellectual
-   assessment must not gate custody or evidence handling. The eventual study
-   account connects observations to the agreed question, with supporting records
-   inspectable and no need to reconstruct the history.
-4. Name each remaining action, its responsible actor and the authority it needs.
-   An operator action is not automatically a request to the principal. A report
-   grants no permission to repeat, continue, close or spend.
-5. Report controlled reasons that identify what went wrong and where. Retain
-   original evidence and protect private diagnostics. Version changed interfaces
-   and update their consumers together without compatibility shims or rewritten
-   historical receipts.
-6. Keep the apparatus's understanding of intellectual work small: commission,
-   authority, operations, evidence, explicitly defined checks, custody and
-   resources. Narrow study-specific checks may establish named observations;
-   answer quality, satisfactory investigation and model competence do not become
-   general apparatus judgments. Unexpected or inconclusive findings remain
-   useful outcomes. These reports do not qualify a model.
+The turn-limit examples in `.scratch/haiku-stress-live-01` and
+`.scratch/haiku-stress-live-02` also show why a reader can mistake an unfinished
+answer for a finished return. Whether operating history belongs in the product's
+rendering remains a product decision. The apparatus reporting contract is owned
+separately by [Experiment reports](apparatus/c10/REPORTING.md).
 
-## Apparatus work
-
-The initial exchange, worked examples and provisional comparison are in
-[the consultation brief](riker/APPARATUS-REPORTING-BRIEF.md).
-[Riker's relayed advice](riker/APPARATUS-REPORTING-ADVICE.md) informs the design
-requirements above: a coherent ordinary reading with distinct authority and no
-false finality. The selected read-only assembler uses a bound authored proposal,
-retained batch plans and optional attributed assessment. Its
-[operating instructions](apparatus/c10/README.md#assemble-an-experiment-report)
-own the exchange format. It does not replace the runner or add delegation.
-
-Implementation checks and the worked reading of the original two limit trials
-and pagination trial are retained in `.scratch/apparatus-report-implementation-01`.
-The native fake batch is `.scratch/c10-report-native-03`; the two preceding
-attempts remain retained with their loopback-listener denial. Reviewer controls
-are in `.scratch/c10-report-review-controls-02`; the final report comparisons
-are in `.scratch/c10-report-controls-04`. A failed first report-control
-attempt and subsequent correction are preserved. No historical receipt was
-changed. The remaining apparatus gate is the matching Linux rehearsal after
-commit, including the new report comparisons.
-
-The worked ordinary reading is
-`.scratch/apparatus-report-implementation-01/retained-reading-final/report.md`.
-It checks all six original snapshots, retains their distinct custody dates and
-flags three historical session receipts as unassessed without converting them.
-Its 18 selected original source files remain unchanged. Final local results:
-62 C10 tests, 24 sanity tests, 330 driver checks, 13 fake audits, 14 reviewer
-comparisons (12 firing controls), seven operator comparisons and 11 report
-comparisons passed. The native batch explicitly skips Linux process-access
-checks; the host driver run has no skips. These are local iteration results.
-
-This work uses current operating rules and offline checks; it needs no new
-model placements or grant of agent autonomy.
-
-### 1. Define the exchange
-
-- [x] Draft the block proposal: narrow question, comparison, observations that
-  distinguish possible outcomes, budget and placement limits, permitted
-  variations and stopping rules.
-- [x] Draft its return: actual observations, what they establish, unexercised
-  or ambiguous comparisons, reported/estimated usage and calculated cost,
-  remaining actions and direct evidence references. Keep independently observed
-  billing distinct. Account for every planned trial, including those not started.
-- [x] Include collection, evidence review and custody disposition in the block's
-  account. Show unfinished work explicitly; a scientific finding cannot conceal
-  an open custody obligation. Represent who acts under current authority without
-  deciding future delegation.
-
-### 2. Choose the reporting structure
-
-- [x] Map report producers, consumers, observation times and bindings across
-  launch, session, audit, review, export and control. The brief gives the
-  record-level map and distinguishes separately usable bindings from duplicates.
-- [x] Make a provisional comparison of local vocabulary changes, an assembled
-  report with human and machine views, and replacement of the batch controller
-  with a runner that understands experiment blocks. Use the
-  concrete examples to assess each shape's complexity, recovery behavior and
-  ability to distinguish expected observations from failures. No shape or set
-  of outcome words is selected in advance.
-- [x] Consider Riker's design guidance while preserving the distinction between
-  consultation, a working preference and a selected architecture.
-- [x] Specify what the checked technical return establishes before interpretation
-  exists, how the experimenter's assessment is attributed, and how later custody,
-  reading and billing records resolve or leave open earlier actions. Define the
-  ordinary reading before choosing its artifact structure.
-- [x] Identify the per-field consumers, required standalone bindings and unused
-  fields for the proposed shape.
-- [x] Record the chosen design and the producer/consumer changes it needs.
-  Separate reporting from decisions about which work may proceed. Implement
-  under current operating authority; leave additional delegation for the
-  autonomy agreement. Any change to product obligations remains the principal's
-  decision.
-
-### 3. Make the outcomes distinguishable
-
-- [x] Work the proposal and report through an ordinary submission, a planned
-  limit stop, an unexercised mechanism, missing evidence and withheld export.
-  Include lost replies, later custody observations and an actual apparatus
-  failure so the report cannot silently merge them.
-- [x] Exercise a technical return ready before interpretation, later custody
-  completion, unresolved judgment and deferred billing. Preserve earlier dated
-  observations while making the current disposition intelligible. Keep evidence
-  handling available throughout; no scientific verdict gates it.
-- [x] Specify the observations and checks before running a comparison. Pair
-  each claimed check with a firing control, a differing case and an invariance
-  case. A correct answer obtained without the mechanism under study must remain
-  unexercised for that mechanism, as with the retained pagination trial.
-- [x] Use retained or synthetic observations to demonstrate a narrow finding
-  without an independent reader judging a long answer. Name any interpretation
-  that still needs a reader or designer; do not turn it into a mechanical grade.
-
-### 4. Implement and verify end to end
-
-- [x] Implement the chosen reporting path across producers and consumers,
-  including `check_rehearsal`, `check_review`, `check_operations`, command
-  output and the apparatus README. Preserve actual reasons, explicit unknowns,
-  authority boundaries and immutable evidence through later collection.
-- [x] Run and retain the applicable
-  [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed): C10
-  tests, shared sanity-launch tests, driver self-test, changed run/reviewer/
-  operator behavior through the native fake provider, and the link check.
-  Apply additional rows if the implementation touches other paths.
-- [ ] After committing, have the principal run the matching retained Linux
-  rehearsal. Review actual counts, controls, skips and failures, and resolve
-  outstanding work. Native checks alone do not qualify the changed apparatus.
-
-## Product vocabulary
+## Remaining work
 
 - [ ] Read-only: map which driver cases, service tests and apparatus checks
   assert each duplicated field and opaque reason, so the decision list names
@@ -209,13 +54,11 @@ model placements or grant of agent autonomy.
   of [DEVELOPMENT](DEVELOPMENT.md#what-to-run-for-what-you-changed) run,
   then the scheduled Linux suite.
 
+
 ## Completion
 
-The apparatus portion is complete when a block has a coherent proposal and
-evidenced result, execution and findings remain distinct, remaining actions are
-usable, and the implemented path passes its local checks and retained Linux
-rehearsal. Complete the plan when the product vocabulary decisions are also
-implemented and checked, with the specification, help, driver and apparatus in
-agreement. Move enduring behavior and reasons into their owning documents,
-record product renames in the interface version history, give unfinished work
-an explicit disposition, and delete this plan.
+Complete this plan when the principal's vocabulary decisions are implemented and
+checked, with the specification, help, service, driver and apparatus in agreement.
+Move enduring behavior and reasons into their owning documents, record product
+renames in the interface version history, give unfinished work an explicit
+disposition, and delete this plan.

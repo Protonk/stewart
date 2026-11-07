@@ -21,8 +21,12 @@ session credential boundary and specification-derived driver helpers without
 changing product contracts or historical evidence. Its one-placement scope is
 explicit; it does not implement continuation or real compaction.
 
-Small-commission readiness, including saved connections and supplied study
-inputs, is demonstrated by the reviewed Linux aarch64 run
+The current reporting apparatus is demonstrated by the reviewed Linux aarch64
+run `.scratch/c10-report-linux-01`, bound to `453a60d` and the qualified
+`acceptance-05` executable. Its pinned `review/result.json` owns the counts,
+source bindings and limits: it covers the fixed catalog and report path, with
+no model calls or skips. Saved connections and supplied study inputs were
+demonstrated on the earlier source binding in the reviewed Linux aarch64 run
 `.scratch/c10-study-launch-01`, pinned in the qualification record with its review
 at `review/result.json`. The earlier `.scratch/c10-launch-01` remains pinned.
 The principal's six-audit Haiku pilot has completed its
@@ -50,9 +54,17 @@ hidden-entry attempt and the limits of the lock/cancellation observations.
 The [qualification record](apparatus/qualified.md) owns demonstrated Linux
 results; run `python3 -I -B apparatus/qualified.py check` before relying on it.
 The reviewed small-commission rehearsal establishes no model qualification.
-Three later apparatus commits, through `3668506`, were rehearsed only with
-unqualified study builds. An ordinary C10 launch needs a new matching
-rehearsal on a qualified binary.
+A live commission still needs rehearsal coverage matching its apparatus,
+binary, inputs and credential route.
+
+Retain the reporting iteration evidence until the principal authorizes disposal:
+`.scratch/c10-report-native-01`, `.scratch/c10-report-native-02`,
+`.scratch/c10-report-native-03`, `.scratch/c10-report-review-controls-01`,
+`.scratch/c10-report-review-controls-02`, `.scratch/c10-report-controls-01`,
+`.scratch/c10-report-controls-02`, `.scratch/c10-report-controls-03` and
+`.scratch/c10-report-controls-04`. These include the loopback-denied attempts
+and the corrected report-control witness failure. Their records own the actual
+outcomes; the Linux run above supplies qualification evidence.
 
 ## Pilot review disposition
 

@@ -65,6 +65,13 @@ Do that from retained evidence, without rerunning the completed commissions.
 | Matching launcher rehearsal | `.scratch/haiku-authoring-rehearsal-01` |
 | Intervention launch, collection and reading assessment | `.scratch/haiku-authoring-live-01`, particularly `review/result.json` and `review/pair-reading-01.json` |
 
+Use the [implemented reporting exchange](apparatus/c10/README.md#assemble-an-experiment-report)
+when judging what a block carries back to the principal. Its worked reading of
+the limit and pagination trials is
+`.scratch/apparatus-report-implementation-01/retained-reading-final/report.md`.
+The checked technical position and attributed assessment remain distinct; this
+example does not replace the measured intervention cycle below.
+
 The apparatus addition is commit `fa21e8c`; ordinary timing maintenance is
 `5d797e4`; the retained candidate is `c76029b` on
 `study/account-composition-01`, with worktree `.scratch/haiku-authoring-worktree-01`.

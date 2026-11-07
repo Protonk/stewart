@@ -1087,6 +1087,26 @@
         "reason": "Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy",
         "until": "Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then"
       }
+    },
+    {
+      "id": "c10-report-linux-01",
+      "kind": "experiment",
+      "date": "2026-11-07T20:37:46Z",
+      "date_from": "review/result.json field ended_at",
+      "summary": "Linux aarch64 rehearsal of apparatus 453a60d: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.",
+      "result": {
+        "path": "review",
+        "files": 8,
+        "sha256": "aa8960f2f8a9a3bebb558c5d573c97168bd20e582149a12a13462375a80a181b"
+      },
+      "evidence": {
+        "path": ".scratch/c10-report-linux-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses.",
+        "until": "A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage."
+      }
     }
   ]
 }

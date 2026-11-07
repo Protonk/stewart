@@ -9,9 +9,9 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Complete the four apparatus-reporting steps through the retained Linux rehearsal; in parallel, the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Current | Complete the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the measured reference | Obtain and compare the independent rapid-iteration designs for the principal's architecture choice | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| After the four apparatus-reporting steps; before the rapid-iteration build | Agree the agent's autonomy within a budgeted block, including experiment selection, follow-ups, custody completion, paid launches and collections, and enforcement | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Ready for agreement; before the rapid-iteration build | Agree the agent's autonomy within a budgeted block, including experiment selection, follow-ups, custody completion, paid launches and collections, and enforcement | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice and autonomy agreement | Build and demonstrate the chosen rapid-iteration path | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice | Rename the product response vocabulary through CONTRACTS, INTERFACE, help, service and split driver authorship | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
 | After self-contained rapid iteration is demonstrated | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
@@ -28,7 +28,7 @@ one-offs have run and are reviewed, and every placement is consumed.
 and evidence. Evidence beyond this model and problem set is a candidate, not a
 selection. No paid placement is authorized.
 
-Current operating rules remain in force throughout the apparatus work. The
+Current operating rules remain in force until an explicit agreement changes them. The
 principal runs authorized live launches and collections in a separate terminal.
 No previous packet authorizes further placements.
 
@@ -70,14 +70,22 @@ container. It demonstrates synthetic credential delivery, process-access
 controls, interruption, exact delivery and export withholding. It establishes
 the native Linux path against local fakes, not real-provider conformance.
 
-The latest qualified-binary small-commission rehearsal `.scratch/c10-study-launch-01` is pinned
+The reporting apparatus at `453a60d` passed the reviewed Linux aarch64 rehearsal
+`.scratch/c10-report-linux-01`, pinned in the qualification record with its review
+at `review/result.json`. This completes the four apparatus-reporting steps. The
+run covers the fixed catalog, reviewer, operator and report comparisons, and
+Linux process-access controls with the `acceptance-05` executable. It used no
+models and does not qualify one. It did not exercise saved Keychain connections,
+additional study templates or an unqualified build override.
+
+The supplied-study and saved-connection rehearsal `.scratch/c10-study-launch-01` is pinned
 with its review in `review/result.json`. It binds commit `751aa7c`, the qualified
 `acceptance-05` aarch64 executable and the pinned image. It covers all six fixed
 commissions, both frozen study templates, failure/export controls, independent
 input readback, procedural review and immutable follow-up collection through the
 saved synthetic connection. The report retains actual counts, scope limits and
-the container identity. It matched the apparatus used for the baselines; later
-apparatus changes were rehearsed only with unqualified study builds. It makes
+the container identity. It matched the apparatus used for the baselines; its
+source binding differs from the current reporting apparatus. It makes
 no model-support claim. The earlier `.scratch/c10-launch-01` remains pinned
 with its original evidence.
 

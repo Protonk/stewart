@@ -66,6 +66,7 @@ not carry them.
 | [haiku-stress-live-03](#haiku-stress-live-03) | experiment | Retain the pagination stress placement, its correct return and the route that avoided paging | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
 | [haiku-stress-live-04](#haiku-stress-live-04) | experiment | Retain the first many-part placement that hit the per-request output cap inside thinking, and the record of the unstarted second audit | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
 | [haiku-stress-live-05](#haiku-stress-live-05) | experiment | Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
+| [c10-report-linux-01](#c10-report-linux-01) | experiment | Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses. | A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage. |
 
 ## Records
 
@@ -444,3 +445,11 @@ not carry them.
 - Result: `review/result.json`, SHA-256 `6770f1baa68d0bad6a01c2384ff6d93f8977c6606b9fd348b480a750be8772df`
 - Evidence: `.scratch/haiku-stress-live-05` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+
+### c10-report-linux-01
+
+- Experiment: Linux aarch64 rehearsal of apparatus 453a60d: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.
+- Date: 2026-11-07T20:37:46Z (from review/result.json field ended_at)
+- Result: `review`, every regular file under it (8 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `aa8960f2f8a9a3bebb558c5d573c97168bd20e582149a12a13462375a80a181b`
+- Evidence: `.scratch/c10-report-linux-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses.; until A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage.
