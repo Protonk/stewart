@@ -10,6 +10,16 @@ chosen shape. Product obligations remain in [DESIGN](DESIGN.md),
 [ACCEPTANCE](ACCEPTANCE.md). Agent outputs and comparisons are retained under
 `.scratch/rapid-iteration-NN` and cited here as they are made.
 
+Design for self-contained experiment blocks: the principal agrees a budget and
+basic design, and the agent commissions small experiments with useful, largely
+unambiguous outcomes within the agreed bounds. Collection, evidence review and
+custody disposition belong inside the cycle. The result should identify a
+supported finding or an unresolved comparison without routinely requiring the
+principal to read long answers or reconstruct several reports. Questions that
+need an independent reader or a designer's interpretation remain explicit; this
+path does not automate judgments of answer quality. The autonomy agreement
+below determines which actions the agent may actually take.
+
 ## Premise
 
 The commission surface is one space: the question body, its front matter, the
@@ -79,6 +89,10 @@ Preserve the failed checks and their dispositions when costing the cycle.
   one inexact quote, the unwarned per-request output cap that counts thinking,
   and tool-reply facts such as line counts that no citation can carry; the last
   changes what participants can express and is the principal's decision.
+- [ ] Identify where an independent reader or the principal supplied a judgment
+  needed to resolve the comparison. Distinguish mechanically observable outcomes
+  from those interpretations, and use that distinction when choosing small
+  experiment blocks. Record both handoffs and the material carried between them.
 
 ## Clean sheet
 
@@ -95,12 +109,17 @@ Preserve the failed checks and their dispositions when costing the cycle.
   rebuild; and to name what each candidate gives up, including custody during
   the work, citation checks at the moment of action, re-entry after a kill and
   continuation of one ledger.
+- [ ] Assess the whole experiment cycle: preparation, launch, observation,
+  collection, review and custody disposition. Identify routine handoffs and
+  interpretations that prevent a block from yielding its own useful result.
+  Do not assume future delegation or paid-launch authority when evaluating a
+  design.
 - [ ] Compare the design with the reference on the measured cycle and on the
   obligations, not on preference. Retain both documents.
 
 ## The question
 
-This is the gate before any build.
+This is the gate before building the rapid-iteration path.
 
 - [ ] Write a prompt that cannot simply agree with us. It gives the obligations,
   the measured reference and the goal, and asks for the simplest architecture;
@@ -132,15 +151,27 @@ This is the gate before any build.
   [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed). An
   apparatus-side choice follows the launcher's checks and rehearsal.
 - [ ] Demonstrate the path on one structural change with bounded spending:
-  define the change, run it, collect it, and record the cycle beside the
+  agree the block, define the change, run it, collect and review it, and account
+  for custody completion. Return its finding and any unresolved decision;
+  record the cycle, actual principal interventions and exchanges beside the
   reference for comparison.
 
 ## Authority and limits
 
-Bounded authorization per model-consuming use stays, as [AGENTS](AGENTS.md#decisions-and-authority)
-requires. The rapid path cuts ceremony, not authority; a standing allowance
-would be a new grant and is not assumed. The decision about who runs paid work
-and how that is enforced is an input to the build step.
+Bounded authorization per model-consuming use stays, as
+[AGENTS](AGENTS.md#decisions-and-authority) requires. A proposed block or budget
+does not itself grant authority. The agreement must state which bounded uses
+are authorized and how the agent's actions are constrained and accounted for.
+
+- [ ] Agree the scope of agent autonomy: experiment selection and permitted
+  variations, follow-ups, stopping rules, collection, review and custody
+  completion. Identify decisions reserved to the principal and conditions that
+  require returning to them. Record the agreement here.
+- [ ] Decide who performs paid launches and collections, how credentials are
+  accessed, and how the agreed budget and placement bounds are enforced. Keep
+  calculated cost, provider usage and observed billing distinct; Stewart's
+  token/turn limits are not a dollar ceiling. Record the chosen enforcement and
+  the checks needed before using it.
 
 Out of scope: tuning the auditor's answers, and designing the manager interface
 beyond the boundary placements this plan needs.
@@ -148,8 +179,10 @@ beyond the boundary placements this plan needs.
 ## Completion
 
 Complete this plan when the decision is recorded, the chosen shape is built and
-checked, and one structural change has run through it with its cycle recorded
-beside the reference. Move enduring behavior and reasons to the owning
+checked, the autonomy agreement and its enforcement are explicit, and one
+structural change has completed a self-contained block with its cycle recorded
+beside the reference. Account for every trial, evidence gap and remaining
+custody obligation. Move enduring behavior and reasons to the owning
 documentation and tests, give open placements and unbuilt candidates an explicit
 disposition, preserve evidence under
 [DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention), then delete this plan.

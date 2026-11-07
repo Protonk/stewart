@@ -9,11 +9,12 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Rationalize the apparatus response vocabulary end to end; in parallel, the read-only inventory of what pins each duplicated field or opaque reason, and the rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Current | Complete the four apparatus-reporting steps through the retained Linux rehearsal; in parallel, the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the measured reference | Obtain and compare the independent rapid-iteration designs for the principal's architecture choice | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| Before the rapid-iteration build | Decide who runs paid work and how that is enforced | A short plan written when that stage starts |
-| After the architecture choice and paid-work decision | Build and demonstrate the chosen rapid-iteration path | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| After the four apparatus-reporting steps; before the rapid-iteration build | Agree the agent's autonomy within a budgeted block, including experiment selection, follow-ups, custody completion, paid launches and collections, and enforcement | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| After the architecture choice and autonomy agreement | Build and demonstrate the chosen rapid-iteration path | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice | Rename the product response vocabulary through CONTRACTS, INTERFACE, help, service and split driver authorship | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
+| After self-contained rapid iteration is demonstrated | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
 | Paused; no placement selected | Interface study: billing dispositions for the Haiku runs; evidence beyond Haiku and this problem set is a candidate | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
@@ -27,10 +28,9 @@ one-offs have run and are reviewed, and every placement is consumed.
 and evidence. Evidence beyond this model and problem set is a candidate, not a
 selection. No paid placement is authorized.
 
-Rapid-iteration design can proceed now from the retained execution records;
-implementation follows the architecture and paid-work decisions. Until the
-paid-work decision is made, the principal runs live launches and collections
-in a separate terminal. No previous packet authorizes further placements.
+Current operating rules remain in force throughout the apparatus work. The
+principal runs authorized live launches and collections in a separate terminal.
+No previous packet authorizes further placements.
 
 The interface study used cheap model calls on the small-commission apparatus
 without completing the full C10 apparatus.
