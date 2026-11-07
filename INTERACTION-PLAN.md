@@ -63,14 +63,36 @@ record is opened; the gap is the finding. The blinded checklist review runs
 in a session denied read access to the original frsrr sources.
 
 - [x] Linux rehearsal covering all four templates: `.scratch/haiku-stress-rehearsal-03`,
-  pinned in the qualification record with its review at `review/result.json`.
-  It is the first rehearsal with a multi-page material; the fake auditor now
-  follows next-page reads (`3668506`). Attempts 1 and 2 are retained with
-  their causes in the setup record.
-- [ ] Principal fills account labels and spending authority, approves each
-  packet digest, launches one packet at a time and collects.
-- [ ] Review each return under the protocol, record the principal's reading
-  before the local assessment, then unblind the checklist against the key.
+  pinned with its review. It is the first rehearsal with a multi-page material;
+  the fake auditor now follows next-page reads (`3668506`).
+- [x] All five placements ran, closed and collected; each is pinned with its
+  review at `review/result.json`: `.scratch/haiku-stress-live-01` to `-05`.
+  Calculated total USD 0.2057392 against an expected 0.674; independent billing
+  is deferred by the principal.
+
+| Run | Outcome | What the manager received |
+| --- | --- | --- |
+| Turns 10 | `limit_reached`; account recorded on request 8 and revised on 9 and 10, never prepared | A manager-sealed return that reads as a finished, well-cited answer; nothing in it says the auditor ran out |
+| Turns 8 | `limit_reached`; twelve reads, nothing recorded | `No answer entries recorded.` |
+| Pagination | Auditor seal; all six answers correct via `list` sizes, a tail read from a chosen `start` and complete searches | A legible account that states its own basis; the paging affordance was never exercised |
+| Checklist, both copies | `interrupted`, cause `max_tokens`: after reading every file the auditor spent a whole 16,000-token response inside thinking and recorded nothing; the control copy reproduced it | `No answer entries recorded.`, twice; the blinded plant test was not reached |
+
+Stewart observations carried forward, with their evidence in each run's
+`review/*/interaction-findings-*.json`: the rendering never shows a limit stop
+or an interruption, so a finished-looking or empty return hides what happened
+and only the manifest's seal actor and the status cause tell; a range read
+after a search hit is the auditor's natural move and Stewart refuses it as an
+unknown `end` key, in three of five runs; one inexact quote refuses a whole
+revision, which cost the turn that could have been a prepare; the per-request
+output cap counts thinking and nothing in the arrangement warns of it or
+suggests recording in parts; facts from tool replies such as line counts
+cannot be cited. The Haiku engagement ends here, as the principal decided.
+No further Haiku placement is selected.
+
+The principal read both empty checklist returns: the question is a useful way
+to force Haiku to give no response. The plant key stays sealed in reserve; a
+later attempt on the same two copies with another model and matching limits is
+a candidate, not a selection. Console billing observation remains deferred.
 
 The single Fable B encounter is complete at `.scratch/fable-problem-b-live-01`.
 `review/encounter-completion-01.json`, pinned in the qualification record,

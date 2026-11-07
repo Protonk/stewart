@@ -61,6 +61,11 @@ not carry them.
 | [haiku-authoring-live-01](#haiku-authoring-live-01) | experiment | Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading | The principal has reviewed the interface comparison and authorizes disposal of its container and evidence |
 | [fable-problem-b-live-01](#fable-problem-b-live-01) | experiment | Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation. | Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then. |
 | [haiku-stress-rehearsal-03](#haiku-stress-rehearsal-03) | experiment | Retain the reviewed rehearsal that backs the five bounded Haiku stress packets, including the first multi-page material rehearsal, with its private originals and independent witnesses | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
+| [haiku-stress-live-01](#haiku-stress-live-01) | experiment | Retain the first turn-limit stress placement, its manager-sealed return and the pre-registered classification and findings | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
+| [haiku-stress-live-02](#haiku-stress-live-02) | experiment | Retain the second turn-limit stress placement and its empty return beside the first for comparison | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
+| [haiku-stress-live-03](#haiku-stress-live-03) | experiment | Retain the pagination stress placement, its correct return and the route that avoided paging | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
+| [haiku-stress-live-04](#haiku-stress-live-04) | experiment | Retain the first many-part placement that hit the per-request output cap inside thinking, and the record of the unstarted second audit | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
+| [haiku-stress-live-05](#haiku-stress-live-05) | experiment | Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
 
 ## Records
 
@@ -399,3 +404,43 @@ not carry them.
 - Result: `review/result.json`, SHA-256 `9372cb30e261862738488d398d2ba2d1c5b5462593fe44a5f939d7133d686f86`
 - Evidence: `.scratch/haiku-stress-rehearsal-03` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the reviewed rehearsal that backs the five bounded Haiku stress packets, including the first multi-page material rehearsal, with its private originals and independent witnesses; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses
+
+### haiku-stress-live-01
+
+- Experiment: Stress run turns-10 on the unqualified study build, claude-haiku-5-5, frozen Problem A: limit_reached after 10 turns with a twice-revised complete account never prepared or submitted; manager close confirmed; export-0002 collected; USD 0.0399731 calculated; no model qualification.
+- Date: 2026-11-07T15:11:25Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `60d82bf5b57c5960c4695b91635c79069978bedb54a56ad9da66fe40fa281730`
+- Evidence: `.scratch/haiku-stress-live-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the first turn-limit stress placement, its manager-sealed return and the pre-registered classification and findings; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+
+### haiku-stress-live-02
+
+- Experiment: Stress run turns-8 on the unqualified study build, claude-haiku-5-5, frozen Problem A: limit_reached after 8 turns with nothing recorded; empty manager-sealed return; export-0002 collected; USD 0.0177970 calculated; no model qualification.
+- Date: 2026-11-07T15:25:00Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `a8bdbb753bbc6b4291073282de162759fe6d1cc1f9dc42c232a3349c9da47b51`
+- Evidence: `.scratch/haiku-stress-live-02` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the second turn-limit stress placement and its empty return beside the first for comparison; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+
+### haiku-stress-live-03
+
+- Experiment: Stress run pagination on the unqualified study build, claude-haiku-5-5, two synthetic logs: auditor seal after 9 turns with all six answers correct by tail read, complete searches and list metadata; paging affordance unexercised; export-0002 collected; USD 0.0225645 calculated; no model qualification.
+- Date: 2026-11-07T15:38:28Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `8edeec950a9b1e0530e87e15da2d34036ec74348c5ff0a79186ec0abdbcabaf0`
+- Evidence: `.scratch/haiku-stress-live-03` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the pagination stress placement, its correct return and the route that avoided paging; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+
+### haiku-stress-live-04
+
+- Experiment: Stress run checklist (two-copy batch) on the unqualified study build, claude-haiku-5-5: checklist-5sgh interrupted with cause max_tokens after 10 turns, nothing recorded, manager close confirmed, export-0002 collected, USD 0.0555290; checklist-sw3z not started by the batch stop; no model qualification.
+- Date: 2026-11-07T16:54:33Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `9b9ff82def47a0a0139a265b890a3b760512c263bc12e4c3cbd5fec74dd23cf0`
+- Evidence: `.scratch/haiku-stress-live-04` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the first many-part placement that hit the per-request output cap inside thinking, and the record of the unstarted second audit; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+
+### haiku-stress-live-05
+
+- Experiment: Stress run checklist-sw3z single-run control on the unqualified study build, claude-haiku-5-5: interrupted with cause max_tokens after 14 turns, nothing recorded, manager close confirmed, export-0002 collected, USD 0.0698756; reproduces the 5sgh wall on the second copy; no model qualification.
+- Date: 2026-11-07T17:08:29Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `6770f1baa68d0bad6a01c2384ff6d93f8977c6606b9fd348b480a750be8772df`
+- Evidence: `.scratch/haiku-stress-live-05` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
