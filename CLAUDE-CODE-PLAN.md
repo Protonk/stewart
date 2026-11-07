@@ -2,6 +2,8 @@
 
 Add Claude Code as a peer auditor runtime while keeping audit semantics in
 Stewart's Rust core. No Claude Code adapter or live conformance run exists.
+This plan authorizes no implementation or model use; each work item needs its
+own commission.
 
 ## Scope
 
@@ -59,7 +61,7 @@ The conformance requirements are in [ACCEPTANCE](ACCEPTANCE.md#the-real-model-co
    helper and its installation/versioning explicitly against the current static
    binary product. Generic advice about multi-tenant hosting is not new scope.
 
-## Next decisions and references
+## Open decisions and references
 
 - Determine whether supported harness observations can bound unreported
   consumption during compaction or another internal call.

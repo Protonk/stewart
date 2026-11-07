@@ -7,8 +7,9 @@ owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 [QUESTION-FORMS](docs/QUESTION-FORMS.md) owns the three implemented forms.
 Answer usefulness remains the manager's judgment.
 
-This plan authorizes no model calls. The first deliverable is a checked apparatus
-for small fixed commissions. Full conformance also needs controlled interruption,
+This plan authorizes no model calls, and its remaining work needs its own
+commission. The checked small-commission apparatus is its completed first
+milestone. Full conformance also needs controlled interruption,
 actual provider compaction and a reviewed result for every required run. A model
 is supported only after its whole gate passes.
 
@@ -49,6 +50,9 @@ hidden-entry attempt and the limits of the lock/cancellation observations.
 The [qualification record](apparatus/qualified.md) owns demonstrated Linux
 results; run `python3 -I -B apparatus/qualified.py check` before relying on it.
 The reviewed small-commission rehearsal establishes no model qualification.
+Three later apparatus commits, through `3668506`, were rehearsed only with
+unqualified study builds. An ordinary C10 launch needs a new matching
+rehearsal on a qualified binary.
 
 ## Pilot review disposition
 
@@ -68,9 +72,9 @@ further billing investigation for this assessment. Attribution to the pilot
 remains unresolved; the original calculated amount is not an observed charge.
 
 The requirements-only framing concern remains recorded in
-`.scratch/c10-live-04/review/inspection.json`. The principal has redirected the
-next study toward unobtrusive scaffolding, rather than tuning the intellectual
-quality of Haiku's answers. This gives the pilot review a disposition without
+`.scratch/c10-live-04/review/inspection.json`. The principal did not pursue
+tuning the intellectual quality of Haiku's answers after this pilot. That gives
+the pilot review a disposition without
 asserting agreement with every assistant judgment or resolving that concern.
 No further pilot placements remain. Repeats, continuations, altered inputs and
 full-gate mechanisms need a separate bounded commission. The pilot implies no
@@ -201,7 +205,8 @@ about answer quality remain outside the mechanical gate.
   a response arriving within the timeout does not demonstrate timeout handling.
   Propose any additional mechanism probe with its evidence objective and budget,
   or obtain an explicit disposition through acceptance review. Do not add a
-  deliberate usage-limit study as an incidental test.
+  deliberate usage-limit study as an incidental test. Provider `max_tokens`
+  stops observed on unqualified study builds supply no C10 coverage.
 
 **Done when:** the compaction and provider-coverage packets have exact conditions,
 observable success/failure criteria and bounded spending proposals. Actual live

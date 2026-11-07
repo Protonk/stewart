@@ -9,35 +9,31 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Rationalize the apparatus response vocabulary end to end; in parallel, the read-only inventory of what pins each duplicated field, and the rapid-iteration measured reference | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| Ready alongside the interface study | Assemble the measured reference from the completed first intervention, then obtain and compare the independent rapid-iteration designs | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| After the bounded interface experiments | Decide who runs paid work and how that is enforced | A short plan written when that stage completes |
+| Current | Rationalize the apparatus response vocabulary end to end; in parallel, the read-only inventory of what pins each duplicated field or opaque reason, and the rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| After the measured reference | Obtain and compare the independent rapid-iteration designs for the principal's architecture choice | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Before the rapid-iteration build | Decide who runs paid work and how that is enforced | A short plan written when that stage starts |
 | After the architecture choice and paid-work decision | Build and demonstrate the chosen rapid-iteration path | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice | Rename the product response vocabulary through CONTRACTS, INTERFACE, help, service and split driver authorship | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
+| Paused; no placement selected | Interface study: billing dispositions for the Haiku runs; evidence beyond Haiku and this problem set is a candidate | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 
-The single Fable Problem B encounter and its original-return reading are complete,
-as are the earlier Haiku A/B baselines and guidance intervention. All their
-placements are consumed. The topic plan owns the findings, candidate build,
-evidence and next-encounter proposal. The principal confirmed that the Fable
-encounter does not change future plans: a few more bounded Haiku encounters,
-then evidence beyond this model and problem set. The five stress one-offs
-have run and are reviewed; the Haiku engagement is complete and no paid
-placement is authorized. No package or interface implementation follows.
+The interface study's Haiku engagement is complete: the A/B baselines, the
+guidance intervention, the Fable Problem B encounter and the five stress
+one-offs have run and are reviewed, and every placement is consumed.
+[INTERACTION-PLAN.md](INTERACTION-PLAN.md) owns the findings, candidate build
+and evidence. Evidence beyond this model and problem set is a candidate, not a
+selection. No paid placement is authorized.
 
-The first intervention's execution record is now available for rapid-iteration
-design, but its measured reference has not yet been assembled. That plan starts
-with the reference and friction analysis, then independent design comparisons
-for a principal decision. Design can proceed during the remaining readings;
-implementation still follows the architecture and paid-work decisions. Until
-the paid-work decision is made, the principal runs live launches and collections
+Rapid-iteration design can proceed now from the retained execution records;
+implementation follows the architecture and paid-work decisions. Until the
+paid-work decision is made, the principal runs live launches and collections
 in a separate terminal. No previous packet authorizes further placements.
 
-The interface study uses cheap model calls to examine Stewart's auditor-facing
-scaffolding. Its preparation does not require completing the full C10 apparatus.
+The interface study used cheap model calls on the small-commission apparatus
+without completing the full C10 apparatus.
 Full C10 qualification remains a release gate; its live
 compaction and recovery runs need their own commission. These API runs do not
 depend on the Claude Code runtime. The other release backlog is not a
@@ -74,26 +70,22 @@ container. It demonstrates synthetic credential delivery, process-access
 controls, interruption, exact delivery and export withholding. It establishes
 the native Linux path against local fakes, not real-provider conformance.
 
-The current small-commission rehearsal `.scratch/c10-study-launch-01` is pinned
+The latest qualified-binary small-commission rehearsal `.scratch/c10-study-launch-01` is pinned
 with its review in `review/result.json`. It binds commit `751aa7c`, the qualified
 `acceptance-05` aarch64 executable and the pinned image. It covers all six fixed
 commissions, both frozen study templates, failure/export controls, independent
 input readback, procedural review and immutable follow-up collection through the
 saved synthetic connection. The report retains actual counts, scope limits and
-the container identity. It establishes apparatus readiness for the baselines;
-it makes no model-support claim. The earlier `.scratch/c10-launch-01` remains
-pinned with its original evidence.
+the container identity. It matched the apparatus used for the baselines; later
+apparatus changes were rehearsed only with unqualified study builds. It makes
+no model-support claim. The earlier `.scratch/c10-launch-01` remains pinned
+with its original evidence.
 
-The Problem A baseline `.scratch/frsrr-baseline-a-01` is pinned with its
-procedural and saved-connection collection review at `review/result.json`.
-It establishes one authorized live placement and later collection, with the
-original export unchanged, not model qualification. The host synthetic checks
-are pinned separately at `.scratch/connection-checks-01/review-02.json`, which
+Interface-study evidence, from the Problem A and B baselines through the five
+stress one-offs, is pinned in the qualification record and owned by its topic
+plan; none of it qualifies a model. The host synthetic connection checks are
+pinned separately at `.scratch/connection-checks-01/review-02.json`, which
 preserves the failed attempt and limits on the locked-state observations.
-
-The Problem B baseline `.scratch/frsrr-baseline-b-01` is also pinned with its
-review at `review/result.json`, covering the authorized placement and later
-saved-connection collection with all original evidence unchanged.
 
 The combined pilot review is pinned at
 `.scratch/c10-haiku-commission-01/review/result.json`, with `report.md` linking
@@ -102,7 +94,7 @@ calculated cost and the requirements-only framing concern. The individual runs
 `.scratch/c10-live-01` through `.scratch/c10-live-06` are also pinned. The pilot
 establishes no model qualification or authority for further model calls.
 
-The qualification record pins that rehearsal, the earlier failed attempts and
+The qualification record pins the launcher rehearsals, the earlier failed attempts and
 their diagnostic controls. Keep their original containers and independent
 credential witnesses through review. Current acceptance containers are named in
 `.scratch/acceptance-05/host/driver-<arch>.container`; each launcher container is

@@ -71,9 +71,14 @@ Preserve the failed checks and their dispositions when costing the cycle.
   actions; report active effort as unknown where it was not observed. Separate
   reusable apparatus setup and incidental timing maintenance from the marginal
   work of changing the guidance, without dropping either from the record.
-- [ ] Record the friction observed in those runs that bears on structure: where
-  the question, materials, family text or arrangement fought one another, and
-  where a change was wanted but not cheap.
+- [ ] Record the friction observed in those runs, and in the five stress
+  one-offs retained in `.scratch/haiku-stress-live-01` to `-05`, that bears on
+  structure: where the question, materials, family text or arrangement fought
+  one another, and where a change was wanted but not cheap. The stress runs
+  add the refused range read after a search hit, a whole revision refused for
+  one inexact quote, the unwarned per-request output cap that counts thinking,
+  and tool-reply facts such as line counts that no citation can carry; the last
+  changes what participants can express and is the principal's decision.
 
 ## Clean sheet
 
@@ -98,9 +103,10 @@ Preserve the failed checks and their dispositions when costing the cycle.
 This is the gate before any build.
 
 - [ ] Write a prompt that cannot simply agree with us. It gives the obligations,
-  the current transport, the measured reference and the goal, and asks for the
-  simplest architecture; it states no hypothesis. Only after the agent has
-  answered, put two hypotheses to it explicitly: a connector that consumes
+  the measured reference and the goal, and asks for the simplest architecture;
+  it states no hypothesis and does not describe the current transport. Only
+  after the agent has answered, describe the current transport and put two
+  hypotheses to it explicitly: a connector that consumes
   question and answer JSON, validates it and applies it after validation; and
   moving named elements of question structure into the app. It must say what
   each would give up and whether a hybrid preserves the custody events while

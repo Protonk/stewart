@@ -1,10 +1,11 @@
 # Future linter for read-only commissions
 
 Explore a tiny, deterministic, non-agentic linter inside Stewart, operating
-after auditor answer preparation. This is a design marker; no implementation
-is commissioned now. The initial scope is redundant caveats saying that an
-examination was read-only when the commission already explicitly established
-that condition. No model calls or general prose rewriting belong in this path.
+after auditor answer preparation. This is a design marker; neither the remaining
+work below nor an implementation is commissioned. The initial scope is redundant
+caveats saying that an examination was read-only when the commission already
+explicitly established that condition. No model calls or general prose rewriting
+belong in this path.
 
 The motivating reading and principal's direction are retained in
 `.scratch/frsrr-baseline-a-01/review/reading-01/`, particularly

@@ -32,8 +32,8 @@ The local focus is the auditor's initial context, family instructions, tool
 descriptions, evidence presentation, citation handling, recording and revision
 tools, and preparation/submission exchanges. Treat these as a coherent interface
 whose current shape can be questioned. The existing-interface A/B baselines and
-the first guidance intervention have been reviewed. Their evidence informs the
-next encounter; they are not unfinished commissions to repeat.
+the first guidance intervention have been reviewed. Their evidence is retained
+for later comparisons; they are not unfinished commissions to repeat.
 
 Reading the returned answer is part of assessing the effect on auditor behavior.
 A separate manager-facing receiving redesign is not current work. Existing
@@ -42,11 +42,11 @@ used labeled companion views; the intervention readings used original returns
 with their exact questions. A document-oriented answer is a candidate, not a
 selected destination.
 
-## Next commission
+## Haiku stress one-offs
 
 The principal selected five bounded Haiku stress one-offs as the last Haiku
 encounters: not calibrators, but cheap hypotheses about what the manager can
-tell from Stewart's return. All use the study build below and the frozen
+tell from Stewart's return. All used the study build below and the frozen
 Problem A template or new templates; the setup, questions, packets, dated cost
 estimate and pre-registered predictions are in `.scratch/haiku-stress-01`
 (`setup-01.json` binds every file by digest; `predictions-01.md` fixes the
@@ -59,8 +59,9 @@ expected package signatures and the review protocol before any run).
 | Pagination over two synthetic logs | `pagination` | Whether the auditor follows `complete: false` and the ready `next` call on read and search, and whether the return lets a manager tell a complete scan from a partial one |
 
 Review classifies each return from the package alone before the interaction
-record is opened; the gap is the finding. The blinded checklist review runs
-in a session denied read access to the original frsrr sources.
+record is opened; the gap is the finding. The blinded checklist review was to
+run in a session denied read access to the original frsrr sources; it was not
+reached.
 
 - [x] Linux rehearsal covering all four templates: `.scratch/haiku-stress-rehearsal-03`,
   pinned with its review. It is the first rehearsal with a multi-page material;
@@ -77,7 +78,7 @@ in a session denied read access to the original frsrr sources.
 | Pagination | Auditor seal; all six answers correct via `list` sizes, a tail read from a chosen `start` and complete searches | A legible account that states its own basis; the paging affordance was never exercised |
 | Checklist, both copies | `interrupted`, cause `max_tokens`: after reading every file the auditor spent a whole 16,000-token response inside thinking and recorded nothing; the control copy reproduced it | `No answer entries recorded.`, twice; the blinded plant test was not reached |
 
-Stewart observations carried forward, with their evidence in each run's
+Stewart observations from these runs, with their evidence in each run's
 `review/*/interaction-findings-*.json`: the rendering never shows a limit stop
 or an interruption, so a finished-looking or empty return hides what happened
 and only the manifest's seal actor and the status cause tell; a range read
@@ -87,7 +88,10 @@ revision, which cost the turn that could have been a prepare; the per-request
 output cap counts thinking and nothing in the arrangement warns of it or
 suggests recording in parts; facts from tool replies such as line counts
 cannot be cited. The Haiku engagement ends here, as the principal decided.
-No further Haiku placement is selected.
+No further Haiku placement is selected. None of these observations is
+selected for change here; the rendering question belongs to the product
+vocabulary decisions and the tool-surface frictions to the rapid-iteration
+friction record.
 
 The principal read both empty checklist returns: the question is a useful way
 to force Haiku to give no response. The plant key stays sealed in reserve; a
@@ -125,9 +129,9 @@ The completed Haiku pair is `.scratch/haiku-authoring-live-01`:
 `review/pair-reading-01.json` owns the combined reading and interaction assessment;
 `review/result.json` owns the earlier procedural/collection review. Both audits
 are closed. The baseline packets and intervention packet are consumed. They
-authorize no further placements. Independent Console billing observations
-or their explicit disposition remain outstanding; this is not an unresolved
-procedural failure or an instruction to repeat a run.
+authorize no further placements. The Console billing item below covers these
+runs too; it is not an unresolved procedural failure or an instruction to
+repeat a run.
 
 The ordinary family on `main` remains `open-inquiry/1`. The candidate is
 `open-inquiry/2` on `study/account-composition-01`, not adopted product behavior.
@@ -139,14 +143,14 @@ current bindings; old launch helpers are historical attempts, not reusable
 spending commands. Evidence under `.scratch` is local and retained, not tracked
 in Git; preserve the cited study ref, worktree and containers.
 
-## Authoring direction and next experiment
+## Authoring direction and first intervention
 
 The principal's November 6 direction separates question-specific structured
 requirements from the auditor's main explanation. Some question types may demand
 data that Stewart can mechanically check and refuse, or that a manager can use
 in a stated relationship. The main response should otherwise be organized by
 its author. The applicability, schemas, checks and treatment of unavailable
-values remain future design work; the current experiment introduces no new
+values remain future design work; the first intervention introduced no new
 required fields or substantive acceptance test.
 
 Post-authoring rearrangement may prove unnecessary. Preserve that possibility:
@@ -567,8 +571,10 @@ cost is USD 0.0187986. The original export and interaction remain retained;
 separate from the principal's now-completed reading. Both authorized placements
 are consumed; no further model call is authorized by these packets.
 
-- [ ] Reconcile the baseline and intervention pairs' calculated costs with independent Console
-  observations or give those observations explicit dispositions.
+- [ ] Reconcile the calculated costs of the Haiku baselines, the intervention
+  pair and the five stress runs with independent Console observations, or give
+  those observations explicit dispositions. The principal has deferred this
+  until the Console shows the figures.
 
 The workload sizing is complete for this pair. A turn is one provider response
 and each request resends the whole context; cumulative input allowances must
@@ -650,9 +656,9 @@ The principal cautioned that distant citations might become difficult to relate
 to claims in a much longer answer. Why this run differed from an earlier ad hoc
 trial remains unresolved; no comparison here isolates that cause.
 
-All three planned sittings are complete. Carry quieter attribution and section
+All three planned sittings are complete. Quieter attribution and section
 presentation, fewer routine operational explanations, and readable citation
-placement into the next proposal. The benefit of separated citations on these
+placement remain candidates for any later proposal; none is selected. The benefit of separated citations on these
 short returns does not establish a universal endnote layout; locating the exact
 claim and returning to it remain design questions for longer answers. No new
 rendering contract or implementation intervention is selected by this account.

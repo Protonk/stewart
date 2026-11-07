@@ -332,7 +332,9 @@ python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
   --submission problem-b /absolute/submission-b
 ```
 
-This runs all 13 fixed scenarios plus one audit per template. The ordinary 14
+This runs all 13 fixed scenarios plus one audit per template. The rehearsal
+auditor follows the ready `next` read when a material exceeds one 65,536-byte
+page and requires the reassembled pages to equal the witnessed bytes. The ordinary 14
 reviewer comparisons and seven operator comparisons remain required. Each study
 audit also gets 18 reviewer comparisons, including four template tampering
 controls and two invariance cases. Live launch checks complete coverage and

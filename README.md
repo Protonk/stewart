@@ -52,12 +52,13 @@ What the evidence establishes:
   this content concern remains for the manager's judgment. The qualification
   record pins the combined review, individual answers, usage and calculated cost;
   Console billing remains unreconciled.
-- **Limits of live coverage:** one model and one observation per pilot case;
-  full repetitions, real compaction, killed-and-continued audits and a
-  `max_tokens` stop remain unobserved. Live provider captures have no independent
-  direct-TLS witness. These results qualify no model. Native x86_64 and
-  WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage review
-  also remain outstanding.
+- **Limits of live coverage:** the pilot used one model with one observation per
+  case; full repetitions, real compaction and killed-and-continued audits remain
+  unobserved. A provider `max_tokens` stop and a second model have run only on
+  unqualified study builds, which qualify nothing. Live provider captures have
+  no independent direct-TLS witness. These results qualify no model. Native
+  x86_64 and WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage
+  review also remain outstanding.
 - **Credential launch:** a synthetic-key rehearsal passed on native Linux,
   including same-user and different-user process-access controls, interrupted
   requests, exact return verification, and withholding contaminated exports.

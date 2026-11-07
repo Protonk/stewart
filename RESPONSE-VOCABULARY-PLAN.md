@@ -90,19 +90,23 @@ rehearsal, with no product decision.
 - [ ] Control replies carry one sentence stating the next operator step
   (for example "closed; collect when ready", "awaiting your confirmation:
   close --confirm cf1.…").
-- [ ] Keep code-consumed values stable: update `check_rehearsal`,
-  `check_review`, `check_operations`, the tests, the README tables, then the
-  retained Linux rehearsal.
+- [ ] Change code-consumed values together with their consumers: update
+  `check_rehearsal`, `check_review`, `check_operations`, the tests and the
+  README tables, then the retained Linux rehearsal, which the principal runs.
 
-Product vocabulary needs the principal's decisions, then the normal cycle.
+Product vocabulary follows the split above: the inventory now, the decision
+list and the normal cycle after the architecture choice.
 
 - [ ] Pulled forward, read-only: map which driver cases, service tests and
   apparatus checks assert each duplicated field and each opaque reason, so
   the decision list names what each rename costs. No edits.
 - [ ] Put a short decision list to the principal: collapse the sealer to one
   field plus manifest; make `condition` either the single state word or a
-  pure derivation; rename the reason triads and the opaque reasons; give
-  typed-back tokens readable prefixes (for example `confirm1.`) or print the
+  pure derivation; decide whether a limit stop or interruption should show in
+  the rendering, which CONTRACTS now keeps free of operating history, since the
+  stress runs showed a manager cannot tell a finished return from a cut-off
+  one; rename the reason triads and the opaque reasons; give typed-back tokens
+  readable prefixes (for example `confirm1.`) or print the
   whole command instead. Each item names what it costs managers already used
   to the words.
 - [ ] After decisions: CONTRACTS, INTERFACE, QUESTION-FORMS and CLI help
