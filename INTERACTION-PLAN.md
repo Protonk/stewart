@@ -44,23 +44,30 @@ selected destination.
 
 ## Next commission
 
-- [ ] Propose the next discriminating encounter for discussion with the
-  principal. The local agent recommends retaining `account-composition-01` and
-  choosing material with longer claim-to-evidence relationships or mixed
-  answerability. No particular question, corpus, comparison count or new model
-  use has been selected. The principal's direction remains a few more bounded
-  Haiku encounters, followed by evidence beyond this model and problem set.
-- [ ] Once the encounter is selected, freeze its question and material bytes,
-  identify what the comparison varies and what remains fixed, and prepare the
-  bounded packet and cost estimate. Use the existing study build if its guidance
-  is unchanged. New submission hashes need matching Linux rehearsal coverage;
-  an unchanged build does not require repeating its acceptance suite merely to
-  change a question. Changes to code, guidance or apparatus require their own
-  applicable checks and evidence under DEVELOPMENT and the launcher guards.
-- [ ] Obtain bounded spending authority for the concrete packet, then run,
-  collect, review and present each original return with its exact question.
-  Record the principal's reading before presenting the local agent's substantive
-  assessment. Review the encounter before selecting another one.
+The principal selected five bounded Haiku stress one-offs as the last Haiku
+encounters: not calibrators, but cheap hypotheses about what the manager can
+tell from Stewart's return. All use the study build below and the frozen
+Problem A template or new templates; the setup, questions, packets, dated cost
+estimate and pre-registered predictions are in `.scratch/haiku-stress-01`
+(`setup-01.json` binds every file by digest; `predictions-01.md` fixes the
+expected package signatures and the review protocol before any run).
+
+| Run | Template | Hypothesis under test |
+| --- | --- | --- |
+| Turn limit 10, then 8 | Frozen Problem A, rehearsed digest unchanged | The near-limit notice arrives on the last request at 8 and one request earlier at 10; submission needs two turns; Haiku recorded nothing before request 11 last time, so a limit stop likely yields an empty manager-sealed return |
+| Checklist on two package copies | `checklist-5sgh`, `checklist-sw3z` | A 40-item answer meets the 64-citation cap, replace traffic and an unreadable citations line; one copy carries planted inconsistencies and the reviewer is blinded to which and how many |
+| Pagination over two synthetic logs | `pagination` | Whether the auditor follows `complete: false` and the ready `next` call on read and search, and whether the return lets a manager tell a complete scan from a partial one |
+
+Review classifies each return from the package alone before the interaction
+record is opened; the gap is the finding. The blinded checklist review runs
+in a session denied read access to the original frsrr sources.
+
+- [ ] Linux rehearsal covering the three new templates; the two turn-limit
+  packets bind the retained `.scratch/haiku-authoring-rehearsal-01`.
+- [ ] Principal fills account labels and spending authority, approves each
+  packet digest, launches one packet at a time and collects.
+- [ ] Review each return under the protocol, record the principal's reading
+  before the local assessment, then unblind the checklist against the key.
 
 The single Fable B encounter is complete at `.scratch/fable-problem-b-live-01`.
 `review/encounter-completion-01.json`, pinned in the qualification record,

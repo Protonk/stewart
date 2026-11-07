@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Select the next bounded Haiku encounter from the completed readings | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Current | Rehearse, run and review the five selected Haiku stress one-offs | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Ready alongside the interface study | Assemble the measured reference from the completed first intervention, then obtain and compare the independent rapid-iteration designs | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the bounded interface experiments | Decide who runs paid work and how that is enforced | A short plan written when that stage completes |
 | After the architecture choice and paid-work decision | Build and demonstrate the chosen rapid-iteration path | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
@@ -23,8 +23,8 @@ as are the earlier Haiku A/B baselines and guidance intervention. All their
 placements are consumed. The topic plan owns the findings, candidate build,
 evidence and next-encounter proposal. The principal confirmed that the Fable
 encounter does not change future plans: a few more bounded Haiku encounters,
-then evidence beyond this model and problem set. No next question, corpus or
-paid placement is selected. No package or interface implementation follows.
+then evidence beyond this model and problem set. The five stress one-offs are
+selected and prepared offline; no paid placement is authorized. No package or interface implementation follows.
 
 The first intervention's execution record is now available for rapid-iteration
 design, but its measured reference has not yet been assembled. That plan starts
