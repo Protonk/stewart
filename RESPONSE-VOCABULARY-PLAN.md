@@ -71,16 +71,21 @@ Stewart's own replies (specification only):
 ## Design requirements
 
 1. Distinguish execution, evidence sufficiency, the experimental finding and
-   remaining actions. A supported negative finding can complete a block. A
-   mechanism not exercised leaves its question open; missing evidence does not
-   establish absence. These findings do not qualify a model or grade an answer.
-2. Give each fact an owner and observation boundary. Before-close and
-   after-close status are different observations. Derived views identify their
-   sources; repeated bindings must serve a consumer or an independently usable
-   artifact. Preserve witness scope and uncertainty wherever a claim is read.
-3. Human and machine views convey the same facts. The ordinary report explains
-   the finding and links directly to supporting evidence; it replaces competing
-   summaries instead of adding another layer above them.
+   remaining actions. A block can be accounted for while its scientific question
+   remains open. Keep missing evidence, unexercised mechanisms, unresolved
+   judgments and deferred billing visible. An absent observation in complete
+   evidence differs from one made unknowable by missing evidence.
+2. Give observations, interpretations, permissions and decisions their own
+   sources and authority. Before-close and after-close status are different
+   observations. Derived views identify their sources; repeated bindings must
+   serve a consumer or an independently usable artifact. Preserve witness scope
+   and uncertainty. Assembly cannot certify the experimenter's interpretation.
+3. Give the principal one coherent ordinary reading; this need not be one
+   artifact. Human and machine views preserve the same distinctions and sources.
+   A checked technical return may be ready before interpretation; intellectual
+   assessment must not gate custody or evidence handling. The eventual study
+   account connects observations to the agreed question, with supporting records
+   inspectable and no need to reconstruct the history.
 4. Name each remaining action, its responsible actor and the authority it needs.
    An operator action is not automatically a request to the principal. A report
    grants no permission to repeat, continue, close or spend.
@@ -88,40 +93,61 @@ Stewart's own replies (specification only):
    original evidence and protect private diagnostics. Version changed interfaces
    and update their consumers together without compatibility shims or rewritten
    historical receipts.
+6. Keep the apparatus's understanding of intellectual work small: commission,
+   authority, operations, evidence, explicitly defined checks, custody and
+   resources. Narrow study-specific checks may establish named observations;
+   answer quality, satisfactory investigation and model competence do not become
+   general apparatus judgments. Unexpected or inconclusive findings remain
+   useful outcomes. These reports do not qualify a model.
 
 ## Apparatus work
 
-The first deliverable is a small set of concrete block proposals and matching
-result examples, with a proposed simplification of the apparatus. Use those
-examples to choose the design before fixing new schemas. This work uses current
-operating rules and offline checks; it needs no new model placements or grant of
-agent autonomy.
+The initial exchange, worked examples and provisional comparison are in
+[the consultation brief](riker/APPARATUS-REPORTING-BRIEF.md).
+[Riker's relayed advice](riker/APPARATUS-REPORTING-ADVICE.md) informs the design
+requirements above: a coherent ordinary reading with distinct authority and no
+false finality. A question-first assembled report remains the working preference;
+no artifact structure or schema has been selected. The next design work is to
+specify the checked technical return, attributed interpretation and their later
+updates, then choose how to assemble them. The supporting read-only extraction
+and source identities are retained in `.scratch/apparatus-report-design-01`.
+
+This work uses current operating rules and offline checks; it needs no new
+model placements or grant of agent autonomy.
 
 ### 1. Define the exchange
 
-- [ ] Define the block proposal: narrow question, comparison, observations that
+- [x] Draft the block proposal: narrow question, comparison, observations that
   distinguish possible outcomes, budget and placement limits, permitted
   variations and stopping rules.
-- [ ] Define its return: actual observations, what they establish, unexercised
+- [x] Draft its return: actual observations, what they establish, unexercised
   or ambiguous comparisons, reported/estimated usage and calculated cost,
   remaining actions and direct evidence references. Keep independently observed
   billing distinct. Account for every planned trial, including those not started.
-- [ ] Include collection, evidence review and custody disposition in the block's
+- [x] Include collection, evidence review and custody disposition in the block's
   account. Show unfinished work explicitly; a scientific finding cannot conceal
   an open custody obligation. Represent who acts under current authority without
   deciding future delegation.
 
 ### 2. Choose the reporting structure
 
-- [ ] Map report producers, consumers, observation times and bindings across
-  launch, session, audit, review, export and control. Identify facts that must
-  travel with a standalone artifact and fields nothing consumes.
-- [ ] Compare local vocabulary changes, one authoritative report derived from
-  retained observations with human and machine views, and replacement of the
-  batch controller with a runner that understands experiment blocks. Use the
+- [x] Map report producers, consumers, observation times and bindings across
+  launch, session, audit, review, export and control. The brief gives the
+  record-level map and distinguishes separately usable bindings from duplicates.
+- [x] Make a provisional comparison of local vocabulary changes, an assembled
+  report with human and machine views, and replacement of the batch controller
+  with a runner that understands experiment blocks. Use the
   concrete examples to assess each shape's complexity, recovery behavior and
   ability to distinguish expected observations from failures. No shape or set
   of outcome words is selected in advance.
+- [x] Consider Riker's design guidance while preserving the distinction between
+  consultation, a working preference and a selected architecture.
+- [ ] Specify what the checked technical return establishes before interpretation
+  exists, how the experimenter's assessment is attributed, and how later custody,
+  reading and billing records resolve or leave open earlier actions. Define the
+  ordinary reading before choosing its artifact structure.
+- [ ] Identify the per-field consumers, required standalone bindings and unused
+  fields for the proposed shape.
 - [ ] Record the chosen design and the producer/consumer changes it needs.
   Separate reporting from decisions about which work may proceed. Implement
   under current operating authority; leave additional delegation for the
@@ -134,6 +160,10 @@ agent autonomy.
   limit stop, an unexercised mechanism, missing evidence and withheld export.
   Include lost replies, later custody observations and an actual apparatus
   failure so the report cannot silently merge them.
+- [ ] Exercise a technical return ready before interpretation, later custody
+  completion, unresolved judgment and deferred billing. Preserve earlier dated
+  observations while making the current disposition intelligible. Keep evidence
+  handling available throughout; no scientific verdict gates it.
 - [ ] Specify the observations and checks before running a comparison. Pair
   each claimed check with a firing control, a differing case and an invariance
   case. A correct answer obtained without the mechanism under study must remain
