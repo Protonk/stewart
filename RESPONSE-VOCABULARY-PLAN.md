@@ -64,6 +64,17 @@ Stewart's own replies (specification only):
 4. Reasons are named by what went wrong and where, in words a reader can act
    on without the appendix.
 
+## Decision
+
+The principal agreed to split the work. The apparatus vocabulary changes now,
+under its own checks and one retained Linux rehearsal. The product vocabulary
+waits for the rapid-iteration architecture choice, since that choice may
+reshape the manager CLI and the auditor envelope, and renaming twice is the
+one way to pay twice. One product task is pulled forward because it is
+read-only and cheap: an inventory of which driver cases, service tests and
+apparatus checks pin each duplicated or opaque field. The agent that performs
+that survey must not later edit the driver if it read the service.
+
 ## Tasks
 
 Apparatus first; it changes under its own checks and the retained Linux
@@ -85,6 +96,9 @@ rehearsal, with no product decision.
 
 Product vocabulary needs the principal's decisions, then the normal cycle.
 
+- [ ] Pulled forward, read-only: map which driver cases, service tests and
+  apparatus checks assert each duplicated field and each opaque reason, so
+  the decision list names what each rename costs. No edits.
 - [ ] Put a short decision list to the principal: collapse the sealer to one
   field plus manifest; make `condition` either the single state word or a
   pure derivation; rename the reason triads and the opaque reasons; give

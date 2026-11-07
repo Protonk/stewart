@@ -9,11 +9,11 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Record the completed Haiku stress one-offs and carry their Stewart observations into the vocabulary and rapid-iteration work | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Current | Rationalize the apparatus response vocabulary end to end; in parallel, the read-only inventory of what pins each duplicated field, and the rapid-iteration measured reference | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | Ready alongside the interface study | Assemble the measured reference from the completed first intervention, then obtain and compare the independent rapid-iteration designs | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the bounded interface experiments | Decide who runs paid work and how that is enforced | A short plan written when that stage completes |
 | After the architecture choice and paid-work decision | Build and demonstrate the chosen rapid-iteration path | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| After the stress one-offs are reviewed | Rationalize operator and manager response vocabulary; apparatus first, product words after a principal decision | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
+| After the architecture choice | Rename the product response vocabulary through CONTRACTS, INTERFACE, help, service and split driver authorship | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
