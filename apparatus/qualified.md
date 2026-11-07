@@ -60,6 +60,7 @@ not carry them.
 | [haiku-authoring-rehearsal-01](#haiku-authoring-rehearsal-01) | experiment | Launcher and frozen-input evidence for the account-composition-01 A/B experiment | The authoring intervention is reviewed and no retained live packet relies on this rehearsal |
 | [haiku-authoring-live-01](#haiku-authoring-live-01) | experiment | Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading | The principal has reviewed the interface comparison and authorizes disposal of its container and evidence |
 | [fable-problem-b-live-01](#fable-problem-b-live-01) | experiment | Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation. | Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then. |
+| [haiku-stress-rehearsal-03](#haiku-stress-rehearsal-03) | experiment | Retain the reviewed rehearsal that backs the five bounded Haiku stress packets, including the first multi-page material rehearsal, with its private originals and independent witnesses | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
 
 ## Records
 
@@ -390,3 +391,11 @@ not carry them.
 - Result: `review/encounter-completion-01.json`, SHA-256 `4b64ef5b0e835b46b9b811c139d8fc5c540a041d8726ecf805ddd3626dd08cc4`
 - Evidence: `.scratch/fable-problem-b-live-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation.; until Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then.
+
+### haiku-stress-rehearsal-03
+
+- Experiment: Stress-study rehearsal on Linux aarch64 at 3668506 with the unqualified account-composition-01 study build: 17 expected audit outcomes including problem-a, two checklist copies and a four-page pagination template; 16 reviewer comparisons with 14 firing controls, 7 operator comparisons, 80 study comparisons with 72 firing controls, and fresh-process Keychain collection; no model calls or model qualification.
+- Date: 2026-11-07T03:55:39Z (from review/result.json field at)
+- Result: `review/result.json`, SHA-256 `9372cb30e261862738488d398d2ba2d1c5b5462593fe44a5f939d7133d686f86`
+- Evidence: `.scratch/haiku-stress-rehearsal-03` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the reviewed rehearsal that backs the five bounded Haiku stress packets, including the first multi-page material rehearsal, with its private originals and independent witnesses; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses

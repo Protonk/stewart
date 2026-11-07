@@ -973,6 +973,25 @@
         "reason": "Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation.",
         "until": "Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then."
       }
+    },
+    {
+      "id": "haiku-stress-rehearsal-03",
+      "kind": "experiment",
+      "date": "2026-11-07T03:55:39Z",
+      "date_from": "review/result.json field at",
+      "summary": "Stress-study rehearsal on Linux aarch64 at 3668506 with the unqualified account-composition-01 study build: 17 expected audit outcomes including problem-a, two checklist copies and a four-page pagination template; 16 reviewer comparisons with 14 firing controls, 7 operator comparisons, 80 study comparisons with 72 firing controls, and fresh-process Keychain collection; no model calls or model qualification.",
+      "result": {
+        "path": "review/result.json",
+        "sha256": "9372cb30e261862738488d398d2ba2d1c5b5462593fe44a5f939d7133d686f86"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-stress-rehearsal-03",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the reviewed rehearsal that backs the five bounded Haiku stress packets, including the first multi-page material rehearsal, with its private originals and independent witnesses",
+        "until": "A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses"
+      }
     }
   ]
 }

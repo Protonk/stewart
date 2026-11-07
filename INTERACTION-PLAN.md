@@ -62,8 +62,11 @@ Review classifies each return from the package alone before the interaction
 record is opened; the gap is the finding. The blinded checklist review runs
 in a session denied read access to the original frsrr sources.
 
-- [ ] Linux rehearsal covering the three new templates; the two turn-limit
-  packets bind the retained `.scratch/haiku-authoring-rehearsal-01`.
+- [x] Linux rehearsal covering all four templates: `.scratch/haiku-stress-rehearsal-03`,
+  pinned in the qualification record with its review at `review/result.json`.
+  It is the first rehearsal with a multi-page material; the fake auditor now
+  follows next-page reads (`3668506`). Attempts 1 and 2 are retained with
+  their causes in the setup record.
 - [ ] Principal fills account labels and spending authority, approves each
   packet digest, launches one packet at a time and collects.
 - [ ] Review each return under the protocol, record the principal's reading
