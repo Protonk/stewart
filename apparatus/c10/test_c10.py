@@ -25,6 +25,76 @@ from study import (case_from_question, copy_submission, inspect_submission,
                    study_proposal)
 from verify import tree_inventory_from_evidence
 import study_build
+from fake import follow_pages
+
+
+def read_reply(call_id, source, start, end, size, text, next_start=None):
+    """A captured tool_result for one material read page, shaped as INTERFACE 7.1 and 7.2 describe."""
+    envelope = {'schema': 'stewart.reply/1', 'operation': 'read', 'outcome': 'completed',
+                'data': {'source': source, 'kind': 'material', 'size': size, 'range': [start, end],
+                         'complete': next_start is None, 'cite': {'source': source, 'start': start, 'end': end}},
+                'next': [] if next_start is None else [{'tool': 'read', 'input': {'source': source, 'start': next_start}, 'why': 'rest'}]}
+    return call_id, [{'type': 'text', 'text': json.dumps(envelope)}, {'type': 'text', 'text': text}]
+
+
+class FakePagingTests(unittest.TestCase):
+    """The scripted auditor follows next-page reads and verifies whole materials."""
+
+    def setUp(self):
+        self.big = ('line\n' * 30000).encode()  # three read pages
+        self.small = b'short material\n'
+        self.materials = {'materials/big.txt': self.big, 'materials/small.txt': self.small}
+        self.page = 65536
+
+    def pages(self):
+        text = self.big.decode(); out, start = [], 0
+        while start < len(text):
+            end = min(len(text), start + self.page)
+            if end < len(text): end = text.rfind('\n', start, end) + 1
+            out.append((start, end)); start = end
+        return out
+
+    def test_single_page_materials_need_no_continuation(self):
+        calls = [{'id': 't1', 'name': 'read', 'input': {'source': 'materials/small.txt'}}]
+        results = dict([read_reply('t1', 'materials/small.txt', 0, len(self.small), len(self.small), self.small.decode())])
+        continued = set()
+        continuations, pages = follow_pages(calls, results, self.materials, continued)
+        self.assertEqual(continuations, [])
+        self.assertEqual(continued, set())
+        self.assertEqual(pages, {'materials/small.txt': {0: self.small.decode()}})
+
+    def test_multi_page_material_is_followed_once_and_verified_when_complete(self):
+        spans = self.pages(); self.assertGreater(len(spans), 2)
+        text = self.big.decode(); calls, results, continued = [], {}, set()
+        for n, (start, end) in enumerate(spans):
+            tid = f't{n + 1}'
+            calls.append({'id': tid, 'name': 'read', 'input': {'source': 'materials/big.txt', 'start': start}})
+            nxt = spans[n + 1][0] if n + 1 < len(spans) else None
+            k, v = read_reply(tid, 'materials/big.txt', start, end, len(self.big), text[start:end], nxt); results[k] = v
+            continuations, _ = follow_pages(calls, results, self.materials, continued)
+            if nxt is None:
+                self.assertEqual(continuations, [])
+            else:
+                self.assertEqual(continuations, [('read', {'source': 'materials/big.txt', 'start': nxt})])
+                # Re-presenting the same results does not issue the continuation twice.
+                self.assertEqual(follow_pages(calls, results, self.materials, continued)[0], [])
+
+    def test_altered_page_bytes_are_refused_when_the_chain_completes(self):
+        spans = self.pages(); text = self.big.decode(); calls, results = [], {}
+        for n, (start, end) in enumerate(spans):
+            tid = f't{n + 1}'; page = text[start:end]
+            if n == 1: page = page[:-1] + 'x'
+            calls.append({'id': tid, 'name': 'read', 'input': {'source': 'materials/big.txt', 'start': start}})
+            nxt = spans[n + 1][0] if n + 1 < len(spans) else None
+            k, v = read_reply(tid, 'materials/big.txt', start, end, len(self.big), page, nxt); results[k] = v
+        with self.assertRaises(ValueError):
+            follow_pages(calls, results, self.materials, set())
+
+    def test_incomplete_page_without_next_read_is_refused(self):
+        tid, blocks = read_reply('t1', 'materials/big.txt', 0, 100, len(self.big), self.big.decode()[:100], 100)
+        envelope = json.loads(blocks[0]['text']); envelope['next'] = []; blocks[0]['text'] = json.dumps(envelope)
+        with self.assertRaises(ValueError):
+            follow_pages([{'id': tid, 'name': 'read', 'input': {'source': 'materials/big.txt'}}], {tid: blocks}, self.materials, set())
 
 
 class StudyBuildTests(unittest.TestCase):
