@@ -19,7 +19,8 @@ from common import (HERE,catalog,compact,digest,inventory,proposal,question_file
                     rehearsal_packet,source_hash,strict_json,tree_hash,validate_packet,write_json)
 from batch import credential_marker,check_credential,export_snapshot
 from batch import execute_batch
-from verify import Evidence,usage_counts,verify
+from verify import Evidence,PagingObservation,usage_counts,verify
+import reporting
 import connections
 from study import (case_from_question, copy_submission, inspect_submission,
                    study_proposal)
@@ -526,21 +527,26 @@ class PacketTests(unittest.TestCase):
 
 
 class EvidenceTests(unittest.TestCase):
-    def test_unexpected_outcome_stops_batch_without_replacing_audit(self):
+    def test_checked_limit_stop_is_not_failure_and_does_not_start_next_audit(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);out=root/'out';out.mkdir()
             sessions=[]
             for n in range(2):
                 evidence=root/f'evidence-{n}';evidence.mkdir()
                 audit=mock.Mock(evidence=evidence,phase='run',run_item={'id':f'audit-{n}','scenario':'submitted'})
-                audit.execute.return_value={'audit':f'audit-{n}','state':'not_submitted'}
+                audit.execute.return_value={'audit':f'audit-{n}','placement':'observed',
+                    'caller_reply_lost':False,'automatic_close':None,
+                    'review_before_close':{'outcome':'checked','ending':'limit_reached',
+                        'auditor_submitted':False,'delivery_verified':False}}
                 sessions.append(audit)
             with mock.patch('batch.locked_export',return_value={'outcome':'exported'}):
                 result=execute_batch(None,None,out,{},'live',b'synthetic',sessions,None,local=True)
             sessions[0].execute.assert_called_once()
             sessions[1].execute.assert_not_called()
-            self.assertEqual((result['planned'],result['observed'],result['failed'],result['not_started']),(2,1,1,1))
-            self.assertEqual(result['audits'][1]['state'],'not_started')
+            self.assertEqual((result['planned'],result['observed'],result['failed'],result['not_started']),(2,1,0,1))
+            self.assertEqual(result['audits'][1]['placement'],'not_started')
+            self.assertEqual(result['halt']['reason'],'without_auditor_submission')
+            self.assertNotIn('expected_observation',result['audits'][0])
             self.assertTrue((sessions[1].evidence/'events/0001.json').is_file())
 
     def test_unknown_effects_stop_batch_and_keep_failure_record(self):
@@ -555,9 +561,26 @@ class EvidenceTests(unittest.TestCase):
             result=execute_batch(None,None,out,{},'live',b'synthetic',sessions,None,local=True)
             sessions[0].execute.assert_called_once()
             sessions[1].execute.assert_not_called()
-            self.assertEqual(result['audits'][0]['state'],'unknown')
+            self.assertEqual(result['audits'][0]['placement'],'unknown')
+            self.assertEqual(result['failed'],1)
+            self.assertNotIn('uncertain caller reply',json.dumps(result))
             self.assertTrue((sessions[0].evidence/'failure.json').is_file())
             self.assertEqual(result['not_started'],1)
+
+    def test_export_exception_does_not_erase_an_observed_placement(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);out=root/'out';out.mkdir();evidence=root/'evidence';evidence.mkdir()
+            audit=mock.Mock(evidence=evidence,phase='status-export',
+                            run_item={'id':'audit','scenario':'submitted'})
+            audit.execute.return_value={'audit':'audit','placement':'observed','caller_reply_lost':False,
+                'automatic_close':None,'review_before_close':{'outcome':'checked','ending':'limit_reached',
+                    'auditor_submitted':False,'delivery_verified':False}}
+            with mock.patch('batch.locked_export',side_effect=PermissionError('PRIVATE TEXT')):
+                result=execute_batch(None,None,out,{},'live',b'synthetic',[audit],None,local=True)
+            self.assertEqual((result['observed'],result['failed']),(1,1))
+            self.assertEqual(result['audits'][0]['review_before_close']['outcome'],'checked')
+            self.assertEqual(result['audits'][0]['failure']['stage'],'export')
+            self.assertNotIn('PRIVATE TEXT',json.dumps(result))
 
     def test_inventory_keeps_nested_hidden_and_empty_members(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -614,6 +637,8 @@ class EvidenceTests(unittest.TestCase):
             self.assertEqual(result['outcome'],'incomplete')
             self.assertEqual(result['failures'],['missing_evidence'])
             self.assertFalse(result['model_qualified'])
+            self.assertIsNone(result['coverage'])
+            self.assertIsNone(result['closed'])
 
     def test_credential_reentry_must_match_without_persisting_key(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -641,6 +666,145 @@ class EvidenceTests(unittest.TestCase):
                       [{'type':'message','input_tokens':True,'output_tokens':0}],
                       [{'type':'message','input_tokens':2**48,'output_tokens':0}]*2]:
             with self.subTest(value=value),self.assertRaises(ValueError):usage_counts({'input_tokens':0,'output_tokens':0,'iterations':value})
+
+
+class ReportingTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.batch = self.root/'batch'
+        self.batch.mkdir()
+        packet = proposal('example-model',['open-ordinary'])
+        self.audit = packet['runs'][0]['id']
+        write_json(self.batch/'PLAN.json',{'schema':'stewart.c10-plan/1','commission':packet,
+                   'binary_sha256':None,'audits':[self.audit]})
+        (self.root/'proposal.md').write_text('Question: was a next-page call offered and attempted?\n')
+        self.manifest = self.root/'block.json'
+        write_json(self.manifest,{'schema':'stewart.experiment-block/1',
+            'proposal':{'author':'Experimenter','document':self.ref(self.root/'proposal.md')},
+            'batches':[self.ref(self.batch/'PLAN.json')]})
+        write_json(self.batch/'RESULT.json',{'schema':'stewart.c10-session/2','mode':'live',
+            'local_iteration_only':False,'planned':1,'observed':1,'failed':0,'not_started':0,
+            'halt':None,'skipped_checks':[],
+            'audits':[{'audit':self.audit,'placement':'observed','failed':False}]})
+
+    def ref(self,path):
+        return {'path':str(path),'sha256':digest(read_file(path))}
+
+    def report(self):
+        return reporting.assemble(self.manifest)
+
+    def test_missing_observation_stays_unknown_and_assessment_does_not_gate_return(self):
+        report = reporting.write_report(self.manifest,self.root/'return')
+        self.assertIsNone(report['assessment'])
+        self.assertIsNone(reporting.latest_review(report['technical']['batches'][0]['audits'][0]))
+        self.assertIn('current_evidence_unavailable',str(reporting.current_issues(report)))
+        self.assertIn('Pending.',read_file(self.root/'return/report.md').decode())
+        self.assertEqual(report['technical_sha256'],self.report()['technical_sha256'])
+
+    def test_assessment_is_attributed_and_later_position_requires_reconciliation(self):
+        original = self.report()
+        (self.root/'assessment.md').write_text('Unresolved designer judgment. Billing deferred by the principal.\n')
+        path = self.root/'assessment.json'
+        write_json(path,{'schema':'stewart.experiment-assessment/1',
+            'technical_sha256':original['technical_sha256'],
+            'assessment':{'author':'A named experimenter','document':self.ref(self.root/'assessment.md')}})
+        current = reporting.assemble(self.manifest,path)
+        self.assertEqual(current['assessment']['basis'],'current')
+        self.assertEqual(original['technical'],current['technical'])
+        self.assertEqual(reporting.current_issues(original),reporting.current_issues(current))
+        snapshot = self.batch/self.audit/'export-0001'
+        snapshot.mkdir(parents=True)
+        write_json(snapshot/'EXPORT.json',{'outcome':'withheld','started_at':1,'ended_at':2,
+            'evidence_state':'incomplete','scan':{'files_with_matches':[],'errors':[]}})
+        later = reporting.assemble(self.manifest,path)
+        self.assertEqual(later['assessment']['basis'],'earlier_position')
+        self.assertNotEqual(later['technical_sha256'],original['technical_sha256'])
+        self.assertIn('not assumed current',reporting.render(later))
+        self.assertEqual(later['assessment']['text'],current['assessment']['text'])
+
+    def test_changed_author_text_fires_binding_check_and_no_old_output_is_rewritten(self):
+        output = self.root/'return'
+        reporting.write_report(self.manifest,output)
+        old = read_file(output/'report.json')
+        with self.assertRaises(reporting.ReportError) as error:
+            reporting.write_report(self.manifest,output)
+        self.assertEqual(error.exception.code,'output_exists')
+        (self.root/'proposal.md').write_text('Changed question\n')
+        with self.assertRaises(reporting.ReportError) as error:
+            self.report()
+        self.assertEqual(error.exception.code,'source_changed')
+        self.assertEqual(old,read_file(output/'report.json'))
+
+    def test_new_question_cannot_reuse_an_assessments_current_basis(self):
+        first = self.report()
+        (self.root/'proposal.md').write_text('A different question about the same trials.\n')
+        manifest = strict_json(read_file(self.manifest))
+        manifest['proposal']['document'] = self.ref(self.root/'proposal.md')
+        self.manifest.write_text(json.dumps(manifest))
+        self.assertNotEqual(first['technical_sha256'],self.report()['technical_sha256'])
+
+    def test_later_withholding_does_not_borrow_an_earlier_checked_state(self):
+        earlier = {'snapshot':'export-0001','review':{'outcome':'checked','closed':False}}
+        audit = {'snapshots':[earlier]}
+        self.assertIs(reporting.latest_review(audit),earlier['review'])
+        audit['snapshots'].append({'snapshot':'export-0002','review':None,'export':'withheld'})
+        self.assertIsNone(reporting.latest_review(audit))
+        self.assertFalse(audit['snapshots'][0]['review']['closed'])
+
+    def test_later_checked_observation_can_resolve_unknown_effects_without_erasing_failure(self):
+        report = self.report()
+        batch = report['technical']['batches'][0]
+        session = batch['session']['record']
+        session.update(failed=1,observed=0)
+        session['audits'][0].update(placement='unknown',failed=True)
+        self.assertTrue(reporting.current_issues(report))
+        batch['audits'][0]['snapshots'].append({'review':{'outcome':'checked'}})
+        self.assertEqual(reporting.current_issues(report),[])
+        self.assertEqual(session['failed'],1)
+        self.assertEqual(session['audits'][0]['placement'],'unknown')
+        session['audits'][0].update(placement='not_started')
+        self.assertEqual(reporting.current_issues(report)[0][1],'placement_observed_after_not_started_record')
+
+    def test_historical_session_is_linked_without_schema_conversion(self):
+        path = self.batch/'RESULT.json'
+        path.write_text('{"schema":"stewart.c10-session/1","outcome":"failed"}\n')
+        old = read_file(path)
+        session = self.report()['technical']['batches'][0]['session']
+        self.assertEqual(session['assessment'],'unsupported_schema')
+        self.assertIsNone(session['record'])
+        self.assertEqual(session['source']['sha256'],digest(old))
+        self.assertEqual(read_file(path),old)
+
+    def test_malformed_export_preserves_inventory_and_hides_exception_text(self):
+        snapshot = self.batch/self.audit/'export-0001'
+        snapshot.mkdir(parents=True)
+        (snapshot/'EXPORT.json').write_text('PRIVATE-CREDENTIAL-SHAPED-TEXT')
+        report = self.report()
+        self.assertNotIn('PRIVATE-CREDENTIAL',json.dumps(report))
+        row = report['technical']['batches'][0]['audits'][0]
+        self.assertEqual(row['audit'],self.audit)
+        self.assertEqual(row['snapshots'][0]['reasons'],['export_metadata_unreadable'])
+
+    def test_paging_observation_has_firing_differing_and_prose_invariance_cases(self):
+        first = read_reply('id','materials/big',0,10,20,'first',10)[1][0]['text']
+        last = read_reply('id','materials/big',10,20,20,'last')[1][0]['text']
+        for prose in ['correct answer','incorrect answer']:
+            p = PagingObservation()
+            p.observe('read',{'source':'materials/big'},json.loads(last))
+            p.observe('record_account',{'text':prose},{'outcome':'completed'})
+            self.assertEqual(p.counts['next_calls_offered'],0)
+            self.assertEqual(p.counts['exact_next_call_attempts'],0)
+        offered = PagingObservation()
+        offered.observe('read',{'source':'materials/big'},json.loads(first))
+        self.assertEqual(offered.counts['next_calls_offered'],1)
+        self.assertEqual(offered.counts['exact_next_call_attempts'],0)
+        offered.observe('read',{'source':'materials/big','start':10},json.loads(last))
+        self.assertEqual(offered.counts['exact_next_call_attempts'],1)
+        self.assertEqual(offered.counts['incomplete_pages'],1)
+        with self.assertRaises(KeyError):
+            PagingObservation().observe('read',{}, {'outcome':'completed','data':{},'next':[]})
 
 
 if __name__=='__main__':

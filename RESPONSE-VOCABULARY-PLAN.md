@@ -27,30 +27,11 @@ Use retained records and synthetic cases for the report design and checks.
 
 ## What the inventory found
 
-Apparatus (`apparatus/c10`, shared helpers in `apparatus/sanity`):
-
-- [Packet validation](apparatus/c10/common.py) requires live runs to select
-  `submitted`. The [reviewer](apparatus/c10/verify.py) distinguishes
-  `not_submitted` from `incomplete` evidence, but the
-  [batch controller](apparatus/c10/batch.py) counts an unsubmitted live run as
-  failed and stops later placements. The [host](apparatus/c10/c10.py) can then
-  print a generic launch failure. An experiment that intentionally reaches a
-  limit cannot express that expected observation in its live packet.
-- Host `session_outcome` copies the container outcome; `binary_status` is
-  repeated in several reports. A batch row's `state` can say `reply_lost` while
-  its nested `review.outcome` says passed: these describe different observations
-  but their names do not make that distinction clear.
-- Repeated declarations such as `model_qualified: false`, `approved: false`,
-  `loss_surrendered: false` and `unassessed` lists need a consumer and scope
-  review. Other apparent constants vary by mode: `witness_scope` distinguishes
-  independent fake exchanges from Stewart-owned live captures, and
-  `local_iteration_only` distinguishes native iteration from Linux evidence.
-- Refusal reasons are flattened in live, rehearse, control and review; withheld
-  collection can exit nonzero without a useful sentence. Shared
-  [failure reporting](apparatus/sanity/session.py) deliberately suppresses
-  arbitrary exception text because it can contain credential-bearing evidence.
-  Useful diagnostics need controlled reasons and context, preserving that
-  protection.
+The apparatus field ownership, consumers, authority boundaries and selected
+reporting behavior are specified in [Experiment reports](apparatus/c10/REPORTING.md).
+Its implementation separates checked observations from submission, custody,
+placement policy and attributed interpretation. The current live stopping rules
+remain in force; synthetic expectation matching applies only to rehearsals.
 
 Stewart's own replies (specification only):
 
@@ -106,11 +87,30 @@ The initial exchange, worked examples and provisional comparison are in
 [the consultation brief](riker/APPARATUS-REPORTING-BRIEF.md).
 [Riker's relayed advice](riker/APPARATUS-REPORTING-ADVICE.md) informs the design
 requirements above: a coherent ordinary reading with distinct authority and no
-false finality. A question-first assembled report remains the working preference;
-no artifact structure or schema has been selected. The next design work is to
-specify the checked technical return, attributed interpretation and their later
-updates, then choose how to assemble them. The supporting read-only extraction
-and source identities are retained in `.scratch/apparatus-report-design-01`.
+false finality. The selected read-only assembler uses a bound authored proposal,
+retained batch plans and optional attributed assessment. Its
+[operating instructions](apparatus/c10/README.md#assemble-an-experiment-report)
+own the exchange format. It does not replace the runner or add delegation.
+
+Implementation checks and the worked reading of the original two limit trials
+and pagination trial are retained in `.scratch/apparatus-report-implementation-01`.
+The native fake batch is `.scratch/c10-report-native-03`; the two preceding
+attempts remain retained with their loopback-listener denial. Reviewer controls
+are in `.scratch/c10-report-review-controls-02`; the final report comparisons
+are in `.scratch/c10-report-controls-04`. A failed first report-control
+attempt and subsequent correction are preserved. No historical receipt was
+changed. The remaining apparatus gate is the matching Linux rehearsal after
+commit, including the new report comparisons.
+
+The worked ordinary reading is
+`.scratch/apparatus-report-implementation-01/retained-reading-final/report.md`.
+It checks all six original snapshots, retains their distinct custody dates and
+flags three historical session receipts as unassessed without converting them.
+Its 18 selected original source files remain unchanged. Final local results:
+62 C10 tests, 24 sanity tests, 330 driver checks, 13 fake audits, 14 reviewer
+comparisons (12 firing controls), seven operator comparisons and 11 report
+comparisons passed. The native batch explicitly skips Linux process-access
+checks; the host driver run has no skips. These are local iteration results.
 
 This work uses current operating rules and offline checks; it needs no new
 model placements or grant of agent autonomy.
@@ -142,13 +142,13 @@ model placements or grant of agent autonomy.
   of outcome words is selected in advance.
 - [x] Consider Riker's design guidance while preserving the distinction between
   consultation, a working preference and a selected architecture.
-- [ ] Specify what the checked technical return establishes before interpretation
+- [x] Specify what the checked technical return establishes before interpretation
   exists, how the experimenter's assessment is attributed, and how later custody,
   reading and billing records resolve or leave open earlier actions. Define the
   ordinary reading before choosing its artifact structure.
-- [ ] Identify the per-field consumers, required standalone bindings and unused
+- [x] Identify the per-field consumers, required standalone bindings and unused
   fields for the proposed shape.
-- [ ] Record the chosen design and the producer/consumer changes it needs.
+- [x] Record the chosen design and the producer/consumer changes it needs.
   Separate reporting from decisions about which work may proceed. Implement
   under current operating authority; leave additional delegation for the
   autonomy agreement. Any change to product obligations remains the principal's
@@ -156,29 +156,29 @@ model placements or grant of agent autonomy.
 
 ### 3. Make the outcomes distinguishable
 
-- [ ] Work the proposal and report through an ordinary submission, a planned
+- [x] Work the proposal and report through an ordinary submission, a planned
   limit stop, an unexercised mechanism, missing evidence and withheld export.
   Include lost replies, later custody observations and an actual apparatus
   failure so the report cannot silently merge them.
-- [ ] Exercise a technical return ready before interpretation, later custody
+- [x] Exercise a technical return ready before interpretation, later custody
   completion, unresolved judgment and deferred billing. Preserve earlier dated
   observations while making the current disposition intelligible. Keep evidence
   handling available throughout; no scientific verdict gates it.
-- [ ] Specify the observations and checks before running a comparison. Pair
+- [x] Specify the observations and checks before running a comparison. Pair
   each claimed check with a firing control, a differing case and an invariance
   case. A correct answer obtained without the mechanism under study must remain
   unexercised for that mechanism, as with the retained pagination trial.
-- [ ] Use retained or synthetic observations to demonstrate a narrow finding
+- [x] Use retained or synthetic observations to demonstrate a narrow finding
   without an independent reader judging a long answer. Name any interpretation
   that still needs a reader or designer; do not turn it into a mechanical grade.
 
 ### 4. Implement and verify end to end
 
-- [ ] Implement the chosen reporting path across producers and consumers,
+- [x] Implement the chosen reporting path across producers and consumers,
   including `check_rehearsal`, `check_review`, `check_operations`, command
   output and the apparatus README. Preserve actual reasons, explicit unknowns,
   authority boundaries and immutable evidence through later collection.
-- [ ] Run and retain the applicable
+- [x] Run and retain the applicable
   [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed): C10
   tests, shared sanity-launch tests, driver self-test, changed run/reviewer/
   operator behavior through the native fake provider, and the link check.

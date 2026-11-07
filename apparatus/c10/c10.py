@@ -19,7 +19,9 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import (REPO,HERE,SOURCE_PATHS,catalog,compact,digest,file_hash,identifier,
     proposal,read_file,rehearsal_packet,require,scan_tree,source_hash,strict_json,validate_packet,write_json)
 from launch import hidden_credential,host_environment,select_qualification
-from verify import Evidence,verify
+from verify import Evidence,ordinary_submission,verify
+from session import failure_details
+from reporting import ReportError, current_issues, review_exports, write_report
 from connections import ConnectionError, lookup as connection_key, status as connection_status, validate_label
 from study import (copy_submission, inspect_submission, resolve_submission,
                    study_proposal, supplied_runs)
@@ -44,35 +46,7 @@ def bindings(qualification_id,build=None):
 
 
 def review_batch(root):
-    root=Path(root)
-    plan=strict_json(read_file(root/'container/PLAN.json'))
-    packet=plan['commission']
-    results=[]
-    for item in packet['runs']:
-        require(identifier(item['id']),'invalid audit identity in plan')
-        folder=root/'container'/item['id']
-        snapshots=[]
-        if folder.exists():
-            for path in sorted(folder.iterdir()):
-                require(re.fullmatch(r'export-[0-9]{4}',path.name) and path.is_dir(),'unknown export member')
-                meta=strict_json(read_file(path/'EXPORT.json'))
-                row={'snapshot':path.name,'export':meta['outcome']}
-                if meta['outcome']=='exported':
-                    require((path/'work.tar').stat().st_size==meta['archive']['bytes'],'export size differs')
-                    e=Evidence(path/'work.tar',meta['archive']['sha256'])
-                    try:
-                        row['review']=verify(e)
-                        binding=e.json('evidence/binding.json')
-                        require(binding['commission']==packet and binding['run']==item
-                                and binding['binary_sha256']==plan['binary_sha256'],'export crossed audit binding')
-                    finally:
-                        e.close()
-                snapshots.append(row)
-        results.append({'audit':item['id'],'case':item['case'],'snapshots':snapshots,
-                        'state':'not_exported' if not snapshots else snapshots[-1]['export']})
-    return {'schema':'stewart.c10-batch-review/1','planned':len(packet['runs']),
-            'audits':results,'model_qualified':False,
-            'binary_status':'unqualified_study' if packet.get('study_build') else 'qualification_bound'}
+    return review_exports(Path(root)/'container')
 
 
 def check_rehearsal_inputs(rehearsed,packet=None):
@@ -92,7 +66,8 @@ def check_rehearsal_inputs(rehearsed,packet=None):
 def check_rehearsal(path,bound,packet=None,*,connection=False):
     host=strict_json(read_file(path/'host/RESULT.json'))
     session=strict_json(read_file(path/'container/RESULT.json'))
-    require(host['mode']=='rehearse' and host['outcome']=='completed'
+    require(host['schema']=='stewart.c10-launch/2' and session['schema']=='stewart.c10-session/2'
+        and host['mode']=='rehearse' and host['outcome']=='completed'
         and session['outcome']=='passed' and session['local_iteration_only'] is False,
         'a successful retained Linux rehearsal is required')
     for key in ['apparatus_sha256','binary_sha256','image','catalog_sha256']:
@@ -118,6 +93,9 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
     require(operations['failed']==0 and operations['passed']==operations['run']==7
             and operations['original_snapshot_unchanged'] is True,
             'operator controls missing or incomplete')
+    reporting=strict_json(read_file(path/'container/report-controls/RESULT.json'))
+    require(reporting['failed']==0 and reporting['passed']==reporting['run']==11
+            and reporting['original_unchanged'] is True,'report controls missing or incomplete')
     for run in supplied_runs(rehearsed):
         controls=strict_json(read_file(path/'container/study-review-controls'/run['id']/'RESULT.json'))
         require(controls['failed']==0 and controls['passed']==controls['run']==18+extra
@@ -126,11 +104,11 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
     for row,item in zip(report['audits'],expected):
         latest=row['snapshots'][0]
         if item['scenario'] in ['submitted','empty','lost-run-reply']:
-            require(latest.get('review',{}).get('outcome')=='procedural_checks_passed','rehearsal procedural review failed')
+            require(latest.get('review') is not None and ordinary_submission(latest['review']),'rehearsal submission review failed')
     if connection:
         first_audit=report['audits'][0]
         require(len(first_audit['snapshots'])>=2
-                and first_audit['snapshots'][-1].get('review',{}).get('outcome')=='procedural_checks_passed',
+                and ordinary_submission(first_audit['snapshots'][-1].get('review') or {'outcome':'incomplete'}),
                 'saved-connection follow-up collection is missing or incomplete')
     first=path/'container/open-ordinary-r1/export-0001'
     meta=strict_json(read_file(first/'EXPORT.json'))
@@ -189,14 +167,14 @@ def launch_batch(args):
     (host/'qualification-check.stderr').write_bytes(checked.stderr)
     (host/'qualification-check.exit').write_text(str(checked.returncode)+'\n')
     name=f'stewart-c10-{int(time.time())}-{os.getpid()}'
-    report={'schema':'stewart.c10-launch/1','mode':mode,'bindings':bound,'container':name,
+    report={'schema':'stewart.c10-launch/2','mode':mode,'bindings':bound,'container':name,
         'commission_sha256':digest(raw),'credential_sent':False,'started_at':time.time(),'outcome':'failed'}
-    report['binary_status']='unqualified_study' if packet.get('study_build') else 'qualification_bound'
-    if packet.get('study_build'):
-        report['study_build']=packet['study_build']
     report['credential_source']={'kind':'keychain','service':'stewart-provider','account':connection} if connection else {'kind':'generated' if mode=='rehearse' else 'hidden-entry'}
     env=host_environment()
+    phase='preparation'
     def step(label,argv):
+        nonlocal phase
+        phase=label
         write_json(host/(label+'.argv.json'),argv)
         with (host/(label+'.stdout')).open('xb') as stdout, (host/(label+'.stderr')).open('xb') as stderr:
             result=subprocess.run(argv,cwd=REPO,env=env,stdin=subprocess.DEVNULL,stdout=stdout,stderr=stderr)
@@ -237,6 +215,7 @@ def launch_batch(args):
         write_json(host/'session.argv.json',argv)
         print('Retained container '+name+'; operator commands in '+str(host/'operator.json'),flush=True)
         with (host/'container.stdout').open('xb') as stdout,(host/'container.stderr').open('xb') as stderr:
+            phase='intake'
             proc=subprocess.Popen(argv,cwd=REPO,env=env,stdin=subprocess.PIPE,stdout=stdout,stderr=stderr)
             deadline=time.monotonic()+300
             while not (exported/'READY.json').exists():
@@ -247,27 +226,38 @@ def launch_batch(args):
             require(ready=={'credential_free_intake_verified':True,'audits':[r['id'] for r in packet['runs']]},'intake readiness differs from packet')
             print(json.dumps({'provider':'Anthropic','endpoint':packet['endpoint'],
                 'manager_supplied_account':packet['account'],'credential_source':report['credential_source']}),flush=True)
+            phase='credential-handoff'
             key=(connection_key(connection,rehearsal=mode=='rehearse',record=host/'connection.json')
                  if connection else (b'c10-NONFUNCTIONAL-'+os.urandom(24).hex().encode())
                  if mode=='rehearse' else hidden_credential())
             proc.stdin.write(key)
             proc.stdin.close()
             report['credential_sent']=True
+            phase='placement'
             report['container_exit']=proc.wait()
         step('container-inspect',['container','inspect',name])
+        phase='host-scan'
         report['host_scan']=scan_tree(out,key)
         require(not report['host_scan']['files_with_matches'] and not report['host_scan']['errors'],'host scan failed or uncertain')
+        phase='batch-result'
         session=strict_json(read_file(exported/'RESULT.json'))
-        report['session_outcome']=session['outcome']
-        require(report['container_exit']==0 and session['failed']==session['not_started']==0,'batch incomplete; review retained results')
+        report['session']={'path':'container/RESULT.json','sha256':file_hash(exported/'RESULT.json')}
+        require(session['schema']=='stewart.c10-session/2' and report['container_exit']==0
+                and session['failed']==0,'batch incomplete; review retained results')
         if mode=='rehearse':
+            phase='rehearsal-controls'
+            require(session['not_started']==0,'rehearsal inventory incomplete')
             controls=strict_json(read_file(exported/'review-controls/RESULT.json'))
             require(controls['failed']==0,'reviewer controls failed')
             controls=strict_json(read_file(exported/'operator-controls/RESULT.json'))
             require(controls['failed']==0,'operator controls failed')
-        report['outcome']='completed' if mode=='rehearse' else 'observed_review_required'
+            controls=strict_json(read_file(exported/'report-controls/RESULT.json'))
+            require(controls['failed']==0,'report controls failed')
+        report['outcome']='completed' if mode=='rehearse' else 'observed'
     except (Exception,KeyboardInterrupt) as error:
-        report['error']='Launch or observation incomplete; inspect retained records and status before another action.'
+        report['error']=f'Launch observation incomplete at {phase}; inspect its retained command records and audit status before another action.'
+        report['failure']=failure_details(error,'host')
+        report['failure']['step']=phase
         if isinstance(error,ConnectionError):
             report['connection_error']=error.code
             report['error']=str(error)
@@ -368,6 +358,10 @@ def main():
                        help='Rehearsal only: include these study inputs alongside all conformance controls')
     p=subs.add_parser('review',help='Read all immutable exports without extracting or launching')
     p.add_argument('evidence',type=Path)
+    p=subs.add_parser('report',help='Assemble a proposal, checked technical return and optional attributed assessment; read-only')
+    p.add_argument('block',type=Path,help='Block manifest with proposal and retained plan hashes')
+    p.add_argument('output',type=Path,help='New directory for report.md and matching report.json')
+    p.add_argument('--assessment',type=Path,help='Attributed assessment bound to a technical position')
     p=subs.add_parser('control',help='Operate one retained audit; collect needs its original credential')
     p.add_argument('evidence',type=Path)
     p.add_argument('audit')
@@ -412,16 +406,23 @@ def main():
         elif args.command=='review':
             report=review_batch(args.evidence)
             print(json.dumps(report,indent=2))
-            return any(not r['snapshots'] or any(s.get('review',{}).get('outcome')=='incomplete' for s in r['snapshots']) for r in report['audits'])
+            return any(not r['snapshots'] or (r['snapshots'][-1].get('review') or {}).get('outcome')!='checked' for r in report['audits'])
+        elif args.command=='report':
+            report=write_report(args.block,args.output,args.assessment)
+            issues=current_issues(report)
+            print(f"Report: {args.output/'report.md'}; technical position {report['technical_sha256']}; technical gaps: {len(issues)}.")
+            return bool(issues)
         elif args.command=='control':
             return host_control(args)
         elif args.command=='connection':
             print(json.dumps(connection_status(args.label),indent=2))
         return 0
+    except ReportError as error:
+        parser.exit(1,error.code+': report not assembled; inspect selected input paths and hashes. No source records changed.\n')
     except ConnectionError as error:
         parser.exit(1,error.code+': '+str(error)+'\n')
     except (ValueError,OSError,KeyError,TypeError) as error:
-        if args.command in ['live','rehearse','control','review']:
+        if args.command in ['live','rehearse','control','review','report']:
             parser.exit(1,'Operation incomplete; inspect retained records. No automatic retry or continuation.\n')
         parser.exit(2,str(error)+'\n')
 

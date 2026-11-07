@@ -121,6 +121,8 @@ python3 -I -B apparatus/c10/smoke.py \
 python3 -I -B apparatus/c10/check_review.py \
   "$PWD/.scratch/c10-native-NN/private/open-ordinary-r1" \
   "$PWD/.scratch/c10-review-controls-NN"
+python3 -I -B apparatus/c10/check_reporting.py \
+  "$PWD/.scratch/c10-native-NN/results" "$PWD/.scratch/c10-report-controls-NN"
 ```
 
 `--case open-ordinary` selects one ordinary case; `--audit control-unsubmitted`
@@ -164,7 +166,10 @@ original process streams. It does not claim to test a killed launcher or auditor
 Linux rehearsal also runs 14 reviewer comparisons (12 altered-evidence controls
 and two invariances) and seven operator comparisons. The latter exercise wrong-key
 refusal, manager close, inspection, explicit confirmation, follow-up export,
-manager attribution and preservation of the original snapshot. Live launch
+manager attribution and preservation of the original snapshot. Eleven report
+comparisons cover the complete inventory, separate submission/closure/reply
+observations, unavailable exports, pending and attributed assessments, earlier
+assessment basis, identical reassembly and unchanged sources. Live launch
 requires these complete results and a matching apparatus, binary, image and catalog.
 
 ## Prepare a concrete live commission
@@ -189,8 +194,12 @@ and executable/source/image binding. Unknown fields, duplicate JSON keys and
 duplicate identities are refused. `effort: null` omits effort. The route is
 `https://api.anthropic.com`, with no proxy. The packet allows one placement and
 up to four built-in attempts per provider request. It permits no wrapper retry,
-model fallback or automatic continuation. An unexpected outcome stops the batch;
-all later planned audits remain accounted for as not started.
+model fallback or automatic continuation. Live placement stops after a missing
+checked auditor submission, lost caller reply, incomplete review, failed/withheld
+export or unknown effects. All later audits remain listed as not started. A
+checked limit ending is a policy stop, not an apparatus failure. Rehearsal
+expectations apply only to synthetic controls; a live packet's `submitted`
+scenario does not certify or require a successful scientific answer.
 
 Before authorizing the exact final packet digest, the principal fills its
 non-secret `account` labels and `spending_authority` and reviews a dated provider
@@ -396,12 +405,30 @@ The reviewer reconstructs raw ordinary requests, reconciles request attempts and
 reported/estimated usage, checks the pinned arrangement and output caps, links
 tool effects to accepted edits, validates mechanical citations against witnessed
 inputs, and derives prepared/selected answer bytes and exact delivered membership
-from the edit history. Reports distinguish `procedural_checks_passed`,
-`not_submitted` and `incomplete`, with submission, actor, delivery and closure as
-separate facts. Unused tools and form sections are coverage observations. Empty
-answers are admissible. Review exit zero means its available snapshots were
-read without incomplete evidence; it does not assert auditor submission or
-qualification. Read each outcome, including withheld or failed exports.
+from the edit history. Version 2 reviews distinguish completed procedural checks
+(`checked`) from `incomplete` evidence. Submission, actor, delivery and closure
+are separate facts; an incomplete review leaves those facts unknown. The
+automatic-close and rehearsal-admission consumers still require a checked
+auditor submission. Empty answers are admissible. Review exit zero means every
+planned audit has a checked latest snapshot; it does not assert submission,
+answer quality or qualification. Earlier observations remain visible, including
+when a later collection is withheld or incomplete.
+
+Coverage records include read/search calls, incomplete pages, offered next-page
+calls and later exact tool/input matches with those offers. This narrow check
+establishes what was offered and attempted in complete captures. It does not
+infer understanding, complete reading, successful pagination or answer quality;
+semantically equivalent calls are outside its exact-match count. Missing evidence
+produces unknown coverage, not zero. Live captures remain Stewart-owned evidence.
+
+The version 2 session records distinguish placement observation, lost caller
+reply, pre-close review, automatic close and export. The host retains its own
+operations and a digest reference to the session. A successfully observed live
+policy stop can exit zero while reporting unstarted work. A failed operation or
+incomplete observation remains nonzero. Export reasons distinguish incomplete
+evidence, credential matches, scan uncertainty and archive-write failure. Host
+failures name their step and retain controlled exception classifications; private
+exception text is not printed. Historical receipts retain their original schemas.
 
 Provider usage is not independently observed billing. Cost assessment, billing
 reconciliation, independent observation of live authoring, kill/continuation and
@@ -409,3 +436,77 @@ real signed-summary compaction need their own evidence and explicit disposition.
 Preserve every failed attempt, original and witness through review under
 [the retention rules](../../DEVELOPMENT.md#evidence-and-retention). Nothing here
 removes containers or evidence.
+
+## Assemble an experiment report
+
+[`REPORTING.md`](REPORTING.md) defines the reading, authority boundaries, source
+bindings and later updates. `report` makes a question-first reading from an
+attributed proposal, retained batch plans and optional attributed assessment. It
+does not launch, close, collect or decide scientific success. The technical return
+is available while interpretation is pending.
+
+Create a block manifest using the exact file hashes. Paths are relative to the
+manifest or absolute. Select each retained `container/PLAN.json`; for native
+iteration use `results/PLAN.json`. The proposal is ordinary UTF-8 Markdown.
+
+```json
+{
+  "schema": "stewart.experiment-block/1",
+  "proposal": {
+    "author": "Experimenter name",
+    "document": {"path": "proposal.md", "sha256": "EXACT_PROPOSAL_SHA256"}
+  },
+  "batches": [
+    {"path": "../retained-batch/container/PLAN.json", "sha256": "EXACT_PLAN_SHA256"}
+  ]
+}
+```
+
+```sh
+python3 -I -B apparatus/c10/c10.py report /absolute/block.json /absolute/return-01
+```
+
+The new output directory contains `report.md` and the matching `report.json`.
+The proposal states the question, comparison, discriminating observations,
+budget, explicit placements, variations and stopping rules. It is not a spending
+authorization. The report inventories all planned audits, every collected
+snapshot, current gaps, usage and custody work. Reassembly refuses an existing
+output directory and never writes to a retained batch. An unsupported historical
+session is linked and explicitly unassessed; its available exports can still be
+reviewed from their original bytes. No receipt is upgraded in place.
+
+When the experimenter's assessment is ready, write it as ordinary UTF-8 Markdown
+and bind it to the `technical_sha256` in the technical return:
+
+```json
+{
+  "schema": "stewart.experiment-assessment/1",
+  "technical_sha256": "EXACT_TECHNICAL_POSITION_SHA256",
+  "assessment": {
+    "author": "Experimenter name",
+    "document": {"path": "assessment.md", "sha256": "EXACT_ASSESSMENT_SHA256"}
+  }
+}
+```
+
+```sh
+python3 -I -B apparatus/c10/c10.py report /absolute/block.json /absolute/return-02 \
+  --assessment /absolute/assessment.json
+```
+
+The assessment should explain the findings and limits, unresolved judgment,
+unexercised mechanisms, estimated/calculated costs, independent billing or its
+explicit deferral, and remaining actions with actor and authority. These remain
+the author's claims. Supplying text neither clears technical gaps nor blocks
+custody work. After new collection, an assessment bound to an earlier position
+is visibly marked for reconciliation. A report can be useful with unknown or
+inconclusive findings; it supplies no universal verdict on the experiment.
+
+Report exit status is nonzero for missing or incomplete current observations,
+unassessed session records or execution records needing reconciliation. Later
+checked evidence can resolve unknown effects while retaining the original failure
+as a dated fact; it does not permanently fail the new report.
+Pending interpretation alone does not make it fail. All source identities and
+checked details remain inspectable in JSON; earlier dated observations are not
+replaced by a new account. Neither output establishes independent billing or
+author authenticity.

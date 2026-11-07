@@ -56,7 +56,7 @@ def exercise(root, *, private=None, out=None, target=None, key=None, local=True)
         review=verify(e)
     finally:
         e.close()
-    record('manager-seal-is-not-submission',review['outcome']=='not_submitted'
+    record('manager-seal-is-not-submission',review['outcome']=='checked'
            and review['delivery_verified'] and review['closed'] and not review['auditor_submitted'],review)
     record('original-snapshot-unchanged',file_hash(initial/'work.tar')==original_hash,{'original_sha256':original_hash})
     result={'schema':'stewart.c10-operator-controls/1','checks':checks,'run':len(checks),

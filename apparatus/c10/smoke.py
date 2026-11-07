@@ -52,7 +52,7 @@ def main():
         credential_marker(checks/(audit.root.name+'.json'),key)
     report=execute_batch(args.binary.resolve(),args.evidence/'private',args.evidence/'results',packet,'rehearse',key,sessions,witness,local=True)
     for item in report['audits']:
-        print(item['audit'],item['state'],item.get('review',{}).get('failures',[]))
+        print(item['audit'],item['placement'],item.get('review_before_close',{}).get('failures',[]))
     print(f"Native iteration only: planned={report['planned']} observed={report['observed']} failed={report['failed']} not_started={report['not_started']} skipped_checks={len(report['skipped_checks'])}; model_calls=0")
     if args.check_operations and report['failed']==report['not_started']==0:
         from check_operations import exercise

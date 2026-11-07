@@ -20,7 +20,7 @@ from common import (catalog, credential_bytes, digest, file_hash, inventory, que
 from session import Session, export_evidence_state, failure_details
 from control import safe_state
 from fake import Auditor
-from verify import Evidence, inventory_from_evidence, verify
+from verify import Evidence, inventory_from_evidence, ordinary_submission, verify
 from study import copy_submission, inspect_submission, resolve_submission, supplied_runs
 
 
@@ -164,13 +164,17 @@ class Audit(Session):
         observation = verify(Evidence(self.root))
         write_json(self.evidence/'review-before-close.json', observation)
         # Only a fully checked auditor submission takes ordinary automatic close.
-        if observation['outcome'] == 'procedural_checks_passed' and not lost_reply:
-            self.command('close','close',self.ref)
-            self.command('status-final','status',self.ref)
+        closure = None
+        if ordinary_submission(observation) and not lost_reply:
+            _, close_exit, close_timeout = self.command('close','close',self.ref)
+            final, status_exit, status_timeout = self.command('status-final','status',self.ref)
+            closure = {'close_exit':close_exit, 'status_exit':status_exit,
+                       'timed_out':close_timeout or status_timeout, 'state':safe_state(final)}
         if scenario == 'export-contamination':
             (self.root/'deliberately-contaminated-control').write_bytes(key)
-        return {'audit':self.run_item['id'], 'state': 'reply_lost' if lost_reply else observation['outcome'],
-                'review':observation, 'fake_requests':fake.requests if fake else None}
+        return {'audit':self.run_item['id'], 'placement':'observed', 'caller_reply_lost':lost_reply,
+                'review_before_close':observation, 'automatic_close':closure,
+                'fake_requests':fake.requests if fake else None}
 
 
 def export_snapshot(root, destination, key, *, force_failure=False):
@@ -178,8 +182,14 @@ def export_snapshot(root, destination, key, *, force_failure=False):
     destination.mkdir(mode=0o700)
     state = export_evidence_state(root)
     scan = scan_tree(root,key)
-    result = {'schema':'stewart.c10-export/1', 'started_at':time.time(), 'outcome':'withheld',
-        'evidence_state':state, 'scan':scan, 'archive':None}
+    result = {'schema':'stewart.c10-export/2', 'started_at':time.time(), 'outcome':'withheld',
+        'evidence_state':state, 'scan':scan, 'archive':None, 'reasons':[]}
+    if state != 'complete':
+        result['reasons'].append('evidence_incomplete')
+    if scan['files_with_matches']:
+        result['reasons'].append('credential_match')
+    if scan['errors']:
+        result['reasons'].append('scan_incomplete')
     if state == 'complete' and not scan['files_with_matches'] and not scan['errors']:
         target = destination/'work.tar'
         try:
@@ -192,6 +202,7 @@ def export_snapshot(root, destination, key, *, force_failure=False):
             result.update(outcome='exported', archive={'bytes':target.stat().st_size,'sha256':file_hash(target)})
         except OSError:
             result['outcome'] = 'failed'
+            result['reasons'].append('archive_write_failed')
     result['ended_at'] = time.time()
     write_json(destination/'EXPORT.json',result)
     return result
@@ -205,37 +216,77 @@ def locked_export(audit, out, key, *, force_failure=False):
         return export_snapshot(audit.root,out,key,force_failure=force_failure)
 
 
+def stop_reason(observed, export):
+    """Conservative placement policy; assessment never participates."""
+    review = observed['review_before_close']
+    closure = observed['automatic_close']
+    if closure is not None and (closure['close_exit'] != 0 or closure['status_exit'] != 0
+            or closure['timed_out'] or closure['state']['closed'] is not True):
+        return 'custody_observation_incomplete'
+    if review['outcome'] != 'checked':
+        return 'review_incomplete'
+    if export['outcome'] != 'exported':
+        return 'export_' + export['outcome']
+    if observed['caller_reply_lost']:
+        return 'caller_reply_lost'
+    if not ordinary_submission(review):
+        return 'without_auditor_submission'
+    return None
+
+
+def rehearsal_match(observed, export, scenario):
+    expected_export = {'reflected-body':'withheld','export-contamination':'withheld',
+                       'export-failure':'failed'}.get(scenario,'exported')
+    review = observed['review_before_close']
+    if scenario == 'reflected-body':
+        expected_review = review['outcome'] == 'incomplete'
+    elif scenario in ['unsubmitted','provider-rejected']:
+        expected_review = review['outcome'] == 'checked' and review['auditor_submitted'] is False
+    else:
+        expected_review = ordinary_submission(review)
+    return (expected_review and export['outcome'] == expected_export
+            and observed['caller_reply_lost'] is (scenario == 'lost-run-reply')
+            and stop_reason(observed, export) != 'custody_observation_incomplete')
+
+
 def execute_batch(binary, private, out, packet, mode, key, sessions, witness, *, local=False):
-    rows, stopped = [], False
+    rows, halt = [], None
     for audit in sessions:
         item = audit.run_item
-        if stopped:
-            event(audit.evidence,'not_started',reason='earlier unexpected outcome')
-            rows.append({'audit':item['id'],'state':'not_started','export':None})
+        if halt is not None:
+            event(audit.evidence,'not_started',reason=halt['reason'])
+            rows.append({'audit':item['id'],'placement':'not_started','export':None})
             continue
+        observed = None
         try:
             observed = audit.execute(key,witness)
             target = out/item['id']/'export-0001'
             target.parent.mkdir(mode=0o700)
             export = locked_export(audit,target,key,force_failure=item['scenario']=='export-failure')
-            expected = {'reflected-body':'withheld','export-contamination':'withheld','export-failure':'failed'}.get(item['scenario'],'exported')
-            expected_review = {'unsubmitted':'not_submitted','provider-rejected':'not_submitted',
-                'lost-run-reply':'reply_lost','reflected-body':'incomplete'}.get(item['scenario'],'procedural_checks_passed')
-            ok = observed['state'] == expected_review and export['outcome'] == expected
-            rows.append({**observed,'export':export,'expected_observation':ok})
-            if mode == 'live' and (observed['state'] != 'procedural_checks_passed' or export['outcome']!='exported') or not ok:
-                stopped = True
+            reason = stop_reason(observed, export)
+            row = {**observed,'export':export}
+            if mode == 'rehearse':
+                row['expected_observation'] = rehearsal_match(observed,export,item['scenario'])
+                row['failed'] = not row['expected_observation']
+                reason = 'rehearsal_expectation_mismatch' if row['failed'] else None
+            else:
+                row['failed'] = reason not in [None,'without_auditor_submission','caller_reply_lost']
+            rows.append(row)
+            if reason is not None:
+                halt = {'audit':item['id'],'reason':reason}
         except Exception as error:
             detail = failure_details(error,audit.phase,item['id'])
+            detail['stage'] = 'export' if observed is not None else 'placement'
             write_json(audit.evidence/'failure.json',detail)
-            rows.append({'audit':item['id'],'state':'unknown','failure':detail,'export':None,'expected_observation':False})
-            stopped = True
-    report = {'schema':'stewart.c10-session/1', 'mode':mode, 'local_iteration_only':local,
-        'binary_status':'unqualified_study' if packet.get('study_build') else 'qualification_bound',
-        'outcome':'observed_review_required' if mode=='live' else ('passed' if not stopped else 'failed'),
-        'planned':len(sessions), 'observed':sum(r['state'] not in ['not_started','unknown'] for r in rows),
-        'failed':sum(r.get('expected_observation') is False for r in rows),
-        'not_started':sum(r['state']=='not_started' for r in rows), 'audits':rows,
+            row = observed if observed is not None else {'audit':item['id'],'placement':'unknown'}
+            rows.append({**row,'failure':detail,'export':None,'failed':True})
+            halt = {'audit':item['id'],'reason':'operation_failed'}
+    failed = sum(r.get('failed') is True for r in rows)
+    report = {'schema':'stewart.c10-session/2', 'mode':mode, 'local_iteration_only':local,
+        'outcome':('incomplete' if failed else 'observed') if mode=='live' else ('failed' if halt else 'passed'),
+        'planned':len(sessions), 'observed':sum(r['placement']=='observed' for r in rows),
+        'failed':failed, 'halt':halt,
+        'not_started':sum(r['placement']=='not_started' for r in rows), 'audits':rows,
         'model_calls':0 if mode=='rehearse' else None, 'model_qualified':False,
         'skipped_checks':['Linux process-access controls (native iteration)'] if local else [],
         'environment':{'system':platform.system(),'machine':platform.machine(),'kernel':platform.release(),
@@ -319,11 +370,18 @@ def main():
                 scan=scan_tree(study_controls,key)
                 require(not scan['files_with_matches'] and not scan['errors'],'study-review export scan failed')
                 shutil.copytree(study_controls,args.out/'study-review-controls')
+            from check_reporting import exercise as exercise_reporting
+            reporting_root=args.private.parent/'c10-report-controls'
+            reporting=exercise_reporting(args.out,reporting_root)
+            scan=scan_tree(reporting_root,key)
+            require(not scan['files_with_matches'] and not scan['errors'],'report-control export scan failed')
+            shutil.copytree(reporting_root,args.out/'report-controls')
+            require(reporting['failed']==0,'report controls failed')
         del key
         write_json(args.out/'RESOURCES.json',{'self_maxrss_kib':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
             'children_maxrss_kib':resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,
             'scope':'Linux process high-water RSS, not simultaneous container memory or full C10 scale qualification'})
-        return report['failed'] > 0 or report['not_started'] > 0
+        return report['failed'] > 0 or args.mode == 'rehearse' and report['not_started'] > 0
     except Exception as error:
         # Never expose raw exceptions: they may contain credential-bearing evidence.
         write_json(args.out/'FAILURE.json',failure_details(error,'batch'))

@@ -95,8 +95,8 @@ def usage_counts(value):
 
 def verify(evidence):
     """Conservative small-commission report. Unsupported mechanisms stay incomplete."""
-    report = {'schema': 'stewart.c10-review/1', 'outcome': 'incomplete',
-        'checks': [], 'failures': [], 'coverage': {}, 'model_qualified': False,
+    report = {'schema': 'stewart.c10-review/2', 'outcome': 'incomplete',
+        'checks': [], 'failures': [], 'coverage': None, 'model_qualified': False,
         'unassessed': ['full C10 repetition matrix', 'compaction', 'interrupted continuation'],
         'witness_scope': None}
     def check(condition, code):
@@ -111,7 +111,46 @@ def verify(evidence):
         code = str(error) if type(error) is ValueError and re.fullmatch(r'[a-z_]{1,80}', str(error)) else 'unreadable_or_unsupported_evidence'
         report['failures'].append(code)
         report['outcome'] = 'incomplete'
+        # Partial checks are diagnostic, not a current custody or coverage finding.
+        for field in ['coverage', 'usage', 'ending', 'cause', 'auditor_submitted',
+                      'seal_actor', 'delivery_verified', 'closed']:
+            report[field] = None
     return report
+
+
+def ordinary_submission(report):
+    """The existing automatic-close/admission condition, not an answer grade."""
+    return (report['outcome'] == 'checked' and report['ending'] == 'sealed'
+            and report['auditor_submitted'] is True and report['delivery_verified'] is True)
+
+
+class PagingObservation:
+    """Count captured read/search affordances, not comprehension or answer quality.
+
+    A follow is an exact tool/input match with a previously offered next call.
+    Semantically equivalent operands are outside this deliberately narrow check.
+    """
+    def __init__(self):
+        self.pending = []
+        self.counts = dict(completed_read_search_calls=0, incomplete_pages=0,
+                           next_calls_offered=0, exact_next_call_attempts=0)
+
+    def observe(self, tool, operands, reply):
+        call = {'tool':tool, 'input':operands}
+        if call in self.pending:
+            self.counts['exact_next_call_attempts'] += 1
+            self.pending.remove(call)
+        if tool not in ['read','search'] or reply['outcome'] != 'completed':
+            return
+        require(type(reply['data']['complete']) is bool and isinstance(reply['next'],list),
+                'paging_observation_shape')
+        self.counts['completed_read_search_calls'] += 1
+        self.counts['incomplete_pages'] += not reply['data']['complete']
+        for item in reply['next']:
+            if item['tool'] == tool:
+                require(isinstance(item['input'],dict), 'paging_observation_shape')
+                self.pending.append({'tool':tool, 'input':item['input']})
+                self.counts['next_calls_offered'] += 1
 
 
 def _verify(e, report, check):
@@ -317,6 +356,7 @@ def _verify(e, report, check):
     revision, citations_checked, submitted = 0, 0, False
     submit_invocation, submit_data, previous_results = None, None, {}
     operations = Counter()
+    paging = PagingObservation()
     refusals = 0
     for call_number, name in enumerate(results, 1):
         result_record = e.json(name)
@@ -336,6 +376,7 @@ def _verify(e, report, check):
         check((digest(operands.raw) if operands else None) == result['input_sha256'], 'tool_input_binding')
         reply = strict_json(result['content'][0]['text'])
         check(reply['outcome'] == result['outcome'] and reply['operation'] == tool, 'tool_reply_binding')
+        paging.observe(tool, strict_json(operands.raw) if operands else None, reply)
         previous_results[call_number] = result
         if tool in {item['name'] for item in arr['tools']}:
             operations[tool] += 1
@@ -398,9 +439,11 @@ def _verify(e, report, check):
     check(used_blocks == set(response_blocks), 'all_used_tool_blocks_accounted')
     report['coverage'] = {'operations': dict(operations), 'refused_or_failed_calls': refusals,
         'citations_checked': citations_checked, 'selected_entries': len(selected),
+        'pagination':paging.counts,
         'unused_tools': [tool['name'] for tool in arr['tools'] if not operations[tool['name']]]}
     seals = [r for r in records if r['kind'] == 'seal']
-    report.update(auditor_submitted=False, delivery_verified=False, closed=any(r['kind']=='closed' for r in records))
+    report.update(auditor_submitted=False, seal_actor=None, delivery_verified=False,
+                  closed=any(r['kind']=='closed' for r in records))
     if seals:
         check(len(seals) == 1, 'single_seal')
         seal = seals[0]['body']
@@ -436,8 +479,7 @@ def _verify(e, report, check):
                 check(e.read(package + name) == content, 'exact_delivered_bytes')
             report['delivery_verified'] = True
         report['auditor_submitted'] = submitted and seal['actor'] == 'auditor'
-    report['outcome'] = ('procedural_checks_passed' if ended['ending'] == 'sealed'
-        and report['auditor_submitted'] and report['delivery_verified'] else 'not_submitted')
+    report['outcome'] = 'checked'
 
 
 def inventory_from_evidence(e, prefix):

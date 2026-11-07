@@ -62,7 +62,7 @@ def exercise(root,out):
     binding=original.json('evidence/binding.json')
     require(binding['mode']=='rehearse','review controls require synthetic evidence')
     baseline=verify(original)
-    require(baseline['outcome']=='procedural_checks_passed','source must pass before applying controls')
+    require(baseline['outcome']=='checked','source must pass before applying controls')
     out.mkdir(mode=0o700)
     write_json(out/'SOURCE.json',{'path':str(root),'binding_sha256':digest(original.read('evidence/binding.json')),
         'files':{name:digest(original.read(name)) for name in sorted(original.names)}})
@@ -79,7 +79,7 @@ def exercise(root,out):
         view=View(original)
         change(view)
         result=verify(view)
-        ok=(result['outcome']=='incomplete' and expected in result['failures']) if control else result['outcome']=='procedural_checks_passed'
+        ok=(result['outcome']=='incomplete' and expected in result['failures']) if control else result['outcome']=='checked'
         folder=out/name;folder.mkdir()
         changes=[]
         for n,(path,raw) in enumerate(sorted(view.changes.items()),1):

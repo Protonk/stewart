@@ -83,6 +83,9 @@ def main():
         result=operate(Path('/work/c10-private'),Path('/out'),args.audit,args.operation,confirm=args.confirm,key=key)
         import json
         print(json.dumps(result,indent=2))
+        if result.get('export',{}).get('outcome','exported') != 'exported':
+            print('Collection did not export: '+', '.join(result['export']['reasons'])+
+                  '. Private originals remain; no repeat or continuation is authorized.',file=sys.stderr)
         return result['exit'] != 0 or result.get('export',{}).get('outcome','exported')!='exported'
     except Exception:
         print('Operator observation incomplete; private command records remain. Inspect status before another action.',file=sys.stderr)
