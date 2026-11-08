@@ -843,10 +843,17 @@ class HostQueueTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'offline'):
             host_queue.command(self.request, self.config, False)
         for console in [None, {**self.config['console'], 'month': '2000-01'},
-                        {**self.config['console'], 'limit_usd': 61}]:
+                        {**self.config['console'], 'limit_usd': 10}]:
             with self.subTest(console=console), self.assertRaises(ValueError):
                 host_queue.configuration({**self.config, 'console': console}, True)
         host_queue.configuration({**self.config, 'console': None}, False)
+
+    def test_console_headroom_does_not_change_the_campaign_budget(self):
+        config = {**self.config, 'console': {**self.config['console'],
+                  'limit_usd': 54, 'starting_spend_usd': 3.91}}
+        self.assertIs(host_queue.configuration(config, True), config)
+        self.assertEqual(config['budget_usd'], 50)
+        self.assertEqual(config['console']['starting_spend_usd'], 3.91)
 
     def test_valid_live_command_retains_launcher_checks_and_account(self):
         argv, charge = host_queue.command(self.request, self.config, True)

@@ -15,10 +15,12 @@ use permits `console: null` and unfilled account/workspace labels. For live use,
 `console` contains `scope`, `month` (`YYYY-MM` in UTC), `limit_usd`,
 `starting_spend_usd`, `recorded_by`, `recorded_at` and `credential_binding` (an
 attributed statement identifying which key/workspace the setting covers). The
-runner checks completeness, current month and positive headroom no greater than
-the campaign budget. It does not inspect the Console or validate that statement.
-The experimenter accounts for earlier campaign charges before continuing; a
-monthly cap refresh does not renew the campaign budget.
+runner checks completeness, current month and positive headroom. It does not
+inspect the Console or validate that statement. Console headroom can differ from
+the authorized campaign budget; neither extra headroom nor a monthly cap refresh
+increases that authorization. Starting spend may be approximate: preserve the
+principal's original observation and its precision alongside the configuration.
+The experimenter accounts for campaign charges before continuing.
 
 Start from the repository root in a host terminal after committing apparatus:
 

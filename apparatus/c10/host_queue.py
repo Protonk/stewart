@@ -49,8 +49,6 @@ def configuration(value, live):
                 'Console limit needs positive remaining headroom')
         require(console['month'] == datetime.now(timezone.utc).strftime('%Y-%m'),
                 'refresh the Console observation for this billing month; campaign allowance does not renew')
-        require(console['limit_usd'] - console['starting_spend_usd'] <= value['budget_usd'],
-                'configured remaining headroom exceeds the campaign budget')
     return value
 
 

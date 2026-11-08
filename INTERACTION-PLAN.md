@@ -83,11 +83,15 @@ Haiku model is `claude-haiku-5-5`; there is no model fallback in this commission
 
 ### Spending and execution
 
-Use the Anthropic Console spending limit as the provider-side spending backstop
-once the principal has configured it for the workspace/account and credential
-used by this campaign. This setting has not yet been confirmed. The limit's
-scope and starting spend must be recorded so existing or shared usage is not
-mistaken for campaign usage. Console limits are monthly; the USD 50 campaign
+Use the Anthropic Console spending limit as the provider-side spending backstop.
+On 2026-11-07 the principal reported a USD 54 limit for “stewart total,” with
+approximately USD 3.91 already spent. Preserve that precision: the roughly
+USD 50.09 headroom is not an increase in the USD 50 campaign authorization.
+Continue the existing `stewart-haiku` connection and previously recorded Stewart
+workspace. The attributed observation and connection basis are retained in
+`.scratch/haiku-recovery-02/console-observation-01.json`; the Console has not been
+independently inspected. Existing or shared usage is not campaign usage.
+Console limits are monthly; the USD 50 campaign
 authorization does not renew with the calendar month or fresh credits.
 The [provider's spend-limit documentation](https://platform.claude.com/docs/en/api/rate-limits#spend-limits)
 describes the monthly scope and refusal of further requests when a configured
@@ -119,14 +123,14 @@ and checking that setup is included in this commission.
   observations and the experimenter's review. `prepare.py` freezes templates,
   proposals, source/reference hashes and binary/image identity. Run one candidate
   at a time; preserve non-reproduction, prevention and inconclusive findings.
-- [ ] Commit preparation, then run the queued offline Linux rehearsal with all
-  eight frozen templates and the synthetic saved connection. Review all controls
-  and later collection; bind selected live packets to that matching apparatus,
-  binary, image and input evidence. The prior fixed-catalog rehearsal does not
-  cover these templates or the delegated host route.
-- [ ] Enable the [host queue](apparatus/c10/HOST-QUEUE.md) after recording the
-  actual Console scope, month, starting spend and campaign credential binding.
-  Keep one queue for the campaign. Its dispatch records retain commands and
+- [ ] Commit the host metadata validation correction and run its queued offline
+  Linux rehearsal, covering all eight frozen templates and synthetic later
+  collection. The activation command verifies all controls before starting the
+  worker. Bind selected live packets to that matching apparatus, binary, image
+  and input evidence. Keep earlier rehearsal records unchanged.
+- [ ] Start the [host queue](apparatus/c10/HOST-QUEUE.md) using the recorded Console
+  observation and continued credential binding. Keep the existing
+  `.scratch/haiku-recovery-02/queue` for the campaign. Its dispatch records retain commands and
   uncertain effects; they do not replace C10 evidence or enforce dollar spending.
   Existing Keychain permission prompts remain an explicit setup consideration.
 - [ ] Conduct bounded comparisons and useful follow-ups. Return a short account
