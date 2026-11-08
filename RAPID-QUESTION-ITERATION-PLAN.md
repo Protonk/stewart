@@ -130,6 +130,10 @@ Preserve the failed checks and their dispositions when costing the cycle.
   design.
 - [ ] Compare the design with the reference on the measured cycle and on the
   obligations, not on preference. Retain both documents.
+  Distinguish requirements grounded in custody and attribution from hypotheses
+  prompted by Haiku's behavior. Identify how each proposed shape would support
+  comparison with other auditors, without building general guidance around one
+  model's habits or requiring every observed Haiku deficiency to be eliminated.
 
 ## The question
 

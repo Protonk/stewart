@@ -54,6 +54,25 @@ are deferred at the compaction-review boundary, and no permanent product change
 has been selected. Independent billing is explicitly unobserved; it does not
 prevent completion of this experimental block.
 
+## Broader auditor evidence
+
+The principal wants to move beyond Haiku as the main experimental auditor to
+avoid adapting Stewart too closely to its habits. Keep its completed encounters
+as reference evidence. Additional Haiku placements should answer a named
+uncertainty or check a specific repair, with a stopping condition; polishing its
+answers is not an open-ended assignment.
+
+- [ ] Prepare a bounded comparison for the principal's choice of next models
+  and budget. Carry forward a small set of discriminating cases and include
+  fresh material, identifying which questions, inputs and checks remain fixed
+  and which runtime or model differences prevent a direct comparison.
+- [ ] Distinguish behavior that recurs across auditors from behavior that remains
+  specific to one model or encounter. Use those observations to test proposed
+  guidance and interfaces; preserve admissible poor answers, repairs and
+  inconclusive findings without introducing a general quality gate.
+
+No next model, provider change or paid placement is selected by this plan.
+
 ## Completed Haiku stress one-offs
 
 The principal selected five bounded Haiku stress one-offs to finish the earlier
