@@ -54,6 +54,31 @@ are deferred at the compaction-review boundary, and no permanent product change
 has been selected. Independent billing is explicitly unobserved; it does not
 prevent completion of this experimental block.
 
+## Vocabulary check with Haiku
+
+Prepare a small Haiku check of the vocabulary revision. This is a new bounded
+block; the completed campaign's unused ceiling does not itself authorize its
+placements.
+
+- [ ] Bind a compact comparison to the implemented vocabulary revision and its
+  qualification/rehearsal evidence. Hold question, material, family guidance,
+  model and limits fixed wherever a comparison is claimed. Old study results
+  with other instructions are contextual evidence, not matched controls.
+- [ ] Cover ordinary recording/preparation/submission, re-entry and recovery
+  from a concrete refusal, and a constrained ending. Plan a small control/candidate
+  comparison, normally one pair per case; name any additional placement's question
+  before launch. Count a mechanism as exercised only when the interaction shows it.
+- [ ] Keep manager lifecycle/view checks in the offline suite and attributed
+  readings. Haiku auditors do not see manager CLI summaries, so their success
+  cannot establish that those summaries are understandable to managers. Family-ID
+  exposure, if selected, is a changed auditor input and must be recorded as such.
+- [ ] Present the exact templates, placement/continuation bounds, cost basis and
+  spending cap for a fresh bounded commission. Do not launch from this plan alone
+  or conduct a usage-limit study as a side effect of a constrained-ending case.
+- [ ] Return the procedural position, observed repairs/deficiencies, custody and
+  resources with attributed interpretation. Resolve a specific defect if needed,
+  then finish the block; Haiku-specific polish is not an exit condition.
+
 ## Broader auditor evidence
 
 The principal wants to move beyond Haiku as the main experimental auditor to
@@ -62,8 +87,9 @@ as reference evidence. Additional Haiku placements should answer a named
 uncertainty or check a specific repair, with a stopping condition; polishing its
 answers is not an open-ended assignment.
 
-- [ ] Prepare a bounded comparison for the principal's choice of next models
-  and budget. Carry forward a small set of discriminating cases and include
+- [ ] Prepare a bounded comparison with Opus as the principal's intended next
+  candidate; bind the exact model and budget before launch. Carry forward a
+  small set of discriminating cases and include
   fresh material, identifying which questions, inputs and checks remain fixed
   and which runtime or model differences prevent a direct comparison.
 - [ ] Distinguish behavior that recurs across auditors from behavior that remains
@@ -71,7 +97,8 @@ answers is not an open-ended assignment.
   guidance and interfaces; preserve admissible poor answers, repairs and
   inconclusive findings without introducing a general quality gate.
 
-No next model, provider change or paid placement is selected by this plan.
+The model's exact identity, any provider change and paid placements still need
+their bounded commission; the intended direction is not launch authority.
 
 ## Completed Haiku stress one-offs
 
