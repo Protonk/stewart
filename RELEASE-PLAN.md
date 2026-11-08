@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Prepare the agreed Haiku failure-and-recovery campaign, enable delegated execution with the Console spending limit, then conduct bounded comparisons | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Current | Rehearse the prepared Haiku block and host route, enable delegated execution with the Console spending limit, then conduct bounded comparisons | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Preparatory work | Complete the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the measured reference | Obtain and compare the independent rapid-iteration designs for the principal's architecture choice | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice | Build and demonstrate the chosen rapid-iteration path under an applicable bounded commission | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |

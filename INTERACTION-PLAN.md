@@ -109,21 +109,26 @@ and checking that setup is included in this commission.
 
 ### Remaining preparation and conduct
 
-- [ ] Prepare small inadequate-evidence and citation-repair comparisons first.
-  Recording under output pressure and an actually offered pagination affordance
-  are follow-up candidates. Use retained findings; do not repeat a completed run
-  merely to recreate its history. Keep reference answers and private study checks
-  outside the auditor's supplied world.
-- [ ] Freeze each trial's inputs, build, settings and discriminating observations
-  before launch. Include controls and invariances where they support the claim;
-  distinguish unexercised mechanisms, missing evidence and observed absence.
-  The agent owns these choices and any necessary answer reading.
-- [ ] Bind the declared study variants and supplied inputs to the applicable
-  offline checks and matching Linux rehearsal. Preserve explicit unqualified
-  study status where applicable. The fixed-catalog reporting rehearsal does not
-  establish saved-connection or new-template coverage.
-- [ ] Establish the delegated execution route and record the Console limit's
-  scope, starting spend and campaign credential binding.
+- [x] Prepare the first [evidence-limit and citation-repair block](apparatus/studies/haiku-recovery/STUDY.md).
+  Eight small candidate audits use the qualified `acceptance-05` binary, with
+  evidence/valid-citation controls and irrelevant-change invariances. The citation
+  fault is an explicitly seeded exercise; it measures recovery, not error incidence.
+  Reference judgments stay outside the submissions. Recording under output pressure
+  and an actually offered pagination affordance remain follow-up candidates.
+- [x] Specify exact model, effort, limits, input generation, discriminating
+  observations and the experimenter's review. `prepare.py` freezes templates,
+  proposals, source/reference hashes and binary/image identity. Run one candidate
+  at a time; preserve non-reproduction, prevention and inconclusive findings.
+- [ ] Commit preparation, then run the queued offline Linux rehearsal with all
+  eight frozen templates and the synthetic saved connection. Review all controls
+  and later collection; bind selected live packets to that matching apparatus,
+  binary, image and input evidence. The prior fixed-catalog rehearsal does not
+  cover these templates or the delegated host route.
+- [ ] Enable the [host queue](apparatus/c10/HOST-QUEUE.md) after recording the
+  actual Console scope, month, starting spend and campaign credential binding.
+  Keep one queue for the campaign. Its dispatch records retain commands and
+  uncertain effects; they do not replace C10 evidence or enforce dollar spending.
+  Existing Keychain permission prompts remain an explicit setup consideration.
 - [ ] Conduct bounded comparisons and useful follow-ups. Return a short account
   of each case: reproducer, failure, what the comparison establishes, recovery,
   uncertainty, spend and custody disposition. Update the principal after the

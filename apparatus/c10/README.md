@@ -201,9 +201,10 @@ checked limit ending is a policy stop, not an apparatus failure. Rehearsal
 expectations apply only to synthetic controls; a live packet's `submitted`
 scenario does not certify or require a successful scientific answer.
 
-Before authorizing the exact final packet digest, the principal fills its
-non-secret `account` labels and `spending_authority` and reviews a dated provider
-compatibility/cost assessment. A nonempty authority field is an input guard,
+Before launching the exact final packet digest, the principal or an experimenter
+acting under an explicit bounded delegation fills its non-secret `account` labels
+and `spending_authority` and reviews a dated provider compatibility/cost assessment.
+A nonempty authority field is an input guard,
 not proof of permission. Do not put credentials in any packet field. Token
 allowances and a watchdog are not a dollar ceiling. These commands do not
 authorize a live run:
@@ -215,7 +216,9 @@ python3 -I -B apparatus/c10/c10.py live "$PWD/.scratch/c10-live-NN" \
   --approved-commission APPROVED_SHA256 --rehearsal "$PWD/.scratch/c10-launch-NN"
 ```
 
-Run an authorized live launch in a separate interactive terminal. The launcher
+Run an authorized live launch in a separate interactive terminal, or use the
+[delegated host queue](HOST-QUEUE.md) under an explicit campaign commission.
+The launcher
 first checks bindings, opens a credential-free TCP connection to the provider
 and completes every intake/readback. It then obtains the key by hidden entry or
 the explicitly selected saved connection and sends it through an inherited

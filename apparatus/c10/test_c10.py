@@ -26,6 +26,7 @@ from study import (case_from_question, copy_submission, inspect_submission,
                    study_proposal)
 from verify import tree_inventory_from_evidence
 import study_build
+import host_queue
 from fake import follow_pages
 
 
@@ -805,6 +806,172 @@ class ReportingTests(unittest.TestCase):
         self.assertEqual(offered.counts['incomplete_pages'],1)
         with self.assertRaises(KeyError):
             PagingObservation().observe('read',{}, {'outcome':'completed','data':{},'next':[]})
+
+
+class HostQueueTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        (self.root / '.scratch').mkdir()
+        patch = mock.patch.object(host_queue, 'REPO', self.root)
+        patch.start(); self.addCleanup(patch.stop)
+        self.config = {'campaign': 'test-campaign', 'authority': 'bounded test authority',
+            'model': 'test-model', 'qualification': 'test-qualified',
+            'account': {'account_label': 'test', 'workspace_id': 'test-workspace', 'credential_label': 'test-key'},
+            'synthetic_connection': 'test-synthetic', 'placement_ceiling': 2, 'budget_usd': 50,
+            'console': {'scope': 'test workspace', 'month': host_queue.datetime.now(host_queue.timezone.utc).strftime('%Y-%m'),
+                'limit_usd': 60, 'starting_spend_usd': 10, 'recorded_by': 'test operator',
+                'recorded_at': 'test time', 'credential_binding': 'test-key belongs to this workspace'}}
+        self.packet = proposal('test-model', ['open-ordinary'])
+        self.packet['account'] = self.config['account'].copy()
+        self.packet['spending_authority'] = self.config['authority']
+        self.packet['bindings'] = dict.fromkeys(self.packet['bindings'], 'test-binding')
+        self.packet['bindings']['qualification_id'] = 'test-qualified'
+        self.path = self.root / 'packet.json'
+        self.save_packet()
+        self.request = {'operation': 'live', 'evidence': str(self.root / '.scratch/live-01'),
+            'packet': str(self.path), 'sha256': digest(read_file(self.path)),
+            'rehearsal': str(self.root / '.scratch/rehearsal-01')}
+
+    def save_packet(self):
+        self.path.write_text(json.dumps(self.packet))
+        if hasattr(self, 'request'):
+            self.request['sha256'] = digest(read_file(self.path))
+
+    def test_live_needs_explicit_enable_and_current_console_record(self):
+        with self.assertRaisesRegex(ValueError, 'offline'):
+            host_queue.command(self.request, self.config, False)
+        for console in [None, {**self.config['console'], 'month': '2000-01'},
+                        {**self.config['console'], 'limit_usd': 61}]:
+            with self.subTest(console=console), self.assertRaises(ValueError):
+                host_queue.configuration({**self.config, 'console': console}, True)
+        host_queue.configuration({**self.config, 'console': None}, False)
+
+    def test_valid_live_command_retains_launcher_checks_and_account(self):
+        argv, charge = host_queue.command(self.request, self.config, True)
+        self.assertEqual(charge, 1)
+        self.assertEqual(argv[3], str(host_queue.HERE / 'c10.py'))
+        for flag, value in [('--approved-commission', self.request['sha256']),
+                            ('--rehearsal', self.request['rehearsal']), ('--connection', 'test-key')]:
+            self.assertEqual(argv[argv.index(flag) + 1], value)
+        self.assertNotIn('shell', argv)
+
+    def test_different_model_authority_account_and_multiple_placements_refuse(self):
+        original = copy.deepcopy(self.packet)
+        for change in [{'model': 'other'}, {'spending_authority': 'other'},
+                       {'account': {**self.packet['account'], 'credential_label': 'other'}},
+                       {'runs': proposal('test-model', ['open-ordinary', 'open-inadequate'])['runs']}]:
+            with self.subTest(change=change):
+                self.packet = {**copy.deepcopy(original), **change}; self.save_packet()
+                with self.assertRaises(ValueError):
+                    host_queue.command(self.request, self.config, True)
+
+    def test_changed_packet_and_existing_evidence_refuse(self):
+        self.path.write_bytes(read_file(self.path) + b' ')
+        with self.assertRaisesRegex(ValueError, 'digest'):
+            host_queue.command(self.request, self.config, True)
+        self.save_packet()
+        Path(self.request['evidence']).mkdir()
+        with self.assertRaisesRegex(ValueError, 'already exists'):
+            host_queue.command(self.request, self.config, True)
+
+    def test_control_scope_and_no_surrender(self):
+        out = self.root / '.scratch/live-01'
+        (out / 'staging').mkdir(parents=True)
+        (out / 'staging/commission.json').write_bytes(read_file(self.path))
+        request = {'operation': 'collect', 'evidence': str(out), 'audit': 'open-ordinary-r1', 'confirm': None}
+        argv, charge = host_queue.command(request, self.config, False)
+        self.assertEqual(charge, 0); self.assertEqual(argv[-2:], ['--connection', 'test-key'])
+        for operation in ['surrender', 'resume', 'delete', 'sh']:
+            with self.assertRaises(ValueError):
+                host_queue.command({**request, 'operation': operation}, self.config, False)
+        with self.assertRaises(ValueError):
+            host_queue.command(request, {**self.config, 'authority': 'different'}, False)
+
+    def test_dispatch_retains_streams_and_never_repeats_claim(self):
+        (self.root / 'claims').mkdir()
+        argv = [sys.executable, '-I', '-B', '-c', 'import sys; print("fake output"); print("fake error", file=sys.stderr); sys.exit(7)']
+        self.assertEqual(host_queue.dispatch(self.root, 'attempt', b'{}', argv, 1, 'config'), 7)
+        claim = self.root / 'claims/attempt'
+        self.assertEqual(read_file(claim / 'stdout'), b'fake output\n')
+        self.assertEqual(read_file(claim / 'stderr'), b'fake error\n')
+        self.assertFalse(host_queue.reconciled(claim))
+        with self.assertRaises(FileExistsError):
+            host_queue.dispatch(self.root, 'attempt', b'{}', argv, 1, 'config')
+        self.assertEqual(strict_json(read_file(claim / 'result.json'))['exit'], 7)
+
+    def test_interruption_keeps_claim_and_needs_attributed_evidence(self):
+        (self.root / 'claims').mkdir()
+        with mock.patch.object(host_queue.subprocess, 'run', side_effect=OSError('lost caller')):
+            with self.assertRaises(OSError):
+                host_queue.dispatch(self.root, 'attempt', b'{}', ['fake'], 1, 'config')
+        claim = self.root / 'claims/attempt'
+        self.assertFalse((claim / 'result.json').exists())
+        self.assertFalse(host_queue.reconciled(claim))
+        (claim / 'result.json').write_bytes(b'{"exit":')
+        self.assertFalse(host_queue.reconciled(claim))
+        witness = self.root / 'witness.json'; witness.write_bytes(b'{"observed":"fake stopped"}')
+        write_json(claim / 'reconciliation.json', {'author': 'test reader', 'disposition': 'fake effects reconciled',
+            'evidence': [{'path': str(witness), 'sha256': digest(read_file(witness))}]})
+        self.assertTrue(host_queue.reconciled(claim))
+        witness.write_bytes(b'changed')
+        with self.assertRaises(ValueError): host_queue.reconciled(claim)
+
+    def test_queue_placement_bound(self):
+        queue = self.root / 'queue'
+        (queue / 'requests').mkdir(parents=True)
+        (queue / 'claims/previous').mkdir(parents=True)
+        write_json(queue / 'claims/previous/command.json', {'placement_charge': 1})
+        write_json(queue / 'claims/previous/result.json', {'exit': 0})
+        (queue / 'claims/earlier').mkdir()
+        write_json(queue / 'claims/earlier/command.json', {'placement_charge': 1})
+        write_json(queue / 'claims/earlier/result.json', {'exit': 0})
+        write_json(queue / 'requests/next.json', self.request)
+        config = self.root / 'config.json'; write_json(config, self.config)
+        with mock.patch.object(host_queue.subprocess, 'check_output', return_value=b''), \
+             mock.patch.object(host_queue, 'source_hash', return_value='source'), \
+             mock.patch.object(host_queue, 'dispatch') as dispatch:
+            with self.assertRaisesRegex(ValueError, 'ceiling'):
+                host_queue.serve(queue, config, True, once=True)
+            dispatch.assert_not_called()
+
+    def test_serial_queue_restart_skips_completed_request(self):
+        queue = self.root / 'queue'
+        (queue / 'requests').mkdir(parents=True)
+        write_json(queue / 'requests/offline.json', {'operation': 'rehearse',
+            'evidence': str(self.root / '.scratch/offline'), 'submissions': []})
+        config = self.root / 'config.json'; write_json(config, self.config)
+        with mock.patch.object(host_queue.subprocess, 'check_output', return_value=b''), \
+             mock.patch.object(host_queue, 'source_hash', return_value='source'), \
+             mock.patch.object(host_queue.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)) as run:
+            self.assertEqual(host_queue.serve(queue, config, False, once=True), 0)
+            self.assertEqual(host_queue.serve(queue, config, False, once=True), 0)
+            self.assertEqual(run.call_count, 1)
+        self.assertEqual(len(list((queue / 'sessions').iterdir())), 2)
+        self.assertEqual(strict_json(read_file(queue / 'claims/offline/command.json'))['placement_charge'], 0)
+
+    def test_second_runner_cannot_claim_while_first_holds_lock(self):
+        queue = self.root / 'queue'; queue.mkdir()
+        config = self.root / 'config.json'; write_json(config, self.config)
+        with (queue / 'lock').open('a') as first:
+            host_queue.fcntl.flock(first, host_queue.fcntl.LOCK_EX | host_queue.fcntl.LOCK_NB)
+            with self.assertRaises(BlockingIOError):
+                host_queue.serve(queue, config, False, once=True)
+
+    def test_torn_claim_metadata_reserves_a_slot_but_allows_offline_recovery(self):
+        queue = self.root / 'queue'
+        (queue / 'requests').mkdir(parents=True)
+        damaged = queue / 'claims/damaged'; damaged.mkdir(parents=True)
+        (damaged / 'command.json').write_bytes(b'{"placement_charge":')
+        self.assertEqual(host_queue.placement_charge(damaged), 1)
+        write_json(queue / 'requests/offline.json', {'operation': 'rehearse',
+            'evidence': str(self.root / '.scratch/offline'), 'submissions': []})
+        config = self.root / 'config.json'; write_json(config, self.config)
+        with mock.patch.object(host_queue.subprocess, 'check_output', return_value=b''), \
+             mock.patch.object(host_queue, 'source_hash', return_value='source'), \
+             mock.patch.object(host_queue.subprocess, 'run', return_value=subprocess.CompletedProcess([], 0)):
+            self.assertEqual(host_queue.serve(queue, config, False, once=True), 0)
 
 
 if __name__=='__main__':
