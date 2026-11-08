@@ -12,9 +12,13 @@ commissioned material access, recorded work, revisions, explicit submission and
 closure. Conversation management, token accounting and process termination have
 runtime-specific meanings. Human and Codex/OpenAI adapters remain future work.
 
-The distributed AI interface uses explicit API or supported cloud-provider
-authentication. Subscription login/routing stays outside Stewart's main
-interface. This product decision is recorded in [CONTRACTS](CONTRACTS.md#run-and-continuation).
+The current contract places subscription login/routing outside Stewart's main
+interface and uses explicit API or supported cloud-provider authentication
+([CONTRACTS](CONTRACTS.md#run-and-continuation)). The principal's intended migration
+target now includes a subscription connector. Resolve its relationship to that
+boundary when selecting the integration; no connector design or authentication
+mechanism is selected here. Common audit and custody terms should survive the
+change while runtime-specific accounting and enforcement remain explicit.
 
 The adapter preserves the [question-family meanings](CONTRACTS.md#question-families-and-open-inquiry)
 and common custody/attribution contract. A family choice must never implicitly
@@ -23,6 +27,8 @@ grant execution, including for experimental inquiry.
 ## Work
 
 1. **Resolve the Claude Code adapter contract and build a narrow integration.**
+   Settle the intended subscription connector's product boundary and supported
+   authentication route before selecting the integration mechanism.
    Establish its accounting, access and stopping guarantees on a pinned runtime.
    Bring any change to Stewart's promises or packaging back to the principal.
    A small SDK helper beside the Rust operation core is a candidate, as is a CLI
