@@ -152,7 +152,7 @@ fn ended_as_submitted() {
     let sc = launched_with_entries(&e);
     end_run(&sc.audit, 1, "ended_unsubmitted", None, None);
     let j = with(&e, "ended_as_submitted", &["status", &sc.r, "--json"]);
-    assert_eq!(s(&j, &["data", "headline", "sealed", "by"]), "auditor");
+    assert_eq!(s(&j, &["data", "headline", "seal", "actor"]), "auditor");
 }
 
 #[test]

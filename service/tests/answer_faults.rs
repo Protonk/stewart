@@ -243,7 +243,7 @@ fn case_t6_submit_paused_before_its_link() {
     assert_eq!(r.reason(), "authoring_ended");
     assert_eq!(r.str(&["ended_by"]), "close");
     assert!(r.data(&["close_requested_at"]).as_str().is_some());
-    assert!(r.data(&["seal"]).is_null() && r.data(&["sealer"]).is_null());
+    assert!(r.str(&["seal", "state"]) == "absent" && r.data(&["seal", "actor"]).is_null());
     assert_eq!(
         kinds(&dir).last().map(String::as_str),
         Some("close_requested")

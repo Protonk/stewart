@@ -36,6 +36,10 @@ Read-only at any time:
   stewart status --archive ROOT      every reference in an archive
 
 Every command except help takes --json for one machine-readable reply on stdout.
+Status, run and close give a brief account by default; --details adds the full
+observations. --details and --json cannot be combined. A completed command does
+not imply completed custody or an adequate answer. A run is one execution
+placement; an audit keeps its ledger and cumulative limits across placements.
 Topics: stewart help commands | forms | limits | reader | close
 "
     .to_string()
@@ -100,11 +104,13 @@ Commands
       stderr says whether they verified. Unverified bytes are never written.
       Items: question-file, question-body, arrangement, arrangement-readable,
       materials/<name>.
-  stewart status REF [--json]
-  stewart status --archive ROOT [--json]
-      Read-only facts: accepted, launched, sealed, delivered, closed, with the
-      evidence behind them and the supported next calls.
-  stewart run REF [--key-fd FD] [--json]
+  stewart status REF [--details | --json]
+  stewart status --archive ROOT [--details | --json]
+      Read-only account of the commission, run, answer, delivery and closure,
+      including unknown facts, losses, cumulative usage and supported next calls.
+      --details includes the underlying observations and evidence; --json gives
+      the complete structured reply. Neither option changes the audit.
+  stewart run REF [--key-fd FD] [--details | --json]
       Place the auditor, in the foreground until the placement ends. Needs
       a provider credential and the network. Prefer --key-fd FD, an inherited
       descriptor (0 or at least 3) carrying 1–4096 visible ASCII bytes and an
@@ -116,12 +122,14 @@ Commands
       STEWART_PROVIDER_URL (https://, or
       http:// to a loopback host) and HTTPS_PROXY (http://host:port) are
       optional. An interrupted run exits 5; run again to continue under the
-      same cumulative limits.
+      same cumulative limits. A run can stop without ending authoring, and
+      authoring can end while custody remains unfinished. The seal actor names
+      who sealed: a manager seal is not auditor submission.
       A reflected credential stops before tools or retries. Raw response bodies
       and retained headers stay exact and private; derived text is explicitly
       redacted. Revoke the exposed key and review evidence before continuing or
       exporting the archive.
-  stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--json]
+  stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--details | --json]
       End the reference. See: stewart help close.
 
 Replies: exit 0 completed, 2 usage, 3 refused, 4 failed; run exits 5 when its

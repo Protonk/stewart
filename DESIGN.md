@@ -67,14 +67,18 @@ The locations cannot overlap through aliases or nesting. The manager maintains
 storage availability and backup. Stewart provides no deletion service in this
 release and no secrecy from the ordinary archive owner. Its supported live
 manager surface remains receipt, status and close. Receipt readback recovers the
-fixed commission, never a view of the live answer.
+fixed commission, never a view of the live answer. A supported read-only live
+answer or conversation viewer remains future product scope; it would need
+revision and partial-data rules and could not grant steering or reopening. The
+standalone return continues to omit operating history.
 
 ## The auditor's world
 
 The model sees the question, captured-material tools, family instructions and
 answer tools. It gets no shell, arbitrary file access, project execution, network
 retrieval or delegated auditors. Supplied test reports remain supplied claims.
-The family name and manager-only custody metadata do not enter this view.
+Re-entry and preparation identify the captured family and version. Manager-only
+custody metadata and the manager's selection rationale do not enter this view.
 
 The initial library is open inquiry, inquiry framing and comparison. Framing
 explicitly commissions formation of a working question and useful investigation

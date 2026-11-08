@@ -201,6 +201,8 @@ class Session:
             return content
         try:
             reply = json.loads(content)
+            if reply.get("schema") != "stewart.reply/2":
+                raise ValueError("unsupported Stewart reply schema")
         except (UnicodeError, json.JSONDecodeError):
             raise RuntimeError(label + ' did not return JSON; raw records retained privately') from None
         if key is None and (rc != 0 or reply.get('outcome') != 'completed'):
@@ -359,7 +361,7 @@ time.sleep(60)
                 fake.__exit__(None, None, None)
         status, _, _ = self.command('status-after-run', 'status', self.ref)
         data = reply.get('data', {})
-        submitted = bool(data.get('seal') and data['seal'].get('actor') == 'auditor')
+        submitted = bool(data.get('seal', {}).get('state') == 'present' and data['seal'].get('actor') == 'auditor')
         verified = False
         closed = False
         if submitted and data.get('delivery', {}).get('outcome') == 'verified':

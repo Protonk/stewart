@@ -20,7 +20,6 @@ use std::time::Duration;
 use crate::answer::NoticesUsed;
 use crate::archive::{Audit, Fail};
 use crate::bodies::{NoticeReport, ProviderUse, RunEnded, RunObservations, RunStarted};
-use crate::ids;
 use crate::json::J;
 use crate::log::{self, Body, EndedBy, LogState, PubErr};
 use crate::ops::close::delivery_value;
@@ -32,11 +31,10 @@ use crate::provider::transport::{AbortHandle, Client, REQUEST_TIMEOUT};
 use crate::provider::url::{self, Proxy, Route};
 use crate::provider::{Cause as EndCause, Ending};
 use crate::reply::{Cause, Next, Reply};
-use crate::returns;
 use crate::runs::{self, RunDir};
 use crate::usage::Usage;
 use crate::util;
-use crate::world::{self, World};
+use crate::world;
 
 const OP: &str = "run";
 
@@ -672,7 +670,7 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
             })
         }
     };
-    finish(&audit, &world, run, started_n, ended)
+    finish(&audit, run, started_n, ended)
 }
 
 /// Every location a placement created and kept, for a failed reply's
@@ -712,7 +710,7 @@ fn kept(audit: &Audit, run: u64, started_n: u64, e: &Ended) -> Vec<String> {
 }
 
 /// Record the placement's ending and build the reply.
-fn finish(audit: &Audit, world: &World, run: u64, started_n: u64, e: Ended) -> Reply {
+fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply {
     // The newest attempt this invocation made; `unknown` when delivery
     // stopped before an attempt's outcome could be established.
     let delivery_effect = match &e.delivered {
@@ -822,15 +820,19 @@ fn finish(audit: &Audit, world: &World, run: u64, started_n: u64, e: Ended) -> R
     }
 
     let state = log::read(audit);
-    let used = state.recorded_usage();
-    let limits = world.arrangement.limits;
     let delivery = e
         .delivered
         .as_ref()
         .and_then(|d| d.attempts.last())
         .map(|v| v.to_j())
         .unwrap_or(J::Null);
-    let data = J::obj()
+    let (seal, seal_diagnostic) = super::seal_j(audit, &state);
+    let mut diagnostics: Vec<J> = seal_diagnostic.into_iter().collect();
+    let headline = super::headline(audit, &state).to_j();
+    let allowances =
+        super::presentation::allowances(audit, &state, super::status::Lock::Held, &mut diagnostics);
+    let summary = super::presentation::summary(&state, &headline, &allowances);
+    let mut data = J::obj()
         .with("run", run)
         .with("continuing", run > 1)
         .with("ending", e.ending.as_str())
@@ -840,16 +842,21 @@ fn finish(audit: &Audit, world: &World, run: u64, started_n: u64, e: Ended) -> R
             e.provider.as_ref().map(|p| p.to_j()).unwrap_or(J::Null),
         )
         .with("usage", e.usage.to_j())
-        .with("allowances", limits.allowances_j(&used))
+        .with("allowances", allowances)
         .with(
             "answer",
             J::obj()
                 .with("revision", state.revision())
                 .with("entries", state.selection().len()),
         )
-        .with("seal", seal_view(audit, &state))
+        .with("seal", seal)
         .with("delivery", delivery)
         .with("notices", placement::notices_j(&e));
+    if !diagnostics.is_empty() {
+        data.push("diagnostics", J::Arr(diagnostics));
+    }
+    data.push("headline", headline);
+    data.push("summary", summary);
     let mut reply = Reply::completed(OP, effects("ended"), data);
     reply.next = next_calls(audit, &e);
     reply
@@ -896,34 +903,4 @@ fn next_calls(audit: &Audit, e: &Ended) -> Vec<Next> {
             )]
         }
     }
-}
-
-/// The seal as status presents it (5.6), or null.
-fn seal_view(audit: &Audit, state: &LogState) -> J {
-    let Some((_, s)) = state.seal() else {
-        return J::Null;
-    };
-    let (sealed_at, unproduced) =
-        match returns::load_manifest(audit, &s.manifest, &s.manifest_sha256) {
-            Ok((m, _)) => (
-                J::Str(m.sealed_at.clone()),
-                crate::json::strs(
-                    &m.unproduced
-                        .iter()
-                        .map(|u| u.name.clone())
-                        .collect::<Vec<_>>(),
-                ),
-            ),
-            Err(_) => (J::Null, J::Arr(Vec::new())),
-        };
-    J::obj()
-        .with(
-            "handle",
-            ids::seal_handle(&audit.archive.store, &audit.id, &s.manifest_sha256),
-        )
-        .with("actor", s.actor.name())
-        .with("sealed_at", sealed_at)
-        .with("revision", s.revision)
-        .with("manifest_sha256", s.manifest_sha256.as_str())
-        .with("unproduced", unproduced)
 }

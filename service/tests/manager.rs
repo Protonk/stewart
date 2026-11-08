@@ -199,8 +199,45 @@ fn the_human_presentation_carries_the_same_result() {
     assert!(t.contains("--i-am-finished"), "{t}");
     let o = e.run(&["status", &r]);
     let t = o.text();
-    assert!(t.contains("Accepted: no | Launched: no"), "{t}");
-    assert!(t.contains("Condition: preparing."), "{t}");
+    assert!(t.contains("Commission: not accepted."), "{t}");
+    assert!(t.contains("Run: not started."), "{t}");
+    assert!(!t.contains("condition: preparing"), "{t}");
+    let before = e.inventory();
+    let detailed = e.run(&["status", &r, "--details"]).text();
+    let machine = e.run(&["status", &r, "--json"]).json();
+    assert!(detailed.contains("condition: preparing"), "{detailed}");
+    assert!(t.contains(s(&machine, &["data", "summary"])), "{t}");
+    assert!(detailed.contains(s(&machine, &["data", "summary"])));
+    let listing = e.run(&["status", "--archive", &e.archive]).text();
+    let expanded = e
+        .run(&["status", "--archive", &e.archive, "--details"])
+        .text();
+    assert!(listing.contains(&format!("Reference: {r}")), "{listing}");
+    assert!(listing.contains("Accepted: no"), "{listing}");
+    assert!(!listing.contains("headline:"), "{listing}");
+    assert!(expanded.contains("headline:"), "{expanded}");
+    assert_eq!(before, e.inventory(), "presentation reads must not mutate");
+}
+
+#[test]
+fn conflicting_views_refuse_before_starting_an_operation() {
+    let e = Env::new();
+    let r = e.new_ref();
+    let before = e.inventory();
+    for command in ["status", "run", "close"] {
+        let o = e.run(&[command, &r, "--details", "--json"]);
+        assert_eq!(o.code, Some(2), "{command}: {}", o.text());
+        assert!(o.stdout.is_empty());
+        assert!(o.stderr.contains("mutually exclusive"));
+        assert_eq!(
+            before,
+            e.inventory(),
+            "{command} began before flag validation"
+        );
+    }
+    let o = e.run(&["prepare", &r, "--details"]);
+    assert_eq!(o.code, Some(2));
+    assert_eq!(before, e.inventory());
 }
 
 #[test]
@@ -606,6 +643,12 @@ fn a_damaged_log_is_diagnosed_never_repaired() {
     let j = e.run(&["status", &r, "--json"]).json();
     assert_eq!(s(&j, &["data", "condition"]), "acceptance_uncertain");
     assert_eq!(s(&j, &["data", "headline", "accepted"]), "unknown");
+    assert_eq!(s(&j, &["data", "allowances"]), "unknown");
+    assert_eq!(
+        s(&j, &["data", "headline", "authoring", "state"]),
+        "unknown"
+    );
+    assert_eq!(s(&j, &["data", "seal", "state"]), "unknown");
     assert_eq!(s(&j, &["data", "diagnostics", "0", "record"]), "log/3.json");
     let o = e.commission(&r, &h);
     let j = o.json();
@@ -615,6 +658,7 @@ fn a_damaged_log_is_diagnosed_never_repaired() {
     let j = o.json();
     assert_eq!(s(&j, &["outcome"]), "completed");
     assert_eq!(s(&j, &["data", "unfinished_reason"]), "log_damaged");
+    assert_eq!(s(&j, &["data", "allowances"]), "unknown");
     assert_eq!(
         std::fs::read(format!("{log}/3.json")).unwrap(),
         b"{not json"
@@ -629,6 +673,12 @@ fn a_damaged_log_is_diagnosed_never_repaired() {
     let j = e.run(&["status", &r, "--json"]).json();
     assert_eq!(s(&j, &["data", "condition"]), "log_damaged");
     assert_eq!(s(&j, &["data", "headline", "accepted"]), "yes");
+    assert_eq!(s(&j, &["data", "allowances", "turns", "used"]), "unknown");
+    assert!(
+        at(&j, &["data", "allowances", "turns", "limit"])
+            .as_u64()
+            .is_some()
+    );
 }
 
 #[test]

@@ -305,7 +305,8 @@ class MiniStewart:
         tot = fp.totals(self.provider.exchanges, upto=ex.n, overrides=None)
         if first:
             tot = fp.totals([x for x in self.provider.exchanges if x.n >= self.placement_first_exchange], upto=ex.n)
-        d = {"audit": "aaaaaaaaaaaaaaaaa", "condition": "open", "sealed_by": None, "revision": self.revision,
+        d = {"audit": "aaaaaaaaaaaaaaaaa", "family": self.family + "/1",
+             "authoring": {"state": "open", "ended_by": None}, "seal": {"state": "absent", "actor": None}, "revision": self.revision,
              "run": {"number": self.placement, "continuing": self.placement > 1},
              "allowances": fp.allowances(tot, self.limits), "notices_used": dict(self.notices_used),
              "question": {"source": "question", "size": len(self.question), "lines": _lines(self.question)},
@@ -325,7 +326,7 @@ class MiniStewart:
         notices = ([{"reason": "section_unfilled", "tool": t, "message": "No %s entries are recorded." % t}
                     for t in expected if counts[t] == 0] if ents else
                    [{"reason": "answer_empty", "message": "No answer entries are recorded."}])
-        return self.env(tool, data={"prepared": h, "revision": self.revision, "entry_count": len(ents), "counts": counts,
+        return self.env(tool, data={"prepared": h, "family": self.family + "/1", "revision": self.revision, "entry_count": len(ents), "counts": counts,
                                     "notices": notices, "rendering": {"source": h + "/rendering", "size": len(md)},
                                     "selection": {"source": h + "/selection", "size": len(aj)}}), None
 
@@ -336,7 +337,7 @@ class MiniStewart:
                                         "rendering": {"source": p["handle"] + "/rendering"}},
                             effects={"seal": "none", "raw_capture": "recorded"}), None
         self.sealed = {"prepared": p["handle"], "selection": p["selection"]}
-        return self.env(tool, data={"seal": "seal.aaaaaa", "sealer": "auditor"},
+        return self.env(tool, data={"seal": {"state": "present", "actor": "auditor", "handle": "seal.aaaaaa"}},
                         effects={"seal": "recorded", "raw_capture": "recorded"}), None
 
 

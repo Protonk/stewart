@@ -32,11 +32,12 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `main.rs`: the binary's entry point; it calls `cli::main`.
 - `cli.rs`: exact argument parsing and presentation (5.1).
 - `help.rs`: `stewart help` and its topics, printed exactly (5.9).
-- `reply.rs`: the `stewart.reply/1` envelope and its human presentation
-  (1.3–1.6).
+- `reply.rs`: the `stewart.reply/2` envelope and its human presentation
+  (1.3–1.7).
 
 **Manager operations**
 
+- `ops/presentation.rs`: shared read-only resource and lifecycle accounts.
 - `ops/`: one file per command, `new`, `prepare`, `commission`, `receipt`,
   `run`, `status` and `close` (5.2–5.8); `ops/mod.rs` holds what they share.
 - `frontmatter.rs`, `scan.rs`: the submission folder: the `question/1` front

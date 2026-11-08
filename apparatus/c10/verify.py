@@ -375,6 +375,7 @@ def _verify(e, report, check):
         operands = callnode.get('input')
         check((digest(operands.raw) if operands else None) == result['input_sha256'], 'tool_input_binding')
         reply = strict_json(result['content'][0]['text'])
+        check(reply['schema'] == spec.REPLY_SCHEMA, 'tool_reply_schema')
         check(reply['outcome'] == result['outcome'] and reply['operation'] == tool, 'tool_reply_binding')
         paging.observe(tool, strict_json(operands.raw) if operands else None, reply)
         previous_results[call_number] = result
@@ -391,6 +392,10 @@ def _verify(e, report, check):
             check(all(result[field] == old[field] for field in ['content','is_error','outcome','log_record']), 'replayed_outcome_unchanged')
             continue
         data, inp = reply['data'], strict_json(operands.raw)
+        if tool == 'what_am_i_working_with' and 'page' not in inp:
+            check(data['family'] == versioned_family, 'reentry_captured_family')
+            check(data['authoring'] == {'state':'open','ended_by':None}
+                  and data['seal'] == {'state':'absent','actor':None}, 'reentry_authoring_and_seal')
         log_name = result['log_record']
         if log_name in entry_records and log_name not in consumed:
             record = entry_records[log_name]['body']
@@ -426,11 +431,12 @@ def _verify(e, report, check):
                 handles[data['entry']] = (record['id'], record['version'])
             consumed.add(log_name)
         if tool == 'prepare':
+            check(data['family'] == versioned_family, 'preparation_captured_family')
             check(data['revision'] == revision and data['entry_count'] == len(selected), 'preparation_counts')
             prepared[data['prepared']] = (revision, answer.answer_json(revision, list(selected.values())), answer.render(list(selected.values())))
         if tool == 'submit' and inp.get('confirm') is True:
             check(inp['prepared'] in prepared and prepared[inp['prepared']][0] == revision
-                  and data['sealer'] == 'auditor', 'confirmed_submission')
+                  and data['seal']['state'] == 'present' and data['seal']['actor'] == 'auditor', 'confirmed_submission')
             submitted = True
             submit_invocation = {'run':1,'tool_use_id':call['id'],'call':call_number}
             submit_data = data
@@ -450,8 +456,8 @@ def _verify(e, report, check):
         report['seal_actor'] = seal['actor'] if seal['actor'] in ['auditor','manager'] else 'unknown'
         if seal['actor'] == 'auditor':
             check(submitted and seal['invocation'] == submit_invocation
-                  and submit_data['manifest_sha256'] == seal['manifest_sha256']
-                  and submit_data['revision'] == seal['revision'], 'seal_submission_binding')
+                  and submit_data['seal']['manifest_sha256'] == seal['manifest_sha256']
+                  and submit_data['seal']['revision'] == seal['revision'], 'seal_submission_binding')
         check(seal['revision'] == revision, 'sealed_revision')
         expected_answer = answer.answer_json(revision, list(selected.values()))
         expected_render = answer.render(list(selected.values()))

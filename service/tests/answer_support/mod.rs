@@ -317,7 +317,7 @@ pub fn decode(ex: Executed) -> Res {
         })
         .collect();
     let env = json::parse(blocks[0].as_bytes()).expect("the envelope is strict JSON");
-    assert_eq!(s(&env, &["schema"]), "stewart.reply/1");
+    assert_eq!(s(&env, &["schema"]), "stewart.reply/2");
     assert_eq!(ex.is_error, s(&env, &["outcome"]) != "completed");
     Res { ex, env, blocks }
 }

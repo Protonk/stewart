@@ -429,8 +429,8 @@ fn check_a_stale_submit_seals_nothing() {
 fn check_prepare_claims_no_seal() {
     let mut l = Live::new();
     let r = l.call("prepare", "{}");
-    assert!(!has(r.data(&[]), "sealer"));
-    assert!(!r.text().contains("sealer"));
+    assert!(!has(r.data(&[]), "seal"));
+    assert!(!r.text().contains("\"seal\":"));
 }
 
 #[test]

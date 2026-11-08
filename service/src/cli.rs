@@ -16,10 +16,10 @@ usage: stewart new FOLDER [--archive ROOT] [--json]
        stewart commission REF HANDLE --i-am-finished [--json]
        stewart receipt REF [--verify] [--json]
        stewart receipt REF --read ITEM
-       stewart status REF [--json]
-       stewart status --archive ROOT [--json]
-       stewart run REF [--key-fd FD] [--json]
-       stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--json]
+       stewart status REF [--details | --json]
+       stewart status --archive ROOT [--details | --json]
+       stewart run REF [--key-fd FD] [--details | --json]
+       stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--details | --json]
        stewart help [commands | forms | limits | reader | close]";
 
 struct Usage(String);
@@ -72,6 +72,9 @@ fn parse(
         }
         i += 1;
     }
+    if out.flag("--details") && out.flag("--json") {
+        return Err(usage("--details and --json are mutually exclusive"));
+    }
     Ok(out)
 }
 
@@ -111,6 +114,7 @@ enum Plan {
     Reply {
         reply: Reply,
         json: bool,
+        details: bool,
         reference: Option<String>,
         mutating: bool,
     },
@@ -163,6 +167,7 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             Ok(Plan::Reply {
                 reply: ops::new::run(folder, root.as_deref()),
                 json: a.flag("--json"),
+                details: a.flag("--details"),
                 reference: None,
                 mutating: true,
             })
@@ -174,6 +179,7 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             Ok(Plan::Reply {
                 reply: ops::prepare::run(&r),
                 json: a.flag("--json"),
+                details: a.flag("--details"),
                 reference: Some(r),
                 mutating: true,
             })
@@ -186,6 +192,7 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             Ok(Plan::Reply {
                 reply,
                 json: a.flag("--json"),
+                details: a.flag("--details"),
                 reference: Some(r),
                 mutating: true,
             })
@@ -210,18 +217,20 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             Ok(Plan::Reply {
                 reply: ops::receipt::run(&r, a.flag("--verify")),
                 json: a.flag("--json"),
+                details: a.flag("--details"),
                 reference: Some(r),
                 mutating: false,
             })
         }
         "status" => {
-            let a = parse(rest, &["--json"], &["--archive"], &[])?;
+            let a = parse(rest, &["--json", "--details"], &["--archive"], &[])?;
             if let Some(root) = a.value("--archive") {
                 a.exactly(0, "no REF with --archive")?;
                 absolute("the archive root", &root)?;
                 return Ok(Plan::Reply {
                     reply: ops::status::run_archive(&root),
                     json: a.flag("--json"),
+                    details: a.flag("--details"),
                     reference: None,
                     mutating: false,
                 });
@@ -231,12 +240,13 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             Ok(Plan::Reply {
                 reply: ops::status::run(&r),
                 json: a.flag("--json"),
+                details: a.flag("--details"),
                 reference: Some(r),
                 mutating: false,
             })
         }
         "run" => {
-            let a = parse(rest, &["--json"], &["--key-fd"], &[])?;
+            let a = parse(rest, &["--json", "--details"], &["--key-fd"], &[])?;
             a.exactly(1, "REF")?;
             let key_fd = a
                 .value("--key-fd")
@@ -256,6 +266,7 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             Ok(Plan::Reply {
                 reply: ops::run::run(&r, key_fd),
                 json: a.flag("--json"),
+                details: a.flag("--details"),
                 reference: Some(r),
                 mutating: true,
             })
@@ -263,7 +274,7 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
         "close" => {
             let a = parse(
                 rest,
-                &["--json"],
+                &["--json", "--details"],
                 &["--confirm", "--surrender", "--destination"],
                 &["--surrender"],
             )?;
@@ -290,6 +301,7 @@ fn plan(argv: &[String]) -> Result<Plan, Usage> {
             Ok(Plan::Reply {
                 reply: ops::close::run(&r, &flags),
                 json: a.flag("--json"),
+                details: a.flag("--details"),
                 reference: Some(r),
                 mutating: true,
             })
@@ -347,17 +359,18 @@ pub fn main() -> i32 {
         Ok(Plan::Reply {
             reply,
             json,
+            details,
             reference,
             mutating,
-        }) => emit(&reply, json, reference.as_deref(), mutating),
+        }) => emit(&reply, json, details, reference.as_deref(), mutating),
     }
 }
 
-fn emit(reply: &Reply, json: bool, reference: Option<&str>, mutating: bool) -> i32 {
+fn emit(reply: &Reply, json: bool, details: bool, reference: Option<&str>, mutating: bool) -> i32 {
     let bytes = if json {
         reply.json_line()
     } else {
-        reply.human().into_bytes()
+        reply.human_with_details(details).into_bytes()
     };
     let written = crate::fault!("reply.write").and_then(|_| {
         let mut out = std::io::stdout().lock();

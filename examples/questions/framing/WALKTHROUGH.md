@@ -28,10 +28,10 @@ limits and destination are not being tested here.
 
 The auditor sees the orientation, the inquiry framing instructions and the tools
 in QUESTION-FORMS, and the question body as its first user message. It never
-sees the front matter or the family name.
+sees the front matter. Re-entry and prepare replies identify the captured family.
 
 Each call is shown as the tool name and its `input`. A line starting `=>` shows
-the `data` of the completed `stewart.reply/1` envelope, whose `next` is empty
+the `data` of the completed `stewart.reply/2` envelope, whose `next` is empty
 unless stated. `[…]` stands for the citations as sent, each with Stewart's
 additions under `stewart`; elsewhere `…` marks something left out: further
 citations, a digest or a time. Handles carry a check bound to their audit, so
@@ -126,14 +126,14 @@ the rendering and the confirmed submit.
 
 ```text
 prepare({})
-=> {"prepared": "ap1.3eizdd", "revision": 5, "entry_count": 5,
+=> {"prepared": "ap1.3eizdd", "family": "inquiry-framing/1", "revision": 5, "entry_count": 5,
     "counts": {"record_working_question": 1, "record_relation": 1, "record_observation": 1, "record_account": 1, "record_limit": 1, "record_artifact": 0},
     "notices": [],
     "rendering": {"source": "ap1.3eizdd/rendering", "size": 1518},
     "selection": {"source": "ap1.3eizdd/selection", "size": 2645}}
 read({"source": "ap1.3eizdd/rendering"})  # optional; exact text shown below
 submit({"prepared": "ap1.3eizdd", "confirm": true})
-=> {"seal": "seal.votboq", "sealer": "auditor", "sealed_at": "…", "revision": 5, "manifest_sha256": "…"}
+=> {"seal": {"state": "present", "actor": "auditor", "handle": "seal.votboq", "sealed_at": "…", "revision": 5, "manifest_sha256": "…"}}
 ```
 
 After a confirmed submit the run delivers the return package and ends, so this

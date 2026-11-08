@@ -126,6 +126,18 @@ pub fn ended_fail(ctx: &Ctx, state: &LogState, by: EndedBy, n: u64) -> Fail {
             String::new()
         }
     });
+    let mut observation = state.seal_observation_j();
+    if let Some((_, s)) = seal {
+        observation.push(
+            "handle",
+            ids::seal_handle(ctx.store(), ctx.audit_id(), &s.manifest_sha256),
+        );
+    }
+    let mut data = J::obj().with("ended_by", by.name());
+    if by == EndedBy::Close {
+        data.push("close_requested_at", close.map(|c| c.at.as_str()));
+    }
+    data.push("seal", observation);
     refused(
         "authoring_ended",
         format!(
@@ -133,19 +145,7 @@ pub fn ended_fail(ctx: &Ctx, state: &LogState, by: EndedBy, n: u64) -> Fail {
             sealed_by.unwrap_or_default()
         ),
     )
-    .data(
-        J::obj()
-            .with("ended_by", by.name())
-            .with("record", crate::names::log_name(n))
-            .with("close_requested_at", close.map(|c| c.at.as_str()))
-            .with(
-                "seal",
-                seal.map(|(_, s)| {
-                    ids::seal_handle(ctx.store(), ctx.audit_id(), &s.manifest_sha256)
-                }),
-            )
-            .with("sealer", seal.map(|(_, s)| s.actor.name())),
-    )
+    .data(data)
 }
 
 // ---------------------------------------------------------------------------

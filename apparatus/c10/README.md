@@ -372,7 +372,11 @@ python3 -I -B apparatus/c10/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID 
 python3 -I -B apparatus/c10/c10.py control "$PWD/.scratch/c10-live-NN" AUDIT_ID collect
 ```
 
-`status` reports run state, seal actor, delivery and closure separately. Unknown
+`status` reports authoring state and its first end reason, run state, seal
+presence and actor, delivery and closure separately. Operator summaries preserve
+unknown usage with known limits and identify when private diagnostics exist.
+Current consumers require `stewart.reply/2`; historical reports are retained
+without conversion. Unknown
 conditions remain unknown, with the raw reply retained privately. `inspect`
 verifies package bytes and identifies the answer to read privately; it does not
 judge its contents. If close requires confirmation, inspect the return, then

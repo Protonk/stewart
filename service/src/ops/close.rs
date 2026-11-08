@@ -338,6 +338,29 @@ fn close(audit: &Audit, flags: &Flags, ctx: &Ctx) -> Reply {
     after_launch(audit, flags, state, ctx)
 }
 
+/// Complete the observed account without re-running the close or altering its effects.
+fn completed_data(audit: &Audit, state: &LogState, mut data: J) -> J {
+    let (lock, lock_diagnostic) = super::status::observe_lock(audit);
+    let mut diagnostics: Vec<J> = lock_diagnostic.into_iter().collect();
+    let allowances = super::presentation::allowances(audit, state, lock, &mut diagnostics);
+    let (_, seal_diagnostic) = seal_j(audit, state);
+    diagnostics.extend(seal_diagnostic);
+    let headline = data
+        .get("headline")
+        .cloned()
+        .unwrap_or_else(|| headline(audit, state).to_j());
+    let mut summary = super::presentation::summary(state, &headline, &allowances);
+    if let Some(J::Str(reason)) = data.get("unfinished_reason") {
+        summary.push_str(&format!("\nClose remains unfinished: {reason}."));
+    }
+    if !diagnostics.is_empty() {
+        data.push("diagnostics", J::Arr(diagnostics));
+    }
+    data.push("allowances", allowances);
+    data.push("summary", summary);
+    data
+}
+
 fn damaged_reply(audit: &Audit, state: &LogState) -> Reply {
     let closure = if state.close_requested().is_some() {
         "unfinished"
@@ -347,11 +370,15 @@ fn damaged_reply(audit: &Audit, state: &LogState) -> Reply {
     let mut r = Reply::completed(
         OP,
         eff_unknown(closure),
-        J::obj()
-            .with("closure", "unfinished")
-            .with("unfinished_reason", "log_damaged")
-            .with("bad_records", state.bad_j())
-            .with("headline", headline(audit, state).to_j()),
+        completed_data(
+            audit,
+            state,
+            J::obj()
+                .with("closure", "unfinished")
+                .with("unfinished_reason", "log_damaged")
+                .with("bad_records", state.bad_j())
+                .with("headline", headline(audit, state).to_j()),
+        ),
     );
     r.retained.push(audit.abs("log"));
     r.next.push(status_next(
@@ -380,7 +407,11 @@ fn closed_reply(
     // A closed audit owes nothing further, so no next call is offered; the
     // receipt stays readable through the status reply's receipt line.
     let Some((b, a)) = body.and_then(|b| b.after.as_ref().map(|a| (b, a))) else {
-        return Reply::completed(OP, eff_before("complete"), data);
+        return Reply::completed(
+            OP,
+            eff_before("complete"),
+            completed_data(audit, state, data),
+        );
     };
     let (seal, _) = seal_j(audit, state);
     data.push("outcome", b.outcome.as_str());
@@ -403,7 +434,7 @@ fn closed_reply(
             delivery_value(Some(a.delivery.outcome.as_str())),
             "complete",
         ),
-        data,
+        completed_data(audit, state, data),
     )
 }
 
@@ -641,7 +672,11 @@ fn unfinished_before(audit: &Audit, reason: &'static str, extra: J, state: &LogS
     if let (J::Obj(m), J::Obj(d)) = (extra, &mut data) {
         d.extend(m);
     }
-    let mut r = Reply::completed(OP, eff_before("unfinished"), data);
+    let mut r = Reply::completed(
+        OP,
+        eff_before("unfinished"),
+        completed_data(audit, state, data),
+    );
     r.next.push(close_next(
         audit,
         "Continue the close; it resumes from the recorded state.",
@@ -1068,7 +1103,7 @@ fn unfinished_after(
         .with("delivery", delivery_j(audit, state, presented))
         .with("confirmation", confirmation.as_deref())
         .with("holder", holder);
-    let mut r = Reply::completed(OP, effects, data);
+    let mut r = Reply::completed(OP, effects, completed_data(audit, state, data));
     match reason {
         "awaiting_confirmation" => {
             let v = presented.and_then(|a| delivery::view(audit, state, a));

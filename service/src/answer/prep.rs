@@ -575,6 +575,7 @@ pub fn prepare_tool(ctx: &Ctx, v: &Json) -> Out {
     }
     let mut data = J::obj()
         .with("prepared", ap.as_str())
+        .with("family", ctx.world.arrangement.family.as_str())
         .with("revision", p.revision)
         .with("entry_count", p.entry_count)
         .with("counts", counts)
@@ -593,7 +594,10 @@ pub fn prepare_tool(ctx: &Ctx, v: &Json) -> Out {
         );
     if crate::sabotage!("prepare_claims_seal") {
         // Sabotage control: preparing claims a seal.
-        data.push("sealer", "auditor");
+        data.push(
+            "seal",
+            J::obj().with("state", "present").with("actor", "auditor"),
+        );
     }
     Out::done(data)
         .next(ToolNext::new(
@@ -767,16 +771,20 @@ pub fn seal(
 // The `submit` tool.
 
 fn sealed_data(s: &Sealed, already: bool) -> J {
-    let mut d = J::obj()
-        .with("seal", s.handle.as_str())
-        .with("sealer", s.actor.name())
-        .with("sealed_at", s.sealed_at.as_str())
-        .with("revision", s.revision)
-        .with("manifest_sha256", s.manifest_sha256.as_str());
-    if already {
-        d.push("already_sealed", true);
+    let mut seal = J::obj()
+        .with("state", "present")
+        .with("actor", s.actor.name())
+        .with("handle", s.handle.as_str());
+    if !already {
+        seal.push("sealed_at", s.sealed_at.as_str());
+        seal.push("revision", s.revision);
+        seal.push("manifest_sha256", s.manifest_sha256.as_str());
     }
-    d
+    let mut data = J::obj().with("seal", seal);
+    if already {
+        data.push("already_sealed", true);
+    }
+    data
 }
 
 fn stale(ctx: &Ctx, revision_now: u64, prepared: &str) -> Out {

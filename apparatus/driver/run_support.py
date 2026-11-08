@@ -42,10 +42,10 @@ import fake_provider as fp
 import rawjson
 from driver_core import (ANTHROPIC_BETA, API_VERSION, COMPACTION, POST_COMPACTION, LOG_KINDS, MAX_TOKENS_PER_REQUEST, RECORD_SCHEMA, RUN_CAUSES, RUN_ENDINGS,
                          StrictJSONError, Skip, expected_system_bytes, expected_tools, read_bytes, sha256_hex,
-                         short, strict_loads)
+                         short, strict_loads, authoring_observation, seal_observation)
 
 RUN_DATA_KEYS = ("run", "continuing", "ending", "cause", "provider", "usage", "allowances", "answer", "seal",
-                 "delivery", "notices")
+                 "delivery", "notices", "headline", "summary")
 NEXT_FOR_ENDING = {  # INTERFACE 5.7
     "interrupted": ("run", "close"),
     "ended_unsubmitted": ("close",), "limit_reached": ("close",), "damaged": ("close",),
@@ -290,8 +290,15 @@ def check_run_reply(t, rep, sub, name, *, ending, cause=None, run_number=None, f
     PROVIDER_FACT_KEYS in order when the cause is a provider cause, and is null otherwise;
     provider=, when given, is the exact expected value (see provider_expected)."""
     d = rep.data
-    t.eq(name + ".data-keys", list(d), list(RUN_DATA_KEYS))
+    t.eq(name + ".data-keys", list(d), list(RUN_DATA_KEYS[:-2]) + (["diagnostics"] if d.get("diagnostics") else []) + list(RUN_DATA_KEYS[-2:]))
     t.eq(name + ".ending", d.get("ending"), ending)
+    t.check(name + ".summary", isinstance(d.get("summary"), str) and bool(d["summary"].strip()), d.get("summary"))
+    t.check(name + ".headline", isinstance(d.get("headline"), dict), d.get("headline"))
+    headline = d.get("headline") if isinstance(d.get("headline"), dict) else {}
+    t.eq(name + ".headline.authoring", headline.get("authoring"),
+         authoring_observation(ending, closing=ending == "stopped_by_close", actor=seal_actor))
+    if ending != "stopped_by_close":
+        t.eq(name + ".headline.seal", headline.get("seal"), seal_observation(seal_actor))
     t.eq(name + ".cause", d.get("cause"), cause)
     t.check(name + ".ending-known", ending in RUN_ENDINGS and (cause is None or cause in RUN_CAUSES), (ending, cause))
     t.eq(name + ".effects.run", rep.effects.get("run"), "ended")
@@ -1166,8 +1173,8 @@ def _selftest_rejection_witness():
                                       "recorded_by": "run", "provider": prov_rec, "requests": 1,
                                       "attempts": n_attempts, "usage": zero}]}
             data = {"run": 1, "continuing": False, "ending": "interrupted", "cause": cause, "provider": prov_rec,
-                    "usage": zero, "allowances": fp.allowances(zero, limits_of(sub)), "answer": None, "seal": None,
-                    "delivery": None, "notices": []}
+                    "usage": zero, "allowances": fp.allowances(zero, limits_of(sub)), "answer": None, "seal": {"state": "absent", "actor": None},
+                    "delivery": None, "notices": [], "headline": {"authoring": authoring_observation("interrupted"), "seal": seal_observation()}, "summary": "Interrupted."}
             t = StubT(d)
             check_rejection(t, sub, Fx(used), Rep(data, 5), "w", run_number=1)
             return [c[0] for c in t.checks if not c[1]], len(t.checks)

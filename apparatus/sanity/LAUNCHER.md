@@ -101,7 +101,9 @@ The paid path uses the direct Anthropic endpoint; adding a proxy or a different
 route needs an explicitly changed launcher and reviewed commission.
 
 `host/operator.json` gives exact `container exec` commands for status and close.
-The operator tool prints an allowlisted state summary and retains the full reply
+The operator tool requires `stewart.reply/2`, prints an allowlisted state
+summary including authoring, seal observations and unknown usage with known
+limits, and retains the full reply
 privately. `inspect` verifies a delivered package against its recorded seal and
 gives the private answer location and any confirmation token. Read that answer
 before explicitly invoking `close --confirm TOKEN`. No confirmation or loss

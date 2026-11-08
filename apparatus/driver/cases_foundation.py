@@ -220,13 +220,13 @@ def c_driver_controls(t):
     # Envelope: a refusal without effects, and one with unordered keys, must fail.
     saved = t.checks
     for label, raw in (("envelope_missing_effects",
-                        b'{"schema":"stewart.reply/1","operation":"status","outcome":"refused","reason":"x",'
+                        b'{"schema":"stewart.reply/2","operation":"status","outcome":"refused","reason":"x",'
                         b'"message":"m","retained":[],"next":[]}'),
                        ("envelope_duplicate_key",
-                        b'{"schema":"stewart.reply/1","schema":"stewart.reply/1","operation":"status",'
+                        b'{"schema":"stewart.reply/2","schema":"stewart.reply/2","operation":"status",'
                         b'"outcome":"completed","effects":{},"next":[],"data":{}}'),
                        ("envelope_escaped_duplicate_key",
-                        b'{"schema":"stewart.reply/1","operation":"status","outcome":"completed",'
+                        b'{"schema":"stewart.reply/2","operation":"status","outcome":"completed",'
                         b'"effects":{},"\\u006eext":[],"next":[],"data":{}}')):
         t.checks = []
         fake = Reply("status", {"rc": 3 if b"refused" in raw else 0, "stdout": raw, "stdout_len": len(raw),
@@ -1214,9 +1214,15 @@ def c_close_before_launch(t):
         t.eq(p + ".effects", no_diag(rep.effects), {"run": "not_started", "seal": "none", "delivery": "none", "closure": "complete"})
         t.eq(p + ".data.closure", rep.data.get("closure"), "complete")
         t.eq(p + ".data-keys", sorted(rep.data), sorted(["closure", "already_closed", "before_launch", "accepted",
-                                                        "closed_at", "headline"]))
+                                                        "closed_at", "headline", "allowances", "summary"]))
         t.eq(p + ".data.already_closed", rep.data.get("already_closed"), False)
         t.eq(p + ".data.before_launch", rep.data.get("before_launch"), True)
+        t.eq(p + ".authoring", rep.data.get("headline", {}).get("authoring"),
+             {"state": "ended", "ended_by": "close"})
+        t.eq(p + ".seal-observation", rep.data.get("headline", {}).get("seal"), seal_observation())
+        t.check(p + ".summary", isinstance(rep.data.get("summary"), str) and bool(rep.data["summary"].strip()), rep.data)
+        if stage != 2:
+            t.eq(p + ".allowances", rep.data.get("allowances"), None)
         t.eq(p + ".data.accepted", rep.data.get("accepted"), stage == 2)
         t.eq(p + ".next", rep.next, [])
         kinds = t.log_kinds(sub)
@@ -2270,7 +2276,11 @@ def c_cli_usage(t):
               ("close-surrender-alone", ["close", sub.ref, "--surrender", "loss.e1.aaaaaa"]),
               ("close-confirm-destination", ["close", sub.ref, "--confirm", "cf1.aaaaaa", "--destination", sub.dest]),
               ("run-no-ref", ["run"]), ("run-extra", ["run", sub.ref, "extra"]),
-              ("run-unknown-flag", ["run", sub.ref, "--provider", "x"])]
+              ("run-unknown-flag", ["run", sub.ref, "--provider", "x"]),
+              ("status-view-conflict", ["status", sub.ref, "--details", "--json"]),
+              ("run-view-conflict", ["run", sub.ref, "--details", "--json"]),
+              ("close-view-conflict", ["close", sub.ref, "--details", "--json"]),
+              ("prepare-no-details", ["prepare", sub.ref, "--details"])]
     for label, args in cases_:
         r = t.cmd(args, op="usage", json_reply=False, envelope=False, name="usage.%s" % label)
         t.eq("usage.%s.exit" % label, r.rc, 2)

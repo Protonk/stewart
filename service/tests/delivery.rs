@@ -65,7 +65,7 @@ fn t8_an_ordinary_ending_is_sealed_by_the_manager_delivered_and_confirmed() {
     // Status after the ordinary ending: no seal, no auditor conclusion.
     let j = status(&e, r);
     assert_eq!(s(&j, &["data", "condition"]), "ended_unsubmitted");
-    assert_eq!(s(&j, &["data", "headline", "sealed", "by"]), "none");
+    assert_eq!(s(&j, &["data", "headline", "seal", "state"]), "absent");
     assert_eq!(s(&j, &["data", "headline", "launched"]), "yes");
     assert!(no(&j, &["data", "headline", "delivered", "verified"]));
     assert_eq!(at(&j, &["data", "runs", "count"]).as_u64(), Some(1));
@@ -97,7 +97,7 @@ fn t8_an_ordinary_ending_is_sealed_by_the_manager_delivered_and_confirmed() {
         s(&j, &["data", "closure", "unfinished_reason"]),
         "delivery_incomplete"
     );
-    assert_eq!(s(&j, &["data", "headline", "sealed", "by"]), "manager");
+    assert_eq!(s(&j, &["data", "headline", "seal", "actor"]), "manager");
 
     let before = e.inventory();
     let o = close(&e, r, &[]);
@@ -223,7 +223,7 @@ fn a_delivery_verified_before_close_is_placed_by_an_ordinary_close() {
 
     let j = status(&e, r);
     assert_eq!(s(&j, &["data", "condition"]), "delivered_open");
-    assert_eq!(s(&j, &["data", "headline", "sealed", "by"]), "auditor");
+    assert_eq!(s(&j, &["data", "headline", "seal", "actor"]), "auditor");
     assert!(yes(&j, &["data", "headline", "delivered", "verified"]));
     assert_eq!(
         s(&j, &["data", "headline", "delivered", "location"]),
@@ -493,6 +493,12 @@ fn t10_a_damaged_element_is_delivered_as_a_named_loss_and_surrendered_by_name() 
     assert!(no(&st, &["data", "headline", "delivered", "verified"]));
     assert!(yes(&st, &["data", "headline", "delivered", "confirmed"]));
     assert!(s(&st, &["data", "summary"]).contains("not a complete delivery"));
+    let human = e.run(&["status", r]).text();
+    let listing = e.run(&["status", "--archive", &e.archive]).text();
+    for loss in &ids {
+        assert!(human.contains(loss), "{human}");
+        assert!(listing.contains(loss), "{listing}");
+    }
     assert_eq!(
         at(&st, &["data", "closure", "surrendered"])
             .as_arr()
@@ -871,15 +877,22 @@ fn status_after_launch_reports_each_fact_separately() {
         at(&j, &["data", "allowances", "turns", "reported"]).as_u64(),
         Some(6)
     );
-    assert_eq!(s(&j, &["data", "headline", "sealed", "by"]), "none");
+    assert_eq!(s(&j, &["data", "headline", "seal", "state"]), "absent");
     assert!(s(&j, &["next", "0", "why"]).contains("manager attribution"));
 
     // Human and JSON presentations carry the same facts.
     let human = e.run(&["status", r]).text();
-    assert!(human.contains("Condition: limit_reached"), "{human}");
-    assert!(human.contains("Sealed by: none"), "{human}");
+    assert!(
+        human.contains("Run 2 stopped at the audit's limits"),
+        "{human}"
+    );
+    assert!(human.contains("3 recorded entries, unsealed"), "{human}");
     assert!(
         human.contains("provider url override: http://127.0.0.1:9"),
+        "{human}"
+    );
+    assert!(
+        human.contains("provider proxy: http://proxy.example:3128"),
         "{human}"
     );
 
@@ -919,6 +932,11 @@ fn status_after_launch_reports_each_fact_separately() {
     std::fs::write(format!("{}/log/99.json", e.audit_dir(r)), b"{}").unwrap();
     let j = status(&e, r);
     assert_eq!(s(&j, &["data", "condition"]), "log_damaged");
+    assert_eq!(s(&j, &["data", "headline", "authoring", "state"]), "ended");
+    assert_eq!(
+        s(&j, &["data", "headline", "authoring", "ended_by"]),
+        "limit"
+    );
     assert_eq!(
         s(&j, &["data", "headline", "delivered", "verified"]),
         "unknown"
@@ -930,6 +948,47 @@ fn status_after_launch_reports_each_fact_separately() {
     let j = close(&e, r, &[]).json();
     assert_eq!(s(&j, &["data", "unfinished_reason"]), "log_damaged");
     assert_eq!(effects(&j), ["unknown", "unknown", "unknown", "unfinished"]);
+}
+
+#[test]
+fn incomplete_usage_evidence_never_presents_partial_totals_as_complete() {
+    let e = Env::new();
+    let r = accepted(&e);
+    let a = open(&r);
+    start_run(&a, 1);
+    record_turn(&a, 1, 1, 1_000, 50);
+    record_turn(&a, 1, 2, 2_000, 60);
+    let complete = status(&e, &r);
+    assert_eq!(allowance(&complete, "turns"), (2, 2, 0));
+    let record = format!("{}/runs/1/attempt-2-1.json", e.audit_dir(&r));
+    let witness = std::fs::read(&record).unwrap();
+    std::fs::write(&record, b"{}").unwrap();
+    let before = e.inventory();
+    let damaged = status(&e, &r);
+    for dimension in ["turns", "input_tokens", "output_tokens"] {
+        assert_eq!(
+            s(&damaged, &["data", "allowances", dimension, "used"]),
+            "unknown"
+        );
+        assert!(
+            at(&damaged, &["data", "allowances", dimension, "limit"])
+                .as_u64()
+                .is_some()
+        );
+    }
+    let human = e.run(&["status", &r]).text();
+    assert!(human.contains("turns unknown/"), "{human}");
+    assert!(human.contains("attempt-2-1.json"), "{human}");
+    assert_eq!(
+        before,
+        e.inventory(),
+        "observation does not repair the evidence"
+    );
+    std::fs::write(&record, &witness).unwrap();
+    assert_eq!(
+        allowance(&status(&e, &r), "turns"),
+        allowance(&complete, "turns")
+    );
 }
 
 #[test]

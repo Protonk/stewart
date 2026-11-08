@@ -32,7 +32,7 @@ from fake import follow_pages
 
 def read_reply(call_id, source, start, end, size, text, next_start=None):
     """A captured tool_result for one material read page, shaped as INTERFACE 7.1 and 7.2 describe."""
-    envelope = {'schema': 'stewart.reply/1', 'operation': 'read', 'outcome': 'completed',
+    envelope = {'schema': 'stewart.reply/2', 'operation': 'read', 'outcome': 'completed',
                 'data': {'source': source, 'kind': 'material', 'size': size, 'range': [start, end],
                          'complete': next_start is None, 'cite': {'source': source, 'start': start, 'end': end}},
                 'next': [] if next_start is None else [{'tool': 'read', 'input': {'source': source, 'start': next_start}, 'why': 'rest'}]}

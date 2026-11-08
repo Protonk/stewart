@@ -7,9 +7,8 @@ authority, and is exercised by [ACCEPTANCE.md](../ACCEPTANCE.md). The question
 families, their instruction texts and the renderer are specified in
 [QUESTION-FORMS.md](QUESTION-FORMS.md).
 
-Status: implemented by the crate in [`service/`](../service/README.md); its test
-status is in [README.md](../README.md). Where this document and CONTRACTS
-differ, CONTRACTS wins and this document is corrected. Linux is the only
+Implementation and qualification status are reported in
+[README.md](../README.md). Where this document and CONTRACTS differ, CONTRACTS wins and this document is corrected. Linux is the only
 platform; the filesystem calls named here are Linux calls.
 
 Examples use illustrative identifiers. Tests match identifiers, digests, times
@@ -26,7 +25,7 @@ another.
 
 | Identifier | Names |
 | --- | --- |
-| `stewart.reply/1` | Reply envelope for manager JSON and auditor tool results |
+| `stewart.reply/2` | Reply envelope and public data for manager JSON and auditor tool results |
 | `question/1` | Front matter grammar of `question.md` |
 | `stewart.record/1` | Archive record header (4.3) |
 | `stewart.preparation/1`, `stewart.arrangement/1`, `stewart.receipt/1` | Manager preparation, pinned arrangement, acceptance receipt |
@@ -36,6 +35,9 @@ another.
 | `utf8-text/1` | The material reader: exact UTF-8 bytes, no transformation |
 
 The writer is identified separately, by the SHA-256 of the executable (4.7).
+Reply revision 2 changes public observations and views: control inputs, archive records,
+prepared answer bytes and return formats retain their versions. There are no
+dual-name aliases, and historical receipts and replies are not rewritten.
 
 ### 1.2 Strict control JSON
 
@@ -69,7 +71,7 @@ printed for people. Raw readback (`receipt --read`) is the one exception: stdout
 carries only the bytes (5.5).
 
 ```json
-{"schema": "stewart.reply/1", "operation": "prepare", "outcome": "completed",
+{"schema": "stewart.reply/2", "operation": "prepare", "outcome": "completed",
  "effects": {"preparation": "recorded"}, "next": [], "data": {}}
 ```
 
@@ -78,7 +80,7 @@ only, never an audit or an answer. The envelope's keys, in this order:
 
 | Field | Present | Meaning |
 | --- | --- | --- |
-| `schema` | always | `stewart.reply/1` |
+| `schema` | always | `stewart.reply/2` |
 | `operation` | always | The command or tool name |
 | `outcome` | always | `completed`, `refused` or `failed` |
 | `reason` | refused, failed | Stable identifier (Appendix A). Tests assert on it. |
@@ -92,6 +94,13 @@ only, never an audit or an answer. The envelope's keys, in this order:
 `next` is always this top-level field, never a member of `data`. On the wire a
 reply is compact JSON: no whitespace between tokens, keys in the order above.
 Examples in this document are spaced for reading.
+
+Refusal messages describe the refused mutation's scope. A known refused
+citation says `No answer edit was applied.`; it does not say that nothing was
+recorded, because raw calls, payloads or diagnostics may remain. A known
+unpublished entry is described as not recorded and its retained effects are
+identified. Uncertain publication is stated as uncertain. Messages and `effects`
+must agree, without losing exact reason IDs, current versions or JSON pointers.
 
 Auditor tool results use the same envelope in the first text block of the
 `tool_result`, without `retained` and without host paths (7.1).
@@ -155,7 +164,30 @@ manager has a choice, such as `run` against `close`, both appear. There is no
 `retryable` flag. Every suggested manager `argv` begins with the recorded
 writer path (4.7), never a bare `stewart`; examples use `/usr/local/bin/stewart`.
 
-### 1.6 Exit status
+### 1.6 Observed authoring and seal
+
+An `authoring` observation has exactly `state`, `ended_by`, in that order.
+`state` is `not_started`, `open`, `ended` or `unknown`. `ended_by` is null
+except when `state` is `ended`, when it is the reason for the first recorded
+ending in log order: `seal` for a seal record, `close` for `close_requested`,
+`ordinary_ending` for `run_ended` `ended_unsubmitted`, `limit` for
+`limit_reached`, or `damage` for `damaged`. A readable ending remains
+established despite later damage. With no established ending, incomplete
+relevant evidence gives `unknown`; complete evidence gives `not_started` when
+there is no launch and `open` otherwise. Interruption alone does not end
+authoring. This observation grants no launch or mutation authority.
+
+A `seal` observation starts with exactly `state`, `actor`, in that order.
+`state` is `absent`, `present` or `unknown`; `actor` is `auditor` or `manager`
+when present and null otherwise. Known absence requires complete relevant
+evidence. A readable seal record establishes its actor even if later damage
+prevents other claims. An uncertain publication never establishes absence.
+Headline and re-entry observations have only these two keys. Manager detail,
+submit and authoring-ended refusals add only their enumerated fields below.
+A durable return manifest still records an actual seal in its unchanged format;
+`effects.seal` still describes the operation's effect rather than its actor.
+
+### 1.7 Exit status
 
 | Code | Meaning |
 | --- | --- |
@@ -788,7 +820,7 @@ its `{` to its `}`.
 {"call": 14, "request": 6, "attempt": 2, "block": 3, "call_file": "call-14.json", "call_bytes": 412,
  "call_sha256": "…", "tool_use_id": "toolu_01A…", "tool": "replace", "input_sha256": "…",
  "replay_of": null, "outcome": "completed", "reason": null, "revision": 8, "log_record": "log/31.json",
- "is_error": false, "content": [{"type": "text", "text": "{\"schema\":\"stewart.reply/1\",…}"}]}
+ "is_error": false, "content": [{"type": "text", "text": "{\"schema\":\"stewart.reply/2\",…}"}]}
 ```
 
 - `request`, `attempt` and `block` locate the block: element `block`, counted
@@ -869,10 +901,10 @@ stewart prepare REF [--json]
 stewart commission REF HANDLE --i-am-finished [--json]
 stewart receipt REF [--verify] [--json]
 stewart receipt REF --read ITEM
-stewart status REF [--json]
-stewart status --archive ROOT [--json]
-stewart run REF [--key-fd FD] [--json]
-stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--json]
+stewart status REF [--details | --json]
+stewart status --archive ROOT [--details | --json]
+stewart run REF [--key-fd FD] [--details | --json]
+stewart close REF [--confirm TOKEN] [--surrender LOSS]... [--destination DIR] [--details | --json]
 stewart help [commands | forms | limits | reader | close]
 ```
 
@@ -881,6 +913,43 @@ Arguments are exact; there are no abbreviations and no configuration files.
 command finds its archive through the reference. Paths given as arguments must
 be absolute. Commands never select an audit by recency, current directory or
 installation.
+
+For `status REF`, `run REF` and `close REF`, default human output leads with
+`data.summary`: a brief factual account of commission, run, answer, delivery and
+closure, followed by qualifications and supported next commands. It includes
+established stop reasons and causes, actual seal actor, confirmation still owed,
+named losses and uncertainty. A later seal or completed close does not hide an
+earlier limit or interruption. Known cumulative usage and limits appear with
+estimated portions identified; unavailable usage is named unknown. Dollar
+estimates are outside this interface.
+
+Completed replies for these commands always have `data.summary`. Refused and
+failed replies include it when the operation has established enough audit
+context to produce one, appended after their case-specific data. This means
+observations already obtained through the operation's existing checks that still
+support the account. Presentation does not require an additional state read or
+revalidation after a refused or uncertain mutation. When those observations do
+not support a trustworthy summary, the detailed failure remains the ordinary
+view until a read-only status establishes further context. In particular, an
+uncertain publication cannot reuse an earlier observation of absence as a
+current fact. A failure without enough context keeps its reason and message; it
+does not invent an audit account. The summary is derived from the same recorded facts as the
+structured observations, including the latest run's number, ending and cause,
+even where a particular reply does not repeat those fields. It adds neither
+an atomic live-view promise nor a new persisted state.
+
+Default output does not recursively expand all `data`. `--details` adds that
+expanded data; `--json` returns the complete structured reply. The two flags are
+mutually exclusive (usage error), and `--details` is accepted only for status,
+run and close. `status --archive` retains its per-reference listing and adds
+expanded entries under `--details`. Other commands retain their presentation.
+Failures, unknown facts and effects, diagnostics and their retained locations,
+named losses, and actionable exact handles remain visible by default.
+Refused/failed replies without a trustworthy summary automatically expand their
+failure data; a summary never suppresses mandatory diagnostic details. No
+mutation is repeated merely to obtain details. Invocation completion is labelled
+command completion. An empty next list reads `Next: no command is supplied.`;
+it establishes neither completed custody nor permission.
 
 ### 5.2 `new`
 
@@ -898,7 +967,7 @@ Creates a reference, and the archive or the scaffold when absent.
   created; another commission always needs its own reference.
 
 ```json
-{"schema": "stewart.reply/1", "operation": "new", "outcome": "completed",
+{"schema": "stewart.reply/2", "operation": "new", "outcome": "completed",
  "effects": {"reference": "created"},
  "next": [{"argv": ["/usr/local/bin/stewart", "prepare", "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/home/ana/stewart-archive"],
            "why": "Edit question.md and materials/, finish, then prepare."}],
@@ -920,7 +989,7 @@ Precondition: no `accepted`, no `close_requested`. Records: `prep/<n>/manifest.j
 log record binding their digests.
 
 ```json
-{"schema": "stewart.reply/1", "operation": "prepare", "outcome": "completed",
+{"schema": "stewart.reply/2", "operation": "prepare", "outcome": "completed",
  "effects": {"preparation": "recorded"},
  "next": [{"argv": ["/usr/local/bin/stewart", "commission", "stw1:…", "mp1.k4q7xa", "--i-am-finished"],
            "why": "Accept exactly this selection. Leave the folder unchanged until commission returns."}],
@@ -1000,7 +1069,7 @@ outcomes are `selection_changed`, `source_unreadable`, `capture_failed`,
 `capture_unverified`, `receipt_record_failed`, `closed` and `process_gone`.
 
 ```json
-{"schema": "stewart.reply/1", "operation": "commission", "outcome": "completed",
+{"schema": "stewart.reply/2", "operation": "commission", "outcome": "completed",
  "effects": {"acceptance": "accepted", "attempt": "recorded"},
  "next": [{"argv": ["/usr/local/bin/stewart", "run", "stw1:…"], "why": "Start the audit; it needs what run_needs lists."},
           {"argv": ["/usr/local/bin/stewart", "close", "stw1:…"], "why": "End the commission without running it."}],
@@ -1017,7 +1086,7 @@ outcomes are `selection_changed`, `source_unreadable`, `capture_failed`,
 ```
 
 ```json
-{"schema": "stewart.reply/1", "operation": "commission", "outcome": "refused",
+{"schema": "stewart.reply/2", "operation": "commission", "outcome": "refused",
  "reason": "selection_changed",
  "message": "materials/a.py changed after preparation, so this selection was not accepted.",
  "effects": {"acceptance": "absent", "attempt": "partial"},
@@ -1031,7 +1100,7 @@ If publishing `accepted` itself fails, whether it was published cannot be
 assumed:
 
 ```json
-{"schema": "stewart.reply/1", "operation": "commission", "outcome": "failed",
+{"schema": "stewart.reply/2", "operation": "commission", "outcome": "failed",
  "reason": "acceptance_record_uncertain",
  "message": "Stewart could not confirm that the acceptance record was published.",
  "effects": {"acceptance": "unknown", "attempt": "recorded", "diagnostic": "durable"},
@@ -1074,11 +1143,13 @@ closes anything. Here it reports an audit whose auditor sealed in its second run
 and whose run delivered the return:
 
 ```json
-{"schema": "stewart.reply/1", "operation": "status", "outcome": "completed",
+{"schema": "stewart.reply/2", "operation": "status", "outcome": "completed",
  "effects": {},
  "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…"],
            "why": "Close the audit. An ordinary close confirms where the delivered copy is."}],
- "data": {"headline": {"accepted": "yes", "launched": "yes", "sealed": {"by": "auditor"},
+ "data": {"headline": {"accepted": "yes", "launched": "yes",
+                       "authoring": {"state": "ended", "ended_by": "seal"},
+                       "seal": {"state": "present", "actor": "auditor"},
                        "delivered": {"verified": true, "confirmed": false,
                                      "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001"},
                        "closed": "no"},
@@ -1093,7 +1164,7 @@ and whose run delivered the return:
                          "input_tokens": {"used": 1830211, "reported": 1801300, "estimated": 28911, "limit": 20000000},
                          "output_tokens": {"used": 59214, "reported": 51022, "estimated": 8192, "limit": 400000}},
           "answer": {"revision": 9, "entries": 6},
-          "seal": {"handle": "seal.r2m6vd", "actor": "auditor", "sealed_at": "2026-11-02T15:20:04.118Z",
+          "seal": {"state": "present", "actor": "auditor", "handle": "seal.r2m6vd", "sealed_at": "2026-11-02T15:20:04.118Z",
                    "revision": 9, "manifest_sha256": "…", "unproduced": []},
           "deliveries": [{"attempt": 1, "by": "run", "destination": "/home/ana/returns",
                           "destination_source": "commissioned", "package": "stewart-return-aqm3x7kd2hz5vw4ny-001",
@@ -1105,8 +1176,9 @@ and whose run delivered the return:
           "receipt_line": ["/usr/local/bin/stewart", "receipt", "stw1:…"]}}
 ```
 
-Headline values: `accepted` is `yes`, `no` or `unknown`; `launched` is `yes`,
-`no` or `unknown`; `sealed.by` is `auditor`, `manager`, `none` or `unknown`;
+Headline keys, in order, are `accepted`, `launched`, `authoring`, `seal`,
+`delivered`, `closed`. `accepted` and `launched` are `yes`, `no` or `unknown`;
+`authoring` and `seal` follow 1.6;
 `delivered` has `verified`, `confirmed` and, once a delivery is `verified` or
 `verified_with_losses`, `location`, the newest such attempt's package path.
 `delivered.verified` is true only for a `verified` delivery. For
@@ -1123,7 +1195,12 @@ The other members of `data`, in order after `evidence`:
   null before launch, else the latest placement's `number` and `started_at`
   with `ending`, `cause`, `ended_at` and `recorded_by` from its `run_ended`,
   those four null while it has none.
-- `allowances`: null before acceptance. Each allowance gives `reported` (usage
+- `allowances`: null when acceptance is established absent, the string
+  `unknown` only when acceptance or its settings/limits cannot be established,
+  otherwise the object below. Each known limit remains numeric when its usage
+  cannot be established: that dimension's `used`, `reported` and `estimated`
+  are then `unknown`. Incomplete evidence never produces zero or a deceptively
+  complete partial total; diagnostics retain the missing evidence. Each allowance gives `reported` (usage
   the provider reported), `estimated` (usage charged without a provider report,
   6.4), `used`, their sum, which is what the limit counts, and `limit`. The
   totals are the `run_ended` usage of every ended placement plus, for a
@@ -1132,9 +1209,12 @@ The other members of `data`, in order after `evidence`:
   request once its process is gone.
 - `answer`: null before launch; else `revision` and `entries`, the number of
   entries in the current selection. Status never shows answer content.
-- `seal`: null, or the seal's `handle`, `actor`, `sealed_at` (the manifest's),
-  `revision`, `manifest_sha256` and `unproduced`, the names of the manifest's
-  unproduced members.
+- `seal`: the observation of 1.6. When present its keys are `state`, `actor`,
+  `handle`, `sealed_at` (the manifest's), `revision`, `manifest_sha256`,
+  `unproduced`, in that order. `unproduced` lists the manifest's unproduced
+  member names. Unestablished metadata is the string `unknown`, preserving
+  established identity and actor; diagnostics name the unavailable evidence.
+  Absent and unknown observations carry only `state`, `actor`.
 - `deliveries`: every delivery attempt in order, with `attempt`, `by`,
   `destination`, `destination_source`, `package` and `replaces` from its plan;
   `outcome` and `cause` from its `delivery_ended`, both null while it has none;
@@ -1252,10 +1332,10 @@ It then reconciles a dead placement (6.7), publishes `run_started`, creates
 replies `completed` whenever it recorded the placement's ending, whatever the
 ending, and `failed` when it could not: `record_failed`, or `log_damaged` when
 it found the log damaged (6.5), with `effects.run` `started`. Exit status is 5
-for an `interrupted` ending and 0 for any other recorded ending (1.6).
+for an `interrupted` ending and 0 for any other recorded ending (1.7).
 
 ```json
-{"schema": "stewart.reply/1", "operation": "run", "outcome": "completed",
+{"schema": "stewart.reply/2", "operation": "run", "outcome": "completed",
  "effects": {"run": "ended", "answer": "changed", "seal": "recorded", "delivery": "verified"},
  "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…"],
            "why": "Close the audit. An ordinary close confirms where the delivered copy is."}],
@@ -1264,13 +1344,20 @@ for an `interrupted` ending and 0 for any other recorded ending (1.6).
                     "output_tokens": {"reported": 20410, "estimated": 0}},
           "allowances": {"turns": {…}, "input_tokens": {…}, "output_tokens": {…}},
           "answer": {"revision": 9, "entries": 6},
-          "seal": {"handle": "seal.r2m6vd", "actor": "auditor", "sealed_at": "2026-11-02T15:20:04.118Z",
+          "seal": {"state": "present", "actor": "auditor", "handle": "seal.r2m6vd", "sealed_at": "2026-11-02T15:20:04.118Z",
                    "revision": 9, "manifest_sha256": "…", "unproduced": []},
           "delivery": {"attempt": 1, "outcome": "verified",
                        "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001",
                        "verified_members": ["manifest.json", "answer.json", "answer.md"],
                        "unverified_members": [], "losses": [], "cause": null},
-          "notices": [{"type": "reminder", "sent": "sent"}]}}
+          "notices": [{"type": "reminder", "sent": "sent"}],
+          "headline": {"accepted": "yes", "launched": "yes",
+                       "authoring": {"state": "ended", "ended_by": "seal"},
+                       "seal": {"state": "present", "actor": "auditor"},
+                       "delivered": {"verified": true, "confirmed": false,
+                                     "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001"},
+                       "closed": "no"},
+          "summary": "Run 2 ended after the auditor submitted revision 9. The return was delivered and verified. The audit is open."}}
 ```
 
 `data` holds `run` and `continuing`; `ending`, `cause` and `provider` as in
@@ -1278,7 +1365,10 @@ for an `interrupted` ending and 0 for any other recorded ending (1.6).
 allowances as status gives them; `answer` and `seal` as in status; `delivery`,
 the attempt this run made (`attempt`, `outcome`, `location`, the package path or
 null, `verified_members`, `unverified_members`, `losses` and `cause`, as in
-status), or null; and `notices`, as in `run_ended` without `record`.
+status), or null; `notices`, as in `run_ended` without `record`; and
+`diagnostics` when nonempty, observations `{record, cause}` of unavailable
+evidence as in status; `headline` as in status; and `summary` (5.1), in that
+order. These diagnostics add no persisted record or mutation.
 
 | Ending | `next` |
 | --- | --- |
@@ -1405,7 +1495,14 @@ leaves the preparation folder and every archive byte alone.
 - **Damaged log**: `closure: "unfinished"`, `unfinished_reason: "log_damaged"`,
   `bad_records` and `headline`.
 
-`runs` is `{count, held, last_ending}`; `seal` is as in status, or null;
+Every completed close data object appends `diagnostics` when nonempty, then
+`allowances`, then `summary` after its case-specific keys above. `diagnostics`
+holds `{record, cause}` observations of unavailable evidence as in status; it
+adds no persisted record or mutation. `allowances` has the same scope and uncertainty
+rules as status (5.6), including on closed-before-launch and damaged-log paths.
+`summary` follows 5.1 and uses the recorded run cause without changing `runs`.
+
+`runs` is `{count, held, last_ending}`; `seal` is as in status;
 `delivery` is the presented or newest attempt as in the `run` reply, its losses
 carrying loss IDs, or null.
 
@@ -1428,25 +1525,29 @@ A closed reply has no next calls; the receipt stays readable through status's
 `surrender_required` also offers the confirmation with every loss named.
 
 ```json
-{"schema": "stewart.reply/1", "operation": "close", "outcome": "completed",
+{"schema": "stewart.reply/2", "operation": "close", "outcome": "completed",
  "effects": {"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"},
  "next": [{"argv": ["/usr/local/bin/stewart", "close", "stw1:…", "--confirm", "cf1.h3d7ws"],
            "why": "Confirm that this delivered copy is where you want the return."},
           {"argv": ["/usr/local/bin/stewart", "status", "stw1:…"],
            "why": "Status keeps showing the delivery and its token until you confirm."}],
  "data": {"closure": "unfinished", "unfinished_reason": "awaiting_confirmation",
-          "headline": {"accepted": "yes", "launched": "yes", "sealed": {"by": "manager"},
+          "headline": {"accepted": "yes", "launched": "yes",
+                       "authoring": {"state": "ended", "ended_by": "ordinary_ending"},
+                       "seal": {"state": "present", "actor": "manager"},
                        "delivered": {"verified": true, "confirmed": false,
                                      "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001"},
                        "closed": "unfinished"},
           "runs": {"count": 1, "held": false, "last_ending": "ended_unsubmitted"},
-          "seal": {"handle": "seal.r2m6vd", "actor": "manager", "sealed_at": "2026-11-02T15:31:40.020Z",
+          "seal": {"state": "present", "actor": "manager", "handle": "seal.r2m6vd", "sealed_at": "2026-11-02T15:31:40.020Z",
                    "revision": 7, "manifest_sha256": "…", "unproduced": []},
           "delivery": {"attempt": 1, "outcome": "verified",
                        "location": "/home/ana/returns/stewart-return-aqm3x7kd2hz5vw4ny-001",
                        "verified_members": ["manifest.json", "answer.json", "answer.md"],
                        "unverified_members": [], "losses": [], "cause": null},
-          "confirmation": "cf1.h3d7ws", "holder": null}}
+          "confirmation": "cf1.h3d7ws", "holder": null,
+          "allowances": {"turns": {…}, "input_tokens": {…}, "output_tokens": {…}},
+          "summary": "Run 1 ended without submission. The manager sealed revision 7 and this close delivered and verified the return. Close is unfinished: confirm placement with the supplied command."}}
 ```
 
 ### 5.9 `help`
@@ -1884,7 +1985,7 @@ that callers with command timeouts should start it in the background.
 
 - Every `tool_result` block is
   `{"type":"tool_result","tool_use_id":<ID>,"content":[…],"is_error":<bool>}`
-  (4.5). Its content begins with a text block holding the `stewart.reply/1`
+  (4.5). Its content begins with a text block holding the `stewart.reply/2`
   envelope, whose `operation` is the tool name. Text reads add a second text
   block holding the exact text read. Like every text block, it is a JSON string
   on the wire, as CONTRACTS requires. When the page has no non-whitespace
@@ -1898,7 +1999,8 @@ that callers with command timeouts should start it in the background.
   refused (`input_invalid`).
 - Replies never include host or archive paths, front matter, provider details
   or manager identifiers: the reference string, archive path, store ID, inquiry
-  label, varies note and family. The audit ID is visible to the auditor. A
+  label and varies note. The audit ID and captured family ID/version are visible
+  to the auditor; only re-entry's first page and prepare add `family`. A
   refusal may repeat the auditor's own input verbatim, such as an unknown
   source name, since that reveals nothing the auditor did not send.
 - Every tool definition is `{"name", "description", "input_schema"}`. The input
@@ -2064,7 +2166,9 @@ payload, and no payload is ever rewritten or removed.
 The first page's `data`:
 
 ```json
-{"audit": "aqm3x7kd2hz5vw4ny", "condition": "open", "sealed_by": null, "revision": 7,
+{"audit": "aqm3x7kd2hz5vw4ny", "family": "open-inquiry/1",
+ "authoring": {"state": "open", "ended_by": null},
+ "seal": {"state": "absent", "actor": null}, "revision": 7,
  "run": {"number": 2, "continuing": true},
  "allowances": {"turns": {"used": 41, "reported": 40, "estimated": 1, "limit": 200},
                 "input_tokens": {"used": 1830211, "reported": 1801300, "estimated": 28911, "limit": 20000000},
@@ -2086,8 +2190,10 @@ The first page's `data`:
 The envelope's `next` offers `list` for the materials and, while `complete` is
 false, a `what_am_i_working_with` call with the `pg.` cursor for the next page.
 
-- `condition` is `open`, `sealed` (with `sealed_by` `auditor` or `manager`) or
-  `closed` (close was requested before any seal). `sealed_by` is null otherwise.
+- Keys follow the example's order. `family` is the captured arrangement's ID
+  and version, never the current installation's default. `authoring` and `seal`
+  follow 1.6. They add no delivery or closure diagnostics to re-entry. A close
+  request ends authoring without claiming completed custody.
 - `entries` lists the current selection in order. A preview is the first 200
   bytes on a character boundary and is marked as a preview; it is null for a
   `binary` artifact. `problem` is `missing` or `unreadable` when the payload
@@ -2118,7 +2224,7 @@ selection, claims `prepared/<n>` (4.3) and writes `answer.json` and `answer.md`
 preparation unless it is sealed. It returns:
 
 ```json
-{"prepared": "ap3.x6h2kq", "revision": 7, "entry_count": 5,
+{"prepared": "ap3.x6h2kq", "family": "open-inquiry/1", "revision": 7, "entry_count": 5,
  "counts": {"record_account": 1, "record_observation": 3, "record_limit": 0, "record_artifact": 1},
  "notices": [{"reason": "section_unfilled", "tool": "record_limit",
               "message": "No record_limit entries are recorded."}],
@@ -2126,6 +2232,8 @@ preparation unless it is sealed. It returns:
  "selection": {"source": "ap3.x6h2kq/selection", "size": 3904}}
 ```
 
+The reply keys follow the example's order. `family` is the captured family
+ID/version, as in re-entry. This reply does not change prepared answer bytes.
 `counts` has one key per recording tool of the family, then `record_artifact`,
 in tools order. `notices` has one `section_unfilled` per expected section with
 no entry, in tools order. Missing sections and an empty answer never refuse. An
@@ -2140,12 +2248,20 @@ bytes refuse (`answer_damaged`). The run then ends `damaged`, and the reply's
 | --- | --- |
 | Dry run, current handle | completed: `dry_run: true`, `revision`, `entry_count`, `rendering` |
 | Revision changed since prepare | refused `stale_preparation`: `revision_now`, next `prepare` |
-| `confirm: true`, current, slot won | completed: `seal`, `sealer: "auditor"`, `sealed_at`, `revision`, `manifest_sha256` |
-| Repeat of an accepted confirmed submit | completed: the same `seal`, `already_sealed: true` |
-| Manager close won the order | refused `authoring_ended`: `{"ended_by": "close", "close_requested_at": …, "seal": <handle or null>, "sealer": <"auditor", "manager" or null>}` |
+| `confirm: true`, current, slot won | completed: `seal: {state: "present", actor: "auditor", handle, sealed_at, revision, manifest_sha256}` |
+| Repeat of an accepted confirmed submit | completed: `seal: {state: "present", actor: "auditor", handle}`, `already_sealed: true` |
+| Manager close won the order | refused `authoring_ended`: `ended_by: "close"`, `close_requested_at`, `seal` (observation of 1.6, adding `handle` after `actor` when present) |
 | Seal publication uncertain | failed `seal_uncertain`, `effects.seal: "unknown"`; next: the same submit, which returns the recorded seal or seals |
 
-Neither reply claims delivery, a stopped process or close. After a confirmed
+Table keys are in wire order, including the keys inside `seal`. A repeat need
+not read the manifest merely to reproduce fresh-submit metadata. Other
+`authoring_ended` tool refusals have `ended_by`, then `seal` with the same
+optional `handle`; the close case additionally puts `close_requested_at`
+between them. Manager run refusals retain `ended_by`, `record` (5.7); if a seal
+is described, it uses the same observation under `seal`, after `record`.
+No preparation reply claims an actual seal.
+
+Neither submit reply claims delivery, a stopped process or close. After a confirmed
 submit the run delivers and ends (6.3), so its reply is recorded but not sent.
 
 ## 8. Seal, return and delivery
@@ -2332,7 +2448,8 @@ remains.
 pauses the run just before its seal `linkat`, runs `close REF` to
 `[log 20: close_requested]`, then releases the run. `submit(ap3, confirm: true)`
 → refused `authoring_ended` with `ended_by: "close"` and `close_requested_at`;
-its `seal` and `sealer` are null unless close has already sealed. Close seals
+its `seal` observation is absent unless close has already sealed (or unknown
+if the relevant evidence cannot be established). Close seals
 revision 7 as manager, and the driver checks the manager seal through status.
 The reverse ordering → the auditor seal stands and close keeps it. Across
 repeated runs each outcome names its actual actor.
@@ -2678,11 +2795,11 @@ the check for that property must fail. The claims are ACCEPTANCE's.
 | `fresh_ledger_on_continuation` | A continuing placement ignores entries recorded before its `run_started` (C13) |
 | `drop_refused_capture` | A refused `record_<kind>` call gets no call capture or result record (C14) |
 | `manifest_verdict` | The return manifest gains `"verdict":"complete"` (C14) |
-| `ended_as_submitted` | Status reports `sealed.by: "auditor"` after an ordinary ending or a limit stop without a seal (C16) |
+| `ended_as_submitted` | Status reports `seal: {state: "present", actor: "auditor"}` after an ordinary ending or a limit stop without a seal (C16) |
 | `seal_as_delivered` | Status reports `delivered.verified: true` whenever a seal exists (C16, C20) |
 | `unknown_membership_empty` | With the manifest unreadable, delivery writes an empty return and records it `verified` (C5, C16) |
 | `stale_preparation_retargets` | `submit` with a stale auditor preparation handle seals the current selection (C20) |
-| `prepare_claims_seal` | Auditor `prepare` replies add `"sealer":"auditor"` (C20) |
+| `prepare_claims_seal` | Auditor `prepare` replies add `"seal":{"state":"present","actor":"auditor"}` (C20) |
 | `leak_custody_path` | Auditor `read` replies add the archive path as `data.archive` (C20) |
 | `accept_unknown_tool_field` | Auditor tool inputs ignore unknown keys (C20) |
 | `seal_uncertain_as_none` | A seal whose publication is uncertain is reported with `effects.seal: "none"` (C20) |

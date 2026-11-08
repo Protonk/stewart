@@ -175,7 +175,7 @@ def c_e2e(t):
     st = t.status(sub, name="e2e.status", cwd=t.fresh_dir("status cwd"))
     hl = st.data.get("headline") or {}
     t.eq("e2e.status.condition", st.data.get("condition"), "delivered_open")
-    t.eq("e2e.status.sealed", hl.get("sealed"), {"by": "auditor"})
+    t.eq("e2e.status.sealed", hl.get("seal"), seal_observation("auditor"))
     t.eq("e2e.status.delivered", hl.get("delivered"), {"verified": True, "confirmed": False, "location": loc})
     t.eq("e2e.status.closed", hl.get("closed"), "no")
     t.eq("e2e.status.allowances", st.data.get("allowances"), fp.allowances(fx.totals(), rs.limits_of(sub)))
@@ -394,9 +394,8 @@ def c_test_variables(t):
 
 def forbidden_for(sub):
     """Strings no auditor reply may carry (7.1, C20 views): host and archive paths, the
-    reference, the store ID, the destination, and the family: its versioned identifier
-    anywhere, its bare name as a whole value (the bare word is also part of tool names)."""
-    return [sub.archive, sub.folder, sub.ref, sub.store, sub.dest, sub.family + "/1", "=" + sub.family]
+    reference, the store ID and destination. Captured family metadata is public in /2."""
+    return [sub.archive, sub.folder, sub.ref, sub.store, sub.dest]
 
 
 def proc(sub, body, **kw):
@@ -526,7 +525,7 @@ def c_c1_requests(t):
 def c_outside_paths(t):
     """Names that leave the material (../, absolute host paths, archive names, near misses,
     directories) are each refused source_unknown by read and by search, with no host or archive
-    path, reference, store or family name anywhere in any reply; a near miss names the closest
+    path, reference or store identity anywhere in any reply; a near miss names the closest
     real name as a hint. A constructed list cursor is refused handle_invalid. Differing: the
     real name reads. Invariance: a second audit in another location refuses the same relative
     names with the same reasons."""
@@ -844,10 +843,10 @@ def c_interruptions(t):
                     st.data.get("diagnostics"))
         elif label == "pre-seal":
             t.eq(pre + ".condition", st.data.get("condition"), "interrupted")
-            t.eq(pre + ".no-seal", [st.data.get("seal"), hl.get("sealed")], [None, {"by": "none"}])
+            t.eq(pre + ".no-seal", [st.data.get("seal"), hl.get("seal")], [seal_observation(), seal_observation()])
         else:
             t.eq(pre + ".condition", st.data.get("condition"), "sealed_undelivered")
-            t.eq(pre + ".sealed-by", hl.get("sealed"), {"by": "auditor"})
+            t.eq(pre + ".sealed-by", hl.get("seal"), seal_observation("auditor"))
             r2 = rs.run(t, sub, fx, name=pre + ".run-2", expect="refused", reason="authoring_ended")
             t.eq(pre + ".ended_by", r2.data.get("ended_by"), "seal")
             t.check(pre + ".record", isinstance(r2.data.get("record"), str) and r2.data["record"].startswith("log/"),
@@ -883,7 +882,7 @@ def c_interruptions(t):
 def c_t6(t):
     """Close wins: the run pauses just before its seal link (log.publish:seal), close publishes
     close_requested, the run is released: the submit is refused authoring_ended with ended_by
-    close, close_requested_at and no seal or sealer; the run ends stopped_by_close; close seals
+    close, close_requested_at and an absent seal observation; the run ends stopped_by_close; close seals
     revision 1 as manager. Submit wins: the run pauses after its seal (seal.after_link), close
     is requested, the run is released: it delivers and ends sealed; the only seal is the
     auditor's. Each order twice."""
@@ -918,7 +917,7 @@ def c_t6(t):
                 t.eq(pre + ".submit-refused", ((env or {}).get("outcome"), (env or {}).get("reason")),
                      ("refused", "authoring_ended"))
                 t.check(pre + ".submit-data", d.get("ended_by") == "close" and isinstance(d.get("close_requested_at"), str)
-                        and AT_RE.match(d["close_requested_at"]) and d.get("seal") is None and d.get("sealer") is None, d)
+                        and AT_RE.match(d["close_requested_at"]) and d.get("seal") == seal_observation() and "sealer" not in d, d)
                 t.eq(pre + ".seal-actor", [b.get("actor") for b in seals], ["manager"])
                 t.eq(pre + ".seal-revision", [b.get("revision") for b in seals], [1])
                 t.eq(pre + ".status-actor", (st.data.get("seal") or {}).get("actor"), "manager")
@@ -1177,7 +1176,7 @@ def c_families(t):
             p.eq("prepare-partial.counts", r.data.get("counts"), counts)
             p.eq("prepare-partial.notices", [(n.get("reason"), n.get("tool")) for n in r.data.get("notices") or []],
                  [("section_unfilled", x) for x in expected if counts[x] == 0])
-            p.check("prepare-partial.no-sealer", "sealer" not in json.dumps(r.data), r.data)
+            p.check("prepare-partial.no-sealer", "seal" not in r.data and "sealer" not in r.data, r.data)
             if family == "open-inquiry":
                 yield from citation_controls(p, sub)
             yield from prepare_and_submit(p)
@@ -1777,7 +1776,7 @@ def c_tool_inputs(t):
     handle_invalid. Replies carry no host path. Prepare names no sealer. Submit with a stale
     preparation refuses stale_preparation with revision_now and a prepare next call; "true"
     for confirm is input_invalid; a dry run seals nothing; the confirmed submit's recorded data
-    is exactly seal, sealer, sealed_at, revision and manifest_sha256, claiming no delivery. On
+    is exactly seal with state, actor, handle, sealed_at, revision and manifest_sha256, claiming no delivery. On
     the test build an uncertain seal publication (log.dirsync:seal=eio) fails seal_uncertain
     with effects.seal unknown and the same submit as next call."""
     sub = run_submission(t)
@@ -1849,8 +1848,10 @@ def c_tool_inputs(t):
     res = rs.result_for(sub, tid)
     env = rs.result_envelope(res[3]) if res and res[3] else None
     d = (env or {}).get("data") or {}
-    t.eq("c20.inputs.submit-data", sorted(d), sorted(["seal", "sealer", "sealed_at", "revision", "manifest_sha256"]))
-    t.eq("c20.inputs.submit-sealer", d.get("sealer"), "auditor")
+    t.eq("c20.inputs.submit-data", list(d), ["seal"])
+    t.eq("c20.inputs.submit-seal-keys", list(d.get("seal", {})), ["state", "actor", "handle", "sealed_at", "revision", "manifest_sha256"])
+    t.eq("c20.inputs.submit-sealer", d.get("seal", {}).get("actor"), "auditor")
+    t.eq("c20.inputs.submit-seal-state", d.get("seal", {}).get("state"), "present")
     if t.bin["kind"] != "test":
         return
     sub2 = run_submission(t)

@@ -19,21 +19,49 @@ from session import safe_choice, safe_usage
 from exercise import verify_package, digest
 
 
+def safe_allowances(value):
+    """Preserve known limits and explicit unknown usage without forwarding raw text."""
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        return 'unknown'
+    result = {}
+    for dimension in ['turns', 'input_tokens', 'output_tokens']:
+        part = value.get(dimension)
+        if not isinstance(part, dict):
+            result[dimension] = 'unknown'
+            continue
+        result[dimension] = {key: part[key] if type(part.get(key)) is int and part[key] >= 0 else 'unknown'
+                             for key in ['used', 'reported', 'estimated', 'limit']}
+    return result
+
+
 def safe_state(reply):
     data = reply.get('data', {})
     run = data.get('runs', {}).get('last') or {}
-    ending = data.get('ending', run.get('ending'))
+    ending = data.get('ending', run.get('ending', data.get('runs', {}).get('last_ending')))
     cause = data.get('cause', run.get('cause'))
-    seal = data.get('seal')
     headline = data.get('headline', {})
+    seal = data.get('seal', headline.get('seal', {}))
+    authoring = headline.get('authoring', {})
     delivery = data.get('delivery') or {}
     return {'outcome': safe_choice(reply.get('outcome'), ['completed', 'failed', 'refused']),
         'condition': safe_choice(data.get('condition'), ['preparing', 'intake_in_progress', 'intake_failed', 'acceptance_uncertain', 'log_damaged', 'not_started', 'run_active', 'interrupted', 'ended_unsubmitted', 'limit_reached', 'damaged', 'sealed_undelivered', 'delivered_open', 'awaiting_confirmation', 'close_unfinished', 'closed_before_launch', 'closed']),
         'ending': safe_choice(ending, ['sealed', 'ended_unsubmitted', 'limit_reached', 'stopped_by_close', 'damaged', 'interrupted']),
         'cause': safe_choice(cause, ['signal', 'provider_unavailable', 'provider_rejected', 'context_exhausted', 'provider_refusal', 'max_tokens', 'protocol_anomaly', 'archive_write_failed', 'process_gone', 'credential_reflected']),
-        'seal_actor': safe_choice(seal.get('actor') if isinstance(seal, dict) else None, ['auditor', 'manager']),
-        'delivery_verified': headline.get('delivered', {}).get('verified') is True or delivery.get('outcome') == 'verified',
-        'closed': headline.get('closed') == 'yes' or data.get('closure') == 'complete',
+        'authoring': {'state': safe_choice(authoring.get('state'), ['not_started', 'open', 'ended']),
+                      'ended_by': None if authoring.get('state') != 'ended' else safe_choice(authoring.get('ended_by'), ['seal', 'ordinary_ending', 'limit', 'damage', 'close'])},
+        'seal_state': safe_choice(seal.get('state') if isinstance(seal, dict) else None, ['absent', 'present']),
+        'seal_actor': (safe_choice(seal.get('actor'), ['auditor', 'manager'])
+                       if isinstance(seal, dict) and seal.get('state') == 'present' else None),
+        'delivery_verified': (headline.get('delivered', {}).get('verified')
+                              if type(headline.get('delivered', {}).get('verified')) is bool
+                              else delivery.get('outcome') == 'verified' if delivery.get('outcome') in ['verified', 'verified_with_losses', 'partial', 'failed', 'name_taken'] else 'unknown'),
+        'closed': (headline['closed'] == 'yes' if headline.get('closed') in ['yes', 'no', 'unfinished']
+                   else data['closure'] == 'complete' if data.get('closure') in ['complete', 'unfinished'] else 'unknown'),
+        'allowances': safe_allowances(data.get('allowances', 'unknown')),
+        'diagnostics_present': bool(data.get('diagnostics') or data.get('bad_records') or reply.get('causes')),
+        'retained_locations_count': len(reply.get('retained', [])),
         'usage': safe_usage(data.get('usage'))}
 
 
@@ -61,6 +89,8 @@ def main():
             user=1000, group=1000, extra_groups=[], umask=0o077)
     write_json(stem.with_suffix('.json'), {'argv': argv, 'exit': result.returncode, 'at': time.time()})
     reply = json.loads(stem.with_suffix('.stdout').read_bytes())
+    if reply.get('schema') != 'stewart.reply/2':
+        raise ValueError('unsupported Stewart reply schema')
     summary = {'operation': args.operation, 'exit': result.returncode,
         'reply_retained': str(stem.with_suffix('.stdout')),
         'confirmation_requested': args.confirm is not None, 'loss_surrendered': False,

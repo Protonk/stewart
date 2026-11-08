@@ -159,6 +159,36 @@ impl<'a> Intake<'a> {
 }
 
 impl LogState {
+    /// Whether authoring has ended, independently of run liveness and custody.
+    /// A readable ending remains authoritative even with a damaged later tail.
+    pub fn authoring_j(&self) -> J {
+        let end = self.authoring_end();
+        let state = if end.is_some() {
+            "ended"
+        } else if self.damaged() {
+            "unknown"
+        } else if self.launched() {
+            "open"
+        } else {
+            "not_started"
+        };
+        J::obj()
+            .with("state", state)
+            .with("ended_by", end.map(|e| e.by.name()))
+    }
+
+    /// A seal observation, never inferring absence from missing evidence.
+    pub fn seal_observation_j(&self) -> J {
+        match self.seal() {
+            Some((_, seal)) => J::obj()
+                .with("state", "present")
+                .with("actor", seal.actor.name()),
+            None => J::obj()
+                .with("state", if self.damaged() { "unknown" } else { "absent" })
+                .with("actor", J::Null),
+        }
+    }
+
     pub fn damaged(&self) -> bool {
         !self.damage.is_empty()
     }

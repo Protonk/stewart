@@ -14,8 +14,8 @@ is insufficient. You judge the answer; Stewart does not grade its conclusions.
 
 ## Status
 
-**Version 0.0.2 — experimental.** The audit lifecycle is implemented, and Linux
-tests with a fake provider have passed. Small commissions have run against a
+**Version 0.0.2 — experimental.** The audit lifecycle is implemented, and
+recorded earlier builds passed Linux tests with a fake provider. Small commissions have run against a
 real model across all three implemented forms and returned answers with verified
 delivery. Its usefulness in real inquiries and readiness for routine use remain
 to be established.
@@ -25,10 +25,15 @@ x86_64 and aarch64. Native macOS is a development environment, not a product
 target. The current adapter uses the Anthropic Messages API; no model is yet
 qualified, and other auditor runtimes are unimplemented.
 
+The `stewart.reply/2` interface revision is implemented. Its Linux acceptance run
+and affected launcher rehearsals remain outstanding; the earlier results below
+do not qualify this revision.
+
 What the evidence establishes:
 
-- **Scripted Linux behavior:** the current acceptance suite, including the
-  credential checks, passed on native aarch64 and x86_64 under Rosetta emulation.
+- **Scripted Linux behavior:** the recorded acceptance suite, including the
+  credential checks, passed on native aarch64 and x86_64 under Rosetta emulation
+  for its bound builds, before reply revision 2.
   The suite exercises the release build through
   independently witnessed audits, with faults and deliberately broken controls
   in a separate test build. Native timing checks passed; emulated timings do not

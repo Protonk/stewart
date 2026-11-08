@@ -35,6 +35,7 @@ def operate(private, out, audit_id, operation, *, confirm=None, key=None, local=
                 stdin=subprocess.DEVNULL,stdout=stdout,stderr=stderr,umask=0o077,**options)
         write_json(stem.with_suffix('.json'),{'argv':argv,'exit':result.returncode,'at':time.time()})
         reply=strict_json(read_file(stem.with_suffix('.stdout')))
+        require(reply.get('schema')=='stewart.reply/2','unsupported Stewart reply schema')
         summary={'audit':audit_id,'operation':operation,'exit':result.returncode,'state':safe_state(reply),
                  'private_reply':str(stem.with_suffix('.stdout')),'loss_surrendered':False}
         if operation=='inspect' and result.returncode==0:

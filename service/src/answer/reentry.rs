@@ -219,11 +219,6 @@ fn inner(ctx: &Ctx, v: &Json) -> Result<Out, Fail> {
         J::obj().with("entries", entries).with("page", page)
     } else {
         let state = &ctx.state;
-        let (condition, sealed_by) = match (state.seal(), state.close_requested()) {
-            (Some((_, s)), _) => ("sealed", Some(s.actor.name())),
-            (None, Some(_)) => ("closed", None),
-            (None, None) => ("open", None),
-        };
         let mut used = ctx.placement.used;
         if crate::sabotage!("reentry_placement_allowances") {
             // Sabotage control: this placement's usage instead of the audit's.
@@ -246,8 +241,9 @@ fn inner(ctx: &Ctx, v: &Json) -> Result<Out, Fail> {
         let q = &ctx.world.question;
         J::obj()
             .with("audit", ctx.audit_id())
-            .with("condition", condition)
-            .with("sealed_by", sealed_by)
+            .with("family", ctx.world.arrangement.family.as_str())
+            .with("authoring", state.authoring_j())
+            .with("seal", state.seal_observation_j())
             .with("revision", revision)
             .with(
                 "run",

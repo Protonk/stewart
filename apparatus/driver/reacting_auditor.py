@@ -711,15 +711,17 @@ class ReactingAuditor:
             self.anomaly("reentry.next-list", env.get("next"))
 
     def _check_wwaw_first(self, d, ex):
-        for k in ("audit", "condition", "sealed_by", "revision", "run", "allowances", "notices_used", "question",
+        for k in ("audit", "family", "authoring", "seal", "revision", "run", "allowances", "notices_used", "question",
                   "materials", "entries", "receipts", "latest_refusals", "gaps", "page"):
             if k not in d:
                 self.anomaly("reentry.member", k)
-        if list(d)[:14] != ["audit", "condition", "sealed_by", "revision", "run", "allowances", "notices_used",
+        if list(d) != ["audit", "family", "authoring", "seal", "revision", "run", "allowances", "notices_used",
                             "question", "materials", "entries", "receipts", "latest_refusals", "gaps", "page"]:
             self.anomaly("reentry.member-order", list(d))
-        if d.get("condition") != "open" or d.get("sealed_by") is not None:
-            self.anomaly("reentry.condition", {"condition": d.get("condition"), "sealed_by": d.get("sealed_by")})
+        if d.get("authoring") != {"state": "open", "ended_by": None} or d.get("seal") != {"state": "absent", "actor": None}:
+            self.anomaly("reentry.authoring-seal", {"authoring": d.get("authoring"), "seal": d.get("seal")})
+        if d.get("family") != self.family + "/1":
+            self.anomaly("reentry.family", d.get("family"))
         run = d.get("run") or {}
         if not isinstance(run.get("number"), int) or run.get("continuing") is not (run.get("number", 0) > 1) \
                 or run.get("number", 0) < self.conversations:
@@ -817,8 +819,12 @@ class ReactingAuditor:
             self.anomaly("prepare.refused", {"reason": env.get("reason")})
             self.mem.ended = True
             return
-        if "sealer" in json.dumps(d):
+        if "seal" in d or "sealer" in d:
             self.anomaly("prepare.claims-sealer", d)
+        if list(d) != ["prepared", "family", "revision", "entry_count", "counts", "notices", "rendering", "selection"]:
+            self.anomaly("prepare.member-order", list(d))
+        if d.get("family") != self.family + "/1":
+            self.anomaly("prepare.family", d.get("family"))
         self.mem.prepared = d
         tools = FAMILY_TOOLS[self.family] + ["record_artifact"]
         if list((d.get("counts") or {}).keys()) != tools:
@@ -978,7 +984,7 @@ def tool_envelope_problems(env, tool, raw_text=None, forbidden=(), own=()):
         for s in own:
             v = v.replace(s, "")
         for f in forbidden:
-            # "=x" forbids x only as a whole value: a family name such as "comparison" is also
+            # "=x" forbids x only as a whole value: a word such as "comparison" is also
             # part of tool names (record_comparison) that every arrangement legitimately shows.
             if (f[1:] == whole) if f.startswith("=") else (f in v):
                 out.append("discloses %r" % f)
@@ -1079,7 +1085,7 @@ def _run_scenario(faults=(), compact_after=(), kill_after=None, finish="submit",
     q, mats = _scenario_material()
     aud = ReactingAuditor(_goals(mats), question=q, materials=mats, compact_after=compact_after,
                           calls_per_turn=calls_per_turn, finish=finish, after_reminder=after_reminder,
-                          forbidden=("/archive/root", "open-inquiry"))
+                          forbidden=("/archive/root",))
     sim = mini_stewart.MiniStewart(aud, q, mats, faults=faults)
     endings = [sim.run(kill_after_mutations=kill_after, kill_after_reminder=kill_after_reminder)]
     if endings[-1] == "killed":
@@ -1135,12 +1141,12 @@ def reacting_auditor_selftests():
     out.append(("auditor.leak.control.beyond-echo", bool(tool_envelope_problems(leak, "read", None, [path], own)),
                 "a path beyond the echoed input must still be a disclosure"))
 
-    fam = dict(env, data={"counts": {"record_comparison": 0}, "family": "comparison"})
-    probs = tool_envelope_problems(fam, "read", None, ["=comparison", "comparison/1"], ())
-    out.append(("auditor.leak.family-whole-value", len(probs) == 1, probs))
+    fam = dict(env, data={"counts": {"record_comparison": 0}, "inquiry": "private-inquiry"})
+    probs = tool_envelope_problems(fam, "read", None, ["=private-inquiry"], ())
+    out.append(("auditor.leak.inquiry-whole-value", len(probs) == 1, probs))
     fam2 = dict(env, data={"counts": {"record_comparison": 0}})
-    out.append(("auditor.leak.family-in-tool-name-allowed", not tool_envelope_problems(fam2, "read", None,
-                                                                                         ["=comparison", "comparison/1"], ())))
+    out.append(("auditor.leak.tool-name-allowed", not tool_envelope_problems(fam2, "read", None,
+                                                                                         ["=private-inquiry"], ())))
 
     # Firing controls: each simulated sabotage must produce the named anomaly.
     def fires(label, check_prefix, **kw):

@@ -575,8 +575,11 @@ fn reentry_reports_recorded_facts_and_pages_by_revision() {
     r.ok();
     let d = |p: &[&str]| r.data(p).to_j().string();
     assert_eq!(r.str(&["audit"]), l.audit.id);
-    assert_eq!(r.str(&["condition"]), "open");
-    assert!(r.data(&["sealed_by"]).is_null());
+    assert_eq!(r.str(&["family"]), l.world.arrangement.family);
+    assert_eq!(r.str(&["authoring", "state"]), "open");
+    assert!(r.data(&["authoring", "ended_by"]).is_null());
+    assert_eq!(r.str(&["seal", "state"]), "absent");
+    assert!(r.data(&["seal", "actor"]).is_null());
     assert_eq!(r.num(&["revision"]), 3);
     assert_eq!(d(&["run"]), r#"{"number":1,"continuing":false}"#);
     assert_eq!(
@@ -721,8 +724,8 @@ fn t12_an_empty_answer_prepares_and_seals() {
     r.ok();
     assert_eq!(r.effect("seal"), "recorded");
     assert!(r.ex.sealed);
-    assert_eq!(r.str(&["sealer"]), "auditor");
-    assert!(r.str(&["seal"]).starts_with("seal."));
+    assert_eq!(r.str(&["seal", "actor"]), "auditor");
+    assert!(r.str(&["seal", "handle"]).starts_with("seal."));
     assert!(!has(r.data(&[]), "delivered"));
     assert_eq!(
         l.state().seal().unwrap().1.actor,
@@ -809,8 +812,8 @@ fn submit_answers_every_case_of_its_table() {
             .string(),
     );
     r.ok();
-    let seal = r.str(&["seal"]).to_string();
-    assert_eq!(r.num(&["revision"]), 2);
+    let seal = r.str(&["seal", "handle"]).to_string();
+    assert_eq!(r.num(&["seal", "revision"]), 2);
     // The repeat returns the same seal.
     let again = l.call(
         "submit",
@@ -820,7 +823,7 @@ fn submit_answers_every_case_of_its_table() {
             .string(),
     );
     again.ok();
-    assert_eq!(again.str(&["seal"]), seal);
+    assert_eq!(again.str(&["seal", "handle"]), seal);
     assert_eq!(
         again.data(&["already_sealed"]).v,
         stewart::json::V::Bool(true)
@@ -830,15 +833,19 @@ fn submit_answers_every_case_of_its_table() {
     let r = l.call("record_account", r#"{"text":"late"}"#);
     assert_eq!(r.reason(), "authoring_ended");
     assert_eq!(
-        (r.str(&["ended_by"]), r.str(&["sealer"]), r.str(&["seal"])),
+        (
+            r.str(&["ended_by"]),
+            r.str(&["seal", "actor"]),
+            r.str(&["seal", "handle"])
+        ),
         ("seal", "auditor", seal.as_str())
     );
     assert_eq!(r.effect("answer"), "unchanged");
     l.call("read", r#"{"source":"question"}"#).ok();
     let r = l.call("what_am_i_working_with", "{}");
     assert_eq!(
-        (r.str(&["condition"]), r.str(&["sealed_by"])),
-        ("sealed", "auditor")
+        (r.str(&["authoring", "state"]), r.str(&["seal", "actor"])),
+        ("ended", "auditor")
     );
     assert_eq!(
         l.call("submit", r#"{"prepared":"ap9.aaaaaa"}"#).reason(),
@@ -864,10 +871,11 @@ fn t6_close_first_ends_authoring_and_close_seals_as_manager() {
     assert_eq!(r.reason(), "authoring_ended");
     assert_eq!(r.str(&["ended_by"]), "close");
     assert!(r.data(&["close_requested_at"]).as_str().is_some());
-    assert!(r.data(&["seal"]).is_null() && r.data(&["sealer"]).is_null());
+    assert!(r.str(&["seal", "state"]) == "absent" && r.data(&["seal", "actor"]).is_null());
     assert_eq!(r.effect("seal"), "none");
     let r = l.call("what_am_i_working_with", "{}");
-    assert_eq!(r.str(&["condition"]), "closed");
+    assert_eq!(r.str(&["authoring", "state"]), "ended");
+    assert_eq!(r.str(&["authoring", "ended_by"]), "close");
     // Close seals revision 7 as manager.
     let state = l.state();
     let family = l.world.arrangement.family().unwrap();
@@ -889,10 +897,31 @@ fn t6_close_first_ends_authoring_and_close_seals_as_manager() {
             .string(),
     );
     assert_eq!(
-        (r.reason(), r.str(&["sealer"])),
+        (r.reason(), r.str(&["seal", "actor"])),
         ("authoring_ended", "manager")
     );
     assert_eq!(r.effect("seal"), "existing");
+    let r = l.call("what_am_i_working_with", "{}");
+    assert_eq!(r.str(&["authoring", "ended_by"]), "close");
+    assert_eq!(r.str(&["seal", "actor"]), "manager");
+}
+
+#[test]
+fn family_metadata_tracks_the_commission_without_entering_answer_bytes() {
+    for family in ["open-inquiry", "comparison", "inquiry-framing"] {
+        let mut l = Live::open(family, "Q?\n", &[("a.txt", b"A\n")]);
+        let expected = l.world.arrangement.family.clone();
+        let reentry = l.call("what_am_i_working_with", "{}");
+        assert_eq!(reentry.str(&["family"]), expected);
+        let preparation = l.call("prepare", "{}");
+        assert_eq!(preparation.str(&["family"]), expected);
+        assert!(!has(preparation.data(&[]), "seal"));
+        let answer = l.file("prepared/1/answer.json");
+        assert_eq!(
+            answer,
+            b"{\"schema\":\"stewart.answer/1\",\"revision\":0,\"entries\":[]}\n"
+        );
+    }
 }
 
 #[test]

@@ -137,7 +137,7 @@ pub enum End {
 #[derive(Debug, Clone)]
 pub struct Executed {
     /// The exact bytes of the block's `content` array: a text block holding
-    /// the `stewart.reply/1` envelope, then, for a text read whose page is
+    /// the `stewart.reply/2` envelope, then, for a text read whose page is
     /// not blank, a text block holding the exact text (7.1).
     pub content: Vec<u8>,
     /// True exactly when `outcome` is not completed.

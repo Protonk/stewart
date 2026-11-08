@@ -889,48 +889,23 @@ pub fn run(reference: &str) -> Reply {
     log::sabotage_unknown_as_absent(&mut state);
     let v = view(&audit, &state);
     let mut diagnostics = v.diagnostics;
-    let allowances = match state.limits() {
-        None => J::Null,
-        Some(limits) if state.damaged() => {
-            // Placements beyond the damage may have charged usage.
-            let one = |limit: u64| {
-                J::obj()
-                    .with("used", "unknown")
-                    .with("reported", "unknown")
-                    .with("estimated", "unknown")
-                    .with("limit", limit)
-            };
-            J::obj()
-                .with("turns", one(limits.turns))
-                .with("input_tokens", one(limits.input_tokens))
-                .with("output_tokens", one(limits.output_tokens))
-        }
-        Some(limits) => {
-            // A placement without its ending is live while it holds the
-            // lock: only its attempt records count, since a request in
-            // flight is charged when its attempt ends. Once the lock is free
-            // its process is gone, and the in-flight estimate that
-            // reconciliation will record is added (6.4). When the lock
-            // cannot be tested, only the records are counted and the
-            // diagnostics say so.
-            let open = state.latest_placement().is_some_and(|p| p.ended.is_none());
-            if open && v.lock == Lock::Unknown {
-                diagnostics.push(J::obj().with("record", archive::LOCK_FILE).with(
-                    "cause",
-                    "allowances count the open placement's attempt records only: whether its process is gone cannot be established, so no estimate for a request in flight is added",
-                ));
-            }
-            let live = v.lock != Lock::Free;
-            let (used, problems) = crate::runs::cumulative_usage(&audit, &state, live);
-            for p in problems {
-                diagnostics.push(J::obj().with("record", "runs").with(
-                    "cause",
-                    format!("usage accounting could not read a record: {p}"),
-                ));
-            }
-            limits.allowances_j(&used)
-        }
-    };
+    let allowances = super::presentation::allowances(&audit, &state, v.lock, &mut diagnostics);
+    let mut summary = super::presentation::summary(&state, &v.headline, &allowances);
+    if matches!(
+        v.condition,
+        "preparing"
+            | "intake_in_progress"
+            | "intake_failed"
+            | "acceptance_uncertain"
+            | "log_damaged"
+            | "close_unfinished"
+            | "awaiting_confirmation"
+            | "run_active"
+            | "interrupted"
+    ) {
+        summary.push('\n');
+        summary.push_str(&v.summary);
+    }
     let (seal, seal_diag) = seal_j(&audit, &state);
     diagnostics.extend(seal_diag);
     let answer = if state.damaged() && state.launched() {
@@ -944,7 +919,7 @@ pub fn run(reference: &str) -> Reply {
     let mut data = J::obj()
         .with("headline", v.headline)
         .with("condition", v.condition)
-        .with("summary", v.summary)
+        .with("summary", summary)
         .with("evidence", J::Arr(v.evidence))
         .with("runs", runs_j(&state, v.lock))
         .with("allowances", allowances)

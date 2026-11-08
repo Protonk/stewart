@@ -117,11 +117,11 @@ def emulator_artifact(rel):
         if rel == a or a.startswith(rel + "/") or rel.startswith(a + "/"):
             return True
     return False
-REPLY_SCHEMA = "stewart.reply/1"
+REPLY_SCHEMA = "stewart.reply/2"
 RECORD_SCHEMA = "stewart.record/1"
 
 # ---------------------------------------------------------------------------
-# Pinned facts from the specification (INTERFACE 1.3-1.6, 3, 4, 5, App. A-C;
+# Pinned facts from the specification (INTERFACE 1.3-1.7, 3, 4, 5, App. A-C;
 # QUESTION-FORMS). These are the driver's own copies; Stewart's output is
 # compared with them.
 # ---------------------------------------------------------------------------
@@ -170,6 +170,27 @@ def tool_effect_keys(tool):
     if isinstance(tool, str) and tool.startswith("record_"):
         return TOOL_EFFECTS["record_"]
     return TOOL_EFFECTS.get(tool)
+
+
+def seal_observation(actor=None):
+    """INTERFACE 1.6, using the case's independently known actor or absence."""
+    return {"state": "unknown" if actor == "unknown" else "present" if actor in ("auditor", "manager") else "absent",
+            "actor": actor if actor in ("auditor", "manager") else None}
+
+
+def authoring_observation(ending=None, *, launched=True, closing=False, actor=None, damaged=False):
+    """Expected first ending for scripted cases, from the case's witnessed order.
+
+    Ordinary/limit/damage endings precede their later manager close. An auditor
+    seal precedes its later close; other close cases end authoring at the request.
+    Cases with another ordering must supply their explicit expected observation.
+    """
+    ended_by = {"ended_unsubmitted": "ordinary_ending", "limit_reached": "limit",
+                "damaged": "damage", "stopped_by_close": "close", "sealed": "seal"}.get(ending)
+    if ended_by is None:
+        ended_by = "seal" if actor == "auditor" else "close" if closing else None
+    return {"state": "ended" if ended_by else "unknown" if damaged else "open" if launched else "not_started",
+            "ended_by": ended_by}
 
 
 RUN_ENDINGS = ("sealed", "ended_unsubmitted", "limit_reached", "stopped_by_close", "damaged", "interrupted")
@@ -1643,7 +1664,7 @@ class T:
                        {"expected": reasons, "got": rep.reason})
 
     def check_envelope(self, op, rep, writer, name):
-        """INTERFACE 1.3-1.6 for one manager --json reply. Checks are named envelope.*."""
+        """INTERFACE 1.3-1.7 for one manager --json reply. Checks are named envelope.*."""
         raw = rep.stdout
         if rep.rc is not None and rep.rc < 0:
             self.check("envelope.present", False, "%s: killed by signal %d" % (name, -rep.rc))
@@ -1720,11 +1741,27 @@ class T:
             self.check("envelope.data", isinstance(obj.get("data"), dict), "%s: data missing on completed reply" % name)
         elif "data" in obj:
             self.check("envelope.data", isinstance(obj.get("data"), dict), "%s: data is not an object" % name)
+        data = obj.get("data") if isinstance(obj.get("data"), dict) else {}
+        if outcome == "completed" and (op in ("run", "close") or op == "status" and "headline" in data):
+            self.check("envelope.summary", isinstance(data.get("summary"), str) and bool(data["summary"].strip()),
+                       "%s: completed manager observation requires summary" % name)
+            headline = data.get("headline") if isinstance(data.get("headline"), dict) else {}
+            self.eq("envelope.headline-order", list(headline), ["accepted", "launched", "authoring", "seal", "delivered", "closed"])
+            authoring = headline.get("authoring") if isinstance(headline.get("authoring"), dict) else {}
+            self.eq("envelope.authoring-order", list(authoring), ["state", "ended_by"])
+            state, end = authoring.get("state"), authoring.get("ended_by")
+            self.check("envelope.authoring-values", state in ("not_started", "open", "ended", "unknown") and
+                       (end in ("seal", "ordinary_ending", "limit", "damage", "close") if state == "ended" else end is None), authoring)
+            seal = headline.get("seal") if isinstance(headline.get("seal"), dict) else {}
+            self.eq("envelope.seal-order", list(seal), ["state", "actor"])
+            self.check("envelope.seal-values", seal in [seal_observation(x) for x in (None, "unknown", "auditor", "manager")], seal)
+            if op == "close":
+                self.check("envelope.close-allowances", "allowances" in data, name)
         if rep.rc is not None and outcome in EXIT_FOR_OUTCOME:
             want = EXIT_FOR_OUTCOME[outcome]
             data = obj.get("data") if isinstance(obj.get("data"), dict) else {}
             if op == "run" and outcome == "completed" and data.get("ending") == "interrupted":
-                want = 5   # INTERFACE 1.6, 5.7: an interrupted placement, recorded
+                want = 5   # INTERFACE 1.7, 5.7: an interrupted placement, recorded
             self.check("exit.matches-outcome", rep.rc == want,
                        "%s: outcome %s (ending %r) exited %s, expected %s" % (
                            name, outcome, data.get("ending"), rep.rc, want))
@@ -2176,7 +2213,8 @@ class T:
             ok = got == expected or (damaged and "unknown" in json.dumps(got))
             self.check("%s.headline.%s" % (name, key), ok, {"expected": expected, "got": got})
         headline("launched", launched)
-        headline("sealed", {"by": "none"})
+        headline("seal", seal_observation())
+        headline("authoring", authoring_observation(launched=launched == "yes", closing=closed != "no"))
         headline("delivered", {"verified": False, "confirmed": False})
         headline("closed", closed)
         self.check("%s.summary" % name, isinstance(d.get("summary"), str) and d.get("summary").strip(), d.get("summary"))
@@ -2210,7 +2248,7 @@ class T:
         elif accepted == "no":
             self.eq("%s.allowances" % name, d.get("allowances"), None)
         self.eq("%s.answer" % name, d.get("answer"), None)
-        self.eq("%s.seal" % name, d.get("seal"), None)
+        self.eq("%s.seal" % name, d.get("seal"), seal_observation())
         self.eq("%s.deliveries" % name, d.get("deliveries"), [])
         self.eq("%s.provider" % name, [d.get("provider_url_override"), d.get("provider_proxy")], [None, None])
         cl = d.get("closure")
@@ -3051,10 +3089,14 @@ def self_test():
             f.write(b"x")
         v, _ = compare_snapshots(s2, snapshot(base, cache), True)
         ok("snapshot.rewrite", v and v[0] == ("rewritten", "d/deep.txt"))
-        s3 = snapshot(base, cache)
+        # Pin both modes: a caller's private umask may already create 0600 files.
+        # a.txt and b.txt share an inode, so this changes both names and no bytes.
         os.chmod(os.path.join(base, "a.txt"), 0o600)
+        s3 = snapshot(base, cache)
+        ok("snapshot.mode-unchanged", compare_snapshots(s3, snapshot(base, cache), True) == ([], []))
+        os.chmod(os.path.join(base, "a.txt"), 0o400)
         v, _ = compare_snapshots(s3, snapshot(base, cache), True)
-        ok("snapshot.mode", any(x[0] == "mode_changed" for x in v))
+        ok("snapshot.mode", v == [("mode_changed", "a.txt"), ("mode_changed", "b.txt")], v)
         res = Proc(["/bin/sh", "-c", "printf out; printf err >&2; exit 3"], {"PATH": "/usr/bin:/bin"}, tmp, 10).wait()
         ok("proc.streams", res["rc"] == 3 and res["stdout"] == b"out" and res["stderr"] == b"err")
         res = Proc(["/bin/sh", "-c", "kill -9 $$"], {"PATH": "/usr/bin:/bin"}, tmp, 10).wait()

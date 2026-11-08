@@ -74,6 +74,23 @@ The product serves a bounded commission and structured return. Managers and
 auditors are cooperative but fallible; access constraints make normal operation
 reliable rather than claiming protection against a hostile archive owner.
 
+## Shared terms
+
+An inquiry is the manager's line of questions and may contain separate audits.
+An audit is one undertaking, with at most one accepted commission and cumulative
+ledger and limits; continuing a run creates no new audit. A commission is the
+accepted question, selected material, settings and authorization. An arrangement
+is its exact instructions, capabilities and runtime settings; capturing one
+does not grant authority. A run is one execution placement. An answer revision
+is a recorded selection, which may be poor or empty. Manager preparation offers
+an exact candidate for acceptance; auditor preparation offers one for sealing.
+Submission is the auditor's confirmed act of sealing; a manager seal is never
+called auditor submission. A return is the sealed package; delivery is its
+verified placement. Verification, placement confirmation and explicit loss
+surrender remain distinct. Close is the operation ending the undertaking; closed
+is completed custody. A close request can end authoring while close is unfinished.
+Invocation outcome, operation effects and observed audit facts remain separate.
+
 ## Platform and auditor access
 
 Ship one statically linked Rust binary for Linux x86_64 and aarch64, without
@@ -92,8 +109,8 @@ Actual tool/access enforcement requires evidence, not just a constructed setting
 
 The adapter binds tool calls to the commission. Auditor calls do not select
 arbitrary archives, host paths or actors. No manager act-as-auditor route exists.
-The auditor sees form instructions and authoring tools, not the family name,
-the manager's reason for choosing it or a hidden prior. Host custody paths and
+The auditor sees form instructions, authoring tools and the captured family
+ID/version, but not the manager's reason for choosing it or a hidden prior. Host custody paths and
 unselected material are absent from its interface. After sealing, closure or
 unrepairable damage, stopping is its final route; no further authoring channel
 is added. A person adapter is deferred and grants no unqualified access promise.
@@ -548,7 +565,8 @@ submission. State and integrity checks still apply to a handle whose acceptance
 cannot be established; missing-readable-result is not evidence of no effect.
 
 **One re-entry call restores orientation and access.** It names the audit,
-open/sealed/closed condition, current answer revision, cumulative allowances,
+captured family ID/version, authoring state and first recorded end reason,
+seal presence and actual actor, current answer revision, cumulative allowances,
 question/material access, current element identities and versions, and recent
 completed edit receipts. Each receipt identifies its action, target, resulting
 revision and completed effect. The latest relevant refusal remains associated
@@ -867,11 +885,26 @@ removal authority or guarantee against external storage loss. It
 does not add commission material to the auditor's return. The manager may keep
 the retrieved bytes independently.
 
-**Status answers with distinct facts.** `status REF` gives one short headline
+**Manager replies answer with distinct facts.** `status REF`, `run REF` and
+`close REF` give one short account of commission, run, answer, delivery and close.
+Their JSON `summary` carries that same account. Default human output includes
+qualifications and supported next commands; `--details` adds expanded data and
+`--json` supplies the full structured reply. The flags are mutually exclusive.
+Failures, uncertain effects, diagnostics and retained locations, named losses
+and actionable exact handles never depend on details. Cumulative usage and
+limits identify estimated portions; incomplete evidence does not become zero.
+Close reports the same cumulative allowances as status and run.
+
+`status REF` also gives one short headline
 and separately identifies the observed run, recorded answer seal and its actor,
 delivery verification and location, and closure. The headline leads with the
-facts a manager tracks, in order: commission accepted, auditor launched, answer
-sealed and by whom, delivery verified and confirmed, audit closed. Diagnostics
+facts a manager tracks, in order: commission accepted, auditor launched,
+authoring state and first recorded end reason, answer sealed and by whom,
+delivery verified and confirmed, audit closed. Authoring is not started, open,
+ended or unknown; an interruption alone does not end it. The first readable
+authoring end remains established despite later damage. Seal observations name
+known absence, presence with actual actor, or uncertainty. Later sealing does
+not hide a prior stop reason or imply submission by the auditor. Diagnostics
 and next actions follow it. The JSON presentation preserves
 the same distinctions and diagnostics. A process ending does not establish a
 submission; a seal does not establish delivery; delivery does not close the
@@ -897,7 +930,10 @@ and recorded endings remain facts; liveness requires current evidence, never
 elapsed time. Status neither probes the delivered copy's current safety nor
 launches, repairs, seals, copies or closes anything. Each actionable failure
 names a stable reason, retained locations and a supported next action; offers
-are not preconditions. No bare "done" hides which undertaking was completed.
+are not preconditions. Invocation completion is command completion. An empty
+next list says `Next: no command is supplied.`; it establishes neither completed
+custody nor permission. These presentations do not promise an atomic live view.
+No bare "done" hides which undertaking was completed.
 
 **Close continues delivery without another investigation.** After auditor launch,
 a run delivers
@@ -991,7 +1027,10 @@ the next supported call(s). Effects are operation-specific: answer unchanged,
 seal recorded, acceptance absent/accepted/unknown, partial copy retained, or
 delivery unverified are different facts. A single `changed: false` or global
 `ok: false` cannot encode all of them. Raw diagnostic recording may have occurred
-even when an answer mutation was refused. Never infer absent effects from an
+even when an answer mutation was refused. Known refused citations say that no
+answer edit was applied, rather than claiming nothing was recorded. Known
+unpublished entries identify retained effects; uncertain publication is stated
+as uncertain. Never infer absent effects from an
 exception. If recording the diagnostic also failed, preserve both causes and say
 which evidence is durable versus merely reported.
 
@@ -1050,9 +1089,11 @@ form/version binding and actual sealer. Its membership comes from the prepared
 selection; there is no second selection step. Identity hashes refer to exact
 stored bytes, not a caller's reserialization of an equivalent JSON object.
 
-Preparation/read views shown to the auditor must omit host coordinates and the
-manager-only family name. An opaque arrangement binding is sufficient there.
-The final manager return manifest can carry the required family/version metadata.
+Preparation/read views shown to the auditor omit host coordinates and
+manager-only records. Re-entry's first page and the preparation reply expose the
+captured family ID/version; the selection rationale, inquiry label and varies
+note remain private unless commissioned as material. The prepared selection
+format is unchanged. The final return manifest retains family/version metadata.
 Separate the view from the private record deliberately; do not serialize an
 internal struct wholesale because it happens to contain the desired members.
 
@@ -1060,7 +1101,7 @@ Illustrative field spellings, not a complete wire schema (tokens are symbolic):
 
 ```json
 {
-  "schema": "stewart.reply/1",
+  "schema": "stewart.reply/2",
   "operation": "prepare",
   "outcome": "completed",
   "data": {

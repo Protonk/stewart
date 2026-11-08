@@ -465,7 +465,13 @@ launch; each must fail.
 - **Pass:** at each independently witnessed lifecycle point, status reports the
   run observation, answer seal/actor, delivery verification/location and closure
   as distinct facts, with the receipt command and any specific next action.
-  Human and JSON presentations agree. The test covers preparation, failed intake,
+  Default, `--details` and JSON presentations agree; details adds expanded
+  data without hiding mandatory diagnostics, uncertainty, losses or exact next
+  handles in the default. Completed run/close replies carry the same factual
+  summary and cumulative allowance qualifications. A later manager seal preserves
+  the first authoring-end reason and prior run cause. Close requested before a
+  seal ends authoring without claiming completed custody. Known seal actors
+  survive later damage; absent and unknown seals remain distinct. The test covers preparation, failed intake,
   uncertain acceptance, closure before launch, a never-run commission,
   held run, interruption, ordinary unsubmitted stop, limit stop, sealed but
   undelivered answer, partial delivery, verified delivery, incomplete close,
@@ -592,8 +598,9 @@ contains only the requested bytes. Missing replies imply unknown effects.
   next actions; recorded seal with incomplete delivery is not failed submission.
   Exercise lost reply and diagnostic-write failure. Machine next calls carry
   usable operands and preserve alternatives; none silently retries a mutation.
-- **Views:** auditor replies omit host coordinates, family name and manager-only
-  records. Handles bind purpose, audit/store and version; crossed or constructed
+- **Views:** auditor replies omit host coordinates and manager-only records.
+  First-page re-entry and prepare expose the captured family ID/version,
+  unchanged by a later installation/default change. Handles bind purpose, audit/store and version; crossed or constructed
   handles cannot select another object. Pages expose coverage and stale revisions
   without silently switching selections. No caller computes its own manifest.
 - **Parsing:** duplicate keys at any depth, escape-equivalent repeats, unknown

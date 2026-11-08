@@ -1,7 +1,7 @@
-//! The `stewart.reply/1` envelope (INTERFACE 1.3–1.6) and its human presentation.
+//! The `stewart.reply/2` envelope (INTERFACE 1.3–1.6) and its human presentation.
 //!
-//! Both presentations are produced from the same `Reply` value; the human one
-//! never adds or hides a fact.
+//! All views come from the same `Reply`. The ordinary human view omits routine
+//! detail while preserving qualifications, failures and actionable references.
 
 use crate::json::J;
 
@@ -289,7 +289,7 @@ impl Reply {
             check_effects(self.operation, &self.effects, auditor).unwrap_err()
         );
         let mut o = J::obj()
-            .with("schema", "stewart.reply/1")
+            .with("schema", "stewart.reply/2")
             .with("operation", self.operation)
             .with("outcome", self.outcome.name());
         let failing = self.outcome != Outcome::Completed;
@@ -343,8 +343,17 @@ impl Reply {
 
     /// The same result for people.
     pub fn human(&self) -> String {
+        self.human_with_details(false)
+    }
+
+    pub fn human_with_details(&self, details: bool) -> String {
+        let concise = matches!(self.operation, "status" | "run" | "close");
+        let summary = self.data.as_ref().and_then(|d| d.get("summary"));
         let mut s = String::new();
         match self.outcome {
+            Outcome::Completed if concise => {
+                s.push_str(&format!("Command stewart {}: completed\n", self.operation))
+            }
             Outcome::Completed => s.push_str(&format!("stewart {}: completed\n", self.operation)),
             _ => s.push_str(&format!(
                 "stewart {}: {} ({})\n",
@@ -356,7 +365,12 @@ impl Reply {
         if let Some(m) = &self.message {
             s.push_str(&format!("{m}\n"));
         }
-        if let Some(lead) = self.data.as_ref().and_then(headline_line) {
+        if concise {
+            if let Some(J::Str(summary)) = summary {
+                s.push_str(summary);
+                s.push('\n');
+            }
+        } else if let Some(lead) = self.data.as_ref().and_then(headline_line) {
             s.push_str(&lead);
         }
         if !self.effects.is_empty() {
@@ -387,14 +401,30 @@ impl Reply {
         if let Some(d) = &self.data {
             if !d.is_empty_obj() {
                 s.push('\n');
-                render(d, 0, &mut s);
+                if self.operation == "status" && !details && d.get("references").is_some() {
+                    render_archive(d, &mut s);
+                } else if !concise
+                    || details
+                    || self.outcome != Outcome::Completed
+                    || !matches!(summary, Some(J::Str(_)))
+                {
+                    // A failed/early reply without a trustworthy account keeps its
+                    // complete failure data visible, even in the default view.
+                    render(d, 0, &mut s);
+                } else {
+                    let mandatory = mandatory_details(d);
+                    if !mandatory.is_empty_obj() {
+                        s.push_str("Qualifications and exact references:\n");
+                        render(&mandatory, 1, &mut s);
+                    }
+                }
             }
         }
         if self.next.is_empty() && self.outcome != Outcome::Completed {
             // A refusal without a supported call must not read as success.
             s.push_str("\nNext: no supported command follows; the message says what to change.\n");
         } else if self.next.is_empty() {
-            s.push_str("\nNext: nothing further is needed.\n");
+            s.push_str("\nNext: no command is supplied.\n");
         } else {
             s.push_str("\nNext:\n");
             for n in &self.next {
@@ -420,13 +450,20 @@ fn headline_line(data: &J) -> Option<String> {
         }
         _ => "unknown".into(),
     };
-    let sealed = h.get("sealed").and_then(|s| s.get("by"));
+    let seal = h.get("seal");
+    let sealed = match seal.and_then(|s| s.get("state")) {
+        Some(J::Str(state)) if state == "absent" => J::Str("none".into()),
+        _ => seal
+            .and_then(|s| s.get("actor"))
+            .cloned()
+            .unwrap_or(J::Str("unknown".into())),
+    };
     let delivered = h.get("delivered");
     let mut line = format!(
         "Accepted: {} | Launched: {} | Sealed by: {} | Delivery verified: {}, confirmed: {} | Closed: {}\n",
         text(h.get("accepted")),
         text(h.get("launched")),
-        text(sealed),
+        text(Some(&sealed)),
         text(delivered.and_then(|d| d.get("verified"))),
         text(delivered.and_then(|d| d.get("confirmed"))),
         text(h.get("closed")),
@@ -452,6 +489,108 @@ pub fn shell_words(argv: &[String]) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// Default human output may omit routine detail, never the qualifications that
+/// constrain an action. Leave original keys so detail and JSON remain locatable.
+fn mandatory_details(data: &J) -> J {
+    let mut result = J::obj();
+    for key in [
+        "diagnostics",
+        "bad_records",
+        "archive_notice",
+        "provider",
+        "provider_url_override",
+        "provider_proxy",
+        "notices",
+        "holder",
+        "confirmation",
+        "losses",
+        "surrendered",
+        "unfinished_reason",
+    ] {
+        if let Some(value) = data.get(key) {
+            if !matches!(value, J::Null) && !matches!(value, J::Arr(v) if v.is_empty()) {
+                result.push(key, value.clone());
+            }
+        }
+    }
+    if let Some(seal) = data.get("seal") {
+        if seal.get("sealed_at") == Some(&J::Str("unknown".into()))
+            || seal
+                .get("unproduced")
+                .is_some_and(|v| !matches!(v, J::Arr(a) if a.is_empty()))
+        {
+            result.push("seal", seal.clone());
+        }
+    }
+    let qualified = |delivery: &J| {
+        delivery.get("outcome") != Some(&J::Str("verified".into()))
+            || delivery
+                .get("confirmation")
+                .is_some_and(|v| !matches!(v, J::Null))
+    };
+    if let Some(delivery) = data.get("delivery") {
+        if !matches!(delivery, J::Null) && qualified(delivery) {
+            result.push("delivery", delivery.clone());
+        }
+    }
+    if let Some(J::Arr(deliveries)) = data.get("deliveries") {
+        let qualifications: Vec<J> = deliveries
+            .iter()
+            .filter(|d| qualified(d))
+            .cloned()
+            .collect();
+        if !qualifications.is_empty() {
+            result.push("deliveries", J::Arr(qualifications));
+        }
+    }
+    if let Some(closure) = data.get("closure") {
+        if let Some(J::Arr(losses)) = closure.get("surrendered") {
+            if !losses.is_empty() {
+                result.push("closure", closure.clone());
+            }
+        }
+    }
+    result
+}
+
+/// Archive status remains a list: one identifiable reference and its independent
+/// facts per row. Detailed output retains the complete structured entries.
+fn render_archive(data: &J, out: &mut String) {
+    if let Some(J::Str(archive)) = data.get("archive") {
+        out.push_str(&format!("Archive: {archive}\n"));
+    }
+    if let Some(J::Arr(rows)) = data.get("references") {
+        if rows.is_empty() {
+            out.push_str("No references are recorded.\n");
+        }
+        for row in rows {
+            if let Some(J::Str(reference)) = row.get("reference") {
+                out.push_str(&format!("\nReference: {reference}\n"));
+            }
+            if let Some(line) = headline_line(row) {
+                out.push_str(&line);
+            }
+            let mut detail = J::obj();
+            for key in ["folder", "inquiry", "varies", "condition", "diagnostic"] {
+                if let Some(value) = row.get(key) {
+                    if !matches!(value, J::Null) {
+                        detail.push(key, value.clone());
+                    }
+                }
+            }
+            if let Some(authoring) = row.get("headline").and_then(|h| h.get("authoring")) {
+                detail.push("authoring", authoring.clone());
+            }
+            if let Some(delivery) = row.get("headline").and_then(|h| h.get("delivered")) {
+                if delivery.get("losses").is_some() {
+                    detail.push("delivery", delivery.clone());
+                }
+            }
+            render(&detail, 1, out);
+        }
+    }
 }
 
 fn scalar(v: &J) -> Option<String> {
@@ -521,7 +660,7 @@ mod tests {
         ));
         assert_eq!(
             r.to_j().string(),
-            r#"{"schema":"stewart.reply/1","operation":"prepare","outcome":"completed","effects":{"preparation":"recorded"},"next":[{"argv":["/x/stewart","commission"],"why":"why"}],"data":{"prepared":"mp1.aaaaaa"}}"#
+            r#"{"schema":"stewart.reply/2","operation":"prepare","outcome":"completed","effects":{"preparation":"recorded"},"next":[{"argv":["/x/stewart","commission"],"why":"why"}],"data":{"prepared":"mp1.aaaaaa"}}"#
         );
         let f = Reply {
             operation: "commission",
@@ -541,7 +680,7 @@ mod tests {
         };
         assert_eq!(
             f.to_j().string(),
-            r#"{"schema":"stewart.reply/1","operation":"commission","outcome":"failed","reason":"acceptance_record_uncertain","message":"m","effects":{"acceptance":"unknown","attempt":"recorded","diagnostic":"durable"},"retained":["/a/intake/1"],"causes":[{"operation":"fsync log directory","error":"EIO"}],"next":[]}"#
+            r#"{"schema":"stewart.reply/2","operation":"commission","outcome":"failed","reason":"acceptance_record_uncertain","message":"m","effects":{"acceptance":"unknown","attempt":"recorded","diagnostic":"durable"},"retained":["/a/intake/1"],"causes":[{"operation":"fsync log directory","error":"EIO"}],"next":[]}"#
         );
         assert_eq!(f.exit_code(), 4);
         assert!(f.human().contains("acceptance unknown"));
@@ -563,7 +702,7 @@ mod tests {
         ));
         assert_eq!(
             r.auditor_j().string(),
-            r#"{"schema":"stewart.reply/1","operation":"read","outcome":"completed","effects":{"raw_capture":"recorded"},"next":[{"tool":"read","input":{"source":"question","start":65536},"why":"Read the rest."}],"data":{"complete":false}}"#
+            r#"{"schema":"stewart.reply/2","operation":"read","outcome":"completed","effects":{"raw_capture":"recorded"},"next":[{"tool":"read","input":{"source":"question","start":65536},"why":"Read the rest."}],"data":{"complete":false}}"#
         );
         r.outcome = Outcome::Refused;
         r.reason = Some("range_invalid".into());

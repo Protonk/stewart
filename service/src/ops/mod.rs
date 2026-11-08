@@ -5,6 +5,7 @@ pub mod close;
 pub mod commission;
 pub mod new;
 pub mod prepare;
+pub(crate) mod presentation;
 pub mod receipt;
 pub mod run;
 pub mod status;
@@ -173,7 +174,8 @@ pub enum DeliveredFacts {
 pub struct Headline {
     pub accepted: &'static str,
     pub launched: &'static str,
-    pub sealed_by: &'static str,
+    pub authoring: J,
+    pub seal: J,
     pub delivered: DeliveredFacts,
     pub closed: &'static str,
 }
@@ -205,7 +207,8 @@ impl Headline {
         J::obj()
             .with("accepted", self.accepted)
             .with("launched", self.launched)
-            .with("sealed", J::obj().with("by", self.sealed_by))
+            .with("authoring", self.authoring.clone())
+            .with("seal", self.seal.clone())
             .with("delivered", delivered)
             .with("closed", self.closed)
     }
@@ -280,7 +283,12 @@ pub fn headline(audit: &Audit, state: &LogState) -> Headline {
     Headline {
         accepted,
         launched,
-        sealed_by,
+        authoring: state.authoring_j(),
+        seal: match sealed_by {
+            "none" => J::obj().with("state", "absent").with("actor", J::Null),
+            "unknown" => J::obj().with("state", "unknown").with("actor", J::Null),
+            actor => J::obj().with("state", "present").with("actor", actor),
+        },
         delivered,
         closed,
     }
@@ -293,13 +301,13 @@ pub fn headline(audit: &Audit, state: &LogState) -> Headline {
 /// diagnostic naming why.
 pub fn seal_j(audit: &Audit, state: &LogState) -> (J, Option<J>) {
     let Some((_, s)) = state.seal() else {
-        return (J::Null, None);
+        return (state.seal_observation_j(), None);
     };
     let handle = crate::ids::seal_handle(&audit.archive.store, &audit.id, &s.manifest_sha256);
     let base = |sealed_at: J, unproduced: J| {
-        J::obj()
+        state
+            .seal_observation_j()
             .with("handle", handle.as_str())
-            .with("actor", s.actor.name())
             .with("sealed_at", sealed_at)
             .with("revision", s.revision)
             .with("manifest_sha256", s.manifest_sha256.as_str())

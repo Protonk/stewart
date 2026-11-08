@@ -51,14 +51,14 @@ PACKAGE_FMT = "stewart-return-%s-%03d"
 RUN_DELIVERY_KEYS = ("attempt", "outcome", "location", "verified_members", "unverified_members", "losses", "cause")
 STATUS_DELIVERY_KEYS = ("attempt", "by", "destination", "destination_source", "package", "replaces", "outcome",
                         "cause", "verified_members", "unverified_members", "losses", "confirmation")
-SEAL_VIEW_KEYS = ("handle", "actor", "sealed_at", "revision", "manifest_sha256", "unproduced")
+SEAL_VIEW_KEYS = ("state", "actor", "handle", "sealed_at", "revision", "manifest_sha256", "unproduced")
 LOSS_KEYS = ("loss", "member", "role", "failure", "stage")
 RUN_LAST_KEYS = ("number", "started_at", "ending", "cause", "ended_at", "recorded_by")
 # 5.8 "data of a completed reply, by path", after launch.
 CLOSE_UNFINISHED_KEYS = ("closure", "unfinished_reason", "headline", "runs", "seal", "delivery", "confirmation",
-                         "holder")
+                         "holder", "allowances", "summary")
 CLOSE_CLOSED_KEYS = ("closure", "already_closed", "before_launch", "accepted", "closed_at", "headline", "outcome",
-                     "runs", "seal", "delivery", "placement", "surrendered")
+                     "runs", "seal", "delivery", "placement", "surrendered", "allowances", "summary")
 # 4.2: the names an audit directory may hold.
 AUDIT_LAYOUT = ("REFERENCE.json", "active.lock", "log", "stage", "prep", "intake", "payload", "prepared", "seal",
                 "runs", "delivery", "diag")
@@ -145,7 +145,7 @@ def audit(t, label, *, dest_watch="additions", accept=True, q=None, dest=None, a
 def with_auditor(t, a, goal_list, **kw):
     sub = a.sub
     sources = {sub.public(rel): w["data"] for rel, w in sub.files.items() if "data" in w}
-    forbidden = [sub.archive, sub.folder, sub.ref, sub.store, sub.family, sub.dest]
+    forbidden = [sub.archive, sub.folder, sub.ref, sub.store, sub.dest]
     kw.setdefault("calls_per_turn", 2)
     a.aud = ReactingAuditor(goal_list, question=sub.body, materials=sources, family=sub.family,
                             limits=rs.limits_of(sub), forbidden=forbidden, model=sub.model, **kw)
@@ -406,7 +406,7 @@ def check_package_at(t, a, name, attempt, dest=None):
 
 def run_cmd(t, a, name, *, expect="completed", reason=None, fault=None, cwd=None, env=None, killed=False,
             mark=True, timeout=300):
-    """stewart run REF against a's fake. killed: a fault kills it, so no reply is judged (1.6)."""
+    """stewart run REF against a's fake. killed: a fault kills it, so no reply is judged (1.7)."""
     fx = a.fx
     if fx is not None and mark:
         fx.mark(name)
@@ -509,7 +509,8 @@ def check_seal_view(t, name, view, a):
     """A seal as status, run and close show it (5.6): its handle binds the witness manifest."""
     if not t.check(name + ".present", isinstance(view, dict), view):
         return
-    t.eq(name + ".keys", sorted(view), sorted(SEAL_VIEW_KEYS))
+    t.eq(name + ".keys", list(view), list(SEAL_VIEW_KEYS))
+    t.eq(name + ".state", view.get("state"), "present")
     sa = view.get("sealed_at")
     if getattr(a, "manifest_unreadable", False):
         # 5.6: "sealed_at (the manifest's)" and "unproduced, the names of the manifest's
@@ -617,10 +618,11 @@ def check_close_obj(t, a, name, obj, *, closure, reason=None, effects=None, toke
     if effects is not None:
         t.eq(name + ".effects", no_diag(obj.get("effects")), effects)
     t.eq(name + ".closure", d.get("closure"), closure)
+    t.check(name + ".summary", isinstance(d.get("summary"), str) and bool(d["summary"].strip()), d.get("summary"))
     hl = d.get("headline") if isinstance(d.get("headline"), dict) else {}
     t.eq(name + ".headline.closed", hl.get("closed"), "yes" if closure == "complete" else "unfinished")
     if closure == "unfinished":
-        t.eq(name + ".data-keys", sorted(d), sorted(CLOSE_UNFINISHED_KEYS))
+        t.eq(name + ".data-keys", sorted(d), sorted(CLOSE_UNFINISHED_KEYS + (("diagnostics",) if d.get("diagnostics") else ())))
         t.eq(name + ".unfinished_reason", d.get("unfinished_reason"), reason)
         t.eq(name + ".confirmation", d.get("confirmation"), token if reason == "awaiting_confirmation" else None)
         h = d.get("holder")
@@ -629,7 +631,7 @@ def check_close_obj(t, a, name, obj, *, closure, reason=None, effects=None, toke
         else:
             t.eq(name + ".holder", h, None)
     else:
-        t.eq(name + ".data-keys", sorted(d), sorted(CLOSE_CLOSED_KEYS))
+        t.eq(name + ".data-keys", sorted(d), sorted(CLOSE_CLOSED_KEYS + (("diagnostics",) if d.get("diagnostics") else ())))
         t.eq(name + ".already_closed", d.get("already_closed"), already)
         t.eq(name + ".before_launch", d.get("before_launch"), False)
         t.eq(name + ".accepted", d.get("accepted"), True)
@@ -642,6 +644,9 @@ def check_close_obj(t, a, name, obj, *, closure, reason=None, effects=None, toke
              if isinstance(sur, list) else sur, sorted(surrendered))
     if runs is not None:
         t.eq(name + ".runs", d.get("runs"), runs)
+        if "authoring" in hl:  # self-test specimens below also specify this field
+            t.eq(name + ".authoring", hl.get("authoring"),
+                 authoring_observation(runs.get("last_ending"), closing=True, actor=actor))
     seal = d.get("seal")
     if actor is not None:
         t.eq(name + ".seal.actor", seal.get("actor") if isinstance(seal, dict) else None, actor)
@@ -687,7 +692,9 @@ def check_status_obj(t, a, name, obj, *, condition, sealed="none", delivered=Non
     hl = d.get("headline") if isinstance(d.get("headline"), dict) else {}
     t.eq(name + ".headline.accepted", hl.get("accepted"), "yes")
     t.eq(name + ".headline.launched", hl.get("launched"), "yes")
-    t.eq(name + ".headline.sealed", hl.get("sealed"), {"by": sealed})
+    t.eq(name + ".headline.sealed", hl.get("seal"), seal_observation(sealed))
+    t.eq(name + ".headline.authoring", hl.get("authoring"),
+         authoring_observation((last or {}).get("ending"), closing=closed != "no", actor=sealed))
     t.eq(name + ".headline.delivered", hl.get("delivered"), delivered if delivered is not None else UNVERIFIED)
     t.eq(name + ".headline.closed", hl.get("closed"), closed)
     t.check(name + ".summary", isinstance(d.get("summary"), str) and d["summary"].strip() != "", d.get("summary"))
@@ -724,7 +731,7 @@ def check_status_obj(t, a, name, obj, *, condition, sealed="none", delivered=Non
     if answer is not None:
         t.eq(name + ".answer", d.get("answer"), answer)
     if seal is None:
-        t.eq(name + ".seal", d.get("seal"), None)
+        t.eq(name + ".seal", d.get("seal"), seal_observation())
     elif seal != "skip":
         sv = d.get("seal")
         t.eq(name + ".seal.actor", sv.get("actor") if isinstance(sv, dict) else None, seal)
@@ -777,7 +784,7 @@ def human_facts(data):
     readback route (5.6, C16 "Human and JSON presentations agree")."""
     facts = []
     hl = data.get("headline") if isinstance(data.get("headline"), dict) else {}
-    by = (hl.get("sealed") or {}).get("by") if isinstance(hl.get("sealed"), dict) else None
+    by = (hl.get("seal") or {}).get("actor") if isinstance(hl.get("seal"), dict) else None
     if by in ("auditor", "manager"):
         facts.append(by)
     dv = hl.get("delivered") if isinstance(hl.get("delivered"), dict) else {}
@@ -812,6 +819,15 @@ def status_point(t, a, name, *, human=True, again=False, cwd=None, **exp):
     if human:
         hum = t.cmd(["status", a.sub.ref], json_reply=False, envelope=False, name=name + ".human", cwd=cwd)
         check_human_agrees(t, name, rep.rc, rep.data, hum.rc, hum.stdout)
+        details = t.cmd(["status", a.sub.ref, "--details"], json_reply=False, envelope=False,
+                        name=name + ".details", cwd=cwd)
+        check_human_agrees(t, name + ".details", rep.rc, rep.data, details.rc, details.stdout)
+        for view, output in (("human", hum.stdout), ("details", details.stdout)):
+            text = output.decode("utf-8", "replace")
+            t.check(name + "." + view + ".summary", norm_ws(rep.data.get("summary", "")) in norm_ws(text), text[:1500])
+            t.check(name + "." + view + ".empty-next-wording", "nothing further is needed" not in text.lower(), text[:1500])
+        t.check(name + ".details.expanded", len(details.stdout) > len(hum.stdout),
+                {"default_bytes": len(hum.stdout), "detail_bytes": len(details.stdout)})
     if again:
         time.sleep(1.2)
         rep2 = t.status(a.sub, name=name + ".later")
@@ -1486,7 +1502,7 @@ def _close_failures(t, a):
                           last=log_last(t, a.sub), seal=None, closure={"unfinished_reason": None},
                           next_cmds=("close", "status"))
         t.check(name + ".status.diagnostics", mentions(st.data.get("diagnostics"), "diag/"), st.data.get("diagnostics"))
-    # 1.6: a missing reply is unknown, not a code; only the absence of the reply is judged here.
+    # 1.7: a missing reply is unknown, not a code; only the absence of the reply is judged here.
     rep = t.cmd(["close", a.sub.ref], name="c17.close.reply-lost", fault="reply.write=epipe", envelope=False,
                 writer=a.sub.writer)
     t.eq("c17.close.reply-lost.no-reply", rep.stdout, b"")
@@ -1836,7 +1852,8 @@ def _damaged_log(t, a):
     t.check("c8.damaged-log.status.launched", hl.get("launched") in ("yes", "unknown"), hl.get("launched"))
     # 5.6: a headline value depending on the unreadable part is unknown; verified and confirmed are
     # the string unknown on a damaged log. A seal or a close record could be in the damaged part.
-    t.eq("c8.damaged-log.status.sealed", hl.get("sealed"), {"by": "unknown"})
+    t.eq("c8.damaged-log.status.sealed", hl.get("seal"), seal_observation("unknown"))
+    t.eq("c8.damaged-log.status.authoring", hl.get("authoring"), {"state": "ended", "ended_by": "ordinary_ending"})
     t.eq("c8.damaged-log.status.delivered", hl.get("delivered"), {"verified": "unknown", "confirmed": "unknown"})
     t.eq("c8.damaged-log.status.closed", hl.get("closed"), "unknown")
     t.check("c8.damaged-log.status.names-record", mentions(d.get("diagnostics"), "%d.json" % (n + 1)),
@@ -2489,19 +2506,35 @@ def _selftest_packages():
     return out
 
 
+@selftest
+def vocabulary_observation_selftests():
+    return [
+        ("vocabulary.not-started", authoring_observation(launched=False) == {"state": "not_started", "ended_by": None}),
+        ("vocabulary.interruption-open", authoring_observation("interrupted") == {"state": "open", "ended_by": None}),
+        ("vocabulary.close-before-seal", authoring_observation(closing=True) == {"state": "ended", "ended_by": "close"}),
+        ("vocabulary.limit-before-manager-seal", authoring_observation("limit_reached", closing=True, actor="manager") == {"state": "ended", "ended_by": "limit"}),
+        ("vocabulary.known-end-survives-damage", authoring_observation("ended_unsubmitted", damaged=True) == {"state": "ended", "ended_by": "ordinary_ending"}),
+        ("vocabulary.unknown-evidence", authoring_observation(damaged=True) == {"state": "unknown", "ended_by": None}),
+        ("vocabulary.absence-needs-evidence", seal_observation() != seal_observation("unknown")),
+        ("vocabulary.actor-attribution", seal_observation("manager") == {"state": "present", "actor": "manager"}),
+    ]
+
+
 def _status_specimen(a, *, condition, sealed, delivered, closed, last, seal=None, deliveries=(), closure=None,
                      nxt=()):
     at = "2026-11-02T15:20:04.118Z"
-    return {"schema": "stewart.reply/1", "operation": "status", "outcome": "completed", "effects": {},
+    return {"schema": "stewart.reply/2", "operation": "status", "outcome": "completed", "effects": {},
             "next": [{"argv": list(x), "why": "Next."} for x in nxt],
-            "data": {"headline": {"accepted": "yes", "launched": "yes", "sealed": {"by": sealed},
+            "data": {"headline": {"accepted": "yes", "launched": "yes",
+                                  "authoring": authoring_observation(last, closing=closed != "no", actor=sealed),
+                                  "seal": seal_observation(sealed),
                                   "delivered": delivered, "closed": closed},
                      "condition": condition, "summary": "Facts.",
                      "evidence": [{"fact": "launched", "evidence": "run_started log/5.json"}],
                      "runs": {"count": 1, "held": False, "holder": None,
                               "last": {"number": 1, "started_at": at, "ending": last, "cause": None,
                                        "ended_at": at if last else None, "recorded_by": "run" if last else None}},
-                     "allowances": None, "answer": {"revision": 7, "entries": 4}, "seal": seal,
+                     "allowances": None, "answer": {"revision": 7, "entries": 4}, "seal": seal if seal is not None else seal_observation(),
                      "deliveries": list(deliveries), "closure": closure, "diagnostics": [],
                      "provider_url_override": None, "provider_proxy": None,
                      "receipt_line": [a.sub.writer, "receipt", a.sub.ref]}}
@@ -2516,7 +2549,7 @@ def _selftest_views():
         a = Audit(_ST(), "v", sub)
         set_expected(_ST(), a, _specimen_entries(), 7, "auditor", "2026-11-02T15:20:04.118Z", "v")
         w, ref = sub.writer, sub.ref
-        sv = {"handle": seal_handle(sub.store, sub.audit, a.manifest), "actor": "auditor",
+        sv = {"state": "present", "actor": "auditor", "handle": seal_handle(sub.store, sub.audit, a.manifest),
               "sealed_at": a.sealed_at, "revision": 7, "manifest_sha256": sha256_hex(a.manifest), "unproduced": []}
         last = {"ending": "ended_unsubmitted", "cause": None, "recorded_by": "run"}
 
@@ -2524,7 +2557,7 @@ def _selftest_views():
             st = _ST()
             check_status_obj(st, a, "s", spec, allowances=False, **exp)
             return st.failed()
-        # ended_unsubmitted: passes; the ended_as_submitted control (sealed.by auditor) fails it.
+        # ended_unsubmitted: passes; the ended_as_submitted control (seal.actor auditor) fails it.
         spec = _status_specimen(a, condition="ended_unsubmitted", sealed="none", delivered=dict(UNVERIFIED),
                                 closed="no", last="ended_unsubmitted", nxt=[(w, "close", ref)])
         exp = dict(condition="ended_unsubmitted", last=last, seal=None, next_cmds=("close",),
@@ -2532,7 +2565,7 @@ def _selftest_views():
         f = status_round(spec, **exp)
         out.append(("after-launch.status.ended-unsubmitted", not f, f))
         bad = json.loads(json.dumps(spec))
-        bad["data"]["headline"]["sealed"] = {"by": "auditor"}
+        bad["data"]["headline"]["seal"] = seal_observation("auditor")
         f = status_round(bad, **exp)
         out.append(("after-launch.status.control.ended_as_submitted", "s.headline.sealed" in f, f))
         # sealed_undelivered: passes; seal_as_delivered (verified true with a seal) fails it.
@@ -2601,14 +2634,14 @@ def _selftest_views():
         out.append(("after-launch.human.json-is-not-human", "h.human.text" in st.failed(), st.failed()))
         # Close replies (5.8): the T8 example passes; skip_confirmation (closed right after a copy
         # close made) fails; a closed reply has no next calls.
-        cobj = {"schema": "stewart.reply/1", "operation": "close", "outcome": "completed",
+        cobj = {"schema": "stewart.reply/2", "operation": "close", "outcome": "completed",
                 "effects": {"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"},
                 "next": [{"argv": [w, "close", ref, "--confirm", tok], "why": "Confirm."},
                          {"argv": [w, "status", ref], "why": "Status."}],
                 "data": {"closure": "unfinished", "unfinished_reason": "awaiting_confirmation",
                          "headline": {"closed": "unfinished"},
                          "runs": {"count": 1, "held": False, "last_ending": "ended_unsubmitted"}, "seal": sv,
-                         "delivery": {"attempt": 1, "outcome": "verified"}, "confirmation": tok, "holder": None}}
+                         "delivery": {"attempt": 1, "outcome": "verified"}, "confirmation": tok, "holder": None, "allowances": None, "summary": "Facts."}}
         cexp = dict(closure="unfinished", reason="awaiting_confirmation", token=tok, attempt=1, delivery="verified",
                     effects={"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"},
                     runs={"count": 1, "held": False, "last_ending": "ended_unsubmitted"})
@@ -2620,7 +2653,7 @@ def _selftest_views():
         bad["data"] = {"closure": "complete", "already_closed": False, "before_launch": False, "accepted": True,
                        "closed_at": a.sealed_at, "headline": {"closed": "yes"}, "outcome": "closed_delivered",
                        "runs": cobj["data"]["runs"], "seal": sv, "delivery": cobj["data"]["delivery"],
-                       "placement": "delivered_before_close", "surrendered": []}
+                       "placement": "delivered_before_close", "surrendered": [], "allowances": None, "summary": "Facts."}
         bad["next"] = []
         st = _ST()
         check_close_obj(st, a, "c8.t8.close", bad, **cexp)

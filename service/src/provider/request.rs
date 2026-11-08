@@ -614,7 +614,7 @@ pub(crate) mod tests {
         let question =
             "Is the restart safe?\n\tLine two with \"quotes\" and a \\ and \u{1}\u{7f} é.";
         let mut conv = Conversation::new(first_user_message(question, Some(&p.continuation)));
-        let result_content = br#"[{"type":"text","text":"{\"schema\":\"stewart.reply/1\"}"}]"#;
+        let result_content = br#"[{"type":"text","text":"{\"schema\":\"stewart.reply/2\"}"}]"#;
         let results = vec![runs::tool_result_block("toolu_1", result_content, false)];
         let notice =
             "Allowance notice: 1 turns, 2 input tokens and 3 output tokens remain for this audit.";

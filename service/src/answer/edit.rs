@@ -123,7 +123,7 @@ pub fn citations(ctx: &Ctx, items: Option<&[Json]>) -> Result<Vec<Citation>, Fai
                     0 => {
                         return Err(refused(
                             "quote_not_found",
-                            format!("Citation {i}: the quote does not occur in {source}. Matching is exact; nothing was recorded."),
+                            format!("Citation {i}: the quote does not occur in {source}. Matching is exact. No answer edit was applied."),
                         )
                         .data(J::obj().with("index", i).with("source", source)));
                     }
@@ -141,7 +141,7 @@ pub fn citations(ctx: &Ctx, items: Option<&[Json]>) -> Result<Vec<Citation>, Fai
                             .collect();
                         return Err(refused(
                             "quote_ambiguous",
-                            format!("Citation {i}: the quote occurs {n} times in {source}. Cite one occurrence by its range; nothing was recorded."),
+                            format!("Citation {i}: the quote occurs {n} times in {source}. Cite one occurrence by its range. No answer edit was applied."),
                         )
                         .data(
                             J::obj()
@@ -341,7 +341,7 @@ fn publish(ctx: &Ctx, action: Action, tool: &str, target: Option<&Item>, new: Op
             Err(cause) => {
                 return Out::fail(record_failed(
                     format!(
-                        "The bytes of {} could not be stored ({}: {}); nothing was recorded.",
+                        "The bytes of {} could not be stored ({}: {}); no answer entry was recorded. Retained effects are reported separately.",
                         n.id, cause.operation, cause.error
                     ),
                     cause,
@@ -428,7 +428,7 @@ fn publish(ctx: &Ctx, action: Action, tool: &str, target: Option<&Item>, new: Op
             return Out::fail(Fail::failed(
                 "log_damaged",
                 format!(
-                    "The audit log is damaged ({}); nothing was recorded.",
+                    "The audit log is damaged ({}); no answer edit was applied. Retained effects are reported separately.",
                     st.bad_names()
                 ),
             ))
@@ -437,7 +437,7 @@ fn publish(ctx: &Ctx, action: Action, tool: &str, target: Option<&Item>, new: Op
         Err(PubErr::NotPublished(cause)) => {
             return Out::fail(record_failed(
                 format!(
-                    "The entry record could not be published ({}: {}); nothing was recorded.",
+                    "The entry record could not be published ({}: {}); no answer entry was recorded. Retained effects are reported separately.",
                     cause.operation, cause.error
                 ),
                 cause,

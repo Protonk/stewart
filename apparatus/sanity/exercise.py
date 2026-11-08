@@ -215,6 +215,8 @@ class Procedure:
         if raw:
             return data
         reply = json.loads(data)
+        if reply.get("schema") != "stewart.reply/2":
+            raise ValueError("unsupported Stewart reply schema")
         if reply['outcome'] != 'completed':
             raise ValueError(f'{label}: {reply}')
         return reply['data']
@@ -245,7 +247,7 @@ class Procedure:
             raise ValueError('incorrect run ending')
         if self.mode == 'provider-rejected' and run['cause'] != 'provider_rejected':
             raise ValueError('provider rejection lost')
-        auditor_submitted = run['seal'] is not None and run['seal']['actor'] == 'auditor'
+        auditor_submitted = run['seal']['state'] == 'present' and run['seal']['actor'] == 'auditor'
         if auditor_submitted != (self.mode == 'submitted'):
             raise ValueError('submission classification failed')
         if auditor_submitted and run['delivery']['outcome'] != 'verified':

@@ -12,8 +12,8 @@ LF bytes (`\n\n`), and a text has no trailing LF.
 
 The families are open inquiry (`open-inquiry/1`), inquiry framing
 (`inquiry-framing/1`) and comparison (`comparison/1`). The manager names one in
-the front matter. The auditor never sees the family name. It sees the
-orientation, its family's instructions and its tools.
+the front matter. The auditor sees the captured family ID/version in re-entry
+and preparation replies, alongside the orientation, its family's instructions and its tools.
 
 ## System blocks
 

@@ -278,6 +278,36 @@ class LaunchTests(unittest.TestCase):
         state = safe_state({'outcome': 'completed', 'data': {'ending': 'potential-secret', 'cause': 'potential-secret', 'provider': {'message': 'potential-secret'}}})
         self.assertNotIn('potential-secret', json.dumps(state))
 
+    def test_vocabulary_observations_keep_unknowns_and_known_limits(self):
+        state = safe_state({'outcome': 'completed', 'data': {
+            'headline': {'authoring': {'state': 'ended', 'ended_by': 'limit'},
+                         'seal': {'state': 'present', 'actor': 'manager'},
+                         'delivered': {'verified': 'unknown'}, 'closed': 'unknown'},
+            'runs': {'last_ending': 'limit_reached'},
+            'allowances': {'turns': {'used': 'unknown', 'reported': 'unknown', 'estimated': 'unknown', 'limit': 12}},
+            'diagnostics': [{'record': 'private', 'cause': 'private'}]}})
+        self.assertEqual(state['authoring'], {'state': 'ended', 'ended_by': 'limit'})
+        self.assertEqual(state['ending'], 'limit_reached')
+        self.assertEqual(state['seal_state'], 'present')
+        self.assertEqual(state['seal_actor'], 'manager')
+        self.assertEqual(state['delivery_verified'], 'unknown')
+        self.assertEqual(state['closed'], 'unknown')
+        self.assertEqual(state['allowances']['turns'], {'used': 'unknown', 'reported': 'unknown', 'estimated': 'unknown', 'limit': 12})
+        self.assertTrue(state['diagnostics_present'])
+        self.assertNotIn('private', json.dumps(state))
+        absent = safe_state({'data': {'headline': {'seal': {'state': 'absent', 'actor': None},
+                                                  'authoring': {'state': 'open', 'ended_by': None},
+                                                  'delivered': {'verified': False}, 'closed': 'no'}}})
+        self.assertEqual(absent['seal_state'], 'absent')
+        self.assertIsNone(absent['seal_actor'])
+        unknown = safe_state({'data': {'headline': {'authoring': {'state': 'unknown', 'ended_by': None},
+                                                   'seal': {'state': 'unknown', 'actor': None}}}})
+        self.assertEqual(unknown['authoring'], {'state': 'unknown', 'ended_by': None})
+        self.assertIsNone(unknown['seal_actor'])
+        self.assertEqual(absent['authoring'], {'state': 'open', 'ended_by': None})
+        self.assertIs(absent['delivery_verified'], False)
+        self.assertIs(absent['closed'], False)
+
     def test_failure_details_report_safe_phase_type_and_errno_only(self):
         detail = failure_details(PermissionError(13, 'potential-secret', '/potential-secret'), 'command.new', 'submitted')
         self.assertEqual(detail['phase'], 'command.new')

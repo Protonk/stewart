@@ -70,8 +70,9 @@ placements.
   before launch. Count a mechanism as exercised only when the interaction shows it.
 - [ ] Keep manager lifecycle/view checks in the offline suite and attributed
   readings. Haiku auditors do not see manager CLI summaries, so their success
-  cannot establish that those summaries are understandable to managers. Family-ID
-  exposure, if selected, is a changed auditor input and must be recorded as such.
+  cannot establish that those summaries are understandable to managers. The approved family-ID
+  exposure is a changed auditor input and must be recorded as such; it cannot be
+  separated from the reply-shape revision without a distinct comparison.
 - [ ] Present the exact templates, placement/continuation bounds, cost basis and
   spending cap for a fresh bounded commission. Do not launch from this plan alone
   or conduct a usage-limit study as a side effect of a constrained-ending case.

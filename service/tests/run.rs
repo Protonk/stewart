@@ -748,7 +748,8 @@ fn end_turn_sends_the_reminder_once_then_ends_unsubmitted() {
     assert_eq!(n(j, &["data", "usage", "turns", "reported"]), 2);
     assert_eq!(n(j, &["data", "allowances", "turns", "used"]), 2);
     assert_eq!(n(j, &["data", "answer", "revision"]), 0);
-    assert!(is_null(j, &["data", "seal"]));
+    assert_eq!(sj(j, &["data", "seal", "state"]), "absent");
+    assert!(is_null(j, &["data", "seal", "actor"]));
     assert_eq!(sj(j, &["next", "0", "argv", "1"]), "close");
 
     let kinds = e.log_kinds(&r);
