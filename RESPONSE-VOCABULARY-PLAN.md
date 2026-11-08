@@ -9,22 +9,22 @@ participants can express. Historical receipts retain their original schemas.
 
 ## Decision inputs
 
-The specification inventory identifies these candidates, not settled renames:
+The read-only implementation and evidence map,
+`.scratch/rapid-iteration-01/VOCABULARY.md`, identifies producers, consumers,
+native tests and independent-driver cases for
+the candidate fields, reasons and handles. It establishes these distinctions:
 
-- The sealer is reported in six fields (`headline.sealed.by`, `seal.actor`,
-  manifest `seal.actor`, submit `sealer`, re-entry `sealed_by`,
-  `effects.seal`). Sixteen status `condition` values restate run endings and
-  closure states; `awaiting_confirmation` and `log_damaged` are each a
-  condition and an `unfinished_reason`; the confirmation token appears in
-  three places.
-- Reason names that do not tell a newcomer what went wrong: `input_invalid`
-  against `fields_invalid` and `range_invalid`; `stale_entry`, `stale_view`
-  and `stale_preparation`; `capture_failed` against `capture_unverified`;
-  `affirmation_missing`; `archive_moved_or_copied`; `invocation_id_reused`,
-  which no section explains.
-- Tokens the manager types back carry prefixes (`cf1.`, `mp1.`, `loss.`) whose
-  meaning lives only in INTERFACE 2.3.
-
+- Seal actor appears in manager summaries, detailed records, durable manifests
+  and auditor replies. `effects.seal` instead describes the current operation's
+  effect or uncertainty. Consolidating names does not eliminate those roles.
+- The 17 manager status conditions are already derived from underlying records
+  and current observations. A single success word must not hide run, submission,
+  delivery or closure facts.
+- Invalid-input and stale-reference reasons identify different repair targets.
+  `invocation_id_reused` is explained in INTERFACE 6.3 and in the refusal message.
+- Human replies already print complete shell-quoted next commands. Handle
+  prefixes also participate in binding checks; a rename affects consumers and
+  exact-byte evidence, not just presentation.
 
 The turn-limit examples in `.scratch/haiku-stress-live-01` and
 `.scratch/haiku-stress-live-02` also show why a reader can mistake an unfinished
@@ -34,21 +34,15 @@ separately by [Experiment reports](apparatus/c10/REPORTING.md).
 
 ## Remaining work
 
-- [ ] Read-only: map which driver cases, service tests and apparatus checks
-  assert each duplicated field and opaque reason, so the decision list names
-  what each rename costs. No edits. An author who reads the service must not
-  later edit the driver in that session.
-- [ ] Put a short decision list to the principal: collapse the sealer to one
-  field plus manifest; make `condition` either the single state word or a
-  pure derivation; decide whether a limit stop or interruption should show in
-  the rendering, which CONTRACTS now keeps free of operating history, since the
-  stress runs showed a manager cannot tell a finished return from a cut-off
-  one; rename the reason triads and the opaque reasons; give typed-back tokens
-  readable prefixes (for example `confirm1.`) or print the
-  whole command instead. Each item names what it costs managers already used
-  to the words.
-- [ ] After decisions: CONTRACTS, INTERFACE, QUESTION-FORMS and CLI help
-  change together; service and help follow; the driver is updated from the
+- [ ] Principal disposition of `.scratch/rapid-iteration-01/DECISION-BRIEF.md`:
+  retain custody and reason distinctions; defer broad field/reason/prefix
+  renaming pending a concrete reader benefit; retain the product-rendering
+  question for manager-consumption work. These are recommendations, not adopted
+  product decisions. If no vocabulary change is selected, dispose of this plan
+  explicitly rather than leaving an assumed rename task.
+- [ ] For selected changes, name the reader/operator benefit and exact interface
+  cost using the inventory. CONTRACTS, INTERFACE, QUESTION-FORMS and CLI help
+  change as applicable; service and help follow; the driver is updated from the
   specification by an author who has not read the implementation
   ([AGENTS](AGENTS.md#preserve-independent-evidence)); the applicable rows
   of [DEVELOPMENT](DEVELOPMENT.md#what-to-run-for-what-you-changed) run,

@@ -9,10 +9,9 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Complete the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| After the measured reference | Obtain and compare the independent rapid-iteration designs for the principal's architecture choice | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Current | Principal architecture choice and vocabulary disposition from `.scratch/rapid-iteration-01/DECISION-BRIEF.md`; read-only inventories and independent design comparison are complete | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice | Build and demonstrate the chosen rapid-iteration path under an applicable bounded commission | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| After the architecture choice | Rename the product response vocabulary through CONTRACTS, INTERFACE, help, service and split driver authorship | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
+| After the architecture choice, if selected | Implement the principal's product-vocabulary decisions through specification, help, service and split driver authorship; no broad rename is assumed | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
 | After the iteration design is settled and any targeted follow-on tests or repairs are complete | Move auditor studies beyond Haiku; choose the next models and a bounded comparison | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | After self-contained rapid iteration is demonstrated | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |
