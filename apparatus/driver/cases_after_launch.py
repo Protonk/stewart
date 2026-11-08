@@ -2153,6 +2153,15 @@ def _t13_stopped(t, a):
     confirm_and_close(t, a, "c8.t13-stopped.confirm", tok)
 
 
+def check_held_sealed_status(t, name, data):
+    """INTERFACE 5.6: a seal ends authoring while delivery can still hold the run."""
+    headline = data.get("headline") if isinstance(data.get("headline"), dict) else {}
+    t.eq(name + ".facts", [data.get("condition"), headline.get("seal"),
+                           (data.get("runs") or {}).get("held")],
+         ["run_active", {"state": "present", "actor": "auditor"}, True])
+    t.eq(name + ".authoring", headline.get("authoring"), {"state": "ended", "ended_by": "seal"})
+
+
 def _held_sealed(t, a):
     with_auditor(t, a, goals(a.sub, artifacts=False))
     h = rs.start_run(t, a.sub, a.fx, name="c8.held-sealed.run", fault="delivery.after_member:1=pause", timeout=300)
@@ -2160,10 +2169,7 @@ def _held_sealed(t, a):
     t.require("c8.held-sealed.paused", stem is not None, "the run did not pause in delivery")
     try:
         st = t.status(a.sub, name="c8.held-sealed.status")
-        hl = st.data.get("headline") if isinstance(st.data.get("headline"), dict) else {}
-        t.eq("c8.held-sealed.status.facts", [st.data.get("condition"), hl.get("sealed"),
-                                             (st.data.get("runs") or {}).get("held")],
-             ["run_active", {"by": "auditor"}, True])
+        check_held_sealed_status(t, "c8.held-sealed.status", st.data)
         rep = close_cmd(t, a, "c8.held-sealed.close", timeout=180)
         d = rep.data
         eff = no_diag(rep.effects)
@@ -2507,6 +2513,35 @@ def _selftest_packages():
 
 
 @selftest
+def held_sealed_observation_selftests():
+    good = {"condition": "run_active", "headline": {
+        "authoring": {"state": "ended", "ended_by": "seal"},
+        "seal": {"state": "present", "actor": "auditor"}}, "runs": {"held": True}}
+    out = []
+    def observe(data):
+        t = _ST()
+        check_held_sealed_status(t, "held", data)
+        return t.failed()
+    failures = observe(good)
+    out.append(("held-sealed.reply2", not failures, failures))
+    for label, mutate in [
+        ("old-shape", lambda data: data["headline"].update(sealed={"by": "auditor"}, seal=None)),
+        ("wrong-actor", lambda data: data["headline"]["seal"].update(actor="manager")),
+        ("seal-is-not-stopped", lambda data: data["runs"].update(held=False)),
+    ]:
+        changed = json.loads(json.dumps(good))
+        mutate(changed)
+        failures = observe(changed)
+        out.append(("held-sealed.control." + label, "held.facts" in failures, failures))
+    unchanged = json.loads(json.dumps(good))
+    unchanged["headline"]["delivered"] = {"verified": False, "confirmed": False}
+    unchanged["diagnostics"] = [{"record": "delivery plan", "cause": "still being copied"}]
+    failures = observe(unchanged)
+    out.append(("held-sealed.qualifications-invariant", not failures, failures))
+    return out
+
+
+@selftest
 def vocabulary_observation_selftests():
     return [
         ("vocabulary.not-started", authoring_observation(launched=False) == {"state": "not_started", "ended_by": None}),
@@ -2629,6 +2664,12 @@ def _selftest_views():
         st = _ST()
         check_human_agrees(st, "h", 0, data, 0, human.replace(tok.encode(), b"the token"))
         out.append(("after-launch.human.missing-token-fails", "h.human.agrees" in st.failed(), st.failed()))
+        st = _ST()
+        check_human_agrees(st, "h", 0, data, 0, human.replace(b"Receipt: stewart receipt REF", b""))
+        out.append(("after-launch.human.missing-receipt-fails", "h.human.agrees" in st.failed(), st.failed()))
+        st = _ST()
+        check_human_agrees(st, "h", 0, data, 0, human + b"Qualifications: retained diagnostics remain available.\n")
+        out.append(("after-launch.human.qualifications-invariant", not st.failed(), st.failed()))
         st = _ST()
         check_human_agrees(st, "h", 0, data, 0, json.dumps(spec).encode())
         out.append(("after-launch.human.json-is-not-human", "h.human.text" in st.failed(), st.failed()))

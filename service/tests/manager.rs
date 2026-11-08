@@ -220,6 +220,39 @@ fn the_human_presentation_carries_the_same_result() {
 }
 
 #[test]
+fn concise_status_keeps_receipt_access_before_and_after_close() {
+    let e = Env::new();
+    let (r, h) = e.prepared(&[("a.txt", b"x")]);
+    assert!(!e.run(&["status", &r]).text().contains("Receipt:"));
+    assert_eq!(e.commission(&r, &h).code, Some(0));
+    for closed in [false, true] {
+        if closed {
+            assert_eq!(e.run(&["close", &r]).code, Some(0));
+        }
+        let before = e.inventory();
+        let plain = e.run(&["status", &r]).text();
+        let detailed = e.run(&["status", &r, "--details"]).text();
+        let command = plain
+            .lines()
+            .find_map(|line| line.strip_prefix("Receipt: "))
+            .unwrap_or_else(|| panic!("receipt command missing: {plain}"));
+        assert!(detailed.contains(&format!("Receipt: {command}")));
+        // The displayed command must actually retrieve this commission from an
+        // unrelated directory, including once custody has closed.
+        let receipt = std::process::Command::new("/bin/sh")
+            .args(["-c", &format!("{command} --json")])
+            .env_clear()
+            .current_dir(&e.cwd)
+            .output()
+            .unwrap();
+        assert!(receipt.status.success(), "{receipt:?}");
+        let receipt = stewart::json::parse(&receipt.stdout).unwrap();
+        assert_eq!(s(&receipt, &["data", "reference"]), r);
+        assert_eq!(before, e.inventory(), "status and receipt are read-only");
+    }
+}
+
+#[test]
 fn conflicting_views_refuse_before_starting_an_operation() {
     let e = Env::new();
     let r = e.new_ref();

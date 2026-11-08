@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Commit the vocabulary revision and qualify the product and affected launchers; native verification passed | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
+| Next action | Complete Linux acceptance and both launcher rehearsals for the vocabulary repairs | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
 | After the vocabulary revision's required checks | Run a small bounded Haiku comparison of the revision; make only targeted repairs and follow-ups | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | After the Haiku vocabulary block | Broaden auditor studies, with Opus the intended next candidate; bind model and budget for that comparison | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Retained next implementation candidate; not a prerequisite for broadening auditors | Select, build and demonstrate the narrow rapid-iteration path proposed in `.scratch/rapid-iteration-01/DECISION-BRIEF.md` | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |

@@ -399,6 +399,20 @@ impl Reply {
             }
         }
         if let Some(d) = &self.data {
+            if concise {
+                if let Some(J::Arr(items)) = d.get("receipt_line") {
+                    let argv: Option<Vec<String>> = items
+                        .iter()
+                        .map(|item| match item {
+                            J::Str(s) => Some(s.clone()),
+                            _ => None,
+                        })
+                        .collect();
+                    if let Some(argv) = argv {
+                        s.push_str(&format!("\nReceipt: {}\n", shell_words(&argv)));
+                    }
+                }
+            }
             if !d.is_empty_obj() {
                 s.push('\n');
                 if self.operation == "status" && !details && d.get("references").is_some() {

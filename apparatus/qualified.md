@@ -20,8 +20,10 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-05](#acceptance-05) | 2026-11-01T18:56:51Z | `f4bbb9c` | qualified | latest |
-| acceptance | linux-x86_64 | [acceptance-05](#acceptance-05) | 2026-11-01T18:56:51Z | `f4bbb9c` | qualified | latest |
+| acceptance | linux-aarch64 | [acceptance-vocabulary-01](#acceptance-vocabulary-01) | 2026-11-08T18:50:36Z | `f6a2fd5` | failed | latest |
+| acceptance | linux-aarch64 | [acceptance-05](#acceptance-05) | 2026-11-01T18:56:51Z | `f4bbb9c` | qualified | latest qualified |
+| acceptance | linux-x86_64 | [acceptance-vocabulary-01](#acceptance-vocabulary-01) | 2026-11-08T18:50:36Z | `f6a2fd5` | failed | latest |
+| acceptance | linux-x86_64 | [acceptance-05](#acceptance-05) | 2026-11-01T18:56:51Z | `f4bbb9c` | qualified | latest qualified |
 | toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 
@@ -151,6 +153,38 @@ not carry them.
 | Release binary SHA-256 | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
 | Test binary SHA-256 | `ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6` | `5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b` |
 | RESULT.json SHA-256 | `44fbbebbdfae205701ab99990da041f1c20e1bd63fc6946af9e56b11bc66b150` | `ec96969bd74f2e4a66bf7c50f0173b7e61378ef87c9ebdfbdd53b9af50b710cb` |
+
+### acceptance-vocabulary-01
+
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
+- Source commit: `f6a2fd59383e58e6c9adc7c52b4682bb8e4d3f6a`; archive SHA-256 `00c57a0d8db7dbe91b71a6c39c05c084697ff4ac62070a2a180ec348ff8a80b1`
+- Finished: 2026-11-08T18:50:36Z
+- Outcome: **failed**
+- Run-level failures: host/DONE reports failures=2; host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-01/driver-arm64/); host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-01/driver-amd64/)
+- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
+- Evidence: `.scratch/acceptance-vocabulary-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: none
+
+| | linux-aarch64 | linux-x86_64 |
+| --- | --- | --- |
+| Execution | native | emulated (Rosetta) |
+| Outcome | **failed** | **failed** |
+| Failures | host/driver-arm64.exit is 1; driver-arm64/driver.exit is 1; driver-arm64/driver-final.exit is 1; cases: 125 selected, 111 passed, 14 failed, 0 skipped; 65 checks failed outside control variants; sabotage controls: 58 of 74 fired; failed_cases: c5.package, c5.partial-delivery, c5.t9-destination, c5.conflicting-package, c5.lost-run-reply, c5.t10-damaged-payload, c5.payload-corrupt-fault, c5.unknown-membership, c17.close-failures, c8.close-every-state, c8.close-faults, c8.close-running, c16.status-after-launch, c4.provider-compaction; broken_checks: baseline_failed c5.package/drop_last_entry, baseline_failed c5.package/deliver_conversation, baseline_failed c5.package/regenerate_rendering, baseline_failed c5.package/render_conclusion, baseline_failed c5.partial-delivery/skip_delivery_verification, baseline_failed c5.partial-delivery/remove_partial_package, baseline_failed c5.unknown-membership/unknown_membership_empty, baseline_failed c8.close-every-state/skip_confirmation, baseline_failed c8.close-every-state/empty_return_before_launch, baseline_failed c8.close-running/seal_as_stopped, baseline_failed c16.status-after-launch/ended_as_submitted, baseline_failed c16.status-after-launch/seal_as_delivered, baseline_failed c4.provider-compaction/omit_compaction, baseline_failed c4.provider-compaction/alter_compaction_summary, baseline_failed c4.provider-compaction/retain_precompaction_context, baseline_failed c4.provider-compaction/ignore_compaction_usage, never_fired (any case)/omit_compaction, never_fired (any case)/alter_compaction_summary, never_fired (any case)/retain_precompaction_context, never_fired (any case)/ignore_compaction_usage, never_fired (any case)/drop_last_entry, never_fired (any case)/skip_delivery_verification, never_fired (any case)/deliver_conversation, never_fired (any case)/regenerate_rendering, never_fired (any case)/render_conclusion, never_fired (any case)/remove_partial_package, never_fired (any case)/skip_confirmation, never_fired (any case)/seal_as_stopped, never_fired (any case)/empty_return_before_launch, never_fired (any case)/ended_as_submitted, never_fired (any case)/seal_as_delivered, never_fired (any case)/unknown_membership_empty; controls_never_fired: omit_compaction, alter_compaction_summary, retain_precompaction_context, ignore_compaction_usage, drop_last_entry, skip_delivery_verification, deliver_conversation, regenerate_rendering, render_conclusion, remove_partial_package, skip_confirmation, seal_as_stopped, empty_return_before_launch, ended_as_submitted, seal_as_delivered, unknown_membership_empty; driver-arm64/evidence/RESULT.json: driver exit 1 | host/driver-amd64.exit is 1; driver-amd64/driver.exit is 1; driver-amd64/driver-final.exit is 1; cases: 123 selected, 109 passed, 14 failed, 0 skipped; 65 checks failed outside control variants; sabotage controls: 58 of 74 fired; failed_cases: c5.package, c5.partial-delivery, c5.t9-destination, c5.conflicting-package, c5.lost-run-reply, c5.t10-damaged-payload, c5.payload-corrupt-fault, c5.unknown-membership, c17.close-failures, c8.close-every-state, c8.close-faults, c8.close-running, c16.status-after-launch, c4.provider-compaction; broken_checks: baseline_failed c5.package/drop_last_entry, baseline_failed c5.package/deliver_conversation, baseline_failed c5.package/regenerate_rendering, baseline_failed c5.package/render_conclusion, baseline_failed c5.partial-delivery/skip_delivery_verification, baseline_failed c5.partial-delivery/remove_partial_package, baseline_failed c5.unknown-membership/unknown_membership_empty, baseline_failed c8.close-every-state/skip_confirmation, baseline_failed c8.close-every-state/empty_return_before_launch, baseline_failed c8.close-running/seal_as_stopped, baseline_failed c16.status-after-launch/ended_as_submitted, baseline_failed c16.status-after-launch/seal_as_delivered, baseline_failed c4.provider-compaction/omit_compaction, baseline_failed c4.provider-compaction/alter_compaction_summary, baseline_failed c4.provider-compaction/retain_precompaction_context, baseline_failed c4.provider-compaction/ignore_compaction_usage, never_fired (any case)/omit_compaction, never_fired (any case)/alter_compaction_summary, never_fired (any case)/retain_precompaction_context, never_fired (any case)/ignore_compaction_usage, never_fired (any case)/drop_last_entry, never_fired (any case)/skip_delivery_verification, never_fired (any case)/deliver_conversation, never_fired (any case)/regenerate_rendering, never_fired (any case)/render_conclusion, never_fired (any case)/remove_partial_package, never_fired (any case)/skip_confirmation, never_fired (any case)/seal_as_stopped, never_fired (any case)/empty_return_before_launch, never_fired (any case)/ended_as_submitted, never_fired (any case)/seal_as_delivered, never_fired (any case)/unknown_membership_empty; controls_never_fired: omit_compaction, alter_compaction_summary, retain_precompaction_context, ignore_compaction_usage, drop_last_entry, skip_delivery_verification, deliver_conversation, regenerate_rendering, render_conclusion, remove_partial_package, skip_confirmation, seal_as_stopped, empty_return_before_launch, ended_as_submitted, seal_as_delivered, unknown_membership_empty; driver-amd64/evidence/RESULT.json: driver exit 1 |
+| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
+| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
+| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
+| Driver self-test | 339/339 | 339/339 |
+| Cases passed | 111/125 | 109/123 |
+| Cases | selected 125, ran 125, passed 111, failed 14, skipped 0 | selected 123, ran 123, passed 109, failed 14, skipped 0 |
+| Variants (a fired control's variant fails) | ran 230, passed 136, failed 94, skipped 0 | ran 230, passed 136, failed 94, skipped 0 |
+| Checks | passed 162608, failed outside controls 65, failed inside controls 1081 | passed 162608, failed outside controls 65, failed inside controls 1081 |
+| Sabotage control variants fired (INTERFACE C.2) | 58/74 | 58/74 |
+| Driver controls fired | 13/13 | 13/13 |
+| Timing gate | on, passed: commands worst 2.925 ms (threshold 100.0 ms); protocol worst 100.077 ms (threshold 120.0 ms) | off (reported, not gated): commands worst 45.648 ms (threshold 100.0 ms); protocol worst 150.893 ms (threshold 120.0 ms) |
+| End to end (`e2e.reacting-audit`) | pass, 871/871 checks | pass, 871/871 checks |
+| Release binary SHA-256 | `201ab8c82cb70a7b179303b61b8b1b4f8f734b8be4bf5123bf623b4c08bdb0c4` | `9155bfe15a9406e007dc5090a151322a46583e1de895c1c27bffdf5c802d9d4d` |
+| Test binary SHA-256 | `56412450aa85a344fd8ea0f463720a18cf2da02888a827acbba86abe6d0f03b4` | `a2b653777b49ad07d05f1f10387182d6cc007c4fef058c72daf3501c080a59cd` |
+| RESULT.json SHA-256 | `8234a418167da9c97a1f7b333d156fed9a497732bfffd4336c1123dfe860119e` | `5d85086e263349e7bbedede68008e7327d1539e35955b93f4a3a86f9c5bdb557` |
 
 ### apparatus-02
 

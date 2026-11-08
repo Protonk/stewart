@@ -72,9 +72,16 @@ class SummarizingProcedure:
         return {"procedure": self.procedure.witness(), "summaries": [s.content_raw.decode() for s in self.summaries]}
 
 
-def check_common(t, sub, fx, pre, rep, ending, cause=None, run_number=1):
+def check_compaction_reply(t, sub, fx, pre, rep, ending, cause=None, run_number=1):
+    # These scripts either submit as auditor or stop unsubmitted; compaction
+    # does not alter the final seal actor or manufacture a seal for an ending.
     rs.check_run_reply(t, rep, sub, pre, ending=ending, cause=cause, run_number=run_number,
-                       fx=fx, limits=rs.limits_of(sub))
+                       fx=fx, limits=rs.limits_of(sub),
+                       seal_actor="auditor" if ending == "sealed" else None)
+
+
+def check_common(t, sub, fx, pre, rep, ending, cause=None, run_number=1):
+    check_compaction_reply(t, sub, fx, pre, rep, ending, cause, run_number)
     rs.check_requests(t, fx, sub, pre, exchanges=fx.exchanges_of(pre))
     rs.check_history(t, fx, pre, exchanges=fx.exchanges_of(pre))
     rs.check_captures(t, sub, fx, pre, run_number=run_number)
@@ -364,6 +371,52 @@ def c_compaction_stopping(t):
         rec = ((rd.attempts.get((2, 1)) or {}).get("body") or {}) if rd else {}
         t.eq(pre + ".aborted", (rec.get("outcome"), (rec.get("charged") or {}).get("basis")), (outcome, "estimated"))
         t.eq(pre + ".no-reminder", t.log_bodies(sub, "notice"), [])
+
+
+@selftest
+def compaction_reply_selftests():
+    """A scripted submit establishes a seal with or without prior compaction."""
+    import copy
+    from types import SimpleNamespace
+    from driver_core import authoring_observation, seal_observation
+    sub = SimpleNamespace(limits=(200, 20000000, 400000))
+    usage = fp.totals([])
+    fx = SimpleNamespace(exchanges_of=lambda name: [], totals=lambda *args: usage)
+    def specimen(ending):
+        actor = "auditor" if ending == "sealed" else None
+        data = {"run": 1, "continuing": False, "ending": ending, "cause": None, "provider": None,
+                "usage": usage, "allowances": fp.allowances(usage, rs.limits_of(sub)),
+                "answer": {"revision": 3, "entries": 3}, "seal": seal_observation(actor),
+                "delivery": None, "notices": [],
+                "headline": {"authoring": authoring_observation(ending), "seal": seal_observation(actor)},
+                "summary": "The witnessed placement ended."}
+        return SimpleNamespace(data=data, effects={"run": "ended", "seal": "recorded" if actor else "none"},
+                               next_argvs=lambda: [["/opt/stewart", "close", "REF"]])
+    def observe(reply, ending):
+        t = rs._StubT("")
+        check_compaction_reply(t, sub, fx, "reply", reply, ending)
+        return [name for name, passed, _ in t.checks if not passed]
+    out = []
+    good = specimen("sealed")
+    failures = observe(good, "sealed")
+    out.append(("compaction.reply.sealed", not failures, failures))
+    for label, seal in [("absent", seal_observation()), ("wrong-actor", seal_observation("manager"))]:
+        bad = copy.deepcopy(good)
+        bad.data["headline"]["seal"] = seal
+        failures = observe(bad, "sealed")
+        out.append(("compaction.reply.control." + label, "reply.headline.seal" in failures, failures))
+    ordinary = specimen("ended_unsubmitted")
+    failures = observe(ordinary, "ended_unsubmitted")
+    out.append(("compaction.reply.unsubmitted", not failures, failures))
+    bad = copy.deepcopy(ordinary)
+    bad.data["headline"]["seal"] = seal_observation("auditor")
+    failures = observe(bad, "ended_unsubmitted")
+    out.append(("compaction.reply.control.invented-submission", "reply.headline.seal" in failures, failures))
+    unchanged = copy.deepcopy(good)
+    unchanged.data["summary"] = "A different truthful presentation of the same observed placement."
+    failures = observe(unchanged, "sealed")
+    out.append(("compaction.reply.prose-invariant", not failures, failures))
+    return out
 
 
 @selftest
