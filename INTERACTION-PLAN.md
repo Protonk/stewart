@@ -1,8 +1,9 @@
 # Stewart auditor-interface study
 
 Use bounded model encounters to investigate how Stewart presents and supports an
-inquiry. The principal's goal is unobtrusive auditor-facing machinery, with a
-useful balance between discoverability and verbosity. An equally sufficient
+inquiry, including useful auditor failures and their recovery. The principal's
+goal is unobtrusive auditor-facing machinery, with a useful balance between
+discoverability and verbosity. An equally sufficient
 answer with more natural prose or less mechanical effort can be a substantial
 success. Minimizing tokens, tool calls or answer length is not the objective.
 
@@ -42,10 +43,100 @@ used labeled companion views; the intervention readings used original returns
 with their exact questions. A document-oriented answer is a candidate, not a
 selected destination.
 
-## Haiku stress one-offs
+## Haiku failure and recovery commission
 
-The principal selected five bounded Haiku stress one-offs as the last Haiku
-encounters: not calibrators, but cheap hypotheses about what the manager can
+On 2026-11-07 the principal accepted the proposed autonomous campaign, increasing
+its Haiku API budget to **USD 50**. The agreed ceiling of **50 new placements**
+remains. Aim for four to six useful cases, stopping earlier if the available
+comparisons stop being informative. These are ceilings, not spending or output
+targets. This is a new commission; earlier placements remain consumed.
+
+The question is when an auditor's failure should remain an admissible answer,
+when a specific intervention can help repair it, and when Stewart should refuse
+an operation or report that something cannot be established. A poor or incorrect
+answer can remain procedurally valid. Intellectual assessments belong to the
+experimenter; narrow study checks do not become a general answer-quality gate.
+An inconclusive comparison or failure to reproduce an expected failure is a
+legitimate result.
+
+### Delegated authority
+
+The agent may select and construct fixtures, vary questions, materials, guidance,
+effort and limits (including deliberate limit studies), choose comparisons,
+replications and fresh follow-up audits, and redirect the remaining allowance.
+It may make isolated study changes to tool feedback or recording mechanisms,
+with declared build status and the required checks. These changes do not settle
+permanent product behavior.
+
+Within the commission the agent may prepare and bind exact trial packets, launch
+them through the enabled execution route, read and assess answers, inspect and
+collect evidence, and perform manager closure and confirmation after inspection,
+including for poor or empty returns. No new principal approval is needed for
+each trial or ordinary follow-up within these bounds. Each packet records the
+campaign authority and the agent's trial selection; it is not a new permission
+source. A recovery trial preserves its predecessor and counts as a new placement.
+Unknown effects must be reconciled before a replacement is considered.
+
+The principal retains budget increases, changes of model or purpose, adoption of
+product-contract changes, loss surrender and evidence disposal. The current
+Haiku model is `claude-haiku-5-5`; there is no model fallback in this commission.
+
+### Spending and execution
+
+Use the Anthropic Console spending limit as the provider-side spending backstop
+once the principal has configured it for the workspace/account and credential
+used by this campaign. This setting has not yet been confirmed. The limit's
+scope and starting spend must be recorded so existing or shared usage is not
+mistaken for campaign usage. Console limits are monthly; the USD 50 campaign
+authorization does not renew with the calendar month or fresh credits.
+The [provider's spend-limit documentation](https://platform.claude.com/docs/en/api/rate-limits#spend-limits)
+describes the monthly scope and refusal of further requests when a configured
+limit is reached. This is a provider feature, not a demonstrated Stewart limit.
+
+Keep ordinary placement counts, reported/estimated usage and calculated costs
+from the existing records. Independent billing remains a distinct observation.
+Do not build a custom credit-limit or reservation service for this campaign;
+additional spending-control engineering needs a concrete reusable requirement.
+Per-run token/turn limits and watchdogs remain useful experimental and execution
+bounds, not claimed dollar enforcement.
+
+The reusable practical prerequisite is an execution route the principal enables
+once, allowing the agent to use the retained launcher and credential handoff
+without a terminal request for each trial. Keep the setup narrow, preserving
+existing evidence, binding and credential checks. Paid trials begin after the
+route and the applicable Console limit are established; authority for preparing
+and checking that setup is included in this commission.
+
+### Remaining preparation and conduct
+
+- [ ] Prepare small inadequate-evidence and citation-repair comparisons first.
+  Recording under output pressure and an actually offered pagination affordance
+  are follow-up candidates. Use retained findings; do not repeat a completed run
+  merely to recreate its history. Keep reference answers and private study checks
+  outside the auditor's supplied world.
+- [ ] Freeze each trial's inputs, build, settings and discriminating observations
+  before launch. Include controls and invariances where they support the claim;
+  distinguish unexercised mechanisms, missing evidence and observed absence.
+  The agent owns these choices and any necessary answer reading.
+- [ ] Bind the declared study variants and supplied inputs to the applicable
+  offline checks and matching Linux rehearsal. Preserve explicit unqualified
+  study status where applicable. The fixed-catalog reporting rehearsal does not
+  establish saved-connection or new-template coverage.
+- [ ] Establish the delegated execution route and record the Console limit's
+  scope, starting spend and campaign credential binding.
+- [ ] Conduct bounded comparisons and useful follow-ups. Return a short account
+  of each case: reproducer, failure, what the comparison establishes, recovery,
+  uncertainty, spend and custody disposition. Update the principal after the
+  first two useful cases and continue within the agreement; a reserved decision
+  or important failure requires returning to them.
+- [ ] End the campaign when the budget or placement ceiling is reached, enough
+  useful cases are characterized, or further comparisons cease to be useful.
+  Account for every trial and remaining obligation; preserve original records.
+
+## Completed Haiku stress one-offs
+
+The principal selected five bounded Haiku stress one-offs to finish the earlier
+Haiku commission: not calibrators, but cheap hypotheses about what the manager can
 tell from Stewart's return. All used the study build below and the frozen
 Problem A template or new templates; the setup, questions, packets, dated cost
 estimate and pre-registered predictions are in `.scratch/haiku-stress-01`
@@ -87,9 +178,9 @@ unknown `end` key, in three of five runs; one inexact quote refuses a whole
 revision, which cost the turn that could have been a prepare; the per-request
 output cap counts thinking and nothing in the arrangement warns of it or
 suggests recording in parts; facts from tool replies such as line counts
-cannot be cited. The Haiku engagement ends here, as the principal decided.
-No further Haiku placement is selected. None of these observations is
-selected for change here; the rendering question belongs to the product
+cannot be cited. That Haiku commission is complete; all five placements are
+consumed. These findings do not themselves select a product change; the rendering
+question belongs to the product
 vocabulary decisions and the tool-surface frictions to the rapid-iteration
 friction record.
 

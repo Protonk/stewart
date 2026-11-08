@@ -9,28 +9,31 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Complete the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Current | Prepare the agreed Haiku failure-and-recovery campaign, enable delegated execution with the Console spending limit, then conduct bounded comparisons | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Preparatory work | Complete the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the measured reference | Obtain and compare the independent rapid-iteration designs for the principal's architecture choice | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| Ready for agreement; before the rapid-iteration build | Agree the agent's autonomy within a budgeted block, including experiment selection, follow-ups, custody completion, paid launches and collections, and enforcement | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
-| After the architecture choice and autonomy agreement | Build and demonstrate the chosen rapid-iteration path | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| After the architecture choice | Build and demonstrate the chosen rapid-iteration path under an applicable bounded commission | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice | Rename the product response vocabulary through CONTRACTS, INTERFACE, help, service and split driver authorship | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
 | After self-contained rapid iteration is demonstrated | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
-| Paused; no placement selected | Interface study: billing dispositions for the Haiku runs; evidence beyond Haiku and this problem set is a candidate | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 
-The interface study's Haiku engagement is complete: the A/B baselines, the
+The interface study's earlier Haiku engagement is complete: the A/B baselines, the
 guidance intervention, the Fable Problem B encounter and the five stress
 one-offs have run and are reviewed, and every placement is consumed.
 [INTERACTION-PLAN.md](INTERACTION-PLAN.md) owns the findings, candidate build
-and evidence. Evidence beyond this model and problem set is a candidate, not a
-selection. No paid placement is authorized.
+and evidence. Its new failure-and-recovery commission owns the agreed USD 50,
+50-placement authority and remaining execution setup. Evidence beyond Haiku
+still needs a separate model decision.
 
-Current operating rules remain in force until an explicit agreement changes them. The
-principal runs authorized live launches and collections in a separate terminal.
-No previous packet authorizes further placements.
+The principal has delegated trial selection, paid launch, collection and reviewed
+custody completion within that campaign. The agent's usable host execution route
+and the Console spending limit remain to be established before paid trials.
+Earlier packets do not authorize new placements; new packets bind each trial to
+the accepted campaign. The broader architecture work is not a prerequisite for
+the campaign's initial comparisons.
 
 The interface study used cheap model calls on the small-commission apparatus
 without completing the full C10 apparatus.

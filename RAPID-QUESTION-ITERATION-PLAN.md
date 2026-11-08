@@ -18,7 +18,7 @@ supported finding or an unresolved comparison without routinely requiring the
 principal to read long answers or reconstruct several reports. Questions that
 need an independent reader or a designer's interpretation remain explicit; this
 path does not automate judgments of answer quality. The autonomy agreement
-below determines which actions the agent may actually take.
+below governs the delegation; each bounded commission fixes its actual scope.
 
 ## Premise
 
@@ -165,20 +165,23 @@ This is the gate before building the rapid-iteration path.
 
 ## Authority and limits
 
-Bounded authorization per model-consuming use stays, as
-[AGENTS](AGENTS.md#decisions-and-authority) requires. A proposed block or budget
-does not itself grant authority. The agreement must state which bounded uses
-are authorized and how the agent's actions are constrained and accounted for.
+On 2026-11-07 the principal agreed broad agent autonomy within a bounded
+failure-and-recovery campaign: selecting experiments and variants, repetitions
+and follow-ups, paid launch, interpretation, collection and reviewed custody
+completion. Budget increases, changes of model or purpose, permanent product
+decisions, loss surrender and disposal remain with the principal. The
+coordinating plan identifies the active commission and its owner.
 
-- [ ] Agree the scope of agent autonomy: experiment selection and permitted
-  variations, follow-ups, stopping rules, collection, review and custody
-  completion. Identify decisions reserved to the principal and conditions that
-  require returning to them. Record the agreement here.
-- [ ] Decide who performs paid launches and collections, how credentials are
-  accessed, and how the agreed budget and placement bounds are enforced. Keep
-  calculated cost, provider usage and observed billing distinct; Stewart's
-  token/turn limits are not a dollar ceiling. Record the chosen enforcement and
-  the checks needed before using it.
+This is the delegation pattern for the rapid path; it is not unlimited authority
+for other paid work. [AGENTS](AGENTS.md#decisions-and-authority) still requires
+an applicable bounded commission. Proposals do not grant permission by themselves.
+
+- [ ] Bind the chosen rapid path's demonstration to an applicable commission,
+  including its model, spending and placement bounds and permitted changes.
+- [ ] Use an enabled execution route and provider-side spending limit, keeping
+  ordinary placement/cost accounting. Add spending-control machinery only for
+  a concrete reusable requirement. Keep calculated cost, provider usage and
+  independent billing distinct; token/turn limits are not a dollar ceiling.
 
 Out of scope: tuning the auditor's answers, and designing the manager interface
 beyond the boundary placements this plan needs.
