@@ -9,8 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current | Rehearse the prepared Haiku block and host route, enable delegated execution with the Console spending limit, then conduct bounded comparisons | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
-| Preparatory work | Complete the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Current | Complete the read-only product-vocabulary inventory and rapid-iteration measured reference and friction record | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md), [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the measured reference | Obtain and compare the independent rapid-iteration designs for the principal's architecture choice | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice | Build and demonstrate the chosen rapid-iteration path under an applicable bounded commission | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After the architecture choice | Rename the product response vocabulary through CONTRACTS, INTERFACE, help, service and split driver authorship | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
@@ -23,17 +22,12 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 The interface study's earlier Haiku engagement is complete: the A/B baselines, the
 guidance intervention, the Fable Problem B encounter and the five stress
 one-offs have run and are reviewed, and every placement is consumed.
-[INTERACTION-PLAN.md](INTERACTION-PLAN.md) owns the findings, candidate build
-and evidence. Its new failure-and-recovery commission owns the agreed USD 50,
-50-placement authority and remaining execution setup. Evidence beyond Haiku
+[INTERACTION-PLAN.md](INTERACTION-PLAN.md) owns those findings, candidate build
+and evidence. The later autonomous failure-and-recovery campaign is also
+complete; [its findings](apparatus/studies/haiku-recovery/RESULTS.md) own the
+observed cases, resource accounting and explicit review limitations. Its host
+worker is stopped, and no further placements are queued. Evidence beyond Haiku
 still needs a separate model decision.
-
-The principal has delegated trial selection, paid launch, collection and reviewed
-custody completion within that campaign. The agent's usable host execution route
-and the Console spending limit remain to be established before paid trials.
-Earlier packets do not authorize new placements; new packets bind each trial to
-the accepted campaign. The broader architecture work is not a prerequisite for
-the campaign's initial comparisons.
 
 The interface study used cheap model calls on the small-commission apparatus
 without completing the full C10 apparatus.

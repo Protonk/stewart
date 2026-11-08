@@ -96,6 +96,13 @@ Preserve the failed checks and their dispositions when costing the cycle.
   one inexact quote, the unwarned per-request output cap that counts thinking,
   and tool-reply facts such as line counts that no citation can carry; the last
   changes what participants can express and is the principal's decision.
+- [ ] Include the completed Haiku failure/recovery campaign in the friction
+  comparison, using [its findings](apparatus/studies/haiku-recovery/RESULTS.md)
+  and retained dispatches. Distinguish ordinary autonomous trial operation from
+  the Keychain collection interruption, compaction-review boundary and mistaken
+  token requirement in a recovery wrapper. Count the principal's recovery actions
+  and the experimenter's narrow evidence checks; do not treat closed custody as
+  a completed compaction review or propose machinery solely to hide these costs.
 - [ ] Identify where an independent reader or the principal supplied a judgment
   needed to resolve the comparison. Distinguish mechanically observable outcomes
   from those interpretations, and use that distinction when choosing small

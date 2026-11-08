@@ -67,6 +67,24 @@ not carry them.
 | [haiku-stress-live-04](#haiku-stress-live-04) | experiment | Retain the first many-part placement that hit the per-request output cap inside thinking, and the record of the unstarted second audit | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
 | [haiku-stress-live-05](#haiku-stress-live-05) | experiment | Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
 | [c10-report-linux-01](#c10-report-linux-01) | experiment | Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses. | A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage. |
+| [haiku-recovery-live-01](#haiku-recovery-live-01) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-02](#haiku-recovery-live-02) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-03](#haiku-recovery-live-03) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-04](#haiku-recovery-live-04) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-05](#haiku-recovery-live-05) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-06](#haiku-recovery-live-06) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-07](#haiku-recovery-live-07) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-08](#haiku-recovery-live-08) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-09](#haiku-recovery-live-09) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-10](#haiku-recovery-live-10) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-11](#haiku-recovery-live-11) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-12](#haiku-recovery-live-12) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-13](#haiku-recovery-live-13) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-14](#haiku-recovery-live-14) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-15](#haiku-recovery-live-15) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-16](#haiku-recovery-live-16) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-17](#haiku-recovery-live-17) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
+| [haiku-recovery-live-18](#haiku-recovery-live-18) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
 
 ## Records
 
@@ -453,3 +471,147 @@ not carry them.
 - Result: `review`, every regular file under it (8 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `aa8960f2f8a9a3bebb558c5d573c97168bd20e582149a12a13462375a80a181b`
 - Evidence: `.scratch/c10-report-linux-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses.; until A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage.
+
+### haiku-recovery-live-01
+
+- Experiment: Haiku failure/recovery trial 01; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:45:21Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `fa038714a781fc3bd5374113057a3a21ed862c2fd66ec7954f0d8ada8728c5e3`
+- Evidence: `.scratch/haiku-recovery-live-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-02
+
+- Experiment: Haiku failure/recovery trial 02; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:47:09Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `da8e9c93f00bf667b07007add0c465612539b54bf884e8e0ce2c4d8cf2536d91`
+- Evidence: `.scratch/haiku-recovery-live-02` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-03
+
+- Experiment: Haiku failure/recovery trial 03; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:48:19Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `e8af905041e173fea03e271c77724a3499eeb21d6b36a82a883c0c9340b94527`
+- Evidence: `.scratch/haiku-recovery-live-03` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-04
+
+- Experiment: Haiku failure/recovery trial 04; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:49:16Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `068f0ba1b745cbd1bc11c43f5ac48facaa5808153d17c76c76450cbd8dd5101e`
+- Evidence: `.scratch/haiku-recovery-live-04` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-05
+
+- Experiment: Haiku failure/recovery trial 05; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:51:04Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `c6d53c03cc87fff095545379062e54a00739b3248c3fc29450f0fc7745d44dde`
+- Evidence: `.scratch/haiku-recovery-live-05` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-06
+
+- Experiment: Haiku failure/recovery trial 06; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:51:54Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `e23421672ffcbae338f9c2eae565cae1c15d20403067216f5110c972bbdd975d`
+- Evidence: `.scratch/haiku-recovery-live-06` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-07
+
+- Experiment: Haiku failure/recovery trial 07; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:53:24Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `fa18c8430ce2329f86fe5dbf0158910b66db0f7aa6e0d66c2c0c0371bd58087a`
+- Evidence: `.scratch/haiku-recovery-live-07` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-08
+
+- Experiment: Haiku failure/recovery trial 08; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:54:40Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `4be73d84490714fdb79fbf0c0e2854b23e5700a58e22eb7223d377f98c43f867`
+- Evidence: `.scratch/haiku-recovery-live-08` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-09
+
+- Experiment: Haiku failure/recovery trial 09; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T02:57:01Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `b534ada5b2889ef744181aba2cbc866a38a3cc2c1e94070a61d4b1b27c0c8ca7`
+- Evidence: `.scratch/haiku-recovery-live-09` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-10
+
+- Experiment: Haiku failure/recovery trial 10; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T03:00:03Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `be590aca46ce23b8ab3134afc7533ae5966a77deb6fb9c4c05190537df35ae77`
+- Evidence: `.scratch/haiku-recovery-live-10` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-11
+
+- Experiment: Haiku failure/recovery trial 11; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T03:02:39Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `663e65d47b697db0c8464c25fd16e8e0489cb16cc5427aa78c1727542e629252`
+- Evidence: `.scratch/haiku-recovery-live-11` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-12
+
+- Experiment: Haiku failure/recovery trial 12; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T03:07:38Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `6cf9f2d1c1740ecedc639c00237a306a4fe46c468794499d74fd30ecd1c918b5`
+- Evidence: `.scratch/haiku-recovery-live-12` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-13
+
+- Experiment: Haiku failure/recovery trial 13; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T03:45:54Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `72e4d6ff6a437823c6becf87b803ba6779f11ea395e367cb8d0687ad2fae93bf`
+- Evidence: `.scratch/haiku-recovery-live-13` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-14
+
+- Experiment: Haiku failure/recovery trial 14; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T03:46:53Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `4677b27dd04dbc2c6c7716240a0814251ce5a7260ae90f95c17581437b784b2e`
+- Evidence: `.scratch/haiku-recovery-live-14` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-15
+
+- Experiment: Haiku failure/recovery trial 15; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T04:06:40Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `dc65d5e5c261686d69c6b82f427540619fdb0cd99ee62756818823cdc3f71d5c`
+- Evidence: `.scratch/haiku-recovery-live-15` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-16
+
+- Experiment: Haiku failure/recovery trial 16; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T04:07:16Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `8815447288467c939a45552c268c86d6204eb210c26dd5e885e61001cc372179`
+- Evidence: `.scratch/haiku-recovery-live-16` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-17
+
+- Experiment: Haiku failure/recovery trial 17; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T04:08:07Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `2e3b82de98820d8413b6b8ec90feb59a0c70eeb91a3e43af1b8e86976e96a5d8`
+- Evidence: `.scratch/haiku-recovery-live-17` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+
+### haiku-recovery-live-18
+
+- Experiment: Haiku failure/recovery trial 18; original live placement and custody snapshots; study evidence, not model qualification
+- Date: 2026-11-08T04:09:10Z (from retention-date.json field at)
+- Result: `host/RESULT.json`, SHA-256 `14b86786d0c9e9a5a9c0112ce13c180e3087385c691e9250c5153a584b4c266b`
+- Evidence: `.scratch/haiku-recovery-live-18` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.

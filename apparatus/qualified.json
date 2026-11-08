@@ -1107,6 +1107,348 @@
         "reason": "Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses.",
         "until": "A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage."
       }
+    },
+    {
+      "id": "haiku-recovery-live-01",
+      "kind": "experiment",
+      "date": "2026-11-08T02:45:21Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 01; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "fa038714a781fc3bd5374113057a3a21ed862c2fd66ec7954f0d8ada8728c5e3"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-02",
+      "kind": "experiment",
+      "date": "2026-11-08T02:47:09Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 02; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "da8e9c93f00bf667b07007add0c465612539b54bf884e8e0ce2c4d8cf2536d91"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-03",
+      "kind": "experiment",
+      "date": "2026-11-08T02:48:19Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 03; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "e8af905041e173fea03e271c77724a3499eeb21d6b36a82a883c0c9340b94527"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-03",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-04",
+      "kind": "experiment",
+      "date": "2026-11-08T02:49:16Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 04; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "068f0ba1b745cbd1bc11c43f5ac48facaa5808153d17c76c76450cbd8dd5101e"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-04",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-05",
+      "kind": "experiment",
+      "date": "2026-11-08T02:51:04Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 05; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "c6d53c03cc87fff095545379062e54a00739b3248c3fc29450f0fc7745d44dde"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-05",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-06",
+      "kind": "experiment",
+      "date": "2026-11-08T02:51:54Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 06; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "e23421672ffcbae338f9c2eae565cae1c15d20403067216f5110c972bbdd975d"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-06",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-07",
+      "kind": "experiment",
+      "date": "2026-11-08T02:53:24Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 07; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "fa18c8430ce2329f86fe5dbf0158910b66db0f7aa6e0d66c2c0c0371bd58087a"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-07",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-08",
+      "kind": "experiment",
+      "date": "2026-11-08T02:54:40Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 08; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "4be73d84490714fdb79fbf0c0e2854b23e5700a58e22eb7223d377f98c43f867"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-08",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-09",
+      "kind": "experiment",
+      "date": "2026-11-08T02:57:01Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 09; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "b534ada5b2889ef744181aba2cbc866a38a3cc2c1e94070a61d4b1b27c0c8ca7"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-09",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-10",
+      "kind": "experiment",
+      "date": "2026-11-08T03:00:03Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 10; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "be590aca46ce23b8ab3134afc7533ae5966a77deb6fb9c4c05190537df35ae77"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-10",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-11",
+      "kind": "experiment",
+      "date": "2026-11-08T03:02:39Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 11; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "663e65d47b697db0c8464c25fd16e8e0489cb16cc5427aa78c1727542e629252"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-11",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-12",
+      "kind": "experiment",
+      "date": "2026-11-08T03:07:38Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 12; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "6cf9f2d1c1740ecedc639c00237a306a4fe46c468794499d74fd30ecd1c918b5"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-12",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-13",
+      "kind": "experiment",
+      "date": "2026-11-08T03:45:54Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 13; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "72e4d6ff6a437823c6becf87b803ba6779f11ea395e367cb8d0687ad2fae93bf"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-13",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-14",
+      "kind": "experiment",
+      "date": "2026-11-08T03:46:53Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 14; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "4677b27dd04dbc2c6c7716240a0814251ce5a7260ae90f95c17581437b784b2e"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-14",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-15",
+      "kind": "experiment",
+      "date": "2026-11-08T04:06:40Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 15; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "dc65d5e5c261686d69c6b82f427540619fdb0cd99ee62756818823cdc3f71d5c"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-15",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-16",
+      "kind": "experiment",
+      "date": "2026-11-08T04:07:16Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 16; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "8815447288467c939a45552c268c86d6204eb210c26dd5e885e61001cc372179"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-16",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-17",
+      "kind": "experiment",
+      "date": "2026-11-08T04:08:07Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 17; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "2e3b82de98820d8413b6b8ec90feb59a0c70eeb91a3e43af1b8e86976e96a5d8"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-17",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
+    },
+    {
+      "id": "haiku-recovery-live-18",
+      "kind": "experiment",
+      "date": "2026-11-08T04:09:10Z",
+      "date_from": "retention-date.json field at",
+      "summary": "Haiku failure/recovery trial 18; original live placement and custody snapshots; study evidence, not model qualification",
+      "result": {
+        "path": "host/RESULT.json",
+        "sha256": "14b86786d0c9e9a5a9c0112ce13c180e3087385c691e9250c5153a584b4c266b"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-live-18",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
+        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+      }
     }
   ]
 }

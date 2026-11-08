@@ -45,102 +45,14 @@ selected destination.
 
 ## Haiku failure and recovery commission
 
-On 2026-11-07 the principal accepted the proposed autonomous campaign, increasing
-its Haiku API budget to **USD 50**. The agreed ceiling of **50 new placements**
-remains. Aim for four to six useful cases, stopping earlier if the available
-comparisons stop being informative. These are ceilings, not spending or output
-targets. This is a new commission; earlier placements remain consumed.
-
-The question is when an auditor's failure should remain an admissible answer,
-when a specific intervention can help repair it, and when Stewart should refuse
-an operation or report that something cannot be established. A poor or incorrect
-answer can remain procedurally valid. Intellectual assessments belong to the
-experimenter; narrow study checks do not become a general answer-quality gate.
-An inconclusive comparison or failure to reproduce an expected failure is a
-legitimate result.
-
-### Delegated authority
-
-The agent may select and construct fixtures, vary questions, materials, guidance,
-effort and limits (including deliberate limit studies), choose comparisons,
-replications and fresh follow-up audits, and redirect the remaining allowance.
-It may make isolated study changes to tool feedback or recording mechanisms,
-with declared build status and the required checks. These changes do not settle
-permanent product behavior.
-
-Within the commission the agent may prepare and bind exact trial packets, launch
-them through the enabled execution route, read and assess answers, inspect and
-collect evidence, and perform manager closure and confirmation after inspection,
-including for poor or empty returns. No new principal approval is needed for
-each trial or ordinary follow-up within these bounds. Each packet records the
-campaign authority and the agent's trial selection; it is not a new permission
-source. A recovery trial preserves its predecessor and counts as a new placement.
-Unknown effects must be reconciled before a replacement is considered.
-
-The principal retains budget increases, changes of model or purpose, adoption of
-product-contract changes, loss surrender and evidence disposal. The current
-Haiku model is `claude-haiku-5-5`; there is no model fallback in this commission.
-
-### Spending and execution
-
-Use the Anthropic Console spending limit as the provider-side spending backstop.
-On 2026-11-07 the principal reported a USD 54 limit for “stewart total,” with
-approximately USD 3.91 already spent. Preserve that precision: the roughly
-USD 50.09 headroom is not an increase in the USD 50 campaign authorization.
-Continue the existing `stewart-haiku` connection and previously recorded Stewart
-workspace. The attributed observation and connection basis are retained in
-`.scratch/haiku-recovery-02/console-observation-01.json`; the Console has not been
-independently inspected. Existing or shared usage is not campaign usage.
-Console limits are monthly; the USD 50 campaign
-authorization does not renew with the calendar month or fresh credits.
-The [provider's spend-limit documentation](https://platform.claude.com/docs/en/api/rate-limits#spend-limits)
-describes the monthly scope and refusal of further requests when a configured
-limit is reached. This is a provider feature, not a demonstrated Stewart limit.
-
-Keep ordinary placement counts, reported/estimated usage and calculated costs
-from the existing records. Independent billing remains a distinct observation.
-Do not build a custom credit-limit or reservation service for this campaign;
-additional spending-control engineering needs a concrete reusable requirement.
-Per-run token/turn limits and watchdogs remain useful experimental and execution
-bounds, not claimed dollar enforcement.
-
-The reusable practical prerequisite is an execution route the principal enables
-once, allowing the agent to use the retained launcher and credential handoff
-without a terminal request for each trial. Keep the setup narrow, preserving
-existing evidence, binding and credential checks. Paid trials begin after the
-route and the applicable Console limit are established; authority for preparing
-and checking that setup is included in this commission.
-
-### Remaining preparation and conduct
-
-- [x] Prepare the first [evidence-limit and citation-repair block](apparatus/studies/haiku-recovery/STUDY.md).
-  Eight small candidate audits use the qualified `acceptance-05` binary, with
-  evidence/valid-citation controls and irrelevant-change invariances. The citation
-  fault is an explicitly seeded exercise; it measures recovery, not error incidence.
-  Reference judgments stay outside the submissions. Recording under output pressure
-  and an actually offered pagination affordance remain follow-up candidates.
-- [x] Specify exact model, effort, limits, input generation, discriminating
-  observations and the experimenter's review. `prepare.py` freezes templates,
-  proposals, source/reference hashes and binary/image identity. Run one candidate
-  at a time; preserve non-reproduction, prevention and inconclusive findings.
-- [ ] Commit the host metadata validation correction and run its queued offline
-  Linux rehearsal, covering all eight frozen templates and synthetic later
-  collection. The activation command verifies all controls before starting the
-  worker. Bind selected live packets to that matching apparatus, binary, image
-  and input evidence. Keep earlier rehearsal records unchanged.
-- [ ] Start the [host queue](apparatus/c10/HOST-QUEUE.md) using the recorded Console
-  observation and continued credential binding. Keep the existing
-  `.scratch/haiku-recovery-02/queue` for the campaign. Its dispatch records retain commands and
-  uncertain effects; they do not replace C10 evidence or enforce dollar spending.
-  Existing Keychain permission prompts remain an explicit setup consideration.
-- [ ] Conduct bounded comparisons and useful follow-ups. Return a short account
-  of each case: reproducer, failure, what the comparison establishes, recovery,
-  uncertainty, spend and custody disposition. Update the principal after the
-  first two useful cases and continue within the agreement; a reserved decision
-  or important failure requires returning to them.
-- [ ] End the campaign when the budget or placement ceiling is reached, enough
-  useful cases are characterized, or further comparisons cease to be useful.
-  Account for every trial and remaining obligation; preserve original records.
+The autonomous campaign is complete. Its five cases, authority, costs, evidence
+and remaining limits are recorded in
+[the study findings](apparatus/studies/haiku-recovery/RESULTS.md). All selected
+audits are closed and every dispatch is accounted for. The host worker is stopped;
+no further model calls are queued. Unlaunched long guidance/invariance candidates
+are deferred at the compaction-review boundary, and no permanent product change
+has been selected. Independent billing is explicitly unobserved; it does not
+prevent completion of this experimental block.
 
 ## Completed Haiku stress one-offs
 
