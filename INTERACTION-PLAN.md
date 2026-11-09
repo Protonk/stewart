@@ -8,11 +8,8 @@ quality remain matters of attributed judgment.
 
 ## Remaining work
 
-- [ ] Prepare a small comparison with Opus as the intended next candidate. Bind
-  the exact model, provider/settings, placement counts, cumulative allowances,
-  wall-clock stops and budget before launch. Include fresh material and a few
-  discriminating cases from the retained studies. State which questions, inputs
-  and checks stay fixed and which differences prevent a direct comparison.
+- [x] Prepare the first small Opus comparison below, with exact inputs and unpaid
+  proposals. Live authority and account labels remain unfilled.
 - [ ] Prepare the matching binary/input/credential-route rehearsal and review
   the actual launch bindings. The existing
   [study apparatus](apparatus/c10/README.md#study-submissions) supports supplied
@@ -25,6 +22,105 @@ quality remain matters of attributed judgment.
   Before adoption align contracts, interface, forms, help/examples and the
   [required checks](DEVELOPMENT.md#what-to-run-for-what-you-changed). Changes to
   authority, expressive freedom or custody require the principal's decision.
+
+## First comparison: four independent inquiries
+
+Next action: the principal runs `!sh .tmp/opus-01/rehearse.sh` on the host. It
+uses a new `.scratch/opus-rehearsal-01` folder. The Linux run is not yet performed;
+return to its actual results before marking rehearsal complete.
+The sandbox's metadata-only Keychain check returned `lookup_failed`; the wrapper
+checks the synthetic item's availability in the host session before starting.
+
+Working inputs are `.scratch/opus-comparison-01`: `freeze.json` identifies the
+templates and unapproved proposals; `packets/` holds bindings to the committed
+apparatus. Keep this one working set while the study is active. The principal
+authorized preparation and offline rehearsal, and confirmed that the retained
+`checklist-5sgh` and `checklist-sw3z` snapshots are the intended blinded pair.
+
+| Order / case | Question and input | What it can show |
+| --- | --- | --- |
+| 1 / `retry-inquiry` | New small fictional worker/gateway example: assess at-most-once and eventual delivery for three implementations | A concrete duplicate-message counterexample, the effect of atomic gateway deduplication, and invariance under renamed terms; distinguish guarantees from supplied assumptions |
+| 2 / `frsrr-a` | Exact original Problem A question and materials about numerical reproducibility across thread counts | A common reference for inspecting Opus and the retained Haiku answer |
+| 3 / `frsrr-5sgh` | Frozen 5sgh material; investigate consequential correctness defects against advertised numerical behavior | A difficult inquiry with the planted condition unknown to both readers |
+| 4 / `frsrr-sw3z` | Frozen sw3z material; byte-identical question to case 3 | The paired unknown-condition inquiry, without the other copy or its answer |
+
+Use a separate audit and unpaid packet for each case, with no shared conversation
+or earlier answer supplied. The order is fixed, not randomized. Both blind
+material inventories match their original freeze; preparation copied and hashed
+them without inspecting source differences or opening the key. Keep the key,
+old predictions and plant instructions outside the auditor's material and our
+reading. Record both returns and provisional human/agent readings before any
+principal-directed unblinding. Without that disclosure, correctness about the
+plant remains unresolved; confident prose is not a substitute for the key.
+
+The paired question asks for supported consequential findings, triggering
+conditions and code-based reasoning, while allowing a bounded finding of no
+established defect. It does not disclose that one copy has important damage or
+require a winner. This replaces the earlier 40-item checklist. Model, prompt,
+allowances, family guidance and reply vocabulary differ from the old Haiku
+attempts, so their empty returns are historical context, not a model-only
+comparison. Problem A preserves its question/material bytes, but its older
+apparatus and guidance conditions also limit causal comparisons.
+
+### Proposed live bounds; no spending authorization
+
+- Model `claude-opus-5-5`, explicit `medium` effort, direct Messages API,
+  ordinary `open-inquiry/1`, current qualified `acceptance-retention-01` binary.
+- Four placements total, one per independent audit. Each allows 24 turns,
+  400,000 cumulative input tokens, 48,000 output tokens and a 1,200-second
+  watchdog. The existing request retry policy permits up to four attempts;
+  no wrapper retry, fallback, automatic continuation or replacement placement.
+- Proposed block ceiling **USD 15**, subject to the principal's approval and
+  current account/provider spending arrangements. At the documented standard
+  rates, the four nominal allowances total **USD 10.24** without cache discounts.
+  Input can overshoot its allowance and lost responses can leave uncertain
+  charges; these token settings do not enforce a dollar ceiling.
+- Use the existing saved provider connection only after the account, workspace
+  and credential labels are confirmed in the authorized packets. Rehearse the
+  route with `stewart-synthetic`; do not look up a live secret in preparation.
+
+The choice of medium effort keeps the provider's current default explicit; this
+is not an effort or usage-limit study. Stewart still caps each response at
+16,000 tokens, including thinking, with a 600-second request timeout. A larger
+cumulative allowance cannot remove that cap. A `max_tokens` or limit ending is
+an observed outcome, not grounds to rerun with changed settings.
+
+Compatibility checked against primary documentation on 2026-11-09:
+[Opus model ID, output capacity and rates](https://platform.claude.com/docs/en/models/opus-5-5/overview),
+[effort and always-on thinking](https://platform.claude.com/docs/en/build-with-claude/effort),
+[API version 2026-10-21](https://platform.claude.com/docs/en/api/versioning) and
+[the pinned on-demand compaction protocol](https://platform.claude.com/docs/en/build-with-claude/compaction-on-demand).
+These are documented compatibility claims, not live observations on this account.
+
+### Rehearsal and review
+
+Run the existing Linux rehearsal with all four exact templates and the synthetic
+saved connection, including its fresh-process follow-up collection. This plans
+17 synthetic audits: 13 existing cases/controls plus four supplied-input audits.
+It must cover the existing process, export, reviewer, operator and reporting
+controls, plus the study checks for every supplied template. Local preparation
+establishes input identity and packet validity; it is not Linux qualification or
+a demonstration of Opus solving these questions. The synthetic rehearsal uses
+its own fixed model and allowances; it does not establish live capacity at the
+proposed bounds. No new apparatus is selected.
+
+After rehearsal, inspect every required outcome and input/binary/source binding
+before proposing the final paid packet digests. Review each live case before
+proceeding to the next independently authorized one. An operational or evidence
+failure stops the block for review; an intact, reviewed limit ending is a study
+outcome. Preserve custody and arrange inspection/closure without another model
+placement. The small reviewer still cannot clear real compaction: if reached,
+retain the incomplete review and resolve custody through the existing inspected
+operator path; do not reinterpret it as a passed review or resume the model.
+
+For each return, read the account before the interaction trace. Record supported
+conclusions, counterexamples, unsupported claims and unresolved areas separately
+from navigation, citations, repairs, recording and submission. Record turns,
+usage, calculated cost and ending as observations. The new fixture's reader
+reference is outside all submissions; its finite checks and argument are not an
+answer-quality gate. One encounter per condition supports bounded observations,
+not a general ranking of models. Retain selected original encounters and readings
+after review; generated rehearsal work remains disposable under DEVELOPMENT.
 
 ## Working inputs and limits
 
@@ -42,14 +138,10 @@ behavior remains `open-inquiry/1`. The candidate was explicitly unqualified and
 has not been adopted. A new packet uses current bindings, never an old helper as
 spending authority.
 
-The principal also has two corrupted derivatives of frsrr, the small repository
-used in earlier Haiku testing. One version has important damage and the other
-does not. Which version and what is damaged are predetermined but hidden from
-both the principal and the agent. The principal reports that Haiku did not
-provide answers on this comparison. Consider this blinded pair for Opus: observe
-how it approaches a difficult task whose answer neither experimenter knows.
-Preserve the blinding while planning; the exact task, inputs and run bounds
-remain to be specified.
+The two corrupted frsrr derivatives have a predetermined hidden condition: one
+has important damage and the other does not. Which version and what is damaged
+remain hidden from both the principal and the agent. The principal reports that
+Haiku supplied no answers. Their selected use is the blinded pair above.
 
 Keep manager operation simple and fixed within each comparison. A manager-facing
 redesign, general response rewriting, a new answer-kind schema and linter

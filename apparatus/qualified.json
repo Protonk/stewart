@@ -1453,6 +1453,25 @@
         "reason": "Inspect the principal readings that motivated the adopted vocabulary revision.",
         "until": "The linked evaluation or pending decision no longer needs these originals."
       }
+    },
+    {
+      "id": "opus-comparison-01",
+      "kind": "experiment",
+      "date": "2026-11-09T22:56:00Z",
+      "date_from": "freeze.json field at",
+      "summary": "Working inputs and unpaid proposals for the first four-case Opus comparison, including the blinded frsrr pair.",
+      "result": {
+        "path": "freeze.json",
+        "sha256": "30c370e680c0b5bfe95d5871feb8b863902466e52ee4d808e2c76f2ba01a3e00"
+      },
+      "evidence": {
+        "path": ".scratch/opus-comparison-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "One current input set for the authorized preparation and offline rehearsal; no live spending authority.",
+        "until": "The study is completed or replaced; select only useful original encounters for archival afterward."
+      }
     }
   ]
 }

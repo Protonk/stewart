@@ -509,3 +509,10 @@ Inspect the principal readings that motivated the adopted vocabulary revision.
 
 - Evidence: `.scratch/vocabulary-revision-01/.` (recorded 2026-11-09T21:59:33Z).
 - Retained purpose: Inspect the principal readings that motivated the adopted vocabulary revision.; until The linked evaluation or pending decision no longer needs these originals.
+
+### opus-comparison-01
+
+Working inputs and unpaid proposals for the first four-case Opus comparison, including the blinded frsrr pair.
+
+- Evidence: `.scratch/opus-comparison-01/freeze.json` (recorded 2026-11-09T22:56:00Z).
+- Retained purpose: One current input set for the authorized preparation and offline rehearsal; no live spending authority.; until The study is completed or replaced; select only useful original encounters for archival afterward.
