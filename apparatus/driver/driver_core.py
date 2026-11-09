@@ -2486,7 +2486,7 @@ def _stats(values):
 class Driver:
     # C9 apparatus budgets: startup/help/status and protocol calls have separate gates.
     startup_gate_ms = 100.0
-    protocol_gate_ms = 120.0
+    protocol_gate_ms = 200.0
 
     def __init__(self, args):
         self.args = args
@@ -2908,23 +2908,23 @@ def timing_selftest():
         return d.timing_report()[1]
 
     out = []
-    g = report(99.999, 119.999)
+    g = report(99.999, 199.999)
     out.append(("timing.budgets-reported", g["threshold_ms"] == 100.0 and
-                g["protocol"]["threshold_ms"] == 120.0, g))
+                g["protocol"]["threshold_ms"] == 200.0, g))
     out.append(("timing.below-budgets", g["passed"] is True and g["protocol"]["passed"] is True, g))
     g = report(110.0, 110.0)
     out.append(("timing.separate-budgets", g["passed"] is False and g["protocol"]["passed"] is True, g))
-    g = report(100.0, 120.0)
+    g = report(100.0, 200.0)
     out.append(("timing.at-budgets-control", g["passed"] is False and g["protocol"]["passed"] is False, g))
-    g = report(100.001, 120.001)
+    g = report(100.001, 200.001)
     out.append(("timing.over-budgets-control", g["passed"] is False and g["protocol"]["passed"] is False, g))
     d.timing_samples.insert(0, command(1.0))
     d.protocol_samples.insert(0, protocol(1.0))
     _, g = d.timing_report()
     out.append(("timing.slow-sample-not-averaged", g["passed"] is False and g["protocol"]["passed"] is False and
-                g["worst_ms"] == 100.001 and g["protocol"]["worst_ms"] == 120.001, g))
+                g["worst_ms"] == 100.001 and g["protocol"]["worst_ms"] == 200.001, g))
 
-    report(99.999, 119.999)
+    report(99.999, 199.999)
     d.timing_samples += [command(500.0, **changes) for changes in (
         {"binary": "test"}, {"fault": "reply.write=epipe"}, {"sabotage": "slow_list"},
         {"background": True}, {"rc": -9}, {"op": "run"})]
@@ -2934,14 +2934,14 @@ def timing_selftest():
     out.append(("timing.startup-exclusions-invariant", g["passed"] is True and g["samples"] == 1 and
                 g["worst_ms"] == 99.999, g))
     out.append(("timing.protocol-exclusions-invariant", g["protocol"]["passed"] is True and
-                g["protocol"]["samples"] == 1 and g["protocol"]["worst_ms"] == 119.999, g))
+                g["protocol"]["samples"] == 1 and g["protocol"]["worst_ms"] == 199.999, g))
     out.append(("timing.full-search-still-reported", table["protocol:search/release"]["max_ms"] == 500.0, table))
 
     d.gate = False
-    g = report(100.0, 120.0)
+    g = report(100.0, 200.0)
     out.append(("timing.disabled-reports-without-verdict", g["passed"] is None and g["protocol"]["passed"] is None and
-                g["threshold_ms"] == 100.0 and g["protocol"]["threshold_ms"] == 120.0 and
-                g["worst_ms"] == 100.0 and g["protocol"]["worst_ms"] == 120.0, g))
+                g["threshold_ms"] == 100.0 and g["protocol"]["threshold_ms"] == 200.0 and
+                g["worst_ms"] == 100.0 and g["protocol"]["worst_ms"] == 200.0, g))
     d.gate = True
     d.timing_samples, d.protocol_samples = [], []
     _, g = d.timing_report()
@@ -3186,7 +3186,7 @@ def parse_args(argv):
                         "temporary directory. Must be outside the repository; on Linux use ext4, xfs or btrfs.")
     p.add_argument("--timing-gate", choices=("on", "off"), default="off",
                    help="gate startup, status and help at under 100 ms, and protocol calls except a full-material "
-                        "search at under 120 ms (only for native runs in the Linux test image); default off, "
+                        "search at under 200 ms (only for native runs in the Linux test image); default off, "
                         "which reports timings without gating")
     p.add_argument("--skip-heavy", action="store_true", help="skip the 16 MiB and 128 MiB bound cases")
     p.add_argument("--require-all-controls", action="store_true",

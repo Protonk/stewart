@@ -165,10 +165,10 @@ requirements:
 - Decide whether and how to add Linux Cargo tests, toolchain-digest enforcement
   and native/emulated execution recording to the toolchain suite.
 - Review qualification rules for skips, timing gates and failures across
-  platforms. Native protocol timings approach the limit; emulated x86_64 has no
-  enforced timing gate.
-  Consider retiring the absolute protocol tripwire or moving performance trends
-  into Linux CI; this is a later policy option, not implementation scheduled now.
+  platforms. The native protocol tripwire is 200 ms; emulated x86_64 has no
+  enforced timing gate. Retiring the absolute tripwire or moving performance
+  trends into Linux CI remains a later policy option, not implementation
+  scheduled now.
 - Decide whether to support running the apparatus from a Linux host; the
   documented host route uses macOS and Apple `container`.
 

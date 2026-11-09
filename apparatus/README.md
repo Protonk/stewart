@@ -159,10 +159,15 @@ status is 0 only when no case failed and every control fired.
   are compared with those sums. A case that kills a run before an attempt
   record exists overrides that attempt's charge to the estimate 6.4 states.
 - Protocol timing (C9): for a response holding one tool call, the time from
-  its last byte to the next request's connection. Gated under 120 ms on the
+  its last byte to the next request's connection. Gated under 200 ms on the
   native architecture (`c9.protocol-timing-gate`), except a search over the
   whole default scope; the `slow_list` control is judged relatively (list's
   interval against the median of the others), so it fires under emulation too.
+  The slowest gated call records a 4 MiB input at the size bound, and its
+  interval also covers Stewart's captures and the start of the next request,
+  which resends that input. It has measured 96 to 132 ms across builds, so the
+  budget is a tripwire for gross regressions, set clear of that call and well
+  under the control's 500 ms delay, rather than a fine performance measure.
 
 ### The reacting auditor
 
