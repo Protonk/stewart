@@ -9,7 +9,7 @@ quality remain matters of attributed judgment.
 ## Remaining work
 
 - [x] Prepare the first small Opus comparison below, with exact inputs and unpaid
-  proposals. Live authority and account labels remain unfilled.
+  proposals. Live authority remains ungranted.
 - [x] Prepare the matching binary/input/credential-route rehearsal and review
   the actual launch bindings. The existing
   [study apparatus](apparatus/c10/README.md#study-submissions) supports supplied
@@ -26,10 +26,11 @@ quality remain matters of attributed judgment.
 ## First comparison: four independent inquiries
 
 Next action: the principal decides whether to authorize the proposed live block
-below and supplies its account/workspace/credential labels and spending
+below, including reuse of the retained account labels and its spending
 arrangement. Preparation and the matching offline rehearsal are complete;
-the proposals remain unpaid and unauthorized. Bind the final authorized packets
-to the current committed apparatus before launch.
+the proposals remain unpaid and unauthorized. `approval.json` in the working
+input folder identifies the four exact proposed packet digests. Their authority
+text is conditional on the principal's explicit approval, not permission itself.
 
 Working inputs are `.scratch/opus-comparison-01`: `freeze.json` identifies the
 templates and unapproved proposals; `packets/` holds bindings to the committed
@@ -70,14 +71,21 @@ apparatus and guidance conditions also limit causal comparisons.
   400,000 cumulative input tokens, 48,000 output tokens and a 1,200-second
   watchdog. The existing request retry policy permits up to four attempts;
   no wrapper retry, fallback, automatic continuation or replacement placement.
-- Proposed block ceiling **USD 15**, subject to the principal's approval and
-  current account/provider spending arrangements. At the documented standard
+- Proposed block stop budget **USD 15**, subject to the principal's approval.
+  At the documented standard
   rates, the four nominal allowances total **USD 10.24** without cache discounts.
   Input can overshoot its allowance and lost responses can leave uncertain
-  charges; these token settings do not enforce a dollar ceiling.
-- Use the existing saved provider connection only after the account, workspace
-  and credential labels are confirmed in the authorized packets. Rehearse the
-  route with `stewart-synthetic`; do not look up a live secret in preparation.
+  charges; these token settings do not enforce a dollar ceiling. Review usage
+  after each audit and stop if charges are uncertain, the stop budget is reached,
+  or less than the next audit's nominal USD 2.56 allowance remains. Approval must
+  include the possibility of overshoot from an in-flight or retried request;
+  no provider-enforced dollar cap has been established.
+- Propose reusing the earlier Haiku account: organization
+  `8d0d5165-c890-408a-92f3-839dd5c59e16`, workspace
+  `wrkspc_01Qr1kxDVRzwEzHdDA5SVzkQ`, saved connection `stewart-haiku`.
+  These non-secret labels come from its retained packets; their reuse is part
+  of the approval request. The synthetic route is rehearsed. No live secret
+  lookup or Opus account-access probe is authorized by preparation.
 
 The choice of medium effort keeps the provider's current default explicit; this
 is not an effort or usage-limit study. Stewart still caps each response at
