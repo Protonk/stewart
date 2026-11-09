@@ -1999,6 +1999,226 @@
         "reason": "Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use",
         "until": "A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container"
       }
+    },
+    {
+      "id": "vocabulary-control-rehearsal-01",
+      "kind": "experiment",
+      "date": "2026-11-09T15:42:35Z",
+      "date_from": "review/result.json field at",
+      "summary": "Vocabulary control: reviewed Linux rehearsal on acceptance-05 with both matched study templates and synthetic saved-connection collection; 15 audits, 50 reviewer, seven operator and eleven report comparisons passed.",
+      "result": {
+        "path": "review",
+        "files": 6,
+        "sha256": "62bb1f1bcfd2f479fb5f9a3bbfaa967935415b146db6c84887ebb5dca6274b44"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-control-rehearsal-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Preserve the control launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison.",
+        "until": "The comparison is reviewed and the principal authorizes disposal of the evidence and container."
+      }
+    },
+    {
+      "id": "vocabulary-candidate-rehearsal-01",
+      "kind": "experiment",
+      "date": "2026-11-09T15:42:36Z",
+      "date_from": "review/result.json field at",
+      "summary": "Vocabulary candidate: reviewed Linux rehearsal on acceptance-vocabulary-03 with both matched study templates and synthetic saved-connection collection; 15 audits, 50 reviewer, seven operator and eleven report comparisons passed.",
+      "result": {
+        "path": "review",
+        "files": 6,
+        "sha256": "d4920448cbb8094285feb13cfd921b3e17e2849ecc598ebc91cc40ffc2b14b5f"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-candidate-rehearsal-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Preserve the candidate launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison.",
+        "until": "The comparison is reviewed and the principal authorizes disposal of the evidence and container."
+      }
+    },
+    {
+      "id": "vocabulary-live-01-control-ordinary",
+      "kind": "experiment",
+      "date": "2026-11-09T15:48:07Z",
+      "date_from": "review/result.json field at",
+      "summary": "Vocabulary ordinary control: seven-turn Haiku submission, two citation refusals repaired, verified delivery and completed closure; procedural review and attributed answer reading retained.",
+      "result": {
+        "path": "review",
+        "files": 10,
+        "sha256": "af97a42da2963e1a249a0eb1691f040e643d38ea8a5aed26f85d741b80c47d69"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-live-01-control-ordinary",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the matched ordinary control, original interaction, answer and custody evidence for the vocabulary comparison.",
+        "until": "The comparison is reviewed and the principal authorizes evidence and container disposal."
+      }
+    },
+    {
+      "id": "vocabulary-live-02-candidate-ordinary",
+      "kind": "experiment",
+      "date": "2026-11-09T15:55:08Z",
+      "date_from": "review/result.json field at",
+      "summary": "Vocabulary ordinary candidate: checked seven-turn Haiku submission and completed custody; correct answer and citation-refusal wording defect recorded beside the matched control.",
+      "result": {
+        "path": "review",
+        "files": 10,
+        "sha256": "fa6b0ee976118d02df094c276513994dcf6a0e86ba3da62d9af170168f995050"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-live-02-candidate-ordinary",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the matched ordinary candidate, original interaction, concrete wording defect and custody evidence.",
+        "until": "The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal."
+      }
+    },
+    {
+      "id": "vocabulary-live-03-candidate-recovery",
+      "kind": "experiment",
+      "date": "2026-11-09T16:03:03Z",
+      "date_from": "review/result.json field at",
+      "summary": "Vocabulary recovery candidate: re-entry preserved the observation across a seeded refusal; corrected replacement and auditor submission completed in eight turns, with verified delivery and closure.",
+      "result": {
+        "path": "review",
+        "files": 11,
+        "sha256": "d21fc4cedd4e521fd1246dafbe60ca9cd82a713fc3577c8e7a552c36d50ae7a4"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-live-03-candidate-recovery",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain exercised recovery, exact state/handle observations, answer and custody evidence for the vocabulary comparison.",
+        "until": "The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal."
+      }
+    },
+    {
+      "id": "vocabulary-live-04-control-recovery",
+      "kind": "experiment",
+      "date": "2026-11-09T16:07:23Z",
+      "date_from": "review/result.json field at",
+      "summary": "Vocabulary comparison: historical control recovery; 79 procedural checks, seeded refusal and state preservation, corrected replacement, auditor submission, verified delivery and close.",
+      "result": {
+        "path": "review",
+        "files": 11,
+        "sha256": "bc6f2a917b68c0649eb35a6417e0aa8eef64e0170f9d338b939ce25caed503e2"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-live-04-control-recovery",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain matched historical control, exact exchanges, attributed reading and recovery mechanism comparison for the commissioned vocabulary revision.",
+        "until": "Vocabulary comparison and repairs reviewed and principal authorizes disposal"
+      }
+    },
+    {
+      "id": "vocabulary-live-05-control-constrained",
+      "kind": "experiment",
+      "date": "2026-11-09T16:34:06Z",
+      "date_from": "review-03/result.json field at",
+      "summary": "Vocabulary comparison: control three-turn stop; 75 final procedural checks, preserved partial selection, manager seal, verified delivery, explicit confirmation and closure. All earlier snapshot files unchanged.",
+      "result": {
+        "path": "review-03",
+        "files": 11,
+        "sha256": "7457b83b32b26ad22e9df01f54d5a8af0b28a727a3b08665d970f9e847d50cb9"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-live-05-control-constrained",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the matched constrained control, all three immutable snapshots, refusal and unsent warning, partial return, attributed readings and closure evidence for the vocabulary comparison.",
+        "until": "Vocabulary comparison and repairs reviewed and principal authorizes disposal"
+      }
+    },
+    {
+      "id": "vocabulary-live-06-candidate-constrained",
+      "kind": "experiment",
+      "date": "2026-11-09T16:41:11Z",
+      "date_from": "review-03/result.json field at",
+      "summary": "Vocabulary comparison: candidate three-turn stop; 73 final procedural checks, empty selection faithfully manager-sealed, delivery verified and confirmed, closed without surrendered losses. Earlier snapshot files unchanged.",
+      "result": {
+        "path": "review-03",
+        "files": 11,
+        "sha256": "371feee78c88a02fd12c25f5e4a3e32d61a6dd3945c946ca105dd9bca9dd7dd0"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-live-06-candidate-constrained",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the matched constrained candidate, all three snapshots, refusal, unsent warning, empty return, attributed readings and closure evidence.",
+        "until": "Vocabulary comparison and repairs reviewed and principal authorizes disposal"
+      }
+    },
+    {
+      "id": "vocabulary-study-01",
+      "kind": "experiment",
+      "date": "2026-11-09T16:42:54Z",
+      "date_from": "comparison-final/result.json field at",
+      "summary": "Six-placement matched Haiku vocabulary comparison complete: all six audits closed, 36 requests, 46 tool calls, 205625 input and 6586 output tokens; calculated USD 0.0238555. One selected citation-refusal wording defect.",
+      "result": {
+        "path": "comparison-final",
+        "files": 1,
+        "sha256": "d9aaf9e897bc1b1bfb6a6a3c4afd5790a85641348ad2f549d1ef50778ee4e24a"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-study-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain exact study inputs, authorization, source bindings, pair comparisons, original failed setup attempts and final review/resource bindings.",
+        "until": "Vocabulary comparison and repairs reviewed and principal authorizes disposal"
+      }
+    },
+    {
+      "id": "vocabulary-citation-driver-01",
+      "kind": "experiment",
+      "date": "2026-11-09T16:56:50Z",
+      "date_from": "review/result.json field at",
+      "summary": "Independent citation-refusal regression: old native binaries have 24 expected message-scope failures; repaired case passes 1849 checks with both sabotage and all eight message controls firing.",
+      "result": {
+        "path": "review",
+        "files": 1,
+        "sha256": "a4ee948b602080da2b08fc0029f5e8cb1bb0587718dac02df969354f40ca08a9"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-citation-driver-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain independently authored checks, skipped sandbox attempts, literal before/after evidence and regression controls.",
+        "until": "Vocabulary repair qualification reviewed and principal authorizes disposal"
+      }
+    },
+    {
+      "id": "vocabulary-citation-repair-01",
+      "kind": "experiment",
+      "date": "2026-11-09T16:58:04Z",
+      "date_from": "review/result.json field at",
+      "summary": "Citation-refusal repair native verification: Cargo 247 default and 311 fault/sabotage passes (35 ignored); driver self-test 352 passes; retained before builds and original sandbox failure.",
+      "result": {
+        "path": "review",
+        "files": 1,
+        "sha256": "d627c62879d8298dcd675389a49c300ec980a305222d68132d882ae241c2e579"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-citation-repair-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain original failed checks, before binary bindings, completed host verification and integrated source-bound review.",
+        "until": "Vocabulary repair qualification reviewed and principal authorizes disposal"
+      }
     }
   ]
 }

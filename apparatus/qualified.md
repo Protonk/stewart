@@ -91,6 +91,17 @@ not carry them.
 | [vocabulary-timing-01](#vocabulary-timing-01) | experiment | Evidence for raising the protocol tripwire from 120 to 200 ms and for reading the acceptance-vocabulary-02 timing failure | The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this comparison and its six containers |
 | [c10-vocabulary-launch-01](#c10-vocabulary-launch-01) | experiment | Retain the checked C10 rehearsal on the qualified vocabulary build, its source bindings, original snapshots and independent witnesses. | A reviewed matching rehearsal supersedes it and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage. |
 | [sanity-launch-05](#sanity-launch-05) | experiment | Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use | A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container |
+| [vocabulary-control-rehearsal-01](#vocabulary-control-rehearsal-01) | experiment | Preserve the control launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison. | The comparison is reviewed and the principal authorizes disposal of the evidence and container. |
+| [vocabulary-candidate-rehearsal-01](#vocabulary-candidate-rehearsal-01) | experiment | Preserve the candidate launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison. | The comparison is reviewed and the principal authorizes disposal of the evidence and container. |
+| [vocabulary-live-01-control-ordinary](#vocabulary-live-01-control-ordinary) | experiment | Retain the matched ordinary control, original interaction, answer and custody evidence for the vocabulary comparison. | The comparison is reviewed and the principal authorizes evidence and container disposal. |
+| [vocabulary-live-02-candidate-ordinary](#vocabulary-live-02-candidate-ordinary) | experiment | Retain the matched ordinary candidate, original interaction, concrete wording defect and custody evidence. | The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal. |
+| [vocabulary-live-03-candidate-recovery](#vocabulary-live-03-candidate-recovery) | experiment | Retain exercised recovery, exact state/handle observations, answer and custody evidence for the vocabulary comparison. | The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal. |
+| [vocabulary-live-04-control-recovery](#vocabulary-live-04-control-recovery) | experiment | Retain matched historical control, exact exchanges, attributed reading and recovery mechanism comparison for the commissioned vocabulary revision. | Vocabulary comparison and repairs reviewed and principal authorizes disposal |
+| [vocabulary-live-05-control-constrained](#vocabulary-live-05-control-constrained) | experiment | Retain the matched constrained control, all three immutable snapshots, refusal and unsent warning, partial return, attributed readings and closure evidence for the vocabulary comparison. | Vocabulary comparison and repairs reviewed and principal authorizes disposal |
+| [vocabulary-live-06-candidate-constrained](#vocabulary-live-06-candidate-constrained) | experiment | Retain the matched constrained candidate, all three snapshots, refusal, unsent warning, empty return, attributed readings and closure evidence. | Vocabulary comparison and repairs reviewed and principal authorizes disposal |
+| [vocabulary-study-01](#vocabulary-study-01) | experiment | Retain exact study inputs, authorization, source bindings, pair comparisons, original failed setup attempts and final review/resource bindings. | Vocabulary comparison and repairs reviewed and principal authorizes disposal |
+| [vocabulary-citation-driver-01](#vocabulary-citation-driver-01) | experiment | Retain independently authored checks, skipped sandbox attempts, literal before/after evidence and regression controls. | Vocabulary repair qualification reviewed and principal authorizes disposal |
+| [vocabulary-citation-repair-01](#vocabulary-citation-repair-01) | experiment | Retain original failed checks, before binary bindings, completed host verification and integrated source-bound review. | Vocabulary repair qualification reviewed and principal authorizes disposal |
 
 ## Records
 
@@ -741,3 +752,91 @@ not carry them.
 - Result: `.`, every regular file under it (44 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `fe3b0049109bdae5c74e9d5e1c63b6cf161e9d19ee9d3304a1b769acf4509d34`
 - Evidence: `.scratch/sanity-launch-05` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use; until A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container
+
+### vocabulary-control-rehearsal-01
+
+- Experiment: Vocabulary control: reviewed Linux rehearsal on acceptance-05 with both matched study templates and synthetic saved-connection collection; 15 audits, 50 reviewer, seven operator and eleven report comparisons passed.
+- Date: 2026-11-09T15:42:35Z (from review/result.json field at)
+- Result: `review`, every regular file under it (6 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `62bb1f1bcfd2f479fb5f9a3bbfaa967935415b146db6c84887ebb5dca6274b44`
+- Evidence: `.scratch/vocabulary-control-rehearsal-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Preserve the control launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison.; until The comparison is reviewed and the principal authorizes disposal of the evidence and container.
+
+### vocabulary-candidate-rehearsal-01
+
+- Experiment: Vocabulary candidate: reviewed Linux rehearsal on acceptance-vocabulary-03 with both matched study templates and synthetic saved-connection collection; 15 audits, 50 reviewer, seven operator and eleven report comparisons passed.
+- Date: 2026-11-09T15:42:36Z (from review/result.json field at)
+- Result: `review`, every regular file under it (6 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d4920448cbb8094285feb13cfd921b3e17e2849ecc598ebc91cc40ffc2b14b5f`
+- Evidence: `.scratch/vocabulary-candidate-rehearsal-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Preserve the candidate launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison.; until The comparison is reviewed and the principal authorizes disposal of the evidence and container.
+
+### vocabulary-live-01-control-ordinary
+
+- Experiment: Vocabulary ordinary control: seven-turn Haiku submission, two citation refusals repaired, verified delivery and completed closure; procedural review and attributed answer reading retained.
+- Date: 2026-11-09T15:48:07Z (from review/result.json field at)
+- Result: `review`, every regular file under it (10 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `af97a42da2963e1a249a0eb1691f040e643d38ea8a5aed26f85d741b80c47d69`
+- Evidence: `.scratch/vocabulary-live-01-control-ordinary` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the matched ordinary control, original interaction, answer and custody evidence for the vocabulary comparison.; until The comparison is reviewed and the principal authorizes evidence and container disposal.
+
+### vocabulary-live-02-candidate-ordinary
+
+- Experiment: Vocabulary ordinary candidate: checked seven-turn Haiku submission and completed custody; correct answer and citation-refusal wording defect recorded beside the matched control.
+- Date: 2026-11-09T15:55:08Z (from review/result.json field at)
+- Result: `review`, every regular file under it (10 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `fa6b0ee976118d02df094c276513994dcf6a0e86ba3da62d9af170168f995050`
+- Evidence: `.scratch/vocabulary-live-02-candidate-ordinary` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the matched ordinary candidate, original interaction, concrete wording defect and custody evidence.; until The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal.
+
+### vocabulary-live-03-candidate-recovery
+
+- Experiment: Vocabulary recovery candidate: re-entry preserved the observation across a seeded refusal; corrected replacement and auditor submission completed in eight turns, with verified delivery and closure.
+- Date: 2026-11-09T16:03:03Z (from review/result.json field at)
+- Result: `review`, every regular file under it (11 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d21fc4cedd4e521fd1246dafbe60ca9cd82a713fc3577c8e7a552c36d50ae7a4`
+- Evidence: `.scratch/vocabulary-live-03-candidate-recovery` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain exercised recovery, exact state/handle observations, answer and custody evidence for the vocabulary comparison.; until The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal.
+
+### vocabulary-live-04-control-recovery
+
+- Experiment: Vocabulary comparison: historical control recovery; 79 procedural checks, seeded refusal and state preservation, corrected replacement, auditor submission, verified delivery and close.
+- Date: 2026-11-09T16:07:23Z (from review/result.json field at)
+- Result: `review`, every regular file under it (11 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `bc6f2a917b68c0649eb35a6417e0aa8eef64e0170f9d338b939ce25caed503e2`
+- Evidence: `.scratch/vocabulary-live-04-control-recovery` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain matched historical control, exact exchanges, attributed reading and recovery mechanism comparison for the commissioned vocabulary revision.; until Vocabulary comparison and repairs reviewed and principal authorizes disposal
+
+### vocabulary-live-05-control-constrained
+
+- Experiment: Vocabulary comparison: control three-turn stop; 75 final procedural checks, preserved partial selection, manager seal, verified delivery, explicit confirmation and closure. All earlier snapshot files unchanged.
+- Date: 2026-11-09T16:34:06Z (from review-03/result.json field at)
+- Result: `review-03`, every regular file under it (11 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `7457b83b32b26ad22e9df01f54d5a8af0b28a727a3b08665d970f9e847d50cb9`
+- Evidence: `.scratch/vocabulary-live-05-control-constrained` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the matched constrained control, all three immutable snapshots, refusal and unsent warning, partial return, attributed readings and closure evidence for the vocabulary comparison.; until Vocabulary comparison and repairs reviewed and principal authorizes disposal
+
+### vocabulary-live-06-candidate-constrained
+
+- Experiment: Vocabulary comparison: candidate three-turn stop; 73 final procedural checks, empty selection faithfully manager-sealed, delivery verified and confirmed, closed without surrendered losses. Earlier snapshot files unchanged.
+- Date: 2026-11-09T16:41:11Z (from review-03/result.json field at)
+- Result: `review-03`, every regular file under it (11 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `371feee78c88a02fd12c25f5e4a3e32d61a6dd3945c946ca105dd9bca9dd7dd0`
+- Evidence: `.scratch/vocabulary-live-06-candidate-constrained` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the matched constrained candidate, all three snapshots, refusal, unsent warning, empty return, attributed readings and closure evidence.; until Vocabulary comparison and repairs reviewed and principal authorizes disposal
+
+### vocabulary-study-01
+
+- Experiment: Six-placement matched Haiku vocabulary comparison complete: all six audits closed, 36 requests, 46 tool calls, 205625 input and 6586 output tokens; calculated USD 0.0238555. One selected citation-refusal wording defect.
+- Date: 2026-11-09T16:42:54Z (from comparison-final/result.json field at)
+- Result: `comparison-final`, every regular file under it (1 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d9aaf9e897bc1b1bfb6a6a3c4afd5790a85641348ad2f549d1ef50778ee4e24a`
+- Evidence: `.scratch/vocabulary-study-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain exact study inputs, authorization, source bindings, pair comparisons, original failed setup attempts and final review/resource bindings.; until Vocabulary comparison and repairs reviewed and principal authorizes disposal
+
+### vocabulary-citation-driver-01
+
+- Experiment: Independent citation-refusal regression: old native binaries have 24 expected message-scope failures; repaired case passes 1849 checks with both sabotage and all eight message controls firing.
+- Date: 2026-11-09T16:56:50Z (from review/result.json field at)
+- Result: `review`, every regular file under it (1 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `a4ee948b602080da2b08fc0029f5e8cb1bb0587718dac02df969354f40ca08a9`
+- Evidence: `.scratch/vocabulary-citation-driver-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain independently authored checks, skipped sandbox attempts, literal before/after evidence and regression controls.; until Vocabulary repair qualification reviewed and principal authorizes disposal
+
+### vocabulary-citation-repair-01
+
+- Experiment: Citation-refusal repair native verification: Cargo 247 default and 311 fault/sabotage passes (35 ignored); driver self-test 352 passes; retained before builds and original sandbox failure.
+- Date: 2026-11-09T16:58:04Z (from review/result.json field at)
+- Result: `review`, every regular file under it (1 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d627c62879d8298dcd675389a49c300ec980a305222d68132d882ae241c2e579`
+- Evidence: `.scratch/vocabulary-citation-repair-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain original failed checks, before binary bindings, completed host verification and integrated source-bound review.; until Vocabulary repair qualification reviewed and principal authorizes disposal

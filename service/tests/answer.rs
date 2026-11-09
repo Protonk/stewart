@@ -251,6 +251,12 @@ fn inputs_are_decoded_strictly() {
 #[test]
 fn citations_are_located_exactly_and_kept_apart_from_stewarts_additions() {
     let mut l = Live::new();
+    let refused_citation = |r: &Res| {
+        assert_eq!(r.outcome(), "refused");
+        assert_eq!(r.effect("answer"), "unchanged");
+        assert_eq!(r.effect("raw_capture"), "recorded");
+        assert!(s(&r.env, &["message"]).ends_with("No answer edit was applied."));
+    };
     let a_sha = stewart::util::sha256_hex(b"def retry():\r\n    send()\n    send()\n");
     let r = l.call(
         "record_observation",
@@ -282,6 +288,7 @@ fn citations_are_located_exactly_and_kept_apart_from_stewarts_additions() {
         r#"{"text":"x","citations":[{"source":"materials/a.py","quote":"send()"}]}"#,
     );
     assert_eq!(r.reason(), "quote_ambiguous");
+    refused_citation(&r);
     assert_eq!(r.num(&["index"]), 0);
     assert_eq!(r.num(&["count"]), 2);
     assert_eq!(
@@ -290,6 +297,7 @@ fn citations_are_located_exactly_and_kept_apart_from_stewarts_additions() {
     );
     let r = l.call("record_limit", r#"{"text":"x","citations":[{"source":"question","start":0,"end":2},{"source":"question","quote":"absent text"}]}"#);
     assert_eq!((r.reason(), r.num(&["index"])), ("quote_not_found", 1));
+    refused_citation(&r);
     for (bad, index) in [
         (r#"[{"source":"question","start":3,"end":3}]"#, 0),
         (
@@ -309,6 +317,7 @@ fn citations_are_located_exactly_and_kept_apart_from_stewarts_additions() {
             &format!(r#"{{"text":"x","citations":{bad}}}"#),
         );
         assert_eq!(r.reason(), "citation_invalid", "{bad}");
+        refused_citation(&r);
         assert_eq!(r.num(&["index"]), index, "{bad}");
         assert_eq!(r.effect("answer"), "unchanged");
     }

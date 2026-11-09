@@ -29,7 +29,7 @@ fn citation_invalid(index: usize, defect: impl Into<String>) -> Fail {
     let defect = defect.into();
     refused(
         "citation_invalid",
-        format!("Citation {index} is not valid: {defect}. Nothing was recorded."),
+        format!("Citation {index} is not valid: {defect}. No answer edit was applied."),
     )
     .data(J::obj().with("index", index).with("defect", defect))
 }

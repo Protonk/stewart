@@ -1676,18 +1676,48 @@ def c_stopping(t):
 # C14: refusals are recorded; no verdicts.
 # ---------------------------------------------------------------------------
 
-@case("c14.refusals-recorded", ["C14", "C6", "C5"],
-      "every refused call is recorded with its bytes and reason; nothing grades the answer",
+def citation_refusal_scope(message):
+    """INTERFACE 1.3: the answer edit was refused; capture is not globally absent."""
+    return (isinstance(message, str) and "No answer edit was applied." in message
+            and "nothing was recorded" not in message.casefold())
+
+
+def refused_citations(sub, entry):
+    """Distinct mechanical citation defects from INTERFACE 7.3, with valid field types."""
+    a = material_bytes(sub, "a.py")
+    s = a.find(b"deliver(r)")
+    notes = material_bytes(sub, "notes/R1.txt")
+    mid = notes.index("é".encode("utf-8")) + 1
+    return [
+        ("quote-range-mismatch", {"source": "materials/a.py", "start": s, "end": s + 11,
+                                  "quote": "deliver(r)"}, "citation_invalid"),
+        ("range-outside-source", {"source": "materials/a.py", "start": 0, "end": len(a) + 1},
+         "citation_invalid"),
+        ("range-empty", {"source": "materials/a.py", "start": s, "end": s}, "citation_invalid"),
+        ("range-inside-codepoint", {"source": "materials/notes/R1.txt", "start": mid, "end": mid + 1},
+         "citation_invalid"),
+        ("unknown-source", {"source": "materials/absent.txt", "quote": "x"}, "citation_invalid"),
+        ("entry-source", {"source": entry, "start": 0, "end": 2}, "citation_invalid"),
+        ("missing-quote", {"source": "materials/a.py", "quote": "not there"}, "quote_not_found"),
+        ("ambiguous-quote", {"source": "materials/a.py", "quote": "(r)"}, "quote_ambiguous"),
+    ]
+
+
+@case("c14.refusals-recorded", ["C14", "C6", "C5", "C9", "C20"],
+      "refused calls retain their bytes and reason; citation messages scope unchanged answers apart from retained capture",
       needs=("loopback",),
       controls=[Control("drop_refused_capture", [r"^c14\.a\.refused-captured\."]),
                 Control("manifest_verdict", [r"^c14\.a\.(manifest-keys|no-verdict)"])])
 def c_refusals_recorded(t):
-    """A refused citation, a path outside the material, a stale replace and a duplicate-key
-    input are each kept as a call capture with the exact block bytes and a result record with
-    the reason, is_error and the content sent; none creates an entry. The audit seals and
-    delivers. No manifest, log record, result envelope, run reply or status holds a key that
-    grades the answer; the manifest holds exactly its 8.2 keys. Differing: each kind has its
-    own reason. Invariance: without the refused calls, the same answer.json bytes."""
+    """Record and replace refuse mismatching quotes, invalid ranges/sources, absent quotes
+    and ambiguous quotes. Their messages say no answer edit was applied, while effects and
+    exact captured blocks/results attest to retained raw calls. Every pair leaves the prior
+    entry readable at its original handle and revision 1. A valid quotation is accepted before
+    the refusals and again in a replacement afterward. A path outside the material, stale
+    replacement and duplicate-key input are also captured with their reasons and is_error.
+    Nothing grades the answer. Invariance: omitting every refused call leaves the same sealed
+    answer.json. The capture sabotage must fire; driver controls reject a blanket no-recording
+    message both instead of and alongside the required scoped sentence."""
     answers = {}
     for label in ("a", "b"):
         pre = "c14." + label
@@ -1695,18 +1725,49 @@ def c_refusals_recorded(t):
         refused = []
 
         def body(p, label=label, refused=refused):
+            def remember(name, r, citation=False):
+                refused.append({"name": name, "reply": r, "citation": citation})
+
             if label == "a":
-                turn = yield p.calls_step(("record_observation", {"text": "bad", "citations": [
-                    {"source": "materials/a.py", "start": 0, "end": 100000}]}), ("read", {"source": "../question.md"}))
-                refused += [(r.tid, r.reason, r.content_raw) for r in turn.replies]
-            turn = yield p.calls_step(("record_observation", {"text": "ok", "label": "kept"}))
+                turn = yield p.calls_step(("read", {"source": "../question.md"}))
+                p.eq("outside-material.reason", turn.reply().reason, "source_unknown")
+                remember("outside-material", turn.reply())
+            citations = [{"source": "materials/a.py", "quote": "deliver(r)"}]
+            want_citations = [aw.record_citation(c, sources_of(sub)) for c in citations]
+            turn = yield p.calls_step(("record_account", {"text": "ok", "label": "kept", "citations": citations}))
             h = turn.reply(0).data.get("entry")
-            turn = yield p.calls_step(("replace", {"entry": h, "text": "ok, revised", "citations": [], "label": "kept"}))
+            p.eq("valid-citation.recorded", (turn.reply().outcome, turn.reply().data.get("revision"),
+                                             turn.reply().data.get("citations")), ("completed", 1, want_citations))
+            if label == "a":
+                for defect, citation, reason in refused_citations(sub, h):
+                    inp = {"text": "refused draft", "citations": [citation], "label": "refused"}
+                    turn = yield p.calls_step(("record_account", inp), ("replace", dict(inp, entry=h)))
+                    for tool, r in zip(("record_account", "replace"), turn.replies):
+                        name = defect + "." + tool
+                        p.eq("citation." + name + ".refused", (r.outcome, r.reason, r.effects),
+                             ("refused", reason, {"answer": "unchanged", "raw_capture": "recorded"}))
+                        p.check("citation." + name + ".message-scope", citation_refusal_scope(r.env.get("message")),
+                                r.env)
+                        remember(name, r, citation=True)
+                    turn = yield p.calls_step(("read", {"source": h}), ("prepare", {}))
+                    r = turn.reply(0)
+                    p.eq("citation." + defect + ".entry-unchanged",
+                         (r.outcome, r.data.get("entry"), r.data.get("version"), r.page(),
+                          r.data.get("label"), r.data.get("citations")),
+                         ("completed", h, 1, b"ok", "kept", want_citations))
+                    p.eq("citation." + defect + ".revision-unchanged",
+                         (turn.reply(1).data.get("revision"), turn.reply(1).data.get("entry_count")), (1, 1))
+            turn = yield p.calls_step(("replace", {"entry": h, "text": "ok, revised", "citations": citations,
+                                                   "label": "kept"}))
+            p.eq("valid-citation.replaced", (turn.reply().outcome, turn.reply().data.get("revision"),
+                                             turn.reply().data.get("citations")), ("completed", 2, want_citations))
             if label == "a":
                 turn = yield p.calls_step(("replace", {"entry": h, "text": "stale", "citations": [], "label": "kept"}))
-                refused += [(r.tid, r.reason, r.content_raw) for r in turn.replies]
+                p.eq("stale-target.reason", turn.reply().reason, "stale_entry")
+                remember("stale-target", turn.reply())
                 turn = yield p.step([p.call("record_observation", raw_input=b'{"text":"a","text":"b"}')])
-                refused += [(r.tid, r.reason, r.content_raw) for r in turn.replies]
+                p.eq("duplicate-key.reason", turn.reply().reason, "input_invalid")
+                remember("duplicate-key", turn.reply())
             yield from prepare_and_submit(p)
         p = proc(sub, body)
         fx = rs.provider(t, p, label=label)
@@ -1717,14 +1778,21 @@ def c_refusals_recorded(t):
         answers[label] = answer_of(t, rep, pre)
         t.eq(pre + ".entries", [b.get("action") for b in rs.entry_bodies(t, sub)], ["add", "replace"])
         if label == "a":
-            t.eq(pre + ".reasons", [x[1] for x in refused], ["citation_invalid", "source_unknown", "stale_entry", "input_invalid"])
-            for tid, reason, content in refused:
-                res = rs.result_for(sub, tid)
-                ok = (res is not None and res[2] == p.calls[tid]["raw_block"] and res[3] is not None
+            t.eq(pre + ".refusal-count", len(refused), 19)
+            for item in refused:
+                r = item["reply"]
+                res = rs.result_for(sub, r.tid)
+                ok = (res is not None and res[2] == p.calls[r.tid]["raw_block"] and res[3] is not None
                       and res[3].get("is_error") is True and rs.result_envelope(res[3]) is not None
-                      and rs.result_envelope(res[3]).get("reason") == reason
-                      and res[3].get("content") == json.loads(content.decode("utf-8")))
-                t.check(pre + ".refused-captured.%s" % reason, ok, res and {"capture": res[2], "record": res[3]})
+                      and rs.result_envelope(res[3]).get("reason") == r.reason
+                      and res[3].get("content") == json.loads(r.content_raw.decode("utf-8")))
+                t.check(pre + ".refused-captured." + item["name"], ok, res and {"capture": res[2], "record": res[3]})
+            citation_messages = [item["reply"].env.get("message") for item in refused if item["citation"]]
+            for name, suffix in (("blanket-no-recording", ""),
+                                 ("contradictory-no-recording", " No answer edit was applied.")):
+                corrupted = ["The citation was refused. Nothing was recorded." + suffix for _ in citation_messages]
+                t.driver_control(name, bool(corrupted) and all(not citation_refusal_scope(m) for m in corrupted),
+                                 {"messages": len(corrupted), "corrupted_message": corrupted[0] if corrupted else None})
             loc = rs.package_of(rep)
             man = rs.read_package_member(loc, "manifest.json") if loc else None
             mobj = json.loads(man.decode("utf-8")) if man else {}

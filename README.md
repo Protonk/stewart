@@ -26,8 +26,10 @@ target. The current adapter uses the Anthropic Messages API; no model is yet
 qualified, and other auditor runtimes are unimplemented.
 
 The `stewart.reply/2` interface revision has passed its recorded Linux acceptance
-run and affected launcher rehearsals. Its behavior with a real auditor has not
-yet been demonstrated.
+run and affected launcher rehearsals. A six-placement matched Haiku comparison
+demonstrated ordinary submission, seeded-refusal recovery and manager custody
+after turn-limit stops. It also found overly broad citation-refusal wording;
+the correction is implemented but awaits Linux acceptance.
 
 What the evidence establishes:
 
@@ -57,6 +59,12 @@ What the evidence establishes:
   this content concern remains for the manager's judgment. The qualification
   record pins the combined review, individual answers, usage and calculated cost;
   Console billing remains unreconciled.
+- **Vocabulary comparison:** both ordinary and recovery pairs submitted answers;
+  both constrained cases stopped without submission and completed manager custody
+  with their actual partial or empty selections. All six audits closed. The
+  [findings](apparatus/studies/vocabulary/RESULTS.md) distinguish procedural checks,
+  attributed answer readings and unexercised warning behavior. This small comparison
+  establishes no general model preference or efficiency improvement.
 - **Limits of live coverage:** the pilot used one model with one observation per
   case; full repetitions, real compaction and killed-and-continued audits remain
   unobserved. A provider `max_tokens` stop and a second model have run only on

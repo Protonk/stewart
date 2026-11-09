@@ -56,39 +56,18 @@ prevent completion of this experimental block.
 
 ## Vocabulary check with Haiku
 
-The principal commissioned this block on 2026-11-09: prepare and run the bounded
-vocabulary comparison, resolve targeted defects and complete the vocabulary
-revision. The Haiku spending cap is already set externally, as stated by the
-principal; its amount and enforcement are not independently observed here.
-The [study specification](apparatus/studies/vocabulary/STUDY.md) fixes six initial
-placements in three matched pairs. Exact templates, proposals, authority and
-preparation evidence are retained in `.scratch/vocabulary-study-01`.
+The commissioned six-placement comparison and all six audit closures are complete.
+[The findings](apparatus/studies/vocabulary/RESULTS.md) own the matched cases,
+attributed readings, usage, citation-refusal defect and evidence locations.
+Ordinary submission, seeded-refusal recovery and constrained custody were
+exercised. Neither three-turn case sent its recorded near-limit notice, so an
+auditor response to that warning remains unobserved. This explicit coverage
+limit does not select an additional model placement.
 
-Next: complete matching offline rehearsals for both binaries and the selected
-saved-connection route, then place and review each audit in the frozen order.
-The control uses the unchanged historical apparatus in
-`.scratch/vocabulary-control-worktree-01`. No paid placement has launched.
-
-- [ ] Bind a compact comparison to the implemented vocabulary revision and its
-  qualification/rehearsal evidence. Hold question, material, family guidance,
-  model and limits fixed wherever a comparison is claimed. Old study results
-  with other instructions are contextual evidence, not matched controls.
-- [ ] Cover ordinary recording/preparation/submission, re-entry and recovery
-  from a concrete refusal, and a constrained ending. Plan a small control/candidate
-  comparison, normally one pair per case; name any additional placement's question
-  before launch. Count a mechanism as exercised only when the interaction shows it.
-- [ ] Keep manager lifecycle/view checks in the offline suite and attributed
-  readings. Haiku auditors do not see manager CLI summaries, so their success
-  cannot establish that those summaries are understandable to managers. The approved family-ID
-  exposure is a changed auditor input and must be recorded as such; it cannot be
-  separated from the reply-shape revision without a distinct comparison.
-- [x] Fix the templates and initial placement/continuation bounds under the fresh
-  commission, retaining a dated cost basis and the principal's external-cap
-  statement. The constrained ending is an audit turn limit, not a provider
-  usage-limit study. Additional placements must answer a named uncertainty.
-- [ ] Return the procedural position, observed repairs/deficiencies, custody and
-  resources with attributed interpretation. Resolve a specific defect if needed,
-  then finish the block; Haiku-specific polish is not an exit condition.
+The initial packets are consumed. No continuation, replacement or further Haiku
+encounter is selected. Independent billing and human-manager usability remain
+unobserved; neither is silently treated as established by the technical checks.
+The treatment's family exposure and reply revision are not separately identified.
 
 ## Broader auditor evidence
 

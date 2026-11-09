@@ -6,13 +6,36 @@ launchers are rehearsed and reviewed on that executable.
 
 ## Next action
 
-**Disposition any repairs from the commissioned vocabulary study.** The principal
-authorized preparation, the bounded Haiku comparison and targeted repairs on
-2026-11-09. The [study specification](apparatus/studies/vocabulary/STUDY.md) fixes
-the comparison; its exact setup is retained in `.scratch/vocabulary-study-01`.
-Stabilize the selected terms and close this plan when its selected work is
-complete. A live commission still needs rehearsal coverage matching its own
-inputs and credential route.
+**Qualify the citation-refusal wording repair and close this plan.** The
+commissioned six-placement comparison is complete; all audits are closed and
+[the findings](apparatus/studies/vocabulary/RESULTS.md) own its observed results,
+limits and resources. No further model placement is selected.
+
+The ordinary and constrained candidate encounters exposed `citation_invalid`
+messages saying "Nothing was recorded" despite retained raw capture. The common
+formatter now says "No answer edit was applied." under the existing
+[refusal contract](docs/INTERFACE.md#13-reply-envelope). The not-found and
+ambiguous-quote paths already used that sentence. Service checks cover those
+three reasons; the independently authored acceptance driver covers recording,
+replacement, retained refusals and unchanged answer state.
+
+Native verification passed: default Cargo 247 tests; fault/sabotage Cargo 311
+tests with 35 ignored; driver self-test 352 checks with no failures or skips;
+123 cases listed. The focused comparison found 24 message-scope failures in the
+old native build. The repair passed 1,849 checks with zero failures outside
+control variants; both sabotage controls and all eight message controls fired.
+Earlier sandbox failures and skipped loopback checks remain retained.
+
+Run and inspect `.scratch/acceptance-vocabulary-citation-01` on Linux from the
+verified repair commit. Native service checks,
+before-build bindings and the combined review are in
+`.scratch/vocabulary-citation-repair-01`; independent driver checks and the
+before/after host evidence are in `.scratch/vocabulary-citation-driver-01`.
+The current correction is unqualified until the container suite passes.
+
+After qualification, update the enduring status and coordinating plan and delete
+this plan. Keep the original study builds, refusals, earlier failed runs and
+snapshots unchanged. No new product restriction or expressive boundary is selected.
 
 ## Verified state and remaining limits
 
