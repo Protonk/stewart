@@ -25,11 +25,11 @@ x86_64 and aarch64. Native macOS is a development environment, not a product
 target. The current adapter uses the Anthropic Messages API; no model is yet
 qualified, and other auditor runtimes are unimplemented.
 
-The `stewart.reply/2` interface revision has passed its recorded Linux acceptance
-run and affected launcher rehearsals. A six-placement matched Haiku comparison
+The `stewart.reply/2` interface revision and its citation-refusal correction have
+passed recorded Linux acceptance. A six-placement matched Haiku comparison
 demonstrated ordinary submission, seeded-refusal recovery and manager custody
-after turn-limit stops. It also found overly broad citation-refusal wording;
-the correction is implemented but awaits Linux acceptance.
+after turn-limit stops. Matching launcher rehearsals covered the builds used
+in those encounters.
 
 What the evidence establishes:
 

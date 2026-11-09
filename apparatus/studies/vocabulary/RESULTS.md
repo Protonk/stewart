@@ -10,7 +10,7 @@ The comparison found a concrete reply defect: a `citation_invalid` refusal still
 said "Nothing was recorded." even though raw capture was retained. The existing
 [refusal contract](../../../docs/INTERFACE.md#13-reply-envelope) requires
 "No answer edit was applied." The correction is implemented with service and
-independently authored driver checks; Linux acceptance of that repair is pending.
+independently authored driver checks and has passed Linux acceptance.
 The live encounters used the original frozen binaries, not the repaired build.
 
 These are the Stewart experimenter's attributed readings, separate from the
@@ -112,7 +112,7 @@ byte-identical through the final snapshots. The respective second snapshots'
 each. No model continuation, replacement trial, loss surrender or evidence
 disposal occurred.
 
-## Resources, scope and remaining work
+## Resources and limits
 
 The six placements used **36 requests and 36 attempts, 46 tool calls, 205,625
 input tokens and 6,586 output tokens**, with no estimated usage or retry.
@@ -134,8 +134,8 @@ The selected repair changes the common `citation_invalid` message to agree with
 its retained effects. Other known citation-refusal messages were checked; the
 not-found and ambiguous-quote paths already use the required sentence. No new
 restriction, answer-quality gate or Haiku-specific prompt adjustment is selected.
-The repair remains unqualified until its Linux acceptance run. A post-repair
-model encounter is not needed to check this deterministic wording contract.
+A post-repair model encounter is not needed to check this deterministic wording
+contract. No further model use is selected by this block.
 
 Native checks passed 247 default Cargo tests and 311 fault/sabotage tests, with
 35 ignored in the latter configuration. The driver self-test passed all 352
@@ -143,9 +143,19 @@ checks without skips, and its case list loaded 123 cases. A focused comparison
 against retained pre-repair binaries found 24 message-scope failures across
 recording and replacement; the repaired binaries passed 1,849 checks with zero
 failures outside control variants. Both sabotage controls and all eight
-message controls fired. These native results support the repair without
-qualifying Linux behavior. Earlier sandbox-denied loopback attempts remain
-retained as failed or skipped, not rewritten as successes.
+message controls fired. Earlier sandbox-denied loopback attempts remain retained
+as failed or skipped, not rewritten as successes.
+
+The subsequent Linux suite `.scratch/acceptance-vocabulary-citation-01`, built
+from `027def8`, qualifies the correction on native aarch64 and emulated x86_64.
+Both platforms passed every case with no skips or failures outside deliberate
+control variants, and every sabotage and driver control fired. The new refusal
+case passed in both binary variants on both architectures. Native command and
+protocol timing gates passed; emulated timings did not gate qualification.
+[The qualification record](../../qualified.md) owns the exact counts, digests and
+source identity. This completes the selected vocabulary work. Full real-model
+qualification, native x86_64 and WSL2 evidence remain separate requirements;
+future model use needs rehearsal bindings matching its own build and inputs.
 
 ## Evidence and retention
 
@@ -171,6 +181,10 @@ Repair verification and pre-repair native binaries remain at
 native outcomes. Independent driver checks, before/after host runs and their
 controls remain at `.scratch/vocabulary-citation-driver-01`, with the aggregate
 in `host-result.json`.
+The Linux suite's `review/result.json` records its inspected controls and verified
+work-archive digests. Earlier vocabulary implementation and Linux-repair checks
+remain in `.scratch/vocabulary-implementation-01` and
+`.scratch/vocabulary-linux-repair-01` under their original source bindings.
 
 Both matching Linux rehearsals are retained and pinned at
 `.scratch/vocabulary-control-rehearsal-01` and
