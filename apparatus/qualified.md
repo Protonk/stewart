@@ -20,22 +20,22 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-vocabulary-citation-01](#acceptance-vocabulary-citation-01) | 2026-11-09T17:17:10Z | `027def8` | qualified | latest |
-| acceptance | linux-x86_64 | [acceptance-vocabulary-citation-01](#acceptance-vocabulary-citation-01) | 2026-11-09T17:17:10Z | `027def8` | qualified | latest |
+| acceptance | linux-aarch64 | [acceptance-retention-01](#acceptance-retention-01) | 2026-11-09T22:20:27Z | `146ee62` | qualified | latest |
+| acceptance | linux-x86_64 | [acceptance-retention-01](#acceptance-retention-01) | 2026-11-09T22:20:27Z | `146ee62` | qualified | latest |
 | toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 
 ## Records
 
-### acceptance-vocabulary-citation-01
+### acceptance-retention-01
 
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
-- Source commit: `027def8e02b22ecf7ca8faf41472d0fb914070ad`; archive SHA-256 `3ef70875b5bed78c591455491a1c40c55f6e39c90ead5e095a757870501a3168`
-- Finished: 2026-11-09T17:17:10Z
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `65d0be28bd6cf570fdc64b82b7e9878c652d5be8c5af292226142c99b7903d54` at the source commit)
+- Source commit: `146ee62cba208c13d69f93d36c1c76b7cdcdabfc`; archive SHA-256 `4253b5e39bb5b0e58101a0138fca69c58d80c83e9ca36e93cca2b857c6ad58d8`
+- Finished: 2026-11-09T22:20:27Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-vocabulary-citation-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/acceptance-retention-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -45,19 +45,19 @@ not carry them.
 | Failures | none | none |
 | Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
+| Script checks (exit records) | 23/23, controls 8/8 | 23/23, controls 8/8 |
 | Driver self-test | 352/352 | 352/352 |
 | Cases passed | 125/125 | 123/123 |
 | Cases | selected 125, ran 125, passed 125, failed 0, skipped 0 | selected 123, ran 123, passed 123, failed 0, skipped 0 |
 | Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 156, failed 74, skipped 0 |
-| Checks | passed 163051, failed outside controls 0, failed inside controls 1017 | passed 163052, failed outside controls 0, failed inside controls 1016 |
+| Checks | passed 163051, failed outside controls 0, failed inside controls 1017 | passed 163051, failed outside controls 0, failed inside controls 1017 |
 | Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
 | Driver controls fired | 21/21 | 21/21 |
-| Timing gate | on, passed: commands worst 3.774 ms (threshold 100.0 ms); protocol worst 143.194 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 64.667 ms (threshold 100.0 ms); protocol worst 182.222 ms (threshold 200.0 ms) |
+| Timing gate | on, passed: commands worst 3.527 ms (threshold 100.0 ms); protocol worst 120.28 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 66.307 ms (threshold 100.0 ms); protocol worst 177.65 ms (threshold 200.0 ms) |
 | End to end (`e2e.reacting-audit`) | pass, 871/871 checks | pass, 871/871 checks |
 | Release binary SHA-256 | `ca7ef399fc84702a5be98e4bf34e8cba8418fc396ff4df8ac57946e689634402` | `c613ff4ae4c7bcec0b9fa8027262341a6938f102502d5fdfa90b83bbeef56ef8` |
 | Test binary SHA-256 | `88ac529004a8950d8b36894f70489f0238d401dbc921d71f90c3829d62117b60` | `4a8370534cf42847f6fc9b70229a4d6d8341233f63a3da4262b40fbbcb383f0c` |
-| RESULT.json SHA-256 | `cc84f59eb47ce7ee985eebba5e5c30604fd0fd0e3691d783eff5af07b80913c1` | `9703d969a4cb5a53d8967201db64b7c593562772d42304f266fa49d2a8406d63` |
+| RESULT.json SHA-256 | `2968af02b574d3dc66e6384fba997be66a819bc069c9989dc4b911b82180345e` | `837b27206149c9b69eff6f1651c02044d3980a44b5e6ca8023d265c5066cc86e` |
 
 ### apparatus-02
 
@@ -362,20 +362,6 @@ Haiku failure/recovery trial 18; original live placement and custody snapshots; 
 
 - Evidence: `.scratch/haiku-recovery-live-18/.` (recorded 2026-11-08T04:09:10Z).
 - Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
-
-### c10-vocabulary-launch-01
-
-Linux aarch64 C10 rehearsal of apparatus 32359be on the acceptance-vocabulary-03 executable: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.
-
-- Evidence: `.scratch/c10-vocabulary-launch-01/review` (recorded 2026-11-09T15:07:33Z).
-- Retained purpose: Latest retained launcher rehearsal; new launches must still match source, binary and inputs.; until A fresh matching rehearsal is reviewed.
-
-### sanity-launch-05
-
-Seven-scenario offline sanity launcher rehearsal of launch code 32359be on the acceptance-vocabulary-03 executable passed: credential delivery, process-access controls, interruption, exact return, reflection and export controls; no model calls
-
-- Evidence: `.scratch/sanity-launch-05/.` (recorded 2026-11-09T15:15:29Z).
-- Retained purpose: Latest retained launcher rehearsal; new launches must still match source, binary and inputs.; until A fresh matching rehearsal is reviewed.
 
 ### vocabulary-live-01-control-ordinary
 

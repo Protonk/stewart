@@ -9,8 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current maintenance; final verification | Simplify the working repository, generated-output lifecycle and selective archival for one agent/human team | [RETENTION-PLAN.md](RETENTION-PLAN.md) |
-| Next auditor study after the maintenance work | Prepare broader auditor studies, with Opus the intended next candidate; bind model and budget before any launch | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Next auditor study | Prepare broader auditor studies, with Opus the intended next candidate; bind model and budget before any launch | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Retained next implementation candidate; not a prerequisite for broadening auditors | Select, build and demonstrate the narrow rapid-iteration path described in its topic plan | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After self-contained rapid iteration is demonstrated | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |

@@ -5,8 +5,8 @@ and **USD 0.4326905 calculated cost**. All 18 audits are closed. Seventeen have
 complete small-commission technical reviews; trial 14 retains an incomplete
 review because it exercised unsupported compaction. Separate, narrower checks
 establish its captured request/response bindings, delivered bytes and later
-closure. No model placement was repeated, no loss surrendered and no evidence
-disposed of. The host worker is stopped with no pending requests.
+closure. No model placement was repeated and no loss surrendered.
+The completed campaign has no pending requests.
 
 These are the Stewart experimenter's assessments of bounded encounters, not
 apparatus-certified intellectual judgments or model qualification. The assembled
@@ -91,7 +91,8 @@ A separate trial 12 collection timed out during Keychain lookup before handoff.
 A distinct collection retry completed custody without repeating the model. The
 first trial 14 recovery wrapper also failed: it mistakenly required a confirmation
 token for `delivered_open`. Its inspection had succeeded. The corrected wrapper
-used ordinary close, as INTERFACE 5.8 specifies. Both failed attempts remain.
+used ordinary close, as INTERFACE 5.8 specifies. The campaign observations
+record both failures.
 
 ### A procedurally valid explanatory error
 

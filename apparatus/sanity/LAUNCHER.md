@@ -43,8 +43,8 @@ writes this credential witness.
 
 ## Prepare a commission without provider use
 
-The [machine proposal](commission-proposal.json) carries the settings discussed
-in [the commission proposal](COMMISSION.md). `packet.py` binds that unapproved
+The [example proposal](commission-proposal.json) is an unapproved starting point;
+choose and review its settings for the intended use. `packet.py` binds the
 JSON proposal to the qualification ID, exact
 binary digest, committed apparatus source and specimen digest. It does not
 launch a container or contact a provider:

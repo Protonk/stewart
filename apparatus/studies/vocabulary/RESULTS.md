@@ -146,7 +146,7 @@ failures outside control variants. Both sabotage controls and all eight
 message controls fired. Earlier sandbox-denied loopback attempts failed or were skipped; those attempts
 were not qualification evidence.
 
-The subsequent Linux suite `.scratch/acceptance-vocabulary-citation-01`, built
+The subsequent Linux suite `acceptance-vocabulary-citation-01`, built
 from `027def8`, qualifies the correction on native aarch64 and emulated x86_64.
 Both platforms passed every case with no skips or failures outside deliberate
 control variants, and every sabotage and driver control fired. The new refusal

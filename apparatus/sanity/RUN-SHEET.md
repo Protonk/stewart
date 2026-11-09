@@ -1,4 +1,4 @@
-# First Messages API sanity commission
+# Messages API sanity procedure
 
 This packet tests one small commission through intake, the model loop, recorded
 work, submission, delivery and close. The specimen is
@@ -14,10 +14,10 @@ approved paid budget. Effort is omitted. A live commission must name the model,
 credential mechanism, provider route, allowances, spending authority and stopping
 conditions; the procedure below records those choices.
 
-[The unpaid commission proposal](COMMISSION.md) names the settings proposed for
-the first real-provider attempt, with dated compatibility and pricing sources.
-The launcher applies those settings to a retained copy of the specimen; they
-require bounded spending authorization before launch.
+The [example proposal](commission-proposal.json) is an unapproved starting point.
+Check the selected model's current compatibility and pricing, and obtain bounded
+spending authorization before launch. The launcher applies the approved settings
+to a retained copy of the specimen.
 
 No command in the rehearsal can select a real provider. The synthetic model
 name is `rehearsal-only`; the fake binds a newly allocated loopback port. The
