@@ -1,5 +1,8 @@
 # Repair when the turn allowance ends
 
+Completed study protocol, retained to interpret [RESULTS.md](RESULTS.md).
+It supplies no current execution or spending authority.
+
 Prepared by the Stewart experimenter on 2026-11-07, after reading first-block
 trials 01–07. This follow-up uses the existing Haiku recovery commission. It
 changes only packet turn limits; the already rehearsed templates, qualified

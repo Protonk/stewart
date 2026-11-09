@@ -1,5 +1,8 @@
 # Follow-up to the unseeded citation failure
 
+Completed study protocol, retained to interpret [RESULTS.md](RESULTS.md).
+It supplies no current execution or spending authority.
+
 Stewart experimenter, 2026-11-07, before further paginated placements. Trial 12
 (`page-long`) followed the offered read continuation and covered the entire
 74,166-byte source. Its attempted account contained the private reference's

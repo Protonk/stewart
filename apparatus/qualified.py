@@ -2030,7 +2030,7 @@ def run_candidates(ctx, out=print):
         out("%-9s %10s  %s%s%s" % (status, human(size), name, "  " + "; ".join(why) if why else "",
                                    "  (%d items unreadable; size is a lower bound)" % errors if errors else ""))
     out("kept: %d entries, %s; ignored (dot entries): %d, %s; removal candidates: %d entries, %s. This command "
-        "never deletes or changes anything; removal is a decision for the user." % (
+        "never deletes or changes anything; use DEVELOPMENT's retention rules for disposal." % (
             totals["keep"][0], human(totals["keep"][1]), totals["ignored"][0], human(totals["ignored"][1]),
             totals["candidate"][0], human(totals["candidate"][1])))
     for e in record["entries"]:
@@ -2425,7 +2425,7 @@ CALLER_TRACE = "GIT_TRACE"
 
 def run_self_test(out=print):
     base = tempfile.mkdtemp(prefix="qualified-self-test-")
-    out("self-test in %s (left in place: this script deletes nothing)" % base)
+    out("self-test in %s (passing temporary work is removed; failures are retained)" % base)
     isolated = {"GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1", "HOME": base,
                 "GIT_AUTHOR_NAME": "self-test", "GIT_AUTHOR_EMAIL": "self-test@invalid",
                 "GIT_COMMITTER_NAME": "self-test", "GIT_COMMITTER_EMAIL": "self-test@invalid"}

@@ -1,5 +1,8 @@
 # Haiku: evidence limits and citation repair
 
+Completed study protocol, retained to interpret [RESULTS.md](RESULTS.md).
+It supplies no current execution or spending authority.
+
 Experimenter: the Stewart development agent. Prepared 2026-11-07 under the
 principal's USD 50 / 50-placement Haiku recovery commission. This is the first
 block, with eight candidate placements, each launched separately. Stop or adapt
@@ -115,27 +118,9 @@ Shared prior usage must not be counted as campaign usage. The campaign does not
 renew next month. Ordinary accounting must account for uncertain charges before
 further paid work; no local credit-limit service is part of this preparation.
 
-## Preparation and activation
+## Retained inputs
 
-`prepare.py freeze OUTPUT` writes new templates, input hashes, eight unbound
-one-audit proposals, an inactive host configuration and a queued offline Linux
-rehearsal. It never reads a key or starts a model. Keep the frozen tree unchanged;
-create a new freeze for changed cases. `prepare.py check OUTPUT` rechecks the
-source/reference hashes, exact templates and proposal settings.
-
-After committing, start the [host queue](../../c10/HOST-QUEUE.md) without
-`--live` to run the prepared synthetic rehearsal. It includes all eight templates,
-the fixed controls and later collection using `stewart-synthetic`. Review its
-retained result with `c10.check_rehearsal`; it must match the committed apparatus,
-qualified binary, image, catalog and every proposed template. Native tests or the
-earlier fixed-catalog rehearsal cannot substitute for this run.
-
-Once the principal supplies Console metadata, record a separate completed host
-configuration; preserve the inactive one. The agent binds each selected proposal
-using `c10.py packet` and records its exact digest in one queue request, with the
-campaign authority and that trial's selection. Start the host queue with `--live`
-only after the cap is configured. No per-trial shell request or new authority is
-needed. Keychain's existing per-lookup policy still applies; this setup neither
-changes it nor claims unattended credential access. Close/inspect/collect use the
-same queue and retained operator records. Stop the queue with its `STOP` file
-between operations; that does not stop or surrender an audit already running.
+The exact templates, settings and proposals remain with the selected evidence
+listed in [RESULTS.md](RESULTS.md). The completed campaign's preparation and
+activation scripts have been retired. A new study uses the current
+[apparatus instructions](../../c10/README.md) and its own bounded commission.

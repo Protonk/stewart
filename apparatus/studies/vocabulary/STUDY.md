@@ -1,5 +1,8 @@
 # Vocabulary comparison
 
+Completed study protocol, retained to interpret [RESULTS.md](RESULTS.md).
+It supplies no current execution or spending authority.
+
 Compare the qualified reply revision 2 with the qualified preceding binary on
 three small matched Haiku cases. The principal commissioned preparation, these
 encounters, targeted repairs and completion of the vocabulary revision on

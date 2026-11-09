@@ -1,5 +1,8 @@
 # Complete reading and exact calculation
 
+Completed study protocol, retained to interpret [RESULTS.md](RESULTS.md).
+It supplies no current execution or spending authority.
+
 Prepared by the Stewart experimenter on 2026-11-07 under the existing Haiku
 recovery commission, after the first eight audits and the two-turn contrasts.
 These are two further small cases, with four candidate placements each. They
@@ -45,9 +48,9 @@ do not infer hidden reasoning from an unsupported final number.
 
 ## Evidence and disposition
 
-`followups.py` generates only ordinary submissions and private reference records.
-Its manifest hashes the generator, this protocol, all templates and the private
-reference. Reference records and review instructions are outside every submitted
+The original generator produced ordinary submissions and private reference
+records. Its manifest binds this protocol, all templates and the private
+reference; those frozen inputs remain with the selected evidence. Reference records and review instructions are outside every submitted
 folder. The CSV checks establish fixture properties, not the truth of an auditor's
 interpretation. A matching offline Linux rehearsal must cover every template
 before paid launch. No binary or tool-feedback change is part of these cases.
