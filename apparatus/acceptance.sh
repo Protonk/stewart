@@ -5,7 +5,7 @@
 # Run it on the host from your own shell: it needs the container services, which
 # a sandboxed command shell may not be able to reach.
 #
-#   sh apparatus/acceptance.sh EVIDENCE_DIR
+#   sh apparatus/acceptance.sh EVIDENCE_DIR [failed|all]
 #
 # EVIDENCE_DIR is required and must not exist yet, so each run gets its own:
 # give a new folder directly under .scratch/ in the repository, as an absolute
@@ -30,16 +30,19 @@
 #   3. in the pinned python image as an unprivileged user, with no network
 #      (loopback only), binaries mounted read-only and archives and homes on the
 #      container's own disk: runs the driver's --self-test, then every case with
-#      --network-isolated --require-all-controls --keep-work all (every Appendix C.2 sabotage
+#      --network-isolated --require-all-controls --keep-work failed (every Appendix C.2 sabotage
 #      control assigned and fired). The timing gates are on only for the host's
 #      native architecture; emulated timings are reported, not gated.
 # host/DONE reports failures=N; host/SUMMARY collects the self-test and driver counts.
 set -u
 
 # The evidence folder is required; nothing else runs before this check.
-[ -n "${1:-}" ] || { echo "usage: sh apparatus/acceptance.sh EVIDENCE_DIR (a new folder directly under .scratch/, as an absolute path)" >&2; exit 2; }
+[ -n "${1:-}" ] || { echo "usage: sh apparatus/acceptance.sh EVIDENCE_DIR [failed|all] (a new folder directly under .scratch/, as an absolute path)" >&2; exit 2; }
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 OUT=$1
+KEEP_WORK=${2:-failed}
+case "$KEEP_WORK" in failed|all) ;; *) echo "retention must be failed or all" >&2; exit 2 ;; esac
+[ "$#" -le 2 ] || { echo "usage: sh apparatus/acceptance.sh EVIDENCE_DIR [failed|all]" >&2; exit 2; }
 PYTHON=docker.io/library/python@sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb
 TAG=stewart-toolchain:1
 PLATFORMS="arm64 amd64"
@@ -84,6 +87,7 @@ expect() {
 }
 
 note "acceptance suite start; repository $REPO; native architecture $NATIVE"
+note "working-file retention: $KEEP_WORK; independent evidence retained through review"
 hstep version container --version
 grep -q 'version 1\.6\.1 ' "$OUT/host/version.stdout" || stop_here "container is not version 1.6.1"
 hstep system-status container system status || stop_here "container services are not running"
@@ -150,14 +154,12 @@ for p in $PLATFORMS; do
         --mount "type=bind,source=$OUT/staging,target=/in,readonly" \
         --mount "type=bind,source=$OUT/bin-$p,target=/bin-in,readonly" \
         --mount "type=bind,source=$OUT/$d,target=/out" \
-        "$PYTHON" sh -c "mkdir -p /tmp/s && tar -xf /in/source.tar -C /tmp/s apparatus/container/acceptance-inner-driver.sh && sh /tmp/s/apparatus/container/acceptance-inner-driver.sh $gate" \
+        "$PYTHON" sh -c "mkdir -p /tmp/s && tar -xf /in/source.tar -C /tmp/s apparatus/container/acceptance-inner-driver.sh && sh /tmp/s/apparatus/container/acceptance-inner-driver.sh $gate $KEEP_WORK" \
         || fail "$d: the self-test or the driver reported failures or broken checks (see $OUT/$d/)"
     expect "$OUT/$d/selftest.exit" 0 "$p: driver self-test"
     expect "$OUT/$d/evidence-copy.exit" 0 "$p: independent driver evidence retained"
-    expect "$OUT/$d/retention-archive.exit" 0 "$p: working copies archived for review"
-    expect "$OUT/$d/retention-list.exit" 0 "$p: work archive is readable"
-    expect "$OUT/$d/retention-sha256.exit" 0 "$p: work archive digest recorded"
-    note "$p: original work retained in container $driver_container until review"
+    expect "$OUT/$d/retention.exit" 0 "$p: requested working-file retention completed"
+    note "$p: driver container $driver_container retained until review"
     {
         echo "== $p (timing gate $gate) =="
         tail -1 "$OUT/$d/selftest.stdout" 2>/dev/null

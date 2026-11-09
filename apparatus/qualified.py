@@ -51,8 +51,9 @@ redirect it. Every command reads and writes qualified.json and qualified.md
 only as regular files with one name in a real folder, refusing a symbolic or
 hard link, a FIFO or anything else in their place, or a link in place of their
 folder. The script writes those two files and, under --self-test, a new
-temporary directory that it leaves in place: it contains no code that deletes
-anything. Dot entries in .scratch/ are never records or removal candidates.
+temporary directory. Passing self-tests remove their own temporary work; failed
+controls leave it for inspection. Repository evidence is never removed by this
+tool. Dot entries in .scratch/ are never records or removal candidates.
 """
 
 import argparse
@@ -66,6 +67,7 @@ import os
 import posixpath
 import re
 import signal
+import shutil
 import stat
 import subprocess
 import sys
@@ -92,7 +94,6 @@ SUITES = {
 }
 EVIDENCE_WHERE = "local: only on the machine that ran it; clones do not carry it"
 TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})")
-CITATION = re.compile(rb"\.scratch/([A-Za-z0-9._-]+)")
 HEX40 = re.compile(r"[0-9a-f]{40}")
 HEX64 = re.compile(r"[0-9a-f]{64}")
 # A record's id is its .scratch folder's name: the characters a citation can name, never a dot entry.
@@ -1633,15 +1634,6 @@ def render(record):
                 suite, platform, e["id"], e["id"], e["date"], e["source_commit"][:7], outcome, reason))
     else:
         L.append("Empty.")
-    L += ["", "## Pins", ""]
-    pins = [e for e in entries if e.get("pin")]
-    if pins:
-        L += ["| Record | Kind | Reason | Until |", "| --- | --- | --- | --- |"]
-        for e in pins:
-            L.append("| [%s](#%s) | %s | %s | %s |" % (e["id"], e["id"], e.get("suite") or e["kind"],
-                                                         cell(e["pin"]["reason"]), cell(e["pin"]["until"])))
-    else:
-        L.append("None.")
     L += ["", "## Records"]
     for e in entries:
         L += ["", "### %s" % e["id"], ""]
@@ -1666,16 +1658,9 @@ def render(record):
             L += render_platform_rows(e)
         else:
             r = e["result"]
-            if "files" in r:
-                result_text = ("- Result: `%s`, every regular file under it (%d files); SHA-256 of their sorted "
-                               "listing (SHA-256, size and path of each) `%s`" % (r["path"], r["files"], r["sha256"]))
-            else:
-                result_text = "- Result: `%s`, SHA-256 `%s`" % (r["path"], r["sha256"])
-            L += ["- Experiment: %s" % cell(e["summary"]),
-                  "- Date: %s (from %s)" % (e["date"], e["date_from"]),
-                  result_text,
-                  "- Evidence: `%s` (%s)" % (e["evidence"]["path"], e["evidence"]["where"]),
-                  "- Pin: %s" % pin_text]
+            L += [cell(e["summary"]), "",
+                  "- Evidence: `%s/%s` (recorded %s)." % (e["evidence"]["path"], r["path"], e["date"]),
+                  "- Retained purpose: %s" % cell(pin_text)]
     return "\n".join(L) + "\n"
 
 
@@ -1915,35 +1900,6 @@ def run_check(ctx, strict=False, out=print, with_drift=True, require_evidence=Fa
 
 # ---------------------------------------------------------------- candidates
 
-def citations(ctx):
-    """{name in lower case: [file]} for every ".scratch/<name>" in a tracked or untracked-but-not-ignored file, other
-    than the record's own three files (RECORD_FILES): the record keeps folders through its front and pins, not
-    through its rendering. A name is kept in lower case because a citation that differs from a folder's name only
-    in case still keeps that folder. Each file is opened without following a link or blocking; only a regular file
-    is read."""
-    raw = ctx.git(["ls-files", "-z", "--cached", "--others", "--exclude-standard"]).stdout
-    found = {}
-    for path in sorted(set(raw.decode("utf-8", "surrogateescape").split("\0"))):
-        if not path or path.startswith(".scratch/") or path in RECORD_FILES:
-            continue
-        try:
-            fd = os.open(os.path.join(ctx.root, *path.split("/")),
-                         os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | O_CLOEXEC)
-        except OSError:
-            continue
-        try:
-            data = read_fd(fd) if stat.S_ISREG(os.fstat(fd).st_mode) else b""
-        except OSError:
-            data = b""
-        finally:
-            os.close(fd)
-        for m in CITATION.finditer(data):
-            name = m.group(1).decode("ascii").lower()
-            for form in {name, name.rstrip(".")}:
-                found.setdefault(form, set()).add(path)
-    return {k: sorted(v) for k, v in found.items()}
-
-
 def disk_usage(path):
     """Bytes allocated under PATH (each inode once; links not followed), and the count of unreadable items."""
     seen, total, errors = set(), 0, [0]
@@ -2040,7 +1996,6 @@ def run_candidates(ctx, out=print):
     record = load_record(ctx, missing_ok=True)
     keep = front(record["entries"])
     pins = {e["id"]: e["pin"] for e in record["entries"] if e.get("pin")}
-    cites = citations(ctx)
     names = sorted(os.listdir(ctx.scratch)) if os.path.isdir(ctx.scratch) else []
     rows, totals = [], {"keep": [0, 0], "candidate": [0, 0], "ignored": [0, 0]}
     for name in names:
@@ -2060,10 +2015,6 @@ def run_candidates(ctx, out=print):
             why.append("front (%s)" % "; ".join(keep[name]))
         if name in pins:
             why.append("pinned until %s" % pins[name]["until"])
-        if name.lower() in cites:
-            files = cites[name.lower()]
-            why.append("cited by %s%s" % (", ".join(files[:4]), " and %d more" % (len(files) - 4)
-                                          if len(files) > 4 else ""))
         if not why:
             # Records find their folders by exact name. A folder no name keeps is still kept when it holds a
             # record's recorded digests; a record that has none to find gets a WARN line below.
@@ -2521,6 +2472,9 @@ def run_self_test(out=print):
     passed, failed = results.count(True), results.count(False)
     out("self-test: %d controls, %d passed, %d failed, %d skipped" % (len(results), passed, failed,
                                                                       len(results) - passed - failed))
+    if failed == 0:
+        shutil.rmtree(base)
+        out("self-test temporary work removed")
     return failed == 0
 
 
@@ -2916,7 +2870,7 @@ def _self_test_controls(base, isolated, control):
                 any(t == tag and m.startswith("refusing to read") and expect in m for t, m in fails),
                 "failures %s" % [(t, m.splitlines()[0]) for t, m in fails])
 
-    # Candidates: only a citation from a tracked or untracked-but-not-ignored file keeps an entry.
+    # Citations are navigation, not retention authority. Only the front or an explicit pin keeps a run.
     _write(ctx.scratch, "orphan-01/x", "x\n")
     status = lambda: {r["name"]: r["status"] for r in run_candidates(ctx, out=quiet)}
     before = status()
@@ -2927,7 +2881,7 @@ def _self_test_controls(base, isolated, control):
     control("candidates: an uncited entry is a candidate; an ignored file's citation does not keep it",
             before.get("orphan-01") == "candidate" and ignored.get("orphan-01") == "candidate",
             "uncited %s; cited only by an ignored file %s" % (before.get("orphan-01"), ignored.get("orphan-01")))
-    control("candidates: a citation keeps a candidate", cited.get("orphan-01") == "keep",
+    control("candidates: a citation does not keep generated working material", cited.get("orphan-01") == "candidate",
             "cited by an untracked NOTES.md: %s; front runs %s" % (
                 cited.get("orphan-01"), {k: cited.get(k) for k in ("run-b", "run-c")}))
     _write(ctx.scratch, "orphan-02/x", "x\n")
@@ -2938,8 +2892,8 @@ def _self_test_controls(base, isolated, control):
     cited = status()
     with open(ctx.markdown, "wb") as handle:
         handle.write(md)
-    control("candidates: a citation differing from a folder's name only in case keeps it",
-            cited.get("orphan-02") == "keep", "cited as .scratch/ORPHAN-02: %s" % cited.get("orphan-02"))
+    control("candidates: a differently cased citation also grants no retention",
+            cited.get("orphan-02") == "candidate", "cited as .scratch/ORPHAN-02: %s" % cited.get("orphan-02"))
     control("candidates: a citation in the record's own qualified.md does not keep a folder",
             cited.get("orphan-03") == "candidate", "cited only by qualified.md: %s" % cited.get("orphan-03"))
     os.makedirs(os.path.join(ctx.scratch, ".harness", ".cc-writes"))
@@ -3184,7 +3138,7 @@ def main(argv=None):
         epilog="Run from the repository root as python3 -I -B apparatus/qualified.py COMMAND. Exit status: 0 "
                "success, 1 check or self-test failed or candidates warned, 2 refused (the message says why).")
     parser.add_argument("--self-test", action="store_true",
-                        help="run firing controls in a new temporary directory (left in place) and report each")
+                        help="run firing controls; remove passing temporary work, retain failures for inspection")
     sub = parser.add_subparsers(dest="command", metavar="COMMAND")
     p = sub.add_parser("extract", help="read a run's evidence, add or replace its record, apply the front",
                        description="Read a suite run's evidence, add or replace its record (keeping any pin), "
@@ -3245,15 +3199,15 @@ def main(argv=None):
                    help="also fail when a record's evidence folder is not in .scratch here")
     sub.add_parser("candidates", help="list .scratch entries, their sizes and why each is kept; deletes nothing",
                    description="List each top-level .scratch entry with its size and whether it is kept: on the "
-                               "front, pinned, cited as .scratch/<name> (case ignored) by a tracked or untracked-"
-                               "but-not-ignored file outside .scratch other than the record's own three files, or "
+                               "front, explicitly pinned for a present purpose, or "
                                "holding a record's recorded digests. Records name their folders exactly, case "
                                "included; a folder no record names is still kept when it holds an acceptance run's "
                                "RESULT.json digest, a toolchain run's source archive, vendor listing and build "
                                "digests (shared by runs of the same source, so all such runs are kept) or an "
                                "experiment's result digest. A dot entry (a name starting with a dot, such as a "
                                "harness's own folder) is listed as ignored and is never a candidate. Everything "
-                               "else is a removal candidate. This command never deletes or changes anything. Exit "
+                               "else is a removal candidate; citations alone do not retain folders. This command "
+                               "never deletes or changes anything. Exit "
                                "status: 0 only when every record is accounted for, its folder listed or a folder "
                                "here holding its recorded digests; otherwise 1, after a WARN line per record that "
                                "is not, since a renamed copy of its folder may be listed as a candidate. On a "

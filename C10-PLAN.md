@@ -13,88 +13,16 @@ milestone. Full conformance also needs controlled interruption,
 actual provider compaction and a reviewed result for every required run. A model
 is supported only after its whole gate passes.
 
-## Current boundary and retained checks
+## Working inputs
 
-The [small-commission apparatus](apparatus/c10/README.md) now owns the implemented
-packet, specimen, launch, reviewer and operator contracts. It reuses the retained
-session credential boundary and specification-derived driver helpers without
-changing product contracts or historical evidence. Its one-placement scope is
-explicit; it does not implement continuation or real compaction.
-
-The current reporting apparatus is demonstrated by the reviewed Linux aarch64
-run `.scratch/c10-report-linux-01`, bound to `453a60d` and the qualified
-`acceptance-05` executable. Its pinned `review/result.json` owns the counts,
-source bindings and limits: it covers the fixed catalog and report path, with
-no model calls or skips. Saved connections and supplied study inputs were
-demonstrated on the earlier source binding in the reviewed Linux aarch64 run
-`.scratch/c10-study-launch-01`, pinned in the qualification record with its review
-at `review/result.json`. The earlier `.scratch/c10-launch-01` remains pinned.
-The principal's six-audit Haiku pilot has completed its
-placements and procedural review. Its review disposition is below;
-full-gate work still needs its own bounded authorization.
-
-Native iteration is not qualification. Retain `.scratch/c10-native-01` and
-`.scratch/c10-native-02` (loopback-denied attempts), `.scratch/c10-native-03`
-(one-case run), `.scratch/c10-native-04` (13-case rehearsal),
-`.scratch/c10-native-05` (seven operator comparisons), and
-`.scratch/c10-review-controls-01`, `.scratch/c10-review-controls-02`, and
-`.scratch/c10-checks-01` until the principal authorizes disposal. Their records own
-the actual counts and outcomes; do not rewrite them to match later schemas.
-
-Also retain the supplied-study iteration records in
-`.scratch/c10-study-native-01` and `.scratch/c10-study-native-02`
-(loopback-denied attempts), `.scratch/c10-study-native-03`,
-`.scratch/c10-study-review-fixed-01`, `.scratch/c10-study-review-study-a-01`,
-`.scratch/c10-study-review-study-b-01`, and `.scratch/provider-study-checks-01`.
-They are development observations; Linux process-access checks were skipped
-natively. The host synthetic checks are pinned at
-`.scratch/connection-checks-01/review-02.json`, including the original failed
-hidden-entry attempt and the limits of the lock/cancellation observations.
-
-The [qualification record](apparatus/qualified.md) owns demonstrated Linux
-results; run `python3 -I -B apparatus/qualified.py check` before relying on it.
-The reviewed small-commission rehearsal establishes no model qualification.
-A live commission still needs rehearsal coverage matching its apparatus,
-binary, inputs and credential route.
-
-Retain the reporting iteration evidence until the principal authorizes disposal:
-`.scratch/c10-report-native-01`, `.scratch/c10-report-native-02`,
-`.scratch/c10-report-native-03`, `.scratch/c10-report-review-controls-01`,
-`.scratch/c10-report-review-controls-02`, `.scratch/c10-report-controls-01`,
-`.scratch/c10-report-controls-02`, `.scratch/c10-report-controls-03` and
-`.scratch/c10-report-controls-04`. These include the loopback-denied attempts
-and the corrected report-control witness failure. Their records own the actual
-outcomes; the Linux run above supplies qualification evidence.
-
-## Pilot review disposition
-
-The qualification record pins the combined review at
-`.scratch/c10-haiku-commission-01/review/result.json` and its readable
-`report.md`, which links all six answers and individual inspections. The frozen
-`commission.json` in that experiment owns the authorization, packets, input
-inventories and source bindings; `compatibility-and-cost.json` owns the dated
-provider checks and estimates. All six authorized placements are complete.
-There are no unused packets or unresolved procedural failures.
-
-The assistant's substantive assessment and the principal's reported Console
-figures are appended as `review/answer-assessment-01.json` and
-`review/billing-observation-01.json` in the commission folder. The principal
-reports 2 cents with the Console set to the last 30 days and does not request
-further billing investigation for this assessment. Attribution to the pilot
-remains unresolved; the original calculated amount is not an observed charge.
-
-The requirements-only framing concern remains recorded in
-`.scratch/c10-live-04/review/inspection.json`. The principal did not pursue
-tuning the intellectual quality of Haiku's answers after this pilot. That gives
-the pilot review a disposition without
-asserting agreement with every assistant judgment or resolving that concern.
-No further pilot placements remain. Repeats, continuations, altered inputs and
-full-gate mechanisms need a separate bounded commission. The pilot implies no
-change to product defaults or acceptance gates.
-
-Keep the six original containers and evidence through the principal's review
-and disposal decision. Each `.scratch/c10-live-01` through `.scratch/c10-live-06`
-folder is pinned separately; its `host/container.name` identifies the container.
+The [apparatus instructions](apparatus/c10/README.md) own the implemented packet,
+launcher, reviewer and report interfaces. Small commissions have completed;
+continuation and actual provider compaction remain outside that apparatus path.
+The [qualification index](apparatus/qualified.md) identifies the current checked
+build and selected evaluations. New live packets need matching rehearsal coverage
+for their actual binary, inputs and credential route. Completed pilot placements
+authorize no further calls. Retention follows
+[DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention).
 
 ## 1. Complete the evidence matrix
 

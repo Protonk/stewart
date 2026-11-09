@@ -135,12 +135,12 @@ final report's copied assessment owns the concluding interpretation.
 
 The original live folders, `.scratch/haiku-recovery-live-01` through
 `.scratch/haiku-recovery-live-18`, are individually pinned as experiments in the
-qualification record; pinning is retention, not qualification. Preserve their
-containers as well. Supporting freezes, dispatch records and checks are retained
-at `.scratch/haiku-recovery-01`, `.scratch/haiku-recovery-02`,
-`.scratch/haiku-recovery-03`, `.scratch/haiku-recovery-03-linux-01`,
-`.scratch/haiku-recovery-preparation-01`, `.scratch/haiku-recovery-followups-01`
-and `.scratch/haiku-recovery-followups-linux-01`.
+qualification record; pinning is retention, not qualification. Supporting freezes
+and proposals remain at `.scratch/haiku-recovery-01`,
+`.scratch/haiku-recovery-02`, `.scratch/haiku-recovery-03` and
+`.scratch/haiku-recovery-followups-01`. Trial 14 custody observations remain with
+its limited reviews. Completed containers, rehearsal work and preparation logs
+have been disposed of after review.
 
 The two matching Linux rehearsals each observed 21 audits, with zero failures
 or skips, including the frozen templates and synthetic later collection.

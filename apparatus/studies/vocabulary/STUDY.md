@@ -10,10 +10,10 @@ Its amount is not supplied here and its enforcement is not independently observe
 
 The exact inputs, six proposals, authority and source bindings are retained in
 `.scratch/vocabulary-study-01`. The control uses `acceptance-05` and the unchanged
-apparatus at `a36acbb`, retained in `.scratch/vocabulary-control-worktree-01`.
+apparatus at `a36acbb`.
 The candidate uses `acceptance-vocabulary-03` and the current apparatus. Each
 uses its own matching reviewer; historical reports are not converted. The
-control worktree references historical evidence without changing its bytes.
+original encounters preserve their captured interface and source identities.
 
 Both arms use `claude-haiku-5-5`, explicit medium effort, `open-inquiry/1`, identical
 question and material bytes within each pair, 160,000 cumulative input tokens,

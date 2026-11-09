@@ -31,66 +31,26 @@ demonstrated ordinary submission, seeded-refusal recovery and manager custody
 after turn-limit stops. Matching launcher rehearsals covered the builds used
 in those encounters.
 
-What the evidence establishes:
+The [qualification record](apparatus/qualified.md) identifies current Linux
+results, exact source/binary identities and selected original evaluations.
+Scripted acceptance has passed on native aarch64 and x86_64 under Rosetta;
+reproducible static builds have been observed on both architectures. A result
+applies to its recorded build. `python3 -I -B apparatus/qualified.py check`
+verifies retained results and reports source drift.
 
-- **Scripted Linux behavior:** the recorded acceptance suite, including the
-  credential checks, passed on native aarch64 and x86_64 under Rosetta emulation
-  for its bound builds, including reply revision 2.
-  The suite exercises the release build through
-  independently witnessed audits, with faults and deliberately broken controls
-  in a separate test build. Native timing checks passed; emulated timings do not
-  gate the result.
-- **One real-model sanity run:** a single open-inquiry commission on
-  `claude-haiku-5-5` went through the direct Anthropic endpoint with the
-  release's built-in TLS roots. The model read both materials through Stewart's
-  tools, recorded four cited entries, prepared and submitted; the auditor seal,
-  verified delivery and ordinary close were observed, and the credential scans
-  were clean. An earlier attempt under a host VPN never reached the provider
-  and consumed nothing.
-- **Four mechanism runs** on the same specimen then observed a real 401
-  rejection recorded without retry, a turn limit with the manager close and
-  confirmation path, an accepted effort setting under the request cap, and
-  the minimum output allowance ending at its limit.
-- **Six-audit Haiku pilot:** one ordinary and one inadequate-evidence commission
-  per form ran on `claude-haiku-5-5`. All six passed procedural review, submitted,
-  delivered and closed. Seven citation refusals and one invalid-cursor refusal
-  were retained; all audits finished within their allowances. The requirements-only
-  framing answer inferred a call order and retry path absent from its materials;
-  this content concern remains for the manager's judgment. The qualification
-  record pins the combined review, individual answers, usage and calculated cost;
-  Console billing remains unreconciled.
-- **Vocabulary comparison:** both ordinary and recovery pairs submitted answers;
-  both constrained cases stopped without submission and completed manager custody
-  with their actual partial or empty selections. All six audits closed. The
-  [findings](apparatus/studies/vocabulary/RESULTS.md) distinguish procedural checks,
-  attributed answer readings and unexercised warning behavior. This small comparison
-  establishes no general model preference or efficiency improvement.
-- **Limits of live coverage:** the pilot used one model with one observation per
-  case; full repetitions, real compaction and killed-and-continued audits remain
-  unobserved. A provider `max_tokens` stop and a second model have run only on
-  unqualified study builds, which qualify nothing. Live provider captures have
-  no independent direct-TLS witness. These results qualify no model. Native
-  x86_64 and WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage
-  review also remain outstanding.
-- **Credential launch:** a synthetic-key rehearsal passed on native Linux,
-  including same-user and different-user process-access controls, interrupted
-  requests, exact return verification, and withholding contaminated exports.
-  The private originals and independent credential witness remain retained.
-- **Small-commission apparatus:** a Linux aarch64 rehearsal covered ordinary
-  and inadequate-evidence submissions for all three forms. All 13 audit scenarios,
-  14 reviewer comparisons and seven later-custody comparisons behaved as expected;
-  both process-access controls fired. This demonstrates the bounded launch and
-  review apparatus against a fake provider. Full real-model conformance remains
-  outstanding.
-- **Reproducible builds:** two service builds produced identical static binaries
-  for each Linux architecture using the recorded toolchain images.
+Small real-model commissions have exercised all three forms, citation repair,
+limits and manager custody. The [interface observations](apparatus/studies/interaction/RESULTS.md),
+[recovery findings](apparatus/studies/haiku-recovery/RESULTS.md) and
+[vocabulary comparison](apparatus/studies/vocabulary/RESULTS.md) preserve their
+substantive readings and limitations. They establish no general model preference.
+Real-provider captures have no independent direct-TLS witness; calculated cost
+and independent billing remain distinct observations.
 
-[The qualification record](apparatus/qualified.md) holds the exact source and
-binary identities, counts and retained evidence. A result applies to those
-recorded builds, not automatically to this version or the current checkout.
-`python3 -I -B apparatus/qualified.py check` validates the record and reports
-source drift. A release build is a build configuration, not a claim that the
-project has met all of [its release requirements](ACCEPTANCE.md).
+Full C10 repetitions, qualified real compaction and killed-and-continued audits,
+native x86_64/WSL2 qualification, Linux Cargo tests and a claim-by-claim coverage
+review remain outstanding. Observations on study builds qualify no model. A
+release build configuration does not itself meet the
+[release requirements](ACCEPTANCE.md).
 
 Interfaces and record formats are still evolving. Each audit is bound to the
 exact binary that created it: keep that binary until its audits close. A newer

@@ -1,19 +1,22 @@
 #!/bin/sh
 # Acceptance-suite driver run, inside the pinned python image with no network
 # (loopback only: the fake provider listens on 127.0.0.1).
-#   sh acceptance-inner-driver.sh GATE   GATE: on (native architecture) or off
+#   sh acceptance-inner-driver.sh GATE [KEEP_WORK]
+# GATE: on (native architecture) or off. KEEP_WORK: failed (default) or all.
 # Inputs: /in/source.tar (git archive of HEAD), /bin-in/stewart and
 # /bin-in/stewart-test (read-only). Output: /out.
 #
 # Starts as root only to record the environment, create an unprivileged user
 # (uid 1000) and its work folder on the container's own disk, then, as that user,
 # runs the driver's --self-test (no binary needed) and the whole driver with
-# --network-isolated --require-all-controls --keep-work all. Archives, folders
-# and homes live under /work/tmp. After the driver returns, copy its independent
-# evidence to /out/evidence and archive the work in /out/work.tar for review.
+# --network-isolated --require-all-controls. Archives, folders and homes live
+# under /work/tmp. Copy independent evidence to /out/evidence. Export remaining
+# working files only after failure or when full retention was requested.
 # The host retains this container too, including if export fails.
 set -u
 GATE=${1:-off}
+KEEP_WORK=${2:-failed}
+case "$KEEP_WORK" in failed|all) ;; *) echo "KEEP_WORK must be failed or all" >&2; exit 2 ;; esac
 rec() {
     name=$1
     shift
@@ -71,18 +74,28 @@ rec driver "$@" env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/work/tmp \
     python3 -I -B /work/driver/apparatus/driver/stewart_driver.py \
     --binary /bin-in/stewart --test-binary /bin-in/stewart-test \
     --evidence /work/run/evidence --work /work/tmp --timing-gate "$GATE" \
-    --network-isolated --require-all-controls --keep-work all $EMULATION
+    --network-isolated --require-all-controls --keep-work "$KEEP_WORK" $EMULATION
 final_rc=$(cat /out/driver.exit)
 [ "$(cat /out/selftest.exit)" = 0 ] || final_rc=1
 rec evidence-copy cp -R /work/run/evidence /out/evidence || final_rc=1
-# Observe after the driver has returned. Keep the independent witness separate
-# from the work archive. tar preserves Linux names, modes and links inside one
-# regular host file; special-file warnings remain in retention-archive.stderr.
-# Original work remains in the retained container even on export failure.
-rec retention-start date -u +%Y-%m-%dT%H:%M:%SZ || final_rc=1
-rec retention-archive tar -cpf /out/work.tar -C /work tmp || final_rc=1
-rec retention-list tar -tf /out/work.tar || final_rc=1
-rec retention-sha256 sha256sum /out/work.tar || final_rc=1
-rec retention-end date -u +%Y-%m-%dT%H:%M:%SZ || final_rc=1
+# The independent witness survives either policy. A failed export keeps the
+# original container available for review, including special Linux files.
+retain_work() {
+    printf '%s\n' "$KEEP_WORK" >/out/keep-work.txt || return 1
+    if [ "$KEEP_WORK" = all ] || [ "$final_rc" -ne 0 ]; then
+        printf 'working files retained for review\n' >/out/retention.txt || return 1
+        rec retention-start date -u +%Y-%m-%dT%H:%M:%SZ || return 1
+        rec retention-archive tar -cpf /out/work.tar -C /work tmp || return 1
+        rec retention-list tar -tf /out/work.tar || return 1
+        rec retention-sha256 sha256sum /out/work.tar || return 1
+        rec retention-end date -u +%Y-%m-%dT%H:%M:%SZ || return 1
+    else
+        printf 'passed; no working archive requested\n' >/out/retention.txt || return 1
+    fi
+}
+retain_work
+retention_rc=$?
+printf '%s\n' "$retention_rc" >/out/retention.exit
+[ "$retention_rc" -eq 0 ] || final_rc=1
 echo "$final_rc" >/out/driver-final.exit
 exit "$final_rc"

@@ -2,805 +2,6 @@
   "schema": "stewart.qualified/1",
   "entries": [
     {
-      "id": "acceptance-04",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4"
-      },
-      "source_commit": "c4f6d7a7f3055a2a323cd4c4e96fda8442507163",
-      "source_archive_sha256": "5d5024934656600dc573d8a25bc2343012a7c9349bf535c5dc6d5b44499d9a28",
-      "date": "2026-11-01T18:09:08Z",
-      "outcome": "failed",
-      "failures": [
-        "host/DONE reports failures=1",
-        "host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-04/driver-amd64/)"
-      ],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 309,
-            "passed": 309,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 125,
-            "ran": 125,
-            "passed": 125,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 153470,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 994
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 12,
-            "total": 12
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 3.146,
-            "protocol_passed": true,
-            "protocol_worst_ms": 99.743
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 848,
-            "checks_failed": 0
-          },
-          "release_sha256": "9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09",
-          "test_sha256": "ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6",
-          "result_sha256": "52b8ebab10e31b2bbcda0340809b851a5c0edea2fa4ef6d3cbfcc0a9a7abcb9f"
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "failed",
-          "failures": [
-            "host/driver-amd64.exit is 1",
-            "driver-amd64/driver.exit is 1",
-            "driver-amd64/driver-final.exit is 1",
-            "cases: 123 selected, 121 passed, 2 failed, 0 skipped",
-            "2 checks failed outside control variants",
-            "failed_cases: credentials.input, credentials.process",
-            "driver-amd64/evidence/RESULT.json: driver exit 1"
-          ],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 309,
-            "passed": 309,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 123,
-            "ran": 123,
-            "passed": 121,
-            "failed": 2,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 154,
-            "failed": 76,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 153468,
-            "failed_outside_controls": 2,
-            "failed_inside_controls": 994
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 12,
-            "total": 12
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 44.984,
-            "protocol_passed": null,
-            "protocol_worst_ms": 143.847
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 848,
-            "checks_failed": 0
-          },
-          "release_sha256": "4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5",
-          "test_sha256": "5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b",
-          "result_sha256": "99e7f82797b006287b45831d0dcf5a8161c163c7b918e46f9f39885d8d517572"
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-04",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis",
-        "until": "The user has reviewed the corrected acceptance result and original failed evidence"
-      }
-    },
-    {
-      "id": "acceptance-05",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4"
-      },
-      "source_commit": "f4bbb9c9ef3bcac811427224f6abc7a553459fa8",
-      "source_archive_sha256": "85d6443f01eed64aa393a506300689ca73349b1222d1a48dae2127bc4e8bb41f",
-      "date": "2026-11-01T18:56:51Z",
-      "outcome": "qualified",
-      "failures": [],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 319,
-            "passed": 319,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 125,
-            "ran": 125,
-            "passed": 125,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 153471,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 994
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 13,
-            "total": 13
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 3.109,
-            "protocol_passed": true,
-            "protocol_worst_ms": 96.167
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 848,
-            "checks_failed": 0
-          },
-          "release_sha256": "9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09",
-          "test_sha256": "ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6",
-          "result_sha256": "44fbbebbdfae205701ab99990da041f1c20e1bd63fc6946af9e56b11bc66b150"
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 319,
-            "passed": 319,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 123,
-            "ran": 123,
-            "passed": 123,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 153471,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 994
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 13,
-            "total": 13
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 49.162,
-            "protocol_passed": null,
-            "protocol_worst_ms": 154.975
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 848,
-            "checks_failed": 0
-          },
-          "release_sha256": "4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5",
-          "test_sha256": "5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b",
-          "result_sha256": "ec96969bd74f2e4a66bf7c50f0173b7e61378ef87c9ebdfbdd53b9af50b710cb"
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-05",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "The qualified executable bound by the retained launcher rehearsals and live experiment records, and the baseline of the focused timing comparison",
-        "until": "Launcher rehearsals on the newly qualified executable are reviewed and the user authorizes disposal of this run and its containers"
-      }
-    },
-    {
-      "id": "acceptance-vocabulary-01",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4"
-      },
-      "source_commit": "f6a2fd59383e58e6c9adc7c52b4682bb8e4d3f6a",
-      "source_archive_sha256": "00c57a0d8db7dbe91b71a6c39c05c084697ff4ac62070a2a180ec348ff8a80b1",
-      "date": "2026-11-08T18:50:36Z",
-      "outcome": "failed",
-      "failures": [
-        "host/DONE reports failures=2",
-        "host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-01/driver-arm64/)",
-        "host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-01/driver-amd64/)"
-      ],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "failed",
-          "failures": [
-            "host/driver-arm64.exit is 1",
-            "driver-arm64/driver.exit is 1",
-            "driver-arm64/driver-final.exit is 1",
-            "cases: 125 selected, 111 passed, 14 failed, 0 skipped",
-            "65 checks failed outside control variants",
-            "sabotage controls: 58 of 74 fired",
-            "failed_cases: c5.package, c5.partial-delivery, c5.t9-destination, c5.conflicting-package, c5.lost-run-reply, c5.t10-damaged-payload, c5.payload-corrupt-fault, c5.unknown-membership, c17.close-failures, c8.close-every-state, c8.close-faults, c8.close-running, c16.status-after-launch, c4.provider-compaction",
-            "broken_checks: baseline_failed c5.package/drop_last_entry, baseline_failed c5.package/deliver_conversation, baseline_failed c5.package/regenerate_rendering, baseline_failed c5.package/render_conclusion, baseline_failed c5.partial-delivery/skip_delivery_verification, baseline_failed c5.partial-delivery/remove_partial_package, baseline_failed c5.unknown-membership/unknown_membership_empty, baseline_failed c8.close-every-state/skip_confirmation, baseline_failed c8.close-every-state/empty_return_before_launch, baseline_failed c8.close-running/seal_as_stopped, baseline_failed c16.status-after-launch/ended_as_submitted, baseline_failed c16.status-after-launch/seal_as_delivered, baseline_failed c4.provider-compaction/omit_compaction, baseline_failed c4.provider-compaction/alter_compaction_summary, baseline_failed c4.provider-compaction/retain_precompaction_context, baseline_failed c4.provider-compaction/ignore_compaction_usage, never_fired (any case)/omit_compaction, never_fired (any case)/alter_compaction_summary, never_fired (any case)/retain_precompaction_context, never_fired (any case)/ignore_compaction_usage, never_fired (any case)/drop_last_entry, never_fired (any case)/skip_delivery_verification, never_fired (any case)/deliver_conversation, never_fired (any case)/regenerate_rendering, never_fired (any case)/render_conclusion, never_fired (any case)/remove_partial_package, never_fired (any case)/skip_confirmation, never_fired (any case)/seal_as_stopped, never_fired (any case)/empty_return_before_launch, never_fired (any case)/ended_as_submitted, never_fired (any case)/seal_as_delivered, never_fired (any case)/unknown_membership_empty",
-            "controls_never_fired: omit_compaction, alter_compaction_summary, retain_precompaction_context, ignore_compaction_usage, drop_last_entry, skip_delivery_verification, deliver_conversation, regenerate_rendering, render_conclusion, remove_partial_package, skip_confirmation, seal_as_stopped, empty_return_before_launch, ended_as_submitted, seal_as_delivered, unknown_membership_empty",
-            "driver-arm64/evidence/RESULT.json: driver exit 1"
-          ],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 339,
-            "passed": 339,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 125,
-            "ran": 125,
-            "passed": 111,
-            "failed": 14,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 136,
-            "failed": 94,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 162608,
-            "failed_outside_controls": 65,
-            "failed_inside_controls": 1081
-          },
-          "controls": {
-            "fired": 58,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 13,
-            "total": 13
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 2.925,
-            "protocol_passed": true,
-            "protocol_worst_ms": 100.077,
-            "protocol_threshold_ms": 120.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 871,
-            "checks_failed": 0
-          },
-          "release_sha256": "201ab8c82cb70a7b179303b61b8b1b4f8f734b8be4bf5123bf623b4c08bdb0c4",
-          "test_sha256": "56412450aa85a344fd8ea0f463720a18cf2da02888a827acbba86abe6d0f03b4",
-          "result_sha256": "8234a418167da9c97a1f7b333d156fed9a497732bfffd4336c1123dfe860119e"
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "failed",
-          "failures": [
-            "host/driver-amd64.exit is 1",
-            "driver-amd64/driver.exit is 1",
-            "driver-amd64/driver-final.exit is 1",
-            "cases: 123 selected, 109 passed, 14 failed, 0 skipped",
-            "65 checks failed outside control variants",
-            "sabotage controls: 58 of 74 fired",
-            "failed_cases: c5.package, c5.partial-delivery, c5.t9-destination, c5.conflicting-package, c5.lost-run-reply, c5.t10-damaged-payload, c5.payload-corrupt-fault, c5.unknown-membership, c17.close-failures, c8.close-every-state, c8.close-faults, c8.close-running, c16.status-after-launch, c4.provider-compaction",
-            "broken_checks: baseline_failed c5.package/drop_last_entry, baseline_failed c5.package/deliver_conversation, baseline_failed c5.package/regenerate_rendering, baseline_failed c5.package/render_conclusion, baseline_failed c5.partial-delivery/skip_delivery_verification, baseline_failed c5.partial-delivery/remove_partial_package, baseline_failed c5.unknown-membership/unknown_membership_empty, baseline_failed c8.close-every-state/skip_confirmation, baseline_failed c8.close-every-state/empty_return_before_launch, baseline_failed c8.close-running/seal_as_stopped, baseline_failed c16.status-after-launch/ended_as_submitted, baseline_failed c16.status-after-launch/seal_as_delivered, baseline_failed c4.provider-compaction/omit_compaction, baseline_failed c4.provider-compaction/alter_compaction_summary, baseline_failed c4.provider-compaction/retain_precompaction_context, baseline_failed c4.provider-compaction/ignore_compaction_usage, never_fired (any case)/omit_compaction, never_fired (any case)/alter_compaction_summary, never_fired (any case)/retain_precompaction_context, never_fired (any case)/ignore_compaction_usage, never_fired (any case)/drop_last_entry, never_fired (any case)/skip_delivery_verification, never_fired (any case)/deliver_conversation, never_fired (any case)/regenerate_rendering, never_fired (any case)/render_conclusion, never_fired (any case)/remove_partial_package, never_fired (any case)/skip_confirmation, never_fired (any case)/seal_as_stopped, never_fired (any case)/empty_return_before_launch, never_fired (any case)/ended_as_submitted, never_fired (any case)/seal_as_delivered, never_fired (any case)/unknown_membership_empty",
-            "controls_never_fired: omit_compaction, alter_compaction_summary, retain_precompaction_context, ignore_compaction_usage, drop_last_entry, skip_delivery_verification, deliver_conversation, regenerate_rendering, render_conclusion, remove_partial_package, skip_confirmation, seal_as_stopped, empty_return_before_launch, ended_as_submitted, seal_as_delivered, unknown_membership_empty",
-            "driver-amd64/evidence/RESULT.json: driver exit 1"
-          ],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 339,
-            "passed": 339,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 123,
-            "ran": 123,
-            "passed": 109,
-            "failed": 14,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 136,
-            "failed": 94,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 162608,
-            "failed_outside_controls": 65,
-            "failed_inside_controls": 1081
-          },
-          "controls": {
-            "fired": 58,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 13,
-            "total": 13
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 45.648,
-            "protocol_passed": null,
-            "protocol_worst_ms": 150.893,
-            "protocol_threshold_ms": 120.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 871,
-            "checks_failed": 0
-          },
-          "release_sha256": "9155bfe15a9406e007dc5090a151322a46583e1de895c1c27bffdf5c802d9d4d",
-          "test_sha256": "a2b653777b49ad07d05f1f10387182d6cc007c4fef058c72daf3501c080a59cd",
-          "result_sha256": "5d85086e263349e7bbedede68008e7327d1539e35955b93f4a3a86f9c5bdb557"
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-vocabulary-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the first vocabulary-revision acceptance failure and its exact binaries beside the repaired run",
-        "until": "The user has reviewed the vocabulary acceptance outcome and the original failed evidence"
-      }
-    },
-    {
-      "id": "acceptance-vocabulary-02",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4"
-      },
-      "source_commit": "bb786d56df70dfb438ccede9b6724f5a65271eeb",
-      "source_archive_sha256": "14b46efc3065413eeb7441c09ee0b594543637c9b9c0bf4ce45c9d664ae80301",
-      "date": "2026-11-09T04:03:06Z",
-      "outcome": "failed",
-      "failures": [
-        "host/DONE reports failures=1",
-        "host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-02/driver-arm64/)"
-      ],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "failed",
-          "failures": [
-            "host/driver-arm64.exit is 1",
-            "driver-arm64/driver.exit is 1",
-            "driver-arm64/driver-final.exit is 1",
-            "cases: 125 selected, 124 passed, 1 failed, 0 skipped",
-            "failed_cases: c9.protocol-timing-gate",
-            "driver-arm64/evidence/RESULT.json: driver exit 1",
-            "timing gate on and not passed (commands True, protocol False)"
-          ],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 352,
-            "passed": 352,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 125,
-            "ran": 125,
-            "passed": 124,
-            "failed": 1,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 162770,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1010
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 13,
-            "total": 13
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 3.376,
-            "protocol_passed": false,
-            "protocol_worst_ms": 121.26,
-            "protocol_threshold_ms": 120.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 871,
-            "checks_failed": 0
-          },
-          "release_sha256": "72dc02154d718d40af2108235ab3e7f046dd92cc2687d392437c53159201f95e",
-          "test_sha256": "ebab37c1ca20894aea948eff65d353f9ece090ea1acf01788e13f15c98f508fe",
-          "result_sha256": "2bb21b3ec481848b44ebd0626969d5a69a5d612ea99f3a69d2950a42e72245d3"
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 352,
-            "passed": 352,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 123,
-            "ran": 123,
-            "passed": 123,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 162770,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1010
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 13,
-            "total": 13
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 45.34,
-            "protocol_passed": null,
-            "protocol_worst_ms": 162.292,
-            "protocol_threshold_ms": 120.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 871,
-            "checks_failed": 0
-          },
-          "release_sha256": "0f7ec280549ef0224b3cfc37daebaf3b8c71c26e56e2ab3bd1fd83889b1bd1b5",
-          "test_sha256": "140c23a2c3431ffe21afdabaa29f8c18fec0a6ec716c8634907ea210851a3077",
-          "result_sha256": "517345ea1ffb65688fa35b2a0b6d7419a5d7b10dfb65356b28e7527ce0e9d6b7"
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-vocabulary-02",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the native protocol timing failure at the 120 ms tripwire and its exact binaries, which the focused timing comparison measured",
-        "until": "The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this run and its containers"
-      }
-    },
-    {
-      "id": "acceptance-vocabulary-03",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4"
-      },
-      "source_commit": "c953bed767623f832d64bf07ee14b3faa6be38ea",
-      "source_archive_sha256": "d717bac8f4820ec8f2a06e83e8e800168221bb28394fff8451323d8c2e1b7d5c",
-      "date": "2026-11-09T05:43:52Z",
-      "outcome": "qualified",
-      "failures": [],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 352,
-            "passed": 352,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 125,
-            "ran": 125,
-            "passed": 125,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 162770,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1010
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 13,
-            "total": 13
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 3.267,
-            "protocol_passed": true,
-            "protocol_worst_ms": 98.716,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 871,
-            "checks_failed": 0
-          },
-          "release_sha256": "72dc02154d718d40af2108235ab3e7f046dd92cc2687d392437c53159201f95e",
-          "test_sha256": "ebab37c1ca20894aea948eff65d353f9ece090ea1acf01788e13f15c98f508fe",
-          "result_sha256": "cf637b5e12002cdacc64b9503a2e6d258eee6a2f6189d1134cefe02dca2ff59f"
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 25,
-            "total": 25,
-            "controls_fired": 8,
-            "controls_total": 8
-          },
-          "self_test": {
-            "checks": 352,
-            "passed": 352,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 123,
-            "ran": 123,
-            "passed": 123,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 162770,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1010
-          },
-          "controls": {
-            "fired": 74,
-            "total": 74
-          },
-          "driver_controls": {
-            "fired": 13,
-            "total": 13
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 43.851,
-            "protocol_passed": null,
-            "protocol_worst_ms": 179.542,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 871,
-            "checks_failed": 0
-          },
-          "release_sha256": "0f7ec280549ef0224b3cfc37daebaf3b8c71c26e56e2ab3bd1fd83889b1bd1b5",
-          "test_sha256": "140c23a2c3431ffe21afdabaa29f8c18fec0a6ec716c8634907ea210851a3077",
-          "result_sha256": "203b7c20ac16736065afbd3262b9d2ec3150b6d23d60d614c65394e37b28b593"
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-vocabulary-03",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Frozen candidate executable and qualification consumed by the completed six-placement vocabulary comparison and its retained matching rehearsals.",
-        "until": "All dependent study evidence and rehearsals reviewed and principal authorizes disposal"
-      }
-    },
-    {
       "id": "acceptance-vocabulary-citation-01",
       "kind": "suite",
       "suite": "acceptance",
@@ -946,10 +147,7 @@
         "path": ".scratch/acceptance-vocabulary-citation-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
-      "pin": {
-        "reason": "Final Linux qualification of the citation-refusal correction completing the vocabulary revision; retains independent controls and original working archives.",
-        "until": "Completed vocabulary revision and dependent comparisons reviewed and principal authorizes disposal"
-      }
+      "pin": null
     },
     {
       "id": "apparatus-02",
@@ -1037,142 +235,23 @@
       "pin": null
     },
     {
-      "id": "successor-inquiry-01",
-      "kind": "experiment",
-      "date": "2026-10-26T16:02:35Z",
-      "date_from": "history-preservation-01.json field at",
-      "summary": "the 21 original product-audit source copies and the history-reachability records that the protected refs refs/development-evidence/successor-inquiry-01/a1 to a3 depend on",
-      "result": {
-        "path": ".",
-        "files": 97,
-        "sha256": "6528b39f1bffc9e362c96f905d257ec9eb7777ef020a24f80fc833b6cdf8cf20"
-      },
-      "evidence": {
-        "path": ".scratch/successor-inquiry-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "recovery-critical design-era records",
-        "until": "the user decides they are no longer needed"
-      }
-    },
-    {
-      "id": "credential-emulation-01",
-      "kind": "experiment",
-      "date": "2026-11-01T18:22:45Z",
-      "date_from": "DONE",
-      "summary": "Independent startup descriptor witnesses explain Rosetta credential-test assumptions; unchanged original cases reproduced",
-      "result": {
-        "path": "diagnosis.json",
-        "sha256": "6bf0c61298b43f1d5f05cd2a1fb0630a34a48efcbf96b5a2d8f55041476990ad"
-      },
-      "evidence": {
-        "path": ".scratch/credential-emulation-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the witnesses and original containers supporting the credential acceptance corrections",
-        "until": "The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers"
-      }
-    },
-    {
-      "id": "sanity-launch-01",
-      "kind": "experiment",
-      "date": "2026-11-01T18:56:53Z",
-      "date_from": "review/diagnosis.json field finished_at",
-      "summary": "Launcher refused during credential-free intake because shared ancestor directories were not readable; original container and setup diagnosis retained",
-      "result": {
-        "path": ".",
-        "files": 30,
-        "sha256": "9ff9ac7181d971ba26160d877618588b84f914b5b0ca1cb8754b636cbfccfb4e"
-      },
-      "evidence": {
-        "path": ".scratch/sanity-launch-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the first launcher failure and the private original container until review",
-        "until": "The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup"
-      }
-    },
-    {
-      "id": "sanity-launch-02",
-      "kind": "experiment",
-      "date": "2026-11-01T19:52:53Z",
-      "date_from": "review/diagnosis.json field finished_at",
-      "summary": "Incomplete launcher rehearsal: observer startup assertion failed and export selector withheld all archives; private originals retained",
-      "result": {
-        "path": ".",
-        "files": 41,
-        "sha256": "cf7646674d8b416128519942b41c7609aaee0948626761c850c4443299a5bcf4"
-      },
-      "evidence": {
-        "path": ".scratch/sanity-launch-02",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain original private audits and credential witness from the failed integrated rehearsal",
-        "until": "The user has reviewed the corrected rehearsal and authorizes disposal of this container and its witness"
-      }
-    },
-    {
-      "id": "launcher-observer-probe-01",
-      "kind": "experiment",
-      "date": "2026-11-01T20:10:42Z",
-      "date_from": "review.json field finished_at",
-      "summary": "Independent observer controls demonstrate actual procfs reads despite unsupported PR_SET_PTRACER setting",
-      "result": {
-        "path": ".",
-        "files": 8,
-        "sha256": "cdc5e19f3b961dd0eaf8183cb77e1e04598411884efb33ad4a9f9de1ddc61dcd"
-      },
-      "evidence": {
-        "path": ".scratch/launcher-observer-probe-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain firing observer controls and original failure diagnosis supporting the launcher correction",
-        "until": "The user has reviewed the corrected rehearsal and authorizes disposal of these controls"
-      }
-    },
-    {
-      "id": "sanity-launch-03",
-      "kind": "experiment",
-      "date": "2026-11-01T20:26:07Z",
-      "date_from": "review/result.json field finished_at",
-      "summary": "Seven-scenario retained launcher rehearsal passed: credential delivery, process controls, interruption, exact return, reflection and export controls",
-      "result": {
-        "path": ".",
-        "files": 50,
-        "sha256": "fd35d25502a3c096fd503b68fe5a341a16b5daa2e3d5070eb197ede361f444e1"
-      },
-      "evidence": {
-        "path": ".scratch/sanity-launch-03",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation",
-        "until": "The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness"
-      }
-    },
-    {
       "id": "sanity-live-01",
       "kind": "experiment",
       "date": "2026-11-02T20:28:52Z",
       "date_from": "review/result.json field finished_at",
-      "summary": "First live Messages API launch: intake and readback verified, but all four provider attempts timed out connecting from the container while a host VPN was active; nothing written to the provider, zero usage, no credential exposure; the same connect probe passed once the VPN was off",
+      "summary": "First live Messages API launch: intake and readback verified, but all four provider attempts timed out connecting from the container while a host VPN was active; nothing written to the provider, zero usage, no credential exposure; the same connect probe passed once the VPN was off; subsequent manager closure verified in review/closure.json; no loss surrendered",
       "result": {
         "path": ".",
         "files": 35,
-        "sha256": "c58b80ffe27eabb3a5084f31736bc2311e601d6b2a6b4c4664e0ffd6e709d73e"
+        "sha256": "5de1a17e8457f310935986c37610de4c770b1095421e819b7984f5a6a833f791"
       },
       "evidence": {
         "path": ".scratch/sanity-live-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review",
-        "until": "The user has reviewed the completed sanity commission and authorizes disposal of this container"
+        "reason": "Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1183,16 +262,16 @@
       "summary": "First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean; Console billing displayed $0.01",
       "result": {
         "path": ".",
-        "files": 35,
-        "sha256": "ac526dc1d13ecd0e587a8bb118508b8a15d3e8ccab949b50ca9b7482b6f0312e"
+        "files": 34,
+        "sha256": "0ae272253b20559ae5d964406638fc5b92d8f672af0a636c92b5c51364a2f74c"
       },
       "evidence": {
         "path": ".scratch/sanity-live-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the first real-provider run, its retained container and private originals through review",
-        "until": "The user has reviewed the sanity commission result and authorizes disposal of this container"
+        "reason": "Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1203,16 +282,16 @@
       "summary": "Mechanism run, provider rejection: a deliberately invalid key drew HTTP 401 authentication_error in 165 ms, not retried, nothing charged, no reflection, ending interrupted (provider_rejected) with the provider's status, type, message and request ID recorded; the launcher's host scan fired on the packet label that quoted the invalid key",
       "result": {
         "path": ".",
-        "files": 35,
-        "sha256": "06b8c4dd7d1eb8fdb48fade21fc5a590657fb61ac02c1b8057b70419248d3eca"
+        "files": 34,
+        "sha256": "bb182d3630559c043821d050125a5e13594c2ef50a0554a7b831781b86eeda67"
       },
       "evidence": {
         "path": ".scratch/sanity-live-03",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the real-provider rejection evidence and the self-inflicted host-scan control through review",
-        "until": "The user has reviewed the mechanism runs and authorizes disposal of this container"
+        "reason": "Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1223,16 +302,16 @@
       "summary": "Mechanism run, turn limit 3: limit_reached with the last response's record call executed and the near-limit notice published but not sent; manager close sealed, delivered and verified the one recorded entry, returned a confirmation token with status awaiting_confirmation, and close --confirm completed closure",
       "result": {
         "path": ".",
-        "files": 35,
-        "sha256": "cf5eff7c647590fa68be6e540a66571a5e2528197fae8e2feef935c04ac519cf"
+        "files": 34,
+        "sha256": "d1b3fcaeda2dba3d13fdbba73d2aed6791647e5daf9d95d15312bb89345c7f4f"
       },
       "evidence": {
         "path": ".scratch/sanity-live-04",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the real-provider limit and manager-close evidence through review",
-        "until": "The user has reviewed the mechanism runs and authorizes disposal of this container"
+        "reason": "Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1243,16 +322,16 @@
       "summary": "Mechanism run, effort high: the pinned output_config reached the wire (34-byte body difference), every request accepted, auditor seal, verified delivery and close; 8 turns, 67,446 input and 4,361 output tokens, largest response 2,055 output tokens under the 12,000 cap",
       "result": {
         "path": ".",
-        "files": 35,
-        "sha256": "5b13d580feadace59c38f4e875a24a1298ea7307e25fe6be7668af6db5fb98ed"
+        "files": 34,
+        "sha256": "e757d36cb62aec3bd7992d5f36b018e1d090432d5fe470a861ef5ba5d251f740"
       },
       "evidence": {
         "path": ".scratch/sanity-live-05",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the real-provider effort evidence through review",
-        "until": "The user has reviewed the mechanism runs and authorizes disposal of this container"
+        "reason": "Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1260,58 +339,19 @@
       "kind": "experiment",
       "date": "2026-11-03T16:03:42Z",
       "date_from": "review/result.json field finished_at",
-      "summary": "Mechanism run, output allowance 1,024: one request at max_tokens 1,024, the first response's two tool calls executed, then limit_reached with 945 output tokens remaining; max_tokens stop not reached; audit left open for manager close",
+      "summary": "Mechanism run, output allowance 1,024: one request at max_tokens 1,024, the first response's two tool calls executed, then limit_reached with 945 output tokens remaining; max_tokens stop not reached; audit left open for manager close; subsequent manager closure verified in review/closure.json; no loss surrendered",
       "result": {
         "path": ".",
         "files": 35,
-        "sha256": "c8146c19e36bec8f7aaa9aafedf371bc6cec7c1229897d9764ad1db5cc0d8513"
+        "sha256": "3134097c45a2144f3b8fd2e1e88934b237035323da2be935b3dacdcb09e720b3"
       },
       "evidence": {
         "path": ".scratch/sanity-live-06",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the real-provider output-limit evidence through review",
-        "until": "The user has reviewed the mechanism runs and authorizes disposal of this container"
-      }
-    },
-    {
-      "id": "sanity-launch-04",
-      "kind": "experiment",
-      "date": "2026-11-03T16:14:57Z",
-      "date_from": "review/result.json field finished_at",
-      "summary": "Seven-scenario offline launcher rehearsal passed on the committed launch code after the condition allowlists were aligned (56a72e6): credential delivery, process controls, interruption, exact return, reflection and export controls",
-      "result": {
-        "path": ".",
-        "files": 44,
-        "sha256": "f96cb3d21c5f5e04dc7f170d13fc20e09e92f219ce39604f83ed8d599428036c"
-      },
-      "evidence": {
-        "path": ".scratch/sanity-launch-04",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the rehearsal that qualifies the current launch code for further real-key use",
-        "until": "A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container"
-      }
-    },
-    {
-      "id": "c10-launch-01",
-      "kind": "experiment",
-      "date": "2026-11-03T21:47:04Z",
-      "date_from": "review/result.json field at",
-      "summary": "C10 small-commission rehearsal on Linux aarch64 at 043a2c4: 13 expected audit outcomes, 14 reviewer comparisons with 12 firing controls, 7 operator comparisons and 2 process-access controls; no model calls or model qualification.",
-      "result": {
-        "path": "review/result.json",
-        "sha256": "e7cb9e28d5192ff0f73523a9e0e99c234d22181a19d663f2737b930b65ff7200"
-      },
-      "evidence": {
-        "path": ".scratch/c10-launch-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation",
-        "until": "A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses"
+        "reason": "Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1321,16 +361,17 @@
       "date_from": "review/result.json field at",
       "summary": "Haiku pilot 1/6, open-ordinary: auditor submission, exact delivery and close verified; 8 turns, 71095 input and 4314 output tokens; 4 invalid-citation calls refused and corrected; 13 final citations checked. No model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "2ea1da0872cc92ea57b8eedc61eff384dbdda75a770740636909e39c039677af"
+        "path": ".",
+        "files": 76,
+        "sha256": "5e173267dec423381c0a8a357600fa032d8014713b8631f361ee19f05c5fee94"
       },
       "evidence": {
         "path": ".scratch/c10-live-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation",
-        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+        "reason": "Inspect the first six-family pilot, including substantive errors and citation recovery.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1340,16 +381,17 @@
       "date_from": "review/result.json field at",
       "summary": "Haiku pilot 2/6, open-inadequate: auditor submission, exact delivery and close verified; 5 turns, 28365 input and 1516 output tokens; 7 citations checked, no tool refusals or request retries. No model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "3646274163d843d7302b4f2025ffaceaeefad4ef568d8afc57b0ca79a33a85af"
+        "path": ".",
+        "files": 65,
+        "sha256": "3c68c7d92f5653d3019cd9826bd9d7be3b4870556e918ee8dbe5e54dec116944"
       },
       "evidence": {
         "path": ".scratch/c10-live-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation",
-        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+        "reason": "Inspect the first six-family pilot, including substantive errors and citation recovery.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1359,16 +401,17 @@
       "date_from": "review/result.json field at",
       "summary": "Haiku pilot 3/6, framing-ordinary: working question and relation recorded; auditor submission, exact delivery and close verified; 5 turns, 37760 input and 2343 output tokens; 11 citations checked, no tool refusals or request retries. No model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "b3e6963876c9a94991e6f24697bf5486f526b34b7028b5fd6de5f6dd38b5d892"
+        "path": ".",
+        "files": 65,
+        "sha256": "bb979c76ccb813cc6b2cf60562c0aff3fc748c623714bca741d3ff90511ba8dd"
       },
       "evidence": {
         "path": ".scratch/c10-live-03",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation",
-        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+        "reason": "Inspect the first six-family pilot, including substantive errors and citation recovery.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1378,16 +421,17 @@
       "date_from": "review/result.json field at",
       "summary": "Haiku pilot 4/6, framing-inadequate: procedural review, exact delivery and close passed; 6 turns, 42421 input and 2295 output tokens; 12 citations checked, no refusals or retries. inspection.json flags a substantive inference beyond supplied requirements. No model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "de7da6b93e4d086cf63729c616062f6185e63afedc7028c4c0a4db144872990b"
+        "path": ".",
+        "files": 65,
+        "sha256": "fb495871d20a54d0bea19e43d464a534597ff07f0f852044e556fb2fefdb734f"
       },
       "evidence": {
         "path": ".scratch/c10-live-04",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain this pilot audit and its substantive inspection concern, reviewed export and private container through the six-audit assessment and billing reconciliation",
-        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+        "reason": "Inspect the first six-family pilot, including substantive errors and citation recovery.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1397,16 +441,17 @@
       "date_from": "review/result.json field at",
       "summary": "Haiku pilot 5/6, comparison-ordinary: auditor submission, exact delivery and close verified; 6 turns, 51053 input and 3437 output tokens; 12 citations checked. Two invalid-quote calls refused, then valid unquoted locators accepted; no request retries. No model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "5073a17cc67180ec887f07616d4f7e6793e5abb4148ed3f5c1a70f7fbb44155c"
+        "path": ".",
+        "files": 66,
+        "sha256": "a0747a484ce943106282f4a302adc8e8209a13ed15d8ed9085dbdae787836d43"
       },
       "evidence": {
         "path": ".scratch/c10-live-05",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain this pilot audit, citation-recovery observations, reviewed export and private container through the six-audit assessment and billing reconciliation",
-        "until": "The principal has reviewed the pilot and authorizes disposal of this container and its evidence"
+        "reason": "Inspect the first six-family pilot, including substantive errors and citation recovery.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1416,16 +461,17 @@
       "date_from": "review/result.json field at",
       "summary": "Haiku pilot 6/6, comparison-inadequate: procedural checks passed, auditor submitted, delivered and closed; 7 turns, 50,102 input and 2,318 output tokens; two tool refusals retained; missing B acknowledged; calculated USD 0.0061692, billing unobserved.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "0beae6364d44695d2d3f48787aa78cffeeecffb3af401d2fecf49ab8a9c73778"
+        "path": ".",
+        "files": 66,
+        "sha256": "7eb92835e9f1d7716a40a004c8077545c8ac461e965ce548027620b459aec366"
       },
       "evidence": {
         "path": ".scratch/c10-live-06",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the final pilot audit, original refusals and A-only answer for six-audit review and billing reconciliation.",
-        "until": "The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence"
+        "reason": "Inspect the first six-family pilot, including substantive errors and citation recovery.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1433,37 +479,19 @@
       "kind": "experiment",
       "date": "2026-11-03T23:14:17Z",
       "date_from": "review/result.json field at",
-      "summary": "Six-audit Haiku pilot: all six submitted, delivered and closed; 37 requests/attempts, no provider retries, 280,796 input and 16,223 output tokens; seven citation and one cursor refusal; framing-inadequate content inference flagged; calculated USD 0.0361911, billing unobserved; no model qualification.",
+      "summary": "Inspect the six-family pilot: exact inputs, settings, combined reading and costs.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "a44db5879ef9b98bb476b97a9e2d0a8e88759970b1e74717b77406c75fa9af6f"
+        "path": ".",
+        "files": 34,
+        "sha256": "3d4a92490d1730113f1437b2dfbf1ef5cca7fea68195f9c7db184fc76dc37656"
       },
       "evidence": {
         "path": ".scratch/c10-haiku-commission-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison.",
-        "until": "The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence"
-      }
-    },
-    {
-      "id": "c10-study-launch-01",
-      "kind": "experiment",
-      "date": "2026-11-05T19:55:32Z",
-      "date_from": "review/result.json field at",
-      "summary": "Saved-connection and study-input rehearsal on Linux aarch64 at 751aa7c: 15 expected audit outcomes, 50 reviewer comparisons with 44 firing controls, 7 operator comparisons, 2 process-access controls, and fresh-process Keychain collection; no model calls or model qualification.",
-      "result": {
-        "path": "review/result.json",
-        "sha256": "a06c601e88f489e17f4fe5fa1da5eed71aa32764df9f1e7b4152aae1c4303fae"
-      },
-      "evidence": {
-        "path": ".scratch/c10-study-launch-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation",
-        "until": "A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses"
+        "reason": "Inspect the six-family pilot: exact inputs, settings, combined reading and costs.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
       }
     },
     {
@@ -1473,35 +501,17 @@
       "date_from": "review/result.json field at",
       "summary": "Problem A Haiku baseline: auditor-sealed, delivered and closed; saved-key launch and later collection reviewed, 509 original files unchanged; no model qualification",
       "result": {
-        "path": "review/result.json",
-        "sha256": "5a82a48331f8ebd46eee2bfb31d4874e37f3651578a30cf01c10ec850a13a8e2"
+        "path": ".",
+        "files": 183,
+        "sha256": "6d379c21c1f7b050aaf4c077c638923dedf9e7602a19d889663ca9040fbea9f1"
       },
       "evidence": {
         "path": ".scratch/frsrr-baseline-a-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Authorized interface-study baseline, original input and return witnesses, and live saved-connection launch and collection",
-        "until": "The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence"
-      }
-    },
-    {
-      "id": "connection-checks-01",
-      "kind": "experiment",
-      "date": "2026-11-05T20:30:11Z",
-      "date_from": "review-02.json field at",
-      "summary": "Saved-connection synthetic host checks: eight passed, one failed, two limited observations; original failures and prompt attribution limits retained",
-      "result": {
-        "path": "review-02.json",
-        "sha256": "3453091829834dbf57b89b474ea9b858dd0cf2ddbb410583e24c7aae7699e580"
-      },
-      "evidence": {
-        "path": ".scratch/connection-checks-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits",
-        "until": "The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition"
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1511,73 +521,17 @@
       "date_from": "review/result.json field at",
       "summary": "Problem B Haiku baseline: auditor-sealed, delivered and closed; live placement and later saved-key collection reviewed, 442 original files unchanged; no model qualification",
       "result": {
-        "path": "review/result.json",
-        "sha256": "b6a2f5c995fc227ea8a61a5554ced7a99116c4aa12afa8c5cdb15b60febfc62c"
+        "path": ".",
+        "files": 149,
+        "sha256": "af09ad7d2913fa6e0b5a8f1d27c70b62650d36c00868537ad1899c26b9947b0d"
       },
       "evidence": {
         "path": ".scratch/frsrr-baseline-b-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Authorized interface-study baseline, original input and return witnesses, and reviewed follow-up collection",
-        "until": "The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence"
-      }
-    },
-    {
-      "id": "haiku-authoring-acceptance-01",
-      "kind": "experiment",
-      "date": "2026-11-06T15:09:55Z",
-      "date_from": "driver-amd64/evidence/RESULT.json field ended_at",
-      "summary": "Unqualified authoring variant: old text/version comparisons and a native 100 ms protocol timing failure; retained first attempt.",
-      "result": {
-        "path": "host/SUMMARY",
-        "sha256": "c5ac60fb678ad75618c4884ca4a076c876e243213f087f058abc97f5227836fc"
-      },
-      "evidence": {
-        "path": ".scratch/haiku-authoring-acceptance-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Preserve the first failed Linux attempt and its controls for the authoring study.",
-        "until": "The authoring study is reviewed and the principal releases its evidence."
-      }
-    },
-    {
-      "id": "haiku-authoring-acceptance-02",
-      "kind": "experiment",
-      "date": "2026-11-06T19:16:09Z",
-      "date_from": "driver-amd64/evidence/RESULT.json field ended_at",
-      "summary": "Reviewed unqualified authoring variant: native 120 ms timing passed; 33 exact text/version/custody-identity comparison failures per architecture and 27 failed control baselines retained.",
-      "result": {
-        "path": "review-02.json",
-        "sha256": "c47367f536392edb9261019c7c82227a5550a773caf8a18bfdca77b3a2913fb2"
-      },
-      "evidence": {
-        "path": ".scratch/haiku-authoring-acceptance-02",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Bind the isolated authoring variant and preserve the limits of its acceptance evidence.",
-        "until": "The authoring study is reviewed and the principal releases the variant evidence."
-      }
-    },
-    {
-      "id": "haiku-authoring-rehearsal-01",
-      "kind": "experiment",
-      "date": "2026-11-06T20:04:07Z",
-      "date_from": "review/result.json field at",
-      "summary": "Matching Linux authoring-study rehearsal: 15 audits, 7 operator checks, 56 reviewer comparisons; saved synthetic connection and later collection passed; zero model calls, study binary unqualified",
-      "result": {
-        "path": "review/result.json",
-        "sha256": "bc2683878668b975f62c68c37d6c99e954a40877c3ae45c4c876413ab6faac8e"
-      },
-      "evidence": {
-        "path": ".scratch/haiku-authoring-rehearsal-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Launcher and frozen-input evidence for the account-composition-01 A/B experiment",
-        "until": "The authoring intervention is reviewed and no retained live packet relies on this rehearsal"
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1587,16 +541,17 @@
       "date_from": "review/result.json field at",
       "summary": "Two authorized Haiku authoring-study placements and saved-connection collections passed procedural review; original exports preserved; unqualified study binary",
       "result": {
-        "path": "review/result.json",
-        "sha256": "14b01080fe41d36a4106bad1df1232f8b3f6f5e283a7aaac9cf2cc233c1480d1"
+        "path": ".",
+        "files": 196,
+        "sha256": "8403a5f553208660c8a7eaae8624087d9e6168f883c6920b92a7c7a8a6058515"
       },
       "evidence": {
         "path": ".scratch/haiku-authoring-live-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading",
-        "until": "The principal has reviewed the interface comparison and authorizes disposal of its container and evidence"
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1606,35 +561,17 @@
       "date_from": "review/encounter-completion-01.json field at",
       "summary": "One authorized Fable Problem B encounter at default effort with no execution on account-composition-01; procedural and collection reviews passed, all 456 original files preserved, principal reading and discussion complete. Principal reports billing reconciles with the displayed USD 3.51 cost; token breakdown unavailable. No model qualification.",
       "result": {
-        "path": "review/encounter-completion-01.json",
-        "sha256": "4b64ef5b0e835b46b9b811c139d8fc5c540a041d8726ecf805ddd3626dd08cc4"
+        "path": ".",
+        "files": 150,
+        "sha256": "8ea10fee3552a84533a1f833114b3158b6cdbf305b47a17d5d8bc80e8e2bc390"
       },
       "evidence": {
         "path": ".scratch/fable-problem-b-live-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation.",
-        "until": "Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then."
-      }
-    },
-    {
-      "id": "haiku-stress-rehearsal-03",
-      "kind": "experiment",
-      "date": "2026-11-07T03:55:39Z",
-      "date_from": "review/result.json field at",
-      "summary": "Stress-study rehearsal on Linux aarch64 at 3668506 with the unqualified account-composition-01 study build: 17 expected audit outcomes including problem-a, two checklist copies and a four-page pagination template; 16 reviewer comparisons with 14 firing controls, 7 operator comparisons, 80 study comparisons with 72 firing controls, and fresh-process Keychain collection; no model calls or model qualification.",
-      "result": {
-        "path": "review/result.json",
-        "sha256": "9372cb30e261862738488d398d2ba2d1c5b5462593fe44a5f939d7133d686f86"
-      },
-      "evidence": {
-        "path": ".scratch/haiku-stress-rehearsal-03",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the reviewed rehearsal that backs the five bounded Haiku stress packets, including the first multi-page material rehearsal, with its private originals and independent witnesses",
-        "until": "A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses"
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1644,16 +581,17 @@
       "date_from": "review/result.json field at",
       "summary": "Stress run turns-10 on the unqualified study build, claude-haiku-5-5, frozen Problem A: limit_reached after 10 turns with a twice-revised complete account never prepared or submitted; manager close confirmed; export-0002 collected; USD 0.0399731 calculated; no model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "60d82bf5b57c5960c4695b91635c79069978bedb54a56ad9da66fe40fa281730"
+        "path": ".",
+        "files": 127,
+        "sha256": "9cd2dfb69217f212fad00dc34fbfd57cbac06980cc241bf62b903dab45e5af76"
       },
       "evidence": {
         "path": ".scratch/haiku-stress-live-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the first turn-limit stress placement, its manager-sealed return and the pre-registered classification and findings",
-        "until": "Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then"
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1663,16 +601,17 @@
       "date_from": "review/result.json field at",
       "summary": "Stress run turns-8 on the unqualified study build, claude-haiku-5-5, frozen Problem A: limit_reached after 8 turns with nothing recorded; empty manager-sealed return; export-0002 collected; USD 0.0177970 calculated; no model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "a8bdbb753bbc6b4291073282de162759fe6d1cc1f9dc42c232a3349c9da47b51"
+        "path": ".",
+        "files": 125,
+        "sha256": "67f3ec7bd01dc158ced8b2369086d0bd241dc914f5307e9894dc0ed65dcafe91"
       },
       "evidence": {
         "path": ".scratch/haiku-stress-live-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the second turn-limit stress placement and its empty return beside the first for comparison",
-        "until": "Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then"
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1682,16 +621,17 @@
       "date_from": "review/result.json field at",
       "summary": "Stress run pagination on the unqualified study build, claude-haiku-5-5, two synthetic logs: auditor seal after 9 turns with all six answers correct by tail read, complete searches and list metadata; paging affordance unexercised; export-0002 collected; USD 0.0225645 calculated; no model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "8edeec950a9b1e0530e87e15da2d34036ec74348c5ff0a79186ec0abdbcabaf0"
+        "path": ".",
+        "files": 83,
+        "sha256": "71da4359807099c410c691a724039279fb5d52b31b1c78f6cd3b27ff2b596a8e"
       },
       "evidence": {
         "path": ".scratch/haiku-stress-live-03",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the pagination stress placement, its correct return and the route that avoided paging",
-        "until": "Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then"
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1701,16 +641,17 @@
       "date_from": "review/result.json field at",
       "summary": "Stress run checklist (two-copy batch) on the unqualified study build, claude-haiku-5-5: checklist-5sgh interrupted with cause max_tokens after 10 turns, nothing recorded, manager close confirmed, export-0002 collected, USD 0.0555290; checklist-sw3z not started by the batch stop; no model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "9b9ff82def47a0a0139a265b890a3b760512c263bc12e4c3cbd5fec74dd23cf0"
+        "path": ".",
+        "files": 160,
+        "sha256": "64f9a34fa19d9a6bbb8aef619b953db9c92b4b1271a8557c2c6be70c008c8bea"
       },
       "evidence": {
         "path": ".scratch/haiku-stress-live-04",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the first many-part placement that hit the per-request output cap inside thinking, and the record of the unstarted second audit",
-        "until": "Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then"
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1720,36 +661,17 @@
       "date_from": "review/result.json field at",
       "summary": "Stress run checklist-sw3z single-run control on the unqualified study build, claude-haiku-5-5: interrupted with cause max_tokens after 14 turns, nothing recorded, manager close confirmed, export-0002 collected, USD 0.0698756; reproduces the 5sgh wall on the second copy; no model qualification.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "6770f1baa68d0bad6a01c2384ff6d93f8977c6606b9fd348b480a750be8772df"
+        "path": ".",
+        "files": 125,
+        "sha256": "1ed2e9c4ed532d709c49621b184fd46bb1a3def18b31887940c364118e781c39"
       },
       "evidence": {
         "path": ".scratch/haiku-stress-live-05",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy",
-        "until": "Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then"
-      }
-    },
-    {
-      "id": "c10-report-linux-01",
-      "kind": "experiment",
-      "date": "2026-11-07T20:37:46Z",
-      "date_from": "review/result.json field ended_at",
-      "summary": "Linux aarch64 rehearsal of apparatus 453a60d: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.",
-      "result": {
-        "path": "review",
-        "files": 8,
-        "sha256": "aa8960f2f8a9a3bebb558c5d573c97168bd20e582149a12a13462375a80a181b"
-      },
-      "evidence": {
-        "path": ".scratch/c10-report-linux-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses.",
-        "until": "A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage."
+        "reason": "Inspect authoring, intellectual limits, interface friction and attributed reader responses.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1759,16 +681,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 01; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "fa038714a781fc3bd5374113057a3a21ed862c2fd66ec7954f0d8ada8728c5e3"
+        "path": ".",
+        "files": 53,
+        "sha256": "90d29126062ca7f6440beb34e41c28bafaa69bc079939a4acb89949977805391"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1778,16 +701,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 02; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "da8e9c93f00bf667b07007add0c465612539b54bf884e8e0ce2c4d8cf2536d91"
+        "path": ".",
+        "files": 54,
+        "sha256": "7eef44782490a90f804842885187c29f8e3c0e3101670b72cb91edf0e89f8a81"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1797,16 +721,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 03; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "e8af905041e173fea03e271c77724a3499eeb21d6b36a82a883c0c9340b94527"
+        "path": ".",
+        "files": 53,
+        "sha256": "4939d47e3929e70d15c5feff2c7e54d66a3a6fb3a7496ae05000b8a90ef02fb0"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-03",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1816,16 +741,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 04; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "068f0ba1b745cbd1bc11c43f5ac48facaa5808153d17c76c76450cbd8dd5101e"
+        "path": ".",
+        "files": 53,
+        "sha256": "7a8539c77b3d1ed3ce5ba6dc827c32626a51f1745341fdc3946ca460751ae996"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-04",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1835,16 +761,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 05; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "c6d53c03cc87fff095545379062e54a00739b3248c3fc29450f0fc7745d44dde"
+        "path": ".",
+        "files": 53,
+        "sha256": "91b78f1f422b29e0514eaa4af24b5cd2152115a2eddfbe894a604d2941c1ae83"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-05",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1854,16 +781,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 06; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "e23421672ffcbae338f9c2eae565cae1c15d20403067216f5110c972bbdd975d"
+        "path": ".",
+        "files": 53,
+        "sha256": "4024b15c5c219607f477f78ef057cf5f3f0ec6de3b096444c9c31083b42b54fa"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-06",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1873,16 +801,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 07; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "fa18c8430ce2329f86fe5dbf0158910b66db0f7aa6e0d66c2c0c0371bd58087a"
+        "path": ".",
+        "files": 53,
+        "sha256": "d8e1516f078f14eee0de233a7798b6c801bf519f7033eafe9e122c56712574af"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-07",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1892,16 +821,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 08; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "4be73d84490714fdb79fbf0c0e2854b23e5700a58e22eb7223d377f98c43f867"
+        "path": ".",
+        "files": 53,
+        "sha256": "e6d379774c5ad441fcf92b2b82b13129f19c8782cc990b097151495f3886759d"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-08",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1911,16 +841,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 09; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "b534ada5b2889ef744181aba2cbc866a38a3cc2c1e94070a61d4b1b27c0c8ca7"
+        "path": ".",
+        "files": 81,
+        "sha256": "1301246eecbf9e1609155941d55243550a91bc2011d7ba9f9552fa68a15c7ce6"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-09",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1930,16 +861,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 10; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "be590aca46ce23b8ab3134afc7533ae5966a77deb6fb9c4c05190537df35ae77"
+        "path": ".",
+        "files": 81,
+        "sha256": "a163c2c010942046653cf63a7675205aa3ad9554e2c07d1ad250fcfcc2480aaf"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-10",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1949,16 +881,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 11; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "663e65d47b697db0c8464c25fd16e8e0489cb16cc5427aa78c1727542e629252"
+        "path": ".",
+        "files": 81,
+        "sha256": "d85a8f6f3b4e0c7da18f9b182c38c99fb3bb83cbc669ec766d9a6751ad596775"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-11",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1968,16 +901,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 12; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "6cf9f2d1c1740ecedc639c00237a306a4fe46c468794499d74fd30ecd1c918b5"
+        "path": ".",
+        "files": 83,
+        "sha256": "e6ec251cff7a1140e25b48fee4ed8737f34105ed2e54c2395d1e63c88decf0d1"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-12",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -1987,16 +921,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 13; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "72e4d6ff6a437823c6becf87b803ba6779f11ea395e367cb8d0687ad2fae93bf"
+        "path": ".",
+        "files": 53,
+        "sha256": "17f83b24aa166d39c772d6a4c262b1a543b70e76c029613f9b2c2b7d2959dda0"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-13",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2006,16 +941,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 14; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "4677b27dd04dbc2c6c7716240a0814251ce5a7260ae90f95c17581437b784b2e"
+        "path": ".",
+        "files": 69,
+        "sha256": "b72abe4d7824e924eed40719b9d54e89af1f327e8a2b5d8ba5ccca5abe5e590b"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-14",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2025,16 +961,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 15; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "dc65d5e5c261686d69c6b82f427540619fdb0cd99ee62756818823cdc3f71d5c"
+        "path": ".",
+        "files": 53,
+        "sha256": "b195861fb01b4b1e9e4f859542cfffabeacdb5c6f24a0f33c4b9b561d7d718fc"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-15",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2044,16 +981,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 16; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "8815447288467c939a45552c268c86d6204eb210c26dd5e885e61001cc372179"
+        "path": ".",
+        "files": 53,
+        "sha256": "afe28f5be5ad814a90f150208415a488240aca16cf9ad9ba80c078d0aebeca83"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-16",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2063,16 +1001,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 17; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "2e3b82de98820d8413b6b8ec90feb59a0c70eeb91a3e43af1b8e86976e96a5d8"
+        "path": ".",
+        "files": 53,
+        "sha256": "9d54ab7c0d594d10ac8d582a6fe4f164b6057ca0f7592c3aaea0ff1dd4fc9f33"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-17",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2082,36 +1021,17 @@
       "date_from": "retention-date.json field at",
       "summary": "Haiku failure/recovery trial 18; original live placement and custody snapshots; study evidence, not model qualification",
       "result": {
-        "path": "host/RESULT.json",
-        "sha256": "14b86786d0c9e9a5a9c0112ce13c180e3087385c691e9250c5153a584b4c266b"
+        "path": ".",
+        "files": 53,
+        "sha256": "46c2dc81fda6c09301f3783ef77c93a6fad32e225e78d4f5e160a1e9bc327ca4"
       },
       "evidence": {
         "path": ".scratch/haiku-recovery-live-18",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.",
-        "until": "The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal."
-      }
-    },
-    {
-      "id": "vocabulary-timing-01",
-      "kind": "experiment",
-      "date": "2026-11-09T04:59:33Z",
-      "date_from": "review-and-decision-01.json field at",
-      "summary": "Focused native timing comparison of the 4 MiB limits call on the acceptance-05, acceptance-vocabulary-01 and acceptance-vocabulary-02 arm64 builds: 36 driver runs, medians 113 to 116 ms, range 99 to 132 ms, differences between builds within repeat noise; no model calls, qualifies nothing",
-      "result": {
-        "path": ".",
-        "files": 636,
-        "sha256": "d0c0a67b770216f591baf63d2095da427592df0a7826daed30c037d5a0f2650b"
-      },
-      "evidence": {
-        "path": ".scratch/vocabulary-timing-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Evidence for raising the protocol tripwire from 120 to 200 ms and for reading the acceptance-vocabulary-02 timing failure",
-        "until": "The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this comparison and its six containers"
+        "reason": "Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2130,8 +1050,8 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the checked C10 rehearsal on the qualified vocabulary build, its source bindings, original snapshots and independent witnesses.",
-        "until": "A reviewed matching rehearsal supersedes it and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage."
+        "reason": "Latest retained launcher rehearsal; new launches must still match source, binary and inputs.",
+        "until": "A fresh matching rehearsal is reviewed."
       }
     },
     {
@@ -2150,48 +1070,8 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use",
-        "until": "A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container"
-      }
-    },
-    {
-      "id": "vocabulary-control-rehearsal-01",
-      "kind": "experiment",
-      "date": "2026-11-09T15:42:35Z",
-      "date_from": "review/result.json field at",
-      "summary": "Vocabulary control: reviewed Linux rehearsal on acceptance-05 with both matched study templates and synthetic saved-connection collection; 15 audits, 50 reviewer, seven operator and eleven report comparisons passed.",
-      "result": {
-        "path": "review",
-        "files": 6,
-        "sha256": "62bb1f1bcfd2f479fb5f9a3bbfaa967935415b146db6c84887ebb5dca6274b44"
-      },
-      "evidence": {
-        "path": ".scratch/vocabulary-control-rehearsal-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Preserve the control launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison.",
-        "until": "The comparison is reviewed and the principal authorizes disposal of the evidence and container."
-      }
-    },
-    {
-      "id": "vocabulary-candidate-rehearsal-01",
-      "kind": "experiment",
-      "date": "2026-11-09T15:42:36Z",
-      "date_from": "review/result.json field at",
-      "summary": "Vocabulary candidate: reviewed Linux rehearsal on acceptance-vocabulary-03 with both matched study templates and synthetic saved-connection collection; 15 audits, 50 reviewer, seven operator and eleven report comparisons passed.",
-      "result": {
-        "path": "review",
-        "files": 6,
-        "sha256": "d4920448cbb8094285feb13cfd921b3e17e2849ecc598ebc91cc40ffc2b14b5f"
-      },
-      "evidence": {
-        "path": ".scratch/vocabulary-candidate-rehearsal-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Preserve the candidate launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison.",
-        "until": "The comparison is reviewed and the principal authorizes disposal of the evidence and container."
+        "reason": "Latest retained launcher rehearsal; new launches must still match source, binary and inputs.",
+        "until": "A fresh matching rehearsal is reviewed."
       }
     },
     {
@@ -2201,17 +1081,17 @@
       "date_from": "review/result.json field at",
       "summary": "Vocabulary ordinary control: seven-turn Haiku submission, two citation refusals repaired, verified delivery and completed closure; procedural review and attributed answer reading retained.",
       "result": {
-        "path": "review",
-        "files": 10,
-        "sha256": "af97a42da2963e1a249a0eb1691f040e643d38ea8a5aed26f85d741b80c47d69"
+        "path": ".",
+        "files": 62,
+        "sha256": "5cbfd129d8b318de8904efae5edd6393030cb4b84407b74192872efc8cc2c1b2"
       },
       "evidence": {
         "path": ".scratch/vocabulary-live-01-control-ordinary",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the matched ordinary control, original interaction, answer and custody evidence for the vocabulary comparison.",
-        "until": "The comparison is reviewed and the principal authorizes evidence and container disposal."
+        "reason": "Inspect the ordinary, recovery and constrained matched vocabulary encounters.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2221,17 +1101,17 @@
       "date_from": "review/result.json field at",
       "summary": "Vocabulary ordinary candidate: checked seven-turn Haiku submission and completed custody; correct answer and citation-refusal wording defect recorded beside the matched control.",
       "result": {
-        "path": "review",
-        "files": 10,
-        "sha256": "fa6b0ee976118d02df094c276513994dcf6a0e86ba3da62d9af170168f995050"
+        "path": ".",
+        "files": 62,
+        "sha256": "d3e4b4721c1bc95f4714c4d4618987106eea9e8dcd21b8cb5d3273f2f6a2a923"
       },
       "evidence": {
         "path": ".scratch/vocabulary-live-02-candidate-ordinary",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the matched ordinary candidate, original interaction, concrete wording defect and custody evidence.",
-        "until": "The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal."
+        "reason": "Inspect the ordinary, recovery and constrained matched vocabulary encounters.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2241,17 +1121,17 @@
       "date_from": "review/result.json field at",
       "summary": "Vocabulary recovery candidate: re-entry preserved the observation across a seeded refusal; corrected replacement and auditor submission completed in eight turns, with verified delivery and closure.",
       "result": {
-        "path": "review",
-        "files": 11,
-        "sha256": "d21fc4cedd4e521fd1246dafbe60ca9cd82a713fc3577c8e7a552c36d50ae7a4"
+        "path": ".",
+        "files": 63,
+        "sha256": "b20e38f6b267c80e0c48fe3f35ab28f0d99b4bcdb3e2996905d9dbd35c8a969a"
       },
       "evidence": {
         "path": ".scratch/vocabulary-live-03-candidate-recovery",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain exercised recovery, exact state/handle observations, answer and custody evidence for the vocabulary comparison.",
-        "until": "The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal."
+        "reason": "Inspect the ordinary, recovery and constrained matched vocabulary encounters.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2261,17 +1141,17 @@
       "date_from": "review/result.json field at",
       "summary": "Vocabulary comparison: historical control recovery; 79 procedural checks, seeded refusal and state preservation, corrected replacement, auditor submission, verified delivery and close.",
       "result": {
-        "path": "review",
-        "files": 11,
-        "sha256": "bc6f2a917b68c0649eb35a6417e0aa8eef64e0170f9d338b939ce25caed503e2"
+        "path": ".",
+        "files": 63,
+        "sha256": "c9de4a5430cd38a1a46171272a776eb65933711eb17f2811cdd4857ae761d0d8"
       },
       "evidence": {
         "path": ".scratch/vocabulary-live-04-control-recovery",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain matched historical control, exact exchanges, attributed reading and recovery mechanism comparison for the commissioned vocabulary revision.",
-        "until": "Vocabulary comparison and repairs reviewed and principal authorizes disposal"
+        "reason": "Inspect the ordinary, recovery and constrained matched vocabulary encounters.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2281,17 +1161,17 @@
       "date_from": "review-03/result.json field at",
       "summary": "Vocabulary comparison: control three-turn stop; 75 final procedural checks, preserved partial selection, manager seal, verified delivery, explicit confirmation and closure. All earlier snapshot files unchanged.",
       "result": {
-        "path": "review-03",
-        "files": 11,
-        "sha256": "7457b83b32b26ad22e9df01f54d5a8af0b28a727a3b08665d970f9e847d50cb9"
+        "path": ".",
+        "files": 111,
+        "sha256": "28aaacec7cfdc000e3657010fedd0977fd3b30095e00406c059472e55081d38d"
       },
       "evidence": {
         "path": ".scratch/vocabulary-live-05-control-constrained",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the matched constrained control, all three immutable snapshots, refusal and unsent warning, partial return, attributed readings and closure evidence for the vocabulary comparison.",
-        "until": "Vocabulary comparison and repairs reviewed and principal authorizes disposal"
+        "reason": "Inspect the ordinary, recovery and constrained matched vocabulary encounters.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2301,17 +1181,17 @@
       "date_from": "review-03/result.json field at",
       "summary": "Vocabulary comparison: candidate three-turn stop; 73 final procedural checks, empty selection faithfully manager-sealed, delivery verified and confirmed, closed without surrendered losses. Earlier snapshot files unchanged.",
       "result": {
-        "path": "review-03",
-        "files": 11,
-        "sha256": "371feee78c88a02fd12c25f5e4a3e32d61a6dd3945c946ca105dd9bca9dd7dd0"
+        "path": ".",
+        "files": 111,
+        "sha256": "eb8be759c44f35f6f929c58491ecd51cef409af1df30ee8a3b1815b6dc347dc4"
       },
       "evidence": {
         "path": ".scratch/vocabulary-live-06-candidate-constrained",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the matched constrained candidate, all three snapshots, refusal, unsent warning, empty return, attributed readings and closure evidence.",
-        "until": "Vocabulary comparison and repairs reviewed and principal authorizes disposal"
+        "reason": "Inspect the ordinary, recovery and constrained matched vocabulary encounters.",
+        "until": "These particular encounters no longer inform a current evaluation."
       }
     },
     {
@@ -2319,59 +1199,299 @@
       "kind": "experiment",
       "date": "2026-11-09T16:42:54Z",
       "date_from": "comparison-final/result.json field at",
-      "summary": "Six-placement matched Haiku vocabulary comparison complete: all six audits closed, 36 requests, 46 tool calls, 205625 input and 6586 output tokens; calculated USD 0.0238555. One selected citation-refusal wording defect.",
+      "summary": "Inspect the three matched comparisons, exact inputs, authority, costs and readings.",
       "result": {
-        "path": "comparison-final",
-        "files": 1,
-        "sha256": "d9aaf9e897bc1b1bfb6a6a3c4afd5790a85641348ad2f549d1ef50778ee4e24a"
+        "path": ".",
+        "files": 47,
+        "sha256": "a9dd49c0b9cbe0dc47f6e6fc224b49ba0fffdd7a0159d128b91f70b9dda1e56f"
       },
       "evidence": {
         "path": ".scratch/vocabulary-study-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain exact study inputs, authorization, source bindings, pair comparisons, original failed setup attempts and final review/resource bindings.",
-        "until": "Vocabulary comparison and repairs reviewed and principal authorizes disposal"
+        "reason": "Inspect the three matched comparisons, exact inputs, authority, costs and readings.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
       }
     },
     {
-      "id": "vocabulary-citation-driver-01",
+      "id": "fable-problem-b-01",
       "kind": "experiment",
-      "date": "2026-11-09T16:56:50Z",
-      "date_from": "review/result.json field at",
-      "summary": "Independent citation-refusal regression: old native binaries have 24 expected message-scope failures; repaired case passes 1849 checks with both sabotage and all eight message controls firing.",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Interpret the second-model encounter against its authority and settings.",
       "result": {
-        "path": "review",
-        "files": 1,
-        "sha256": "a4ee948b602080da2b08fc0029f5e8cb1bb0587718dac02df969354f40ca08a9"
+        "path": ".",
+        "files": 15,
+        "sha256": "459f7dfb4dc328c61916f6cf48cff7a89d9c71250702e75f8e0d0d251eec375a"
       },
       "evidence": {
-        "path": ".scratch/vocabulary-citation-driver-01",
+        "path": ".scratch/fable-problem-b-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain independently authored checks, skipped sandbox attempts, literal before/after evidence and regression controls.",
-        "until": "Vocabulary repair qualification reviewed and principal authorizes disposal"
+        "reason": "Interpret the second-model encounter against its authority and settings.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
       }
     },
     {
-      "id": "vocabulary-citation-repair-01",
+      "id": "frsrr-inspection-01",
       "kind": "experiment",
-      "date": "2026-11-09T16:58:04Z",
-      "date_from": "review/result.json field at",
-      "summary": "Citation-refusal repair native verification: Cargo 247 default and 311 fault/sabotage passes (35 ignored); driver self-test 352 passes; retained before builds and original sandbox failure.",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Inspect the substantive checks behind the frsrr Problem A/B readings.",
       "result": {
-        "path": "review",
-        "files": 1,
-        "sha256": "d627c62879d8298dcd675389a49c300ec980a305222d68132d882ae241c2e579"
+        "path": ".",
+        "files": 53,
+        "sha256": "082e0b8309c9b787d41fc62177f1762ae6d4ada6337e436d2c36de62fd89a611"
       },
       "evidence": {
-        "path": ".scratch/vocabulary-citation-repair-01",
+        "path": ".scratch/frsrr-inspection-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain original failed checks, before binary bindings, completed host verification and integrated source-bound review.",
-        "until": "Vocabulary repair qualification reviewed and principal authorizes disposal"
+        "reason": "Inspect the substantive checks behind the frsrr Problem A/B readings.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "frsrr-interface-inputs-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Frozen questions and material for the next auditor comparison.",
+      "result": {
+        "path": ".",
+        "files": 38,
+        "sha256": "8c5fa00b8f36a710c899b2aa8174a4f5ff52c89ce4b19f52f7686c8538819899"
+      },
+      "evidence": {
+        "path": ".scratch/frsrr-interface-inputs-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Frozen questions and material for the next auditor comparison.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "frsrr-study-commission-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Interpret baseline authority, settings, costs and original reader responses.",
+      "result": {
+        "path": ".",
+        "files": 19,
+        "sha256": "ba66acfc96866a0c8fe368ec853e28091a0d6e8cdd0357c8e0b8127d20ff961b"
+      },
+      "evidence": {
+        "path": ".scratch/frsrr-study-commission-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret baseline authority, settings, costs and original reader responses.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "frsrr-study-submissions-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Interpret the frsrr baseline questions and arrangements as supplied.",
+      "result": {
+        "path": ".",
+        "files": 72,
+        "sha256": "54d3926cb8b758bc9398b1d5b35ade9a0aab10a40cea9750b255382244f208ba"
+      },
+      "evidence": {
+        "path": ".scratch/frsrr-study-submissions-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret the frsrr baseline questions and arrangements as supplied.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "haiku-authoring-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Inspect the unadopted guidance candidate, patch, settings and declared differences.",
+      "result": {
+        "path": ".",
+        "files": 14,
+        "sha256": "6909de1cd73c9811b0f67e80ac135d8e957c5f591df7bc0695dd167408ce33b4"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-authoring-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the unadopted guidance candidate, patch, settings and declared differences.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "haiku-recovery-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Interpret recovery trials against their frozen inputs and settings.",
+      "result": {
+        "path": ".",
+        "files": 28,
+        "sha256": "a75c1314596906f64a84665f209b9996c8a7bf575deb6ab577e5c9afc914acb9"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret recovery trials against their frozen inputs and settings.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "haiku-recovery-02",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Interpret recovery trials against their frozen inputs and settings.",
+      "result": {
+        "path": ".",
+        "files": 30,
+        "sha256": "89a6ce15f840ec45509c8c67dd32daa57d780a437fcda4f48044dcfb3501013f"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret recovery trials against their frozen inputs and settings.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "haiku-recovery-03",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Interpret recovery trials against their frozen inputs and settings.",
+      "result": {
+        "path": ".",
+        "files": 28,
+        "sha256": "ed8d14c9690316d3befe096a38b5949ea36e37f18eea614f596425968dbf0b57"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-03",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret recovery trials against their frozen inputs and settings.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "haiku-recovery-block-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Inspect the five-case findings, trial 14 limited review and custody observations.",
+      "result": {
+        "path": ".",
+        "files": 335,
+        "sha256": "8eb4054715c1f08f6a612e28b2e2f90a9547bfe5bb4befdcaec96c4e6d2561ce"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-block-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the five-case findings, trial 14 limited review and custody observations.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "haiku-recovery-followups-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Interpret the paging and arithmetic encounters against their exact inputs.",
+      "result": {
+        "path": ".",
+        "files": 27,
+        "sha256": "37ff770f3e4324b14f908d2321d290cf76f3c72ccf9a5e62486af1d6970e171e"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-recovery-followups-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret the paging and arithmetic encounters against their exact inputs.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "haiku-stress-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Interpret stress encounters against their questions, plants and prior predictions.",
+      "result": {
+        "path": ".",
+        "files": 99,
+        "sha256": "e2ad0b08d1e6fa56eb28e7036d8f973603311d1a01cec503f01dfef4dfe4c15f"
+      },
+      "evidence": {
+        "path": ".scratch/haiku-stress-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret stress encounters against their questions, plants and prior predictions.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "rapid-iteration-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Original independent consultations and measurements for the pending design decision.",
+      "result": {
+        "path": ".",
+        "files": 12,
+        "sha256": "8ce775a72262453af9a7c94b4fe5989079f1721b5ac71c16430a6b5da841781b"
+      },
+      "evidence": {
+        "path": ".scratch/rapid-iteration-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Original independent consultations and measurements for the pending design decision.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
+      }
+    },
+    {
+      "id": "vocabulary-revision-01",
+      "kind": "experiment",
+      "date": "2026-11-09T21:59:33Z",
+      "date_from": "DONE",
+      "summary": "Inspect the principal readings that motivated the adopted vocabulary revision.",
+      "result": {
+        "path": ".",
+        "files": 4,
+        "sha256": "7a169f10624d60eee517594d3089b7dbaff39ada49262739b814dfe841f6e08a"
+      },
+      "evidence": {
+        "path": ".scratch/vocabulary-revision-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the principal readings that motivated the adopted vocabulary revision.",
+        "until": "The linked evaluation or pending decision no longer needs these originals."
       }
     }
   ]

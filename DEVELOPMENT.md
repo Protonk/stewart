@@ -280,98 +280,62 @@ explicit permission, with its models and budget named.
 
 ## Evidence and retention
 
-Runs write their records under `.scratch/<run>/` in the repository: container
-suite evidence, driver evidence folders, and the outputs of commands run by hand
-for a study. `.scratch/` is ignored by Git, so records stay on the machine that
-made them and do not travel with the repository.
+The working repository serves one agent/human team building, testing and
+evaluating the current application. Keep source, specifications, test fixtures
+and generators, the lockfile and one vendored dependency tree. Build caches,
+staging copies, local checks and synthetic test work are disposable. Use `.tmp/`
+for routine check output; overwrite or remove it once consumed. A command log is
+not an archival deliverable.
 
-The qualification record is the tracked account of what the suites have shown:
-[`apparatus/qualified.json`](apparatus/qualified.json), with
-[`apparatus/qualified.md`](apparatus/qualified.md) generated from it by
-`apparatus/qualified.py`. Never edit the Markdown by hand. The script's
-`extract` reads a run of `acceptance.sh` or `step2.sh` from its own evidence
-and decides its outcome mechanically. For each suite and platform the record
-keeps the latest run and, when that run did not qualify, the latest run that
-did (the front). Any other record stays only while it is pinned, with a reason
-and a condition for its release; Git history keeps the records that leave.
-`check` fails when the Markdown differs from a fresh render, a source commit is
-missing from the repository or a record no longer matches the evidence on this
-machine, and it reports the changes under `service/` and `apparatus/` since
-each front run's source commit.
+Container suites and live studies initially use `.scratch/<run>/`. New runs use
+new folders so a failed attempt cannot overwrite evidence still under review.
+Neither `.tmp/` nor `.scratch/` travels with Git. The manager supplies backups
+for any selected original evidence that cannot be reproduced.
 
-- **A new attempt gets a new directory.** The suites take their evidence folder
-  as a required argument, and the suites and the driver refuse an existing one;
-  give each run its own name directly under `.scratch/`.
-- **Run records are never rewritten.** A correction or reinterpretation goes in
-  the document that cites the run, or into a new run.
-- **Retention follows the record and citation.** An entry directly under
-  `.scratch/` stays while it is on the front, pinned (`qualified.py pin`, or
-  `pin --experiment` for evidence that is not a suite run), or cited as
-  `.scratch/NAME`, in any letter case, by a tracked or untracked-but-not-ignored
-  file outside `.scratch/` other than the record's own files.
-  `qualified.py candidates` lists every entry with its size, marking each as
-  kept, with its reasons, or as a removal candidate. It also keeps a folder
-  that holds the digests a record entry recorded, so renaming an entry cannot
-  expose its folder, and it exits 1 when an entry's folder is absent and no
-  folder holds its digests, as on a machine without the evidence. Act only on a
-  run that exits 0. Removal is by hand and the user's decision; no script
-  removes records.
+### Current test evidence
 
-**Protected local records.** Keep these:
+[`qualified.py`](apparatus/qualified.py) maintains
+[`qualified.json`](apparatus/qualified.json) and its generated Markdown. For
+each suite/platform keep the latest result and, if it failed, the last qualified
+result. `check` verifies retained results and reports source drift. A result
+applies to its recorded binary and source, not automatically to later code.
 
-- The refs `refs/development-evidence/successor-inquiry-01/a1`, `a2` and `a3`,
-  which keep three historical outcome commits reachable that no branch
-  contains. Do not delete them; a main-only clone does not carry them.
-- The 21 original product-audit source copies under `A1/` to `A3/` in
-  `.scratch/successor-inquiry-01/answers/attempt-01/sources/`, and the records
-  `history-reachability-01.json` and its correction
-  `history-preservation-01.json` in `.scratch/successor-inquiry-01/`. Do not
-  prune them.
+During review keep the independent witness, actual command outputs, counts,
+failures, skips, environment and binary/image identities. Controls must fire;
+missing evidence and failed comparisons cannot be reported as passes. For
+missing-capture, extraction or deletion investigations keep the witness outside
+the operation under test, together with the original affected material, until
+review resolves what happened.
 
-The record pins the `.scratch/successor-inquiry-01` folder, which holds the
-second item, but not the refs: they are Git state outside `.scratch`, kept by
-this rule alone. `coordination/successor-inquiry-01/CORPUS-RETENTION.md` at
-commit `267aaf0` explains what they protect.
+The acceptance driver normally uses `--keep-work failed`: successful cases and
+firing controls release their synthetic working trees. The suite exports
+independent evidence and, on failure, the remaining work. Pass `all` as the
+second argument to `apparatus/acceptance.sh` only for an investigation needing
+all original work. Export failure retains the container and fails the suite.
+After review remove the container and bulky generated files no longer needed;
+keep the concise result and any specifically selected failure evidence. A fixed
+reproducible defect belongs in a regression test, not an indefinite old run.
 
-An evidence run keeps what ACCEPTANCE requires until its results have been
-reviewed ("What a test run keeps", C18): the witness, and the damaged originals
-and bulky material that review needs, under the rules above. The driver writes
-its witness, each variant's checks and inventories, and each command's argv,
-streams, exit status and timing into the evidence folder, and removes nothing
-there. The archives, folders and homes a case works on are in its work
-directory (`--work`). With the default `--keep-work failed`, once a variant has
-served its purpose (it passed, or its control fired) and its results are
-written, the driver removes that variant's work and lists the removal in the
-run's `RESULT.json`; a variant that did not serve its purpose keeps its work,
-and up to 64 MiB of it is copied into the evidence. `--keep-work all` keeps
-every variant's work. The acceptance suite uses `--keep-work all`. After the
-driver returns it copies the independent evidence folder and writes
-`driver-<arch>/work.tar`, its listing, SHA-256 and export start/end times. The
-archive preserves regular-file bytes and Linux names/modes/links; tar warnings
-about special specimens remain recorded. Original working trees, including
-special files, remain in the named driver containers until review, even if
-export fails. Export failures fail the suite. Removing those containers after
-review is a separate, explicit disposal; the suite does not remove them.
-The service's integration tests remove their temporary trees as each test
-finishes.
+### Selected evaluations
 
-What a run must show:
+Archive originals only when they have a present inspection purpose and would
+be costly or impossible to reproduce. A particular model encounter or human
+reading cannot be reproduced by another invocation. Retain the question and
+inputs, effective arrangement, original response/answer, relevant custody and
+usage records, and the attributed assessment needed to inspect the finding.
+Keep unresolved limits visible. A paid call alone is not a reason to retain it.
+Old synthetic environments are not needed merely to read a completed encounter.
 
-- A clean result needs a firing control, a case differing in the measured
-  property and an invariance case (ACCEPTANCE, "Rules every check follows"). A
-  control that does not fire is a broken check, and a run that lost its control
-  is not evidence of the property it guards.
-- The witness sits outside whatever the run under test may change or remove,
-  as the driver keeps its own outside Stewart's archive.
-- Preserve command outputs. The scripts keep every step's stdout, stderr and
-  exit status; commands run by hand for a study keep theirs beside its record.
-- Report actual counts: cases run, passed, failed and skipped, and the controls
-  that fired, as the run's own summary gives them (`host/SUMMARY`, the driver's
-  `RESULTS.md`), never as what should have run.
-- A run qualifies the commit it archived (a suite's `host/commit.stdout`) and
-  the binaries whose digests it recorded; by itself it says nothing about a
-  later source.
-- Qualify actual access and stopping, not merely the settings meant to produce
-  them.
-- An explanation remains a hypothesis until a comparison distinguishes it from
-  its rivals.
+Use explicit pins in the existing qualification index for selected evaluations
+and inputs; state their current purpose and release condition. Citations are
+navigation and do not preserve entire folders. `qualified.py candidates` lists
+unselected folders without deleting them; resolve missing-record warnings before
+acting. A pin protects its named original result, not unrelated caches or
+preparation logs beside it. Preserve exact original records that remain; revise
+the maintained interpretation or retention scope rather than historical bytes.
+
+Routine disposal under these rules is part of maintaining the repository, not a
+new approval procedure. Do not discard unfinished product custody, an archive
+still needed for an active audit, or its exact writer. Finish or explicitly
+dispose of that undertaking first. Retire temporary worktrees when their task
+ends; ordinary Git history retains source without additional working copies.

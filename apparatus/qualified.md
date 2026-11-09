@@ -25,247 +25,7 @@ not carry them.
 | toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 
-## Pins
-
-| Record | Kind | Reason | Until |
-| --- | --- | --- | --- |
-| [acceptance-04](#acceptance-04) | acceptance | Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis | The user has reviewed the corrected acceptance result and original failed evidence |
-| [acceptance-05](#acceptance-05) | acceptance | The qualified executable bound by the retained launcher rehearsals and live experiment records, and the baseline of the focused timing comparison | Launcher rehearsals on the newly qualified executable are reviewed and the user authorizes disposal of this run and its containers |
-| [acceptance-vocabulary-01](#acceptance-vocabulary-01) | acceptance | Retain the first vocabulary-revision acceptance failure and its exact binaries beside the repaired run | The user has reviewed the vocabulary acceptance outcome and the original failed evidence |
-| [acceptance-vocabulary-02](#acceptance-vocabulary-02) | acceptance | Retain the native protocol timing failure at the 120 ms tripwire and its exact binaries, which the focused timing comparison measured | The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this run and its containers |
-| [acceptance-vocabulary-03](#acceptance-vocabulary-03) | acceptance | Frozen candidate executable and qualification consumed by the completed six-placement vocabulary comparison and its retained matching rehearsals. | All dependent study evidence and rehearsals reviewed and principal authorizes disposal |
-| [acceptance-vocabulary-citation-01](#acceptance-vocabulary-citation-01) | acceptance | Final Linux qualification of the citation-refusal correction completing the vocabulary revision; retains independent controls and original working archives. | Completed vocabulary revision and dependent comparisons reviewed and principal authorizes disposal |
-| [successor-inquiry-01](#successor-inquiry-01) | experiment | recovery-critical design-era records | the user decides they are no longer needed |
-| [credential-emulation-01](#credential-emulation-01) | experiment | Retain the witnesses and original containers supporting the credential acceptance corrections | The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers |
-| [sanity-launch-01](#sanity-launch-01) | experiment | Retain the first launcher failure and the private original container until review | The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup |
-| [sanity-launch-02](#sanity-launch-02) | experiment | Retain original private audits and credential witness from the failed integrated rehearsal | The user has reviewed the corrected rehearsal and authorizes disposal of this container and its witness |
-| [launcher-observer-probe-01](#launcher-observer-probe-01) | experiment | Retain firing observer controls and original failure diagnosis supporting the launcher correction | The user has reviewed the corrected rehearsal and authorizes disposal of these controls |
-| [sanity-launch-03](#sanity-launch-03) | experiment | Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation | The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness |
-| [sanity-live-01](#sanity-live-01) | experiment | Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review | The user has reviewed the completed sanity commission and authorizes disposal of this container |
-| [sanity-live-02](#sanity-live-02) | experiment | Retain the first real-provider run, its retained container and private originals through review | The user has reviewed the sanity commission result and authorizes disposal of this container |
-| [sanity-live-03](#sanity-live-03) | experiment | Retain the real-provider rejection evidence and the self-inflicted host-scan control through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
-| [sanity-live-04](#sanity-live-04) | experiment | Retain the real-provider limit and manager-close evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
-| [sanity-live-05](#sanity-live-05) | experiment | Retain the real-provider effort evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
-| [sanity-live-06](#sanity-live-06) | experiment | Retain the real-provider output-limit evidence through review | The user has reviewed the mechanism runs and authorizes disposal of this container |
-| [sanity-launch-04](#sanity-launch-04) | experiment | Retain the rehearsal that qualifies the current launch code for further real-key use | A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container |
-| [c10-launch-01](#c10-launch-01) | experiment | Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
-| [c10-live-01](#c10-live-01) | experiment | Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
-| [c10-live-02](#c10-live-02) | experiment | Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
-| [c10-live-03](#c10-live-03) | experiment | Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
-| [c10-live-04](#c10-live-04) | experiment | Retain this pilot audit and its substantive inspection concern, reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
-| [c10-live-05](#c10-live-05) | experiment | Retain this pilot audit, citation-recovery observations, reviewed export and private container through the six-audit assessment and billing reconciliation | The principal has reviewed the pilot and authorizes disposal of this container and its evidence |
-| [c10-live-06](#c10-live-06) | experiment | Retain the final pilot audit, original refusals and A-only answer for six-audit review and billing reconciliation. | The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence |
-| [c10-haiku-commission-01](#c10-haiku-commission-01) | experiment | Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison. | The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence |
-| [c10-study-launch-01](#c10-study-launch-01) | experiment | Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
-| [frsrr-baseline-a-01](#frsrr-baseline-a-01) | experiment | Authorized interface-study baseline, original input and return witnesses, and live saved-connection launch and collection | The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence |
-| [connection-checks-01](#connection-checks-01) | experiment | Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits | The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition |
-| [frsrr-baseline-b-01](#frsrr-baseline-b-01) | experiment | Authorized interface-study baseline, original input and return witnesses, and reviewed follow-up collection | The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence |
-| [haiku-authoring-acceptance-01](#haiku-authoring-acceptance-01) | experiment | Preserve the first failed Linux attempt and its controls for the authoring study. | The authoring study is reviewed and the principal releases its evidence. |
-| [haiku-authoring-acceptance-02](#haiku-authoring-acceptance-02) | experiment | Bind the isolated authoring variant and preserve the limits of its acceptance evidence. | The authoring study is reviewed and the principal releases the variant evidence. |
-| [haiku-authoring-rehearsal-01](#haiku-authoring-rehearsal-01) | experiment | Launcher and frozen-input evidence for the account-composition-01 A/B experiment | The authoring intervention is reviewed and no retained live packet relies on this rehearsal |
-| [haiku-authoring-live-01](#haiku-authoring-live-01) | experiment | Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading | The principal has reviewed the interface comparison and authorizes disposal of its container and evidence |
-| [fable-problem-b-live-01](#fable-problem-b-live-01) | experiment | Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation. | Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then. |
-| [haiku-stress-rehearsal-03](#haiku-stress-rehearsal-03) | experiment | Retain the reviewed rehearsal that backs the five bounded Haiku stress packets, including the first multi-page material rehearsal, with its private originals and independent witnesses | A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses |
-| [haiku-stress-live-01](#haiku-stress-live-01) | experiment | Retain the first turn-limit stress placement, its manager-sealed return and the pre-registered classification and findings | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
-| [haiku-stress-live-02](#haiku-stress-live-02) | experiment | Retain the second turn-limit stress placement and its empty return beside the first for comparison | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
-| [haiku-stress-live-03](#haiku-stress-live-03) | experiment | Retain the pagination stress placement, its correct return and the route that avoided paging | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
-| [haiku-stress-live-04](#haiku-stress-live-04) | experiment | Retain the first many-part placement that hit the per-request output cap inside thinking, and the record of the unstarted second audit | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
-| [haiku-stress-live-05](#haiku-stress-live-05) | experiment | Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy | Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then |
-| [c10-report-linux-01](#c10-report-linux-01) | experiment | Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses. | A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage. |
-| [haiku-recovery-live-01](#haiku-recovery-live-01) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-02](#haiku-recovery-live-02) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-03](#haiku-recovery-live-03) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-04](#haiku-recovery-live-04) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-05](#haiku-recovery-live-05) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-06](#haiku-recovery-live-06) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-07](#haiku-recovery-live-07) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-08](#haiku-recovery-live-08) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-09](#haiku-recovery-live-09) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-10](#haiku-recovery-live-10) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-11](#haiku-recovery-live-11) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-12](#haiku-recovery-live-12) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-13](#haiku-recovery-live-13) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-14](#haiku-recovery-live-14) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-15](#haiku-recovery-live-15) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-16](#haiku-recovery-live-16) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-17](#haiku-recovery-live-17) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [haiku-recovery-live-18](#haiku-recovery-live-18) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
-| [vocabulary-timing-01](#vocabulary-timing-01) | experiment | Evidence for raising the protocol tripwire from 120 to 200 ms and for reading the acceptance-vocabulary-02 timing failure | The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this comparison and its six containers |
-| [c10-vocabulary-launch-01](#c10-vocabulary-launch-01) | experiment | Retain the checked C10 rehearsal on the qualified vocabulary build, its source bindings, original snapshots and independent witnesses. | A reviewed matching rehearsal supersedes it and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage. |
-| [sanity-launch-05](#sanity-launch-05) | experiment | Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use | A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container |
-| [vocabulary-control-rehearsal-01](#vocabulary-control-rehearsal-01) | experiment | Preserve the control launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison. | The comparison is reviewed and the principal authorizes disposal of the evidence and container. |
-| [vocabulary-candidate-rehearsal-01](#vocabulary-candidate-rehearsal-01) | experiment | Preserve the candidate launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison. | The comparison is reviewed and the principal authorizes disposal of the evidence and container. |
-| [vocabulary-live-01-control-ordinary](#vocabulary-live-01-control-ordinary) | experiment | Retain the matched ordinary control, original interaction, answer and custody evidence for the vocabulary comparison. | The comparison is reviewed and the principal authorizes evidence and container disposal. |
-| [vocabulary-live-02-candidate-ordinary](#vocabulary-live-02-candidate-ordinary) | experiment | Retain the matched ordinary candidate, original interaction, concrete wording defect and custody evidence. | The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal. |
-| [vocabulary-live-03-candidate-recovery](#vocabulary-live-03-candidate-recovery) | experiment | Retain exercised recovery, exact state/handle observations, answer and custody evidence for the vocabulary comparison. | The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal. |
-| [vocabulary-live-04-control-recovery](#vocabulary-live-04-control-recovery) | experiment | Retain matched historical control, exact exchanges, attributed reading and recovery mechanism comparison for the commissioned vocabulary revision. | Vocabulary comparison and repairs reviewed and principal authorizes disposal |
-| [vocabulary-live-05-control-constrained](#vocabulary-live-05-control-constrained) | experiment | Retain the matched constrained control, all three immutable snapshots, refusal and unsent warning, partial return, attributed readings and closure evidence for the vocabulary comparison. | Vocabulary comparison and repairs reviewed and principal authorizes disposal |
-| [vocabulary-live-06-candidate-constrained](#vocabulary-live-06-candidate-constrained) | experiment | Retain the matched constrained candidate, all three snapshots, refusal, unsent warning, empty return, attributed readings and closure evidence. | Vocabulary comparison and repairs reviewed and principal authorizes disposal |
-| [vocabulary-study-01](#vocabulary-study-01) | experiment | Retain exact study inputs, authorization, source bindings, pair comparisons, original failed setup attempts and final review/resource bindings. | Vocabulary comparison and repairs reviewed and principal authorizes disposal |
-| [vocabulary-citation-driver-01](#vocabulary-citation-driver-01) | experiment | Retain independently authored checks, skipped sandbox attempts, literal before/after evidence and regression controls. | Vocabulary repair qualification reviewed and principal authorizes disposal |
-| [vocabulary-citation-repair-01](#vocabulary-citation-repair-01) | experiment | Retain original failed checks, before binary bindings, completed host verification and integrated source-bound review. | Vocabulary repair qualification reviewed and principal authorizes disposal |
-
 ## Records
-
-### acceptance-04
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
-- Source commit: `c4f6d7a7f3055a2a323cd4c4e96fda8442507163`; archive SHA-256 `5d5024934656600dc573d8a25bc2343012a7c9349bf535c5dc6d5b44499d9a28`
-- Finished: 2026-11-01T18:09:08Z
-- Outcome: **failed**
-- Run-level failures: host/DONE reports failures=1; host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-04/driver-amd64/)
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis; until The user has reviewed the corrected acceptance result and original failed evidence
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **qualified** | **failed** |
-| Failures | none | host/driver-amd64.exit is 1; driver-amd64/driver.exit is 1; driver-amd64/driver-final.exit is 1; cases: 123 selected, 121 passed, 2 failed, 0 skipped; 2 checks failed outside control variants; failed_cases: credentials.input, credentials.process; driver-amd64/evidence/RESULT.json: driver exit 1 |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
-| Driver self-test | 309/309 | 309/309 |
-| Cases passed | 125/125 | 121/123 |
-| Cases | selected 125, ran 125, passed 125, failed 0, skipped 0 | selected 123, ran 123, passed 121, failed 2, skipped 0 |
-| Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 154, failed 76, skipped 0 |
-| Checks | passed 153470, failed outside controls 0, failed inside controls 994 | passed 153468, failed outside controls 2, failed inside controls 994 |
-| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
-| Driver controls fired | 12/12 | 12/12 |
-| Timing gate | on, passed: worst 3.146 ms; protocol worst 99.743 ms; threshold 100.0 ms | off (reported, not gated): worst 44.984 ms; protocol worst 143.847 ms; threshold 100.0 ms |
-| End to end (`e2e.reacting-audit`) | pass, 848/848 checks | pass, 848/848 checks |
-| Release binary SHA-256 | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
-| Test binary SHA-256 | `ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6` | `5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b` |
-| RESULT.json SHA-256 | `52b8ebab10e31b2bbcda0340809b851a5c0edea2fa4ef6d3cbfcc0a9a7abcb9f` | `99e7f82797b006287b45831d0dcf5a8161c163c7b918e46f9f39885d8d517572` |
-
-### acceptance-05
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
-- Source commit: `f4bbb9c9ef3bcac811427224f6abc7a553459fa8`; archive SHA-256 `85d6443f01eed64aa393a506300689ca73349b1222d1a48dae2127bc4e8bb41f`
-- Finished: 2026-11-01T18:56:51Z
-- Outcome: **qualified**
-- Run-level failures: none
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-05` (local: only on the machine that ran it; clones do not carry it)
-- Pin: The qualified executable bound by the retained launcher rehearsals and live experiment records, and the baseline of the focused timing comparison; until Launcher rehearsals on the newly qualified executable are reviewed and the user authorizes disposal of this run and its containers
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **qualified** | **qualified** |
-| Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
-| Driver self-test | 319/319 | 319/319 |
-| Cases passed | 125/125 | 123/123 |
-| Cases | selected 125, ran 125, passed 125, failed 0, skipped 0 | selected 123, ran 123, passed 123, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 156, failed 74, skipped 0 |
-| Checks | passed 153471, failed outside controls 0, failed inside controls 994 | passed 153471, failed outside controls 0, failed inside controls 994 |
-| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
-| Driver controls fired | 13/13 | 13/13 |
-| Timing gate | on, passed: worst 3.109 ms; protocol worst 96.167 ms; threshold 100.0 ms | off (reported, not gated): worst 49.162 ms; protocol worst 154.975 ms; threshold 100.0 ms |
-| End to end (`e2e.reacting-audit`) | pass, 848/848 checks | pass, 848/848 checks |
-| Release binary SHA-256 | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
-| Test binary SHA-256 | `ef3aa222c5c28e6a1ba7c364dfc4f0060f8bb2dd601131a4f15e6b0b896326e6` | `5c8dfc66d4261af13fd29ef7e305b185f524d52900063f627cf39867d495c41b` |
-| RESULT.json SHA-256 | `44fbbebbdfae205701ab99990da041f1c20e1bd63fc6946af9e56b11bc66b150` | `ec96969bd74f2e4a66bf7c50f0173b7e61378ef87c9ebdfbdd53b9af50b710cb` |
-
-### acceptance-vocabulary-01
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
-- Source commit: `f6a2fd59383e58e6c9adc7c52b4682bb8e4d3f6a`; archive SHA-256 `00c57a0d8db7dbe91b71a6c39c05c084697ff4ac62070a2a180ec348ff8a80b1`
-- Finished: 2026-11-08T18:50:36Z
-- Outcome: **failed**
-- Run-level failures: host/DONE reports failures=2; host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-01/driver-arm64/); host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-01/driver-amd64/)
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-vocabulary-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the first vocabulary-revision acceptance failure and its exact binaries beside the repaired run; until The user has reviewed the vocabulary acceptance outcome and the original failed evidence
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **failed** | **failed** |
-| Failures | host/driver-arm64.exit is 1; driver-arm64/driver.exit is 1; driver-arm64/driver-final.exit is 1; cases: 125 selected, 111 passed, 14 failed, 0 skipped; 65 checks failed outside control variants; sabotage controls: 58 of 74 fired; failed_cases: c5.package, c5.partial-delivery, c5.t9-destination, c5.conflicting-package, c5.lost-run-reply, c5.t10-damaged-payload, c5.payload-corrupt-fault, c5.unknown-membership, c17.close-failures, c8.close-every-state, c8.close-faults, c8.close-running, c16.status-after-launch, c4.provider-compaction; broken_checks: baseline_failed c5.package/drop_last_entry, baseline_failed c5.package/deliver_conversation, baseline_failed c5.package/regenerate_rendering, baseline_failed c5.package/render_conclusion, baseline_failed c5.partial-delivery/skip_delivery_verification, baseline_failed c5.partial-delivery/remove_partial_package, baseline_failed c5.unknown-membership/unknown_membership_empty, baseline_failed c8.close-every-state/skip_confirmation, baseline_failed c8.close-every-state/empty_return_before_launch, baseline_failed c8.close-running/seal_as_stopped, baseline_failed c16.status-after-launch/ended_as_submitted, baseline_failed c16.status-after-launch/seal_as_delivered, baseline_failed c4.provider-compaction/omit_compaction, baseline_failed c4.provider-compaction/alter_compaction_summary, baseline_failed c4.provider-compaction/retain_precompaction_context, baseline_failed c4.provider-compaction/ignore_compaction_usage, never_fired (any case)/omit_compaction, never_fired (any case)/alter_compaction_summary, never_fired (any case)/retain_precompaction_context, never_fired (any case)/ignore_compaction_usage, never_fired (any case)/drop_last_entry, never_fired (any case)/skip_delivery_verification, never_fired (any case)/deliver_conversation, never_fired (any case)/regenerate_rendering, never_fired (any case)/render_conclusion, never_fired (any case)/remove_partial_package, never_fired (any case)/skip_confirmation, never_fired (any case)/seal_as_stopped, never_fired (any case)/empty_return_before_launch, never_fired (any case)/ended_as_submitted, never_fired (any case)/seal_as_delivered, never_fired (any case)/unknown_membership_empty; controls_never_fired: omit_compaction, alter_compaction_summary, retain_precompaction_context, ignore_compaction_usage, drop_last_entry, skip_delivery_verification, deliver_conversation, regenerate_rendering, render_conclusion, remove_partial_package, skip_confirmation, seal_as_stopped, empty_return_before_launch, ended_as_submitted, seal_as_delivered, unknown_membership_empty; driver-arm64/evidence/RESULT.json: driver exit 1 | host/driver-amd64.exit is 1; driver-amd64/driver.exit is 1; driver-amd64/driver-final.exit is 1; cases: 123 selected, 109 passed, 14 failed, 0 skipped; 65 checks failed outside control variants; sabotage controls: 58 of 74 fired; failed_cases: c5.package, c5.partial-delivery, c5.t9-destination, c5.conflicting-package, c5.lost-run-reply, c5.t10-damaged-payload, c5.payload-corrupt-fault, c5.unknown-membership, c17.close-failures, c8.close-every-state, c8.close-faults, c8.close-running, c16.status-after-launch, c4.provider-compaction; broken_checks: baseline_failed c5.package/drop_last_entry, baseline_failed c5.package/deliver_conversation, baseline_failed c5.package/regenerate_rendering, baseline_failed c5.package/render_conclusion, baseline_failed c5.partial-delivery/skip_delivery_verification, baseline_failed c5.partial-delivery/remove_partial_package, baseline_failed c5.unknown-membership/unknown_membership_empty, baseline_failed c8.close-every-state/skip_confirmation, baseline_failed c8.close-every-state/empty_return_before_launch, baseline_failed c8.close-running/seal_as_stopped, baseline_failed c16.status-after-launch/ended_as_submitted, baseline_failed c16.status-after-launch/seal_as_delivered, baseline_failed c4.provider-compaction/omit_compaction, baseline_failed c4.provider-compaction/alter_compaction_summary, baseline_failed c4.provider-compaction/retain_precompaction_context, baseline_failed c4.provider-compaction/ignore_compaction_usage, never_fired (any case)/omit_compaction, never_fired (any case)/alter_compaction_summary, never_fired (any case)/retain_precompaction_context, never_fired (any case)/ignore_compaction_usage, never_fired (any case)/drop_last_entry, never_fired (any case)/skip_delivery_verification, never_fired (any case)/deliver_conversation, never_fired (any case)/regenerate_rendering, never_fired (any case)/render_conclusion, never_fired (any case)/remove_partial_package, never_fired (any case)/skip_confirmation, never_fired (any case)/seal_as_stopped, never_fired (any case)/empty_return_before_launch, never_fired (any case)/ended_as_submitted, never_fired (any case)/seal_as_delivered, never_fired (any case)/unknown_membership_empty; controls_never_fired: omit_compaction, alter_compaction_summary, retain_precompaction_context, ignore_compaction_usage, drop_last_entry, skip_delivery_verification, deliver_conversation, regenerate_rendering, render_conclusion, remove_partial_package, skip_confirmation, seal_as_stopped, empty_return_before_launch, ended_as_submitted, seal_as_delivered, unknown_membership_empty; driver-amd64/evidence/RESULT.json: driver exit 1 |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
-| Driver self-test | 339/339 | 339/339 |
-| Cases passed | 111/125 | 109/123 |
-| Cases | selected 125, ran 125, passed 111, failed 14, skipped 0 | selected 123, ran 123, passed 109, failed 14, skipped 0 |
-| Variants (a fired control's variant fails) | ran 230, passed 136, failed 94, skipped 0 | ran 230, passed 136, failed 94, skipped 0 |
-| Checks | passed 162608, failed outside controls 65, failed inside controls 1081 | passed 162608, failed outside controls 65, failed inside controls 1081 |
-| Sabotage control variants fired (INTERFACE C.2) | 58/74 | 58/74 |
-| Driver controls fired | 13/13 | 13/13 |
-| Timing gate | on, passed: commands worst 2.925 ms (threshold 100.0 ms); protocol worst 100.077 ms (threshold 120.0 ms) | off (reported, not gated): commands worst 45.648 ms (threshold 100.0 ms); protocol worst 150.893 ms (threshold 120.0 ms) |
-| End to end (`e2e.reacting-audit`) | pass, 871/871 checks | pass, 871/871 checks |
-| Release binary SHA-256 | `201ab8c82cb70a7b179303b61b8b1b4f8f734b8be4bf5123bf623b4c08bdb0c4` | `9155bfe15a9406e007dc5090a151322a46583e1de895c1c27bffdf5c802d9d4d` |
-| Test binary SHA-256 | `56412450aa85a344fd8ea0f463720a18cf2da02888a827acbba86abe6d0f03b4` | `a2b653777b49ad07d05f1f10387182d6cc007c4fef058c72daf3501c080a59cd` |
-| RESULT.json SHA-256 | `8234a418167da9c97a1f7b333d156fed9a497732bfffd4336c1123dfe860119e` | `5d85086e263349e7bbedede68008e7327d1539e35955b93f4a3a86f9c5bdb557` |
-
-### acceptance-vocabulary-02
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
-- Source commit: `bb786d56df70dfb438ccede9b6724f5a65271eeb`; archive SHA-256 `14b46efc3065413eeb7441c09ee0b594543637c9b9c0bf4ce45c9d664ae80301`
-- Finished: 2026-11-09T04:03:06Z
-- Outcome: **failed**
-- Run-level failures: host/DONE reports failures=1; host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-02/driver-arm64/)
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-vocabulary-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the native protocol timing failure at the 120 ms tripwire and its exact binaries, which the focused timing comparison measured; until The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this run and its containers
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **failed** | **qualified** |
-| Failures | host/driver-arm64.exit is 1; driver-arm64/driver.exit is 1; driver-arm64/driver-final.exit is 1; cases: 125 selected, 124 passed, 1 failed, 0 skipped; failed_cases: c9.protocol-timing-gate; driver-arm64/evidence/RESULT.json: driver exit 1; timing gate on and not passed (commands True, protocol False) | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
-| Driver self-test | 352/352 | 352/352 |
-| Cases passed | 124/125 | 123/123 |
-| Cases | selected 125, ran 125, passed 124, failed 1, skipped 0 | selected 123, ran 123, passed 123, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 156, failed 74, skipped 0 |
-| Checks | passed 162770, failed outside controls 0, failed inside controls 1010 | passed 162770, failed outside controls 0, failed inside controls 1010 |
-| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
-| Driver controls fired | 13/13 | 13/13 |
-| Timing gate | on, not passed: commands worst 3.376 ms (threshold 100.0 ms); protocol worst 121.26 ms (threshold 120.0 ms) | off (reported, not gated): commands worst 45.34 ms (threshold 100.0 ms); protocol worst 162.292 ms (threshold 120.0 ms) |
-| End to end (`e2e.reacting-audit`) | pass, 871/871 checks | pass, 871/871 checks |
-| Release binary SHA-256 | `72dc02154d718d40af2108235ab3e7f046dd92cc2687d392437c53159201f95e` | `0f7ec280549ef0224b3cfc37daebaf3b8c71c26e56e2ab3bd1fd83889b1bd1b5` |
-| Test binary SHA-256 | `ebab37c1ca20894aea948eff65d353f9ece090ea1acf01788e13f15c98f508fe` | `140c23a2c3431ffe21afdabaa29f8c18fec0a6ec716c8634907ea210851a3077` |
-| RESULT.json SHA-256 | `2bb21b3ec481848b44ebd0626969d5a69a5d612ea99f3a69d2950a42e72245d3` | `517345ea1ffb65688fa35b2a0b6d7419a5d7b10dfb65356b28e7527ce0e9d6b7` |
-
-### acceptance-vocabulary-03
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
-- Source commit: `c953bed767623f832d64bf07ee14b3faa6be38ea`; archive SHA-256 `d717bac8f4820ec8f2a06e83e8e800168221bb28394fff8451323d8c2e1b7d5c`
-- Finished: 2026-11-09T05:43:52Z
-- Outcome: **qualified**
-- Run-level failures: none
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-vocabulary-03` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Frozen candidate executable and qualification consumed by the completed six-placement vocabulary comparison and its retained matching rehearsals.; until All dependent study evidence and rehearsals reviewed and principal authorizes disposal
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **qualified** | **qualified** |
-| Failures | none | none |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
-| Driver self-test | 352/352 | 352/352 |
-| Cases passed | 125/125 | 123/123 |
-| Cases | selected 125, ran 125, passed 125, failed 0, skipped 0 | selected 123, ran 123, passed 123, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 156, failed 74, skipped 0 |
-| Checks | passed 162770, failed outside controls 0, failed inside controls 1010 | passed 162770, failed outside controls 0, failed inside controls 1010 |
-| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
-| Driver controls fired | 13/13 | 13/13 |
-| Timing gate | on, passed: commands worst 3.267 ms (threshold 100.0 ms); protocol worst 98.716 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 43.851 ms (threshold 100.0 ms); protocol worst 179.542 ms (threshold 200.0 ms) |
-| End to end (`e2e.reacting-audit`) | pass, 871/871 checks | pass, 871/871 checks |
-| Release binary SHA-256 | `72dc02154d718d40af2108235ab3e7f046dd92cc2687d392437c53159201f95e` | `0f7ec280549ef0224b3cfc37daebaf3b8c71c26e56e2ab3bd1fd83889b1bd1b5` |
-| Test binary SHA-256 | `ebab37c1ca20894aea948eff65d353f9ece090ea1acf01788e13f15c98f508fe` | `140c23a2c3431ffe21afdabaa29f8c18fec0a6ec716c8634907ea210851a3077` |
-| RESULT.json SHA-256 | `cf637b5e12002cdacc64b9503a2e6d258eee6a2f6189d1134cefe02dca2ff59f` | `203b7c20ac16736065afbd3262b9d2ec3150b6d23d60d614c65394e37b28b593` |
 
 ### acceptance-vocabulary-citation-01
 
@@ -276,7 +36,7 @@ not carry them.
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/acceptance-vocabulary-citation-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Final Linux qualification of the citation-refusal correction completing the vocabulary revision; retains independent controls and original working archives.; until Completed vocabulary revision and dependent comparisons reviewed and principal authorizes disposal
+- Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
@@ -323,554 +83,443 @@ not carry them.
 | Binary SHA-256 (both builds) | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
 | Alpine run exit | 0 | 0 |
 
-### successor-inquiry-01
-
-- Experiment: the 21 original product-audit source copies and the history-reachability records that the protected refs refs/development-evidence/successor-inquiry-01/a1 to a3 depend on
-- Date: 2026-10-26T16:02:35Z (from history-preservation-01.json field at)
-- Result: `.`, every regular file under it (97 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `6528b39f1bffc9e362c96f905d257ec9eb7777ef020a24f80fc833b6cdf8cf20`
-- Evidence: `.scratch/successor-inquiry-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: recovery-critical design-era records; until the user decides they are no longer needed
-
-### credential-emulation-01
-
-- Experiment: Independent startup descriptor witnesses explain Rosetta credential-test assumptions; unchanged original cases reproduced
-- Date: 2026-11-01T18:22:45Z (from DONE)
-- Result: `diagnosis.json`, SHA-256 `6bf0c61298b43f1d5f05cd2a1fb0630a34a48efcbf96b5a2d8f55041476990ad`
-- Evidence: `.scratch/credential-emulation-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the witnesses and original containers supporting the credential acceptance corrections; until The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers
-
-### sanity-launch-01
-
-- Experiment: Launcher refused during credential-free intake because shared ancestor directories were not readable; original container and setup diagnosis retained
-- Date: 2026-11-01T18:56:53Z (from review/diagnosis.json field finished_at)
-- Result: `.`, every regular file under it (30 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `9ff9ac7181d971ba26160d877618588b84f914b5b0ca1cb8754b636cbfccfb4e`
-- Evidence: `.scratch/sanity-launch-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the first launcher failure and the private original container until review; until The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup
-
-### sanity-launch-02
-
-- Experiment: Incomplete launcher rehearsal: observer startup assertion failed and export selector withheld all archives; private originals retained
-- Date: 2026-11-01T19:52:53Z (from review/diagnosis.json field finished_at)
-- Result: `.`, every regular file under it (41 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cf7646674d8b416128519942b41c7609aaee0948626761c850c4443299a5bcf4`
-- Evidence: `.scratch/sanity-launch-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain original private audits and credential witness from the failed integrated rehearsal; until The user has reviewed the corrected rehearsal and authorizes disposal of this container and its witness
-
-### launcher-observer-probe-01
-
-- Experiment: Independent observer controls demonstrate actual procfs reads despite unsupported PR_SET_PTRACER setting
-- Date: 2026-11-01T20:10:42Z (from review.json field finished_at)
-- Result: `.`, every regular file under it (8 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cdc5e19f3b961dd0eaf8183cb77e1e04598411884efb33ad4a9f9de1ddc61dcd`
-- Evidence: `.scratch/launcher-observer-probe-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain firing observer controls and original failure diagnosis supporting the launcher correction; until The user has reviewed the corrected rehearsal and authorizes disposal of these controls
-
-### sanity-launch-03
-
-- Experiment: Seven-scenario retained launcher rehearsal passed: credential delivery, process controls, interruption, exact return, reflection and export controls
-- Date: 2026-11-01T20:26:07Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (50 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `fd35d25502a3c096fd503b68fe5a341a16b5daa2e3d5070eb197ede361f444e1`
-- Evidence: `.scratch/sanity-launch-03` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the demonstrated launch path, independent credential witness and private originals for first paid-test preparation; until The user has reviewed the paid-test preparation and authorizes disposal of this container and its witness
-
 ### sanity-live-01
 
-- Experiment: First live Messages API launch: intake and readback verified, but all four provider attempts timed out connecting from the container while a host VPN was active; nothing written to the provider, zero usage, no credential exposure; the same connect probe passed once the VPN was off
-- Date: 2026-11-02T20:28:52Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `c58b80ffe27eabb3a5084f31736bc2311e601d6b2a6b4c4664e0ffd6e709d73e`
-- Evidence: `.scratch/sanity-live-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the first paid-run attempt, its retained container and the VPN-era connectivity evidence until review; until The user has reviewed the completed sanity commission and authorizes disposal of this container
+First live Messages API launch: intake and readback verified, but all four provider attempts timed out connecting from the container while a host VPN was active; nothing written to the provider, zero usage, no credential exposure; the same connect probe passed once the VPN was off; subsequent manager closure verified in review/closure.json; no loss surrendered
+
+- Evidence: `.scratch/sanity-live-01/.` (recorded 2026-11-02T20:28:52Z).
+- Retained purpose: Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.; until These particular encounters no longer inform a current evaluation.
 
 ### sanity-live-02
 
-- Experiment: First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean; Console billing displayed $0.01
-- Date: 2026-11-03T15:32:43Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `ac526dc1d13ecd0e587a8bb118508b8a15d3e8ccab949b50ca9b7482b6f0312e`
-- Evidence: `.scratch/sanity-live-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the first real-provider run, its retained container and private originals through review; until The user has reviewed the sanity commission result and authorizes disposal of this container
+First completed Messages API sanity commission: claude-haiku-5-5 read both materials, recorded four cited entries, prepared and submitted; auditor seal, verified delivery and ordinary close observed; 8 turns, 55,401 input and 2,713 output tokens; credential scans clean; Console billing displayed $0.01
+
+- Evidence: `.scratch/sanity-live-02/.` (recorded 2026-11-03T15:32:43Z).
+- Retained purpose: Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.; until These particular encounters no longer inform a current evaluation.
 
 ### sanity-live-03
 
-- Experiment: Mechanism run, provider rejection: a deliberately invalid key drew HTTP 401 authentication_error in 165 ms, not retried, nothing charged, no reflection, ending interrupted (provider_rejected) with the provider's status, type, message and request ID recorded; the launcher's host scan fired on the packet label that quoted the invalid key
-- Date: 2026-11-03T15:56:16Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `06b8c4dd7d1eb8fdb48fade21fc5a590657fb61ac02c1b8057b70419248d3eca`
-- Evidence: `.scratch/sanity-live-03` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the real-provider rejection evidence and the self-inflicted host-scan control through review; until The user has reviewed the mechanism runs and authorizes disposal of this container
+Mechanism run, provider rejection: a deliberately invalid key drew HTTP 401 authentication_error in 165 ms, not retried, nothing charged, no reflection, ending interrupted (provider_rejected) with the provider's status, type, message and request ID recorded; the launcher's host scan fired on the packet label that quoted the invalid key
+
+- Evidence: `.scratch/sanity-live-03/.` (recorded 2026-11-03T15:56:16Z).
+- Retained purpose: Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.; until These particular encounters no longer inform a current evaluation.
 
 ### sanity-live-04
 
-- Experiment: Mechanism run, turn limit 3: limit_reached with the last response's record call executed and the near-limit notice published but not sent; manager close sealed, delivered and verified the one recorded entry, returned a confirmation token with status awaiting_confirmation, and close --confirm completed closure
-- Date: 2026-11-03T15:59:32Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cf5eff7c647590fa68be6e540a66571a5e2528197fae8e2feef935c04ac519cf`
-- Evidence: `.scratch/sanity-live-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the real-provider limit and manager-close evidence through review; until The user has reviewed the mechanism runs and authorizes disposal of this container
+Mechanism run, turn limit 3: limit_reached with the last response's record call executed and the near-limit notice published but not sent; manager close sealed, delivered and verified the one recorded entry, returned a confirmation token with status awaiting_confirmation, and close --confirm completed closure
+
+- Evidence: `.scratch/sanity-live-04/.` (recorded 2026-11-03T15:59:32Z).
+- Retained purpose: Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.; until These particular encounters no longer inform a current evaluation.
 
 ### sanity-live-05
 
-- Experiment: Mechanism run, effort high: the pinned output_config reached the wire (34-byte body difference), every request accepted, auditor seal, verified delivery and close; 8 turns, 67,446 input and 4,361 output tokens, largest response 2,055 output tokens under the 12,000 cap
-- Date: 2026-11-03T16:00:39Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `5b13d580feadace59c38f4e875a24a1298ea7307e25fe6be7668af6db5fb98ed`
-- Evidence: `.scratch/sanity-live-05` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the real-provider effort evidence through review; until The user has reviewed the mechanism runs and authorizes disposal of this container
+Mechanism run, effort high: the pinned output_config reached the wire (34-byte body difference), every request accepted, auditor seal, verified delivery and close; 8 turns, 67,446 input and 4,361 output tokens, largest response 2,055 output tokens under the 12,000 cap
+
+- Evidence: `.scratch/sanity-live-05/.` (recorded 2026-11-03T16:00:39Z).
+- Retained purpose: Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.; until These particular encounters no longer inform a current evaluation.
 
 ### sanity-live-06
 
-- Experiment: Mechanism run, output allowance 1,024: one request at max_tokens 1,024, the first response's two tool calls executed, then limit_reached with 945 output tokens remaining; max_tokens stop not reached; audit left open for manager close
-- Date: 2026-11-03T16:03:42Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (35 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `c8146c19e36bec8f7aaa9aafedf371bc6cec7c1229897d9764ad1db5cc0d8513`
-- Evidence: `.scratch/sanity-live-06` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the real-provider output-limit evidence through review; until The user has reviewed the mechanism runs and authorizes disposal of this container
+Mechanism run, output allowance 1,024: one request at max_tokens 1,024, the first response's two tool calls executed, then limit_reached with 945 output tokens remaining; max_tokens stop not reached; audit left open for manager close; subsequent manager closure verified in review/closure.json; no loss surrendered
 
-### sanity-launch-04
-
-- Experiment: Seven-scenario offline launcher rehearsal passed on the committed launch code after the condition allowlists were aligned (56a72e6): credential delivery, process controls, interruption, exact return, reflection and export controls
-- Date: 2026-11-03T16:14:57Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (44 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `f96cb3d21c5f5e04dc7f170d13fc20e09e92f219ce39604f83ed8d599428036c`
-- Evidence: `.scratch/sanity-launch-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the rehearsal that qualifies the current launch code for further real-key use; until A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container
-
-### c10-launch-01
-
-- Experiment: C10 small-commission rehearsal on Linux aarch64 at 043a2c4: 13 expected audit outcomes, 14 reviewer comparisons with 12 firing controls, 7 operator comparisons and 2 process-access controls; no model calls or model qualification.
-- Date: 2026-11-03T21:47:04Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `e7cb9e28d5192ff0f73523a9e0e99c234d22181a19d663f2737b930b65ff7200`
-- Evidence: `.scratch/c10-launch-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the reviewed small-commission apparatus rehearsal, private originals and independent witnesses for bounded live commission preparation; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses
+- Evidence: `.scratch/sanity-live-06/.` (recorded 2026-11-03T16:03:42Z).
+- Retained purpose: Inspect actual provider rejection, effort and limit behavior, with its custody outcomes.; until These particular encounters no longer inform a current evaluation.
 
 ### c10-live-01
 
-- Experiment: Haiku pilot 1/6, open-ordinary: auditor submission, exact delivery and close verified; 8 turns, 71095 input and 4314 output tokens; 4 invalid-citation calls refused and corrected; 13 final citations checked. No model qualification.
-- Date: 2026-11-03T22:26:14Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `2ea1da0872cc92ea57b8eedc61eff384dbdda75a770740636909e39c039677af`
-- Evidence: `.scratch/c10-live-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+Haiku pilot 1/6, open-ordinary: auditor submission, exact delivery and close verified; 8 turns, 71095 input and 4314 output tokens; 4 invalid-citation calls refused and corrected; 13 final citations checked. No model qualification.
+
+- Evidence: `.scratch/c10-live-01/.` (recorded 2026-11-03T22:26:14Z).
+- Retained purpose: Inspect the first six-family pilot, including substantive errors and citation recovery.; until These particular encounters no longer inform a current evaluation.
 
 ### c10-live-02
 
-- Experiment: Haiku pilot 2/6, open-inadequate: auditor submission, exact delivery and close verified; 5 turns, 28365 input and 1516 output tokens; 7 citations checked, no tool refusals or request retries. No model qualification.
-- Date: 2026-11-03T22:34:29Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `3646274163d843d7302b4f2025ffaceaeefad4ef568d8afc57b0ca79a33a85af`
-- Evidence: `.scratch/c10-live-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+Haiku pilot 2/6, open-inadequate: auditor submission, exact delivery and close verified; 5 turns, 28365 input and 1516 output tokens; 7 citations checked, no tool refusals or request retries. No model qualification.
+
+- Evidence: `.scratch/c10-live-02/.` (recorded 2026-11-03T22:34:29Z).
+- Retained purpose: Inspect the first six-family pilot, including substantive errors and citation recovery.; until These particular encounters no longer inform a current evaluation.
 
 ### c10-live-03
 
-- Experiment: Haiku pilot 3/6, framing-ordinary: working question and relation recorded; auditor submission, exact delivery and close verified; 5 turns, 37760 input and 2343 output tokens; 11 citations checked, no tool refusals or request retries. No model qualification.
-- Date: 2026-11-03T22:47:15Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `b3e6963876c9a94991e6f24697bf5486f526b34b7028b5fd6de5f6dd38b5d892`
-- Evidence: `.scratch/c10-live-03` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain this pilot audit, its reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+Haiku pilot 3/6, framing-ordinary: working question and relation recorded; auditor submission, exact delivery and close verified; 5 turns, 37760 input and 2343 output tokens; 11 citations checked, no tool refusals or request retries. No model qualification.
+
+- Evidence: `.scratch/c10-live-03/.` (recorded 2026-11-03T22:47:15Z).
+- Retained purpose: Inspect the first six-family pilot, including substantive errors and citation recovery.; until These particular encounters no longer inform a current evaluation.
 
 ### c10-live-04
 
-- Experiment: Haiku pilot 4/6, framing-inadequate: procedural review, exact delivery and close passed; 6 turns, 42421 input and 2295 output tokens; 12 citations checked, no refusals or retries. inspection.json flags a substantive inference beyond supplied requirements. No model qualification.
-- Date: 2026-11-03T22:57:05Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `de7da6b93e4d086cf63729c616062f6185e63afedc7028c4c0a4db144872990b`
-- Evidence: `.scratch/c10-live-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain this pilot audit and its substantive inspection concern, reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+Haiku pilot 4/6, framing-inadequate: procedural review, exact delivery and close passed; 6 turns, 42421 input and 2295 output tokens; 12 citations checked, no refusals or retries. inspection.json flags a substantive inference beyond supplied requirements. No model qualification.
+
+- Evidence: `.scratch/c10-live-04/.` (recorded 2026-11-03T22:57:05Z).
+- Retained purpose: Inspect the first six-family pilot, including substantive errors and citation recovery.; until These particular encounters no longer inform a current evaluation.
 
 ### c10-live-05
 
-- Experiment: Haiku pilot 5/6, comparison-ordinary: auditor submission, exact delivery and close verified; 6 turns, 51053 input and 3437 output tokens; 12 citations checked. Two invalid-quote calls refused, then valid unquoted locators accepted; no request retries. No model qualification.
-- Date: 2026-11-03T23:05:12Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `5073a17cc67180ec887f07616d4f7e6793e5abb4148ed3f5c1a70f7fbb44155c`
-- Evidence: `.scratch/c10-live-05` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain this pilot audit, citation-recovery observations, reviewed export and private container through the six-audit assessment and billing reconciliation; until The principal has reviewed the pilot and authorizes disposal of this container and its evidence
+Haiku pilot 5/6, comparison-ordinary: auditor submission, exact delivery and close verified; 6 turns, 51053 input and 3437 output tokens; 12 citations checked. Two invalid-quote calls refused, then valid unquoted locators accepted; no request retries. No model qualification.
+
+- Evidence: `.scratch/c10-live-05/.` (recorded 2026-11-03T23:05:12Z).
+- Retained purpose: Inspect the first six-family pilot, including substantive errors and citation recovery.; until These particular encounters no longer inform a current evaluation.
 
 ### c10-live-06
 
-- Experiment: Haiku pilot 6/6, comparison-inadequate: procedural checks passed, auditor submitted, delivered and closed; 7 turns, 50,102 input and 2,318 output tokens; two tool refusals retained; missing B acknowledged; calculated USD 0.0061692, billing unobserved.
-- Date: 2026-11-03T23:12:08Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `0beae6364d44695d2d3f48787aa78cffeeecffb3af401d2fecf49ab8a9c73778`
-- Evidence: `.scratch/c10-live-06` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the final pilot audit, original refusals and A-only answer for six-audit review and billing reconciliation.; until The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence
+Haiku pilot 6/6, comparison-inadequate: procedural checks passed, auditor submitted, delivered and closed; 7 turns, 50,102 input and 2,318 output tokens; two tool refusals retained; missing B acknowledged; calculated USD 0.0061692, billing unobserved.
+
+- Evidence: `.scratch/c10-live-06/.` (recorded 2026-11-03T23:12:08Z).
+- Retained purpose: Inspect the first six-family pilot, including substantive errors and citation recovery.; until These particular encounters no longer inform a current evaluation.
 
 ### c10-haiku-commission-01
 
-- Experiment: Six-audit Haiku pilot: all six submitted, delivered and closed; 37 requests/attempts, no provider retries, 280,796 input and 16,223 output tokens; seven citation and one cursor refusal; framing-inadequate content inference flagged; calculated USD 0.0361911, billing unobserved; no model qualification.
-- Date: 2026-11-03T23:14:17Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `a44db5879ef9b98bb476b97a9e2d0a8e88759970b1e74717b77406c75fa9af6f`
-- Evidence: `.scratch/c10-haiku-commission-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the frozen commission, combined review, answer digests and content concern for principal assessment, billing reconciliation and any separately commissioned comparison.; until The principal has reviewed the pilot and authorizes disposal of the retained containers and evidence
+Inspect the six-family pilot: exact inputs, settings, combined reading and costs.
 
-### c10-study-launch-01
-
-- Experiment: Saved-connection and study-input rehearsal on Linux aarch64 at 751aa7c: 15 expected audit outcomes, 50 reviewer comparisons with 44 firing controls, 7 operator comparisons, 2 process-access controls, and fresh-process Keychain collection; no model calls or model qualification.
-- Date: 2026-11-05T19:55:32Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `a06c601e88f489e17f4fe5fa1da5eed71aa32764df9f1e7b4152aae1c4303fae`
-- Evidence: `.scratch/c10-study-launch-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the reviewed saved-connection and exact study-template rehearsal, private originals and independent witnesses for bounded Problem A/B commission preparation; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses
+- Evidence: `.scratch/c10-haiku-commission-01/.` (recorded 2026-11-03T23:14:17Z).
+- Retained purpose: Inspect the six-family pilot: exact inputs, settings, combined reading and costs.; until The linked evaluation or pending decision no longer needs these originals.
 
 ### frsrr-baseline-a-01
 
-- Experiment: Problem A Haiku baseline: auditor-sealed, delivered and closed; saved-key launch and later collection reviewed, 509 original files unchanged; no model qualification
-- Date: 2026-11-05T20:29:20Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `5a82a48331f8ebd46eee2bfb31d4874e37f3651578a30cf01c10ec850a13a8e2`
-- Evidence: `.scratch/frsrr-baseline-a-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Authorized interface-study baseline, original input and return witnesses, and live saved-connection launch and collection; until The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence
+Problem A Haiku baseline: auditor-sealed, delivered and closed; saved-key launch and later collection reviewed, 509 original files unchanged; no model qualification
 
-### connection-checks-01
-
-- Experiment: Saved-connection synthetic host checks: eight passed, one failed, two limited observations; original failures and prompt attribution limits retained
-- Date: 2026-11-05T20:30:11Z (from review-02.json field at)
-- Result: `review-02.json`, SHA-256 `3453091829834dbf57b89b474ea9b858dd0cf2ddbb410583e24c7aae7699e580`
-- Evidence: `.scratch/connection-checks-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Host access, denial, rotation, disconnect and hidden-entry evidence for the saved-connection route, including unresolved observer limits; until The principal authorizes disposal of these host checks after a suitable replacement or explicit disposition
+- Evidence: `.scratch/frsrr-baseline-a-01/.` (recorded 2026-11-05T20:29:20Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### frsrr-baseline-b-01
 
-- Experiment: Problem B Haiku baseline: auditor-sealed, delivered and closed; live placement and later saved-key collection reviewed, 442 original files unchanged; no model qualification
-- Date: 2026-11-05T23:26:56Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `b6a2f5c995fc227ea8a61a5554ced7a99116c4aa12afa8c5cdb15b60febfc62c`
-- Evidence: `.scratch/frsrr-baseline-b-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Authorized interface-study baseline, original input and return witnesses, and reviewed follow-up collection; until The interface comparison and principal review are complete and the principal authorizes disposal of the original container and evidence
+Problem B Haiku baseline: auditor-sealed, delivered and closed; live placement and later saved-key collection reviewed, 442 original files unchanged; no model qualification
 
-### haiku-authoring-acceptance-01
-
-- Experiment: Unqualified authoring variant: old text/version comparisons and a native 100 ms protocol timing failure; retained first attempt.
-- Date: 2026-11-06T15:09:55Z (from driver-amd64/evidence/RESULT.json field ended_at)
-- Result: `host/SUMMARY`, SHA-256 `c5ac60fb678ad75618c4884ca4a076c876e243213f087f058abc97f5227836fc`
-- Evidence: `.scratch/haiku-authoring-acceptance-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Preserve the first failed Linux attempt and its controls for the authoring study.; until The authoring study is reviewed and the principal releases its evidence.
-
-### haiku-authoring-acceptance-02
-
-- Experiment: Reviewed unqualified authoring variant: native 120 ms timing passed; 33 exact text/version/custody-identity comparison failures per architecture and 27 failed control baselines retained.
-- Date: 2026-11-06T19:16:09Z (from driver-amd64/evidence/RESULT.json field ended_at)
-- Result: `review-02.json`, SHA-256 `c47367f536392edb9261019c7c82227a5550a773caf8a18bfdca77b3a2913fb2`
-- Evidence: `.scratch/haiku-authoring-acceptance-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Bind the isolated authoring variant and preserve the limits of its acceptance evidence.; until The authoring study is reviewed and the principal releases the variant evidence.
-
-### haiku-authoring-rehearsal-01
-
-- Experiment: Matching Linux authoring-study rehearsal: 15 audits, 7 operator checks, 56 reviewer comparisons; saved synthetic connection and later collection passed; zero model calls, study binary unqualified
-- Date: 2026-11-06T20:04:07Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `bc2683878668b975f62c68c37d6c99e954a40877c3ae45c4c876413ab6faac8e`
-- Evidence: `.scratch/haiku-authoring-rehearsal-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Launcher and frozen-input evidence for the account-composition-01 A/B experiment; until The authoring intervention is reviewed and no retained live packet relies on this rehearsal
+- Evidence: `.scratch/frsrr-baseline-b-01/.` (recorded 2026-11-05T23:26:56Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-authoring-live-01
 
-- Experiment: Two authorized Haiku authoring-study placements and saved-connection collections passed procedural review; original exports preserved; unqualified study binary
-- Date: 2026-11-06T20:13:37Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `14b01080fe41d36a4106bad1df1232f8b3f6f5e283a7aaac9cf2cc233c1480d1`
-- Evidence: `.scratch/haiku-authoring-live-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Account-composition-01 A/B comparison, exact original returns, collection evidence and pending principal reading; until The principal has reviewed the interface comparison and authorizes disposal of its container and evidence
+Two authorized Haiku authoring-study placements and saved-connection collections passed procedural review; original exports preserved; unqualified study binary
+
+- Evidence: `.scratch/haiku-authoring-live-01/.` (recorded 2026-11-06T20:13:37Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### fable-problem-b-live-01
 
-- Experiment: One authorized Fable Problem B encounter at default effort with no execution on account-composition-01; procedural and collection reviews passed, all 456 original files preserved, principal reading and discussion complete. Principal reports billing reconciles with the displayed USD 3.51 cost; token breakdown unavailable. No model qualification.
-- Date: 2026-11-06T23:11:43Z (from review/encounter-completion-01.json field at)
-- Result: `review/encounter-completion-01.json`, SHA-256 `4b64ef5b0e835b46b9b811c139d8fc5c540a041d8726ecf805ddd3626dd08cc4`
-- Evidence: `.scratch/fable-problem-b-live-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the bounded Fable encounter, original-return reading, substantive discussion and reported billing reconciliation.; until Principal disposal decision under DEVELOPMENT; preserve original exports, study bindings and review evidence until then.
+One authorized Fable Problem B encounter at default effort with no execution on account-composition-01; procedural and collection reviews passed, all 456 original files preserved, principal reading and discussion complete. Principal reports billing reconciles with the displayed USD 3.51 cost; token breakdown unavailable. No model qualification.
 
-### haiku-stress-rehearsal-03
-
-- Experiment: Stress-study rehearsal on Linux aarch64 at 3668506 with the unqualified account-composition-01 study build: 17 expected audit outcomes including problem-a, two checklist copies and a four-page pagination template; 16 reviewer comparisons with 14 firing controls, 7 operator comparisons, 80 study comparisons with 72 firing controls, and fresh-process Keychain collection; no model calls or model qualification.
-- Date: 2026-11-07T03:55:39Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `9372cb30e261862738488d398d2ba2d1c5b5462593fe44a5f939d7133d686f86`
-- Evidence: `.scratch/haiku-stress-rehearsal-03` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the reviewed rehearsal that backs the five bounded Haiku stress packets, including the first multi-page material rehearsal, with its private originals and independent witnesses; until A later matching rehearsal supersedes it and the user authorizes disposal of its container and witnesses
+- Evidence: `.scratch/fable-problem-b-live-01/.` (recorded 2026-11-06T23:11:43Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-stress-live-01
 
-- Experiment: Stress run turns-10 on the unqualified study build, claude-haiku-5-5, frozen Problem A: limit_reached after 10 turns with a twice-revised complete account never prepared or submitted; manager close confirmed; export-0002 collected; USD 0.0399731 calculated; no model qualification.
-- Date: 2026-11-07T15:11:25Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `60d82bf5b57c5960c4695b91635c79069978bedb54a56ad9da66fe40fa281730`
-- Evidence: `.scratch/haiku-stress-live-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the first turn-limit stress placement, its manager-sealed return and the pre-registered classification and findings; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+Stress run turns-10 on the unqualified study build, claude-haiku-5-5, frozen Problem A: limit_reached after 10 turns with a twice-revised complete account never prepared or submitted; manager close confirmed; export-0002 collected; USD 0.0399731 calculated; no model qualification.
+
+- Evidence: `.scratch/haiku-stress-live-01/.` (recorded 2026-11-07T15:11:25Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-stress-live-02
 
-- Experiment: Stress run turns-8 on the unqualified study build, claude-haiku-5-5, frozen Problem A: limit_reached after 8 turns with nothing recorded; empty manager-sealed return; export-0002 collected; USD 0.0177970 calculated; no model qualification.
-- Date: 2026-11-07T15:25:00Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `a8bdbb753bbc6b4291073282de162759fe6d1cc1f9dc42c232a3349c9da47b51`
-- Evidence: `.scratch/haiku-stress-live-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the second turn-limit stress placement and its empty return beside the first for comparison; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+Stress run turns-8 on the unqualified study build, claude-haiku-5-5, frozen Problem A: limit_reached after 8 turns with nothing recorded; empty manager-sealed return; export-0002 collected; USD 0.0177970 calculated; no model qualification.
+
+- Evidence: `.scratch/haiku-stress-live-02/.` (recorded 2026-11-07T15:25:00Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-stress-live-03
 
-- Experiment: Stress run pagination on the unqualified study build, claude-haiku-5-5, two synthetic logs: auditor seal after 9 turns with all six answers correct by tail read, complete searches and list metadata; paging affordance unexercised; export-0002 collected; USD 0.0225645 calculated; no model qualification.
-- Date: 2026-11-07T15:38:28Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `8edeec950a9b1e0530e87e15da2d34036ec74348c5ff0a79186ec0abdbcabaf0`
-- Evidence: `.scratch/haiku-stress-live-03` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the pagination stress placement, its correct return and the route that avoided paging; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+Stress run pagination on the unqualified study build, claude-haiku-5-5, two synthetic logs: auditor seal after 9 turns with all six answers correct by tail read, complete searches and list metadata; paging affordance unexercised; export-0002 collected; USD 0.0225645 calculated; no model qualification.
+
+- Evidence: `.scratch/haiku-stress-live-03/.` (recorded 2026-11-07T15:38:28Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-stress-live-04
 
-- Experiment: Stress run checklist (two-copy batch) on the unqualified study build, claude-haiku-5-5: checklist-5sgh interrupted with cause max_tokens after 10 turns, nothing recorded, manager close confirmed, export-0002 collected, USD 0.0555290; checklist-sw3z not started by the batch stop; no model qualification.
-- Date: 2026-11-07T16:54:33Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `9b9ff82def47a0a0139a265b890a3b760512c263bc12e4c3cbd5fec74dd23cf0`
-- Evidence: `.scratch/haiku-stress-live-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the first many-part placement that hit the per-request output cap inside thinking, and the record of the unstarted second audit; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+Stress run checklist (two-copy batch) on the unqualified study build, claude-haiku-5-5: checklist-5sgh interrupted with cause max_tokens after 10 turns, nothing recorded, manager close confirmed, export-0002 collected, USD 0.0555290; checklist-sw3z not started by the batch stop; no model qualification.
+
+- Evidence: `.scratch/haiku-stress-live-04/.` (recorded 2026-11-07T16:54:33Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-stress-live-05
 
-- Experiment: Stress run checklist-sw3z single-run control on the unqualified study build, claude-haiku-5-5: interrupted with cause max_tokens after 14 turns, nothing recorded, manager close confirmed, export-0002 collected, USD 0.0698756; reproduces the 5sgh wall on the second copy; no model qualification.
-- Date: 2026-11-07T17:08:29Z (from review/result.json field at)
-- Result: `review/result.json`, SHA-256 `6770f1baa68d0bad6a01c2384ff6d93f8977c6606b9fd348b480a750be8772df`
-- Evidence: `.scratch/haiku-stress-live-05` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the control placement that attributes the output-cap wall to the 40-item question rather than a copy; until Principal disposal decision under DEVELOPMENT; preserve the original exports, packet and review evidence until then
+Stress run checklist-sw3z single-run control on the unqualified study build, claude-haiku-5-5: interrupted with cause max_tokens after 14 turns, nothing recorded, manager close confirmed, export-0002 collected, USD 0.0698756; reproduces the 5sgh wall on the second copy; no model qualification.
 
-### c10-report-linux-01
-
-- Experiment: Linux aarch64 rehearsal of apparatus 453a60d: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.
-- Date: 2026-11-07T20:37:46Z (from review/result.json field ended_at)
-- Result: `review`, every regular file under it (8 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `aa8960f2f8a9a3bebb558c5d573c97168bd20e582149a12a13462375a80a181b`
-- Evidence: `.scratch/c10-report-linux-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the checked reporting apparatus rehearsal, source bindings, original snapshots and independent witnesses.; until A reviewed matching rehearsal supersedes these reporting and custody controls and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage.
+- Evidence: `.scratch/haiku-stress-live-05/.` (recorded 2026-11-07T17:08:29Z).
+- Retained purpose: Inspect authoring, intellectual limits, interface friction and attributed reader responses.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-01
 
-- Experiment: Haiku failure/recovery trial 01; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:45:21Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `fa038714a781fc3bd5374113057a3a21ed862c2fd66ec7954f0d8ada8728c5e3`
-- Evidence: `.scratch/haiku-recovery-live-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 01; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-01/.` (recorded 2026-11-08T02:45:21Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-02
 
-- Experiment: Haiku failure/recovery trial 02; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:47:09Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `da8e9c93f00bf667b07007add0c465612539b54bf884e8e0ce2c4d8cf2536d91`
-- Evidence: `.scratch/haiku-recovery-live-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 02; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-02/.` (recorded 2026-11-08T02:47:09Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-03
 
-- Experiment: Haiku failure/recovery trial 03; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:48:19Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `e8af905041e173fea03e271c77724a3499eeb21d6b36a82a883c0c9340b94527`
-- Evidence: `.scratch/haiku-recovery-live-03` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 03; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-03/.` (recorded 2026-11-08T02:48:19Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-04
 
-- Experiment: Haiku failure/recovery trial 04; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:49:16Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `068f0ba1b745cbd1bc11c43f5ac48facaa5808153d17c76c76450cbd8dd5101e`
-- Evidence: `.scratch/haiku-recovery-live-04` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 04; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-04/.` (recorded 2026-11-08T02:49:16Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-05
 
-- Experiment: Haiku failure/recovery trial 05; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:51:04Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `c6d53c03cc87fff095545379062e54a00739b3248c3fc29450f0fc7745d44dde`
-- Evidence: `.scratch/haiku-recovery-live-05` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 05; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-05/.` (recorded 2026-11-08T02:51:04Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-06
 
-- Experiment: Haiku failure/recovery trial 06; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:51:54Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `e23421672ffcbae338f9c2eae565cae1c15d20403067216f5110c972bbdd975d`
-- Evidence: `.scratch/haiku-recovery-live-06` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 06; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-06/.` (recorded 2026-11-08T02:51:54Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-07
 
-- Experiment: Haiku failure/recovery trial 07; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:53:24Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `fa18c8430ce2329f86fe5dbf0158910b66db0f7aa6e0d66c2c0c0371bd58087a`
-- Evidence: `.scratch/haiku-recovery-live-07` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 07; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-07/.` (recorded 2026-11-08T02:53:24Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-08
 
-- Experiment: Haiku failure/recovery trial 08; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:54:40Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `4be73d84490714fdb79fbf0c0e2854b23e5700a58e22eb7223d377f98c43f867`
-- Evidence: `.scratch/haiku-recovery-live-08` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 08; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-08/.` (recorded 2026-11-08T02:54:40Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-09
 
-- Experiment: Haiku failure/recovery trial 09; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T02:57:01Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `b534ada5b2889ef744181aba2cbc866a38a3cc2c1e94070a61d4b1b27c0c8ca7`
-- Evidence: `.scratch/haiku-recovery-live-09` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 09; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-09/.` (recorded 2026-11-08T02:57:01Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-10
 
-- Experiment: Haiku failure/recovery trial 10; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T03:00:03Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `be590aca46ce23b8ab3134afc7533ae5966a77deb6fb9c4c05190537df35ae77`
-- Evidence: `.scratch/haiku-recovery-live-10` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 10; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-10/.` (recorded 2026-11-08T03:00:03Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-11
 
-- Experiment: Haiku failure/recovery trial 11; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T03:02:39Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `663e65d47b697db0c8464c25fd16e8e0489cb16cc5427aa78c1727542e629252`
-- Evidence: `.scratch/haiku-recovery-live-11` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 11; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-11/.` (recorded 2026-11-08T03:02:39Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-12
 
-- Experiment: Haiku failure/recovery trial 12; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T03:07:38Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `6cf9f2d1c1740ecedc639c00237a306a4fe46c468794499d74fd30ecd1c918b5`
-- Evidence: `.scratch/haiku-recovery-live-12` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 12; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-12/.` (recorded 2026-11-08T03:07:38Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-13
 
-- Experiment: Haiku failure/recovery trial 13; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T03:45:54Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `72e4d6ff6a437823c6becf87b803ba6779f11ea395e367cb8d0687ad2fae93bf`
-- Evidence: `.scratch/haiku-recovery-live-13` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 13; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-13/.` (recorded 2026-11-08T03:45:54Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-14
 
-- Experiment: Haiku failure/recovery trial 14; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T03:46:53Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `4677b27dd04dbc2c6c7716240a0814251ce5a7260ae90f95c17581437b784b2e`
-- Evidence: `.scratch/haiku-recovery-live-14` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 14; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-14/.` (recorded 2026-11-08T03:46:53Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-15
 
-- Experiment: Haiku failure/recovery trial 15; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T04:06:40Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `dc65d5e5c261686d69c6b82f427540619fdb0cd99ee62756818823cdc3f71d5c`
-- Evidence: `.scratch/haiku-recovery-live-15` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 15; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-15/.` (recorded 2026-11-08T04:06:40Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-16
 
-- Experiment: Haiku failure/recovery trial 16; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T04:07:16Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `8815447288467c939a45552c268c86d6204eb210c26dd5e885e61001cc372179`
-- Evidence: `.scratch/haiku-recovery-live-16` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 16; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-16/.` (recorded 2026-11-08T04:07:16Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-17
 
-- Experiment: Haiku failure/recovery trial 17; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T04:08:07Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `2e3b82de98820d8413b6b8ec90feb59a0c70eeb91a3e43af1b8e86976e96a5d8`
-- Evidence: `.scratch/haiku-recovery-live-17` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 17; original live placement and custody snapshots; study evidence, not model qualification
+
+- Evidence: `.scratch/haiku-recovery-live-17/.` (recorded 2026-11-08T04:08:07Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### haiku-recovery-live-18
 
-- Experiment: Haiku failure/recovery trial 18; original live placement and custody snapshots; study evidence, not model qualification
-- Date: 2026-11-08T04:09:10Z (from retention-date.json field at)
-- Result: `host/RESULT.json`, SHA-256 `14b86786d0c9e9a5a9c0112ce13c180e3087385c691e9250c5153a584b4c266b`
-- Evidence: `.scratch/haiku-recovery-live-18` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports.; until The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal.
+Haiku failure/recovery trial 18; original live placement and custody snapshots; study evidence, not model qualification
 
-### vocabulary-timing-01
-
-- Experiment: Focused native timing comparison of the 4 MiB limits call on the acceptance-05, acceptance-vocabulary-01 and acceptance-vocabulary-02 arm64 builds: 36 driver runs, medians 113 to 116 ms, range 99 to 132 ms, differences between builds within repeat noise; no model calls, qualifies nothing
-- Date: 2026-11-09T04:59:33Z (from review-and-decision-01.json field at)
-- Result: `.`, every regular file under it (636 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d0c0a67b770216f591baf63d2095da427592df0a7826daed30c037d5a0f2650b`
-- Evidence: `.scratch/vocabulary-timing-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Evidence for raising the protocol tripwire from 120 to 200 ms and for reading the acceptance-vocabulary-02 timing failure; until The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this comparison and its six containers
+- Evidence: `.scratch/haiku-recovery-live-18/.` (recorded 2026-11-08T04:09:10Z).
+- Retained purpose: Inspect the five-case failure/recovery findings, including controls and incomplete trial 14.; until These particular encounters no longer inform a current evaluation.
 
 ### c10-vocabulary-launch-01
 
-- Experiment: Linux aarch64 C10 rehearsal of apparatus 32359be on the acceptance-vocabulary-03 executable: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.
-- Date: 2026-11-09T15:07:33Z (from review/result.json field ended_at)
-- Result: `review`, every regular file under it (8 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cdb03803b0d6e54be3c1f0ba2d1b2bdf5d214a9b72fc39995863cfb020ac1da5`
-- Evidence: `.scratch/c10-vocabulary-launch-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the checked C10 rehearsal on the qualified vocabulary build, its source bindings, original snapshots and independent witnesses.; until A reviewed matching rehearsal supersedes it and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage.
+Linux aarch64 C10 rehearsal of apparatus 32359be on the acceptance-vocabulary-03 executable: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.
+
+- Evidence: `.scratch/c10-vocabulary-launch-01/review` (recorded 2026-11-09T15:07:33Z).
+- Retained purpose: Latest retained launcher rehearsal; new launches must still match source, binary and inputs.; until A fresh matching rehearsal is reviewed.
 
 ### sanity-launch-05
 
-- Experiment: Seven-scenario offline sanity launcher rehearsal of launch code 32359be on the acceptance-vocabulary-03 executable passed: credential delivery, process-access controls, interruption, exact return, reflection and export controls; no model calls
-- Date: 2026-11-09T15:15:29Z (from review/result.json field finished_at)
-- Result: `.`, every regular file under it (44 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `fe3b0049109bdae5c74e9d5e1c63b6cf161e9d19ee9d3304a1b769acf4509d34`
-- Evidence: `.scratch/sanity-launch-05` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use; until A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container
+Seven-scenario offline sanity launcher rehearsal of launch code 32359be on the acceptance-vocabulary-03 executable passed: credential delivery, process-access controls, interruption, exact return, reflection and export controls; no model calls
 
-### vocabulary-control-rehearsal-01
-
-- Experiment: Vocabulary control: reviewed Linux rehearsal on acceptance-05 with both matched study templates and synthetic saved-connection collection; 15 audits, 50 reviewer, seven operator and eleven report comparisons passed.
-- Date: 2026-11-09T15:42:35Z (from review/result.json field at)
-- Result: `review`, every regular file under it (6 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `62bb1f1bcfd2f479fb5f9a3bbfaa967935415b146db6c84887ebb5dca6274b44`
-- Evidence: `.scratch/vocabulary-control-rehearsal-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Preserve the control launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison.; until The comparison is reviewed and the principal authorizes disposal of the evidence and container.
-
-### vocabulary-candidate-rehearsal-01
-
-- Experiment: Vocabulary candidate: reviewed Linux rehearsal on acceptance-vocabulary-03 with both matched study templates and synthetic saved-connection collection; 15 audits, 50 reviewer, seven operator and eleven report comparisons passed.
-- Date: 2026-11-09T15:42:36Z (from review/result.json field at)
-- Result: `review`, every regular file under it (6 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d4920448cbb8094285feb13cfd921b3e17e2849ecc598ebc91cc40ffc2b14b5f`
-- Evidence: `.scratch/vocabulary-candidate-rehearsal-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Preserve the candidate launcher, exact input coverage and independent witnesses for the commissioned vocabulary comparison.; until The comparison is reviewed and the principal authorizes disposal of the evidence and container.
+- Evidence: `.scratch/sanity-launch-05/.` (recorded 2026-11-09T15:15:29Z).
+- Retained purpose: Latest retained launcher rehearsal; new launches must still match source, binary and inputs.; until A fresh matching rehearsal is reviewed.
 
 ### vocabulary-live-01-control-ordinary
 
-- Experiment: Vocabulary ordinary control: seven-turn Haiku submission, two citation refusals repaired, verified delivery and completed closure; procedural review and attributed answer reading retained.
-- Date: 2026-11-09T15:48:07Z (from review/result.json field at)
-- Result: `review`, every regular file under it (10 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `af97a42da2963e1a249a0eb1691f040e643d38ea8a5aed26f85d741b80c47d69`
-- Evidence: `.scratch/vocabulary-live-01-control-ordinary` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the matched ordinary control, original interaction, answer and custody evidence for the vocabulary comparison.; until The comparison is reviewed and the principal authorizes evidence and container disposal.
+Vocabulary ordinary control: seven-turn Haiku submission, two citation refusals repaired, verified delivery and completed closure; procedural review and attributed answer reading retained.
+
+- Evidence: `.scratch/vocabulary-live-01-control-ordinary/.` (recorded 2026-11-09T15:48:07Z).
+- Retained purpose: Inspect the ordinary, recovery and constrained matched vocabulary encounters.; until These particular encounters no longer inform a current evaluation.
 
 ### vocabulary-live-02-candidate-ordinary
 
-- Experiment: Vocabulary ordinary candidate: checked seven-turn Haiku submission and completed custody; correct answer and citation-refusal wording defect recorded beside the matched control.
-- Date: 2026-11-09T15:55:08Z (from review/result.json field at)
-- Result: `review`, every regular file under it (10 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `fa6b0ee976118d02df094c276513994dcf6a0e86ba3da62d9af170168f995050`
-- Evidence: `.scratch/vocabulary-live-02-candidate-ordinary` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the matched ordinary candidate, original interaction, concrete wording defect and custody evidence.; until The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal.
+Vocabulary ordinary candidate: checked seven-turn Haiku submission and completed custody; correct answer and citation-refusal wording defect recorded beside the matched control.
+
+- Evidence: `.scratch/vocabulary-live-02-candidate-ordinary/.` (recorded 2026-11-09T15:55:08Z).
+- Retained purpose: Inspect the ordinary, recovery and constrained matched vocabulary encounters.; until These particular encounters no longer inform a current evaluation.
 
 ### vocabulary-live-03-candidate-recovery
 
-- Experiment: Vocabulary recovery candidate: re-entry preserved the observation across a seeded refusal; corrected replacement and auditor submission completed in eight turns, with verified delivery and closure.
-- Date: 2026-11-09T16:03:03Z (from review/result.json field at)
-- Result: `review`, every regular file under it (11 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d21fc4cedd4e521fd1246dafbe60ca9cd82a713fc3577c8e7a552c36d50ae7a4`
-- Evidence: `.scratch/vocabulary-live-03-candidate-recovery` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain exercised recovery, exact state/handle observations, answer and custody evidence for the vocabulary comparison.; until The vocabulary comparison and targeted repair are reviewed and the principal authorizes evidence and container disposal.
+Vocabulary recovery candidate: re-entry preserved the observation across a seeded refusal; corrected replacement and auditor submission completed in eight turns, with verified delivery and closure.
+
+- Evidence: `.scratch/vocabulary-live-03-candidate-recovery/.` (recorded 2026-11-09T16:03:03Z).
+- Retained purpose: Inspect the ordinary, recovery and constrained matched vocabulary encounters.; until These particular encounters no longer inform a current evaluation.
 
 ### vocabulary-live-04-control-recovery
 
-- Experiment: Vocabulary comparison: historical control recovery; 79 procedural checks, seeded refusal and state preservation, corrected replacement, auditor submission, verified delivery and close.
-- Date: 2026-11-09T16:07:23Z (from review/result.json field at)
-- Result: `review`, every regular file under it (11 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `bc6f2a917b68c0649eb35a6417e0aa8eef64e0170f9d338b939ce25caed503e2`
-- Evidence: `.scratch/vocabulary-live-04-control-recovery` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain matched historical control, exact exchanges, attributed reading and recovery mechanism comparison for the commissioned vocabulary revision.; until Vocabulary comparison and repairs reviewed and principal authorizes disposal
+Vocabulary comparison: historical control recovery; 79 procedural checks, seeded refusal and state preservation, corrected replacement, auditor submission, verified delivery and close.
+
+- Evidence: `.scratch/vocabulary-live-04-control-recovery/.` (recorded 2026-11-09T16:07:23Z).
+- Retained purpose: Inspect the ordinary, recovery and constrained matched vocabulary encounters.; until These particular encounters no longer inform a current evaluation.
 
 ### vocabulary-live-05-control-constrained
 
-- Experiment: Vocabulary comparison: control three-turn stop; 75 final procedural checks, preserved partial selection, manager seal, verified delivery, explicit confirmation and closure. All earlier snapshot files unchanged.
-- Date: 2026-11-09T16:34:06Z (from review-03/result.json field at)
-- Result: `review-03`, every regular file under it (11 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `7457b83b32b26ad22e9df01f54d5a8af0b28a727a3b08665d970f9e847d50cb9`
-- Evidence: `.scratch/vocabulary-live-05-control-constrained` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the matched constrained control, all three immutable snapshots, refusal and unsent warning, partial return, attributed readings and closure evidence for the vocabulary comparison.; until Vocabulary comparison and repairs reviewed and principal authorizes disposal
+Vocabulary comparison: control three-turn stop; 75 final procedural checks, preserved partial selection, manager seal, verified delivery, explicit confirmation and closure. All earlier snapshot files unchanged.
+
+- Evidence: `.scratch/vocabulary-live-05-control-constrained/.` (recorded 2026-11-09T16:34:06Z).
+- Retained purpose: Inspect the ordinary, recovery and constrained matched vocabulary encounters.; until These particular encounters no longer inform a current evaluation.
 
 ### vocabulary-live-06-candidate-constrained
 
-- Experiment: Vocabulary comparison: candidate three-turn stop; 73 final procedural checks, empty selection faithfully manager-sealed, delivery verified and confirmed, closed without surrendered losses. Earlier snapshot files unchanged.
-- Date: 2026-11-09T16:41:11Z (from review-03/result.json field at)
-- Result: `review-03`, every regular file under it (11 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `371feee78c88a02fd12c25f5e4a3e32d61a6dd3945c946ca105dd9bca9dd7dd0`
-- Evidence: `.scratch/vocabulary-live-06-candidate-constrained` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the matched constrained candidate, all three snapshots, refusal, unsent warning, empty return, attributed readings and closure evidence.; until Vocabulary comparison and repairs reviewed and principal authorizes disposal
+Vocabulary comparison: candidate three-turn stop; 73 final procedural checks, empty selection faithfully manager-sealed, delivery verified and confirmed, closed without surrendered losses. Earlier snapshot files unchanged.
+
+- Evidence: `.scratch/vocabulary-live-06-candidate-constrained/.` (recorded 2026-11-09T16:41:11Z).
+- Retained purpose: Inspect the ordinary, recovery and constrained matched vocabulary encounters.; until These particular encounters no longer inform a current evaluation.
 
 ### vocabulary-study-01
 
-- Experiment: Six-placement matched Haiku vocabulary comparison complete: all six audits closed, 36 requests, 46 tool calls, 205625 input and 6586 output tokens; calculated USD 0.0238555. One selected citation-refusal wording defect.
-- Date: 2026-11-09T16:42:54Z (from comparison-final/result.json field at)
-- Result: `comparison-final`, every regular file under it (1 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d9aaf9e897bc1b1bfb6a6a3c4afd5790a85641348ad2f549d1ef50778ee4e24a`
-- Evidence: `.scratch/vocabulary-study-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain exact study inputs, authorization, source bindings, pair comparisons, original failed setup attempts and final review/resource bindings.; until Vocabulary comparison and repairs reviewed and principal authorizes disposal
+Inspect the three matched comparisons, exact inputs, authority, costs and readings.
 
-### vocabulary-citation-driver-01
+- Evidence: `.scratch/vocabulary-study-01/.` (recorded 2026-11-09T16:42:54Z).
+- Retained purpose: Inspect the three matched comparisons, exact inputs, authority, costs and readings.; until The linked evaluation or pending decision no longer needs these originals.
 
-- Experiment: Independent citation-refusal regression: old native binaries have 24 expected message-scope failures; repaired case passes 1849 checks with both sabotage and all eight message controls firing.
-- Date: 2026-11-09T16:56:50Z (from review/result.json field at)
-- Result: `review`, every regular file under it (1 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `a4ee948b602080da2b08fc0029f5e8cb1bb0587718dac02df969354f40ca08a9`
-- Evidence: `.scratch/vocabulary-citation-driver-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain independently authored checks, skipped sandbox attempts, literal before/after evidence and regression controls.; until Vocabulary repair qualification reviewed and principal authorizes disposal
+### fable-problem-b-01
 
-### vocabulary-citation-repair-01
+Interpret the second-model encounter against its authority and settings.
 
-- Experiment: Citation-refusal repair native verification: Cargo 247 default and 311 fault/sabotage passes (35 ignored); driver self-test 352 passes; retained before builds and original sandbox failure.
-- Date: 2026-11-09T16:58:04Z (from review/result.json field at)
-- Result: `review`, every regular file under it (1 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d627c62879d8298dcd675389a49c300ec980a305222d68132d882ae241c2e579`
-- Evidence: `.scratch/vocabulary-citation-repair-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain original failed checks, before binary bindings, completed host verification and integrated source-bound review.; until Vocabulary repair qualification reviewed and principal authorizes disposal
+- Evidence: `.scratch/fable-problem-b-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Interpret the second-model encounter against its authority and settings.; until The linked evaluation or pending decision no longer needs these originals.
+
+### frsrr-inspection-01
+
+Inspect the substantive checks behind the frsrr Problem A/B readings.
+
+- Evidence: `.scratch/frsrr-inspection-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Inspect the substantive checks behind the frsrr Problem A/B readings.; until The linked evaluation or pending decision no longer needs these originals.
+
+### frsrr-interface-inputs-01
+
+Frozen questions and material for the next auditor comparison.
+
+- Evidence: `.scratch/frsrr-interface-inputs-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Frozen questions and material for the next auditor comparison.; until The linked evaluation or pending decision no longer needs these originals.
+
+### frsrr-study-commission-01
+
+Interpret baseline authority, settings, costs and original reader responses.
+
+- Evidence: `.scratch/frsrr-study-commission-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Interpret baseline authority, settings, costs and original reader responses.; until The linked evaluation or pending decision no longer needs these originals.
+
+### frsrr-study-submissions-01
+
+Interpret the frsrr baseline questions and arrangements as supplied.
+
+- Evidence: `.scratch/frsrr-study-submissions-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Interpret the frsrr baseline questions and arrangements as supplied.; until The linked evaluation or pending decision no longer needs these originals.
+
+### haiku-authoring-01
+
+Inspect the unadopted guidance candidate, patch, settings and declared differences.
+
+- Evidence: `.scratch/haiku-authoring-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Inspect the unadopted guidance candidate, patch, settings and declared differences.; until The linked evaluation or pending decision no longer needs these originals.
+
+### haiku-recovery-01
+
+Interpret recovery trials against their frozen inputs and settings.
+
+- Evidence: `.scratch/haiku-recovery-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Interpret recovery trials against their frozen inputs and settings.; until The linked evaluation or pending decision no longer needs these originals.
+
+### haiku-recovery-02
+
+Interpret recovery trials against their frozen inputs and settings.
+
+- Evidence: `.scratch/haiku-recovery-02/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Interpret recovery trials against their frozen inputs and settings.; until The linked evaluation or pending decision no longer needs these originals.
+
+### haiku-recovery-03
+
+Interpret recovery trials against their frozen inputs and settings.
+
+- Evidence: `.scratch/haiku-recovery-03/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Interpret recovery trials against their frozen inputs and settings.; until The linked evaluation or pending decision no longer needs these originals.
+
+### haiku-recovery-block-01
+
+Inspect the five-case findings, trial 14 limited review and custody observations.
+
+- Evidence: `.scratch/haiku-recovery-block-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Inspect the five-case findings, trial 14 limited review and custody observations.; until The linked evaluation or pending decision no longer needs these originals.
+
+### haiku-recovery-followups-01
+
+Interpret the paging and arithmetic encounters against their exact inputs.
+
+- Evidence: `.scratch/haiku-recovery-followups-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Interpret the paging and arithmetic encounters against their exact inputs.; until The linked evaluation or pending decision no longer needs these originals.
+
+### haiku-stress-01
+
+Interpret stress encounters against their questions, plants and prior predictions.
+
+- Evidence: `.scratch/haiku-stress-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Interpret stress encounters against their questions, plants and prior predictions.; until The linked evaluation or pending decision no longer needs these originals.
+
+### rapid-iteration-01
+
+Original independent consultations and measurements for the pending design decision.
+
+- Evidence: `.scratch/rapid-iteration-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Original independent consultations and measurements for the pending design decision.; until The linked evaluation or pending decision no longer needs these originals.
+
+### vocabulary-revision-01
+
+Inspect the principal readings that motivated the adopted vocabulary revision.
+
+- Evidence: `.scratch/vocabulary-revision-01/.` (recorded 2026-11-09T21:59:33Z).
+- Retained purpose: Inspect the principal readings that motivated the adopted vocabulary revision.; until The linked evaluation or pending decision no longer needs these originals.

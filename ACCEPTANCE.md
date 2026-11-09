@@ -696,7 +696,7 @@ cost.
 
 ## What a test run keeps
 
-Each run keeps a record next to the work that cites it:
+Each run supplies the following evidence for review:
 
 - the binary and image digests;
 - the environment;
@@ -706,9 +706,12 @@ Each run keeps a record next to the work that cites it:
 - the witness comparisons;
 - for the conformance tier, the full recorded conversations and actual provider usage/cost.
 
-Bulky material such as conversations and homes at the size limits follows the
-project's retention rules for evidence runs. The witness is kept until the run's
-results have been reviewed.
+Keep the independent witness and affected originals through review. Afterward,
+retain current results and only the original material selected for a present
+inspection purpose under [DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention).
+Successful synthetic working trees, superseded checks and staging copies are
+disposable. This lifetime does not weaken the comparisons required of a run or
+change the application's custody obligations.
 
 ## What these tests don't claim
 

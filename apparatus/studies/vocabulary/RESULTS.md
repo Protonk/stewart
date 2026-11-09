@@ -143,8 +143,8 @@ checks without skips, and its case list loaded 123 cases. A focused comparison
 against retained pre-repair binaries found 24 message-scope failures across
 recording and replacement; the repaired binaries passed 1,849 checks with zero
 failures outside control variants. Both sabotage controls and all eight
-message controls fired. Earlier sandbox-denied loopback attempts remain retained
-as failed or skipped, not rewritten as successes.
+message controls fired. Earlier sandbox-denied loopback attempts failed or were skipped; those attempts
+were not qualification evidence.
 
 The subsequent Linux suite `.scratch/acceptance-vocabulary-citation-01`, built
 from `027def8`, qualifies the correction on native aarch64 and emulated x86_64.
@@ -176,23 +176,9 @@ The first four attributed readings are in `review/`; the constrained cases keep
 Technical results, exact answer bytes and attributed assessments remain separate.
 Pinning retains evidence; it does not qualify a model.
 
-Repair verification and pre-repair native binaries remain at
-`.scratch/vocabulary-citation-repair-01`; its `review/result.json` binds the
-native outcomes. Independent driver checks, before/after host runs and their
-controls remain at `.scratch/vocabulary-citation-driver-01`, with the aggregate
-in `host-result.json`.
-The Linux suite's `review/result.json` records its inspected controls and verified
-work-archive digests. Earlier vocabulary implementation and Linux-repair checks
-remain in `.scratch/vocabulary-implementation-01` and
-`.scratch/vocabulary-linux-repair-01` under their original source bindings.
-
-Both matching Linux rehearsals are retained and pinned at
-`.scratch/vocabulary-control-rehearsal-01` and
-`.scratch/vocabulary-candidate-rehearsal-01`. Each observed 15 audits, passed 50
-reviewer comparisons, fired 44 reviewer controls, passed seven operator and 11
-report comparisons, and fired both Linux process-access controls. Both included
-the exact templates and synthetic saved-connection collection, with no model
-calls or skips. The unchanged historical apparatus remains in
-`.scratch/vocabulary-control-worktree-01`; earlier rejected setup attempts remain
-in the study evidence. Keep the run containers and original records until the
-principal authorizes disposal.
+Current Linux qualification is indexed in [qualified.md](../../qualified.md).
+The original model encounters retain their captured interfaces and source/binary
+identities. Superseded synthetic runs, pre-repair binaries, matching rehearsal
+work, and the historical control worktree have been disposed of after review.
+New launches require fresh bindings to their selected build and inputs; the
+completed study supplies no authority to replay old packets.

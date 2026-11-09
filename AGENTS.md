@@ -52,7 +52,7 @@ weakness, go to the user, who decides how to route them.
 Whoever takes a task owns understanding it, doing or organizing it, integrating it
 and verifying the result. Write useful CLI help, comments and failure messages
 along with implementation and tests. Run the checks named by DEVELOPMENT,
-preserve their outputs and report actual outcomes: counts as the run gives them,
+keep their outputs through review and report actual outcomes: counts as the run gives them,
 failures with their output, and skipped steps as skipped. Finish remaining work
 or give it an explicit disposition. Explain the app through its behavior and
 results.
@@ -106,6 +106,11 @@ route readers to particular plans, and product code and tests must stand without
 them. Explain mechanisms and reasons without temporary planning coordinates.
 Do not accumulate completed work reports, superseded proposals or reminders of
 removed features.
+
+Keep one current working set for the agent/human team. Generated output is
+disposable after use and review; archive only originals with a present inspection
+purpose that would be costly or impossible to reproduce. Citations and completed
+tasks do not create indefinite retention obligations.
 
 Notes are optional support for unfinished work, not routine deliverables or a
 session history. Write only what the next action needs and the code, diff, test
