@@ -1,33 +1,16 @@
 # Product response vocabulary
 
 The vocabulary revision is implemented at f6a2fd5 and repaired at bb786d5.
-`acceptance-vocabulary-03`, from c953bed, qualifies it on Linux. The launcher
-rehearsals on that executable are outstanding.
+`acceptance-vocabulary-03`, from c953bed, qualifies it on Linux, and both
+launchers are rehearsed and reviewed on that executable.
 
-## Next actions
+## Next action
 
-1. **Rehearse and review both affected launchers.** Use the qualified
-   native-aarch64 executable of `acceptance-vocabulary-03`, each launcher with a
-   fresh retained directory:
-
-   ```sh
-   python3 -I -B apparatus/c10/c10.py rehearse \
-     "$PWD/.scratch/c10-vocabulary-launch-01" --qualification acceptance-vocabulary-03
-   python3 -I -B apparatus/c10/c10.py review "$PWD/.scratch/c10-vocabulary-launch-01"
-   python3 -I -B apparatus/sanity/launch.py rehearse \
-     "$PWD/.scratch/sanity-launch-05" --qualification acceptance-vocabulary-03
-   python3 -I -B apparatus/sanity/review.py "$PWD/.scratch/sanity-launch-05"
-   ```
-
-   Follow the [C10](apparatus/c10/README.md) and
-   [sanity](apparatus/sanity/LAUNCHER.md) instructions, including Linux
-   process-access controls. Record and commit the reviewed bindings. These are
-   fake-provider checks, with no model calls. A live commission still needs
-   rehearsal coverage matching its own inputs and credential route.
-2. **Disposition any repairs from the bounded vocabulary study.** Stabilize the
-   selected terms and close this plan when its selected work is complete. The
-   coordinating plan owns when the study and broader auditor work occur; this
-   plan does not authorize paid placements.
+**Disposition any repairs from the bounded vocabulary study.** Stabilize the
+selected terms and close this plan when its selected work is complete. The
+coordinating plan owns when the study and broader auditor work occur; this plan
+does not authorize paid placements. A live commission still needs rehearsal
+coverage matching its own inputs and credential route.
 
 ## Verified state and remaining limits
 
@@ -53,7 +36,17 @@ The service binaries of the second and third runs are byte-identical.
 The original native implementation checks and fake-audit/operator/report
 comparisons remain in `.scratch/vocabulary-implementation-01`, and the repair
 checks in `.scratch/vocabulary-linux-repair-01`, under their own source
-bindings. Linux process-access controls remain owed by the rehearsals.
+bindings.
+
+Both launcher rehearsals ran at apparatus commit 32359be on the
+`acceptance-vocabulary-03` native-aarch64 executable, with the fake provider and
+no model calls, and are pinned with their reviews. `.scratch/c10-vocabulary-launch-01`
+passed the rehearsal gate: 13 of 13 audits observed, 14 reviewer, seven operator
+and 11 report comparisons passed, and all 12 reviewer controls fired.
+`.scratch/sanity-launch-05` passed its seven scenarios with 26 of 26 exact
+authentication matches. In both, the two Linux process-access controls fired and
+inspection of the Stewart process was denied. Neither exercised a saved Keychain
+connection, supplied study templates or a study-build override.
 
 ## Selected scope and completion
 

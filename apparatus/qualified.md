@@ -89,6 +89,8 @@ not carry them.
 | [haiku-recovery-live-17](#haiku-recovery-live-17) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
 | [haiku-recovery-live-18](#haiku-recovery-live-18) | experiment | Supports the commissioned Haiku failure/recovery comparisons and their checked or explicitly incomplete reports. | The comparison findings and custody obligations are resolved and the principal authorizes evidence disposal. |
 | [vocabulary-timing-01](#vocabulary-timing-01) | experiment | Evidence for raising the protocol tripwire from 120 to 200 ms and for reading the acceptance-vocabulary-02 timing failure | The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this comparison and its six containers |
+| [c10-vocabulary-launch-01](#c10-vocabulary-launch-01) | experiment | Retain the checked C10 rehearsal on the qualified vocabulary build, its source bindings, original snapshots and independent witnesses. | A reviewed matching rehearsal supersedes it and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage. |
+| [sanity-launch-05](#sanity-launch-05) | experiment | Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use | A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container |
 
 ## Records
 
@@ -723,3 +725,19 @@ not carry them.
 - Result: `.`, every regular file under it (636 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `d0c0a67b770216f591baf63d2095da427592df0a7826daed30c037d5a0f2650b`
 - Evidence: `.scratch/vocabulary-timing-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: Evidence for raising the protocol tripwire from 120 to 200 ms and for reading the acceptance-vocabulary-02 timing failure; until The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this comparison and its six containers
+
+### c10-vocabulary-launch-01
+
+- Experiment: Linux aarch64 C10 rehearsal of apparatus 32359be on the acceptance-vocabulary-03 executable: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.
+- Date: 2026-11-09T15:07:33Z (from review/result.json field ended_at)
+- Result: `review`, every regular file under it (8 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `cdb03803b0d6e54be3c1f0ba2d1b2bdf5d214a9b72fc39995863cfb020ac1da5`
+- Evidence: `.scratch/c10-vocabulary-launch-01` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the checked C10 rehearsal on the qualified vocabulary build, its source bindings, original snapshots and independent witnesses.; until A reviewed matching rehearsal supersedes it and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage.
+
+### sanity-launch-05
+
+- Experiment: Seven-scenario offline sanity launcher rehearsal of launch code 32359be on the acceptance-vocabulary-03 executable passed: credential delivery, process-access controls, interruption, exact return, reflection and export controls; no model calls
+- Date: 2026-11-09T15:15:29Z (from review/result.json field finished_at)
+- Result: `.`, every regular file under it (44 files); SHA-256 of their sorted listing (SHA-256, size and path of each) `fe3b0049109bdae5c74e9d5e1c63b6cf161e9d19ee9d3304a1b769acf4509d34`
+- Evidence: `.scratch/sanity-launch-05` (local: only on the machine that ran it; clones do not carry it)
+- Pin: Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use; until A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container

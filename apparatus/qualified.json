@@ -1959,6 +1959,46 @@
         "reason": "Evidence for raising the protocol tripwire from 120 to 200 ms and for reading the acceptance-vocabulary-02 timing failure",
         "until": "The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this comparison and its six containers"
       }
+    },
+    {
+      "id": "c10-vocabulary-launch-01",
+      "kind": "experiment",
+      "date": "2026-11-09T15:07:33Z",
+      "date_from": "review/result.json field ended_at",
+      "summary": "Linux aarch64 C10 rehearsal of apparatus 32359be on the acceptance-vocabulary-03 executable: 13 expected audit scenarios, 14 reviewer comparisons, seven operator comparisons, 11 report comparisons and two process controls; no skips or model calls.",
+      "result": {
+        "path": "review",
+        "files": 8,
+        "sha256": "cdb03803b0d6e54be3c1f0ba2d1b2bdf5d214a9b72fc39995863cfb020ac1da5"
+      },
+      "evidence": {
+        "path": ".scratch/c10-vocabulary-launch-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the checked C10 rehearsal on the qualified vocabulary build, its source bindings, original snapshots and independent witnesses.",
+        "until": "A reviewed matching rehearsal supersedes it and the principal authorizes disposal; saved connections and supplied study inputs need their own matching coverage."
+      }
+    },
+    {
+      "id": "sanity-launch-05",
+      "kind": "experiment",
+      "date": "2026-11-09T15:15:29Z",
+      "date_from": "review/result.json field finished_at",
+      "summary": "Seven-scenario offline sanity launcher rehearsal of launch code 32359be on the acceptance-vocabulary-03 executable passed: credential delivery, process-access controls, interruption, exact return, reflection and export controls; no model calls",
+      "result": {
+        "path": ".",
+        "files": 44,
+        "sha256": "fe3b0049109bdae5c74e9d5e1c63b6cf161e9d19ee9d3304a1b769acf4509d34"
+      },
+      "evidence": {
+        "path": ".scratch/sanity-launch-05",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the rehearsal that covers the current launch code and the qualified vocabulary build for further real-key use",
+        "until": "A later rehearsal on newer launch code supersedes it and the user authorizes disposal of this container"
+      }
     }
   ]
 }

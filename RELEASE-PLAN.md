@@ -9,8 +9,8 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next action | Rehearse and review both launchers on the qualified vocabulary build | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
-| After the vocabulary revision's required checks | Run a small bounded Haiku comparison of the revision; make only targeted repairs and follow-ups | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| Next action | Run a small bounded Haiku comparison of the vocabulary revision; make only targeted repairs and follow-ups | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
+| With the Haiku vocabulary block | Disposition its repairs and close the vocabulary revision | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
 | After the Haiku vocabulary block | Broaden auditor studies, with Opus the intended next candidate; bind model and budget for that comparison | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Retained next implementation candidate; not a prerequisite for broadening auditors | Select, build and demonstrate the narrow rapid-iteration path proposed in `.scratch/rapid-iteration-01/DECISION-BRIEF.md` | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | After self-contained rapid iteration is demonstrated | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
@@ -69,6 +69,9 @@ launch code. Its reviewed evidence is in `review/result.json` within that folder
 container. It demonstrates synthetic credential delivery, process-access
 controls, interruption, exact delivery and export withholding. It establishes
 the native Linux path against local fakes, not real-provider conformance.
+`.scratch/sanity-launch-05` and `.scratch/c10-vocabulary-launch-01` repeat the
+sanity and C10 rehearsals on the `acceptance-vocabulary-03` executable; both
+are pinned with their reviews.
 
 The reporting apparatus at `453a60d` passed the reviewed Linux aarch64 rehearsal
 `.scratch/c10-report-linux-01`, pinned in the qualification record with its review
