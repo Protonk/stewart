@@ -10,7 +10,7 @@ quality remain matters of attributed judgment.
 
 - [x] Prepare the first small Opus comparison below, with exact inputs and unpaid
   proposals. Live authority and account labels remain unfilled.
-- [ ] Prepare the matching binary/input/credential-route rehearsal and review
+- [x] Prepare the matching binary/input/credential-route rehearsal and review
   the actual launch bindings. The existing
   [study apparatus](apparatus/c10/README.md#study-submissions) supports supplied
   inputs. Paid placements require their own bounded commission.
@@ -25,11 +25,11 @@ quality remain matters of attributed judgment.
 
 ## First comparison: four independent inquiries
 
-Next action: the principal runs `!sh .tmp/opus-01/rehearse.sh` on the host. It
-uses a new `.scratch/opus-rehearsal-01` folder. The Linux run is not yet performed;
-return to its actual results before marking rehearsal complete.
-The sandbox's metadata-only Keychain check returned `lookup_failed`; the wrapper
-checks the synthetic item's availability in the host session before starting.
+Next action: the principal decides whether to authorize the proposed live block
+below and supplies its account/workspace/credential labels and spending
+arrangement. Preparation and the matching offline rehearsal are complete;
+the proposals remain unpaid and unauthorized. Bind the final authorized packets
+to the current committed apparatus before launch.
 
 Working inputs are `.scratch/opus-comparison-01`: `freeze.json` identifies the
 templates and unapproved proposals; `packets/` holds bindings to the committed
@@ -94,18 +94,28 @@ These are documented compatibility claims, not live observations on this account
 
 ### Rehearsal and review
 
-Run the existing Linux rehearsal with all four exact templates and the synthetic
-saved connection, including its fresh-process follow-up collection. This plans
-17 synthetic audits: 13 existing cases/controls plus four supplied-input audits.
-It must cover the existing process, export, reviewer, operator and reporting
-controls, plus the study checks for every supplied template. Local preparation
-establishes input identity and packet validity; it is not Linux qualification or
-a demonstration of Opus solving these questions. The synthetic rehearsal uses
-its own fixed model and allowances; it does not establish live capacity at the
-proposed bounds. No new apparatus is selected.
+The reviewed Linux rehearsal is `.scratch/opus-rehearsal-01`, using all four
+exact templates, the `acceptance-retention-01` binary and apparatus from
+`985c6eb`. All 17 synthetic audits produced their expected observations, with
+zero failed, unstarted or skipped cases. The reviewer comparisons passed 86/86,
+with 76/76 firing controls; operator checks passed 7/7 and reporting checks
+11/11. Both process-protection controls fired. The three deliberately withheld
+or failed exports were expected controls. All four live input bindings pass the
+retained rehearsal check.
 
-After rehearsal, inspect every required outcome and input/binary/source binding
-before proposing the final paid packet digests. Review each live case before
+The host used `stewart-synthetic` through Keychain and completed a fresh-process
+follow-up collection; the second export verifies ordinary submission. The host
+scan found no credential matches or read errors in its stated file-byte scope.
+The run made zero model calls. Its fixed synthetic model and allowances do not
+establish live capacity at the proposed bounds or demonstrate Opus solving the
+questions. Review details are in `review/result.json` within the rehearsal;
+retain its launch-prerequisite evidence only while this comparison needs it.
+Staging and generated reviewer variants have been removed after review; the
+remaining evidence still passes the launch prerequisite. No new apparatus is
+selected.
+
+Confirm final account, authority and input/binary/source bindings before proposing
+the paid packet digests. Review each live case before
 proceeding to the next independently authorized one. An operational or evidence
 failure stops the block for review; an intact, reviewed limit ending is a study
 outcome. Preserve custody and arrange inspection/closure without another model

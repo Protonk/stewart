@@ -516,3 +516,10 @@ Working inputs and unpaid proposals for the first four-case Opus comparison, inc
 
 - Evidence: `.scratch/opus-comparison-01/freeze.json` (recorded 2026-11-09T22:56:00Z).
 - Retained purpose: One current input set for the authorized preparation and offline rehearsal; no live spending authority.; until The study is completed or replaced; select only useful original encounters for archival afterward.
+
+### opus-rehearsal-01
+
+Offline Opus comparison rehearsal: 17 expected audit outcomes; 86 reviewer comparisons, 76 firing controls, 7 operator and 11 reporting checks; synthetic saved-connection follow-up verified; zero model calls.
+
+- Evidence: `.scratch/opus-rehearsal-01/review/result.json` (recorded 2026-11-09T23:13:07Z).
+- Retained purpose: Current launch prerequisite for the four prepared Opus comparison inputs; retain the exported evidence needed by check_rehearsal.; until The comparison completes or a replacement rehearsal supersedes it.
