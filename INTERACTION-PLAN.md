@@ -42,6 +42,15 @@ behavior remains `open-inquiry/1`. The candidate was explicitly unqualified and
 has not been adopted. A new packet uses current bindings, never an old helper as
 spending authority.
 
+The principal also has two corrupted derivatives of frsrr, the small repository
+used in earlier Haiku testing. One version has important damage and the other
+does not. Which version and what is damaged are predetermined but hidden from
+both the principal and the agent. The principal reports that Haiku did not
+provide answers on this comparison. Consider this blinded pair for Opus: observe
+how it approaches a difficult task whose answer neither experimenter knows.
+Preserve the blinding while planning; the exact task, inputs and run bounds
+remain to be specified.
+
 Keep manager operation simple and fixed within each comparison. A manager-facing
 redesign, general response rewriting, a new answer-kind schema and linter
 implementation are outside this study. Do not turn one auditor's habits into
