@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next action | Complete Linux acceptance and both launcher rehearsals for the vocabulary repairs | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
+| Next action | Rehearse and review both launchers on the qualified vocabulary build | [RESPONSE-VOCABULARY-PLAN.md](RESPONSE-VOCABULARY-PLAN.md) |
 | After the vocabulary revision's required checks | Run a small bounded Haiku comparison of the revision; make only targeted repairs and follow-ups | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | After the Haiku vocabulary block | Broaden auditor studies, with Opus the intended next candidate; bind model and budget for that comparison | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Retained next implementation candidate; not a prerequisite for broadening auditors | Select, build and demonstrate the narrow rapid-iteration path proposed in `.scratch/rapid-iteration-01/DECISION-BRIEF.md` | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
@@ -105,7 +105,7 @@ establishes no model qualification or authority for further model calls.
 The qualification record pins the launcher rehearsals, the earlier failed attempts and
 their diagnostic controls. Keep their original containers and independent
 credential witnesses through review. Current acceptance containers are named in
-`.scratch/acceptance-05/host/driver-<arch>.container`; each launcher container is
+`.scratch/acceptance-vocabulary-03/host/driver-<arch>.container`; each launcher container is
 named in its `host/container.name`. Disposal is the user's
 decision under [DEVELOPMENT.md](DEVELOPMENT.md#evidence-and-retention).
 

@@ -20,10 +20,8 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-vocabulary-02](#acceptance-vocabulary-02) | 2026-11-09T04:03:06Z | `bb786d5` | failed | latest |
-| acceptance | linux-aarch64 | [acceptance-05](#acceptance-05) | 2026-11-01T18:56:51Z | `f4bbb9c` | qualified | latest qualified |
-| acceptance | linux-x86_64 | [acceptance-vocabulary-02](#acceptance-vocabulary-02) | 2026-11-09T04:03:06Z | `bb786d5` | failed (this platform: qualified) | latest |
-| acceptance | linux-x86_64 | [acceptance-05](#acceptance-05) | 2026-11-01T18:56:51Z | `f4bbb9c` | qualified | latest qualified |
+| acceptance | linux-aarch64 | [acceptance-vocabulary-03](#acceptance-vocabulary-03) | 2026-11-09T05:43:52Z | `c953bed` | qualified | latest |
+| acceptance | linux-x86_64 | [acceptance-vocabulary-03](#acceptance-vocabulary-03) | 2026-11-09T05:43:52Z | `c953bed` | qualified | latest |
 | toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 
@@ -32,7 +30,9 @@ not carry them.
 | Record | Kind | Reason | Until |
 | --- | --- | --- | --- |
 | [acceptance-04](#acceptance-04) | acceptance | Retain the original credential-test failures and exact binaries alongside the independent Rosetta diagnosis | The user has reviewed the corrected acceptance result and original failed evidence |
+| [acceptance-05](#acceptance-05) | acceptance | The qualified executable bound by the retained launcher rehearsals and live experiment records, and the baseline of the focused timing comparison | Launcher rehearsals on the newly qualified executable are reviewed and the user authorizes disposal of this run and its containers |
 | [acceptance-vocabulary-01](#acceptance-vocabulary-01) | acceptance | Retain the first vocabulary-revision acceptance failure and its exact binaries beside the repaired run | The user has reviewed the vocabulary acceptance outcome and the original failed evidence |
+| [acceptance-vocabulary-02](#acceptance-vocabulary-02) | acceptance | Retain the native protocol timing failure at the 120 ms tripwire and its exact binaries, which the focused timing comparison measured | The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this run and its containers |
 | [successor-inquiry-01](#successor-inquiry-01) | experiment | recovery-critical design-era records | the user decides they are no longer needed |
 | [credential-emulation-01](#credential-emulation-01) | experiment | Retain the witnesses and original containers supporting the credential acceptance corrections | The user has reviewed the diagnosis and authorizes disposal of these witnesses and containers |
 | [sanity-launch-01](#sanity-launch-01) | experiment | Retain the first launcher failure and the private original container until review | The user has reviewed the replacement rehearsal and authorizes disposal of this failed setup |
@@ -133,7 +133,7 @@ not carry them.
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/acceptance-05` (local: only on the machine that ran it; clones do not carry it)
-- Pin: none
+- Pin: The qualified executable bound by the retained launcher rehearsals and live experiment records, and the baseline of the focused timing comparison; until Launcher rehearsals on the newly qualified executable are reviewed and the user authorizes disposal of this run and its containers
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
@@ -197,7 +197,7 @@ not carry them.
 - Run-level failures: host/DONE reports failures=1; host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-vocabulary-02/driver-arm64/)
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/acceptance-vocabulary-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: none
+- Pin: Retain the native protocol timing failure at the 120 ms tripwire and its exact binaries, which the focused timing comparison measured; until The user has reviewed the acceptance run under the 200 ms tripwire and authorizes disposal of this run and its containers
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
@@ -219,6 +219,38 @@ not carry them.
 | Release binary SHA-256 | `72dc02154d718d40af2108235ab3e7f046dd92cc2687d392437c53159201f95e` | `0f7ec280549ef0224b3cfc37daebaf3b8c71c26e56e2ab3bd1fd83889b1bd1b5` |
 | Test binary SHA-256 | `ebab37c1ca20894aea948eff65d353f9ece090ea1acf01788e13f15c98f508fe` | `140c23a2c3431ffe21afdabaa29f8c18fec0a6ec716c8634907ea210851a3077` |
 | RESULT.json SHA-256 | `2bb21b3ec481848b44ebd0626969d5a69a5d612ea99f3a69d2950a42e72245d3` | `517345ea1ffb65688fa35b2a0b6d7419a5d7b10dfb65356b28e7527ce0e9d6b7` |
+
+### acceptance-vocabulary-03
+
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `99aaee3901cb0e2ed3a66be7168f08b7373736870febc60cd2fe82acd11cbca4` at the source commit)
+- Source commit: `c953bed767623f832d64bf07ee14b3faa6be38ea`; archive SHA-256 `d717bac8f4820ec8f2a06e83e8e800168221bb28394fff8451323d8c2e1b7d5c`
+- Finished: 2026-11-09T05:43:52Z
+- Outcome: **qualified**
+- Run-level failures: none
+- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
+- Evidence: `.scratch/acceptance-vocabulary-03` (local: only on the machine that ran it; clones do not carry it)
+- Pin: none
+
+| | linux-aarch64 | linux-x86_64 |
+| --- | --- | --- |
+| Execution | native | emulated (Rosetta) |
+| Outcome | **qualified** | **qualified** |
+| Failures | none | none |
+| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
+| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
+| Script checks (exit records) | 25/25, controls 8/8 | 25/25, controls 8/8 |
+| Driver self-test | 352/352 | 352/352 |
+| Cases passed | 125/125 | 123/123 |
+| Cases | selected 125, ran 125, passed 125, failed 0, skipped 0 | selected 123, ran 123, passed 123, failed 0, skipped 0 |
+| Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 156, failed 74, skipped 0 |
+| Checks | passed 162770, failed outside controls 0, failed inside controls 1010 | passed 162770, failed outside controls 0, failed inside controls 1010 |
+| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
+| Driver controls fired | 13/13 | 13/13 |
+| Timing gate | on, passed: commands worst 3.267 ms (threshold 100.0 ms); protocol worst 98.716 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 43.851 ms (threshold 100.0 ms); protocol worst 179.542 ms (threshold 200.0 ms) |
+| End to end (`e2e.reacting-audit`) | pass, 871/871 checks | pass, 871/871 checks |
+| Release binary SHA-256 | `72dc02154d718d40af2108235ab3e7f046dd92cc2687d392437c53159201f95e` | `0f7ec280549ef0224b3cfc37daebaf3b8c71c26e56e2ab3bd1fd83889b1bd1b5` |
+| Test binary SHA-256 | `ebab37c1ca20894aea948eff65d353f9ece090ea1acf01788e13f15c98f508fe` | `140c23a2c3431ffe21afdabaa29f8c18fec0a6ec716c8634907ea210851a3077` |
+| RESULT.json SHA-256 | `cf637b5e12002cdacc64b9503a2e6d258eee6a2f6189d1134cefe02dca2ff59f` | `203b7c20ac16736065afbd3262b9d2ec3150b6d23d60d614c65394e37b28b593` |
 
 ### apparatus-02
 
