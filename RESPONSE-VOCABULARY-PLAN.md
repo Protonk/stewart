@@ -6,11 +6,13 @@ launchers are rehearsed and reviewed on that executable.
 
 ## Next action
 
-**Disposition any repairs from the bounded vocabulary study.** Stabilize the
-selected terms and close this plan when its selected work is complete. The
-coordinating plan owns when the study and broader auditor work occur; this plan
-does not authorize paid placements. A live commission still needs rehearsal
-coverage matching its own inputs and credential route.
+**Disposition any repairs from the commissioned vocabulary study.** The principal
+authorized preparation, the bounded Haiku comparison and targeted repairs on
+2026-11-09. The [study specification](apparatus/studies/vocabulary/STUDY.md) fixes
+the comparison; its exact setup is retained in `.scratch/vocabulary-study-01`.
+Stabilize the selected terms and close this plan when its selected work is
+complete. A live commission still needs rehearsal coverage matching its own
+inputs and credential route.
 
 ## Verified state and remaining limits
 

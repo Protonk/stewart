@@ -56,9 +56,18 @@ prevent completion of this experimental block.
 
 ## Vocabulary check with Haiku
 
-Prepare a small Haiku check of the vocabulary revision. This is a new bounded
-block; the completed campaign's unused ceiling does not itself authorize its
-placements.
+The principal commissioned this block on 2026-11-09: prepare and run the bounded
+vocabulary comparison, resolve targeted defects and complete the vocabulary
+revision. The Haiku spending cap is already set externally, as stated by the
+principal; its amount and enforcement are not independently observed here.
+The [study specification](apparatus/studies/vocabulary/STUDY.md) fixes six initial
+placements in three matched pairs. Exact templates, proposals, authority and
+preparation evidence are retained in `.scratch/vocabulary-study-01`.
+
+Next: complete matching offline rehearsals for both binaries and the selected
+saved-connection route, then place and review each audit in the frozen order.
+The control uses the unchanged historical apparatus in
+`.scratch/vocabulary-control-worktree-01`. No paid placement has launched.
 
 - [ ] Bind a compact comparison to the implemented vocabulary revision and its
   qualification/rehearsal evidence. Hold question, material, family guidance,
@@ -73,9 +82,10 @@ placements.
   cannot establish that those summaries are understandable to managers. The approved family-ID
   exposure is a changed auditor input and must be recorded as such; it cannot be
   separated from the reply-shape revision without a distinct comparison.
-- [ ] Present the exact templates, placement/continuation bounds, cost basis and
-  spending cap for a fresh bounded commission. Do not launch from this plan alone
-  or conduct a usage-limit study as a side effect of a constrained-ending case.
+- [x] Fix the templates and initial placement/continuation bounds under the fresh
+  commission, retaining a dated cost basis and the principal's external-cap
+  statement. The constrained ending is an audit turn limit, not a provider
+  usage-limit study. Additional placements must answer a named uncertainty.
 - [ ] Return the procedural position, observed repairs/deficiencies, custody and
   resources with attributed interpretation. Resolve a specific defect if needed,
   then finish the block; Haiku-specific polish is not an exit condition.
