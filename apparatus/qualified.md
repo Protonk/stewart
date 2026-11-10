@@ -512,10 +512,10 @@ Inspect the principal readings that motivated the adopted vocabulary revision.
 
 ### opus-comparison-01
 
-Frozen questions and materials for four completed Opus encounters; exact consumed commission and authorization retained alongside one working input set for the pending blinded interpretation.
+Frozen inputs, exact consumed commission and original unsealed key for the completed four-encounter Opus comparison; one working set for inspecting findings and selecting any next inquiry.
 
-- Evidence: `.scratch/opus-comparison-01/freeze.json` (recorded 2026-11-09T22:56:00Z).
-- Retained purpose: Support the principal readings and decision on the completed blinded comparison with one accessible working input set.; until The blinded comparison has a disposition; keep only selected originals still needed for inspection.
+- Evidence: `.scratch/opus-comparison-01/.` (recorded 2026-11-09T22:56:00Z).
+- Retained purpose: Inspect the disclosed plants against the fixed returns and readings, and use the selected inputs when deciding further work.; until The comparison no longer needs these originals for inspection; retain only inputs selected for current work.
 
 ### opus-rehearsal-01
 
@@ -543,11 +543,11 @@ Opus Problem A: checked auditor submission, verified delivery and closure; 14 tu
 Opus blinded 5sgh: input-limit stop, six recorded entries, manager-sealed delivery and confirmed closure; 12 turns, 428551 input and 12494 output tokens; provisional reading fixed before the other blinded return.
 
 - Evidence: `.scratch/opus-live-03/.` (recorded 2026-11-09T23:56:49Z).
-- Retained purpose: Inspect this blinded encounter, its recorded selection and limit/custody outcome against the eventual disclosed condition.; until The comparison no longer needs this original encounter for inspection.
+- Retained purpose: Inspect this encounter, its recorded selection and limit/custody outcome against the disclosed prose and comment plants.; until The comparison no longer needs this original encounter for inspection.
 
 ### opus-live-04
 
 Opus blinded sw3z: input-limit stop after prepare, seven recorded entries, manager-sealed delivery and confirmed closure; 12 turns, 461820 input and 13585 output tokens; provisional reading fixed before key disclosure.
 
 - Evidence: `.scratch/opus-live-04/.` (recorded 2026-11-10T00:11:56Z).
-- Retained purpose: Inspect this blinded encounter, its recorded selection and limit/custody outcome against the eventual disclosed condition.; until The comparison no longer needs this original encounter for inspection.
+- Retained purpose: Inspect this encounter, its recorded selection and limit/custody outcome in the disclosed unplanted condition.; until The comparison no longer needs this original encounter for inspection.

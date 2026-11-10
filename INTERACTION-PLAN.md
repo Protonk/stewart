@@ -8,53 +8,31 @@ quality remain matters of attributed judgment.
 
 ## Remaining work
 
-- [ ] If the principal authorizes unblinding, compare the recorded claims and
-  readings with the predetermined condition. Keep what was known before
-  disclosure distinct from later explanation. If disclosure is not selected,
-  give the comparison an explicitly unresolved disposition.
-- [ ] Finish the comparison of answer sufficiency and interface friction.
-  Inspect question, return and interaction together; preserve poor answers,
-  partial work and inconclusive findings. Select any further trial only for a
-  named uncertainty, with a fresh bounded commission.
+- [ ] Select the next inquiry, if any, from the completed comparisons. Name the
+  uncertainty it would resolve and distinguish answer sufficiency from interface
+  friction. The disclosed frsrr pair contains prose/comment plants; a study of
+  detecting executable numerical damage would need a suitable input and its own
+  bounded commission. No further trial is selected or authorized.
 - [ ] Test any proposed guidance/interface change against broader observations.
   Before adoption align contracts, interface, forms, help/examples and the
   [required checks](DEVELOPMENT.md#what-to-run-for-what-you-changed). Changes to
   authority, expressive freedom or custody require the principal's decision.
 
-## Blinded comparison awaiting interpretation
+## Available comparison inputs
 
 The [Opus comparison findings](apparatus/studies/interaction/RESULTS.md#opus-comparison)
-own the completed encounters, custody outcomes, costs and limitations. All four
-placements are consumed and all audits are closed. No model resumption or
-additional placement is authorized by the unused stop budget.
+own the completed encounters, disclosed condition, comparison and limitations.
+All four placements are consumed and all audits are closed. No model resumption
+or additional placement is authorized by the unused stop budget.
 
-The two frozen frsrr derivatives have a predetermined hidden condition: one has
-important damage and the other does not. Which version and what is damaged
-remain hidden from both the principal and agent. Both received the same broad
-correctness question, without disclosure of the pair or the planted condition.
-The earlier Haiku checklist attempts supplied no answers; the changed question,
-model, allowances and guidance prevent a model-only comparison.
-
-| Input | Original delivered selection | Fixed agent reading |
-| --- | --- | --- |
-| `frsrr-5sgh` | `.scratch/opus-live-03/review/answer.md` | `.scratch/opus-live-03/review/reading.json` |
-| `frsrr-sw3z` | `.scratch/opus-live-04/review/answer.md` | `.scratch/opus-live-04/review/reading.json` |
-
-Both are manager-sealed selections after input-limit stops, not auditor
-submissions. The principal's provisional reading is recorded in the linked
-findings; the agent's readings remain fixed in the files above.
-Keep the hidden key, old predictions and plant instructions closed until the
-principal expressly directs disclosure. A confident account does not establish
-the hidden condition.
-
-Keep one working input set, `.scratch/opus-comparison-01`, through this decision.
+Keep one working input set, `.scratch/opus-comparison-01`, for selecting the next
+inquiry while these originals remain useful for inspection.
 `freeze.json` identifies the frozen inputs; `approval.json`, `authorization.json`
-and `packets/` preserve the exact consumed commission. `retry-reference.md` is
-outside all submissions and is a reader aid, not an answer-quality gate. The
-first two encounters and readings are `.scratch/opus-live-01` and
-`.scratch/opus-live-02`. Retain selected originals through the
-[evidence index](apparatus/qualified.md); the reviewed rehearsal's generated work
-and the consumed preparation scripts are disposable.
+and `packets/` preserve the exact consumed commission; `unsealed-key.json` is the
+disclosed original key. `retry-reference.md` is outside all submissions and is a
+reader aid, not an answer-quality gate. The four encounters and attributed
+readings are `.scratch/opus-live-01` through `.scratch/opus-live-04`, selected in
+the [evidence index](apparatus/qualified.md).
 
 ## Working inputs and limits
 

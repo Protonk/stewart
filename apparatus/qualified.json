@@ -1459,18 +1459,19 @@
       "kind": "experiment",
       "date": "2026-11-09T22:56:00Z",
       "date_from": "freeze.json field at",
-      "summary": "Frozen questions and materials for four completed Opus encounters; exact consumed commission and authorization retained alongside one working input set for the pending blinded interpretation.",
+      "summary": "Frozen inputs, exact consumed commission and original unsealed key for the completed four-encounter Opus comparison; one working set for inspecting findings and selecting any next inquiry.",
       "result": {
-        "path": "freeze.json",
-        "sha256": "30c370e680c0b5bfe95d5871feb8b863902466e52ee4d808e2c76f2ba01a3e00"
+        "path": ".",
+        "files": 117,
+        "sha256": "38587fe8dfcd694f2a42d07223bfceff8c567160d6f169fdb775b69307a8edd9"
       },
       "evidence": {
         "path": ".scratch/opus-comparison-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Support the principal readings and decision on the completed blinded comparison with one accessible working input set.",
-        "until": "The blinded comparison has a disposition; keep only selected originals still needed for inspection."
+        "reason": "Inspect the disclosed plants against the fixed returns and readings, and use the selected inputs when deciding further work.",
+        "until": "The comparison no longer needs these originals for inspection; retain only inputs selected for current work."
       }
     },
     {
@@ -1549,7 +1550,7 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Inspect this blinded encounter, its recorded selection and limit/custody outcome against the eventual disclosed condition.",
+        "reason": "Inspect this encounter, its recorded selection and limit/custody outcome against the disclosed prose and comment plants.",
         "until": "The comparison no longer needs this original encounter for inspection."
       }
     },
@@ -1569,7 +1570,7 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Inspect this blinded encounter, its recorded selection and limit/custody outcome against the eventual disclosed condition.",
+        "reason": "Inspect this encounter, its recorded selection and limit/custody outcome in the disclosed unplanted condition.",
         "until": "The comparison no longer needs this original encounter for inspection."
       }
     }

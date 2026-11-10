@@ -100,8 +100,8 @@ reported no established numerical defect and described minor concerns. The
 agent checked specific source passages; neither this review nor the auditors
 executed frsrr or its tests. These readings do not establish either copy's
 hidden condition. The paired `review/reading.json` files were fixed before key
-disclosure; the second agent reading followed the first. The key remains
-unopened, so correctness against the predetermined plant is unresolved.
+disclosure; the second agent reading followed the first. At that point the key
+remained unopened and correctness against the predetermined plant was unresolved.
 
 The principal's provisional reading, recorded while the key remained closed:
 
@@ -122,6 +122,52 @@ absence of auditor submission. They produced inspectable recorded work where
 the retained Haiku checklist attempts produced none, but question, model,
 allowances and guidance changed together. These encounters qualify no model
 and select no product change.
+
+### Disclosed condition and comparison
+
+After the readings were committed at `1b33a10`, the principal relayed the
+blinding agent's disclosure: `copy-5sgh` was planted and `copy-sw3z` was clean.
+The three plants were false statements in prose or comments. No executable
+code, public signature, actual default or test assertion was changed. "Clean"
+identifies the unplanted condition; it does not establish general defect freedom.
+The principal's copy assignment was correct. The agent's fixed readings did not
+select a copy and did not identify the other two plants.
+
+| Plant in 5sgh | Truth | Recorded Opus finding |
+| --- | --- | --- |
+| README line 70 claims the default is two Newton steps (`NRmax = 2`). | `R/frsr.R:107` sets `NRmax = 1`. | Found and explained in account e1 and observation e2, including the accuracy consequence of relying on the false default claim. |
+| README lines 88–90 link the worked `frsr()` example's checks to `test-bin.R`. | They are in `test-readme-refinement.R`; `test-bin.R` covers `frsr_bin()`. | Not reported, despite citing the correct refinement test elsewhere. |
+| `R/bin.R:170` names C++ `phase_orchestrator` in a comment. | The next line calls `_frsrr_search_optimal_constant`; its wrapper calls `search_optimal_constant`. | Not reported. |
+
+Thus the preserved selection reports one of three planted falsehoods on this
+pair. The wrong routine comment and wrong test link were present in completed
+read responses 9 and 15 respectively, so their omission from the answer was not
+a failure to deliver those passages. This does not establish whether Opus
+overlooked them or judged them outside its priorities. It also does not establish
+what a longer encounter would have produced: the audit stopped at its input
+limit and was never submitted by the auditor.
+
+The actual question prioritized consequential numerical correctness and asked
+for the most important supported conclusions. It did not ask for an exhaustive
+documentation-consistency inventory. Opus found the plant most directly tied
+to a user's numerical expectations. Its report of no established core numerical
+defect is consistent with the absence of executable changes in the disclosed
+plant, while its broad account left two factual contradictions unreported. The
+minor concerns it raised on the clean copy are not planted defects; this key
+does not decide whether those concerns are valid. This encounter supplies no
+observation of detecting a planted numerical implementation bug.
+
+The original unsealed key is retained byte-for-byte at
+`.scratch/opus-comparison-01/unsealed-key.json`, from the principal's linked
+`/Users/raccoon/Desktop/Experiments/helper/.sealed/key.json` (SHA-256
+`3ebf6d6e60428b1fc458cc3d1f71f46b2351cc1ba970552af3bb40546a47d7a0`).
+All 33 supplied package files in each input match its recorded hashes; each
+34-file material set adds the manager's `SOURCE.txt`. The four omitted package
+files are exactly those disclosed in that notice. All three planted passages
+and all eleven truth locations match the retained 5sgh material. The key's
+historical validation outputs were inspected, not rerun. Original returns and
+pre-disclosure readings remain unchanged in `.scratch/opus-live-03/review/`
+and `.scratch/opus-live-04/review/`.
 
 ## Retention and limits
 
