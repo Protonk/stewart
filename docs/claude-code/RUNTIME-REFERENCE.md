@@ -1,6 +1,7 @@
 # Claude Code runtime reference for integration work
 
-Documentation checked 2026-10-31. No Claude Code/SDK run has been performed for
+Documentation checked 2026-10-31; the subscription credential section was
+checked 2026-11-10. No Claude Code/SDK run has been performed for
 this work; the candidate configuration has not been compiled or tested as a
 combination. Verify these details against the selected pinned release.
 
@@ -53,6 +54,37 @@ Open composition question: does the selected SDK's `--bare` pass-through retain
 explicitly supplied in-process MCP servers, hooks and normal compaction?
 This is unverified. A custom prompt plus disabled filesystem instructions also
 needs an actual compaction/re-entry comparison.
+
+## Subscription credentials
+
+From the authentication, headless and legal pages linked above. These are
+documented statements, not observed behavior.
+
+- **Scripted use.** `claude setup-token` prints a one-year OAuth token for
+  `CLAUDE_CODE_OAUTH_TOKEN`, documented for CI pipelines and scripts. It can
+  only make model requests. A `/login` credential is stored in the macOS
+  Keychain, or in `.credentials.json` under `~/.claude` or `CLAUDE_CONFIG_DIR`
+  on Linux.
+- **Bare mode excludes them.** Bare mode never reads OAuth credentials, the
+  keychain or `CLAUDE_CODE_OAUTH_TOKEN`. A subscription run is therefore
+  non-bare: hooks, skills, plugins, MCP discovery, auto memory, `CLAUDE.md`,
+  system reminders and background tasks each need their own control and their
+  own verification. The headless page says bare mode will become the default
+  for `-p`; recheck this route at every pin.
+- **Precedence.** Cloud-provider selection, `ANTHROPIC_AUTH_TOKEN`,
+  `ANTHROPIC_API_KEY`, `apiKeyHelper`, `CLAUDE_CODE_OAUTH_TOKEN`, profile or
+  federation credentials, then the `/login` credential. Under `-p` a present
+  API key is always used. A non-bare run given no credential uses whatever
+  login the machine or configuration directory holds. Either direction can
+  select a billing route silently.
+- **Terms.** OAuth authentication is for subscribers' ordinary use of Claude
+  Code and Anthropic's own applications, and plan limits assume ordinary
+  individual use of Claude Code and the Agent SDK. Third-party developers may
+  not offer Claude.ai login, route requests through plan credentials for their
+  users, or collect, store or intermediate those credentials. An end user
+  signing in to the unmodified binary with their own subscription is not
+  prevented. Read the legal page itself before relying on this summary;
+  questions about a particular use go to Anthropic.
 
 ## Accounting
 
@@ -107,5 +139,5 @@ correctly.
 Tests need witnesses for internal-call accounting, effective authentication/tools,
 usage across compaction, and stop/late-mutation behavior. Preserve independent
 observations and failed variants through review under
-[DEVELOPMENT](../../DEVELOPMENT.md#evidence-and-retention). Only separately
+[DEVELOPMENT](../../development/DEVELOPMENT.md#evidence-and-retention). Only separately
 commissioned live work can settle provider behavior.

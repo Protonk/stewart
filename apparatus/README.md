@@ -338,7 +338,7 @@ runs that package.
 ## Evidence retention
 
 Evidence folders under `.scratch/` follow "Evidence and retention" in
-[DEVELOPMENT.md](../DEVELOPMENT.md#evidence-and-retention). After a run of
+[DEVELOPMENT.md](../development/DEVELOPMENT.md#evidence-and-retention). After a run of
 `acceptance.sh` or `step2.sh`, `qualified.py extract` reads it into the
 qualification record (`--suite acceptance` or `--suite toolchain`); commit
 `qualified.json` and `qualified.md` together. `qualified.py candidates` lists

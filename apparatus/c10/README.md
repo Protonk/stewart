@@ -451,7 +451,7 @@ Provider usage is not independently observed billing. Cost assessment, billing
 reconciliation, independent observation of live authoring, kill/continuation and
 real signed-summary compaction need their own evidence and explicit disposition.
 Preserve every failed attempt, original and witness through review under
-[the retention rules](../../DEVELOPMENT.md#evidence-and-retention). Nothing here
+[the retention rules](../../development/DEVELOPMENT.md#evidence-and-retention). Nothing here
 removes containers or evidence.
 
 ## Assemble an experiment report

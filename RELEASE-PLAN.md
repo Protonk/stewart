@@ -9,25 +9,29 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next | Resolve Claude Code subscription feasibility and propose the adapter contract; implementation follows the resulting decisions | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
-| Decided default; implementation pending | Include the accepted question body with the returned answer, within the selected context boundary | [Returned question and answer](CONTRACTS.md#returned-question-and-answer) |
+| Next | Set up the default-off development build that carries the Claude Code adapter, its release absence check and its credential route | [BUILD-FLAG-SETUP-PLAN.md](BUILD-FLAG-SETUP-PLAN.md) |
+| After the build setup | Resolve Claude Code feasibility and propose the adapter contract; implementation follows the resulting decisions, inside that build | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
+| Independent of the two above | Align the manager interface, including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
+| Deferred until the build setup, Claude Code and manager alignment plans finish | Rework the root README | [README-RESCUE-PLAN.md](development/README-RESCUE-PLAN.md) |
 | Unselected | Further auditor studies and question-family dogfooding | [Deferred studies](#deferred-studies) |
 
 Further API studies and completion of the API conformance gate are not
-prerequisites for Claude Code feasibility work. Planning and previous model
-placements confer no execution or spending authority.
+prerequisites for the build setup or Claude Code feasibility work. Claude Code
+feasibility research may begin during the build setup; adapter code waits for
+it. Planning and previous model placements confer no execution or spending
+authority.
 
 The return-context decision needs no further presentation tuning or reader
-comparison before implementation. Broader manager-interface design is deferred;
-no additional reading interface or return context is selected here.
+comparison before implementation. No additional reading interface or return
+context is selected here.
 
 ## Current evidence
 
 [README](README.md#status) owns product maturity and coverage limits;
 [the qualification index](apparatus/qualified.md) owns current suite results
 and selected evaluations. Retain originals for inspection under
-[DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention), not to reconstruct old
+[DEVELOPMENT](development/DEVELOPMENT.md#evidence-and-retention), not to reconstruct old
 builds.
 
 ## Deferred studies

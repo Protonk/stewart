@@ -78,6 +78,6 @@ manager readings in `.scratch/vocabulary-revision-01/READINGS.md` describe the
 design proposal; they are not observed user readings. The implementation evidence
 contains the offline comparisons. Haiku cannot establish usability of manager replies
 it never sees. Report only the evidence actually observed. Resolve specific defects
-with the applicable [development checks](../../../DEVELOPMENT.md#what-to-run-for-what-you-changed)
+with the applicable [development checks](../../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
 and independent driver authorship when needed; do not extend the study to polish
 Haiku's answers. Preserve outstanding limits explicitly when closing the block.

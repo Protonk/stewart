@@ -12,13 +12,13 @@ commissioned material access, recorded work, revisions, explicit submission and
 closure. Conversation management, token accounting and process termination have
 runtime-specific meanings. Human and Codex/OpenAI adapters remain future work.
 
-The current contract places subscription login/routing outside Stewart's main
-interface and uses explicit API or supported cloud-provider authentication
-([CONTRACTS](CONTRACTS.md#run-and-continuation)). The principal's intended migration
-target now includes a subscription connector. Resolve its relationship to that
-boundary when selecting the integration; no connector design or authentication
-mechanism is selected here. Common audit and custody terms should survive the
-change while runtime-specific accounting and enforcement remain explicit.
+The distributed integrations keep explicit API or supported cloud-provider
+authentication ([CONTRACTS](CONTRACTS.md#run-and-continuation)). The adapter is
+developed behind a default-off build feature and is absent from the release
+binary; shipping any of it is a later decision for the principal. This plan
+takes that build configuration and its credential route as given and covers
+the runtime. Common audit and custody terms should survive the change while
+runtime-specific accounting and enforcement remain explicit.
 
 The adapter preserves the [question-family meanings](CONTRACTS.md#question-families-and-open-inquiry)
 and common custody/attribution contract. A family choice must never implicitly
@@ -32,10 +32,11 @@ understanding or intellectual completeness.
 ## 1. Feasibility and contract proposal
 
 - [ ] Refresh [the runtime reference](docs/claude-code/RUNTIME-REFERENCE.md)
-  against primary documentation for a selected pinned release. Its October 31
-  configuration is untested and assumes explicit API/cloud credentials; establish
-  the supported subscription route and its relationship to the current product
-  boundary before adopting those controls.
+  against primary documentation for a selected pinned release. Its candidate
+  configuration is untested and assumes bare mode, which subscription
+  credentials cannot use. Establish how ambient isolation, tools, hooks and
+  compaction compose under the credential route actually in use before
+  adopting those controls.
 - [ ] Compare a CLI bridge with a small SDK helper. State installation, versioning
   and platform implications for the current static Linux binary. The SDK is a
   candidate, not a settled dependency; generic multi-tenant hosting is not scope.
@@ -58,7 +59,7 @@ understanding or intellectual completeness.
   guarantees. Resolve the meaning of a runtime choice before adding a selector.
 
 **Done when:** this plan contains a concrete integration recommendation, its
-limitations and the contract/packaging decisions needed from the principal.
+limitations and the contract and installation decisions needed from the principal.
 Keep technical controls and dated sources in the runtime reference. Separate
 documented capabilities from demonstrated behavior; propose any necessary live
 probes with bounded scope and budget before running them.
@@ -80,7 +81,7 @@ probes with bounded scope and budget before running them.
   Supply useful setup, help and failure messages for the chosen installation.
 
 **Done when:** the narrow path and failure policies pass the applicable
-[DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed), including
+[DEVELOPMENT checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed), including
 offline controls. Real harness guarantees remain unqualified until demonstrated.
 
 ## 3. Qualify the selected guarantees
@@ -95,8 +96,9 @@ Use an independent witness, firing controls, differing cases and invariance
 cases under [ACCEPTANCE](ACCEPTANCE.md#the-real-model-conformance-tier). Pin
 SDK/CLI versions, effective configuration, model, authentication route and
 binaries. Resolve any mismatch between that gate and the proposed runtime during
-the contract decision; do not transfer API results into a harness qualification
-claim. Model answer quality is not the gate.
+the contract decision. Do not transfer API results into a harness qualification
+claim, or results under one credential route into a claim about another. Model
+answer quality is not the gate.
 
 Complete this plan when the selected integration has a reviewed qualification
 outcome and failures or unexercised work have explicit dispositions. Move enduring

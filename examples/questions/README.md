@@ -27,7 +27,7 @@ semantic support and include empty and conflicting answer cases.
 The materials are exact bytes: the walkthroughs, the citation controls and
 [QUESTION-FORMS](../../docs/QUESTION-FORMS.md) cite their byte ranges and line
 numbers, so copy them unchanged. With the `stewart` binary built
-([DEVELOPMENT](../../DEVELOPMENT.md)), from the repository root, and with
+([DEVELOPMENT](../../development/DEVELOPMENT.md)), from the repository root, and with
 absolute paths, as every path argument must be:
 
 ```sh

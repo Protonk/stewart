@@ -722,7 +722,7 @@ Each run supplies the following evidence for review:
 
 Keep the independent witness and affected originals through review. Afterward,
 retain current results and only the original material selected for a present
-inspection purpose under [DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention).
+inspection purpose under [DEVELOPMENT](development/DEVELOPMENT.md#evidence-and-retention).
 Successful synthetic working trees, superseded checks and staging copies are
 disposable. This lifetime does not weaken the comparisons required of a run or
 change the application's custody obligations.

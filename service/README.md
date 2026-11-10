@@ -180,7 +180,7 @@ cargo test --locked --offline
 CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-injection,sabotage
 ```
 
-[DEVELOPMENT.md](../DEVELOPMENT.md) covers the rest: producing `vendor/`, the
+[DEVELOPMENT.md](../development/DEVELOPMENT.md) covers the rest: producing `vendor/`, the
 release and test builds, the independent driver, and the Linux container
 suites, which alone count as evidence.
 

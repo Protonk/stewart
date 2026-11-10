@@ -21,7 +21,7 @@ The [qualification index](apparatus/qualified.md) identifies the current checked
 build and selected evaluations. New live packets need matching rehearsal coverage
 for their actual binary, inputs and credential route. Completed pilot placements
 authorize no further calls. Retention follows
-[DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention).
+[DEVELOPMENT](development/DEVELOPMENT.md#evidence-and-retention).
 
 ## 1. Complete the evidence matrix
 
@@ -167,8 +167,8 @@ coverage remains outstanding until those authorized runs supply the evidence.
   explicitly resolve missing observations. Extend qualification-record tooling
   as needed to check the report against its evidence.
 
-[DEVELOPMENT](DEVELOPMENT.md#what-to-run-for-what-you-changed) owns checks and
-[retention](DEVELOPMENT.md#evidence-and-retention);
+[DEVELOPMENT](development/DEVELOPMENT.md#what-to-run-for-what-you-changed) owns checks and
+[retention](development/DEVELOPMENT.md#evidence-and-retention);
 [AGENTS](AGENTS.md) owns independent authorship, commits and host handoffs.
 Use the [host queue](apparatus/c10/HOST-QUEUE.md) and its saved-connection route
 for supported operations under the bounded commission; extend and rehearse that

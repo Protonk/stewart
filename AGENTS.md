@@ -23,7 +23,7 @@ obligations, excuse unreported failures or turn intended behavior into evidence.
    Removed material is not a gap to repair. Planning alone does not authorize
    execution.
 4. **Identify the required checks before editing.** Use
-   [What to run for what you changed](DEVELOPMENT.md#what-to-run-for-what-you-changed).
+   [What to run for what you changed](development/DEVELOPMENT.md#what-to-run-for-what-you-changed).
    Notice the driver-independence rule below before reading implementation code
    for a task that may need acceptance-driver changes.
 
@@ -131,7 +131,7 @@ the specification alone.
 Development-machine runs help iteration but are not qualification evidence.
 Evidence comes from a Linux container suite and, under ACCEPTANCE, the native
 WSL2 run. Call nothing qualified without such a run. Retained `.scratch` runs
-follow [Evidence and retention](DEVELOPMENT.md#evidence-and-retention).
+follow [Evidence and retention](development/DEVELOPMENT.md#evidence-and-retention).
 
 A clean result needs a firing control, a case differing in the measured property
 and an invariance case. An explanation remains a hypothesis until a comparison

@@ -1,12 +1,12 @@
 # Building and testing Stewart
 
-Stewart is the Rust audit service in [`service/`](service): one crate, binary
-`stewart`. [`apparatus/`](apparatus) holds what builds and tests it: pinned
+Stewart is the Rust audit service in [`service/`](../service): one crate, binary
+`stewart`. [`apparatus/`](../apparatus) holds what builds and tests it: pinned
 Linux toolchain images, container scripts and an independent acceptance driver
 with a fake provider. The apparatus does not ship. What to build and what
-evidence is owed are in [DESIGN.md](DESIGN.md),
-[CONTRACTS.md](CONTRACTS.md), [ACCEPTANCE.md](ACCEPTANCE.md) and
-[docs/INTERFACE.md](docs/INTERFACE.md); [AGENTS.md](AGENTS.md) states the
+evidence is owed are in [DESIGN.md](../DESIGN.md),
+[CONTRACTS.md](../CONTRACTS.md), [ACCEPTANCE.md](../ACCEPTANCE.md) and
+[docs/INTERFACE.md](../docs/INTERFACE.md); [AGENTS.md](../AGENTS.md) states the
 development rules.
 
 The product is one statically linked binary for Linux x86_64 and aarch64
@@ -43,12 +43,12 @@ CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-inje
 | What changed | What to run |
 | --- | --- |
 | Prose or Markdown anywhere | The link check. |
-| `docs/INTERFACE.md` or `docs/QUESTION-FORMS.md` | The link check, both cargo configurations and the driver's self-test. A test in `service/src/forms.rs` compares the service's pinned texts and tool descriptions with QUESTION-FORMS; one in `service/src/fault.rs`, built only in the fault and sabotage configuration, compares its failure points, actions and sabotage controls, and the names in its variable table, with INTERFACE Appendix C. The driver's self-test compares its own copies of the pinned texts and tool descriptions with QUESTION-FORMS, and its answer witness reproduces the structured answer and rendering examples of QUESTION-FORMS and the manifest example of INTERFACE 8.2 byte for byte. A changed pinned text or tool description needs the service's copy changed too (then the `service/` row applies); a changed pinned text or example needs the driver's copy updated, under the driver-independence rule in [AGENTS.md](AGENTS.md). |
+| `docs/INTERFACE.md` or `docs/QUESTION-FORMS.md` | The link check, both cargo configurations and the driver's self-test. A test in `service/src/forms.rs` compares the service's pinned texts and tool descriptions with QUESTION-FORMS; one in `service/src/fault.rs`, built only in the fault and sabotage configuration, compares its failure points, actions and sabotage controls, and the names in its variable table, with INTERFACE Appendix C. The driver's self-test compares its own copies of the pinned texts and tool descriptions with QUESTION-FORMS, and its answer witness reproduces the structured answer and rendering examples of QUESTION-FORMS and the manifest example of INTERFACE 8.2 byte for byte. A changed pinned text or tool description needs the service's copy changed too (then the `service/` row applies); a changed pinned text or example needs the driver's copy updated, under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | Worked example materials: `question.md` and `materials/` under `examples/questions/*/submission/` | No check reads them. The walkthroughs, `CITATION-CONTROLS.md`, QUESTION-FORMS and INTERFACE cite their sizes, byte ranges and line numbers, and the driver's answer witness pins the examples in those docs, so recheck every citation of a changed file; a changed example in the docs then needs the row above. |
 | `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. Changing what Stewart promises is the user's decision. |
 | `service/src/` or `service/tests/` | Both cargo configurations. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once both configurations pass. |
-| `apparatus/driver/` | The driver's self-test and `--list`, which loads every case module. The change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once those two pass. Edit the driver only under the driver-independence rule in [AGENTS.md](AGENTS.md). |
-| `apparatus/c10/` | `python3 -I -B apparatus/c10/test_c10.py`, `python3 -I -B apparatus/sanity/test_launch.py`, and the driver's self-test for the specification-derived helpers it imports. Exercise changed run, reviewer and operator behavior with the native fake-provider commands in [the apparatus instructions](apparatus/c10/README.md#run-the-offline-checks). The change remains unqualified until its retained Linux `c10.py rehearse` run, scheduled by the user after committing. No model calls are needed for these checks. |
+| `apparatus/driver/` | The driver's self-test and `--list`, which loads every case module. The change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once those two pass. Edit the driver only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
+| `apparatus/c10/` | `python3 -I -B apparatus/c10/test_c10.py`, `python3 -I -B apparatus/sanity/test_launch.py`, and the driver's self-test for the specification-derived helpers it imports. Exercise changed run, reviewer and operator behavior with the native fake-provider commands in [the apparatus instructions](../apparatus/c10/README.md#run-the-offline-checks). The change remains unqualified until its retained Linux `c10.py rehearse` run, scheduled by the user after committing. No model calls are needed for these checks. |
 | Python in `apparatus/sanity/` | `python3 -I -B apparatus/sanity/test_launch.py`. For shared session or evidence helpers, also run the C10 checks above. The affected launcher needs its retained Linux rehearsal before qualification; source changes invalidate its previous rehearsal binding for live use. |
 | Shell scripts in `apparatus/` or `apparatus/container/` | `sh -n` on each changed script. The change is unqualified until the next container run of the suite that uses it, which the user schedules and batches; it can land and be pushed once `sh -n` passes. `step2.sh` runs `container/inner-build.sh` and `acceptance.sh` the `acceptance-inner-` scripts. |
 | `apparatus/check_links.py` | `python3 -I -B apparatus/check_links.py --self-test`, then the link check. |
@@ -87,7 +87,7 @@ Before citing the record, run `python3 -I -B apparatus/qualified.py check`.
 
 The toolchain images `stewart-toolchain:1-arm64` and `stewart-toolchain:1-amd64`
 are built by `apparatus/step2.sh` from
-[`apparatus/container/Containerfile`](apparatus/container/Containerfile): the
+[`apparatus/container/Containerfile`](../apparatus/container/Containerfile): the
 Rust image pinned by digest, plus the native musl target and the musl C
 toolchain (`ring` compiles C and assembly for the target). The target and the
 musl packages are fetched when the image is built, so a built image's digest is
@@ -177,7 +177,7 @@ the test build as the firing control.
 
 ## The independent driver
 
-[`apparatus/driver/`](apparatus/driver) is the black-box acceptance driver,
+[`apparatus/driver/`](../apparatus/driver) is the black-box acceptance driver,
 written in Python with the standard library only; `stewart_driver.py` is its
 entry point. Its author writes it from INTERFACE, QUESTION-FORMS, CONTRACTS and
 ACCEPTANCE and does not read `service/`, and the service is written from the
@@ -214,7 +214,7 @@ Linux-only expectations (the OFD lock, `/proc` observations, the archive
 filesystem allowlist, byte-string names) are skipped with their reason, as are
 cases needing the fake provider where loopback listening is not permitted, and
 the timing gate is off unless `--timing-gate on` is given.
-[apparatus/README.md](apparatus/README.md) describes the driver's modules,
+[apparatus/README.md](../apparatus/README.md) describes the driver's modules,
 cases, controls and evidence in detail.
 
 ## Container suites
@@ -260,7 +260,7 @@ another checkout uses that checkout's own `service/vendor`.
 Each writes `host/DONE` with `failures=N`; `acceptance.sh` also writes
 `host/SUMMARY` with the driver's counts per architecture, and
 `acceptance.sh` adds the self-test's summary line.
-[apparatus/README.md](apparatus/README.md) gives each script's steps and
+[apparatus/README.md](../apparatus/README.md) gives each script's steps and
 evidence layout. `apparatus/qualified.py extract` reads a run of `acceptance.sh`
 or `step2.sh` into the qualification record ([Evidence and
 retention](#evidence-and-retention)).
@@ -294,8 +294,8 @@ for any selected original evidence that cannot be reproduced.
 
 ### Current test evidence
 
-[`qualified.py`](apparatus/qualified.py) maintains
-[`qualified.json`](apparatus/qualified.json) and its generated Markdown. For
+[`qualified.py`](../apparatus/qualified.py) maintains
+[`qualified.json`](../apparatus/qualified.json) and its generated Markdown. For
 each suite/platform keep the latest result and, if it failed, the last qualified
 result. `check` verifies retained results and reports source drift. A result
 applies to its recorded binary and source, not automatically to later code.

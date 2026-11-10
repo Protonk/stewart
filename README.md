@@ -149,7 +149,7 @@ and their continuation paths. The exact interface is in
 ## Working on Stewart
 
 Start with [AGENTS.md](AGENTS.md) for development rules and
-[DEVELOPMENT.md](DEVELOPMENT.md) for setup, builds, checks and evidence retention.
+[DEVELOPMENT.md](development/DEVELOPMENT.md) for setup, builds, checks and evidence retention.
 The crate needs vendored dependencies and the Linux suites use pinned container
 images; DEVELOPMENT describes how to prepare them. Local Mac tests help
 development but do not qualify Linux behavior.
@@ -169,8 +169,8 @@ the specification below defines the product.
 | [service/README.md](service/README.md) | The Rust crate and its modules. |
 | [apparatus/README.md](apparatus/README.md) | Build and test apparatus, including the independent acceptance driver. |
 
-`service/` is the product; `apparatus/` does not ship. `examples/` contains worked
-questions. `riker/` describes an optional [consultation procedure](riker/RIKER.md).
+`service/` is the product; `apparatus/` does not ship. `development/` holds
+working material for developing Stewart. `examples/` contains worked questions. `riker/` describes an optional [consultation procedure](riker/RIKER.md).
 `CLAUDE.md` links to `AGENTS.md` so development agents read the same rules.
 
 ## License
