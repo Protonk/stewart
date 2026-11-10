@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next implementation candidate; boundary selection outstanding | Select, build and demonstrate the narrow rapid-iteration path described in its topic plan | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Next implementation | Specify, build and demonstrate the narrow rapid-iteration path described in its topic plan | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
 | Further auditor studies when selected | Name the uncertainty and bind model and budget before any launch | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | After self-contained rapid iteration is demonstrated | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |

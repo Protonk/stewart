@@ -4,25 +4,63 @@ Make a small structural experiment self-contained: agree its purpose and budget,
 change what the auditor encounters, launch within those bounds, collect and
 review the result, and complete custody. Return a supported finding or an explicit
 unresolved comparison without requiring the principal to reconstruct several
-reports. This is a design and build candidate, not launch authority.
+reports. The first configuration boundary below is approved; the facility is not
+implemented. Live demonstration needs its own bounded commission.
 
-## Decision to make
+## Approved first boundary
 
-The recommendation is to keep the custody core and typed authoring protocol and
-accept one existing family's guidance as a captured commission-time study
-attachment. Capture its effective bytes and origin; later local edits must not
-change accepted audits. Keep capabilities, tool schemas, limits, operational
-notices and custody product-owned. Capturing configurable text cannot establish
-that it truthfully describes a capability.
+Keep the custody core and typed authoring protocol. Start with one optional,
+explicitly selected guidance attachment for open inquiry. It replaces the whole
+open-inquiry family-guidance block; it is not appended to the built-in version.
+Without an attachment, use the built-in guidance. The question remains the place
+for requests specific to that inquiry.
 
-The alternatives are the current separate-study-build path, an optional
-document/JSON connector, unrestricted arrangement input, and a generic
-artifact/event custodian. A document connector may simplify bulk revision but
-would need raw offered/refused versions, atomic edits, stale-version checks and
-explicit submission. A generic custodian transfers those obligations to adapters.
-Neither has a demonstrated benefit sufficient to select it now. Existing question
-files can already carry requested organization without a universal schema or an
-intellectual quality gate.
+The attachment may vary intellectual guidance and suggested answer organization.
+Stewart owns the orientation, capabilities, tool definitions, citation mechanics,
+limits, operational notices and custody behavior. The family remains open inquiry;
+missing sections, no supported finding, uncertainty and disagreement remain
+admissible. A guidance file grants no capability or spending authority.
+
+Preparation shows the exact effective instructions and identifies whether the
+guidance is built-in or manager-supplied. Bind the selected bytes and origin to
+the prepared proposal and captured commission. Acceptance fixes them; later
+source edits cannot change an accepted audit. Retain the base family identity
+and distinguish the supplied guidance from the stock family version. Exact file
+selection, bounds, receipt members and identity fields remain to be specified
+through the existing intake and arrangement mechanisms.
+
+Validation covers mechanical selection, encoding, bounds and faithful capture.
+An unsupported configuration field is refused; Stewart does not claim to judge
+whether arbitrary guidance is sensible, consistent or truthful about capabilities.
+Capturing text is not semantic certification or an answer-quality gate.
+
+### Keep replacement simple
+
+The principal approved this amount of control and asked that the way replacement
+is chosen remain an explicit design discussion: richer pathways can become
+expensive to update. Show the concrete selection, replacement and default behavior
+before implementing the facility. Use the existing capture path and one whole-block
+replacement where practical. Layered overrides, includes, inheritance, templates,
+multiple attachments and additional configurable instruction blocks are outside
+this first build. Discuss a concrete need and maintenance cost with the principal
+before adding such mechanisms. Routine implementation choices and guidance-text
+changes within the selected facility do not each require another boundary decision.
+
+The document/JSON connector, unrestricted arrangement input and generic
+artifact/event custodian remain unselected. Existing question files already
+carry requested organization; no universal question schema is needed here.
+
+### Acceptance examples
+
+- No attachment uses the stock guidance and ordinary open-inquiry tools.
+- Two different attachments use the same binary and tools, each with exactly
+  its selected guidance; the replaced stock paragraph is absent.
+- Editing the source after preparation cannot silently change the prepared
+  proposal; editing it after acceptance cannot change the captured commission.
+- Inspection and receipt readback distinguish supplied guidance from built-in
+  guidance and recover its exact bytes and origin.
+- Unsupported configuration fields refuse explicitly; an answer with missing
+  sections remains admissible under either guidance choice.
 
 The independent design readings and measured reference are retained in
 `.scratch/rapid-iteration-01`. Their agreement is advice, not empirical proof.
@@ -36,9 +74,9 @@ costs. Original encounters and substantive limitations are in
 
 ## Remaining work
 
-- [ ] The principal selects the configuration boundary, including whether the
-  narrow guidance attachment is the first build. Record what remains open about
-  the manager's inputs and interpretation.
+- [ ] Specify the concrete attachment intake and replacement behavior under the
+  approved boundary, including defaults, provenance and source-change handling.
+  Review how the facility is selected with the principal before implementation.
 - [ ] Build the selected shape through the normal contract, interface/forms,
   help/examples and [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed).
   Product and independent-driver authorship remain separate. An apparatus-only
