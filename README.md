@@ -38,8 +38,8 @@ reproducible static builds have been observed on both architectures. A result
 applies to its recorded build. `python3 -I -B apparatus/qualified.py check`
 verifies retained results and reports source drift.
 
-Small real-model commissions have exercised all three forms, citation repair,
-limits and manager custody. The [interface observations](apparatus/studies/interaction/RESULTS.md),
+Small commissions with Haiku, Fable and Opus have exercised all three forms,
+citation repair, limits and manager custody. The [interface observations](apparatus/studies/interaction/RESULTS.md),
 [recovery findings](apparatus/studies/haiku-recovery/RESULTS.md) and
 [vocabulary comparison](apparatus/studies/vocabulary/RESULTS.md) preserve their
 substantive readings and limitations. They establish no general model preference.

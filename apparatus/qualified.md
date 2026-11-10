@@ -512,14 +512,42 @@ Inspect the principal readings that motivated the adopted vocabulary revision.
 
 ### opus-comparison-01
 
-Working inputs and unpaid proposals for the first four-case Opus comparison, including the blinded frsrr pair.
+Frozen questions and materials for four completed Opus encounters; exact consumed commission and authorization retained alongside one working input set for the pending blinded interpretation.
 
 - Evidence: `.scratch/opus-comparison-01/freeze.json` (recorded 2026-11-09T22:56:00Z).
-- Retained purpose: One current input set for the authorized preparation and offline rehearsal; no live spending authority.; until The study is completed or replaced; select only useful original encounters for archival afterward.
+- Retained purpose: Support the principal readings and decision on the completed blinded comparison with one accessible working input set.; until The blinded comparison has a disposition; keep only selected originals still needed for inspection.
 
 ### opus-rehearsal-01
 
-Offline Opus comparison rehearsal: 17 expected audit outcomes; 86 reviewer comparisons, 76 firing controls, 7 operator and 11 reporting checks; synthetic saved-connection follow-up verified; zero model calls.
+Compact latest offline C10 rehearsal results: 17 expected audits, 86 reviewer comparisons, 76 firing controls, 7 operator and 11 reporting checks; zero model calls. Generated work discarded after review; not reusable launch-admission evidence.
 
-- Evidence: `.scratch/opus-rehearsal-01/review/result.json` (recorded 2026-11-09T23:13:07Z).
-- Retained purpose: Current launch prerequisite for the four prepared Opus comparison inputs; retain the exported evidence needed by check_rehearsal.; until The comparison completes or a replacement rehearsal supersedes it.
+- Evidence: `.scratch/opus-rehearsal-01/.` (recorded 2026-11-09T23:13:07Z).
+- Retained purpose: Keep the latest concise rehearsal results and identities for the current apparatus; generated synthetic archives are disposable after review.; until A newer rehearsal replaces this current result.
+
+### opus-live-01
+
+Opus retry inquiry: checked auditor submission, verified delivery and closure; 6 turns, 38532 input and 2628 output tokens, no retries; original answer and attributed reading retained.
+
+- Evidence: `.scratch/opus-live-01/.` (recorded 2026-11-09T23:29:12Z).
+- Retained purpose: Inspect the first Opus reasoning and interface encounter, including its supported conclusions, unnecessary caveats, interaction and custody.; until The comparison no longer needs this original encounter for inspection.
+
+### opus-live-02
+
+Opus Problem A: checked auditor submission, verified delivery and closure; 14 turns, 278397 input and 4961 output tokens, one repaired read-input refusal, no provider retries; original return and Haiku comparison reading retained.
+
+- Evidence: `.scratch/opus-live-02/.` (recorded 2026-11-09T23:35:22Z).
+- Retained purpose: Inspect the Opus/Haiku Problem A accounts, sampling scope caveat, interface behavior and original custody evidence.; until The comparison no longer needs this original encounter for inspection.
+
+### opus-live-03
+
+Opus blinded 5sgh: input-limit stop, six recorded entries, manager-sealed delivery and confirmed closure; 12 turns, 428551 input and 12494 output tokens; provisional reading fixed before the other blinded return.
+
+- Evidence: `.scratch/opus-live-03/.` (recorded 2026-11-09T23:56:49Z).
+- Retained purpose: Inspect this blinded encounter, its recorded selection and limit/custody outcome against the eventual disclosed condition.; until The comparison no longer needs this original encounter for inspection.
+
+### opus-live-04
+
+Opus blinded sw3z: input-limit stop after prepare, seven recorded entries, manager-sealed delivery and confirmed closure; 12 turns, 461820 input and 13585 output tokens; provisional reading fixed before key disclosure.
+
+- Evidence: `.scratch/opus-live-04/.` (recorded 2026-11-10T00:11:56Z).
+- Retained purpose: Inspect this blinded encounter, its recorded selection and limit/custody outcome against the eventual disclosed condition.; until The comparison no longer needs this original encounter for inspection.

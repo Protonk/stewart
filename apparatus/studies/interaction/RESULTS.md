@@ -58,6 +58,60 @@ settle unimodality as magic varies; full-domain coverage differs from exhaustive
 pointwise enumeration. The completed reading selected no product change. The
 principal reported billing agreement with USD 3.51, without token-level detail.
 
+## Opus comparison
+
+Four independent `claude-opus-5-5` placements at medium effort used
+`open-inquiry/1`, the qualified `acceptance-retention-01` binary and apparatus
+bound to `8de5fea`. Each allowed 24 turns, 400,000 cumulative input tokens,
+48,000 output tokens and a 1,200-second watchdog. The ordinary 16,000-token
+response cap included thinking. The order below was fixed; no audit received
+an earlier answer or the other blinded copy.
+
+| Evidence / inquiry | Outcome | Turns | Input / output tokens | Calculated USD |
+| --- | --- | ---: | ---: | ---: |
+| `opus-live-01` / retry reasoning | Auditor submitted; 4 entries | 6 | 38,532 / 2,628 | 0.206688 |
+| `opus-live-02` / frsrr Problem A | Auditor submitted; 5 entries | 14 | 278,397 / 4,961 | 1.212808 |
+| `opus-live-03` / blinded 5sgh | Input limit; 6 manager-sealed entries | 12 | 428,551 / 12,494 | 1.964084 |
+| `opus-live-04` / blinded sw3z | Input limit after prepare; 7 manager-sealed entries | 12 | 461,820 / 13,585 | 2.118980 |
+
+All four latest exports passed procedural review, with verified delivery and
+completed closure; no loss was surrendered. The two input-limit outcomes were
+not auditor submissions. All 44 provider requests had reported usage and no
+retries or estimated usage. Total calculated cost was **USD 5.502560** against
+the principal's USD 15 stop budget, using the standard rates checked on
+2026-11-09 (USD 4/million input and USD 20/million output tokens; no cache usage).
+This is not an independent Console billing observation. The original packets,
+approval and input identities are in `.scratch/opus-comparison-01`; each
+`.scratch/opus-live-NN/review/result.json` records its review and cost basis.
+
+The agent's reading of the retry case found the expected duplicate-message
+counterexample, atomic-deduplication argument and renaming invariance, with
+unnecessary caveats about failures outside the supplied model. Problem A
+supported the same fixed-block/reduction explanation as the retained Haiku
+baseline and shared its sampling scope caveat: identical public arguments alone
+do not ensure identical sampled inputs and candidates. Opus repaired one
+unsupported `read` operand (`end`) and submitted without citation repair. The
+different effort, allowances, apparatus and reply vocabulary prevent an isolated
+model-effect claim.
+
+For 5sgh, the recorded account established a README/default-step mismatch and
+reported no consequential core arithmetic or selection defect. For sw3z, it
+reported no established numerical defect and described minor concerns. The
+agent checked specific source passages; neither this review nor the auditors
+executed frsrr or its tests. These readings do not establish either copy's
+hidden condition. The paired `review/reading.json` files were fixed before key
+disclosure; the second agent reading followed the first. The key remains
+unopened, so correctness against the predetermined plant is unresolved.
+
+The first blinded audit recorded all six entries in its final permitted
+request, without prepare. The second recorded seven entries and then prepared
+in its final request. Both stopped on cumulative input use, with completed tool
+responses and no output-cap stop. Their prose can look finished despite the
+absence of auditor submission. They produced inspectable recorded work where
+the retained Haiku checklist attempts produced none, but question, model,
+allowances and guidance changed together. These encounters qualify no model
+and select no product change.
+
 ## Retention and limits
 
 Retain these particular encounters to inspect authoring, intellectual limits,

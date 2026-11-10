@@ -1459,7 +1459,7 @@
       "kind": "experiment",
       "date": "2026-11-09T22:56:00Z",
       "date_from": "freeze.json field at",
-      "summary": "Working inputs and unpaid proposals for the first four-case Opus comparison, including the blinded frsrr pair.",
+      "summary": "Frozen questions and materials for four completed Opus encounters; exact consumed commission and authorization retained alongside one working input set for the pending blinded interpretation.",
       "result": {
         "path": "freeze.json",
         "sha256": "30c370e680c0b5bfe95d5871feb8b863902466e52ee4d808e2c76f2ba01a3e00"
@@ -1469,8 +1469,8 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "One current input set for the authorized preparation and offline rehearsal; no live spending authority.",
-        "until": "The study is completed or replaced; select only useful original encounters for archival afterward."
+        "reason": "Support the principal readings and decision on the completed blinded comparison with one accessible working input set.",
+        "until": "The blinded comparison has a disposition; keep only selected originals still needed for inspection."
       }
     },
     {
@@ -1478,18 +1478,99 @@
       "kind": "experiment",
       "date": "2026-11-09T23:13:07Z",
       "date_from": "review/result.json field at",
-      "summary": "Offline Opus comparison rehearsal: 17 expected audit outcomes; 86 reviewer comparisons, 76 firing controls, 7 operator and 11 reporting checks; synthetic saved-connection follow-up verified; zero model calls.",
+      "summary": "Compact latest offline C10 rehearsal results: 17 expected audits, 86 reviewer comparisons, 76 firing controls, 7 operator and 11 reporting checks; zero model calls. Generated work discarded after review; not reusable launch-admission evidence.",
       "result": {
-        "path": "review/result.json",
-        "sha256": "bdbef892648d60bc2442ea5c40165542a5649dd731bbbd5df2fd92f3bd15ad3d"
+        "path": ".",
+        "files": 10,
+        "sha256": "43195f836fd6bb120f56b0cb9d1c1cd3c09bd96f40c280a113ba73b291086b55"
       },
       "evidence": {
         "path": ".scratch/opus-rehearsal-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Current launch prerequisite for the four prepared Opus comparison inputs; retain the exported evidence needed by check_rehearsal.",
-        "until": "The comparison completes or a replacement rehearsal supersedes it."
+        "reason": "Keep the latest concise rehearsal results and identities for the current apparatus; generated synthetic archives are disposable after review.",
+        "until": "A newer rehearsal replaces this current result."
+      }
+    },
+    {
+      "id": "opus-live-01",
+      "kind": "experiment",
+      "date": "2026-11-09T23:29:12Z",
+      "date_from": "review/result.json field at",
+      "summary": "Opus retry inquiry: checked auditor submission, verified delivery and closure; 6 turns, 38532 input and 2628 output tokens, no retries; original answer and attributed reading retained.",
+      "result": {
+        "path": ".",
+        "files": 54,
+        "sha256": "cd0ffddc37050de95251e65d1b79ea2b42d8cc5f27f41eaacadec0d4edde4730"
+      },
+      "evidence": {
+        "path": ".scratch/opus-live-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the first Opus reasoning and interface encounter, including its supported conclusions, unnecessary caveats, interaction and custody.",
+        "until": "The comparison no longer needs this original encounter for inspection."
+      }
+    },
+    {
+      "id": "opus-live-02",
+      "kind": "experiment",
+      "date": "2026-11-09T23:35:22Z",
+      "date_from": "review/result.json field at",
+      "summary": "Opus Problem A: checked auditor submission, verified delivery and closure; 14 turns, 278397 input and 4961 output tokens, one repaired read-input refusal, no provider retries; original return and Haiku comparison reading retained.",
+      "result": {
+        "path": ".",
+        "files": 54,
+        "sha256": "607873108e7bf098998a40f98f98d1c2142022c398b1d122e0b154f8aae1feb1"
+      },
+      "evidence": {
+        "path": ".scratch/opus-live-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the Opus/Haiku Problem A accounts, sampling scope caveat, interface behavior and original custody evidence.",
+        "until": "The comparison no longer needs this original encounter for inspection."
+      }
+    },
+    {
+      "id": "opus-live-03",
+      "kind": "experiment",
+      "date": "2026-11-09T23:56:49Z",
+      "date_from": "review/result.json field at",
+      "summary": "Opus blinded 5sgh: input-limit stop, six recorded entries, manager-sealed delivery and confirmed closure; 12 turns, 428551 input and 12494 output tokens; provisional reading fixed before the other blinded return.",
+      "result": {
+        "path": ".",
+        "files": 91,
+        "sha256": "3792b1f6923d90edbb39976f6c61ba2e7345d56084155704be10c82e2b6e6765"
+      },
+      "evidence": {
+        "path": ".scratch/opus-live-03",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect this blinded encounter, its recorded selection and limit/custody outcome against the eventual disclosed condition.",
+        "until": "The comparison no longer needs this original encounter for inspection."
+      }
+    },
+    {
+      "id": "opus-live-04",
+      "kind": "experiment",
+      "date": "2026-11-10T00:11:56Z",
+      "date_from": "review/result.json field at",
+      "summary": "Opus blinded sw3z: input-limit stop after prepare, seven recorded entries, manager-sealed delivery and confirmed closure; 12 turns, 461820 input and 13585 output tokens; provisional reading fixed before key disclosure.",
+      "result": {
+        "path": ".",
+        "files": 91,
+        "sha256": "ebcf603b6ee0267ee90021fcba5c1c6b53f50ebabf09da62387fc3904f344a39"
+      },
+      "evidence": {
+        "path": ".scratch/opus-live-04",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect this blinded encounter, its recorded selection and limit/custody outcome against the eventual disclosed condition.",
+        "until": "The comparison no longer needs this original encounter for inspection."
       }
     }
   ]
