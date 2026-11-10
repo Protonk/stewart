@@ -246,7 +246,7 @@ def question_file(case, packet, destination):
             'model: ' + packet['model'], 'destination: ' + str(destination)]
     if packet['effort'] is not None:
         rows.append('effort: ' + packet['effort'])
-    for key in ['inquiry', 'varies']:
+    for key in ['guidance', 'inquiry', 'varies']:
         if case.get(key) is not None:
             rows.append(key + ': ' + case[key])
     rows += ['limit-' + name.replace('_', '-') + ': ' + str(packet['limits'][name]) for name in LIMITS]

@@ -426,6 +426,55 @@ class StudyTests(unittest.TestCase):
         (self.folder/'materials/link').symlink_to('text.txt')
         with self.assertRaises(ValueError):study_proposal('example-model',[('problem-a',self.folder)])
 
+    def test_selected_guidance_is_bound_and_survives_copy_and_rendering(self):
+        # A same-named material stays evidence; only the explicit root selection instructs.
+        (self.folder/'materials/guidance.md').write_bytes(b'Ordinary evidence.\n')
+        stock=inspect_submission(self.folder,'problem-a')
+        self.assertNotIn('guidance',stock)
+        original=tree_hash(self.folder)
+        raw=b'\xef\xbb\xbfDevelop a connected account.\r\n\r\n'
+        (self.folder/'guidance.md').write_bytes(raw)
+        with self.assertRaises(ValueError):inspect_submission(self.folder,'problem-a')
+        self.case['guidance']='guidance.md'
+        (self.folder/'question.md').write_bytes(question_file(self.case,proposal('example-model'),'/placeholder'))
+        case=inspect_submission(self.folder,'problem-a')
+        self.assertNotEqual(case['sha256'],original)
+        self.assertIn(b'guidance: guidance.md\n',question_file(case,proposal('changed-model'),'/actual'))
+        copy_submission(self.folder,self.root/'copy',case['sha256'])
+        self.assertEqual(read_file(self.root/'copy/guidance.md'),raw)
+        effective=strict_json(study_build.system_bytes({},'open-inquiry',raw))
+        self.assertEqual(effective[1]['text'].encode(),raw)
+        (self.folder/'guidance.md').write_bytes(raw+b'Changed.\n')
+        with self.assertRaises(ValueError):copy_submission(self.folder,self.root/'changed',case['sha256'])
+        self.assertFalse((self.root/'changed').exists())
+
+    def test_guidance_refusals_precede_proposal(self):
+        self.case['guidance']='guidance.md'
+        question=question_file(self.case,proposal('example-model'),'/placeholder')
+        (self.folder/'question.md').write_bytes(question)
+        with self.assertRaises(ValueError):study_proposal('example-model',[('problem-a',self.folder)])
+        for raw in [b'',b' \t\r\n',b'x\0y',b'\xff',b'x'*262145]:
+            (self.folder/'guidance.md').write_bytes(raw)
+            with self.subTest(raw=raw[:10]),self.assertRaises(ValueError):
+                study_proposal('example-model',[('problem-a',self.folder)])
+        (self.folder/'guidance.md').write_bytes(b'Valid.\n')
+        for changed in [question.replace(b'guidance.md',b'other.md'),
+                        question.replace(b'family: open-inquiry',b'family: comparison')]:
+            (self.folder/'question.md').write_bytes(changed)
+            with self.assertRaises(ValueError):study_proposal('example-model',[('problem-a',self.folder)])
+
+    def test_supplied_guidance_and_study_build_refuse_before_audit_creation(self):
+        from batch import Audit
+        self.case['guidance']='guidance.md'
+        (self.folder/'question.md').write_bytes(question_file(self.case,proposal('example-model'),'/placeholder'))
+        (self.folder/'guidance.md').write_bytes(b'Connected account.\n')
+        packet=study_proposal('rehearsal-only',[('problem-a',self.folder)],rehearsal=True)
+        packet['study_build']={'fixture':'override'}
+        target=self.root/'audit'
+        with self.assertRaisesRegex(ValueError,'not both'):
+            Audit('/unused-binary',target,packet,packet['runs'][-1],mode='rehearse',local=True)
+        self.assertFalse(target.exists())
+
     def test_rehearsal_covers_exact_inputs_and_keeps_fixed_controls(self):
         live=study_proposal('example-model',[('problem-a',self.folder)])
         rehearsed=study_proposal('rehearsal-only',[('problem-a',self.folder)],rehearsal=True)

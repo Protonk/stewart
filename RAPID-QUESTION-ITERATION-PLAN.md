@@ -4,8 +4,9 @@ Make a small structural experiment self-contained: agree its purpose and budget,
 change what the auditor encounters, launch within those bounds, collect and
 review the result, and complete custody. Return a supported finding or an explicit
 unresolved comparison without requiring the principal to reconstruct several
-reports. The first configuration boundary below is approved; the facility is not
-implemented. Live demonstration needs its own bounded commission.
+reports. The first configuration boundary is approved, implemented and checked
+natively; Linux qualification remains unfinished. Live
+demonstration needs its own bounded commission.
 
 ## Approved first boundary
 
@@ -25,9 +26,10 @@ Preparation shows the exact effective instructions and identifies whether the
 guidance is built-in or manager-supplied. Bind the selected bytes and origin to
 the prepared proposal and captured commission. Acceptance fixes them; later
 source edits cannot change an accepted audit. Retain the base family identity
-and distinguish the supplied guidance from the stock family version. Exact file
-selection, bounds, receipt members and identity fields remain to be specified
-through the existing intake and arrangement mechanisms.
+and distinguish the supplied guidance from the stock family version. The selected
+shape is `guidance: guidance.md`, with one bounded root file and whole-block
+replacement. [INTERFACE 3.2](docs/INTERFACE.md#selected-family-guidance) owns its
+selection, bounds, receipt members and identity fields.
 
 Validation covers mechanical selection, encoding, bounds and faithful capture.
 An unsupported configuration field is refused; Stewart does not claim to judge
@@ -38,9 +40,9 @@ Capturing text is not semantic certification or an answer-quality gate.
 
 The principal approved this amount of control and asked that the way replacement
 is chosen remain an explicit design discussion: richer pathways can become
-expensive to update. Show the concrete selection, replacement and default behavior
-before implementing the facility. Use the existing capture path and one whole-block
-replacement where practical. Layered overrides, includes, inheritance, templates,
+expensive to update. The concrete selection, replacement and default behavior
+were approved before implementation. Use the existing capture path and one whole-block
+replacement. Layered overrides, includes, inheritance, templates,
 multiple attachments and additional configurable instruction blocks are outside
 this first build. Discuss a concrete need and maintenance cost with the principal
 before adding such mechanisms. Routine implementation choices and guidance-text
@@ -74,16 +76,18 @@ costs. Original encounters and substantive limitations are in
 
 ## Remaining work
 
-- [ ] Specify the concrete attachment intake and replacement behavior under the
-  approved boundary, including defaults, provenance and source-change handling.
-  Review how the facility is selected with the principal before implementation.
-- [ ] Build the selected shape through the normal contract, interface/forms,
-  help/examples and [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed).
-  Product and independent-driver authorship remain separate. An apparatus-only
-  choice follows the launcher's checks and rehearsal.
-- [ ] Demonstrate with local fakes that one fixed binary accepts different
-  captured guidance, refuses unsupported overrides and preserves accepted text
-  after later edits. Exercise relevant capture, refusal and recovery invariants.
+- [ ] Qualify the implementation and independent driver on both Linux
+  architectures, then run the launcher's Linux rehearsal with the exact cycle
+  inputs. The native [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed)
+  passed, including the corrected guidance case and its three firing controls,
+  all 15 synthetic audit outcomes, reviewer/operator/report controls and input
+  readback. Linux process-access checks remain unexercised for this change.
+  Working results are in `.tmp/rapid-guidance-01/host/` and
+  `.tmp/rapid-guidance-01/host-02/`. The current host handoff is
+  `python3 -I -B .tmp/rapid-guidance-01/qualify.py`; it runs acceptance, records
+  a successful result, and rehearses the launcher, stopping on failure. No model
+  calls are included. Review the retained runs and dispose of generated work
+  under the ordinary retention rules.
 - [ ] Bind a live demonstration to a fresh bounded commission: model, purpose,
   placement/spending limits, permitted variations, stopping and custody work.
   Use an enabled execution route and provider-side spending limit. Token/turn
@@ -94,6 +98,16 @@ costs. Original encounters and substantive limitations are in
   bytes against the reference. Account for every attempt and custody outcome;
   a poor answer or inconclusive comparison is admissible. Distinguish calculated
   cost, provider usage and independently observed billing.
+
+The first cycle's frozen inputs are `.scratch/guidance-cycle-01`: two submissions
+with identical question and materials from the small retry inquiry. One uses
+built-in guidance; the other attaches the connected-account candidate recorded
+in `freeze.json`. This is unblinded and does not revisit the planted frsrr pair.
+Rehearse these exact inputs on one binary. Compare the resulting account's
+organization, supporting reasoning, duplication and authoring work; one pair can
+demonstrate the pathway but cannot establish a general answer-quality effect.
+The earlier reader reference stays outside both submissions. Model, effort and
+spending are to be bound after qualification, before any live placement.
 
 Within a bounded commission the agent may select variants, operate, interpret,
 collect and complete reviewed custody. Budget/model/purpose changes, permanent

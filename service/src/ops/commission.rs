@@ -383,6 +383,16 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
             mtime: f.mtime.clone(),
         });
     }
+    // Keep the existing question/material capture order stable; guidance is a distinct role.
+    if let Some(g) = &manifest.guidance {
+        items.push(Item {
+            name: "guidance.md".into(),
+            capture: "g.bin".into(),
+            size: g.size,
+            sha256: g.sha256.clone(),
+            mtime: g.mtime.clone(),
+        });
+    }
     let captures_j = J::Arr(
         items
             .iter()
@@ -392,6 +402,8 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
                         "item",
                         if it.capture == "q.bin" {
                             "question-file"
+                        } else if it.capture == "g.bin" {
+                            "guidance-file"
                         } else {
                             it.name.as_str()
                         },
@@ -531,6 +543,11 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
         manifest_sha256,
         m: &manifest,
         question_capture: &format!("intake/{attempt}/q.bin"),
+        guidance_capture: manifest
+            .guidance
+            .as_ref()
+            .map(|_| format!("intake/{attempt}/g.bin"))
+            .as_deref(),
         captures: &captures,
         checks: &checks,
         i_am_finished: declared,

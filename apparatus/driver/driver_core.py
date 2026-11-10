@@ -224,7 +224,7 @@ INTAKE_ENDED_OUTCOMES = ("selection_changed", "source_unreadable", "capture_fail
 ITEM_DIAGNOSTICS = ("item_unknown", "item_damaged", "item_missing", "item_unreadable",
                     "item_unsupported")
 VERIFY_STATES = ("verified", "damaged", "missing", "unreadable", "unsupported")
-BOUNDS = {"question_bytes": 262144, "files": 128, "file_bytes": 16777216,
+BOUNDS = {"question_bytes": 262144, "guidance_bytes": 262144, "files": 128, "file_bytes": 16777216,
           "total_bytes": 134217728, "directories": 256, "path_bytes": 1024,
           "path_components": 32, "component_bytes": 255}
 COMMISSION_CHECKS = ["capture_digests_match_preparation",
@@ -355,7 +355,7 @@ ANTHROPIC_BETA = "compact-2026-09-04"
 COMPACTION = {"trigger_tokens": 150000, "request": {"type": "summarize"}}
 ARRANGEMENT_MEMBERS = ("model", "anthropic_version", "anthropic_beta", "compaction", "max_tokens_per_request", "system", "tools",
                        "request_extra", "texts", "limits", "near_limit_percent", "retry",
-                       "request_timeout_seconds", "reader", "renderer", "family", "bindings")
+                       "request_timeout_seconds", "reader", "renderer", "family", "guidance", "bindings")
 
 
 def expected_tools(family):
@@ -423,9 +423,11 @@ def pinned_json_string(text):
     return ''.join(out)
 
 
-def expected_system_bytes(family):
+def expected_system_bytes(family, guidance=None):
+    """The two system blocks; selected guidance is exact UTF-8, not joined or trimmed."""
+    text = FAMILY_TEXT[family] if guidance is None else guidance.decode("utf-8")
     return ('[{"type":"text","text":%s},{"type":"text","text":%s}]'
-            % (pinned_json_string(ORIENTATION), pinned_json_string(FAMILY_TEXT[family]))).encode("utf-8")
+            % (pinned_json_string(ORIENTATION), pinned_json_string(text))).encode("utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -1032,13 +1034,16 @@ def material_witness(entries):
 def question_md(body=b"Audit our app to make sure there are no bugs.\n", *, family="open-inquiry",
                 model="claude-opus-5-5", dest="/nonexistent", turns="200",
                 input_tokens="20000000", output_tokens="400000", inquiry=None, varies=None,
-                nl=b"\n", bom=False, extra=(), omit=(), comments=True, effort=None):
+                nl=b"\n", bom=False, extra=(), omit=(), comments=True, effort=None, guidance=None):
     """A question.md. effort, when given, is written as an `effort` field after `model`,
     where the 3.2 template documents it."""
     def enc(v):
         return v if isinstance(v, bytes) else str(v).encode("utf-8")
 
-    fields = [("stewart", b"question/1"), ("family", enc(family)), ("model", enc(model))]
+    fields = [("stewart", b"question/1"), ("family", enc(family))]
+    if guidance is not None:
+        fields.append(("guidance", enc(guidance)))
+    fields.append(("model", enc(model)))
     if effort is not None:
         fields.append(("effort", enc(effort)))
     fields += [("destination", enc(dest)), ("limit-turns", enc(turns)),
@@ -1266,7 +1271,7 @@ class Sub:
     """One submission: a folder the driver built, its destination and its reference."""
 
     def __init__(self, t, folder, dest, archive, question, entries, root_entries, family, model, limits,
-                 effort=None):
+                 effort=None, guidance=None):
         self.t, self.folder, self.dest, self.archive = t, folder, dest, archive
         self.question = question
         self.body = split_question(question)
@@ -1276,6 +1281,9 @@ class Sub:
         # The front matter's effort level (3.2), or None when the question sets none. A case
         # that edits question.md to change it updates this too.
         self.effort = effort
+        # Independently supplied attachment bytes. Keep these when editing/removing the
+        # accepted source, so requests and readback cannot validate themselves.
+        self.guidance = guidance
         self.files, self.dirs = material_witness(entries)
         self.ref = self.audit = self.store = None
         self.handles = []
@@ -1297,6 +1305,8 @@ class Sub:
         """Receipt item ID -> expected bytes or {'big':..., 'sha256':..., 'size':...}."""
         h = handle or self.accepted_handle
         out = {"question-file": self.question, "question-body": self.body}
+        if self.guidance is not None:
+            out["guidance-file"] = self.guidance
         arr = self.arrangement.get(h)
         if arr:
             out["arrangement"] = arr["machine"]
@@ -1841,13 +1851,15 @@ class T:
     def submission(self, entries, *, question=None, body=b"Audit our app to make sure there are no bugs.\n",
                    family="open-inquiry", model="claude-opus-5-5", archive=None, root_entries=(),
                    q=None, folder=None, dest=None, make_question=True, make_materials=True,
-                   dest_watch="frozen", effort=None):
+                   dest_watch="frozen", effort=None, guidance=None):
         """Build a submission folder and its witness. dest_watch is 'frozen' before launch
         (nothing may appear) and 'additions' where a run or close may deliver. effort sets the
         front matter's effort level (3.2); None leaves the key out."""
         folder = folder or self.folder_path()
         dest = dest or self.dest_path()
         q = dict(q or {})
+        if guidance is not None:
+            q.setdefault("guidance", "guidance.md")
         limits = (int(q.get("turns", 200)) if str(q.get("turns", 200)).isdigit() else None,
                   int(q.get("input_tokens", 20000000)) if str(q.get("input_tokens", 20000000)).isdigit() else None,
                   int(q.get("output_tokens", 400000)) if str(q.get("output_tokens", 400000)).isdigit() else None)
@@ -1857,13 +1869,16 @@ class T:
         if make_question:
             with open(os.path.join(folder, "question.md"), "wb") as f:
                 f.write(question)
+        if guidance is not None:
+            with open(os.path.join(folder, "guidance.md"), "wb") as f:
+                f.write(guidance)
         if make_materials:
             os.mkdir(os.path.join(folder, "materials"))
             build_entries(os.path.join(folder, "materials"), entries)
         if root_entries:
             build_entries(folder, root_entries)
         sub = Sub(self, folder, dest, archive or self.archive_path(), question, entries, root_entries,
-                  family, model, limits, effort=effort)
+                  family, model, limits, effort=effort, guidance=guidance)
         self.watch(folder, "frozen", "folder")
         self.watch(dest, dest_watch, "destination")
         self.save_witness(sub)
@@ -1880,6 +1895,11 @@ class T:
                     "files": [], "dirs": sorted(x.hex() for x in sub.dirs)}
         with open(os.path.join(d, "question.md.bin"), "wb") as f:
             f.write(sub.question)
+        if sub.guidance is not None:
+            manifest["guidance"] = {"file": "guidance.md", "size": len(sub.guidance),
+                                    "sha256": sha256_hex(sub.guidance), "blob": "guidance.md.bin"}
+            with open(os.path.join(d, "guidance.md.bin"), "wb") as f:
+                f.write(sub.guidance)
         for i, (rel, w) in enumerate(sorted(sub.files.items())):
             entry = {"name_hex": rel.hex(), "size": w["size"], "sha256": w["sha256"], "lines": w["lines"]}
             if "data" in w:
@@ -2009,6 +2029,9 @@ class T:
         q = d.get("question") or {}
         self.eq("%s.question" % name, q, {"file_bytes": len(sub.question), "file_sha256": sha256_hex(sub.question),
                                          "body_bytes": len(sub.body), "body_sha256": sha256_hex(sub.body)})
+        guidance = (None if sub.guidance is None else
+                    {"file": "guidance.md", "size": len(sub.guidance), "sha256": sha256_hex(sub.guidance)})
+        self.eq("%s.guidance" % name, d.get("guidance", "missing"), guidance)
         exp_files = []
         for rel in sorted(sub.files):
             w = sub.files[rel]
@@ -2030,6 +2053,8 @@ class T:
         gd = mats.get("directories")
         self.eq("%s.directories" % name, sorted(gd) if isinstance(gd, list) else gd, sorted(exp_dirs))
         s = d.get("settings") or {}
+        self.eq("%s.settings.guidance" % name, s.get("guidance"),
+                None if sub.guidance is None else "guidance.md")
         self.eq("%s.settings.family" % name, s.get("family"), sub.family)
         self.eq("%s.settings.model" % name, s.get("model"), sub.model)
         self.eq("%s.settings.destination" % name, s.get("destination"), sub.dest)
@@ -2047,7 +2072,7 @@ class T:
 
     def check_prepared_settings(self, sub, name, inquiry=False, varies=False):
         """The latest `prepared` record's settings (4.4), in order: family, model, destination,
-        limits {turns, input_tokens, output_tokens}, then effort, inquiry and varies only when
+        limits {turns, input_tokens, output_tokens}, then guidance, effort, inquiry and varies only when
         given. sub.effort is the level the question sets, or None; inquiry and varies say whether
         the question gives them (4.4 does not spell out their recorded form, so only their
         presence and place are judged)."""
@@ -2055,6 +2080,8 @@ class T:
         s = bodies[-1].get("settings") if bodies else None
         want = {"family": sub.family, "model": sub.model, "destination": sub.dest,
                 "limits": {"turns": sub.limits[0], "input_tokens": sub.limits[1], "output_tokens": sub.limits[2]}}
+        if sub.guidance is not None:
+            want["guidance"] = "guidance.md"
         if sub.effort is not None:
             want["effort"] = sub.effort
         for key, given in (("inquiry", inquiry), ("varies", varies)):
@@ -2133,11 +2160,18 @@ class T:
         return found
 
     def check_captures(self, sub, attempt, name):
-        """The attempt's capture files hold exactly the witness bytes (q.bin and m*.bin, 4.2)."""
+        """The attempt's capture files hold the witness bytes (q.bin, m*.bin and selected g.bin)."""
         d = os.path.join(sub.audit_dir, "intake", attempt)
         q = os.path.join(d, "q.bin")
         self.check("%s.capture-question" % name, os.path.isfile(q) and sha256_file(q) == sha256_hex(sub.question),
                    "intake/%s/q.bin does not hold question.md" % attempt)
+        g = os.path.join(d, "g.bin")
+        if sub.guidance is not None:
+            self.check("%s.capture-guidance" % name,
+                       os.path.isfile(g) and sha256_file(g) == sha256_hex(sub.guidance),
+                       "intake/%s/g.bin does not hold guidance.md" % attempt)
+        else:
+            self.check("%s.no-guidance-capture" % name, not os.path.lexists(g), "unselected guidance capture")
         got = []
         inos = set()
         for n in sorted(os.listdir(d)):
@@ -2292,6 +2326,10 @@ class T:
         for att in self.intake_dirs(sub):
             d = os.path.join(sub.audit_dir, "intake", att)
             for n in sorted(os.listdir(d)):
+                if n == "g.bin" and sub.guidance is not None:
+                    p = os.path.join(d, n)
+                    if sha256_file(p) == sha256_hex(sub.guidance):
+                        out.setdefault("guidance-file", []).append(p)
                 if re.fullmatch(r"m[0-9]{4,}\.bin", n):
                     p = os.path.join(d, n)
                     digest = sha256_file(p)
@@ -3059,9 +3097,16 @@ def self_test():
     ok("split.body-delimiter", split_question(b"---\nk: v\n---\n" + body) == body)
     sysv = strict_loads(expected_system_bytes("comparison"))
     ok("system.decodes", sysv == [{"type": "text", "text": ORIENTATION}, {"type": "text", "text": FAMILY_TEXT["comparison"]}])
+    guidance = b'\xef\xbb\xbf  Answer "exactly".\r\nNo final newline\t'
+    custom = strict_loads(expected_system_bytes("open-inquiry", guidance))
+    ok("system.guidance-exact", custom == [{"type": "text", "text": ORIENTATION},
+                                         {"type": "text", "text": guidance.decode("utf-8")}])
+    ok("system.guidance-replaces", FAMILY_TEXT["open-inquiry"] not in custom[1]["text"])
     ok("tools.counts", [len(expected_tools(f)) for f in ("open-inquiry", "inquiry-framing", "comparison")] == [12, 14, 14])
     ok("question.default-splits", split_question(question_md()) == b"Audit our app to make sure there are no bugs.\n")
     ok("question.crlf-splits", split_question(question_md(b"x\r\n", nl=b"\r\n")) == b"x\r\n")
+    ok("question.guidance-selected", b"\nguidance: guidance.md\n" in question_md(guidance="guidance.md")
+       and b"\nguidance:" not in question_md())
     ident = big_identity(3 << 20, "seed")
     data = b"".join(big_chunks(3 << 20, "seed"))
     ok("big.identity", ident == {"size": len(data), "sha256": sha256_hex(data), "lines": line_count(data)})

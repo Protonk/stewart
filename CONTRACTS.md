@@ -79,7 +79,7 @@ reliable rather than claiming protection against a hostile archive owner.
 An inquiry is the manager's line of questions and may contain separate audits.
 An audit is one undertaking, with at most one accepted commission and cumulative
 ledger and limits; continuing a run creates no new audit. A commission is the
-accepted question, selected material, settings and authorization. An arrangement
+accepted question, selected material, any explicitly selected guidance, settings and authorization. An arrangement
 is its exact instructions, capabilities and runtime settings; capturing one
 does not grant authority. A run is one execution placement. An answer revision
 is a recorded selection, which may be poor or empty. Manager preparation offers
@@ -204,10 +204,11 @@ operation boundaries, independent evidence and unaffected comparison cases.
 
 ## Initial materials and preparation inspection
 
-**The folder has two entries.** The submission root contains `question.md` and
+**The folder has two required entries.** The submission root contains `question.md` and
 `materials/`. `question.md` holds the front matter and verbatim question body;
 the complete original file is captured as well as the body supplied to the auditor.
-`materials/` recursively supplies every contained entry. A material's public name
+`guidance.md` is admitted at the submission root only when explicitly selected
+for open inquiry. `materials/` recursively supplies every contained entry. A material's public name
 is its exact path relative to `materials/`, using `/` between components. Host
 absolute paths and archive paths are not auditor material names. No extra path
 arguments, external-path labels, automatic includes or exclusion rules enlarge
@@ -216,7 +217,7 @@ instructions to put intended material under `materials/` or move it outside the
 submission. Stewart's own metadata is stored in the archive, not this folder.
 
 **Settings live in the question file's front matter.** It names the family, the
-provider model, the run limits, the answer destination and, optionally, an
+provider model, the run limits, the answer destination and, optionally, a guidance attachment, an
 effort level and the earlier audit this one varies. Prepare decodes it strictly
 and binds every setting with the selection. Commission takes only the prepared
 handle and the affirmation, and `run` takes only the reference. The auditor
@@ -279,9 +280,10 @@ enough context. Changes require a versioned contract and updated boundary tests.
 | Scope | First-release bound |
 | --- | --- |
 | Complete `question.md`, including front matter | 256 KiB |
-| Material files, excluding `question.md` | 128 |
+| Selected `guidance.md` | 256 KiB |
+| Material files under `materials/` | 128 |
 | One material file | 16 MiB |
-| Total question and material file bytes | 128 MiB |
+| Total question, selected guidance and material file bytes | 128 MiB |
 | Directories under `materials/`, including that root | 256 |
 | Material path | 1,024 UTF-8 bytes, at most 32 components, at most 255 bytes per component |
 | Text bytes returned by one material read | 64 KiB |
@@ -617,6 +619,19 @@ a complete route. Modules are not a second compulsory taxonomy, and any selected
 module must be explicit rather than inferred silently from the question.
 Modules and their interactions are not first-build requirements; no module
 catalogue or composition system is selected.
+
+**Open-inquiry guidance may be supplied explicitly.** The manager can select one
+`guidance.md` at the submission root to replace the whole family-guidance block.
+Without selection Stewart uses built-in guidance; an unselected root file is
+refused. Preparation identifies the effective text and origin, and acceptance
+captures it with the same source-change checks as other inputs. Its exact bytes
+remain recoverable through the receipt and fixed for every placement. It is
+instruction text, separate from the question and evidence materials. Stewart
+retains ownership of orientation, tools, capability descriptions, limits,
+operational notices and custody. The base family identity and supplied guidance
+identity remain distinct. Mechanical validation does not certify arbitrary prose
+as sensible or truthful about powers. No layers, includes or arbitrary paths are
+part of this selection. The exact rules and bounds are in INTERFACE 3.2.
 
 **Inquiry framing is an explicit task.** This family commissions the auditor to
 formulate a working question from the manager's concern and investigate it within

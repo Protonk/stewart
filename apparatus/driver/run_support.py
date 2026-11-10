@@ -566,7 +566,7 @@ def check_requests(t, fx, sub, name, *, family=None, exchanges=None):
     model, system and tools bytes and the request_extra members (the effort: `output_config`
     after `tools` exactly when the front matter sets one), with nothing else and no whitespace."""
     family = family or sub.family
-    want_sys = expected_system_bytes(family)
+    want_sys = expected_system_bytes(family, getattr(sub, "guidance", None))
     want_tools = expected_tools(family)
     pinned_tools = arrangement_member_raw(sub, "tools")
     pinned_sys = arrangement_member_raw(sub, "system")

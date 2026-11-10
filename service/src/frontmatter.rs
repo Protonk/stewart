@@ -5,9 +5,10 @@ use crate::json::J;
 use crate::util;
 
 pub const FAMILIES: [&str; 3] = ["open-inquiry", "inquiry-framing", "comparison"];
-pub const KEYS: [&str; 10] = [
+pub const KEYS: [&str; 11] = [
     "stewart",
     "family",
+    "guidance",
     "model",
     "effort",
     "destination",
@@ -67,6 +68,8 @@ pub fn scaffold() -> String {
 pub struct Settings {
     pub family: String,
     pub model: String,
+    /// Explicit fixed-file family guidance selection.
+    pub guidance: Option<String>,
     /// The manager's effort level, sent as a request parameter; `None` sends
     /// no effort, so the provider's default for the model applies.
     pub effort: Option<String>,
@@ -92,6 +95,9 @@ impl Settings {
                     .with("input_tokens", self.input_tokens)
                     .with("output_tokens", self.output_tokens),
             );
+        if let Some(g) = &self.guidance {
+            o.push("guidance", g.as_str());
+        }
         if let Some(e) = &self.effort {
             o.push("effort", e.as_str());
         }
@@ -316,6 +322,7 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
     };
 
     let mut settings = Settings {
+        guidance: None,
         family: String::new(),
         model: String::new(),
         effort: None,
@@ -345,6 +352,19 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
                 format!(
                     "line {l}: family must be open-inquiry, inquiry-framing or comparison; {v:?} is none of these (nearest: {}).",
                     util::nearest(v, &FAMILIES)
+                ),
+            );
+        }
+    }
+    if let Some((v, l)) = get("guidance") {
+        if v == "guidance.md" && settings.family == "open-inquiry" {
+            settings.guidance = Some(v.to_string());
+        } else {
+            invalid(
+                "guidance",
+                l,
+                format!(
+                    "line {l}: guidance must be exactly guidance.md and requires family: open-inquiry; no other path or family is supported."
                 ),
             );
         }

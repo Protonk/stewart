@@ -13,6 +13,7 @@ use crate::util;
 use std::collections::BTreeMap;
 
 pub const QUESTION_BYTES: u64 = 262_144;
+pub const GUIDANCE_BYTES: u64 = 262_144;
 pub const FILES: usize = 128;
 pub const FILE_BYTES: u64 = 16_777_216;
 pub const TOTAL_BYTES: u64 = 134_217_728;
@@ -24,6 +25,7 @@ pub const COMPONENT_BYTES: usize = 255;
 pub fn bounds_j() -> J {
     J::obj()
         .with("question_bytes", QUESTION_BYTES)
+        .with("guidance_bytes", GUIDANCE_BYTES)
         .with("files", FILES)
         .with("file_bytes", FILE_BYTES)
         .with("total_bytes", TOTAL_BYTES)
@@ -91,6 +93,7 @@ pub struct DirEntry {
 
 pub struct Scan {
     pub question: QuestionFile,
+    pub guidance: Option<QuestionFile>,
     pub files: Vec<Material>,
     pub dirs: Vec<DirEntry>,
 }
@@ -116,8 +119,9 @@ fn nofollow() -> bool {
 }
 
 /// Check the folder's root: exactly `question.md` (a regular file) and
-/// `materials/` (a directory).
-pub fn check_root(folder: &Dir) -> Result<(), Refusal> {
+/// `materials/` (a directory), allowing guidance.md only when selected.
+/// Its type and contents are checked by read_guidance after parsing the selector.
+pub fn check_root(folder: &Dir, allow_guidance: bool) -> Result<(), Refusal> {
     let (names, more) = folder.names_bounded(64).map_err(|e| {
         refusal(
             "source_unreadable",
@@ -140,7 +144,7 @@ pub fn check_root(folder: &Dir) -> Result<(), Refusal> {
         return Err(refusal(
             "folder_incomplete",
             format!(
-                "The folder {} has no {}; it needs exactly question.md and materials/.",
+                "The folder {} has no {}; question.md and materials/ are required, with guidance.md only when selected.",
                 folder.path,
                 missing.join(" and no ")
             ),
@@ -149,7 +153,11 @@ pub fn check_root(folder: &Dir) -> Result<(), Refusal> {
     }
     let mut extra: Vec<String> = names
         .iter()
-        .filter(|n| n.as_slice() != b"question.md" && n.as_slice() != b"materials")
+        .filter(|n| {
+            n.as_slice() != b"question.md"
+                && n.as_slice() != b"materials"
+                && !(allow_guidance && n.as_slice() == b"guidance.md")
+        })
         .map(|n| String::from_utf8_lossy(n).into_owned())
         .collect();
     extra.sort();
@@ -158,7 +166,7 @@ pub fn check_root(folder: &Dir) -> Result<(), Refusal> {
         return Err(refusal(
             "unexpected_root_entry",
             format!(
-                "{first:?} is at the root of the folder{more_note}. The root holds only question.md and materials/: move it under materials/ if the auditor should read it, or out of the folder."
+                "{first:?} is at the root of the folder{more_note}. The root holds question.md, materials/, and guidance.md only when explicitly selected: move it under materials/ if the auditor should read it as evidence, or out of the folder."
             ),
             J::obj().with("entries", crate::json::strs(&extra)),
         ));
@@ -209,6 +217,44 @@ pub fn read_question(folder: &Dir) -> Result<QuestionFile, Refusal> {
     })?;
     if let Some(off) = first_non_text(&bytes) {
         return Err(not_text("question.md", off));
+    }
+    Ok(QuestionFile { bytes, stat: st })
+}
+
+/// Read the explicitly selected root guidance without transforming its bytes.
+pub fn read_guidance(folder: &Dir) -> Result<QuestionFile, Refusal> {
+    let (f, st) = folder.open_regular_bytes(b"guidance.md", nofollow()).map_err(|e| {
+        if matches!(e, ReadError::Missing) {
+            refusal("folder_incomplete", "guidance.md was selected but is missing; supply it or remove the guidance setting.", J::obj().with("missing", crate::json::strs(&["guidance.md"])))
+        } else { source_error("guidance.md", e) }
+    })?;
+    if st.size > GUIDANCE_BYTES {
+        return Err(bound(
+            "guidance_bytes",
+            GUIDANCE_BYTES,
+            "guidance.md",
+            st.size,
+        ));
+    }
+    let bytes = fsx::read_bounded(f, &st, GUIDANCE_BYTES).map_err(|e| match e {
+        ReadError::TooLarge { size, .. } => {
+            bound("guidance_bytes", GUIDANCE_BYTES, "guidance.md", size)
+        }
+        other => source_error("guidance.md", other),
+    })?;
+    if let Some(off) = first_non_text(&bytes) {
+        return Err(not_text("guidance.md", off));
+    }
+    if !std::str::from_utf8(&bytes)
+        .expect("text checked")
+        .chars()
+        .any(|c| !c.is_whitespace())
+    {
+        return Err(refusal(
+            "guidance_empty",
+            "guidance.md must contain a non-whitespace character; the provider cannot carry a blank text block.",
+            J::obj().with("entry", "guidance.md"),
+        ));
     }
     Ok(QuestionFile { bytes, stat: st })
 }
@@ -294,10 +340,15 @@ fn check_name(raw: &[u8], parent: &str) -> Result<String, Refusal> {
 }
 
 /// Scan `materials/` fully, reading and hashing each file.
-pub fn scan(folder: &Dir, exclude: &Exclude) -> Result<Scan, Refusal> {
-    check_root(folder)?;
+pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<Scan, Refusal> {
+    check_root(folder, selected_guidance)?;
     let question = read_question(folder)?;
-    let mut total = question.stat.size;
+    let guidance = if selected_guidance {
+        Some(read_guidance(folder)?)
+    } else {
+        None
+    };
+    let mut total = question.stat.size + guidance.as_ref().map_or(0, |g| g.stat.size);
     let mut files: Vec<Material> = Vec::new();
     let mut dirs: Vec<DirEntry> = Vec::new();
 
@@ -459,6 +510,7 @@ pub fn scan(folder: &Dir, exclude: &Exclude) -> Result<Scan, Refusal> {
     dirs.sort_by(|a, b| a.name.as_bytes().cmp(b.name.as_bytes()));
     Ok(Scan {
         question,
+        guidance,
         files,
         dirs,
     })
@@ -593,7 +645,11 @@ mod tests {
         (t, p)
     }
     fn run(p: &str) -> Result<Scan, Refusal> {
-        scan(&Dir::open_follow(p).unwrap(), &Exclude { ids: vec![] })
+        scan(
+            &Dir::open_follow(p).unwrap(),
+            &Exclude { ids: vec![] },
+            false,
+        )
     }
 
     #[test]

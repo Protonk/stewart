@@ -16,6 +16,11 @@ visible in any live report.
 
 ## Experimental family guidance
 
+For an ordinary qualified binary, select `guidance: guidance.md` in an open-inquiry
+study template and supply that root file. It replaces the family block through
+the product's capture and receipt path. Rehearse the exact templates before live
+use. Supplied guidance cannot be combined with a study-build override.
+
 The optional study-build path admits an explicitly **unqualified** Linux binary
 for an open-inquiry family-guidance experiment. It supports changed family text
 and its version; tool schemas, citation checks, rendering, revision and submission
@@ -307,8 +312,12 @@ Console and is not confirmed by the launcher. It never deletes an item itself.
 
 Study packets use `stewart.study-commission/1`; the six-case catalog and
 `stewart.c10-commission/1` retain their existing meanings. Supply a folder with
-only `question.md` and `materials/`. It is a hashed template: family, `inquiry`,
-optional `varies`, exact question body and material bytes come from it. The run
+`question.md` and `materials/`, plus `guidance.md` when explicitly selected by
+`guidance: guidance.md` for open inquiry. It is a hashed template: family, `inquiry`,
+optional `varies` and `guidance`, exact question body, selected guidance and
+material bytes come from it. Guidance is witnessed and read back separately from
+evidence materials; it replaces the effective family block on the same binary.
+It cannot be combined with a separate study-build instruction override. The run
 packet supplies model, effort and cumulative allowances; the launcher supplies
 destination. Those front-matter fields are rendered anew. Template settings
 in those positions are not live settings or spending authority.
@@ -349,7 +358,8 @@ auditor follows the ready `next` read when a material exceeds one 65,536-byte
 page and requires the reassembled pages to equal the witnessed bytes. The ordinary 14
 reviewer comparisons and seven operator comparisons remain required. Each study
 audit also gets 18 reviewer comparisons, including four template tampering
-controls and two invariance cases. Live launch checks complete coverage and
+controls and two invariance cases. A selected guidance attachment adds four
+controls for changed/missing capture, changed template and changed readback. Live launch checks complete coverage and
 successful reviews. Native iteration accepts the same `--submission ID FOLDER`
 arguments on `smoke.py`; run `check_review.py` on each resulting study audit.
 Native checks are not Linux qualification.

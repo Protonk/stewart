@@ -1819,7 +1819,7 @@ def c_unsupported(t):
         t.check("unsupported.%s.secret-not-captured" % label, not leaked, leaked)
 
 
-@case("c19.folder-layout", ["C19", "C11"], "the folder holds exactly question.md and materials/")
+@case("c19.folder-layout", ["C19", "C11"], "the folder holds question.md, materials/ and explicitly selected guidance only")
 def c_folder_layout(t):
     """Missing question.md or materials/ refuses folder_incomplete naming it; any other
     root entry (file, hidden file, directory) refuses unexpected_root_entry naming it;
@@ -1989,7 +1989,7 @@ def check_arrangement(t, sub, handle, family, p, limits):
     t.eq(p + ".anthropic-beta", members.get("anthropic_beta"), ANTHROPIC_BETA)
     t.eq(p + ".compaction", members.get("compaction"), COMPACTION)
     sysv = members.get("system")
-    expect_sys = expected_system_bytes(family)
+    expect_sys = expected_system_bytes(family, sub.guidance)
     if isinstance(sysv, str):
         t.eq(p + ".system-bytes", sysv.encode("utf-8"), expect_sys)
         try:
@@ -2040,10 +2040,17 @@ def check_arrangement(t, sub, handle, family, p, limits):
     t.check(p + ".reader", mentions(members.get("reader"), "utf8-text/1"), members.get("reader"))
     t.check(p + ".renderer", mentions(members.get("renderer"), "stewart.render/1"), members.get("renderer"))
     t.check(p + ".family", mentions(members.get("family"), family), members.get("family"))
+    effective = sub.guidance if sub.guidance is not None else FAMILY_TEXT[family].encode("utf-8")
+    origin = "guidance.md" if sub.guidance is not None else "builtin"
+    t.eq(p + ".guidance", members.get("guidance"),
+         {"source": origin, "size": len(effective), "sha256": sha256_hex(effective)})
     t.check(p + ".bindings", contains_string(members.get("bindings"), sha256_hex(sub.body)), members.get("bindings"))
     readable = norm_ws(rb.decode("utf-8", "replace"))
     t.check(p + ".readable.orientation", norm_ws(ORIENTATION) in readable, "orientation text not in arrangement.md")
-    t.check(p + ".readable.instructions", norm_ws(FAMILY_TEXT[family]) in readable, "family text not in arrangement.md")
+    t.check(p + ".readable.instructions", norm_ws(effective.decode("utf-8")) in readable,
+            "effective guidance not in arrangement.md")
+    t.check(p + ".readable.guidance", origin in readable and sha256_hex(effective) in readable
+            and str(len(effective)) in readable.replace(",", ""), "guidance origin/identity absent")
     for e in exp_tools:
         t.check(p + ".readable.tools", e["name"] in readable, e["name"])
     for n in limits:
@@ -2461,18 +2468,19 @@ def c_bound_file_bytes(t):
     _bound_refused(t, rep, "bound-file.over", "file_bytes", "big.txt")
 
 
-@case("c19.bounds.total-bytes", ["C19", "C9"], "128 MiB of question and materials is admitted; one byte more is refused",
+@case("c19.bounds.total-bytes", ["C19", "C9"], "128 MiB of question, guidance and materials is admitted; one byte more is refused",
       heavy=True)
 def c_bound_total(t):
-    """Question plus materials of exactly 134,217,728 bytes prepare and commission, and
+    """Question, guidance and materials of exactly 134,217,728 bytes prepare and commission, and
     status on that archive is timed; one byte more refuses bound_exceeded naming
     total_bytes."""
     dest = t.dest_path()
-    q = question_md(dest=dest)
+    guidance = b"Answer the question within the supplied evidence.\r\n"
+    q = question_md(dest=dest, guidance="guidance.md")
     fb = BOUNDS["file_bytes"]
-    rest = BOUNDS["total_bytes"] - 7 * fb - len(q)
+    rest = BOUNDS["total_bytes"] - 7 * fb - len(q) - len(guidance)
     entries = [BIG("part%d.txt" % i, fb, "total-%d" % i) for i in range(7)] + [BIG("last.txt", rest, "total-last")]
-    sub = t.submission(entries, question=q, dest=dest)
+    sub = t.submission(entries, question=q, dest=dest, guidance=guidance)
     t.new_ref(sub)
     rep = t.prepare(sub, name="bound-total.exact.prepare", timeout=900)
     t.check_prepare_witness(rep, sub, "bound-total.exact.prepare")
@@ -2480,11 +2488,11 @@ def c_bound_total(t):
     for i in range(3):
         t.status(sub, name="status-at-total-bound-%d" % i)
     dest2 = t.dest_path()
-    q2 = question_md(dest=dest2)
-    rest2 = BOUNDS["total_bytes"] - 7 * fb - len(q2) + 1
+    q2 = question_md(dest=dest2, guidance="guidance.md")
+    rest2 = BOUNDS["total_bytes"] - 7 * fb - len(q2) - len(guidance) + 1
     entries2 = entries[:-1] + [BIG("last.txt", rest2, "total-last")]
-    t.require("bound-total.over-size", len(q2) + 7 * fb + rest2 == BOUNDS["total_bytes"] + 1, rest2)
-    over = t.submission(entries2, question=q2, dest=dest2)
+    t.require("bound-total.over-size", len(q2) + len(guidance) + 7 * fb + rest2 == BOUNDS["total_bytes"] + 1, rest2)
+    over = t.submission(entries2, question=q2, dest=dest2, guidance=guidance)
     t.new_ref(over, name="bound-total.over.new")
     rep = t.prepare(over, name="bound-total.over", expect="refused", reason="bound_exceeded", timeout=900)
     _bound_refused(t, rep, "bound-total.over", "total_bytes")

@@ -49,6 +49,8 @@ class Audit(Session):
         supplied = run.get('submission_folder') is not None
         self.specimen = (inspect_submission(resolve_submission(run, submissions), run['case'], run['submission_sha256'])
                          if supplied else catalog()[run['case']])
+        require(not packet.get('study_build') or self.specimen.get('guidance') is None,
+                'choose supplied guidance or a study-build override, not both')
         self.run_item, self.local = run, local
         self.phase, self.observer_state, self.witness = 'setup', None, None
         self.index, self.ref, self.process = 0, None, None
@@ -75,7 +77,7 @@ class Audit(Session):
         e = Evidence(self.root)
         inputs = inventory_from_evidence(e, 'evidence/input-witness/')
         write_json(self.evidence / 'specimen.json', {'case':{key:value for key,value in self.specimen.items() if key not in ['root','sha256']},
-            'materials':[item for item in inventory(self.specimen['root']) if item['path'] != 'question.md']})
+            'materials':[item for item in inventory(self.specimen['root']) if item['path'] == 'materials' or item['path'].startswith('materials/')]})
         write_json(self.evidence / 'binding.json', {'schema':'stewart.c10-audit/1',
             'commission':packet, 'run':run, 'family':self.specimen['family'], 'mode':mode,
             'binary_sha256':file_hash(binary), 'input_inventory':inputs, 'destination':str(self.destination),
@@ -98,8 +100,11 @@ class Audit(Session):
         self.command('commission', 'commission', self.ref, prepared['data']['prepared'], '--i-am-finished')
         self.command('receipt-verify', 'receipt', self.ref, '--verify')
         readbacks = []
-        for n, (item, expected) in enumerate({'question-file':read_file(self.folder/'question.md'),
-                'question-body':self.question.encode(), **self.materials}.items(), 1):
+        expected_inputs = {'question-file':read_file(self.folder/'question.md'),
+                           'question-body':self.question.encode(), **self.materials}
+        if self.specimen.get('guidance') is not None:
+            expected_inputs['guidance-file'] = read_file(self.folder/'guidance.md')
+        for n, (item, expected) in enumerate(expected_inputs.items(), 1):
             label = f'readback-{n:04d}'
             raw = self.command(label, 'receipt', self.ref, '--read', item, raw=True)
             require(raw == expected, 'input readback differs from independent witness')
@@ -122,7 +127,9 @@ class Audit(Session):
                 write_json(witnessed/f'received-{n}.json', {'matches_canary':received==key,
                     'bytes':len(received), 'observed_at':time.time()})
             fake = Auditor(scenario, fake_root, self.materials, self.question, self.specimen['family'], auth,
-                           packet=self.commission)
+                           packet=self.commission,
+                           guidance=read_file(self.evidence/'input-witness/guidance.md')
+                               if self.specimen.get('guidance') else None)
             fake.key = key.decode('ascii')
             if not self.local and self.run_item['id'] == 'open-ordinary-r1':
                 seen, release = threading.Event(), threading.Event()

@@ -30,6 +30,9 @@ use crate::usage::Limits;
 pub struct Pinned {
     /// The family ID and version, `open-inquiry/1`.
     pub family: String,
+    pub guidance_source: String,
+    pub guidance_size: u64,
+    pub guidance_sha256: String,
     pub model: String,
     /// The exact bytes of the `model` value (a JSON string).
     pub model_raw: Vec<u8>,
@@ -116,6 +119,7 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         b.exactly(&[
             "schema",
             "family",
+            "guidance",
             "orientation",
             "model",
             "anthropic_version",
@@ -142,7 +146,32 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         for (i, t) in b.arr("tools")?.iter().enumerate() {
             tool_names.push(t.obj(&format!("/body/tools/{i}"))?.str("name")?.to_string());
         }
-        b.arr("system")?;
+        let system = b.arr("system")?;
+        if system.len() != 2 {
+            return Err(b.invalid("system", "expected orientation and family guidance blocks"));
+        }
+        let text = system[1].obj("/body/system/1")?.str("text")?;
+        let g = b.obj("guidance")?;
+        g.exactly(&["source", "size", "sha256"])?;
+        let guidance_source = g.str("source")?;
+        if !["builtin", "guidance.md"].contains(&guidance_source)
+            || (guidance_source == "guidance.md" && b.str("family")? != "open-inquiry/1")
+        {
+            return Err(g.invalid(
+                "source",
+                "expected builtin or guidance.md for open-inquiry/1",
+            ));
+        }
+        let guidance_size = g.u64("size", crate::scan::GUIDANCE_BYTES)?;
+        let guidance_sha256 = g.sha256("sha256")?;
+        if text.len() as u64 != guidance_size
+            || crate::util::sha256_hex(text.as_bytes()) != guidance_sha256
+        {
+            return Err(b.invalid(
+                "guidance",
+                "identity differs from the effective second system block",
+            ));
+        }
         let extra = b.obj("request_extra")?;
         let request_extra = admitted_extra(&raw("request_extra")?).ok_or_else(|| {
             value_err(
@@ -217,6 +246,9 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         bind.exactly(&["question_body_sha256", "material_index_sha256"])?;
         Ok::<_, JsonError>(Pinned {
             family: b.str("family")?.to_string(),
+            guidance_source: guidance_source.to_string(),
+            guidance_size,
+            guidance_sha256: guidance_sha256.to_string(),
             model: b.str("model")?.to_string(),
             model_raw: raw("model")?,
             anthropic_version: anthropic_version.to_string(),
@@ -407,6 +439,7 @@ pub(crate) mod tests {
 
     pub fn settings(family: &str, model: &str) -> Settings {
         Settings {
+            guidance: None,
             family: family.into(),
             model: model.into(),
             effort: None,
@@ -421,6 +454,7 @@ pub(crate) mod tests {
 
     pub fn arrangement_record(s: &Settings) -> Vec<u8> {
         let a = arrangement(&ArrangementInput {
+            guidance: None,
             settings: s,
             question_body_sha256: &"a".repeat(64),
             material_index_sha256: &"b".repeat(64),

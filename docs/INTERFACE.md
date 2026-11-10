@@ -28,7 +28,7 @@ another.
 | `stewart.reply/2` | Reply envelope and public data for manager JSON and auditor tool results |
 | `question/1` | Front matter grammar of `question.md` |
 | `stewart.record/1` | Archive record header (4.3) |
-| `stewart.preparation/1`, `stewart.arrangement/1`, `stewart.receipt/1` | Manager preparation, pinned arrangement, acceptance receipt |
+| `stewart.preparation/2`, `stewart.arrangement/2`, `stewart.receipt/2` | Manager preparation, pinned arrangement, acceptance receipt |
 | `stewart.answer/1`, `stewart.return/1` | Structured answer, return manifest |
 | `open-inquiry/1`, `inquiry-framing/1`, `comparison/1` | Families: instructions, recording tools, coverage sections |
 | `stewart.orientation/1`, `stewart.render/1` | Auditor orientation text; Markdown renderer |
@@ -277,17 +277,17 @@ reaches only captured material that is already in the auditor's world, so
 constructing one grants nothing. Names are exact; a near miss is refused with
 the closest existing names as hints, never normalized.
 
-Receipt items are named `question-file`, `question-body`, `arrangement`,
+Receipt items are named `question-file`, `question-body`, `guidance-file` (when supplied), `arrangement`,
 `arrangement-readable` and `materials/<public name>`.
 
 ## 3. The submission folder
 
 ### 3.1 Layout
 
-The folder has exactly two entries: `question.md` and `materials/`. If either is
-missing, prepare refuses (`folder_incomplete`), naming it. Anything else at the
-root is refused at prepare (`unexpected_root_entry`), naming the entry and
-suggesting either moving it under `materials/` or out of the folder.
+The folder contains `question.md` and `materials/`, plus `guidance.md` only when
+the question explicitly selects it (3.2). A missing required entry refuses
+`folder_incomplete`, naming it. An unselected `guidance.md` or any other root
+entry refuses `unexpected_root_entry`. Links and special files refuse unread.
 
 ### 3.2 Front matter (`question/1`)
 
@@ -337,6 +337,7 @@ Fields:
 | --- | --- | --- |
 | `stewart` | yes | Exactly `question/1` |
 | `family` | yes | `open-inquiry`, `inquiry-framing` or `comparison` |
+| `guidance` | no | Exactly `guidance.md`, and only with `family: open-inquiry` |
 | `model` | yes | 1–128 characters from `A–Z a–z 0–9 . _ : -` |
 | `effort` | no | `low`, `medium`, `high`, `xhigh` or `max` |
 | `destination` | yes | Absolute UTF-8 path, at most 1,024 bytes, no control characters |
@@ -359,6 +360,54 @@ Stewart sends no effort, and the provider's default for the model applies.
 The levels are the ones the pinned API version (6.1) documents. Stewart does not
 check which levels a model accepts: a provider that refuses a level, or the
 parameter itself, is reported as it answered (6.5).
+
+#### Selected family guidance
+
+`guidance: guidance.md` selects that fixed regular file at the submission root.
+Any other value, or use with another family, refuses `setting_invalid` naming
+`guidance`. Without the key, use built-in family guidance. There is no automatic
+selection, arbitrary path, include, template expansion or layering. The file is
+instruction text, not a member of the material index or a `list`/`read`/`search`
+source. A separate `materials/guidance.md` is ordinary material and has no effect
+on instruction selection.
+
+The selected file must be UTF-8 without NUL, at most 262,144 bytes (256 KiB),
+and contain a non-whitespace character. Invalid text refuses `material_not_text`;
+blank text refuses `guidance_empty` because the provider requires a nonblank
+text block. Oversize refuses `bound_exceeded` with bound `guidance_bytes`.
+Its bytes count toward `total_bytes`, not the material-file count. Bounds replies
+include `guidance_bytes: 262144`. No trimming, BOM removal or newline conversion
+is performed. Its exact text replaces the second system block; orientation,
+tools, operational notices, limits and answer admissibility do not change.
+
+Preparation binds its size, SHA-256 and observed mtime. Acceptance captures it
+as `intake/<attempt>/g.bin` under the same source checks and final rescan as the
+question and materials. A mismatch refuses `selection_changed`, naming
+`guidance.md`; prepare the changed selection again. A repeated acceptance after
+a lost reply returns its original receipt even if the source changed afterwards.
+Receipt item `guidance-file` recovers the accepted bytes. Run verifies that
+capture and its identity against the pinned arrangement; missing or damaged
+bytes refuse `commission_damaged` before a provider request. After acceptance,
+source edits or deletion never affect requests, continuation or readback.
+
+The preparation and receipt schemas are version 2. Their bodies have a required
+`guidance` member immediately after `question`: null for built-in guidance;
+otherwise `{"file":"guidance.md","size":N,"sha256":H,"mtime":M}` in the
+preparation and `{"file":"guidance.md","size":N,"sha256":H,"capture":C}`
+in the receipt. Manager prepare/receipt data include `guidance` after `question`,
+null or `{"file":"guidance.md","size":N,"sha256":H}`. Settings include
+`guidance: "guidance.md"` only when selected. The `prepared` log body carries
+that same guidance summary after `question`; `intake_planned.captures` adds item
+`guidance-file` with file `g.bin` after question and material captures.
+Historical receipts are not rewritten or upgraded.
+
+The arrangement schema is version 2. Immediately after `family`, its `guidance`
+object is `{"source":S,"size":N,"sha256":H}`. S is `builtin` or `guidance.md`;
+N and H identify the exact effective second-block text, including for built-in
+guidance. The readable arrangement identifies that source, size and digest and
+shows the effective text. `family` remains the base family/protocol identity;
+it does not assert that manager-supplied guidance is the stock family wording.
+Guidance metadata grants no powers and is not a semantic approval of its text.
 
 The scaffold created by `new` contains the front matter above with
 `model: REPLACE-WITH-MODEL` and `destination: REPLACE-WITH-ABSOLUTE-DIRECTORY`,
@@ -532,7 +581,7 @@ to the audit directory. The manager-foundation kinds:
 | Kind | Body keys after `prev` |
 | --- | --- |
 | `reference` | `file`, `file_sha256`, `folder`, `writer` {`path`, `sha256`} |
-| `prepared` | `prep`, `manifest`, `manifest_sha256`, `arrangement_sha256`, `readable_sha256`, `settings` {`family`, `model`, `destination`, `limits` {`turns`, `input_tokens`, `output_tokens`}, then `effort`, `inquiry` and `varies` only when given}, `question` {`file_bytes`, `file_sha256`, `body_bytes`, `body_sha256`}, `materials` {`count`, `bytes`} |
+| `prepared` | `prep`, `manifest`, `manifest_sha256`, `arrangement_sha256`, `readable_sha256`, `settings` {`family`, `model`, `destination`, `limits` {`turns`, `input_tokens`, `output_tokens`}, then `guidance`, `effort`, `inquiry` and `varies` only when given}, `question` {`file_bytes`, `file_sha256`, `body_bytes`, `body_sha256`}, `guidance` (3.2), `materials` {`count`, `bytes`} |
 | `intake_planned` | `attempt`, `prepared` (the handle), `prep`, `declaration` {`i_am_finished`}, `captures` [{`item`, `file`}], `observations` |
 | `intake_ended` | `attempt`, `outcome`, `recorded_by` (`commission` or `close`), `message`, `cause` ({`operation`, `error`} or null), `changes` ({`added`, `removed`, `changed`} or null) |
 | `accepted` | `attempt`, `prepared`, `prep`, `receipt` (`intake/<attempt>/receipt.json`), `receipt_sha256` |
@@ -995,6 +1044,7 @@ log record binding their digests.
            "why": "Accept exactly this selection. Leave the folder unchanged until commission returns."}],
  "data": {"prepared": "mp1.k4q7xa",
           "question": {"file_bytes": 539, "file_sha256": "…", "body_bytes": 46, "body_sha256": "…"},
+          "guidance": null,
           "settings": {"family": "open-inquiry", "model": "claude-opus-5-5",
                        "destination": "/home/ana/returns",
                        "limits": {"turns": 200, "input_tokens": 20000000, "output_tokens": 400000}},
@@ -1003,17 +1053,17 @@ log record binding their digests.
                                   {"name": "materials/requirements.txt", "size": 662, "sha256": "…", "lines": 10},
                                   {"name": "materials/supplied-report.txt", "size": 591, "sha256": "…", "lines": 8}]},
           "reader": {"id": "utf8-text/1", "transformations": "none"},
-          "bounds": {"question_bytes": 262144, "files": 128, "file_bytes": 16777216, "total_bytes": 134217728,
+          "bounds": {"question_bytes": 262144, "guidance_bytes": 262144, "files": 128, "file_bytes": 16777216, "total_bytes": 134217728,
                      "directories": 256, "path_bytes": 1024, "path_components": 32, "component_bytes": 255},
           "arrangement": {"sha256": "…", "readable": "/home/ana/stewart-archive/audits/aqm3…/prep/1/arrangement.md",
                           "machine": "/home/ana/stewart-archive/audits/aqm3…/prep/1/arrangement.json"}}}
 ```
 
-`settings` is the `prepared` record's (4.3): `effort`, `inquiry` and `varies`
+`settings` is the `prepared` record's (4.3): `guidance`, `effort`, `inquiry` and `varies`
 appear only when the front matter gives them.
 
 Refusals: `folder_incomplete`, `front_matter_invalid`, `setting_missing`,
-`setting_invalid`, `destination_invalid`, `question_empty`,
+`setting_invalid`, `destination_invalid`, `question_empty`, `guidance_empty`,
 `unexpected_root_entry`, `unsupported_entry`, `location_overlap`,
 `material_not_text`, `name_invalid`, `source_unreadable`, `bound_exceeded`
 (naming the bound, the limit and the entry where it was exceeded),
@@ -1132,7 +1182,7 @@ vouching for the whole commission from one member.
 stdout. It then writes one JSON line to stderr: the item, size, SHA-256 and
 `verified: true`, or the diagnostic (`item_unknown`, `item_damaged`,
 `item_missing`, `item_unreadable` or `item_unsupported`). Bytes that fail
-verification are not written. Items: `question-file`, `question-body`,
+verification are not written. Items: `question-file`, `question-body`, `guidance-file` when supplied,
 `arrangement`, `arrangement-readable` and `materials/<name>`. The live source
 and the currently installed forms are never consulted.
 
@@ -1675,7 +1725,8 @@ redaction service and never rewrites a prior capture.
 | `anthropic_beta` | `compact-2026-09-04`, pinned by the release |
 | `compaction` | `{"trigger_tokens":150000,"request":{"type":"summarize"}}`, pinned by the release |
 | `max_tokens_per_request` | 16,000, pinned by the release, so a non-streaming response fits the request timeout |
-| `system` | Exact JSON array: orientation block, family instruction block (QUESTION-FORMS) |
+| `guidance` | Source, size and SHA-256 of the effective second system block (3.2) |
+| `system` | Exact JSON array: orientation block, selected or built-in family guidance (QUESTION-FORMS) |
 | `tools` | Exact JSON array of tool definitions for the family (section 7) |
 | `request_extra` | Exact JSON object of further top-level request parameters, limited to the release's allowlist. The allowlist admits one member, `output_config`, whose value is exactly `{"effort":"<level>"}` with a level of 3.2. It holds that member when the front matter sets `effort`, and is `{}` otherwise. |
 | `texts` | Reminder, near-limit template, continuation and post-compaction notices |

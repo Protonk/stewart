@@ -123,6 +123,20 @@ question.
   misspelled name, and one that sends it as text in the first message instead
   of as a parameter. Each must fail.
 
+- **Selected guidance:** With the same binary, open-inquiry commissions using
+  built-in guidance and two supplied guidance files send exactly the respective
+  second system block. Orientation, tools, notices, limits and empty-answer
+  admissibility remain invariant. A changed material leaves guidance unchanged.
+  Witness supplied text independently; observe the actual fake-provider requests.
+  Guidance selection, malformed text, blank text, unsupported family/value and
+  exact/over bounds follow INTERFACE 3.2. An unselected root file refuses.
+  Capture/source-change and receipt checks in C15/C19 cover the selected guidance:
+  same-size edits with restored mtime cannot escape the prepared digest; lost
+  acceptance replies cannot cause recapture; later source edits/deletion cannot
+  alter accepted requests or readback; damaged capture refuses run/readback.
+  Reuse applicable arrangement, changed-source, live-readback and incomplete-answer
+  controls, and require each exercised control to fire.
+
 ### C2 — Question and material arrive unchanged
 
 - **Pass:** the question-body bytes inside the first request equal the supplied body.

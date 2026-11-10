@@ -1,5 +1,5 @@
-//! The preparation manifest (`stewart.preparation/1`) and the acceptance
-//! receipt (`stewart.receipt/1`): their bodies, and strict decoders that also
+//! The preparation manifest (`stewart.preparation/2`) and the acceptance
+//! receipt (`stewart.receipt/2`): their bodies, and strict decoders that also
 //! check the bindings the log holds for them.
 
 use crate::archive::{Audit, RECORD_LIMIT, decode_record};
@@ -7,8 +7,8 @@ use crate::frontmatter::Settings;
 use crate::json::{self, J, JsonError, Obj};
 use crate::util;
 
-pub const PREPARATION_SCHEMA: &str = "stewart.preparation/1";
-pub const RECEIPT_SCHEMA: &str = "stewart.receipt/1";
+pub const PREPARATION_SCHEMA: &str = "stewart.preparation/2";
+pub const RECEIPT_SCHEMA: &str = "stewart.receipt/2";
 
 pub const CHECKS: [&str; 3] = [
     "capture_digests_match_preparation",
@@ -28,6 +28,7 @@ pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
         "model",
         "destination",
         "limits",
+        "guidance",
         "effort",
         "inquiry",
         "varies",
@@ -40,7 +41,13 @@ pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
             return Err(s.invalid("effort", "expected an effort level"));
         }
     }
+    let guidance = s.opt_str("guidance")?;
+    if guidance.is_some() && (guidance != Some("guidance.md") || s.str("family")? != "open-inquiry")
+    {
+        return Err(s.invalid("guidance", "expected guidance.md for open-inquiry"));
+    }
     Ok(Settings {
+        guidance: guidance.map(str::to_string),
         family: s.str("family")?.to_string(),
         model: s.str("model")?.to_string(),
         effort: effort.map(|x| x.to_string()),
@@ -74,6 +81,54 @@ impl QInfo {
     }
 }
 
+/// Metadata of the explicitly selected instruction file, separate from materials.
+#[derive(Debug, Clone)]
+pub struct GuidanceFile {
+    pub size: u64,
+    pub sha256: String,
+    pub mtime: String,
+}
+impl GuidanceFile {
+    pub fn summary_j(&self) -> J {
+        J::obj()
+            .with("file", "guidance.md")
+            .with("size", self.size)
+            .with("sha256", self.sha256.as_str())
+    }
+}
+pub fn guidance_summary(g: Option<&GuidanceFile>) -> J {
+    g.map_or(J::Null, GuidanceFile::summary_j)
+}
+/// Decode the required member; null denotes built-in guidance.
+fn decode_guidance(
+    b: &Obj,
+    receipt: bool,
+    settings: &Settings,
+) -> Result<Option<GuidanceFile>, JsonError> {
+    let g = b.obj_or_null("guidance")?;
+    if g.is_some() != settings.guidance.is_some() {
+        return Err(b.invalid("guidance", "must match the explicit guidance setting"));
+    }
+    g.map(|o| {
+        let extra = if receipt { "capture" } else { "mtime" };
+        o.exactly(&["file", "size", "sha256", extra])?;
+        if o.str("file")? != "guidance.md" {
+            return Err(o.invalid("file", "expected guidance.md"));
+        }
+        o.str(extra)?;
+        Ok(GuidanceFile {
+            size: o.u64("size", crate::scan::GUIDANCE_BYTES)?,
+            sha256: o.sha256("sha256")?.to_string(),
+            mtime: if receipt {
+                String::new()
+            } else {
+                o.str("mtime")?.to_string()
+            },
+        })
+    })
+    .transpose()
+}
+
 #[derive(Debug, Clone)]
 pub struct MFile {
     pub name: String,
@@ -105,6 +160,7 @@ pub struct Manifest {
     pub prep: u64,
     pub folder: String,
     pub question: QInfo,
+    pub guidance: Option<GuidanceFile>,
     pub settings: Settings,
     pub files: Vec<MFile>,
     pub dirs: Vec<String>,
@@ -135,6 +191,7 @@ pub struct ManifestParts<'a> {
     pub prep: u64,
     pub folder: &'a str,
     pub question: &'a QInfo,
+    pub guidance: Option<&'a GuidanceFile>,
     pub settings: &'a Settings,
     pub index: &'a [u8],
     pub files: &'a [MFile],
@@ -158,6 +215,11 @@ pub fn manifest_body(p: &ManifestParts) -> J {
                 .with("body_bytes", p.question.body_bytes)
                 .with("body_sha256", p.question.body_sha256.as_str())
                 .with("mtime", p.question.mtime.as_str()),
+        )
+        .with(
+            "guidance",
+            p.guidance
+                .map_or(J::Null, |g| g.summary_j().with("mtime", g.mtime.as_str())),
         )
         .with("settings", p.settings.to_j())
         .with("index", J::Raw(p.index.to_vec()))
@@ -215,6 +277,7 @@ pub fn decode_manifest(bytes: &[u8]) -> Result<Manifest, String> {
             "prep",
             "folder",
             "question",
+            "guidance",
             "settings",
             "index",
             "observations",
@@ -249,6 +312,7 @@ pub fn decode_manifest(bytes: &[u8]) -> Result<Manifest, String> {
             mtime: q.str("mtime")?.to_string(),
         };
         let settings = decode_settings(&b.obj("settings")?)?;
+        let guidance = decode_guidance(&b, false, &settings)?;
         let index = b.req("index")?;
         let io = index.obj("/body/index")?;
         io.only(&["files", "directories"])?;
@@ -299,6 +363,7 @@ pub fn decode_manifest(bytes: &[u8]) -> Result<Manifest, String> {
             prep: b.u64("prep", u64::MAX)?,
             folder: b.str("folder")?.to_string(),
             question,
+            guidance,
             settings,
             files,
             dirs,
@@ -348,6 +413,7 @@ pub struct Receipt {
     pub manifest: Manifest,
     pub captures: Vec<(MFile, String)>,
     pub question_capture: String,
+    pub guidance_capture: Option<String>,
     pub checks: Vec<String>,
     pub i_am_finished: bool,
     pub json: json::Json,
@@ -360,6 +426,7 @@ pub struct ReceiptParts<'a> {
     pub manifest_sha256: &'a str,
     pub m: &'a Manifest,
     pub question_capture: &'a str,
+    pub guidance_capture: Option<&'a str>,
     pub captures: &'a [(MFile, String)],
     pub checks: &'a [&'a str],
     pub i_am_finished: bool,
@@ -386,6 +453,15 @@ pub fn receipt_body(p: &ReceiptParts) -> J {
                 .with("body_bytes", m.question.body_bytes)
                 .with("body_sha256", m.question.body_sha256.as_str())
                 .with("capture", p.question_capture),
+        )
+        .with(
+            "guidance",
+            m.guidance.as_ref().map_or(J::Null, |g| {
+                g.summary_j().with(
+                    "capture",
+                    p.guidance_capture.expect("selected guidance capture"),
+                )
+            }),
         )
         .with("settings", m.settings.to_j())
         .with(
@@ -457,6 +533,7 @@ pub fn decode_receipt(bytes: &[u8]) -> Result<Receipt, String> {
             "manifest",
             "manifest_sha256",
             "question",
+            "guidance",
             "settings",
             "materials",
             "arrangement",
@@ -492,6 +569,11 @@ pub fn decode_receipt(bytes: &[u8]) -> Result<Receipt, String> {
             mtime: String::new(),
         };
         let settings = decode_settings(&b.obj("settings")?)?;
+        let guidance = decode_guidance(&b, true, &settings)?;
+        let guidance_capture = b
+            .obj_or_null("guidance")?
+            .map(|o| o.str("capture").map(str::to_string))
+            .transpose()?;
         let mats = b.obj("materials")?;
         mats.only(&["count", "bytes", "directories", "files"])?;
         let mut captures = Vec::new();
@@ -529,6 +611,7 @@ pub fn decode_receipt(bytes: &[u8]) -> Result<Receipt, String> {
             prep: b.u64("prep", u64::MAX)?,
             folder: String::new(),
             question,
+            guidance,
             settings,
             files: captures.iter().map(|(f, _)| f.clone()).collect(),
             dirs,
@@ -543,6 +626,7 @@ pub fn decode_receipt(bytes: &[u8]) -> Result<Receipt, String> {
             prepared: b.str("prepared")?.to_string(),
             prep: b.u64("prep", u64::MAX)?,
             question_capture: q.str("capture")?.to_string(),
+            guidance_capture,
             manifest,
             captures,
             checks: b

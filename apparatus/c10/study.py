@@ -34,7 +34,7 @@ def case_from_question(raw, name):
         raise ValueError('study front matter has no closing delimiter')
     required = {'stewart', 'family', 'model', 'destination', 'limit-turns',
                 'limit-input-tokens', 'limit-output-tokens'}
-    require(required <= settings.keys() <= required | {'effort', 'inquiry', 'varies'},
+    require(required <= settings.keys() <= required | {'guidance', 'effort', 'inquiry', 'varies'},
             'study front-matter fields differ from question/1')
     require(settings['stewart'] == 'question/1' and settings['family'] in FAMILIES,
             'unknown study form')
@@ -45,17 +45,27 @@ def case_from_question(raw, name):
     varies = settings.get('varies')
     require(varies is None or varies.startswith('stw1:') and not any(c.isspace() for c in varies),
             'varies must be a Stewart reference; omit it until there is an earlier audit')
-    return {'id': name, 'family': settings['family'], 'variant': 'study',
-            'question': body, 'inquiry': inquiry, 'varies': varies}
+    guidance = settings.get('guidance')
+    require(guidance is None or guidance == 'guidance.md' and settings['family'] == 'open-inquiry',
+            'guidance must be guidance.md for open-inquiry')
+    result = {'id': name, 'family': settings['family'], 'variant': 'study',
+              'question': body, 'inquiry': inquiry, 'varies': varies}
+    if guidance is not None:
+        result['guidance'] = guidance
+    return result
 
 
 def inspect_submission(root, name, expected=None):
     root = Path(root)
     identity = tree_hash(root)
     require(expected is None or identity == expected, 'study submission differs from packet')
-    require({p.name for p in root.iterdir()} == {'question.md', 'materials'}
-            and (root/'materials').is_dir(), 'study submission needs only question.md and materials/')
     case = case_from_question(read_file(root/'question.md'), name)
+    selected = case.get('guidance') is not None
+    require({p.name for p in root.iterdir()} == {'question.md', 'materials'} | ({'guidance.md'} if selected else set())
+            and (root/'materials').is_dir(), 'study submission needs question.md, materials/ and only explicitly selected guidance.md')
+    if selected:
+        raw = read_file(root/'guidance.md', 262144)
+        require(b'\0' not in raw and raw.decode('utf-8').strip(), 'guidance needs nonblank UTF-8 text without NUL')
     for item in inventory(root/'materials'):
         if item['type'] == 'file':
             raw = read_file(root/'materials'/item['path'])

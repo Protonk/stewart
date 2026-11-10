@@ -18,7 +18,14 @@ and preparation replies, alongside the orientation, its family's instructions an
 ## System blocks
 
 The request's `system` array has two text blocks: the orientation, then the
-family instructions. It is pinned as the compact JSON
+family instructions. Open inquiry may replace its whole family-instruction
+block with the explicitly selected `guidance.md` text under
+[INTERFACE 3.2](INTERFACE.md#selected-family-guidance). Its bytes are kept exactly,
+including whitespace; the paragraph-joining convention above applies only to
+built-in texts. The family ID remains the base authoring protocol; the pinned
+arrangement separately identifies the effective guidance source and digest.
+Orientation, tools, notices, expected-section notices and admissible answers are
+unchanged. The system array is pinned as the compact JSON
 `[{"type":"text","text":<orientation>},{"type":"text","text":<family instructions>}]`,
 each text a JSON string escaped as in the structured answer (below).
 

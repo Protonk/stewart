@@ -135,6 +135,15 @@ def exercise(root,out):
         case('changed-template-material',lambda v:v.changes.update({selected:v.read(selected)+b'changed'}),'study_template_binding')
         case('missing-template-material',lambda v:v.removed.add(selected),'study_template_binding')
         case('added-template-directory',lambda v:v.added_directories.add(template+'materials/control-empty-directory'),'study_template_binding')
+    if (baseline.get('guidance') or {}).get('source') == 'guidance.md':
+        receipt_name = next(original.json(n)['body']['receipt'] for n in original.names
+                            if n.startswith(base+'log/') and original.json(n)['kind'] == 'accepted')
+        capture = base + original.json(base+receipt_name)['body']['guidance']['capture']
+        rb = next(r for r in original.json('evidence/readbacks.json') if r['item'] == 'guidance-file')
+        case('changed-guidance-capture', lambda v:v.changes.update({capture:v.read(capture)+b'changed'}), 'guidance_capture')
+        case('missing-guidance-capture', lambda v:v.removed.add(capture), 'missing_evidence')
+        case('changed-template-guidance', lambda v:v.changes.update({'evidence/submission-template/guidance.md':b'changed'}), 'study_template_binding')
+        case('changed-guidance-readback', lambda v:v.changes.update({'evidence/'+rb['command']+'.stdout':b'changed'}), 'exact_receipt_readback')
     unchanged=verify(Evidence(root))
     require(unchanged==baseline,'original changed during controls')
     result={'schema':'stewart.c10-review-controls/1','cases':rows,'run':len(rows),

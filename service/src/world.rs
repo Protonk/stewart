@@ -272,6 +272,38 @@ pub fn load(audit: &Audit, state: &LogState) -> Result<World, Vec<ItemProblem>> 
         }
     }
 
+    // Instructions are not evidence sources, but their selected original must
+    // verify before any request and match the effective arrangement's identity.
+    if let Some(g) = &r.manifest.guidance {
+        match &r.guidance_capture {
+            Some(cap) => {
+                if let Err(p) = verified(audit, "guidance-file", cap, g.size, &g.sha256) {
+                    problems.push(p);
+                }
+            }
+            None => problems.push(ItemProblem::new(
+                "guidance-file",
+                "selected capture is missing from the receipt",
+            )),
+        }
+    }
+    if let Some((a, _)) = &arrangement {
+        let matches = match &r.manifest.guidance {
+            Some(g) => {
+                a.guidance_source == "guidance.md"
+                    && a.guidance_size == g.size
+                    && a.guidance_sha256 == g.sha256
+            }
+            None => a.guidance_source == "builtin",
+        };
+        if !matches {
+            problems.push(ItemProblem::new(
+                "arrangement",
+                "guidance identity differs from the accepted selection",
+            ));
+        }
+    }
+
     let mut materials = Vec::new();
     for (m, cap) in &r.captures {
         match verified(audit, &m.name, cap, m.size, &m.sha256) {

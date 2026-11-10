@@ -57,6 +57,15 @@ pub fn items(r: &Receipt) -> Vec<Item> {
             within: None,
         },
     ];
+    if let (Some(g), Some(cap)) = (&r.manifest.guidance, &r.guidance_capture) {
+        v.push(Item {
+            id: "guidance-file".into(),
+            size: g.size,
+            sha256: g.sha256.clone(),
+            file: cap.clone(),
+            within: None,
+        });
+    }
     for (f, cap) in &r.captures {
         v.push(Item {
             id: f.name.clone(),
@@ -249,6 +258,7 @@ pub fn run(reference: &str, verify: bool) -> Reply {
         .with("prepared", prepared.as_str())
         .with("receipt_sha256", rsha.as_str())
         .with("question", m.question.summary_j())
+        .with("guidance", records::guidance_summary(m.guidance.as_ref()))
         .with("settings", m.settings.to_j())
         .with("materials", m.materials_j())
         .with(
@@ -367,6 +377,8 @@ pub fn read(reference: &str, item: &str) -> ReadResult {
         // Sabotage control: read the live preparation folder instead of the capture.
         let live = if item.starts_with("materials/") {
             Some(item.to_string())
+        } else if item == "guidance-file" {
+            Some("guidance.md".into())
         } else if item == "question-file" {
             Some("question.md".into())
         } else {
@@ -442,6 +454,7 @@ fn sabotage_regenerate(audit: &Audit, machine: bool) -> Option<Vec<u8>> {
     let parsed = crate::frontmatter::parse(&q).ok()?;
     let body = &q[parsed.body_offset..];
     let a = crate::forms::arrangement(&crate::forms::ArrangementInput {
+        guidance: None,
         settings: &parsed.settings,
         question_body_sha256: &util::sha256_hex(body),
         material_index_sha256: &util::sha256_hex(b"regenerated"),

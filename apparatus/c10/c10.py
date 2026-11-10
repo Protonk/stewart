@@ -98,8 +98,10 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
             and reporting['original_unchanged'] is True,'report controls missing or incomplete')
     for run in supplied_runs(rehearsed):
         controls=strict_json(read_file(path/'container/study-review-controls'/run['id']/'RESULT.json'))
-        require(controls['failed']==0 and controls['passed']==controls['run']==18+extra
-                and controls['controls']==controls['controls_fired']==16+extra and controls['original_unchanged'] is True,
+        reviewed = next(r for r in report['audits'] if r['audit'] == run['id'])['snapshots'][0]['review']
+        guidance_extra = 4 if (reviewed.get('guidance') or {}).get('source') == 'guidance.md' else 0
+        require(controls['failed']==0 and controls['passed']==controls['run']==18+extra+guidance_extra
+                and controls['controls']==controls['controls_fired']==16+extra+guidance_extra and controls['original_unchanged'] is True,
                 'study template controls missing or incomplete')
     for row,item in zip(report['audits'],expected):
         latest=row['snapshots'][0]
@@ -148,7 +150,9 @@ def launch_batch(args):
             packet['account']={'account_label':'synthetic connection rehearsal',
                 'workspace_id':'offline','credential_label':connection}
     for run in supplied_runs(packet):
-        inspect_submission(resolve_submission(run),run['case'],run['submission_sha256'])
+        case=inspect_submission(resolve_submission(run),run['case'],run['submission_sha256'])
+        require(not packet.get('study_build') or case.get('guidance') is None,
+                'choose supplied guidance or a study-build override, not both')
     bound,binaries,checked=bindings(args.qualification,packet.get('study_build'))
     if mode=='live':
         require(packet['bindings']==bound,'approved packet bindings changed')

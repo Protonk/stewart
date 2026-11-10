@@ -113,7 +113,7 @@ def verify(evidence):
         report['outcome'] = 'incomplete'
         # Partial checks are diagnostic, not a current custody or coverage finding.
         for field in ['coverage', 'usage', 'ending', 'cause', 'auditor_submitted',
-                      'seal_actor', 'delivery_verified', 'closed']:
+                      'seal_actor', 'delivery_verified', 'closed', 'guidance']:
             report[field] = None
     return report
 
@@ -171,7 +171,7 @@ def _verify(e, report, check):
         template = tree_inventory_from_evidence(e, 'evidence/submission-template/')
         check(digest(compact(template)) == run['submission_sha256'], 'study_template_binding')
         case = case_from_question(e.read('evidence/submission-template/question.md'), run['case'])
-        check(specimen == {'case': case, 'materials': [item for item in template if item['path'] != 'question.md']},
+        check(specimen == {'case': case, 'materials': [item for item in template if item['path'] == 'materials' or item['path'].startswith('materials/')]},
               'study_specimen_binding')
     else:
         check(digest(compact(specimen)) == run['submission_sha256'], 'specimen_binding')
@@ -184,6 +184,13 @@ def _verify(e, report, check):
     qfile = e.read('evidence/input-witness/question.md')
     check(qfile == question_file(specimen['case'], packet, binding['destination']), 'rendered_submission_binding')
     qbody = qfile.split(b'---\n', 2)[2]
+    selected_guidance = specimen['case'].get('guidance')
+    guidance = e.read('evidence/input-witness/guidance.md', 262144) if selected_guidance else None
+    if selected_guidance:
+        check(selected_guidance == 'guidance.md' and family == 'open-inquiry'
+              and b'\0' not in guidance and bool(guidance.decode('utf-8').strip()), 'guidance_selection')
+        check(guidance == e.read('evidence/submission-template/guidance.md'), 'guidance_template_binding')
+
     sources = {'question': qbody}
     sources.update({name[len('evidence/input-witness/'):]: e.read(name) for name in e.names
                     if name.startswith('evidence/input-witness/materials/')})
@@ -217,6 +224,8 @@ def _verify(e, report, check):
     readbacks = e.json('evidence/readbacks.json')
     expected_readbacks = {'question-file':qfile, 'question-body':qbody,
                           **{k:v for k,v in sources.items() if k!='question'}}
+    if guidance is not None:
+        expected_readbacks['guidance-file'] = guidance
     check(len(readbacks) == len(expected_readbacks) and {r['item'] for r in readbacks} == set(expected_readbacks), 'readback_membership')
     for item in readbacks:
         check(re.fullmatch(r'[0-9]{2,}-readback-[0-9]{4}',item['command']) is not None, 'readback_command_identity')
@@ -228,7 +237,15 @@ def _verify(e, report, check):
               and item['sha256'] == digest(expected_readbacks[item['item']]), 'exact_receipt_readback')
     check(receipt['settings']['family'] == family and receipt['settings']['model'] == packet['model']
           and receipt['settings']['limits'] == packet['limits']
-          and receipt['settings'].get('effort') == packet['effort'], 'commission_settings')
+          and receipt['settings'].get('effort') == packet['effort']
+          and receipt['settings'].get('guidance') == selected_guidance, 'commission_settings')
+    if guidance is not None:
+        g = receipt['guidance']
+        check(receipt['schema'] == 'stewart.receipt/2' and g['file'] == 'guidance.md'
+              and g['size'] == len(guidance) and g['sha256'] == digest(guidance)
+              and e.read(base + relative(g['capture'])) == guidance, 'guidance_capture')
+    elif receipt.get('schema') == 'stewart.receipt/2':
+        check(receipt['guidance'] is None, 'guidance_selection')
     check(e.read(base + relative(receipt['question']['capture'])) == qfile, 'question_capture')
     check(receipt['question']['body_sha256'] == digest(qbody), 'question_body_binding')
     materials = receipt['materials']['files']
@@ -244,8 +261,14 @@ def _verify(e, report, check):
     arr = arrnode.value()
     check(arr['family'] == versioned_family and arr['model'] == packet['model']
           and arr['limits'] == packet['limits'], 'arrangement_settings')
-    check(arrnode.get('system').raw == system_bytes(packet, family)
+    check(arrnode.get('system').raw == system_bytes(packet, family, guidance)
           and arrnode.get('tools').raw == compact(spec.expected_tools(family)), 'specified_system_and_tools')
+    if guidance is not None or arr.get('schema') == 'stewart.arrangement/2':
+        effective = strict_json(system_bytes(packet, family, guidance))[1]['text'].encode()
+        identity = {'source': 'guidance.md' if guidance is not None else 'builtin',
+                    'size': len(effective), 'sha256': digest(effective)}
+        check(arr['schema'] == 'stewart.arrangement/2' and arr['guidance'] == identity, 'guidance_identity')
+        report['guidance'] = identity
     expected_extra = {} if packet['effort'] is None else {'output_config': {'effort': packet['effort']}}
     check(arr['request_extra'] == expected_extra, 'effort_parameter')
     check(arr['max_tokens_per_request'] == 16000 and arr['request_timeout_seconds'] == 600,

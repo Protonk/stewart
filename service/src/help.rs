@@ -59,15 +59,18 @@ pub fn topic(name: &str) -> Option<String> {
 fn commands() -> String {
     "\
 The submission folder
-  The folder holds exactly two entries: question.md and materials/. Anything else
-  at its root is refused; move it under materials/ (the auditor may read it) or
-  out of the folder. Everything under materials/ is included, hidden names and
+  The folder holds question.md and materials/, plus guidance.md only when
+  explicitly selected for open inquiry. Other root entries are refused; move
+  evidence under materials/ or move unselected files out of the folder. Everything under materials/ is included, hidden names and
   empty files and directories too. Links, FIFOs, sockets and devices are refused
   unread; nothing is silently skipped or renamed.
 
   question.md begins with front matter between --- lines:
     stewart: question/1
     family: open-inquiry | inquiry-framing | comparison
+    guidance: optional guidance.md, only with open-inquiry; replaces its whole
+      family-guidance block with this root file (at most 256 KiB of nonblank
+      UTF-8 text without NUL). Omit the key to use built-in guidance.
     model: the provider model for every run of this audit
     effort: optional low | medium | high | xhigh | max, sent to the provider
       with every request; without it the model's provider default applies
@@ -77,6 +80,11 @@ The submission folder
     varies: optional stw1: reference of an earlier audit this one varies
   The question body is every byte after the closing --- line, exactly as
   written; the auditor receives it and never sees the front matter.
+
+  Guidance is instruction text, separate from evidence materials. It cannot
+  change tools, capabilities, notices, limits or custody. Prepare shows the
+  effective text and its origin; receipt recovers the accepted bytes. No includes,
+  arbitrary paths, template expansion or semantic certification are performed.
 
   Finish editing before prepare, and leave the folder unchanged from prepare
   until commission returns: prepare hashes what is there, and commission refuses
@@ -97,12 +105,13 @@ Commands
       this returns. Repeating it after a lost reply returns the recorded
       acceptance without capturing again.
   stewart receipt REF [--verify] [--json]
-      The fixed commission: question, materials, arrangement, checks, the run
+      The fixed commission: question, selected guidance, materials, arrangement, checks, the run
       line and the readback items. --verify reads and hashes each item.
   stewart receipt REF --read ITEM
       Write one item's captured bytes, exactly, to stdout; one JSON line on
       stderr says whether they verified. Unverified bytes are never written.
-      Items: question-file, question-body, arrangement, arrangement-readable,
+      Items: question-file, question-body, guidance-file (when supplied),
+      arrangement, arrangement-readable,
       materials/<name>.
   stewart status REF [--details | --json]
   stewart status --archive ROOT [--details | --json]
@@ -145,8 +154,9 @@ fn forms_text() -> String {
 Question families
 
 The family is chosen in question.md (family: ...). The auditor sees the
-orientation, its family's instructions and its tools; it never sees the family
-name. Every family permits answering that the materials are inadequate, that the
+orientation, its effective family guidance, tools and captured base family ID.
+Open inquiry accepts an explicitly selected guidance.md replacement; the arrangement
+identifies supplied guidance separately from stock family wording. Every family permits answering that the materials are inadequate, that the
 premise is wrong or that nothing supported was found; none requires a defect, a
 winner or a repair. Missing sections and an empty answer can be submitted.
 
@@ -210,9 +220,10 @@ fn limits() -> String {
 Intake bounds (recorded in each preparation and commission; they do not say
 whether a question has enough context):
   question.md, including front matter    {} bytes (256 KiB)
+  selected guidance.md                    {} bytes (256 KiB)
   material files                          {}
   one material file                       {} bytes (16 MiB)
-  question and materials together         {} bytes (128 MiB)
+  question, guidance and materials        {} bytes (128 MiB)
   directories under materials/, with it   {}
   material path                           {} bytes, {} components, {} bytes per component
 Bounds are enforced while scanning. Exceeding one refuses with bound_exceeded,
@@ -237,6 +248,7 @@ of context per page; 128 materials per list page; 4 MiB per tool call. Answers:
 256 entries, 64 MiB per entry, 256 MiB in the current selection.
 ",
         scan::QUESTION_BYTES,
+        scan::GUIDANCE_BYTES,
         scan::FILES,
         scan::FILE_BYTES,
         scan::TOTAL_BYTES,

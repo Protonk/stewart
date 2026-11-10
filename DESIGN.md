@@ -20,13 +20,16 @@ those concerns. [CONTRACTS.md](CONTRACTS.md) supplies the binding details.
 
 Stewart has opinions about how questions meet evidence. Those opinions live in
 versioned family guidance and authoring tools, visible before commissioning.
+Open inquiry also admits explicitly supplied family guidance, captured with its
+origin; tools, orientation and custody remain product-owned.
 They cannot turn into a requirement to find a defect, choose a winner or agree
 with a premise. Open inquiry is an ordinary route for broad requests.
 
 ## The manager's path
 
 1. **Prepare ordinary files.** The submission folder contains `question.md`
-   and `materials/`. The complete question file has settings and the question
+   and `materials/`, with an explicitly selected `guidance.md` for open inquiry
+   when custom family guidance is wanted. The complete question file has settings and the question
    body. Material is literal recursive UTF-8 text, with published bounds and
    no hidden exclusions. Stewart may scaffold the folder; the manager owns it.
 2. **Finish editing, then prepare.** Stewart inventories/hashes the selection

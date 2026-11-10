@@ -38,16 +38,17 @@ def follow_pages(calls, results, materials, continued):
 
 
 class Auditor(Fake):
-    def __init__(self, scenario, evidence, materials, question, family, auth_observer=None, packet=None):
+    def __init__(self, scenario, evidence, materials, question, family, auth_observer=None, packet=None, guidance=None):
         super().__init__(scenario, evidence, materials, question, auth_observer)
         self.family = family
         self.packet = packet or {}
+        self.guidance = guidance
         self.stage = 0
         self.continued = set()
 
     def respond(self, body):
         require(body['model'] == 'rehearsal-only' and 'output_config' not in body, 'fake model/settings changed')
-        require(body['system'] == strict_json(system_bytes(self.packet, self.family))
+        require(body['system'] == strict_json(system_bytes(self.packet, self.family, self.guidance))
                 and body['tools'] == spec.expected_tools(self.family), 'fake arrangement differs from specification')
         require(body['messages'][0] == {'role':'user', 'content':[{'type':'text','text':self.question}]}, 'fake question changed')
         if self.mode == 'provider-rejected':

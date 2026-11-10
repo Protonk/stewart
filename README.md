@@ -72,6 +72,25 @@ execute the supplied code or fetch more material. The auditor works through
 Stewart's tools on accepted copies, with no shell, general filesystem access
 or network retrieval.
 
+For open inquiry, `guidance: guidance.md` in the question's front matter selects
+that file beside `question.md` as the complete replacement for built-in family
+guidance. Omit the setting to use the default. The attachment is nonblank UTF-8
+text without NUL, at most 256 KiB. It changes guidance, not tools or custody.
+Prepare shows its text and origin; `receipt REF --read guidance-file` recovers
+its accepted bytes. For example, a guidance file can ask for a connected account:
+
+```text
+Address the question from the supplied materials in one connected account.
+State your conclusion and its reach early, and connect it to evidence. Add
+separate observations or limits when they help explain the answer. Uncertainty,
+missing evidence and disagreement remain valid responses.
+```
+
+Acceptance fixes that text; editing the source later does not change the audit.
+The [interface](docs/INTERFACE.md#selected-family-guidance) defines selection,
+source-change checks and readback. The guidance facility awaits its Linux
+qualification; a worked instruction is not evidence that it improves answers.
+
 Run allowances count cumulative turns and input/output tokens. Stewart enforces
 no dollar ceiling.
 

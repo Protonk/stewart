@@ -10,7 +10,7 @@ use crate::json::{J, quote};
 pub const ORIENTATION_ID: &str = "stewart.orientation/1";
 pub const RENDERER_ID: &str = "stewart.render/1";
 pub const READER_ID: &str = "utf8-text/1";
-pub const ARRANGEMENT_SCHEMA: &str = "stewart.arrangement/1";
+pub const ARRANGEMENT_SCHEMA: &str = "stewart.arrangement/2";
 /// The Messages API version this release pins (INTERFACE 6.1): the
 /// `anthropic-version` header of every request and the arrangement's
 /// `anthropic_version` member.
@@ -338,10 +338,14 @@ fn instructions(f: &Family) -> &'static str {
 
 /// The exact `system` array: orientation block, then family instructions.
 pub fn system(f: &Family) -> Vec<u8> {
+    system_with_guidance(instructions(f))
+}
+
+fn system_with_guidance(guidance: &str) -> Vec<u8> {
     format!(
         r#"[{{"type":"text","text":{}}},{{"type":"text","text":{}}}]"#,
         quote(ORIENTATION),
-        quote(instructions(f))
+        quote(guidance)
     )
     .into_bytes()
 }
@@ -386,6 +390,7 @@ pub struct Arrangement {
 }
 
 pub struct ArrangementInput<'a> {
+    pub guidance: Option<&'a str>,
     pub settings: &'a crate::frontmatter::Settings,
     pub question_body_sha256: &'a str,
     pub material_index_sha256: &'a str,
@@ -405,11 +410,26 @@ pub fn request_extra(effort: Option<&str>) -> Vec<u8> {
 pub fn arrangement(input: &ArrangementInput) -> Arrangement {
     let s = input.settings;
     let f = family(&s.family).expect("family validated by the front matter parser");
-    let system = system(f);
+    let guidance = input.guidance.unwrap_or_else(|| instructions(f));
+    let system = system_with_guidance(guidance);
     let tools = tools(f).bytes();
     let body = J::obj()
         .with("schema", ARRANGEMENT_SCHEMA)
         .with("family", f.versioned_id())
+        .with(
+            "guidance",
+            J::obj()
+                .with(
+                    "source",
+                    if input.guidance.is_some() {
+                        "guidance.md"
+                    } else {
+                        "builtin"
+                    },
+                )
+                .with("size", guidance.len())
+                .with("sha256", crate::util::sha256_hex(guidance.as_bytes())),
+        )
         .with("orientation", ORIENTATION_ID)
         .with("model", s.model.as_str())
         .with("anthropic_version", ANTHROPIC_VERSION)
@@ -485,9 +505,20 @@ fn readable(f: &Family, input: &ArrangementInput, tools_bytes: &[u8]) -> String 
     md.push_str("## Identity\n\n");
     md.push_str(&format!("- Schema: {ARRANGEMENT_SCHEMA}\n"));
     md.push_str(&format!(
-        "- Family: {} ({}). The auditor never sees the family name.\n",
+        "- Base family: {} ({}). The auditor sees this family/protocol identity.\n",
         f.versioned_id(),
         f.title
+    ));
+    let guidance = input.guidance.unwrap_or_else(|| instructions(f));
+    md.push_str(&format!(
+        "- Guidance source: {}; {} bytes; SHA-256: {}\n",
+        if input.guidance.is_some() {
+            "guidance.md (manager-supplied)"
+        } else {
+            "builtin"
+        },
+        guidance.len(),
+        crate::util::sha256_hex(guidance.as_bytes())
     ));
     md.push_str(&format!("- Orientation: {ORIENTATION_ID}\n"));
     md.push_str(&format!("- Reader: {READER_ID}: the exact UTF-8 bytes of each file, with no transformation (no newline normalization, transcoding, extraction or execution).\n"));
@@ -518,7 +549,7 @@ fn readable(f: &Family, input: &ArrangementInput, tools_bytes: &[u8]) -> String 
     md.push_str("## Orientation (first system block)\n\n");
     md.push_str(&quoted_block(ORIENTATION));
     md.push_str("\n\n## Family instructions (second system block)\n\n");
-    md.push_str(&quoted_block(instructions(f)));
+    md.push_str(&quoted_block(guidance));
     md.push_str("\n\n## Stopping and notices\n\n");
     md.push_str("After an ordinary turn ends without submission, at most once per audit and only while no limit is exhausted, the auditor receives this reminder:\n\n");
     md.push_str(&quoted_block(REMINDER));
@@ -602,6 +633,7 @@ mod tests {
     #[test]
     fn a_pinned_arrangement_reads_back_with_its_exact_bytes() {
         let settings = crate::frontmatter::Settings {
+            guidance: None,
             family: "comparison".into(),
             model: "claude-opus-5-5".into(),
             effort: None,
@@ -613,6 +645,7 @@ mod tests {
             varies: None,
         };
         let a = arrangement(&ArrangementInput {
+            guidance: None,
             settings: &settings,
             question_body_sha256: &"1".repeat(64),
             material_index_sha256: &"2".repeat(64),

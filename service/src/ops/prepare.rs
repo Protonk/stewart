@@ -111,7 +111,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
     ])
     .map_err(with_next)?;
 
-    scan::check_root(&folder)
+    scan::check_root(&folder, true)
         .map_err(scan_fail)
         .map_err(with_next)?;
     let qf = scan::read_question(&folder)
@@ -189,7 +189,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
         scan::FILES,
         scan::TOTAL_BYTES
     );
-    let s = scan::scan(&folder, &exclude)
+    let s = scan::scan(&folder, &exclude, settings.guidance.is_some())
         .map_err(scan_fail)
         .map_err(with_next)?;
     if s.question.bytes != qf.bytes {
@@ -232,7 +232,16 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
         .collect();
     let index = records::index_bytes(&files, &dirs);
     let index_sha = util::sha256_hex(&index);
+    let guidance = s.guidance.as_ref().map(|g| records::GuidanceFile {
+        size: g.bytes.len() as u64,
+        sha256: util::sha256_hex(&g.bytes),
+        mtime: g.stat.mtime(),
+    });
     let arr = forms::arrangement(&ArrangementInput {
+        guidance: s
+            .guidance
+            .as_ref()
+            .map(|g| std::str::from_utf8(&g.bytes).expect("validated guidance")),
         settings: &settings,
         question_body_sha256: &question.body_sha256,
         material_index_sha256: &index_sha,
@@ -271,6 +280,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
             prep: n,
             folder: &folder_path,
             question: &question,
+            guidance: guidance.as_ref(),
             settings: &settings,
             index: &index,
             files: &files,
@@ -308,6 +318,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
             .with("readable_sha256", readable_sha.as_str())
             .with("settings", settings_j.clone())
             .with("question", question.summary_j())
+            .with("guidance", records::guidance_summary(guidance.as_ref()))
             .with(
                 "materials",
                 J::obj()
@@ -350,6 +361,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
     let data = J::obj()
         .with("prepared", handle.as_str())
         .with("question", question.summary_j())
+        .with("guidance", records::guidance_summary(guidance.as_ref()))
         .with("settings", settings_j)
         .with(
             "materials",

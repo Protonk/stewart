@@ -631,33 +631,22 @@ fn decode_body(kind: &str, b: &Obj, audit: &str) -> Result<Body, JsonError> {
                 "readable_sha256",
                 "settings",
                 "question",
+                "guidance",
                 "materials",
             ])?;
-            let s = b.obj("settings")?;
-            s.only(&[
-                "family",
-                "model",
-                "destination",
-                "limits",
-                "effort",
-                "inquiry",
-                "varies",
-            ])?;
-            s.str("family")?;
-            s.str("model")?;
-            s.str("destination")?;
-            let l = s.obj("limits")?;
-            l.only(&["turns", "input_tokens", "output_tokens"])?;
-            l.u64("turns", crate::frontmatter::MAX_TURNS)?;
-            l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?;
-            l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?;
-            if let Some(e) = s.opt_str("effort")? {
-                if !crate::frontmatter::EFFORT_LEVELS.contains(&e) {
-                    return Err(s.invalid("effort", "expected an effort level"));
-                }
+            let settings = crate::records::decode_settings(&b.obj("settings")?)?;
+            let guidance = b.obj_or_null("guidance")?;
+            if guidance.is_some() != settings.guidance.is_some() {
+                return Err(b.invalid("guidance", "must match settings"));
             }
-            s.opt_str("inquiry")?;
-            s.opt_str("varies")?;
+            if let Some(g) = guidance {
+                g.exactly(&["file", "size", "sha256"])?;
+                if g.str("file")? != "guidance.md" {
+                    return Err(g.invalid("file", "expected guidance.md"));
+                }
+                g.u64("size", crate::scan::GUIDANCE_BYTES)?;
+                g.sha256("sha256")?;
+            }
             let q = b.obj("question")?;
             q.only(&["file_bytes", "file_sha256", "body_bytes", "body_sha256"])?;
             let m = b.obj("materials")?;

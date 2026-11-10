@@ -102,8 +102,9 @@ def family_id(packet, family):
     return family + '/' + str(value['version'] if value and value['family'] == family else 1)
 
 
-def system_bytes(packet, family):
-    result = spec.expected_system_bytes(family)
+def system_bytes(packet, family, guidance=None):
+    require(guidance is None or packet.get('study_build') is None, 'supplied guidance and a study-build override cannot be combined')
+    result = spec.expected_system_bytes(family, guidance)
     build = packet.get('study_build')
     if build is not None:
         value = interface(build['interface'])
