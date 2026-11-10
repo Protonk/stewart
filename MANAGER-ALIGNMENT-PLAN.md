@@ -30,18 +30,28 @@ text comes from the binary that will pin it.
   approved text. The server calls no model and infers nothing.
 - Inspection-style validation of contents. Manager and auditor are cooperative;
   the server does not look for hostile or manipulative material.
+- Mechanical checks. They live in `prepare` and nowhere else. This is a painful
+  but deliberate choice, to be resisted if it is reopened.
 - Specialized connectors to the CLI. The server wraps no command, takes no audit
   reference and opens no archive, so that it stays optional in substance.
 
-**Idea to weigh:** a startup option, working name `--newbie`, for an agent that
-has not read the documentation. By default the server offers little. With the
-option it leads: the question types first, then the materials suggested for the
-type chosen. A server only answers calls, so the lead comes from its startup
-instructions and from what each reply offers next.
+**Idea to weigh:** an informative mode, working name `--newbie`, for an agent
+that has not read the documentation. Replies are terse by default. In this mode
+a call gets an informative reply: asked about adding a question, the server
+lays out the question types; told the type chosen, it gives the materials
+suggested for it. How the mode is passed is open. A launch argument fixes it
+for a session; a call argument lets the agent choose each time.
 
-- [ ] Draft the manager-facing text for each question type and settle its owner
-  beside [the form specification](docs/QUESTION-FORMS.md). The principal
-  approves the text before a server carries it.
+**The text has one source.** A documentation source that people can read and
+the build can consume drives the reply to each call. Approved text is whatever
+that source holds at the commit the binary is built from; no record of who
+approved it is assumed. The arrangement has to stay maintainable whoever edits
+it.
+
+- [ ] Choose that source and how the binary takes text from it. The pinned
+  texts of [the form specification](docs/QUESTION-FORMS.md), which a test
+  compares with the service's copies, are the existing precedent.
+- [ ] Draft the manager-facing text for each question type in that source.
 - [ ] Propose the server's surface and its place in CONTRACTS, INTERFACE and
   ACCEPTANCE. It is a new product surface; independent driver cases follow the
   specification. Write it without new dependencies.
