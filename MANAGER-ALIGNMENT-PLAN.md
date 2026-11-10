@@ -35,12 +35,12 @@ text comes from the binary that will pin it.
 - Specialized connectors to the CLI. The server wraps no command, takes no audit
   reference and opens no archive, so that it stays optional in substance.
 
-**Idea to weigh:** an informative mode, working name `--newbie`, for an agent
-that has not read the documentation. Replies are terse by default. In this mode
-a call gets an informative reply: asked about adding a question, the server
-lays out the question types; told the type chosen, it gives the materials
-suggested for it. How the mode is passed is open. A launch argument fixes it
-for a session; a call argument lets the agent choose each time.
+**Guided replies are chosen per call.** Replies are terse by default. A call
+argument asks for a guided reply, for an agent that has not read the
+documentation: asked about adding a question, the server lays out the question
+types; told the type chosen, it gives the materials suggested for it. There is
+no launch option for this. A session-wide setting would oblige an agent to
+reconnect to leave it. The server keeps no memory of earlier calls.
 
 **The text has one source.** A documentation source that people can read and
 the build can consume drives the reply to each call. Approved text is whatever
