@@ -1559,19 +1559,79 @@
       "kind": "experiment",
       "date": "2026-11-10T05:45:13Z",
       "date_from": "DONE",
-      "summary": "Current exact-input Linux rehearsal for the guidance comparison: all 15 audit outcomes, guidance readback, reviewer/operator/report controls and synthetic saved-connection collection passed.",
+      "summary": "Concise reviewed Linux guidance rehearsal and reviewer/operator/report control results; synthetic working evidence retired.",
       "result": {
         "path": ".",
-        "files": 359,
-        "sha256": "26d5847182f739b34b871947ffc0a6036fffbf3ce384af6f6a7a6b7670719259"
+        "files": 14,
+        "sha256": "d63839a588d0dd91f99075d1f0f7c461fa25bf0c064a322694f538ecf0c9fe94"
       },
       "evidence": {
         "path": ".scratch/guidance-rehearsal-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Supply the complete current rehearsal binding and exports required to authorize and inspect the pending two-placement guidance comparison.",
-        "until": "The guidance cycle ends or a new rehearsal replaces it; then trim generated synthetic work to the current concise result."
+        "reason": "Inspect the current Linux launcher and reviewer qualification results. This trimmed record is not a live launch binding.",
+        "until": "A later launcher rehearsal replaces these current qualification results."
+      }
+    },
+    {
+      "id": "guidance-live-01",
+      "kind": "experiment",
+      "date": "2026-11-10T06:28:18Z",
+      "date_from": "review/result.json field at",
+      "summary": "Built-in guidance: one submitted and closed Opus retry inquiry, original answer and checked agent reading.",
+      "result": {
+        "path": ".",
+        "files": 52,
+        "sha256": "090ffbb5d2dfaea78bc195ba7c48153d97118ae54ca6922711f6305eeea78b5e"
+      },
+      "evidence": {
+        "path": ".scratch/guidance-live-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect answer organization, citation repair, tool work and usage in the paired guidance comparison.",
+        "until": "The comparison no longer needs this original encounter for inspection."
+      }
+    },
+    {
+      "id": "guidance-live-02",
+      "kind": "experiment",
+      "date": "2026-11-10T06:29:35Z",
+      "date_from": "review/result.json field at",
+      "summary": "Supplied guidance: one submitted and closed Opus retry inquiry, original answer and checked agent reading.",
+      "result": {
+        "path": ".",
+        "files": 52,
+        "sha256": "f0975c74c55cf1f08018ef8ee2fa3a024222f11780e4cd3fe0e4af12f25622bc"
+      },
+      "evidence": {
+        "path": ".scratch/guidance-live-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the connected account, optional-section behavior, tool work and usage in the paired guidance comparison.",
+        "until": "The comparison no longer needs this original encounter for inspection."
+      }
+    },
+    {
+      "id": "guidance-cycle-01",
+      "kind": "experiment",
+      "date": "2026-11-10T06:36:11Z",
+      "date_from": "result.json field at",
+      "summary": "Completed two-placement guidance comparison: exact inputs, authority, costs, readings and cleanup observation.",
+      "result": {
+        "path": ".",
+        "files": 35,
+        "sha256": "61ecc291bf75d879ad7ec667e2e6df858dcb607e9d189ea4b7b8388313114ab6"
+      },
+      "evidence": {
+        "path": ".scratch/guidance-cycle-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret the paired encounters against their fixed inputs, explicit commission and attributed measurements.",
+        "until": "The comparison no longer needs its original inputs and authority for inspection."
       }
     }
   ]

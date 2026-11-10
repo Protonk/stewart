@@ -53,8 +53,8 @@ has not been adopted. A new packet uses current bindings, never an old helper as
 spending authority.
 
 Keep manager operation simple and fixed within each comparison. A manager-facing
-redesign, general response rewriting, a new answer-kind schema and linter
-implementation are outside this study. Do not turn one auditor's habits into
+redesign, general response rewriting and a new answer-kind schema are outside
+this study. Do not turn one auditor's habits into
 product requirements or turn missing expected sections into a quality gate.
 
 Complete this plan when selected comparisons have dispositions and any adopted

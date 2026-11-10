@@ -632,6 +632,9 @@ operational notices and custody. The base family identity and supplied guidance
 identity remain distinct. Mechanical validation does not certify arbitrary prose
 as sensible or truthful about powers. No layers, includes or arbitrary paths are
 part of this selection. The exact rules and bounds are in INTERFACE 3.2.
+Any richer facility for choosing or composing guidance needs a separate design
+discussion about its need and maintenance cost; ordinary text replacement stays
+within this boundary.
 
 **Inquiry framing is an explicit task.** This family commissions the auditor to
 formulate a working question from the manager's concern and investigate it within
@@ -744,6 +747,11 @@ recorded answer. It does not generate conclusions, fill missing evidence, resolv
 contradictions or insert operating history, source materials or a question that
 the auditor did not include. The rendering is a sealed member of the return, with identified
 Stewart-generated presentation bytes, not an extra post-submission accompaniment.
+
+Auditor caveats remain part of the authored answer, including redundant or
+unhelpful ones. Stewart does not detect, suppress or rewrite them to improve the
+prose, or produce companion copies proposing their removal. Readers may assess
+them; custody and rendering preserve them.
 
 Delivery and later readback verify and return the stored rendering; they do not
 substitute a new rendering from the installed form. A reproducibility check

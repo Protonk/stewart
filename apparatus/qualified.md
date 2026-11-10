@@ -547,7 +547,28 @@ Opus blinded sw3z: input-limit stop after prepare, seven recorded entries, manag
 
 ### guidance-rehearsal-01
 
-Current exact-input Linux rehearsal for the guidance comparison: all 15 audit outcomes, guidance readback, reviewer/operator/report controls and synthetic saved-connection collection passed.
+Concise reviewed Linux guidance rehearsal and reviewer/operator/report control results; synthetic working evidence retired.
 
 - Evidence: `.scratch/guidance-rehearsal-01/.` (recorded 2026-11-10T05:45:13Z).
-- Retained purpose: Supply the complete current rehearsal binding and exports required to authorize and inspect the pending two-placement guidance comparison.; until The guidance cycle ends or a new rehearsal replaces it; then trim generated synthetic work to the current concise result.
+- Retained purpose: Inspect the current Linux launcher and reviewer qualification results. This trimmed record is not a live launch binding.; until A later launcher rehearsal replaces these current qualification results.
+
+### guidance-live-01
+
+Built-in guidance: one submitted and closed Opus retry inquiry, original answer and checked agent reading.
+
+- Evidence: `.scratch/guidance-live-01/.` (recorded 2026-11-10T06:28:18Z).
+- Retained purpose: Inspect answer organization, citation repair, tool work and usage in the paired guidance comparison.; until The comparison no longer needs this original encounter for inspection.
+
+### guidance-live-02
+
+Supplied guidance: one submitted and closed Opus retry inquiry, original answer and checked agent reading.
+
+- Evidence: `.scratch/guidance-live-02/.` (recorded 2026-11-10T06:29:35Z).
+- Retained purpose: Inspect the connected account, optional-section behavior, tool work and usage in the paired guidance comparison.; until The comparison no longer needs this original encounter for inspection.
+
+### guidance-cycle-01
+
+Completed two-placement guidance comparison: exact inputs, authority, costs, readings and cleanup observation.
+
+- Evidence: `.scratch/guidance-cycle-01/.` (recorded 2026-11-10T06:36:11Z).
+- Retained purpose: Interpret the paired encounters against their fixed inputs, explicit commission and attributed measurements.; until The comparison no longer needs its original inputs and authority for inspection.

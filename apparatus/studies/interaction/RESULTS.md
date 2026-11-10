@@ -14,7 +14,8 @@ The frsrr Problem A/B baselines are `.scratch/frsrr-baseline-a-01` and
 combined interpretation. Current product guidance is `open-inquiry/1`; the
 `open-inquiry/2` candidate at `c76029b` invited a connected account with separate
 observation/limit entries optional. Tools, schemas, notices, citations, revision,
-rendering and submission were fixed. It remains unadopted and unqualified.
+rendering and submission were fixed. That encounter used an unqualified study
+build; the candidate has not replaced the built-in guidance.
 
 A had one entry instead of six; B had two instead of five. Both submitted after
 empty-section notices without filling the categories. The principal found A's
@@ -168,6 +169,96 @@ and all eleven truth locations match the retained 5sgh material. The key's
 historical validation outputs were inspected, not rerun. Original returns and
 pre-disclosure readings remain unchanged in `.scratch/opus-live-03/review/`
 and `.scratch/opus-live-04/review/`.
+
+## Supplied-guidance cycle
+
+Two independent `claude-opus-5-5` placements at medium effort used the qualified
+`acceptance-guidance-01` binary and apparatus bound to `b0a459b`. They received
+the same small retry inquiry and two material files (1,527 bytes), with the
+reader reference outside both submissions. Built-in `open-inquiry/1` guidance
+came first; the second explicitly selected the connected-account candidate as
+`guidance.md`. Its accepted 903 bytes were recovered exactly through the receipt
+and checked against the effective second system block. Orientation, tools,
+notices and limits remained fixed. This was an unblinded, fixed-order pair,
+not another frsrr plant study.
+
+Each placement allowed 12 turns, 160,000 cumulative input tokens, 12,000 output
+tokens and a 900-second watchdog under the principal's shared USD 3 stop budget.
+The first return, usage and closure were reviewed before the second dispatch.
+Both auditors submitted; both delivered selections passed procedural review and
+closed without loss surrender. The queue is stopped and both placements consumed.
+
+| Evidence / guidance | Entries | Turns | Input / output tokens | Calculated USD |
+| --- | ---: | ---: | ---: | ---: |
+| `guidance-live-01` / built-in | 6 | 11 | 91,401 / 3,592 | 0.437444 |
+| `guidance-live-02` / supplied | 1 | 5 | 29,040 / 2,233 | 0.160820 |
+
+All 16 provider attempts had reported usage, with no provider retry, cache usage
+or estimated tokens. Total calculated cost was **USD 0.598264**, using standard
+global rates of USD 4/million input and USD 20/million output tokens recorded in
+the approved packet. Independent Console billing remains unobserved; no billing
+investigation is selected. The principal's approximate starting observation was
+USD 9.87 spent and USD 41 headroom, with uncertain attribution of about five
+cents to another key. Those observations did not enlarge the USD 3 commission.
+
+The agent's reading found the expected six guarantee verdicts in both returns:
+North and East violate at-most-once through emit/crash-before-marker/retry/emit;
+South preserves it through atomic durable deduplication; all three eventually
+produce a message under the stated finite-crash and fair-retry assumptions.
+Both explain East's equivalence to North. The supplied account also gives a
+concrete South retry sequence and generalizes North's duplication to finitely
+many interrupted attempts. These are attributed substantive readings, separate
+from the apparatus's procedural checks.
+
+The built-in run recorded an account, four observations largely repeating its
+reasoning, and a limit. It made 16 tool calls: 13 completed and three refused
+`record_limit` calls with `quote_not_found`. The quote omitted the source's line
+break between “partial” and “effects”; it was repeated once unchanged, then
+shortened without repairing that mismatch. Two searches led to a successful
+byte-range citation covering only “inside a step.” That citation is mechanically
+valid but weak local support for the broad limit. No successful entry was revised.
+
+The supplied run made six tool calls, all completed, and recorded only one
+account with whole-file citations to the two short sources. It submitted after
+preparation reported unfilled observation and limit sections, without filling
+them. Neither run read the offered prepared rendering; such inspection is
+optional. Both defined the requirement labels in ordinary words up front.
+
+Fewer entries did not mean less prose. Counting whitespace-separated words in
+auditor text, excluding rendering labels and citation metadata, the built-in
+return has 640 words and the supplied return 770. Their complete renderings are
+5,077 and 4,601 bytes respectively. The supplied account removes repetition
+across entry categories but repeats assumptions at its opening and close.
+Both add unnecessary counterfactual caveats about failures outside the supplied
+model. The principal directed that these remain auditor behavior to tolerate:
+Stewart must not prune them. The deferred caveat-linter work is abandoned; the
+[rendering contract](../../../CONTRACTS.md#readable-answer-rendering) owns that
+boundary. Original returns remain unchanged.
+
+This cycle demonstrates the small variation path: selecting an ordinary guidance
+file, rehearsing its exact input, commissioning two bounded placements, reviewing
+between them and completing custody through the existing serial host queue.
+It supports a concrete difference in organization and tool work on this pair,
+not a general answer-quality or causal cost claim. The built-in run's citation
+repair contributes to the usage difference; a single stochastic pair cannot
+separate that variation from a guidance effect. Built-in guidance remains
+unchanged, and no additional placements or answer-tuning work are selected.
+
+The one-time boundary implementation and qualification are distinct from changing
+a guidance file later. Recorded script intervals were 521.3 seconds for initial
+native checks, 115.5 seconds for the repaired native continuation and 895.4 seconds
+for Linux acceptance plus rehearsal. The first selected-driver run passed 10 of
+11 cases; its guidance case read `name` where the specification says `source`.
+The independent driver author repaired that projection. Its rerun and subsequent
+Linux qualification passed. The qualification index owns the full counts.
+The two live host intervals were 38.9 and 28.6 seconds. These are process elapsed
+times, not measured human or agent labor. Host handoffs and retained byte counts
+are recorded in `.scratch/guidance-cycle-01/result.json`.
+
+Original inputs and bounded authority are in `.scratch/guidance-cycle-01`.
+Each live folder's `review/result.json` binds its checked export, exact delivered
+answer, usage and agent reading. These originals support inspection of this
+comparison; the synthetic environments are disposable after review.
 
 ## Retention and limits
 
