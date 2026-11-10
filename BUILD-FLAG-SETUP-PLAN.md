@@ -80,9 +80,9 @@ and skipped cases are superseded by the host runs; Linux remains unqualified.
   back to the direct adapter; classifying arbitrary bytes supplied to the
   existing API route requires a supported discriminator that is not yet known.
   Do not claim that a token-prefix test enforces this.
-- [ ] Freeze the authenticated executable pin and assign the remaining live
-  login/launch comparisons to the runtime work. The proposed manifest could
-  not be downloaded here; its signature and binary digest remain unverified.
+
+The executable pin is authenticated. The principal approved the bounded native
+probe; its dedicated login and launch comparisons belong to the runtime work.
 
 **Done when:** a container run shows the markers absent from the release and
 test binaries and present in the gated one; the three cargo configurations

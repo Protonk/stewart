@@ -38,11 +38,13 @@ launch controls, and separates documented mechanisms from unverified behavior.
 The [initial probe proposal](docs/claude-code/FEASIBILITY-PROBE.md) is bounded to
 synthetic native checks. Its outcome is needed before adopting the combination.
 
-- [ ] Refresh [the runtime reference](docs/claude-code/RUNTIME-REFERENCE.md)
-  when freezing the executable pin. Documentation was refreshed for proposed
-  version 2.1.322; downloading and authenticating its manifest remains owed.
-  Establish how ambient isolation, tools, hooks and compaction compose under
-  the selected non-bare subscription route before adopting those controls.
+- [ ] Complete the approved [native probe](docs/claude-code/FEASIBILITY-PROBE.md)
+  after dedicated login. The offline controls pass and the executable pin is
+  authenticated; approval and remaining invocation bounds are owned by that
+  commission and its durable run state. Update the
+  [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md) with observed
+  composition of login, restrictions, MCP and hooks. Compaction and broader
+  accounting remain separate, uncommissioned comparisons.
 - [ ] Decide first which process executes the auditor's tools. The harness
   starts a stdio MCP server as its own child, while only `run` holds
   [the audit's lock](docs/INTERFACE.md#46-the-active-lock-and-liveness) and

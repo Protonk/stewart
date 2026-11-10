@@ -8,9 +8,12 @@ boundary is implemented; the adapter and the combined launch configuration are
 untested. Documentation describes capabilities, not a demonstrated combination.
 
 The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)
-could not be retrieved here (DNS resolution failed). Its signature and the
-platform binary's digest must be verified before this proposal becomes an
-executable pin. No checksum has been inferred or substituted.
+was authenticated against the pinned release signing key on 2026-11-10. The
+installed `darwin-arm64` binary and a dedicated copy match its SHA-256, and the
+copy passed Apple's code-signature check on the host. Agent-shell DNS and
+code-signature failures did not establish these results; host checks did.
+The CLI's own version/options and the combined launch controls still need the
+bounded setup and probe.
 
 ## Where to find the details
 
@@ -183,6 +186,14 @@ does not prove the absence of other instructions or policy.
 before sending any model input remains unverified, so do not use it as an
 assumed pre-request gate. A first synthetic check session is preferable to
 exposing an audit while discovering the configuration.
+
+The [SDK's API-key-source field](https://code.claude.com/docs/en/agent-sdk/typescript#apikeysource)
+distinguishes environment keys, helpers and Console login keys from `none`.
+Require `none` at initialization alongside the earlier `claude.ai` auth status
+and explicit environment. `none` alone does not prove subscription login; it
+also covers other non-key authentication. A reported enabled paid-overflow
+setting or quota rejection stops the probe. Absence of such an event does not
+replace the manager's account-setting confirmation.
 
 The existing API path accepts an opaque credential. A token prefix is not
 proof of its class, and the adapter cannot certify arbitrary manager-supplied

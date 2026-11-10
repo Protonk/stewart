@@ -1,17 +1,21 @@
 # Native subscription feasibility probe
 
-Proposal for review, dated 2026-11-10. No Claude invocation is authorized by
-this document. The recorder and supervisor described below are not implemented.
+Approved by the principal on 2026-11-10 for the limits below; the principal
+also confirmed paid extra usage disabled. This is one commission, not standing
+permission for replacement runs. The
+[recorder and supervisor](../../apparatus/claude-code/README.md) are implemented;
+the 3 pin checks and 15 offline native probe checks pass. Dedicated login and
+the bounded CLI setup checks remain prerequisites to model use.
 This is the first bounded experiment for the
 [native launch recommendation](RUNTIME-REFERENCE.md#native-launch-recommendation),
 using synthetic material on the development Mac. It does not qualify an adapter,
 a model or Linux enforcement.
 
-## Proposed commission
+## Approved commission
 
 | Boundary | Proposed limit |
 | --- | --- |
-| Executable | Unmodified Claude Code **2.1.322**, `darwin-arm64`, absolute versioned path; signed manifest and binary SHA-256 verified before execution. The manifest was not retrievable from this environment. |
+| Executable | Unmodified Claude Code **2.1.322**, `darwin-arm64`; signed manifest, SHA-256 and Apple code signature verified on the host. Pin: `~/.local/share/stewart-claude-code/2.1.322/claude`, SHA-256 `a9d237949db816a0b7afd88a9a8e1df36b3a597a30f5a41d1c0539eb180a3450`. |
 | Authentication | Manager's own subscription login in a dedicated `CLAUDE_CONFIG_DIR`; harness-owned Keychain/file storage. No subscription secret enters Stewart. |
 | Spending | Included subscription usage only. Manager confirms paid overflow/usage credits are disabled. Quota exhaustion ends the batch. No API route or purchased additional usage. |
 | Model | Exact proposed ID `claude-haiku-5-5`, as listed in the [model reference](https://platform.claude.com/docs/en/models/overview). Availability under this subscription is unverified; unavailable means stop, with no substitute model. |
@@ -27,8 +31,9 @@ studies and attempts to exhaust the subscription.
 
 ## Fixed launch inputs
 
-Prepare a private run directory under `.scratch/` with separate empty working
-directories and an independent witness directory. Keep the dedicated harness
+Use `.scratch/claude-code-probe-01` for the private run records and independent
+witnesses, with separate empty working directories outside the repository under
+`/private/tmp`. Keep the dedicated harness
 login outside the evidence. Hash the executable, supplied settings, MCP config,
 prompt, hook, relay and supervisor before starting; retain those nonsecret
 inputs with the run. Do not copy or inspect the credential store.
@@ -134,14 +139,14 @@ accounting. Those require separate controls before adapter claims are adopted.
 
 ## Before execution
 
-1. Authenticate the release manifest and freeze the actual binary digest.
-2. Implement the small recorder, hook and supervisor against this proposal;
-   rehearse them with a fake subprocess/MCP peer, including denial, timeout,
-   malformed input and failure to record a witness. Verify that the supervisor
-   observes child termination and preserves failed-run evidence.
-3. Obtain explicit permission for the invocation counts and limits above,
-   including confirmation that only included subscription usage is available.
-4. Perform the bounded setup checks before the model phase. Any discrepancy
+The authenticated pin receipt and original verification outputs are in
+`.scratch/claude-code-pin-01/`. No Claude invocation has been used yet.
+The runner reserves each invocation durably before launch; its run state owns
+the remaining allowance after setup begins.
+
+1. Complete the dedicated harness-owned login in the manager's own Terminal,
+   as part of the bounded setup checks.
+2. Perform the bounded setup checks before the model phase. Any discrepancy
    between the pinned binary's supported options and this proposal stops the
    batch for review; do not expand the commission to work around one.
 
