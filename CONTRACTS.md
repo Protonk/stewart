@@ -38,6 +38,12 @@ Keep observed facts, attributed acknowledgments and authored claims separate.
 Stewart never turns them into a substantive grade, deadline or verdict. Invocation
 outcomes and configured time limits are mechanical facts, not judgments of work.
 
+Stewart establishes the relationship between the auditor, recorded work and
+delivery. It cannot generally establish how much the auditor understood, forgot
+or left intellectually unfinished, and must not undertake that assessment.
+Richer runtime telemetry does not expand this remit. An auditor's statements
+about its own understanding or progress remain attributed claims.
+
 Stewart's intellectual influence belongs in question families, instructions and
 the constrained audit space. An answer must be able to express missing evidence,
 uncertainty, disagreement, no supported finding and a challenge to the premise.

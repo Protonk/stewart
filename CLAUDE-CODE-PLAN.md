@@ -24,6 +24,11 @@ The adapter preserves the [question-family meanings](CONTRACTS.md#question-famil
 and common custody/attribution contract. A family choice must never implicitly
 grant execution, including for experimental inquiry.
 
+Define manager-facing runtime observations within the
+[evidence and judgment boundary](CONTRACTS.md#principles-and-scope). Additional
+telemetry does not expand Stewart's responsibility into assessing the auditor's
+understanding or intellectual completeness.
+
 ## Work
 
 1. **Resolve the Claude Code adapter contract and build a narrow integration.**
