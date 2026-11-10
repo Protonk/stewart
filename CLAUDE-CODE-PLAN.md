@@ -38,8 +38,9 @@ understanding or intellectual completeness.
   compaction compose under the credential route actually in use before
   adopting those controls.
 - [ ] Compare a CLI bridge with a small SDK helper. State installation, versioning
-  and platform implications for the current static Linux binary. The SDK is a
-  candidate, not a settled dependency; generic multi-tenant hosting is not scope.
+  and platform implications for native development and the static Linux build.
+  The SDK is a candidate, not a settled dependency; generic multi-tenant hosting
+  is not scope.
   [The reference](docs/claude-code/RUNTIME-REFERENCE.md#tool-transport-and-rust-building-blocks)
   narrows this to two candidates built on maintained pieces: `claude -p` driven
   from the standard library with an MCP tool server, or the official SDK in a
@@ -65,7 +66,9 @@ understanding or intellectual completeness.
   access, accounting and stopping guarantees. For each runtime promise, identify
   the observation or enforcement available, its failure policy and the evidence
   needed to demonstrate it. Include ambient/managed configuration and tools
-  outside Stewart's commissioned surface.
+  outside Stewart's commissioned surface. Identify host-specific process,
+  credential and filesystem mechanisms, with native development checks and
+  separate Linux qualification controls; do not transfer guarantees between them.
 - [ ] Establish what consumption can be reported or defensibly bounded after
   compaction, internal calls or a lost final result. Do not assume Messages-loop
   turn counts or complete auditor telemetry are available. Missing totals are

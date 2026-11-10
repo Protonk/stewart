@@ -25,25 +25,34 @@ Claude through any harness.
   credential reaches the provider only through the unmodified `claude` binary.
   Stewart's Messages API adapter never carries one. How this is enforced is
   part of the research below.
+- **The harness owns its login.** The manager signs in through Anthropic's own
+  flow, using a dedicated harness configuration. Claude manages its credential
+  storage; Stewart never receives or reads the subscription credential. The
+  service's descriptor route is not used for that login.
+- **Native development, Linux qualification.** Iterate on the development Mac
+  with Apple silicon, extending the existing `aarch64-apple-darwin` build and
+  [native test workflow](development/DEVELOPMENT.md#building-and-testing-natively).
+  Use Linux containers to validate the Linux builds and qualify their behavior.
+  Native macOS remains a development environment; this adds no macOS product
+  release or qualification claim.
 
-## Open: the credential route
+## Remaining: enforce the launch arrangement
 
-The principal has deferred who holds a subscription credential, pending
-research. [The runtime reference](docs/claude-code/RUNTIME-REFERENCE.md#subscription-credentials)
-holds the documented facts and their dates. Bring back options with evidence
-for each of these; a live probe needs its own bounded permission.
+[The runtime reference](docs/claude-code/RUNTIME-REFERENCE.md#subscription-credentials)
+holds the documented facts and their dates. Specify and check how the selected
+login and platform work together. A live probe needs its own bounded permission.
 
-- **Holder.** The launch environment supplies the credential to the harness
-  and Stewart never reads it, or Stewart receives it through the existing
-  [descriptor route](docs/INTERFACE.md#61-provider). State what each means under
-  the documented credential terms and for the hidden-entry and no-secret-in-
-  environment properties the current route provides. The leading candidate is
-  that the harness owns its login: the manager signs in once through
-  Anthropic's own flow inside the launch environment, the credential stays in
-  the harness's configuration directory, and Stewart never reads it.
-- **Where the gated build runs.** A native development machine with a stored
-  login, or a Linux container given a token or credentials file. Compare each
-  with the discipline of [the existing live launcher](apparatus/sanity/LAUNCHER.md).
+- **Credential isolation.** Establish how the dedicated configuration selects
+  Claude's own stored login on macOS, including Keychain behavior, without
+  exposing it to Stewart. Specify missing or expired login handling and what
+  is kept out of arguments, environment and diagnostics. Check these properties
+  against the selected harness version rather than assuming the existing
+  [descriptor route](docs/INTERFACE.md#61-provider) supplies them.
+- **Platform differences.** Compare native launch and observation controls with
+  [the existing Linux launcher](apparatus/sanity/LAUNCHER.md). Identify which
+  process, credential and filesystem protections need different mechanisms or
+  have narrower development guarantees on macOS. Linux validation must exercise
+  its own mechanisms; a native observation cannot establish them.
 - **No silent route.** The harness prefers an API key over a subscription token
   when both are present, and without bare mode falls through to any login it
   finds. Specify the refusals that make the route in use the route intended.
@@ -107,5 +116,6 @@ for each of these; a live probe needs its own bounded permission.
 **Done when:** a container run shows the markers absent from the release and
 test binaries and present in the gated one; the three cargo configurations
 pass natively; the leaf documentation covers building and checking; and the
-credential route is decided by the principal. Move the description rule to the
-comment beside the feature, then delete this plan.
+selected login and launch arrangement has a concrete enforcement and check
+design, with any remaining live verification assigned to the runtime work.
+Move the description rule to the comment beside the feature, then delete this plan.

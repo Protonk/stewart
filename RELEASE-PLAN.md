@@ -11,7 +11,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 | --- | --- | --- |
 | Next | Set up the default-off development build that carries the Claude Code adapter, its release absence check and its credential route | [BUILD-FLAG-SETUP-PLAN.md](BUILD-FLAG-SETUP-PLAN.md) |
 | After the build setup | Resolve Claude Code feasibility and propose the adapter contract; implementation follows the resulting decisions, inside that build | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
-| Independent of the two above | Align the manager interface, including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
+| Later, after the two above | Align the manager interface, using the development runtime for iteration and including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
 | Deferred until the build setup, Claude Code and manager alignment plans finish | Rework the root README | [README-RESCUE-PLAN.md](development/README-RESCUE-PLAN.md) |
 | Unselected | Further auditor studies and question-family dogfooding | [Deferred studies](#deferred-studies) |
