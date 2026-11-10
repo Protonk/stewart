@@ -6,8 +6,20 @@ use crate::scan;
 
 pub const TOPICS: [&str; 5] = ["commands", "forms", "limits", "reader", "close"];
 
+#[cfg(feature = "claude-code")]
+fn build_notice() -> &'static str {
+    crate::claude_code::BUILD_NOTICE
+}
+
+#[cfg(not(feature = "claude-code"))]
+fn build_notice() -> &'static str {
+    ""
+}
+
 pub fn overview() -> String {
-    "\
+    let mut text = String::from(build_notice());
+    text.push_str(
+        "\
 Stewart keeps a bounded inquiry honest: you supply a question, selected
 materials, a question family and limits; an auditor answers inside that
 arrangement; Stewart keeps the records and returns the answer without judging it.
@@ -41,8 +53,9 @@ observations. --details and --json cannot be combined. A completed command does
 not imply completed custody or an adequate answer. A run is one execution
 placement; an audit keeps its ledger and cumulative limits across placements.
 Topics: stewart help commands | forms | limits | reader | close
-"
-    .to_string()
+",
+    );
+    text
 }
 
 pub fn topic(name: &str) -> Option<String> {

@@ -1,17 +1,23 @@
 # Claude Code runtime reference for integration work
 
-Documentation checked 2026-10-31; the sections on subscription credentials,
-binary identity, and tool transport were checked 2026-11-10. No Claude Code/SDK
-run has been performed for
-this work; the candidate configuration has not been compiled or tested as a
-combination. Verify these details against the selected pinned release.
+Launch, authentication, CLI, tool and accounting documentation checked
+2026-11-10. The proposed harness pin is **2.1.322**, present in the
+[official changelog](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md).
+No Claude Code/SDK process has been started for this work. The development-build
+boundary is implemented; the adapter and the combined launch configuration are
+untested. Documentation describes capabilities, not a demonstrated combination.
+
+The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)
+could not be retrieved here (DNS resolution failed). Its signature and the
+platform binary's digest must be verified before this proposal becomes an
+executable pin. No checksum has been inferred or substituted.
 
 ## Where to find the details
 
 | Topic | Primary references | What to resolve or retain |
 | --- | --- | --- |
 | Runtime/SDK choice | [SDK overview](https://code.claude.com/docs/en/agent-sdk/overview), [configuration](https://code.claude.com/docs/en/agent-sdk/configuration), [CLI reference](https://code.claude.com/docs/en/cli-reference) | SDK convenience versus a CLI bridge; helper installation and version pinning alongside the Rust binary. |
-| Explicit credentials | [Authentication](https://code.claude.com/docs/en/authentication), [headless/bare mode](https://code.claude.com/docs/en/headless), [legal and compliance](https://code.claude.com/docs/en/legal-and-compliance) | Use the supported API/cloud route; establish behavior with absent or empty credentials and an existing local login. Keep credentials out of captured diagnostics. |
+| Credentials | [Authentication](https://code.claude.com/docs/en/authentication), [headless/bare mode](https://code.claude.com/docs/en/headless), [legal and compliance](https://code.claude.com/docs/en/legal-and-compliance) | For the native development route, use the manager's own login in the unmodified harness; establish missing-login refusal and absence of API fallback. Keep credentials out of captured diagnostics. |
 | Environment and ambient configuration | [SDK feature loading](https://code.claude.com/docs/en/agent-sdk/claude-code-features), [environment variables](https://code.claude.com/docs/en/env-vars), [TypeScript](https://code.claude.com/docs/en/agent-sdk/typescript), [Python](https://code.claude.com/docs/en/agent-sdk/python) | Filesystem settings, global configuration, memory, managed policy and connectors are distinct inputs. Verify child-environment replacement/merging in the selected SDK and version. |
 | Tools and permissions | [Custom tools](https://code.claude.com/docs/en/agent-sdk/custom-tools), [permissions](https://code.claude.com/docs/en/agent-sdk/permissions), [tool search](https://code.claude.com/docs/en/agent-sdk/tool-search) | Tool availability versus approval, MCP loading, deferred schemas and any remaining built-in tools. |
 | Compaction | [Agent loop](https://code.claude.com/docs/en/agent-sdk/agent-loop), [model configuration](https://code.claude.com/docs/en/model-config), [hooks](https://code.claude.com/docs/en/agent-sdk/hooks) | Automatic compaction under the selected prompt/configuration, observable boundaries, instruction preservation and re-entry. |
@@ -25,11 +31,11 @@ These names are navigation aids for a pinned-version check, not a supported
 configuration promised by Stewart. Verify how the options compose before using
 them together.
 
-- **Authentication:** explicit `ANTHROPIC_API_KEY` or the selected supported
-  cloud credentials; `--bare` through SDK `extraArgs`/`extra_args`; private
-  configuration through `CLAUDE_CONFIG_DIR`. Inspect reported authentication
-  source/provider as supporting observations. Missing credentials must not
-  silently select a different billing route.
+- **Authentication:** the manager's harness-owned login, selected by a dedicated
+  `CLAUDE_CONFIG_DIR`; no credential supplied by Stewart. Use non-bare mode.
+  `claude auth status` reports `authMethod` and `configDirectory` without
+  returning the credential. Require the selected directory and `claude.ai`
+  method before model use; missing or conflicting observations refuse.
 - **Ambient inputs:** `settingSources: []`, `strictMcpConfig: true`, an explicit
   process environment/working directory, and the documented controls for auto
   memory, connectors and background tasks. Candidate switches include
@@ -40,7 +46,7 @@ them together.
   `allowedTools`, `permissionMode: "dontAsk"`, `permissionPrompts: "none"` and
   a `PreToolUse` hook. `allowedTools` is about approval; it is not the sole tool
   inventory control. Inspect actual inventory and behavior, including after
-  compaction. Check whether `EndConversation` remains available. For a small
+  compaction. For a small
   application tool set, assess `ENABLE_TOOL_SEARCH=false` or TS `alwaysLoad`
   to avoid uncertain deferred-tool discovery.
 - **Compaction observations:** `system/compact_boundary`, `PreCompact` and
@@ -52,10 +58,20 @@ them together.
   measure or stop the same activity. Establish the event order for a running
   custom tool, queued inputs, a partial response and forced process death.
 
-Open composition question: does the selected SDK's `--bare` pass-through retain
-explicitly supplied in-process MCP servers, hooks and normal compaction?
-This is unverified. A custom prompt plus disabled filesystem instructions also
-needs an actual compaction/re-entry comparison.
+For the native CLI candidate, `--restricted`, `--tools ""`,
+`--setting-sources ""` and `--strict-mcp-config` are complementary controls.
+The [CLI reference](https://code.claude.com/docs/en/cli-reference) documents
+restricted mode from 2.1.248; it still loads managed policy. It is not an OS
+sandbox. Its composition with subscription login and the explicit MCP server
+needs the proposed probe. Bare mode also disables explicitly configured hooks,
+so it is unsuitable for this subscription route.
+
+The [tool reference](https://code.claude.com/docs/en/tools-reference#endconversation-tool-behavior)
+says `EndConversation` cannot be removed while other tools remain **on surfaces
+where it exists**, but explicitly excludes noninteractive `-p` and SDK sessions.
+Check the actual inventory; do not infer an extra tool from the CLI flag's
+general caveat. A custom prompt plus controlled filesystem instructions still
+needs a separate compaction/re-entry comparison.
 
 ## Subscription credentials
 
@@ -66,7 +82,9 @@ documented statements, not observed behavior.
   `CLAUDE_CODE_OAUTH_TOKEN`, documented for CI pipelines and scripts. It can
   only make model requests. A `/login` credential is stored in the macOS
   Keychain, or in `.credentials.json` under `~/.claude` or `CLAUDE_CONFIG_DIR`
-  on Linux.
+  on Linux. The current authentication page also documents a macOS file fallback
+  when a Keychain write fails; the configuration directory selects the Keychain
+  entry as well. Do not inspect either credential store from Stewart.
 - **Bare mode excludes them.** Bare mode never reads OAuth credentials, the
   keychain or `CLAUDE_CODE_OAUTH_TOKEN`. A subscription run is therefore
   non-bare: hooks, skills, plugins, MCP discovery, auto memory, `CLAUDE.md`,
@@ -87,6 +105,12 @@ documented statements, not observed behavior.
   signing in to the unmodified binary with their own subscription is not
   prevented. Read the legal page itself before relying on this summary;
   questions about a particular use go to Anthropic.
+
+Subscription authentication alone does not establish zero additional spending.
+[Usage credits](https://support.claude.com/en/articles/12429409-manage-usage-credits-for-paid-claude-plans)
+can keep requests running at consumption-based prices after included usage is
+exhausted. The proposed development commission uses included usage only: the
+manager confirms paid overflow is disabled; a quota stop ends the batch.
 
 ## Binary identity and updates
 
@@ -115,39 +139,93 @@ From the setup page. Documented statements, not observed behavior.
 
 ## Tool transport and Rust building blocks
 
-From the Agent SDK overview, the headless page and crates.io.
+From the Agent SDK overview, the headless page and the
+[official Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk).
 
 - **No official Rust SDK.** The Agent SDK ships for Python and TypeScript. For
   other languages the documentation says to run `claude -p` as a subprocess and
-  read its JSON output. About ten community Rust wrappers exist, none official;
-  the `claude-agent-sdk` crate names an Anthropic repository but was published
-  by an individual and last released in September 2025.
+  read its JSON output.
 - **Tools arrive through MCP.** The harness starts a stdio MCP server as its
-  own child from `--mcp-config`, and under `-p` waits for it before the first
-  turn. Its startup event, `system/init`, reports the model, tools, MCP servers
-  and plugins.
+  own child from `--mcp-config`. Under `-p` it normally waits for pending
+  servers before the first turn, subject to startup timeout and cached-tool
+  behavior. Its startup event, `system/init`, reports the model, tools, MCP
+  servers and plugins.
 - **`rmcp`** is the official Rust MCP SDK: client and server, several
   transports and the full protocol surface. A stdio tool server needs its
-  `server` and `transport-io` features. It requires `tokio`, `serde`,
-  `serde_json`, `futures`, `tracing`, `tokio-util`, `chrono`, `thiserror` and
-  `indexmap`, and `sha2` 0.11, a second `sha2` beside the service's pinned
-  0.10.9. `mercutio` is a synchronous, IO-less alternative with little
-  adoption.
-- **Isolation.** `landlock`, from the Landlock project, restricts a child's
-  filesystem access; `hakoniwa` and `procage` are higher-level sandboxes. A
-  fresh container holding only the pinned binary and an empty configuration
-  directory needs none of them.
+  `server` and `transport-io` features. Its async runtime and serialization
+  dependencies would expand Stewart's graph. Resolve and inspect the graph
+  for a selected version before choosing it; no dependency has been added.
+
+## Native launch recommendation
+
+This is a proposed mechanism for the decided native workflow, not implemented
+enforcement. Use the pinned executable by absolute path, outside the repository,
+with an empty working directory and a dedicated harness configuration. The
+manager completes Anthropic's login flow there. Keep the actual home identity
+for Keychain access; do not copy an existing login or read its secret.
+
+Construct one explicit child environment inside the gated module. Retain only
+required host values such as home, temporary directory, locale and a controlled
+system PATH, plus the selected configuration and documented controls. Refuse
+explicit provider/key inputs for the harness route; never inherit provider,
+proxy, credential-helper or library-injection variables. Disable every update
+path with `DISABLE_UPDATES=1`. Pin the model and configuration as well as the
+binary, and refuse a changed binding. An invalid harness setup must not fall
+back to the Messages API.
+
+Apply `forceLoginMethod: "claudeai"` as a supporting control, not the sole
+route check. Inspect the harness's credential-free authentication report and
+effective startup metadata. Managed policy can outrank supplied settings;
+unexpected sources, tools, plugins, routing or model selection stop the run.
+An input the harness cannot expose remains unverified; a matching tool list
+does not prove the absence of other instructions or policy.
+`system/init` is evidence about what the harness reports. Whether it arrives
+before sending any model input remains unverified, so do not use it as an
+assumed pre-request gate. A first synthetic check session is preferable to
+exposing an audit while discovering the configuration.
+
+The existing API path accepts an opaque credential. A token prefix is not
+proof of its class, and the adapter cannot certify arbitrary manager-supplied
+bytes as an API key without a supported provider mechanism. The defensible
+initial constraint is structural: the native harness owns the subscription
+secret, the harness route has no credential argument, and it never calls the
+direct adapter. Any stronger direct-route rejection claim needs a separately
+specified discriminator and a synthetic firing control; it is not implemented
+by the build feature.
+
+Prefer a standard-library CLI bridge with a stdio MCP relay. The harness owns
+the relay child; `run` owns a private Unix-domain socket, the audit lock and
+every durable mutation. The relay forwards original request bytes; `run`
+captures them before interpretation and returns the response bytes. Closing
+authoring must be checked again at durable publication, even if a call entered
+earlier. A missing relay or owner ends the session without another writer.
+
+This keeps the shipped Rust dependency graph unchanged. A Python/TypeScript
+SDK helper offers higher-level hooks and interruption but adds a language
+runtime, package pin and another deployment component. It still wraps the same
+harness and cannot supply missing provider evidence by itself. `rmcp` is a
+maintained option; raw capture can sit below parsing, so it is not ruled out
+by parsed handler arguments. For the narrow handshake/list/call surface, a
+synchronous implementation using the existing JSON code is the first candidate.
+Use the [MCP stdio specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
+and [tool protocol](https://modelcontextprotocol.io/specification/2025-11-25/server/tools),
+including errors and notifications, to check it independently before adoption.
+
+Native checks establish development behavior only. macOS has no Linux
+`/proc`/non-dumpable boundary, and its existing lock and process-identity
+fallbacks do not establish the Linux guarantees. A parent-held child handle,
+process-group supervision and witnessed termination need native tests; Linux
+qualification exercises Linux's own mechanisms. Restricting the auditor's
+tool surface does not make the entire harness a filesystem sandbox.
 
 ## Unverified
 
-Stated from memory or inferred, and not checked against a source or a run:
+Not demonstrated under the selected native launch arrangement:
 
-- that the harness names MCP tools `mcp__<server>__<tool>` in what the model
-  sees;
 - that `system/init` arrives before the first message is sent, which would let
   a session's reported configuration be checked before any audit content;
-- that `rmcp` hands a tool handler parsed arguments without the original
-  request line;
+- exact capture before decoding with either a custom relay or an `rmcp`
+  transport wrapper;
 - that the binary can be launched from an already-open descriptor, given that
   it reads its executable from disk while running;
 - `rmcp`'s transitive dependency count, its minimum Rust version against the

@@ -3,9 +3,10 @@
 # Inputs: /in/source.tar (git archive of HEAD), /vendor (the vendored crates,
 # read-only). Output: /out.
 #
-# Builds three binaries from the same sources, each in its own target folder:
+# Builds four binaries from the same sources, each in its own target folder:
 #   stewart        release, <arch>-unknown-linux-musl
 #   stewart-test   release profile with --features fault-injection,sabotage (musl)
+#   stewart-local  release profile with --features claude-code (musl)
 #   stewart-glibc  release, <arch>-unknown-linux-gnu: the firing control for the
 #                  static check, which must reject it
 # and records the apparatus checks the host script evaluates:
@@ -14,6 +15,8 @@
 #   cmp-release-test.exit     cmp's status (1 = the binaries differ)
 #   strings-<name>-<VAR>.exit grep's status for each of the six test-only
 #                             variable names (0 = present)
+#   markers-<name>.exit       0 when every adapter marker has the required
+#                             presence (local) or absence (release and test)
 # Every step keeps its stdout, stderr and exit code. A failed required step stops.
 set -u
 step() {
@@ -34,6 +37,7 @@ must network sh -c 'cat /proc/net/route; ls /sys/class/net'
 must unpack sh -c 'mkdir -p /work && tar -xf /in/source.tar -C /work && cp -R /vendor /work/service/vendor'
 must build-release sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-release cargo build --locked --offline --release --target $MUSL"
 must build-test sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-test cargo build --locked --offline --release --features fault-injection,sabotage --target $MUSL"
+must build-local sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-local cargo build --locked --offline --release --features claude-code --target $MUSL"
 step build-glibc sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-glibc cargo build --locked --offline --release --target $GNU"
 
 must copy-release cp "/work/target-release/$MUSL/release/stewart" /out/stewart
@@ -44,6 +48,7 @@ if [ -f "/work/target-test/$MUSL/release/stewart-test" ]; then
 else
     must copy-test cp "/work/target-test/$MUSL/release/stewart" /out/stewart-test
 fi
+must copy-local cp "/work/target-local/$MUSL/release/stewart" /out/stewart-local
 [ -f "/work/target-glibc/$GNU/release/stewart" ] && step copy-glibc cp "/work/target-glibc/$GNU/release/stewart" /out/stewart-glibc
 
 static_check() {
@@ -55,7 +60,7 @@ static_check() {
         echo 0 >"/out/static-$1.exit"
     fi
 }
-for name in stewart stewart-test stewart-glibc; do
+for name in stewart stewart-test stewart-local stewart-glibc; do
     [ -f "/out/$name" ] && static_check "$name" "/out/$name"
 done
 
@@ -68,7 +73,12 @@ for name in stewart stewart-test; do
         echo $? >"/out/strings-$name-$var.exit"
     done
 done
-step sha256 sha256sum /out/stewart /out/stewart-test
+must marker-list cp /work/apparatus/claude-code-markers.txt /out/claude-code-markers.txt
+step markers-release sh /work/apparatus/check-build-markers.sh absent /out/claude-code-markers.txt /out/stewart
+step markers-test sh /work/apparatus/check-build-markers.sh absent /out/claude-code-markers.txt /out/stewart-test
+step markers-local sh /work/apparatus/check-build-markers.sh present /out/claude-code-markers.txt /out/stewart-local
+step sha256 sha256sum /out/stewart /out/stewart-test /out/stewart-local
 step run-release /out/stewart help
 step run-test /out/stewart-test help
+step run-local /out/stewart-local help
 exit 0

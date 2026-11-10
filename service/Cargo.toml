@@ -20,6 +20,10 @@ panic = "abort"
 strip = "symbols"
 
 [features]
+# Local development only, default off: gates the entire Claude Code adapter.
+# Describe building/checking it only in leaf documentation, never root README
+# or AGENTS. The distributed build has no part of this adapter.
+claude-code = []
 # Test builds only (INTERFACE Appendix C). The release binary is built without
 # them and contains neither their code nor their environment variable names.
 fault-injection = []

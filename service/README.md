@@ -172,13 +172,38 @@ transport tests print `SKIPPED` and return, which Cargo reports as passing;
 ## Building and testing
 
 Run Cargo from this directory, so that `.cargo/config.toml` points it at the
-vendored sources. The two test configurations, release behavior and the test
-build:
+vendored sources. The release-behavior and fault/sabotage test configurations:
 
 ```sh
 cargo test --locked --offline
 CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-injection,sabotage
 ```
+
+### Development runtime build
+
+The default-off `claude-code` feature contains the development adapter boundary
+in `src/claude_code.rs`. It currently adds only an identification line to
+`stewart help`; the adapter is unimplemented and `run` still uses the Messages
+API. Build and check it in a separate target folder:
+
+```sh
+CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-code
+CARGO_TARGET_DIR=target-local cargo build --locked --offline --release --features claude-code
+```
+
+This extends the native Apple-silicon workflow. Keep the resulting binary for
+any audits it creates: its writer digest differs from the release binary, so
+the release cannot continue or close those audits. Gated-build runs are
+development iteration and qualify neither the distributed binary nor a model.
+An observation under one credential route does not establish another route.
+
+The container suite builds `stewart-local` as the firing control for
+[`claude-code-markers.txt`](../apparatus/claude-code-markers.txt). Every listed
+string must be reachable in that build and absent from release/test binaries.
+When adapter code gains an essential identifying string, add it to the list;
+unused strings disappear under fat LTO. The suite records the list and each
+check's output. Fault/sabotage features remain a separate configuration until
+the adapter has fault points of its own.
 
 [DEVELOPMENT.md](../development/DEVELOPMENT.md) covers the rest: producing `vendor/`, the
 release and test builds, the independent driver, and the Linux container

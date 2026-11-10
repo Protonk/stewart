@@ -11,9 +11,10 @@ development rules.
 
 The product is one statically linked binary for Linux x86_64 and aarch64
 (CONTRACTS, "Platform and auditor access"), built and qualified in Linux
-containers. Native macOS is not a target. The crate builds and tests on the
-development Mac so that work can iterate quickly there, but nothing run natively
-on a development machine counts as evidence.
+containers. `aarch64-apple-darwin` is a native development target, not a release
+or qualification target. The crate builds and tests on the development Mac so
+that work can iterate quickly there, but native runs do not qualify Linux
+behavior.
 
 ## What to run for what you changed
 
@@ -40,20 +41,28 @@ cargo test --locked --offline
 CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-injection,sabotage
 ```
 
+Changes to service code or build configuration also need the development
+configuration, from `service/`:
+
+```sh
+CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-code
+```
+
 | What changed | What to run |
 | --- | --- |
 | Prose or Markdown anywhere | The link check. |
 | `docs/INTERFACE.md` or `docs/QUESTION-FORMS.md` | The link check, both cargo configurations and the driver's self-test. A test in `service/src/forms.rs` compares the service's pinned texts and tool descriptions with QUESTION-FORMS; one in `service/src/fault.rs`, built only in the fault and sabotage configuration, compares its failure points, actions and sabotage controls, and the names in its variable table, with INTERFACE Appendix C. The driver's self-test compares its own copies of the pinned texts and tool descriptions with QUESTION-FORMS, and its answer witness reproduces the structured answer and rendering examples of QUESTION-FORMS and the manifest example of INTERFACE 8.2 byte for byte. A changed pinned text or tool description needs the service's copy changed too (then the `service/` row applies); a changed pinned text or example needs the driver's copy updated, under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | Worked example materials: `question.md` and `materials/` under `examples/questions/*/submission/` | No check reads them. The walkthroughs, `CITATION-CONTROLS.md`, QUESTION-FORMS and INTERFACE cite their sizes, byte ranges and line numbers, and the driver's answer witness pins the examples in those docs, so recheck every citation of a changed file; a changed example in the docs then needs the row above. |
 | `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. Changing what Stewart promises is the user's decision. |
-| `service/src/` or `service/tests/` | Both cargo configurations. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once both configurations pass. |
+| `service/src/` or `service/tests/` | All three cargo configurations above. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once all three configurations pass. |
 | `apparatus/driver/` | The driver's self-test and `--list`, which loads every case module. The change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once those two pass. Edit the driver only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | `apparatus/c10/` | `python3 -I -B apparatus/c10/test_c10.py`, `python3 -I -B apparatus/sanity/test_launch.py`, and the driver's self-test for the specification-derived helpers it imports. Exercise changed run, reviewer and operator behavior with the native fake-provider commands in [the apparatus instructions](../apparatus/c10/README.md#run-the-offline-checks). The change remains unqualified until its retained Linux `c10.py rehearse` run, scheduled by the user after committing. No model calls are needed for these checks. |
 | Python in `apparatus/sanity/` | `python3 -I -B apparatus/sanity/test_launch.py`. For shared session or evidence helpers, also run the C10 checks above. The affected launcher needs its retained Linux rehearsal before qualification; source changes invalidate its previous rehearsal binding for live use. |
 | Shell scripts in `apparatus/` or `apparatus/container/` | `sh -n` on each changed script. The change is unqualified until the next container run of the suite that uses it, which the user schedules and batches; it can land and be pushed once `sh -n` passes. `step2.sh` runs `container/inner-build.sh` and `acceptance.sh` the `acceptance-inner-` scripts. |
+| `apparatus/check-build-markers.sh`, `apparatus/test_build_markers.py` or `apparatus/claude-code-markers.txt` | `sh -n apparatus/check-build-markers.sh` and `python3 -I -B apparatus/test_build_markers.py`; run the marker check against release-profile release/test/development binaries, with expected absence/absence/presence. Linux qualification needs the next container acceptance run. |
 | `apparatus/check_links.py` | `python3 -I -B apparatus/check_links.py --self-test`, then the link check. |
 | `apparatus/qualified.py` | `python3 -I -B apparatus/qualified.py --self-test`, then `python3 -I -B apparatus/qualified.py check`. |
-| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | The user's run of `step2.sh`, which rebuilds the toolchain images, vendors the crates named by the committed `Cargo.lock` into `service/vendor`, and builds and checks the release binary for both architectures. It refuses while `service/vendor` exists, so the old tree has to be moved out of the way first. Then both cargo configurations, and the next container run of `acceptance.sh`. The change is unqualified until those container runs, which the user schedules and batches; it can land and be pushed once both cargo configurations pass, which after a dependency change needs the tree that `step2.sh` vendors. |
+| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | The user's run of `step2.sh`, which rebuilds the toolchain images, vendors the crates named by the committed `Cargo.lock` into `service/vendor`, and builds and checks the release binary for both architectures. It refuses while `service/vendor` exists, so the old tree has to be moved out of the way first. Then all three cargo configurations, and the next container run of `acceptance.sh`. The change is unqualified until those container runs, which the user schedules and batches; it can land and be pushed once all three configurations pass, which after a dependency change needs the tree that `step2.sh` vendors. |
 
 `apparatus/qualified.py` keeps the qualification record ([Evidence and
 retention](#evidence-and-retention)). After a container run of `acceptance.sh`
@@ -249,10 +258,12 @@ another checkout uses that checkout's own `service/vendor`.
   two builds byte for byte, checks that the binary is static, runs it in its
   toolchain image, and runs `stewart help` in the pinned alpine image.
 - `acceptance.sh` runs the whole scripted tier of ACCEPTANCE. Per architecture
-  it builds the release binary, the test build and a glibc control, and checks
-  that both musl binaries are static and the glibc control is not, that `cmp`
-  tells the release and test binaries apart, and that only the test build
-  contains the six test-only variable names. Then, in the pinned python image
+  it builds the release binary, the test build, a development build and a glibc
+  control, and checks that all three musl binaries are static and the glibc
+  control is not, that `cmp` tells the release and test binaries apart, and that
+  only the test build contains the six test-only variable names. The adapter
+  marker list must be absent from release/test and present in development.
+  Then, in the pinned python image
   with no network and as an unprivileged user, it runs the driver's self-test
   and every case with `--network-isolated --require-all-controls --keep-work all`, so every
   sabotage control of Appendix C.2 must be assigned to a case and fire.

@@ -300,11 +300,15 @@ python image (its only network use). It archives `service`, `apparatus` and
 `docs` from `HEAD` (the driver's self-test compares its pinned texts and
 examples with `docs/`), and for each architecture, offline:
 
-1. builds the release binary, the test binary and the glibc control, each in
-   its own target folder;
-2. checks that both musl binaries are static and the glibc build is not, that
+1. builds the release binary, the test binary, `stewart-local` with the
+   default-off `claude-code` feature, and the glibc control, each in its own
+   target folder;
+2. checks that all three musl binaries are static and the glibc build is not, that
    `cmp` tells the release and test binaries apart, and that only the test
-   binary contains the six test-only variable names of INTERFACE Appendix C;
+   binary contains the six test-only variable names of INTERFACE Appendix C.
+   [`check-build-markers.sh`](check-build-markers.sh) checks every literal line
+   of [`claude-code-markers.txt`](claude-code-markers.txt): release/test must lack
+   all markers and the development binary must contain them as a firing control;
 3. in the pinned python image with `--network none` (loopback only), as an
    unprivileged user, with the binaries mounted read-only and archives and
    homes on the container's own disk, runs the driver's `--self-test`, then
@@ -330,6 +334,15 @@ containers and generated payloads under the retention rules below. Use
 `sh apparatus/acceptance.sh RUN all` when a named investigation needs passing
 witnesses and working copies as well as failures.
 Build containers are removed on exit.
+
+The development binary stays in `build-<arch>/`, with its digest in
+`host/binaries.sha256`; it is not supplied to the release acceptance driver.
+The marker list is copied into each build folder, and `markers-release`,
+`markers-test` and `markers-local` keep stdout, stderr and exit status there.
+The qualification extractor includes these literal host expectations in its
+script-check counts and accepts the extra digest. Its release/test identities
+still name the binaries the independent driver actually exercised; the extra
+binary establishes no adapter or model qualification.
 
 ACCEPTANCE also requires the scripted tier natively on WSL2, from a handoff
 package of the same binary, driver and fake provider; no script here builds or

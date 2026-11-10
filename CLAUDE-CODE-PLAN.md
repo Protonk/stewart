@@ -31,31 +31,29 @@ understanding or intellectual completeness.
 
 ## 1. Feasibility and contract proposal
 
+The current recommendation is a native CLI bridge with a stdio MCP relay back
+to the sole Rust writer. The [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md#native-launch-recommendation)
+compares the SDK helper and protocol choices, specifies the proposed login and
+launch controls, and separates documented mechanisms from unverified behavior.
+The [initial probe proposal](docs/claude-code/FEASIBILITY-PROBE.md) is bounded to
+synthetic native checks. Its outcome is needed before adopting the combination.
+
 - [ ] Refresh [the runtime reference](docs/claude-code/RUNTIME-REFERENCE.md)
-  against primary documentation for a selected pinned release. Its candidate
-  configuration is untested and assumes bare mode, which subscription
-  credentials cannot use. Establish how ambient isolation, tools, hooks and
-  compaction compose under the credential route actually in use before
-  adopting those controls.
-- [ ] Compare a CLI bridge with a small SDK helper. State installation, versioning
-  and platform implications for native development and the static Linux build.
-  The SDK is a candidate, not a settled dependency; generic multi-tenant hosting
-  is not scope.
-  [The reference](docs/claude-code/RUNTIME-REFERENCE.md#tool-transport-and-rust-building-blocks)
-  narrows this to two candidates built on maintained pieces: `claude -p` driven
-  from the standard library with an MCP tool server, or the official SDK in a
-  helper outside the crate. Community Rust wrappers are not candidates.
+  when freezing the executable pin. Documentation was refreshed for proposed
+  version 2.1.322; downloading and authenticating its manifest remains owed.
+  Establish how ambient isolation, tools, hooks and compaction compose under
+  the selected non-bare subscription route before adopting those controls.
 - [ ] Decide first which process executes the auditor's tools. The harness
   starts a stdio MCP server as its own child, while only `run` holds
   [the audit's lock](docs/INTERFACE.md#46-the-active-lock-and-liveness) and
   writes its records. The child must relay each call to `run`, or `run` must
   serve the tools itself over another transport.
-- [ ] Choose between `rmcp` and a hand-written tool server. The service needs
-  three request types and the startup handshake. Whether `rmcp` lets the
-  service capture a call's exact bytes before interpreting them should decide
-  it, since [raw capture comes first](CONTRACTS.md#principles-and-scope). A
-  hand-written server adds no dependency and could share its protocol code
-  with any other MCP surface the binary carries.
+- [ ] Confirm the proposed synchronous tool relay with an offline protocol
+  check before adoption. Compare its handshake, notifications and errors with
+  the specification; demonstrate exact bytes captured before decoding, since
+  [raw capture comes first](CONTRACTS.md#principles-and-scope). `rmcp` with a
+  transport wrapper remains an alternative if the narrow relay proves costly
+  to maintain; its parsed handlers alone do not rule out raw capture.
 - [ ] State what the auditor actually sees under the harness. Its tools arrive
   through MCP under harness-assigned names, not as the pinned tool array, and
   a non-bare harness may add model-visible content, which
@@ -74,13 +72,20 @@ understanding or intellectual completeness.
   turn counts or complete auditor telemetry are available. Missing totals are
   not zero consumption; estimated dollars cannot silently replace the current
   token/turn contract. Present unsupported promises and alternatives for decision.
+  The documented crash fallback loses output/internal-call totals; subscription
+  billing does not resolve that evidence gap. Propose an explicit unknown-usage
+  and continuation policy rather than carrying the API estimates over.
 - [ ] Distinguish automatic compaction within a placement from continuation
   after interruption. Initially retain one placement per harness session and
   Stewart's fresh-conversation continuation from its ledger. Harness-native
   resume remains a separate choice; determine how re-entry reaches recorded
   work after compaction without claiming to restore unrecorded understanding.
 - [ ] Specify how preparation pins the selected runtime, configuration and
-  guarantees. Resolve the meaning of a runtime choice before adding a selector.
+  guarantees. Decide whether a passing check session binds the binary/config
+  pair, or whether startup metadata can serve as a demonstrated pre-input gate.
+  A standing check-session policy needs bounded permission and its own usage
+  record, outside the audit's allowances. Resolve the meaning of a runtime
+  choice before adding a selector.
 
 **Done when:** this plan contains a concrete integration recommendation, its
 limitations and the contract and installation decisions needed from the principal.
