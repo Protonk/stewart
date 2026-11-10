@@ -20,22 +20,22 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-retention-01](#acceptance-retention-01) | 2026-11-09T22:20:27Z | `146ee62` | qualified | latest |
-| acceptance | linux-x86_64 | [acceptance-retention-01](#acceptance-retention-01) | 2026-11-09T22:20:27Z | `146ee62` | qualified | latest |
+| acceptance | linux-aarch64 | [acceptance-guidance-01](#acceptance-guidance-01) | 2026-11-10T05:44:56Z | `b99c9c0` | qualified | latest |
+| acceptance | linux-x86_64 | [acceptance-guidance-01](#acceptance-guidance-01) | 2026-11-10T05:44:56Z | `b99c9c0` | qualified | latest |
 | toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 
 ## Records
 
-### acceptance-retention-01
+### acceptance-guidance-01
 
 - Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `65d0be28bd6cf570fdc64b82b7e9878c652d5be8c5af292226142c99b7903d54` at the source commit)
-- Source commit: `146ee62cba208c13d69f93d36c1c76b7cdcdabfc`; archive SHA-256 `4253b5e39bb5b0e58101a0138fca69c58d80c83e9ca36e93cca2b857c6ad58d8`
-- Finished: 2026-11-09T22:20:27Z
+- Source commit: `b99c9c003830ae39afb09519efdfdc102eaad548`; archive SHA-256 `8f27ee1dec0ce5457649140acfde73ddd5106a73960a4c3e8cb15b2ecbd1733d`
+- Finished: 2026-11-10T05:44:56Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-retention-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/acceptance-guidance-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -46,18 +46,18 @@ not carry them.
 | Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
 | Script checks (exit records) | 23/23, controls 8/8 | 23/23, controls 8/8 |
-| Driver self-test | 352/352 | 352/352 |
-| Cases passed | 125/125 | 123/123 |
-| Cases | selected 125, ran 125, passed 125, failed 0, skipped 0 | selected 123, ran 123, passed 123, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 230, passed 156, failed 74, skipped 0 | ran 230, passed 156, failed 74, skipped 0 |
-| Checks | passed 163051, failed outside controls 0, failed inside controls 1017 | passed 163051, failed outside controls 0, failed inside controls 1017 |
-| Sabotage control variants fired (INTERFACE C.2) | 74/74 | 74/74 |
+| Driver self-test | 355/355 | 355/355 |
+| Cases passed | 128/128 | 126/126 |
+| Cases | selected 128, ran 128, passed 128, failed 0, skipped 0 | selected 126, ran 126, passed 126, failed 0, skipped 0 |
+| Variants (a fired control's variant fails) | ran 240, passed 161, failed 79, skipped 0 | ran 240, passed 161, failed 79, skipped 0 |
+| Checks | passed 178483, failed outside controls 0, failed inside controls 1209 | passed 178483, failed outside controls 0, failed inside controls 1209 |
+| Sabotage control variants fired (INTERFACE C.2) | 79/79 | 79/79 |
 | Driver controls fired | 21/21 | 21/21 |
-| Timing gate | on, passed: commands worst 3.527 ms (threshold 100.0 ms); protocol worst 120.28 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 66.307 ms (threshold 100.0 ms); protocol worst 177.65 ms (threshold 200.0 ms) |
-| End to end (`e2e.reacting-audit`) | pass, 871/871 checks | pass, 871/871 checks |
-| Release binary SHA-256 | `ca7ef399fc84702a5be98e4bf34e8cba8418fc396ff4df8ac57946e689634402` | `c613ff4ae4c7bcec0b9fa8027262341a6938f102502d5fdfa90b83bbeef56ef8` |
-| Test binary SHA-256 | `88ac529004a8950d8b36894f70489f0238d401dbc921d71f90c3829d62117b60` | `4a8370534cf42847f6fc9b70229a4d6d8341233f63a3da4262b40fbbcb383f0c` |
-| RESULT.json SHA-256 | `2968af02b574d3dc66e6384fba997be66a819bc069c9989dc4b911b82180345e` | `837b27206149c9b69eff6f1651c02044d3980a44b5e6ca8023d265c5066cc86e` |
+| Timing gate | on, passed: commands worst 3.292 ms (threshold 100.0 ms); protocol worst 100.136 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 46.926 ms (threshold 100.0 ms); protocol worst 161.225 ms (threshold 200.0 ms) |
+| End to end (`e2e.reacting-audit`) | pass, 872/872 checks | pass, 872/872 checks |
+| Release binary SHA-256 | `acc35e9add35a667d99b915f3bf9734a78225be41cfae032362554e075d92ab2` | `360213d490ffd1fe4f651cc0cd50d037e3acbb744aaac3904aafa973af144214` |
+| Test binary SHA-256 | `329d7cdddb9c86e6b5421c6f9b90307fb8ef84063cbf4fd8a272a1b20fa3a676` | `d45bc95b7139cf4aac94a73c9c582df10f930da93ee0b8a4e833a00e7d515f86` |
+| RESULT.json SHA-256 | `aea716c3488edb9868fdc1828e228882e0d4b1f275de4d71ea4c16c27a31ab37` | `0a146890b8dc10859fc84344645b0b6a9c9a5af2d23733e6baec5bcff61267cd` |
 
 ### apparatus-02
 
@@ -517,13 +517,6 @@ Frozen inputs, exact consumed commission and original unsealed key for the compl
 - Evidence: `.scratch/opus-comparison-01/.` (recorded 2026-11-09T22:56:00Z).
 - Retained purpose: Inspect the disclosed plants against the fixed returns and readings, and use the selected inputs when deciding further work.; until The comparison no longer needs these originals for inspection; retain only inputs selected for current work.
 
-### opus-rehearsal-01
-
-Compact latest offline C10 rehearsal results: 17 expected audits, 86 reviewer comparisons, 76 firing controls, 7 operator and 11 reporting checks; zero model calls. Generated work discarded after review; not reusable launch-admission evidence.
-
-- Evidence: `.scratch/opus-rehearsal-01/.` (recorded 2026-11-09T23:13:07Z).
-- Retained purpose: Keep the latest concise rehearsal results and identities for the current apparatus; generated synthetic archives are disposable after review.; until A newer rehearsal replaces this current result.
-
 ### opus-live-01
 
 Opus retry inquiry: checked auditor submission, verified delivery and closure; 6 turns, 38532 input and 2628 output tokens, no retries; original answer and attributed reading retained.
@@ -551,3 +544,10 @@ Opus blinded sw3z: input-limit stop after prepare, seven recorded entries, manag
 
 - Evidence: `.scratch/opus-live-04/.` (recorded 2026-11-10T00:11:56Z).
 - Retained purpose: Inspect this encounter, its recorded selection and limit/custody outcome in the disclosed unplanted condition.; until The comparison no longer needs this original encounter for inspection.
+
+### guidance-rehearsal-01
+
+Current exact-input Linux rehearsal for the guidance comparison: all 15 audit outcomes, guidance readback, reviewer/operator/report controls and synthetic saved-connection collection passed.
+
+- Evidence: `.scratch/guidance-rehearsal-01/.` (recorded 2026-11-10T05:45:13Z).
+- Retained purpose: Supply the complete current rehearsal binding and exports required to authorize and inspect the pending two-placement guidance comparison.; until The guidance cycle ends or a new rehearsal replaces it; then trim generated synthetic work to the current concise result.

@@ -2,16 +2,16 @@
   "schema": "stewart.qualified/1",
   "entries": [
     {
-      "id": "acceptance-retention-01",
+      "id": "acceptance-guidance-01",
       "kind": "suite",
       "suite": "acceptance",
       "script": {
         "path": "apparatus/acceptance.sh",
         "sha256": "65d0be28bd6cf570fdc64b82b7e9878c652d5be8c5af292226142c99b7903d54"
       },
-      "source_commit": "146ee62cba208c13d69f93d36c1c76b7cdcdabfc",
-      "source_archive_sha256": "4253b5e39bb5b0e58101a0138fca69c58d80c83e9ca36e93cca2b857c6ad58d8",
-      "date": "2026-11-09T22:20:27Z",
+      "source_commit": "b99c9c003830ae39afb09519efdfdc102eaad548",
+      "source_archive_sha256": "8f27ee1dec0ce5457649140acfde73ddd5106a73960a4c3e8cb15b2ecbd1733d",
+      "date": "2026-11-10T05:44:56Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -29,32 +29,32 @@
             "controls_total": 8
           },
           "self_test": {
-            "checks": 352,
-            "passed": 352,
+            "checks": 355,
+            "passed": 355,
             "failed": 0,
             "skipped": 0
           },
           "cases": {
-            "selected": 125,
-            "ran": 125,
-            "passed": 125,
+            "selected": 128,
+            "ran": 128,
+            "passed": 128,
             "failed": 0,
             "skipped": 0
           },
           "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
+            "ran": 240,
+            "passed": 161,
+            "failed": 79,
             "skipped": 0
           },
           "checks": {
-            "passed": 163051,
+            "passed": 178483,
             "failed_outside_controls": 0,
-            "failed_inside_controls": 1017
+            "failed_inside_controls": 1209
           },
           "controls": {
-            "fired": 74,
-            "total": 74
+            "fired": 79,
+            "total": 79
           },
           "driver_controls": {
             "fired": 21,
@@ -64,20 +64,20 @@
             "enabled": true,
             "passed": true,
             "threshold_ms": 100.0,
-            "worst_ms": 3.527,
+            "worst_ms": 3.292,
             "protocol_passed": true,
-            "protocol_worst_ms": 120.28,
+            "protocol_worst_ms": 100.136,
             "protocol_threshold_ms": 200.0
           },
           "e2e": {
             "case": "e2e.reacting-audit",
             "outcome": "pass",
-            "checks_passed": 871,
+            "checks_passed": 872,
             "checks_failed": 0
           },
-          "release_sha256": "ca7ef399fc84702a5be98e4bf34e8cba8418fc396ff4df8ac57946e689634402",
-          "test_sha256": "88ac529004a8950d8b36894f70489f0238d401dbc921d71f90c3829d62117b60",
-          "result_sha256": "2968af02b574d3dc66e6384fba997be66a819bc069c9989dc4b911b82180345e"
+          "release_sha256": "acc35e9add35a667d99b915f3bf9734a78225be41cfae032362554e075d92ab2",
+          "test_sha256": "329d7cdddb9c86e6b5421c6f9b90307fb8ef84063cbf4fd8a272a1b20fa3a676",
+          "result_sha256": "aea716c3488edb9868fdc1828e228882e0d4b1f275de4d71ea4c16c27a31ab37"
         },
         "linux-x86_64": {
           "execution": "emulated (Rosetta)",
@@ -92,32 +92,32 @@
             "controls_total": 8
           },
           "self_test": {
-            "checks": 352,
-            "passed": 352,
+            "checks": 355,
+            "passed": 355,
             "failed": 0,
             "skipped": 0
           },
           "cases": {
-            "selected": 123,
-            "ran": 123,
-            "passed": 123,
+            "selected": 126,
+            "ran": 126,
+            "passed": 126,
             "failed": 0,
             "skipped": 0
           },
           "variants": {
-            "ran": 230,
-            "passed": 156,
-            "failed": 74,
+            "ran": 240,
+            "passed": 161,
+            "failed": 79,
             "skipped": 0
           },
           "checks": {
-            "passed": 163051,
+            "passed": 178483,
             "failed_outside_controls": 0,
-            "failed_inside_controls": 1017
+            "failed_inside_controls": 1209
           },
           "controls": {
-            "fired": 74,
-            "total": 74
+            "fired": 79,
+            "total": 79
           },
           "driver_controls": {
             "fired": 21,
@@ -127,24 +127,24 @@
             "enabled": false,
             "passed": null,
             "threshold_ms": 100.0,
-            "worst_ms": 66.307,
+            "worst_ms": 46.926,
             "protocol_passed": null,
-            "protocol_worst_ms": 177.65,
+            "protocol_worst_ms": 161.225,
             "protocol_threshold_ms": 200.0
           },
           "e2e": {
             "case": "e2e.reacting-audit",
             "outcome": "pass",
-            "checks_passed": 871,
+            "checks_passed": 872,
             "checks_failed": 0
           },
-          "release_sha256": "c613ff4ae4c7bcec0b9fa8027262341a6938f102502d5fdfa90b83bbeef56ef8",
-          "test_sha256": "4a8370534cf42847f6fc9b70229a4d6d8341233f63a3da4262b40fbbcb383f0c",
-          "result_sha256": "837b27206149c9b69eff6f1651c02044d3980a44b5e6ca8023d265c5066cc86e"
+          "release_sha256": "360213d490ffd1fe4f651cc0cd50d037e3acbb744aaac3904aafa973af144214",
+          "test_sha256": "d45bc95b7139cf4aac94a73c9c582df10f930da93ee0b8a4e833a00e7d515f86",
+          "result_sha256": "0a146890b8dc10859fc84344645b0b6a9c9a5af2d23733e6baec5bcff61267cd"
         }
       },
       "evidence": {
-        "path": ".scratch/acceptance-retention-01",
+        "path": ".scratch/acceptance-guidance-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null
@@ -1475,26 +1475,6 @@
       }
     },
     {
-      "id": "opus-rehearsal-01",
-      "kind": "experiment",
-      "date": "2026-11-09T23:13:07Z",
-      "date_from": "review/result.json field at",
-      "summary": "Compact latest offline C10 rehearsal results: 17 expected audits, 86 reviewer comparisons, 76 firing controls, 7 operator and 11 reporting checks; zero model calls. Generated work discarded after review; not reusable launch-admission evidence.",
-      "result": {
-        "path": ".",
-        "files": 10,
-        "sha256": "43195f836fd6bb120f56b0cb9d1c1cd3c09bd96f40c280a113ba73b291086b55"
-      },
-      "evidence": {
-        "path": ".scratch/opus-rehearsal-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Keep the latest concise rehearsal results and identities for the current apparatus; generated synthetic archives are disposable after review.",
-        "until": "A newer rehearsal replaces this current result."
-      }
-    },
-    {
       "id": "opus-live-01",
       "kind": "experiment",
       "date": "2026-11-09T23:29:12Z",
@@ -1572,6 +1552,26 @@
       "pin": {
         "reason": "Inspect this encounter, its recorded selection and limit/custody outcome in the disclosed unplanted condition.",
         "until": "The comparison no longer needs this original encounter for inspection."
+      }
+    },
+    {
+      "id": "guidance-rehearsal-01",
+      "kind": "experiment",
+      "date": "2026-11-10T05:45:13Z",
+      "date_from": "DONE",
+      "summary": "Current exact-input Linux rehearsal for the guidance comparison: all 15 audit outcomes, guidance readback, reviewer/operator/report controls and synthetic saved-connection collection passed.",
+      "result": {
+        "path": ".",
+        "files": 359,
+        "sha256": "26d5847182f739b34b871947ffc0a6036fffbf3ce384af6f6a7a6b7670719259"
+      },
+      "evidence": {
+        "path": ".scratch/guidance-rehearsal-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Supply the complete current rehearsal binding and exports required to authorize and inspect the pending two-placement guidance comparison.",
+        "until": "The guidance cycle ends or a new rehearsal replaces it; then trim generated synthetic work to the current concise result."
       }
     }
   ]

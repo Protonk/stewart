@@ -1,120 +1,75 @@
 # Rapid question iteration
 
-Make a small structural experiment self-contained: agree its purpose and budget,
-change what the auditor encounters, launch within those bounds, collect and
-review the result, and complete custody. Return a supported finding or an explicit
-unresolved comparison without requiring the principal to reconstruct several
-reports. The first configuration boundary is approved, implemented and checked
-natively; Linux qualification remains unfinished. Live
-demonstration needs its own bounded commission.
+Complete one small structural experiment: agree its purpose and budget, vary what
+an auditor encounters, launch within those bounds, review the result and complete
+custody. Return a supported finding or an explicit unresolved comparison.
 
-## Approved first boundary
+## Implemented boundary
 
-Keep the custody core and typed authoring protocol. Start with one optional,
-explicitly selected guidance attachment for open inquiry. It replaces the whole
-open-inquiry family-guidance block; it is not appended to the built-in version.
-Without an attachment, use the built-in guidance. The question remains the place
-for requests specific to that inquiry.
+Open inquiry admits one explicitly selected `guidance.md`, replacing the whole
+family block. The selected shape and capture obligations are in
+[INTERFACE 3.2](docs/INTERFACE.md#selected-family-guidance); intellectual freedom
+and ownership are in [CONTRACTS](CONTRACTS.md#question-families-and-open-inquiry).
+The implementation and independent driver passed Linux acceptance on both
+architectures. [The qualification index](apparatus/qualified.md) owns the results.
+The exact-input Linux rehearsal is `.scratch/guidance-rehearsal-01`, including
+saved-connection collection and all reviewer/operator/report controls.
 
-The attachment may vary intellectual guidance and suggested answer organization.
-Stewart owns the orientation, capabilities, tool definitions, citation mechanics,
-limits, operational notices and custody behavior. The family remains open inquiry;
-missing sections, no supported finding, uncertainty and disagreement remain
-admissible. A guidance file grants no capability or spending authority.
+Keep replacement simple. The principal asked that any richer way to choose or
+compose guidance occasion a design discussion about need and maintenance cost.
+Layers, includes, inheritance, templates, multiple attachments and more
+configurable blocks remain unselected. Routine guidance-text changes within the
+implemented boundary do not each require another boundary decision. The
+document/JSON connector, unrestricted arrangement input and generic artifact/event
+custodian remain unselected; no universal question schema is needed here.
 
-Preparation shows the exact effective instructions and identifies whether the
-guidance is built-in or manager-supplied. Bind the selected bytes and origin to
-the prepared proposal and captured commission. Acceptance fixes them; later
-source edits cannot change an accepted audit. Retain the base family identity
-and distinguish the supplied guidance from the stock family version. The selected
-shape is `guidance: guidance.md`, with one bounded root file and whole-block
-replacement. [INTERFACE 3.2](docs/INTERFACE.md#selected-family-guidance) owns its
-selection, bounds, receipt members and identity fields.
+## Current experiment
 
-Validation covers mechanical selection, encoding, bounds and faithful capture.
-An unsupported configuration field is refused; Stewart does not claim to judge
-whether arbitrary guidance is sensible, consistent or truthful about capabilities.
-Capturing text is not semantic certification or an answer-quality gate.
+The frozen inputs are `.scratch/guidance-cycle-01`. Two submissions have the same
+question and materials from the small retry inquiry. One uses built-in guidance;
+the other attaches the connected-account candidate identified in `freeze.json`.
+This is unblinded and does not revisit the planted frsrr pair. The earlier reader
+reference stays outside both submissions.
 
-### Keep replacement simple
+Propose `claude-opus-5-5` at medium effort, one placement per submission, with a
+shared USD 3 stop budget. Each placement allows 12 turns, 160,000 cumulative input
+tokens, 12,000 output tokens and 900 seconds. The principal reports USD 9.87 spent
+and approximately USD 41 remaining; `console.json` preserves that observation
+and its uncertainty. Prepare the exact two packets for approval; no live use is authorized yet.
+Use the existing serial host queue to review one outcome before dispatching the
+next. Additional placements, continuation and loss surrender are outside scope.
 
-The principal approved this amount of control and asked that the way replacement
-is chosen remain an explicit design discussion: richer pathways can become
-expensive to update. The concrete selection, replacement and default behavior
-were approved before implementation. Use the existing capture path and one whole-block
-replacement. Layered overrides, includes, inheritance, templates,
-multiple attachments and additional configurable instruction blocks are outside
-this first build. Discuss a concrete need and maintenance cost with the principal
-before adding such mechanisms. Routine implementation choices and guidance-text
-changes within the selected facility do not each require another boundary decision.
+Compare the account's organization, supporting reasoning, duplication and
+recording/editing work. Report setup and check effort, principal interventions,
+process durations and retained bytes separately from substantive findings. One
+pair can demonstrate the pathway but cannot establish a general answer-quality
+effect. Poor answers and inconclusive comparisons remain admissible.
 
-The document/JSON connector, unrestricted arrangement input and generic
-artifact/event custodian remain unselected. Existing question files already
-carry requested organization; no universal question schema is needed here.
-
-### Acceptance examples
-
-- No attachment uses the stock guidance and ordinary open-inquiry tools.
-- Two different attachments use the same binary and tools, each with exactly
-  its selected guidance; the replaced stock paragraph is absent.
-- Editing the source after preparation cannot silently change the prepared
-  proposal; editing it after acceptance cannot change the captured commission.
-- Inspection and receipt readback distinguish supplied guidance from built-in
-  guidance and recover its exact bytes and origin.
-- Unsupported configuration fields refuse explicitly; an answer with missing
-  sections remains admissible under either guidance choice.
-
-The independent design readings and measured reference are retained in
-`.scratch/rapid-iteration-01`. Their agreement is advice, not empirical proof.
-The observed guidance intervention changed four variant files and needed two
-failed Linux acceptance attempts totaling 31 minutes; its candidate remained
-unqualified. The live pair took 62 seconds and cost a calculated USD 0.0562753.
-The 6.694-hour surrounding interval was calendar time, not measured labor or
-unavoidable overhead. Configuration alone will not remove credential or review
-costs. Original encounters and substantive limitations are in
-[the interaction findings](apparatus/studies/interaction/RESULTS.md).
+The measured reference and independent design readings are in
+`.scratch/rapid-iteration-01`; their agreement is advice, not empirical proof.
+[The interaction findings](apparatus/studies/interaction/RESULTS.md) own the prior
+encounters and limitations. Distinguish elapsed calendar time from measured labor
+and new-facility qualification from the cost of changing a guidance file later.
 
 ## Remaining work
 
-- [ ] Qualify the implementation and independent driver on both Linux
-  architectures, then run the launcher's Linux rehearsal with the exact cycle
-  inputs. The native [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed)
-  passed, including the corrected guidance case and its three firing controls,
-  all 15 synthetic audit outcomes, reviewer/operator/report controls and input
-  readback. Linux process-access checks remain unexercised for this change.
-  Working results are in `.tmp/rapid-guidance-01/host/` and
-  `.tmp/rapid-guidance-01/host-02/`. The current host handoff is
-  `python3 -I -B .tmp/rapid-guidance-01/qualify.py`; it runs acceptance, records
-  a successful result, and rehearses the launcher, stopping on failure. No model
-  calls are included. Review the retained runs and dispose of generated work
-  under the ordinary retention rules.
-- [ ] Bind a live demonstration to a fresh bounded commission: model, purpose,
-  placement/spending limits, permitted variations, stopping and custody work.
-  Use an enabled execution route and provider-side spending limit. Token/turn
-  accounting is not a dollar ceiling; add spending machinery only for a concrete
-  reusable requirement.
-- [ ] Run one structural comparison, preferably with a broader auditor choice.
-  Measure setup/check effort, principal interventions, process time and retained
-  bytes against the reference. Account for every attempt and custody outcome;
-  a poor answer or inconclusive comparison is admissible. Distinguish calculated
-  cost, provider usage and independently observed billing.
+- [ ] Obtain the principal's explicit bounded approval for the two packets bound
+  to the qualified binary and current apparatus. Token/turn accounting and the campaign
+  stop budget are not a provider-enforced dollar ceiling.
+- [ ] Run the two placements in order with review between them. Stop on uncertain
+  charges, operational/evidence failure or insufficient budget; an intact reviewed
+  limit ending is admissible. Retrieve, inspect and complete ordinary custody
+  without surrendering loss. Report calculated cost separately from billing.
+- [ ] Compare both returns, record the attributed reading in the existing findings
+  document and give the cycle an explicit outcome. Remove its synthetic containers
+  and generated work after review, retaining the current qualification evidence,
+  necessary rehearsal binding and selected original encounters. Superseded
+  rehearsal/acceptance files and reviewed native work have been pruned; the three
+  synthetic containers remain for the next host handoff. The host container handoff remains
+  necessary under AGENTS.md.
 
-The first cycle's frozen inputs are `.scratch/guidance-cycle-01`: two submissions
-with identical question and materials from the small retry inquiry. One uses
-built-in guidance; the other attaches the connected-account candidate recorded
-in `freeze.json`. This is unblinded and does not revisit the planted frsrr pair.
-Rehearse these exact inputs on one binary. Compare the resulting account's
-organization, supporting reasoning, duplication and authoring work; one pair can
-demonstrate the pathway but cannot establish a general answer-quality effect.
-The earlier reader reference stays outside both submissions. Model, effort and
-spending are to be bound after qualification, before any live placement.
-
-Within a bounded commission the agent may select variants, operate, interpret,
-collect and complete reviewed custody. Budget/model/purpose changes, permanent
-product decisions and loss surrender remain with the principal. Completed
-commissions grant no new spending authority. General answer tuning and a manager
-interface redesign are outside this work.
-
-Complete the plan when the boundary is selected, built and checked and one
-structural experiment has completed that cycle. Move enduring behavior to its
-owners, give unbuilt ideas a disposition and remove this plan.
+The principal retains purpose, spending, model changes, permanent product decisions
+and loss surrender. Completed commissions confer no further spending authority.
+General answer tuning and a manager-interface redesign are outside this cycle.
+At completion, move enduring guidance to its owners, give unbuilt ideas an explicit
+disposition and remove this plan.

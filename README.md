@@ -88,8 +88,9 @@ missing evidence and disagreement remain valid responses.
 
 Acceptance fixes that text; editing the source later does not change the audit.
 The [interface](docs/INTERFACE.md#selected-family-guidance) defines selection,
-source-change checks and readback. The guidance facility awaits its Linux
-qualification; a worked instruction is not evidence that it improves answers.
+source-change checks and readback. Linux acceptance and the launcher rehearsal
+have verified this path with fake providers. Its effect on answer quality remains
+unestablished.
 
 Run allowances count cumulative turns and input/output tokens. Stewart enforces
 no dollar ceiling.
