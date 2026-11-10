@@ -40,6 +40,27 @@ understanding or intellectual completeness.
 - [ ] Compare a CLI bridge with a small SDK helper. State installation, versioning
   and platform implications for the current static Linux binary. The SDK is a
   candidate, not a settled dependency; generic multi-tenant hosting is not scope.
+  [The reference](docs/claude-code/RUNTIME-REFERENCE.md#tool-transport-and-rust-building-blocks)
+  narrows this to two candidates built on maintained pieces: `claude -p` driven
+  from the standard library with an MCP tool server, or the official SDK in a
+  helper outside the crate. Community Rust wrappers are not candidates.
+- [ ] Decide first which process executes the auditor's tools. The harness
+  starts a stdio MCP server as its own child, while only `run` holds
+  [the audit's lock](docs/INTERFACE.md#46-the-active-lock-and-liveness) and
+  writes its records. The child must relay each call to `run`, or `run` must
+  serve the tools itself over another transport.
+- [ ] Choose between `rmcp` and a hand-written tool server. The service needs
+  three request types and the startup handshake. Whether `rmcp` lets the
+  service capture a call's exact bytes before interpreting them should decide
+  it, since [raw capture comes first](CONTRACTS.md#principles-and-scope). A
+  hand-written server adds no dependency and could share its protocol code
+  with any other MCP surface the binary carries.
+- [ ] State what the auditor actually sees under the harness. Its tools arrive
+  through MCP under harness-assigned names, not as the pinned tool array, and
+  a non-bare harness may add model-visible content, which
+  [the Messages route forbids](docs/INTERFACE.md#62-requests-and-responses).
+  Observations of auditor presentation made through the harness are specific
+  to it.
 - [ ] Separate Stewart-owned custody and authoring guarantees from runtime
   access, accounting and stopping guarantees. For each runtime promise, identify
   the observation or enforcement available, its failure policy and the evidence

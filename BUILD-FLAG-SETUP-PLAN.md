@@ -37,7 +37,10 @@ for each of these; a live probe needs its own bounded permission.
   and Stewart never reads it, or Stewart receives it through the existing
   [descriptor route](docs/INTERFACE.md#61-provider). State what each means under
   the documented credential terms and for the hidden-entry and no-secret-in-
-  environment properties the current route provides.
+  environment properties the current route provides. The leading candidate is
+  that the harness owns its login: the manager signs in once through
+  Anthropic's own flow inside the launch environment, the credential stays in
+  the harness's configuration directory, and Stewart never reads it.
 - **Where the gated build runs.** A native development machine with a stored
   login, or a Linux container given a token or credentials file. Compare each
   with the discipline of [the existing live launcher](apparatus/sanity/LAUNCHER.md).
@@ -49,6 +52,28 @@ for each of these; a live probe needs its own bounded permission.
   refuses, what the gated code may read or pass on, and the check, with its
   firing control, that would catch a subscription credential on the direct
   route.
+- **Harness identity.** Candidate: pin one harness version, take its digest
+  from [the signed release manifest](docs/claude-code/RUNTIME-REFERENCE.md#binary-identity-and-updates),
+  and have the gated build hash the executable it is about to run, refuse a
+  mismatch and record path, digest and version with the placement. The
+  manifest signature is checked in the launch apparatus, not in Stewart. A pin
+  means launching the versioned file with every update path disabled, through
+  an absolute path, an explicit child environment and a controlled
+  configuration directory. The claim this supports is that Stewart ran a file
+  matching the pinned release under that environment; it is not proof against
+  the machine's owner.
+- **Check session.** Candidate: a short model-consuming session that exercises
+  the real harness, configuration and credential, covering what a digest
+  cannot. Bind each result to the binary digest and a digest of the launch
+  configuration, and refuse a placement without a passing result for the
+  current pair, so the session is owed only on first use and after either
+  changes. It needs a firing control, such as a removed hook or a wrong
+  credential that must fail it. Its usage is recorded apart from the audit's
+  allowances and is not zero. It needs the principal's standing, bounded
+  permission. A check session can itself fetch an update that applies at the
+  next start, so it depends on the pin above. A cheaper variant inspects the
+  harness's startup report in the audit session itself;
+  [whether that is possible is unverified](docs/claude-code/RUNTIME-REFERENCE.md#unverified).
 
 ## Tasks
 

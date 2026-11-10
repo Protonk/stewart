@@ -9,6 +9,15 @@ on it. This is a sketch, not a schedule.
   List the mismatches.
 - [ ] Implement the [returned question](CONTRACTS.md#returned-question-and-answer):
   specification and service by one author, driver by another.
+- [ ] Add recipes to `stewart help` for feeding `run --key-fd` from a secret
+  tool the manager already uses. Decided: Stewart keeps storing no credential
+  and takes no credential-store dependency, in line with
+  [the declined scope](CONTRACTS.md#declined-and-deferred-scope). The `keyring`
+  crate was considered and set aside: its value is cross-platform reach, and
+  its Linux stores were understood, without verification, to need a desktop
+  session or not to survive a reboot. A hidden prompt is an optional
+  convenience, to be written against the existing dependencies. Help text is
+  [specified](docs/INTERFACE.md#59-help), so the change follows the check table.
 - [ ] Bring the remaining choices to the principal with evidence. Nothing
   further is selected beyond the design goal below.
 

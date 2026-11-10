@@ -1,7 +1,8 @@
 # Claude Code runtime reference for integration work
 
-Documentation checked 2026-10-31; the subscription credential section was
-checked 2026-11-10. No Claude Code/SDK run has been performed for
+Documentation checked 2026-10-31; the sections on subscription credentials,
+binary identity, and tool transport were checked 2026-11-10. No Claude Code/SDK
+run has been performed for
 this work; the candidate configuration has not been compiled or tested as a
 combination. Verify these details against the selected pinned release.
 
@@ -15,6 +16,7 @@ combination. Verify these details against the selected pinned release.
 | Tools and permissions | [Custom tools](https://code.claude.com/docs/en/agent-sdk/custom-tools), [permissions](https://code.claude.com/docs/en/agent-sdk/permissions), [tool search](https://code.claude.com/docs/en/agent-sdk/tool-search) | Tool availability versus approval, MCP loading, deferred schemas and any remaining built-in tools. |
 | Compaction | [Agent loop](https://code.claude.com/docs/en/agent-sdk/agent-loop), [model configuration](https://code.claude.com/docs/en/model-config), [hooks](https://code.claude.com/docs/en/agent-sdk/hooks) | Automatic compaction under the selected prompt/configuration, observable boundaries, instruction preservation and re-entry. |
 | Usage and budgets | [Cost tracking](https://code.claude.com/docs/en/agent-sdk/cost-tracking), [TypeScript result types](https://code.claude.com/docs/en/agent-sdk/typescript#sdkresultmessage), [Python reference](https://code.claude.com/docs/en/agent-sdk/python) | Which calls are counted, cumulative versus per-turn totals, restored totals, resets, missing results and enforcement timing. |
+| Installation, updates and binary integrity | [Setup](https://code.claude.com/docs/en/setup) | Version pinning, update control, the signed release manifest and platform requirements. |
 | Interrupt and termination | [Interrupt receipts](https://code.claude.com/docs/en/agent-sdk/typescript#sdkcontrolinterruptresponse), [SIGTERM behavior](https://code.claude.com/docs/en/headless#stop-a-run-with-sigterm), [hooks](https://code.claude.com/docs/en/agent-sdk/hooks) | Queued work, active handlers, graceful interruption, process death and the final result that may be lost. |
 
 ## Candidate controls
@@ -85,6 +87,71 @@ documented statements, not observed behavior.
   signing in to the unmodified binary with their own subscription is not
   prevented. Read the legal page itself before relying on this summary;
   questions about a particular use go to Anthropic.
+
+## Binary identity and updates
+
+From the setup page. Documented statements, not observed behavior.
+
+- **One executable.** The native install is a single binary, and the npm
+  package installs the same one through a per-platform optional dependency.
+  Linux x64 and arm64 are supported, including musl. Alpine needs `libgcc`,
+  `libstdc++` and `ripgrep`, with `USE_BUILTIN_RIPGREP=0`.
+- **Signed manifest.** Each release from 2.1.89 publishes `manifest.json` with
+  a SHA-256 per platform binary and a detached GPG signature. The release key's
+  fingerprint is `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`. Linux
+  binaries carry no code signature of their own; the manifest, or a signed
+  apt, dnf or apk repository, is the integrity check.
+- **Updates.** A native install updates in the background, and an update takes
+  effect at the next start. `~/.local/bin/claude` is a symlink into
+  `~/.local/share/claude/versions/`. `DISABLE_AUTOUPDATER` stops only the
+  background check; `DISABLE_UPDATES` blocks every update path. The installer
+  accepts an exact version. A running session reads parts of its executable
+  from disk.
+- **An unmodified binary can still be redirected.** `ANTHROPIC_BASE_URL` sends
+  requests, and the credential with them, to another endpoint. A settings `env`
+  block, an `apiKeyHelper`, hooks, managed settings, a preloaded library or
+  another `claude` earlier on `PATH` also change what runs. A digest
+  establishes which file ran, not how it was configured.
+
+## Tool transport and Rust building blocks
+
+From the Agent SDK overview, the headless page and crates.io.
+
+- **No official Rust SDK.** The Agent SDK ships for Python and TypeScript. For
+  other languages the documentation says to run `claude -p` as a subprocess and
+  read its JSON output. About ten community Rust wrappers exist, none official;
+  the `claude-agent-sdk` crate names an Anthropic repository but was published
+  by an individual and last released in September 2025.
+- **Tools arrive through MCP.** The harness starts a stdio MCP server as its
+  own child from `--mcp-config`, and under `-p` waits for it before the first
+  turn. Its startup event, `system/init`, reports the model, tools, MCP servers
+  and plugins.
+- **`rmcp`** is the official Rust MCP SDK: client and server, several
+  transports and the full protocol surface. A stdio tool server needs its
+  `server` and `transport-io` features. It requires `tokio`, `serde`,
+  `serde_json`, `futures`, `tracing`, `tokio-util`, `chrono`, `thiserror` and
+  `indexmap`, and `sha2` 0.11, a second `sha2` beside the service's pinned
+  0.10.9. `mercutio` is a synchronous, IO-less alternative with little
+  adoption.
+- **Isolation.** `landlock`, from the Landlock project, restricts a child's
+  filesystem access; `hakoniwa` and `procage` are higher-level sandboxes. A
+  fresh container holding only the pinned binary and an empty configuration
+  directory needs none of them.
+
+## Unverified
+
+Stated from memory or inferred, and not checked against a source or a run:
+
+- that the harness names MCP tools `mcp__<server>__<tool>` in what the model
+  sees;
+- that `system/init` arrives before the first message is sent, which would let
+  a session's reported configuration be checked before any audit content;
+- that `rmcp` hands a tool handler parsed arguments without the original
+  request line;
+- that the binary can be launched from an already-open descriptor, given that
+  it reads its executable from disk while running;
+- `rmcp`'s transitive dependency count, its minimum Rust version against the
+  pinned toolchain, and its behavior in the static musl fat-LTO build.
 
 ## Accounting
 
