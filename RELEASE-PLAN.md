@@ -9,15 +9,15 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next auditor study | Prepare broader auditor studies, with Opus the intended next candidate; bind model and budget before any launch | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
-| Retained next implementation candidate; not a prerequisite for broadening auditors | Select, build and demonstrate the narrow rapid-iteration path described in its topic plan | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Next implementation candidate; boundary selection outstanding | Select, build and demonstrate the narrow rapid-iteration path described in its topic plan | [RAPID-QUESTION-ITERATION-PLAN.md](RAPID-QUESTION-ITERATION-PLAN.md) |
+| Further auditor studies when selected | Name the uncertainty and bind model and budget before any launch | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | After self-contained rapid iteration is demonstrated | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
 | Deferred design marker; no implementation scheduled | Explore a deterministic linter for redundant read-only caveats after answer preparation | [FUTURE-LINTER-PLAN.md](FUTURE-LINTER-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
 | Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 
-The completed Haiku studies supply reference observations for broader auditors.
+The completed model encounters supply reference observations for further work.
 Further placements need a named question, exact model and bounded spending.
 Small API comparisons can use the existing apparatus without completing the
 full C10 gate or adding another runtime. Release gates remain separately

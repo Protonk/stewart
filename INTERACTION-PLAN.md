@@ -8,11 +8,13 @@ quality remain matters of attributed judgment.
 
 ## Remaining work
 
+Further blinded evaluation is deferred by the principal. The completed pair
+remains available for inspection; no replacement blinded comparison is scheduled.
+
 - [ ] Select the next inquiry, if any, from the completed comparisons. Name the
   uncertainty it would resolve and distinguish answer sufficiency from interface
-  friction. The disclosed frsrr pair contains prose/comment plants; a study of
-  detecting executable numerical damage would need a suitable input and its own
-  bounded commission. No further trial is selected or authorized.
+  friction. Any further trial needs its own bounded commission; none is selected
+  or authorized.
 - [ ] Test any proposed guidance/interface change against broader observations.
   Before adoption align contracts, interface, forms, help/examples and the
   [required checks](DEVELOPMENT.md#what-to-run-for-what-you-changed). Changes to
