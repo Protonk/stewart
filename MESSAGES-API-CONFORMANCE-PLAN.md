@@ -1,4 +1,4 @@
-# C10: real-model conformance apparatus
+# Messages API real-model conformance
 
 Build a reusable Messages API apparatus that can establish whether a named model
 uses Stewart's arrangement and finishes. The gate and required observations are
@@ -7,11 +7,10 @@ owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 [QUESTION-FORMS](docs/QUESTION-FORMS.md) owns the three implemented forms.
 Answer usefulness remains the manager's judgment.
 
-This plan authorizes no model calls, and its remaining work needs its own
-commission. The checked small-commission apparatus is its completed first
-milestone. Full conformance also needs controlled interruption,
-actual provider compaction and a reviewed result for every required run. A model
-is supported only after its whole gate passes.
+The checked small-commission apparatus is complete. Full conformance still needs
+controlled interruption, actual provider compaction and a reviewed result for
+every required run. A model is supported only after its whole gate passes.
+No further model calls are selected or authorized by this plan.
 
 ## Working inputs
 
@@ -154,55 +153,28 @@ coverage remains outstanding until those authorized runs supply the evidence.
 
 ## 5. Rehearse, commission and report
 
-Two apparatus milestones keep completion concrete:
+- [ ] Freeze schema and observation extensions before implementing dependent
+  paths; extend the apparatus instructions and operator procedures with them.
+- [ ] Demonstrate interruption/continuation, multi-placement export, compaction
+  verification and scale controls in Linux rehearsals. Derive all gate cases and
+  budgets from the manifest; recheck exact live bindings before credential use.
+- [ ] Prepare bounded conformance packets through the
+  [apparatus workflow](apparatus/c10/README.md), including the additional mechanism
+  cases, permitted recovery/replacements and dated cost estimates. Obtain the
+  principal's authorization for the concrete model coverage and budget.
+- [ ] Publish a reviewed per-model C10 report with exercised/unexercised coverage,
+  source evidence, provider usage and available billing. Preserve failures and
+  explicitly resolve missing observations. Extend qualification-record tooling
+  as needed to check the report against its evidence.
 
-| Milestone | Required result |
-| --- | --- |
-| Small-commission readiness | Fixed small specimens and case inventory; generalized launch with exact bindings and bounded authority; independent input readback; automated procedural review; loss-of-reply handling and later close/evidence collection; synthetic credential and export controls demonstrated in retained Linux runs. Specialized recovery/compaction coverage remains visibly outstanding. |
-| Full C10 apparatus readiness | The first milestone plus witnessed kill/continuation, multi-placement accounting and export, compaction specimen, summary verification, scale checks and their firing controls. All required cases and budgets can be derived from the manifest. |
+[DEVELOPMENT](DEVELOPMENT.md#what-to-run-for-what-you-changed) owns checks and
+[retention](DEVELOPMENT.md#evidence-and-retention);
+[AGENTS](AGENTS.md) owns independent authorship, commits and host handoffs.
+Use the [host queue](apparatus/c10/HOST-QUEUE.md) and its saved-connection route
+for supported operations under the bounded commission; extend and rehearse that
+route before delegating currently unsupported continuation operations.
 
-- [ ] Freeze extensions to schemas and observation rules before implementing
-  dependent kill/continuation or compaction paths. Follow the
-  [driver-independence rule](AGENTS.md#preserve-independent-evidence); keep these
-  checks derived from the specification and extend the documented test commands
-  and operator run sheet with each new path.
-- [ ] Run the applicable [DEVELOPMENT checks](DEVELOPMENT.md#what-to-run-for-what-you-changed):
-  link check for prose; shell syntax checks for changed scripts; driver self-test
-  and case list for driver changes; both Cargo configurations for service changes.
-  Driver and service changes also need the scheduled Linux acceptance suite;
-  changed scripts and Python launchers need the container rehearsal that uses
-  them. The C10/shared-session rows apply to this tranche. Qualification-tooling
-  changes need its self-test and record check. Commit apparatus code before its
-  container rehearsal, which runs archived source. Local checks alone establish
-  no Linux qualification.
-- [ ] For each extension, retain Linux rehearsal output with source, binary/image identities,
-  environment/filesystem, command streams, counts, skips, timings, controls,
-  witnesses and export outcomes. Recheck qualification bindings before real-key
-  use. Record limitations of the observed platform rather than transferring its
-  result to another architecture or WSL2.
-- [ ] Prepare separate bounded live packets for small commissions and the
-  additional conformance mechanisms. Name exact models/settings, all audit and
-  placement counts, retry/continuation policy, cumulative allowances, wall-clock
-  stops and batch stop conditions. Include dated cost estimates and the limits
-  of those estimates; Stewart supplies no dollar ceiling. Obtain the principal's
-  authorization for the concrete packets before any model-consuming work.
-- [ ] Review all actual outcomes and publish a per-model C10 report with source
-  links, exercised/unexercised procedures, full conversations, provider usage and
-  available billing evidence. Preserve failures and resolve any missing billing
-  observation explicitly. Extend qualification-record tooling as needed so the
-  conformance result can be checked against its retained evidence; never hand-edit
-  generated qualification Markdown or rewrite historical receipts.
-
-For this work, the principal executes commands that change the Git index or
-commit state, and commands that operate containers. Supply those commands with
-`!`. Supply paid launch commands without `!`; the principal runs them and enters
-the API key in a separate terminal. A paid launch command follows the bounded
-authorization for that commission. Prepare and verify all files before handing
-over Git commands, and stage/commit only the intended paths.
-
-The plan is complete when the apparatus is demonstrated and each commissioned
-model has a reviewed gate outcome with failures and unexercised work explicitly
-disposed. Keep enduring procedures in apparatus documentation and tests, the
-results in the qualification record, and then delete this plan. Evidence and
-container disposal remain governed by
-[DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention).
+Complete this plan when the apparatus is demonstrated and every commissioned
+model has a reviewed gate outcome, with failures and unexercised work explicitly
+disposed. Keep enduring procedures in apparatus documentation/tests and outcomes
+in the qualification record, then delete the plan.

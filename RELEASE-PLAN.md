@@ -9,17 +9,14 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Decided default; implementation pending | Include the original question with the returned answer, within the selected context boundary | [Returned question and answer](CONTRACTS.md#returned-question-and-answer) |
-| Further auditor studies when selected | Name the uncertainty and bind model and budget before any launch | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
-| Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
-| Separately commissioned studies | Question-family dogfooding | The study section below |
-| Runtime follow-on, separately scheduled | Implement and qualify Claude Code as a peer auditor runtime | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
+| Next | Resolve Claude Code subscription feasibility and propose the adapter contract; implementation follows the resulting decisions | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
+| Decided default; implementation pending | Include the accepted question body with the returned answer, within the selected context boundary | [Returned question and answer](CONTRACTS.md#returned-question-and-answer) |
+| Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
+| Unselected | Further auditor studies and question-family dogfooding | [Deferred studies](#deferred-studies) |
 
-The completed model encounters supply reference observations for further work.
-Further placements need a named question, exact model and bounded spending.
-Small API comparisons can use the existing apparatus without completing the
-full C10 gate or adding another runtime. Release gates remain separately
-scheduled work.
+Further API studies and completion of the API conformance gate are not
+prerequisites for Claude Code feasibility work. Planning and previous model
+placements confer no execution or spending authority.
 
 The return-context decision needs no further presentation tuning or reader
 comparison before implementation. Broader manager-interface design is deferred;
@@ -31,24 +28,17 @@ no additional reading interface or return context is selected here.
 [the qualification index](apparatus/qualified.md) owns current suite results
 and selected evaluations. Retain originals for inspection under
 [DEVELOPMENT](DEVELOPMENT.md#evidence-and-retention), not to reconstruct old
-builds. Completed model placements confer no further spending authority.
+builds.
 
-## Question-family dogfooding
+## Deferred studies
 
-The five purposes and shared boundaries are in
-[CONTRACTS.md](CONTRACTS.md#question-families-and-open-inquiry). Investigate:
-
-- Material recipes, prompt guidance and expected sections.
-- Recording vocabulary for claim examination and experimental inquiry, whose
-  dedicated forms are not implemented.
-- Useful read-only experimental contributions, the manager's repair work and
-  the usefulness of model returns.
-
-Preserve the common custody and attribution contract, legitimate returns across
-families, and the distinction between notices and blocking checks. Execution
-permission is independent of family choice. Any deployed form needs consistent
-specification, service, help/examples and independent-driver changes with the
-applicable checks. A proposed substantive restriction requires a product decision.
+No further auditor study is selected. Blinded evaluation and question-family
+dogfooding are deferred; the [family contract](CONTRACTS.md#question-families-and-open-inquiry)
+owns their product boundaries. An agent-manager study omitting the question from
+returns is only an option after the manager interface is established and the
+principal selects it, not a pending task. A future study needs a named uncertainty
+and bounded commission. [Completed interaction findings](apparatus/studies/interaction/RESULTS.md)
+and the evidence index retain the observations and original input locations.
 
 ## First-release requirements
 
@@ -56,7 +46,7 @@ applicable checks. A proposed substantive restriction requires a product decisio
 | --- | --- |
 | Linux container qualification | Run the scripted acceptance suite on the release source and binaries, on both architectures with the required controls. |
 | Native WSL2 qualification | Package the same binary, driver and fake provider; arrange and review the user's native run. |
-| Real-model conformance | Complete [C10-PLAN.md](C10-PLAN.md) and qualify each model the release names under an authorized budget. |
+| Real-model conformance | Complete [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and qualify each model the release names under an authorized budget. |
 | Public release gate | Set the binary release schedule with the principal. |
 
 The requirements remain those of ACCEPTANCE while its review is open.
@@ -76,8 +66,12 @@ requirements:
 - Reconcile ACCEPTANCE's per-change tier/image language with batched container
   qualification and the current pinned Python runner.
 - Confirm the platform and real-model release gates and coverage scope.
-- Decide whether and how to add Linux Cargo tests, toolchain-digest enforcement
-  and native/emulated execution recording to the toolchain suite.
+- Decide whether to add Linux Cargo tests. Current Linux suites build the crate
+  and run the independent driver; an offline Cargo route would need
+  `STEWART_IT_TMP` on ext4, xfs or btrfs.
+- Decide toolchain-digest enforcement and native/emulated execution recording.
+  Built image digests are the actual toolchain pins; acceptance records image
+  inspections by tag but does not enforce equality with the toolchain record.
 - Review qualification rules for skips, timing gates and failures across
   platforms. The native protocol tripwire is 200 ms; emulated x86_64 has no
   enforced timing gate. Retiring the absolute tripwire or moving performance
@@ -95,26 +89,6 @@ The native timing gate applies. Native x86_64 is unexercised, so its timings mus
 be measured rather than inferred from Rosetta.
 
 Needs: a package builder, instructions and the user's scheduled run.
-
-### Real-model conformance
-
-[C10-PLAN.md](C10-PLAN.md) owns the specimens and run matrix, reusable launcher,
-continuation and evidence collection, procedural verifier, compaction and
-provider-coverage work, checks and bounded run packets. Its small-commission and
-full-apparatus milestones distinguish readiness to test from model qualification.
-The gate remains [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
-a model is supported only after it passes that gate.
-
-### Build and test coverage
-
-- **Cargo tests on Linux.** The service's tests have run on the development Mac;
-  the Linux suites build the crate and exercise it through the independent driver.
-  Add an offline container test route with `STEWART_IT_TMP` on ext4, xfs or btrfs
-  if selected in the acceptance review.
-- **Toolchain identity.** The Containerfile pins its base image, but target and
-  package installation can change a rebuilt image. Built image digests are the
-  actual pins. Acceptance records image inspections by tag but does not enforce
-  equality with the toolchain record; decide the intended enforcement.
 
 ### Documentation and test discrepancies
 
