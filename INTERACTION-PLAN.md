@@ -11,6 +11,11 @@ quality remain matters of attributed judgment.
 Further blinded evaluation is deferred by the principal. The completed pair
 remains available for inspection; no replacement blinded comparison is scheduled.
 
+No study of including versus omitting the question from returns is selected or
+required for the [decided default](CONTRACTS.md#returned-question-and-answer).
+An agent-manager omission study could be reconsidered after the manager interface
+is established, only if the principal selects it; it is not a pending task.
+
 - [ ] Select the next inquiry, if any, from the completed comparisons. Name the
   uncertainty it would resolve and distinguish answer sufficiency from interface
   friction. Any further trial needs its own bounded commission; none is selected

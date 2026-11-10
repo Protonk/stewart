@@ -731,6 +731,20 @@ The effectiveness of recording tools, material guidance and intellectual returns
 remains an empirical question, separate from procedural conformance.
 No hidden-prior mechanism or elaborate module composition is selected.
 
+## Returned question and answer
+
+**Decided default, pending implementation:** return the original commissioned
+question alongside the auditor's recorded answer. The added context is the exact
+accepted question body, attributed to the manager separately from the auditor's
+answer. Stewart adds no supplied materials, guidance or operating history to
+provide that context. This does not expand custody of supplied material or alter
+the auditor's text, citations or selected artifacts.
+
+The current package in [INTERFACE 8.2](docs/INTERFACE.md#82-the-return-package)
+does not yet include the question. Its package specification, implementation and
+independent acceptance checks must be aligned when this addition is implemented;
+the rendering described below is the current behavior.
+
 ## Readable answer rendering
 
 Preserve the structured answer and its recorded elements. Auditor

@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next scope discussion | Consider the manager's consumption of answers; no redesign is commissioned | A scope to be agreed when selected |
+| Decided default; implementation pending | Include the original question with the returned answer, within the selected context boundary | [Returned question and answer](CONTRACTS.md#returned-question-and-answer) |
 | Further auditor studies when selected | Name the uncertainty and bind model and budget before any launch | [INTERACTION-PLAN.md](INTERACTION-PLAN.md) |
 | Separately commissioned conformance | Complete the C10 apparatus and run the full gate for each named model | [C10-PLAN.md](C10-PLAN.md) |
 | Separately commissioned studies | Question-family dogfooding | The study section below |
@@ -20,6 +20,10 @@ Further placements need a named question, exact model and bounded spending.
 Small API comparisons can use the existing apparatus without completing the
 full C10 gate or adding another runtime. Release gates remain separately
 scheduled work.
+
+The return-context decision needs no further presentation tuning or reader
+comparison before implementation. Broader manager-interface design is deferred;
+no additional reading interface or return context is selected here.
 
 ## Current evidence
 
