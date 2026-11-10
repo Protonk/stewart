@@ -103,6 +103,17 @@ hidden condition. The paired `review/reading.json` files were fixed before key
 disclosure; the second agent reading followed the first. The key remains
 unopened, so correctness against the predetermined plant is unresolved.
 
+The principal's provisional reading, recorded while the key remained closed:
+
+> My read/guess is that `5sgh` is the defect directory, not `sw3z`. I don't have
+> too many other comments, as both are filled with Opus-like indicators that it
+> was productive and busy.
+
+This assigns a suspected damaged copy without identifying the damage. The
+agent's fixed readings above do not select a damaged copy; neither reading
+established the hidden condition. These are pre-disclosure judgments to compare
+with the key, not conclusions informed by it.
+
 The first blinded audit recorded all six entries in its final permitted
 request, without prepare. The second recorded seven entries and then prepared
 in its final request. Both stopped on cumulative input use, with completed tool

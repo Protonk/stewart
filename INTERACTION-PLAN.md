@@ -8,8 +8,6 @@ quality remain matters of attributed judgment.
 
 ## Remaining work
 
-- [ ] Record the principal's provisional readings of the two blinded returns
-  below, before opening the key. The agent's readings are already fixed.
 - [ ] If the principal authorizes unblinding, compare the recorded claims and
   readings with the predetermined condition. Keep what was known before
   disclosure distinct from later explanation. If disclosure is not selected,
@@ -43,12 +41,11 @@ model, allowances and guidance prevent a model-only comparison.
 | `frsrr-sw3z` | `.scratch/opus-live-04/review/answer.md` | `.scratch/opus-live-04/review/reading.json` |
 
 Both are manager-sealed selections after input-limit stops, not auditor
-submissions. Read each account before its interaction trace when forming the
-principal's reading. Record supported conclusions, unsupported claims and
-unexamined areas separately from navigation, citations and recording mechanics.
+submissions. The principal's provisional reading is recorded in the linked
+findings; the agent's readings remain fixed in the files above.
 Keep the hidden key, old predictions and plant instructions closed until the
-principal expressly directs disclosure, after both returns and provisional
-readings are fixed. A confident account does not establish the hidden condition.
+principal expressly directs disclosure. A confident account does not establish
+the hidden condition.
 
 Keep one working input set, `.scratch/opus-comparison-01`, through this decision.
 `freeze.json` identifies the frozen inputs; `approval.json`, `authorization.json`
