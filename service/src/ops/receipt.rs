@@ -287,7 +287,7 @@ pub fn run(reference: &str, verify: bool) -> Reply {
                 .with("location", audit.abs(&format!("intake/{}", r.attempt))),
         )
         .with("run_line", super::run_line(&audit))
-        .with("run_needs", super::run_needs())
+        .with("run_needs", super::run_needs(&audit))
         .with("items", J::Arr(item_js));
     let verification = if verify {
         J::obj()
@@ -452,6 +452,10 @@ fn sabotage_regenerate(audit: &Audit, machine: bool) -> Option<Vec<u8>> {
         .read_regular("question.md", crate::scan::QUESTION_BYTES)
         .ok()?;
     let parsed = crate::frontmatter::parse(&q).ok()?;
+    #[cfg(feature = "claude-code")]
+    if parsed.settings.harness.is_some() {
+        return None;
+    }
     let body = &q[parsed.body_offset..];
     let a = crate::forms::arrangement(&crate::forms::ArrangementInput {
         guidance: None,

@@ -915,7 +915,10 @@ pub fn run(reference: &str) -> Reply {
     } else {
         answer_j(&state)
     };
-    let provider = state.placements().last().map(|p| p.start.provider.clone());
+    let provider = state
+        .placements()
+        .last()
+        .and_then(|p| p.start.provider.clone());
     let mut data = J::obj()
         .with("headline", v.headline)
         .with("condition", v.condition)

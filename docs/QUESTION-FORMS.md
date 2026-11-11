@@ -17,6 +17,10 @@ and preparation replies, alongside the orientation, its family's instructions an
 
 ## System blocks
 
+The [development runtime contract](claude-code/CONTRACT.md) specifies the harness
+mapping and its pinned runtime texts. The blocks below are the Messages mapping;
+the family guidance and answer semantics are common to both.
+
 The request's `system` array has two text blocks: the orientation, then the
 family instructions. Open inquiry may replace its whole family-instruction
 block with the explicitly selected `guidance.md` text under

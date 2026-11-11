@@ -181,10 +181,11 @@ CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-inje
 
 ### Development runtime build
 
-The default-off `claude-code` feature contains the development adapter boundary
-in `src/claude_code.rs`. It currently adds only an identification line to
-`stewart help`; the adapter is unimplemented and `run` still uses the Messages
-API. Build and check it in a separate target folder:
+The default-off `claude-code` feature contains the subscription harness adapter
+in `src/claude_code.rs` and its child modules. The
+[development runtime contract](../docs/claude-code/CONTRACT.md) owns its distinct
+question/profile schemas, observation limits and placement accounting. API
+questions keep their existing path. Build and check it in a separate target folder:
 
 ```sh
 CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-code
@@ -196,6 +197,12 @@ any audits it creates: its writer digest differs from the release binary, so
 the release cannot continue or close those audits. Gated-build runs are
 development iteration and qualify neither the distributed binary nor a model.
 An observation under one credential route does not establish another route.
+
+The [independent runtime driver](../apparatus/driver/CLAUDE-CODE.md) uses a
+synthetic executable to check preparation, core MCP effects, stopping and
+continuation. It invokes no Claude process. Real setup or runtime checks need
+their own bounded commission; the earlier two-tool probe is not a service
+qualification or a check receipt for a newly built writer.
 
 The container suite builds `stewart-local` as the firing control for
 [`claude-code-markers.txt`](../apparatus/claude-code-markers.txt). Every listed

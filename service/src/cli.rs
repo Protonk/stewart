@@ -322,6 +322,10 @@ pub fn main() -> i32 {
             }
         }
     }
+    #[cfg(feature = "claude-code")]
+    if let Some(code) = crate::claude_code::process::helper(&argv) {
+        return code;
+    }
     match plan(&argv) {
         Err(Usage(msg)) => {
             eprintln!(

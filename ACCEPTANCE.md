@@ -626,6 +626,16 @@ contains only the requested bytes. Missing replies imply unknown effects.
 
 ### Platforms
 
+The default-off development runtime has a distinct
+[contract and verification scope](docs/claude-code/CONTRACT.md). Its offline
+controls must exercise the actual core through MCP: exact traffic, positive
+effects, denial and invariance, publication after closure, startup mismatch,
+owner/relay loss, unknown usage, cumulative placement limits and continuation.
+An independent author derives driver cases from that specification. Native
+checks remain development checks; Linux qualification and separately commissioned
+real-harness compaction/submission/stopping comparisons remain necessary for
+the claims they exercise. API results do not qualify the harness profile.
+
 The scripted tier runs, unchanged, on:
 
 - Linux aarch64 and x86_64 in the test image. On the development Mac that means

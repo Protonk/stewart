@@ -23,7 +23,8 @@ pub fn reader_j() -> J {
 }
 
 pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
-    s.only(&[
+    #[allow(unused_mut)]
+    let mut allowed = vec![
         "family",
         "model",
         "destination",
@@ -32,9 +33,23 @@ pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
         "effort",
         "inquiry",
         "varies",
-    ])?;
+    ];
+    #[cfg(feature = "claude-code")]
+    allowed.push("runtime");
+    s.only(&allowed)?;
     let l = s.obj("limits")?;
-    l.only(&["turns", "input_tokens", "output_tokens"])?;
+    #[cfg(feature = "claude-code")]
+    let harness = s
+        .get("runtime")
+        .map(|_| crate::claude_code::profile::Selection::decode(&s.obj("runtime")?, &l))
+        .transpose()?;
+    #[cfg(feature = "claude-code")]
+    let is_harness = harness.is_some();
+    #[cfg(not(feature = "claude-code"))]
+    let is_harness = false;
+    if !is_harness {
+        l.only(&["turns", "input_tokens", "output_tokens"])?;
+    }
     let effort = s.opt_str("effort")?;
     if let Some(e) = effort {
         if !crate::frontmatter::EFFORT_LEVELS.contains(&e) {
@@ -47,14 +62,28 @@ pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
         return Err(s.invalid("guidance", "expected guidance.md for open-inquiry"));
     }
     Ok(Settings {
+        #[cfg(feature = "claude-code")]
+        harness,
         guidance: guidance.map(str::to_string),
         family: s.str("family")?.to_string(),
         model: s.str("model")?.to_string(),
         effort: effort.map(|x| x.to_string()),
         destination: s.str("destination")?.to_string(),
-        turns: l.u64("turns", crate::frontmatter::MAX_TURNS)?,
-        input_tokens: l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?,
-        output_tokens: l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?,
+        turns: if is_harness {
+            0
+        } else {
+            l.u64("turns", crate::frontmatter::MAX_TURNS)?
+        },
+        input_tokens: if is_harness {
+            0
+        } else {
+            l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?
+        },
+        output_tokens: if is_harness {
+            0
+        } else {
+            l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?
+        },
         inquiry: s.opt_str("inquiry")?.map(|x| x.to_string()),
         varies: s.opt_str("varies")?.map(|x| x.to_string()),
     })

@@ -1735,6 +1735,13 @@ redaction service and never rewrites a prior capture.
 | `reader`, `renderer`, `family` | `utf8-text/1`, `stewart.render/1`, family ID and version |
 | `bindings` | SHA-256 of the question body and of the material index |
 
+The material-index digest hashes the exact UTF-8 JSON `index` value retained
+in the prepared manifest, from its opening `{` through its closing `}`, with
+no surrounding whitespace. The compact object has members `files` then
+`directories`; each file has members `name`, `size`, `sha256`, `lines` in that
+order. Both arrays follow bytewise public-name order. Strings use JSON escapes
+for quotes, backslashes and control characters; other Unicode is literal UTF-8.
+
 The run loads the arrangement through the `accepted` record, the receipt it
 names and the receipt's `arrangement` member, checking each digest (5.7). Each
 request body is assembled by splicing pinned bytes, never by re-serializing a
@@ -2031,6 +2038,10 @@ replies says that the run is in the foreground until the placement ends, and
 that callers with command timeouts should start it in the background.
 
 ## 7. The auditor's tools
+
+The default-off development runtime's distinct input and record schemas are
+specified in [its contract](claude-code/CONTRACT.md). The Messages adapter above
+retains its own exact request, accounting and continuation rules.
 
 ### 7.1 Conventions
 

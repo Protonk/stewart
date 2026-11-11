@@ -52,6 +52,8 @@ impl Split {
 /// the `usage` of the run reply (5.7).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Usage {
+    #[cfg(feature = "claude-code")]
+    pub harness: Option<crate::claude_code::accounting::Summary>,
     pub turns: Split,
     pub input_tokens: Split,
     pub output_tokens: Split,
@@ -59,12 +61,22 @@ pub struct Usage {
 
 impl Usage {
     pub fn add(&mut self, other: &Usage) {
+        #[cfg(feature = "claude-code")]
+        if let Some(h) = other.harness {
+            self.harness.get_or_insert_with(Default::default).add(h);
+            return;
+        }
         self.turns.add(other.turns);
         self.input_tokens.add(other.input_tokens);
         self.output_tokens.add(other.output_tokens);
     }
     /// Add one attempt's charge, on the side its basis names.
     pub fn charge(&mut self, c: &Charge) {
+        #[cfg(feature = "claude-code")]
+        assert!(
+            self.harness.is_none(),
+            "API charges cannot account a harness session"
+        );
         let side = |n: u64| match c.basis {
             Basis::Reported => Split {
                 reported: n,
@@ -82,14 +94,27 @@ impl Usage {
     }
     /// `{"turns":{reported,estimated},"input_tokens":…,"output_tokens":…}`.
     pub fn to_j(&self) -> J {
+        #[cfg(feature = "claude-code")]
+        if let Some(h) = self.harness {
+            return h.to_j();
+        }
         J::obj()
             .with("turns", self.turns.to_j())
             .with("input_tokens", self.input_tokens.to_j())
             .with("output_tokens", self.output_tokens.to_j())
     }
     pub fn decode(o: &Obj) -> Result<Usage, JsonError> {
+        #[cfg(feature = "claude-code")]
+        if o.get("runtime").is_some() {
+            return Ok(Usage {
+                harness: Some(crate::claude_code::accounting::Summary::decode(o)?),
+                ..Usage::default()
+            });
+        }
         o.exactly(&["turns", "input_tokens", "output_tokens"])?;
         Ok(Usage {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             turns: Split::decode(&o.obj("turns")?)?,
             input_tokens: Split::decode(&o.obj("input_tokens")?)?,
             output_tokens: Split::decode(&o.obj("output_tokens")?)?,
@@ -190,6 +215,8 @@ impl Charge {
 /// values and its record's `remaining` (4.4).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Remaining {
+    #[cfg(feature = "claude-code")]
+    pub harness: Option<(u64, u64)>,
     pub turns: u64,
     pub input_tokens: u64,
     pub output_tokens: u64,
@@ -197,14 +224,39 @@ pub struct Remaining {
 
 impl Remaining {
     pub fn to_j(&self) -> J {
+        #[cfg(feature = "claude-code")]
+        if let Some((seconds, placements)) = self.harness {
+            return J::obj()
+                .with("runtime", "claude-code/1")
+                .with("seconds", seconds)
+                .with("placements", placements);
+        }
         J::obj()
             .with("turns", self.turns)
             .with("input_tokens", self.input_tokens)
             .with("output_tokens", self.output_tokens)
     }
     pub fn decode(o: &Obj) -> Result<Remaining, JsonError> {
+        #[cfg(feature = "claude-code")]
+        if o.get("runtime").is_some() {
+            o.exactly(&["runtime", "seconds", "placements"])?;
+            if o.str("runtime")? != "claude-code/1" {
+                return Err(o.invalid("runtime", "unsupported notice scope"));
+            }
+            return Ok(Remaining {
+                turns: 0,
+                input_tokens: 0,
+                output_tokens: 0,
+                harness: Some((
+                    o.u64("seconds", crate::claude_code::profile::MAX_SECONDS)?,
+                    o.u64("placements", crate::claude_code::profile::MAX_PLACEMENTS)?,
+                )),
+            });
+        }
         o.exactly(&["turns", "input_tokens", "output_tokens"])?;
         Ok(Remaining {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             turns: o.u64("turns", FIGURE_MAX)?,
             input_tokens: o.u64("input_tokens", FIGURE_MAX)?,
             output_tokens: o.u64("output_tokens", FIGURE_MAX)?,
@@ -223,6 +275,8 @@ impl Remaining {
 /// The audit's cumulative limits, from the accepted commission's front matter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Limits {
+    #[cfg(feature = "claude-code")]
+    pub harness: Option<crate::claude_code::profile::Limits>,
     pub turns: u64,
     pub input_tokens: u64,
     pub output_tokens: u64,
@@ -231,6 +285,8 @@ pub struct Limits {
 impl Limits {
     pub fn remaining(&self, used: &Usage) -> Remaining {
         Remaining {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             turns: self.turns.saturating_sub(used.turns.used()),
             input_tokens: self.input_tokens.saturating_sub(used.input_tokens.used()),
             output_tokens: self.output_tokens.saturating_sub(used.output_tokens.used()),
@@ -240,6 +296,10 @@ impl Limits {
     /// remains, the input allowance is used up or fewer than 1,024 output
     /// tokens remain.
     pub fn exhausted(&self, used: &Usage) -> bool {
+        #[cfg(feature = "claude-code")]
+        if let Some(h) = self.harness {
+            return used.harness.unwrap_or_default().placements >= h.max_placements;
+        }
         let r = self.remaining(used);
         r.turns == 0 || r.input_tokens == 0 || r.output_tokens < MIN_OUTPUT_FOR_REQUEST
     }
@@ -260,6 +320,10 @@ impl Limits {
     /// The allowances member of status, run and re-entry replies:
     /// each `{used, reported, estimated, limit}`.
     pub fn allowances_j(&self, used: &Usage) -> J {
+        #[cfg(feature = "claude-code")]
+        if let Some(h) = self.harness {
+            return used.harness.unwrap_or_default().allowances(h);
+        }
         let one = |s: Split, limit: u64| {
             J::obj()
                 .with("used", s.used())
@@ -316,6 +380,8 @@ mod tests {
     #[test]
     fn exhaustion_and_near_limit_follow_the_stated_thresholds() {
         let l = Limits {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             turns: 10,
             input_tokens: 1000,
             output_tokens: 5000,

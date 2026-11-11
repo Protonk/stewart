@@ -463,10 +463,12 @@ facts the summary may omit. Compaction is distinct from the fresh conversation
 used after an interrupted placement. The trigger, captures, usage and failure
 behavior are specified in INTERFACE 6.2.
 
-The Messages API remains the current runtime. Claude Code is intended as a future
-peer adapter; human and Codex/OpenAI runtimes are future possibilities. Those
-adapters are unimplemented and have no qualification claim for their access,
-context or stopping mechanisms.
+The distributed runtime uses the Messages API. The separate default-off
+development build implements the [Claude Code runtime contract](docs/claude-code/CONTRACT.md)
+for harness observations, placement limits, unknown usage and startup validation;
+its native synthetic service checks pass. This development profile has no
+real-harness or Linux qualification claim for access, context or stopping.
+Human and Codex/OpenAI runtimes remain future possibilities.
 
 The distributed AI integrations use explicit API or supported cloud-provider
 authentication. Subscription login and routing through a user's Claude

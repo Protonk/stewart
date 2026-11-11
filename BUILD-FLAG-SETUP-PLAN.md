@@ -2,9 +2,9 @@
 
 The released binary carries the Messages API adapter and nothing of Claude Code.
 A separate, default-off build carries the Claude Code adapter for local
-development and testing. This plan sets up that build, its checks and its
-credential route. It authorizes neither adapter implementation nor starting
-Claude through any harness.
+development and testing. This plan owns that build, its checks and its credential
+boundary. The principal has authorized the adapter implementation under its
+decided contract; no further Claude invocation is authorized.
 
 ## Decided
 
@@ -50,8 +50,9 @@ The proposed arrangement uses one pinned absolute executable, a dedicated
 harness-owned login, an explicit child environment and no fallback to the
 Messages API. Hash the executable and launch configuration; refuse a changed
 binding. macOS observations apply to development, while Linux qualification
-exercises Linux's process and filesystem mechanisms separately. None of these
-launch controls is implemented by the feature boundary.
+exercises Linux's process and filesystem mechanisms separately. The gated
+adapter implements the launch controls and has passed native synthetic service
+checks. Real-harness service conformance and Linux enforcement remain unqualified.
 
 ## Remaining checks and decisions
 
@@ -62,31 +63,30 @@ limits. The dependency graph is unchanged. The qualifier reads the added
 expected exits and extra binary digest without a schema change; no historical
 record has been rewritten.
 
-All three host Cargo configurations pass, including loopback cases, with no
-socket skips. Their unchanged tests exercise the Messages API path in the
-gated build. Optimized native binaries pass the absence/absence/presence
-marker checks; help matches apart from the gated notice. Keep
-`.tmp/claude-code-setup/host-native.cqIqZX/` and the other check outputs in
-`.tmp/claude-code-setup/` through review. The earlier sandbox socket failure
-and skipped cases are superseded by the host runs; Linux remains unqualified.
+The integrated adapter passed all three host Cargo configurations, including
+loopback cases, and the four optimized markers passed absence/absence/presence
+checks in release, fault/sabotage and development builds. The current build
+outputs are in `.tmp/claude-code-adapter/host.PZGw1h/`. Keep these and the earlier
+`.tmp/claude-code-setup/` outputs through review. Earlier failures and skips
+remain retained; Linux remains unqualified.
 
 - [ ] Run the toolchain and container acceptance checks required by
   [DEVELOPMENT](development/DEVELOPMENT.md#what-to-run-for-what-you-changed),
   on the committed change when the principal schedules them. Retain and extract
   both architectures' results. The development binary is a marker control;
   the independent driver still evaluates the release and fault/sabotage binaries.
-- [ ] Resolve whether the proposed structural credential boundary satisfies
-  the harness-only requirement. The harness owns its secret and cannot fall
-  back to the direct adapter; classifying arbitrary bytes supplied to the
-  existing API route requires a supported discriminator that is not yet known.
-  Recommend accepting the structural boundary for native development, with
-  explicit credential arguments refused on the harness route and no direct-API
-  fallback. Do not claim to classify independently supplied API credential bytes
-  or that a token-prefix test enforces this. The principal's decision is pending.
+
+The principal accepted the structural credential boundary on 2026-11-10:
+the harness owns its secret, the harness route refuses credential arguments and
+never falls back to the direct adapter. There is no classification claim for
+arbitrary bytes supplied separately to the API route. The
+[development runtime contract](docs/claude-code/CONTRACT.md#arrangement-and-observation)
+owns this decision; implementation and verification must enforce it.
 
 The [reviewed native comparison](docs/claude-code/RUNTIME-REFERENCE.md#reviewed-native-comparison)
 supplies the launch observations for the credential-boundary decision. It does
-not qualify Linux enforcement or settle the stronger direct-route discriminator.
+not qualify Linux enforcement. The accepted structural boundary makes no
+direct-route credential-classification claim.
 
 **Done when:** a container run shows the markers absent from the release and
 test binaries and present in the gated one; the three cargo configurations

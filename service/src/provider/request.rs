@@ -28,6 +28,8 @@ use crate::usage::Limits;
 /// receipt and the receipt's `arrangement` member, checking each digest.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Pinned {
+    #[cfg(feature = "claude-code")]
+    pub harness: Option<crate::claude_code::arrangement::Harness>,
     /// The family ID and version, `open-inquiry/1`.
     pub family: String,
     pub guidance_source: String,
@@ -111,6 +113,10 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         return Err(format!("the arrangement has kind {:?}", r.kind));
     }
     let b = r.body();
+    #[cfg(feature = "claude-code")]
+    if b.str("schema").ok() == Some(crate::claude_code::profile::ARRANGEMENT_SCHEMA) {
+        return crate::claude_code::arrangement::decode(&b, bytes);
+    }
     let raw = |k: &str| -> Result<Vec<u8>, JsonError> {
         let v = b.req(k)?;
         Ok(bytes[v.start..v.end].to_vec())
@@ -210,6 +216,8 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         let l = b.obj("limits")?;
         l.exactly(&["turns", "input_tokens", "output_tokens"])?;
         let limits = Limits {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             turns: l.u64("turns", crate::frontmatter::MAX_TURNS)?,
             input_tokens: l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?,
             output_tokens: l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?,
@@ -245,6 +253,8 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         let bind = b.obj("bindings")?;
         bind.exactly(&["question_body_sha256", "material_index_sha256"])?;
         Ok::<_, JsonError>(Pinned {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             family: b.str("family")?.to_string(),
             guidance_source: guidance_source.to_string(),
             guidance_size,
@@ -288,6 +298,11 @@ pub struct Parts {
 
 impl Parts {
     pub fn of(p: &Pinned) -> Parts {
+        #[cfg(feature = "claude-code")]
+        assert!(
+            p.harness.is_none(),
+            "harness arrangements cannot enter the API adapter"
+        );
         Parts {
             model: p.model_raw.clone(),
             system: p.system_raw.clone(),
@@ -439,6 +454,8 @@ pub(crate) mod tests {
 
     pub fn settings(family: &str, model: &str) -> Settings {
         Settings {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             guidance: None,
             family: family.into(),
             model: model.into(),
@@ -497,6 +514,8 @@ pub(crate) mod tests {
         assert_eq!(
             p.limits,
             Limits {
+                #[cfg(feature = "claude-code")]
+                harness: None,
                 turns: 200,
                 input_tokens: 20_000_000,
                 output_tokens: 400_000

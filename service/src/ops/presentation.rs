@@ -8,6 +8,20 @@ use crate::log::LogState;
 use crate::usage::Limits;
 
 fn unknown_usage(limits: &Limits) -> J {
+    #[cfg(feature = "claude-code")]
+    if let Some(h) = limits.harness {
+        return J::obj()
+            .with("runtime", "claude-code/1")
+            .with(
+                "placements",
+                J::obj()
+                    .with("used", "unknown")
+                    .with("limit", h.max_placements)
+                    .with("remaining", "unknown"),
+            )
+            .with("placement_timeout_seconds", h.placement_timeout_seconds)
+            .with("usage", "unknown");
+    }
     let one = |limit| {
         J::obj()
             .with("used", "unknown")
@@ -31,6 +45,14 @@ pub fn allowances(audit: &Audit, state: &LogState, lock: Lock, diagnostics: &mut
     };
     if state.damaged() {
         return unknown_usage(&limits);
+    }
+    #[cfg(feature = "claude-code")]
+    if limits.harness.is_some() {
+        let (used, problems) = crate::runs::cumulative_usage(audit, state, lock != Lock::Free);
+        for problem in problems {
+            diagnostics.push(J::obj().with("record", "runs").with("cause", problem));
+        }
+        return limits.allowances_j(&used);
     }
     let open = state.latest_placement().is_some_and(|p| p.ended.is_none());
     if open && lock == Lock::Unknown {
@@ -194,6 +216,23 @@ pub fn summary(state: &LogState, headline: &J, allowances: &J) -> String {
         {
             lines.push("Ordinary close can settle placement of the already-delivered copy; no confirmation token is required for that path.".into());
         }
+    }
+    #[cfg(feature = "claude-code")]
+    if matches!(allowances.get("runtime"), Some(J::Str(s)) if s == "claude-code/1") {
+        let slots = allowances.get("placements");
+        let count = |key| match slots.and_then(|s| s.get(key)) {
+            Some(J::Int(n)) => n.to_string(),
+            _ => "unknown".into(),
+        };
+        lines.push(format!("Placement starts: {} used of {}; {} remain. Token reports cover the observed harness main loop only; provider completeness is unverified.", count("used"), count("limit"), count("remaining")));
+        if let Some(usage) = allowances.get("usage") {
+            let count = |key| match usage.get(key) {
+                Some(J::Int(n)) => n.to_string(),
+                _ => "unknown".into(),
+            };
+            lines.push(format!("Usage: {} placements have a reported checkpoint; {} have an uncovered interval. Stopping was observed for {} placements.", count("reported_placements"), count("unknown_intervals"), count("stopped")));
+        }
+        return lines.join("\n");
     }
     if let J::Obj(dimensions) = allowances {
         let mut usage = Vec::new();

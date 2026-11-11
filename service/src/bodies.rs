@@ -182,6 +182,16 @@ pub struct ProviderUse {
     pub anthropic_version: String,
 }
 
+impl ProviderUse {
+    pub fn to_j(&self) -> J {
+        J::obj()
+            .with("base_url", self.base_url.as_str())
+            .with("override", self.overridden)
+            .with("proxy", self.proxy.as_deref())
+            .with("anthropic_version", self.anthropic_version.as_str())
+    }
+}
+
 /// What Stewart observed about the placement's process: observations only,
 /// never identity. `start_ticks` is field 22 of `/proc/self/stat`; it and
 /// `host` and `boot_id` are `None` where the platform cannot report them.
@@ -230,7 +240,9 @@ impl RunObservations {
 pub struct RunStarted {
     pub run: u64,
     pub arrangement_sha256: String,
-    pub provider: ProviderUse,
+    pub provider: Option<ProviderUse>,
+    #[cfg(feature = "claude-code")]
+    pub runtime: Option<crate::claude_code::accounting::Start>,
     pub observations: RunObservations,
 }
 
@@ -244,26 +256,29 @@ impl RunStarted {
         format!("runs/{}", self.run)
     }
     pub fn to_j(&self) -> J {
-        J::obj()
+        #[allow(unused_mut)]
+        let mut j = J::obj()
             .with("run", self.run)
             .with("continuing", self.continuing())
             .with("dir", self.dir())
             .with("arrangement_sha256", self.arrangement_sha256.as_str())
             .with(
                 "provider",
-                J::obj()
-                    .with("base_url", self.provider.base_url.as_str())
-                    .with("override", self.provider.overridden)
-                    .with("proxy", self.provider.proxy.as_deref())
-                    .with(
-                        "anthropic_version",
-                        self.provider.anthropic_version.as_str(),
-                    ),
+                self.provider
+                    .as_ref()
+                    .map(ProviderUse::to_j)
+                    .unwrap_or(J::Null),
             )
-            .with("observations", self.observations.to_j())
+            .with("observations", self.observations.to_j());
+        #[cfg(feature = "claude-code")]
+        if let Some(runtime) = &self.runtime {
+            j.push("runtime", runtime.to_j());
+        }
+        j
     }
     pub fn decode(b: &Obj) -> Result<RunStarted, JsonError> {
-        b.exactly(&[
+        #[allow(unused_mut)]
+        let mut keys = vec![
             "prev",
             "run",
             "continuing",
@@ -271,7 +286,17 @@ impl RunStarted {
             "arrangement_sha256",
             "provider",
             "observations",
-        ])?;
+        ];
+        #[cfg(feature = "claude-code")]
+        let runtime = b
+            .get("runtime")
+            .map(|_| crate::claude_code::accounting::Start::decode(&b.obj("runtime")?))
+            .transpose()?;
+        #[cfg(feature = "claude-code")]
+        if runtime.is_some() {
+            keys.push("runtime");
+        }
+        b.exactly(&keys)?;
         let run = b.u64("run", NUM_MAX)?;
         if run == 0 {
             return Err(b.invalid("run", "placements are numbered from 1"));
@@ -285,17 +310,31 @@ impl RunStarted {
         if b.str("dir")? != format!("runs/{run}") {
             return Err(b.invalid("dir", format!("expected runs/{run}")));
         }
-        let p = b.obj("provider")?;
-        p.exactly(&["base_url", "override", "proxy", "anthropic_version"])?;
+        let p = b.obj_or_null("provider")?;
+        #[cfg(feature = "claude-code")]
+        let is_harness = runtime.is_some();
+        #[cfg(not(feature = "claude-code"))]
+        let is_harness = false;
+        if is_harness == p.is_some() {
+            return Err(b.invalid("provider", "exactly one runtime/provider must be selected"));
+        }
+        let provider = p
+            .map(|p| {
+                p.exactly(&["base_url", "override", "proxy", "anthropic_version"])?;
+                Ok::<_, JsonError>(ProviderUse {
+                    base_url: p.str("base_url")?.into(),
+                    overridden: p.bool("override")?,
+                    proxy: opt_string(&p, "proxy")?,
+                    anthropic_version: p.str("anthropic_version")?.into(),
+                })
+            })
+            .transpose()?;
         Ok(RunStarted {
             run,
             arrangement_sha256: b.sha256("arrangement_sha256")?.to_string(),
-            provider: ProviderUse {
-                base_url: p.str("base_url")?.to_string(),
-                overridden: p.bool("override")?,
-                proxy: opt_string(&p, "proxy")?,
-                anthropic_version: p.str("anthropic_version")?.to_string(),
-            },
+            provider,
+            #[cfg(feature = "claude-code")]
+            runtime,
             observations: RunObservations::decode(&b.obj("observations")?)?,
         })
     }
@@ -441,8 +480,13 @@ impl RunEnded {
         ])?;
         let ending = b.one_of("ending", &RUN_ENDINGS)?.to_string();
         let cause = opt_string(b, "cause")?;
+        let runtime_deadline = false;
+        #[cfg(feature = "claude-code")]
+        let runtime_deadline = runtime_deadline
+            || (cause.as_deref() == Some("placement_deadline")
+                && b.obj("usage")?.get("runtime").is_some());
         match (&cause, ending.as_str()) {
-            (Some(c), "interrupted") if RUN_CAUSES.contains(&c.as_str()) => {}
+            (Some(c), "interrupted") if RUN_CAUSES.contains(&c.as_str()) || runtime_deadline => {}
             (None, e) if e != "interrupted" => {}
             (Some(_), "interrupted") | (None, _) => {
                 return Err(b.invalid(
@@ -1595,14 +1639,16 @@ mod tests {
     #[test]
     fn run_started_derives_continuing_and_dir() {
         let r = RunStarted {
+            #[cfg(feature = "claude-code")]
+            runtime: None,
             run: 2,
             arrangement_sha256: h('a'),
-            provider: ProviderUse {
+            provider: Some(ProviderUse {
                 base_url: "https://api.anthropic.com".into(),
                 overridden: false,
                 proxy: None,
                 anthropic_version: "2026-10-21".into(),
-            },
+            }),
             observations: RunObservations {
                 pid: 4182,
                 start_ticks: Some(912873),
@@ -1885,6 +1931,8 @@ mod tests {
             request: 9,
             text: "Allowance notice: 40 turns".into(),
             remaining: Some(Remaining {
+                #[cfg(feature = "claude-code")]
+                harness: None,
                 turns: 40,
                 input_tokens: 3900000,
                 output_tokens: 79000,

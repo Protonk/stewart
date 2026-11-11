@@ -413,6 +413,10 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
     let guidance = input.guidance.unwrap_or_else(|| instructions(f));
     let system = system_with_guidance(guidance);
     let tools = tools(f).bytes();
+    #[cfg(feature = "claude-code")]
+    if s.harness.is_some() {
+        return crate::claude_code::arrangement::build(input, guidance, &tools);
+    }
     let body = J::obj()
         .with("schema", ARRANGEMENT_SCHEMA)
         .with("family", f.versioned_id())
@@ -633,6 +637,8 @@ mod tests {
     #[test]
     fn a_pinned_arrangement_reads_back_with_its_exact_bytes() {
         let settings = crate::frontmatter::Settings {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             guidance: None,
             family: "comparison".into(),
             model: "claude-opus-5-5".into(),

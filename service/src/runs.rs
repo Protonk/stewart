@@ -1103,6 +1103,14 @@ pub fn cumulative_usage(
 
 /// Account a placement from its run directory (6.4).
 pub fn account(audit: &Audit, run: u64) -> Result<Account, String> {
+    #[cfg(feature = "claude-code")]
+    if crate::log::read(audit)
+        .placements()
+        .iter()
+        .any(|p| p.run == run && p.start.runtime.is_some())
+    {
+        return Ok(crate::claude_code::accounting::account(audit, run));
+    }
     let dir = open(audit, run)
         .map_err(|e| format!("{} cannot be opened: {}", dir_name(run), util::describe(&e)))?;
     let l = list(&dir)

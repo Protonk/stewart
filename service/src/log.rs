@@ -599,7 +599,18 @@ impl LogState {
         };
         let p = self.prepared(prep)?;
         let l = p.body_obj().obj("settings").ok()?.obj("limits").ok()?;
+        #[cfg(feature = "claude-code")]
+        if p.body_obj().obj("settings").ok()?.get("runtime").is_some() {
+            return Some(Limits {
+                turns: 0,
+                input_tokens: 0,
+                output_tokens: 0,
+                harness: Some(crate::claude_code::profile::Limits::decode(&l).ok()?),
+            });
+        }
         Some(Limits {
+            #[cfg(feature = "claude-code")]
+            harness: None,
             turns: l.u64("turns", u64::MAX).ok()?,
             input_tokens: l.u64("input_tokens", u64::MAX).ok()?,
             output_tokens: l.u64("output_tokens", u64::MAX).ok()?,
@@ -986,6 +997,14 @@ where
                 at: at_of(&bytes),
             });
         }
+        #[cfg(feature = "claude-code")]
+        let runtime_gate = crate::claude_code::gate::current();
+        #[cfg(feature = "claude-code")]
+        let _runtime_permit = runtime_gate
+            .as_ref()
+            .map(|g| g.permit())
+            .transpose()
+            .map_err(PubErr::Refused)?;
         match stage_dir.link_to(&stage_name, &log_dir, &final_name) {
             Ok(()) => {}
             Err(e) if e.raw_os_error() == Some(libc::EEXIST) => continue,
@@ -1133,7 +1152,7 @@ pub(crate) mod tests {
         (p, audit)
     }
 
-    fn reference_body() -> J {
+    pub(crate) fn reference_body() -> J {
         J::obj()
             .with("file", "REFERENCE.json")
             .with("file_sha256", "0".repeat(64))
@@ -1144,7 +1163,7 @@ pub(crate) mod tests {
             )
     }
 
-    fn close_body() -> J {
+    pub(crate) fn close_body() -> J {
         J::obj()
             .with(
                 "flags",
@@ -1240,13 +1259,15 @@ pub(crate) mod tests {
     fn started(run: u64) -> J {
         RunStarted {
             run,
+            #[cfg(feature = "claude-code")]
+            runtime: None,
             arrangement_sha256: "a".repeat(64),
-            provider: crate::bodies::ProviderUse {
+            provider: Some(crate::bodies::ProviderUse {
                 base_url: "https://api.anthropic.com".into(),
                 overridden: false,
                 proxy: None,
                 anthropic_version: crate::forms::ANTHROPIC_VERSION.into(),
-            },
+            }),
             observations: crate::bodies::RunObservations::current(),
         }
         .to_j()

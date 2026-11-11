@@ -79,7 +79,7 @@ fn eff(state: Option<&LogState>, held: Option<bool>) -> Vec<(&'static str, &'sta
     ]
 }
 
-fn refuse(audit: &Audit, f: Fail, state: Option<&LogState>) -> Reply {
+pub(crate) fn refuse(audit: &Audit, f: Fail, state: Option<&LogState>) -> Reply {
     let held = audit.lock_held().ok();
     let mut reply = f.into_reply(OP, eff(state, held));
     audit.diagnose(
@@ -105,7 +105,7 @@ fn run_next(audit: &Audit, why: &str) -> Next {
 }
 
 /// The audit's state (the second check of 5.7).
-fn state_refusal(audit: &Audit, state: &LogState) -> Option<Fail> {
+pub(crate) fn state_refusal(audit: &Audit, state: &LogState) -> Option<Fail> {
     if state.accepted().is_none() {
         return Some(
             Fail::refused(
@@ -237,7 +237,7 @@ fn tls(audit: &Audit) -> Result<Tls, Fail> {
 }
 
 /// The commissioned destination, from the accepted preparation's settings.
-fn destination(state: &LogState) -> Option<String> {
+pub(crate) fn destination(state: &LogState) -> Option<String> {
     let prep = match &state.accepted()?.body {
         Body::Accepted { prep, .. } => *prep,
         _ => return None,
@@ -255,7 +255,12 @@ fn destination(state: &LogState) -> Option<String> {
 
 /// Record the ending of a placement whose process is gone (6.7): accounted
 /// from its run directory as 6.4 states.
-fn reconcile(audit: &Audit, state: &LogState, run: u64, started_n: u64) -> Result<(), Fail> {
+pub(crate) fn reconcile(
+    audit: &Audit,
+    state: &LogState,
+    run: u64,
+    started_n: u64,
+) -> Result<(), Fail> {
     let (acc, problem) = match runs::account(audit, run) {
         Ok(a) => (a, None),
         Err(e) => (runs::Account::default(), Some(e)),
@@ -388,6 +393,10 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
     // 2. The audit's state.
     if let Some(f) = state_refusal(&audit, &state) {
         return refuse(&audit, f, Some(&state));
+    }
+    #[cfg(feature = "claude-code")]
+    if state.limits().is_some_and(|l| l.harness.is_some()) {
+        return crate::claude_code::run::run(audit, state, input);
     }
     // 3. The environment.
     let env = match environment(&audit, input) {
@@ -543,14 +552,16 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
     // run_started.
     let run = state.next_run();
     let started = RunStarted {
+        #[cfg(feature = "claude-code")]
+        runtime: None,
         run,
         arrangement_sha256: world.arrangement_sha256.clone(),
-        provider: ProviderUse {
+        provider: Some(ProviderUse {
             base_url: env.route.endpoint.url.clone(),
             overridden: env.overridden,
             proxy: route_proxy(&env.route).map(|p| p.value.clone()),
             anthropic_version: pinned.anthropic_version.clone(),
-        },
+        }),
         observations: RunObservations::current(),
     };
     let published = log::publish(&audit, "run_started", |st| {
@@ -710,7 +721,7 @@ fn kept(audit: &Audit, run: u64, started_n: u64, e: &Ended) -> Vec<String> {
 }
 
 /// Record the placement's ending and build the reply.
-fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply {
+pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply {
     // The newest attempt this invocation made; `unknown` when delivery
     // stopped before an attempt's outcome could be established.
     let delivery_effect = match &e.delivered {

@@ -52,7 +52,7 @@ pub mod answer;
 pub mod archive;
 pub mod bodies;
 #[cfg(feature = "claude-code")]
-mod claude_code;
+pub mod claude_code;
 pub mod cli;
 pub mod credential;
 pub mod delivery;

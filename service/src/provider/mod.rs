@@ -35,7 +35,7 @@ pub mod request;
 pub mod response;
 pub mod stop;
 pub mod tls;
-mod tolerant;
+pub(crate) mod tolerant;
 pub mod transport;
 pub mod url;
 
@@ -110,6 +110,8 @@ pub enum Cause {
     ProtocolAnomaly,
     ArchiveWriteFailed,
     ProcessGone,
+    #[cfg(feature = "claude-code")]
+    PlacementDeadline,
 }
 
 impl Cause {
@@ -125,6 +127,8 @@ impl Cause {
             Cause::ProtocolAnomaly => "protocol_anomaly",
             Cause::ArchiveWriteFailed => "archive_write_failed",
             Cause::ProcessGone => "process_gone",
+            #[cfg(feature = "claude-code")]
+            Cause::PlacementDeadline => "placement_deadline",
         }
     }
 }

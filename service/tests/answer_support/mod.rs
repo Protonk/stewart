@@ -276,14 +276,16 @@ impl Live {
 fn launch(audit: &Audit, state: &LogState, world: &World) -> (Placement, RunDir) {
     let run = state.next_run();
     let body = RunStarted {
+        #[cfg(feature = "claude-code")]
+        runtime: None,
         run,
         arrangement_sha256: world.arrangement_sha256.clone(),
-        provider: ProviderUse {
+        provider: Some(ProviderUse {
             base_url: "https://api.anthropic.com".into(),
             overridden: false,
             proxy: None,
             anthropic_version: stewart::forms::ANTHROPIC_VERSION.into(),
-        },
+        }),
         observations: RunObservations::current(),
     };
     log::publish(audit, "run_started", |_| Ok(body.to_j()))

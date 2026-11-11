@@ -88,7 +88,7 @@ fn accepted_data(
             J::obj().with("count", count).with("bytes", bytes),
         )
         .with("run_line", super::run_line(audit))
-        .with("run_needs", super::run_needs())
+        .with("run_needs", super::run_needs(audit))
         .with(
             "receipt_line",
             json::strs(&audit.argv(&["receipt", &audit.reference])),

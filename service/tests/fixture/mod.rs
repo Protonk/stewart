@@ -76,9 +76,11 @@ pub fn start_run_with(a: &Audit, run: u64, provider: ProviderUse) -> u64 {
         a,
         "run_started",
         RunStarted {
+            #[cfg(feature = "claude-code")]
+            runtime: None,
             run,
             arrangement_sha256,
-            provider,
+            provider: Some(provider),
             observations: RunObservations::current(),
         }
         .to_j(),
@@ -225,6 +227,8 @@ pub fn add_artifact(a: &Audit, run: u64, label: &str, bytes: &[u8]) -> Entry {
 /// The usage a fixture placement charged.
 pub fn usage() -> Usage {
     Usage {
+        #[cfg(feature = "claude-code")]
+        harness: None,
         turns: Split {
             reported: 3,
             estimated: 1,

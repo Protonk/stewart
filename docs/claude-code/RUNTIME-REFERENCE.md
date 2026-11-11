@@ -7,8 +7,11 @@ The pinned CLI has completed version, help and authentication checks, with one
 manager-operated subscription login. The development-build boundary is
 implemented. The revised native launch candidate passed its three-case
 synthetic comparison: successful tool use, a witnessed hook denial and a
-successful repeat in another working directory. The service adapter remains
-unimplemented; these native observations do not qualify Linux behavior.
+successful repeat in another working directory. The service adapter is now
+implemented under its [development runtime contract](CONTRACT.md) and has passed
+native offline checks through the actual Rust core. Those service checks use a
+synthetic harness; real-Claude service conformance and Linux behavior remain
+unqualified.
 
 The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)
 was authenticated against the pinned release signing key on 2026-11-10. The
@@ -72,10 +75,9 @@ this comparison. Reported skills and agent definitions remain part of the
 harness metadata; two available tools do not establish an otherwise empty
 instruction surface.
 
-Recommend the native CLI plus stdio MCP path for the next adapter contract and
-offline Rust relay work. This is a feasibility result for development, not a
-completed Stewart adapter or release qualification. The commission is consumed;
-there is no remaining launch or replacement authority.
+This comparison supplied the feasibility evidence for the selected native CLI
+and stdio MCP path. It does not establish full-service or release qualification.
+The commission is consumed; there is no remaining launch or replacement authority.
 
 ## Native authentication observations
 
@@ -149,10 +151,10 @@ reported startup model selection does not establish a successful provider call.
 
 ### Built-in inventory decision
 
-Reject the original zero-plugin launch candidate. The next candidate should
-account explicitly for the pinned harness's built-in components while keeping
-the exact two-tool restriction. Restricted mode is documented to limit tools
-and settings sources, not to remove every built-in component.
+The selected launch arrangement accounts explicitly for the pinned harness's
+built-in components. The second probe retained its exact two-tool restriction.
+Restricted mode is documented to limit tools and settings sources, not to remove
+every built-in component.
 [CLI reference](https://code.claude.com/docs/en/cli-reference#cli-flags)
 
 Read-only inspection of the authenticated binary identifies the instruction
@@ -171,8 +173,8 @@ these three built-in name/source/path entries for this binary, with the privacy
 guard preserved. The checker rejects missing, extra, duplicated or changed
 entries, while permitting a different list order. Extra tools and plugin/server
 errors still refuse. This configuration decision does not certify their
-model-visible contributions or authorize a new Claude invocation or adapter
-implementation. The stopped batch is not resumable, and its two unused sessions
+model-visible contributions or authorize a new Claude invocation. The stopped
+batch is not resumable, and its two unused sessions
 are not replacement authority. The separately approved second commission tested
 the accepted candidate as described above; its allowance is now consumed too.
 
@@ -339,8 +341,9 @@ From the Agent SDK overview, the headless page and the
 
 ## Native launch recommendation
 
-Recommend this mechanism for the development adapter on the strength of the
-native comparison; the Rust integration remains to be specified and implemented.
+The development adapter implements this mechanism on the strength of the native
+comparison. The [runtime contract](CONTRACT.md) pins its exact launch and archive
+formats, supplied inputs, enforcement and observation limits.
 Use the pinned executable by absolute path, outside the repository,
 with an empty working directory and a dedicated harness configuration. The
 manager completes Anthropic's login flow there. Keep the actual home identity
@@ -384,8 +387,8 @@ direct adapter. Any stronger direct-route rejection claim needs a separately
 specified discriminator and a synthetic firing control; it is not implemented
 by the build feature.
 
-Prefer a standard-library CLI bridge with a stdio MCP relay. The harness owns
-the relay child; `run` owns a private Unix-domain socket, the audit lock and
+The integration uses a standard-library CLI bridge with a stdio MCP relay. The
+harness owns the relay child; `run` owns a private Unix-domain socket, the audit lock and
 every durable mutation. The relay forwards original request bytes; `run`
 captures them before interpretation and returns the response bytes. Closing
 authoring must be checked again at durable publication, even if a call entered
@@ -396,18 +399,22 @@ SDK helper offers higher-level hooks and interruption but adds a language
 runtime, package pin and another deployment component. It still wraps the same
 harness and cannot supply missing provider evidence by itself. `rmcp` is a
 maintained option; raw capture can sit below parsing, so it is not ruled out
-by parsed handler arguments. For the narrow handshake/list/call surface, a
-synchronous implementation using the existing JSON code is the first candidate.
+by parsed handler arguments. For the narrow handshake/list/call surface, the
+implementation uses the existing tolerant JSON scanner around strict core
+arguments.
 Use the [MCP stdio specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
 and [tool protocol](https://modelcontextprotocol.io/specification/2025-11-25/server/tools),
 including errors and notifications. The offline check below exercises the
-narrow protocol and relay; the actual core integration remains unimplemented.
+protocol prototype. The [independent service driver](../../apparatus/driver/CLAUDE-CODE.md)
+separately exercises the actual core integration, including preparation,
+startup gating, recording, submission, delivery, continuation, recorder failure
+and process-group stopping.
 
 Native checks establish development behavior only. macOS has no Linux
 `/proc`/non-dumpable boundary, and its existing lock and process-identity
-fallbacks do not establish the Linux guarantees. A parent-held child handle,
-process-group supervision and witnessed termination need native tests; Linux
-qualification exercises Linux's own mechanisms. Restricting the auditor's
+fallbacks do not establish the Linux guarantees. Native synthetic tests exercise
+owned-process supervision and witnessed termination; Linux qualification
+exercises Linux's own mechanisms. Restricting the auditor's
 tool surface does not make the entire harness a filesystem sandbox.
 
 ## Offline Rust protocol check
@@ -470,8 +477,12 @@ Not demonstrated under the selected native launch arrangement:
 
 - a supported configuration check before the first message is sent; the
   observed `system/init` ordering does not provide one;
-- exact capture and failure recovery in the actual adapter's archive; the
-  Rust transport prototype preserves bytes, but does not integrate that writer;
+- actual-adapter capture and failure recovery with the real harness; native
+  synthetic service checks exercise the writer, without establishing Claude's
+  behavior or complete provider accounting;
+- relay-only disconnect while the model remains alive, and end-to-end MCP
+  cancellation in the service; owner/model-loss cases observe relay stopping,
+  while publication-gate unit controls and the prototype have separate scope;
 - that the binary can be launched from an already-open descriptor, given that
   it reads its executable from disk while running;
 - `rmcp`'s transitive dependency count, its minimum Rust version against the
@@ -489,8 +500,8 @@ The result reference and cost guide say resumed results can include totals
 restored from earlier session calls. Do not assume every `query()` result starts
 at zero or sum all results. Streaming totals, session restoration and `/clear`
 resets require identified checkpoints/deltas. Keep the Stewart audit identity separate from
-harness session IDs. The initial adapter can retain fresh-conversation
-continuation, avoiding a need to adopt native resume immediately.
+harness session IDs. The adapter uses fresh-conversation continuation; it does
+not use native resume.
 
 The cost guide states that crash results may have zeroed totals. The documented
 assistant-message fallback recovers main-loop input/cache counts but not output
@@ -502,8 +513,10 @@ The documented USD budget uses a client estimate that can exceed its configured
 value, and restored spend does not count toward that query's budget. The exact
 `maxTurns` model-call boundary needs verification: establish whether each
 control gates a call before consumption or detects an excess afterward. A
-turn-start gate alone does not observe every internal model call. Stewart
-currently promises token/turn allowances, not a dollar cap.
+turn-start gate alone does not observe every internal model call. The Messages
+adapter retains token/turn allowances. The development runtime instead uses
+the [placement and deadline limits](CONTRACT.md#limits-usage-and-continuation);
+neither is a dollar cap.
 
 ## Stopping and the durable boundary
 

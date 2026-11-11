@@ -134,7 +134,10 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
             J::Arr(defects.iter().map(|d| d.to_j()).collect()),
         )))
     })?;
-    let settings = q.settings.clone();
+    #[allow(unused_mut)]
+    let mut settings = q.settings.clone();
+    #[cfg(feature = "claude-code")]
+    crate::claude_code::profile::prepare(&audit, &mut settings)?;
 
     // The destination must exist, be a directory and overlap neither location.
     let dest = Dir::open_follow(&settings.destination).map_err(|e| {

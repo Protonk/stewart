@@ -767,6 +767,10 @@ pub fn gone_run_ended(audit: &Audit, state: &LogState, p: &log::Placement, by: B
 /// process is gone. The caller holds the active lock.
 fn reconcile(audit: &Audit, effects: Effects) -> Result<(), Reply> {
     let st = log::read(audit);
+    #[cfg(feature = "claude-code")]
+    if let Err(e) = crate::claude_code::accounting::ensure_stopped(audit, &st) {
+        return Err(Fail::refused("runtime_stop_unknown", e).into_reply(OP, effects));
+    }
     if let Some(gone) = st.open_intake() {
         let r = log::publish(audit, "intake_ended", |s| {
             if !s

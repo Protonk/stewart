@@ -66,6 +66,8 @@ pub fn scaffold() -> String {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Settings {
+    #[cfg(feature = "claude-code")]
+    pub harness: Option<crate::claude_code::profile::Selection>,
     pub family: String,
     pub model: String,
     /// Explicit fixed-file family guidance selection.
@@ -95,6 +97,14 @@ impl Settings {
                     .with("input_tokens", self.input_tokens)
                     .with("output_tokens", self.output_tokens),
             );
+        #[cfg(feature = "claude-code")]
+        if let Some(runtime) = &self.harness {
+            if let J::Obj(fields) = &mut o {
+                fields.retain(|(key, _)| key != "limits");
+            }
+            o.push("limits", runtime.limits.to_j());
+            o.push("runtime", runtime.to_j());
+        }
         if let Some(g) = &self.guidance {
             o.push("guidance", g.as_str());
         }
@@ -129,7 +139,7 @@ pub struct Defect {
 }
 
 impl Defect {
-    fn new(
+    pub(crate) fn new(
         reason: &'static str,
         line: Option<usize>,
         key: Option<&str>,
@@ -283,7 +293,11 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
                 ),
             )]);
         }
-        if !KEYS.contains(&key) {
+        #[cfg(feature = "claude-code")]
+        let runtime_key = crate::claude_code::profile::EXTRA_KEYS.contains(&key);
+        #[cfg(not(feature = "claude-code"))]
+        let runtime_key = false;
+        if !KEYS.contains(&key) && !runtime_key {
             if crate::sabotage!("accept_unknown_field") {
                 continue;
             }
@@ -310,6 +324,12 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
         fields.push((key.to_string(), value.to_string(), line_no));
     }
 
+    #[cfg(feature = "claude-code")]
+    let is_harness = fields
+        .iter()
+        .any(|(k, v, _)| k == "stewart" && v == crate::claude_code::profile::QUESTION_SCHEMA);
+    #[cfg(not(feature = "claude-code"))]
+    let is_harness = false;
     let mut defects = Vec::new();
     let get = |k: &str| {
         fields
@@ -322,6 +342,8 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
     };
 
     let mut settings = Settings {
+        #[cfg(feature = "claude-code")]
+        harness: None,
         guidance: None,
         family: String::new(),
         model: String::new(),
@@ -334,7 +356,7 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
         varies: None,
     };
     if let Some((v, l)) = get("stewart") {
-        if v != "question/1" {
+        if v != "question/1" && !is_harness {
             invalid(
                 "stewart",
                 l,
@@ -484,6 +506,9 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
         }
     }
     for key in REQUIRED {
+        if is_harness && key.starts_with("limit-") {
+            continue;
+        }
         if get(key).is_none() {
             defects.push(Defect::new(
                 "setting_missing",
@@ -493,6 +518,8 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
             ));
         }
     }
+    #[cfg(feature = "claude-code")]
+    crate::claude_code::profile::frontmatter(&fields, is_harness, &mut settings, &mut defects);
     let body = &text[body_offset..];
     if !body.chars().any(|c| !c.is_whitespace()) {
         defects.push(Defect::new(

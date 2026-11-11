@@ -9,8 +9,8 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Next | Set up the default-off development build that carries the Claude Code adapter, its release absence check and its credential route | [BUILD-FLAG-SETUP-PLAN.md](BUILD-FLAG-SETUP-PLAN.md) |
-| After the build setup | Resolve Claude Code feasibility and propose the adapter contract; implementation follows the resulting decisions, inside that build | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
+| Current build work | Qualify the default-off build and release absence boundary in the separately scheduled container run; native checks pass | [BUILD-FLAG-SETUP-PLAN.md](BUILD-FLAG-SETUP-PLAN.md) |
+| Current runtime work | Complete the remaining failure controls and prepare a bounded commission for real service conformance; the implemented adapter passes native synthetic checks | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 | Later, after the two above | Align the manager interface, using the development runtime for iteration and including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
 | Deferred until the build setup, Claude Code and manager alignment plans finish | Rework the root README | [README-RESCUE-PLAN.md](development/README-RESCUE-PLAN.md) |
@@ -18,9 +18,9 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 Further API studies and completion of the API conformance gate are not
 prerequisites for the build setup or Claude Code feasibility work. Claude Code
-feasibility research may begin during the build setup; adapter code waits for
-it. Planning and previous model placements confer no execution or spending
-authority.
+feasibility and the adapter contract are decided. Implementation and offline
+verification are authorized; further live checks require their own bounded
+commission. Planning and previous model placements confer no spending authority.
 
 The return-context decision needs no further presentation tuning or reader
 comparison before implementation. No additional reading interface or return

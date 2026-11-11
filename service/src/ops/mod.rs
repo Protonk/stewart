@@ -17,7 +17,19 @@ use crate::log::LogState;
 use crate::util;
 
 /// What `run` needs from its environment (commission and receipt replies).
-pub fn run_needs() -> J {
+pub fn run_needs(_audit: &Audit) -> J {
+    #[cfg(feature = "claude-code")]
+    if crate::log::read(_audit)
+        .limits()
+        .is_some_and(|l| l.harness.is_some())
+    {
+        return crate::json::strs(&[
+            "explicit authority for this bounded placement; no automatic restart",
+            "the pinned harness installation and its own subscription login, with paid extra usage disabled",
+            "no credential argument or credential environment variable; no API fallback",
+            "foreground execution under the commissioned placement deadline; usage may remain partial or unknown",
+        ]);
+    }
     crate::json::strs(&[
         "provider credential through --key-fd or ANTHROPIC_API_KEY",
         "network access to the provider",
