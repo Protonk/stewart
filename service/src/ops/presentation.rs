@@ -219,19 +219,7 @@ pub fn summary(state: &LogState, headline: &J, allowances: &J) -> String {
     }
     #[cfg(feature = "claude-code")]
     if matches!(allowances.get("runtime"), Some(J::Str(s)) if s == "claude-code/1") {
-        let slots = allowances.get("placements");
-        let count = |key| match slots.and_then(|s| s.get(key)) {
-            Some(J::Int(n)) => n.to_string(),
-            _ => "unknown".into(),
-        };
-        lines.push(format!("Placement starts: {} used of {}; {} remain. Token reports cover the observed harness main loop only; provider completeness is unverified.", count("used"), count("limit"), count("remaining")));
-        if let Some(usage) = allowances.get("usage") {
-            let count = |key| match usage.get(key) {
-                Some(J::Int(n)) => n.to_string(),
-                _ => "unknown".into(),
-            };
-            lines.push(format!("Usage: {} placements have a reported checkpoint; {} have an uncovered interval. Stopping was observed for {} placements.", count("reported_placements"), count("unknown_intervals"), count("stopped")));
-        }
+        lines.extend(runtime_lines(allowances));
         return lines.join("\n");
     }
     if let J::Obj(dimensions) = allowances {
@@ -254,4 +242,130 @@ pub fn summary(state: &LogState, headline: &J, allowances: &J) -> String {
         lines.push("Cumulative usage and limits are unknown.".into());
     }
     lines.join("\n")
+}
+
+/// The summary's account of a runtime audit's allowances: placement starts
+/// with the per-placement deadline, then what usage and stopping were
+/// observed. The runtime contract states the facts these lines carry.
+#[cfg(feature = "claude-code")]
+fn runtime_lines(allowances: &J) -> Vec<String> {
+    let mut lines = Vec::new();
+    let slots = allowances.get("placements");
+    let count = |key| match slots.and_then(|s| s.get(key)) {
+        Some(J::Int(n)) => n.to_string(),
+        _ => "unknown".into(),
+    };
+    // Number agreement: exactly one takes the singular; zero, several and
+    // an unknown count take the plural.
+    let one = |n: &str| n == "1";
+    let remaining = count("remaining");
+    let timeout = match allowances.get("placement_timeout_seconds") {
+        Some(J::Int(n)) => n.to_string(),
+        _ => "unknown".into(),
+    };
+    lines.push(format!(
+        "Placement starts: {} used of {}; {} {}. Each placement has a deadline of {} {}. Token reports cover the observed harness main loop only; provider completeness is unverified.",
+        count("used"),
+        count("limit"),
+        remaining,
+        if one(&remaining) { "remains" } else { "remain" },
+        timeout,
+        if one(&timeout) { "second" } else { "seconds" },
+    ));
+    if let Some(usage) = allowances.get("usage") {
+        let count = |key| match usage.get(key) {
+            Some(J::Int(n)) => n.to_string(),
+            _ => "unknown".into(),
+        };
+        let placements = |n: &str| if one(n) { "placement" } else { "placements" };
+        let have = |n: &str| if one(n) { "has" } else { "have" };
+        let (reported, uncovered, stopped) = (
+            count("reported_placements"),
+            count("unknown_intervals"),
+            count("stopped"),
+        );
+        lines.push(format!(
+            "Usage: {reported} {} {} a reported checkpoint; {uncovered} {} {} an uncovered interval. Stopping was observed for {stopped} {}.",
+            placements(&reported),
+            have(&reported),
+            placements(&uncovered),
+            have(&uncovered),
+            placements(&stopped),
+        ));
+    }
+    lines
+}
+
+#[cfg(all(test, feature = "claude-code"))]
+mod tests {
+    use super::*;
+
+    fn allowances(used: u64, limit: u64, timeout: u64, usage: Option<[u64; 3]>) -> J {
+        let mut a = J::obj()
+            .with("runtime", "claude-code/1")
+            .with(
+                "placements",
+                J::obj()
+                    .with("used", used)
+                    .with("limit", limit)
+                    .with("remaining", limit - used),
+            )
+            .with("placement_timeout_seconds", timeout);
+        match usage {
+            Some([reported, uncovered, stopped]) => a.push(
+                "usage",
+                J::obj()
+                    .with("reported_placements", reported)
+                    .with("unknown_intervals", uncovered)
+                    .with("stopped", stopped),
+            ),
+            None => a.push("usage", "unknown"),
+        }
+        a
+    }
+
+    #[test]
+    fn the_summary_states_the_deadline_and_agrees_in_number() {
+        let lines = runtime_lines(&allowances(1, 2, 600, Some([1, 0, 1])));
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].contains("1 used of 2; 1 remains."), "{}", lines[0]);
+        assert!(lines[0].contains("600 seconds"), "{}", lines[0]);
+        assert!(
+            lines[1].contains("1 placement has a reported checkpoint")
+                && lines[1].contains("0 placements have an uncovered interval")
+                && lines[1].ends_with("observed for 1 placement."),
+            "{}",
+            lines[1]
+        );
+        let lines = runtime_lines(&allowances(2, 4, 1, Some([2, 1, 0])));
+        assert!(lines[0].contains("2 used of 4; 2 remain."), "{}", lines[0]);
+        assert!(lines[0].contains("1 second."), "{}", lines[0]);
+        assert!(
+            lines[1].contains("2 placements have a reported checkpoint")
+                && lines[1].contains("1 placement has an uncovered interval")
+                && lines[1].ends_with("observed for 0 placements."),
+            "{}",
+            lines[1]
+        );
+        // An unknown count is not presented as one.
+        let unknown = J::obj()
+            .with("runtime", "claude-code/1")
+            .with(
+                "placements",
+                J::obj()
+                    .with("used", "unknown")
+                    .with("limit", 3u64)
+                    .with("remaining", "unknown"),
+            )
+            .with("placement_timeout_seconds", 60u64)
+            .with("usage", "unknown");
+        let lines = runtime_lines(&unknown);
+        assert!(
+            lines[0].contains("unknown used of 3; unknown remain."),
+            "{}",
+            lines[0]
+        );
+        assert!(lines[0].contains("60 seconds"));
+        assert!(lines[1].contains("unknown placements have"), "{}", lines[1]);
+    }
 }

@@ -28,34 +28,21 @@ remain future work.
 - Exercise the parts of the [launch surface](CONTRACT.md#launch-surface) that
   the digest names but no driver case drives: the hook helper's allow and deny
   replies and the effort arguments.
-- Decide the alignment candidates from the 2026-11-11 comparison of the two
-  paths through one binary. Paired replies differed only in limits, runtime
-  settings, run requirements, allowances and usage; the return package had the
-  same form. The differences the transport does not force:
-  - the separate question version, where a runtime field on the common
-    version would do, and a scaffold and help topics that describe only the
-    Messages limits;
-  - `run_needs` for this runtime, which the contract does not specify and
-    which omits the advice to start a long run in the background;
-  - the orientation's first paragraph, which drops the sentences naming the
-    list, read and search tools and saying the manager cannot be asked;
-  - the post-compaction notice, reworded beyond the one necessary noun;
-  - presentation: the whole profile text inside human output, singular and
-    plural agreement in the usage lines, no placement timeout in the summary,
-    and API-only status fields shown as null.
 - Settle what usage a submitting placement reports. The runtime stops the
   harness after a confirmed submission; in synthetic runs that leaves the
-  final interval unknown on every sealed audit. Real-harness behavior is
-  unobserved.
-- Add driver cases for close after delivery and close after an ordinary
-  ending, which the Messages driver exercises and this one does not. Share
-  cases for common behavior between the two runtimes where independence allows.
+  final interval unknown on every sealed audit, while a turn that ends with a
+  result is reported. Make what the real harness reports at that point an
+  explicit observation of the real-service commission.
+- Share driver cases for behavior common to both runtimes where independence
+  allows; the two drivers currently cover custody, submission and close
+  separately.
 - Extend the independent offline driver to isolate relay-only disconnect while
-  the model remains alive, MCP cancellation through the actual service, valid
-  terminal usage checkpoints across placements, and compaction/notice/reminder
-  interactions. Current cases exercise relay stopping with owner/model loss and
-  usage with missing terminal reports. Publication-gate and event-parser unit
-  controls, and the protocol prototype, are separate evidence.
+  the model remains alive, MCP cancellation through the actual service, usage
+  checkpoints across more than one placement, and compaction with its notice.
+  Current cases exercise relay stopping with owner/model loss, usage with
+  missing terminal reports, and one placement's reminder and valid checkpoints.
+  Publication-gate and event-parser unit controls, and the protocol prototype,
+  are separate evidence.
 - Provide a Linux execution path for the standalone synthetic runtime suite,
   with the exact gated binary and independent witnesses. `acceptance.sh` checks
   the gated build and markers but does not run this suite; its result cannot
@@ -81,15 +68,17 @@ profile, and native results do not qualify Linux.
 
 ## Evidence through review
 
-The current native validation is `.tmp/surface-binding/host.24wFiF`, with
-runtime witnesses at `/private/tmp/stewart-surface-runtime.QTlDKw/run`:
-16 cases, 5,554 checks and 52 controls passed, with no skips. It covers the
-surface-bound check, including two builds with different digests accepting one
-profile. All applicable
+The current native validation is `.tmp/alignment/host.x1DmST`, with runtime
+witnesses at `/private/tmp/stewart-align-runtime.SbCg7Q/run`: 18 cases, 7,017
+checks and 58 controls passed, with no skips. It covers the single question
+version, the surface-bound check with two builds accepting one profile, close
+after delivery and an ordinary ending closed by the manager. All applicable
 [DEVELOPMENT checks](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
-passed. The source snapshot stayed unchanged throughout the run. The earlier
-validation of the writer-bound form is `.tmp/document-harmonization/host.VxyhfJ`,
-with witnesses at `/private/tmp/stewart-doc-runtime.CGwaur/run`.
+passed. The source snapshot stayed unchanged throughout the run. Earlier
+validations are `.tmp/surface-binding/host.24wFiF` (first surface-bound form,
+witnesses at `/private/tmp/stewart-surface-runtime.QTlDKw/run`) and
+`.tmp/document-harmonization/host.VxyhfJ` (writer-bound form, witnesses at
+`/private/tmp/stewart-doc-runtime.CGwaur/run`).
 
 Keep `.tmp/document-harmonization/` through review of the later socket EOF
 failure and its fix. `host.PMinwd` retains the failed native run. The paired

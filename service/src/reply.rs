@@ -398,7 +398,18 @@ impl Reply {
                 }
             }
         }
-        if let Some(d) = &self.data {
+        // People see the runtime profile's path and digest; the JSON reply
+        // keeps its exact captured text.
+        #[cfg(feature = "claude-code")]
+        let shown = self
+            .data
+            .as_ref()
+            .map(crate::claude_code::profile::for_people);
+        #[cfg(feature = "claude-code")]
+        let data = &shown;
+        #[cfg(not(feature = "claude-code"))]
+        let data = &self.data;
+        if let Some(d) = data {
             if concise {
                 if let Some(J::Arr(items)) = d.get("receipt_line") {
                     let argv: Option<Vec<String>> = items

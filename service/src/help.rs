@@ -4,7 +4,18 @@
 use crate::forms::{self, FAMILIES};
 use crate::scan;
 
+#[cfg(not(feature = "claude-code"))]
 pub const TOPICS: [&str; 5] = ["commands", "forms", "limits", "reader", "close"];
+/// The development build adds its runtime topic after the common ones.
+#[cfg(feature = "claude-code")]
+pub const TOPICS: [&str; 6] = [
+    "commands",
+    "forms",
+    "limits",
+    "reader",
+    "close",
+    crate::claude_code::HELP_TOPIC,
+];
 
 #[cfg(feature = "claude-code")]
 fn build_notice() -> &'static str {
@@ -56,6 +67,14 @@ placement; an audit keeps its ledger and cumulative limits across placements.
 Topics: stewart help commands | forms | limits | reader | close
 ",
     );
+    // The development build lists its own topic on the same line.
+    #[cfg(feature = "claude-code")]
+    {
+        text.truncate(text.len() - 1);
+        text.push_str(" | ");
+        text.push_str(crate::claude_code::HELP_TOPIC);
+        text.push('\n');
+    }
     text
 }
 
@@ -66,6 +85,8 @@ pub fn topic(name: &str) -> Option<String> {
         "limits" => limits(),
         "reader" => reader(),
         "close" => close(),
+        #[cfg(feature = "claude-code")]
+        crate::claude_code::HELP_TOPIC => crate::claude_code::help(),
         _ => return None,
     })
 }
@@ -378,5 +399,68 @@ mod tests {
         assert!(all.contains("leave the folder unchanged"));
         assert!(!all.contains("STEWART_TEST"));
         assert!(super::topic("nope").is_none());
+    }
+
+    #[cfg(not(feature = "claude-code"))]
+    #[test]
+    fn the_release_build_has_no_runtime_topic_or_notice() {
+        assert!(super::topic("runtime").is_none());
+        assert_eq!(
+            super::TOPICS,
+            ["commands", "forms", "limits", "reader", "close"]
+        );
+        let overview = super::overview();
+        assert!(overview.starts_with("Stewart keeps a bounded inquiry honest"));
+        assert!(
+            overview.ends_with("Topics: stewart help commands | forms | limits | reader | close\n")
+        );
+        assert!(!overview.contains("runtime"));
+    }
+
+    /// The development build's topic carries the facts the runtime contract
+    /// lists, and the overview leads to it.
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn the_development_build_explains_runtime_questions() {
+        let overview = super::overview();
+        assert!(overview.starts_with("Stewart development build: claude-code\n"));
+        let notice = overview.split("\n\n").next().unwrap();
+        assert!(notice.contains("stewart help runtime"));
+        assert!(!notice.contains("docs/"), "{notice}");
+        assert!(overview.ends_with(
+            "Topics: stewart help commands | forms | limits | reader | close | runtime\n"
+        ));
+        // Apart from the notice and the added topic, the overview is the common one.
+        let common = overview
+            .strip_prefix(notice)
+            .unwrap()
+            .trim_start_matches('\n')
+            .replace(" | runtime\n", "\n");
+        assert!(common.starts_with("Stewart keeps a bounded inquiry honest"));
+        assert!(!common.contains("runtime"));
+        assert_eq!(super::TOPICS.last(), Some(&"runtime"));
+        let topic = super::topic("runtime").expect("runtime topic");
+        for fact in [
+            "stewart: question/1",
+            "limit-turns",
+            "limit-input-tokens",
+            "limit-output-tokens",
+            "runtime-profile",
+            "max-placements",
+            "placement-timeout-seconds",
+            "stewart.claude-code.profile/2",
+            "nonsecret",
+            "launch surface",
+            "runtime_profile_invalid",
+            "SHA-256",
+            "subscription login",
+            "--key-fd",
+            "ANTHROPIC_API_KEY",
+            "never\n  falls back",
+            "in the background",
+            "partial or unknown",
+        ] {
+            assert!(topic.contains(fact), "the runtime topic lacks {fact:?}");
+        }
     }
 }

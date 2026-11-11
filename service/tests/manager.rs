@@ -785,6 +785,17 @@ fn help_and_usage() {
             .contains("Formulate a working question")
     );
     assert_eq!(e.run(&["help", "nope"]).code, Some(2));
+    // Only the development build has a runtime topic; here it is unknown.
+    #[cfg(not(feature = "claude-code"))]
+    {
+        let o = e.run(&["help", "runtime"]);
+        assert_eq!(o.code, Some(2));
+        assert!(
+            o.stderr
+                .contains("topics: commands, forms, limits, reader, close\n")
+        );
+        assert!(!e.run(&["help"]).text().contains("runtime"));
+    }
     assert_eq!(e.run(&["run"]).code, Some(2));
     assert_eq!(e.run(&["run", "stw1:x", "--detach"]).code, Some(2));
     let o = e.run(&["run", "stw1:x", "--json"]);

@@ -31,7 +31,9 @@ each tool call, then `delivery/` and `ops/close.rs`.
 
 - `main.rs`: the binary's entry point; it calls `cli::main`.
 - `cli.rs`: exact argument parsing and presentation (5.1).
-- `help.rs`: `stewart help` and its topics, printed exactly (5.9).
+- `help.rs`: `stewart help` and its topics, printed exactly (5.9). The
+  development build adds one topic, `runtime`, whose text is in
+  `claude_code.rs`.
 - `reply.rs`: the `stewart.reply/2` envelope and its human presentation
   (1.3–1.7).
 
@@ -41,8 +43,10 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `ops/`: one file per command, `new`, `prepare`, `commission`, `receipt`,
   `run`, `status` and `close` (5.2–5.8); `ops/mod.rs` holds what they share.
 - `frontmatter.rs`, `scan.rs`: the submission folder: the `question/1` front
-  matter and the material scan (3), plus the gated
-  [development question schema](../docs/claude-code/CONTRACT.md#development-input-and-preparation-schema).
+  matter and the material scan (3). In the development build the same version
+  takes the three
+  [runtime fields](../docs/claude-code/CONTRACT.md#development-input-and-preparation-schema),
+  and naming `runtime-profile` selects the runtime.
 - `forms.rs`: the question families, their pinned texts and tool definitions,
   and the arrangement prepare pins (QUESTION-FORMS; 6.2).
 
@@ -164,13 +168,18 @@ against an audit the real binary commissioned.
 | `delivery.rs` | Delivery, close and status after launch | any |
 | `manager_seal.rs` | Close's manager seal through the answer module | any |
 | `close_faults.rs` | Delivery and close failure traces | `fault-injection` |
-| `claude_code.rs` | The development runtime: the publication gate in process, and `prepare`'s profile and launch-surface binding through the real binary | `claude-code` |
+| `claude_code.rs` | The development runtime through the real binary: the runtime fields on `question/1`, the profile and launch-surface binding, help, what people are shown, and one placement of a synthetic executable that fails its status check; and the publication gate in process | `claude-code` |
 | `close_sabotage.rs` | Delivery, close and status sabotage controls, and the run-handoff controls `relative_run_line` and `commission_over_network` (ACCEPTANCE C12) | `sabotage` |
 
 Shared support is in `tests/common/` (the harness), `tests/fixture/` (states
 after launch built with the crate's own writers), `tests/answer_support/` (a
 live placement in process) and `tests/fixtures/` (an expected answer and
 rendering, and test-only TLS certificates).
+
+The synthetic placement in `claude_code.rs` starts a supervised process group
+under the scratch directory. It prints `SKIPPED` and returns when that
+directory lies under a project or configuration tree, where the runtime
+refuses to launch.
 
 Some tests bind a loopback listener: the `run.rs` cases, the transport unit
 tests in `src/provider/transport.rs` and `commission_over_network` in
@@ -192,9 +201,12 @@ CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-inje
 
 The default-off `claude-code` feature contains the subscription harness adapter
 in `src/claude_code.rs` and its child modules. The
-[development runtime contract](../docs/claude-code/CONTRACT.md) owns its distinct
-question/profile schemas, observation limits and placement accounting. API
-questions keep their existing path. Build and check it in a separate target folder:
+[development runtime contract](../docs/claude-code/CONTRACT.md) owns its
+question fields, profile schema, observation limits, placement accounting and
+[what help and human output must say](../docs/claude-code/CONTRACT.md#help-run-requirements-and-presentation).
+A question without `runtime-profile` keeps the Messages API path, and the
+scaffold is the same in both builds; `stewart help runtime` in the development
+build explains the difference. Build and check it in a separate target folder:
 
 ```sh
 CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-code
@@ -208,7 +220,9 @@ bound to the [launch surface](../docs/claude-code/CONTRACT.md#launch-surface)
 instead, so a rebuild that leaves the surface unchanged accepts an existing
 profile for new audits. A test in `src/claude_code/surface.rs` compares the
 surface with the contract's worked example byte for byte; a changed surface
-value needs that example and its digest changed too. Gated-build runs are
+value needs that example and its digest changed too; so does a changed pinned
+runtime text, which a test in `src/claude_code/arrangement.rs` compares with the
+contract's quoted blocks. Gated-build runs are
 development iteration and qualify neither the distributed binary nor a model.
 An observation under one credential route does not establish another route.
 

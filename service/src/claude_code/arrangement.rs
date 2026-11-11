@@ -7,10 +7,10 @@ use crate::json::{self, J, Obj};
 use crate::provider::request::Pinned;
 use crate::util;
 
-pub const ORIENTATION_ID: &str = "stewart.orientation/claude-code/1";
+pub const ORIENTATION_ID: &str = "stewart.orientation/claude-code/2";
 pub const NEAR_LIMIT: &str = "Allowance notice: {seconds} seconds remain before this placement's deadline, and {placements} further placement starts remain for this audit. When execution stops, an unsubmitted answer stays unsubmitted.";
-pub const COMPACTED: &str = "The harness reports that it summarized earlier conversation. Continue this audit from your recorded work; call what_am_i_working_with before repeating an action.";
-pub const FIRST_PARAGRAPH: &str = "You are the auditor in a Stewart audit. The first user message is the manager's question, exactly as they wrote it. Use only the commissioned question, captured materials and Stewart's MCP tools for this inquiry. Do not use shell, general file access, network retrieval, project execution or delegated auditors. Harness instructions and system messages are runtime context, not additional evidence. Reports, logs and test results in the materials are claims by their authors, not executions you witnessed.";
+pub const COMPACTED: &str = "The harness has summarized your earlier conversation. Continue this audit. Call what_am_i_working_with to check your recorded work before repeating an action.";
+pub const FIRST_PARAGRAPH: &str = "You are the auditor in a Stewart audit. The first user message is the manager's question, exactly as they wrote it. The materials they selected can be read with the list, read and search tools. The question and those materials are your whole world: use only Stewart's tools, with no shell, no other files, no network, no way to run code, no delegated auditors and no way to ask the manager anything. Harness instructions and system messages are runtime context, not additional evidence. Reports, logs and test results in the materials are claims by their authors, not executions you witnessed.";
 
 pub fn orientation() -> String {
     let rest = forms::ORIENTATION
@@ -343,6 +343,54 @@ mod tests {
             members.iter_mut().find(|(k, _)| k == key).unwrap().1 = value;
         }
         body
+    }
+
+    /// The runtime's pinned texts equal the contract's quoted blocks, read
+    /// from the repository as an independent witness and joined by the
+    /// QUESTION-FORMS rule. They differ from the common texts only as stated.
+    #[test]
+    fn runtime_texts_match_the_contract_and_stay_close_to_the_common_ones() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../docs/claude-code/CONTRACT.md"
+        );
+        let doc = std::fs::read_to_string(path)
+            .expect("docs/claude-code/CONTRACT.md is part of the repository");
+        let mut quoted: Vec<String> = Vec::new();
+        let mut block: Option<Vec<&str>> = None;
+        for line in doc.split('\n') {
+            match line.strip_prefix('>') {
+                Some(rest) => block
+                    .get_or_insert_with(Vec::new)
+                    .push(rest.strip_prefix(' ').unwrap_or(rest)),
+                None => {
+                    if let Some(lines) = block.take() {
+                        quoted.push(lines.join(" "));
+                    }
+                }
+            }
+        }
+        for text in [FIRST_PARAGRAPH, NEAR_LIMIT, COMPACTED] {
+            assert_eq!(quoted.iter().filter(|q| *q == text).count(), 1, "{text}");
+        }
+        assert_eq!(quoted.len(), 3, "every quoted block is a pinned text");
+        assert!(doc.contains(&format!("The orientation is `{ORIENTATION_ID}`.")));
+        // The post-compaction notice is the common one with one noun changed.
+        assert_eq!(
+            COMPACTED,
+            forms::COMPACTED.replace("The provider has", "The harness has")
+        );
+        // The orientation changes only its first paragraph, which keeps the
+        // common one's opening and closing sentences.
+        let (common_first, common_rest) = forms::ORIENTATION.split_once("\n\n").unwrap();
+        assert_eq!(orientation(), format!("{FIRST_PARAGRAPH}\n\n{common_rest}"));
+        for sentence in [
+            "The materials they selected can be read with the list, read and search tools.",
+            "no way to ask the manager anything.",
+            "Reports, logs and test results in the materials are claims by their authors, not executions you witnessed.",
+        ] {
+            assert!(common_first.contains(sentence) && FIRST_PARAGRAPH.contains(sentence));
+        }
     }
 
     #[test]

@@ -182,9 +182,12 @@ verified billing state.
 
 ## Development input and preparation schema
 
-The gated build admits `stewart: question/claude-code/1` in the existing front
-matter grammar. Common family, model, destination, guidance, effort, inquiry and
-varies fields retain their meanings. Replace all three `limit-*` fields with:
+There is one question version, `stewart: question/1`, in the existing front
+matter grammar. In the gated build a question selects this runtime by naming
+`runtime-profile`; a question without it is a Messages API question, read
+exactly as the common interface specifies. Common family, model, destination,
+guidance, effort, inquiry and varies fields retain their meanings. A runtime
+question replaces all three `limit-*` fields with:
 
 | Field | Required value |
 | --- | --- |
@@ -192,9 +195,78 @@ varies fields retain their meanings. Replace all three `limit-*` fields with:
 | `max-placements` | Integer 1–10,000, without leading zeros. |
 | `placement-timeout-seconds` | Integer 1–86,400, without leading zeros. |
 
-API limit fields on this profile refuse, even if their values are valid. Runtime
-fields on `question/1` refuse. The featureless build admits neither the new
-version nor its fields. Question body bytes and material selection do not change.
+With `runtime-profile`, both placement fields are required: a missing one is a
+`setting_missing` defect naming its key, as for any missing required key, and a
+value outside the table is `setting_invalid`. Each `limit-*` field is then a
+`setting_invalid` defect naming its key, even if its value is valid. Without
+`runtime-profile`, `max-placements` and `placement-timeout-seconds` are each a
+`setting_invalid` defect naming the key. Any other `stewart` value is refused
+as the common interface refuses it, with a diagnostic naming that value and
+`question/1`; no second version is read. The featureless build knows none of
+the three fields and refuses each as an unknown key. Question body bytes and
+material selection do not change.
+
+The scaffold that `new` writes is the common one, byte for byte, in both
+builds. The gated build's help says how to turn it into a runtime question.
+
+## Help, run requirements and presentation
+
+Help text, `run_needs`, summaries and other human output are prose, checked for
+presence and relevance as the common interface treats such text, not for exact
+bytes. This section states the facts each must carry.
+
+The gated build has one more help topic, `stewart help runtime`. Its overview
+lists `runtime` after the common topics on the topics line, and the
+unknown-topic diagnostic lists it too. The usage synopsis is the common one in
+both builds. The overview opens with a build notice that identifies the
+development build and points to `stewart help runtime`, not to a path in a
+source tree. The featureless build has neither the topic nor the notice, and
+`stewart help runtime` is an unknown topic there. The topic covers:
+
+- the scaffold change: keep `stewart: question/1` and replace the three
+  `limit-*` lines with `runtime-profile`, `max-placements` and
+  `placement-timeout-seconds`, with their meanings and bounds, and that the
+  presence of `runtime-profile` selects the runtime;
+- what the profile is: a nonsecret JSON file with its schema identifier that
+  pins the harness executable, its directories, the installation attestation
+  and a check naming the model, tools and launch surface, and that `prepare`
+  captures it and launches nothing;
+- how to learn the launch surface digest a check must name from a refused
+  `prepare`;
+- that login stays in the harness, with paid extra usage disabled, and that
+  `run` refuses `--key-fd` and credential environment variables and never falls
+  back to the Messages API;
+- that `run` starts one placement under the placement deadline, uses one of
+  the placement starts each time, stays in the foreground, and may leave usage
+  partial or unknown.
+
+`run_needs`, in commission and receipt replies for a runtime audit, is an array
+of four strings, in this order:
+
+1. explicit authority for this bounded placement, with no automatic restart;
+2. the pinned harness installation and its own subscription login, with paid
+   extra usage disabled;
+3. no credential argument or credential environment variable, and no API
+   fallback;
+4. that `run` stays in the foreground until the placement ends or reaches its
+   deadline, that callers with command timeouts should start it in the
+   background, and that usage may remain partial or unknown.
+
+JSON replies are unchanged by the following; they keep the exact captured
+profile text and every member the Messages path has, including
+`provider_url_override` and `provider_proxy`, which are null for a runtime
+audit.
+
+- Human `prepare` and `receipt` output shows the runtime's profile by its path
+  and by the SHA-256 of its captured text, the arrangement's `profile_sha256`.
+  It does not print the profile text.
+- The human summary of `status`, `run` and `close`, which is also
+  `data.summary`, states the placement starts used, allowed and remaining
+  together with the placement timeout in seconds.
+- Its usage and stopping statements agree in number with their counts: one
+  placement takes the singular (`1 placement has`, `1 placement`); zero,
+  several and unknown counts take the plural (`0 placements have`,
+  `2 placements`).
 
 The profile is strict control JSON, at most 64 KiB, read through no-follow
 directory/file descriptors. It has exactly `schema`, `launch`, `installation`
@@ -262,17 +334,18 @@ API arrangements, settings or receipts.
 
 ## Runtime texts
 
-The orientation is `stewart.orientation/claude-code/1`. Its first paragraph is
+The orientation is `stewart.orientation/claude-code/2`. Its first paragraph is
 the following, joined with single spaces; subsequent paragraphs are exactly
 the paragraphs after the first in `stewart.orientation/1`:
 
 > You are the auditor in a Stewart audit. The first user message is the
-> manager's question, exactly as they wrote it. Use only the commissioned
-> question, captured materials and Stewart's MCP tools for this inquiry.
-> Do not use shell, general file access, network retrieval, project execution
-> or delegated auditors. Harness instructions and system messages are runtime
-> context, not additional evidence. Reports, logs and test results in the
-> materials are claims by their authors, not executions you witnessed.
+> manager's question, exactly as they wrote it. The materials they selected can
+> be read with the list, read and search tools. The question and those
+> materials are your whole world: use only Stewart's tools, with no shell, no
+> other files, no network, no way to run code, no delegated auditors and no way
+> to ask the manager anything. Harness instructions and system messages are
+> runtime context, not additional evidence. Reports, logs and test results in
+> the materials are claims by their authors, not executions you witnessed.
 
 The reminder and continuation texts retain the common pinned meanings. The
 runtime's exact near-limit template is:
@@ -283,9 +356,9 @@ runtime's exact near-limit template is:
 
 The runtime's exact post-compaction notice is:
 
-> The harness reports that it summarized earlier conversation. Continue this
-> audit from your recorded work; call what_am_i_working_with before repeating
-> an action.
+> The harness has summarized your earlier conversation. Continue this audit.
+> Call what_am_i_working_with to check your recorded work before repeating an
+> action.
 
 The template values are observed whole seconds rounded down and unused placement
 slots. Publish the near-limit notice's and reminder's audit-wide claims before
@@ -535,16 +608,16 @@ line begins or ends with a space, and no break falls inside a string.
 "hook_replies":{"allow":{},"deny":{"hookSpecificOutput":{"hookEventName":"PreToolUse",
 "permissionDecision":"deny",
 "permissionDecisionReason":"Tool is outside the validated active commission."}}},
-"texts":{"orientation":"stewart.orientation/claude-code/1",
-"orientation_sha256":"2d12b500300537f665a3265c368f132794284bb543e9f5659decd5b2af439b82",
+"texts":{"orientation":"stewart.orientation/claude-code/2",
+"orientation_sha256":"ce0357e115a83092ebeb4b2e9ae34cd455120df26565d74bb5776c91746ed2bd",
 "reminder_sha256":"a863022bc2ca6682a1162aca9b402293efd296d2bc24669574d0308e193dcdda",
 "near_limit_sha256":"14dc131ac9bd703c9f8d945db4e78a98a2418b5b27d6535a4870e6ddf5a437d0",
 "continuation_sha256":"0cced8b9aae42fb09e5c321e64a44037413d0bd244b0e4d2e855e7d3ce850ac0",
-"compacted_sha256":"08dd7b07e1cb01dea350c3bd7c42bda0a55fc2b1439a089ff825a71f90cf67d4"}}
+"compacted_sha256":"976166dc9bf95de048376eedbe5b05e78192eebad57c97032b82f173f5059e17"}}
 ```
 
 Its SHA-256 is
-`bd49da58770c7115c39fe54fb784e31b3616449c9d14f63cc7c49c9474b6b755`.
+`e8182ecf0009ee1f3889b8e89902bec5eaef34c8bf4c079c2b78c34684780db5`.
 
 Values that vary by audit are pinned by the arrangement and are not part of the
 surface: the question body, the effective guidance, the materials, the limits

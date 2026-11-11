@@ -9,7 +9,6 @@ use crate::{ids, util};
 use sha2::{Digest, Sha256};
 use std::io::Read;
 
-pub const QUESTION_SCHEMA: &str = "question/claude-code/1";
 pub const PROFILE_SCHEMA: &str = "stewart.claude-code.profile/2";
 pub const ARRANGEMENT_SCHEMA: &str = "stewart.claude-code.arrangement/2";
 pub const SIGNER: &str = "31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE";
@@ -18,11 +17,10 @@ pub const MAX_PLACEMENTS: u64 = 10_000;
 pub const MAX_SECONDS: u64 = 86_400;
 pub const MAX_TURNS: u64 = 200;
 pub const MAX_OUTPUT_TOKENS: u64 = 16_000;
-pub const EXTRA_KEYS: [&str; 3] = [
-    "runtime-profile",
-    "max-placements",
-    "placement-timeout-seconds",
-];
+/// The front matter field whose presence selects this runtime, on the one
+/// question version. Without it a question is a Messages API question.
+pub const SELECTOR: &str = "runtime-profile";
+pub const EXTRA_KEYS: [&str; 3] = [SELECTOR, "max-placements", "placement-timeout-seconds"];
 
 pub fn frontmatter(
     fields: &[(String, String, usize)],
@@ -41,9 +39,16 @@ pub fn frontmatter(
         ));
     };
     if !selected {
+        // Without a profile this is a Messages API question; the placement
+        // fields have no meaning there.
         for key in EXTRA_KEYS {
             if get(key).is_some() {
-                invalid(key, "runtime fields require question/claude-code/1");
+                invalid(
+                    key,
+                    &format!(
+                        "{key} applies only to a question that names {SELECTOR}; without it the question uses limit-turns, limit-input-tokens and limit-output-tokens"
+                    ),
+                );
             }
         }
         return;
@@ -52,40 +57,51 @@ pub fn frontmatter(
         if get(key).is_some() {
             invalid(
                 key,
-                "API turn/token limits are not supported by this runtime; use placement limits",
+                &format!(
+                    "{key} is a Messages API limit; a question that names {SELECTOR} takes max-placements and placement-timeout-seconds instead"
+                ),
             );
         }
     }
-    let path = get("runtime-profile")
-        .map(|(_, v, _)| v.as_str())
-        .unwrap_or("");
+    let path = get(SELECTOR).map(|(_, v, _)| v.as_str()).unwrap_or("");
     if ids::check_absolute(path).is_err() {
-        invalid(
-            "runtime-profile",
-            "a runtime profile must be an absolute file path",
-        );
+        invalid(SELECTOR, "a runtime profile must be an absolute file path");
     }
-    let mut value = |key: &str, max: u64| {
-        let v = get(key).map(|(_, v, _)| v.as_str()).unwrap_or("");
+    let mut missing = Vec::new();
+    let mut value = |key: &'static str, max: u64| {
+        let Some((_, v, _)) = get(key) else {
+            missing.push(key);
+            return 0;
+        };
         match v.parse::<u64>() {
-            Ok(n) if n > 0 && n <= max && n.to_string() == v => n,
+            Ok(n) if n > 0 && n <= max && n.to_string() == *v => n,
             _ => {
                 invalid(
                     key,
-                    &format!(
-                        "{key} is required, as an integer from 1 to {max} without leading zeros"
-                    ),
+                    &format!("{key} must be an integer from 1 to {max} without leading zeros"),
                 );
                 0
             }
         }
     };
+    let limits = Limits {
+        max_placements: value("max-placements", MAX_PLACEMENTS),
+        placement_timeout_seconds: value("placement-timeout-seconds", MAX_SECONDS),
+    };
+    // A missing placement field is reported as any missing required key is.
+    for key in missing {
+        defects.push(Defect::new(
+            "setting_missing",
+            None,
+            Some(key),
+            format!(
+                "the required key {key} is missing from the front matter; a question that names {SELECTOR} needs it."
+            ),
+        ));
+    }
     settings.harness = Some(Selection {
         path: path.into(),
-        limits: Limits {
-            max_placements: value("max-placements", MAX_PLACEMENTS),
-            placement_timeout_seconds: value("placement-timeout-seconds", MAX_SECONDS),
-        },
+        limits,
         profile: None,
     });
 }
@@ -144,6 +160,33 @@ impl Selection {
             limits: Limits::decode(limits)?,
             profile: Some(profile.into()),
         })
+    }
+}
+
+/// Reply data as people read it: wherever a runtime selection appears, its
+/// captured profile text is replaced by that text's SHA-256, beside the path.
+/// The digest is the arrangement's `profile_sha256`. JSON replies are not
+/// passed through here and keep the exact text.
+pub fn for_people(data: &J) -> J {
+    match data {
+        J::Obj(members) => {
+            let selection = matches!(data.get("kind"), Some(J::Str(k)) if k == "claude-code/1")
+                && data.get("profile_path").is_some();
+            J::Obj(
+                members
+                    .iter()
+                    .map(|(key, value)| match value {
+                        J::Str(text) if selection && key == "profile" => (
+                            "profile_sha256".to_string(),
+                            J::Str(util::sha256_hex(text.as_bytes())),
+                        ),
+                        _ => (key.clone(), for_people(value)),
+                    })
+                    .collect(),
+            )
+        }
+        J::Arr(items) => J::Arr(items.iter().map(for_people).collect()),
+        other => other.clone(),
     }
 }
 
@@ -380,6 +423,38 @@ pub(crate) mod tests {
         // The other bindings still refuse on their own.
         assert!(profile.bindings(&own, "another-model", b"[]").is_err());
         assert!(profile.bindings(&own, "fixture-model", b"[{}]").is_err());
+    }
+
+    #[test]
+    fn people_see_the_profile_path_and_digest_not_its_text() {
+        let text = fixture(PROFILE_SCHEMA, "surface_sha256", &surface::sha256(), b"[]");
+        let selection = Selection {
+            path: "/fixture/profile.json".into(),
+            limits: Limits {
+                max_placements: 2,
+                placement_timeout_seconds: 60,
+            },
+            profile: Some(text.clone()),
+        };
+        let data = J::obj().with("prepared", "mp1.aaaaaa").with(
+            "settings",
+            J::obj()
+                .with("model", "fixture-model")
+                .with("runtime", selection.to_j()),
+        );
+        let shown = for_people(&data).string();
+        assert!(shown.contains(r#""profile_path":"/fixture/profile.json""#));
+        assert!(shown.contains(&format!(
+            r#""profile_sha256":"{}""#,
+            util::sha256_hex(text.as_bytes())
+        )));
+        assert!(!shown.contains("installation") && !shown.contains(r#""profile":"#));
+        // The reply itself is untouched and keeps the exact text.
+        assert!(data.string().contains(&crate::json::quote(&text)));
+        // Invariance: data without a runtime selection is shown as it is,
+        // including a member that merely shares the name.
+        let other = J::obj().with("settings", J::obj().with("profile", "kept"));
+        assert_eq!(for_people(&other), other);
     }
 
     #[test]

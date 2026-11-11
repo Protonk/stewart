@@ -327,7 +327,7 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
     #[cfg(feature = "claude-code")]
     let is_harness = fields
         .iter()
-        .any(|(k, v, _)| k == "stewart" && v == crate::claude_code::profile::QUESTION_SCHEMA);
+        .any(|(k, _, _)| k == crate::claude_code::profile::SELECTOR);
     #[cfg(not(feature = "claude-code"))]
     let is_harness = false;
     let mut defects = Vec::new();
@@ -356,7 +356,7 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
         varies: None,
     };
     if let Some((v, l)) = get("stewart") {
-        if v != "question/1" && !is_harness {
+        if v != "question/1" {
             invalid(
                 "stewart",
                 l,
@@ -576,6 +576,115 @@ mod tests {
         assert_eq!(q.settings.turns, 200);
         assert_eq!(q.settings.family, "open-inquiry");
         assert_eq!(q.line_ending, "LF");
+    }
+
+    /// The development runtime's three fields. The release build knows none
+    /// of them; the development build reads them on the one question version.
+    const RUNTIME: &str = "---\nstewart: question/1\nfamily: open-inquiry\nmodel: claude-opus-5-5\ndestination: /home/ana/returns\nruntime-profile: /home/ana/profile.json\nmax-placements: 3\nplacement-timeout-seconds: 600\n---\nAudit our app to make sure there are no bugs.\n";
+
+    #[cfg(not(feature = "claude-code"))]
+    #[test]
+    fn the_release_build_knows_no_runtime_field_or_version() {
+        let defects = parse(RUNTIME.as_bytes()).unwrap_err();
+        assert_eq!(defects.len(), 1);
+        assert_eq!(defects[0].reason, "front_matter_invalid");
+        assert_eq!(defects[0].key.as_deref(), Some("runtime-profile"));
+        // Each field alone beside the ordinary limits is equally unknown.
+        for key in [
+            "runtime-profile",
+            "max-placements",
+            "placement-timeout-seconds",
+        ] {
+            let line = RUNTIME
+                .lines()
+                .find(|l| l.starts_with(key))
+                .expect("fixture line");
+            let one = GOOD.replace("limit-turns: 200\n", &format!("limit-turns: 200\n{line}\n"));
+            let defects = parse(one.as_bytes()).unwrap_err();
+            assert_eq!(defects.len(), 1, "{key}");
+            assert_eq!(defects[0].reason, "front_matter_invalid", "{key}");
+            assert_eq!(defects[0].key.as_deref(), Some(key));
+            assert!(defects[0].message.contains("unknown key"), "{key}");
+        }
+        let version = GOOD.replace("stewart: question/1", "stewart: question/claude-code/1");
+        let defects = parse(version.as_bytes()).unwrap_err();
+        assert_eq!(defects.len(), 1);
+        assert_eq!(defects[0].reason, "setting_invalid");
+        assert_eq!(defects[0].key.as_deref(), Some("stewart"));
+        // Invariance: the ordinary question still parses.
+        assert!(parse(GOOD.as_bytes()).is_ok());
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn the_profile_field_selects_the_runtime_on_the_one_version() {
+        let q = parse(RUNTIME.as_bytes()).unwrap();
+        let selected = q.settings.harness.expect("runtime selected");
+        assert_eq!(selected.path, "/home/ana/profile.json");
+        assert_eq!(selected.limits.max_placements, 3);
+        assert_eq!(selected.limits.placement_timeout_seconds, 600);
+        // Invariance: without the field the question is a Messages question.
+        let q = parse(GOOD.as_bytes()).unwrap();
+        assert!(q.settings.harness.is_none());
+        assert_eq!(q.settings.turns, 200);
+
+        let defects = |text: &str| -> Vec<(&'static str, Option<String>, String)> {
+            parse(text.as_bytes())
+                .unwrap_err()
+                .into_iter()
+                .map(|d| (d.reason, d.key, d.message))
+                .collect()
+        };
+        // The removed version refuses by name, with or without runtime fields.
+        for text in [RUNTIME, GOOD] {
+            let found =
+                defects(&text.replace("stewart: question/1", "stewart: question/claude-code/1"));
+            assert_eq!(found.len(), 1, "{found:?}");
+            assert_eq!(found[0].0, "setting_invalid");
+            assert_eq!(found[0].1.as_deref(), Some("stewart"));
+            assert!(
+                found[0].2.contains("question/claude-code/1")
+                    && found[0].2.contains("exactly question/1"),
+                "{found:?}"
+            );
+        }
+        // Each API limit beside a profile refuses, although its value is valid.
+        for limit in [
+            "limit-turns: 200",
+            "limit-input-tokens: 20000000",
+            "limit-output-tokens: 400000",
+        ] {
+            let key = limit.split(':').next().unwrap();
+            let found = defects(&RUNTIME.replace(
+                "max-placements: 3\n",
+                &format!("max-placements: 3\n{limit}\n"),
+            ));
+            assert_eq!(found.len(), 1, "{found:?}");
+            assert_eq!(found[0].0, "setting_invalid");
+            assert_eq!(found[0].1.as_deref(), Some(key));
+        }
+        // Each placement field without a profile refuses.
+        for line in ["max-placements: 3", "placement-timeout-seconds: 600"] {
+            let key = line.split(':').next().unwrap();
+            let found = defects(
+                &GOOD.replace("limit-turns: 200\n", &format!("limit-turns: 200\n{line}\n")),
+            );
+            assert_eq!(found.len(), 1, "{found:?}");
+            assert_eq!(found[0].0, "setting_invalid");
+            assert_eq!(found[0].1.as_deref(), Some(key));
+            assert!(found[0].2.contains("runtime-profile"), "{found:?}");
+        }
+        // A missing placement field is a missing required key; a bad one is invalid.
+        let found = defects(&RUNTIME.replace("max-placements: 3\n", ""));
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].0, "setting_missing");
+        assert_eq!(found[0].1.as_deref(), Some("max-placements"));
+        let found = defects(&RUNTIME.replace("-seconds: 600", "-seconds: 0600"));
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert_eq!(found[0].0, "setting_invalid");
+        assert_eq!(found[0].1.as_deref(), Some("placement-timeout-seconds"));
+        // The scaffold is the common one and names no runtime field.
+        assert!(!scaffold().contains("runtime") && !scaffold().contains("placement"));
     }
 
     #[test]

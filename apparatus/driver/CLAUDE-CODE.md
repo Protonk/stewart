@@ -58,7 +58,15 @@ the invalid-startup checks, with malformed and duplicate-member controls.
 
 The cases exercise all three question families, exact transformed MCP schemas
 and pinned texts, profile/check binding refusals, strict JSON and profile path
-controls, placement bounds, API-field rejection and captured receipt readback.
+controls, and captured receipt readback. Field cases cover the one question
+version: placement bounds, a missing placement field, a Messages limit beside a
+profile, a placement field without one, and the removed version refused by
+name. Help and presentation cases check the build notice, the runtime topic's
+stated facts, the four run requirements, the summary's placement facts and
+agreement in number, and that human output names the profile by path and digest
+without printing its text. With a featureless binary, the runtime fields are
+unknown keys, the topic and notice are absent, and both builds write the same
+scaffold.
 Invariance cases change outer profile whitespace, manager HOME/CWD and accepted
 source files.
 
@@ -80,6 +88,11 @@ inventory checks detect changes or removals of earlier records around synchronou
 manager commands. The owner-death, missing-stop and recorder-failure cases
 separately witness the process or archive state they deliberately alter.
 Runtime controls include successful auditor submission and verified delivery,
+followed by an ordinary close that leaves the delivered package unchanged and
+admits no further launch. An ordinary-ending case ends two turns without
+submitting: it witnesses the single reminder as the second input, reports only
+the later of two cumulative usage checkpoints, refuses another run, and closes
+through a manager seal and a confirmed placement. Further controls cover
 attempted authoring before startup followed by delayed valid and mismatched-model
 startup controls, interrupted work followed by a fresh session, placement exhaustion,
 deadline and owner-death stopping with a resistant descendant, and API credential
@@ -98,8 +111,8 @@ witnessed outside the archive. Missing final checkpoints must remain unknown.
 
 Relay stopping is observed as part of model exit and owner death; there is no
 separate relay-disconnect case with the model still running. The suite does not
-exercise end-to-end MCP cancellation, compaction or valid final-checkpoint usage
-accounting. Of the launch surface, the hook helper's replies and the effort
+exercise end-to-end MCP cancellation, compaction, or usage checkpoints across
+more than one placement. Of the launch surface, the hook helper's replies and the effort
 arguments are named by the digest but not exercised: the synthetic harness
 calls no hook and no case selects an effort. `run`'s own re-verification of a
 pinned surface has no black-box firing control, because one binary cannot hold

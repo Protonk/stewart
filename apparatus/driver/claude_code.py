@@ -45,13 +45,15 @@ from rawjson import compact, parse
 
 FIRST_PARAGRAPH = (
     "You are the auditor in a Stewart audit. The first user message is the "
-    "manager's question, exactly as they wrote it. Use only the commissioned "
-    "question, captured materials and Stewart's MCP tools for this inquiry. "
-    "Do not use shell, general file access, network retrieval, project execution "
-    "or delegated auditors. Harness instructions and system messages are runtime "
-    "context, not additional evidence. Reports, logs and test results in the "
-    "materials are claims by their authors, not executions you witnessed."
+    "manager's question, exactly as they wrote it. The materials they selected can "
+    "be read with the list, read and search tools. The question and those "
+    "materials are your whole world: use only Stewart's tools, with no shell, no "
+    "other files, no network, no way to run code, no delegated auditors and no way "
+    "to ask the manager anything. Harness instructions and system messages are "
+    "runtime context, not additional evidence. Reports, logs and test results in "
+    "the materials are claims by their authors, not executions you witnessed."
 )
+ORIENTATION_ID = "stewart.orientation/claude-code/2"
 RUNTIME_ORIENTATION = FIRST_PARAGRAPH + "\n\n" + ORIENTATION.split("\n\n", 1)[1]
 NEAR_LIMIT = (
     "Allowance notice: {seconds} seconds remain before this placement's deadline, "
@@ -59,9 +61,9 @@ NEAR_LIMIT = (
     "stops, an unsubmitted answer stays unsubmitted."
 )
 COMPACTED = (
-    "The harness reports that it summarized earlier conversation. Continue this "
-    "audit from your recorded work; call what_am_i_working_with before repeating "
-    "an action."
+    "The harness has summarized your earlier conversation. Continue this audit. "
+    "Call what_am_i_working_with to check your recorded work before repeating an "
+    "action."
 )
 TEXTS = {"reminder": REMINDER, "near_limit": NEAR_LIMIT,
          "continuation": CONTINUATION, "compacted": COMPACTED}
@@ -69,6 +71,14 @@ SIGNER = "31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE"
 MODEL = "synthetic-offline-model"
 CANARY = b'#!/bin/sh\nprintf "unexpected local launch\\n" > "$0.started"\nexit 97\n'
 ACCOUNT = "The supplied report claims success. This synthetic auditor did not witness execution.\n"
+# Two cumulative main-loop checkpoints for one synthetic session. Only the
+# later one may be reported; their sum must never appear.
+CHECKPOINTS = (
+    {"num_turns": 2, "usage": {"input_tokens": 11, "cache_creation_input_tokens": 120,
+                               "cache_read_input_tokens": 300, "output_tokens": 40}},
+    {"num_turns": 3, "usage": {"input_tokens": 17, "cache_creation_input_tokens": 120,
+                               "cache_read_input_tokens": 950, "output_tokens": 65}},
+)
 PROFILE_SCHEMA = "stewart.claude-code.profile/2"
 ARRANGEMENT_SCHEMA = "stewart.claude-code.arrangement/2"
 SURFACE_SCHEMA = "stewart.claude-code.surface/1"
@@ -88,10 +98,12 @@ CASES = (
     ("surface-binding", "A check naming another surface, or an earlier profile form, refuses with the exact surface"),
     ("surface-two-builds", "Optional second build: same profile accepted by both writers; audits stay with their writer"),
     ("profile-input", "Strict profile JSON, bounds, regular-file and no-follow controls"),
-    ("limit-fields", "Placement bounds; API fields and runtime fields on question/1 refuse"),
+    ("limit-fields", "One question version: placement bounds, mixed limit fields and the removed version refuse"),
+    ("help-and-presentation", "Runtime help topic and notice; human output shows the profile by path and digest"),
     ("source-invariance", "Receipt stays captured after source/profile edits and CWD/HOME changes"),
-    ("release-gate", "Optional featureless binary refuses the new version and runtime fields"),
+    ("release-gate", "Optional featureless binary: runtime fields unknown, no topic or notice, same scaffold"),
     ("runtime-submit", "Actual MCP record/prepare/submit, faithful delivery and fresh-session invariance"),
+    ("runtime-ordinary-ending", "Unsubmitted turns, one reminder, a valid usage checkpoint, manager seal and confirmed close"),
     ("runtime-init-control", "Attempted authoring before a mismatched startup never changes the answer"),
     ("runtime-interruption", "Interrupted work and unknown usage continue in a fresh session without duplication"),
     ("runtime-deadline", "Deadline terminates the synthetic harness and its resistant descendant group"),
@@ -174,7 +186,7 @@ def surface_document():
         "hook_replies": {"allow": {}, "deny": {"hookSpecificOutput": {
             "hookEventName": "PreToolUse", "permissionDecision": "deny",
             "permissionDecisionReason": "Tool is outside the validated active commission."}}},
-        "texts": {"orientation": "stewart.orientation/claude-code/1",
+        "texts": {"orientation": ORIENTATION_ID,
                   "orientation_sha256": text_sha(RUNTIME_ORIENTATION),
                   "reminder_sha256": text_sha(REMINDER),
                   "near_limit_sha256": text_sha(NEAR_LIMIT),
@@ -451,6 +463,27 @@ class Driver:
         self.eq(label + ".exit", process.returncode, expected_exit)
         return reply
 
+    def plain(self, label, args, binary=None):
+        """Run a command for its human output; keep exact argv, stdout and stderr."""
+        self.serial += 1
+        prefix = "%04d-%s" % (self.serial, label)
+        argv = [str(binary or self.binary)] + [str(x) for x in args]
+        starts_before = {str(p): p.read_bytes() if p.exists() else None for p in self.canaries}
+        process = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 env=self.env, cwd=self.cwd, timeout=30)
+        (self.commands / (prefix + ".stdout")).write_bytes(process.stdout)
+        (self.commands / (prefix + ".stderr")).write_bytes(process.stderr)
+        self.save("commands/" + prefix + ".json", {"argv": argv, "exit": process.returncode})
+        self.eq(label + ".no-harness-start",
+                {str(p): p.read_bytes() if p.exists() else None for p in self.canaries}, starts_before)
+        return process.returncode, process.stdout.decode("utf-8", "replace"), process.stderr.decode("utf-8", "replace")
+
+    def facts(self, label, text, words):
+        """Presence and relevance: each stated fact's words appear, case-insensitively."""
+        lowered = text.lower()
+        for word in words:
+            self.check(label + ".states." + word.replace(" ", "-")[:32], word.lower() in lowered, text[:600])
+
     def fixture(self, label, family="open-inquiry", binary=None, scenario=None, timeout=600, placements=3):
         root = self.work / label
         root.mkdir()
@@ -502,7 +535,7 @@ class Driver:
         profile_path.write_bytes(profile)
         body = b"Inspect only the selected report. It is a supplied claim.\r\nKeep uncertainty explicit.\n"
         material = "Supplied report: café passed.\r\nThis is not an observed execution.\n".encode()
-        fields = {"stewart": "question/claude-code/1", "family": family, "model": MODEL,
+        fields = {"stewart": "question/1", "family": family, "model": MODEL,
                   "destination": str(destination), "runtime-profile": str(profile_path),
                   "max-placements": str(placements), "placement-timeout-seconds": str(timeout)}
         (folder / "materials" / "report.txt").write_bytes(material)
@@ -546,7 +579,7 @@ class Driver:
         obj = strict_loads(node.raw)
         self.eq(label + ".keys", sorted(obj), sorted(ARRANGEMENT_KEYS))
         expected = {"schema": ARRANGEMENT_SCHEMA, "model": MODEL,
-                    "orientation": "stewart.orientation/claude-code/1",
+                    "orientation": ORIENTATION_ID,
                     "system_prompt": RUNTIME_ORIENTATION + "\n\n" + FAMILY_TEXT[f["family"]],
                     "runtime": {"kind": "claude-code/1", "profile_path": str(f["profile_path"]),
                                 "profile": f["profile"].decode()},
@@ -591,11 +624,19 @@ class Driver:
                          ["commission", f["reference"], prepared["data"]["prepared"], "--i-am-finished"])
         self.require(f["label"] + ".accepted", reply.get("outcome") == "completed", reply)
         self.eq(f["label"] + ".acceptance", reply.get("effects", {}).get("acceptance"), "accepted")
-        run_needs = json.dumps(reply.get("data", {}).get("run_needs", []))
+        needs = reply.get("data", {}).get("run_needs", [])
+        run_needs = json.dumps(needs)
         self.check(f["label"] + ".no-api-credential-request",
                    "ANTHROPIC_API_KEY" not in run_needs and "--key-fd" not in run_needs, run_needs)
+        self.require(f["label"] + ".run-needs-four", isinstance(needs, list) and len(needs) == 4
+                     and all(isinstance(item, str) for item in needs), needs)
+        for index, words in enumerate((("authority", "restart"), ("harness", "login", "extra usage"),
+                                       ("credential", "fallback"),
+                                       ("foreground", "deadline", "background", "unknown"))):
+            self.facts(f["label"] + ".run-needs-%d" % (index + 1), needs[index], words)
         receipt = self.cmd(f["label"] + ".receipt", ["receipt", f["reference"], "--verify"])
         self.eq(f["label"] + ".receipt-settings", receipt["data"].get("settings"), prepared["data"]["settings"])
+        self.eq(f["label"] + ".receipt-run-needs", receipt["data"].get("run_needs"), needs)
         for item, expected in (("question-file", (f["witness"] / "question-file").read_bytes()),
                                ("question-body", (f["witness"] / "question-body").read_bytes()),
                                ("materials/report.txt", (f["witness"] / "report.txt").read_bytes()),
@@ -613,7 +654,30 @@ class Driver:
                 {"runtime": "claude-code/1", "placements": {"used": 0, "limit": f["limits"]["max_placements"],
                  "remaining": f["limits"]["max_placements"]},
                  "placement_timeout_seconds": f["limits"]["placement_timeout_seconds"], "usage": usage})
+        for key in ("provider_url_override", "provider_proxy"):
+            self.check(f["label"] + ".common-member." + key,
+                       key in status_reply["data"] and status_reply["data"][key] is None,
+                       status_reply["data"].get(key, "absent"))
+        self.summary_facts(f["label"] + ".summary", status_reply["data"].get("summary"), f, 0)
         return receipt, status_reply, raw
+
+    def summary_facts(self, label, summary, f, used):
+        """The human summary's placement facts and its agreement in number."""
+        if not self.check(label + ".text", isinstance(summary, str), summary):
+            return
+        limits = f["limits"]
+        timeout = limits["placement_timeout_seconds"]
+        self.check(label + ".timeout", re.search(r"\b%d seconds?\b" % timeout, summary) is not None, summary)
+        for name, value in (("used", used), ("allowed", limits["max_placements"]),
+                            ("remaining", limits["max_placements"] - used)):
+            self.check(label + ".starts-" + name, re.search(r"\b%d\b" % value, summary) is not None, summary)
+        self.check(label + ".number-agreement",
+                   re.search(r"\b1 placements\b|\b1 have\b|\b(?:0|[2-9]|[1-9][0-9]+) placement has\b", summary) is None,
+                   summary)
+        if used == 1:
+            self.check(label + ".singular", re.search(r"\b1 placement\b", summary) is not None, summary)
+        else:
+            self.check(label + ".plural", re.search(r"\b%d placements\b" % used, summary) is not None, summary)
 
     def families(self):
         for family in FAMILY_TEXT:
@@ -827,27 +891,98 @@ class Driver:
                 self.question(f, dict(f["fields"], **{key: value}))
                 reply = self.prepare(f, key + "-" + value, "refused")
                 self.control(key + "-" + value, reply.get("outcome") == "refused")
+                self.defect("limit-fields." + key + "-" + value, reply, "setting_invalid", key)
             fields = dict(f["fields"])
             del fields[key]
             self.question(f, fields)
             reply = self.prepare(f, key + "-missing", "refused")
             self.control(key + "-missing", reply.get("outcome") == "refused")
+            self.defect("limit-fields." + key + "-missing", reply, "setting_missing", key)
+        # A runtime question admits no Messages limit, even a valid one.
         for key in ("limit-turns", "limit-input-tokens", "limit-output-tokens"):
             self.question(f, dict(f["fields"], **{key: "200"}))
             reply = self.prepare(f, key, "refused")
             self.control(key, reply.get("outcome") == "refused")
+            self.defect("limit-fields." + key, reply, "setting_invalid", key)
+        # The removed version is refused by name; restoring only that line prepares.
+        removed = "question/claude-code/1"
+        self.question(f, dict(f["fields"], stewart=removed))
+        reply = self.prepare(f, "removed-version", "refused")
+        self.control("removed-question-version", reply.get("outcome") == "refused")
+        for value in (removed, "question/1"):
+            self.check("limit-fields.removed-version.names." + value, value in (reply.get("message") or ""),
+                       reply.get("message"))
+        self.question(f)
+        self.prepare(f, "version-restored")
         fields = {key: value for key, value in f["fields"].items()
                   if key not in ("runtime-profile", "max-placements", "placement-timeout-seconds")}
         fields.update({"stewart": "question/1", "limit-turns": "200",
                        "limit-input-tokens": "20000000", "limit-output-tokens": "400000"})
         self.question(f, fields)
         self.prepare(f, "api-positive")
-        for key in ("runtime-profile", "max-placements", "placement-timeout-seconds"):
+        # Naming the profile makes it a runtime question, which these limits then defeat.
+        self.question(f, dict(fields, **{"runtime-profile": f["fields"]["runtime-profile"]}))
+        reply = self.prepare(f, "runtime-profile-with-limits", "refused")
+        self.control("runtime-profile-with-limits", reply.get("outcome") == "refused")
+        # Without the profile, a placement field has nothing to bound.
+        for key in ("max-placements", "placement-timeout-seconds"):
             self.question(f, dict(fields, **{key: f["fields"][key]}))
-            reply = self.prepare(f, key + "-on-api", "refused")
-            self.control(key + "-on-api", reply.get("outcome") == "refused")
+            reply = self.prepare(f, key + "-without-profile", "refused")
+            self.control(key + "-without-profile", reply.get("outcome") == "refused")
+            self.defect("limit-fields." + key + "-without-profile", reply, "setting_invalid", key)
         self.question(f)
         self.prepare(f, "restored")
+
+    def defect(self, label, reply, reason, key):
+        self.eq(label + ".reason", reply.get("reason"), reason)
+        self.check(label + ".names-key", key in (reply.get("message") or ""), reply.get("message"))
+
+    def help_and_presentation(self):
+        # The build notice and the added topic.
+        status, overview, _ = self.plain("help.overview", ["help"])
+        self.eq("help.overview-exit", status, 0)
+        notice = overview.split("\n\n", 1)[0]
+        self.check("help.notice-points-to-topic", "stewart help runtime" in notice, notice)
+        self.check("help.notice-names-no-source-path", "/" not in notice and ".md" not in notice, notice)
+        topics = [line for line in overview.splitlines() if line.startswith("Topics:")]
+        self.check("help.topics-line", len(topics) == 1 and topics[0].rstrip().endswith("runtime")
+                   and all(name in topics[0] for name in ("commands", "forms", "limits", "reader", "close")),
+                   topics)
+        status, topic, _ = self.plain("help.runtime", ["help", "runtime"])
+        self.eq("help.runtime-exit", status, 0)
+        self.facts("help.runtime", topic, (
+            "question/1", "limit-", "runtime-profile", "max-placements", "placement-timeout-seconds",
+            PROFILE_SCHEMA, "executable", "check", "surface", "prepare",
+            "login", "extra usage", "--key-fd", "Messages API", "foreground", "deadline", "unknown"))
+        for name, bound in (("max-placements", "10,?000"), ("placement-timeout-seconds", "86,?400")):
+            self.check("help.runtime.bound." + name, re.search(r"\b1\b.{0,12}\b" + bound + r"\b", topic) is not None,
+                       topic[:900])
+        status, _, complaint = self.plain("help.unknown-topic", ["help", "no-such-topic"])
+        self.check("help.unknown-topic-refused", status != 0, status)
+        self.check("help.unknown-topic-lists-runtime", "runtime" in complaint, complaint)
+        self.control("unknown-help-topic", status != 0)
+        # Human preparation and receipt name the profile by path and digest only.
+        f = self.fixture("presentation")
+        digest = sha(f["profile"])
+        status, shown, _ = self.plain("presentation.prepare", ["prepare", f["reference"]])
+        self.eq("presentation.prepare-exit", status, 0)
+        prepared = self.prepare(f, "prepare-json")
+        self.eq("presentation.json-keeps-profile-text",
+                prepared["data"]["settings"].get("runtime", {}).get("profile"), f["profile"].decode())
+        reply = self.cmd("presentation.commission",
+                         ["commission", f["reference"], prepared["data"]["prepared"], "--i-am-finished"])
+        self.require("presentation.accepted", reply.get("outcome") == "completed", reply)
+        status, receipt, _ = self.plain("presentation.receipt", ["receipt", f["reference"]])
+        self.eq("presentation.receipt-exit", status, 0)
+        for name, text in (("prepare", shown), ("receipt", receipt)):
+            self.check("presentation.%s.profile-path" % name, str(f["profile_path"]) in text, text[:800])
+            self.check("presentation.%s.profile-digest" % name, digest in text, text[:800])
+            for fragment in ('"installation"', SIGNER, '"evidence_sha256"'):
+                self.check("presentation.%s.no-profile-text.%s" % (name, fragment.strip('"')[:16]),
+                           fragment not in text, fragment)
+        status, summary, _ = self.plain("presentation.status", ["status", f["reference"]])
+        self.eq("presentation.status-exit", status, 0)
+        self.summary_facts("presentation.status", summary, f, 0)
 
     def source_invariance(self):
         f = self.fixture("source-invariance")
@@ -877,8 +1012,9 @@ class Driver:
         if self.release is None:
             return "--release-binary was not supplied; featureless rejection not checked"
         f = self.fixture("release-gate", binary=self.release)
-        reply = self.cmd("release-gate.version", ["prepare", f["reference"]], "refused", binary=self.release)
-        self.control("featureless-version", reply.get("outcome") == "refused")
+        reply = self.cmd("release-gate.runtime-question", ["prepare", f["reference"]], "refused", binary=self.release)
+        self.control("featureless-runtime-question", reply.get("outcome") == "refused")
+        self.eq("release-gate.runtime-question.reason", reply.get("reason"), "front_matter_invalid")
         fields = {key: value for key, value in f["fields"].items()
                   if key not in ("runtime-profile", "max-placements", "placement-timeout-seconds")}
         fields.update({"stewart": "question/1", "limit-turns": "200",
@@ -889,6 +1025,29 @@ class Driver:
             self.question(f, dict(fields, **{key: f["fields"][key]}))
             reply = self.cmd("release-gate." + key, ["prepare", f["reference"]], "refused", binary=self.release)
             self.control("featureless-" + key, reply.get("outcome") == "refused")
+            self.defect("release-gate." + key, reply, "front_matter_invalid", key)
+        self.question(f, dict(fields, stewart="question/claude-code/1"))
+        reply = self.cmd("release-gate.removed-version", ["prepare", f["reference"]], "refused", binary=self.release)
+        self.control("featureless-removed-version", reply.get("outcome") == "refused")
+        # No topic and no notice in the featureless build; the same scaffold in both.
+        status, overview, _ = self.plain("release-gate.help", ["help"], binary=self.release)
+        self.eq("release-gate.help-exit", status, 0)
+        self.check("release-gate.no-notice", "runtime" not in overview and "claude" not in overview.lower(),
+                   overview[:400])
+        status, _, _ = self.plain("release-gate.help-runtime", ["help", "runtime"], binary=self.release)
+        self.check("release-gate.no-runtime-topic", status != 0, status)
+        self.control("featureless-no-runtime-topic", status != 0)
+        scaffolds = {}
+        for name, binary in (("development", self.binary), ("featureless", self.release)):
+            folder = self.work / ("scaffold-" + name)
+            reply = self.cmd("release-gate.scaffold-" + name,
+                             ["new", folder, "--archive", self.work / ("scaffold-archive-" + name)], binary=binary)
+            self.require("release-gate.scaffold-" + name + ".created", reply.get("outcome") == "completed", reply)
+            scaffolds[name] = {str(path.relative_to(folder)): path.read_bytes().hex()
+                               for path in sorted(folder.rglob("*")) if path.is_file()}
+        self.check("release-gate.scaffold-nonempty", "question.md" in scaffolds["development"],
+                   sorted(scaffolds["development"]))
+        self.eq("release-gate.same-scaffold", scaffolds["development"], scaffolds["featureless"])
 
     def harness_events(self, f):
         path = f["witness"] / "harness.jsonl"
@@ -958,6 +1117,7 @@ class Driver:
         status_reply = self.cmd(f["label"] + ".runtime-status", ["status", f["reference"]])
         usage = status_reply["data"].get("allowances", {}).get("usage", {})
         self.eq(f["label"] + ".reserved", usage.get("placements"), placements)
+        self.summary_facts(f["label"] + ".runtime-summary", status_reply["data"].get("summary"), f, placements)
         self.eq(f["label"] + ".provider-completeness", usage.get("provider_completeness"), "unverified")
         if not terminal:
             self.eq(f["label"] + ".unknown-intervals", usage.get("unknown_intervals"), placements)
@@ -993,9 +1153,9 @@ class Driver:
                 self.check(f["label"] + ".stop." + key, type(record.get(key)) is int and record[key] >= 0, record)
         return live
 
-    def check_delivery(self, f, status_reply):
+    def check_delivery(self, f, status_reply, actor="auditor"):
         data = status_reply["data"]
-        self.eq(f["label"] + ".auditor-seal", data.get("seal", {}).get("actor"), "auditor")
+        self.eq(f["label"] + "." + actor + "-seal", data.get("seal", {}).get("actor"), actor)
         delivery = data.get("headline", {}).get("delivered", {})
         self.require(f["label"] + ".verified-delivery", delivery.get("verified") is True, delivery)
         package = Path(delivery["location"])
@@ -1004,6 +1164,112 @@ class Driver:
                                "text": ACCOUNT, "citations": []}) + b']}\n')
         (f["witness"] / "expected-answer.json").write_bytes(expected)
         self.eq(f["label"] + ".faithful-answer", (package / "answer.json").read_bytes().decode(), expected.decode())
+        return package
+
+    def package_identity(self, package):
+        return {path.name: sha(path.read_bytes()) for path in sorted(package.iterdir())}
+
+    def runtime_allowances(self, label, data, used, f):
+        allowances = data.get("allowances") or {}
+        self.eq(label + ".allowances-runtime", allowances.get("runtime"), "claude-code/1")
+        self.eq(label + ".allowances-placements", allowances.get("placements"),
+                {"used": used, "limit": f["limits"]["max_placements"],
+                 "remaining": f["limits"]["max_placements"] - used})
+        self.check(label + ".no-api-allowances",
+                   not {"turns", "input_tokens", "output_tokens"} & set(allowances), sorted(allowances))
+
+    def launch_count(self, f):
+        return sum(e["event"] == "launch" for e in self.harness_events(f))
+
+    def close_after_delivery(self, f, package):
+        """An ordinary close of a copy delivered before close, as on the Messages path."""
+        label = f["label"]
+        delivered = self.package_identity(package)
+        launches = self.launch_count(f)
+        reply = self.cmd(label + ".close", ["close", f["reference"]])
+        self.eq(label + ".close-effects", reply.get("effects"),
+                {"run": "ended", "seal": "existing", "delivery": "verified", "closure": "complete"})
+        data = reply.get("data") or {}
+        for key, value in (("closure", "complete"), ("already_closed", False), ("before_launch", False),
+                           ("placement", "delivered_before_close"), ("surrendered", [])):
+            self.eq(label + ".close-" + key, data.get(key), value)
+        self.eq(label + ".close-seal-actor", (data.get("seal") or {}).get("actor"), "auditor")
+        self.eq(label + ".close-runs", data.get("runs"), {"count": 1, "held": False, "last_ending": "sealed"})
+        self.runtime_allowances(label + ".close", data, 1, f)
+        status_reply = self.cmd(label + ".status-closed", ["status", f["reference"]])
+        headline = status_reply["data"].get("headline", {})
+        self.eq(label + ".closed-headline", headline.get("closed"), "yes")
+        self.eq(label + ".closed-condition", status_reply["data"].get("condition"), "closed")
+        self.eq(label + ".delivery-confirmed", headline.get("delivered", {}).get("confirmed"), True)
+        repeat = self.cmd(label + ".close-again", ["close", f["reference"]])
+        self.eq(label + ".close-again-already", (repeat.get("data") or {}).get("already_closed"), True)
+        self.eq(label + ".package-unchanged", self.package_identity(package), delivered)
+        self.eq(label + ".one-package", [path.name for path in sorted(package.parent.iterdir())], [package.name])
+        refused = self.cmd(label + ".run-after-close", ["run", f["reference"]], "refused")
+        self.check(label + ".run-after-close-reason",
+                   refused.get("reason") in ("reference_closed", "authoring_ended"), refused.get("reason"))
+        self.eq(label + ".no-launch-after-close", self.launch_count(f), launches)
+
+    def runtime_ordinary_ending(self):
+        f = self.fixture("runtime-ordinary-ending", scenario="no-submit")
+        label = f["label"]
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]])
+        data = reply.get("data") or {}
+        self.eq(label + ".ending", data.get("ending"), "ended_unsubmitted")
+        self.eq(label + ".reminder-notice",
+                [n for n in data.get("notices", []) if n.get("type") == "reminder"],
+                [{"type": "reminder", "sent": "sent"}])
+        self.eq(label + ".no-seal-from-ending", (data.get("seal") or {}).get("state"), "absent")
+        self.groups_absent(f)
+        events = self.harness_events(f)
+        self.require(label + ".no-harness-fatal", not any(e["event"] == "fatal" for e in events),
+                     str(f["witness"] / "harness.jsonl"))
+        inputs = [e["value"] for e in events if e["event"] == "input"]
+        self.eq(label + ".inputs", inputs, [
+            {"type": "user", "session_id": "", "parent_tool_use_id": None,
+             "message": {"role": "user", "content": text}} for text in (f["body"].decode(), REMINDER)])
+        results = [e["value"] for e in events if e["event"] == "output" and e["value"].get("type") == "result"]
+        self.eq(label + ".two-turn-endings", len(results), 2)
+        status_reply = self.inspect_runtime(f, terminal=True)
+        usage = status_reply["data"].get("allowances", {}).get("usage", {})
+        latest = dict(CHECKPOINTS[1]["usage"], harness_turns=CHECKPOINTS[1]["num_turns"])
+        summed = {key: CHECKPOINTS[0]["usage"][key] + CHECKPOINTS[1]["usage"][key] for key in CHECKPOINTS[0]["usage"]}
+        self.eq(label + ".latest-checkpoint", usage.get("reported_main_loop"), latest)
+        self.control("checkpoints-not-summed", usage.get("reported_main_loop") is not None
+                     and usage.get("reported_main_loop") != dict(summed, harness_turns=5))
+        for key, value in (("reported_placements", 1), ("unknown_intervals", 0), ("stopped", 1)):
+            self.eq(label + ".usage-" + key, usage.get(key), value)
+        self.eq(label + ".run-usage", data.get("usage"), usage)
+        checkpoints = sorted((self.audit_path(f) / "runs" / "1").glob("runtime-usage-*.json"))
+        self.check(label + ".checkpoint-records", bool(checkpoints), str(self.audit_path(f) / "runs" / "1"))
+        self.eq(label + ".recorded-entry", (status_reply["data"].get("answer") or {}).get("entries"), 1)
+        # Authoring has ended: another run launches nothing, and close seals for the manager.
+        launches = self.launch_count(f)
+        refused = self.cmd(label + ".run-again", ["run", f["reference"]], "refused")
+        self.eq(label + ".run-again-reason", refused.get("reason"), "authoring_ended")
+        self.eq(label + ".no-second-launch", self.launch_count(f), launches)
+        self.control("ordinary-ending-ends-authoring", refused.get("reason") == "authoring_ended"
+                     and self.launch_count(f) == launches)
+        closing = self.cmd(label + ".close", ["close", f["reference"]])
+        self.eq(label + ".close-effects", closing.get("effects"),
+                {"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"})
+        cdata = closing.get("data") or {}
+        self.eq(label + ".close-unfinished", cdata.get("unfinished_reason"), "awaiting_confirmation")
+        self.eq(label + ".manager-seal", (cdata.get("seal") or {}).get("actor"), "manager")
+        token = cdata.get("confirmation")
+        self.require(label + ".confirmation-token", isinstance(token, str) and token.startswith("cf1."), token)
+        self.runtime_allowances(label + ".close", cdata, 1, f)
+        package = self.check_delivery(f, self.cmd(label + ".status-sealed", ["status", f["reference"]]), "manager")
+        delivered = self.package_identity(package)
+        again = self.cmd(label + ".close-without-token", ["close", f["reference"]])
+        self.eq(label + ".repeat-is-not-confirmation", (again.get("data") or {}).get("closure"), "unfinished")
+        done = self.cmd(label + ".close-confirm", ["close", f["reference"], "--confirm", token])
+        ddata = done.get("data") or {}
+        self.eq(label + ".closed", ddata.get("closure"), "complete")
+        self.eq(label + ".placement-confirmed", ddata.get("placement"), "confirmed")
+        self.eq(label + ".package-unchanged", self.package_identity(package), delivered)
+        self.eq(label + ".no-launch-during-close", self.launch_count(f), launches)
 
     def runtime_submit(self):
         for label in ("runtime-positive", "runtime-fresh-invariance"):
@@ -1012,7 +1278,9 @@ class Driver:
             env = dict(self.env, DRIVER_INJECTION="must-not-forward", HTTPS_PROXY="http://127.0.0.1:1")
             self.cmd(label + ".run", ["run", f["reference"]], env=env)
             self.groups_absent(f)
-            self.check_delivery(f, self.inspect_runtime(f))
+            package = self.check_delivery(f, self.inspect_runtime(f))
+            if label == "runtime-positive":
+                self.close_after_delivery(f, package)
 
     def runtime_init_control(self):
         valid = self.fixture("runtime-delayed-valid-init", scenario="delayed-valid-init")
@@ -1522,6 +1790,17 @@ def synthetic_harness(scenario_path, argv):
         if scenario["mode"] == "record-then-exit":
             event("deliberate-interruption")
             return 7
+        if scenario["mode"] == "no-submit":
+            # Each turn ends with a cumulative main-loop result and no submission.
+            def turn_ended(checkpoint):
+                emit({"type": "result", "subtype": "success", "is_error": False,
+                      "session_id": scenario["session"], "num_turns": checkpoint["num_turns"],
+                      "usage": checkpoint["usage"]})
+            turn_ended(CHECKPOINTS[0])
+            incoming.get(timeout=10)  # the single reminder, witnessed as an input event
+            turn_ended(CHECKPOINTS[1])
+            time.sleep(600)
+            return 9
         prepared = tool("prepare", {})
         if prepared.get("outcome") != "completed":
             raise RuntimeError("prepare did not complete: %r" % prepared)

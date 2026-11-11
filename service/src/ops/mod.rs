@@ -27,7 +27,7 @@ pub fn run_needs(_audit: &Audit) -> J {
             "explicit authority for this bounded placement; no automatic restart",
             "the pinned harness installation and its own subscription login, with paid extra usage disabled",
             "no credential argument or credential environment variable; no API fallback",
-            "foreground execution under the commissioned placement deadline; usage may remain partial or unknown",
+            "runs in the foreground until the placement ends or reaches its deadline; callers with command timeouts should start it in the background; usage may remain partial or unknown",
         ]);
     }
     crate::json::strs(&[
