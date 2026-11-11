@@ -5,8 +5,10 @@ also confirmed paid extra usage disabled. This is one commission, not standing
 permission for replacement runs. The
 [recorder and supervisor](../../apparatus/claude-code/README.md) are implemented;
 the 3 pin checks and 18 offline native probe checks pass. All four setup checks
-and the single dedicated login have completed. The model phase remains to be
-assessed.
+and the single dedicated login have completed. This commission is stopped:
+case 1 failed its startup inventory check, and cases 2 and 3 were never launched. The
+[reviewed outcome](RUNTIME-REFERENCE.md#first-native-launch-outcome) rejects the
+zero-plugin candidate and states the decision needed for another comparison.
 This is the first bounded experiment for the
 [native launch recommendation](RUNTIME-REFERENCE.md#native-launch-recommendation),
 using synthetic material on the development Mac. It does not qualify an adapter,
@@ -145,19 +147,17 @@ The authenticated pin receipt and original verification outputs are in
 in `.scratch/claude-code-probe-01/`; the original checker then stopped because
 it incorrectly required hidden options to appear in help. The
 [runtime reference](RUNTIME-REFERENCE.md#help-inventory-check) records the
-reviewed cause. `finish-setup` retains these two completed calls and their original
+reviewed cause. `finish-setup` retained these two completed calls and their original
 inputs, recorded the checker correction, and completed the two remaining
 authentication checks and one login. The empty configuration reported no login;
 the selected configuration reported `claude.ai` after the manager's login.
-All four setup calls and the one login are consumed. The runner reserves each
-model invocation durably before launch; its run state owns the remaining
-allowance. Any discrepancy between the pinned binary's supported options and
-this proposal stops the batch for review; do not expand the commission to work
-around one.
+All four setup calls, the one login and one model-session launch are consumed.
+`RESULT.json` records case 1 as failed and cases 2 and 3 as unexercised. The batch
+is closed to further invocation; the unused slots permit no replacement or
+revised comparison. No usage result was captured, so consumption is unknown.
 
-The result should recommend adopting, changing or abandoning the launch
-candidate, with each case marked observed, failed or unexercised. Keep originals
-through review under [evidence and retention](../../development/DEVELOPMENT.md#evidence-and-retention).
+Keep originals through review under
+[evidence and retention](../../development/DEVELOPMENT.md#evidence-and-retention).
 The unresolved adapter contract still needs decisions about ambient inputs,
 unknown consumption, stopping and durable authoring; this probe does not settle
 those by itself.

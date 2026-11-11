@@ -35,16 +35,19 @@ The current recommendation is a native CLI bridge with a stdio MCP relay back
 to the sole Rust writer. The [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md#native-launch-recommendation)
 compares the SDK helper and protocol choices, specifies the proposed login and
 launch controls, and separates documented mechanisms from unverified behavior.
-The [initial probe proposal](docs/claude-code/FEASIBILITY-PROBE.md) is bounded to
-synthetic native checks. Its outcome is needed before adopting the combination.
+The [first probe](docs/claude-code/FEASIBILITY-PROBE.md) stopped at its startup
+inventory check. Its [reviewed outcome](docs/claude-code/RUNTIME-REFERENCE.md#first-native-launch-outcome)
+states what worked, what failed and which comparisons remain unexercised.
 
-- [ ] Complete the approved [native probe](docs/claude-code/FEASIBILITY-PROBE.md).
-  The offline controls and dedicated login checks pass, and the executable pin
-  is authenticated; approval and remaining invocation bounds are owned by that
-  commission and its durable run state. Update the
-  [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md) with observed
-  composition of login, restrictions, MCP and hooks. Compaction and broader
-  accounting remain separate, uncommissioned comparisons.
+- [ ] Decide the accepted built-in inventory for the next launch candidate.
+  The [recommendation](docs/claude-code/RUNTIME-REFERENCE.md#built-in-inventory-decision)
+  retains the pinned harness's three observed components, including its privacy
+  guard, and keeps the two-tool limit. Do not relax the checker or start another
+  session under the stopped commission.
+- [ ] After the inventory decision, prepare and commission a fresh bounded
+  comparison of successful tool use, hook denial and invariance. Preserve the
+  failed run; no replacement or resumed session is authorized. Compaction and
+  broader accounting remain separate, uncommissioned comparisons.
 - [ ] Decide first which process executes the auditor's tools. The harness
   starts a stdio MCP server as its own child, while only `run` holds
   [the audit's lock](docs/INTERFACE.md#46-the-active-lock-and-liveness) and
@@ -94,6 +97,11 @@ limitations and the contract and installation decisions needed from the principa
 Keep technical controls and dated sources in the runtime reference. Separate
 documented capabilities from demonstrated behavior; propose any necessary live
 probes with bounded scope and budget before running them.
+
+Keep `.tmp/claude-code-probe/first-live-review.log` and
+`.tmp/claude-code-probe/shared-clock-*.log` through review of the static plugin
+findings, observer clock comparison and offline recorder repairs. The frozen
+inputs in `.scratch/claude-code-probe-01` own what executed in the stopped run.
 
 ## 2. Narrow implementation after the decisions
 

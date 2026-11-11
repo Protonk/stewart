@@ -153,8 +153,15 @@ def validate_event(value):
         servers = value.get("mcp_servers", [])
         if len(servers) != 1 or servers[0].get("name") != "probe" or servers[0].get("status") != "connected":
             raise ValueError("MCP server is not the sole connected probe server")
-        if value.get("plugins") or value.get("plugin_errors") or value.get("mcp_server_errors"):
-            raise ValueError("unexpected plugin or server error")
+        if value.get("plugins"):
+            plugins = value["plugins"]
+            names = [p.get("name") if isinstance(p, dict) else None for p in plugins] if isinstance(plugins, list) else []
+            label = ", ".join(names) if names and all(isinstance(n, str) for n in names) else "invalid inventory"
+            raise ValueError("unexpected plugin inventory: " + label)
+        if value.get("plugin_errors"):
+            raise ValueError("startup reported plugin errors; see captured system/init")
+        if value.get("mcp_server_errors"):
+            raise ValueError("startup reported MCP server errors; see captured system/init")
         if value.get("permissionMode") != "dontAsk":
             raise ValueError("unexpected permission mode")
     if value.get("type") == "system" and value.get("subtype") in {"compact_boundary", "api_retry", "plugin_install"}:
@@ -180,7 +187,7 @@ def supervise(argv, cwd, env, out, timeout, payload=None, delay=0, stream=False,
     """Capture before parsing, supervise the process group, send at most one input."""
     out.mkdir(mode=0o700, exist_ok=False)
     def event(kind, **fields):
-        fixture.append(out / "process.jsonl", dict(kind=kind, time_ns=time.monotonic_ns(), **fields))
+        fixture.append(out / "process.jsonl", fixture.observation(kind=kind, **fields))
     event("launch-intent", argv=argv)  # No child if its observer cannot record.
     outputs = {}
     start = time.monotonic()

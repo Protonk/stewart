@@ -9,6 +9,18 @@ import sys
 import time
 
 TOOLS = {"mcp__probe__read_specimen", "mcp__probe__record_note"}
+CLOCK_NAME = "CLOCK_UPTIME_RAW" if sys.platform == "darwin" else "CLOCK_MONOTONIC"
+CLOCK_ID = getattr(time, CLOCK_NAME)
+
+
+def clock_ns():
+    # Python <3.10 gives macOS time.monotonic_ns() a process-local origin.
+    # Use the kernel clock directly so separate witnesses share an origin.
+    return time.clock_gettime_ns(CLOCK_ID)
+
+
+def observation(**fields):
+    return dict(fields, time_ns=clock_ns(), clock=CLOCK_NAME, observer_pid=os.getpid())
 
 
 def decode(raw):
@@ -37,7 +49,7 @@ def append(path, value):
 
 
 def capture(case, channel, raw):
-    append(case / (channel + ".jsonl"), {"time_ns": time.monotonic_ns(), "bytes_b64": base64.b64encode(raw).decode()})
+    append(case / (channel + ".jsonl"), observation(bytes_b64=base64.b64encode(raw).decode()))
 
 
 def tools():
@@ -76,10 +88,10 @@ def serve(case):
         elif method == "tools/call":
             name, args = params.get("name"), params.get("arguments", {})
             if name == "read_specimen" and args == {}:
-                append(case / "effects.jsonl", {"tool": name, "time_ns": time.monotonic_ns()})
+                append(case / "effects.jsonl", observation(tool=name))
                 reply["result"] = {"content": [{"type": "text", "text": "The marker word is orchard.\n"}]}
             elif name == "record_note" and isinstance(args, dict) and set(args) == {"text"} and isinstance(args["text"], str):
-                append(case / "effects.jsonl", {"tool": name, "text": args["text"], "time_ns": time.monotonic_ns()})
+                append(case / "effects.jsonl", observation(tool=name, text=args["text"]))
                 reply["result"] = {"content": [{"type": "text", "text": "recorded"}]}
             else:
                 reply["error"] = {"code": -32602, "message": "unknown tool or invalid arguments"}
@@ -97,7 +109,7 @@ def hook(case, deny):
     event = decode(raw)
     name = event.get("tool_name")
     if name not in TOOLS:
-        append(case / "unexpected.jsonl", {"reason": "unexpected tool at hook", "time_ns": time.monotonic_ns()})
+        append(case / "unexpected.jsonl", observation(reason="unexpected tool at hook"))
     if name not in TOOLS or (deny and name == "mcp__probe__record_note"):
         result = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny",
                                           "permissionDecisionReason": "Synthetic probe denial; stop without retrying."}}

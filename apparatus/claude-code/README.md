@@ -50,6 +50,12 @@ effect witness, hook observations and raw traffic live outside the controlled
 working directories. A failed witness prevents a successful tool reply; a
 failed hook witness returns a blocking exit code.
 
+New observations name their clock and observer PID. They use the kernel's
+`CLOCK_UPTIME_RAW` on macOS and `CLOCK_MONOTONIC` on Linux so separate processes
+share a clock origin. Python versions before 3.10 give macOS
+`time.monotonic_ns()` a process-local origin. Older records that used it support
+timing within one observer only; never rewrite them to imply a shared clock.
+
 ## Running a commissioned probe
 
 These commands require the principal's bounded permission; documentation is

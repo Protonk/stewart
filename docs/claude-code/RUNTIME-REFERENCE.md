@@ -5,16 +5,17 @@ Launch, authentication, CLI, tool and accounting documentation checked
 [official changelog](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md).
 The pinned CLI has completed version, help and authentication checks, with one
 manager-operated subscription login. The development-build boundary is
-implemented; the adapter and combined model-session launch configuration remain
-unverified. Documentation describes capabilities, not a demonstrated combination.
+implemented. The first model-session launch was refused because startup reported
+three built-in plugins where the candidate required none. The adapter remains
+unimplemented; the launch candidate has not passed its comparison.
 
 The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)
 was authenticated against the pinned release signing key on 2026-11-10. The
 installed `darwin-arm64` binary and a dedicated copy match its SHA-256, and the
 copy passed Apple's code-signature check on the host. Agent-shell DNS and
 code-signature failures did not establish these results; host checks did.
-The CLI reports the expected version. The combined model-session launch controls
-still need the bounded probe.
+The CLI reports the expected version. The failed launch does not establish
+model availability, successful tool use or complete consumption accounting.
 
 ## Native authentication observations
 
@@ -22,9 +23,10 @@ On 2026-11-10, the empty configuration reported `loggedIn: false`,
 `authMethod: "none"` and exit 1. After the manager completed one uncaptured
 login, the dedicated configuration reported `loggedIn: true`,
 `authMethod: "claude.ai"` and exit 0. Both reports named the intended
-configuration directories. These establish the observed setup route; model
-startup must still report the approved authentication source and configuration.
-No credential store was inspected or copied.
+configuration directories. The first session's startup also reported
+`apiKeySource: "none"`. These are observations of the selected route, not an
+independent observation of provider billing. No credential store was inspected
+or copied.
 
 The private run is `.scratch/claude-code-probe-01`. Its `auth-empty` and
 `auth-selected` records retain only the allowlisted status fields, process
@@ -47,6 +49,86 @@ this exact checkpoint preserves the original source and outputs and records
 the correction before any unused authentication step. Option registration does
 not establish that the combined launch settings work; that remains the probe's
 question.
+
+## First native launch outcome
+
+The 2026-11-10 run in `.scratch/claude-code-probe-01` launched case 1 once and
+stopped the batch. `RESULT.json`, the case's raw stdout and process journal,
+and its independent MCP journals retain the observations. Cases 2 and 3 never
+launched. All bound source, executable and configuration hashes still matched
+at the initial review. The subsequent offline recorder fixes changed the working
+source, while the run's frozen inputs, receipts and captures remain unchanged.
+
+Startup reported the expected `claude-haiku-5-5`, CLI version, `dontAsk`
+permission mode, exactly the two probe tools, and the sole connected `probe`
+server. It also reported these plugins with `path: "builtin"` and the
+corresponding `@builtin` source:
+
+- `cc-plugin-agents-md`
+- `cc-plugin-privacy`
+- `cc-plugin-plugin-authoring`
+
+That nonempty inventory triggered the recorder's `unexpected plugin or server
+error` refusal. No plugin/server error field was present; the plugin inventory
+itself was the cause. The supervisor sent SIGTERM, observed the process group
+gone, and recorded exit 143 after 5.113 seconds. This demonstrates this native
+stop path, not Linux enforcement or cancellation of a provider request.
+
+The supervisor held input for five seconds. Its own journal records the sole
+synthetic input at 5.009 seconds and first stdout capture, containing
+`system/init`, at 5.038 seconds. No startup event was captured before input.
+This configuration therefore has no demonstrated startup check before sending
+input. Provider-request timing is not visible in these records.
+
+The MCP witness contains an unsupported `server/discover` request followed by
+successful `initialize`, `notifications/initialized` and `tools/list` traffic.
+It contains no tool call. There is no hook/effect witness, assistant response,
+final result or usage total. The positive tool control, hook denial and
+invariance comparison are unexercised. Consumption is unknown, not zero;
+reported startup model selection does not establish a successful provider call.
+
+### Built-in inventory decision
+
+Reject the original zero-plugin launch candidate. The next candidate should
+account explicitly for the pinned harness's built-in components while keeping
+the exact two-tool restriction. Restricted mode is documented to limit tools
+and settings sources, not to remove every built-in component.
+[CLI reference](https://code.claude.com/docs/en/cli-reference#cli-flags)
+
+Read-only inspection of the authenticated binary identifies the instruction
+loader, a privacy guard, and plugin-authoring support behind the three names.
+The privacy guard's declared role is to refuse shell calls combining the
+signed-in account's email address with a User-Agent. These are static findings,
+not exercised guarantees. Disabling all three merely to obtain an empty list
+would remove a protection and would not establish an instruction-free harness.
+The documented `enabledPlugins` settings and built-in instruction options are
+configuration controls; their composition under this restricted launch has not
+been tested. [Settings reference](https://code.claude.com/docs/en/settings-reference#enabledplugins),
+[instruction loading](https://code.claude.com/docs/en/memory#choose-which-instruction-files-load)
+
+Recommend a separately reviewed candidate that expects exactly these three
+built-in name/source/path entries for this binary, preserves the privacy guard,
+and still refuses any extra plugin, tool or server error. This changes the
+commission's accepted inventory and needs the principal's decision before a
+new live comparison. It does not certify their model-visible contributions or
+authorize adapter implementation. The stopped batch is not resumable, and its
+two unused sessions are not replacement authority.
+
+### Observer clock scope
+
+The probe used Python 3.9.6 on macOS. Its monotonic clocks have different origins
+in different processes; MCP timestamps cannot be subtracted from supervisor
+timestamps to establish cross-process order. The input/startup/stop timings
+above come from the single supervisor's journal. Python made the macOS
+monotonic clock common to all processes in 3.10.
+[Python clock reference](https://docs.python.org/3/library/time.html#time.monotonic)
+
+A native offline comparison reproduced this mismatch in three parent/child
+brackets; `CLOCK_UPTIME_RAW` readings fell inside all three brackets. The current
+recorder now uses that shared clock directly on macOS and `CLOCK_MONOTONIC` on
+Linux, with a clock name and observer PID on each new observation. Native tests
+check the cross-process bracket immediately and after a delay. Existing
+timestamps remain as recorded and gain no cross-process meaning from the fix.
 
 ## Where to find the details
 
@@ -99,7 +181,7 @@ For the native CLI candidate, `--restricted`, `--tools ""`,
 The [CLI reference](https://code.claude.com/docs/en/cli-reference) documents
 restricted mode from 2.1.248; it still loads managed policy. It is not an OS
 sandbox. Its composition with subscription login and the explicit MCP server
-needs the proposed probe. Bare mode also disables explicitly configured hooks,
+failed the zero-plugin startup condition in the first probe. Bare mode also disables explicitly configured hooks,
 so it is unsuitable for this subscription route.
 
 The [tool reference](https://code.claude.com/docs/en/tools-reference#endconversation-tool-behavior)
@@ -215,10 +297,11 @@ effective startup metadata. Managed policy can outrank supplied settings;
 unexpected sources, tools, plugins, routing or model selection stop the run.
 An input the harness cannot expose remains unverified; a matching tool list
 does not prove the absence of other instructions or policy.
-`system/init` is evidence about what the harness reports. Whether it arrives
-before sending any model input remains unverified, so do not use it as an
-assumed pre-request gate. A first synthetic check session is preferable to
-exposing an audit while discovering the configuration.
+`system/init` is evidence about what the harness reports. In the first probe it
+was captured only after input, following five seconds with stdin held open.
+Do not use it as an assumed pre-request gate. A first synthetic check session
+is preferable to exposing an audit while discovering the configuration; standing
+check-session authority still needs its own bounded decision.
 
 The [SDK's API-key-source field](https://code.claude.com/docs/en/agent-sdk/typescript#apikeysource)
 distinguishes environment keys, helpers and Console login keys from `none`.

@@ -168,6 +168,32 @@ class ProbeControls(unittest.TestCase):
         with self.assertRaises(ValueError):
             probe.validate_event(event)
 
+    def test_plugin_inventory_and_server_errors_are_distinct(self):
+        event = {"type": "system", "subtype": "init", "model": probe.MODEL,
+                 "tools": sorted(probe.fixture.TOOLS), "apiKeySource": "none", "claude_code_version": probe.pin.VERSION,
+                 "mcp_servers": [{"name": "probe", "status": "connected"}], "permissionMode": "dontAsk", "plugins": []}
+        probe.validate_event(event)
+        with self.assertRaisesRegex(ValueError, "unexpected plugin inventory: cc-plugin-privacy"):
+            probe.validate_event(dict(event, plugins=[{"name": "cc-plugin-privacy", "path": "builtin"}]))
+        with self.assertRaisesRegex(ValueError, "startup reported plugin errors"):
+            probe.validate_event(dict(event, plugin_errors=[{"message": "synthetic error"}]))
+        with self.assertRaisesRegex(ValueError, "startup reported MCP server errors"):
+            probe.validate_event(dict(event, mcp_server_errors=[{"message": "synthetic error"}]))
+
+    def test_witness_clocks_share_origin_across_processes(self):
+        code = ("import importlib.util,json,sys,time; "
+                "s=importlib.util.spec_from_file_location('fixture',sys.argv[1]); "
+                "m=importlib.util.module_from_spec(s); s.loader.exec_module(m); "
+                "time.sleep(float(sys.argv[2])); print(json.dumps(m.observation(kind='clock-control')))")
+        for delay in ["0", "0.05"]:
+            before = probe.fixture.clock_ns()
+            observed = json.loads(subprocess.check_output([sys.executable, "-I", "-B", "-c", code, str(fixture), delay]))
+            after = probe.fixture.clock_ns()
+            self.assertEqual(observed["clock"], probe.fixture.CLOCK_NAME)
+            self.assertNotEqual(observed["observer_pid"], os.getpid())
+            self.assertLessEqual(before, observed["time_ns"])
+            self.assertLessEqual(observed["time_ns"], after)
+
     def test_help_is_not_an_inventory_of_hidden_flags(self):
         text = "\n".join(probe.VISIBLE_FLAGS) + "\n--system-prompt[-file]\n"
         probe.check_help(text)
