@@ -35,24 +35,16 @@ The current recommendation is a native CLI bridge with a stdio MCP relay back
 to the sole Rust writer. The [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md#native-launch-recommendation)
 compares the SDK helper and protocol choices, specifies the proposed login and
 launch controls, and separates documented mechanisms from unverified behavior.
-The first probe's [reviewed outcome](docs/claude-code/RUNTIME-REFERENCE.md#first-native-launch-outcome)
-states what worked, what failed and which comparisons remain unexercised. The
-principal accepted the [revised built-in inventory](docs/claude-code/RUNTIME-REFERENCE.md#built-in-inventory-decision).
+The [reviewed native comparison](docs/claude-code/RUNTIME-REFERENCE.md#reviewed-native-comparison)
+demonstrates the bounded synthetic path with the accepted built-in inventory.
+Both probe commissions are closed; no additional live use is authorized.
 
-- [ ] Run and review the approved
-  [second probe](docs/claude-code/FEASIBILITY-PROBE.md), comparing successful tool
-  use, hook denial and invariance. The principal explicitly approved this
-  commission on 2026-11-10 after reading it: one fresh authentication-status
-  check and at most three new sessions under its stated limits. Inputs are
-  frozen in `.scratch/claude-code-probe-02`; its run state owns execution and
-  remaining slots. Do not change the bound proposal or request the same
-  approval again. Preserve the failed first run. Compaction and broader
-  accounting remain separate, uncommissioned comparisons.
-- [ ] Decide first which process executes the auditor's tools. The harness
+- [ ] Settle the adapter contract for which process executes the auditor's tools. The harness
   starts a stdio MCP server as its own child, while only `run` holds
   [the audit's lock](docs/INTERFACE.md#46-the-active-lock-and-liveness) and
-  writes its records. The child must relay each call to `run`, or `run` must
-  serve the tools itself over another transport.
+  writes its records. The recommendation is a stdio child relaying original
+  request/response bytes over a private Unix-domain socket to `run`, with no
+  second writer. The native Python fixture does not implement that Rust boundary.
 - [ ] Confirm the proposed synchronous tool relay with an offline protocol
   check before adoption. Compare its handshake, notifications and errors with
   the specification; demonstrate exact bytes captured before decoding, since
@@ -86,8 +78,9 @@ principal accepted the [revised built-in inventory](docs/claude-code/RUNTIME-REF
   resume remains a separate choice; determine how re-entry reaches recorded
   work after compaction without claiming to restore unrecorded understanding.
 - [ ] Specify how preparation pins the selected runtime, configuration and
-  guarantees. Decide whether a passing check session binds the binary/config
-  pair, or whether startup metadata can serve as a demonstrated pre-input gate.
+  guarantees. Propose how a passing synthetic check binds the binary/config
+  pair, including freshness and changed-input refusal. The observed startup
+  metadata arrives after input and cannot serve as a demonstrated pre-input gate.
   A standing check-session policy needs bounded permission and its own usage
   record, outside the audit's allowances. Resolve the meaning of a runtime
   choice before adding a selector.
@@ -103,7 +96,9 @@ Keep `.tmp/claude-code-probe/first-live-review.log`,
 `.tmp/claude-code-probe/probe-02-*.log` through review of the static plugin
 findings, observer clock comparison and offline recorder changes. The frozen
 inputs in `.scratch/claude-code-probe-01` own what executed in the stopped run;
-the second commission uses `.scratch/claude-code-probe-02`.
+the successful second commission is retained in `.scratch/claude-code-probe-02`.
+Its `inputs/proposal.md` and frozen code own the executed scope. Both run states
+and all original captures stay unchanged through review.
 
 ## 2. Narrow implementation after the decisions
 

@@ -1,21 +1,81 @@
 # Claude Code runtime reference for integration work
 
 Launch, authentication, CLI, tool and accounting documentation checked
-2026-11-10. The proposed harness pin is **2.1.322**, present in the
+2026-11-10. The selected harness pin is **2.1.322**, present in the
 [official changelog](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md).
 The pinned CLI has completed version, help and authentication checks, with one
 manager-operated subscription login. The development-build boundary is
-implemented. The first model-session launch was refused because startup reported
-three built-in plugins where the candidate required none. The adapter remains
-unimplemented; the launch candidate has not passed its comparison.
+implemented. The revised native launch candidate passed its three-case
+synthetic comparison: successful tool use, a witnessed hook denial and a
+successful repeat in another working directory. The service adapter remains
+unimplemented; these native observations do not qualify Linux behavior.
 
 The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)
 was authenticated against the pinned release signing key on 2026-11-10. The
 installed `darwin-arm64` binary and a dedicated copy match its SHA-256, and the
 copy passed Apple's code-signature check on the host. Agent-shell DNS and
 code-signature failures did not establish these results; host checks did.
-The CLI reports the expected version. The failed launch does not establish
-model availability, successful tool use or complete consumption accounting.
+The CLI reports the expected version. The successful comparison demonstrates
+the selected model and synthetic tool path under this subscription; complete
+consumption accounting remains unverified.
+
+## Reviewed native comparison
+
+The principal approved probe 02 on 2026-11-10. It used exactly one fresh
+authentication-status check and three fresh model sessions. Review of
+`.scratch/claude-code-probe-02` confirmed all three outcomes against raw harness
+stdout and the independent MCP, hook and effect witnesses. All 32 input bindings
+matched, and all 42 files in the stopped first run remained unchanged. The
+executed controller is from commit `1efed2a`; frozen source and the approved
+scope are retained in the run's `inputs/` directory.
+
+| Case | Independent observations | Process outcome |
+| --- | --- | --- |
+| 1. Positive control | One read, one hook-observed record attempt, one handler call recording exactly `orchard`. | Exit 0; process group gone after 7.834 seconds. |
+| 2. Denial | One read and one hook-observed record attempt. The hook returned deny; no record call reached the MCP handler and no record effect was written. The harness reported the matching tool-use ID as denied and did not retry. | Exit 0; process group gone after 3.559 seconds. |
+| 3. Invariance | A fresh session in another empty directory again read and recorded exactly `orchard` once. | Exit 0; process group gone after 3.150 seconds. |
+
+Each startup reported exactly the two expected tools, the sole connected
+`probe` MCP server, the three accepted built-ins, `dontAsk`, CLI 2.1.322 and
+`claude-haiku-5-5`. Session IDs were distinct; each supervisor sent one user
+input. Every result reported success, three turns, no queued turns and no
+spawned subagents. No supervision signal was needed in this batch.
+
+The fresh authentication check reported `loggedIn: true`, `authMethod:
+"claude.ai"` and the dedicated configuration directory, with exit 0. All three
+startups reported `apiKeySource: "none"`. Each session's rate-limit event
+reported `overageEnabled: false` and `isUsingOverage: false`, consistent with
+the principal's disabled-extra-usage condition. These are harness observations,
+not an independent inspection of billing or the credential store.
+
+The first session sent its synthetic input at 5.019 seconds and observed
+`system/init` at 5.039 seconds. The other two also observed initialization after
+input. The stream therefore supplies no demonstrated pre-input configuration
+gate. The revised shared clock kept all MCP, hook and effect observations
+inside their session's supervisor interval; observers are identified by PID.
+
+Final usage reports were present for all three fresh sessions:
+
+| Case | Input | Cache creation input | Cache read input | Output |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 6 | 1,286 | 2,322 | 136 |
+| 2 | 6 | 545 | 3,104 | 213 |
+| 3 | 6 | 504 | 3,104 | 127 |
+| Sum of reports | 18 | 2,335 | 8,530 | 476 |
+
+These are the harness's reported token fields, not independently complete
+provider accounting. Its cost fields do not establish a bill. The first stopped
+run still has unknown consumption. Turn/output limits were not reached, so
+their enforcement remains unexercised; compaction, a lost final result, native
+resume, filesystem confinement and late authoring after closure were outside
+this comparison. Reported skills and agent definitions remain part of the
+harness metadata; two available tools do not establish an otherwise empty
+instruction surface.
+
+Recommend the native CLI plus stdio MCP path for the next adapter contract and
+offline Rust relay work. This is a feasibility result for development, not a
+completed Stewart adapter or release qualification. The commission is consumed;
+there is no remaining launch or replacement authority.
 
 ## Native authentication observations
 
@@ -44,11 +104,11 @@ says help omits supported flags. Read-only inspection of the authenticated
 with `hideHelp()`. Their absence from the captured help is expected and does
 not require changing the approved arguments.
 
-The corrected checker retains the visible-option checks. A continuation from
-this exact checkpoint preserves the original source and outputs and records
-the correction before any unused authentication step. Option registration does
-not establish that the combined launch settings work; that remains the probe's
-question.
+The corrected checker retained the visible-option checks. The continuation
+preserved the original source and outputs and recorded the correction before
+the unused authentication steps. Option registration alone did not establish
+that the launch settings worked together; the later native comparison supplied
+that bounded observation.
 
 ## First native launch outcome
 
@@ -113,8 +173,8 @@ entries, while permitting a different list order. Extra tools and plugin/server
 errors still refuse. This configuration decision does not certify their
 model-visible contributions or authorize a new Claude invocation or adapter
 implementation. The stopped batch is not resumable, and its two unused sessions
-are not replacement authority. A new bounded commission must test the accepted
-candidate.
+are not replacement authority. The separately approved second commission tested
+the accepted candidate as described above; its allowance is now consumed too.
 
 ### Observer clock scope
 
@@ -182,9 +242,10 @@ For the native CLI candidate, `--restricted`, `--tools ""`,
 `--setting-sources ""` and `--strict-mcp-config` are complementary controls.
 The [CLI reference](https://code.claude.com/docs/en/cli-reference) documents
 restricted mode from 2.1.248; it still loads managed policy. It is not an OS
-sandbox. Its composition with subscription login and the explicit MCP server
-failed the zero-plugin startup condition in the first probe. Bare mode also disables explicitly configured hooks,
-so it is unsuitable for this subscription route.
+sandbox. The subscription login, explicit MCP server and command hook composed
+successfully in the native comparison with the three accepted built-ins. Bare
+mode also disables explicitly configured hooks, so it is unsuitable for this
+subscription route.
 
 The [tool reference](https://code.claude.com/docs/en/tools-reference#endconversation-tool-behavior)
 says `EndConversation` cannot be removed while other tools remain **on surfaces
@@ -278,8 +339,9 @@ From the Agent SDK overview, the headless page and the
 
 ## Native launch recommendation
 
-This is a proposed mechanism for the decided native workflow, not implemented
-enforcement. Use the pinned executable by absolute path, outside the repository,
+Recommend this mechanism for the development adapter on the strength of the
+native comparison; the Rust integration remains to be specified and implemented.
+Use the pinned executable by absolute path, outside the repository,
 with an empty working directory and a dedicated harness configuration. The
 manager completes Anthropic's login flow there. Keep the actual home identity
 for Keychain access; do not copy an existing login or read its secret.
@@ -299,8 +361,8 @@ effective startup metadata. Managed policy can outrank supplied settings;
 unexpected sources, tools, plugins, routing or model selection stop the run.
 An input the harness cannot expose remains unverified; a matching tool list
 does not prove the absence of other instructions or policy.
-`system/init` is evidence about what the harness reports. In the first probe it
-was captured only after input, following five seconds with stdin held open.
+`system/init` is evidence about what the harness reports. In both probes' first
+cases it was captured only after input, following five seconds with stdin held open.
 Do not use it as an assumed pre-request gate. A first synthetic check session
 is preferable to exposing an audit while discovering the configuration; standing
 check-session authority still needs its own bounded decision.
@@ -351,10 +413,10 @@ tool surface does not make the entire harness a filesystem sandbox.
 
 Not demonstrated under the selected native launch arrangement:
 
-- that `system/init` arrives before the first message is sent, which would let
-  a session's reported configuration be checked before any audit content;
-- exact capture before decoding with either a custom relay or an `rmcp`
-  transport wrapper;
+- a supported configuration check before the first message is sent; the
+  observed `system/init` ordering does not provide one;
+- exact capture before decoding in the proposed Rust relay or an `rmcp`
+  transport wrapper; the probe's independent witness was Python;
 - that the binary can be launched from an already-open descriptor, given that
   it reads its executable from disk while running;
 - `rmcp`'s transitive dependency count, its minimum Rust version against the

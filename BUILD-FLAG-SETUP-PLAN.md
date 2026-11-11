@@ -81,8 +81,9 @@ and skipped cases are superseded by the host runs; Linux remains unqualified.
   existing API route requires a supported discriminator that is not yet known.
   Do not claim that a token-prefix test enforces this.
 
-The executable pin is authenticated. The principal approved the bounded native
-probe; its dedicated login and launch comparisons belong to the runtime work.
+The [reviewed native comparison](docs/claude-code/RUNTIME-REFERENCE.md#reviewed-native-comparison)
+supplies the launch observations for the credential-boundary decision. It does
+not qualify Linux enforcement or settle the stronger direct-route discriminator.
 
 **Done when:** a container run shows the markers absent from the release and
 test binaries and present in the gated one; the three cargo configurations
