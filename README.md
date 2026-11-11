@@ -80,8 +80,9 @@ outstanding. The [qualification record](apparatus/qualified.md) identifies those
 builds and results, and the [interaction findings](apparatus/studies/interaction/RESULTS.md)
 report observations from actual inquiries.
 
-Stewart is a single Rust binary for Linux x86_64 and aarch64. Native macOS is a
-development environment. See [building and testing](development/DEVELOPMENT.md)
+Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. The
+source also builds on Apple-silicon macOS, without a support or qualification
+claim. See [building and testing](development/DEVELOPMENT.md)
 and [contributing](AGENTS.md), or read the [design](DESIGN.md),
 [behavioral contracts](CONTRACTS.md) and [acceptance requirements](ACCEPTANCE.md).
 

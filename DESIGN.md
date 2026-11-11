@@ -120,13 +120,11 @@ limits. Presentation never changes substantive records or manufactures success.
 The distributed adapter is a Messages API loop. For long runs it asks the provider
 to summarize active context, retaining the original exchanges and continuing
 from the provider's signed summary under the same cumulative allowances.
-The answer format does not depend on model conversation metadata. A separate,
-default-off development build implements a supervised Claude Code runtime under
-its [distinct contract](docs/claude-code/CONTRACT.md); native synthetic checks
-establish only their exercised service behavior. Real-harness and Linux runtime
-qualification remain outstanding. Human and Codex/OpenAI adapters are future
-possibilities. Each runtime needs its own enforcement of the commission's access
-and stopping rules. Ship one static Linux binary for x86_64 and aarch64.
+The answer format does not depend on model conversation metadata. Other
+runtimes sit behind the same operation core: adapters that only a source build
+includes, and possible human or other-provider adapters. Each runtime needs its
+own contract and its own enforcement of the commission's access and stopping
+rules. Ship one static Linux binary for x86_64 and aarch64.
 Linux containers hold the build and test apparatus; WSL2 is to be qualified with
 the same shipped binary.
 

@@ -104,9 +104,10 @@ recording tools and rendering. These names do not denote different mechanisms.
 
 Ship one statically linked Rust binary for Linux x86_64 and aarch64, without
 runtime language dependencies. WSL2 runs that binary. Build, test and experiment
-in Linux containers; the development apparatus does not ship. Native
-`aarch64-apple-darwin` is a development target, not a supported product or
-qualification target.
+in Linux containers; the development apparatus does not ship. Linux is the
+supported platform. Native `aarch64-apple-darwin` is a build target: the source
+builds and runs there and nothing restricts its use, but it is not shipped,
+supported or qualified.
 
 Stewart has no version-control relationship. History, diffs, logs and test results
 are manager-supplied files, with their authors' attribution. It neither executes
@@ -241,9 +242,9 @@ level names, not which levels a model accepts, and reports a provider's refusal
 as the provider gave it. Messages API run limits are cumulative counts the provider reports:
 model turns, input tokens and output tokens. When a response is lost, Stewart
 charges a stated conservative estimate and records it as estimated. Stewart sets
-no money limit, since prices are not facts it observes. The development runtime's
-distinct [placement limits](docs/claude-code/CONTRACT.md#limits-usage-and-continuation)
-do not turn missing harness usage into an API estimate. The destination is an
+no money limit, since prices are not facts it observes. A runtime outside the
+distributed binary states its own limits in its leaf contract and never turns
+its missing usage into an API estimate. The destination is an
 existing directory in which each delivery attempt creates its own new package.
 
 `new` may scaffold an absent folder or use an explicitly supplied existing
@@ -469,17 +470,19 @@ facts the summary may omit. Compaction is distinct from the fresh conversation
 used after an interrupted placement. The trigger, captures, usage and failure
 behavior are specified in INTERFACE 6.2.
 
-The distributed runtime uses the Messages API. The separate default-off
-development build implements the [Claude Code runtime contract](docs/claude-code/CONTRACT.md)
-for harness observations, placement limits, unknown usage and startup validation;
-its native synthetic service checks pass. This development profile has no
-real-harness or Linux qualification claim for access, context or stopping.
-Human and Codex/OpenAI runtimes remain future possibilities.
+The distributed runtime uses the Messages API. The source may hold further
+runtime adapters that the distributed binary excludes at build time; the
+binary carries no switch that enables them. Each such adapter has a leaf
+contract for its differences from the Messages path and keeps the common
+custody, attribution, submission and delivery contracts. What is established
+for one runtime or credential route qualifies no other. Human and
+other-provider runtimes remain future possibilities.
 
 The distributed AI integrations use explicit API or supported cloud-provider
-authentication. Subscription login and routing through a user's Claude
-subscription stay outside Stewart's main interface. This is the chosen product
-boundary, independent of which runtime performs the audit.
+authentication. Other authentication options, including subscription login and
+routing through a user's subscription, stay outside the distributed binary and
+its interface. This is the chosen product boundary, independent of which
+runtime performs the audit.
 
 The manager's unit is an inquiry: a line of questions about a concern. Each audit
 has its own explicit reference and can record which earlier problem it varies.
@@ -711,7 +714,7 @@ a working question within the same commission.
 Family selection grants no additional permissions, material access or budget.
 Even if execution becomes available later, experimental inquiry does not itself
 authorize it. Questions, evidence, artifacts and intellectual returns retain
-their meanings across Messages API and later Claude Code arrangements.
+their meanings across the Messages API and every other runtime arrangement.
 Family-specific recording tools and expected sections may guide authoring;
 they do not establish different custody, attribution or submission contracts.
 Mechanical checks remain distinct from substantive judgments under the

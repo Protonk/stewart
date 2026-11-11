@@ -7,21 +7,29 @@ Claude launch or resume is authorized. Both earlier probe commissions are closed
 
 ## Decided scope
 
-The [development runtime contract](docs/claude-code/CONTRACT.md) owns the selected
+The [development runtime contract](CONTRACT.md) owns the selected
 observation, placement-limit, startup and credential boundaries. The
-[runtime reference](docs/claude-code/RUNTIME-REFERENCE.md) owns technical evidence
-and remaining limits. The adapter stays behind the default-off development
-feature; shipping it remains a separate decision.
+[runtime reference](RUNTIME-REFERENCE.md) owns technical evidence
+and remaining limits. Packaged releases exclude the adapter; the published
+source keeps it behind the default-off feature. Its purpose is to be the main
+means of exercising the manager's interface, so keep it in line with the
+Messages path wherever the transport allows. Linux is in scope: a source
+builder there is an intended user.
 
-Preserve the [question-family meanings](CONTRACTS.md#question-families-and-open-inquiry),
+Preserve the [question-family meanings](../../CONTRACTS.md#question-families-and-open-inquiry),
 common custody/attribution contract and
-[evidence and judgment boundary](CONTRACTS.md#principles-and-scope). Family choice
+[evidence and judgment boundary](../../CONTRACTS.md#principles-and-scope). Family choice
 never grants execution. Runtime telemetry does not establish the auditor's
 understanding or intellectual completeness. Human and other runtime adapters
 remain future work.
 
 ## Remaining work
 
+- List every difference this contract makes from the Messages path at the
+  manager's surface: front matter, preparation, receipt, status, close and the
+  return. Separate those the transport forces from the incidental, and bring
+  the incidental ones to the principal with evidence. Share driver cases for
+  common behavior between the two runtimes where independence allows.
 - Extend the independent offline driver to isolate relay-only disconnect while
   the model remains alive, MCP cancellation through the actual service, valid
   terminal usage checkpoints across placements, and compaction/notice/reminder
@@ -46,7 +54,7 @@ remain future work.
   alone do not establish enforcement.
 
 Use firing controls, differing cases and invariance cases under
-[ACCEPTANCE](ACCEPTANCE.md#the-real-model-conformance-tier). Bind results to the
+[ACCEPTANCE](../../ACCEPTANCE.md#the-real-model-conformance-tier). Bind results to the
 actual CLI, effective configuration, model, authentication route and binaries.
 Model answer quality is not the gate. API results do not qualify the harness
 profile, and native results do not qualify Linux.
@@ -56,7 +64,7 @@ profile, and native results do not qualify Linux.
 The current native validation is `.tmp/document-harmonization/host.VxyhfJ`,
 with runtime witnesses at `/private/tmp/stewart-doc-runtime.CGwaur/run`:
 14 cases, 4,711 checks and 45 controls passed, with no skips. All applicable
-[DEVELOPMENT checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
+[DEVELOPMENT checks](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
 passed. The source snapshot stayed unchanged throughout the run.
 
 Keep `.tmp/document-harmonization/` through review of the later socket EOF
@@ -80,7 +88,7 @@ The original `.scratch/claude-code-probe-01` and
 `.scratch/claude-code-probe-02` captures remain unchanged for review of the
 selected launch arrangement. Each run's frozen inputs own what executed;
 previous runs confer no new launch authority. Apply the normal
-[evidence retention rules](development/DEVELOPMENT.md#evidence-and-retention)
+[evidence retention rules](../../development/DEVELOPMENT.md#evidence-and-retention)
 after review rather than retaining reproducible working trees indefinitely.
 
 The two probes are not yet registered in the qualification index. Their

@@ -11,10 +11,10 @@ development rules.
 
 The product is one statically linked binary for Linux x86_64 and aarch64
 (CONTRACTS, "Platform and auditor access"), built and qualified in Linux
-containers. `aarch64-apple-darwin` is a native development target, not a release
-or qualification target. The crate builds and tests on the development Mac so
-that work can iterate quickly there, but native runs do not qualify Linux
-behavior.
+containers. Linux is the supported platform. `aarch64-apple-darwin` is a build
+target: the crate builds, tests and runs there, with no release, support or
+qualification claim. Work iterates quickly on the development Mac, but native
+runs do not qualify Linux behavior.
 
 ## What to run for what you changed
 
@@ -147,7 +147,7 @@ Rust toolchain and the vendored crates. The Linux-only calls are gathered in
 `service/src/platform.rs`, whose module documentation lists each one beside its
 macOS fallback: `flock` for the OFD lock, `st_birthtime` for `statx`,
 `getentropy` for `getrandom`, no process start time, and so on. The fallbacks
-exist only for development; they are not supported behavior.
+make the macOS build target work; they are not supported behavior.
 
 ```sh
 cd service

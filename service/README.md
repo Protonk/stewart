@@ -225,10 +225,10 @@ development-machine checks establish neither platform's qualification.
 
 ## Platform
 
-Linux is the only supported platform. Every Linux-only call is in
-`src/platform.rs`, each beside its macOS fallback. The fallbacks let the crate
-build and test natively on a development Mac; they are not supported behavior,
-and what rests on them (the OFD active lock, `/proc` observations, the archive
+Linux is the supported platform. Apple-silicon macOS is a build target. Every
+Linux-only call is in `src/platform.rs`, each beside its macOS fallback. The
+fallbacks let the crate build, test and run natively on a Mac; they are not
+supported behavior, and what rests on them (the OFD active lock, `/proc` observations, the archive
 filesystem allowlist) behaves as shipped only on Linux.
 
 Before adding a call to a libc function, read "Calling libc" in the crate

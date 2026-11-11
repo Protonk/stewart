@@ -17,6 +17,25 @@ This document owns the runtime-specific differences. Stewart retains one writer,
 one ledger, exact targets, explicit submission, verified delivery and close.
 A session ending is never an auditor submission.
 
+The distributed binary excludes this adapter at build time and carries no
+switch for it; a source build includes it with the `claude-code` feature. Keep
+this runtime in line with the Messages path wherever the transport allows, so
+that what is learned about the manager's interface on one holds on the other.
+Linux x86_64 and aarch64 are the platforms Stewart supports. Apple-silicon
+macOS is a build target without a support or qualification claim.
+
+## Evidence owed
+
+Offline controls must exercise the actual core through MCP: exact traffic,
+positive effects, denial and invariance, publication after closure, startup
+mismatch, owner/relay loss, unknown usage, cumulative placement limits and
+continuation. An independent author derives driver cases from this contract.
+Native macOS checks remain development checks. Linux qualification and separately
+commissioned real-harness compaction, submission and stopping comparisons
+remain necessary for the claims they exercise. Messages API results do not
+qualify the harness profile. The common
+[rules every check follows](../../ACCEPTANCE.md#rules-every-check-follows) apply.
+
 ## Arrangement and observation
 
 The profile pins the native executable, model, local launch configuration,
