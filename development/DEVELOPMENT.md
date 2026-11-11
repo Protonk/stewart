@@ -56,7 +56,7 @@ CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-co
 | `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. Changing what Stewart promises is the user's decision. |
 | `service/src/` or `service/tests/` | All three cargo configurations above. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once all three configurations pass. |
 | Release driver and shared helpers in `apparatus/driver/` | `stewart_driver.py --self-test` and `--list`, which loads every release case module. Shared helpers used by the standalone runtime driver also need that driver's checks below. Release-driver qualification needs the next container run of `acceptance.sh`, which the user schedules and batches; the change can land once its native checks pass. Edit only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
-| `apparatus/driver/claude_code.py` or its `CLAUDE-CODE.md` | `python3 -I -B apparatus/driver/claude_code.py --self-test` and `--list`. Runtime behavior changes also need the affected synthetic cases against the gated binary, retaining witnesses as described in the driver guide. This standalone driver is not run by `acceptance.sh`; qualifying its runtime behavior needs a separate Linux execution path. |
+| `apparatus/driver/claude_code.py` or its `CLAUDE-CODE.md` | `python3 -I -B apparatus/driver/claude_code.py --self-test` and `--list`. Runtime behavior changes also need the affected synthetic cases against the gated binary, retaining witnesses as described in the driver guide. Linux qualification needs the next container run of `acceptance.sh`, which also runs this standalone driver on both architectures. |
 | Runtime schemas or pinned texts in `docs/claude-code/CONTRACT.md` | The link check, the `claude-code` Cargo configuration, and the standalone runtime driver's self-test and list. Update exact service/driver copies when their pinned bytes change, preserving independent authorship. Prose-only status changes need the link check. |
 | `apparatus/c10/` | `python3 -I -B apparatus/c10/test_c10.py`, `python3 -I -B apparatus/sanity/test_launch.py`, and the driver's self-test for the specification-derived helpers it imports. Exercise changed run, reviewer and operator behavior with the native fake-provider commands in [the apparatus instructions](../apparatus/c10/README.md#run-the-offline-checks). The change remains unqualified until its retained Linux `c10.py rehearse` run, scheduled by the user after committing. No model calls are needed for these checks. |
 | Python in `apparatus/sanity/` | `python3 -I -B apparatus/sanity/test_launch.py`. For shared session or evidence helpers, also run the C10 checks above. The affected launcher needs its retained Linux rehearsal before qualification; source changes invalidate its previous rehearsal binding for live use. |
@@ -233,8 +233,9 @@ The [standalone Claude Code driver](../apparatus/driver/CLAUDE-CODE.md) exercise
 the gated adapter with a synthetic executable and MCP traffic. Its self-test,
 case list and runtime cases are separate from `stewart_driver.py`; they make no
 real-Claude or provider calls. Native runs need host Unix sockets and process
-observation. The container suite below builds the gated binary as a marker
-control but does not execute this runtime driver.
+observation. The container suite below runs this driver against the gated binary
+on both architectures, separately from the release driver. It also supplies a
+second gated build with a different digest for the profile/writer comparison.
 
 ## Container suites
 
@@ -277,6 +278,11 @@ another checkout uses that checkout's own `service/vendor`.
   with no network and as an unprivileged user, it runs the driver's self-test
   and every case with `--network-isolated --require-all-controls --keep-work all`, so every
   sabotage control of Appendix C.2 must be assigned to a case and fire.
+  In the same isolated container it runs the standalone runtime driver's
+  self-test and every synthetic case, using the development, release and second
+  development binaries. Qualification requires no skipped or unselected runtime
+  cases and all controls firing. Runtime witnesses and results are exported
+  separately from the release driver's evidence.
 
 Each writes `host/DONE` with `failures=N`; `acceptance.sh` also writes
 `host/SUMMARY` with the driver's counts per architecture, and

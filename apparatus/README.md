@@ -22,8 +22,8 @@ reports cover small-commission procedure and do not declare a model qualified.
 The [standalone runtime driver](driver/CLAUDE-CODE.md) checks the gated Claude
 Code adapter against a synthetic executable. It has its own self-test, case
 list and native runtime command, and invokes no real harness or provider.
-`acceptance.sh` builds the gated binary and checks its markers; it does not run
-these runtime cases. The separate [probe apparatus](claude-code/README.md)
+`acceptance.sh` builds two gated binaries, checks their markers and runs these
+runtime cases on both Linux architectures. The separate [probe apparatus](claude-code/README.md)
 retains the closed native feasibility comparison and an offline protocol prototype.
 
 ## Running the scripts
@@ -308,14 +308,15 @@ python image (its only network use). It archives `service`, `apparatus` and
 examples with `docs/`), and for each architecture, offline:
 
 1. builds the release binary, the test binary, `stewart-local` with the
-   default-off `claude-code` feature, and the glibc control, each in its own
-   target folder;
-2. checks that all three musl binaries are static and the glibc build is not, that
+   default-off `claude-code` feature, a debug-profile `stewart-local-variant`
+   with the same feature, and the glibc control, each in its own target folder;
+2. checks that all four musl binaries are static and the glibc build is not, that
    `cmp` tells the release and test binaries apart, and that only the test
    binary contains the six test-only variable names of INTERFACE Appendix C.
    [`check-build-markers.sh`](check-build-markers.sh) checks every literal line
    of [`claude-code-markers.txt`](claude-code-markers.txt): release/test must lack
-   all markers and the development binary must contain them as a firing control;
+   all markers and both development binaries must contain them as firing controls.
+   The development writers must have different bytes;
 3. in the pinned python image with `--network none` (loopback only), as an
    unprivileged user, with the binaries mounted read-only and archives and
    homes on the container's own disk, runs the driver's `--self-test`, then
@@ -324,7 +325,11 @@ examples with `docs/`), and for each architecture, offline:
    control must fire. The timing gates (startup, `status` and `help`; protocol
    calls) are on only for the native architecture; Rosetta's home cache is
    recorded as an emulator artifact;
-4. copies the independent driver evidence. A failed run, or an explicit `all`
+4. runs the standalone synthetic runtime self-test and every runtime case,
+   using the two development writers and the featureless release binary.
+   Every case must pass and every control must fire, with no skipped or
+   unselected cases. No real harness or provider is invoked;
+5. copies the independent driver evidence. A failed run, or an explicit `all`
    retention argument, also exports remaining working copies to
    `driver-<arch>/work.tar`, with a listing, SHA-256 and export start/end times.
    Export failure fails the suite. Named driver containers remain until review,
@@ -342,14 +347,24 @@ containers and generated payloads under the retention rules below. Use
 witnesses and working copies as well as failures.
 Build containers are removed on exit.
 
-The development binary stays in `build-<arch>/`, with its digest in
-`host/binaries.sha256`; it is not supplied to the release acceptance driver.
+The development binaries stay in `build-<arch>/`, with their digests in
+`host/binaries.sha256`; the standalone runtime driver receives them separately
+from the release acceptance driver. `driver-<arch>/runtime-evidence/` holds the
+runtime result, environment, command outputs, independent witnesses and driver
+snapshot. Every run exports the complete runtime work tree as `runtime-work.tar`,
+with listing, digest and export times, preserving launch markers that live
+beside fixture executables outside `witness/`. Its original
+container remains available through review even if export fails.
 The marker list is copied into each build folder, and `markers-release`,
-`markers-test` and `markers-local` keep stdout, stderr and exit status there.
+`markers-test`, `markers-local` and `markers-local-variant` keep stdout, stderr
+and exit status there.
 The qualification extractor includes these literal host expectations in its
-script-check counts and accepts the extra digest. Its release/test identities
-still name the binaries the independent driver actually exercised; the extra
-binary establishes no adapter or model qualification.
+script-check counts. It records runtime cases, checks and controls separately,
+checks them against the full source inventory and binary identities, and hashes
+the exported evidence listing and complete work archive. Runtime requirements apply to runs whose own
+source script selects them; earlier records gain no invented observations.
+Synthetic Linux results establish only the exercised adapter behavior and
+process controls, with no real-harness or model qualification.
 
 ACCEPTANCE also requires the scripted tier natively on WSL2, from a handoff
 package of the same binary, driver and fake provider; no script here builds or

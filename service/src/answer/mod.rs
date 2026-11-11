@@ -259,6 +259,12 @@ fn finish(
 pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call) -> Executed {
     let state = crate::log::read(audit);
     let revision = state.revision();
+    #[cfg(feature = "claude-code")]
+    if let Some(gate) = crate::claude_code::gate::current() {
+        if let Err(failure) = gate.permit() {
+            return refused_before_execution(call, revision, failure);
+        }
+    }
     let tool = known(call.name).filter(|t| world.arrangement.tool_names.iter().any(|n| n == t));
     let Some(tool) = tool else {
         let tools = &world.arrangement.tool_names;
@@ -344,6 +350,15 @@ pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call)
         }
     }
     finish(Some(audit), tool, None, call, "recorded", revision, out)
+}
+
+/// A captured runtime call stopped before dispatch. Preserve its ordinary
+/// auditor envelope without entering a handler or claiming an answer effect.
+#[cfg(feature = "claude-code")]
+pub(crate) fn refused_before_execution(call: &Call, revision: u64, failure: Fail) -> Executed {
+    let op = known(call.name).unwrap_or(NO_TOOL);
+    let shown = (op == NO_TOOL).then(|| call.name.unwrap_or(""));
+    finish(None, op, shown, call, "recorded", revision, failure.into())
 }
 
 /// The account of a block whose call capture could not be written: the call

@@ -3,10 +3,12 @@
 # Inputs: /in/source.tar (git archive of HEAD), /vendor (the vendored crates,
 # read-only). Output: /out.
 #
-# Builds four binaries from the same sources, each in its own target folder:
+# Builds five binaries from the same sources, each in its own target folder:
 #   stewart        release, <arch>-unknown-linux-musl
 #   stewart-test   release profile with --features fault-injection,sabotage (musl)
 #   stewart-local  release profile with --features claude-code (musl)
+#   stewart-local-variant  debug profile with --features claude-code (musl),
+#                  the distinct writer for the unchanged-profile control
 #   stewart-glibc  release, <arch>-unknown-linux-gnu: the firing control for the
 #                  static check, which must reject it
 # and records the apparatus checks the host script evaluates:
@@ -38,6 +40,7 @@ must unpack sh -c 'mkdir -p /work && tar -xf /in/source.tar -C /work && cp -R /v
 must build-release sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-release cargo build --locked --offline --release --target $MUSL"
 must build-test sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-test cargo build --locked --offline --release --features fault-injection,sabotage --target $MUSL"
 must build-local sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-local cargo build --locked --offline --release --features claude-code --target $MUSL"
+must build-local-variant sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-local-variant cargo build --locked --offline --features claude-code --target $MUSL"
 step build-glibc sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-glibc cargo build --locked --offline --release --target $GNU"
 
 must copy-release cp "/work/target-release/$MUSL/release/stewart" /out/stewart
@@ -49,6 +52,7 @@ else
     must copy-test cp "/work/target-test/$MUSL/release/stewart" /out/stewart-test
 fi
 must copy-local cp "/work/target-local/$MUSL/release/stewart" /out/stewart-local
+must copy-local-variant cp "/work/target-local-variant/$MUSL/debug/stewart" /out/stewart-local-variant
 [ -f "/work/target-glibc/$GNU/release/stewart" ] && step copy-glibc cp "/work/target-glibc/$GNU/release/stewart" /out/stewart-glibc
 
 static_check() {
@@ -60,12 +64,14 @@ static_check() {
         echo 0 >"/out/static-$1.exit"
     fi
 }
-for name in stewart stewart-test stewart-local stewart-glibc; do
+for name in stewart stewart-test stewart-local stewart-local-variant stewart-glibc; do
     [ -f "/out/$name" ] && static_check "$name" "/out/$name"
 done
 
 cmp -s /out/stewart /out/stewart-test
 echo $? >/out/cmp-release-test.exit
+cmp -s /out/stewart-local /out/stewart-local-variant
+echo $? >/out/cmp-local-variant.exit
 for name in stewart stewart-test; do
     for var in STEWART_TEST_FAULT STEWART_TEST_SABOTAGE STEWART_TEST_FAULT_DIR STEWART_TEST_TLS_ROOT \
         STEWART_TEST_PROVIDER_TIMEOUT STEWART_TEST_RETRY_DELAYS; do
@@ -77,8 +83,10 @@ must marker-list cp /work/apparatus/claude-code-markers.txt /out/claude-code-mar
 step markers-release sh /work/apparatus/check-build-markers.sh absent /out/claude-code-markers.txt /out/stewart
 step markers-test sh /work/apparatus/check-build-markers.sh absent /out/claude-code-markers.txt /out/stewart-test
 step markers-local sh /work/apparatus/check-build-markers.sh present /out/claude-code-markers.txt /out/stewart-local
-step sha256 sha256sum /out/stewart /out/stewart-test /out/stewart-local
+step markers-local-variant sh /work/apparatus/check-build-markers.sh present /out/claude-code-markers.txt /out/stewart-local-variant
+step sha256 sha256sum /out/stewart /out/stewart-test /out/stewart-local /out/stewart-local-variant
 step run-release /out/stewart help
 step run-test /out/stewart-test help
 step run-local /out/stewart-local help
+step run-local-variant /out/stewart-local-variant help
 exit 0

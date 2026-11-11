@@ -93,6 +93,7 @@ ARRANGEMENT_KEYS = {
 # synthetic harness's own environment; Stewart supplies none of them.
 WRAPPER_ENVIRONMENT = {"PWD", "OLDPWD", "SHLVL", "_", "__CF_USER_TEXT_ENCODING"}
 KEPT = "A pipelined note whose call was not cancelled.\n"
+QUEUED = "The second pipelined note must follow the first.\n"
 CANCELLED = "A pipelined note whose call was cancelled before it could be published.\n"
 DUPLICATE = "A note sent under a request identifier this placement already used.\n"
 SECOND_RELAY = "A note attempted through a second relay after the first was lost.\n"
@@ -121,7 +122,7 @@ CASES = (
     ("runtime-submit", "Actual MCP record/prepare/submit, faithful delivery and fresh-session invariance"),
     ("runtime-ordinary-ending", "Unsubmitted turns, one reminder, a valid usage checkpoint, manager seal and confirmed close"),
     ("runtime-hooks-and-effort", "The hook helper admits only pinned tools after startup; a selected effort reaches the launch"),
-    ("runtime-cancellation", "Late and unknown cancellations, a reused request ID, a call behind a pending one and cancellation races"),
+    ("runtime-cancellation", "Ordered pipelined calls, cancellation behind a large call, late/unknown cancellations and reused IDs"),
     ("runtime-relay-loss", "The relay dies while the model lives: the placement stops, nothing else writes, a fresh session continues"),
     ("runtime-usage-series", "Two placements: each session's latest checkpoint is summed and a lost interval stays unknown"),
     ("runtime-compaction", "Each compaction boundary is followed by the pinned notice and spends neither allowance"),
@@ -410,7 +411,7 @@ class Driver:
                   "variant_sha256": sha(variant.read_bytes()) if variant else None,
                   "surface_sha256": SURFACE_SHA,
                   "driver_sha256": sha(Path(__file__).read_bytes()),
-                  "qualification": False, "scope": "native offline preparation and synthetic MCP runtime"})
+                  "qualification": False, "scope": "offline preparation and synthetic MCP runtime"})
 
     def save(self, name, obj):
         (self.work / name).write_bytes(compact(obj) + b"\n")
@@ -538,7 +539,7 @@ class Driver:
                        "marker": str(executable) + ".started", "config": str(launch_dir / "config"),
                        "version": "synthetic-offline-1", "model": MODEL, "family": family,
                        "session": label + "-session-1", "account": ACCOUNT,
-                       "kept": KEPT, "cancelled": CANCELLED, "duplicate": DUPLICATE,
+                       "kept": KEPT, "queued": QUEUED, "cancelled": CANCELLED, "duplicate": DUPLICATE,
                        "second_relay": SECOND_RELAY,
                        "auth_private": "synthetic-auth-private-output-" + label}) + b"\n")
             (witness / "scenario-initial.json").write_bytes(scenario_path.read_bytes())
@@ -1406,12 +1407,22 @@ class Driver:
         seen = {e["name"]: e["response"] for e in events if e["event"] == "observation"}
         races = ["race-%d" % number for number in range(1, RACES + 1)]
         self.eq(label + ".observations", list(seen),
-                ["first", "ping", "duplicate", "kept", "cancelled"] + races + ["reentry"])
+                ["first", "ping", "duplicate", "kept", "queued", "predecessor", "cancelled"] + races + ["reentry"])
 
         def completed(name):
             return (self.core_reply(seen.get(name)) or {}).get("outcome") == "completed"
         self.check(label + ".first-completed", completed("first"), seen.get("first"))
         self.check(label + ".kept-completed", completed("kept"), seen.get("kept"))
+        self.check(label + ".queued-completed", completed("queued"), seen.get("queued"))
+        self.check(label + ".predecessor-completed", completed("predecessor"), seen.get("predecessor"))
+        pairs = [(e["ids"][0], e["ids"][1]) for e in events
+                 if e["event"] == "rpc-transmitted" and len(e["methods"]) >= 2
+                 and e["methods"][:2] == ["tools/call", "tools/call"]]
+        replies = [e["value"].get("id") for e in events if e["event"] == "rpc-receive"]
+        self.require(label + ".two-pipelined-pairs", len(pairs) == 2, pairs)
+        for index, (first, second) in enumerate(pairs, 1):
+            self.check("%s.pair-%d.reply-order" % (label, index),
+                       first in replies and second in replies and replies.index(first) < replies.index(second), replies)
         self.eq(label + ".ping", (seen.get("ping") or {}).get("result"), {})
         self.check(label + ".duplicate-answered", seen.get("duplicate") is not None, "no reply to a reused request ID")
         delivery = status_reply["data"].get("headline", {}).get("delivered", {})
@@ -1420,10 +1431,15 @@ class Driver:
         texts = [entry.get("text") for entry in answer.get("entries", [])]
         # An effect exists exactly when its call got a completed reply.
         for name, text, control in (("duplicate", DUPLICATE, "reused-request-id-refused"),
-                                    ("cancelled", CANCELLED, "uncompleted-pipelined-call-has-no-effect")):
+                                    ("cancelled", CANCELLED, "cancelled-pipelined-call-has-no-effect")):
             self.eq(label + "." + name + ".effect-iff-completed", text in texts, completed(name))
             self.control(control, text not in texts and not completed(name))
-        self.note(label + ".pipelined-second-call", "answered %s" % json.dumps(seen.get("cancelled"))[:300])
+        cancelled = self.core_reply(seen.get("cancelled")) or {}
+        self.eq(label + ".cancelled-reason", cancelled.get("reason"), "placement_stopped")
+        self.note(label + ".cancellation-observer-scope",
+                  "The peer sent a large predecessor, its sibling and cancellation in one write; "
+                  "the sibling was refused without effect. Transport and effects are witnessed; "
+                  "the instant at which the sibling entered the service queue is not independently observed.")
         # A cancellation racing its own call may win or lose. Either way the
         # entry exists exactly when the call got a completed reply.
         landed = []
@@ -1431,6 +1447,9 @@ class Driver:
             self.eq(label + "." + name + ".effect-iff-completed", race_text(number) in texts, completed(name))
             if completed(name):
                 landed.append(race_text(number))
+            else:
+                self.eq(label + "." + name + ".stopped-reason",
+                        (self.core_reply(seen.get(name)) or {}).get("reason"), "placement_stopped")
         lost = [name for name in races if not completed(name)]
         answers = sorted({json.dumps(seen.get(name))[:200] for name in lost})
         self.note(label + ".cancellation-races", "cancellation won %d of %d races%s" % (
@@ -1438,7 +1457,7 @@ class Driver:
             "; a winning in-flight cancellation was not exercised in this run"))
         # A cancellation that arrives after completion, or names no request, changes nothing.
         self.eq(label + ".delivered-entries", [text[:60] for text in texts],
-                [text[:60] for text in [ACCOUNT, KEPT] + landed])
+                [text[:60] for text in [ACCOUNT, KEPT, QUEUED, race_text(0)] + landed])
         self.eq(label + ".reentry-after-cancellation", (seen.get("reentry") or {}).get("outcome"), "completed")
         # Exact traffic: what the peer sent is what was retained, and every
         # reply the peer received had been retained before it was sent.
@@ -1870,7 +1889,7 @@ class Driver:
                                "failures": failures, "skip_reason": reason})
             print("%s %s (%d checks)" % (state.upper(), name, len(self.checks) - start), flush=True)
         report = {"schema": "stewart.claude-code.offline-driver/2", "qualification": False,
-                  "scope": "native offline preparation and synthetic MCP runtime; no Claude or provider invocation",
+                  "scope": "offline preparation and synthetic MCP runtime; no Claude or provider invocation",
                   "elapsed_seconds": time.monotonic() - self.started,
                   "cases": self.cases, "checks": self.checks, "controls": self.controls,
                   "notes": self.notes,
@@ -1885,7 +1904,7 @@ class Driver:
                              "controls_fired": sum(c["fired"] for c in self.controls)}}
         self.save("RESULT.json", report)
         print(json.dumps(report["counts"], sort_keys=True), flush=True)
-        print("Development evidence only; retained work: %s" % self.work, flush=True)
+        print("Synthetic observations; qualification belongs to the enclosing suite. Retained work: %s" % self.work, flush=True)
         return 1 if report["counts"]["failed"] else 0
 
 
@@ -2170,14 +2189,21 @@ def synthetic_harness(scenario_path, argv):
                 event("observation", name="duplicate", response=receive(first["id"], timeout=3))
             except TimeoutError:
                 event("observation", name="duplicate", response=None)
-            # Two calls and the second one's cancellation arrive together. Calls
-            # execute one at a time, so the cancellation is read while the
-            # first still holds the core.
+            # Both calls are sent before either reply. The second must complete
+            # after the first, with their effects in the same order.
             kept = frame("tools/call", {"name": "record_account", "arguments": {"text": scenario["kept"]}})
-            dropped = frame("tools/call", {"name": "record_account", "arguments": {"text": scenario["cancelled"]}})
-            send_frames([kept, dropped, frame("notifications/cancelled",
-                                              {"requestId": dropped["id"], "reason": "superseded"}, notification=True)])
+            queued = frame("tools/call", {"name": "record_account", "arguments": {"text": scenario["queued"]}})
+            send_frames([kept, queued])
             event("observation", name="kept", response=receive(kept["id"]))
+            event("observation", name="queued", response=receive(queued["id"]))
+            # A large predecessor makes a waiting cancellation observable without
+            # adding a product test barrier. The outer check requires cancellation
+            # to win and reports the limit of this external observation.
+            predecessor = frame("tools/call", {"name": "record_account", "arguments": {"text": race_text(0)}})
+            dropped = frame("tools/call", {"name": "record_account", "arguments": {"text": scenario["cancelled"]}})
+            send_frames([predecessor, dropped, frame("notifications/cancelled",
+                                              {"requestId": dropped["id"], "reason": "superseded"}, notification=True)])
+            event("observation", name="predecessor", response=receive(predecessor["id"]))
             try:
                 event("observation", name="cancelled", response=receive(dropped["id"], timeout=3))
             except TimeoutError:
@@ -2439,7 +2465,7 @@ for raw in sys.stdin.buffer:
             scenario = {"mode": mode, "witness": str(root), "marker": str(root / "started"),
                         "config": str(root), "version": "synthetic-offline-1", "model": MODEL,
                         "family": "open-inquiry", "session": "synthetic-" + mode, "account": ACCOUNT,
-                        "kept": KEPT, "cancelled": CANCELLED, "duplicate": DUPLICATE,
+                        "kept": KEPT, "queued": QUEUED, "cancelled": CANCELLED, "duplicate": DUPLICATE,
                         "second_relay": SECOND_RELAY, "auth_private": "synthetic-private-auth-field"}
             (root / "scenario.json").write_bytes(compact(scenario))
             (root / "peer.py").write_text(mode_peer)
@@ -2491,15 +2517,17 @@ for raw in sys.stdin.buffer:
             kinds = [(o.get("type"), o.get("subtype")) for o in outputs]
             consumed = sum(e["event"] == "input" for e in events)
             if mode == "cancel":
-                check("mode.cancel.observations", names == ["first", "ping", "duplicate", "kept", "cancelled"]
+                check("mode.cancel.observations", names == ["first", "ping", "duplicate", "kept", "queued", "predecessor", "cancelled"]
                       + ["race-%d" % number for number in range(1, RACES + 1)] + ["reentry"])
                 check("mode.cancel.pipelined", any(e["event"] == "rpc-transmitted" and e["methods"] ==
                       ["tools/call", "tools/call", "notifications/cancelled"] for e in events))
+                check("mode.cancel.uncancelled-pipeline", any(e["event"] == "rpc-transmitted" and e["methods"] ==
+                      ["tools/call", "tools/call"] for e in events))
                 sent = [e["value"] for e in events if e["event"] == "rpc-send"]
                 ids = [v["id"] for v in sent if v["method"] == "tools/call" and v["params"]["name"] == "record_account"]
-                check("mode.cancel.reused-id", len(ids) == 4 + RACES and ids[0] == ids[1] and len(set(ids)) == 3 + RACES)
+                check("mode.cancel.reused-id", len(ids) == 6 + RACES and ids[0] == ids[1] and len(set(ids)) == 5 + RACES)
                 cancels = [v["params"]["requestId"] for v in sent if v["method"] == "notifications/cancelled"]
-                check("mode.cancel.cancel-targets", cancels == [ids[0], 424242] + ids[3:])
+                check("mode.cancel.cancel-targets", cancels == [ids[0], 424242] + ids[5:])
                 check("mode.cancel.race-size", len(race_text(1)) == 262144 and race_text(1) != race_text(2))
                 check("mode.cancel.submits", any(submitted(e) for e in events))
             elif mode == "compaction":

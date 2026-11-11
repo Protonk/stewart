@@ -74,16 +74,21 @@ record has been rewritten.
 The integrated adapter passed all three host Cargo configurations, including
 loopback cases, and the six optimized markers passed absence/absence/presence
 checks in release, fault/sabotage and development builds. The current native
-outputs are in `.tmp/alignment/host.x1DmST/`. Keep these and the
-earlier `.tmp/claude-code-adapter/` and `.tmp/claude-code-setup/` outputs through
-review. Earlier failures and skips remain retained; Linux remains unqualified.
+outputs, including the queued-call and Linux suite changes, are in
+`.tmp/runtime-queue/host.yTveQl/`. No checks failed or skipped, and the source
+stayed unchanged during the run. Keep these and the earlier
+`.tmp/alignment/`, `.tmp/claude-code-adapter/` and `.tmp/claude-code-setup/`
+outputs through review. Earlier failures and skips remain retained; Linux
+remains unqualified. The container suite now also exercises the gated runtime
+and a second development writer.
 
 - [ ] Run the toolchain and container acceptance checks required by
   [DEVELOPMENT](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed),
   on the committed change when the principal schedules them. Retain and extract
-  both architectures' results. The development binary is a marker control;
-  the independent driver still evaluates the release and fault/sabotage binaries.
-  This qualifies the build boundary, not execution of the gated runtime.
+  both architectures' results. The release driver evaluates the release and
+  fault/sabotage binaries; the separate synthetic runtime driver evaluates
+  the development binary. The marker comparisons qualify the build boundary,
+  while the runtime cases supply their own execution evidence.
 
 The principal accepted the structural credential boundary on 2026-11-10:
 the harness owns its secret, the harness route refuses credential arguments and

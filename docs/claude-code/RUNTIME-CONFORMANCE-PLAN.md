@@ -1,10 +1,10 @@
 # Claude Code runtime conformance
 
-The gated adapter is implemented, aligned with the Messages path at the
-manager's surface, and passes its native offline checks against a synthetic
-harness. No real-Claude service run exists. No Claude launch or resume is
-authorized: both earlier probe commissions are closed, and step 4 below needs
-its own.
+The gated adapter is implemented and aligned with the Messages path at the
+manager's surface, including ordered tool-call queuing. Native offline checks
+against a synthetic harness pass. No real-Claude service run exists. No Claude
+launch or resume is authorized: both earlier probe commissions are closed,
+and the real-service run below needs its own commission.
 
 ## Decided scope
 
@@ -30,26 +30,14 @@ Take these in order. Each step that changes the contract or the service is
 written by one author, and its driver cases by another who has not read the
 implementation.
 
-1. **Queue concurrent tool calls.** The principal decided this on 2026-11-11.
-   A tool call that
-   arrives while another is pending is now answered with a transport error and
-   no effect, and the contract is silent. Specify and implement that such
-   calls wait and execute one at a time in arrival order, as the Messages path
-   executes the several calls of one response. Keep the present rules: an
-   entry exists only with a completed reply, a reused request identifier is
-   refused, and a cancellation that reaches a call before its publication
-   leaves no effect and is answered `placement_stopped`, whether the call was
-   waiting or executing. State any bound on waiting calls in the contract.
-   The driver's cancellation case then expects the second pipelined call to
-   complete in order, and gains a waiting call whose cancellation must win.
-2. **Give the synthetic suite a Linux path.** Run the standalone runtime
-   driver inside the container suite against the gated Linux binaries of both
-   architectures, offline, with its witnesses exported like the release
-   driver's. `acceptance.sh` now builds the gated binary and checks its markers
-   but does not run this suite, so nothing yet qualifies runtime execution on
-   the supported platform. Extend the qualification record to read the result.
-   The principal schedules the container run.
-3. **Build the real-service check and propose its commission.** Two pieces of
+1. **Qualify the Linux runtime path.** The container suite now includes the
+   standalone runtime driver against both architectures' gated binaries, a
+   different-digest writer control, exported independent witnesses and runtime
+   results in the qualification record. Native verification is complete. Have
+   the principal run the container suite on the committed source, then review
+   and extract both architectures' results. Linux runtime execution remains
+   unqualified until that run.
+2. **Build the real-service check and propose its commission.** Two pieces of
    apparatus are missing: a producer for a profile's installation and check
    attestation, and a full-service check that drives the actual auditor tool
    set through the real harness with independent witnesses. Current fixtures
@@ -60,7 +48,7 @@ implementation.
    disabled, and the witnesses retained. Rehearse it offline against the
    synthetic harness. Bring it to the principal; preparing it authorizes
    nothing.
-4. **Run the real-service check under that commission.** Exercise the actual
+3. **Run the real-service check under that commission.** Exercise the actual
    tool surface, compaction and re-entry, accounting, interruption,
    submission, delivery and close. Verify effective tools, instructions,
    authentication and access before and after compaction, including host and
@@ -111,10 +99,27 @@ None of this blocks the steps above. Do it when it fits.
 
 ## Evidence through review
 
-The current native validation of the service is `.tmp/alignment/host.x1DmST`,
+The queued-call and Linux suite changes passed host verification in
+`.tmp/runtime-queue/host.yTveQl/`, with runtime witnesses at
+`/private/tmp/stewart-queue-runtime.LGe6um/run`: all three Cargo configurations,
+apparatus checks and optimized marker checks passed. The runtime suite passed
+23 cases, 9,702 checks and 68 controls, with no skips or unselected cases.
+Its self-test passed 158 checks; the qualification self-test passed 97 controls.
+The source snapshot stayed unchanged and all three copied binary digests match
+the runtime's environment record. No real harness was invoked.
+
+The cancellation comparison witnessed a refused sibling without an effect,
+and cancellation won all six further races. Its traffic does not independently
+identify the instant a call entered the internal queue; deterministic unit
+controls cover waiting-state cancellation and queue bounds. The host run
+resolves the earlier sandbox loopback failures and skips retained beside it in
+`.tmp/runtime-queue/`. Keep the host outputs, binaries and independent witnesses
+through review of the Linux run.
+
+The latest completed native validation of the earlier service baseline is `.tmp/alignment/host.x1DmST`,
 with runtime witnesses at `/private/tmp/stewart-align-runtime.SbCg7Q/run`: all
 applicable [DEVELOPMENT checks](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
-passed with no skips and the source snapshot stayed unchanged. The current run
+passed with no skips and the source snapshot stayed unchanged. The corresponding run
 of the independent driver against those same binaries is
 `.tmp/driver-gaps/host.QdjlTD`, with witnesses at
 `/private/tmp/stewart-gaps-runtime.sDdJDu/run`: 23 cases, 9,690 checks and 68

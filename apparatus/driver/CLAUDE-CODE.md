@@ -4,7 +4,8 @@
 [Claude Code development runtime contract](../../docs/claude-code/CONTRACT.md).
 Its author works from that contract, the common specifications and this driver's
 specification-owned forms, without reading the service implementation or tests.
-It is a standalone native driver; it is not registered in the release suite.
+It is a standalone driver, run separately from the release driver both natively
+and by the Linux container acceptance suite.
 
 Run from the repository root with an explicit Python 3.9 or later interpreter.
 The driver supports macOS arm64 and Linux aarch64/x86_64. Runtime checks need a
@@ -116,12 +117,16 @@ Five further runtime cases use the same synthetic executable:
   has passed, admit pinned tools afterwards and deny four unpinned names, with
   the exact denial object of the launch surface. A question that selects an
   effort must reach the launch as the surface's effort arguments.
-- **Cancellation.** A cancellation arriving after completion and one naming no
-  request change nothing. A reused request identifier is answered and has no
-  effect. A second call written together with the first, while the first is
-  still pending, has no effect either; that outcome does not isolate its
-  accompanying cancellation, since the service refuses a call behind a pending
-  one. Six further calls are each written together with their own cancellation.
+- **Cancellation and queuing.** A cancellation arriving after completion and
+  one naming no request change nothing. A reused request identifier is answered
+  and has no effect. Two uncancelled calls written together must both complete,
+  with their replies and entries in arrival order. A separate pair puts a small
+  call behind a large predecessor, followed in the same write by cancellation
+  of the second call: the predecessor completes, and the cancelled call must
+  receive `placement_stopped` with no entry. Independent traffic and effects
+  are retained. This external observation does not identify the instant at which
+  the second call entered the internal queue; the case reports that limit.
+  Six further calls are each written together with their own cancellation.
   Either side may win such a race, so the case requires only that an entry
   exists exactly when its call received a completed reply, and reports as a
   note how many cancellations won. A run in which none won has not exercised a
@@ -143,7 +148,8 @@ Five further runtime cases use the same synthetic executable:
 The self-test runs every synthetic scenario against a small specification-only
 peer first, so a sequencing fault in the harness shows before a binary is used.
 
-Not exercised: `run`'s own re-verification of a pinned surface, which has no
+Not exercised: the internal waiting state or queue count/byte overflow;
+`run`'s own re-verification of a pinned surface, which has no
 black-box firing control because one binary cannot hold an arrangement that
 pins a different surface; a hook call after the placement has stopped admitting
 calls; and the near-limit notice. The contract's
@@ -158,6 +164,15 @@ the archive. `driver-snapshot/` preserves the executable synthetic harness and
 its specification-derived helpers used by that run. Keep the work directory
 through review, then apply the repository's
 [evidence retention rules](../../development/DEVELOPMENT.md#evidence-and-retention).
-Native results are development evidence only. Synthetic runtime checks can
-demonstrate the exercised adapter and local process controls; they establish no
-real harness behavior, provider consumption or Linux qualification.
+Native results are development evidence only. The container suite runs this
+driver on both supported Linux architectures, with distinct release-profile
+and debug-profile development writers and a featureless release binary. It
+requires every case and control, exports `RESULT.json`, `environment.json`,
+`commands/`, `witness/` and `driver-snapshot/` to `runtime-evidence/`, and retains
+the original container through review. It also exports the whole work tree to
+`runtime-work.tar` on every run: launch markers beside fixture executables are
+independent witnesses outside `witness/`. The qualification extractor
+checks actual counts, full source case inventory, source/binary identities,
+the exported evidence listing and the complete work archive's digest. The standalone report makes no qualification
+claim itself; the enclosing Linux suite qualifies only the adapter and process
+controls it exercises, never real-harness behavior or provider consumption.

@@ -21,7 +21,7 @@ use crate::{
     json::{self, J},
     log, runs, util, world,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::io::{Read, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::{
@@ -615,6 +615,35 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
         let mut output = Vec::new();
         let mut incoming = Vec::new();
         let mut pending: Option<Pending> = None;
+        let mut waiting = Waiting::default();
+        let start_tool = |task: &Pending, usage: Summary| {
+            let mut used = live.used_before;
+            used.add(&Usage {
+                harness: Some(usage),
+                ..Usage::default()
+            });
+            let state = log::read(live.audit);
+            let placement = answer::Placement {
+                run: live.run,
+                continuing: live.run > 1,
+                used,
+                limits: live.world.arrangement.limits,
+                notices_used: answer::NoticesUsed {
+                    reminder: state.notice_used("reminder"),
+                    near_limit: state.notice_used("near_limit"),
+                },
+            };
+            let worker = task.clone();
+            let tx = tx.clone();
+            scope.spawn(move || {
+                let call_id = format!("mcp-{}", worker.call);
+                let call = worker.as_call(&call_id);
+                let result = worker
+                    .gate
+                    .within(|| answer::execute(live.audit, live.world, &placement, &call));
+                let _ = tx.send(Input::Tool(result));
+            });
+        };
         let mut calls = 0u64;
         let mut readers = 2usize;
         let mut eof = std::collections::BTreeSet::new();
@@ -794,6 +823,7 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                                                 p.gate.cancel();
                                             }
                                         }
+                                        waiting.cancel(&key);
                                     }
                                     Action::Reply(value) => cap.send(
                                         "mcp-out",
@@ -806,34 +836,26 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                                         name,
                                         arguments,
                                     } => {
-                                        if !observed.initialized
-                                            || pending.is_some()
-                                            || gate.permit().is_err()
-                                        {
-                                            cap.send("mcp-out", connection.as_mut().unwrap(), &wire::line(wire::error(&id, -32000, "startup is unvalidated, placement stopped, or another tool is pending")))?;
+                                        if !observed.initialized || gate.permit().is_err() {
+                                            cap.send(
+                                                "mcp-out",
+                                                connection.as_mut().unwrap(),
+                                                &wire::line(wire::error(
+                                                    &id,
+                                                    -32000,
+                                                    "startup is unvalidated or placement stopped",
+                                                )),
+                                            )?;
+                                            continue;
+                                        }
+                                        if pending.is_some() && !waiting.can_admit(raw.len()) {
+                                            cap.send("mcp-out", connection.as_mut().unwrap(), &wire::line(wire::error(&id, -32000, "tool queue limit: at most 32 waiting calls and 16 MiB of request frames; this call was not admitted")))?;
                                             continue;
                                         }
                                         calls += 1;
                                         live.dir
                                             .write_call(calls, &raw)
                                             .map_err(|e| live.record_error(e.error))?;
-                                        let mut used = live.used_before;
-                                        used.add(&Usage {
-                                            harness: Some(observed.usage),
-                                            ..Usage::default()
-                                        });
-                                        let state = log::read(live.audit);
-                                        let placement = answer::Placement {
-                                            run: live.run,
-                                            continuing: live.run > 1,
-                                            used,
-                                            limits: live.world.arrangement.limits,
-                                            notices_used: answer::NoticesUsed {
-                                                reminder: state.notice_used("reminder"),
-                                                near_limit: state.notice_used("near_limit"),
-                                            },
-                                        };
-                                        let call_gate = gate.call();
                                         let task = Pending {
                                             id,
                                             key,
@@ -841,25 +863,14 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                                             arguments,
                                             raw,
                                             call: calls,
-                                            gate: call_gate.clone(),
+                                            gate: gate.call(),
                                         };
-                                        let worker = task.clone();
-                                        let tx = tx.clone();
-                                        scope.spawn(move || {
-                                            let call = answer::Call {
-                                                call: worker.call,
-                                                tool_use_id: &format!("mcp-{}", worker.call),
-                                                name: Some(&worker.name),
-                                                input: Some(&worker.arguments),
-                                            };
-                                            let result = call_gate.within(|| {
-                                                answer::execute(
-                                                    live.audit, live.world, &placement, &call,
-                                                )
-                                            });
-                                            let _ = tx.send(Input::Tool(result));
-                                        });
-                                        pending = Some(task);
+                                        if pending.is_some() {
+                                            waiting.push(task);
+                                        } else {
+                                            start_tool(&task, observed.usage);
+                                            pending = Some(task);
+                                        }
                                     }
                                 }
                             }
@@ -923,6 +934,10 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                                 "core tool required the placement to stop; see its retained result"
                                     .into(),
                             );
+                        }
+                        if let Some(task) = waiting.pop() {
+                            start_tool(&task, observed.usage);
+                            pending = Some(task);
                         }
                     }
                 }
@@ -996,6 +1011,20 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                 Err(_) => break,
             }
         }
+        // These requests were admitted and captured, but never dispatched.
+        // Retain their refusals after the running worker settles so revisions
+        // reflect all observed effects. Do not execute them during shutdown.
+        while let Some(task) = waiting.pop() {
+            let call_id = format!("mcp-{}", task.call);
+            let refusal = answer::refused_before_execution(
+                &task.as_call(&call_id),
+                log::read(live.audit).revision(),
+                task.gate.permit().err().expect("placement gate is stopped"),
+            );
+            if let Err(e) = retain_tool(live, &task, &refusal) {
+                drain_error = Some(e);
+            }
+        }
         if !output.is_empty() || !incoming.is_empty() {
             drain_error =
                 Some("runtime ended with a partial frame; original chunks retained".into());
@@ -1029,6 +1058,48 @@ struct Pending {
     raw: Vec<u8>,
     call: u64,
     gate: Gate,
+}
+
+impl Pending {
+    fn as_call<'a>(&'a self, call_id: &'a str) -> answer::Call<'a> {
+        answer::Call {
+            call: self.call,
+            tool_use_id: call_id,
+            name: Some(&self.name),
+            input: Some(&self.arguments),
+        }
+    }
+}
+
+const WAITING_CALLS: usize = 32;
+const WAITING_BYTES: usize = 16 * 1024 * 1024;
+
+/// Only waiting calls count against these bounds. Cancellation leaves a call
+/// in its ordered slot until its refusal is retained and returned.
+#[derive(Default)]
+struct Waiting {
+    calls: VecDeque<Pending>,
+    bytes: usize,
+}
+impl Waiting {
+    fn can_admit(&self, bytes: usize) -> bool {
+        self.calls.len() < WAITING_CALLS && bytes <= WAITING_BYTES - self.bytes
+    }
+    fn push(&mut self, task: Pending) {
+        assert!(self.can_admit(task.raw.len()));
+        self.bytes += task.raw.len();
+        self.calls.push_back(task);
+    }
+    fn pop(&mut self) -> Option<Pending> {
+        let task = self.calls.pop_front()?;
+        self.bytes -= task.raw.len();
+        Some(task)
+    }
+    fn cancel(&self, key: &str) {
+        if let Some(task) = self.calls.iter().find(|task| task.key == key) {
+            task.gate.cancel();
+        }
+    }
 }
 
 fn retain_tool(live: &Live, p: &Pending, result: &answer::Executed) -> Result<(), String> {
@@ -1237,6 +1308,96 @@ fn publication_error(error: log::PubErr) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn queued_call(gate: &Gate, call: u64, bytes: usize) -> Pending {
+        Pending {
+            id: call.to_string().into_bytes(),
+            key: format!("n:{call}"),
+            name: "record_account".into(),
+            arguments: b"{}".to_vec(),
+            raw: vec![b' '; bytes],
+            call,
+            gate: gate.call(),
+        }
+    }
+
+    #[test]
+    fn waiting_cancellation_prevents_publication_and_preserves_sibling_order() {
+        let (path, audit) = log::tests::scratch_audit();
+        let gate = Gate::new(Instant::now() + Duration::from_secs(60));
+        // Prove that the real publication path fires before altering cancellation.
+        assert!(
+            gate.within(|| log::publish(&audit, "reference", |_| Ok(log::tests::reference_body())))
+                .is_ok()
+        );
+        let count = audit.sub("log").unwrap().names().unwrap().len();
+        let mut waiting = Waiting::default();
+        waiting.push(queued_call(&gate, 2, 10));
+        waiting.push(queued_call(&gate, 3, 10));
+        waiting.cancel("n:99");
+        assert!(waiting.calls.iter().all(|c| c.gate.permit().is_ok()));
+        // The cancelled call is still waiting: no executor has taken it.
+        waiting.cancel("n:2");
+        let cancelled = waiting.pop().unwrap();
+        assert_eq!(cancelled.call, 2);
+        let result = cancelled
+            .gate
+            .within(|| log::publish(&audit, "close_requested", |_| Ok(log::tests::close_body())));
+        assert!(matches!(result, Err(log::PubErr::Refused(f)) if f.reason == "placement_stopped"));
+        assert_eq!(audit.sub("log").unwrap().names().unwrap().len(), count);
+        let reply = answer::refused_before_execution(
+            &cancelled.as_call("mcp-2"),
+            0,
+            cancelled.gate.permit().err().unwrap(),
+        );
+        assert_eq!(reply.reason.as_deref(), Some("placement_stopped"));
+        assert!(reply.log_record.is_none());
+        assert!(reply.is_error);
+        let sibling = waiting.pop().unwrap();
+        assert_eq!(sibling.call, 3);
+        assert!(
+            sibling
+                .gate
+                .within(|| {
+                    log::publish(&audit, "close_requested", |_| Ok(log::tests::close_body()))
+                })
+                .is_ok()
+        );
+        assert_eq!(audit.sub("log").unwrap().names().unwrap().len(), count + 1);
+        assert_eq!(waiting.bytes, 0);
+        assert!(waiting.pop().is_none());
+        std::fs::remove_dir_all(path).unwrap();
+    }
+
+    #[test]
+    fn waiting_bounds_refuse_overflow_without_discarding_accepted_calls() {
+        let gate = Gate::new(Instant::now() + Duration::from_secs(60));
+        let mut waiting = Waiting::default();
+        for n in 1..=WAITING_CALLS {
+            assert!(waiting.can_admit(1));
+            waiting.push(queued_call(&gate, n as u64, 1));
+        }
+        assert!(!waiting.can_admit(1));
+        waiting.cancel("n:1");
+        assert!(!waiting.can_admit(1), "cancellation keeps its ordered slot");
+        for n in 1..=WAITING_CALLS {
+            assert_eq!(waiting.pop().unwrap().call, n as u64);
+            assert!(waiting.can_admit(1));
+        }
+        for n in 1..=2 {
+            assert!(waiting.can_admit(WAITING_BYTES / 2));
+            waiting.push(queued_call(&gate, n, WAITING_BYTES / 2));
+        }
+        assert!(!waiting.can_admit(1));
+        assert_eq!(waiting.pop().unwrap().call, 1);
+        assert!(waiting.can_admit(WAITING_BYTES / 2));
+        gate.stop();
+        assert_eq!(
+            waiting.pop().unwrap().gate.permit().err().unwrap().reason,
+            "placement_stopped"
+        );
+        assert_eq!(waiting.bytes, 0);
+    }
+
     #[test]
     fn accepted_connection_waits_through_idle_intervals() {
         use std::os::fd::AsRawFd;

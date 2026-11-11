@@ -22,9 +22,9 @@
 # For each architecture it:
 #   1. builds, from a git archive of HEAD plus service/vendor, the release binary,
 #      the test binary (--features fault-injection,sabotage, its own target folder)
-#      the development binary (--features claude-code, its own target folder)
+#      the development binaries (--features claude-code, release and debug profiles)
 #      and a glibc build used only as a control;
-#   2. checks the apparatus with firing controls: all three musl binaries pass the
+#   2. checks the apparatus with firing controls: all four musl binaries pass the
 #      static check and the glibc build fails it; the release and test binaries
 #      differ under cmp; the release binary lacks all six test-only variable
 #      names of INTERFACE Appendix C while the test binary contains them;
@@ -35,6 +35,8 @@
 #      --network-isolated --require-all-controls --keep-work failed (every Appendix C.2 sabotage
 #      control assigned and fired). The timing gates are on only for the host's
 #      native architecture; emulated timings are reported, not gated.
+#   4. runs the standalone synthetic runtime driver against the development
+#      binaries in that same container, with no real harness or provider calls.
 # host/DONE reports failures=N; host/SUMMARY collects the self-test and driver counts.
 set -u
 
@@ -131,12 +133,15 @@ for p in $PLATFORMS; do
     expect "$OUT/$b/build-release.exit" 0 "$p: release build"
     expect "$OUT/$b/build-test.exit" 0 "$p: test build"
     expect "$OUT/$b/build-local.exit" 0 "$p: development build"
+    expect "$OUT/$b/build-local-variant.exit" 0 "$p: second development build"
     expect "$OUT/$b/static-stewart.exit" 0 "$p: release binary is static"
     expect "$OUT/$b/static-stewart-test.exit" 0 "$p: test binary is static"
     expect "$OUT/$b/static-stewart-local.exit" 0 "$p: development binary is static"
+    expect "$OUT/$b/static-stewart-local-variant.exit" 0 "$p: second development binary is static"
     expect "$OUT/$b/build-glibc.exit" 0 "$p: glibc control builds"
     expect "$OUT/$b/static-stewart-glibc.exit" 1 "$p: control fired: the static check rejects the glibc build"
     expect "$OUT/$b/cmp-release-test.exit" 1 "$p: control fired: cmp distinguishes the release and test binaries"
+    expect "$OUT/$b/cmp-local-variant.exit" 1 "$p: control fired: development writers differ"
     for var in $TEST_VARS; do
         expect "$OUT/$b/strings-stewart-$var.exit" 1 "$p: release binary lacks $var"
         expect "$OUT/$b/strings-stewart-test-$var.exit" 0 "$p: control fired: the test binary contains $var"
@@ -144,15 +149,19 @@ for p in $PLATFORMS; do
     expect "$OUT/$b/markers-release.exit" 0 "$p: release binary lacks all adapter markers"
     expect "$OUT/$b/markers-test.exit" 0 "$p: test binary lacks all adapter markers"
     expect "$OUT/$b/markers-local.exit" 0 "$p: control fired: development binary contains every adapter marker"
+    expect "$OUT/$b/markers-local-variant.exit" 0 "$p: control fired: second development binary contains every adapter marker"
     expect "$OUT/$b/run-release.exit" 0 "$p: release binary runs (help)"
     expect "$OUT/$b/run-test.exit" 0 "$p: test binary runs (help)"
     expect "$OUT/$b/run-local.exit" 0 "$p: development binary runs (help)"
-    if [ ! -f "$OUT/$b/stewart" ] || [ ! -f "$OUT/$b/stewart-test" ]; then
+    expect "$OUT/$b/run-local-variant.exit" 0 "$p: second development binary runs (help)"
+    if [ ! -f "$OUT/$b/stewart" ] || [ ! -f "$OUT/$b/stewart-test" ] || \
+       [ ! -f "$OUT/$b/stewart-local" ] || [ ! -f "$OUT/$b/stewart-local-variant" ]; then
         fail "$p: binaries missing; driver not run"
         continue
     fi
     mkdir -p "$OUT/bin-$p"
-    cp "$OUT/$b/stewart" "$OUT/$b/stewart-test" "$OUT/bin-$p/"
+    cp "$OUT/$b/stewart" "$OUT/$b/stewart-test" "$OUT/$b/stewart-local" \
+        "$OUT/$b/stewart-local-variant" "$OUT/bin-$p/"
     gate=off
     [ "$p" = "$NATIVE" ] && gate=on
     d="driver-$p"
@@ -168,12 +177,19 @@ for p in $PLATFORMS; do
     expect "$OUT/$d/selftest.exit" 0 "$p: driver self-test"
     expect "$OUT/$d/evidence-copy.exit" 0 "$p: independent driver evidence retained"
     expect "$OUT/$d/retention.exit" 0 "$p: requested working-file retention completed"
+    expect "$OUT/$d/runtime-selftest.exit" 0 "$p: synthetic runtime self-test"
+    expect "$OUT/$d/runtime-driver.exit" 0 "$p: synthetic runtime driver"
+    expect "$OUT/$d/runtime-complete.exit" 0 "$p: synthetic runtime has no skipped or unselected cases"
+    expect "$OUT/$d/runtime-evidence-copy.exit" 0 "$p: independent runtime evidence retained"
+    expect "$OUT/$d/runtime-retention.exit" 0 "$p: runtime working-file retention completed"
     note "$p: driver container $driver_container retained until review"
     {
         echo "== $p (timing gate $gate) =="
         tail -1 "$OUT/$d/selftest.stdout" 2>/dev/null
         sed -n '/^## Counts/,/^## Timing gate/p' "$OUT/$d/evidence/RESULTS.md" 2>/dev/null | sed '$d'
         echo "driver exit: $(cat "$OUT/$d/driver-final.exit" 2>/dev/null || echo missing)"
+        tail -1 "$OUT/$d/runtime-selftest.stdout" 2>/dev/null
+        tail -2 "$OUT/$d/runtime-driver.stdout" 2>/dev/null
     } >>"$OUT/host/SUMMARY"
 done
 

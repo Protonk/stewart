@@ -102,6 +102,9 @@ DATE_KEYS = ("at", "ended_at", "finished_at")  # JSON fields that can date an ex
 DATE_FROM = re.compile(r"(.+) field (%s)" % "|".join(DATE_KEYS))
 O_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
 SELFTEST_LINE = re.compile(r"self-test: (\d+) checks, (\d+) passed, (\d+) failed, (\d+) skipped")
+RUNTIME_SELFTEST_LINE = re.compile(r"Self-test: (\d+) passed, (\d+) failed, (\d+) skipped")
+RUNTIME_COUNTS = ("cases", "passed", "failed", "skipped", "checks", "checks_passed", "checks_failed",
+                  "controls", "controls_fired")
 # Fields typed by a person rather than read from evidence; check does not re-derive them.
 TYPED_FIELDS = ("pin", "summary")
 # Finder writes a file with this name into a folder a person opens; a folder result's digest skips it.
@@ -307,6 +310,27 @@ class Evidence:
     def digest(self, rel, need=True):
         data = self.bytes(rel, need)
         return None if data is None else sha256(data)
+
+    def streamed_digest(self, rel):
+        """Hash a potentially large regular export without retaining it in memory."""
+        reached = self._reach(rel)
+        if reached is None:
+            return None
+        dfd, name, seen = reached
+        try:
+            if not stat.S_ISREG(seen.st_mode):
+                self.problem("%s: not a regular file" % rel)
+                return None
+            fd = self._open_at(dfd, name, seen, rel, os.O_NONBLOCK)
+            if fd is None:
+                return None
+            try:
+                result = self._file_digest(fd, rel)
+                return result[0] if result else None
+            finally:
+                os.close(fd)
+        finally:
+            os.close(dfd)
 
     def _entry(self, dfd, name, shown, need=True):
         """The lstat of NAME in the folder DFD, or None with a problem noted (a missing NAME only when NEED). NAME
@@ -675,6 +699,119 @@ def explain_not_run(ev, head, p, steps):
     return why
 
 
+def runtime_acceptance(ctx, ev, head, p, bins, fails):
+    """Read the separate synthetic runtime result only when the run's script requires it."""
+    folder = "driver-%s/runtime-evidence" % p
+    result_rel, environment_rel = folder + "/RESULT.json", folder + "/environment.json"
+    res, environment = ev.json(result_rel), ev.json(environment_rel)
+    if not isinstance(res, dict) or res.get("schema") != "stewart.claude-code.offline-driver/2":
+        ev.problem("%s: schema is not stewart.claude-code.offline-driver/2" % result_rel)
+        return None
+    if not isinstance(environment, dict):
+        ev.problem("%s: not an object" % environment_rel)
+        return None
+    get = lambda dotted, kind: ev.field(res, dotted, result_rel, kind)
+    counts = {key: get("counts." + key, "count") for key in RUNTIME_COUNTS}
+    cases, checks, controls = (get(name, list) for name in ("cases", "checks", "controls"))
+    if get("not_selected", list):
+        fails.append("runtime: some cases were not selected")
+    if get("qualification", "bool") is not False:
+        fails.append("runtime: synthetic observations claim independent qualification")
+    rows = {}
+    for label, values in (("cases", cases), ("checks", checks), ("controls", controls)):
+        rows[label] = [row for row in values or []
+                       if ev.typed(row, dict, "%s: %s row" % (result_rel, label)) is not None]
+    cases, checks, controls = (rows[name] for name in ("cases", "checks", "controls"))
+    derived = {"cases": len(cases), "checks": len(checks), "controls": len(controls),
+               **{name: sum(row.get("outcome") == name for row in cases)
+                  for name in ("passed", "failed", "skipped")},
+               "checks_passed": sum(row.get("passed") is True for row in checks),
+               "checks_failed": sum(row.get("passed") is False for row in checks),
+               "controls_fired": sum(row.get("fired") is True for row in controls)}
+    if counts != derived:
+        fails.append("runtime: reported counts differ from the result rows")
+    if (derived["cases"] == 0 or derived["passed"] != derived["cases"]
+            or derived["checks"] == 0 or derived["checks_passed"] != derived["checks"]
+            or derived["controls"] == 0 or derived["controls_fired"] != derived["controls"]):
+        fails.append("runtime: cases/checks/controls are missing, failed, skipped or unfired")
+    names = [row.get("name") for row in cases]
+    if any(not isinstance(name, str) for name in names) or len(set(map(str, names))) != len(names):
+        fails.append("runtime: case identities are missing or repeated")
+    for row in cases:
+        selected_checks = [check for check in checks if check.get("case") == row.get("name")]
+        if (row.get("checks") != len(selected_checks) or not selected_checks
+                or row.get("failures") != sum(check.get("passed") is not True for check in selected_checks)
+                or row.get("skip_reason") is not None):
+            fails.append("runtime: case %s disagrees with its checks or reports a skip" % row.get("name"))
+    if any(row.get("case") not in names for row in checks + controls):
+        fails.append("runtime: checks or controls name an absent case")
+
+    driver_path = "apparatus/driver/claude_code.py"
+    source = ctx.blob(head["source_commit"], driver_path)
+    if source is None:
+        ev.problem(ctx.why_no_blob(head["source_commit"], driver_path))
+    else:
+        try:
+            inventory = next(ast.literal_eval(node.value) for node in ast.parse(source).body
+                             if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name)
+                                and target.id == "CASES" for target in node.targets))
+            expected_names = [name for name, _description in inventory]
+        except (SyntaxError, ValueError, TypeError, StopIteration):
+            ev.problem("%s at the source commit: cannot read its CASES inventory" % driver_path)
+        else:
+            if names != expected_names:
+                fails.append("runtime: case identities/order differ from the source driver's full inventory")
+        if environment.get("driver_sha256") != sha256(source):
+            fails.append("runtime: driver digest differs from the source commit")
+    for name in ("claude_code.py", "driver_core.py", "rawjson.py"):
+        original = ctx.blob(head["source_commit"], "apparatus/driver/" + name)
+        snapshot = ev.digest(folder + "/driver-snapshot/" + name)
+        if original is None:
+            ev.problem(ctx.why_no_blob(head["source_commit"], "apparatus/driver/" + name))
+        elif snapshot != sha256(original):
+            fails.append("runtime: %s snapshot differs from the source commit" % name)
+
+    digests = {}
+    for field, built in (("binary_sha256", "stewart-local"), ("release_sha256", "stewart"),
+                         ("variant_sha256", "stewart-local-variant")):
+        digest = ev.field(environment, field, environment_rel, "str")
+        digests[field] = digest
+        if digest is not None and not HEX64.fullmatch(digest):
+            ev.problem("%s: %s is not a SHA-256" % (environment_rel, field))
+        if bins is not None and bins.get("build-%s/%s" % (p, built)) != digest:
+            fails.append("runtime: %s differs from the built binary digest" % built)
+    if digests["binary_sha256"] == digests["variant_sha256"]:
+        fails.append("runtime: the development writers are not distinct")
+    if environment.get("qualification") is not False:
+        fails.append("runtime: environment labels synthetic observations as qualification")
+
+    self_test = None
+    summary = ev.text("driver-%s/runtime-selftest.stdout" % p)
+    found = RUNTIME_SELFTEST_LINE.findall(summary or "")
+    if not found:
+        ev.problem("driver-%s/runtime-selftest.stdout: no self-test summary" % p)
+    else:
+        passed, failed, skipped = map(int, found[-1])
+        self_test = {"passed": passed, "failed": failed, "skipped": skipped}
+        if not passed or failed or skipped:
+            fails.append("runtime self-test: %d passed, %d failed, %d skipped" % (passed, failed, skipped))
+    for name in ("commands", "witness"):
+        members = ev.tree(folder + "/" + name)
+        if members is not None and not members[0]:
+            fails.append("runtime: exported %s contains no evidence" % name)
+    evidence = ev.tree(folder)
+    work_sha256 = ev.streamed_digest("driver-%s/runtime-work.tar" % p)
+    exported_sha256 = ev.first_token("driver-%s/runtime-retention-sha256.stdout" % p)
+    if work_sha256 is not None and work_sha256 != exported_sha256:
+        fails.append("runtime: work archive differs from its completed-export digest")
+    return {"self_test": self_test, "counts": counts,
+            "result_sha256": ev.digest(result_rel), "environment_sha256": ev.digest(environment_rel),
+            "work_sha256": work_sha256,
+            "evidence": {"files": evidence[0], "listing_sha256": evidence[1]} if evidence else None,
+            "development_sha256": digests["binary_sha256"], "release_sha256": digests["release_sha256"],
+            "variant_sha256": digests["variant_sha256"], "driver_sha256": environment.get("driver_sha256")}
+
+
 def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
     fails = []
     result_rel = "driver-%s/evidence/RESULT.json" % p
@@ -808,6 +945,9 @@ def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
                 fails.append("host/binaries.sha256 gives %s for build-%s/%s; the driver ran %s"
                              % (recorded, p, built, ran))
 
+    extra = {}
+    if any(folder == "driver" and name == "runtime-driver" for folder, name, _want, _label in expectations):
+        extra["runtime"] = runtime_acceptance(ctx, ev, head, p, bins, fails)
     rustc = ev.line("build-%s/toolchain.stdout" % p)
     return {
         "execution": execution,
@@ -827,6 +967,7 @@ def acceptance_platform(ctx, ev, head, p, machine, native, expectations, bins):
         "release_sha256": digests["release"],
         "test_sha256": digests["test"],
         "result_sha256": ev.digest(result_rel),
+        **extra,
     }
 
 
@@ -1135,6 +1276,13 @@ def _timing_gate(value, where, probs):
 
 # A platform of an acceptance run whose results are absent records only why; otherwise it records everything.
 ACCEPTANCE_NOT_RUN = {"execution": _OPT_STR, "outcome": _OUTCOME, "failures": _FAILURES}
+RUNTIME_PLATFORM = _object({
+    "self_test": _counts("passed", "failed", "skipped"), "counts": _counts(*RUNTIME_COUNTS),
+    "result_sha256": _SHA, "environment_sha256": _SHA,
+    "work_sha256": _SHA,
+    "evidence": _object({"files": _INT, "listing_sha256": _SHA}),
+    "development_sha256": _SHA, "release_sha256": _SHA, "variant_sha256": _SHA, "driver_sha256": _SHA,
+})
 ACCEPTANCE_PLATFORM = dict(ACCEPTANCE_NOT_RUN, **{
     "toolchain_image": _OPT_STR, "rustc": _OPT_STR,
     "script_checks": _counts("passed", "total", "controls_fired", "controls_total"),
@@ -1147,6 +1295,7 @@ ACCEPTANCE_PLATFORM = dict(ACCEPTANCE_NOT_RUN, **{
     "timing_gate": _timing_gate,
     "e2e": _object({"case": _STR, "outcome": _SCALAR, "checks_passed": _NUM, "checks_failed": _NUM}),
     "release_sha256": _OPT_STR, "test_sha256": _OPT_STR, "result_sha256": _OPT_SHA,
+    "runtime": RUNTIME_PLATFORM,
 })
 TOOLCHAIN_PLATFORM = dict(ACCEPTANCE_NOT_RUN, **{
     "toolchain_image": _OPT_STR, "rustc": _OPT_STR,
@@ -1176,7 +1325,9 @@ def _platforms(suite):
                 spec = ACCEPTANCE_NOT_RUN
             else:
                 spec = ACCEPTANCE_PLATFORM
-            _fields(pl, spec, "%s.%s" % (where, key), probs)
+            # Runtime evidence is present precisely when the run's own source
+            # script required it. Do not invent observations for earlier runs.
+            _fields(pl, spec, "%s.%s" % (where, key), probs, checked_elsewhere=("runtime",))
     return check
 
 
@@ -1572,6 +1723,24 @@ def render_platform_rows(e):
             ("Test binary SHA-256", [code(pl.get("test_sha256")) for pl in pls]),
             ("RESULT.json SHA-256", [code(pl.get("result_sha256")) for pl in pls]),
         ]
+        if any("runtime" in pl for pl in pls):
+            runtimes = [pl.get("runtime") or {} for pl in pls]
+            rows += [
+                ("Synthetic runtime cases", [counts(runtime, "counts", ("cases", "passed", "failed", "skipped"))
+                                             for runtime in runtimes]),
+                ("Synthetic runtime checks", [counts(runtime, "counts", ("checks", "checks_passed", "checks_failed"))
+                                              for runtime in runtimes]),
+                ("Synthetic runtime controls", [ratio(runtime.get("counts"), "controls_fired", "controls")
+                                                for runtime in runtimes]),
+                ("Synthetic runtime self-test", [counts(runtime, "self_test", ("passed", "failed", "skipped"))
+                                                 for runtime in runtimes]),
+                ("Development binary SHA-256", [code(runtime.get("development_sha256")) for runtime in runtimes]),
+                ("Second development binary SHA-256", [code(runtime.get("variant_sha256")) for runtime in runtimes]),
+                ("Synthetic runtime RESULT.json SHA-256", [code(runtime.get("result_sha256")) for runtime in runtimes]),
+                ("Synthetic runtime evidence listing SHA-256", [code((runtime.get("evidence") or {}).get("listing_sha256"))
+                                                                for runtime in runtimes]),
+                ("Synthetic runtime work archive SHA-256", [code(runtime.get("work_sha256")) for runtime in runtimes]),
+            ]
     else:
         def build(pl, i):
             bs = pl.get("builds") or []
@@ -2277,6 +2446,116 @@ def _fixture_run(ctx, run_id, commit, date, failing):
     w("host/binaries.sha256", "\n".join(bins) + "\n")
 
 
+def _runtime_self_test(base, isolated, record_control):
+    """Independent fixture mutations for the optional, source-declared runtime tier."""
+    def control(name, passed, detail="source-bound synthetic runtime evidence"):
+        record_control(name, passed, detail)
+
+    root = os.path.join(base, "runtime-repo")
+    os.mkdir(root)
+    ctx = Ctx(root, git_env=isolated)
+    script = FIXTURE_SCRIPT + ''.join(
+        '    expect "$OUT/$d/%s.exit" 0 "$p: runtime fixture"\n' % name
+        for name in ("runtime-driver", "runtime-selftest", "runtime-complete",
+                     "runtime-evidence-copy", "runtime-retention"))
+    _write(root, "apparatus/acceptance.sh", script)
+    sources = {"claude_code.py": 'CASES = (("runtime-one", "fixture"),)\n',
+               "driver_core.py": "# specification fixture\n", "rawjson.py": "# decoder fixture\n"}
+    for name, contents in sources.items():
+        _write(root, "apparatus/driver/" + name, contents)
+    ctx.git(["init", "-q"])
+    ctx.git(["add", "-A"])
+    ctx.git(["commit", "-q", "--no-verify", "-m", "runtime fixture"])
+    commit = ctx.git(["rev-parse", "HEAD"]).stdout.decode().strip()
+    _fixture_run(ctx, "runtime", commit, "2026-01-04T00:00:00Z", False)
+    folder = os.path.join(ctx.scratch, "runtime")
+    binaries = _read(os.path.join(folder, "host/binaries.sha256")).decode()
+    for p, _key, _machine in PLATFORMS:
+        prefix = "driver-%s/runtime-evidence/" % p
+        release = sha256(("runtime-%s-r" % p).encode())
+        local, variant = sha256((p + "-local").encode()), sha256((p + "-variant").encode())
+        binaries += "%s  /r/build-%s/stewart-local\n%s  /r/build-%s/stewart-local-variant\n" % (
+            local, p, variant, p)
+        report = {"schema": "stewart.claude-code.offline-driver/2", "qualification": False,
+                  "not_selected": [],
+                  "counts": {"cases": 1, "passed": 1, "failed": 0, "skipped": 0, "checks": 1,
+                             "checks_passed": 1, "checks_failed": 0, "controls": 1, "controls_fired": 1},
+                  "cases": [{"name": "runtime-one", "outcome": "passed", "checks": 1,
+                             "failures": 0, "skip_reason": None}],
+                  "checks": [{"case": "runtime-one", "name": "fixture", "passed": True}],
+                  "controls": [{"case": "runtime-one", "name": "fixture-control", "fired": True}]}
+        environment = {"qualification": False, "binary_sha256": local, "release_sha256": release,
+                       "variant_sha256": variant, "driver_sha256": sha256(sources["claude_code.py"].encode())}
+        _write(folder, prefix + "RESULT.json", json.dumps(report))
+        _write(folder, prefix + "environment.json", json.dumps(environment))
+        _write(folder, prefix + "commands/command.stdout", "fixture command result\n")
+        _write(folder, prefix + "witness/traffic", "fixture independent traffic\n")
+        for name, contents in sources.items():
+            _write(folder, prefix + "driver-snapshot/" + name, contents)
+        for name in ("runtime-driver", "runtime-selftest", "runtime-complete",
+                     "runtime-evidence-copy", "runtime-retention"):
+            _write(folder, "driver-%s/%s.exit" % (p, name), "0\n")
+        _write(folder, "driver-%s/runtime-selftest.stdout" % p, "Self-test: 3 passed, 0 failed, 0 skipped\n")
+        _write(folder, "driver-%s/runtime-work.tar" % p, "fixture archive\n")
+        _write(folder, "driver-%s/runtime-retention-sha256.stdout" % p,
+               sha256(b"fixture archive\n") + "  /out/runtime-work.tar\n")
+    _write(folder, "host/binaries.sha256", binaries)
+    baseline = extract_suite(ctx, "runtime", "acceptance")
+    control("runtime: full synthetic evidence qualifies both platforms",
+            baseline["outcome"] == "qualified" and all(pl["runtime"]["counts"]["cases"] == 1
+                                                       for pl in baseline["platforms"].values()))
+    record = {"schema": SCHEMA, "entries": [baseline]}
+    control("runtime: extracted fields validate and render separately",
+            not record_problems(record) and "Synthetic runtime cases" in render(record))
+
+    def mutate(name, rel, transform, unreadable=False):
+        path = os.path.join(folder, rel)
+        original = _read(path)
+        try:
+            replacement = transform(original)
+            if replacement is None:
+                os.unlink(path)
+            else:
+                _write(folder, rel, replacement.decode() if isinstance(replacement, bytes) else replacement)
+            try:
+                changed = extract_suite(ctx, "runtime", "acceptance")
+            except ExtractError:
+                rejected = True
+            else:
+                rejected = not unreadable and changed["outcome"] == "failed"
+            control("runtime: " + name, rejected)
+        finally:
+            _write(folder, rel, original.decode())
+    result_rel = "driver-arm64/runtime-evidence/RESULT.json"
+    env_rel = "driver-arm64/runtime-evidence/environment.json"
+    def change_json(fn):
+        def change(raw):
+            value = json.loads(raw)
+            fn(value)
+            return json.dumps(value)
+        return change
+    mutate("missing result cannot qualify", result_rel, lambda raw: None, unreadable=True)
+    mutate("unselected cases fail", result_rel, change_json(lambda obj: obj["not_selected"].append("runtime-one")))
+    mutate("forged aggregate counts fail", result_rel, change_json(lambda obj: obj["counts"].update(checks=2)))
+    mutate("unfired controls fail", result_rel, change_json(lambda obj: (
+        obj["controls"][0].update(fired=False), obj["counts"].update(controls_fired=0))))
+    mutate("a consistently reported skip fails", result_rel, change_json(lambda obj: (
+        obj["cases"][0].update(outcome="skipped", skip_reason="fixture"), obj["counts"].update(passed=0, skipped=1))))
+    mutate("omitted full-inventory case fails", result_rel, change_json(lambda obj: (
+        obj.update(cases=[], checks=[], controls=[]), obj["counts"].update({key: 0 for key in RUNTIME_COUNTS}))))
+    mutate("different development digest fails", env_rel, change_json(lambda obj: obj.update(binary_sha256="0" * 64)))
+    mutate("altered driver snapshot fails", "driver-arm64/runtime-evidence/driver-snapshot/claude_code.py",
+           lambda raw: raw + b"# altered\n")
+    mutate("failed export fails", "driver-arm64/runtime-evidence-copy.exit", lambda raw: "1\n")
+    mutate("missing work archive refuses", "driver-arm64/runtime-work.tar", lambda raw: None, unreadable=True)
+    mutate("corrupt work archive fails", "driver-arm64/runtime-work.tar", lambda raw: raw + b"changed\n")
+    mutate("skipped self-test fails", "driver-arm64/runtime-selftest.stdout",
+           lambda raw: "Self-test: 2 passed, 0 failed, 1 skipped\n")
+    mutate("empty independent witness fails", "driver-arm64/runtime-evidence/witness/traffic", lambda raw: None)
+    control("runtime: restoring every mutation preserves the baseline",
+            extract_suite(ctx, "runtime", "acceptance") == baseline)
+
+
 def _tree_state(path):
     """{relative path: what is there} for everything under PATH, links not followed: a witness of any change."""
     state = {}
@@ -2479,6 +2758,7 @@ def run_self_test(out=print):
 
 
 def _self_test_controls(base, isolated, control):
+    _runtime_self_test(base, isolated, control)
     root = os.path.join(base, "repo")
     os.makedirs(root)
     ctx = Ctx(root, git_env=isolated)

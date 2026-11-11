@@ -467,14 +467,35 @@ Interpreted strings require well-formed Unicode without NUL. Core invocation
 IDs are `mcp-C` for call number C; the original JSON-RPC ID remains in the
 request capture and response, and determines cancellation and duplicate checks.
 Tool arguments retain their original bytes for strict core validation.
+
+After startup validation, tool calls execute one at a time in arrival order.
+A call arriving behind an unfinished call waits; it is not refused merely
+because another call is pending. At most 32 calls may wait, with at most
+16 MiB of their original request frames in total, including each LF delimiter;
+the executing call is excluded from both bounds. A call exceeding either
+waiting bound receives JSON-RPC error `-32000`, naming the queue limit, with
+no tool effect. Its request ID remains used. Earlier accepted calls keep their
+order and are not discarded.
+
+Cancellation applies to waiting and executing calls. A cancellation observed
+before a waiting call starts prevents its execution; its ordinary MCP tool
+reply is a `placement_stopped` refusal in its ordered turn. Cancellation during
+execution retains the publication rule above. Cancellation of an unknown or
+completed ID changes nothing, and cancelling one call does not cancel its
+siblings. Control requests and cancellation notifications remain serviceable
+while a tool executes. Accepted calls retain their request and result records;
+on placement stopping, waiting calls never execute and are recorded as
+`placement_stopped` when the archive remains writable. Shutdown does not promise
+delivery of their replies after the transport closes.
+
 JSON-RPC envelopes and errors use the transport's number grammar, including
 negative error codes; the unsigned-integer rule for Stewart control arguments
 does not apply to them. After confirmed submission, the runtime captures and
 attempts to send the MCP tool response, then stops the harness without another
 input. The Messages API's recorded-only submit response remains unchanged.
 Frames are bounded at 8 MiB; core arguments remain bounded at 4 MiB.
-Total observed capture is bounded at 256 MiB per placement. Crossing a bound
-stops execution and reports the incomplete interval; it never discards earlier
+Total observed capture is bounded at 256 MiB per placement. Crossing a transport
+frame or capture bound stops execution and reports the incomplete interval; it never discards earlier
 captures or turns truncation into a complete conversation.
 
 The startup event must report `type: system`, `subtype: init`, the profile's
