@@ -4,7 +4,7 @@ use super::{
     accounting::{self, Summary},
     events::{Event, Observed},
     gate::Gate,
-    process,
+    process, profile, surface,
     wire::{self, Action, Value},
 };
 use crate::archive::{Audit, Fail};
@@ -75,12 +75,20 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
             "Runtime settings and arrangement differ.".into(),
         );
     };
-    if let Err(e) = h.profile.check(
-        &audit.refile.writer_sha256,
-        &world.arrangement.model,
-        &h.mcp_tools,
-    ) {
-        return reject("runtime_profile_invalid", e);
+    // The arrangement pins the surface this audit was prepared with; the
+    // check must still name the surface this binary supplies.
+    let supplied = surface::sha256();
+    let checked = if h.surface_sha256 == supplied {
+        h.profile
+            .check(&supplied, &world.arrangement.model, &h.mcp_tools)
+    } else {
+        Err(profile::surface_differs(&h.surface_sha256, &supplied))
+    };
+    if let Err(e) = checked {
+        return reject(
+            "runtime_profile_invalid",
+            format!("{e}. No harness was launched."),
+        );
     }
     let question = match world
         .question
@@ -425,10 +433,6 @@ fn reader(mut input: impl Read, channel: &'static str, tx: mpsc::SyncSender<Inpu
         }
     }
 }
-fn shell_quote(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "'\\''"))
-}
-
 fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
     let h = live.world.arrangement.harness.as_ref().unwrap();
     let tmp = crate::fsx::Dir::open_nofollow(&h.profile.temporary_directory)
@@ -493,11 +497,11 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
     };
     let auth = authenticate(live, &workspace)?;
     live.write("runtime-auth.json", &auth.bytes())?;
-    let mcp_path = "m".to_string();
-    let hook_path = "h".to_string();
-    let mcp_listener = UnixListener::bind(&mcp_path)
+    let mcp_path = surface::MCP_SOCKET;
+    let hook_path = surface::HOOK_SOCKET;
+    let mcp_listener = UnixListener::bind(mcp_path)
         .map_err(|e| format!("bind private MCP socket in {workspace}: {e}"))?;
-    let hook_listener = UnixListener::bind(&hook_path)
+    let hook_listener = UnixListener::bind(hook_path)
         .map_err(|e| format!("bind private hook socket in {workspace}: {e}"))?;
     mcp_listener
         .set_nonblocking(true)
@@ -505,121 +509,36 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
     hook_listener
         .set_nonblocking(true)
         .map_err(|e| e.to_string())?;
-    let hook_command = format!(
-        "{} {} {}",
-        shell_quote(&live.audit.refile.writer_path),
-        process::HOOK,
-        shell_quote(&hook_path)
-    );
-    let settings = J::obj()
-        .with("forceLoginMethod", "claudeai")
-        .with("fastMode", false)
-        .with("fallbackModel", J::Arr(vec![]))
-        .with(
-            "hooks",
-            J::obj().with(
-                "PreToolUse",
-                J::Arr(vec![J::obj().with("matcher", "*").with(
-                    "hooks",
-                    J::Arr(vec![
-                            J::obj()
-                                .with("type", "command")
-                                .with("command", hook_command)
-                                .with("timeout", 5u64),
-                        ]),
-                )]),
-            ),
-        );
-    let config = J::obj().with(
-        "mcpServers",
-        J::obj().with(
-            "stewart",
-            J::obj()
-                .with("type", "stdio")
-                .with("command", live.audit.refile.writer_path.as_str())
-                .with("args", json::strs(&[process::RELAY, &mcp_path])),
-        ),
-    );
+    // Every value supplied to the harness comes from the launch surface's
+    // builders, filled with this placement's paths and the pinned model.
+    let slots = surface::Slots::launch(&h.profile, &workspace, &live.audit.refile.writer_path);
+    let environment = surface::environment(&slots);
     for (name, bytes) in [
-        ("settings.json", settings.bytes()),
-        ("mcp.json", config.bytes()),
+        ("settings.json", surface::settings(&slots).bytes()),
+        ("mcp.json", surface::mcp_config(&slots).bytes()),
         ("system.txt", h.system_prompt.as_bytes().to_vec()),
     ] {
         live.write(&format!("runtime-{name}"), &bytes)?;
         cwd.write_excl(name, &bytes)
             .map_err(|e| e.err.to_string())?;
     }
-    let mut args = [
-        "-p",
-        "--input-format",
-        "stream-json",
-        "--output-format",
-        "stream-json",
-        "--verbose",
-        "--restricted",
-        "--tools",
-        "",
-        "--setting-sources",
-        "",
-        "--settings",
-    ]
-    .map(String::from)
-    .to_vec();
-    args.extend([
-        format!("{workspace}/settings.json"),
-        "--strict-mcp-config".into(),
-        "--mcp-config".into(),
-        format!("{workspace}/mcp.json"),
-        "--allowedTools".into(),
-    ]);
-    args.extend(
-        live.world
-            .arrangement
-            .tool_names
-            .iter()
-            .map(|n| format!("mcp__stewart__{n}")),
-    );
-    args.extend(
-        [
-            "--permission-mode",
-            "dontAsk",
-            "--permission-prompts",
-            "none",
-            "--system-prompt-file",
-        ]
-        .map(String::from),
-    );
-    args.extend([
-        format!("{workspace}/system.txt"),
-        "--model".into(),
-        h.profile.model.clone(),
-        "--max-turns".into(),
-        "200".into(),
-        "--no-session-persistence".into(),
-    ]);
+    let mut args = surface::model_argv(&slots, &live.world.arrangement.tool_names);
     if let Some(effort) = &h.effort {
-        args.extend(["--effort".into(), effort.clone()]);
+        args.extend(surface::effort_argv(effort));
     }
     let launch = J::obj()
         .with("argv", json::strs(&args))
-        .with("cwd", workspace.as_str())
-        .with(
-            "environment",
-            J::Obj(
-                process::environment(&h.profile)
-                    .into_iter()
-                    .map(|(k, v)| (k, J::from(v)))
-                    .collect(),
-            ),
-        );
+        .with("cwd", slots.workspace)
+        .with("environment", surface::environment_j(&slots));
     live.write("runtime-launch.json", &launch.bytes())?;
     if Instant::now() >= live.deadline {
         return Err("placement deadline expired during startup".into());
     }
     let mut owner = process::Owned::start(
-        &live.audit.refile.writer_path,
-        &h.profile,
-        &workspace,
+        slots.writer,
+        &h.profile.executable,
+        &environment,
+        slots.workspace,
         &args,
         live.deadline.saturating_duration_since(Instant::now()),
         live.dir,
@@ -799,23 +718,10 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                                         .arrangement
                                         .tool_names
                                         .iter()
-                                        .any(|n| name == format!("mcp__stewart__{n}"))
+                                        .any(|n| name == surface::tool_name(n))
                             })
                             && gate.permit().is_ok();
-                        let reply = if allowed {
-                            J::obj()
-                        } else {
-                            J::obj().with(
-                                "hookSpecificOutput",
-                                J::obj()
-                                    .with("hookEventName", "PreToolUse")
-                                    .with("permissionDecision", "deny")
-                                    .with(
-                                        "permissionDecisionReason",
-                                        "Tool is outside the validated active commission.",
-                                    ),
-                            )
-                        };
+                        let reply = surface::hook_reply(allowed);
                         cap.send("hook-out", &mut stream, &wire::line(reply))?;
                     }
                     Input::Bytes(channel, bytes) => {
@@ -1232,11 +1138,13 @@ fn authenticate(live: &Live, workspace: &str) -> Result<J, String> {
     if Instant::now() >= live.deadline {
         return Err("placement deadline expired before auth check".into());
     }
+    let slots = surface::Slots::launch(&h.profile, workspace, &live.audit.refile.writer_path);
     let mut owner = process::Owned::start(
-        &live.audit.refile.writer_path,
-        &h.profile,
-        workspace,
-        &["auth".into(), "status".into()],
+        slots.writer,
+        &h.profile.executable,
+        &surface::environment(&slots),
+        slots.workspace,
+        &surface::auth_argv(),
         live.deadline
             .saturating_duration_since(Instant::now())
             .min(Duration::from_secs(30)),

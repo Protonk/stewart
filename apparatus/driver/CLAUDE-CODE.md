@@ -21,6 +21,7 @@ python3 -I -B apparatus/driver/claude_code.py --list
 python3 -I -B apparatus/driver/claude_code.py \
   --binary /absolute/path/to/development/stewart \
   --release-binary /absolute/path/to/featureless/stewart \
+  --variant-binary /absolute/path/to/another/development/stewart \
   --work /absolute/path/to/fresh-work-directory
 ```
 
@@ -30,7 +31,10 @@ reads. Put the work directory outside the repository checkout so that the
 synthetic launch directory is outside the writer tree. Keep the selected
 binaries in a separate directory from the work tree and unchanged during the run.
 `--release-binary` is optional; omitting it reports the featureless-build
-case as skipped. The driver never substitutes a skipped check for a pass.
+case as skipped. `--variant-binary` is optional too: it names a second build
+with the same feature and a different digest, such as the debug build beside a
+release build, and omitting it reports the two-build case as skipped. The
+driver never substitutes a skipped check for a pass.
 Use repeatable `--case NAME` options to diagnose selected cases; `RESULT.json`
 names the unselected cases separately. The default runs every case.
 
@@ -56,7 +60,22 @@ The cases exercise all three question families, exact transformed MCP schemas
 and pinned texts, profile/check binding refusals, strict JSON and profile path
 controls, placement bounds, API-field rejection and captured receipt readback.
 Invariance cases change outer profile whitespace, manager HOME/CWD and accepted
-source files. A recorded canary start fails the local-operation check. Archive
+source files.
+
+The driver rebuilds the [launch surface](../../docs/claude-code/CONTRACT.md#launch-surface)
+from the contract's member table and its own copies of the pinned texts. Its
+self-test compares that reconstruction with the contract's worked example and
+stated digest, byte for byte. Against a binary, a check naming another surface
+must refuse with the digest and exact document the binary requires, and the
+earlier profile identifier, the earlier form and its writer member must refuse.
+Every refused profile is checked for the stated reason and surface data. With
+a second build, the same profile file must be accepted by both writers, each
+pinning the same surface, while the second writer still refuses to run the
+first writer's audit. Runtime cases compare each synthetic launch's arguments,
+environment, settings file, MCP configuration, working directory and MCP
+initialization result with the surface, placeholders filled. A shell wrapper
+around the synthetic harness adds a few variables of its own; the driver allows
+exactly those and no others. A recorded canary start fails the local-operation check. Archive
 inventory checks detect changes or removals of earlier records around synchronous
 manager commands. The owner-death, missing-stop and recorder-failure cases
 separately witness the process or archive state they deliberately alter.
@@ -80,7 +99,11 @@ witnessed outside the archive. Missing final checkpoints must remain unknown.
 Relay stopping is observed as part of model exit and owner death; there is no
 separate relay-disconnect case with the model still running. The suite does not
 exercise end-to-end MCP cancellation, compaction or valid final-checkpoint usage
-accounting. The contract's [demonstrated scope](../../docs/claude-code/CONTRACT.md)
+accounting. Of the launch surface, the hook helper's replies and the effort
+arguments are named by the digest but not exercised: the synthetic harness
+calls no hook and no case selects an effort. `run`'s own re-verification of a
+pinned surface has no black-box firing control, because one binary cannot hold
+an arrangement that pins a different surface. The contract's [demonstrated scope](../../docs/claude-code/CONTRACT.md)
 distinguishes this synthetic runtime evidence from other checks and remaining
 qualification work.
 

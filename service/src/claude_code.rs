@@ -17,6 +17,7 @@ pub mod gate;
 pub mod process;
 pub mod profile;
 pub mod run;
+pub mod surface;
 pub mod wire;
 
 /// Convert only the transport field name, splicing the original schema bytes.

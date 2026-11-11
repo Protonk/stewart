@@ -25,14 +25,9 @@ remain future work.
 
 ## Remaining work
 
-- Bind the profile's check to the harness-facing surface instead of the whole
-  writer. Decided 2026-11-11: the check names what Stewart supplies to the
-  harness, so a rebuild that leaves that surface alone keeps its check, and a
-  changed surface refuses until rechecked. Each actual start is still validated.
-  The contract defines the surface exactly enough for an independent driver to
-  compute it. The changed profile form takes a new identifier and the earlier
-  one is refused, with no reader for it. Specification and service by one
-  author, driver by another.
+- Exercise the parts of the [launch surface](CONTRACT.md#launch-surface) that
+  the digest names but no driver case drives: the hook helper's allow and deny
+  replies and the effort arguments.
 - List every difference this contract makes from the Messages path at the
   manager's surface: front matter, preparation, receipt, status, close and the
   return. Separate those the transport forces from the incidental, and bring
@@ -69,11 +64,15 @@ profile, and native results do not qualify Linux.
 
 ## Evidence through review
 
-The current native validation is `.tmp/document-harmonization/host.VxyhfJ`,
-with runtime witnesses at `/private/tmp/stewart-doc-runtime.CGwaur/run`:
-14 cases, 4,711 checks and 45 controls passed, with no skips. All applicable
+The current native validation is `.tmp/surface-binding/host.24wFiF`, with
+runtime witnesses at `/private/tmp/stewart-surface-runtime.QTlDKw/run`:
+16 cases, 5,554 checks and 52 controls passed, with no skips. It covers the
+surface-bound check, including two builds with different digests accepting one
+profile. All applicable
 [DEVELOPMENT checks](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
-passed. The source snapshot stayed unchanged throughout the run.
+passed. The source snapshot stayed unchanged throughout the run. The earlier
+validation of the writer-bound form is `.tmp/document-harmonization/host.VxyhfJ`,
+with witnesses at `/private/tmp/stewart-doc-runtime.CGwaur/run`.
 
 Keep `.tmp/document-harmonization/` through review of the later socket EOF
 failure and its fix. `host.PMinwd` retains the failed native run. The paired

@@ -8,7 +8,8 @@ not qualification. Run with an explicit interpreter and isolated startup:
 
     python3 -I -B apparatus/driver/claude_code.py --self-test
     python3 -I -B apparatus/driver/claude_code.py --binary /abs/stewart \
-        --work /abs/fresh-directory [--release-binary /abs/stewart-release]
+        --work /abs/fresh-directory [--release-binary /abs/stewart-release] \
+        [--variant-binary /abs/another-development-build]
 
 Every input and command result is retained for review, including the independent
 witness outside the archive. No successful or failed working tree is deleted.
@@ -68,15 +69,24 @@ SIGNER = "31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE"
 MODEL = "synthetic-offline-model"
 CANARY = b'#!/bin/sh\nprintf "unexpected local launch\\n" > "$0.started"\nexit 97\n'
 ACCOUNT = "The supplied report claims success. This synthetic auditor did not witness execution.\n"
+PROFILE_SCHEMA = "stewart.claude-code.profile/2"
+ARRANGEMENT_SCHEMA = "stewart.claude-code.arrangement/2"
+SURFACE_SCHEMA = "stewart.claude-code.surface/1"
 ARRANGEMENT_KEYS = {
     "schema", "family", "model", "guidance", "orientation", "system",
     "system_prompt", "tools", "mcp_tools", "runtime", "profile_sha256",
+    "surface", "surface_sha256",
     "effort", "limits", "harness_max_turns", "harness_max_output_tokens",
     "texts", "reader", "renderer", "reading", "bindings",
 }
+# A shell wrapper and the interpreter's platform runtime add these to the
+# synthetic harness's own environment; Stewart supplies none of them.
+WRAPPER_ENVIRONMENT = {"PWD", "OLDPWD", "SHLVL", "_", "__CF_USER_TEXT_ENCODING"}
 CASES = (
     ("families", "All three families: preparation, commission, exact readback and status"),
     ("binding-controls", "Change each launch/check binding; reject it; restore the valid control"),
+    ("surface-binding", "A check naming another surface, or an earlier profile form, refuses with the exact surface"),
+    ("surface-two-builds", "Optional second build: same profile accepted by both writers; audits stay with their writer"),
     ("profile-input", "Strict profile JSON, bounds, regular-file and no-follow controls"),
     ("limit-fields", "Placement bounds; API fields and runtime fields on question/1 refuse"),
     ("source-invariance", "Receipt stays captured after source/profile edits and CWD/HOME changes"),
@@ -114,6 +124,103 @@ def mcp_tools(base):
                    + b',"description":' + tool.get("description").raw
                    + b',"inputSchema":' + tool.get("input_schema").raw + b'}')
     return b'[' + b','.join(out) + b']'
+
+
+def surface_document():
+    """Rebuild the launch surface from the contract's member table.
+
+    This is written from the table and the wire contract's prose, not copied
+    from the contract's worked example; the self-test compares the two.
+    """
+    def text_sha(text):
+        return sha(text.encode("utf-8"))
+    return {
+        "schema": SURFACE_SCHEMA,
+        "working_directory": "{workspace}",
+        "auth_argv": ["auth", "status"],
+        "model_argv": [
+            "-p", "--input-format", "stream-json", "--output-format", "stream-json",
+            "--verbose", "--restricted", "--tools", "", "--setting-sources", "",
+            "--settings", "{workspace}/settings.json", "--strict-mcp-config",
+            "--mcp-config", "{workspace}/mcp.json", "--allowedTools",
+            "mcp__stewart__{tool}", "--permission-mode", "dontAsk",
+            "--permission-prompts", "none", "--system-prompt-file",
+            "{workspace}/system.txt", "--model", "{model}", "--max-turns", "200",
+            "--no-session-persistence"],
+        "effort_argv": ["--effort", "{effort}"],
+        "settings": {
+            "forceLoginMethod": "claudeai", "fastMode": False, "fallbackModel": [],
+            "hooks": {"PreToolUse": [{"matcher": "*", "hooks": [
+                {"type": "command", "command": "'{writer}' __stewart-cc-hook 'h'",
+                 "timeout": 5}]}]}},
+        "mcp_config": {"mcpServers": {"stewart": {
+            "type": "stdio", "command": "{writer}", "args": ["__stewart-cc-relay", "m"]}}},
+        "environment": {
+            "PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8",
+            "DISABLE_UPDATES": "1", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+            "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
+            "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1",
+            "CLAUDE_CODE_DISABLE_AGENT_VIEW": "1", "CLAUDE_CODE_DISABLE_FAST_MODE": "1",
+            "ENABLE_CLAUDEAI_MCP_SERVERS": "false", "ENABLE_TOOL_SEARCH": "false",
+            "CLAUDE_CODE_MAX_RETRIES": "0", "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16000",
+            "HOME": "{home}", "TMPDIR": "{temporary_directory}",
+            "CLAUDE_CONFIG_DIR": "{config_directory}"},
+        "controls": {"harness_max_turns": 200, "harness_max_output_tokens": 16000},
+        "system_prompt": "{orientation}\n\n{guidance}",
+        "input": {"type": "user", "session_id": "", "parent_tool_use_id": None,
+                  "message": {"role": "user", "content": "{text}"}},
+        "mcp_initialize": {"protocolVersion": "2025-11-25", "capabilities": {"tools": {}},
+                           "serverInfo": {"name": "stewart", "version": "1"}},
+        "hook_replies": {"allow": {}, "deny": {"hookSpecificOutput": {
+            "hookEventName": "PreToolUse", "permissionDecision": "deny",
+            "permissionDecisionReason": "Tool is outside the validated active commission."}}},
+        "texts": {"orientation": "stewart.orientation/claude-code/1",
+                  "orientation_sha256": text_sha(RUNTIME_ORIENTATION),
+                  "reminder_sha256": text_sha(REMINDER),
+                  "near_limit_sha256": text_sha(NEAR_LIMIT),
+                  "continuation_sha256": text_sha(CONTINUATION),
+                  "compacted_sha256": text_sha(COMPACTED)},
+    }
+
+
+SURFACE = compact(surface_document())
+SURFACE_SHA = sha(SURFACE)
+
+
+def shell_quoted(path):
+    """The wire contract's single-quote form for the writer in the hook command."""
+    return "'" + path.replace("'", "'\\''") + "'"
+
+
+def filled_launch(writer, workspace, launch, family, model):
+    """Fill the surface placeholders for one launch of one family."""
+    doc = surface_document()
+    argv = []
+    for arg in doc["model_argv"]:
+        if arg == "mcp__stewart__{tool}":
+            argv.extend("mcp__stewart__" + tool["name"] for tool in expected_tools(family))
+        else:
+            argv.append(arg.replace("{workspace}", workspace).replace("{model}", model))
+    settings = doc["settings"]
+    settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"] = (
+        shell_quoted(writer) + " __stewart-cc-hook 'h'")
+    config = doc["mcp_config"]
+    config["mcpServers"]["stewart"]["command"] = writer
+    environment = {key: value.replace("{home}", launch["home"])
+                   .replace("{temporary_directory}", launch["temporary_directory"])
+                   .replace("{config_directory}", launch["config_directory"])
+                   for key, value in doc["environment"].items()}
+    return {"auth_argv": doc["auth_argv"], "model_argv": argv, "settings": settings,
+            "mcp_config": config, "environment": environment,
+            "mcp_initialize": doc["mcp_initialize"]}
+
+
+def surface_example(spec):
+    """The contract's worked example bytes and stated digest, read from its text."""
+    section = spec.split("## Launch surface", 1)[1]
+    block = section.split("```json\n", 1)[1].split("\n```", 1)[0]
+    stated = re.search(r"Its SHA-256 is\s+`([0-9a-f]{64})`", section)
+    return "".join(block.split("\n")).encode("utf-8"), stated.group(1) if stated else None
 
 
 def platform_name():
@@ -233,8 +340,8 @@ class CaseStopped(Exception):
 
 
 class Driver:
-    def __init__(self, binary, work, release=None, selected=None):
-        self.binary, self.work, self.release = binary, work, release
+    def __init__(self, binary, work, release=None, selected=None, variant=None):
+        self.binary, self.work, self.release, self.variant = binary, work, release, variant
         self.selected = set(selected) if selected else {name for name, _ in CASES}
         self.work.mkdir(mode=0o700, parents=False, exist_ok=False)
         source = work / "driver-snapshot"
@@ -263,6 +370,9 @@ class Driver:
                   "binary": str(binary), "binary_sha256": sha(binary.read_bytes()),
                   "release_binary": str(release) if release else None,
                   "release_sha256": sha(release.read_bytes()) if release else None,
+                  "variant_binary": str(variant) if variant else None,
+                  "variant_sha256": sha(variant.read_bytes()) if variant else None,
+                  "surface_sha256": SURFACE_SHA,
                   "driver_sha256": sha(Path(__file__).read_bytes()),
                   "qualification": False, "scope": "native offline preparation and synthetic MCP runtime"})
 
@@ -306,6 +416,7 @@ class Driver:
             self.require(label + ".deadline", False, "local command exceeded 30 seconds")
         (self.commands / (prefix + ".stdout")).write_bytes(process.stdout)
         (self.commands / (prefix + ".stderr")).write_bytes(process.stderr)
+        self.last_stdout = process.stdout
         self.save("commands/" + prefix + ".json", {"argv": argv, "exit": process.returncode,
                   "elapsed_seconds": time.monotonic() - started})
         for archive in self.archives:
@@ -378,12 +489,12 @@ class Driver:
         # Noncompact launch bytes make reserialization an observable binding error.
         launch_raw = json.dumps(launch, ensure_ascii=False, indent=2).encode()
         tools = compact(expected_tools(family))
-        check = {"writer_sha256": sha((binary or self.binary).read_bytes()),
+        check = {"surface_sha256": SURFACE_SHA,
                  "launch_sha256": sha(launch_raw), "tools_sha256": sha(mcp_tools(tools)),
                  "model": MODEL, "checked_at": "2026-11-10T00:00:00.000Z",
                  "evidence_sha256": sha(b"synthetic offline attestation; no model or signature check"),
                  "outcome": "observed"}
-        profile = (b'{"schema":"stewart.claude-code.profile/1","launch":' + launch_raw
+        profile = (b'{"schema":' + compact(PROFILE_SCHEMA) + b',"launch":' + launch_raw
                    + b',"installation":' + compact({"manifest_sha256": sha(b"synthetic manifest"),
                      "signer": SIGNER, "binary_sha256": launch["sha256"]})
                    + b',"check":' + compact(check) + b'}\n')
@@ -398,6 +509,7 @@ class Driver:
         fixture = {"label": label, "root": root, "folder": folder, "archive": archive,
                    "reference": reference, "profile_path": profile_path, "profile": profile,
                    "family": family, "tools": tools, "fields": fields, "body": body,
+                   "launch": launch,
                    "material": material, "witness": witness, "executable": executable,
                    "limits": {"max_placements": placements, "placement_timeout_seconds": timeout},
                    "scenario": root / "scenario.json" if scenario else None}
@@ -433,19 +545,21 @@ class Driver:
             node = node.get("body")
         obj = strict_loads(node.raw)
         self.eq(label + ".keys", sorted(obj), sorted(ARRANGEMENT_KEYS))
-        expected = {"schema": "stewart.claude-code.arrangement/1", "model": MODEL,
+        expected = {"schema": ARRANGEMENT_SCHEMA, "model": MODEL,
                     "orientation": "stewart.orientation/claude-code/1",
                     "system_prompt": RUNTIME_ORIENTATION + "\n\n" + FAMILY_TEXT[f["family"]],
                     "runtime": {"kind": "claude-code/1", "profile_path": str(f["profile_path"]),
                                 "profile": f["profile"].decode()},
-                    "profile_sha256": sha(f["profile"]), "effort": None,
+                    "profile_sha256": sha(f["profile"]), "surface_sha256": SURFACE_SHA,
+                    "effort": None,
                     "limits": f["limits"], "harness_max_turns": 200,
                     "harness_max_output_tokens": 16000, "texts": TEXTS}
         for key, value in expected.items():
             self.eq(label + "." + key, obj.get(key), value)
         system = compact([{"type": "text", "text": RUNTIME_ORIENTATION},
                           {"type": "text", "text": FAMILY_TEXT[f["family"]]}])
-        for key, value in (("system", system), ("tools", f["tools"]), ("mcp_tools", mcp_tools(f["tools"]))):
+        for key, value in (("system", system), ("tools", f["tools"]), ("mcp_tools", mcp_tools(f["tools"])),
+                           ("surface", SURFACE)):
             actual = node.get(key)
             self.eq(label + "." + key + "-bytes", actual.raw.decode() if actual else None, value.decode())
         bindings = obj.get("bindings", {})
@@ -505,11 +619,118 @@ class Driver:
         for family in FAMILY_TEXT:
             self.accept(self.fixture(family, family))
 
+    def profile_refusal(self, label, reply, named=()):
+        """A profile prepare cannot accept: the stated reason and the exact surface."""
+        self.eq(label + ".reason", reply.get("reason"), "runtime_profile_invalid")
+        surface = (reply.get("data") or {}).get("surface")
+        if not self.check(label + ".surface-object", isinstance(surface, dict), reply.get("data")):
+            return
+        self.eq(label + ".surface-keys", list(surface), ["schema", "sha256", "document"])
+        self.eq(label + ".surface-schema", surface.get("schema"), SURFACE_SCHEMA)
+        self.eq(label + ".surface-digest", surface.get("sha256"), SURFACE_SHA)
+        document = parse(self.last_stdout).get("data").get("surface").get("document")
+        self.eq(label + ".surface-document-bytes", document.raw.decode() if document else None,
+                SURFACE.decode())
+        message = reply.get("message") or ""
+        for value in named:
+            self.check(label + ".message-names." + value[:24], value in message, message)
+
+    def replace_profile(self, f, label, mutated):
+        f["profile_path"].write_bytes(mutated)
+        (f["witness"] / (label + ".json")).write_bytes(mutated)
+
+    def surface_binding(self):
+        f = self.fixture("surface")
+        self.prepare(f, "positive")
+        # A check naming another surface refuses and tells the manager, without
+        # any launch, the digest and document this binary requires.
+        other = sha(SURFACE + b" ")
+        node = parse(f["profile"]).get("check").get("surface_sha256")
+        self.replace_profile(f, "other-surface",
+                             f["profile"][:node.start] + compact(other) + f["profile"][node.end:])
+        reply = self.prepare(f, "other-surface", "refused")
+        self.control("other-surface", reply.get("outcome") == "refused")
+        self.profile_refusal("surface.other-surface", reply, named=(other, SURFACE_SHA))
+        # The earlier profile identifier is refused by name; nothing reads it.
+        earlier = "stewart.claude-code.profile/1"
+        renamed = f["profile"].replace(compact(PROFILE_SCHEMA), compact(earlier), 1)
+        self.replace_profile(f, "earlier-identifier", renamed)
+        reply = self.prepare(f, "earlier-identifier", "refused")
+        self.control("earlier-profile-identifier", reply.get("outcome") == "refused")
+        self.profile_refusal("surface.earlier-identifier", reply, named=(earlier, PROFILE_SCHEMA))
+        # The whole earlier form, with a correct writer digest, is refused too.
+        writer = compact(sha(self.binary.read_bytes()))
+        earlier_form = renamed.replace(b'"surface_sha256":' + compact(SURFACE_SHA),
+                                       b'"writer_sha256":' + writer, 1)
+        self.require("surface.earlier-form-built", earlier_form != renamed, "check member not found")
+        self.replace_profile(f, "earlier-form", earlier_form)
+        reply = self.prepare(f, "earlier-form", "refused")
+        self.control("earlier-profile-form", reply.get("outcome") == "refused")
+        self.profile_refusal("surface.earlier-form", reply, named=(earlier,))
+        # The current identifier admits neither the old member in place of the
+        # surface binding nor beside it.
+        in_place = f["profile"].replace(b'"surface_sha256":' + compact(SURFACE_SHA),
+                                        b'"writer_sha256":' + writer, 1)
+        beside = f["profile"].replace(b'"surface_sha256":',
+                                      b'"writer_sha256":' + writer + b',"surface_sha256":', 1)
+        for label, mutated in (("writer-member-in-place", in_place), ("writer-member-beside", beside)):
+            self.require("surface." + label + "-built", mutated != f["profile"], "check member not found")
+            self.replace_profile(f, label, mutated)
+            reply = self.prepare(f, label, "refused")
+            self.control(label, reply.get("outcome") == "refused")
+            self.profile_refusal("surface." + label, reply)
+        f["profile_path"].write_bytes(f["profile"])
+        self.prepare(f, "restored")
+
+    def surface_two_builds(self):
+        if self.variant is None:
+            return "--variant-binary was not supplied; writer invariance of the check not exercised"
+        digests = sha(self.binary.read_bytes()), sha(self.variant.read_bytes())
+        self.require("two-builds.distinct-writers", digests[0] != digests[1], digests)
+        a = self.fixture("two-builds-a")
+        _, _, raw_a = self.accept(a)
+        # The second writer creates its own reference and is given the very
+        # same profile file: same path, same bytes, same check.
+        b = self.fixture("two-builds-b", binary=self.variant)
+        self.question(b, dict(b["fields"], **{"runtime-profile": str(a["profile_path"])}))
+        prepared = self.cmd("two-builds-b.prepare", ["prepare", b["reference"]], binary=self.variant)
+        self.require("two-builds-b.accepts-same-profile", prepared.get("outcome") == "completed", prepared)
+        raw_b = Path(prepared["data"]["arrangement"]["machine"]).read_bytes()
+        nodes = []
+        for raw in (raw_a, raw_b):
+            node = parse(raw)
+            nodes.append(node.get("body") if node.get("record") else node)
+        for name, node in zip(("a", "b"), nodes):
+            surface, digest = node.get("surface"), node.get("surface_sha256")
+            self.eq("two-builds-%s.surface-bytes" % name, surface.raw.decode() if surface else None,
+                    SURFACE.decode())
+            self.eq("two-builds-%s.surface-digest" % name, digest.value() if digest else None, SURFACE_SHA)
+        self.eq("two-builds-b.same-profile-captured",
+                prepared["data"]["settings"].get("runtime", {}).get("profile"), a["profile"].decode())
+        # Firing control under the second writer: it requires the same digest.
+        other = sha(SURFACE + b" ")
+        node = parse(a["profile"]).get("check").get("surface_sha256")
+        self.replace_profile(a, "variant-other-surface",
+                             a["profile"][:node.start] + compact(other) + a["profile"][node.end:])
+        reply = self.cmd("two-builds-b.other-surface", ["prepare", b["reference"]], "refused",
+                         binary=self.variant)
+        self.control("variant-other-surface", reply.get("outcome") == "refused")
+        self.profile_refusal("two-builds-b.other-surface", reply, named=(other, SURFACE_SHA))
+        a["profile_path"].write_bytes(a["profile"])
+        # Sharing a check does not share an audit: the one-writer rule stands.
+        marker = Path(str(a["executable"]) + ".started")
+        reply = self.cmd("two-builds.variant-run-on-first-audit", ["run", a["reference"]], "refused",
+                         binary=self.variant)
+        self.eq("two-builds.writer-mismatch", reply.get("reason"), "writer_mismatch")
+        self.check("two-builds.no-harness-start", not marker.exists(), str(marker))
+        self.control("one-writer-per-audit", reply.get("outcome") == "refused"
+                     and reply.get("reason") == "writer_mismatch" and not marker.exists())
+
     def binding_controls(self):
         f = self.fixture("binding")
         self.prepare(f, "positive")
         for section, key, value in (
-                ("check", "writer_sha256", "0" * 64),
+                ("check", "surface_sha256", "0" * 64),
                 ("check", "launch_sha256", sha(compact(json.loads(f["profile"])["launch"]))),
                 ("check", "tools_sha256", "0" * 64), ("check", "model", "wrong-model"),
                 ("check", "outcome", "unobserved"), ("installation", "signer", "0" * 40),
@@ -521,6 +742,7 @@ class Driver:
             (f["witness"] / (section + "-" + key + ".json")).write_bytes(mutated)
             reply = self.prepare(f, section + "-" + key, "refused")
             self.control(section + "-" + key, reply.get("outcome") == "refused")
+            self.profile_refusal("binding." + section + "-" + key, reply)
         changed_launch = json.loads(f["profile"])["launch"]
         changed_launch["platform"] = "linux-x86_64" if platform_name() != "linux-x86_64" else "macos-aarch64"
         node = parse(f["profile"]).get("launch")
@@ -532,12 +754,14 @@ class Driver:
         (f["witness"] / "wrong-platform-profile.json").write_bytes(mutated)
         reply = self.prepare(f, "platform", "refused")
         self.control("platform", reply.get("outcome") == "refused")
+        self.profile_refusal("binding.platform", reply)
         f["profile_path"].write_bytes(f["profile"])
         executable = f["executable"].read_bytes()
         f["executable"].write_bytes(executable + b"# changed digest\n")
         (f["witness"] / "changed-executable").write_bytes(f["executable"].read_bytes())
         reply = self.prepare(f, "executable-changed", "refused")
         self.control("executable-digest", reply.get("outcome") == "refused")
+        self.profile_refusal("binding.executable-changed", reply)
         f["executable"].write_bytes(executable)
         # External JSON whitespace changes no launch value or check binding.
         f["profile_path"].write_bytes(b" \n" + f["profile"] + b"\t")
@@ -562,20 +786,24 @@ class Driver:
             (f["witness"] / (label + ".json")).write_bytes(mutated)
             reply = self.prepare(f, label, "refused")
             self.control(label, reply.get("outcome") == "refused")
+            self.profile_refusal("profile-input." + label, reply)
         f["profile_path"].unlink()
         original = f["root"] / "original-profile.json"
         original.write_bytes(f["profile"])
         f["profile_path"].symlink_to(original)
         reply = self.prepare(f, "file-link", "refused")
         self.control("profile-file-link", reply.get("outcome") == "refused")
+        self.profile_refusal("profile-input.file-link", reply)
         f["profile_path"].unlink()
         f["profile_path"].mkdir()
         reply = self.prepare(f, "directory", "refused")
         self.control("profile-not-regular", reply.get("outcome") == "refused")
+        self.profile_refusal("profile-input.directory", reply)
         f["profile_path"].rmdir()
         os.mkfifo(f["profile_path"], mode=0o600)
         reply = self.prepare(f, "fifo", "refused")
         self.control("profile-fifo", reply.get("outcome") == "refused")
+        self.profile_refusal("profile-input.fifo", reply)
         f["profile_path"].unlink()
         f["profile_path"].write_bytes(f["profile"])
         alias = f["root"] / "directory-link"
@@ -584,6 +812,7 @@ class Driver:
         self.question(f, fields)
         reply = self.prepare(f, "directory-link", "refused")
         self.control("profile-directory-link", reply.get("outcome") == "refused")
+        self.profile_refusal("profile-input.directory-link", reply)
         self.question(f)
         self.prepare(f, "restored")
 
@@ -673,31 +902,23 @@ class Driver:
         launches = [e for e in events if e["event"] == "launch"]
         self.eq(f["label"] + ".auth-count", sum(e["role"] == "auth" for e in launches), placements)
         self.eq(f["label"] + ".model-count", sum(e["role"] == "model" for e in launches), placements)
+        auths = [e for e in launches if e["role"] == "auth"]
         for index, event in enumerate(e for e in launches if e["role"] == "model"):
             p = f["label"] + ".launch-%d" % (index + 1)
             argv = event["argv"]
-            expected_pairs = {"--input-format": "stream-json", "--output-format": "stream-json",
-                              "--tools": "", "--setting-sources": "", "--permission-mode": "dontAsk",
-                              "--permission-prompts": "none", "--model": MODEL, "--max-turns": "200"}
-            for key, value in expected_pairs.items():
-                self.eq(p + ".argv." + key, argv[argv.index(key) + 1] if key in argv else None, value)
-            for flag in ("-p", "--verbose", "--restricted", "--strict-mcp-config", "--no-session-persistence"):
-                self.check(p + ".argv." + flag, flag in argv, argv)
-            start = argv.index("--allowedTools") + 1 if "--allowedTools" in argv else len(argv)
-            allowed = []
-            for arg in argv[start:]:
-                if arg.startswith("--"):
-                    break
-                allowed.extend(arg.split(","))
-            self.eq(p + ".allowed-tools", allowed,
-                    ["mcp__stewart__" + t["name"] for t in expected_tools(f["family"])])
+            # The supplied files are named absolutely inside the private
+            # working directory; take that directory from the launch itself.
+            named = argv[argv.index("--settings") + 1] if "--settings" in argv[:-1] else ""
+            workspace = named[:-len("/settings.json")] if named.endswith("/settings.json") else named
+            self.check(p + ".workspace-absolute", workspace.startswith("/"), named)
+            self.eq(p + ".workspace-is-cwd", os.path.realpath(workspace), os.path.realpath(event["cwd"]))
+            expected = filled_launch(str(self.binary), workspace, f["launch"], f["family"], MODEL)
+            self.eq(p + ".argv", argv, expected["model_argv"])
             env = event["environment"]
-            for key, value in {"HOME": str(f["root"] / "runtime" / "home"),
-                               "TMPDIR": str(f["root"] / "runtime" / "temporary"),
-                               "CLAUDE_CONFIG_DIR": str(f["root"] / "runtime" / "config"),
-                               "PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "en_US.UTF-8",
-                               "CLAUDE_CODE_MAX_RETRIES": "0", "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "16000"}.items():
-                self.eq(p + ".env." + key, env.get(key), value)
+            self.eq(p + ".env.supplied", {key: env.get(key) for key in expected["environment"]},
+                    expected["environment"])
+            self.eq(p + ".env.nothing-else",
+                    sorted(set(env) - set(expected["environment"]) - WRAPPER_ENVIRONMENT), [])
             for key in ("DRIVER_INJECTION", "HTTPS_PROXY", "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL"):
                 self.check(p + ".no-forward." + key, key not in env, env.get(key))
             cwd = Path(event["cwd"])
@@ -706,16 +927,24 @@ class Driver:
                            not cwd.is_relative_to(outside), str(cwd))
             self.eq(p + ".system-prompt", event.get("system_prompt"),
                     RUNTIME_ORIENTATION + "\n\n" + FAMILY_TEXT[f["family"]])
-            settings = event.get("settings", {})
-            for key, value in {"forceLoginMethod": "claudeai", "fastMode": False, "fallbackModel": []}.items():
-                self.eq(p + ".settings." + key, settings.get(key), value)
-            hooks = settings.get("hooks", {}).get("PreToolUse", [])
-            self.check(p + ".hook", any(h.get("matcher") == "*" and any(
-                x.get("type") == "command" and x.get("timeout") == 5 for x in h.get("hooks", [])) for h in hooks), hooks)
-            config = event.get("mcp_config", {}).get("mcpServers", {})
-            self.eq(p + ".mcp-servers", list(config), ["stewart"])
-            self.eq(p + ".mcp-type", config.get("stewart", {}).get("type"), "stdio")
-            self.eq(p + ".mcp-writer", config.get("stewart", {}).get("command"), str(self.binary))
+            self.eq(p + ".settings", event.get("settings"), expected["settings"])
+            self.eq(p + ".mcp-config", event.get("mcp_config"), expected["mcp_config"])
+            if index < len(auths):
+                auth = auths[index]
+                self.eq(p + ".auth-argv", auth["argv"], expected["auth_argv"])
+                self.eq(p + ".auth-cwd", os.path.realpath(auth["cwd"]), os.path.realpath(event["cwd"]))
+                self.eq(p + ".auth-env.supplied",
+                        {key: auth["environment"].get(key) for key in expected["environment"]},
+                        expected["environment"])
+                self.eq(p + ".auth-env.nothing-else",
+                        sorted(set(auth["environment"]) - set(expected["environment"]) - WRAPPER_ENVIRONMENT), [])
+        handshakes = [e["value"]["result"] for e in events if e["event"] == "rpc-receive"
+                      and isinstance(e["value"].get("result"), dict)
+                      and "protocolVersion" in e["value"]["result"]]
+        if any(e["role"] == "model" for e in launches):
+            self.check(f["label"] + ".mcp-initialize",
+                       bool(handshakes) and all(h == surface_document()["mcp_initialize"] for h in handshakes),
+                       handshakes)
         inputs = [e["value"] for e in events if e["event"] == "input"]
         self.check(f["label"] + ".exact-first-question", bool(inputs) and inputs[0] == {
             "type": "user", "session_id": "", "parent_tool_use_id": None,
@@ -1368,6 +1597,32 @@ def self_test():
             current = []
     for name, text in (("orientation", FIRST_PARAGRAPH), ("near-limit", NEAR_LIMIT), ("compacted", COMPACTED)):
         check("spec." + name, text in paragraphs)
+    example, stated = surface_example(spec)
+    check("surface.example-bytes", SURFACE == example)
+    check("surface.example-digest", SURFACE_SHA == stated == sha(example))
+    check("surface.ascii", all(byte < 128 for byte in SURFACE) and not SURFACE.endswith(b"\n"))
+    check("surface.member-order", list(strict_loads(SURFACE)) == [
+        "schema", "working_directory", "auth_argv", "model_argv", "effort_argv", "settings",
+        "mcp_config", "environment", "controls", "system_prompt", "input", "mcp_initialize",
+        "hook_replies", "texts"])
+    check("surface.environment-count", len(surface_document()["environment"]) == 15)
+    changed = surface_document()
+    changed["environment"]["CLAUDE_CODE_MAX_RETRIES"] = "1"
+    check("surface.value-firing-control", sha(compact(changed)) != SURFACE_SHA)
+    changed = surface_document()
+    changed["texts"]["reminder_sha256"] = sha((REMINDER + "\n").encode())
+    check("surface.text-firing-control", sha(compact(changed)) != SURFACE_SHA)
+    profile_launch = {"home": "/h", "temporary_directory": "/t", "config_directory": "/c"}
+    first = filled_launch("/one/stewart", "/w1", profile_launch, "open-inquiry", MODEL)
+    second = filled_launch("/two/it's/stewart", "/w2", profile_launch, "open-inquiry", MODEL)
+    check("surface.placeholders-only-differ", first != second and compact(surface_document()) == SURFACE)
+    check("surface.one-argument-per-tool", [a for a in first["model_argv"] if a.startswith("mcp__stewart__")]
+          == ["mcp__stewart__" + tool["name"] for tool in expected_tools("open-inquiry")])
+    check("surface.filled-paths", first["model_argv"][first["model_argv"].index("--settings") + 1]
+          == "/w1/settings.json" and first["environment"]["HOME"] == "/h"
+          and first["mcp_config"]["mcpServers"]["stewart"]["command"] == "/one/stewart")
+    check("surface.hook-quoting", second["settings"]["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+          == "'/two/it'\\''s/stewart' __stewart-cc-hook 'h'")
     for family in FAMILY_TEXT:
         base = compact(expected_tools(family))
         mapped = mcp_tools(base)
@@ -1596,6 +1851,8 @@ def main():
                         help="run only a named case; repeat to select several (default: all)")
     parser.add_argument("--binary", type=Path, help="absolute path to the claude-code development binary")
     parser.add_argument("--release-binary", type=Path, help="optional absolute featureless binary for rejection controls")
+    parser.add_argument("--variant-binary", type=Path,
+                        help="optional absolute second claude-code build with a different digest, for writer invariance")
     parser.add_argument("--work", type=Path, help="absolute directory that must not already exist; all evidence is retained")
     args = parser.parse_args()
     if args.list:
@@ -1606,17 +1863,18 @@ def main():
         return self_test()
     if args.binary is None or args.work is None:
         parser.error("--binary and --work are required unless --self-test or --list is selected")
-    for label, path in (("--binary", args.binary), ("--work", args.work), ("--release-binary", args.release_binary)):
+    for label, path in (("--binary", args.binary), ("--work", args.work), ("--release-binary", args.release_binary),
+                        ("--variant-binary", args.variant_binary)):
         if path is not None and not path.is_absolute():
             parser.error(label + " must be absolute")
     if args.work.exists():
         parser.error("--work already exists; preserve that evidence and choose a fresh path")
-    for path in (args.binary, args.release_binary):
+    for path in (args.binary, args.release_binary, args.variant_binary):
         if path is not None and (not path.is_file() or not os.access(path, os.X_OK)):
             parser.error("binary must be an executable regular file: " + str(path))
     try:
         platform_name()
-        return Driver(args.binary, args.work, args.release_binary, args.case).run()
+        return Driver(args.binary, args.work, args.release_binary, args.case, args.variant_binary).run()
     except (OSError, ValueError) as exc:
         print("Driver setup failed: %s" % exc, file=sys.stderr)
         return 2

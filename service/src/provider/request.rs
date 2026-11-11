@@ -114,7 +114,18 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
     }
     let b = r.body();
     #[cfg(feature = "claude-code")]
-    if b.str("schema").ok() == Some(crate::claude_code::profile::ARRANGEMENT_SCHEMA) {
+    if let Some(schema) = b
+        .str("schema")
+        .ok()
+        .filter(|s| s.starts_with("stewart.claude-code.arrangement/"))
+    {
+        // One runtime arrangement form is read; another identifier is refused.
+        let current = crate::claude_code::profile::ARRANGEMENT_SCHEMA;
+        if schema != current {
+            return Err(format!(
+                "unsupported arrangement schema {schema:?}; this binary reads only {current}"
+            ));
+        }
         return crate::claude_code::arrangement::decode(&b, bytes);
     }
     let raw = |k: &str| -> Result<Vec<u8>, JsonError> {

@@ -1,7 +1,6 @@
 //! The supervisor has no archive descriptor and never interprets tool calls.
 //! Its process group lives until shutdown. Owner EOF and a monotonic deadline
 //! independently terminate the group; the owner records its ID before GO.
-use super::profile::Profile;
 use crate::json::J;
 use crate::runs::RunDir;
 use std::io::{self, Read, Write};
@@ -15,33 +14,6 @@ pub const SUPERVISOR: &str = "__stewart-cc-supervise";
 pub const RELAY: &str = "__stewart-cc-relay";
 pub const HOOK: &str = "__stewart-cc-hook";
 const GRACE: Duration = Duration::from_secs(2);
-
-/// The only construction of a harness environment. Nothing is inherited.
-pub fn environment(profile: &Profile) -> Vec<(String, String)> {
-    let mut e: Vec<(String, String)> = [
-        ("PATH", "/usr/bin:/bin:/usr/sbin:/sbin"),
-        ("LANG", "en_US.UTF-8"),
-        ("DISABLE_UPDATES", "1"),
-        ("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1"),
-        ("CLAUDE_CODE_DISABLE_AUTO_MEMORY", "1"),
-        ("CLAUDE_CODE_DISABLE_BACKGROUND_TASKS", "1"),
-        ("CLAUDE_CODE_DISABLE_AGENT_VIEW", "1"),
-        ("CLAUDE_CODE_DISABLE_FAST_MODE", "1"),
-        ("ENABLE_CLAUDEAI_MCP_SERVERS", "false"),
-        ("ENABLE_TOOL_SEARCH", "false"),
-        ("CLAUDE_CODE_MAX_RETRIES", "0"),
-        ("CLAUDE_CODE_MAX_OUTPUT_TOKENS", "16000"),
-    ]
-    .iter()
-    .map(|(k, v)| (k.to_string(), v.to_string()))
-    .collect();
-    e.extend([
-        ("HOME".into(), profile.home.clone()),
-        ("TMPDIR".into(), profile.temporary_directory.clone()),
-        ("CLAUDE_CONFIG_DIR".into(), profile.config_directory.clone()),
-    ]);
-    e
-}
 
 pub fn gone(pgid: i32) -> Result<bool, String> {
     if pgid <= 1 {
@@ -67,9 +39,12 @@ pub struct Owned {
     pub exit_code: Option<i32>,
 }
 impl Owned {
+    /// Start one supervised harness process. `environment` is the whole child
+    /// environment, built by the launch surface; nothing is inherited.
     pub fn start(
         writer: &str,
-        profile: &Profile,
+        executable: &str,
+        environment: &[(String, String)],
         cwd: &str,
         args: &[String],
         remaining: Duration,
@@ -83,11 +58,11 @@ impl Owned {
             .arg(SUPERVISOR)
             .arg(fd.to_string())
             .arg(remaining.as_millis().max(1).to_string())
-            .arg(&profile.executable)
+            .arg(executable)
             .args(args)
             .current_dir(cwd)
             .env_clear()
-            .envs(environment(profile))
+            .envs(environment.iter().map(|(k, v)| (k, v)))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

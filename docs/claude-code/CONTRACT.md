@@ -138,17 +138,27 @@ Preparation and commissioning stay local: neither launches Claude or logs in.
 The manager uses the existing dedicated harness-owned login. A separately
 commissioned synthetic check produces an inspectable receipt for a launch
 profile. Bind it to the executable digest and signature receipt, platform,
-model, environment allowlist/values, settings, hook and relay/writer identities,
-tool-schema transformation and expected startup inventory. Retain the exact
-synthetic prompt and result with it. Do not hash or copy the credential store.
-The two-tool feasibility receipt does not validate the full service tool set.
-Profile validation is implemented; apparatus to produce a reviewed real-service
-check attestation is still needed. Synthetic driver attestations exercise
-validation and are not real-harness commissioning evidence.
+model, tool-schema transformation, expected startup inventory and the
+[launch surface](#launch-surface): the invocation, settings, hook and relay
+arrangement, environment names and values, supporting controls, handshake,
+input shape and pinned texts that Stewart supplies to the harness. Retain the
+exact synthetic prompt and result with it. Do not hash or copy the credential
+store. The two-tool feasibility receipt does not validate the full service tool
+set. Profile validation is implemented; apparatus to produce a reviewed
+real-service check attestation is still needed. Synthetic driver attestations
+exercise validation and are not real-harness commissioning evidence.
 
-`prepare` binds the selected profile and check receipt into the arrangement.
-Before every start, verify the observable bindings and obtain a fresh allowlisted
-authentication status: the selected directory, `claude.ai` and logged in. Require
+The check is bound to what the harness is given, not to the `stewart` binary
+that gives it. A rebuild that leaves the launch surface unchanged keeps its
+check; a build that changes any surface value refuses that profile until the
+changed surface has its own check. This binding concerns the profile only. An
+audit stays bound to the binary that created it under the common
+[one-writer rule](../../CONTRACTS.md#versions-and-legacy-obligations).
+
+`prepare` binds the selected profile, check receipt and launch surface into the
+arrangement. Before every start, verify the observable bindings and obtain a
+fresh allowlisted authentication status: the selected directory, `claude.ai` and
+logged in. Require
 `apiKeySource: "none"` separately at initialization. A failed or changed binding
 refuses. Live commissioning must include
 the non-model status invocation as well as any model session; installation and
@@ -188,46 +198,67 @@ version nor its fields. Question body bytes and material selection do not change
 
 The profile is strict control JSON, at most 64 KiB, read through no-follow
 directory/file descriptors. It has exactly `schema`, `launch`, `installation`
-and `check`. Its schema is `stewart.claude-code.profile/1`.
+and `check`. Its schema is `stewart.claude-code.profile/2`. Any other profile
+schema identifier refuses, with a diagnostic naming it and the identifier this
+binary reads; there is no reader for another form.
 
 | Object | Exact members |
 | --- | --- |
 | `launch` | `executable` (absolute regular file path), `sha256` (binary digest), `version` (pinned CLI version), `platform` (`macos-aarch64`, `linux-aarch64` or `linux-x86_64`), `config_directory`, `home`, `temporary_directory` (absolute directory paths). |
 | `installation` | `manifest_sha256`, `signer`, `binary_sha256`. The signer is `31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE`; binary digest equals `launch.sha256`. |
-| `check` | `writer_sha256`, `launch_sha256`, `tools_sha256`, `model`, `checked_at`, `evidence_sha256`, `outcome` (exactly `observed`). |
+| `check` | `surface_sha256`, `launch_sha256`, `tools_sha256`, `model`, `checked_at`, `evidence_sha256`, `outcome` (exactly `observed`). |
 
 SHA-256 values are lowercase 64-digit hexadecimal strings. `launch_sha256`
 hashes the original JSON value bytes of `launch`, including their internal
 whitespace. `tools_sha256` hashes the compact MCP tool array: pinned family
 tool order, each object ordered `name`, `description`, `inputSchema`, with the
-original schema value bytes preserved. `writer_sha256` binds the commissioning
-binary; model and platform must match. `checked_at` identifies the check's date,
-and `evidence_sha256` identifies its independently reviewed record. The embedded
+original schema value bytes preserved. `surface_sha256` hashes the
+[launch surface](#launch-surface) document the check session exercised; it must
+equal the digest of the surface the running binary supplies. Model and platform
+must match. `checked_at` identifies the check's date, and `evidence_sha256` identifies its independently reviewed record. The embedded
 installation/check entries are attributed attestations; reading and hashing
 them does not redo signature verification or reproduce a live check. They confer
 no permission to invoke Claude.
 
 `prepare` checks these bindings and hashes the executable without executing it.
+It computes the running binary's own launch surface and refuses a profile whose
+`check.surface_sha256` differs. A profile that `prepare` cannot accept refuses
+with reason `runtime_profile_invalid` and launches nothing. Every such refusal
+carries `data.surface`, with exactly `schema` (`stewart.claude-code.surface/1`),
+`sha256` (the digest this binary requires a check to name) and `document` (the
+surface document as a JSON value, its bytes exactly those the digest covers). A
+surface mismatch also states both digests in its message. A manager therefore
+learns the required digest and the exact document from a refusal alone.
+
 The source profile's exact UTF-8 text is captured in prepared settings as
 `runtime: {kind:"claude-code/1",profile_path,profile}`. Its `limits` object is
 exactly `{max_placements,placement_timeout_seconds}`. Subsequent receipt readback
-uses captured bytes, never a changed live profile. `run` verifies the executable
-and check bindings again. The runtime never opens the named credential directory.
+uses captured bytes, never a changed live profile. Before any launch, `run`
+verifies the executable and check bindings again, including that the pinned
+surface is the one the running binary supplies; a difference refuses with
+`runtime_profile_invalid`, naming both digests. The runtime never opens the
+named credential directory.
 
-The arrangement schema is `stewart.claude-code.arrangement/1`. Its exact members
+The arrangement schema is `stewart.claude-code.arrangement/2`. Its exact members
 are `schema`, `family`, `model`, `guidance`, `orientation`, `system`,
-`system_prompt`, `tools`, `mcp_tools`, `runtime`, `profile_sha256`, `effort`,
-`limits`, `harness_max_turns`, `harness_max_output_tokens`, `texts`, `reader`,
-`renderer`, `reading` and `bindings`. Common members retain the interface's
-meaning. `profile_sha256` hashes the captured profile string's UTF-8 bytes.
-`effort` is null or the selected level. Supporting controls request 200 harness
-turns and 16,000 output tokens per response. Their enforcement is a qualification
-obligation, not a token allowance.
+`system_prompt`, `tools`, `mcp_tools`, `runtime`, `profile_sha256`, `surface`,
+`surface_sha256`, `effort`, `limits`, `harness_max_turns`,
+`harness_max_output_tokens`, `texts`, `reader`, `renderer`, `reading` and
+`bindings`. Common members retain the interface's meaning. `profile_sha256`
+hashes the captured profile string's UTF-8 bytes. `surface` is the launch
+surface document as a JSON value, written with exactly the document's bytes, and
+`surface_sha256` is their SHA-256; it equals the captured profile's
+`check.surface_sha256`. Receipt readback of the arrangement therefore shows what
+the check was bound to, not only a digest. `effort` is null or the selected
+level. Supporting controls request 200 harness turns and 16,000 output tokens
+per response. Their enforcement is a qualification obligation, not a token
+allowance. Another runtime arrangement schema identifier refuses with a
+diagnostic naming it; there is no reader for another form.
 
 `system` retains two text blocks; `system_prompt` joins their decoded strings
 with exactly two LF bytes. `tools` retains the base tool definitions;
 `mcp_tools` holds the mapping described above. No runtime extension is added to
-old arrangements, settings or receipts.
+API arrangements, settings or receipts.
 
 ## Runtime texts
 
@@ -319,25 +350,40 @@ stream-json --verbose --restricted --tools '' --setting-sources '' --settings
 PATH --strict-mcp-config --mcp-config PATH --allowedTools NAMES --permission-mode
 dontAsk --permission-prompts none --system-prompt-file PATH --model MODEL
 --max-turns 200 --no-session-persistence`, plus `--effort LEVEL` when selected.
-`NAMES` is every pinned tool prefixed `mcp__stewart__`. Settings select
-`forceLoginMethod: claudeai`, `fastMode: false`, `fallbackModel: []`, and a
-`PreToolUse` command hook matching `*`, with a five-second timeout. MCP config
-has exactly one server, `stewart`, with `type: stdio`, the Stewart writer as
-`command`, and private relay arguments. The working directory is a fresh,
-private directory outside the submission, archive and project ancestry.
+`NAMES` is every pinned tool prefixed `mcp__stewart__`, one argument per tool in
+the pinned family order. Settings select `forceLoginMethod: claudeai`,
+`fastMode: false`, `fallbackModel: []`, and a `PreToolUse` command hook matching
+`*`, with a five-second timeout. The hook's command is the writer's path in
+single quotes (each `'` in the path written `'\''`), `__stewart-cc-hook` and
+`'h'`, separated by single spaces. MCP config has exactly one server, `stewart`,
+with `type: stdio`, the Stewart writer as `command`, and the arguments
+`__stewart-cc-relay` and `m`. The working directory is a fresh, private
+directory outside the submission, archive and project ancestry. It holds the
+three supplied files `settings.json`, `mcp.json` and `system.txt`, which the
+`PATH` arguments name absolutely, and the two private sockets `m` and `h`, which
+the relay and hook name relatively.
 
-The child environment is rebuilt from the pinned HOME, TMPDIR and
-CLAUDE_CONFIG_DIR, fixed PATH `/usr/bin:/bin:/usr/sbin:/sbin`, LANG
-`en_US.UTF-8`, and the disable controls exercised in the runtime reference.
-`CLAUDE_CODE_MAX_RETRIES` is `0`; `CLAUDE_CODE_MAX_OUTPUT_TOKENS` is `16000`.
-No caller environment, credential, endpoint, proxy or agent injection is
-forwarded.
+The hook helper prints one LF-terminated JSON object. It admits a call with `{}`
+when the tool is a pinned prefixed name, startup has passed and the placement
+still admits calls. Otherwise it prints the denial object given as
+`hook_replies.deny` in the [launch surface](#launch-surface).
+
+The child environment is rebuilt, with nothing inherited. It is exactly the
+fifteen names and values that the [launch surface](#launch-surface) lists as
+its `environment` member: fixed `PATH` and `LANG`, eight disable controls,
+`CLAUDE_CODE_MAX_RETRIES` `0`, `CLAUDE_CODE_MAX_OUTPUT_TOKENS` `16000`, and
+`HOME`, `TMPDIR` and `CLAUDE_CONFIG_DIR` from the profile's `home`,
+`temporary_directory` and `config_directory`. The authentication check uses the same environment and
+working directory. No caller environment, credential, endpoint, proxy or agent
+injection is forwarded.
 
 Input is LF-delimited JSON. Each supplied message has `type: user`,
 `session_id: ""`, `parent_tool_use_id: null`, and
 `message: {role: user, content: TEXT}`. The first content is the exact question
 body; continuation and notices are separate inputs. MCP uses LF-delimited
-JSON-RPC 2.0 and protocol version `2025-11-25`. Initialization, initialized
+JSON-RPC 2.0 and protocol version `2025-11-25`. The initialization result has
+exactly `protocolVersion`, `capabilities: {tools: {}}` and
+`serverInfo: {name: stewart, version: "1"}`. Initialization, initialized
 notification, ping, fixed tools/list, tools/call and cancellation are supported.
 Unknown methods return method-not-found. Notifications never execute tools or
 receive replies. IDs are strings or integers, unique within a placement;
@@ -403,3 +449,108 @@ retain the actual core reply; `request` and `attempt` are 1 and `block` is C
 for this single MCP connection. These are transport coordinates, not HTTP
 requests. Harness `run_ended.requests` and `attempts` are zero. No harness
 accounting record is interpreted as an API charge.
+
+## Launch surface
+
+The launch surface is everything Stewart supplies to the harness that is the
+same in every audit and is not already bound by the profile's `launch_sha256`,
+`tools_sha256` or `model`. A profile's `check.surface_sha256` names it. The
+surface is a property of a build: two builds that supply the same values have
+the same surface wherever they are installed, and a build that changes any
+value below has a different one.
+
+The surface document is `stewart.claude-code.surface/1`. It is one JSON object
+in the compact form used for `tools_sha256`: no whitespace between tokens,
+members in the order given here, integers in decimal, and no trailing LF. In
+strings only `"`, `\` and control characters are escaped; the one escape the
+current document contains is `\n` for each LF in `system_prompt`. Every byte is
+ASCII. `surface_sha256` is the SHA-256 of these bytes.
+
+A value that differs between launches appears as a placeholder: the literal
+string below, braces included. Placeholders are never filled in the document.
+
+| Placeholder | Stands for |
+| --- | --- |
+| `{workspace}` | The placement's private working directory, an absolute path. |
+| `{writer}` | The Stewart writer's absolute path. In the hook command a launch writes it with the shell quoting given in the [wire contract](#development-wire-and-process-contract). |
+| `{home}`, `{temporary_directory}`, `{config_directory}` | The profile's `launch` members of those names. |
+| `{model}` | The commissioned model. |
+| `{effort}` | The selected effort level. |
+| `{tool}` | One pinned tool name. The single argument `mcp__stewart__{tool}` stands for one argument per pinned tool, in the pinned family order. |
+| `{orientation}`, `{guidance}` | The orientation text and the effective family guidance text. |
+| `{text}` | The content of one supplied input message. |
+
+The members, in order:
+
+| Member | Value |
+| --- | --- |
+| `schema` | `stewart.claude-code.surface/1`. |
+| `working_directory` | `{workspace}`: the authentication check and the model session both run there. |
+| `auth_argv` | The authentication check's arguments: `auth`, `status`. |
+| `model_argv` | The model invocation's arguments in order, as strings, without the effort arguments. The two empty arguments are empty strings, each `PATH` is `{workspace}/` followed by its file name, `NAMES` is the single `{tool}` argument, `MODEL` is `{model}` and the turn cap is the string `200`. |
+| `effort_argv` | `--effort`, `{effort}`: appended to `model_argv` when the question selects an effort. |
+| `settings` | The settings file: `forceLoginMethod`, `fastMode`, `fallbackModel`, then `hooks` with the one `PreToolUse` entry of `matcher` and `hooks`, whose one hook has `type`, `command` and integer `timeout`. The command is `'{writer}' __stewart-cc-hook 'h'`. |
+| `mcp_config` | The MCP configuration file: `mcpServers` with the one server `stewart` of `type`, `command` (`{writer}`) and `args`. |
+| `environment` | The whole child environment as an object of string values, in this order: `PATH` `/usr/bin:/bin:/usr/sbin:/sbin`; `LANG` `en_US.UTF-8`; `DISABLE_UPDATES`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, `CLAUDE_CODE_DISABLE_AUTO_MEMORY`, `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`, `CLAUDE_CODE_DISABLE_AGENT_VIEW` and `CLAUDE_CODE_DISABLE_FAST_MODE`, each `1`; `ENABLE_CLAUDEAI_MCP_SERVERS` and `ENABLE_TOOL_SEARCH`, each `false`; `CLAUDE_CODE_MAX_RETRIES` `0`; `CLAUDE_CODE_MAX_OUTPUT_TOKENS` `16000`; `HOME` `{home}`; `TMPDIR` `{temporary_directory}`; `CLAUDE_CONFIG_DIR` `{config_directory}`. |
+| `controls` | The integers `harness_max_turns` 200 and `harness_max_output_tokens` 16000. |
+| `system_prompt` | The system-prompt file's construction: `{orientation}`, two LF bytes, `{guidance}`. |
+| `input` | One supplied input message, with `{text}` as its content. |
+| `mcp_initialize` | The MCP initialization result. |
+| `hook_replies` | `allow`, the empty object, then `deny`: `hookSpecificOutput` with `hookEventName` `PreToolUse`, `permissionDecision` `deny` and `permissionDecisionReason` `Tool is outside the validated active commission.` |
+| `texts` | `orientation`, the orientation identifier, then `orientation_sha256`, `reminder_sha256`, `near_limit_sha256`, `continuation_sha256` and `compacted_sha256`. Each digest covers the pinned text's UTF-8 bytes under the [joining convention of QUESTION-FORMS](../QUESTION-FORMS.md), without a trailing LF. The orientation is the [runtime orientation](#runtime-texts) in full. The reminder and continuation are the common texts of QUESTION-FORMS. The near-limit text is this runtime's template with `{seconds}` and `{placements}` unfilled, and the compacted text is this runtime's post-compaction notice. |
+
+The following is the complete current document and owns its literal values.
+Join the block's lines without their line endings to obtain the exact bytes; no
+line begins or ends with a space, and no break falls inside a string.
+
+```json
+{"schema":"stewart.claude-code.surface/1",
+"working_directory":"{workspace}",
+"auth_argv":["auth","status"],
+"model_argv":["-p","--input-format","stream-json","--output-format","stream-json",
+"--verbose","--restricted","--tools","","--setting-sources","","--settings",
+"{workspace}/settings.json","--strict-mcp-config","--mcp-config","{workspace}/mcp.json",
+"--allowedTools","mcp__stewart__{tool}","--permission-mode","dontAsk",
+"--permission-prompts","none","--system-prompt-file","{workspace}/system.txt","--model",
+"{model}","--max-turns","200","--no-session-persistence"],
+"effort_argv":["--effort","{effort}"],
+"settings":{"forceLoginMethod":"claudeai","fastMode":false,"fallbackModel":[],
+"hooks":{"PreToolUse":[{"matcher":"*","hooks":[{"type":"command",
+"command":"'{writer}' __stewart-cc-hook 'h'","timeout":5}]}]}},
+"mcp_config":{"mcpServers":{"stewart":{"type":"stdio","command":"{writer}",
+"args":["__stewart-cc-relay","m"]}}},
+"environment":{"PATH":"/usr/bin:/bin:/usr/sbin:/sbin","LANG":"en_US.UTF-8",
+"DISABLE_UPDATES":"1","CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC":"1",
+"CLAUDE_CODE_DISABLE_AUTO_MEMORY":"1","CLAUDE_CODE_DISABLE_BACKGROUND_TASKS":"1",
+"CLAUDE_CODE_DISABLE_AGENT_VIEW":"1","CLAUDE_CODE_DISABLE_FAST_MODE":"1",
+"ENABLE_CLAUDEAI_MCP_SERVERS":"false","ENABLE_TOOL_SEARCH":"false",
+"CLAUDE_CODE_MAX_RETRIES":"0","CLAUDE_CODE_MAX_OUTPUT_TOKENS":"16000","HOME":"{home}",
+"TMPDIR":"{temporary_directory}","CLAUDE_CONFIG_DIR":"{config_directory}"},
+"controls":{"harness_max_turns":200,"harness_max_output_tokens":16000},
+"system_prompt":"{orientation}\n\n{guidance}",
+"input":{"type":"user","session_id":"","parent_tool_use_id":null,
+"message":{"role":"user","content":"{text}"}},
+"mcp_initialize":{"protocolVersion":"2025-11-25","capabilities":{"tools":{}},
+"serverInfo":{"name":"stewart","version":"1"}},
+"hook_replies":{"allow":{},"deny":{"hookSpecificOutput":{"hookEventName":"PreToolUse",
+"permissionDecision":"deny",
+"permissionDecisionReason":"Tool is outside the validated active commission."}}},
+"texts":{"orientation":"stewart.orientation/claude-code/1",
+"orientation_sha256":"2d12b500300537f665a3265c368f132794284bb543e9f5659decd5b2af439b82",
+"reminder_sha256":"a863022bc2ca6682a1162aca9b402293efd296d2bc24669574d0308e193dcdda",
+"near_limit_sha256":"14dc131ac9bd703c9f8d945db4e78a98a2418b5b27d6535a4870e6ddf5a437d0",
+"continuation_sha256":"0cced8b9aae42fb09e5c321e64a44037413d0bd244b0e4d2e855e7d3ce850ac0",
+"compacted_sha256":"08dd7b07e1cb01dea350c3bd7c42bda0a55fc2b1439a089ff825a71f90cf67d4"}}
+```
+
+Its SHA-256 is
+`bd49da58770c7115c39fe54fb784e31b3616449c9d14f63cc7c49c9474b6b755`.
+
+Values that vary by audit are pinned by the arrangement and are not part of the
+surface: the question body, the effective guidance, the materials, the limits
+and the selected effort. The family guidance is such a value even when it is a
+built-in text, because the family is the manager's choice. The executable, the
+profile's directories, the tool definitions and the model keep their own
+bindings. Tool results and JSON-RPC errors are behavior, exercised by cases
+rather than named by a digest. Supervision, capture and accounting are Stewart's
+own and are not supplied to the harness.

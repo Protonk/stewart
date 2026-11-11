@@ -2,7 +2,7 @@
 //! opens the harness credential directory. A check receipt is an attributed
 //! installation/check record, not authority to start a model session.
 
-use crate::archive::{Audit, Fail};
+use crate::archive::Fail;
 use crate::fsx::Dir;
 use crate::json::{self, J, JsonError, Obj};
 use crate::{ids, util};
@@ -10,8 +10,8 @@ use sha2::{Digest, Sha256};
 use std::io::Read;
 
 pub const QUESTION_SCHEMA: &str = "question/claude-code/1";
-pub const PROFILE_SCHEMA: &str = "stewart.claude-code.profile/1";
-pub const ARRANGEMENT_SCHEMA: &str = "stewart.claude-code.arrangement/1";
+pub const PROFILE_SCHEMA: &str = "stewart.claude-code.profile/2";
+pub const ARRANGEMENT_SCHEMA: &str = "stewart.claude-code.arrangement/2";
 pub const SIGNER: &str = "31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE";
 pub const MAX_PROFILE_BYTES: u64 = 64 * 1024;
 pub const MAX_PLACEMENTS: u64 = 10_000;
@@ -156,7 +156,8 @@ pub struct Profile {
     pub config_directory: String,
     pub home: String,
     pub temporary_directory: String,
-    pub writer_sha256: String,
+    /// The launch surface the check session exercised.
+    pub surface_sha256: String,
     pub tools_sha256: String,
     pub model: String,
     pub checked_at: String,
@@ -176,10 +177,18 @@ impl Profile {
         let parsed = json::parse(raw).map_err(|e| e.to_string())?;
         (|| {
             let o = parsed.obj("")?;
-            o.exactly(&["schema", "launch", "installation", "check"])?;
-            if o.str("schema")? != PROFILE_SCHEMA {
-                return Err(o.invalid("schema", format!("expected {PROFILE_SCHEMA}")));
+            // One profile form is read. Any other identifier, including an
+            // earlier one, is refused by name before its members are examined.
+            let schema = o.str("schema")?;
+            if schema != PROFILE_SCHEMA {
+                return Err(o.invalid(
+                    "schema",
+                    format!(
+                        "unsupported profile schema {schema:?}; this binary reads only {PROFILE_SCHEMA}"
+                    ),
+                ));
             }
+            o.exactly(&["schema", "launch", "installation", "check"])?;
             let l = o.obj("launch")?;
             l.exactly(&[
                 "executable",
@@ -201,7 +210,7 @@ impl Profile {
             }
             let c = o.obj("check")?;
             c.exactly(&[
-                "writer_sha256",
+                "surface_sha256",
                 "launch_sha256",
                 "tools_sha256",
                 "model",
@@ -231,7 +240,7 @@ impl Profile {
                 config_directory: absolute(&l, "config_directory")?,
                 home: absolute(&l, "home")?,
                 temporary_directory: absolute(&l, "temporary_directory")?,
-                writer_sha256: c.sha256("writer_sha256")?.into(),
+                surface_sha256: c.sha256("surface_sha256")?.into(),
                 tools_sha256: c.sha256("tools_sha256")?.into(),
                 model: c.str("model")?.into(),
                 checked_at: c.str("checked_at")?.into(),
@@ -240,16 +249,25 @@ impl Profile {
         .map_err(|e: JsonError| e.to_string())
     }
 
-    pub fn check(&self, writer: &str, model: &str, tools: &[u8]) -> Result<(), String> {
-        if self.writer_sha256 != writer
-            || self.model != model
-            || self.tools_sha256 != util::sha256_hex(tools)
-        {
-            return Err("runtime check does not bind this writer, model and MCP tool surface; a separately commissioned check is needed".into());
+    /// The check's bindings to what this binary and this question supply.
+    /// `surface` is the running binary's own launch surface digest.
+    pub fn bindings(&self, surface: &str, model: &str, tools: &[u8]) -> Result<(), String> {
+        if self.surface_sha256 != surface {
+            return Err(surface_differs(&self.surface_sha256, surface));
+        }
+        if self.model != model || self.tools_sha256 != util::sha256_hex(tools) {
+            return Err("runtime check does not bind this model and MCP tool surface; a separately commissioned check is needed".into());
         }
         if self.platform != format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH) {
             return Err("runtime check belongs to another platform".into());
         }
+        Ok(())
+    }
+
+    /// The bindings, then the pinned executable's digest. Reads the
+    /// executable without executing it.
+    pub fn check(&self, surface: &str, model: &str, tools: &[u8]) -> Result<(), String> {
+        self.bindings(surface, model, tools)?;
         let (mut file, _) = open_regular(&self.executable)?;
         let mut hash = Sha256::new();
         let mut chunk = [0; 65536];
@@ -267,6 +285,15 @@ impl Profile {
     }
 }
 
+/// The diagnostic for a check of another surface. It states the digest this
+/// binary supplies, so a manager learns it without any launch.
+pub fn surface_differs(named: &str, supplied: &str) -> String {
+    format!(
+        "the runtime check names launch surface {named}, but this binary's launch surface ({}) has SHA-256 {supplied}; a separately commissioned check of this surface is needed",
+        super::surface::SCHEMA
+    )
+}
+
 pub fn open_regular(path: &str) -> Result<(std::fs::File, crate::fsx::Stat), String> {
     ids::check_absolute(path).map_err(|e| e.to_string())?;
     let (parent, name) = path.rsplit_once('/').ok_or("expected an absolute path")?;
@@ -275,7 +302,10 @@ pub fn open_regular(path: &str) -> Result<(std::fs::File, crate::fsx::Stat), Str
     dir.open_regular(name).map_err(|e| e.describe())
 }
 
-pub fn prepare(audit: &Audit, settings: &mut crate::frontmatter::Settings) -> Result<(), Fail> {
+/// Load and check the selected profile for `prepare`. Every refusal carries
+/// this binary's launch surface, so the digest a check must name is available
+/// without a launch.
+pub fn prepare(settings: &mut crate::frontmatter::Settings) -> Result<(), Fail> {
     let Some(selection) = &mut settings.harness else {
         return Ok(());
     };
@@ -284,6 +314,7 @@ pub fn prepare(audit: &Audit, settings: &mut crate::frontmatter::Settings) -> Re
             "runtime_profile_invalid",
             format!("The runtime profile cannot be prepared: {e}. No harness was launched."),
         )
+        .data(super::surface::report())
     };
     let (file, stat) = open_regular(&selection.path).map_err(fail)?;
     if stat.size > MAX_PROFILE_BYTES {
@@ -297,8 +328,77 @@ pub fn prepare(audit: &Audit, settings: &mut crate::frontmatter::Settings) -> Re
     let family = crate::forms::family(&settings.family).expect("validated family");
     let tools = super::mcp_tools(&crate::forms::tools(family).bytes()).map_err(fail)?;
     profile
-        .check(&audit.refile.writer_sha256, &settings.model, &tools)
+        .check(&super::surface::sha256(), &settings.model, &tools)
         .map_err(fail)?;
     selection.profile = Some(String::from_utf8(raw).map_err(|e| fail(e.to_string()))?);
     Ok(())
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::super::surface;
+    use super::*;
+
+    /// A profile text whose check holds `binding: surface`. Its other
+    /// bindings are valid for `model` and `tools` on this platform.
+    pub(crate) fn fixture(schema: &str, binding: &str, surface: &str, tools: &[u8]) -> String {
+        let launch = format!(
+            r#"{{"executable":"/fixture/harness","sha256":"{}","version":"2.1.322","platform":"{}-{}","config_directory":"/fixture/config","home":"/fixture/home","temporary_directory":"/fixture/tmp"}}"#,
+            "a".repeat(64),
+            std::env::consts::OS,
+            std::env::consts::ARCH
+        );
+        format!(
+            r#"{{"schema":"{schema}","launch":{launch},"installation":{{"manifest_sha256":"{}","signer":"{SIGNER}","binary_sha256":"{}"}},"check":{{"{binding}":"{surface}","launch_sha256":"{}","tools_sha256":"{}","model":"fixture-model","checked_at":"2026-11-11","evidence_sha256":"{}","outcome":"observed"}}}}"#,
+            "b".repeat(64),
+            "a".repeat(64),
+            util::sha256_hex(launch.as_bytes()),
+            util::sha256_hex(tools),
+            "c".repeat(64),
+        )
+    }
+
+    #[test]
+    fn the_check_binds_the_surface_and_not_the_writer() {
+        let own = surface::sha256();
+        let text = fixture(PROFILE_SCHEMA, "surface_sha256", &own, b"[]");
+        let profile = Profile::parse(text.as_bytes()).unwrap();
+        // The bindings take no writer identity: any build supplying this
+        // surface accepts the same profile bytes.
+        profile.bindings(&own, "fixture-model", b"[]").unwrap();
+        // Firing control: a build supplying another surface refuses, and
+        // says which digest it supplies.
+        let other = util::sha256_hex(b"another surface");
+        let refusal = profile
+            .bindings(&other, "fixture-model", b"[]")
+            .unwrap_err();
+        assert!(
+            refusal.contains(&own) && refusal.contains(&other),
+            "{refusal}"
+        );
+        assert!(refusal.contains(surface::SCHEMA), "{refusal}");
+        // The other bindings still refuse on their own.
+        assert!(profile.bindings(&own, "another-model", b"[]").is_err());
+        assert!(profile.bindings(&own, "fixture-model", b"[{}]").is_err());
+    }
+
+    #[test]
+    fn only_the_current_profile_form_is_read() {
+        let own = surface::sha256();
+        let earlier = fixture(
+            "stewart.claude-code.profile/1",
+            "surface_sha256",
+            &own,
+            b"[]",
+        );
+        let refusal = Profile::parse(earlier.as_bytes()).unwrap_err();
+        assert!(
+            refusal.contains("stewart.claude-code.profile/1") && refusal.contains(PROFILE_SCHEMA),
+            "{refusal}"
+        );
+        let writer_bound = fixture(PROFILE_SCHEMA, "writer_sha256", &own, b"[]");
+        assert!(Profile::parse(writer_bound.as_bytes()).is_err());
+        let malformed = fixture(PROFILE_SCHEMA, "surface_sha256", "not-a-digest", b"[]");
+        assert!(Profile::parse(malformed.as_bytes()).is_err());
+    }
 }

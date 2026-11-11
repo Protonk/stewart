@@ -86,8 +86,10 @@ each tool call, then `delivery/` and `ops/close.rs`.
   accounting of a placement without `run_ended` (6.4).
 - `usage.rs`: usage, charges and cumulative allowances (6.4).
 - `claude_code/`: the default-off development runtime, entered from `ops/run.rs`;
-  profile and arrangement bindings, MCP transport, the publication gate,
-  harness accounting and process supervision. Its
+  profile and arrangement bindings, the launch surface that a profile's check
+  names, MCP transport, the publication gate, harness accounting and process
+  supervision. `surface.rs` is the only construction of what a launch supplies
+  to the harness, so the surface digest describes the actual launch. Its
   [runtime contract](../docs/claude-code/CONTRACT.md) owns differences from the
   Messages API path.
 
@@ -162,6 +164,7 @@ against an audit the real binary commissioned.
 | `delivery.rs` | Delivery, close and status after launch | any |
 | `manager_seal.rs` | Close's manager seal through the answer module | any |
 | `close_faults.rs` | Delivery and close failure traces | `fault-injection` |
+| `claude_code.rs` | The development runtime: the publication gate in process, and `prepare`'s profile and launch-surface binding through the real binary | `claude-code` |
 | `close_sabotage.rs` | Delivery, close and status sabotage controls, and the run-handoff controls `relative_run_line` and `commission_over_network` (ACCEPTANCE C12) | `sabotage` |
 
 Shared support is in `tests/common/` (the harness), `tests/fixture/` (states
@@ -200,7 +203,12 @@ CARGO_TARGET_DIR=target-local cargo build --locked --offline --release --feature
 
 This extends the native Apple-silicon workflow. Keep the resulting binary for
 any audits it creates: its writer digest differs from the release binary, so
-the release cannot continue or close those audits. Gated-build runs are
+the release cannot continue or close those audits. A runtime profile's check is
+bound to the [launch surface](../docs/claude-code/CONTRACT.md#launch-surface)
+instead, so a rebuild that leaves the surface unchanged accepts an existing
+profile for new audits. A test in `src/claude_code/surface.rs` compares the
+surface with the contract's worked example byte for byte; a changed surface
+value needs that example and its digest changed too. Gated-build runs are
 development iteration and qualify neither the distributed binary nor a model.
 An observation under one credential route does not establish another route.
 
@@ -208,7 +216,7 @@ The [independent runtime driver](../apparatus/driver/CLAUDE-CODE.md) uses a
 synthetic executable to check preparation, core MCP effects, stopping and
 continuation. It invokes no Claude process. Real setup or runtime checks need
 their own bounded commission; the earlier two-tool probe is not a service
-qualification or a check receipt for a newly built writer.
+qualification or a check of this build's launch surface.
 
 The container suite builds `stewart-local` as the firing control for
 [`claude-code-markers.txt`](../apparatus/claude-code-markers.txt). Every listed

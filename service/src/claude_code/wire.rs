@@ -125,6 +125,16 @@ pub fn error(id: &[u8], code: i32, message: &str) -> J {
                 .with("message", message),
         )
 }
+/// What the server presents at initialization. The launch surface pins it.
+pub fn initialize_result() -> J {
+    J::obj()
+        .with("protocolVersion", PROTOCOL)
+        .with("capabilities", J::obj().with("tools", J::obj()))
+        .with(
+            "serverInfo",
+            J::obj().with("name", "stewart").with("version", "1"),
+        )
+}
 pub enum Action {
     Silent,
     Reply(J),
@@ -194,16 +204,7 @@ impl Mcp {
                     info.text("name")?;
                     info.text("version")?;
                     self.initialized = true;
-                    Action::Reply(result(
-                        id.bytes(),
-                        J::obj()
-                            .with("protocolVersion", PROTOCOL)
-                            .with("capabilities", J::obj().with("tools", J::obj()))
-                            .with(
-                                "serverInfo",
-                                J::obj().with("name", "stewart").with("version", "1"),
-                            ),
-                    ))
+                    Action::Reply(result(id.bytes(), initialize_result()))
                 }
                 "tools/list" | "tools/call" if !self.ready => {
                     return Err("initialize and notify initialized first".into());
@@ -257,17 +258,19 @@ pub fn line(value: J) -> Vec<u8> {
     b.push(b'\n');
     b
 }
+/// One supplied input message. The launch surface pins this shape.
+pub fn user_message(text: &str) -> J {
+    J::obj()
+        .with("type", "user")
+        .with("session_id", "")
+        .with("parent_tool_use_id", J::Null)
+        .with(
+            "message",
+            J::obj().with("role", "user").with("content", text),
+        )
+}
 pub fn user(text: &str) -> Vec<u8> {
-    line(
-        J::obj()
-            .with("type", "user")
-            .with("session_id", "")
-            .with("parent_tool_use_id", J::Null)
-            .with(
-                "message",
-                J::obj().with("role", "user").with("content", text),
-            ),
-    )
+    line(user_message(text))
 }
 
 #[cfg(test)]

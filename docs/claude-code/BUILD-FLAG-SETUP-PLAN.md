@@ -72,9 +72,9 @@ expected exits and extra binary digest without a schema change; no historical
 record has been rewritten.
 
 The integrated adapter passed all three host Cargo configurations, including
-loopback cases, and the four optimized markers passed absence/absence/presence
+loopback cases, and the five optimized markers passed absence/absence/presence
 checks in release, fault/sabotage and development builds. The current native
-outputs are in `.tmp/document-harmonization/host.VxyhfJ/`. Keep these and the
+outputs are in `.tmp/surface-binding/host.24wFiF/`. Keep these and the
 earlier `.tmp/claude-code-adapter/` and `.tmp/claude-code-setup/` outputs through
 review. Earlier failures and skips remain retained; Linux remains unqualified.
 

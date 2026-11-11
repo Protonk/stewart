@@ -1,4 +1,5 @@
 Stewart development build: claude-code
 question/claude-code/1
-stewart.claude-code.profile/1
+stewart.claude-code.profile/2
+stewart.claude-code.surface/1
 __stewart-cc-supervise

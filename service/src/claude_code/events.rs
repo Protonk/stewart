@@ -40,7 +40,7 @@ impl Observed {
         }
         let kind = v.text("type")?;
         let expected: BTreeSet<String> =
-            names.iter().map(|n| format!("mcp__stewart__{n}")).collect();
+            names.iter().map(|n| super::surface::tool_name(n)).collect();
         if kind == "system" {
             match v.text("subtype")?.as_str() {
                 "init" => {
@@ -231,12 +231,13 @@ mod tests {
                 config_directory: "/config".into(),
                 home: "/home".into(),
                 temporary_directory: "/tmp".into(),
-                writer_sha256: "0".repeat(64),
+                surface_sha256: "0".repeat(64),
                 tools_sha256: "0".repeat(64),
                 model: "fixture-model".into(),
                 checked_at: "test".into(),
             },
             profile_sha256: "0".repeat(64),
+            surface_sha256: "0".repeat(64),
             system_prompt: String::new(),
             mcp_tools: b"[]".to_vec(),
             effort: None,
