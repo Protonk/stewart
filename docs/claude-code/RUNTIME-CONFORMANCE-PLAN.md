@@ -28,11 +28,28 @@ remain future work.
 - Exercise the parts of the [launch surface](CONTRACT.md#launch-surface) that
   the digest names but no driver case drives: the hook helper's allow and deny
   replies and the effort arguments.
-- List every difference this contract makes from the Messages path at the
-  manager's surface: front matter, preparation, receipt, status, close and the
-  return. Separate those the transport forces from the incidental, and bring
-  the incidental ones to the principal with evidence. Share driver cases for
-  common behavior between the two runtimes where independence allows.
+- Decide the alignment candidates from the 2026-11-11 comparison of the two
+  paths through one binary. Paired replies differed only in limits, runtime
+  settings, run requirements, allowances and usage; the return package had the
+  same form. The differences the transport does not force:
+  - the separate question version, where a runtime field on the common
+    version would do, and a scaffold and help topics that describe only the
+    Messages limits;
+  - `run_needs` for this runtime, which the contract does not specify and
+    which omits the advice to start a long run in the background;
+  - the orientation's first paragraph, which drops the sentences naming the
+    list, read and search tools and saying the manager cannot be asked;
+  - the post-compaction notice, reworded beyond the one necessary noun;
+  - presentation: the whole profile text inside human output, singular and
+    plural agreement in the usage lines, no placement timeout in the summary,
+    and API-only status fields shown as null.
+- Settle what usage a submitting placement reports. The runtime stops the
+  harness after a confirmed submission; in synthetic runs that leaves the
+  final interval unknown on every sealed audit. Real-harness behavior is
+  unobserved.
+- Add driver cases for close after delivery and close after an ordinary
+  ending, which the Messages driver exercises and this one does not. Share
+  cases for common behavior between the two runtimes where independence allows.
 - Extend the independent offline driver to isolate relay-only disconnect while
   the model remains alive, MCP cancellation through the actual service, valid
   terminal usage checkpoints across placements, and compaction/notice/reminder
