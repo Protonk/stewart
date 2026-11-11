@@ -1,4 +1,4 @@
-"""One approved native probe: bounded setup, then at most three model sessions."""
+"""Prepare probe 02 offline; after bounded approval, check auth and run up to three sessions."""
 
 import argparse
 import base64
@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 import selectors
 import shlex
-import shutil
 import signal
 import subprocess
 import sys
@@ -27,10 +26,14 @@ def sibling(name):
 
 fixture, pin = sibling("fixture"), sibling("pin")
 REPO = Path(__file__).resolve().parents[2]
-RUN = REPO / ".scratch/claude-code-probe-01"
+COMMISSION = "claude-code-probe-02"
+RUN = REPO / ".scratch" / COMMISSION
+PREVIOUS = REPO / ".scratch/claude-code-probe-01"
+PROPOSAL = REPO / "docs/claude-code/FEASIBILITY-PROBE.md"
 PIN = REPO / ".scratch/claude-code-pin-01/pin.json"
 MODEL = "claude-haiku-5-5"
-ORIGINAL_CHECKER = "5abd0f59d856d90014ff7fe1b6566c9512b302e653e76c4df9fb9b001d206a1b"
+BUILTIN_PLUGINS = [{"name": name, "path": "builtin", "source": name + "@builtin"} for name in
+                   ["cc-plugin-agents-md", "cc-plugin-privacy", "cc-plugin-plugin-authoring"]]
 VISIBLE_FLAGS = ["--restricted", "--tools", "--setting-sources", "--settings", "--strict-mcp-config", "--mcp-config",
                  "--allowedTools", "--permission-mode", "--permission-prompts", "--model",
                  "--no-session-persistence", "--input-format", "--output-format"]
@@ -85,7 +88,7 @@ class State:
             os.close(fd)
 
     def claim(self, name):
-        allowed = {"version", "help", "auth-empty", "login", "auth-selected", "case-1", "case-2", "case-3"}
+        allowed = {"auth-selected", "case-1", "case-2", "case-3"}
         if name not in allowed or name in self.data["uses"]:
             raise ValueError("invocation already reserved, or outside approved scope: " + name)
         self.data["uses"][name] = {"outcome": "reserved; execution uncertain until completion"}
@@ -140,6 +143,15 @@ def stop_group(child, event, grace=5):
     return gone
 
 
+def validate_plugins(plugins):
+    if (not isinstance(plugins, list) or len(plugins) != len(BUILTIN_PLUGINS)
+            or any(not isinstance(p, dict) or set(p) != {"name", "path", "source"} for p in plugins)
+            or any(plugins.count(p) != 1 for p in BUILTIN_PLUGINS)):
+        names = [p.get("name") if isinstance(p, dict) else None for p in plugins] if isinstance(plugins, list) else []
+        label = ", ".join(names) if names and all(isinstance(n, str) for n in names) else repr(names)
+        raise ValueError("unexpected plugin inventory; require the three pinned built-in name/path/source entries; reported: " + label)
+
+
 def validate_event(value):
     if not isinstance(value, dict):
         raise ValueError("stream event is not an object")
@@ -153,11 +165,7 @@ def validate_event(value):
         servers = value.get("mcp_servers", [])
         if len(servers) != 1 or servers[0].get("name") != "probe" or servers[0].get("status") != "connected":
             raise ValueError("MCP server is not the sole connected probe server")
-        if value.get("plugins"):
-            plugins = value["plugins"]
-            names = [p.get("name") if isinstance(p, dict) else None for p in plugins] if isinstance(plugins, list) else []
-            label = ", ".join(names) if names and all(isinstance(n, str) for n in names) else "invalid inventory"
-            raise ValueError("unexpected plugin inventory: " + label)
+        validate_plugins(value.get("plugins"))
         if value.get("plugin_errors"):
             raise ValueError("startup reported plugin errors; see captured system/init")
         if value.get("mcp_server_errors"):
@@ -292,38 +300,72 @@ def supervise(argv, cwd, env, out, timeout, payload=None, delay=0, stream=False,
     return result, events, raw
 
 
-def bindings(state, correcting_checker=False):
+def bindings(state):
     expected = state.data["bindings"]
     for path, digest in expected.items():
-        if correcting_checker and path == str(Path(__file__).resolve()):
-            continue
         if pin.digest(path) != digest:
             raise ValueError("bound input changed: " + path)
     if state.data["environment"] != environment(state.data["config"]):
         raise ValueError("launch environment changed since setup")
 
 
-def prepare(state):
+def retained_setup():
+    """Read nonsecret prior evidence; never open the harness credential store."""
+    prior = fixture.decode((PREVIOUS / "state.json").read_bytes())
     receipt = fixture.decode(PIN.read_bytes())
-    if receipt["version"] != pin.VERSION or receipt["signer"] != pin.FINGERPRINT or pin.digest(receipt["binary"]) != receipt["sha256"]:
+    if not prior.get("setup_complete") or not prior.get("live_complete"):
+        raise ValueError("the prior setup and stopped batch must be settled before a new commission")
+    if (receipt["version"] != pin.VERSION or receipt["signer"] != pin.FINGERPRINT
+            or receipt["platform"] != "darwin-arm64" or pin.digest(receipt["binary"]) != receipt["sha256"]
+            or receipt["binary"] != prior["binary"] or prior["bindings"].get(receipt["binary"]) != receipt["sha256"]):
         raise ValueError("verified binary pin is missing or changed")
-    state.data.update(binary=receipt["binary"], model=MODEL,
-                      approval="Principal approved the bounded proposal and confirmed extra usage disabled, 2026-11-10",
-                      config=str(Path.home() / ".local/share/stewart-claude-code/probe-config"), cases=[])
-    config = Path(state.data["config"])
-    config.mkdir(mode=0o700, parents=True, exist_ok=False)
-    (RUN / "empty-config").mkdir(mode=0o700)
-    work = Path(tempfile.mkdtemp(prefix="stewart-claude-probe-", dir="/private/tmp"))
+    for path, digest in prior["bindings"].items():
+        if Path(path).is_relative_to(PREVIOUS) and pin.digest(path) != digest:
+            raise ValueError("retained prior input changed: " + path)
+    if prior["environment"] != environment(prior["config"]):
+        raise ValueError("launch environment differs from the verified subscription setup")
+    for name, method, logged_in, expected_exit in [("auth-empty", "none", False, 1), ("auth-selected", "claude.ai", True, 0)]:
+        status = fixture.decode((PREVIOUS / name / "auth-status.json").read_bytes())
+        result = prior["uses"][name]
+        config = str(PREVIOUS / "empty-config") if name == "auth-empty" else prior["config"]
+        if status != {"loggedIn": logged_in, "authMethod": method, "configDirectory": config}:
+            raise ValueError("prior authentication observations do not match the selected route")
+        if result.get("exit") != expected_exit or result.get("stop") is not None or result.get("group_gone") is not True:
+            raise ValueError("prior authentication check was unsuccessful or uncertain")
+    if prior["uses"].get("login", {}).get("exit") != 0:
+        raise ValueError("prior dedicated login did not complete")
+    check_version((PREVIOUS / "version/stdout.bin").read_text())
+    check_help((PREVIOUS / "help/stdout.bin").read_text())
+    return prior
+
+
+def prepare():
+    """Freeze this new proposal without launching Claude or reusing invocation slots."""
+    if RUN.exists():
+        raise ValueError("probe 02 preparation already began; inspect it before any further action")
+    prior = retained_setup()
+    sources = {"probe.py": Path(__file__).resolve(), "fixture.py": Path(fixture.__file__).resolve(),
+               "pin.py": Path(pin.__file__).resolve(), "pin.json": PIN, "proposal.md": PROPOSAL,
+               "prior-state.json": PREVIOUS / "state.json", "prior-result.json": PREVIOUS / "RESULT.json",
+               "prior-version.stdout": PREVIOUS / "version/stdout.bin", "prior-help.stdout": PREVIOUS / "help/stdout.bin",
+               "prior-auth-empty.json": PREVIOUS / "auth-empty/auth-status.json",
+               "prior-auth-selected.json": PREVIOUS / "auth-selected/auth-status.json"}
+    RUN.mkdir(mode=0o700)
+    state = State(RUN)
+    state.data.update(commission=COMMISSION, prepared=False, approval=None, binary=prior["binary"], model=MODEL,
+                      config=prior["config"], cases=[])
+    work = Path(tempfile.mkdtemp(prefix="stewart-claude-probe-02-", dir="/private/tmp"))
     (work / "setup").mkdir(mode=0o700)
     state.data["setup_cwd"] = str(work / "setup")
-    sources = [Path(__file__).resolve(), Path(fixture.__file__).resolve(), Path(pin.__file__).resolve(), PIN, Path(receipt["binary"])]
     inputs = RUN / "inputs"
     inputs.mkdir(mode=0o700)
-    for source in sources[:-1]:
-        copy = inputs / source.name
-        shutil.copyfile(source, copy)
+    for name, source in sources.items():
+        with (inputs / name).open("xb") as out:
+            out.write(source.read_bytes())
+            out.flush()
+            os.fsync(out.fileno())
     frozen_fixture = inputs / "fixture.py"
-    sources += list(inputs.iterdir())
+    bound = list(sources.values()) + list(inputs.iterdir()) + [Path(prior["binary"])]
     for number in [1, 2, 3]:
         case = RUN / ("case-%d" % number)
         case.mkdir(mode=0o700)
@@ -338,40 +380,38 @@ def prepare(state):
         write_json(case / "mcp.json", {"mcpServers": {"probe": {"type": "stdio", "command": sys.executable,
                    "args": ["-I", "-B", str(frozen_fixture), "mcp", str(case)]}}})
         state.data["cases"].append({"case": str(case), "cwd": str(cwd)})
-        sources += [case / "settings.json", case / "mcp.json", case / "prompt.txt"]
-    state.data["bindings"] = {str(p): pin.digest(p) for p in sources}
-    state.data["environment"] = environment(config)
+        bound += [case / "settings.json", case / "mcp.json", case / "prompt.txt"]
+    state.data["bindings"] = {str(p): pin.digest(p) for p in bound}
+    state.data["environment"] = environment(prior["config"])
+    state.data["prepared"] = True
     state.save()
+    print("Probe 02 prepared offline. No Claude invocation; bounded launch approval is still required.")
 
 
-def command(state, name, args, auth=False, config=None):
+def check_auth(state):
+    name = "auth-selected"
     bindings(state)
     state.claim(name)
-    result, _, raw = supervise([state.data["binary"]] + args, state.data["setup_cwd"],
-             environment(config or state.data["config"]), RUN / name, 30, private_status=auth)
+    result, _, raw = supervise([state.data["binary"], "auth", "status"], state.data["setup_cwd"],
+             environment(state.data["config"]), RUN / name, 30, private_status=True)
     state.finish(name, result)
     if result["stop"] or not result["group_gone"]:
         raise ValueError(name + " did not finish under supervision")
-    if auth:
-        try:
-            value = fixture.decode(raw["stdout"])
-            safe = {k: value.get(k) for k in ["loggedIn", "authMethod", "configDirectory"]}
-            if safe["authMethod"] not in {"none", "claude.ai", "oauth_token", "api_key", "api_key_helper", "third_party"} or not isinstance(safe["configDirectory"], str):
-                raise ValueError("unexpected auth status fields")
-            if safe["loggedIn"] is not None and not isinstance(safe["loggedIn"], bool):
-                raise ValueError("unexpected login status field")
-        except (ValueError, AttributeError):
-            raise ValueError("auth status was not the documented JSON report; raw auth output was not retained")
-        write_json(RUN / name / "auth-status.json", safe)
-        expected = "none" if name == "auth-empty" else "claude.ai"
-        if safe["authMethod"] != expected or safe["configDirectory"] != str(config or state.data["config"]):
-            raise ValueError("unexpected authentication method or configuration directory")
-        if result["exit"] != (1 if name == "auth-empty" else 0):
-            raise ValueError("unexpected authentication exit status")
-        return safe
-    if result["exit"]:
-        raise ValueError(name + " failed")
-    return (RUN / name / "stdout.bin").read_text()
+    try:
+        value = fixture.decode(raw["stdout"])
+        safe = {k: value.get(k) for k in ["loggedIn", "authMethod", "configDirectory"]}
+        if safe["authMethod"] not in {"none", "claude.ai", "oauth_token", "api_key", "api_key_helper", "third_party"} or not isinstance(safe["configDirectory"], str):
+            raise ValueError("unexpected auth status fields")
+        if safe["loggedIn"] is not None and not isinstance(safe["loggedIn"], bool):
+            raise ValueError("unexpected login status field")
+    except (ValueError, AttributeError):
+        raise ValueError("auth status was not the documented JSON report; raw auth output was not retained")
+    write_json(RUN / name / "auth-status.json", safe)
+    if safe != {"loggedIn": True, "authMethod": "claude.ai", "configDirectory": state.data["config"]}:
+        raise ValueError("unexpected authentication method, login status or configuration directory")
+    if result["exit"] != 0:
+        raise ValueError("unexpected authentication exit status")
+    return safe
 
 
 def check_version(version):
@@ -386,74 +426,6 @@ def check_help(help_text):
     for option in VISIBLE_FLAGS:
         if option not in help_text:
             raise ValueError("required visible option not identified in captured help: " + option)
-
-
-def login_steps(state):
-    command(state, "auth-empty", ["auth", "status"], auth=True, config=RUN / "empty-config")
-    bindings(state)
-    state.claim("login")
-    print("Sign in through Claude's own flow using your subscription. This interaction is not recorded.", flush=True)
-    rc = subprocess.call([state.data["binary"], "auth", "login"], cwd=state.data["setup_cwd"], env=environment(state.data["config"]))
-    state.finish("login", {"exit": rc})
-    if rc:
-        raise ValueError("login failed; the one approved login attempt has been used")
-    command(state, "auth-selected", ["auth", "status"], auth=True)
-    state.data["setup_complete"] = True
-    state.save()
-    print("Setup verified. No model session was started.")
-
-
-def setup(state):
-    if not sys.stdin.isatty() or not sys.stdout.isatty():
-        raise ValueError("run setup in your own Terminal; the login interaction must not be captured by an agent")
-    if state.path.exists():
-        raise ValueError("setup already began; inspect its records before any further invocation")
-    prepare(state)
-    check_version(command(state, "version", ["--version"]))
-    check_help(command(state, "help", ["--help"]))
-    login_steps(state)
-
-
-def check_setup_checkpoint(data):
-    if data.get("setup_complete") or data.get("live_started") or set(data["uses"]) != {"version", "help"}:
-        raise ValueError("continuation requires exactly the completed version/help checkpoint")
-    for result in data["uses"].values():
-        if result.get("exit") != 0 or result.get("stop") is not None or result.get("group_gone") is not True:
-            raise ValueError("a completed setup check failed or has uncertain execution")
-
-
-def finish_setup(state):
-    """Continue this stopped setup after correcting its help-inventory check.
-
-    No completed or reserved invocation is repeated. Preserve the original
-    controller and all earlier records; append the correction's provenance.
-    """
-    if not sys.stdin.isatty() or not sys.stdout.isatty():
-        raise ValueError("finish setup in your own Terminal so login remains uncaptured")
-    check_setup_checkpoint(state.data)
-    controller = Path(__file__).resolve()
-    if state.data["bindings"].get(str(controller)) != ORIGINAL_CHECKER:
-        raise ValueError("this continuation applies only to the reviewed help-check failure")
-    bindings(state, correcting_checker=True)
-    check_version((RUN / "version/stdout.bin").read_text())
-    check_help((RUN / "help/stdout.bin").read_text())
-    snapshot = RUN / "inputs/probe-corrected-help-check.py"
-    with snapshot.open("xb") as out:
-        out.write(controller.read_bytes())
-        out.flush()
-        os.fsync(out.fileno())
-    new_digest = pin.digest(snapshot)
-    correction = RUN / "setup-checker-correction.json"
-    write_json(correction, {"reason": "Two documented CLI options are explicitly hidden from help; the approved argv and limits are unchanged.",
-               "old_controller_sha256": ORIGINAL_CHECKER, "new_controller_sha256": new_digest,
-               "version_output_sha256": pin.digest(RUN / "version/stdout.bin"),
-               "help_output_sha256": pin.digest(RUN / "help/stdout.bin"),
-               "hidden_options": ["--system-prompt-file", "--max-turns"], "repeated_invocations": []})
-    state.data["bindings"].update({str(controller): new_digest, str(snapshot): new_digest, str(correction): pin.digest(correction)})
-    state.data["setup_checker_correction"] = str(correction)
-    state.save()
-    print("Reusing successful version/help records; continuing only the unused authentication steps.", flush=True)
-    login_steps(state)
 
 
 def records(path):
@@ -485,12 +457,16 @@ def assessment(case, events, denial):
             "usage_scope": "harness report only; missing/internal consumption is not inferred as zero"}
 
 
-def live(state):
-    if not state.data.get("setup_complete") or state.data.get("live_started"):
-        raise ValueError("setup must finish first; the model batch can start only once")
+def live(state, approved=False, extra_usage_disabled=False):
+    if not approved or not extra_usage_disabled:
+        raise ValueError("probe 02 requires its own bounded approval and the included-usage-only condition")
+    if state.data.get("commission") != COMMISSION or not state.data.get("prepared") or state.data.get("live_started"):
+        raise ValueError("probe 02 must be prepared first; its batch can start only once")
     bindings(state)
+    state.data["approval"] = "Operator relayed bounded approval for probe 02 with paid extra usage disabled"
     state.data["live_started"] = True
     state.save()
+    check_auth(state)
     deadline = time.monotonic() + 360
     results = []
     for number, row in enumerate(state.data["cases"], 1):
@@ -531,23 +507,21 @@ def live(state):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["setup", "finish-setup", "live"])
+    parser.add_argument("action", choices=["prepare", "live"], help="prepare is offline; live consumes only a separately approved probe 02 commission")
+    parser.add_argument("--approved-probe-02", action="store_true", help="relay explicit approval for one auth-status check and at most three fresh sessions")
     parser.add_argument("--extra-usage-disabled", action="store_true", help="confirm the approved included-usage-only condition remains true")
     args = parser.parse_args()
     os.umask(0o077)
-    RUN.mkdir(mode=0o700, exist_ok=True)
     try:
+        if args.action == "prepare":
+            prepare()
+            return
+        if not args.approved_probe_02 or not args.extra_usage_disabled:
+            raise ValueError("live requires --approved-probe-02 and --extra-usage-disabled; documentation is not approval")
         with (RUN / "active.lock").open("a+b") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             state = State(RUN)
-            if args.action == "setup":
-                setup(state)
-            elif args.action == "finish-setup":
-                finish_setup(state)
-            else:
-                if not args.extra_usage_disabled:
-                    raise ValueError("live phase requires the included-usage-only condition")
-                live(state)
+            live(state, approved=args.approved_probe_02, extra_usage_disabled=args.extra_usage_disabled)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as exc:
         parser.exit(1, "probe stopped: %s\nNo automatic replacement or retry is allowed.\n" % exc)
 

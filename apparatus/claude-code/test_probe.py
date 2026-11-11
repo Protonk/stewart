@@ -1,12 +1,14 @@
 """Offline controls; every subprocess is Python, never Claude."""
 
 import base64
+import copy
 import importlib.util
 import io
 import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -162,7 +164,7 @@ class ProbeControls(unittest.TestCase):
     def test_api_key_source_refuses(self):
         event = {"type": "system", "subtype": "init", "model": probe.MODEL,
                  "tools": sorted(probe.fixture.TOOLS), "apiKeySource": "none", "claude_code_version": probe.pin.VERSION,
-                 "mcp_servers": [{"name": "probe", "status": "connected"}], "permissionMode": "dontAsk", "plugins": []}
+                 "mcp_servers": [{"name": "probe", "status": "connected"}], "permissionMode": "dontAsk", "plugins": copy.deepcopy(probe.BUILTIN_PLUGINS)}
         probe.validate_event(event)
         event["apiKeySource"] = "ANTHROPIC_API_KEY"
         with self.assertRaises(ValueError):
@@ -171,9 +173,9 @@ class ProbeControls(unittest.TestCase):
     def test_plugin_inventory_and_server_errors_are_distinct(self):
         event = {"type": "system", "subtype": "init", "model": probe.MODEL,
                  "tools": sorted(probe.fixture.TOOLS), "apiKeySource": "none", "claude_code_version": probe.pin.VERSION,
-                 "mcp_servers": [{"name": "probe", "status": "connected"}], "permissionMode": "dontAsk", "plugins": []}
+                 "mcp_servers": [{"name": "probe", "status": "connected"}], "permissionMode": "dontAsk", "plugins": copy.deepcopy(probe.BUILTIN_PLUGINS)}
         probe.validate_event(event)
-        with self.assertRaisesRegex(ValueError, "unexpected plugin inventory: cc-plugin-privacy"):
+        with self.assertRaisesRegex(ValueError, "unexpected plugin inventory"):
             probe.validate_event(dict(event, plugins=[{"name": "cc-plugin-privacy", "path": "builtin"}]))
         with self.assertRaisesRegex(ValueError, "startup reported plugin errors"):
             probe.validate_event(dict(event, plugin_errors=[{"message": "synthetic error"}]))
@@ -201,52 +203,134 @@ class ProbeControls(unittest.TestCase):
         with self.assertRaises(ValueError):
             probe.check_help(text.replace("--restricted", ""))
 
-    def test_setup_continuation_never_repeats_uncertain_or_started_auth(self):
-        good = {"exit": 0, "stop": None, "group_gone": True}
-        data = {"uses": {"version": dict(good), "help": dict(good)}}
-        probe.check_setup_checkpoint(data)
-        data["uses"]["help"] = {"outcome": "reserved"}
-        with self.assertRaises(ValueError):
-            probe.check_setup_checkpoint(data)
-        data["uses"]["help"] = dict(good)
-        data["uses"]["auth-empty"] = {"outcome": "reserved"}
-        with self.assertRaises(ValueError):
-            probe.check_setup_checkpoint(data)
+    def seed_prior(self):
+        prior = self.root / "prior"
+        prior.mkdir()
+        binary = self.root / "never-run-claude"
+        binary.write_text("synthetic executable identity; must never launch")
+        config = self.root / "harness-config"
+        config.mkdir()
+        pin_path = self.root / "pin.json"
+        probe.write_json(pin_path, {"version": probe.pin.VERSION, "signer": probe.pin.FINGERPRINT,
+                         "platform": "darwin-arm64", "binary": str(binary), "sha256": probe.pin.digest(binary)})
+        for name, content in [("version", probe.pin.VERSION + " (Claude Code)"), ("help", "\n".join(probe.VISIBLE_FLAGS))]:
+            (prior / name).mkdir()
+            (prior / name / "stdout.bin").write_text(content)
+        state = probe.State(prior)
+        state.data.update(binary=str(binary), config=str(config), environment=probe.environment(config),
+                          setup_complete=True, live_complete=True, bindings={str(binary): probe.pin.digest(binary)})
+        for name, method, logged_in, rc in [("auth-empty", "none", False, 1), ("auth-selected", "claude.ai", True, 0)]:
+            (prior / name).mkdir()
+            probe.write_json(prior / name / "auth-status.json", {"loggedIn": logged_in, "authMethod": method,
+                             "configDirectory": str(prior / "empty-config") if name == "auth-empty" else str(config)})
+            state.data["uses"][name] = {"exit": rc, "stop": None, "group_gone": True}
+        state.data["uses"]["login"] = {"exit": 0}
+        state.data["uses"]["case-1"] = {"exit": 143, "stop": "old refusal", "group_gone": True}
+        state.save()
+        probe.write_json(prior / "RESULT.json", {"cases": [{"case": 1, "outcome": "failed"}]})
+        proposal = self.root / "proposal.md"
+        proposal.write_text("Synthetic proposed commission; not launch authority.\n")
+        return {"PREVIOUS": prior, "PIN": pin_path, "PROPOSAL": proposal, "RUN": self.root / "run"}
 
-    def test_setup_correction_preserves_originals_and_only_reaches_unused_login(self):
-        inputs = self.root / "inputs"
-        inputs.mkdir()
-        original = inputs / "probe.py"
-        original.write_bytes(b"original checker\n")
-        controller = str(Path(probe.__file__).resolve())
-        for name, content in [("version", probe.pin.VERSION + " (Claude Code)\n"),
-                              ("help", "\n".join(probe.VISIBLE_FLAGS))]:
-            (self.root / name).mkdir()
-            (self.root / name / "stdout.bin").write_text(content)
-        preserved = {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
-        state = probe.State(self.root)
-        state.data.update(config=str(self.root / "config"), environment=probe.environment(self.root / "config"),
-                          bindings={controller: probe.pin.digest(original), str(original): probe.pin.digest(original)},
-                          uses={n: {"exit": 0, "stop": None, "group_gone": True} for n in ["version", "help"]})
-        def remaining_steps(current):
-            probe.bindings(current)
-            self.assertEqual(set(current.data["uses"]), {"version", "help"})
-        with patch.object(probe, "RUN", self.root), patch.object(probe, "ORIGINAL_CHECKER", probe.pin.digest(original)), \
-             patch.object(probe.sys, "stdin") as stdin, patch.object(probe.sys, "stdout", io.StringIO()) as stdout, \
-             patch.object(probe, "login_steps", side_effect=remaining_steps) as login, \
-             patch.object(probe.subprocess, "Popen") as spawn, patch.object(probe.subprocess, "call") as call:
-            stdin.isatty.return_value = True
-            with patch.object(stdout, "isatty", return_value=True):
-                probe.finish_setup(state)
-                login.assert_called_once_with(state)
+    def remember_work_directory(self, state):
+        self.addCleanup(shutil.rmtree, str(Path(state.data["setup_cwd"]).parent))
+
+    def test_preparation_is_offline_preserves_prior_and_never_reuses_slots(self):
+        paths = self.seed_prior()
+        originals = {p: p.read_bytes() for p in paths["PREVIOUS"].rglob("*") if p.is_file()}
+        with patch.multiple(probe, **paths), patch.object(probe.subprocess, "Popen") as spawn, \
+             patch.object(probe.sys, "stdout", io.StringIO()):
+            probe.prepare()
+            state = probe.State(probe.RUN)
+            self.remember_work_directory(state)
+            self.assertEqual(state.data["uses"], {})
+            self.assertIsNone(state.data["approval"])
+            probe.bindings(state)
+            with self.assertRaises(ValueError):
+                probe.prepare()
+            for approved, included_only in [(False, True), (True, False)]:
                 with self.assertRaises(ValueError):
-                    probe.finish_setup(probe.State(self.root))
+                    probe.live(state, approved=approved, extra_usage_disabled=included_only)
             spawn.assert_not_called()
-            call.assert_not_called()
-        self.assertEqual({p: p.read_bytes() for p in preserved}, preserved)
-        correction = json.loads((self.root / "setup-checker-correction.json").read_text())
-        self.assertEqual(correction["repeated_invocations"], [])
-        self.assertEqual(correction["new_controller_sha256"], probe.pin.digest(controller))
+        self.assertEqual({p: p.read_bytes() for p in originals}, originals)
+
+    def test_preparation_refuses_failed_prior_auth_before_new_run(self):
+        paths = self.seed_prior()
+        prior = probe.State(paths["PREVIOUS"])
+        prior.data["uses"]["auth-selected"]["group_gone"] = False
+        prior.save()
+        with patch.multiple(probe, **paths), patch.object(probe.subprocess, "Popen") as spawn:
+            with self.assertRaisesRegex(ValueError, "unsuccessful or uncertain"):
+                probe.prepare()
+            spawn.assert_not_called()
+        self.assertFalse(paths["RUN"].exists())
+
+    def rehearse_commission(self, mode):
+        paths = self.seed_prior()
+        real_supervise = probe.supervise
+        calls = []
+        def offline_supervise(argv, cwd, env, out, timeout, **kwargs):
+            calls.append(argv[1:])
+            self.assertEqual(argv[0], str(self.root / "never-run-claude"))
+            if argv[1:] == ["auth", "status"]:
+                report = {"loggedIn": mode != "auth-conflict", "authMethod": "claude.ai", "configDirectory": env["CLAUDE_CONFIG_DIR"]}
+                replacement = [sys.executable, "-I", "-B", "-c", "import sys; print(sys.argv[1])", json.dumps(report)]
+            else:
+                case_mode = "deny" if out.parent.name == "case-2" else mode
+                replacement = [sys.executable, "-I", "-B", str(fake), str(out.parent), case_mode]
+                self.assertEqual(argv[argv.index("--max-turns") + 1], "4")
+                self.assertEqual(kwargs["delay"], 5 if out.parent.name == "case-1" else 0)
+                kwargs["delay"] = 0.1  # Exercise the same supervisor with a short offline wait.
+            return real_supervise(replacement, cwd, env, out, timeout, **kwargs)
+        with patch.multiple(probe, **paths), patch.object(probe.sys, "stdout", io.StringIO()):
+            probe.prepare()
+            state = probe.State(probe.RUN)
+            self.remember_work_directory(state)
+            with patch.object(probe, "supervise", side_effect=offline_supervise):
+                if mode == "auth-conflict":
+                    with self.assertRaisesRegex(ValueError, "unexpected authentication"):
+                        probe.live(state, approved=True, extra_usage_disabled=True)
+                else:
+                    probe.live(state, approved=True, extra_usage_disabled=True)
+                with self.assertRaises(ValueError):
+                    probe.live(probe.State(probe.RUN), approved=True, extra_usage_disabled=True)
+            result = probe.RUN / "RESULT.json"
+            return state, json.loads(result.read_text()) if result.exists() else None, calls
+
+    def test_fresh_commission_auth_then_three_offline_cases(self):
+        state, result, calls = self.rehearse_commission("allow")
+        self.assertEqual(calls[0], ["auth", "status"])
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(set(state.data["uses"]), {"auth-selected", "case-1", "case-2", "case-3"})
+        self.assertEqual([c["outcome"] for c in result["cases"]], ["observed"] * 3)
+        self.assertTrue(state.data["live_complete"])
+
+    def test_fresh_commission_stops_on_additional_plugin(self):
+        state, result, calls = self.rehearse_commission("extra-plugin")
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(set(state.data["uses"]), {"auth-selected", "case-1"})
+        self.assertIn("unexpected plugin inventory", state.data["uses"]["case-1"]["stop"])
+        self.assertEqual([c["outcome"] for c in result["cases"]], ["failed", "unexercised", "unexercised"])
+
+    def test_fresh_auth_failure_never_starts_a_model_session_or_retries(self):
+        state, result, calls = self.rehearse_commission("auth-conflict")
+        self.assertEqual(calls, [["auth", "status"]])
+        self.assertEqual(set(state.data["uses"]), {"auth-selected"})
+        self.assertIsNone(result)
+
+    def test_pinned_plugin_identity_is_exact_but_order_is_irrelevant(self):
+        expected = copy.deepcopy(probe.BUILTIN_PLUGINS)
+        probe.validate_plugins(expected)
+        probe.validate_plugins(list(reversed(expected)))
+        for field, value in [("name", "another"), ("source", "cc-plugin-privacy@another"), ("path", "/external")]:
+            changed = copy.deepcopy(expected)
+            changed[1][field] = value
+            with self.assertRaisesRegex(ValueError, "unexpected plugin inventory"):
+                probe.validate_plugins(changed)
+        for changed in [None, [], expected[:2], expected + [expected[0]], [expected[0]] * 3,
+                        [dict(expected[0], extra="unexpected")] + expected[1:]]:
+            with self.assertRaisesRegex(ValueError, "unexpected plugin inventory"):
+                probe.validate_plugins(changed)
 
 
 if __name__ == "__main__":

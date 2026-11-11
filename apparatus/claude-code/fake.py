@@ -9,6 +9,10 @@ case = Path(sys.argv[1])
 mode = sys.argv[2]
 fixture = str(Path(__file__).with_name("fixture.py"))
 tools = ["mcp__probe__read_specimen", "mcp__probe__record_note"]
+plugins = [{"name": name, "path": "builtin", "source": name + "@builtin"} for name in
+           ["cc-plugin-agents-md", "cc-plugin-privacy", "cc-plugin-plugin-authoring"]]
+if mode == "extra-plugin":
+    plugins.append({"name": "unexpected", "path": "builtin", "source": "unexpected@builtin"})
 
 
 def emit(value):
@@ -23,7 +27,7 @@ if mode == "malformed":
 emit({"type": "system", "subtype": "init", "model": "claude-haiku-5-5",
       "apiKeySource": "none", "claude_code_version": "2.1.322",
       "tools": tools + (["Bash"] if mode == "extra-tool" else []), "permissionMode": "dontAsk",
-      "mcp_servers": [{"name": "probe", "status": "connected"}], "plugins": []})
+      "mcp_servers": [{"name": "probe", "status": "connected"}], "plugins": plugins})
 sys.stdin.buffer.read()
 server = subprocess.Popen([sys.executable, "-I", "-B", fixture, "mcp", str(case)], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 

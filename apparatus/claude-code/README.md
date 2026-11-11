@@ -11,9 +11,10 @@ preserves an exclusive copy outside the repository. It also checks Apple's
 code signature. It never launches Claude. The public-key verification uses
 an isolated keyring without a GPG agent or the user's trust configuration.
 
-`probe.py` runs one bounded commission in `.scratch/claude-code-probe-01`.
+`probe.py` prepares a fresh bounded commission in `.scratch/claude-code-probe-02`.
 Invocation reservations are persisted before spawning. A failed or uncertain
-reservation is not repeated; setup and the model phase each start only once.
+reservation is not repeated; the authentication check and model phase start
+only once.
 The source, executable, prompt, settings and MCP configuration are hashed and
 checked before invocation. Source inputs are copied into the run, and the MCP
 server and hook execute that retained copy. The child environment is explicit; it includes the
@@ -22,9 +23,9 @@ keys, alternate endpoints, proxy or library-injection settings.
 
 The dedicated login is at
 `~/.local/share/stewart-claude-code/probe-config`. Only Claude accesses its
-credential store. Setup requires a terminal and leaves the login interaction
-uncaptured. Authentication reports retain only `loggedIn`, `authMethod` and
-`configDirectory`; raw authentication output is discarded. Model inputs use
+credential store. The existing manager-operated login is reused; the current
+runner performs no login flow. Authentication reports retain only `loggedIn`,
+`authMethod` and `configDirectory`; raw authentication output is discarded. Model inputs use
 empty working directories under `/private/tmp`, outside the repository's
 instruction ancestry. Their locations are recorded in the run state.
 
@@ -42,7 +43,10 @@ MCP/hook traffic, positive/denial/invariance cases, exact raw capture, broken
 witnesses, malformed streams, unexpected tools, quota/auth routing refusal,
 durable invocation reservations, and stopping an uncooperative process and a
 descendant. Host process-group observation must work; an observation denied by
-an agent sandbox is a failed check, not an inferred successful stop.
+an agent sandbox is a failed check, not an inferred successful stop. Controls
+for a fresh commission also verify offline preparation, prior-record
+preservation, the approval gate, the single fresh
+authentication check, all three synthetic cases and refusal of another start.
 
 `fake.py` is the offline harness peer. `fixture.py` is the same MCP server and
 hook used by the real probe. Raw requests are captured before parsing. The
@@ -63,55 +67,43 @@ not authority to start Claude. The pin's version, model and limits are fixed
 in the scripts. No model substitution, resumed session or replacement attempt
 is implemented.
 
-Fetch and verify the installed pin, retaining a new evidence directory:
+The executable pin and harness-owned login must already be verified. The
+current preparation reads the pin receipt and prior nonsecret setup/run
+records, checks the executable and snapshots the new inputs. It preserves the
+stopped run and creates new working directories,
+source snapshots and witnesses; no invocation reservation is transferred.
+
+Prepare the inputs without launching Claude:
 
 ```sh
-python3 -I -B apparatus/claude-code/pin.py "$PWD/.scratch/claude-code-pin-01"
+python3 -I -B apparatus/claude-code/probe.py prepare
 ```
 
-If only verification failed, `--verify-only` uses the existing downloads and
-records a separate verification attempt. It does not overwrite the earlier
-failure. Do not rerun after a successful `pin.json` receipt already exists.
+Preparation is exclusive. If it already began or failed partway through, inspect
+its files before further action; never erase evidence to force a retry. Both
+source copies and working sources are hashed, so an edit after preparation
+stops execution for review.
 
-After the offline checks pass, run setup **in the manager's own Terminal**:
+Only after explicit approval of probe 02, with paid overflow disabled, run on
+the native host:
 
 ```sh
-python3 -I -B apparatus/claude-code/probe.py setup
+python3 -I -B apparatus/claude-code/probe.py live --approved-probe-02 --extra-usage-disabled
 ```
 
-It uses four non-model CLI invocations: version, help, authentication status
-against an empty configuration, and status against the selected configuration.
-Between the two status calls, the manager completes one harness-owned login.
-Unexpected options or authentication stop setup. Login codes and credentials
-must remain in that terminal/browser interaction.
-
-The pinned CLI hides some supported options from help. The checker uses the
-visible inventory together with the reviewed option registrations in the
-authenticated binary; it does not treat help as an exhaustive inventory.
-For the reviewed stop after successful version/help calls, continue in the
-manager's own Terminal with:
-
-```sh
-python3 -I -B apparatus/claude-code/probe.py finish-setup
-```
-
-This accepts only that exact checkpoint and original checker binding. It
-preserves the original controller and captured outputs, adds a correction
-receipt and controller snapshot, and uses only the remaining authentication
-checks and login. No completed or uncertain invocation is repeated, and the
-approved arguments and limits stay the same. Any other stopped state needs
-review before further action.
-
-After setup, with paid overflow disabled, the commissioned model phase is:
-
-```sh
-python3 -I -B apparatus/claude-code/probe.py live --extra-usage-disabled
-```
+This first spends one non-model `auth status` invocation, with a 30-second
+deadline, requiring the dedicated directory, a logged-in `claude.ai` route and
+exit 0. A failed or uncertain check consumes that attempt and blocks model use.
+The approval flag relays the principal's decision; documentation is not approval.
 
 It starts at most three sequential sessions, each with one input and at most
 four harness turns. Each session is terminated at 120 seconds; the whole phase
 has a six-minute deadline. Termination allows five seconds before SIGKILL.
-Process-group stopping is observed and recorded. Unexpected startup inventory,
+Process-group stopping is observed and recorded. Startup must report exactly
+the two probe tools and the three pinned built-ins: `cc-plugin-agents-md`,
+`cc-plugin-privacy` and `cc-plugin-plugin-authoring`, each with `path: "builtin"`
+and its own `@builtin` source. Missing, extra, duplicated or changed plugin
+entries refuse; inventory ordering has no meaning. Unexpected startup inventory,
 API-key routing, model selection, background work, retries, compaction, quota
 exhaustion or failed supervision ends the batch. The final summary records
 unlaunched cases as unexercised. Missing usage is unknown, never zero.

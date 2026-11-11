@@ -106,13 +106,15 @@ configuration controls; their composition under this restricted launch has not
 been tested. [Settings reference](https://code.claude.com/docs/en/settings-reference#enabledplugins),
 [instruction loading](https://code.claude.com/docs/en/memory#choose-which-instruction-files-load)
 
-Recommend a separately reviewed candidate that expects exactly these three
-built-in name/source/path entries for this binary, preserves the privacy guard,
-and still refuses any extra plugin, tool or server error. This changes the
-commission's accepted inventory and needs the principal's decision before a
-new live comparison. It does not certify their model-visible contributions or
-authorize adapter implementation. The stopped batch is not resumable, and its
-two unused sessions are not replacement authority.
+The principal accepted the next candidate's inventory on 2026-11-10: exactly
+these three built-in name/source/path entries for this binary, with the privacy
+guard preserved. The checker rejects missing, extra, duplicated or changed
+entries, while permitting a different list order. Extra tools and plugin/server
+errors still refuse. This configuration decision does not certify their
+model-visible contributions or authorize a new Claude invocation or adapter
+implementation. The stopped batch is not resumable, and its two unused sessions
+are not replacement authority. A new bounded commission must test the accepted
+candidate.
 
 ### Observer clock scope
 

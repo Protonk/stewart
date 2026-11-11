@@ -1,28 +1,28 @@
 # Native subscription feasibility probe
 
-Approved by the principal on 2026-11-10 for the limits below; the principal
-also confirmed paid extra usage disabled. This is one commission, not standing
-permission for replacement runs. The
-[recorder and supervisor](../../apparatus/claude-code/README.md) are implemented;
-the 3 pin checks and 18 offline native probe checks pass. All four setup checks
-and the single dedicated login have completed. This commission is stopped:
-case 1 failed its startup inventory check, and cases 2 and 3 were never launched. The
-[reviewed outcome](RUNTIME-REFERENCE.md#first-native-launch-outcome) rejects the
-zero-plugin candidate and states the decision needed for another comparison.
-This is the first bounded experiment for the
-[native launch recommendation](RUNTIME-REFERENCE.md#native-launch-recommendation),
-using synthetic material on the development Mac. It does not qualify an adapter,
-a model or Linux enforcement.
+This is the proposed second commission, `claude-code-probe-02`. The principal
+accepted the exact built-in plugin inventory on 2026-11-10. That configuration
+decision does not authorize new Claude invocations. The runnable proposal below
+needs explicit bounded approval before its single authentication check or any
+model session. Paid extra usage was already confirmed disabled; included usage
+only remains a condition of execution.
 
-## Approved commission
+The [first run](RUNTIME-REFERENCE.md#first-native-launch-outcome) remains stopped
+and preserved in `.scratch/claude-code-probe-01`. Its two unused slots are not
+reused. This fresh comparison uses the same binary, model, prompts, tools,
+settings and limits, with the accepted built-in inventory and corrected
+[observer clocks](RUNTIME-REFERENCE.md#observer-clock-scope). It does not qualify
+an adapter, a model or Linux enforcement.
 
-| Boundary | Approved limit |
+## Proposed commission
+
+| Boundary | Proposed limit |
 | --- | --- |
 | Executable | Unmodified Claude Code **2.1.322**, `darwin-arm64`; signed manifest, SHA-256 and Apple code signature verified on the host. Pin: `~/.local/share/stewart-claude-code/2.1.322/claude`, SHA-256 `a9d237949db816a0b7afd88a9a8e1df36b3a597a30f5a41d1c0539eb180a3450`. |
-| Authentication | Manager's own subscription login in a dedicated `CLAUDE_CONFIG_DIR`; harness-owned Keychain/file storage. No subscription secret enters Stewart. |
-| Spending | Included subscription usage only. Manager confirms paid overflow/usage credits are disabled. Quota exhaustion ends the batch. No API route or purchased additional usage. |
+| Authentication | Reuse the verified manager-owned subscription login in `~/.local/share/stewart-claude-code/probe-config`; harness-owned Keychain/file storage. No subscription secret enters Stewart. |
+| Spending | Included subscription usage only. The prior confirmation that paid overflow/usage credits are disabled remains required. Quota exhaustion ends the batch. No API route or purchased additional usage. |
 | Model | Exact proposed ID `claude-haiku-5-5`, as listed in the [model reference](https://platform.claude.com/docs/en/models/overview). Availability under this subscription is unverified; unavailable means stop, with no substitute model. |
-| Setup | At most four non-model CLI invocations: version, help, auth status against an empty configuration, auth status against the selected configuration. If needed, one manager-operated login flow before that final status check, without capturing its codes or credentials. |
+| Setup | Exactly one non-model `auth status` invocation against the existing dedicated configuration, with a 30-second deadline. Require `loggedIn: true`, `authMethod: "claude.ai"`, the intended directory and exit 0. No new login, download, version/help call or empty-configuration check. |
 | Model sessions | At most **three**, sequential, fresh sessions; exactly one user input per session, no queued follow-ups, resume, automatic replacement or retry of a failed case. |
 | Limits | `--max-turns 4`, requested output limit 2,048 tokens, provider retries disabled. A supervisor stops each session after 120 seconds and the entire model phase after six minutes. |
 | Stop | Close input, terminate the owned process group, allow five seconds, then kill survivors and record the observed outcome. Stop the batch on an unexpected route, model, tool, configuration, credential exposure or supervision failure. |
@@ -34,7 +34,7 @@ studies and attempts to exhaust the subscription.
 
 ## Fixed launch inputs
 
-Use `.scratch/claude-code-probe-01` for the private run records and independent
+Use `.scratch/claude-code-probe-02` for the private run records and independent
 witnesses, with separate empty working directories outside the repository under
 `/private/tmp`. Keep the dedicated harness
 login outside the evidence. Hash the executable, supplied settings, MCP config,
@@ -62,8 +62,9 @@ CLAUDE_CODE_MAX_OUTPUT_TOKENS=2048
 Do not inherit provider credentials, alternate endpoints, proxies, credential
 helpers, library injection or watchdog variables. Do not enable debug logging
 or capture the manager's login interaction. Require `auth status` to report the
-selected configuration directory and `authMethod: "claude.ai"`; the empty
-configuration must report no login. A conflicting result ends setup.
+selected configuration directory, `loggedIn: true` and `authMethod: "claude.ai"`.
+The prior empty-configuration check is retained as provenance, not rerun. A
+conflicting fresh status result ends the commission before any model session.
 [Authentication reference](https://code.claude.com/docs/en/authentication)
 
 The proposed argv after the absolute executable is:
@@ -134,30 +135,65 @@ final result as emitted, including usage, model usage, errors and session ID;
 do not turn reported cost into a bill or infer missing output/internal usage.
 No TLS interception or provider credential capture is part of this probe.
 
+Startup must report exactly these three plugin entries, in any order:
+
+```json
+[
+  {"name":"cc-plugin-agents-md","path":"builtin","source":"cc-plugin-agents-md@builtin"},
+  {"name":"cc-plugin-privacy","path":"builtin","source":"cc-plugin-privacy@builtin"},
+  {"name":"cc-plugin-plugin-authoring","path":"builtin","source":"cc-plugin-plugin-authoring@builtin"}
+]
+```
+
+Missing, extra, duplicated or changed entries fail the launch candidate. Plugin
+or MCP-server error reports still stop the batch. No plugin is disabled, and
+these entries do not grant tools beyond the two expected MCP tools. Accepting
+them identifies the pinned runtime components; it does not certify their
+model-visible contributions.
+
 Unexpected extra tools or plugins fail the launch candidate. Restricted mode
 is not an OS sandbox, and this comparison proves only the observed hook/tool
 path. It says nothing about an already-running handler after authoring ends,
 filesystem confinement of the harness, compaction or completeness of internal
 accounting. Those require separate controls before adapter claims are adopted.
 
-## Setup and execution state
+## Prepared inputs and execution
 
-The authenticated pin receipt and original verification outputs are in
-`.scratch/claude-code-pin-01/`. The version and help calls completed successfully
-in `.scratch/claude-code-probe-01/`; the original checker then stopped because
-it incorrectly required hidden options to appear in help. The
-[runtime reference](RUNTIME-REFERENCE.md#help-inventory-check) records the
-reviewed cause. `finish-setup` retained these two completed calls and their original
-inputs, recorded the checker correction, and completed the two remaining
-authentication checks and one login. The empty configuration reported no login;
-the selected configuration reported `claude.ai` after the manager's login.
-All four setup calls, the one login and one model-session launch are consumed.
-`RESULT.json` records case 1 as failed and cases 2 and 3 as unexercised. The batch
-is closed to further invocation; the unused slots permit no replacement or
-revised comparison. No usage result was captured, so consumption is unknown.
+The authenticated pin receipt and verification outputs remain in
+`.scratch/claude-code-pin-01/`. Preparation reads the prior run's nonsecret setup
+records and checks its retained inputs, executable identity and explicit launch
+environment. It does not open the harness credential store. It creates new
+working directories and independent witnesses, snapshots the current source,
+this proposal and prior setup observations, and hashes the inputs. No prior
+state, receipt or capture is rewritten.
 
-Keep originals through review under
+Preparation starts no Claude process:
+
+```sh
+python3 -I -B apparatus/claude-code/probe.py prepare
+```
+
+After the principal explicitly approves this commission, its one-shot host
+command is:
+
+```sh
+python3 -I -B apparatus/claude-code/probe.py live --approved-probe-02 --extra-usage-disabled
+```
+
+The approval flag relays that decision; the command printed here is not itself
+authority. The runner refuses changed inputs, reserves each invocation before
+launch, and refuses a second start even after an authentication or model failure.
+The six-minute model deadline begins after the authentication check; stopping
+allows the specified five-second grace. No automatic replacement, retry or
+model substitution is authorized.
+
+A first initialization event after the input is expected from the previous
+observation; it remains a recorded ordering, not a pre-input guarantee. No real
+audit material is supplied. Missing consumption remains unknown, including
+when stopping prevents a final result.
+
+Keep the old and new originals through review under
 [evidence and retention](../../development/DEVELOPMENT.md#evidence-and-retention).
-The unresolved adapter contract still needs decisions about ambient inputs,
-unknown consumption, stopping and durable authoring; this probe does not settle
-those by itself.
+The outcome must state observed, failed or unexercised for each case and identify
+any remaining decision. The adapter contract still needs decisions about ambient
+inputs, unknown consumption, stopping and durable authoring.
