@@ -33,10 +33,11 @@ implementation.
 1. **Qualify the Linux runtime path.** The container suite now includes the
    standalone runtime driver against both architectures' gated binaries, a
    different-digest writer control, exported independent witnesses and runtime
-   results in the qualification record. Native verification is complete. Have
-   the principal run the container suite on the committed source, then review
-   and extract both architectures' results. Linux runtime execution remains
-   unqualified until that run.
+   results in the qualification record. Native verification is complete, but
+   the first Linux run failed at initialization reply delivery or peer progress
+   on both architectures. Resolve that failure using the retained witnesses
+   and bounded comparison below, then rerun the affected checks and the
+   container suite. Linux runtime execution remains unqualified.
 2. **Build the real-service check and propose its commission.** Two pieces of
    apparatus are missing: a producer for a profile's installation and check
    attestation, and a full-service check that drives the actual auditor tool
@@ -98,6 +99,27 @@ None of this blocks the steps above. Do it when it fits.
   working trees and superseded runs.
 
 ## Evidence through review
+
+The failed Linux run `.scratch/acceptance-runtime-queue-01` is recorded in
+the [qualification index](../../apparatus/qualified.md). The release suites
+passed all cases and required controls, and all build/static/marker comparisons
+passed. The runtime suites each passed 10 cases and failed 13, with no skips.
+Retain both driver containers and the exported runtime work archives through
+diagnosis; the original evidence is unchanged.
+
+In the positive case on each architecture, the independent harness witnessed
+authentication, model launch, the supplied question, emitted startup and the
+transmitted MCP initialization request. Stewart retained the complete
+initialization reply, but the independent peer witnessed no reply. The
+deadline case still observed group stopping. These observations locate the
+failure boundary without establishing its cause.
+
+Next host comparison: `sh .tmp/runtime-queue/check-linux-relay.sh`, from the
+repository root, writes fresh evidence to `.scratch/relay-diagnostic-01`.
+It runs the retained optimized and debug Linux binaries' relay helpers against
+a synthetic socket peer, with bounded open-connection, segmentation and EOF
+observations. It performs no build, authentication or model invocation. Inspect
+the evidence before changing the service or rerunning the full acceptance suite.
 
 The queued-call and Linux suite changes passed host verification in
 `.tmp/runtime-queue/host.yTveQl/`, with runtime witnesses at
