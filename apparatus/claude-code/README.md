@@ -79,6 +79,23 @@ Between the two status calls, the manager completes one harness-owned login.
 Unexpected options or authentication stop setup. Login codes and credentials
 must remain in that terminal/browser interaction.
 
+The pinned CLI hides some supported options from help. The checker uses the
+visible inventory together with the reviewed option registrations in the
+authenticated binary; it does not treat help as an exhaustive inventory.
+For the reviewed stop after successful version/help calls, continue in the
+manager's own Terminal with:
+
+```sh
+python3 -I -B apparatus/claude-code/probe.py finish-setup
+```
+
+This accepts only that exact checkpoint and original checker binding. It
+preserves the original controller and captured outputs, adds a correction
+receipt and controller snapshot, and uses only the remaining authentication
+checks and login. No completed or uncertain invocation is repeated, and the
+approved arguments and limits stay the same. Any other stopped state needs
+review before further action.
+
 After setup, with paid overflow disabled, the commissioned model phase is:
 
 ```sh

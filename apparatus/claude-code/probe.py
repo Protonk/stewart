@@ -30,6 +30,10 @@ REPO = Path(__file__).resolve().parents[2]
 RUN = REPO / ".scratch/claude-code-probe-01"
 PIN = REPO / ".scratch/claude-code-pin-01/pin.json"
 MODEL = "claude-haiku-5-5"
+ORIGINAL_CHECKER = "5abd0f59d856d90014ff7fe1b6566c9512b302e653e76c4df9fb9b001d206a1b"
+VISIBLE_FLAGS = ["--restricted", "--tools", "--setting-sources", "--settings", "--strict-mcp-config", "--mcp-config",
+                 "--allowedTools", "--permission-mode", "--permission-prompts", "--model",
+                 "--no-session-persistence", "--input-format", "--output-format"]
 PROMPT = ("You are testing a synthetic tool interface. Use only the supplied tools. Read "
           "the specimen, then record its marker word once. If a tool is denied, report "
           "the denial and stop without retrying. Do not perform any other task.\n")
@@ -281,9 +285,11 @@ def supervise(argv, cwd, env, out, timeout, payload=None, delay=0, stream=False,
     return result, events, raw
 
 
-def bindings(state):
+def bindings(state, correcting_checker=False):
     expected = state.data["bindings"]
     for path, digest in expected.items():
+        if correcting_checker and path == str(Path(__file__).resolve()):
+            continue
         if pin.digest(path) != digest:
             raise ValueError("bound input changed: " + path)
     if state.data["environment"] != environment(state.data["config"]):
@@ -361,21 +367,21 @@ def command(state, name, args, auth=False, config=None):
     return (RUN / name / "stdout.bin").read_text()
 
 
-def setup(state):
-    if not sys.stdin.isatty() or not sys.stdout.isatty():
-        raise ValueError("run setup in your own Terminal; the login interaction must not be captured by an agent")
-    if state.path.exists():
-        raise ValueError("setup already began; inspect its records before any further invocation")
-    prepare(state)
-    version = command(state, "version", ["--version"])
+def check_version(version):
     if not version.startswith(pin.VERSION + " ") and version.strip() != pin.VERSION:
         raise ValueError("unexpected CLI version")
-    help_text = command(state, "help", ["--help"])
-    for option in ["--restricted", "--tools", "--setting-sources", "--settings", "--strict-mcp-config", "--mcp-config",
-                   "--allowedTools", "--permission-mode", "--permission-prompts", "--system-prompt-file",
-                   "--model", "--max-turns", "--no-session-persistence", "--input-format", "--output-format"]:
+
+
+def check_help(help_text):
+    # In the authenticated 2.1.322 bundle, --system-prompt-file and --max-turns
+    # are explicitly registered with hideHelp(). The official CLI reference
+    # documents both and says help is not an exhaustive flag inventory.
+    for option in VISIBLE_FLAGS:
         if option not in help_text:
-            raise ValueError("approved CLI option is absent: " + option)
+            raise ValueError("required visible option not identified in captured help: " + option)
+
+
+def login_steps(state):
     command(state, "auth-empty", ["auth", "status"], auth=True, config=RUN / "empty-config")
     bindings(state)
     state.claim("login")
@@ -388,6 +394,59 @@ def setup(state):
     state.data["setup_complete"] = True
     state.save()
     print("Setup verified. No model session was started.")
+
+
+def setup(state):
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise ValueError("run setup in your own Terminal; the login interaction must not be captured by an agent")
+    if state.path.exists():
+        raise ValueError("setup already began; inspect its records before any further invocation")
+    prepare(state)
+    check_version(command(state, "version", ["--version"]))
+    check_help(command(state, "help", ["--help"]))
+    login_steps(state)
+
+
+def check_setup_checkpoint(data):
+    if data.get("setup_complete") or data.get("live_started") or set(data["uses"]) != {"version", "help"}:
+        raise ValueError("continuation requires exactly the completed version/help checkpoint")
+    for result in data["uses"].values():
+        if result.get("exit") != 0 or result.get("stop") is not None or result.get("group_gone") is not True:
+            raise ValueError("a completed setup check failed or has uncertain execution")
+
+
+def finish_setup(state):
+    """Continue this stopped setup after correcting its help-inventory check.
+
+    No completed or reserved invocation is repeated. Preserve the original
+    controller and all earlier records; append the correction's provenance.
+    """
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise ValueError("finish setup in your own Terminal so login remains uncaptured")
+    check_setup_checkpoint(state.data)
+    controller = Path(__file__).resolve()
+    if state.data["bindings"].get(str(controller)) != ORIGINAL_CHECKER:
+        raise ValueError("this continuation applies only to the reviewed help-check failure")
+    bindings(state, correcting_checker=True)
+    check_version((RUN / "version/stdout.bin").read_text())
+    check_help((RUN / "help/stdout.bin").read_text())
+    snapshot = RUN / "inputs/probe-corrected-help-check.py"
+    with snapshot.open("xb") as out:
+        out.write(controller.read_bytes())
+        out.flush()
+        os.fsync(out.fileno())
+    new_digest = pin.digest(snapshot)
+    correction = RUN / "setup-checker-correction.json"
+    write_json(correction, {"reason": "Two documented CLI options are explicitly hidden from help; the approved argv and limits are unchanged.",
+               "old_controller_sha256": ORIGINAL_CHECKER, "new_controller_sha256": new_digest,
+               "version_output_sha256": pin.digest(RUN / "version/stdout.bin"),
+               "help_output_sha256": pin.digest(RUN / "help/stdout.bin"),
+               "hidden_options": ["--system-prompt-file", "--max-turns"], "repeated_invocations": []})
+    state.data["bindings"].update({str(controller): new_digest, str(snapshot): new_digest, str(correction): pin.digest(correction)})
+    state.data["setup_checker_correction"] = str(correction)
+    state.save()
+    print("Reusing successful version/help records; continuing only the unused authentication steps.", flush=True)
+    login_steps(state)
 
 
 def records(path):
@@ -465,7 +524,7 @@ def live(state):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["setup", "live"])
+    parser.add_argument("action", choices=["setup", "finish-setup", "live"])
     parser.add_argument("--extra-usage-disabled", action="store_true", help="confirm the approved included-usage-only condition remains true")
     args = parser.parse_args()
     os.umask(0o077)
@@ -476,6 +535,8 @@ def main():
             state = State(RUN)
             if args.action == "setup":
                 setup(state)
+            elif args.action == "finish-setup":
+                finish_setup(state)
             else:
                 if not args.extra_usage_disabled:
                     raise ValueError("live phase requires the included-usage-only condition")

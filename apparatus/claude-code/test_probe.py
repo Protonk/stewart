@@ -2,6 +2,7 @@
 
 import base64
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -166,6 +167,60 @@ class ProbeControls(unittest.TestCase):
         event["apiKeySource"] = "ANTHROPIC_API_KEY"
         with self.assertRaises(ValueError):
             probe.validate_event(event)
+
+    def test_help_is_not_an_inventory_of_hidden_flags(self):
+        text = "\n".join(probe.VISIBLE_FLAGS) + "\n--system-prompt[-file]\n"
+        probe.check_help(text)
+        probe.check_help(text + "\n--max-turns\n--system-prompt-file\n")
+        with self.assertRaises(ValueError):
+            probe.check_help(text.replace("--restricted", ""))
+
+    def test_setup_continuation_never_repeats_uncertain_or_started_auth(self):
+        good = {"exit": 0, "stop": None, "group_gone": True}
+        data = {"uses": {"version": dict(good), "help": dict(good)}}
+        probe.check_setup_checkpoint(data)
+        data["uses"]["help"] = {"outcome": "reserved"}
+        with self.assertRaises(ValueError):
+            probe.check_setup_checkpoint(data)
+        data["uses"]["help"] = dict(good)
+        data["uses"]["auth-empty"] = {"outcome": "reserved"}
+        with self.assertRaises(ValueError):
+            probe.check_setup_checkpoint(data)
+
+    def test_setup_correction_preserves_originals_and_only_reaches_unused_login(self):
+        inputs = self.root / "inputs"
+        inputs.mkdir()
+        original = inputs / "probe.py"
+        original.write_bytes(b"original checker\n")
+        controller = str(Path(probe.__file__).resolve())
+        for name, content in [("version", probe.pin.VERSION + " (Claude Code)\n"),
+                              ("help", "\n".join(probe.VISIBLE_FLAGS))]:
+            (self.root / name).mkdir()
+            (self.root / name / "stdout.bin").write_text(content)
+        preserved = {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
+        state = probe.State(self.root)
+        state.data.update(config=str(self.root / "config"), environment=probe.environment(self.root / "config"),
+                          bindings={controller: probe.pin.digest(original), str(original): probe.pin.digest(original)},
+                          uses={n: {"exit": 0, "stop": None, "group_gone": True} for n in ["version", "help"]})
+        def remaining_steps(current):
+            probe.bindings(current)
+            self.assertEqual(set(current.data["uses"]), {"version", "help"})
+        with patch.object(probe, "RUN", self.root), patch.object(probe, "ORIGINAL_CHECKER", probe.pin.digest(original)), \
+             patch.object(probe.sys, "stdin") as stdin, patch.object(probe.sys, "stdout", io.StringIO()) as stdout, \
+             patch.object(probe, "login_steps", side_effect=remaining_steps) as login, \
+             patch.object(probe.subprocess, "Popen") as spawn, patch.object(probe.subprocess, "call") as call:
+            stdin.isatty.return_value = True
+            with patch.object(stdout, "isatty", return_value=True):
+                probe.finish_setup(state)
+                login.assert_called_once_with(state)
+                with self.assertRaises(ValueError):
+                    probe.finish_setup(probe.State(self.root))
+            spawn.assert_not_called()
+            call.assert_not_called()
+        self.assertEqual({p: p.read_bytes() for p in preserved}, preserved)
+        correction = json.loads((self.root / "setup-checker-correction.json").read_text())
+        self.assertEqual(correction["repeated_invocations"], [])
+        self.assertEqual(correction["new_controller_sha256"], probe.pin.digest(controller))
 
 
 if __name__ == "__main__":

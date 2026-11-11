@@ -4,8 +4,9 @@ Approved by the principal on 2026-11-10 for the limits below; the principal
 also confirmed paid extra usage disabled. This is one commission, not standing
 permission for replacement runs. The
 [recorder and supervisor](../../apparatus/claude-code/README.md) are implemented;
-the 3 pin checks and 15 offline native probe checks pass. Dedicated login and
-the bounded CLI setup checks remain prerequisites to model use.
+the 3 pin checks and 18 offline native probe checks pass. Version and help have
+completed; dedicated login and the two authentication checks remain prerequisites
+to model use.
 This is the first bounded experiment for the
 [native launch recommendation](RUNTIME-REFERENCE.md#native-launch-recommendation),
 using synthetic material on the development Mac. It does not qualify an adapter,
@@ -140,9 +141,15 @@ accounting. Those require separate controls before adapter claims are adopted.
 ## Before execution
 
 The authenticated pin receipt and original verification outputs are in
-`.scratch/claude-code-pin-01/`. No Claude invocation has been used yet.
-The runner reserves each invocation durably before launch; its run state owns
-the remaining allowance after setup begins.
+`.scratch/claude-code-pin-01/`. The version and help calls completed successfully
+in `.scratch/claude-code-probe-01/`; the original checker then stopped because
+it incorrectly required hidden options to appear in help. The
+[runtime reference](RUNTIME-REFERENCE.md#help-inventory-check) records the
+reviewed cause. `finish-setup` retains these two completed calls and their original
+inputs, records the checker correction, and continues with the two unused
+authentication checks and one login. No model session has started. The runner
+reserves each invocation durably before launch; its run state owns the remaining
+allowance.
 
 1. Complete the dedicated harness-owned login in the manager's own Terminal,
    as part of the bounded setup checks.

@@ -3,17 +3,35 @@
 Launch, authentication, CLI, tool and accounting documentation checked
 2026-11-10. The proposed harness pin is **2.1.322**, present in the
 [official changelog](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md).
-No Claude Code/SDK process has been started for this work. The development-build
-boundary is implemented; the adapter and the combined launch configuration are
-untested. Documentation describes capabilities, not a demonstrated combination.
+The pinned CLI has completed version and help calls. No model session has
+started. The development-build boundary is implemented; the adapter and the
+combined launch configuration are untested. Documentation describes capabilities,
+not a demonstrated combination.
 
 The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)
 was authenticated against the pinned release signing key on 2026-11-10. The
 installed `darwin-arm64` binary and a dedicated copy match its SHA-256, and the
 copy passed Apple's code-signature check on the host. Agent-shell DNS and
 code-signature failures did not establish these results; host checks did.
-The CLI's own version/options and the combined launch controls still need the
-bounded setup and probe.
+The CLI reports the expected version. Authentication and the combined launch
+controls still need the remaining bounded setup checks and probe.
+
+## Help inventory check
+
+The first setup checker incorrectly required every approved option to appear
+in `--help`. It stopped after the two successful metadata calls, before any
+authentication check or login. The
+[CLI reference](https://code.claude.com/docs/en/cli-reference#cli-flags) explicitly
+says help omits supported flags. Read-only inspection of the authenticated
+2.1.322 executable found `--system-prompt-file` and `--max-turns` registered
+with `hideHelp()`. Their absence from the captured help is expected and does
+not require changing the approved arguments.
+
+The corrected checker retains the visible-option checks. A continuation from
+this exact checkpoint preserves the original source and outputs and records
+the correction before any unused authentication step. Option registration does
+not establish that the combined launch settings work; that remains the probe's
+question.
 
 ## Where to find the details
 
