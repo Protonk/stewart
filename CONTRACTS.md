@@ -1222,6 +1222,16 @@ an upgrade neither continues nor closes older audits. Binding an audit to its
 writer avoids a format-compatibility class, accepting that an upgrade can leave
 open audits waiting for their original binary.
 
+**No backward-compatibility machinery.** Stewart carries no code to read,
+translate, upgrade or act on a record, input or action in an earlier form. A
+changed form takes a new schema identifier and replaces its predecessor: the
+binary refuses the earlier identifier with a diagnostic and keeps no reader,
+converter, fallback or second code path for it. This covers what the manager
+supplies, such as front matter and settings, as well as what Stewart writes.
+The binary that made an audit remains the way to work with it. This is a
+standing refusal, not deferred work: it keeps the manager-facing schemas small
+enough to reduce later, and adding such machinery would change this contract.
+
 **Legacy records confer no new authority.** Earlier implementations and their
 test results are not evidence for this service. Previously recorded independent
 resources remain undisposed unless explicitly accounted for. No old live audit,
@@ -1251,7 +1261,8 @@ interpretation grants no execution or mutation authority.
 - No first-release deletion, prune/purge or new hold/release service. Keeping
   custody scope explicit avoids importing legacy removal machinery. Existing
   holds and independent obligations remain effective.
-- No generic legacy reader (see "Versions and legacy obligations").
+- No generic legacy reader, schema migration, converter or compatibility mode
+  (see "Versions and legacy obligations").
 - No automatic source repair, silent exclusion, regenerated original or current-
   form replacement for sealed bytes. These would change the undertaking while
   claiming to fulfill it.

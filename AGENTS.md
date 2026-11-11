@@ -70,8 +70,10 @@ for a container suite remains unqualified until that run, which the user schedul
 and batches; it need not wait for the run to land. The public binary release gate
 is separate, and its schedule remains the user's decision.
 
-Do not add compatibility shims or rewrite historical receipts to fit a newer
-schema.
+Do not add compatibility shims, old-form readers, converters or parallel code
+paths, and do not rewrite historical receipts to fit a newer schema. A changed
+form replaces the old one, which is then refused;
+[CONTRACTS](CONTRACTS.md#versions-and-legacy-obligations) owns the rule.
 
 ## Organize larger work
 

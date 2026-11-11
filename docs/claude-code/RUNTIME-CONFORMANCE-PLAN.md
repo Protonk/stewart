@@ -25,6 +25,14 @@ remain future work.
 
 ## Remaining work
 
+- Bind the profile's check to the harness-facing surface instead of the whole
+  writer. Decided 2026-11-11: the check names what Stewart supplies to the
+  harness, so a rebuild that leaves that surface alone keeps its check, and a
+  changed surface refuses until rechecked. Each actual start is still validated.
+  The contract defines the surface exactly enough for an independent driver to
+  compute it. The changed profile form takes a new identifier and the earlier
+  one is refused, with no reader for it. Specification and service by one
+  author, driver by another.
 - List every difference this contract makes from the Messages path at the
   manager's surface: front matter, preparation, receipt, status, close and the
   return. Separate those the transport forces from the incidental, and bring
