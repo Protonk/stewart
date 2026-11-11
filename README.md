@@ -22,8 +22,8 @@ to be established.
 
 Stewart is written in Rust and built as one statically linked Linux binary for
 x86_64 and aarch64. Native macOS is a development environment, not a product
-target. The current adapter uses the Anthropic Messages API; no model is yet
-qualified, and other auditor runtimes are unimplemented.
+target. The distributed adapter uses the Anthropic Messages API; no model is yet
+qualified.
 
 The `stewart.reply/2` interface revision and its citation-refusal correction have
 passed recorded Linux acceptance. A six-placement matched Haiku comparison
@@ -156,7 +156,7 @@ development but do not qualify Linux behavior.
 
 Active work lives in tracked `*-PLAN.md` files. List them with
 `git ls-files '*-PLAN.md'`; the coordinating plan owns work order, and topic
-plans own their remaining decisions and tasks. Plans describe proposed work;
+plans own their remaining decisions and tasks. Plans record decisions and remaining work;
 the specification below defines the product.
 
 | Read | For |

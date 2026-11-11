@@ -6,9 +6,10 @@ on 2026-11-10. It does not change the distributed Messages API contract or
 claim Linux qualification. The gated adapter is implemented and has passed
 native offline service checks using a synthetic harness. Those checks exercise
 the Rust core, custody, submission, continuation and process controls; they do
-not establish real-Claude service conformance. Relay-only disconnect and
-end-to-end MCP cancellation remain unqualified; publication-gate unit controls
-are separate evidence.
+not establish real-Claude service conformance. The
+[independent driver's coverage](../../apparatus/driver/CLAUDE-CODE.md) distinguishes
+exercised cases from the remaining relay, cancellation, usage-checkpoint and
+compaction comparisons; unit controls are separate evidence.
 
 The common [custody and audit contracts](../../CONTRACTS.md),
 [interface](../INTERFACE.md) and [question families](../QUESTION-FORMS.md) apply.
@@ -58,7 +59,7 @@ a token-prefix discriminator nor a credential-store read.
 
 ## Limits, usage and continuation
 
-This profile requires cumulative `max_placements` and
+This profile requires cumulative `max_placements` and per-placement
 `placement_timeout_seconds` settings. An illustrative commission of three
 placements and 600 seconds per placement permits at most three starts, each
 with a ten-minute supervisor deadline. These numbers are an example, not
@@ -106,8 +107,8 @@ Harness-managed compaction within a placement does not grant a new slot, reset
 the deadline or replace ledger state. Record exposed boundaries and summaries
 without claiming to capture every internal exchange. Re-entry supplies recorded
 state, not lost understanding. Keep the orientation's direction to use re-entry
-after summarization; adapting the post-compaction notice needs its own pinned
-text and a demonstrated delivery point. Qualification must exercise compaction
+after summarization. The runtime text below pins the post-compaction notice;
+its delivery point still needs demonstration with the real harness. Qualification must exercise compaction
 and the one-reminder interaction; until then, this path remains unqualified for
 long-run iteration rather than being described as tested.
 
@@ -121,7 +122,10 @@ profile. Bind it to the executable digest and signature receipt, platform,
 model, environment allowlist/values, settings, hook and relay/writer identities,
 tool-schema transformation and expected startup inventory. Retain the exact
 synthetic prompt and result with it. Do not hash or copy the credential store.
-The two-tool feasibility receipt does not validate the future service tool set.
+The two-tool feasibility receipt does not validate the full service tool set.
+Profile validation is implemented; apparatus to produce a reviewed real-service
+check attestation is still needed. Synthetic driver attestations exercise
+validation and are not real-harness commissioning evidence.
 
 `prepare` binds the selected profile and check receipt into the arrangement.
 Before every start, verify the observable bindings and obtain a fresh allowlisted
@@ -234,8 +238,10 @@ The runtime's exact post-compaction notice is:
 > an action.
 
 The template values are observed whole seconds rounded down and unused placement
-slots. Publish each notice's audit-wide claim before transmission; a missing
-transmission observation is unknown, never a reason to resend the same allowance.
+slots. Publish the near-limit notice's and reminder's audit-wide claims before
+transmission; a missing transmission observation is unknown, never a reason to
+restore either allowance. A post-compaction notice follows each exposed
+compaction boundary and does not consume either allowance.
 
 ## Harness accounting record
 
@@ -322,6 +328,11 @@ Interpreted strings require well-formed Unicode without NUL. Core invocation
 IDs are `mcp-C` for call number C; the original JSON-RPC ID remains in the
 request capture and response, and determines cancellation and duplicate checks.
 Tool arguments retain their original bytes for strict core validation.
+JSON-RPC envelopes and errors use the transport's number grammar, including
+negative error codes; the unsigned-integer rule for Stewart control arguments
+does not apply to them. After confirmed submission, the runtime captures and
+attempts to send the MCP tool response, then stops the harness without another
+input. The Messages API's recorded-only submit response remains unchanged.
 Frames are bounded at 8 MiB; core arguments remain bounded at 4 MiB.
 Total observed capture is bounded at 256 MiB per placement. Crossing a bound
 stops execution and reports the incomplete interval; it never discards earlier

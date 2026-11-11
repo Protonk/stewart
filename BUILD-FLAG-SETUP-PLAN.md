@@ -22,13 +22,14 @@ decided contract; no further Claude invocation is authorized.
   need no special treatment. The principal owns the underlying policy question
   and may revise this posture.
 - **Subscription credentials travel only through the harness.** A subscription
-  credential reaches the provider only through the unmodified `claude` binary.
-  Stewart's Messages API adapter never carries one. How this is enforced is
-  part of the research below.
+  credential used by this runtime reaches the provider through the unmodified
+  `claude` binary. The accepted boundary is structural: this adapter never
+  supplies that credential to the Messages API route. It does not classify
+  arbitrary opaque bytes supplied independently to the API route.
 - **The harness owns its login.** The manager signs in through Anthropic's own
   flow, using a dedicated harness configuration. Claude manages its credential
-  storage; Stewart never receives or reads the subscription credential. The
-  service's descriptor route is not used for that login.
+  storage; Stewart accepts no subscription credential input and does not read
+  that storage. The service's descriptor route is not used for that login.
 - **Native development, Linux qualification.** Iterate on the development Mac
   with Apple silicon, extending the existing `aarch64-apple-darwin` build and
   [native test workflow](development/DEVELOPMENT.md#building-and-testing-natively).
@@ -36,17 +37,17 @@ decided contract; no further Claude invocation is authorized.
   Native macOS remains a development environment; this adds no macOS product
   release or qualification claim.
 
-## Launch arrangement to verify
+## Selected launch arrangement
 
 [The runtime reference](docs/claude-code/RUNTIME-REFERENCE.md#subscription-credentials)
 holds the documented facts and their dates. Its
 [native launch recommendation](docs/claude-code/RUNTIME-REFERENCE.md#native-launch-recommendation)
-specifies the proposed credential isolation, explicit environment, refusal
-policy and host limits. The
-[probe proposal](docs/claude-code/FEASIBILITY-PROBE.md) supplies the first
-bounded comparison; neither the proposal nor this plan permits starting Claude.
+explains the selected credential isolation, explicit environment, refusal
+policy and host limits. The [runtime contract](docs/claude-code/CONTRACT.md)
+owns the implemented arrangement; the two feasibility commissions are closed.
+This plan permits no additional Claude invocation.
 
-The proposed arrangement uses one pinned absolute executable, a dedicated
+The selected arrangement uses one pinned absolute executable, a dedicated
 harness-owned login, an explicit child environment and no fallback to the
 Messages API. Hash the executable and launch configuration; refuse a changed
 binding. macOS observations apply to development, while Linux qualification
@@ -65,16 +66,17 @@ record has been rewritten.
 
 The integrated adapter passed all three host Cargo configurations, including
 loopback cases, and the four optimized markers passed absence/absence/presence
-checks in release, fault/sabotage and development builds. The current build
-outputs are in `.tmp/claude-code-adapter/host.PZGw1h/`. Keep these and the earlier
-`.tmp/claude-code-setup/` outputs through review. Earlier failures and skips
-remain retained; Linux remains unqualified.
+checks in release, fault/sabotage and development builds. The current native
+outputs are in `.tmp/document-harmonization/host.VxyhfJ/`. Keep these and the
+earlier `.tmp/claude-code-adapter/` and `.tmp/claude-code-setup/` outputs through
+review. Earlier failures and skips remain retained; Linux remains unqualified.
 
 - [ ] Run the toolchain and container acceptance checks required by
   [DEVELOPMENT](development/DEVELOPMENT.md#what-to-run-for-what-you-changed),
   on the committed change when the principal schedules them. Retain and extract
   both architectures' results. The development binary is a marker control;
   the independent driver still evaluates the release and fault/sabotage binaries.
+  This qualifies the build boundary, not execution of the gated runtime.
 
 The principal accepted the structural credential boundary on 2026-11-10:
 the harness owns its secret, the harness route refuses credential arguments and

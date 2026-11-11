@@ -374,6 +374,35 @@ fn accepted_stream(stream: UnixStream) -> std::io::Result<UnixStream> {
     stream.set_nonblocking(false)?;
     Ok(stream)
 }
+
+const MCP_READ_INTERVAL: Duration = Duration::from_millis(100);
+
+struct McpInput(UnixStream);
+impl McpInput {
+    fn new(stream: UnixStream) -> std::io::Result<Self> {
+        // On the development Mac, a blocked socket read can miss a peer's
+        // write-half shutdown even though a new read observes EOF. Periodic
+        // reads recover that observation without treating idle time as loss.
+        // The placement supervisor still owns the execution deadline.
+        stream.set_read_timeout(Some(MCP_READ_INTERVAL))?;
+        Ok(Self(stream))
+    }
+}
+impl Read for McpInput {
+    fn read(&mut self, bytes: &mut [u8]) -> std::io::Result<usize> {
+        loop {
+            match self.0.read(bytes) {
+                Err(e)
+                    if matches!(
+                        e.kind(),
+                        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                    ) => {}
+                result => return result,
+            }
+        }
+    }
+}
+
 fn reader(mut input: impl Read, channel: &'static str, tx: mpsc::SyncSender<Input>) {
     loop {
         let mut bytes = vec![0; 65536];
@@ -749,7 +778,8 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                         stream
                             .set_write_timeout(Some(Duration::from_secs(2)))
                             .map_err(|e| e.to_string())?;
-                        let input = stream.try_clone().map_err(|e| e.to_string())?;
+                        let input = McpInput::new(stream.try_clone().map_err(|e| e.to_string())?)
+                            .map_err(|e| format!("configure MCP reader: {e}"))?;
                         let tx = tx.clone();
                         scope.spawn(move || reader(input, "mcp", tx));
                         connection = Some(stream);
@@ -1301,6 +1331,16 @@ mod tests {
     use super::*;
     #[test]
     fn accepted_connection_waits_through_idle_intervals() {
+        use std::os::fd::AsRawFd;
+
+        // A plain timed read fails while the peer is idle. The MCP wrapper
+        // must survive multiple such intervals without reporting disconnect.
+        let (mut control, _control_peer) = UnixStream::pair().unwrap();
+        control.set_read_timeout(Some(MCP_READ_INTERVAL)).unwrap();
+        assert!(matches!(
+            control.read(&mut [0; 1]).unwrap_err().kind(),
+            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+        ));
         for inherited_nonblocking in [true, false] {
             let (stream, peer) = UnixStream::pair().unwrap();
             stream.set_nonblocking(inherited_nonblocking).unwrap();
@@ -1312,13 +1352,18 @@ mod tests {
                 );
             }
             let stream = accepted_stream(stream).unwrap();
+            // Retrying timeouts must not mask a nonblocking busy loop.
+            let mode = unsafe { libc::fcntl(stream.as_raw_fd(), libc::F_GETFL) };
+            assert!(mode >= 0);
+            assert_eq!(mode & libc::O_NONBLOCK, 0);
+            let input = McpInput::new(stream).unwrap();
             let (tx, rx) = mpsc::sync_channel(4);
             std::thread::scope(|scope| {
                 let mut peer = peer;
-                scope.spawn(move || reader(stream, "mcp", tx));
+                scope.spawn(move || reader(input, "mcp", tx));
                 for bytes in [b"first\n".as_slice(), b"second\n".as_slice()] {
                     assert!(matches!(
-                        rx.recv_timeout(Duration::from_millis(30)),
+                        rx.recv_timeout(MCP_READ_INTERVAL * 3),
                         Err(mpsc::RecvTimeoutError::Timeout)
                     ));
                     peer.write_all(bytes).unwrap();
@@ -1328,10 +1373,19 @@ mod tests {
                     ));
                 }
                 peer.shutdown(std::net::Shutdown::Write).unwrap();
-                assert!(matches!(
-                    rx.recv_timeout(Duration::from_secs(2)),
-                    Ok(Input::Eof("mcp"))
-                ));
+                match rx.recv_timeout(Duration::from_secs(2)) {
+                    Ok(Input::Eof("mcp")) => (),
+                    Ok(Input::Error(error)) => panic!(
+                        "reader failed after peer half-close (inherited nonblocking: {inherited_nonblocking}): {error}"
+                    ),
+                    Ok(Input::Bytes(channel, bytes)) => {
+                        panic!("unexpected {channel} bytes after peer half-close: {bytes:?}")
+                    }
+                    Ok(_) => panic!("unexpected reader event after peer half-close"),
+                    Err(error) => panic!(
+                        "no EOF after peer half-close (inherited nonblocking: {inherited_nonblocking}): {error}"
+                    ),
+                }
             });
         }
     }

@@ -5,9 +5,9 @@
 #
 #   sh apparatus/driver/testdata/make-tls.sh     # needs OpenSSL 3.4 or later
 #
-# It replaces the files in tls/; commit the result. Fixed validity dates keep the
-# certificates usable whatever the container clock says (2025 to 2125); the
-# expired leaf is valid only during 2001.
+# It replaces the files in tls/; commit the result. Both CAs and the ordinary
+# leaves are valid from 2025-01-01 to 2125-01-01; the expired leaf is valid from
+# 2001-01-01 to 2001-12-31. Tests need a clock within the ordinary interval.
 set -eu
 D=$(cd "$(dirname "$0")" && pwd)/tls
 mkdir -p "$D"

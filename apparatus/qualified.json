@@ -1219,7 +1219,7 @@
       "kind": "experiment",
       "date": "2026-11-09T21:59:33Z",
       "date_from": "DONE",
-      "summary": "Frozen questions and material for the next auditor comparison.",
+      "summary": "Frozen frsrr questions and material for inspecting the original comparison design.",
       "result": {
         "path": ".",
         "files": 38,
@@ -1230,8 +1230,8 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Frozen questions and material for the next auditor comparison.",
-        "until": "The linked evaluation or pending decision no longer needs these originals."
+        "reason": "Inspect the original questions and byte-preserved material; no further auditor comparison is commissioned.",
+        "until": "Review of these original comparison inputs is complete."
       }
     },
     {
@@ -1419,7 +1419,7 @@
       "kind": "experiment",
       "date": "2026-11-09T21:59:33Z",
       "date_from": "DONE",
-      "summary": "Original independent consultations and measurements for the pending design decision.",
+      "summary": "Original independent consultations and measurements about iteration workflow.",
       "result": {
         "path": ".",
         "files": 12,
@@ -1430,8 +1430,8 @@
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Original independent consultations and measurements for the pending design decision.",
-        "until": "The linked evaluation or pending decision no longer needs these originals."
+        "reason": "Inspect the measurements and consultations underlying the iteration-workflow proposals; the retained proposals are evidence, not assignments.",
+        "until": "Review of the original workflow measurements and consultations is complete."
       }
     },
     {

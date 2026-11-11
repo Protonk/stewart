@@ -47,7 +47,8 @@ Read-only at any time:
   stewart status REF                 where the audit stands, with evidence
   stewart status --archive ROOT      every reference in an archive
 
-Every command except help takes --json for one machine-readable reply on stdout.
+Commands take --json for one machine-readable reply on stdout, except help and
+receipt --read, which writes the exact item bytes and accepts no --json option.
 Status, run and close give a brief account by default; --details adds the full
 observations. --details and --json cannot be combined. A completed command does
 not imply completed custody or an adequate answer. A run is one execution

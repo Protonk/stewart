@@ -33,7 +33,7 @@ python3 -I -B apparatus/driver/stewart_driver.py --self-test
 python3 -I -B apparatus/driver/stewart_driver.py --list
 ```
 
-Both cargo configurations, from `service/` ([Building and testing
+The release and fault/sabotage Cargo configurations, from `service/` ([Building and testing
 natively](#building-and-testing-natively)):
 
 ```sh
@@ -55,7 +55,9 @@ CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-co
 | Worked example materials: `question.md` and `materials/` under `examples/questions/*/submission/` | No check reads them. The walkthroughs, `CITATION-CONTROLS.md`, QUESTION-FORMS and INTERFACE cite their sizes, byte ranges and line numbers, and the driver's answer witness pins the examples in those docs, so recheck every citation of a changed file; a changed example in the docs then needs the row above. |
 | `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. Changing what Stewart promises is the user's decision. |
 | `service/src/` or `service/tests/` | All three cargo configurations above. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once all three configurations pass. |
-| `apparatus/driver/` | The driver's self-test and `--list`, which loads every case module. The change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once those two pass. Edit the driver only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
+| Release driver and shared helpers in `apparatus/driver/` | `stewart_driver.py --self-test` and `--list`, which loads every release case module. Shared helpers used by the standalone runtime driver also need that driver's checks below. Release-driver qualification needs the next container run of `acceptance.sh`, which the user schedules and batches; the change can land once its native checks pass. Edit only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
+| `apparatus/driver/claude_code.py` or its `CLAUDE-CODE.md` | `python3 -I -B apparatus/driver/claude_code.py --self-test` and `--list`. Runtime behavior changes also need the affected synthetic cases against the gated binary, retaining witnesses as described in the driver guide. This standalone driver is not run by `acceptance.sh`; qualifying its runtime behavior needs a separate Linux execution path. |
+| Runtime schemas or pinned texts in `docs/claude-code/CONTRACT.md` | The link check, the `claude-code` Cargo configuration, and the standalone runtime driver's self-test and list. Update exact service/driver copies when their pinned bytes change, preserving independent authorship. Prose-only status changes need the link check. |
 | `apparatus/c10/` | `python3 -I -B apparatus/c10/test_c10.py`, `python3 -I -B apparatus/sanity/test_launch.py`, and the driver's self-test for the specification-derived helpers it imports. Exercise changed run, reviewer and operator behavior with the native fake-provider commands in [the apparatus instructions](../apparatus/c10/README.md#run-the-offline-checks). The change remains unqualified until its retained Linux `c10.py rehearse` run, scheduled by the user after committing. No model calls are needed for these checks. |
 | Python in `apparatus/sanity/` | `python3 -I -B apparatus/sanity/test_launch.py`. For shared session or evidence helpers, also run the C10 checks above. The affected launcher needs its retained Linux rehearsal before qualification; source changes invalidate its previous rehearsal binding for live use. |
 | `apparatus/claude-code/` | `python3 -I -B apparatus/claude-code/test_pin.py`, `python3 -I -B apparatus/claude-code/test_probe.py` and `python3 -I -B apparatus/claude-code/test_protocol.py`, on the native host where process-group observation is permitted. These are offline controls and invoke no Claude process. The protocol check compiles a separate Rust prototype using the existing locked crate and native toolchain; Cargo runs offline. Any real harness invocation needs bounded authority. Native results establish no Linux qualification. |
@@ -227,6 +229,13 @@ the timing gate is off unless `--timing-gate on` is given.
 [apparatus/README.md](../apparatus/README.md) describes the driver's modules,
 cases, controls and evidence in detail.
 
+The [standalone Claude Code driver](../apparatus/driver/CLAUDE-CODE.md) exercises
+the gated adapter with a synthetic executable and MCP traffic. Its self-test,
+case list and runtime cases are separate from `stewart_driver.py`; they make no
+real-Claude or provider calls. Native runs need host Unix sockets and process
+observation. The container suite below builds the gated binary as a marker
+control but does not execute this runtime driver.
+
 ## Container suites
 
 The suites run under Apple `container` 1.6.1 on the development Mac and need it
@@ -277,11 +286,11 @@ evidence layout. `apparatus/qualified.py extract` reads a run of `acceptance.sh`
 or `step2.sh` into the qualification record ([Evidence and
 retention](#evidence-and-retention)).
 
-Evidence comes from a Linux container suite and, under ACCEPTANCE
+Qualification evidence comes from a Linux container suite and, under ACCEPTANCE
 ("Platforms"), from the scripted tier run natively on WSL2 from a handoff
 package of the same binary, driver and fake provider; these scripts cover the
 Linux containers only. Native runs on a development machine such as the Mac are
-not evidence. On the development Mac the x86_64 containers run under Rosetta
+development checks, not qualification evidence. On the development Mac the x86_64 containers run under Rosetta
 emulation: their timings are reported but do not gate (ACCEPTANCE C9), and the
 driver records Rosetta's own cache under the home as an emulator artifact rather
 than a write by Stewart.

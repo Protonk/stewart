@@ -3,8 +3,9 @@
 This is the current acceptance design for the [Stewart design](DESIGN.md), under
 [CONTRACTS.md](CONTRACTS.md). It specifies the evidence owed, not executed
 results. End to end means a manager's submission through the actual release
-binary to an independently verified return; only the provider is replaced in
-the scripted tier. Real-model conformance uses the real provider.
+binary to an independently verified return. Scripted ordinary paths replace
+the provider; failure and sabotage controls use the specified test-build features.
+Real-model conformance uses the real provider.
 
 Every case below is read under the accepted machine interface:
 [docs/INTERFACE.md](docs/INTERFACE.md) and
@@ -51,9 +52,15 @@ don't either.
 
 | Tier | Runs | Model | Gate? |
 | --- | --- | --- | --- |
-| **Scripted** | Test image, every platform, every change | A fake provider replaying scripted turns | Yes |
-| **Real-model conformance** | Experiment image, each release, each supported model | The real provider | Yes |
-| **Experiments** | Experiment image, when someone has a question | The real provider | No |
+| **Scripted** | Container qualification of changed source, on every required platform | A fake provider replaying scripted turns | Yes |
+| **Real-model conformance** | Commissioned conformance run, each release, each supported model | The real provider | Yes |
+| **Experiments** | Commissioned study, when someone has a question | The real provider | No |
+
+The principal schedules and batches container qualification. Passing the
+applicable [development checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
+permits a change to land while it remains unqualified; landing does not transfer
+an earlier suite result to new source. The release and model gates remain owed.
+The apparatus documentation owns the pinned build and runner images.
 
 The scripted tier tests Stewart's behavior within its covered cases. The
 conformance tier tests whether the named models can use the arrangement. Experiments are where research

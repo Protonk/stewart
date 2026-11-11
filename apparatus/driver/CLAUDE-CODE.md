@@ -6,7 +6,14 @@ Its author works from that contract, the common specifications and this driver's
 specification-owned forms, without reading the service implementation or tests.
 It is a standalone native driver; it is not registered in the release suite.
 
-Run from the repository root with an explicit Python interpreter:
+Run from the repository root with an explicit Python 3.9 or later interpreter.
+The driver supports macOS arm64 and Linux aarch64/x86_64. Runtime checks need a
+host that permits Unix-domain socket listeners and observation and signalling
+of owned process groups. A sandbox denying those operations prevents the
+controls from firing; it does not establish a passing runtime result.
+Use a binary built with the default-off `claude-code` feature for `--binary`
+and a featureless binary for `--release-binary` (see
+[development checks](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)).
 
 ```sh
 python3 -I -B apparatus/driver/claude_code.py --self-test
@@ -19,8 +26,9 @@ python3 -I -B apparatus/driver/claude_code.py \
 
 `--work` must be absent and its parent must exist. Use a physical absolute path
 without symlink components because the profile contract requires no-follow
-reads. Keep the selected binary in a separate directory from the work tree;
-the launch directory must also be outside the writer tree.
+reads. Put the work directory outside the repository checkout so that the
+synthetic launch directory is outside the writer tree. Keep the selected
+binaries in a separate directory from the work tree and unchanged during the run.
 `--release-binary` is optional; omitting it reports the featureless-build
 case as skipped. The driver never substitutes a skipped check for a pass.
 Use repeatable `--case NAME` options to diagnose selected cases; `RESULT.json`
@@ -48,11 +56,13 @@ The cases exercise all three question families, exact transformed MCP schemas
 and pinned texts, profile/check binding refusals, strict JSON and profile path
 controls, placement bounds, API-field rejection and captured receipt readback.
 Invariance cases change outer profile whitespace, manager HOME/CWD and accepted
-source files. A recorded canary start fails the local-operation check. The
-driver inventories every archive before and after each operation and fails if
-an earlier record changes or disappears. Runtime controls include successful
-auditor submission and verified delivery, attempted authoring before rejected
-startup, interrupted work followed by a fresh session, placement exhaustion,
+source files. A recorded canary start fails the local-operation check. Archive
+inventory checks detect changes or removals of earlier records around synchronous
+manager commands. The owner-death, missing-stop and recorder-failure cases
+separately witness the process or archive state they deliberately alter.
+Runtime controls include successful auditor submission and verified delivery,
+attempted authoring before startup followed by delayed valid and mismatched-model
+startup controls, interrupted work followed by a fresh session, placement exhaustion,
 deadline and owner-death stopping with a resistant descendant, and API credential
 option rejection. A controlled missing-stop case retains the original process
 metadata, substitutes an independently owned live group, and checks that restart
@@ -66,6 +76,13 @@ archive. Running as root skips this case explicitly because root can bypass the
 permission control.
 Harness observations and attempted MCP calls are independently
 witnessed outside the archive. Missing final checkpoints must remain unknown.
+
+Relay stopping is observed as part of model exit and owner death; there is no
+separate relay-disconnect case with the model still running. The suite does not
+exercise end-to-end MCP cancellation, compaction or valid final-checkpoint usage
+accounting. The contract's [demonstrated scope](../../docs/claude-code/CONTRACT.md)
+distinguishes this synthetic runtime evidence from other checks and remaining
+qualification work.
 
 `RESULT.json` reports per-case outcomes, check counts, explicit skipped cases,
 firing controls and timings. `commands/` retains exact argv, stdout and stderr;

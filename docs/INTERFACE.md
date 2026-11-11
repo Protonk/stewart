@@ -8,8 +8,13 @@ families, their instruction texts and the renderer are specified in
 [QUESTION-FORMS.md](QUESTION-FORMS.md).
 
 Implementation and qualification status are reported in
-[README.md](../README.md). Where this document and CONTRACTS differ, CONTRACTS wins and this document is corrected. Linux is the only
-platform; the filesystem calls named here are Linux calls.
+[README.md](../README.md). Where this document and CONTRACTS differ, CONTRACTS
+wins and this document is corrected. Linux is the product platform; the
+filesystem calls named here are Linux calls. Native macOS development fallbacks
+are described in [DEVELOPMENT](../development/DEVELOPMENT.md#building-and-testing-natively).
+The default-off runtime's [leaf contract](claude-code/CONTRACT.md) owns its
+question/arrangement schemas, transport, accounting and stopping differences;
+the Messages API wire and token limits below are not its harness protocol.
 
 Examples use illustrative identifiers. Tests match identifiers, digests, times
 and paths by their stated patterns and every other value exactly, except prose:
@@ -2470,9 +2475,10 @@ unknown membership has none.
 
 ## 9. Failure traces
 
-Each trace is a literal acceptance fixture. The driver reproduces it against the
-release binary, using controlled synchronization or kills at the named points,
-and compares the result with an independent witness. `→` shows the reply;
+Each trace defines a literal acceptance fixture. Ordinary paths exercise the
+release binary; named fault points and sabotage controls require the test build
+of Appendix C. The driver uses controlled synchronization or kills at the named
+points and compares the result with an independent witness. `→` shows the reply;
 `[log n: kind]` shows the log record published.
 
 **T1. Lost commission reply.**

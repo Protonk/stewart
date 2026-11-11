@@ -11,7 +11,9 @@ preserves an exclusive copy outside the repository. It also checks Apple's
 code signature. It never launches Claude. The public-key verification uses
 an isolated keyring without a GPG agent or the user's trust configuration.
 
-`probe.py` prepares a fresh bounded commission in `.scratch/claude-code-probe-02`.
+`probe.py` is bound to the completed commission in `.scratch/claude-code-probe-02`.
+Both native probe commissions are closed. Its retained source supports inspection
+and offline controls; the existing slots cannot be reused.
 Invocation reservations are persisted before spawning. A failed or uncertain
 reservation is not repeated; the authentication check and model phase start
 only once.
@@ -31,7 +33,7 @@ instruction ancestry. Their locations are recorded in the run state.
 
 ## Checks
 
-Run from the repository root, before any real harness invocation:
+Run these offline checks from the repository root:
 
 ```sh
 python3 -I -B apparatus/claude-code/test_pin.py
@@ -67,10 +69,13 @@ publication refusal, duplex backpressure and owner loss. Numeric IDs in this
 prototype use integer notation. The prototype caps frames at 8 MiB, arguments
 at 4 MiB and request IDs at 4,096 per session; these are apparatus bounds.
 
-This is not a service adapter or an acceptance driver. The pending-publication
-controls model ordering in memory. Private named-socket attachment, actual
-archive publication/recovery, orphan stopping and Linux enforcement remain
-integration work. See the [runtime reference](../../docs/claude-code/RUNTIME-REFERENCE.md#offline-rust-protocol-check)
+The prototype is separate from the implemented service adapter and its
+[independent driver](../driver/CLAUDE-CODE.md). Its pending-publication controls
+model ordering in memory; they do not test the service's named socket, archive
+publication/recovery or orphan stopping. The service driver exercises those
+integrated paths with a synthetic harness, with its own stated coverage gaps.
+Linux qualification remains outstanding. See the
+[runtime reference](../../docs/claude-code/RUNTIME-REFERENCE.md#offline-rust-protocol-check)
 for the protocol comparison and its limits.
 
 `fake.py` is the offline harness peer. `fixture.py` is the same MCP server and
@@ -85,62 +90,23 @@ share a clock origin. Python versions before 3.10 give macOS
 `time.monotonic_ns()` a process-local origin. Older records that used it support
 timing within one observer only; never rewrite them to imply a shared clock.
 
-## Running a commissioned probe
+## Inspecting the closed commissions
 
-These commands require the principal's bounded permission; documentation is
-not authority to start Claude. The pin's version, model and limits are fixed
-in the scripts. No model substitution, resumed session or replacement attempt
-is implemented.
-
-The executable pin and harness-owned login must already be verified. The
-current preparation reads the pin receipt and prior nonsecret setup/run
-records, checks the executable and snapshots the new inputs. It preserves the
-stopped run and creates new working directories,
-source snapshots and witnesses; no invocation reservation is transferred.
-
-Prepare the inputs without launching Claude:
-
-```sh
-python3 -I -B apparatus/claude-code/probe.py prepare
-```
-
-Preparation is exclusive. If it already began or failed partway through, inspect
-its files before further action; never erase evidence to force a retry. Both
-source copies and working sources are hashed, so an edit after preparation
-stops execution for review.
-
-Only after explicit approval of probe 02, with paid overflow disabled, run on
-the native host:
-
-```sh
-python3 -I -B apparatus/claude-code/probe.py live --approved-probe-02 --extra-usage-disabled
-```
-
-This first spends one non-model `auth status` invocation, with a 30-second
-deadline, requiring the dedicated directory, a logged-in `claude.ai` route and
-exit 0. A failed or uncertain check consumes that attempt and blocks model use.
-The approval flag relays the principal's decision; documentation is not approval.
-
-It starts at most three sequential sessions, each with one input and at most
-four harness turns. Each session is terminated at 120 seconds; the whole phase
-has a six-minute deadline. Termination allows five seconds before SIGKILL.
-Process-group stopping is observed and recorded. Startup must report exactly
-the two probe tools and the three pinned built-ins: `cc-plugin-agents-md`,
-`cc-plugin-privacy` and `cc-plugin-plugin-authoring`, each with `path: "builtin"`
-and its own `@builtin` source. Missing, extra, duplicated or changed plugin
-entries refuse; inventory ordering has no meaning. Unexpected startup inventory,
-API-key routing, model selection, background work, retries, compaction, quota
-exhaustion or failed supervision ends the batch. The final summary records
-unlaunched cases as unexercised. Missing usage is unknown, never zero.
+The original runs are `.scratch/claude-code-probe-01` and
+`.scratch/claude-code-probe-02`. Their frozen `inputs/` own the source and scope
+that executed. The [runtime reference](../../docs/claude-code/RUNTIME-REFERENCE.md#reviewed-native-comparison)
+records the reviewed observations and their limits. No remaining invocation or
+replacement authority exists. A full-service check needs new apparatus and a
+separately approved bounded commission; these two-tool results cannot supply its
+profile attestation.
 
 Inspect `RESULT.json`, each case's `assessment.json`, `process/` captures and
-the independent `effects.jsonl`, hook and MCP journals. A hook denial is only
-observed when an attempted record is witnessed and never reaches the handler.
-Absent attempts are unexercised. A matching startup inventory does not prove
-the absence of unobservable instructions, internal requests or managed policy.
-The code does not establish filesystem confinement or a complete credential
-leak detector. Raw model/harness output stays private and is not automatically
-exported.
+the independent effect, hook and MCP journals. A hook denial is observed only
+when an attempted record is witnessed and never reaches the handler. Absent
+attempts are unexercised. A matching startup inventory does not prove the absence
+of unobservable instructions, internal requests or managed policy. The code does
+not establish filesystem confinement or a complete credential leak detector.
+Raw model/harness output stays private and is not automatically exported.
 
 Keep the original failed and successful observations through review under
 [evidence and retention](../../development/DEVELOPMENT.md#evidence-and-retention).

@@ -17,8 +17,8 @@ No further model calls are selected or authorized by this plan.
 The [apparatus instructions](apparatus/c10/README.md) own the implemented packet,
 launcher, reviewer and report interfaces. Small commissions have completed;
 continuation and actual provider compaction remain outside that apparatus path.
-The [qualification index](apparatus/qualified.md) identifies the current checked
-build and selected evaluations. New live packets need matching rehearsal coverage
+The [qualification index](apparatus/qualified.md) identifies recorded checked
+builds and selected evaluations. New live packets need matching rehearsal coverage
 for their actual binary, inputs and credential route. Completed pilot placements
 authorize no further calls. Retention follows
 [DEVELOPMENT](development/DEVELOPMENT.md#evidence-and-retention).

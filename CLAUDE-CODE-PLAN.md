@@ -23,15 +23,22 @@ remain future work.
 ## Remaining work
 
 - Extend the independent offline driver to isolate relay-only disconnect while
-  the model remains alive, and MCP cancellation through the actual service.
-  Current cases exercise relay stopping with owner/model loss. Publication-gate
-  unit controls and the protocol prototype are separate evidence; they do not
-  qualify end-to-end MCP cancellation.
+  the model remains alive, MCP cancellation through the actual service, valid
+  terminal usage checkpoints across placements, and compaction/notice/reminder
+  interactions. Current cases exercise relay stopping with owner/model loss and
+  usage with missing terminal reports. Publication-gate and event-parser unit
+  controls, and the protocol prototype, are separate evidence.
+- Provide a Linux execution path for the standalone synthetic runtime suite,
+  with the exact gated binary and independent witnesses. `acceptance.sh` checks
+  the gated build and markers but does not run this suite; its result cannot
+  qualify runtime execution.
 - Prepare a concrete bounded commission for real service conformance, with exact
   synthetic materials, model, session allowance, stopping conditions, executable
   and writer pins, selected subscription route and retained witnesses. The
   earlier two-tool probe is not a full-service profile check. Obtain the
   principal's explicit approval before any additional Claude invocation.
+  The real full-service check and profile-attestation producer still need
+  apparatus; current offline fixtures supply synthetic attestations only.
 - Under that commission, exercise the actual auditor tool surface,
   compaction/re-entry, accounting, interruption, submission, delivery and close.
   Verify effective tools, instructions, authentication and access before and
@@ -46,16 +53,25 @@ profile, and native results do not qualify Linux.
 
 ## Evidence through review
 
-The current native run is `.tmp/claude-code-adapter/host.PZGw1h`, with runtime
-witnesses at `/private/tmp/stewart-cc-native.DyFPFv/run`: 14 cases, 4,711 checks
-and 45 controls passed, with no skips. All applicable
+The current native validation is `.tmp/document-harmonization/host.VxyhfJ`,
+with runtime witnesses at `/private/tmp/stewart-doc-runtime.CGwaur/run`:
+14 cases, 4,711 checks and 45 controls passed, with no skips. All applicable
 [DEVELOPMENT checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
 passed. The source snapshot stayed unchanged throughout the run.
+
+Keep `.tmp/document-harmonization/` through review of the later socket EOF
+failure and its fix. `host.PMinwd` retains the failed native run. The paired
+socket comparisons distinguish a blocked read after peer write-half shutdown
+from an empty channel or missing EOF; they do not qualify Linux behavior.
+The MCP reader's bounded idle-read retries passed the strengthened regression
+and the native validation above.
 
 Keep `.tmp/claude-code-adapter*`, the earlier host runs and their external
 witnesses through this implementation review; each host directory's
 `runtime-work.txt` locates its witness. The original socket-mode and driver
-parser failures remain intact. Also keep
+parser failures remain intact. The baseline in `4e7478a` has its own
+`host.PZGw1h` results and `/private/tmp/stewart-cc-native.DyFPFv/run` witnesses;
+those records are not rebound to the current binary. Also keep
 `/private/tmp/stewart-claude-driver-checks.AhLaUX`, `/private/tmp/scc5`,
 `/private/tmp/scc6`, `.tmp/claude-code-contract/` and `.tmp/claude-code-probe/`
 through review of their offline controls and observer comparisons.
@@ -66,6 +82,13 @@ selected launch arrangement. Each run's frozen inputs own what executed;
 previous runs confer no new launch authority. Apply the normal
 [evidence retention rules](development/DEVELOPMENT.md#evidence-and-retention)
 after review rather than retaining reproducible working trees indefinitely.
+
+The two probes are not yet registered in the qualification index. Their
+results/state files have no UTC run timestamp accepted by the current indexer.
+Resolve how to register that known date gap before relying on the index to cover
+these selected evaluations; do not manufacture a run timestamp or rewrite their
+receipts to fit the index. Keep their original paths and retention purpose above
+explicit until that is resolved.
 
 Complete this plan when the selected integration has a reviewed qualification
 outcome and failures or unexercised work have explicit dispositions. Keep

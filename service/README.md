@@ -24,7 +24,7 @@ and `zeroize`.
 ## Modules by role
 
 One audit can be followed through them: `cli.rs` and `ops/` for the manager's
-commands, `ops/run.rs` into `provider/placement.rs` for the run, `answer/` for
+commands, `ops/run.rs` into `provider/placement.rs` for a Messages API run, `answer/` for
 each tool call, then `delivery/` and `ops/close.rs`.
 
 **CLI and help**
@@ -41,7 +41,8 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `ops/`: one file per command, `new`, `prepare`, `commission`, `receipt`,
   `run`, `status` and `close` (5.2–5.8); `ops/mod.rs` holds what they share.
 - `frontmatter.rs`, `scan.rs`: the submission folder: the `question/1` front
-  matter and the material scan (3).
+  matter and the material scan (3), plus the gated
+  [development question schema](../docs/claude-code/CONTRACT.md#development-input-and-preparation-schema).
 - `forms.rs`: the question families, their pinned texts and tool definitions,
   and the arrangement prepare pins (QUESTION-FORMS; 6.2).
 
@@ -84,6 +85,11 @@ each tool call, then `delivery/` and `ops/close.rs`.
   context replacements without discarding earlier captures; and the
   accounting of a placement without `run_ended` (6.4).
 - `usage.rs`: usage, charges and cumulative allowances (6.4).
+- `claude_code/`: the default-off development runtime, entered from `ops/run.rs`;
+  profile and arrangement bindings, MCP transport, the publication gate,
+  harness accounting and process supervision. Its
+  [runtime contract](../docs/claude-code/CONTRACT.md) owns differences from the
+  Messages API path.
 
 **Delivery**
 
@@ -214,7 +220,8 @@ the adapter has fault points of its own.
 
 [DEVELOPMENT.md](../development/DEVELOPMENT.md) covers the rest: producing `vendor/`, the
 release and test builds, the independent driver, and the Linux container
-suites, which alone count as evidence.
+suites. Qualification also requires the native WSL2 run under ACCEPTANCE;
+development-machine checks establish neither platform's qualification.
 
 ## Platform
 

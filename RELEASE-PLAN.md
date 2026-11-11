@@ -67,8 +67,6 @@ changes require an implementation-independent author.
 Resolve these acceptance-policy questions without silently changing the current
 requirements:
 
-- Reconcile ACCEPTANCE's per-change tier/image language with batched container
-  qualification and the current pinned Python runner.
 - Confirm the platform and real-model release gates and coverage scope.
 - Decide whether to add Linux Cargo tests. Current Linux suites build the crate
   and run the independent driver; an offline Cargo route would need
@@ -94,17 +92,8 @@ be measured rather than inferred from Rosetta.
 
 Needs: a package builder, instructions and the user's scheduled run.
 
-### Documentation and test discrepancies
+### Remaining test discrepancies
 
-- Align CONTRACTS' illustrative prepare/submit field names with INTERFACE 7.6
-  (`prepared_handle`, `answer_revision` and the notice key `section` differ).
-  Clarify the synonymous family/form terminology where needed.
-- Correct INTERFACE 9's claim that named fault traces run against the release
-  binary; fault points are test-build features. Correct CLI help's assertion
-  that every non-help command accepts `--json`: raw receipt readback does not.
-- Have an implementation-independent author correct the TLS fixture README's
-  expired-certificate validity and its description of wrong-name/expired
-  self-test fixtures as driver controls.
 - Add a check that prepares the worked examples. Make unavailable loopback tests
   report actual skips rather than printing SKIPPED and returning as passed.
 

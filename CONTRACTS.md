@@ -97,12 +97,16 @@ surrender remain distinct. Close is the operation ending the undertaking; closed
 is completed custody. A close request can end authoring while close is unfinished.
 Invocation outcome, operation effects and observed audit facts remain separate.
 
+A question family, also called a form, selects the auditor's instructions,
+recording tools and rendering. These names do not denote different mechanisms.
+
 ## Platform and auditor access
 
 Ship one statically linked Rust binary for Linux x86_64 and aarch64, without
 runtime language dependencies. WSL2 runs that binary. Build, test and experiment
-in Linux containers; the development apparatus does not ship. Native macOS is
-not a supported target.
+in Linux containers; the development apparatus does not ship. Native
+`aarch64-apple-darwin` is a development target, not a supported product or
+qualification target.
 
 Stewart has no version-control relationship. History, diffs, logs and test results
 are manager-supplied files, with their authors' attribution. It neither executes
@@ -234,10 +238,12 @@ Stewart sends it as a request parameter on every request and never as text the
 auditor reads. Without one Stewart sends none and the provider's default for the
 model applies; Stewart has no effort default of its own. It knows the documented
 level names, not which levels a model accepts, and reports a provider's refusal
-as the provider gave it. Run limits are cumulative counts the provider reports:
+as the provider gave it. Messages API run limits are cumulative counts the provider reports:
 model turns, input tokens and output tokens. When a response is lost, Stewart
 charges a stated conservative estimate and records it as estimated. Stewart sets
-no money limit, since prices are not facts it observes. The destination is an
+no money limit, since prices are not facts it observes. The development runtime's
+distinct [placement limits](docs/claude-code/CONTRACT.md#limits-usage-and-continuation)
+do not turn missing harness usage into an API estimate. The destination is an
 existing directory in which each delivery attempt creates its own new package.
 
 `new` may scaffold an absent folder or use an explicitly supplied existing
@@ -1142,38 +1148,16 @@ format is unchanged. The final return manifest retains family/version metadata.
 Separate the view from the private record deliberately; do not serialize an
 internal struct wholesale because it happens to contain the desired members.
 
-Illustrative field spellings, not a complete wire schema (tokens are symbolic):
+The exact preparation reply and submit operands are specified in
+[INTERFACE 7.6](docs/INTERFACE.md#76-prepare-and-submit). Preparation returns
+`data.prepared`, the captured `family`, the answer `revision`, entry counts,
+readable `selection` and `rendering` views, and nonblocking `notices` identifying
+the recording `tool`. It reports neither a sealer nor a completeness grade.
+An auxiliary observation count cannot imply a comparison took place.
 
-```json
-{
-  "schema": "stewart.reply/2",
-  "operation": "prepare",
-  "outcome": "completed",
-  "data": {
-    "prepared_handle": "ap_7",
-    "answer_revision": 7,
-    "entry_count": 3,
-    "selection_view": "view_selection_7",
-    "rendering_view": "view_rendering_7",
-    "notices": [
-      {"reason": "section_unfilled", "section": "comparison", "message": "No comparison entries are recorded."}
-    ]
-  }
-}
-```
-
-There is no sealer or "complete answer" grade in that preparation reply. Existing
-notices remain nonblocking and require no acknowledgment. An auxiliary observation
-count cannot imply a comparison took place.
-
-```text
-submit(prepared_handle="ap_7", confirm=false)
-  -> dry-run result; no seal
-submit(prepared_handle="ap_7", confirm=true)
-  -> recorded seal reference, actual actor and bound answer revision
-repeat the accepted confirmed call
-  -> that same recorded seal, no new mutation
-```
+Use the returned handle as `submit(prepared=HANDLE, confirm=false)` to inspect
+the dry-run result, or with `confirm=true` to request sealing. Repeating an
+accepted confirmed call returns its recorded seal without another mutation.
 
 Explicit true is required for effect. Use the manager's separate
 finished-material acknowledgment for commission; do not give a vague universal
@@ -1276,5 +1260,5 @@ interpretation grants no execution or mutation authority.
   opinions on evidence, remain optional studies, not gates on this design.
 - No product-level saved provider connection, bearer or federated
   authentication or additional provider. The service takes one explicit
-  credential per placement; reuse across launches belongs to the launch
+  credential per Messages API placement; reuse across launches belongs to the launch
   environment.

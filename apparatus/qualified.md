@@ -428,10 +428,10 @@ Inspect the substantive checks behind the frsrr Problem A/B readings.
 
 ### frsrr-interface-inputs-01
 
-Frozen questions and material for the next auditor comparison.
+Frozen frsrr questions and material for inspecting the original comparison design.
 
 - Evidence: `.scratch/frsrr-interface-inputs-01/.` (recorded 2026-11-09T21:59:33Z).
-- Retained purpose: Frozen questions and material for the next auditor comparison.; until The linked evaluation or pending decision no longer needs these originals.
+- Retained purpose: Inspect the original questions and byte-preserved material; no further auditor comparison is commissioned.; until Review of these original comparison inputs is complete.
 
 ### frsrr-study-commission-01
 
@@ -498,10 +498,10 @@ Interpret stress encounters against their questions, plants and prior prediction
 
 ### rapid-iteration-01
 
-Original independent consultations and measurements for the pending design decision.
+Original independent consultations and measurements about iteration workflow.
 
 - Evidence: `.scratch/rapid-iteration-01/.` (recorded 2026-11-09T21:59:33Z).
-- Retained purpose: Original independent consultations and measurements for the pending design decision.; until The linked evaluation or pending decision no longer needs these originals.
+- Retained purpose: Inspect the measurements and consultations underlying the iteration-workflow proposals; the retained proposals are evidence, not assignments.; until Review of the original workflow measurements and consultations is complete.
 
 ### vocabulary-revision-01
 

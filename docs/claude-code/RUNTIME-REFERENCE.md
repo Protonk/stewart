@@ -207,11 +207,12 @@ timestamps remain as recorded and gain no cross-process meaning from the fix.
 | Installation, updates and binary integrity | [Setup](https://code.claude.com/docs/en/setup) | Version pinning, update control, the signed release manifest and platform requirements. |
 | Interrupt and termination | [Interrupt receipts](https://code.claude.com/docs/en/agent-sdk/typescript#sdkcontrolinterruptresponse), [SIGTERM behavior](https://code.claude.com/docs/en/headless#stop-a-run-with-sigterm), [hooks](https://code.claude.com/docs/en/agent-sdk/hooks) | Queued work, active handlers, graceful interruption, process death and the final result that may be lost. |
 
-## Candidate controls
+## Documented control surface
 
-These names are navigation aids for a pinned-version check, not a supported
-configuration promised by Stewart. Verify how the options compose before using
-them together.
+These names summarize the documentation reviewed on the date above, including
+options not selected for Stewart. The [runtime contract](CONTRACT.md) owns the
+implemented configuration. The native two-tool comparison demonstrates only
+its recorded combination; verify a changed combination before relying on it.
 
 - **Authentication:** the manager's harness-owned login, selected by a dedicated
   `CLAUDE_CONFIG_DIR`; no credential supplied by Stewart. Use non-bare mode.
@@ -220,7 +221,7 @@ them together.
   method before model use; missing or conflicting observations refuse.
 - **Ambient inputs:** `settingSources: []`, `strictMcpConfig: true`, an explicit
   process environment/working directory, and the documented controls for auto
-  memory, connectors and background tasks. Candidate switches include
+  memory, connectors and background tasks. Documented switches include
   `CLAUDE_CODE_DISABLE_AUTO_MEMORY`, `ENABLE_CLAUDEAI_MCP_SERVERS` and
   `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`. Managed/server-managed policy remains
   a separate input; a fresh directory does not remove server-managed policy.
@@ -292,8 +293,9 @@ documented statements, not observed behavior.
 Subscription authentication alone does not establish zero additional spending.
 [Usage credits](https://support.claude.com/en/articles/12429409-manage-usage-credits-for-paid-claude-plans)
 can keep requests running at consumption-based prices after included usage is
-exhausted. The proposed development commission uses included usage only: the
-manager confirms paid overflow is disabled; a quota stop ends the batch.
+exhausted. The consumed native commissions required included usage only, and
+the runtime contract retains that condition: the manager confirms paid overflow
+is disabled; a quota stop ends the run. This confers no new invocation authority.
 
 ## Binary identity and updates
 
@@ -461,10 +463,10 @@ The real relay and owner processes preserve pipelined traffic byte for
 byte. A simultaneous large write in each direction demonstrates progress under
 backpressure; owner loss exits the relay with a failure even while stdin is open.
 
-Recommend a duplex byte relay with serialized core execution, not a lockstep
-request/reply proxy. A reader must remain available for cancellation and ping
-while a handler is pending. The check uses inherited Unix socketpairs, not the
-future private named-socket rendezvous. It does not establish peer binding,
+The service uses a duplex byte relay with serialized core execution. A reader
+remains available for cancellation and ping while a handler is pending. The
+prototype uses inherited Unix socketpairs; the service uses a private named
+socket. The prototype does not establish peer binding,
 archive failure recovery, close races in the actual core, orphan stopping,
 Linux behavior or real-harness compatibility with the full auditor tool set.
 Its frame/request-count bounds and one synthetic tool are apparatus limits,
@@ -483,6 +485,9 @@ Not demonstrated under the selected native launch arrangement:
 - relay-only disconnect while the model remains alive, and end-to-end MCP
   cancellation in the service; owner/model-loss cases observe relay stopping,
   while publication-gate unit controls and the prototype have separate scope;
+- valid usage checkpoints across service placements, and compaction with
+  re-entry, notices and the one-reminder policy; the independent synthetic
+  service suite does not yet cover these paths;
 - that the binary can be launched from an already-open descriptor, given that
   it reads its executable from disk while running;
 - `rmcp`'s transitive dependency count, its minimum Rust version against the
@@ -534,8 +539,8 @@ and whether interruption waits for them.
 
 ## Versions and evidence
 
-Pin and record both SDK and Claude Code versions, plus the initialization
-capabilities. Check version floors for interruption receipts, queue cancellation,
+Pin and record the Claude Code version and initialization capabilities; an
+SDK-based alternative would also need its SDK pin. Check version floors for interruption receipts, queue cancellation,
 permission prompts, bare mode, reset messages and usage fields. Availability of
 individual features does not establish that the whole configuration composes
 correctly.

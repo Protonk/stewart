@@ -19,6 +19,13 @@ offline rehearsal uses synthetic credentials and a local fake provider; live
 launch needs a matching rehearsal and an explicitly authorized packet. Its
 reports cover small-commission procedure and do not declare a model qualified.
 
+The [standalone runtime driver](driver/CLAUDE-CODE.md) checks the gated Claude
+Code adapter against a synthetic executable. It has its own self-test, case
+list and native runtime command, and invokes no real harness or provider.
+`acceptance.sh` builds the gated binary and checks its markers; it does not run
+these runtime cases. The separate [probe apparatus](claude-code/README.md)
+retains the closed native feasibility comparison and an offline protocol prototype.
+
 ## Running the scripts
 
 On the development Mac the containers run under Apple `container` 1.6.1. Each
