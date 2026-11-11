@@ -38,9 +38,9 @@ launch controls, and separates documented mechanisms from unverified behavior.
 The [initial probe proposal](docs/claude-code/FEASIBILITY-PROBE.md) is bounded to
 synthetic native checks. Its outcome is needed before adopting the combination.
 
-- [ ] Complete the approved [native probe](docs/claude-code/FEASIBILITY-PROBE.md)
-  after dedicated login. The offline controls pass and the executable pin is
-  authenticated; approval and remaining invocation bounds are owned by that
+- [ ] Complete the approved [native probe](docs/claude-code/FEASIBILITY-PROBE.md).
+  The offline controls and dedicated login checks pass, and the executable pin
+  is authenticated; approval and remaining invocation bounds are owned by that
   commission and its durable run state. Update the
   [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md) with observed
   composition of login, restrictions, MCP and hooks. Compaction and broader

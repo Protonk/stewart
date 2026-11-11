@@ -3,18 +3,33 @@
 Launch, authentication, CLI, tool and accounting documentation checked
 2026-11-10. The proposed harness pin is **2.1.322**, present in the
 [official changelog](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md).
-The pinned CLI has completed version and help calls. No model session has
-started. The development-build boundary is implemented; the adapter and the
-combined launch configuration are untested. Documentation describes capabilities,
-not a demonstrated combination.
+The pinned CLI has completed version, help and authentication checks, with one
+manager-operated subscription login. The development-build boundary is
+implemented; the adapter and combined model-session launch configuration remain
+unverified. Documentation describes capabilities, not a demonstrated combination.
 
 The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)
 was authenticated against the pinned release signing key on 2026-11-10. The
 installed `darwin-arm64` binary and a dedicated copy match its SHA-256, and the
 copy passed Apple's code-signature check on the host. Agent-shell DNS and
 code-signature failures did not establish these results; host checks did.
-The CLI reports the expected version. Authentication and the combined launch
-controls still need the remaining bounded setup checks and probe.
+The CLI reports the expected version. The combined model-session launch controls
+still need the bounded probe.
+
+## Native authentication observations
+
+On 2026-11-10, the empty configuration reported `loggedIn: false`,
+`authMethod: "none"` and exit 1. After the manager completed one uncaptured
+login, the dedicated configuration reported `loggedIn: true`,
+`authMethod: "claude.ai"` and exit 0. Both reports named the intended
+configuration directories. These establish the observed setup route; model
+startup must still report the approved authentication source and configuration.
+No credential store was inspected or copied.
+
+The private run is `.scratch/claude-code-probe-01`. Its `auth-empty` and
+`auth-selected` records retain only the allowlisted status fields, process
+observations and exit results. The run state records all four setup calls and
+the single login as consumed.
 
 ## Help inventory check
 
