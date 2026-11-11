@@ -79,7 +79,10 @@ and skipped cases are superseded by the host runs; Linux remains unqualified.
   the harness-only requirement. The harness owns its secret and cannot fall
   back to the direct adapter; classifying arbitrary bytes supplied to the
   existing API route requires a supported discriminator that is not yet known.
-  Do not claim that a token-prefix test enforces this.
+  Recommend accepting the structural boundary for native development, with
+  explicit credential arguments refused on the harness route and no direct-API
+  fallback. Do not claim to classify independently supplied API credential bytes
+  or that a token-prefix test enforces this. The principal's decision is pending.
 
 The [reviewed native comparison](docs/claude-code/RUNTIME-REFERENCE.md#reviewed-native-comparison)
 supplies the launch observations for the credential-boundary decision. It does

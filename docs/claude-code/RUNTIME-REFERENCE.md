@@ -400,7 +400,8 @@ by parsed handler arguments. For the narrow handshake/list/call surface, a
 synchronous implementation using the existing JSON code is the first candidate.
 Use the [MCP stdio specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports)
 and [tool protocol](https://modelcontextprotocol.io/specification/2025-11-25/server/tools),
-including errors and notifications, to check it independently before adoption.
+including errors and notifications. The offline check below exercises the
+narrow protocol and relay; the actual core integration remains unimplemented.
 
 Native checks establish development behavior only. macOS has no Linux
 `/proc`/non-dumpable boundary, and its existing lock and process-identity
@@ -409,14 +410,68 @@ process-group supervision and witnessed termination need native tests; Linux
 qualification exercises Linux's own mechanisms. Restricting the auditor's
 tool surface does not make the entire harness a filesystem sandbox.
 
+## Offline Rust protocol check
+
+`apparatus/claude-code/test_protocol.py` builds and exercises
+`protocol_check.rs` without invoking Claude. The prototype links the existing
+Rust crate for strict argument decoding and compiles the existing tolerant
+provider scanner for outer MCP frames. It adds no dependency and changes no
+service source. The scanner choice matters: MCP metadata can contain numbers
+and strings that are not valid Stewart control arguments. Preserve those bytes;
+apply strict control validation to the original argument span before dispatch.
+
+The protocol was checked against the dated MCP
+[base messages](https://modelcontextprotocol.io/specification/2025-11-25/basic),
+[lifecycle](https://modelcontextprotocol.io/specification/2025-11-25/basic/lifecycle),
+[stdio transport](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports),
+[tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools),
+[ping](https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/ping)
+and [cancellation](https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/cancellation)
+specifications on 2026-11-10. It supports initialization and version negotiation,
+the initialized notification, ping, a fixed tool list and tool calls. It advertises
+only tools, without tasks, sampling, resources, prompts or list changes. Unknown
+methods receive method-not-found; the observed `server/discover` request therefore
+allows the client's ordinary initialize fallback without adopting that extension.
+Notifications receive no reply. Request IDs retain their type and original wire
+representation, with repeated IDs refused within the session.
+
+Malformed envelopes and unknown tools receive protocol errors. Invalid arguments
+to the known synthetic tool receive a tool result with `isError: true`, preserving
+the distinction from an unrecognized request. MCP's cancellation notification
+does not undo a completed effect. A pending synthetic mutation can be cancelled
+before publication, and authoring ending between admission and publication
+prevents its effect. Those checks model ordering; they do not test the service's
+durable log boundary.
+
+The native run passed **9 Rust tests** (six existing scanner tests and three
+publication/cancellation controls) and **14 Python process checks**, with no skips.
+An independent peer retains its sent and received bytes outside the owner's
+capture directory. The owner preserves chunks before framing or decoding,
+including malformed, truncated and oversized inputs, and response bytes before
+transmission. Controls exercise unavailable capture, argument refusal and failed
+publication. An unrelated notification leaves the positive publication unchanged.
+The real relay and owner processes preserve pipelined traffic byte for
+byte. A simultaneous large write in each direction demonstrates progress under
+backpressure; owner loss exits the relay with a failure even while stdin is open.
+
+Recommend a duplex byte relay with serialized core execution, not a lockstep
+request/reply proxy. A reader must remain available for cancellation and ping
+while a handler is pending. The check uses inherited Unix socketpairs, not the
+future private named-socket rendezvous. It does not establish peer binding,
+archive failure recovery, close races in the actual core, orphan stopping,
+Linux behavior or real-harness compatibility with the full auditor tool set.
+Its frame/request-count bounds and one synthetic tool are apparatus limits,
+not additional restrictions on Stewart's auditor contract. A transport wrapper
+around `rmcp` remains possible if maintaining this narrow surface becomes costly.
+
 ## Unverified
 
 Not demonstrated under the selected native launch arrangement:
 
 - a supported configuration check before the first message is sent; the
   observed `system/init` ordering does not provide one;
-- exact capture before decoding in the proposed Rust relay or an `rmcp`
-  transport wrapper; the probe's independent witness was Python;
+- exact capture and failure recovery in the actual adapter's archive; the
+  Rust transport prototype preserves bytes, but does not integrate that writer;
 - that the binary can be launched from an already-open descriptor, given that
   it reads its executable from disk while running;
 - `rmcp`'s transitive dependency count, its minimum Rust version against the

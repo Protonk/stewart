@@ -36,9 +36,10 @@ Run from the repository root, before any real harness invocation:
 ```sh
 python3 -I -B apparatus/claude-code/test_pin.py
 python3 -I -B apparatus/claude-code/test_probe.py
+python3 -I -B apparatus/claude-code/test_protocol.py
 ```
 
-These launch only synthetic Python processes. The probe checks cover actual
+The pin/probe checks launch only synthetic Python processes. The probe checks cover actual
 MCP/hook traffic, positive/denial/invariance cases, exact raw capture, broken
 witnesses, malformed streams, unexpected tools, quota/auth routing refusal,
 durable invocation reservations, and stopping an uncooperative process and a
@@ -47,6 +48,30 @@ an agent sandbox is a failed check, not an inferred successful stop. Controls
 for a fresh commission also verify offline preparation, prior-record
 preservation, the approval gate, the single fresh
 authentication check, all three synthetic cases and refusal of another start.
+
+`test_protocol.py` compiles an offline Rust transport prototype with the native
+toolchain and existing locked, vendored dependencies. Cargo runs offline; its
+cache is `service/target-local/protocol-check/`. The test executables and
+synthetic work directories are temporary. The check launches only those Rust
+executables and its local peer, never Claude. It needs Unix socketpairs but no
+listening network socket or credential. Retain command output through review.
+
+The prototype owner captures received chunks before framing/decoding and the
+response before sending it. Its sole tool records a synthetic note. The relay
+forwards bytes over an inherited socket in both directions; it never opens
+an archive, interprets arguments or reconnects. Peer bytes witness the capture
+independently. Controls cover initialization, version negotiation, notifications,
+typed request IDs, malformed input, protocol versus tool errors, exact argument
+spans, capture failure, incomplete/oversized frames, pending cancellation,
+publication refusal, duplex backpressure and owner loss. Numeric IDs in this
+prototype use integer notation. The prototype caps frames at 8 MiB, arguments
+at 4 MiB and request IDs at 4,096 per session; these are apparatus bounds.
+
+This is not a service adapter or an acceptance driver. The pending-publication
+controls model ordering in memory. Private named-socket attachment, actual
+archive publication/recovery, orphan stopping and Linux enforcement remain
+integration work. See the [runtime reference](../../docs/claude-code/RUNTIME-REFERENCE.md#offline-rust-protocol-check)
+for the protocol comparison and its limits.
 
 `fake.py` is the offline harness peer. `fixture.py` is the same MCP server and
 hook used by the real probe. Raw requests are captured before parsing. The
