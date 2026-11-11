@@ -1,9 +1,10 @@
 # Claude Code runtime conformance
 
-The gated adapter is implemented and has passed native offline service checks.
-The principal approved A–C and implementation with offline controls on
-2026-11-10. No real-Claude service conformance run exists, and no additional
-Claude launch or resume is authorized. Both earlier probe commissions are closed.
+The gated adapter is implemented, aligned with the Messages path at the
+manager's surface, and passes its native offline checks against a synthetic
+harness. No real-Claude service run exists. No Claude launch or resume is
+authorized: both earlier probe commissions are closed, and step 4 below needs
+its own.
 
 ## Decided scope
 
@@ -23,46 +24,90 @@ never grants execution. Runtime telemetry does not establish the auditor's
 understanding or intellectual completeness. Human and other runtime adapters
 remain future work.
 
-## Remaining work
+## Next steps, in order
 
-- Decide how the runtime treats a tool call that arrives while another is
-  pending. It now answers the later call with a transport error and no effect;
-  the contract is silent. The Messages path executes several calls of one
-  response in order, and a real harness may issue calls together.
-- Settle what usage a submitting placement reports. The runtime stops the
-  harness after a confirmed submission; in synthetic runs that leaves the
-  final interval unknown on every sealed audit, while a turn that ends with a
-  result is reported. Make what the real harness reports at that point an
-  explicit observation of the real-service commission.
-- Share driver cases for behavior common to both runtimes where independence
-  allows; the two drivers currently cover custody, submission and close
-  separately.
-- Offline cases not yet written: refusal of a second relay connection in a
-  live placement (the stop after relay loss ends the attempt first), a hook
-  call after the placement has stopped admitting calls, and the near-limit
-  notice. `run`'s re-verification of a pinned surface has unit coverage only.
-- Provide a Linux execution path for the standalone synthetic runtime suite,
-  with the exact gated binary and independent witnesses. `acceptance.sh` checks
-  the gated build and markers but does not run this suite; its result cannot
-  qualify runtime execution.
-- Prepare a concrete bounded commission for real service conformance, with exact
-  synthetic materials, model, session allowance, stopping conditions, executable
-  and writer pins, selected subscription route and retained witnesses. The
-  earlier two-tool probe is not a full-service profile check. Obtain the
-  principal's explicit approval before any additional Claude invocation.
-  The real full-service check and profile-attestation producer still need
-  apparatus; current offline fixtures supply synthetic attestations only.
-- Under that commission, exercise the actual auditor tool surface,
-  compaction/re-entry, accounting, interruption, submission, delivery and close.
-  Verify effective tools, instructions, authentication and access before and
-  after compaction, including host and server-managed configuration. Settings
-  alone do not establish enforcement.
+Take these in order. Each step that changes the contract or the service is
+written by one author, and its driver cases by another who has not read the
+implementation.
+
+1. **Queue concurrent tool calls.** The principal decided this on 2026-11-11.
+   A tool call that
+   arrives while another is pending is now answered with a transport error and
+   no effect, and the contract is silent. Specify and implement that such
+   calls wait and execute one at a time in arrival order, as the Messages path
+   executes the several calls of one response. Keep the present rules: an
+   entry exists only with a completed reply, a reused request identifier is
+   refused, and a cancellation that reaches a call before its publication
+   leaves no effect and is answered `placement_stopped`, whether the call was
+   waiting or executing. State any bound on waiting calls in the contract.
+   The driver's cancellation case then expects the second pipelined call to
+   complete in order, and gains a waiting call whose cancellation must win.
+2. **Give the synthetic suite a Linux path.** Run the standalone runtime
+   driver inside the container suite against the gated Linux binaries of both
+   architectures, offline, with its witnesses exported like the release
+   driver's. `acceptance.sh` now builds the gated binary and checks its markers
+   but does not run this suite, so nothing yet qualifies runtime execution on
+   the supported platform. Extend the qualification record to read the result.
+   The principal schedules the container run.
+3. **Build the real-service check and propose its commission.** Two pieces of
+   apparatus are missing: a producer for a profile's installation and check
+   attestation, and a full-service check that drives the actual auditor tool
+   set through the real harness with independent witnesses. Current fixtures
+   supply synthetic attestations only, and the two-tool probe is not a
+   full-service check. Then write a concrete bounded commission: exact
+   synthetic materials, model, session allowance, stopping conditions,
+   executable and surface pins, the subscription route with paid extra usage
+   disabled, and the witnesses retained. Rehearse it offline against the
+   synthetic harness. Bring it to the principal; preparing it authorizes
+   nothing.
+4. **Run the real-service check under that commission.** Exercise the actual
+   tool surface, compaction and re-entry, accounting, interruption,
+   submission, delivery and close. Verify effective tools, instructions,
+   authentication and access before and after compaction, including host and
+   server-managed configuration; settings alone do not establish enforcement.
+   The commission names these as explicit observations, each currently unknown
+   for the real harness:
+   - what usage a submitting placement reports. The runtime stops the harness
+     after a confirmed submission; in synthetic runs that leaves the final
+     interval unknown on every sealed audit, while a turn that ends with a
+     result is reported;
+   - how the harness issues several tool calls of one model response;
+   - where a post-compaction notice is delivered, and whether startup can be
+     validated before the first question reaches the provider;
+   - whether the turn cap and per-response output request are enforced.
 
 Use firing controls, differing cases and invariance cases under
 [ACCEPTANCE](../../ACCEPTANCE.md#the-real-model-conformance-tier). Bind results to the
 actual CLI, effective configuration, model, authentication route and binaries.
 Model answer quality is not the gate. API results do not qualify the harness
 profile, and native results do not qualify Linux.
+
+## Desirable work
+
+None of this blocks the steps above. Do it when it fits.
+
+- Share driver cases for behavior common to both runtimes where independence
+  allows. The two drivers now cover custody, submission, delivery and close
+  separately, so a common behavior is specified once and checked twice by
+  different code.
+- Write the offline cases still missing: refusal of a second relay connection
+  in a live placement (the stop after relay loss now ends the attempt first), a
+  hook call after the placement has stopped admitting calls, and the
+  near-limit notice. `run`'s re-verification of a pinned surface has unit
+  coverage only, because one binary cannot hold an arrangement that pins
+  another surface.
+
+## Housekeeping
+
+- Register the two native probes in the qualification index. Their result and
+  state files carry no UTC run timestamp the indexer accepts. Resolve how to
+  register that known gap; do not manufacture a timestamp or rewrite their
+  receipts to fit. Until then their paths and retention purpose stay listed
+  below.
+- Once the principal has reviewed the evidence listed below, apply the
+  [retention rules](../../development/DEVELOPMENT.md#evidence-and-retention):
+  keep the current results and selected originals, and release the reproducible
+  working trees and superseded runs.
 
 ## Evidence through review
 
@@ -104,13 +149,6 @@ selected launch arrangement. Each run's frozen inputs own what executed;
 previous runs confer no new launch authority. Apply the normal
 [evidence retention rules](../../development/DEVELOPMENT.md#evidence-and-retention)
 after review rather than retaining reproducible working trees indefinitely.
-
-The two probes are not yet registered in the qualification index. Their
-results/state files have no UTC run timestamp accepted by the current indexer.
-Resolve how to register that known date gap before relying on the index to cover
-these selected evaluations; do not manufacture a run timestamp or rewrite their
-receipts to fit the index. Keep their original paths and retention purpose above
-explicit until that is resolved.
 
 Complete this plan when the selected integration has a reviewed qualification
 outcome and failures or unexercised work have explicit dispositions. Keep

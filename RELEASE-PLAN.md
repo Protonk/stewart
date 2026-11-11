@@ -9,9 +9,9 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current build work | Qualify the release's exclusion of the source-only adapter in the separately scheduled container run; native checks pass | [Source-only build plan](docs/claude-code/BUILD-FLAG-SETUP-PLAN.md) |
-| Current runtime work | Complete the source-only runtime's remaining failure controls, give its synthetic suite a Linux path and prepare a bounded commission for real service conformance; the implemented adapter passes native synthetic checks | [Source-only runtime plan](docs/claude-code/RUNTIME-CONFORMANCE-PLAN.md) |
-| Later, after the two above | Align the manager interface, using the development runtime for iteration and including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
+| Current build work | Qualify the release's exclusion of the source-only adapter in a container run; native checks pass. Schedule that run once the runtime suite below has its Linux path, so one run covers both | [Source-only build plan](docs/claude-code/BUILD-FLAG-SETUP-PLAN.md) |
+| Current runtime work | Take the plan's numbered steps in order. Its last step needs a bounded commission from the principal | [Source-only runtime plan](docs/claude-code/RUNTIME-CONFORMANCE-PLAN.md) |
+| Later, after the runtime's real-service check has a reviewed outcome | Align the manager interface, using the development runtime for iteration and including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
 | Unselected | Further auditor studies and question-family dogfooding | [Deferred studies](#deferred-studies) |
 

@@ -101,6 +101,6 @@ direct-route credential-classification claim.
 test binaries and present in the gated one; the three cargo configurations
 pass natively; the leaf documentation covers building and checking; and the
 selected login and launch arrangement has a concrete enforcement and check
-design, with any remaining live verification assigned to the runtime work.
+design, with any remaining live verification given an explicit disposition.
 The feature comment and crate guide retain the build guidance; delete this plan
 when the remaining checks and decisions are complete.
