@@ -13,7 +13,6 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 | Current runtime work | Complete the remaining failure controls and prepare a bounded commission for real service conformance; the implemented adapter passes native synthetic checks | [CLAUDE-CODE-PLAN.md](CLAUDE-CODE-PLAN.md) |
 | Later, after the two above | Align the manager interface, using the development runtime for iteration and including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
-| Deferred until the build setup, Claude Code and manager alignment plans finish | Rework the root README | [README-RESCUE-PLAN.md](development/README-RESCUE-PLAN.md) |
 | Unselected | Further auditor studies and question-family dogfooding | [Deferred studies](#deferred-studies) |
 
 Further API studies and completion of the API conformance gate are not
