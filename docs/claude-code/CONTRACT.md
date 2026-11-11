@@ -7,9 +7,10 @@ claim Linux qualification. The gated adapter is implemented and has passed
 native offline service checks using a synthetic harness. Those checks exercise
 the Rust core, custody, submission, continuation and process controls; they do
 not establish real-Claude service conformance. The
-[independent driver's coverage](../../apparatus/driver/CLAUDE-CODE.md) distinguishes
-exercised cases from the remaining relay, cancellation, usage-checkpoint and
-compaction comparisons; unit controls are separate evidence.
+[independent driver's coverage](../../apparatus/driver/CLAUDE-CODE.md) states
+which synthetic comparisons it exercises, including relay loss, cancellation,
+usage across placements and compaction, and which it does not; unit controls
+are separate evidence.
 
 The common [custody and audit contracts](../../CONTRACTS.md),
 [interface](../INTERFACE.md) and [question families](../QUESTION-FORMS.md) apply.

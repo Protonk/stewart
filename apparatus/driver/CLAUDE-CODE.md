@@ -109,19 +109,50 @@ permission control.
 Harness observations and attempted MCP calls are independently
 witnessed outside the archive. Missing final checkpoints must remain unknown.
 
-Relay stopping is observed as part of model exit and owner death; there is no
-separate relay-disconnect case with the model still running. The suite does not
-exercise end-to-end MCP cancellation, compaction, or usage checkpoints across
-more than one placement. Of the launch surface, the hook helper's replies and the effort
-arguments are named by the digest but not exercised: the synthetic harness
-calls no hook and no case selects an effort. `run`'s own re-verification of a
-pinned surface has no black-box firing control, because one binary cannot hold
-an arrangement that pins a different surface. The contract's [demonstrated scope](../../docs/claude-code/CONTRACT.md)
-distinguishes this synthetic runtime evidence from other checks and remaining
-qualification work.
+Five further runtime cases use the same synthetic executable:
+
+- **Hooks and effort.** The harness runs the configured hook command as it
+  would before a tool call. The helper must deny a pinned tool before startup
+  has passed, admit pinned tools afterwards and deny four unpinned names, with
+  the exact denial object of the launch surface. A question that selects an
+  effort must reach the launch as the surface's effort arguments.
+- **Cancellation.** A cancellation arriving after completion and one naming no
+  request change nothing. A reused request identifier is answered and has no
+  effect. A second call written together with the first, while the first is
+  still pending, has no effect either; that outcome does not isolate its
+  accompanying cancellation, since the service refuses a call behind a pending
+  one. Six further calls are each written together with their own cancellation.
+  Either side may win such a race, so the case requires only that an entry
+  exists exactly when its call received a completed reply, and reports as a
+  note how many cancellations won. A run in which none won has not exercised a
+  winning in-flight cancellation. The retained `mcp` stream equals the bytes
+  sent, and received replies are a prefix of the retained `mcp-out`.
+- **Relay loss.** The harness kills its relay and stays alive. Stewart must
+  stop the placement well before its deadline, keep the recorded entry, and
+  let a fresh session finish with nothing added. The harness also starts a
+  second relay in the dead placement; the stop usually ends that attempt
+  first, and a note says whether it finished.
+- **Usage series.** One session reports a checkpoint and dies during its
+  reminder turn; a second session reports a lower one and ends unsubmitted.
+  The report is the sum of each session's latest checkpoint, one interval stays
+  unknown, and the reminder is sent once for the audit.
+- **Compaction.** Each of two compaction boundaries is followed by the pinned
+  notice, re-entry still works, and the reminder remains available afterwards.
+  The retained `stdout` and `input` streams equal what the harness wrote and read.
+
+The self-test runs every synthetic scenario against a small specification-only
+peer first, so a sequencing fault in the harness shows before a binary is used.
+
+Not exercised: `run`'s own re-verification of a pinned surface, which has no
+black-box firing control because one binary cannot hold an arrangement that
+pins a different surface; a hook call after the placement has stopped admitting
+calls; and the near-limit notice. The contract's
+[demonstrated scope](../../docs/claude-code/CONTRACT.md) distinguishes this
+synthetic runtime evidence from other checks and remaining qualification work.
 
 `RESULT.json` reports per-case outcomes, check counts, explicit skipped cases,
-firing controls and timings. `commands/` retains exact argv, stdout and stderr;
+firing controls, timings and notes. A note records an observation that decides
+no outcome, such as which side won a race. `commands/` retains exact argv, stdout and stderr;
 `witness/` retains independent question, material, profile and tool inputs outside
 the archive. `driver-snapshot/` preserves the executable synthetic harness and
 its specification-derived helpers used by that run. Keep the work directory

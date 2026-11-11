@@ -482,12 +482,13 @@ Not demonstrated under the selected native launch arrangement:
 - actual-adapter capture and failure recovery with the real harness; native
   synthetic service checks exercise the writer, without establishing Claude's
   behavior or complete provider accounting;
-- relay-only disconnect while the model remains alive, and end-to-end MCP
-  cancellation in the service; owner/model-loss cases observe relay stopping,
-  while publication-gate unit controls and the prototype have separate scope;
-- valid usage checkpoints across service placements, and compaction with
-  re-entry, notices and the one-reminder policy; the independent synthetic
-  service suite does not yet cover these paths;
+- real-harness behavior for relay loss, MCP cancellation, usage checkpoints
+  across placements, and compaction with re-entry, its notice and the
+  one-reminder policy; the independent synthetic service suite exercises each
+  of these against the actual core, which says nothing about how the real
+  harness issues calls, reports usage or delivers a notice;
+- how the real harness issues several tool calls of one model response; the
+  runtime answers a call that arrives while another is pending with an error;
 - that the binary can be launched from an already-open descriptor, given that
   it reads its executable from disk while running;
 - `rmcp`'s transitive dependency count, its minimum Rust version against the

@@ -25,9 +25,10 @@ remain future work.
 
 ## Remaining work
 
-- Exercise the parts of the [launch surface](CONTRACT.md#launch-surface) that
-  the digest names but no driver case drives: the hook helper's allow and deny
-  replies and the effort arguments.
+- Decide how the runtime treats a tool call that arrives while another is
+  pending. It now answers the later call with a transport error and no effect;
+  the contract is silent. The Messages path executes several calls of one
+  response in order, and a real harness may issue calls together.
 - Settle what usage a submitting placement reports. The runtime stops the
   harness after a confirmed submission; in synthetic runs that leaves the
   final interval unknown on every sealed audit, while a turn that ends with a
@@ -36,13 +37,10 @@ remain future work.
 - Share driver cases for behavior common to both runtimes where independence
   allows; the two drivers currently cover custody, submission and close
   separately.
-- Extend the independent offline driver to isolate relay-only disconnect while
-  the model remains alive, MCP cancellation through the actual service, usage
-  checkpoints across more than one placement, and compaction with its notice.
-  Current cases exercise relay stopping with owner/model loss, usage with
-  missing terminal reports, and one placement's reminder and valid checkpoints.
-  Publication-gate and event-parser unit controls, and the protocol prototype,
-  are separate evidence.
+- Offline cases not yet written: refusal of a second relay connection in a
+  live placement (the stop after relay loss ends the attempt first), a hook
+  call after the placement has stopped admitting calls, and the near-limit
+  notice. `run`'s re-verification of a pinned surface has unit coverage only.
 - Provide a Linux execution path for the standalone synthetic runtime suite,
   with the exact gated binary and independent witnesses. `acceptance.sh` checks
   the gated build and markers but does not run this suite; its result cannot
@@ -68,15 +66,18 @@ profile, and native results do not qualify Linux.
 
 ## Evidence through review
 
-The current native validation is `.tmp/alignment/host.x1DmST`, with runtime
-witnesses at `/private/tmp/stewart-align-runtime.SbCg7Q/run`: 18 cases, 7,017
-checks and 58 controls passed, with no skips. It covers the single question
-version, the surface-bound check with two builds accepting one profile, close
-after delivery and an ordinary ending closed by the manager. All applicable
-[DEVELOPMENT checks](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
-passed. The source snapshot stayed unchanged throughout the run. Earlier
-validations are `.tmp/surface-binding/host.24wFiF` (first surface-bound form,
-witnesses at `/private/tmp/stewart-surface-runtime.QTlDKw/run`) and
+The current native validation of the service is `.tmp/alignment/host.x1DmST`,
+with runtime witnesses at `/private/tmp/stewart-align-runtime.SbCg7Q/run`: all
+applicable [DEVELOPMENT checks](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
+passed with no skips and the source snapshot stayed unchanged. The current run
+of the independent driver against those same binaries is
+`.tmp/driver-gaps/host.QdjlTD`, with witnesses at
+`/private/tmp/stewart-gaps-runtime.sDdJDu/run`: 23 cases, 9,690 checks and 68
+controls passed, with no skips. It adds the hook helper, a selected effort,
+cancellation, relay loss, usage across two placements and compaction; its notes
+record that cancellation won all six races, each answered `placement_stopped`.
+Earlier validations are `.tmp/surface-binding/host.24wFiF` (first surface-bound
+form, witnesses at `/private/tmp/stewart-surface-runtime.QTlDKw/run`) and
 `.tmp/document-harmonization/host.VxyhfJ` (writer-bound form, witnesses at
 `/private/tmp/stewart-doc-runtime.CGwaur/run`).
 
