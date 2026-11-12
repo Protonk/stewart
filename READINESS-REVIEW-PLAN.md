@@ -6,7 +6,8 @@ manager-interface plan. It looks for three kinds of trouble that could swamp
 that work once it begins and reports them to the principal, who decides what
 each one means for entry.
 
-**State: A is running; B and C have not been dispatched.** The orchestrator
+**State: A's batches have returned and its unreached-condition check is
+running; B and C have not been dispatched.** The orchestrator
 updates this line, the task boxes and the [run record](#run-record) in place
 and commits those updates.
 
@@ -220,7 +221,7 @@ to their INTERFACE sections.
   python3 -I -B apparatus/driver/claude_code.py --list
   ```
 
-- [ ] Write the workflow script and run it: review, then refute, eight agents
+- [x] Write the workflow script and run it: review, then refute, eight agents
   at a time. Record its run identifier and script path in the run record as
   soon as it is launched.
 - [ ] Merge unreached-condition candidates by clause and send each to its
@@ -416,7 +417,23 @@ refuter per finding on the session model. Its script is
 `readiness-a-test-review-wf_d19e9fa6-d66.js` under the launching session's
 `workflows/scripts/` directory in the harness's project folder for this
 checkout; the script holds the reviewer and refuter briefs. Reviewers return
-at most twelve unreached-condition candidates each. No batch has been re-run.
+at most twelve unreached-condition candidates each. All 32 batches returned and
+no batch was re-run: each `batch-NN.review.json` names every expected unit
+(786 of 786). The run raised 189 findings, each with a `<finding-id>.refute.json`:
+137 stand, 49 were refuted and 3 are unsettled on the driver side.
+`.tmp/readiness/a/merged.json` holds the tables, findings and verdicts;
+`.tmp/readiness/tools/merge_a.py` rebuilds it from the batch files.
+
+**A, unreached conditions.** The reviewers proposed 379 candidates citing 375
+different passages, so merging by quoted clause merged almost nothing. They
+are instead grouped by specification section into 58 sets of at most eight
+(`.tmp/readiness/a/unreached-GNN.candidates.json`, identifiers `U001` to
+`U379`, built by `.tmp/readiness/tools/group_unreached.py`), one refuter per
+set on the session model. Launched as workflow run `wf_e15d37fd-f69`, four
+agents at a time; script `readiness-a-unreached-conditions-wf_e15d37fd-f69.js`
+in the same directory as the first. Each refuter writes
+`unreached-GNN.result.json` with a verdict per candidate: `reached` (unit,
+file, line and tree named), `partly`, `unreached` or `not-specified`.
 
 B and C: nothing has run.
 
