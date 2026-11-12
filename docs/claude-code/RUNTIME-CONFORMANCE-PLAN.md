@@ -127,20 +127,37 @@ or phase results. Neither the exact blocked operation nor the cause of the
 original Linux initialization failure is established. Preserve both attempts
 through diagnosis; do not restart the old probe.
 
+The second comparison, `.scratch/relay-diagnostic-02`, completed with nine
+observations: metadata and both empty-EOF cases passed; all six nonempty-reply
+cases hit their nine-second worker deadline. Every case's socketpair reader
+control and exact request forwarding succeeded. The nonempty cases retained
+the reply write but stopped within stdout observation, without a read result.
+The segmented cases sent only their first reply fragment, and the half-close
+cases never reached shutdown. Neither is evidence about a complete segmented
+reply or nonempty EOF. Optimized and debug behaved alike, and removing `/proc`
+observation did not remove the failure. All worker groups and the diagnostic
+container were observed stopped; the export is intact.
+
 Next host command, from the repository root:
-`python3 -I -B .tmp/runtime-queue/check-linux-relay-v2.py`. It writes
-`.scratch/relay-diagnostic-02` and compares the retained arm64 optimized/debug
-relay binaries with whole, segmented, half-closed and empty socket traffic.
-Direct-reader controls distinguish observation from forwarding. The probe
-saves progress and bytes incrementally, reads no `/proc` files in its traffic
-worker and has a separate whole-case watchdog. The host wrapper gives the
-guest probe a 110-second timeout and its container client a 120-second
-deadline, exports partial evidence after a nonzero result, then stops and
-inspects only its own diagnostic container. Its main process is `sleep 240`;
-if the host controller is lost, inspect stopping and recover the retained
-container. Terminating a host client alone does not establish remote stopping. This
-comparison performs no build, authentication or model invocation. Inspect its
-evidence before changing the service or rerunning acceptance.
+`python3 -I -B .tmp/runtime-queue/check-linux-relay-v3.py`. It writes
+`.scratch/relay-diagnostic-03`. A positive pipe-reader control and checkpoints
+around descriptor inspection, `select` and `read` distinguish an observer
+failure from missing reply bytes. Each of three candidates receives an open
+reply, a reply immediately followed by half-close before any stdout observation,
+and empty EOF. The candidates are the retained optimized Stewart and two small
+standalone relays differing only in socket-to-stdout copying: standard-library
+copy versus explicit read/write/flush. This comparison tests a hypothesis;
+Stewart is unchanged.
+
+The wrapper checks the retained toolchain image digest and builds only those
+two standalone executables offline, with a 60-second guest build timeout. The
+probe has a separate whole-case watchdog, a 110-second guest timeout and a
+120-second host-client deadline. It saves progress and bytes incrementally,
+exports evidence even after a nonzero workload result, and stops and inspects
+its own containers. The containers and originals remain available for recovery.
+Terminating a host client alone does not establish remote stopping. There is
+no authentication or model invocation. Inspect the comparison before changing
+the service or rerunning acceptance.
 
 The queued-call and Linux suite changes passed host verification in
 `.tmp/runtime-queue/host.yTveQl/`, with runtime witnesses at
