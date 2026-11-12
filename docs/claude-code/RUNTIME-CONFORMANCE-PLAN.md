@@ -85,6 +85,52 @@ that provenance; they are not independent peer witnesses or complete provider
 transcripts. The [apparatus guide](../../apparatus/claude-code/README.md) owns the
 artifact interfaces as they are implemented.
 
+The [independent complete-package witness](../../apparatus/driver/CLAUDE-CODE-SERVICE-WITNESS.md)
+is implemented. It retains exact expected selection, rendering, artifact and
+manifest bytes outside the archive and checks the delivered directory before
+and after close. All 32 offline controls passed without failures or skips;
+203 self-test evidence members and twenty review manifests containing 174
+members were verified. Logs are
+`.tmp/service-witness/independent-self-test-final.log` and
+`independent-evidence-review-final.log`. A launch-free comparison against an
+exact copy of the prior Linux positive package and independent peer inputs passed
+all fifteen package checks; provenance and output are retained at
+`.tmp/service-witness/prior-linux-positive-control-02` and
+`prior-linux-positive-review-02.log`. This does not transfer Linux qualification.
+The first local comparison call omitted the required expected `actor` argument;
+its setup error and partial derived copy remain at
+`.tmp/service-witness/prior-linux-positive-review.log` and
+`prior-linux-positive-control`. No original receipt was changed.
+
+The native rehearsal at `/private/tmp/stewart-service-witness-01` passed both
+runtime cases and all 865 checks, with no failures or skips. Its zero control
+cases are reported as zero; the 32 separate self-test controls supply the firing
+corruption and stopping comparisons. All six commands in
+`.tmp/service-witness/host.mboAA5` passed with unchanged source, no timeouts and
+all outer groups observed absent. Review verified all 283 root evidence members,
+nine complete package snapshots containing 72 members, and eight retained group
+absence observations across four synthetic placements. Packages stayed exact
+through close and repeated close; continuation retained one entry without
+duplication. Original inputs and peer witnesses remain outside the archive.
+The review is `.tmp/service-witness/host-review.log`.
+
+The continuation case is a harness exit after recording, not an externally timed
+interruption. A real-harness controller, an external interruption comparison and
+the remaining observations above still need concrete procedures. Fixed synthetic
+account text is not an oracle for real model answers. Unknown stopping or an
+uncertain command result must prevent another start.
+
+The initial surface-only proposal is prepared offline at
+`.scratch/claude-code-surface-proposal-01`, with commission digest
+`da70d69fde47507f5ebff62d27359760c33fa4959ed8b4c4aa6478acbefa9151`.
+It proposes the earlier probe's `claude-haiku-5-5` model and the open-inquiry
+family: three authentication invocations of at most 30 seconds and three model
+sessions of at most 120 seconds, within 450 seconds overall. Availability has
+not been probed. No `START.json`, invocation reservation or observation exists.
+The preparation and review logs are under `.tmp/service-witness/`. This packet
+is a draft for later bounded approval; it does not commission a service run or
+grant authority to invoke Claude.
+
 The current native verification is `.tmp/surface-controller/host.gt15l7`.
 All fourteen commands passed with unchanged source snapshots, no timeouts and
 all outer command groups observed absent. Controller checks passed 13 tests
