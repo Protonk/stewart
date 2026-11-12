@@ -36,8 +36,10 @@ implementation.
    results in the qualification record. The first Linux run failed during
    initialization on both architectures. A controlled comparison isolated the
    reply-copy path. The fix and independent regression passed native host
-   verification; rerun the container suite on both architectures. Linux runtime
-   execution remains unqualified.
+   verification and the next Linux run. That run's remaining failures all
+   concern an extra locale variable in the Python witness. Compare the revised
+   observer's before/after snapshots on both architectures, then rerun the full
+   container suite. Linux runtime execution remains unqualified.
 2. **Build the real-service check and propose its commission.** Two pieces of
    apparatus are missing: a producer for a profile's installation and check
    attestation, and a full-service check that drives the actual auditor tool
@@ -100,8 +102,8 @@ None of this blocks the steps above. Do it when it fits.
 
 ## Evidence through review
 
-The failed Linux run `.scratch/acceptance-runtime-queue-01` is recorded in
-the [qualification index](../../apparatus/qualified.md). The release suites
+The earlier failed Linux run `.scratch/acceptance-runtime-queue-01` remains
+retained through diagnosis. The release suites
 passed all cases and required controls, and all build/static/marker comparisons
 passed. The runtime suites each passed 10 cases and failed 13, with no skips.
 Retain both driver containers and the exported runtime work archives through
@@ -168,12 +170,54 @@ skips, the `commission_over_network` bind failure and the direct-helper case's
 four bind failures before helper launch. Keep those originals and
 `/private/tmp/stewart-relay-forwarding-fix-01` through review of the Linux run.
 
+The subsequent Linux run `.scratch/acceptance-relay-fix-01`, at `2ec1c94`, is
+recorded as failed in the [qualification index](../../apparatus/qualified.md).
+Both architectures passed the direct relay regression's 64 checks. Each runtime
+suite passed 13 cases and failed 11: 9,724 checks passed and 42 failed, with no
+skips and all 73 controls fired. Every failed check reports the same extra
+`LC_CTYPE=C.UTF-8` in the Python environment witness. All 15 specified values
+match. Release suites, build/static/marker comparisons and both runtime
+self-tests passed. The release driver itself exited zero; the enclosing driver
+result is nonzero because of the runtime failures.
+
+The witness previously observed only `os.environ` after Python startup. Its
+replacement retains complete NUL-delimited bytes before Python, plus the later
+snapshot. Contract checks use the earlier snapshot; an injected `LC_CTYPE` is
+still refused. Its scope starts after shell startup, as described in the
+[driver guide](../../apparatus/driver/CLAUDE-CODE.md). Native self-tests passed
+205 checks with no failures or skips. Controls distinguished a normal launch,
+an injected locale variable, changed `LANG`, another extra variable and normal
+invariance. With `LANG=C`, the native interpreter added `LC_CTYPE=C.UTF-8` after
+the earlier witness; the specified `LANG=en_US.UTF-8` did not produce that change
+on the Mac. Whether interpreter startup accounts for the Linux failures still
+needs the paired Linux observation.
+
+That failed suite also exported eight relay sockets inside its witness trees.
+The indexer now records special entries as failures and binds their paths and
+types without opening them or changing originals. Its self-test passed 99
+controls and the index check passed. Future relay workspaces live outside
+`witness/`; the next comparison verifies the ordinary evidence export contains
+only regular files and directories, with copied bytes unchanged.
+
+Native selected cases in `/private/tmp/stewart-environment-observer-native-01`
+remain failed because the agent sandbox denies Unix socket binding: 144 of 153
+checks passed, nine failed, one of five controls fired, with no skips. A local
+wrapper check in `.scratch/environment-observer-01` reproduced those failures;
+its native witness is `/private/tmp/stewart-env-cbr34u6i/results`. A missing
+argument guard also allowed that check to attempt `container system status`,
+which the sandbox denied; no container was launched. The wrapper now parses
+arguments before work and stops on native failure. Preserve both attempts.
+
 Next host command, from the repository root:
-`sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-relay-fix-01"`. It builds
-the committed source and runs the release and synthetic runtime suites on
-arm64 and amd64. After the run, inspect failures and controls, extract its
-qualification record and check the index. No real harness or model invocation
-is authorized by this suite. Retain the original failed runs and comparison
+`python3 -I -B .tmp/environment-observer/check-host.py`. It freezes the revised
+driver, reuses the nine retained binaries after checking their original receipt
+digests, and runs self-tests plus the submit/invariance and direct relay cases
+on the native host and both Linux architectures. It retains new observations
+under `.scratch/environment-observer-02`, including independent raw environment
+witnesses, before/after differences and container stopping observations. This
+selected comparison does not qualify the full suite. Inspect it before landing
+the driver changes and scheduling another full acceptance run. No real harness
+or model invocation is authorized. Retain the failed runs and comparison
 witnesses through review of the fix.
 
 The queued-call and Linux suite changes passed host verification in

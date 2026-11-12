@@ -20,9 +20,9 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-runtime-queue-01](#acceptance-runtime-queue-01) | 2026-11-11T22:16:08Z | `ab17bec` | failed | latest |
+| acceptance | linux-aarch64 | [acceptance-relay-fix-01](#acceptance-relay-fix-01) | 2026-11-12T02:26:17Z | `2ec1c94` | failed | latest |
 | acceptance | linux-aarch64 | [acceptance-guidance-01](#acceptance-guidance-01) | 2026-11-10T05:44:56Z | `b99c9c0` | qualified | latest qualified |
-| acceptance | linux-x86_64 | [acceptance-runtime-queue-01](#acceptance-runtime-queue-01) | 2026-11-11T22:16:08Z | `ab17bec` | failed | latest |
+| acceptance | linux-x86_64 | [acceptance-relay-fix-01](#acceptance-relay-fix-01) | 2026-11-12T02:26:17Z | `2ec1c94` | failed | latest |
 | acceptance | linux-x86_64 | [acceptance-guidance-01](#acceptance-guidance-01) | 2026-11-10T05:44:56Z | `b99c9c0` | qualified | latest qualified |
 | toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
 | toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
@@ -61,22 +61,22 @@ not carry them.
 | Test binary SHA-256 | `329d7cdddb9c86e6b5421c6f9b90307fb8ef84063cbf4fd8a272a1b20fa3a676` | `d45bc95b7139cf4aac94a73c9c582df10f930da93ee0b8a4e833a00e7d515f86` |
 | RESULT.json SHA-256 | `aea716c3488edb9868fdc1828e228882e0d4b1f275de4d71ea4c16c27a31ab37` | `0a146890b8dc10859fc84344645b0b6a9c9a5af2d23733e6baec5bcff61267cd` |
 
-### acceptance-runtime-queue-01
+### acceptance-relay-fix-01
 
 - Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `9b5bf068812f0c1e1963d7e1a09dc56b7bf0727e093ec4c805187d3f0888d0e1` at the source commit)
-- Source commit: `ab17becf1fc01d2194dd7e6bf91114b1f80b6346`; archive SHA-256 `057eabd28faa5c5394c304a46e44361e9255eaad99e422b013d49e64bcf65dc1`
-- Finished: 2026-11-11T22:16:08Z
+- Source commit: `2ec1c944cd4e9dc12963ec9486f47abfca2b84cd`; archive SHA-256 `baf4fd9a899faa06868a368cf9eb8cd18e405150b0a262adee60606338c43ced`
+- Finished: 2026-11-12T02:26:17Z
 - Outcome: **failed**
-- Run-level failures: host/DONE reports failures=6; host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-runtime-queue-01/driver-arm64/); host/driver.log: FAILED: arm64: synthetic runtime driver (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-runtime-queue-01/driver-arm64/runtime-driver.exit); host/driver.log: FAILED: arm64: synthetic runtime has no skipped or unselected cases (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-runtime-queue-01/driver-arm64/runtime-complete.exit); host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-runtime-queue-01/driver-amd64/); host/driver.log: FAILED: amd64: synthetic runtime driver (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-runtime-queue-01/driver-amd64/runtime-driver.exit); host/driver.log: FAILED: amd64: synthetic runtime has no skipped or unselected cases (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-runtime-queue-01/driver-amd64/runtime-complete.exit)
+- Run-level failures: host/DONE reports failures=6; host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-relay-fix-01/driver-arm64/); host/driver.log: FAILED: arm64: synthetic runtime driver (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-relay-fix-01/driver-arm64/runtime-driver.exit); host/driver.log: FAILED: arm64: synthetic runtime has no skipped or unselected cases (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-relay-fix-01/driver-arm64/runtime-complete.exit); host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-relay-fix-01/driver-amd64/); host/driver.log: FAILED: amd64: synthetic runtime driver (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-relay-fix-01/driver-amd64/runtime-driver.exit); host/driver.log: FAILED: amd64: synthetic runtime has no skipped or unselected cases (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-relay-fix-01/driver-amd64/runtime-complete.exit)
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-runtime-queue-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/acceptance-relay-fix-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
 | Execution | native | emulated (Rosetta) |
 | Outcome | **failed** | **failed** |
-| Failures | host/driver-arm64.exit is 1; driver-arm64/driver-final.exit is 1; driver-arm64/runtime-driver.exit is 1, expected 0 (arm64: synthetic runtime driver); driver-arm64/runtime-complete.exit is 1, expected 0 (arm64: synthetic runtime has no skipped or unselected cases); runtime: cases/checks/controls are missing, failed, skipped or unfired | host/driver-amd64.exit is 1; driver-amd64/driver-final.exit is 1; driver-amd64/runtime-driver.exit is 1, expected 0 (amd64: synthetic runtime driver); driver-amd64/runtime-complete.exit is 1, expected 0 (amd64: synthetic runtime has no skipped or unselected cases); runtime: cases/checks/controls are missing, failed, skipped or unfired |
+| Failures | host/driver-arm64.exit is 1; driver-arm64/driver-final.exit is 1; driver-arm64/runtime-driver.exit is 1, expected 0 (arm64: synthetic runtime driver); driver-arm64/runtime-complete.exit is 1, expected 0 (arm64: synthetic runtime has no skipped or unselected cases); runtime: cases/checks/controls are missing, failed, skipped or unfired; runtime: exported evidence contains an unsupported entry: driver-arm64/runtime-evidence/witness/relay-forwarding/empty-eof/workspace/m: neither a regular file nor a folder; runtime: exported evidence contains an unsupported entry: driver-arm64/runtime-evidence/witness/relay-forwarding/immediate-half-close/workspace/m: neither a regular file nor a folder; runtime: exported evidence contains an unsupported entry: driver-arm64/runtime-evidence/witness/relay-forwarding/segmented-open/workspace/m: neither a regular file nor a folder; runtime: exported evidence contains an unsupported entry: driver-arm64/runtime-evidence/witness/relay-forwarding/whole-open/workspace/m: neither a regular file nor a folder | host/driver-amd64.exit is 1; driver-amd64/driver-final.exit is 1; driver-amd64/runtime-driver.exit is 1, expected 0 (amd64: synthetic runtime driver); driver-amd64/runtime-complete.exit is 1, expected 0 (amd64: synthetic runtime has no skipped or unselected cases); runtime: cases/checks/controls are missing, failed, skipped or unfired; runtime: exported evidence contains an unsupported entry: driver-amd64/runtime-evidence/witness/relay-forwarding/empty-eof/workspace/m: neither a regular file nor a folder; runtime: exported evidence contains an unsupported entry: driver-amd64/runtime-evidence/witness/relay-forwarding/immediate-half-close/workspace/m: neither a regular file nor a folder; runtime: exported evidence contains an unsupported entry: driver-amd64/runtime-evidence/witness/relay-forwarding/segmented-open/workspace/m: neither a regular file nor a folder; runtime: exported evidence contains an unsupported entry: driver-amd64/runtime-evidence/witness/relay-forwarding/whole-open/workspace/m: neither a regular file nor a folder |
 | Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
 | Script checks (exit records) | 38/40, controls 11/11 | 38/40, controls 11/11 |
@@ -87,20 +87,20 @@ not carry them.
 | Checks | passed 178483, failed outside controls 0, failed inside controls 1209 | passed 178483, failed outside controls 0, failed inside controls 1209 |
 | Sabotage control variants fired (INTERFACE C.2) | 79/79 | 79/79 |
 | Driver controls fired | 21/21 | 21/21 |
-| Timing gate | on, passed: commands worst 1.917 ms (threshold 100.0 ms); protocol worst 148.556 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 43.792 ms (threshold 100.0 ms); protocol worst 206.916 ms (threshold 200.0 ms) |
+| Timing gate | on, passed: commands worst 1.979 ms (threshold 100.0 ms); protocol worst 144.034 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 42.473 ms (threshold 100.0 ms); protocol worst 246.106 ms (threshold 200.0 ms) |
 | End to end (`e2e.reacting-audit`) | pass, 872/872 checks | pass, 872/872 checks |
 | Release binary SHA-256 | `3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023` | `9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973` |
 | Test binary SHA-256 | `712a1adfcf55e29e093e60bf7aa8b1bde81f1a2dfed5bc247af73038f1c2d47b` | `5a71b421bd56bc3f4e91ade3abeb5fff7709372d4c5a1ee2d66e5ea94e9dfae3` |
-| RESULT.json SHA-256 | `5f7640a92d374875b7a54e739c16e8faaa0433196d5ca1cfd08c878d7b9b779d` | `6891084f3d86138d185ecf7ad0583e559699d6d03dd156d4231c954b1434c4e3` |
-| Synthetic runtime cases | cases 23, passed 10, failed 13, skipped 0 | cases 23, passed 10, failed 13, skipped 0 |
-| Synthetic runtime checks | checks 6341, checks passed 6328, checks failed 13 | checks 6341, checks passed 6328, checks failed 13 |
-| Synthetic runtime controls | 49/49 | 49/49 |
-| Synthetic runtime self-test | passed 158, failed 0, skipped 0 | passed 158, failed 0, skipped 0 |
-| Development binary SHA-256 | `51fcdfcb41b1cc412491e5425c9712aa60a57cf94310f43a93efaef1442a9d7b` | `98b39b8b0e7e8a543caaadf6b694b14421e7403bebef727aa793df3183cae984` |
-| Second development binary SHA-256 | `1bd28f5d44bbf9b8f64118d66bbdcc143fb038eb815493b3d98a320eaf5313e0` | `d659584770c3fcb4d5e430ef457e35f2bca5f53d4a6cdb4334241e3caf496e63` |
-| Synthetic runtime RESULT.json SHA-256 | `58107eae162cbb68674a3571c7375706049b99473be009b376799d8bb96d7279` | `9768c2ceaf090d9ae693f65c3f05996c4564ce8b932393075c0735e28ad4a709` |
-| Synthetic runtime evidence listing SHA-256 | `71f6bcaa3f7fab313746194b8004d74cbe62de4689d0679f40e9041e3e02cbfe` | `397e6158210a82eb7a25f446520d012b30551c4a612ae9eac7353480a6e99eb4` |
-| Synthetic runtime work archive SHA-256 | `3415e727de360db21c1acdfeea2a11030fec8b56136b1f2dabc2a101c521e42e` | `16bb9cc9bbbb9f2cb3bdfbfab140df10083f0a71982d527b419c156e2150a165` |
+| RESULT.json SHA-256 | `c5e21c831abc6ccb449e98dc39b33a6355e93e867bba7391113bca0ff975c6e1` | `4b867cfb993a783c4dfce9e49196faab8e426c4f7535bb167892e72b4f533db1` |
+| Synthetic runtime cases | cases 24, passed 13, failed 11, skipped 0 | cases 24, passed 13, failed 11, skipped 0 |
+| Synthetic runtime checks | checks 9766, checks passed 9724, checks failed 42 | checks 9766, checks passed 9724, checks failed 42 |
+| Synthetic runtime controls | 73/73 | 73/73 |
+| Synthetic runtime self-test | passed 176, failed 0, skipped 0 | passed 176, failed 0, skipped 0 |
+| Development binary SHA-256 | `f6b6cb9cdebfd3aaedc040b7ac7d1a5444554dbbda2d414b307b660c641ed761` | `2b83a5b8c0fbe5f4989de981c8bd7db8b351eed8faea87a38c0398bf1a4e7d52` |
+| Second development binary SHA-256 | `a63a25f92ad6e549ee1ab06998d372ce8204bcaf68f5f45bc40cc47d2f58f1f2` | `b0bbfc4bd7d4ae37e9f2530099964eaaf7f559dfca3978cc34b07fa2bf8c9509` |
+| Synthetic runtime RESULT.json SHA-256 | `cd477603bd28e3f595f230192d00c3a72b70df815547d2cb57660c2b1d4095a2` | `1e2ec352a9cd6fc3c89a25bc760f63a7879275bea585e724fc6c968ebabe66c9` |
+| Synthetic runtime evidence listing SHA-256 | `f4460c5dcbca79bcf232a2d790e2e2c9bb9cff170bca6df27bd9cbe37ef79249` | `a18de4d424f6007500a16d02eb8e1d0706a1e743875f496c63b9e2832a0e345f` |
+| Synthetic runtime work archive SHA-256 | `414ae6976ed4407d75e398a167000da4daab546b08c09866cfed14cb17afdcb6` | `fdacd2c0c40a200970e5f89373483ab250860359adb05a65db152c8c913d9cf5` |
 
 ### apparatus-02
 

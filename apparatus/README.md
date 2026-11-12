@@ -376,6 +376,13 @@ Evidence folders under `.scratch/` follow "Evidence and retention" in
 [DEVELOPMENT.md](../development/DEVELOPMENT.md#evidence-and-retention). After a run of
 `acceptance.sh` or `step2.sh`, `qualified.py extract` reads it into the
 qualification record (`--suite acceptance` or `--suite toolchain`); commit
-`qualified.json` and `qualified.md` together. `qualified.py candidates` lists
+`qualified.json` and `qualified.md` together. A special entry such as a socket
+in an exported runtime evidence tree is recorded as a qualification failure.
+The tree digest binds its path and file type with a marker; it never opens the
+entry or counts it as a regular evidence file. This permits a failed run to be
+recorded without changing its originals. Links and unreadable required fields
+still prevent extraction.
+
+`qualified.py candidates` lists
 the folders that nothing keeps, under the rules in DEVELOPMENT.md, as removal
 candidates; removal is by hand, and only after a run that exits 0.

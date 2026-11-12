@@ -23,7 +23,10 @@ summary. An experiment's result is one file, or a folder ("." for the whole
 experiment folder) digested as a sorted listing of every regular file under
 it: the digest covers each file's path, size and contents, not mode bits or
 empty folders, and skips files named .DS_Store, which Finder writes into a
-folder a person opens. If a field cannot be read, extract fails and names it.
+folder a person opens. Runtime evidence trees also bind the path and file type
+of special entries, recording each as a qualification failure; they never read
+those entries or treat them as captured bytes. Other unreadable fields make
+extract fail with their names.
 Check, render and the other commands fail with a reason, never a traceback,
 on a record that is malformed or nested too deeply. A run's outcome is
 decided mechanically: "qualified" only when its completion record reports no
@@ -416,14 +419,17 @@ class Evidence:
             return None
         return h.hexdigest(), size
 
-    def tree(self, rel):
+    def tree(self, rel, rejected_entries=None):
         """(files, digest) for the folder REL, or None. The digest is the SHA-256 of a listing with one line
         "<SHA-256> <size> <path>\\n" per regular file under REL (path relative to REL, "/"-separated, UTF-8),
         sorted by path bytes. It therefore covers each file's path, size and contents, and not mode bits,
         timestamps or empty folders. A regular file named .DS_Store (FINDER_FILE), which Finder writes into a
         folder a person opens, is skipped and not counted. A link, or anything that is neither a regular file nor
-        a folder, is refused. Every folder and file is opened through its parent's descriptor without following a
-        link, so a link planted while the walk runs cannot redirect it."""
+        a folder, is refused. When REJECTED_ENTRIES is supplied for a runtime evidence tree, special entries
+        instead contribute a "special-<file type in octal> 0 <path>\\n" marker and a qualification failure.
+        They do not count as regular files and are never opened. Links and unreadable entries are still refused.
+        Every folder and file is opened through its parent's descriptor without following a link, so a link
+        planted while the walk runs cannot redirect it."""
         top = self._open_folder(rel)
         if top is None:
             return None
@@ -468,7 +474,13 @@ class Evidence:
                         if got is not None:
                             rows.append((name.encode("utf-8", "surrogateescape"), got[0], got[1]))
                 else:
-                    self.problem("%s: neither a regular file nor a folder" % shown)
+                    problem = "%s: neither a regular file nor a folder" % shown
+                    if rejected_entries is None:
+                        self.problem(problem)
+                    else:
+                        rejected_entries.append(problem)
+                        rows.append((name.encode("utf-8", "surrogateescape"),
+                                     "special-%o" % stat.S_IFMT(est.st_mode), 0))
 
         try:
             walk(top, "")
@@ -478,7 +490,7 @@ class Evidence:
             return None
         listing = b"".join(b"%s %d %s\n" % (digest.encode("ascii"), size, name)
                            for name, digest, size in sorted(rows))
-        return len(rows), sha256(listing)
+        return sum(HEX64.fullmatch(digest) is not None for _name, digest, _size in rows), sha256(listing)
 
     def result(self, rel):
         """An experiment's result record: {path, sha256} for a file, {path, files, sha256} for a folder."""
@@ -795,11 +807,14 @@ def runtime_acceptance(ctx, ev, head, p, bins, fails):
         self_test = {"passed": passed, "failed": failed, "skipped": skipped}
         if not passed or failed or skipped:
             fails.append("runtime self-test: %d passed, %d failed, %d skipped" % (passed, failed, skipped))
+    rejected_entries = []
     for name in ("commands", "witness"):
-        members = ev.tree(folder + "/" + name)
+        members = ev.tree(folder + "/" + name, rejected_entries)
         if members is not None and not members[0]:
             fails.append("runtime: exported %s contains no evidence" % name)
-    evidence = ev.tree(folder)
+    evidence = ev.tree(folder, rejected_entries)
+    for problem in dict.fromkeys(rejected_entries):
+        fails.append("runtime: exported evidence contains an unsupported entry: " + problem)
     work_sha256 = ev.streamed_digest("driver-%s/runtime-work.tar" % p)
     exported_sha256 = ev.first_token("driver-%s/runtime-retention-sha256.stdout" % p)
     if work_sha256 is not None and work_sha256 != exported_sha256:
@@ -2552,6 +2567,22 @@ def _runtime_self_test(base, isolated, record_control):
     mutate("skipped self-test fails", "driver-arm64/runtime-selftest.stdout",
            lambda raw: "Self-test: 2 passed, 0 failed, 1 skipped\n")
     mutate("empty independent witness fails", "driver-arm64/runtime-evidence/witness/traffic", lambda raw: None)
+    special = "driver-arm64/runtime-evidence/witness/leftover-pipe"
+    os.mkfifo(os.path.join(folder, special))
+    try:
+        changed = extract_suite(ctx, "runtime", "acceptance")
+        pl = changed["platforms"]["linux-aarch64"]
+        control("runtime: special witness entry records a failed run without reading it",
+                changed["outcome"] == "failed" and pl["outcome"] == "failed"
+                and any(special in problem for problem in pl["failures"])
+                and pl["runtime"]["evidence"]["files"] == baseline["platforms"]["linux-aarch64"]["runtime"]["evidence"]["files"]
+                and pl["runtime"]["evidence"]["listing_sha256"] != baseline["platforms"]["linux-aarch64"]["runtime"]["evidence"]["listing_sha256"]
+                and not record_problems({"schema": SCHEMA, "entries": [changed]}))
+        strict = Evidence(ctx, "runtime")
+        control("runtime: ordinary result trees still refuse special entries",
+                strict.tree("driver-arm64/runtime-evidence/witness") is None and bool(strict.problems))
+    finally:
+        os.unlink(os.path.join(folder, special))
     control("runtime: restoring every mutation preserves the baseline",
             extract_suite(ctx, "runtime", "acceptance") == baseline)
 
