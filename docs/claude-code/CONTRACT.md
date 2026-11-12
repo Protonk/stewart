@@ -156,8 +156,10 @@ exact synthetic prompt and result with it. Do not hash or copy the credential
 store. The two-tool feasibility receipt does not validate the full service tool
 set. Profile validation, installation verification and assembly from separately
 reviewed evidence are implemented in the [profile apparatus](../../apparatus/claude-code/README.md).
-The independent fixture exercises actual helpers offline; a commissioned
-real-harness observer and subsequent service comparison are still needed.
+The independent fixture exercises actual helpers offline. A bounded invocation
+library and independent observer exist with offline controls; their live
+controller, reviewed real-harness check and subsequent service comparison are
+still needed.
 Synthetic driver attestations exercise validation and are not real-harness
 commissioning evidence.
 

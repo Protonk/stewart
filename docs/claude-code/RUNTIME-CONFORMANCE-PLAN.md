@@ -31,10 +31,10 @@ written by one author, and its driver cases by another who has not read the
 implementation.
 
 1. **Build the real-service check and propose its commission.** Two pieces of
-   apparatus remain: a bounded real-harness observer and review workflow, and
+   apparatus remain: a real-harness controller and review workflow, and
    a full-service comparison with independent witnesses. The installation and
-   profile producer and independent offline helper fixture are implemented and
-   verified natively. No reviewed real-harness attestation exists, and the
+   profile producer, invocation library and independent offline helper fixture
+   and observer are implemented and verified natively. No reviewed real-harness attestation exists, and the
    two-tool probe is not a full-service check. Write a concrete bounded commission: exact
    synthetic materials, model, session allowance, stopping conditions,
    executable and surface pins, the subscription route with paid extra usage
@@ -74,13 +74,63 @@ first fixture deliverable is offline only: it exercises actual helpers and
 retains raw witnesses but leaves authentication/startup observations unexercised.
 Its synthetic rehearsal cannot produce an eligible profile attestation.
 
-Remaining implementation before proposing a live commission: add and verify the
-bounded real-harness runner, review workflow and actual-service comparison. The latter's independent
+Remaining implementation before proposing a live commission: integrate the
+bounded invocation library and independent observer into a live controller,
+complete the review workflow and add the actual-service comparison. The latter's independent
 witnesses include original synthetic inputs, manager commands/readback, external
 delivery inventories and process observations. Service-owned raw captures retain
 that provenance; they are not independent peer witnesses or complete provider
 transcripts. The [apparatus guide](../../apparatus/claude-code/README.md) owns the
 artifact interfaces as they are implemented.
+
+The combined host verification at `.tmp/bounded-observer/host.CD7Wrh` passed all
+twelve commands, with unchanged source snapshots, no timeouts and all outer
+command groups observed absent. Pin checks passed 3 tests, profile checks 16,
+invocation checks 22, probe checks 24, protocol checks 14 Python tests and 9 Rust
+tests, the surface fixture self-test 51 checks and the observer self-test 37
+checks, with no failures or skips. The listener rehearsal at
+`.scratch/claude-code-observer-rehearsal-01` passed all five controls. Review
+verified all 209 evidence members, exact source/input bindings, three distinct
+sessions/workspaces and both firing negative controls without effects.
+Authentication and process results in the listener rehearsal are explicitly
+synthetic; the separate invocation controls exercised actual Python process
+stopping. The producer refused the synthetic observation, and no `CHECK.json`
+or eligible profile was emitted. Reviews are retained at
+`.tmp/bounded-observer/host-02-review.log` and
+`.tmp/bounded-observer/listener-review-final.log`.
+
+The earlier listener rehearsal at
+`/private/tmp/stewart-observer-listeners-native-01` failed all five controls at
+socket binding with `EPERM`, before any peer connection. No subprocess or Claude
+was launched by that rehearsal. Preserve it and
+`.tmp/runtime-queue/observer-listeners-native-01.log` through host review.
+
+The first combined host check at `.tmp/bounded-observer/host.Qt0uwr` completed
+ten commands: nine passed and the bounded tests errored. Those tests ran 21
+cases: twenty passed, and owner-loss observation raised `PermissionError`
+(`EPERM`) from `killpg(group, 0)`; its cleanup then raised the same error from
+`killpg(group, SIGKILL)`. The remaining apparatus checks passed with no skips,
+source snapshots matched and all outer command groups were observed absent.
+The listener rehearsal and its evidence review were not run. Later read-only
+inspection observed the recorded group absent; no historical group was signalled.
+The supplementary `ps` inspection was denied by the agent sandbox. Original
+outputs remain unchanged, with review at `.tmp/bounded-observer/host-01-review.log`.
+
+The owner-loss test now retains bounded status probes, keeps `EPERM` unknown,
+requires explicit absence to pass and records cleanup failures without masking
+the primary result. It sends no cleanup signal after observed absence. A fresh
+run reproduced one `EPERM` followed by absence about 24 milliseconds later.
+The transition, persistent-denial, present and absence/invariance controls pass;
+persistent denial cannot count as stopping. All 22 bounded tests passed with no
+skips in `.tmp/bounded-observer/bounded-tests-owner-loss-fix.log`; exact group
+observations and controls were reviewed in
+`.tmp/bounded-observer/owner-loss-fix-review.log`. The invocation library and
+independent observer are unchanged by this test correction. The reason for the
+operating system's transient denial remains unestablished.
+
+This completes native verification of the invocation library and independent
+observer. There is no integrated live controller, eligible check or new spending
+authority yet. Preserve the failed originals through review of this comparison.
 
 The host verification at `.tmp/profile-bootstrap/host.Wxzodq` passed all eleven
 commands with unchanged source snapshots and all owned process groups observed

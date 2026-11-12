@@ -82,6 +82,58 @@ the allowlisted `loggedIn`, `authMethod` and `configDirectory`. A review is an
 attributed assessment, not a cryptographic identity or an exhaustive record of
 provider activity, hidden instructions or managed policy.
 
+## Bounded invocation library
+
+`bounded.py` supplies launch controls for a future commissioned observer. It has
+no live command-line entry or ready live commission. The
+[independent observer](../driver/CLAUDE-CODE-OBSERVER.md) owns stream validation,
+fixture sockets and comparison assessments; integration into a live controller
+remains necessary. `prepare(root, budget)`
+freezes `BUDGET.json` without executing anything. The
+`stewart.claude-code.invocation-budget/1` record names a purpose, mode, overall
+deadline allowance, file bindings and an ordered list of invocations. Each
+invocation fixes its id, auth/model role, argument vector, complete environment,
+working directory, base64 input bytes and timeout. Every executable must be a
+bound regular file. A model slot requires its own immediately preceding auth
+slot; a live pair must use the same executable, environment and directory.
+These are apparatus controls, not a replacement for validating the full runtime
+surface and the principal's commission.
+
+`Budget(root, approved_digest, extra_usage_disabled)` locks the batch and refuses
+a live budget without its exact approved digest and the assertion that paid extra
+usage is disabled. It persists `START.json` before any reservation. The digest
+argument records authority conveyed by the caller; it does not authenticate the
+principal or infer permission. A rehearsal accepts no live approval. No started
+batch can be reopened, even after a failure or lost reply. Unstarted allowances
+are recorded at closure and cannot be reused.
+
+`execute(id, on_stdout, on_stderr, check_stop)` rechecks all bound files and
+the frozen budget before reserving the next slot. A separate guard establishes
+its own session, waits for the owner to persist `group.json`, and only then may
+fork and execute the requested process. Owner EOF or the shared kernel-clock
+deadline stops the whole owned group with TERM followed by KILL after 0.3 seconds.
+Normal worker exit also stops remaining descendants. The worker's exit and
+observed group absence are separate results. This controls cooperative process
+groups; it does not confine escaped descendants or guarantee progress during
+host/kernel failure. Unknown stopping or any failed invocation blocks another
+start. `halt(reason)` also closes the batch after an independent assessment fails.
+
+Model stdout/stderr are retained before callbacks run. The periodic `check_stop`
+callback lets a fixture failure stop an otherwise silent process. Results bind
+retained stream bytes and the written input prefix and identify actual stream
+EOF. The controller must pass those EOF observations to its independent observer,
+review its final assessment, and halt on failure before another slot. Bytes
+drained during stopping remain captured but are not parsed into a successful
+observation. Authentication receives no callbacks: stdout/stderr stay in bounded
+private buffers, raw output is discarded, and only the typed `loggedIn`,
+`authMethod` and `configDirectory` fields are retained. A successful route is
+exactly `true`, `claude.ai` and the bound configuration directory.
+
+The apparatus permits at most 32 slots, six hours per batch, 1 MiB of input per
+slot, 64 KiB of combined auth output and 32 MiB of model capture. Its intended
+comparisons are short synthetic tasks. These bounds do not qualify Stewart's
+product limits or authorize a usage-limit study.
+
 ## Closed native probes
 
 `pin.py` fetches the public release key, manifest and signature, checks the
@@ -117,6 +169,7 @@ Run these offline checks from the repository root:
 ```sh
 python3 -I -B apparatus/claude-code/test_pin.py
 python3 -I -B apparatus/claude-code/test_profile.py
+python3 -I -B apparatus/claude-code/test_bounded.py
 python3 -I -B apparatus/claude-code/test_probe.py
 python3 -I -B apparatus/claude-code/test_protocol.py
 ```
@@ -137,6 +190,17 @@ review/input bindings, changed/missing/unlisted witnesses, symlink/special-file
 refusals, changed executables, failed installation verification, rehearsal
 refusal and normal invariance. A canary executable witnesses that the producer
 never starts the harness; credential-canary reads are separately refused.
+
+The bounded-launch controls execute only Python peers. They retain their run
+directory and cover approval/refusal without execution, reservation and group
+record failures, exact capture before observer callbacks, authentication canary
+discard, changed bindings, one-use slots, failed independent assessments, silent
+fixture failure, worker/descendant stopping, owner loss and an observer that
+stalls beyond the process deadline. The owner-loss control retains its bounded
+group-status observations: permission denial remains unknown, and only an
+explicit absence observation passes. Cleanup failures are recorded separately
+and no cleanup signal is sent after observed absence. These controls establish
+no real-harness observation.
 
 `test_protocol.py` compiles an offline Rust transport prototype with the native
 toolchain and existing locked, vendored dependencies. Cargo runs offline; its
