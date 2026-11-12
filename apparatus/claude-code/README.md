@@ -1,9 +1,88 @@
-# Native Claude launch probe apparatus
+# Claude installation and check apparatus
 
-This is a synthetic native experiment, separate from Stewart's service and
-acceptance driver. It runs a two-tool MCP fixture and a command hook through
-one pinned Claude executable. It does not implement an auditor adapter or
-qualify Linux behavior. Python uses only its standard library.
+This apparatus prepares installation evidence and reviewed runtime profiles,
+and retains the earlier two-tool native experiments. Profile preparation and
+assembly launch no Claude process. The closed probes and their offline controls
+remain separate from Stewart's service and independent acceptance driver.
+Python uses only its standard library.
+
+## Preparing a profile
+
+`profile.py prepare` verifies the retained public manifest/signature again with
+an isolated GPG keyring, checks the selected native executable's digest and
+Apple code signature, and writes exact `launch.json` and `installation.json`
+values. `PREPARATION.json` records the verification time, their bindings and an
+inventory of every retained public verification input and command result. The
+producer checks the named login directory's existence without reading its
+contents. It does not execute Claude, query authentication or issue a check
+attestation. It currently uses the selected native pin supported by `pin.py`.
+
+```sh
+python3 -I -B apparatus/claude-code/profile.py prepare \
+  --pin-receipt /absolute/retained-pin/pin.json --output /absolute/new-installation \
+  --config-directory /absolute/dedicated-login --home /absolute/home \
+  --temporary-directory /absolute/temporary
+```
+
+An initial supplied-surface check uses the actual Stewart helpers with an
+independent fixture's sockets and complete selected-family tool inventory.
+Its observations concern the supplied surface and fixture effects, not the
+audit core. A separately reviewed, real-harness result can supply the profile
+attestation needed for a subsequent service comparison. Synthetic rehearsals
+cannot. No live runner or live commission is supplied by the profile producer.
+
+```sh
+python3 -I -B apparatus/claude-code/profile.py assemble \
+  --installation-directory /absolute/installation \
+  --observation-directory /absolute/observation --review /absolute/CHECK.json \
+  --output /absolute/new-profile.json
+```
+
+Assembly checks every retained evidence member, the original launch bytes,
+surface/tool/model bindings, required observed comparisons and stopping, and
+the independent review's binding to the observation. It rechecks the installed
+executable's digest. The profile preserves the original launch JSON value,
+including internal whitespace. Its `check.evidence_sha256` is the SHA-256 of
+the exact `CHECK.json` bytes. Existing outputs, missing/unlisted evidence,
+links, special files, failed/unexercised comparisons and rehearsal observations
+are refused. Output must stay outside both input evidence directories, so
+publication cannot invalidate their inventories. Reading installation receipts during assembly does not repeat
+the signature verification performed by `prepare`. Neither command grants
+authority to launch or resume Claude.
+
+### Check evidence interface
+
+The observation directory contains `OBSERVATION.json`, `EVIDENCE.json` and its
+regular-file members. `CHECK.json` is supplied separately by an independent
+reviewer and may be stored there too. The manifest covers every other file;
+it excludes these three records to avoid circular hashes. Socket workspaces
+stay outside the evidence directory.
+
+- `EVIDENCE.json`: schema `stewart.claude-code.surface-evidence/1` and `members`,
+  an array of `{path,bytes,sha256}`. Paths are unique relative paths without
+  traversal. The required exact input files are `inputs/launch.json`,
+  `inputs/surface.json` and `inputs/tools.json`; their hashes bind file bytes.
+- `OBSERVATION.json`: schema `stewart.claude-code.surface-observation/1`,
+  `mode` (`real-harness` or `synthetic-rehearsal`), `scope` (`supplied-surface`),
+  `started_at`, `finished_at`, `launch_sha256`, `surface_sha256`, `tools_sha256`,
+  `model`, `evidence_manifest_sha256`, `checks` and `stopping` (`observed` or
+  `unknown`). A check has `id`, `outcome` (`observed`, `failed` or `unexercised`)
+  and `evidence`, a list of retained manifest paths. The independent fixture's
+  `REQUIRED_CHECKS` inventory owns the required comparisons.
+- `CHECK.json`: schema `stewart.claude-code.reviewed-check/1`, `scope`
+  (`supplied-surface`), the same four launch/surface/tools/model bindings,
+  `checked_at` (the observation's `finished_at`), `observation_sha256`,
+  `reviewer`, `reviewed_at` and `outcome` (`observed`). Times are actual UTC
+  timestamps ending in `Z`; the review follows the completed observation.
+
+The producer requires real-harness mode, every required comparison observed
+with retained witnesses, and observed stopping. Authentication raw output is
+never an evidence member: a future live runner must discard it and retain only
+the allowlisted `loggedIn`, `authMethod` and `configDirectory`. A review is an
+attributed assessment, not a cryptographic identity or an exhaustive record of
+provider activity, hidden instructions or managed policy.
+
+## Closed native probes
 
 `pin.py` fetches the public release key, manifest and signature, checks the
 pinned signer with `gpgv`, compares the installed executable's SHA-256 and
@@ -37,6 +116,7 @@ Run these offline checks from the repository root:
 
 ```sh
 python3 -I -B apparatus/claude-code/test_pin.py
+python3 -I -B apparatus/claude-code/test_profile.py
 python3 -I -B apparatus/claude-code/test_probe.py
 python3 -I -B apparatus/claude-code/test_protocol.py
 ```
@@ -50,6 +130,13 @@ an agent sandbox is a failed check, not an inferred successful stop. Controls
 for a fresh commission also verify offline preparation, prior-record
 preservation, the approval gate, the single fresh
 authentication check, all three synthetic cases and refusal of another start.
+
+Profile controls use temporary synthetic signature/observation/review records,
+never real-harness evidence. They exercise exact launch-byte preservation,
+review/input bindings, changed/missing/unlisted witnesses, symlink/special-file
+refusals, changed executables, failed installation verification, rehearsal
+refusal and normal invariance. A canary executable witnesses that the producer
+never starts the harness; credential-canary reads are separately refused.
 
 `test_protocol.py` compiles an offline Rust transport prototype with the native
 toolchain and existing locked, vendored dependencies. Cargo runs offline; its

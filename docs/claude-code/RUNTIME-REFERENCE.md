@@ -423,6 +423,30 @@ owned-process supervision and witnessed termination; Linux qualification
 exercises Linux's own mechanisms. Restricting the auditor's
 tool surface does not make the entire harness a filesystem sandbox.
 
+### Private helper transport for independent fixtures
+
+An independent fixture can own the private sockets while invoking the gated
+binary's actual helpers. `__stewart-cc-relay m` connects to the Unix socket
+`m` relative to its working directory. It forwards stdin bytes unchanged and
+shuts down the socket's write half at stdin EOF. Replies are forwarded unchanged
+to stdout, with each available chunk flushed before another read; socket EOF
+ends the reply stream. The helper does not parse MCP or own an audit.
+
+`__stewart-cc-hook h` connects to socket `h`, reads stdin through EOF with an
+8 MiB input bound, forwards those bytes unchanged, then shuts down the socket's
+write half. The owner replies and closes its connection. The helper copies a
+nonempty reply of at most 64 KiB unchanged to stdout. Each socket read has a
+four-second timeout; this is not an overall invocation deadline. An empty or
+oversized reply, connection/read failure or oversized input produces a diagnostic
+and exit 2. Successful transport exits zero. The owner supplies the
+LF-terminated hook JSON in the [runtime contract](CONTRACT.md#development-wire-and-process-contract);
+the helper itself does not interpret it.
+
+The fixture must retain independent request, reply and effect witnesses, own
+its overall timeout and observe stopping. Using actual helpers exercises their
+transport; fixture-owned sockets and simulated tool effects establish no core
+publication, custody or service-conformance result.
+
 ## Offline Rust protocol check
 
 `apparatus/claude-code/test_protocol.py` builds and exercises

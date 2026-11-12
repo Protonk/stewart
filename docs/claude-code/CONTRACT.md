@@ -154,9 +154,12 @@ arrangement, environment names and values, supporting controls, handshake,
 input shape and pinned texts that Stewart supplies to the harness. Retain the
 exact synthetic prompt and result with it. Do not hash or copy the credential
 store. The two-tool feasibility receipt does not validate the full service tool
-set. Profile validation is implemented; apparatus to produce a reviewed
-real-service check attestation is still needed. Synthetic driver attestations
-exercise validation and are not real-harness commissioning evidence.
+set. Profile validation, installation verification and assembly from separately
+reviewed evidence are implemented in the [profile apparatus](../../apparatus/claude-code/README.md).
+The independent fixture exercises actual helpers offline; a commissioned
+real-harness observer and subsequent service comparison are still needed.
+Synthetic driver attestations exercise validation and are not real-harness
+commissioning evidence.
 
 The check is bound to what the harness is given, not to the `stewart` binary
 that gives it. A rebuild that leaves the launch surface unchanged keeps its

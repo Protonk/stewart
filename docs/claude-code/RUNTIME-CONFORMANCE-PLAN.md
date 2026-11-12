@@ -3,8 +3,7 @@
 The gated adapter is implemented and aligned with the Messages path at the
 manager's surface, including ordered tool-call queuing. Native offline checks
 and Linux container acceptance against a synthetic harness pass. No real-Claude
-service run exists. No Claude
-launch or resume is authorized: both earlier probe commissions are closed,
+service run exists. No Claude launch or resume is authorized: both earlier probe commissions are closed,
 and the real-service run below needs its own commission.
 
 ## Decided scope
@@ -32,11 +31,11 @@ written by one author, and its driver cases by another who has not read the
 implementation.
 
 1. **Build the real-service check and propose its commission.** Two pieces of
-   apparatus are missing: a producer for a profile's installation and check
-   attestation, and a full-service check that drives the actual auditor tool
-   set through the real harness with independent witnesses. Current fixtures
-   supply synthetic attestations only, and the two-tool probe is not a
-   full-service check. Then write a concrete bounded commission: exact
+   apparatus remain: a bounded real-harness observer and review workflow, and
+   a full-service comparison with independent witnesses. The installation and
+   profile producer and independent offline helper fixture are implemented and
+   verified natively. No reviewed real-harness attestation exists, and the
+   two-tool probe is not a full-service check. Write a concrete bounded commission: exact
    synthetic materials, model, session allowance, stopping conditions,
    executable and surface pins, the subscription route with paid extra usage
    disabled, and the witnesses retained. Rehearse it offline against the
@@ -57,6 +56,53 @@ implementation.
    - where a post-compaction notice is delivered, and whether startup can be
      validated before the first question reaches the provider;
    - whether the turn cap and per-response output request are enforced.
+
+### Preparing the first profile check
+
+The initial check observes the complete supplied launch surface with the actual
+Stewart relay and hook helpers connected to an independent fixture's private
+sockets. The fixture advertises the selected family's exact MCP tool inventory;
+its effects remain explicitly fixture effects. This can establish harness
+compatibility with the supplied surface, not service custody or publication.
+After independent review, the profile producer can embed that check's bindings
+and exact review digest. The actual-service comparison then uses the reviewed
+profile. No placeholder or unperformed check is recorded as `observed`.
+
+The installation producer verifies retained public signing evidence and the
+native executable without executing Claude or reading credential storage. The
+first fixture deliverable is offline only: it exercises actual helpers and
+retains raw witnesses but leaves authentication/startup observations unexercised.
+Its synthetic rehearsal cannot produce an eligible profile attestation.
+
+Remaining implementation before proposing a live commission: add and verify the
+bounded real-harness runner, review workflow and actual-service comparison. The latter's independent
+witnesses include original synthetic inputs, manager commands/readback, external
+delivery inventories and process observations. Service-owned raw captures retain
+that provenance; they are not independent peer witnesses or complete provider
+transcripts. The [apparatus guide](../../apparatus/claude-code/README.md) owns the
+artifact interfaces as they are implemented.
+
+The host verification at `.tmp/profile-bootstrap/host.Wxzodq` passed all eleven
+commands with unchanged source snapshots and all owned process groups observed
+absent. Pin checks passed 3 tests, profile checks 16, probe checks 24, protocol
+checks 14 Python tests and 9 Rust tests, and the surface fixture self-test 51
+checks, with no failures or skips. Review verified all fourteen public
+installation-evidence members at `.scratch/claude-code-service-installation-01`.
+The native helper rehearsal at `.scratch/claude-code-surface-rehearsal-01`
+passed all seven comparisons, with 92 evidence members verified. Its observation
+records eight observed comparisons and two intentionally unexercised comparisons:
+authentication and real-harness startup. It cannot produce an eligible profile.
+No Claude or authentication invocation occurred. The review output is
+`.tmp/profile-bootstrap/host-review.log`.
+
+The initial filename collision on case-insensitive macOS was corrected; its
+failed output remains at `.tmp/toolchain-refresh/profile-tests.log`.
+The earlier actual-helper sandbox rehearsal at
+`/private/tmp/stewart-surface-rehearsal-native-02` retains seven socket-bind
+`EPERM` failures before helper launch; all seven worker groups stopped with no
+timeouts. Its observation has three observed, five failed and two unexercised
+comparisons. The authentication and startup comparisons intentionally remain
+unexercised in every synthetic rehearsal.
 
 Use firing controls, differing cases and invariance cases under
 [ACCEPTANCE](../../ACCEPTANCE.md#the-real-model-conformance-tier). Bind results to the
