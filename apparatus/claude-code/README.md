@@ -74,7 +74,9 @@ The prototype is separate from the implemented service adapter and its
 model ordering in memory; they do not test the service's named socket, archive
 publication/recovery or orphan stopping. The service driver exercises those
 integrated paths with a synthetic harness, with its own stated coverage gaps.
-Linux qualification remains outstanding. See the
+The [qualification record](../qualified.md) identifies the integrated service's
+Linux synthetic acceptance runs; they do not qualify this prototype or establish
+real-harness conformance. See the
 [runtime reference](../../docs/claude-code/RUNTIME-REFERENCE.md#offline-rust-protocol-check)
 for the protocol comparison and its limits.
 

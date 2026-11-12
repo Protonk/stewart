@@ -2,7 +2,8 @@
 
 The gated adapter is implemented and aligned with the Messages path at the
 manager's surface, including ordered tool-call queuing. Native offline checks
-against a synthetic harness pass. No real-Claude service run exists. No Claude
+and Linux container acceptance against a synthetic harness pass. No real-Claude
+service run exists. No Claude
 launch or resume is authorized: both earlier probe commissions are closed,
 and the real-service run below needs its own commission.
 
@@ -30,18 +31,7 @@ Take these in order. Each step that changes the contract or the service is
 written by one author, and its driver cases by another who has not read the
 implementation.
 
-1. **Qualify the Linux runtime path.** The container suite now includes the
-   standalone runtime driver against both architectures' gated binaries, a
-   different-digest writer control, exported independent witnesses and runtime
-   results in the qualification record. The first Linux run failed during
-   initialization on both architectures. A controlled comparison isolated the
-   reply-copy path. The fix and independent regression passed native host
-   verification and the next Linux run. That run's remaining failures all
-   concern an extra locale variable in the Python witness. The revised observer
-   and its controls now pass selected native and Linux cases, with the variable
-   absent before Python and present afterward on Linux. Rerun the full container
-   suite. Linux runtime execution remains unqualified.
-2. **Build the real-service check and propose its commission.** Two pieces of
+1. **Build the real-service check and propose its commission.** Two pieces of
    apparatus are missing: a producer for a profile's installation and check
    attestation, and a full-service check that drives the actual auditor tool
    set through the real harness with independent witnesses. Current fixtures
@@ -52,7 +42,7 @@ implementation.
    disabled, and the witnesses retained. Rehearse it offline against the
    synthetic harness. Bring it to the principal; preparing it authorizes
    nothing.
-3. **Run the real-service check under that commission.** Exercise the actual
+2. **Run the real-service check under that commission.** Exercise the actual
    tool surface, compaction and re-entry, accounting, interruption,
    submission, delivery and close. Verify effective tools, instructions,
    authentication and access before and after compaction, including host and
@@ -102,6 +92,18 @@ None of this blocks the steps above. Do it when it fits.
   working trees and superseded runs.
 
 ## Evidence through review
+
+The current Linux acceptance run `.scratch/acceptance-environment-observer-01`,
+at `b4ccba4`, is qualified in the
+[qualification index](../../apparatus/qualified.md). Each architecture passed
+all 24 runtime cases, 9,892 checks and 73 controls, with no failures, skips or
+unselected cases. The runtime self-test passed 205 checks. Release suites passed
+128 cases on native arm64 and 126 on emulated amd64, with all 79 sabotage and
+21 driver controls fired, and no failures outside the controls or skips. All
+build/static/marker comparisons passed. Review verified binary/source digests,
+40 independent environment witnesses per architecture and regular-file-only
+evidence exports. This qualifies the recorded Linux synthetic behavior; it
+does not establish real-harness conformance or native WSL2 qualification.
 
 The earlier failed Linux run `.scratch/acceptance-runtime-queue-01` remains
 retained through diagnosis. The release suites
@@ -171,8 +173,8 @@ skips, the `commission_over_network` bind failure and the direct-helper case's
 four bind failures before helper launch. Keep those originals and
 `/private/tmp/stewart-relay-forwarding-fix-01` through review of the Linux run.
 
-The subsequent Linux run `.scratch/acceptance-relay-fix-01`, at `2ec1c94`, is
-recorded as failed in the [qualification index](../../apparatus/qualified.md).
+The subsequent Linux run `.scratch/acceptance-relay-fix-01`, at `2ec1c94`,
+was recorded as failed; its index entry remains in Git history.
 Both architectures passed the direct relay regression's 64 checks. Each runtime
 suite passed 13 cases and failed 11: 9,724 checks passed and 42 failed, with no
 skips and all 73 controls fired. Every failed check reports the same extra
@@ -227,13 +229,8 @@ digests. Each platform exported 158 regular files matching their originals,
 without special entries. All 17 host commands passed and their owned process
 groups were absent; both Linux containers were observed stopped.
 
-Next host command, from the repository root:
-`sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-environment-observer-01"`.
-It builds the committed source and runs the full release and synthetic runtime
-suites on both Linux architectures. Inspect failures and controls, extract the
-qualification record and check the index before calling the runtime qualified.
-No real harness or model invocation is authorized. Retain the failed runs and
-comparison witnesses through review of the fix.
+The full acceptance run above completes this comparison's Linux verification.
+Retain the failed runs and comparison witnesses through review of the fix.
 
 The queued-call and Linux suite changes passed host verification in
 `.tmp/runtime-queue/host.yTveQl/`, with runtime witnesses at

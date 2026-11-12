@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current build work | Qualify the release's exclusion of the source-only adapter and the new Linux runtime path in one container run; native verification is complete | [Source-only build plan](docs/claude-code/BUILD-FLAG-SETUP-PLAN.md) |
+| Current build work | Finish the required toolchain rebuild and reproducibility check; native checks and container acceptance pass | [Source-only build plan](docs/claude-code/BUILD-FLAG-SETUP-PLAN.md) |
 | Current runtime work | Take the plan's numbered steps in order. Its last step needs a bounded commission from the principal | [Source-only runtime plan](docs/claude-code/RUNTIME-CONFORMANCE-PLAN.md) |
 | Later, after the runtime's real-service check has a reviewed outcome | Align the manager interface, using the development runtime for iteration and including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |

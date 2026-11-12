@@ -60,7 +60,9 @@ Messages API. Hash the executable and launch configuration; refuse a changed
 binding. macOS observations apply to development, while Linux qualification
 exercises Linux's process and filesystem mechanisms separately. The gated
 adapter implements the launch controls and has passed native synthetic service
-checks. Real-harness service conformance and Linux enforcement remain unqualified.
+checks and Linux container acceptance. Real-harness service conformance remains
+unqualified; the [qualification record](../../apparatus/qualified.md) owns the
+exact Linux source, binaries and results.
 
 ## Remaining checks and decisions
 
@@ -78,17 +80,27 @@ outputs, including the queued-call and Linux suite changes, are in
 `.tmp/runtime-queue/host.yTveQl/`. No checks failed or skipped, and the source
 stayed unchanged during the run. Keep these and the earlier
 `.tmp/alignment/`, `.tmp/claude-code-adapter/` and `.tmp/claude-code-setup/`
-outputs through review. Earlier failures and skips remain retained; Linux
-remains unqualified. The container suite now also exercises the gated runtime
-and a second development writer.
+outputs through review. Earlier failures and skips remain retained. The
+container suite also exercises the gated runtime and a second development writer.
 
-- [ ] Run the toolchain and container acceptance checks required by
-  [DEVELOPMENT](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed),
-  on the committed change when the principal schedules them. Retain and extract
-  both architectures' results. The release driver evaluates the release and
-  fault/sabotage binaries; the separate synthetic runtime driver evaluates
-  the development binary. The marker comparisons qualify the build boundary,
-  while the runtime cases supply their own execution evidence.
+The container acceptance run `.scratch/acceptance-environment-observer-01`, at
+`b4ccba4`, passed on both architectures and is recorded as qualified. All six
+adapter markers were absent from release/test and present in both development
+builds. All static checks and their glibc controls passed. The release driver
+and the separate synthetic runtime driver passed all cases and required
+controls without skips. These comparisons qualify the build boundary and the
+recorded synthetic runtime behavior.
+
+- [ ] Run the toolchain check required by
+  [DEVELOPMENT](../../development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
+  for the `Cargo.toml` feature addition. The latest toolchain record is
+  `apparatus-02` at `cb84205`, before that addition. `Cargo.lock` and the
+  Containerfile are unchanged, but the stated check remains owed. The prepared
+  host command is `sh .tmp/toolchain-refresh/check-host.sh`; it preserves the
+  current vendor tree, runs `step2.sh` into `.scratch/toolchain-runtime-01`, and
+  compares the regenerated vendor contents and release binaries with the
+  already qualified inputs. Inspect and extract both architectures' results.
+  A difference needs review before treating existing checks as applicable.
 
 The principal accepted the structural credential boundary on 2026-11-10:
 the harness owns its secret, the harness route refuses credential arguments and
@@ -102,8 +114,9 @@ supplies the launch observations for the credential-boundary decision. It does
 not qualify Linux enforcement. The accepted structural boundary makes no
 direct-route credential-classification claim.
 
-**Done when:** a container run shows the markers absent from the release and
-test binaries and present in the gated one; the three cargo configurations
+**Done when:** the required toolchain check passes; a container run shows the
+markers absent from the release and test binaries and present in the gated one;
+the three cargo configurations
 pass natively; the leaf documentation covers building and checking; and the
 selected login and launch arrangement has a concrete enforcement and check
 design, with any remaining live verification given an explicit disposition.

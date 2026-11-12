@@ -9,8 +9,10 @@ implemented. The revised native launch candidate passed its three-case
 synthetic comparison: successful tool use, a witnessed hook denial and a
 successful repeat in another working directory. The service adapter is now
 implemented under its [development runtime contract](CONTRACT.md) and has passed
-native offline checks through the actual Rust core. Those service checks use a
-synthetic harness; real-Claude service conformance and Linux behavior remain
+native offline checks through the actual Rust core and Linux container
+acceptance. Those service checks use a synthetic harness; the
+[qualification record](../../apparatus/qualified.md) identifies their exact
+source, binaries and coverage. Real-Claude service conformance remains
 unqualified.
 
 The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)

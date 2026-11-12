@@ -2,10 +2,12 @@
 
 This is the decided contract for the default-off `claude-code` development
 runtime. The principal approved its observation, limits and startup boundaries
-on 2026-11-10. It does not change the distributed Messages API contract or
-claim Linux qualification. The gated adapter is implemented and has passed
-native offline service checks using a synthetic harness. Those checks exercise
-the Rust core, custody, submission, continuation and process controls; they do
+on 2026-11-10. It does not change the distributed Messages API contract.
+The gated adapter is implemented and has passed native offline service checks
+and Linux container acceptance using a synthetic harness. The
+[qualification record](../../apparatus/qualified.md) identifies the exact
+source and binaries covered. Those checks exercise the Rust core, custody,
+submission, continuation and process controls; they do
 not establish real-Claude service conformance. The
 [independent driver's coverage](../../apparatus/driver/CLAUDE-CODE.md) states
 which synthetic comparisons it exercises, including relay loss, cancellation,
@@ -31,10 +33,10 @@ Offline controls must exercise the actual core through MCP: exact traffic,
 positive effects, denial and invariance, publication after closure, startup
 mismatch, owner/relay loss, unknown usage, cumulative placement limits and
 continuation. An independent author derives driver cases from this contract.
-Native macOS checks remain development checks. Linux qualification and separately
-commissioned real-harness compaction, submission and stopping comparisons
-remain necessary for the claims they exercise. Messages API results do not
-qualify the harness profile. The common
+Native macOS checks remain development checks. Linux qualification applies to
+the recorded synthetic comparisons; separately commissioned real-harness
+compaction, submission and stopping comparisons remain necessary for the claims
+they exercise. Messages API results do not qualify the harness profile. The common
 [rules every check follows](../../ACCEPTANCE.md#rules-every-check-follows) apply.
 
 ## Arrangement and observation
