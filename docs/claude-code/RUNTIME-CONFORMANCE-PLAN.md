@@ -36,7 +36,7 @@ implementation.
    results in the qualification record. Native verification is complete, but
    the first Linux run failed at initialization reply delivery or peer progress
    on both architectures. Resolve that failure using the retained witnesses
-   and bounded comparison below, then rerun the affected checks and the
+   and diagnostic recovery below, then rerun the affected checks and the
    container suite. Linux runtime execution remains unqualified.
 2. **Build the real-service check and propose its commission.** Two pieces of
    apparatus are missing: a producer for a profile's installation and check
@@ -114,12 +114,24 @@ initialization reply, but the independent peer witnessed no reply. The
 deadline case still observed group stopping. These observations locate the
 failure boundary without establishing its cause.
 
-Next host comparison: `sh .tmp/runtime-queue/check-linux-relay.sh`, from the
-repository root, writes fresh evidence to `.scratch/relay-diagnostic-01`.
-It runs the retained optimized and debug Linux binaries' relay helpers against
-a synthetic socket peer, with bounded open-connection, segmentation and EOF
-observations. It performs no build, authentication or model invocation. Inspect
-the evidence before changing the service or rerunning the full acceptance suite.
+The relay comparison in `.scratch/relay-diagnostic-01` was interrupted by the
+host runner after 3,600 seconds. Only arm64 container-start output reached the
+host; no case results or completion record were exported. The probe had
+unbounded process-start and process-observation operations, and its host
+wrapper had no container-command watchdog. The existing diagnostic container's
+state is unknown; the timeout establishes neither its stopping nor a relay
+failure. Preserve this attempt and inspect its effects before another probe.
+
+Next host command, from the repository root:
+`python3 -I -B .tmp/runtime-queue/inspect-relay-host.py`. It targets only the
+container recorded by that attempt, writes `.scratch/relay-inspection-01`,
+and applies an independent host watchdog to each command. It inspects state
+and attempts a partial evidence export before stopping that diagnostic; a
+failed export or validation leaves stopping unrequested. Terminating a host
+client does not establish that its remote command stopped. The watchdog's
+six local checks passed, including setup, execution and descendant timeout controls.
+No new probe, build, authentication or model invocation is performed. Inspect
+the recovered evidence before changing the service or rerunning acceptance.
 
 The queued-call and Linux suite changes passed host verification in
 `.tmp/runtime-queue/host.yTveQl/`, with runtime witnesses at
