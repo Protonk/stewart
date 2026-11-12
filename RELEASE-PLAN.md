@@ -9,16 +9,17 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current runtime work | Prepare the real-service check and its bounded commission, then run only under the principal's approval | [Source-only runtime plan](docs/claude-code/RUNTIME-CONFORMANCE-PLAN.md) |
-| Later, after the runtime's real-service check has a reviewed outcome | Align the manager interface, using the development runtime for iteration and including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
+| Current manager work | Specify shared commissioning rules, complete the independent CLI, implement optional preparation MCP, and demonstrate the interface with fake-provider integration | [Integrated manager-interface plan](development/MANAGER-INTERFACE-PLAN.md) |
+| Alongside manager work, separately bounded | Prepare source-only runtime comparisons and question-family trials; live starts require the principal's approval and their own verified apparatus/profile prerequisites | The integrated plan owns this testing track; a real-service outcome is not a prerequisite for manager MCP or fake-provider boundary acceptance |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
-| Unselected | Further auditor studies and question-family dogfooding | [Deferred studies](#deferred-studies) |
+| Unselected | Broader auditor studies, blinded evaluation and question-family dogfooding beyond the integrated procedural trials | [Deferred studies](#deferred-studies) |
 
-Further API studies and completion of the API conformance gate are not
-prerequisites for the source-only runtime work. That
-runtime's feasibility and adapter contract are decided. Implementation and offline
-verification are authorized; further live checks require their own bounded
-commission. Planning and previous model placements confer no spending authority.
+The integrated plan subsumes the former manager-alignment and runtime-conformance
+plans, including their remaining tasks and evidence-review obligations. It owns
+the local implementation sequence and the shared manager/type test matrix.
+The separate Messages API plan retains the full release-model gate; neither
+subscription trials nor fake-provider acceptance substitute for that gate.
+Planning and previous model placements confer no execution or spending authority.
 
 The return-context decision needs no further presentation tuning or reader
 comparison before implementation. No additional reading interface or return
@@ -34,8 +35,9 @@ builds.
 
 ## Deferred studies
 
-No further auditor study is selected. Blinded evaluation and question-family
-dogfooding are deferred; the [family contract](CONTRACTS.md#question-families-and-open-inquiry)
+The integrated plan includes preparation of bounded procedural question-family
+trials, without authorizing live calls. Broader blinded evaluation and family
+dogfooding remain deferred; the [family contract](CONTRACTS.md#question-families-and-open-inquiry)
 owns their product boundaries. An agent-manager study omitting the question from
 returns is only an option after the manager interface is established and the
 principal selects it, not a pending task. A future study needs a named uncertainty
@@ -89,10 +91,5 @@ The native timing gate applies. Native x86_64 is unexercised, so its timings mus
 be measured rather than inferred from Rosetta.
 
 Needs: a package builder, instructions and the user's scheduled run.
-
-### Remaining test discrepancies
-
-- Add a check that prepares the worked examples. Make unavailable loopback tests
-  report actual skips rather than printing SKIPPED and returning as passed.
 
 Deferred product scope belongs in CONTRACTS; it is not additional release work.
