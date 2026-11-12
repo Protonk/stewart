@@ -91,8 +91,8 @@ ARRANGEMENT_KEYS = {
     "effort", "limits", "harness_max_turns", "harness_max_output_tokens",
     "texts", "reader", "renderer", "reading", "bindings",
 }
-# A shell wrapper and the interpreter's platform runtime add these to the
-# synthetic harness's own environment; Stewart supplies none of them.
+# Shell/platform additions allowed only within the pre-Python observer's scope.
+# Interpreter changes are retained separately and never exempt LC_CTYPE.
 WRAPPER_ENVIRONMENT = {"PWD", "OLDPWD", "SHLVL", "_", "__CF_USER_TEXT_ENCODING"}
 KEPT = "A pipelined note whose call was not cancelled.\n"
 QUEUED = "The second pipelined note must follow the first.\n"
@@ -141,6 +141,35 @@ CASES = (
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def environment_snapshot(raw):
+    """Decode env -0 without accepting a truncated or ambiguous witness."""
+    if raw and not raw.endswith(b"\0"):
+        raise ValueError("environment witness is not NUL terminated")
+    values = {}
+    for item in raw[:-1].split(b"\0") if raw else ():
+        name, separator, value = item.partition(b"=")
+        if not separator or not name:
+            raise ValueError("environment witness contains an invalid entry")
+        name, value = name.decode("utf-8"), value.decode("utf-8")
+        if name in values:
+            raise ValueError("environment witness repeats a name: " + name)
+        values[name] = value
+    return values
+
+
+def synthetic_executable(script, scenario, witness):
+    """Snapshot after shell startup, before Python can change the environment."""
+    command = [sys.executable, "-I", "-B", str(script), "--synthetic-harness", str(scenario)]
+    # mktemp creates a new mode-0600 file: concurrent launches and PID reuse
+    # cannot overwrite a prior witness. All subsequent outputs retain it.
+    return ("#!/bin/sh\n"
+            "environment_witness=$(/usr/bin/mktemp "
+            + shlex.quote(str(witness / "environment.XXXXXXXXXX")) + ") || exit 95\n"
+            '/usr/bin/env -0 > "$environment_witness" || exit 95\n'
+            "exec " + " ".join(shlex.quote(arg) for arg in command)
+            + ' --environment-witness "$environment_witness" "$@"\n').encode("utf-8")
 
 
 def publish_witness(path, data):
@@ -613,13 +642,13 @@ def relay_pipe_control(witness):
             os.close(writer)
 
 
-def relay_traffic(binary, variant, env, witness):
+def relay_traffic(binary, variant, env, workspace, witness):
     """Exercise only the specified byte conduit, without an audit or harness."""
     observer, checks = RelayObserver(witness), {}
     listener = connection = process = None
     stopping_uncertain = False
     try:
-        cwd = witness.directory / "workspace"
+        cwd = workspace
         witness.event("before-workspace")
         cwd.mkdir(mode=0o700)
         os.chdir(cwd)
@@ -759,6 +788,8 @@ class Driver:
     def runtime_relay_forwarding(self):
         root = self.witness / "relay-forwarding"
         root.mkdir()
+        workspaces = self.work / "relay-work"
+        workspaces.mkdir()
 
         def observe(name, action, seconds=8):
             try:
@@ -786,7 +817,8 @@ class Driver:
         self.control("relay-pipe-observer-idle-open-bytes-eof", relay_success(record),
                      "pipe observer did not observe idle/open-writer bytes/EOF")
         for variant in ("whole-open", "segmented-open", "immediate-half-close", "empty-eof"):
-            record = observe(variant, lambda witness: relay_traffic(self.binary, variant, self.env, witness))
+            record = observe(variant, lambda witness: relay_traffic(
+                self.binary, variant, self.env, workspaces / variant, witness))
             inspect(variant, record)
             self.control("relay-" + variant, relay_success(record), "relay forwarding comparison did not pass")
         self.note("relay-observer-scope", "Each direct helper worker owns an 8-second deadline plus "
@@ -896,9 +928,7 @@ class Driver:
                        "second_relay": SECOND_RELAY,
                        "auth_private": "synthetic-auth-private-output-" + label}) + b"\n")
             (witness / "scenario-initial.json").write_bytes(scenario_path.read_bytes())
-            command = [sys.executable, "-I", "-B", str(self.harness_script),
-                       "--synthetic-harness", str(scenario_path)]
-            executable.write_text("#!/bin/sh\nexec " + " ".join(shlex.quote(arg) for arg in command) + ' "$@"\n')
+            executable.write_bytes(synthetic_executable(self.harness_script, scenario_path, witness))
         executable.chmod(0o700)
         self.canaries.append(Path(str(executable) + ".started"))
         launch = {"executable": str(executable), "sha256": sha(executable.read_bytes()),
@@ -1444,6 +1474,19 @@ class Driver:
     def audit_path(self, f):
         return f["archive"] / "audits" / f["reference"].split(":")[1]
 
+    def inspect_environment(self, prefix, event, expected, witness):
+        # Check the independently retained pre-Python bytes, not os.environ
+        # after interpreter startup (which may have coerced LC_CTYPE).
+        name = event.get("environment_witness", "")
+        self.require(prefix + ".witness-name", bool(re.fullmatch(r"environment\.[A-Za-z0-9]+", name)), name)
+        raw = (witness / name).read_bytes()
+        self.eq(prefix + ".witness-sha256", sha(raw), event.get("environment_sha256"))
+        env = environment_snapshot(raw)
+        self.eq(prefix + ".witness-content", env, event["environment"])
+        self.eq(prefix + ".supplied", {key: env.get(key) for key in expected}, expected)
+        self.eq(prefix + ".nothing-else", sorted(set(env) - set(expected) - WRAPPER_ENVIRONMENT), [])
+        return env
+
     def inspect_runtime(self, f, placements=1, terminal=False):
         events = self.harness_events(f)
         launches = [e for e in events if e["event"] == "launch"]
@@ -1461,11 +1504,7 @@ class Driver:
             self.eq(p + ".workspace-is-cwd", os.path.realpath(workspace), os.path.realpath(event["cwd"]))
             expected = filled_launch(str(self.binary), workspace, f["launch"], f["family"], MODEL, f["effort"])
             self.eq(p + ".argv", argv, expected["model_argv"])
-            env = event["environment"]
-            self.eq(p + ".env.supplied", {key: env.get(key) for key in expected["environment"]},
-                    expected["environment"])
-            self.eq(p + ".env.nothing-else",
-                    sorted(set(env) - set(expected["environment"]) - WRAPPER_ENVIRONMENT), [])
+            env = self.inspect_environment(p + ".env", event, expected["environment"], f["witness"])
             for key in ("DRIVER_INJECTION", "HTTPS_PROXY", "ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL"):
                 self.check(p + ".no-forward." + key, key not in env, env.get(key))
             cwd = Path(event["cwd"])
@@ -1480,11 +1519,7 @@ class Driver:
                 auth = auths[index]
                 self.eq(p + ".auth-argv", auth["argv"], expected["auth_argv"])
                 self.eq(p + ".auth-cwd", os.path.realpath(auth["cwd"]), os.path.realpath(event["cwd"]))
-                self.eq(p + ".auth-env.supplied",
-                        {key: auth["environment"].get(key) for key in expected["environment"]},
-                        expected["environment"])
-                self.eq(p + ".auth-env.nothing-else",
-                        sorted(set(auth["environment"]) - set(expected["environment"]) - WRAPPER_ENVIRONMENT), [])
+                self.inspect_environment(p + ".auth-env", auth, expected["environment"], f["witness"])
         handshakes = [e["value"]["result"] for e in events if e["event"] == "rpc-receive"
                       and isinstance(e["value"].get("result"), dict)
                       and "protocolVersion" in e["value"]["result"]]
@@ -2264,10 +2299,15 @@ class Driver:
         return 1 if report["counts"]["failed"] else 0
 
 
-def synthetic_harness(scenario_path, argv):
+def synthetic_harness(scenario_path, environment_path, argv):
     """Synthetic executable only: no provider or real harness is ever invoked."""
     scenario = strict_loads(Path(scenario_path).read_bytes())
     witness = Path(scenario["witness"])
+    environment_path = Path(environment_path)
+    if environment_path.parent != witness:
+        raise ValueError("environment witness must be in the scenario witness directory")
+    environment_raw = environment_path.read_bytes()
+    initial_environment = environment_snapshot(environment_raw)
     event_lock = threading.Lock()
 
     def event(kind, **data):
@@ -2278,7 +2318,9 @@ def synthetic_harness(scenario_path, argv):
     with open(scenario["marker"], "ab") as stream:
         stream.write(compact(argv) + b"\n")
     role = "auth" if argv == ["auth", "status"] else "model"
-    launch = {"role": role, "argv": argv, "environment": dict(os.environ), "cwd": os.getcwd()}
+    launch = {"role": role, "argv": argv, "environment": initial_environment,
+              "environment_witness": environment_path.name, "environment_sha256": sha(environment_raw),
+              "interpreted_environment": dict(os.environ), "cwd": os.getcwd()}
     if role == "auth":
         event("launch", **launch)
         print(json.dumps({"loggedIn": True, "authMethod": "claude.ai", "configDirectory": scenario["config"],
@@ -2664,6 +2706,70 @@ def self_test():
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
+    environment_root = Path(tempfile.mkdtemp(prefix="stewart-environment-driver-selftest-"))
+    print("Environment self-test evidence retained: %s" % environment_root, flush=True)
+    check("environment.nul-decoder-values", environment_snapshot(b"A=line\nwith=equals\0EMPTY=\0")
+          == {"A": "line\nwith=equals", "EMPTY": ""})
+    check("environment.empty-decoder", environment_snapshot(b"") == {})
+    for name, raw in (("truncated", b"A=1"), ("duplicate", b"A=1\0A=2\0"),
+                      ("empty-entry", b"A=1\0\0"), ("no-equals", b"A\0"),
+                      ("empty-name", b"=1\0"), ("invalid-utf8", b"A=\xff\0")):
+        try:
+            environment_snapshot(raw)
+        except ValueError:
+            refused = True
+        else:
+            refused = False
+        check("environment.decoder-refuses-" + name, refused)
+    scenario = {"witness": str(environment_root), "marker": str(environment_root / "started"),
+                "config": str(environment_root), "auth_private": "synthetic-environment-control"}
+    (environment_root / "scenario.json").write_bytes(compact(scenario))
+    executable = environment_root / "synthetic-harness"
+    executable.write_bytes(synthetic_executable(Path(__file__).resolve(), environment_root / "scenario.json", environment_root))
+    executable.chmod(0o700)
+    expected = {key: value.replace("{home}", str(environment_root / "home"))
+                .replace("{temporary_directory}", str(environment_root / "temporary"))
+                .replace("{config_directory}", str(environment_root / "config"))
+                for key, value in surface_document()["environment"].items()}
+    preserved, observations = {}, []
+    for name, changes, rejected in (("normal", {}, None), ("locale-injection", {"LC_CTYPE": "C.UTF-8"}, "nothing-else"),
+                                    ("changed-lang", {"LANG": "C"}, "supplied"),
+                                    ("extra-variable", {"DRIVER_INJECTION": "synthetic"}, "nothing-else"),
+                                    ("invariance", {}, None)):
+        supplied = dict(expected, **changes)
+        result = subprocess.run([str(executable), "auth", "status"], env=supplied, cwd=environment_root,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+        (environment_root / (name + ".stdout")).write_bytes(result.stdout)
+        (environment_root / (name + ".stderr")).write_bytes(result.stderr)
+        check("environment." + name + ".auth-ran", result.returncode == 0)
+        events_path = environment_root / "harness.jsonl"
+        events = [json.loads(line) for line in events_path.read_bytes().splitlines()] if events_path.exists() else []
+        event = events[-1] if len(events) == len(observations) + 1 else {}
+        if not event:
+            check("environment." + name + ".launch-witness", False)
+            continue
+        observer = object.__new__(Driver)
+        observer.checks, observer.current = [], "environment-self-test"
+        with (environment_root / (name + ".inspection.stdout")).open("w") as stream, contextlib.redirect_stdout(stream):
+            observer.inspect_environment(name, event, expected, environment_root)
+        failed = [row["name"] for row in observer.checks if not row["passed"]]
+        check("environment." + name + ".contract-observation", failed == ([name + "." + rejected] if rejected else []))
+        check("environment." + name + ".supplied-values-witnessed",
+              all(event["environment"].get(key) == value for key, value in supplied.items()))
+        snapshot_path = environment_root / event["environment_witness"]
+        check("environment." + name + ".unique-witness", snapshot_path.name not in preserved
+              and all((environment_root / member).read_bytes() == raw for member, raw in preserved.items()))
+        preserved[snapshot_path.name] = snapshot_path.read_bytes()
+        before, after = event["environment"], event["interpreted_environment"]
+        change = {"case": name, "before": before, "after": after,
+                  "added": sorted(set(after) - set(before)), "removed": sorted(set(before) - set(after)),
+                  "changed": sorted(key for key in before.keys() & after.keys() if before[key] != after[key])}
+        observations.append(change)
+        print("Environment control %s: post-Python added=%s changed=%s removed=%s" % (
+            name, change["added"], change["changed"], change["removed"]), flush=True)
+    (environment_root / "OBSERVATIONS.json").write_bytes(compact(observations) + b"\n")
+    check("environment.normal-invariance", len(observations) == 5
+          and observations[0]["before"] == observations[-1]["before"])
     relay_root = Path(tempfile.mkdtemp(prefix="stewart-relay-driver-selftest-"))
     print("Relay self-test evidence retained: %s" % relay_root, flush=True)
 
@@ -2918,9 +3024,11 @@ for raw in sys.stdin.buffer:
             (root / "prompt").write_text("synthetic self-test prompt")
             (root / "mcp.json").write_bytes(compact({"mcpServers": {"stewart": {"command": sys.executable,
                 "args": ["-I", "-B", str(root / "peer.py")]}}}))
+            executable = root / "synthetic-harness"
+            executable.write_bytes(synthetic_executable(Path(__file__).resolve(), root / "scenario.json", root))
+            executable.chmod(0o700)
             process = subprocess.Popen(
-                [sys.executable, "-I", "-B", str(Path(__file__).resolve()), "--synthetic-harness",
-                 str(root / "scenario.json"), "-p", "--settings", str(root / "settings.json"),
+                [str(executable), "-p", "--settings", str(root / "settings.json"),
                  "--mcp-config", str(root / "mcp.json"), "--system-prompt-file", str(root / "prompt")],
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 env={"PATH": "/usr/bin:/bin"}, cwd=root)
@@ -3027,7 +3135,10 @@ for raw in sys.stdin.buffer:
         (root / "prompt").write_text("synthetic self-test prompt")
         (root / "mcp.json").write_bytes(compact({"mcpServers": {"stewart": {"command": sys.executable,
             "args": ["-I", "-B", str(root / "peer.py")]}}}))
-        prefix = [sys.executable, "-I", "-B", str(Path(__file__).resolve()), "--synthetic-harness", str(root / "scenario.json")]
+        executable = root / "synthetic-harness"
+        executable.write_bytes(synthetic_executable(Path(__file__).resolve(), root / "scenario.json", root))
+        executable.chmod(0o700)
+        prefix = [str(executable)]
         auth = subprocess.run(prefix + ["auth", "status"], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               env={"PATH": "/usr/bin:/bin"}, timeout=5)
         check("synthetic.auth", auth.returncode == 0 and json.loads(auth.stdout)["loggedIn"] is True)
@@ -3075,8 +3186,10 @@ for raw in sys.stdin.buffer:
             (child_root / "peer.py").write_text(error_peer)
             (child_root / "mcp.json").write_bytes(compact({"mcpServers": {"stewart": {
                 "command": sys.executable, "args": ["-I", "-B", str(child_root / "peer.py")]}}}))
-            argv = [sys.executable, "-I", "-B", str(Path(__file__).resolve()), "--synthetic-harness",
-                    str(child_root / "scenario.json"), "-p", "--settings", str(root / "settings.json"),
+            executable = child_root / "synthetic-harness"
+            executable.write_bytes(synthetic_executable(Path(__file__).resolve(), child_root / "scenario.json", child_root))
+            executable.chmod(0o700)
+            argv = [str(executable), "-p", "--settings", str(root / "settings.json"),
                     "--mcp-config", str(child_root / "mcp.json"), "--system-prompt-file", str(root / "prompt")]
             process = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                        env={"PATH": "/usr/bin:/bin"}, start_new_session=True)
@@ -3166,7 +3279,9 @@ for raw in sys.stdin.buffer:
 
 def main():
     if len(sys.argv) >= 3 and sys.argv[1] == "--synthetic-harness":
-        return synthetic_harness(sys.argv[2], sys.argv[3:])
+        if len(sys.argv) < 5 or sys.argv[3] != "--environment-witness":
+            raise ValueError("synthetic harness requires its pre-Python environment witness")
+        return synthetic_harness(sys.argv[2], sys.argv[4], sys.argv[5:])
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--self-test", action="store_true", help="check the independent helpers without a binary")
     parser.add_argument("--list", action="store_true", help="list the standalone offline cases")

@@ -69,6 +69,8 @@ with that explicit reason; qualification cannot pass. This watchdog assumes the
 owner and host continue running. The synthetic harness's nonblocking reader also
 records read checkpoints and handles ordinary readiness races; nonblocking mode
 alone does not bound a kernel read stall.
+Relay sockets and working directories live under `relay-work/`; their independent
+progress and byte witnesses live under `witness/relay-forwarding/`.
 
 MCP envelopes and independent transport witnesses use a separate JSON decoder
 that accepts signed JSON-RPC error codes. Embedded Stewart core replies and
@@ -103,9 +105,20 @@ a second build, the same profile file must be accepted by both writers, each
 pinning the same surface, while the second writer still refuses to run the
 first writer's audit. Runtime cases compare each synthetic launch's arguments,
 environment, settings file, MCP configuration, working directory and MCP
-initialization result with the surface, placeholders filled. A shell wrapper
-around the synthetic harness adds a few variables of its own; the driver allows
-exactly those and no others. A recorded canary start fails the local-operation check. Archive
+initialization result with the surface, placeholders filled. Before executing
+Python, the shell wrapper uses `/usr/bin/mktemp` and `/usr/bin/env -0` to retain a
+unique, mode-0600 environment witness. Inspection checks its complete NUL framing,
+unique names, digest and decoded contents. The launch event keeps this snapshot
+as `environment`, with the later Python snapshot as `interpreted_environment`.
+Contract checks use the earlier snapshot: interpreter startup can change locale
+variables, so the later snapshot alone does not establish what was supplied.
+An extra `LC_CTYPE`, including `C.UTF-8`, is still refused.
+
+This observer starts after shell startup; it does not witness the raw environment
+passed to `execve`. Its existing shell/platform exceptions are `PWD`, `OLDPWD`,
+`SHLVL`, `_` and `__CF_USER_TEXT_ENCODING`. Both snapshots are retained, including
+changes during shell exec and Python startup; those changes are observations,
+not new exceptions to the launch contract. A recorded canary start fails the local-operation check. Archive
 inventory checks detect changes or removals of earlier records around synchronous
 manager commands. The owner-death, missing-stop and recorder-failure cases
 separately witness the process or archive state they deliberately alter.
@@ -173,6 +186,10 @@ workers at setup/read/cleanup checkpoints, a resistant descendant after its
 worker exits, subsequent normal operation, and the refusal to launch further
 selected cases after unresolved stopping. The self-test prints the retained
 directory containing these partial witnesses and watchdog results.
+Environment controls exercise the actual wrapper and inspection path with the
+specified environment, an injected `LC_CTYPE=C.UTF-8`, a changed `LANG`, an extra
+variable and a repeated normal launch. They retain raw and interpreted snapshots
+and report their differences without requiring a platform to change its locale.
 
 Not exercised: the internal waiting state or queue count/byte overflow;
 `run`'s own re-verification of a pinned surface, which has no

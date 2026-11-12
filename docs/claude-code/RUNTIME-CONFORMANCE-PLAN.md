@@ -37,9 +37,10 @@ implementation.
    initialization on both architectures. A controlled comparison isolated the
    reply-copy path. The fix and independent regression passed native host
    verification and the next Linux run. That run's remaining failures all
-   concern an extra locale variable in the Python witness. Compare the revised
-   observer's before/after snapshots on both architectures, then rerun the full
-   container suite. Linux runtime execution remains unqualified.
+   concern an extra locale variable in the Python witness. The revised observer
+   and its controls now pass selected native and Linux cases, with the variable
+   absent before Python and present afterward on Linux. Rerun the full container
+   suite. Linux runtime execution remains unqualified.
 2. **Build the real-service check and propose its commission.** Two pieces of
    apparatus are missing: a producer for a profile's installation and check
    attestation, and a full-service check that drives the actual auditor tool
@@ -189,15 +190,14 @@ still refused. Its scope starts after shell startup, as described in the
 an injected locale variable, changed `LANG`, another extra variable and normal
 invariance. With `LANG=C`, the native interpreter added `LC_CTYPE=C.UTF-8` after
 the earlier witness; the specified `LANG=en_US.UTF-8` did not produce that change
-on the Mac. Whether interpreter startup accounts for the Linux failures still
-needs the paired Linux observation.
+on the Mac.
 
 That failed suite also exported eight relay sockets inside its witness trees.
 The indexer now records special entries as failures and binds their paths and
 types without opening them or changing originals. Its self-test passed 99
-controls and the index check passed. Future relay workspaces live outside
-`witness/`; the next comparison verifies the ordinary evidence export contains
-only regular files and directories, with copied bytes unchanged.
+controls and the index check passed. Relay workspaces now live outside
+`witness/`; the selected comparison below verifies the ordinary evidence export
+contains only regular files and directories, with copied bytes unchanged.
 
 Native selected cases in `/private/tmp/stewart-environment-observer-native-01`
 remain failed because the agent sandbox denies Unix socket binding: 144 of 153
@@ -208,17 +208,32 @@ argument guard also allowed that check to attempt `container system status`,
 which the sandbox denied; no container was launched. The wrapper now parses
 arguments before work and stops on native failure. Preserve both attempts.
 
+The host comparison `.scratch/environment-observer-02` passed on native macOS,
+Linux arm64 and Linux amd64. Each passed 205 self-tests and listed 24 cases; the
+two selected cases passed all 499 checks and fired all five controls, with no
+failures or skips and 22 cases explicitly unselected. The native witnesses are
+at `/private/tmp/stewart-env-dr5n5rw3/results`; the Linux witnesses are in each
+architecture's retained evidence tar and stopped container. This resolves the
+sandbox restrictions above, without qualifying the full suite.
+
+On each Linux architecture, all four authentication/model launch witnesses
+contained the specified `LANG=en_US.UTF-8` and no `LC_CTYPE` before Python,
+followed by `LC_CTYPE=C.UTF-8` in Python's snapshot. The Mac's four launches
+showed no added locale variable. The normal/invariance controls agree, and an
+explicitly supplied `LC_CTYPE=C.UTF-8` still fails the exact-environment check.
+Review verified the original NUL framing, unique names, decoded contents and
+digests, all seven frozen source/specification files, and all retained input
+digests. Each platform exported 158 regular files matching their originals,
+without special entries. All 17 host commands passed and their owned process
+groups were absent; both Linux containers were observed stopped.
+
 Next host command, from the repository root:
-`python3 -I -B .tmp/environment-observer/check-host.py`. It freezes the revised
-driver, reuses the nine retained binaries after checking their original receipt
-digests, and runs self-tests plus the submit/invariance and direct relay cases
-on the native host and both Linux architectures. It retains new observations
-under `.scratch/environment-observer-02`, including independent raw environment
-witnesses, before/after differences and container stopping observations. This
-selected comparison does not qualify the full suite. Inspect it before landing
-the driver changes and scheduling another full acceptance run. No real harness
-or model invocation is authorized. Retain the failed runs and comparison
-witnesses through review of the fix.
+`sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-environment-observer-01"`.
+It builds the committed source and runs the full release and synthetic runtime
+suites on both Linux architectures. Inspect failures and controls, extract the
+qualification record and check the index before calling the runtime qualified.
+No real harness or model invocation is authorized. Retain the failed runs and
+comparison witnesses through review of the fix.
 
 The queued-call and Linux suite changes passed host verification in
 `.tmp/runtime-queue/host.yTveQl/`, with runtime witnesses at
