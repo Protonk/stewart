@@ -36,7 +36,7 @@ implementation.
    results in the qualification record. Native verification is complete, but
    the first Linux run failed at initialization reply delivery or peer progress
    on both architectures. Resolve that failure using the retained witnesses
-   and diagnostic recovery below, then rerun the affected checks and the
+   and relay comparison below, then rerun the affected checks and the
    container suite. Linux runtime execution remains unqualified.
 2. **Build the real-service check and propose its commission.** Two pieces of
    apparatus are missing: a producer for a profile's installation and check
@@ -118,20 +118,29 @@ The relay comparison in `.scratch/relay-diagnostic-01` was interrupted by the
 host runner after 3,600 seconds. Only arm64 container-start output reached the
 host; no case results or completion record were exported. The probe had
 unbounded process-start and process-observation operations, and its host
-wrapper had no container-command watchdog. The existing diagnostic container's
-state is unknown; the timeout establishes neither its stopping nor a relay
-failure. Preserve this attempt and inspect its effects before another probe.
+wrapper had no container-command watchdog. Recovery evidence in
+`.scratch/relay-inspection-01` confirms that diagnostic container was running
+and is now stopped. At inspection, the probe's Python process was in disk
+sleep and its relay child was alive with two threads. The partial export holds
+only the environment and first case's supplied bytes, without observed bytes
+or phase results. Neither the exact blocked operation nor the cause of the
+original Linux initialization failure is established. Preserve both attempts
+through diagnosis; do not restart the old probe.
 
 Next host command, from the repository root:
-`python3 -I -B .tmp/runtime-queue/inspect-relay-host.py`. It targets only the
-container recorded by that attempt, writes `.scratch/relay-inspection-01`,
-and applies an independent host watchdog to each command. It inspects state
-and attempts a partial evidence export before stopping that diagnostic; a
-failed export or validation leaves stopping unrequested. Terminating a host
-client does not establish that its remote command stopped. The watchdog's
-six local checks passed, including setup, execution and descendant timeout controls.
-No new probe, build, authentication or model invocation is performed. Inspect
-the recovered evidence before changing the service or rerunning acceptance.
+`python3 -I -B .tmp/runtime-queue/check-linux-relay-v2.py`. It writes
+`.scratch/relay-diagnostic-02` and compares the retained arm64 optimized/debug
+relay binaries with whole, segmented, half-closed and empty socket traffic.
+Direct-reader controls distinguish observation from forwarding. The probe
+saves progress and bytes incrementally, reads no `/proc` files in its traffic
+worker and has a separate whole-case watchdog. The host wrapper gives the
+guest probe a 110-second timeout and its container client a 120-second
+deadline, exports partial evidence after a nonzero result, then stops and
+inspects only its own diagnostic container. Its main process is `sleep 240`;
+if the host controller is lost, inspect stopping and recover the retained
+container. Terminating a host client alone does not establish remote stopping. This
+comparison performs no build, authentication or model invocation. Inspect its
+evidence before changing the service or rerunning acceptance.
 
 The queued-call and Linux suite changes passed host verification in
 `.tmp/runtime-queue/host.yTveQl/`, with runtime witnesses at
