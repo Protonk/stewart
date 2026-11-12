@@ -6,7 +6,7 @@ manager-interface plan. It looks for three kinds of trouble that could swamp
 that work once it begins and reports them to the principal, who decides what
 each one means for entry.
 
-**State: not started.** Nothing below has been dispatched. The orchestrator
+**State: A is running; B and C have not been dispatched.** The orchestrator
 updates this line, the task boxes and the [run record](#run-record) in place
 and commits those updates.
 
@@ -32,8 +32,9 @@ The principal commissioned this review and chose, for this one bounded use:
   `model` and `effort` options. Refuters and the orchestrator use the session
   model. The script does not exist yet; the orchestrator writes it at dispatch
   from the briefs this plan specifies.
-- **At most eight agents at once.** Reviewers and refuters share that pool. A
-  goes first; B and C follow and may run together.
+- **At most eight agents at once, as a hard limit; four to six in practice.**
+  Reviewers and refuters share that pool. A goes first; B and C follow and may
+  run together.
 - **B and C are dispatched by hand** with the Agent tool. Their briefs differ on
   purpose, and what B's crossing needs depends on what comes back.
 - **Results come back in chat** as one list, ranked by how directly an item
@@ -42,10 +43,9 @@ The principal commissioned this review and chose, for this one bounded use:
   work, or accept. The principal decides. No findings document is tracked
   unless the principal asks.
 
-Dispatch has not been authorized yet: the principal asked for this plan to be
-committed first. A session that did not receive these choices from the
-principal directly confirms them, and that the Workflow tool is enabled, before
-dispatching anything. The review has no cap on findings; the orchestrator
+The principal authorized dispatch after this plan was committed. A session that
+did not receive these choices from the principal directly confirms them, and
+that the Workflow tool is enabled, before dispatching anything further. The review has no cap on findings; the orchestrator
 reports the number of agents used.
 
 ## Limits
@@ -208,7 +208,7 @@ to their INTERFACE sections.
 | 31 | `apparatus/sanity/test_launch.py`; `apparatus/sanity/exercise.py` as subject; `apparatus/test_build_markers.py`; the self-test of `apparatus/check_links.py` | `apparatus/sanity/LAUNCHER.md`, INTERFACE Appendix C |
 | 32 | The self-test of `apparatus/qualified.py` | DEVELOPMENT, "Evidence and retention" |
 
-- [ ] Confirm the batch list covers every tracked file with tests, and list
+- [x] Confirm the batch list covers every tracked file with tests, and list
   each batch's expected units by name. The first two commands print the Rust
   tests and the Python tests, cases and self-test registrations; the two
   `--list` commands print the drivers' cases and run no binary.
@@ -406,7 +406,19 @@ run can be resumed by its identifier only from the session that launched it;
 another session re-dispatches only the batches without a file, after
 confirming with the principal that the earlier run is no longer active.
 
-Nothing has run.
+**A, expected units.** `.tmp/readiness/a/expected.json` and one
+`batch-NN.expected.json` per batch: 786 units, of which 389 Rust tests and 150
+driver cases (126 release, 24 runtime), matching the commands above.
+
+**A, review and refutation.** Launched as workflow run `wf_d19e9fa6-d66`, six
+agents at a time: one Opus 5.5 reviewer per batch at high effort, then one
+refuter per finding on the session model. Its script is
+`readiness-a-test-review-wf_d19e9fa6-d66.js` under the launching session's
+`workflows/scripts/` directory in the harness's project folder for this
+checkout; the script holds the reviewer and refuter briefs. Reviewers return
+at most twelve unreached-condition candidates each. No batch has been re-run.
+
+B and C: nothing has run.
 
 ## Completion
 
