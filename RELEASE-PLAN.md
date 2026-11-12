@@ -25,6 +25,41 @@ The return-context decision needs no further presentation tuning or reader
 comparison before implementation. No additional reading interface or return
 context is selected here.
 
+## Entry to manager-interface work
+
+**Assessment: the specification stage can start now.** The latest offline
+service/package rehearsal has a reviewed passing outcome and observed process
+stopping. Service code is unchanged since the recorded Linux acceptance source;
+subsequent apparatus additions have native verification, not fresh Linux
+qualification. No unresolved result currently establishes a blocker on manager
+contract work. The remaining runtime and release obligations follow the routing
+above.
+
+1. **Carry the baseline forward.** Use the integrated plan's
+   [evidence-review section](development/MANAGER-INTERFACE-PLAN.md#remaining-offline-runtime-coverage-and-evidence-review)
+   to locate the current results, selected failures and witnesses. Preserve
+   them through their specified reviews. Reconcile any newly discovered uncertain
+   process or durable effect before reusing that work; a fresh broad suite or
+   historical cleanup is not an entry requirement.
+2. **Keep the live-testing handoff explicit.** The
+   [subscription testing track](development/MANAGER-INTERFACE-PLAN.md#additional-claude-code-subscription-testing)
+   owns the unapproved surface packet, real-profile prerequisites and missing
+   service procedures. Leave that packet unstarted and revalidate its scope and
+   bindings when taking up that track. A reviewed real-service outcome is needed
+   for its claims, not to open manager-interface work.
+3. **Enter the existing plan at stage 1:**
+   [specify the shared contracts](development/MANAGER-INTERFACE-PLAN.md#1-specify-the-shared-commissioning-and-documentary-contracts).
+   Start with the CLI walk-through and rule/diagnostic inventory, then freeze the
+   question-role, MCP and effect-description schemas with their acceptance
+   examples. Arrange implementation-independent driver authorship before changes
+   needing both service and driver work. Implementation follows that plan's
+   sequence and DEVELOPMENT checks.
+
+This transition is complete when stage 1 is underway with the baseline and
+remaining obligations accounted for. Remove this entry section then; the work
+order and topic plans continue to own execution. No model launch or container run
+is required merely to make this transition.
+
 ## Current evidence
 
 [README](README.md#status) owns product maturity and coverage limits;
