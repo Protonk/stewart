@@ -49,6 +49,27 @@ The embedded installation and check entries are
 synthetic attestations for offline input validation; they establish no signature
 verification, installation check or authority for a real session.
 
+The direct `runtime-relay-forwarding` case invokes only the hidden
+`__stewart-cc-relay m` helper against an independently owned Unix socket. It
+requires exact arbitrary bytes, including NUL, invalid UTF-8 and a final segment
+without LF, in each direction while both inputs remain open. The same bytes sent
+whole and in three segments must arrive before EOF; each segment is observed
+before the next is sent. Separate cases half-close the socket immediately after
+sending a reply, before observing stdout, and close empty inputs. A raw pipe
+control exercises the same observer with an idle writer, bytes while the writer
+remains open, and EOF.
+
+Each direct helper runs in a worker's process group. A separate owner bounds the
+whole worker, including setup, process creation, reads and cleanup: eight seconds
+per traffic variant, two for the pipe control, then up to 1.5 seconds each for
+group stopping. The owner retains incremental progress and byte witnesses and
+never reads helper stdout. A stalled read therefore cannot hold that owner inside
+the read. If group absence cannot be observed, further selected cases are skipped
+with that explicit reason; qualification cannot pass. This watchdog assumes the
+owner and host continue running. The synthetic harness's nonblocking reader also
+records read checkpoints and handles ordinary readiness races; nonblocking mode
+alone does not bound a kernel read stall.
+
 MCP envelopes and independent transport witnesses use a separate JSON decoder
 that accepts signed JSON-RPC error codes. Embedded Stewart core replies and
 archive records retain their strict control decoding. Envelope checks follow
@@ -147,6 +168,11 @@ Five further runtime cases use the same synthetic executable:
 
 The self-test runs every synthetic scenario against a small specification-only
 peer first, so a sequencing fault in the harness shows before a binary is used.
+It also exercises the direct relay observer with a raw pipe, actual blocked-read
+workers at setup/read/cleanup checkpoints, a resistant descendant after its
+worker exits, subsequent normal operation, and the refusal to launch further
+selected cases after unresolved stopping. The self-test prints the retained
+directory containing these partial witnesses and watchdog results.
 
 Not exercised: the internal waiting state or queue count/byte overflow;
 `run`'s own re-verification of a pinned surface, which has no

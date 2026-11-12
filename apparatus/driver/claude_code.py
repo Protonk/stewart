@@ -17,6 +17,7 @@ witness outside the archive. No successful or failed working tree is deleted.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import copy
 import hashlib
 import json
@@ -28,6 +29,7 @@ import re
 import select
 import shlex
 import signal
+import socket
 import stat
 import subprocess
 import sys
@@ -119,6 +121,7 @@ CASES = (
     ("help-and-presentation", "Runtime help topic and notice; human output shows the profile by path and digest"),
     ("source-invariance", "Receipt stays captured after source/profile edits and CWD/HOME changes"),
     ("release-gate", "Optional featureless binary: runtime fields unknown, no topic or notice, same scaffold"),
+    ("runtime-relay-forwarding", "Direct relay: arbitrary whole and segmented bytes before EOF, pipe observer control and bounded stopping"),
     ("runtime-submit", "Actual MCP record/prepare/submit, faithful delivery and fresh-session invariance"),
     ("runtime-ordinary-ending", "Unsubmitted turns, one reminder, a valid usage checkpoint, manager seal and confirmed close"),
     ("runtime-hooks-and-effort", "The hook helper admits only pinned tools after startup; a selected effort reaches the launch"),
@@ -375,6 +378,317 @@ class CaseStopped(Exception):
     pass
 
 
+class RelayWitness:
+    """Incremental independent traffic and progress, including before a read."""
+    def __init__(self, directory, channel):
+        self.directory, self.channel = directory, channel
+
+    def event(self, stage, **details):
+        self.publish({"kind": "phase", "stage": stage, "pid": os.getpid(),
+                      "monotonic_ns": time.monotonic_ns(), **details})
+
+    def publish(self, value):
+        raw = compact(value) + b"\n"
+        if len(raw) > 4000:
+            raise ValueError("relay checkpoint exceeds atomic channel bound")
+        # The owner receives this before a potentially blocking file operation.
+        if os.write(self.channel, raw) != len(raw):
+            raise RuntimeError("incomplete relay checkpoint publication")
+        with (self.directory / "worker-events.jsonl").open("ab", buffering=0) as stream:
+            if stream.write(raw) != len(raw):
+                raise RuntimeError("incomplete relay checkpoint file")
+
+    def bytes(self, name, raw):
+        with (self.directory / name).open("ab", buffering=0) as stream:
+            if stream.write(raw) != len(raw):
+                raise RuntimeError("incomplete relay byte witness: " + name)
+
+
+def relay_supervised(directory, action, seconds=8):
+    """Bound setup, Popen, reads and cleanup in a separately owned session.
+
+    A select deadline cannot bound a read that stalls after readiness. The
+    owner never reads relay stdout; its checkpoint pipe is nonblocking and
+    drained in bounded batches. This is not a bound on a stalled host/kernel.
+    """
+    directory.mkdir(mode=0o700)
+    started = time.monotonic()
+    record = {"budget_seconds": seconds, "cleanup_budget_seconds": 1.5,
+              "timed_out": False, "worker_reaped": False, "worker_exit": None,
+              "group_stopped": False, "last_phase": None, "result": None,
+              "channel_error": None, "signals": []}
+    (directory / "controller-start.json").write_bytes(compact(record) + b"\n")
+    read_fd, write_fd = os.pipe()
+    os.set_blocking(read_fd, False)
+    pid = os.fork()
+    if pid == 0:
+        os.close(read_fd)
+        try:
+            os.setsid()
+            witness = RelayWitness(directory, write_fd)
+            witness.event("worker-session-established", group=os.getpgrp())
+            result = action(witness)
+            witness.publish({"kind": "result", "result": result})
+            os._exit(0)
+        except BaseException:
+            try:
+                RelayWitness(directory, write_fd).publish({"kind": "result", "result": {
+                    "error": traceback.format_exc(), "checks": {}}})
+            except BaseException:
+                pass
+            os._exit(1)
+    os.close(write_fd)
+    record["worker_pid"] = pid
+    pending, total = bytearray(), 0
+
+    def drain():
+        nonlocal total
+        for _ in range(16):
+            try:
+                raw = os.read(read_fd, 4096)
+            except BlockingIOError:
+                break
+            if not raw:
+                break
+            total += len(raw)
+            if total > 1 << 20:
+                record["channel_error"] = "relay checkpoints exceed 1 MiB"
+                return
+            with (directory / "controller-events.jsonl").open("ab", buffering=0) as stream:
+                if stream.write(raw) != len(raw):
+                    record["channel_error"] = "incomplete controller checkpoint file"
+                    return
+            pending.extend(raw)
+            while b"\n" in pending:
+                line, _, rest = bytes(pending).partition(b"\n")
+                pending[:] = rest
+                try:
+                    row = json.loads(line)
+                except ValueError:
+                    record["channel_error"] = "invalid relay checkpoint"
+                    continue
+                if row.get("kind") == "result":
+                    record["result"] = row.get("result")
+                else:
+                    record["last_phase"] = row
+
+    def reap():
+        if not record["worker_reaped"]:
+            got, status = os.waitpid(pid, os.WNOHANG)
+            if got:
+                record["worker_reaped"] = True
+                record["worker_exit"] = os.waitstatus_to_exitcode(status)
+
+    try:
+        while True:
+            drain()
+            reap()
+            if record["worker_reaped"]:
+                break
+            if time.monotonic() - started >= seconds or record["channel_error"]:
+                record["timed_out"] = True
+                break
+            time.sleep(0.01)
+    finally:
+        # Reaping the worker is insufficient: its relay may still be alive.
+        cleanup_end = time.monotonic() + 1.5
+        for sig, allowance in ((signal.SIGTERM, 0.3), (signal.SIGKILL, 1.2)):
+            reap()
+            state = group_observation(pid)
+            if record["worker_reaped"] and state == "absent":
+                break
+            record["signals"].append({"signal": sig.name, "group_state": state})
+            try:
+                if state == "present":
+                    os.killpg(pid, sig)
+                elif not record["worker_reaped"]:
+                    # Setup may not have made the session yet. This remains
+                    # our unreaped child; never signal the owner's group.
+                    os.kill(pid, sig)
+            except ProcessLookupError:
+                pass
+            until = min(cleanup_end, time.monotonic() + allowance)
+            while time.monotonic() < until:
+                reap()
+                if record["worker_reaped"] and group_observation(pid) == "absent":
+                    break
+                time.sleep(0.01)
+        drain()
+        reap()
+        record["final_group_state"] = group_observation(pid)
+        record["group_stopped"] = record["worker_reaped"] and record["final_group_state"] == "absent"
+        if (record["result"] or {}).get("stopping_uncertain"):
+            record["group_stopped"] = False
+        if pending:
+            record["channel_error"] = "incomplete final relay checkpoint"
+        os.close(read_fd)
+        record["elapsed_seconds"] = time.monotonic() - started
+        (directory / "controller-result.json").write_bytes(compact(record) + b"\n")
+    return record
+
+
+def relay_success(record):
+    result = record.get("result") or {}
+    return (record["group_stopped"] and record["worker_exit"] == 0 and not record["timed_out"]
+            and not record["channel_error"] and not result.get("error")
+            and bool(result.get("checks")) and all(result["checks"].values()))
+
+
+class RelayObserver:
+    def __init__(self, witness):
+        self.witness, self.captures = witness, {}
+
+    def read(self, fd, name, wanted=None, seconds=0.6):
+        """Read available bytes, or until the wanted bytes/EOF/window end."""
+        got, eof = bytearray(), False
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            self.witness.event("before-select", stream=name, fd=fd, deadline=deadline)
+            ready, _, _ = select.select([fd], [], [], max(0, deadline - time.monotonic()))
+            self.witness.event("after-select", stream=name, fd=fd, ready=ready)
+            if not ready:
+                break
+            self.witness.event("before-os-read", stream=name, fd=fd, requested_bytes=512)
+            try:
+                raw = os.read(fd, 512)
+            except BlockingIOError:
+                self.witness.event("after-os-read", stream=name, fd=fd, outcome="EAGAIN")
+                continue
+            self.witness.event("after-os-read", stream=name, fd=fd,
+                               outcome="bytes" if raw else "EOF", raw_hex=raw.hex())
+            self.witness.bytes("observed-" + name + ".bin", raw)
+            self.captures.setdefault(name, bytearray()).extend(raw)
+            if len(self.captures[name]) > 65536:
+                raise ValueError("unexpected relay traffic exceeds 64 KiB")
+            if not raw:
+                eof = True
+                break
+            got.extend(raw)
+            if wanted is not None and bytes(got) == wanted:
+                break
+        return bytes(got), eof
+
+    def send(self, fd, name, raw):
+        self.witness.bytes("supplied-" + name + ".bin", raw)
+        position, deadline = 0, time.monotonic() + 0.6
+        while position < len(raw):
+            if time.monotonic() >= deadline:
+                raise TimeoutError("relay write deadline: " + name)
+            _, ready, _ = select.select([], [fd], [], max(0, deadline - time.monotonic()))
+            if not ready:
+                raise TimeoutError("relay write deadline: " + name)
+            self.witness.event("before-os-write", stream=name, fd=fd, bytes=len(raw) - position)
+            try:
+                size = os.write(fd, raw[position:])
+            except BlockingIOError:
+                continue
+            self.witness.event("after-os-write", stream=name, fd=fd, bytes=size,
+                               raw_hex=raw[position:position + size].hex())
+            if not size:
+                raise RuntimeError("relay write made no progress")
+            self.witness.bytes("transmitted-" + name + ".bin", raw[position:position + size])
+            position += size
+
+
+RELAY_REQUEST = b"\x00\xffinput without a final LF\nsecond line\r\x01tail"
+RELAY_REPLY = b"\xfe\x00reply without a final LF\r\nsecond line\x7ftail"
+
+
+def relay_pipe_control(witness):
+    observer, checks = RelayObserver(witness), {}
+    reader, writer = os.pipe()
+    try:
+        os.set_blocking(reader, False)
+        os.set_blocking(writer, False)
+        checks["idle"] = observer.read(reader, "pipe", seconds=0.03) == (b"", False)
+        observer.send(writer, "pipe", RELAY_REPLY)
+        checks["bytes-while-writer-open"] = observer.read(reader, "pipe", RELAY_REPLY) == (RELAY_REPLY, False)
+        os.close(writer)
+        writer = None
+        checks["empty-eof"] = observer.read(reader, "pipe") == (b"", True)
+        return {"checks": checks, "error": None}
+    finally:
+        os.close(reader)
+        if writer is not None:
+            os.close(writer)
+
+
+def relay_traffic(binary, variant, env, witness):
+    """Exercise only the specified byte conduit, without an audit or harness."""
+    observer, checks = RelayObserver(witness), {}
+    listener = connection = process = None
+    stopping_uncertain = False
+    try:
+        cwd = witness.directory / "workspace"
+        witness.event("before-workspace")
+        cwd.mkdir(mode=0o700)
+        os.chdir(cwd)
+        listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        listener.settimeout(1)
+        witness.event("before-listener-bind")
+        listener.bind("m")
+        listener.listen(1)
+        witness.event("before-popen", argv=[str(binary), "__stewart-cc-relay", "m"])
+        process = subprocess.Popen([str(binary), "__stewart-cc-relay", "m"], env=env,
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        witness.event("after-popen", relay_pid=process.pid)
+        if os.getpgid(process.pid) != os.getpgrp():
+            stopping_uncertain = True
+            process.kill()
+            raise RuntimeError("relay escaped the owned worker group")
+        connection, _ = listener.accept()
+        connection.setblocking(False)
+        for stream in (process.stdin, process.stdout, process.stderr):
+            os.set_blocking(stream.fileno(), False)
+        inp, out, peer = process.stdin.fileno(), process.stdout.fileno(), connection.fileno()
+        checks["idle-stdout"] = observer.read(out, "stdout", seconds=0.03) == (b"", False)
+        checks["idle-socket"] = observer.read(peer, "socket", seconds=0.03) == (b"", False)
+        request = b"" if variant == "empty-eof" else RELAY_REQUEST
+        reply = b"" if variant == "empty-eof" else RELAY_REPLY
+        segments = (slice(0, 1), slice(1, 7), slice(7, None)) if variant == "segmented-open" else (slice(None),)
+        for index, segment in enumerate(segments):
+            if request:
+                observer.send(inp, "stdin", request[segment])
+                checks["request-open-%d" % index] = observer.read(peer, "socket", request[segment]) == (request[segment], False)
+            if reply:
+                observer.send(peer, "socket", reply[segment])
+                if variant != "immediate-half-close":
+                    checks["reply-open-%d" % index] = observer.read(out, "stdout", reply[segment]) == (reply[segment], False)
+        # In this variant, shutdown happens before any nonempty stdout read.
+        witness.event("before-peer-half-close", variant=variant)
+        connection.shutdown(socket.SHUT_WR)
+        witness.event("after-peer-half-close", variant=variant)
+        tail, _ = observer.read(out, "stdout", reply if variant == "immediate-half-close" else None,
+                                seconds=0.6 if variant == "immediate-half-close" else 0.03)
+        checks["half-close-tail"] = tail == (reply if variant == "immediate-half-close" else b"")
+        witness.event("before-stdin-close")
+        process.stdin.close()
+        witness.event("after-stdin-close")
+        checks["socket-eof"] = observer.read(peer, "socket") == (b"", True)
+        checks["exact-final-stdout"] = bytes(observer.captures.get("stdout", b"")) == reply
+        checks["exact-final-socket"] = bytes(observer.captures.get("socket", b"")) == request
+        end = time.monotonic() + 0.6
+        while process.poll() is None and time.monotonic() < end:
+            time.sleep(0.01)
+        checks["relay-exit"] = process.poll() == 0
+        checks["stdout-eof"] = observer.read(out, "stdout") == (b"", True)
+        observer.read(process.stderr.fileno(), "stderr", seconds=0.03)
+        return {"checks": checks, "error": None}
+    except BaseException:
+        return {"checks": checks, "error": traceback.format_exc(), "stopping_uncertain": stopping_uncertain}
+    finally:
+        witness.event("before-worker-cleanup")
+        if connection is not None:
+            connection.close()
+        if listener is not None:
+            listener.close()
+        if process:
+            for stream in (process.stdin, process.stdout, process.stderr):
+                if stream and not stream.closed:
+                    stream.close()
+        witness.event("after-worker-cleanup")
+
+
 class Driver:
     def __init__(self, binary, work, release=None, selected=None, variant=None):
         self.binary, self.work, self.release, self.variant = binary, work, release, variant
@@ -401,6 +715,7 @@ class Driver:
         self.serial = 0
         self.archives = []
         self.canaries = []
+        self.launch_blocked = None
         self.started = time.monotonic()
         self.save("environment.json", {"platform": platform.platform(),
                   "python": sys.version, "environment": self.env,
@@ -437,9 +752,47 @@ class Driver:
         self.notes.append({"case": self.current, "name": name, "note": text})
         print("NOTE %s: %s" % (name, text), flush=True)
 
-    def control(self, name, fired):
+    def control(self, name, fired, detail="deliberately invalid input was not refused"):
         self.controls.append({"case": self.current, "name": name, "fired": bool(fired)})
-        self.check(name + ".fired", fired, "deliberately invalid input was not refused")
+        self.check(name + ".fired", fired, detail)
+
+    def runtime_relay_forwarding(self):
+        root = self.witness / "relay-forwarding"
+        root.mkdir()
+
+        def observe(name, action, seconds=8):
+            try:
+                return relay_supervised(root / name, action, seconds)
+            except Exception:
+                self.launch_blocked = "relay observer controller failed; stopping is unresolved; see %s" % (root / name)
+                raise
+
+        def inspect(name, record):
+            self.check(name + ".deadline", not record["timed_out"], record)
+            self.check(name + ".group-stopped", record["group_stopped"], record)
+            if not record["group_stopped"]:
+                self.launch_blocked = "owned relay observer group %s has not been observed stopped; see %s" % (
+                    record["worker_pid"], root / name / "controller-result.json")
+                raise CaseStopped(self.launch_blocked)
+            result = record.get("result") or {}
+            self.check(name + ".worker-result", record["worker_exit"] == 0
+                       and not record["channel_error"] and not result.get("error")
+                       and bool(result.get("checks")), record)
+            for label, passed in result.get("checks", {}).items():
+                self.check(name + "." + label, passed, result)
+
+        record = observe("pipe-control", relay_pipe_control, 2)
+        inspect("pipe-control", record)
+        self.control("relay-pipe-observer-idle-open-bytes-eof", relay_success(record),
+                     "pipe observer did not observe idle/open-writer bytes/EOF")
+        for variant in ("whole-open", "segmented-open", "immediate-half-close", "empty-eof"):
+            record = observe(variant, lambda witness: relay_traffic(self.binary, variant, self.env, witness))
+            inspect(variant, record)
+            self.control("relay-" + variant, relay_success(record), "relay forwarding comparison did not pass")
+        self.note("relay-observer-scope", "Each direct helper worker owns an 8-second deadline plus "
+                  "1.5 seconds for observed group stopping. Pipe readiness and nonblocking mode alone "
+                  "do not bound a stalled read; the owner never reads helper stdout. Byte and progress "
+                  "witnesses remain outside the audit, including after a worker timeout.")
 
     def cmd(self, label, args, outcome="completed", binary=None, raw=False, env=None, cwd=None, input_bytes=None):
         self.serial += 1
@@ -1878,7 +2231,10 @@ class Driver:
             start = len(self.checks)
             reason = None
             try:
-                reason = getattr(self, name.replace("-", "_"))()
+                if self.launch_blocked:
+                    reason = self.launch_blocked
+                else:
+                    reason = getattr(self, name.replace("-", "_"))()
             except CaseStopped:
                 pass
             except Exception:
@@ -2027,8 +2383,11 @@ def synthetic_harness(scenario_path, argv):
 
         def read_frame(deadline):
             # Read the descriptor directly: a buffered reader could hold a
-            # second pipelined reply where select cannot see it.
+            # second pipelined reply where select cannot see it. Nonblocking
+            # mode handles readiness races; it does not bound a kernel read
+            # stall. The direct relay case has an independent owner watchdog.
             descriptor = mcp.stdout.fileno()
+            os.set_blocking(descriptor, False)
             while b"\n" not in unread:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
@@ -2036,7 +2395,13 @@ def synthetic_harness(scenario_path, argv):
                 ready, _, _ = select.select([descriptor], [], [], remaining)
                 if not ready:
                     return None
-                chunk = os.read(descriptor, 65536)
+                event("rpc-before-read", fd=descriptor, requested_bytes=65536)
+                try:
+                    chunk = os.read(descriptor, 65536)
+                except BlockingIOError:
+                    event("rpc-after-read", fd=descriptor, outcome="EAGAIN")
+                    continue
+                event("rpc-after-read", fd=descriptor, outcome="bytes" if chunk else "EOF", bytes=len(chunk))
                 if not chunk:
                     raise RuntimeError("MCP server ended before reply")
                 unread.extend(chunk)
@@ -2299,6 +2664,85 @@ def self_test():
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
+    relay_root = Path(tempfile.mkdtemp(prefix="stewart-relay-driver-selftest-"))
+    print("Relay self-test evidence retained: %s" % relay_root, flush=True)
+
+    def supervised_control(name, action, seconds=0.2):
+        record = relay_supervised(relay_root / name, action, seconds)
+        check("relay-owner." + name + ".group-stopped", record["group_stopped"])
+        if not record["group_stopped"]:
+            raise RuntimeError("self-test owned group stopping unknown: %s" % record)
+        return record
+
+    record = supervised_control("pipe-reader", relay_pipe_control, 2)
+    check("relay-owner.pipe-idle-open-bytes-eof", relay_success(record))
+    journal = [json.loads(raw) for raw in (relay_root / "pipe-reader/controller-events.jsonl").read_bytes().splitlines()]
+    check("relay-owner.independent-byte-witness", (relay_root / "pipe-reader/observed-pipe.bin").read_bytes()
+          == RELAY_REPLY and any(row.get("raw_hex") == RELAY_REPLY.hex() for row in journal))
+    check("relay-owner.read-checkpoints", all(stage in {row.get("stage") for row in journal}
+          for stage in ("before-select", "after-select", "before-os-read", "after-os-read")))
+
+    def stall(witness, stage):
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
+        witness.bytes("partial.bin", b"before stall\x00\xff")
+        witness.event(stage)
+        # A real blocking read with a writer kept open; the owner must remain
+        # responsive even when no Python deadline can run in this worker.
+        reader, writer = os.pipe()
+        os.read(reader, 1)
+        os.close(writer)
+        os.close(reader)
+
+    for stage in ("before-popen", "before-os-read", "before-worker-cleanup"):
+        record = supervised_control(stage, lambda witness: stall(witness, stage))
+        check("relay-owner." + stage + ".timeout", record["timed_out"] and not relay_success(record)
+              and record["elapsed_seconds"] < 2 and record["last_phase"]["stage"] == stage
+              and any(row["signal"] == "SIGKILL" for row in record["signals"]))
+        check("relay-owner." + stage + ".partial-witness", (relay_root / stage / "partial.bin").read_bytes()
+              == b"before stall\x00\xff")
+
+    def lingering_descendant(witness):
+        ready_r, ready_w = os.pipe()
+        child = os.fork()
+        if child == 0:
+            os.close(ready_r)
+            signal.signal(signal.SIGTERM, signal.SIG_IGN)
+            os.write(ready_w, b"r")
+            time.sleep(30)
+            os._exit(0)
+        os.close(ready_w)
+        os.read(ready_r, 1)
+        os.close(ready_r)
+        witness.event("resistant-descendant-ready", descendant=child)
+        time.sleep(30)  # worker accepts TERM; descendant does not
+
+    record = supervised_control("lingering-descendant", lingering_descendant)
+    check("relay-owner.reaped-worker-does-not-hide-descendant", record["timed_out"]
+          and record["elapsed_seconds"] < 2 and any(row["signal"] == "SIGKILL" for row in record["signals"]))
+    record = supervised_control("invariance", relay_pipe_control, 2)
+    check("relay-owner.invariance-after-timeouts", relay_success(record))
+
+    # Exercise the driver's actual dispatch: uncertain stopping prevents the
+    # next selected case from launching and remains visible as a skip.
+    dispatcher = object.__new__(Driver)
+    dispatcher.selected = {"families", "binding-controls"}
+    dispatcher.launch_blocked = None
+    dispatcher.cases, dispatcher.checks, dispatcher.controls, dispatcher.notes = [], [], [], []
+    dispatcher.started, dispatcher.work = time.monotonic(), relay_root
+    saved = {}
+    dispatcher.save = lambda name, value: saved.update({name: value})
+    def unknown_stop():
+        dispatcher.launch_blocked = "self-test deliberately unresolved owned group"
+        dispatcher.check("self-test.unresolved-group", False, "expected firing control")
+        raise CaseStopped()
+    dispatcher.families = unknown_stop
+    dispatched = []
+    dispatcher.binding_controls = lambda: dispatched.append("unexpected launch")
+    with (relay_root / "dispatch-control.stdout").open("w") as stream, contextlib.redirect_stdout(stream):
+        dispatcher.run()
+    check("relay-owner.unknown-stop-blocks-launch", not dispatched
+          and [row["outcome"] for row in saved["RESULT.json"]["cases"]] == ["failed", "skipped"]
+          and saved["RESULT.json"]["cases"][1]["skip_reason"] == dispatcher.launch_blocked)
     valid_error = b'{"jsonrpc":"2.0","id":3,"error":{"code":-32000,"message":"startup pending"}}'
     check("mcp.signed-error", mcp_message_loads(valid_error)["error"]["code"] == -32000)
     check("mcp.signed-id", mcp_message_loads(b'{"jsonrpc":"2.0","id":-1,"result":{}}')["id"] == -1)

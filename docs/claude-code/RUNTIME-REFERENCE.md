@@ -392,7 +392,9 @@ by the build feature.
 The integration uses a standard-library CLI bridge with a stdio MCP relay. The
 harness owns the relay child; `run` owns a private Unix-domain socket, the audit lock and
 every durable mutation. The relay forwards original request bytes; `run`
-captures them before interpretation and returns the response bytes. Closing
+captures them before interpretation and returns the response bytes. The relay
+copies each available reply chunk to stdout and flushes it before reading
+again, so partial frames can reach the peer while the socket remains open. Closing
 authoring must be checked again at durable publication, even if a call entered
 earlier. A missing relay or owner ends the session without another writer.
 

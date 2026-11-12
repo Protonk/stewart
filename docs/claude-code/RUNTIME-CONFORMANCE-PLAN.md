@@ -33,11 +33,11 @@ implementation.
 1. **Qualify the Linux runtime path.** The container suite now includes the
    standalone runtime driver against both architectures' gated binaries, a
    different-digest writer control, exported independent witnesses and runtime
-   results in the qualification record. Native verification is complete, but
-   the first Linux run failed at initialization reply delivery or peer progress
-   on both architectures. Resolve that failure using the retained witnesses
-   and relay comparison below, then rerun the affected checks and the
-   container suite. Linux runtime execution remains unqualified.
+   results in the qualification record. The first Linux run failed during
+   initialization on both architectures. A controlled comparison isolated the
+   reply-copy path. The fix and independent regression passed native host
+   verification; rerun the container suite on both architectures. Linux runtime
+   execution remains unqualified.
 2. **Build the real-service check and propose its commission.** Two pieces of
    apparatus are missing: a producer for a profile's installation and check
    attestation, and a full-service check that drives the actual auditor tool
@@ -138,26 +138,43 @@ reply or nonempty EOF. Optimized and debug behaved alike, and removing `/proc`
 observation did not remove the failure. All worker groups and the diagnostic
 container were observed stopped; the export is intact.
 
-Next host command, from the repository root:
-`python3 -I -B .tmp/runtime-queue/check-linux-relay-v3.py`. It writes
-`.scratch/relay-diagnostic-03`. A positive pipe-reader control and checkpoints
-around descriptor inspection, `select` and `read` distinguish an observer
-failure from missing reply bytes. Each of three candidates receives an open
-reply, a reply immediately followed by half-close before any stdout observation,
-and empty EOF. The candidates are the retained optimized Stewart and two small
-standalone relays differing only in socket-to-stdout copying: standard-library
-copy versus explicit read/write/flush. This comparison tests a hypothesis;
-Stewart is unchanged.
+The paired comparison in `.scratch/relay-diagnostic-03` completed ten
+observations with two failures. The retained Stewart and a standalone
+standard-library-copy relay stalled in `os.read` after `select` on a
+nonblocking stdout pipe when the reply socket stayed open. An otherwise
+identical standalone relay using explicit read/write/flush delivered the exact
+141-byte reply before EOF. All three candidates passed immediate half-close
+and empty EOF; pipe and socketpair reader controls passed in every case.
+The toolchain image matched the retained build image. Both containers and all
+worker groups were observed stopped. This distinguishes the copy paths without
+establishing the underlying kernel or library defect, or qualifying the full
+service fix.
 
-The wrapper checks the retained toolchain image digest and builds only those
-two standalone executables offline, with a 60-second guest build timeout. The
-probe has a separate whole-case watchdog, a 110-second guest timeout and a
-120-second host-client deadline. It saves progress and bytes incrementally,
-exports evidence even after a nonzero workload result, and stops and inspects
-its own containers. The containers and originals remain available for recovery.
-Terminating a host client alone does not establish remote stopping. There is
-no authentication or model invocation. Inspect the comparison before changing
-the service or rerunning acceptance.
+The service now uses the tested explicit reply-copy loop. A unit check covers
+visibility before the next read, interrupted reads, short writes and raw bytes
+without LF. An independent driver regression covers the actual helper with an
+owner watchdog outside its pipe reads. Host verification in
+`.tmp/relay-fix/host.KTpsns/`, with runtime witnesses at
+`/private/tmp/stewart-relay-runtime.wx0dO3/run`, passed all three Cargo
+configurations, builds, formatting and links with no skipped checks. The
+runtime suite passed 24 cases, 9,766 checks and all 73 controls; its self-test
+passed 176 checks with no failures or skips. The source snapshot stayed
+unchanged and all three copied binary digests match the runtime environment
+record. This completes native verification, not Linux qualification.
+
+The host run resolves the sandbox's socket restrictions: retained runs in
+`.tmp/relay-fix/` and `.tmp/runtime-queue/relay-driver-*.log` include loopback
+skips, the `commission_over_network` bind failure and the direct-helper case's
+four bind failures before helper launch. Keep those originals and
+`/private/tmp/stewart-relay-forwarding-fix-01` through review of the Linux run.
+
+Next host command, from the repository root:
+`sh apparatus/acceptance.sh "$PWD/.scratch/acceptance-relay-fix-01"`. It builds
+the committed source and runs the release and synthetic runtime suites on
+arm64 and amd64. After the run, inspect failures and controls, extract its
+qualification record and check the index. No real harness or model invocation
+is authorized by this suite. Retain the original failed runs and comparison
+witnesses through review of the fix.
 
 The queued-call and Linux suite changes passed host verification in
 `.tmp/runtime-queue/host.yTveQl/`, with runtime witnesses at

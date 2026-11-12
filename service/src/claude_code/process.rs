@@ -242,7 +242,24 @@ fn relay(path: &str) -> io::Result<()> {
         let _ = io::copy(&mut io::stdin().lock(), &mut input);
         let _ = input.shutdown(std::net::Shutdown::Write);
     });
-    io::copy(&mut stream, &mut io::stdout().lock()).map(|_| ())
+    forward_replies(&mut stream, &mut io::stdout().lock())
+}
+
+fn forward_replies(input: &mut impl Read, output: &mut impl Write) -> io::Result<()> {
+    // Replies, including partial lines, must reach the pipe reader before the
+    // next socket read. Keep this as explicit read/write: the Linux
+    // socket-to-pipe io::copy path can stall the reader until socket EOF.
+    let mut buffer = [0u8; 8192];
+    loop {
+        let count = match input.read(&mut buffer) {
+            Ok(0) => return Ok(()),
+            Ok(count) => count,
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            Err(error) => return Err(error),
+        };
+        output.write_all(&buffer[..count])?;
+        output.flush()?;
+    }
 }
 fn hook(path: &str) -> io::Result<()> {
     let mut stream = UnixStream::connect(path)?;
@@ -289,4 +306,69 @@ pub fn helper(args: &[String]) -> Option<i32> {
             2
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    #[test]
+    fn reply_chunks_are_visible_before_the_next_read() {
+        #[derive(Default)]
+        struct State {
+            pending: Vec<u8>,
+            visible: Vec<u8>,
+            reads: usize,
+        }
+        struct Reader(Rc<RefCell<State>>);
+        impl Read for Reader {
+            fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+                let mut state = self.0.borrow_mut();
+                let next: &[u8] = match state.reads {
+                    0 => b"first\0",
+                    1 => {
+                        assert_eq!(state.visible, b"first\0");
+                        state.reads += 1;
+                        return Err(io::ErrorKind::Interrupted.into());
+                    }
+                    2 => {
+                        assert_eq!(state.visible, b"first\0");
+                        b"second\xff"
+                    }
+                    3 => {
+                        assert_eq!(state.visible, b"first\0second\xff");
+                        b""
+                    }
+                    _ => panic!("read after EOF"),
+                };
+                state.reads += 1;
+                buffer[..next.len()].copy_from_slice(next);
+                Ok(next.len())
+            }
+        }
+        struct Writer(Rc<RefCell<State>>);
+        impl Write for Writer {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                // Require write_all to preserve a chunk across short writes.
+                let count = bytes.len().min(2);
+                self.0
+                    .borrow_mut()
+                    .pending
+                    .extend_from_slice(&bytes[..count]);
+                Ok(count)
+            }
+            fn flush(&mut self) -> io::Result<()> {
+                let mut state = self.0.borrow_mut();
+                let pending = std::mem::take(&mut state.pending);
+                state.visible.extend(pending);
+                Ok(())
+            }
+        }
+        let state = Rc::new(RefCell::new(State::default()));
+        forward_replies(&mut Reader(state.clone()), &mut Writer(state.clone())).unwrap();
+        assert_eq!(state.borrow().visible, b"first\0second\xff");
+        assert!(state.borrow().pending.is_empty());
+    }
 }
