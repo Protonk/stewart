@@ -30,11 +30,13 @@ Take these in order. Each step that changes the contract or the service is
 written by one author, and its driver cases by another who has not read the
 implementation.
 
-1. **Build the real-service check and propose its commission.** Two pieces of
-   apparatus remain: a real-harness controller and review workflow, and
-   a full-service comparison with independent witnesses. The installation and
-   profile producer, invocation library and independent offline helper fixture
-   and observer are implemented and verified natively. No reviewed real-harness attestation exists, and the
+1. **Build the real-service check and propose its commission.** Build the
+   full-service comparison with independent witnesses. The supplied-surface
+   controller and explicit review workflow have passed their native synthetic
+   rehearsals.
+   The installation and profile producer, invocation library and independent
+   offline helper fixture and observer are implemented and verified natively.
+   No reviewed real-harness attestation exists, and the
    two-tool probe is not a full-service check. Write a concrete bounded commission: exact
    synthetic materials, model, session allowance, stopping conditions,
    executable and surface pins, the subscription route with paid extra usage
@@ -74,85 +76,55 @@ first fixture deliverable is offline only: it exercises actual helpers and
 retains raw witnesses but leaves authentication/startup observations unexercised.
 Its synthetic rehearsal cannot produce an eligible profile attestation.
 
-Remaining implementation before proposing a live commission: integrate the
-bounded invocation library and independent observer into a live controller,
-complete the review workflow and add the actual-service comparison. The latter's independent
+The integrated controller and explicit review workflow are implemented and
+verified with native synthetic rehearsals. The actual-service comparison remains
+before proposing a live commission. Its independent
 witnesses include original synthetic inputs, manager commands/readback, external
 delivery inventories and process observations. Service-owned raw captures retain
 that provenance; they are not independent peer witnesses or complete provider
 transcripts. The [apparatus guide](../../apparatus/claude-code/README.md) owns the
 artifact interfaces as they are implemented.
 
-The combined host verification at `.tmp/bounded-observer/host.CD7Wrh` passed all
-twelve commands, with unchanged source snapshots, no timeouts and all outer
-command groups observed absent. Pin checks passed 3 tests, profile checks 16,
-invocation checks 22, probe checks 24, protocol checks 14 Python tests and 9 Rust
-tests, the surface fixture self-test 51 checks and the observer self-test 37
-checks, with no failures or skips. The listener rehearsal at
-`.scratch/claude-code-observer-rehearsal-01` passed all five controls. Review
-verified all 209 evidence members, exact source/input bindings, three distinct
-sessions/workspaces and both firing negative controls without effects.
-Authentication and process results in the listener rehearsal are explicitly
-synthetic; the separate invocation controls exercised actual Python process
-stopping. The producer refused the synthetic observation, and no `CHECK.json`
-or eligible profile was emitted. Reviews are retained at
-`.tmp/bounded-observer/host-02-review.log` and
-`.tmp/bounded-observer/listener-review-final.log`.
+The current native verification is `.tmp/surface-controller/host.gt15l7`.
+All fourteen commands passed with unchanged source snapshots, no timeouts and
+all outer command groups observed absent. Controller checks passed 13 tests
+and observer checks passed 58, without failures or skips. The batch verified
+unchanged source bindings and passing outputs for pin 3, profile 16, invocation
+22, probe 24, protocol 14 Python and 9 Rust, surface 51 and peer 73 from
+`.tmp/surface-controller/host.ij81RP`.
 
-The earlier listener rehearsal at
-`/private/tmp/stewart-observer-listeners-native-01` failed all five controls at
-socket binding with `EPERM`, before any peer connection. No subprocess or Claude
-was launched by that rehearsal. Preserve it and
-`.tmp/runtime-queue/observer-listeners-native-01.log` through host review.
+The five listener controls at `.scratch/claude-code-observer-rehearsal-03`
+passed; all 211 evidence members were verified. The integrated controller at
+`.scratch/claude-code-controller-rehearsal-01` passed its normal comparison and
+both intended failure controls. Normal used six synthetic invocations with
+positive/denial/invariance cases in distinct sessions and workspaces. Bad startup
+used two invocations and left four slots closed; wrong authentication used one
+and left five closed. Both failures prevented fixture effects and later starts.
+All nine launched groups were observed absent. Review verified 249, 83 and 50
+evidence members respectively, exact peer/observer traffic and supplied inputs,
+and refusal of repeat starts without changing receipts. No eligible `CHECK.json`
+or profile was emitted; synthetic attestation and profile assembly were refused.
+The review is `.tmp/surface-controller/host-02-review.log`. These are native
+synthetic results, not real-harness or Linux qualification.
 
-The first combined host check at `.tmp/bounded-observer/host.Qt0uwr` completed
-ten commands: nine passed and the bounded tests errored. Those tests ran 21
-cases: twenty passed, and owner-loss observation raised `PermissionError`
-(`EPERM`) from `killpg(group, 0)`; its cleanup then raised the same error from
-`killpg(group, SIGKILL)`. The remaining apparatus checks passed with no skips,
-source snapshots matched and all outer command groups were observed absent.
-The listener rehearsal and its evidence review were not run. Later read-only
-inspection observed the recorded group absent; no historical group was signalled.
-The supplementary `ps` inspection was denied by the agent sandbox. Original
-outputs remain unchanged, with review at `.tmp/bounded-observer/host-01-review.log`.
+The installation at `.scratch/claude-code-service-installation-01` has fourteen
+verified public evidence members. Its native helper fixture comparison at
+`.scratch/claude-code-surface-rehearsal-01` passed seven comparisons with 92
+verified members; authentication and real-harness startup stayed unexercised.
+Its review is `.tmp/profile-bootstrap/host-review.log`.
 
-The owner-loss test now retains bounded status probes, keeps `EPERM` unknown,
-requires explicit absence to pass and records cleanup failures without masking
-the primary result. It sends no cleanup signal after observed absence. A fresh
-run reproduced one `EPERM` followed by absence about 24 milliseconds later.
-The transition, persistent-denial, present and absence/invariance controls pass;
-persistent denial cannot count as stopping. All 22 bounded tests passed with no
-skips in `.tmp/bounded-observer/bounded-tests-owner-loss-fix.log`; exact group
-observations and controls were reviewed in
-`.tmp/bounded-observer/owner-loss-fix-review.log`. The invocation library and
-independent observer are unchanged by this test correction. The reason for the
-operating system's transient denial remains unestablished.
+Preserve these selected failed originals and controls through review of the
+first service comparison; do not rerun them in place or rewrite receipts:
 
-This completes native verification of the invocation library and independent
-observer. There is no integrated live controller, eligible check or new spending
-authority yet. Preserve the failed originals through review of this comparison.
-
-The host verification at `.tmp/profile-bootstrap/host.Wxzodq` passed all eleven
-commands with unchanged source snapshots and all owned process groups observed
-absent. Pin checks passed 3 tests, profile checks 16, probe checks 24, protocol
-checks 14 Python tests and 9 Rust tests, and the surface fixture self-test 51
-checks, with no failures or skips. Review verified all fourteen public
-installation-evidence members at `.scratch/claude-code-service-installation-01`.
-The native helper rehearsal at `.scratch/claude-code-surface-rehearsal-01`
-passed all seven comparisons, with 92 evidence members verified. Its observation
-records eight observed comparisons and two intentionally unexercised comparisons:
-authentication and real-harness startup. It cannot produce an eligible profile.
-No Claude or authentication invocation occurred. The review output is
-`.tmp/profile-bootstrap/host-review.log`.
-
-The initial filename collision on case-insensitive macOS was corrected; its
-failed output remains at `.tmp/toolchain-refresh/profile-tests.log`.
-The earlier actual-helper sandbox rehearsal at
-`/private/tmp/stewart-surface-rehearsal-native-02` retains seven socket-bind
-`EPERM` failures before helper launch; all seven worker groups stopped with no
-timeouts. Its observation has three observed, five failed and two unexercised
-comparisons. The authentication and startup comparisons intentionally remain
-unexercised in every synthetic rehearsal.
+| Evidence | Failure and disposition |
+| --- | --- |
+| `.tmp/surface-controller/host.ij81RP`, `.scratch/claude-code-observer-rehearsal-02` | Twelve of thirteen commands passed. The listener's capture-failure control reported `ENOTCONN` before a final case assessment; four of five controls passed. All 206 original members remain unchanged. Review: `.tmp/surface-controller/host-01-review.log`. |
+| `.tmp/observer-repair/diagnosis.log`, `self-test.log`, `evidence-review.log` | Ordered socketpairs reproduced EPIPE before send, ENOTCONN between send and shutdown, and EOF after shutdown. The original syscall remains unattributed. The repaired control uses a valid correlated hook request and independent attempted-byte witness; it requires the exact capture failure, closed gate and stop, and refuses unrelated errors. All 58 checks and 1,591 evidence members passed review. Live observer behavior was unchanged. |
+| `.scratch/claude-code-controller-sandbox-01`, `.tmp/surface-controller/sandbox-run.log` | First socket bind refused with EPERM before any reservation. No controller invocation started. |
+| `.tmp/surface-controller/profile-refactor-tests.log`, `profile-refactor-tests-fixed.log` | Six errors from an installation-validation refactor, corrected; all sixteen profile tests then passed. |
+| `.tmp/bounded-observer/host.Qt0uwr`, `host-01-review.log`, `owner-loss-fix-review.log` | Owner-loss observation and cleanup encountered EPERM. Later read-only inspection observed absence. Corrected controls keep EPERM unknown, require explicit absence and avoid signalling an observed-absent group. A fresh control observed EPERM followed by absence; its operating-system cause remains unestablished. All 22 invocation checks passed in `host.CD7Wrh` and the current carried-forward run. |
+| `/private/tmp/stewart-observer-listeners-native-01`, `/private/tmp/stewart-surface-rehearsal-native-02` | Sandbox bind denials before peers/helpers. Subsequent native listener/helper rehearsals passed. Raw logs and receipts remain unchanged. |
+| `.tmp/toolchain-refresh/profile-tests.log` | Case-insensitive filename collision, corrected before the passing profile bootstrap run. |
 
 Use firing controls, differing cases and invariance cases under
 [ACCEPTANCE](../../ACCEPTANCE.md#the-real-model-conformance-tier). Bind results to the

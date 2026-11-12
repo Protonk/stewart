@@ -233,6 +233,51 @@ def evidence(root, manifest_raw):
     return members
 
 
+def validated_installation(installation_root):
+    """Recheck retained public evidence and executable bytes; never launch Claude."""
+    launch_raw = read_file(installation_root / 'launch.json', 65536)
+    installation_raw = read_file(installation_root / 'installation.json', 65536)
+    launch, installation = decode(launch_raw), decode(installation_raw)
+    prepared = decode(read_file(installation_root / 'PREPARATION.json'))
+    exact(prepared, ('schema', 'scope', 'verified_at', 'launch_sha256', 'installation_sha256',
+                     'pin_receipt_sha256', 'verification_files'),
+          'installation evidence')
+    if (prepared['schema'] != 'stewart.claude-code.installation-evidence/1'
+            or prepared['scope'] != 'installation-only' or prepared['launch_sha256'] != sha(launch_raw)
+            or prepared['installation_sha256'] != sha(installation_raw)
+            or prepared['pin_receipt_sha256'] != sha(read_file(installation_root / 'installation/pin.json'))):
+        raise ValueError('installation evidence bindings changed')
+    timestamp(prepared['verified_at'], 'installation verification time')
+    if prepared['verification_files'] != verification_inventory(installation_root / 'installation'):
+        raise ValueError('installation verification evidence changed or is missing')
+    exact(launch, ('executable', 'sha256', 'version', 'platform', 'config_directory', 'home', 'temporary_directory'), 'launch')
+    exact(installation, ('manifest_sha256', 'signer', 'binary_sha256'), 'installation')
+    receipt = decode(read_file(installation_root / 'installation/pin.json'))
+    exact(receipt, ('version', 'platform', 'binary', 'sha256', 'manifest_sha256', 'signer', 'verification'), 'pin receipt')
+    if (launch['sha256'] != receipt['sha256'] or launch['executable'] != receipt['binary']
+            or launch['version'] != pin.VERSION or launch['platform'] != 'macos-aarch64'
+            or receipt['version'] != pin.VERSION or receipt['platform'] != pin.PLATFORM
+            or receipt['signer'] != pin.FINGERPRINT
+            or installation != {'manifest_sha256': receipt['manifest_sha256'], 'signer': pin.FINGERPRINT,
+                                'binary_sha256': launch['sha256']}):
+        raise ValueError('installation and launch bindings differ')
+    public = installation_root / 'installation'
+    manifest = read_file(public / 'manifest.json')
+    if (sha(manifest) != installation['manifest_sha256']
+            or pin.manifest_checksum(manifest) != launch['sha256']):
+        raise ValueError('retained installation manifest changed')
+    for name in ('dearmor', 'signature', 'codesign'):
+        if read_file(public / 'verification' / (name + '.exit')).strip() != b'0':
+            raise ValueError('installation verification did not pass: ' + name)
+    if not pin.signed_by_release_key(read_file(public / 'verification/signature.stdout').decode('utf-8')):
+        raise ValueError('retained signature does not name the pinned release key')
+    if read_file(absolute(launch['executable']), limit=None, hash_only=True)[0] != launch['sha256']:
+        raise ValueError('harness executable changed since the check')
+    for key in ('config_directory', 'home', 'temporary_directory'):
+        os.close(directory(absolute(text(launch[key], key))))
+    return launch_raw, installation_raw
+
+
 def assemble(installation_root, observation_root, review_path, output):
     output = absolute(output)
     os.close(directory(output.parent))
@@ -293,48 +338,10 @@ def assemble(installation_root, observation_root, review_path, output):
             raise ValueError('required comparison is not observed with retained evidence: ' + str(check['id']))
     if len(identifiers) != len(REQUIRED_CHECKS) or set(identifiers) != set(REQUIRED_CHECKS):
         raise ValueError('required comparison inventory is incomplete or repeated')
-    launch_raw = read_file(installation_root / 'launch.json', 65536)
+    launch_raw, installation_raw = validated_installation(installation_root)
+    installation = decode(installation_raw)
     if launch_raw != read_file(observation_root / 'inputs/launch.json'):
         raise ValueError('observed launch differs from the installation preparation')
-    installation_raw = read_file(installation_root / 'installation.json', 65536)
-    launch, installation = decode(launch_raw), decode(installation_raw)
-    prepared = decode(read_file(installation_root / 'PREPARATION.json'))
-    exact(prepared, ('schema', 'scope', 'verified_at', 'launch_sha256', 'installation_sha256',
-                     'pin_receipt_sha256', 'verification_files'),
-          'installation evidence')
-    if (prepared['schema'] != 'stewart.claude-code.installation-evidence/1'
-            or prepared['scope'] != 'installation-only' or prepared['launch_sha256'] != sha(launch_raw)
-            or prepared['installation_sha256'] != sha(installation_raw)
-            or prepared['pin_receipt_sha256'] != sha(read_file(installation_root / 'installation/pin.json'))):
-        raise ValueError('installation evidence bindings changed')
-    timestamp(prepared['verified_at'], 'installation verification time')
-    if prepared['verification_files'] != verification_inventory(installation_root / 'installation'):
-        raise ValueError('installation verification evidence changed or is missing')
-    exact(launch, ('executable', 'sha256', 'version', 'platform', 'config_directory', 'home', 'temporary_directory'), 'launch')
-    exact(installation, ('manifest_sha256', 'signer', 'binary_sha256'), 'installation')
-    receipt = decode(read_file(installation_root / 'installation/pin.json'))
-    exact(receipt, ('version', 'platform', 'binary', 'sha256', 'manifest_sha256', 'signer', 'verification'), 'pin receipt')
-    if (launch['sha256'] != receipt['sha256'] or launch['executable'] != receipt['binary']
-            or launch['version'] != pin.VERSION or launch['platform'] != 'macos-aarch64'
-            or receipt['version'] != pin.VERSION or receipt['platform'] != pin.PLATFORM
-            or receipt['signer'] != pin.FINGERPRINT
-            or installation != {'manifest_sha256': receipt['manifest_sha256'], 'signer': pin.FINGERPRINT,
-                                'binary_sha256': launch['sha256']}):
-        raise ValueError('installation and launch bindings differ')
-    public = installation_root / 'installation'
-    manifest = read_file(public / 'manifest.json')
-    if (sha(manifest) != installation['manifest_sha256']
-            or pin.manifest_checksum(manifest) != launch['sha256']):
-        raise ValueError('retained installation manifest changed')
-    for name in ('dearmor', 'signature', 'codesign'):
-        if read_file(public / 'verification' / (name + '.exit')).strip() != b'0':
-            raise ValueError('installation verification did not pass: ' + name)
-    if not pin.signed_by_release_key(read_file(public / 'verification/signature.stdout').decode('utf-8')):
-        raise ValueError('retained signature does not name the pinned release key')
-    if read_file(absolute(launch['executable']), limit=None, hash_only=True)[0] != launch['sha256']:
-        raise ValueError('harness executable changed since the check')
-    for key in ('config_directory', 'home', 'temporary_directory'):
-        os.close(directory(absolute(text(launch[key], key))))
     # Splice the original launch value bytes: internal whitespace is part of its binding.
     if launch_raw.strip() != launch_raw:
         raise ValueError('launch file must contain exactly the JSON value without surrounding whitespace')

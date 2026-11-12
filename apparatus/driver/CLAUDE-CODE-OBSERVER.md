@@ -21,6 +21,16 @@ authentication and process-result controls; neither launches a subprocess or
 Claude. A socket-bind denial is a failed comparison, not a skipped or passing
 control. Every generated directory remains available through review.
 
+The hook capture-failure control sends the same valid session-correlated attempt
+as the positive comparison. It retains the attempted bytes and peer operation
+status outside the sabotaged capture, and requires the exact injected failure,
+an observed stop request, a closed gate and no hook reply, call or effect.
+`EPIPE`, `ECONNRESET` and `ENOTCONN` are retained peer diagnostics; a disconnect
+alone cannot pass the control, and other socket errors remain failures. Ordered
+socketpair controls place server closure before send, between send and shutdown,
+and after shutdown. The ordinary positive and fragmented invariance comparisons
+still require a valid hook reply and the matching independent effect.
+
 ## Launcher boundary
 
 Construct `CaseObserver(prepared_inputs, case_id, kind, workspace, evidence_dir)`
@@ -97,7 +107,7 @@ writes at 256 MiB per case. Events name their observer and shared kernel clock.
 
 ## Evidence
 
-`assess_batch(root, cases, mode)` takes completed positive, closed-gate and
+`assess_batch(root, cases, mode, *, before_finalize=None)` takes completed positive, closed-gate and
 invariance observers in that order. The caller explicitly declares
 `synthetic-rehearsal` or `real-harness`; this is a provenance declaration, never
 permission. The function writes the existing `EVIDENCE.json` and `OBSERVATION.json`
@@ -105,6 +115,14 @@ forms consumed by the [profile producer](../claude-code/README.md), binding exac
 launch, surface, tools, model, input files, case evidence and source snapshots.
 It never writes a reviewed `CHECK.json` or profile. Independent review is still
 required, and the producer refuses rehearsal observations.
+
+The optional `before_finalize(checks, stopping)` callback runs after aggregate
+assessment, including distinct session/workspace checks, and before the evidence
+manifest is written. It receives an isolated copy of the final check list and
+the final stopping string. A controller can write its `RESULT.json` from those
+outcomes so that the manifest includes it. Callback changes cannot alter the
+independent assessment; a callback exception prevents manifest and observation
+finalization. It grants no launch or review authority.
 
 Create all control results before manifest finalization. No additional evidence
 files may be added afterward. The listener rehearsal writes `REHEARSAL.json`

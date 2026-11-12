@@ -77,18 +77,99 @@ stay outside the evidence directory.
 
 The producer requires real-harness mode, every required comparison observed
 with retained witnesses, and observed stopping. Authentication raw output is
-never an evidence member: a future live runner must discard it and retain only
+never an evidence member: the invocation library discards it and retains only
 the allowlisted `loggedIn`, `authMethod` and `configDirectory`. A review is an
 attributed assessment, not a cryptographic identity or an exhaustive record of
 provider activity, hidden instructions or managed policy.
 
+## Supplied-surface controller
+
+`surface_check.py` connects the invocation budget, independent observer and
+actual Stewart helpers. Preparation creates a fresh packet with frozen source,
+public installation evidence, exact inputs and three distinct workspaces. It
+starts nothing. The proposed live allowance is three `auth status` invocations
+of at most 30 seconds and three model sessions of at most 120 seconds, within
+one 450-second process deadline. The comparisons are positive, hook denial and
+fresh-session invariance for one selected family's complete tool inventory.
+Only the fixture's declared `record_account` effect is implemented. This is
+supplied-surface compatibility; service behavior and compaction remain separate.
+
+```sh
+python3 -I -B apparatus/claude-code/surface_check.py prepare \
+  --output /absolute/new-packet --binary /absolute/gated-stewart \
+  --installation-directory /absolute/installation --model SELECTED_MODEL
+python3 -I -B apparatus/claude-code/surface_check.py inspect --packet /absolute/new-packet
+```
+
+The emitted `COMMISSION.json` binds the ordered invocation budget and names its
+scope, model, supplied surface and unexercised properties. Review those exact
+bytes, all six slots, synthetic question, tool inventory and stop conditions
+before asking the principal for permission. Preparation and earlier commissions
+confer none. Only after explicit bounded approval, use the printed frozen
+controller with the packet's bound Python interpreter:
+
+```sh
+ABS_PYTHON -I -B /absolute/new-packet/sources/apparatus/claude-code/surface_check.py run \
+  --packet /absolute/new-packet --approved-commission EXACT_APPROVED_SHA256 \
+  --extra-usage-disabled
+```
+
+The digest argument conveys the principal's approval; it does not authenticate
+the caller. The extra-usage flag asserts the required account setting rather
+than changing or independently verifying billing controls. A fresh private
+authentication check precedes each model start. Failed authentication, changed
+inputs, observer failure, missing EOF, unknown stopping or a reused session
+halts the batch. An entered packet cannot be restarted. Inspect uncertainty
+before proposing any replacement; no retry or leftover allowance is automatic.
+
+The run keeps process records, independent fixture witnesses and frozen inputs
+under `observation/`. `RESULT.json` reflects the independent aggregate assessment
+and is included before its manifest freezes. Partial runs retain a failed result
+and evidence inventory; they cannot supply an eligible check. Real authentication
+raw output stays private and is discarded. This workflow neither reads the
+credential store nor executes any login flow.
+
+Successful completion still requires independent review of the original streams,
+positive/denial/invariance effects, exact bindings and process records. After
+that review, an identified reviewer can record the exact observation digest:
+
+```sh
+ABS_PYTHON -I -B /absolute/new-packet/sources/apparatus/claude-code/surface_check.py attest \
+  --packet /absolute/new-packet --reviewed-observation OBSERVATION_SHA256 \
+  --reviewer REVIEWER --output /absolute/new-packet/observation/CHECK.json
+```
+
+`attest` checks the evidence inventory and completed budget, then records the
+caller's explicit assessment. It does not perform the intellectual review or
+authenticate the reviewer. `profile.py assemble` separately validates and embeds
+that review. No run automatically writes a review or profile, and neither grants
+authority to start a service placement.
+
+### Synthetic controller rehearsal
+
+`prepare-rehearsal --output /absolute/new-packet --binary /absolute/gated-stewart`
+constructs a fixed [synthetic peer](../driver/CLAUDE-CODE-PEER.md) wrapper instead
+of accepting a real installation. Run its frozen controller with
+`run-rehearsal --packet /absolute/new-packet`. It accepts no live approval.
+The three scenarios are `normal`, `bad-init` and `wrong-auth`; the latter two
+are expected failure controls. Each has at most six synthetic invocations,
+10 seconds per auth, 30 per model and 120 seconds overall. No Claude process,
+provider or credential store is involved.
+
+The peer exercises actual relay/hook helpers and keeps its own raw traffic and
+environment witnesses. A fully written, exclusively published
+`startup-observed.json` coordinates the synthetic peer after startup validation;
+real mode never writes it. This schedules the fake peer and makes no claim about
+real-harness startup ordering. Rehearsal observations remain explicitly synthetic
+and both attestation and profile assembly refuse them. The controller's unit
+review records are labelled parser fixtures, not live evidence.
+
 ## Bounded invocation library
 
-`bounded.py` supplies launch controls for a future commissioned observer. It has
-no live command-line entry or ready live commission. The
+`bounded.py` supplies launch controls for the supplied-surface controller. The
+library has no live command-line entry or built-in commission. The
 [independent observer](../driver/CLAUDE-CODE-OBSERVER.md) owns stream validation,
-fixture sockets and comparison assessments; integration into a live controller
-remains necessary. `prepare(root, budget)`
+fixture sockets and comparison assessments. `prepare(root, budget)`
 freezes `BUDGET.json` without executing anything. The
 `stewart.claude-code.invocation-budget/1` record names a purpose, mode, overall
 deadline allowance, file bindings and an ordered list of invocations. Each
@@ -170,6 +251,7 @@ Run these offline checks from the repository root:
 python3 -I -B apparatus/claude-code/test_pin.py
 python3 -I -B apparatus/claude-code/test_profile.py
 python3 -I -B apparatus/claude-code/test_bounded.py
+python3 -I -B apparatus/claude-code/test_surface_check.py
 python3 -I -B apparatus/claude-code/test_probe.py
 python3 -I -B apparatus/claude-code/test_protocol.py
 ```

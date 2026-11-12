@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import errno
 import hashlib
 import json
 import os
@@ -505,8 +506,8 @@ class CaseObserver:
         return record
 
 
-def assess_batch(root, cases, mode):
-    """Create the existing observation shape; callers supply mode, never authority."""
+def assess_batch(root, cases, mode, *, before_finalize=None):
+    """Assess first, optionally publish a caller record, then freeze the manifest."""
     if mode not in {"real-harness", "synthetic-rehearsal"}:
         raise ValueError("unsupported observation mode")
     root = Path(root)
@@ -528,17 +529,22 @@ def assess_batch(root, cases, mode):
     surface.save(root / "scope.json", {"scope": "supplied-surface", "mode": mode,
         "not_claimed": ["core/service conformance", "exhaustive provider capture", "hidden policy inspection", "launch authority"],
         "fresh_sessions_and_workspaces": fresh, "comparison_order": list(KINDS)})
-    evidence = surface.manifest(root)
-    surface.save(root / "EVIDENCE.json", evidence)
     checks = []
     for name in surface.REQUIRED_CHECKS:
         outcomes = [record["checks"][name] for record in records]
         outcome = "failed" if "failed" in outcomes or (not fresh and name == "hook-controls") else "unexercised" if "unexercised" in outcomes else "observed"
         checks.append({"id": name, "outcome": outcome, "evidence": [str((case.root / "CASE.json").relative_to(root)) for case in cases]})
+    stopping = "observed" if all(record["stopping"] == "observed" for record in records) else "unknown"
+    if before_finalize is not None:
+        # The caller may publish its result from this assessment, but cannot
+        # alter the independent outcomes that the observer subsequently records.
+        before_finalize(copy.deepcopy(checks), stopping)
+    evidence = surface.manifest(root)
+    surface.save(root / "EVIDENCE.json", evidence)
     observation = {"schema": "stewart.claude-code.surface-observation/1", "mode": mode, "scope": "supplied-surface",
         "started_at": records[0]["started_at"], "finished_at": records[-1]["finished_at"], **records[0]["bindings"],
         "evidence_manifest_sha256": spec.sha((root / "EVIDENCE.json").read_bytes()), "checks": checks,
-        "stopping": "observed" if all(record["stopping"] == "observed" for record in records) else "unknown"}
+        "stopping": stopping}
     surface.save(root / "OBSERVATION.json", observation)
     return observation
 
@@ -589,6 +595,115 @@ def _line(client):
     return spec.mcp_message_loads(bytes(raw))
 
 
+def _hook_input(case):
+    return compact({"hook_event_name": "PreToolUse", "session_id": case.init["session_id"],
+        "tool_use_id": "toolu-synthetic", "tool_name": "mcp__stewart__record_account",
+        "tool_input": {"text": surface.MARKER}})
+
+
+def _hook_failure_peer(peer, raw, before_operation=None, report=None):
+    """Retain a disconnect as a diagnostic, never as proof of capture failure."""
+    reply = bytearray()
+    report = {} if report is None else report
+    report.update(send_started=False, send_completed=False, shutdown_completed=False, reply_hex="")
+    try:
+        for operation in ("sendall", "shutdown", "recv"):
+            report["operation"] = operation
+            if before_operation is not None:
+                before_operation(operation)
+            if operation == "sendall":
+                report["send_started"] = True
+                peer.sendall(raw)
+                report["send_completed"] = True
+            elif operation == "shutdown":
+                peer.shutdown(socket.SHUT_WR)
+                report["shutdown_completed"] = True
+            else:
+                while True:
+                    chunk = peer.recv(4096)
+                    if not chunk:
+                        break
+                    reply.extend(chunk)
+        report.update(errno=None, reply_hex=reply.hex())
+        return report
+    except OSError as error:
+        report.update(errno=error.errno, detail=str(error), reply_hex=reply.hex())
+        if error.errno not in {errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN}:
+            raise
+        return report
+
+
+HOOK_CAPTURE_FAILURE = "synthetic listener witness failure"
+
+
+def _hook_capture_failure_observed(case, control):
+    return (control.get("injected") is True and control.get("observer_stop") is True
+            and control.get("peer", {}).get("reply_hex") == ""
+            and set(case.errors) == {"hook observer failed: " + HOOK_CAPTURE_FAILURE,
+                                     "hook peer EOF unobserved; capture may be incomplete"}
+            and not case.gate_open() and not case.hooks and not case.calls and not case.fixture.effects)
+
+
+def _hook_capture_failure(case, listeners=False, order="concurrent"):
+    """Sabotage only the hook capture; ordered socketpairs exercise close races."""
+    if order not in {"concurrent", "before-sendall", "before-shutdown", "before-recv"} or (listeners and order != "concurrent"):
+        raise ValueError("unsupported synthetic hook-failure ordering")
+    raw = _hook_input(case)
+    # This peer witness is outside the append being sabotaged. It states the
+    # attempted input, not a claim that the observer received those bytes.
+    (case.root / "control-hook-attempted.bin").write_bytes(raw)
+    control = {"order": order, "injected": False, "failure": HOOK_CAPTURE_FAILURE, "peer": {}}
+    original = case.append
+    release = threading.Event()
+    if order == "concurrent":
+        release.set()
+
+    def broken(member, chunk):
+        if member.startswith("hook-") and member.endswith("-received.bin"):
+            if not release.wait(2):
+                raise TimeoutError("synthetic hook ordering timed out")
+            control.update(injected=True, member=member, append_bytes=len(chunk))
+            raise OSError(HOOK_CAPTURE_FAILURE)
+        original(member, chunk)
+
+    def join_hook():
+        for thread in case.threads:
+            if thread.name.startswith("hook-"):
+                thread.join(timeout=2)
+                if thread.is_alive():
+                    raise TimeoutError("synthetic hook observer did not finish")
+
+    def before_operation(operation):
+        if order == "before-" + operation:
+            release.set()
+            join_hook()
+
+    case.append = broken
+    try:
+        with _connect(case, "h", listeners) as peer:
+            _hook_failure_peer(peer, raw, before_operation, control["peer"])
+        join_hook()
+        try:
+            case.check_stop()
+        except ObserverStop:
+            control["observer_stop"] = True
+        else:
+            control["observer_stop"] = False
+        control["passed"] = _hook_capture_failure_observed(case, control)
+        return control
+    except (OSError, ValueError, ObserverStop) as error:
+        control["error"] = {"type": type(error).__name__, "errno": getattr(error, "errno", None), "detail": str(error)}
+        raise
+    finally:
+        release.set()
+        try:
+            join_hook()
+        finally:
+            case.append = original
+            control["observer_errors"] = list(case.errors)
+            surface.save(case.root / "control-hook-failure.json", control)
+
+
 def _traffic(case, listeners=False, fragmented=False, no_attempt=False, bypass=False):
     raw = compact(_init(case)) + b"\n"
     for chunk in ([raw[n:n + 1] for n in range(len(raw))] if fragmented else [raw]):
@@ -610,8 +725,7 @@ def _traffic(case, listeners=False, fragmented=False, no_attempt=False, bypass=F
             raise ValueError("synthetic peer saw a different tool inventory")
         if not no_attempt:
             with _connect(case, "h", listeners) as hook:
-                hook.sendall(compact({"hook_event_name": "PreToolUse", "session_id": case.init["session_id"],
-                    "tool_use_id": "toolu-synthetic", "tool_name": "mcp__stewart__record_account", "tool_input": {"text": surface.MARKER}}))
+                hook.sendall(_hook_input(case))
                 hook.shutdown(socket.SHUT_WR)
                 reply = bytearray()
                 while True:
@@ -775,6 +889,71 @@ def self_test():
     check("witness-failure-stops-before-gate", stopped and not case.gate_open())
     case.append = original
     _finish_control(case, stop="observer-stop")
+    for order in ("before-sendall", "before-shutdown", "before-recv"):
+        case = _control_observer(root, "hook-capture-" + order, "positive")
+        case.feed(compact(_init(case)) + b"\n")
+        original = case.append
+        control = _hook_capture_failure(case, order=order)
+        check("hook-capture-" + order, control["passed"] and control["append_bytes"] == 0
+              and case.append == original
+              and (case.root / "control-hook-attempted.bin").read_bytes() == _hook_input(case)
+              and not (case.root / "hook-0001-received.bin").exists())
+        changed = dict(control, injected=False)
+        check("hook-capture-" + order + "-requires-injection", not _hook_capture_failure_observed(case, changed))
+        extra_failure = copy.copy(case)
+        extra_failure.errors = list(case.errors) + ["synthetic unrelated observer failure"]
+        check("hook-capture-" + order + "-rejects-unrelated-failure", not _hook_capture_failure_observed(extra_failure, control))
+        _finish_control(case, stop="observer-stop", guard_reason="owner-stop")
+
+    class FailingPeer:
+        def __init__(self, operation, number):
+            self.operation, self.number = operation, number
+
+        def fail_at(self, operation):
+            if operation == self.operation:
+                raise OSError(self.number, "synthetic peer operation failed")
+
+        def sendall(self, raw):
+            self.fail_at("sendall")
+
+        def shutdown(self, direction):
+            self.fail_at("shutdown")
+
+        def recv(self, size):
+            self.fail_at("recv")
+            return b""
+
+    for operation, number in (("sendall", errno.EPIPE), ("shutdown", errno.ENOTCONN), ("recv", errno.ECONNRESET)):
+        diagnostic = _hook_failure_peer(FailingPeer(operation, number), _hook_input(normal[0]))
+        check("hook-peer-" + operation + "-disconnect-alone-is-insufficient",
+              diagnostic["operation"] == operation and diagnostic["errno"] == number
+              and not _hook_capture_failure_observed(normal[0], {"injected": True, "observer_stop": True, "peer": diagnostic}))
+    diagnostic = {}
+    try:
+        _hook_failure_peer(FailingPeer("shutdown", errno.EACCES), _hook_input(normal[0]), report=diagnostic)
+    except OSError as error:
+        refused = error.errno == errno.EACCES
+    else:
+        refused = False
+    check("hook-peer-unrelated-error-propagates", refused and diagnostic["send_completed"]
+          and diagnostic["operation"] == "shutdown" and diagnostic["errno"] == errno.EACCES)
+
+    from unittest.mock import patch
+    case = _control_observer(root, "hook-capture-connect-error", "positive")
+    case.feed(compact(_init(case)) + b"\n")
+    original = case.append
+    with patch(__name__ + "._connect", side_effect=OSError(errno.EACCES, "synthetic connection refused")):
+        try:
+            _hook_capture_failure(case)
+        except OSError as error:
+            refused = error.errno == errno.EACCES
+        else:
+            refused = False
+    control = json.loads((case.root / "control-hook-failure.json").read_bytes())
+    check("hook-capture-early-error-restores-and-retains", refused and case.append == original
+          and control["injected"] is False and control["error"]["errno"] == errno.EACCES
+          and (case.root / "control-hook-attempted.bin").read_bytes() == _hook_input(case))
+    _finish_control(case, stop="synthetic-control")
     case = _control_observer(root, "initialize-error", "positive")
     case.fixture.mcp(b'{"jsonrpc":"2.0","id":1,"method":"ping"}\n')
     reply = case.fixture.mcp(b'{"jsonrpc":"2.0","id":1,"method":"initialize"}\n')
@@ -798,6 +977,50 @@ def self_test():
     result = _finish_control(case)
     check("malformed-usage-remains-unknown", result["usage_checkpoint"]["state"] == "unknown"
           and result["usage_reports"][0]["usage"]["input_tokens"] == -1)
+    # Aggregate parser controls copy existing synthetic case records without
+    # invoking peers again or rewriting their original witnesses.
+    for variant in ("normal", "duplicate-session", "callback-failure"):
+        aggregate = root / ("aggregate-" + variant)
+        aggregate.mkdir()
+        surface.save(aggregate / "control.json", {"scope": "copied synthetic case records; no new peer observation", "variant": variant})
+        cloned = []
+        for index, original in enumerate(normal):
+            clone = copy.copy(original)
+            clone.root = aggregate / original.kind
+            clone.root.mkdir()
+            record = spec.transport_loads((original.root / "CASE.json").read_bytes())
+            if variant == "duplicate-session" and index == 1:
+                record["session_id"] = normal[0].init["session_id"]
+            surface.save(clone.root / "CASE.json", record)
+            cloned.append(clone)
+        seen = []
+
+        def finalize(aggregate_checks, stopping):
+            seen.append((copy.deepcopy(aggregate_checks), stopping))
+            if variant == "callback-failure":
+                raise OSError("synthetic controller result write failed")
+            surface.save(aggregate / "RESULT.json", {"checks": aggregate_checks, "stopping": stopping})
+            # A callback receives an isolated snapshot, not writable authority
+            # over the independent observation's final outcomes.
+            aggregate_checks[0]["outcome"] = "failed"
+
+        try:
+            value = assess_batch(aggregate, cloned, "synthetic-rehearsal", before_finalize=finalize)
+        except OSError:
+            check("aggregate-callback-failure-prevents-finalization", variant == "callback-failure"
+                  and len(seen) == 1 and not (aggregate / "EVIDENCE.json").exists()
+                  and not (aggregate / "OBSERVATION.json").exists())
+            continue
+        member = next((row for row in spec.transport_loads((aggregate / "EVIDENCE.json").read_bytes())["members"]
+                       if row["path"] == "RESULT.json"), None)
+        raw = (aggregate / "RESULT.json").read_bytes()
+        check("aggregate-" + variant + "-callback-record-bound", member == {
+            "path": "RESULT.json", "bytes": len(raw), "sha256": spec.sha(raw)})
+        check("aggregate-" + variant + "-callback-matches-observation", len(seen) == 1
+              and seen[0] == (value["checks"], value["stopping"]))
+        failed = [row["id"] for row in seen[0][0] if row["outcome"] != "observed"]
+        check("aggregate-" + variant + "-outcome", failed == (["hook-controls"] if variant == "duplicate-session" else [])
+              and seen[0][1] == "observed")
     surface.save(root / "SELFTEST.json", {"checks": checks})
     observation = assess_batch(root, normal, "synthetic-rehearsal")
     passed = sum(row["passed"] for row in checks)
@@ -826,6 +1049,7 @@ def rehearse_listeners(root):
             controls.append({"name": kind, "passed": False, "detail": str(error)})
     for name in ("bad-startup", "witness-failure"):
         case = _control_observer(root, name, "positive")
+        control = None
         try:
             case.start_listeners()
             if name == "bad-startup":
@@ -837,20 +1061,7 @@ def rehearse_listeners(root):
                     pass
             else:
                 case.feed(compact(_init(case)) + b"\n")
-                original = case.append
-                def broken(member, raw):
-                    if member.startswith("hook-") and member.endswith("-received.bin"):
-                        raise OSError("synthetic listener witness failure")
-                    original(member, raw)
-                case.append = broken
-                with _connect(case, "h", True) as peer:
-                    try:
-                        peer.sendall(b"{}")
-                        peer.shutdown(socket.SHUT_WR)
-                        peer.recv(4096)
-                    except (BrokenPipeError, ConnectionResetError):
-                        pass
-                case.append = original
+                control = _hook_capture_failure(case, listeners=True)
             try:
                 case.check_stop()
             except ObserverStop:
@@ -858,11 +1069,12 @@ def rehearse_listeners(root):
             else:
                 stopped = False
             record = _finish_control(case, stop="observer-stop", guard_reason="owner-stop")
-            controls.append({"name": name, "passed": stopped and bool(record["errors"]) and not case.fixture.effects,
+            controls.append({"name": name, "passed": stopped and bool(record["errors"]) and not case.fixture.effects
+                             and (control is None or control["passed"]),
                              "detail": record["errors"]})
         except (OSError, ValueError, ObserverStop) as error:
             case.close()
-            controls.append({"name": name, "passed": False, "detail": str(error)})
+            controls.append({"name": name, "passed": False, "detail": str(error), "observer_errors": list(case.errors)})
     counts = {"controls": len(controls), "passed": sum(row["passed"] for row in controls),
               "failed": sum(not row["passed"] for row in controls), "skipped": 0}
     surface.save(root / "REHEARSAL.json", {"schema": "stewart.claude-code.observer-rehearsal/1", "counts": counts,
