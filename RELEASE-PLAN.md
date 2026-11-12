@@ -9,14 +9,13 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Current build work | Finish the required toolchain rebuild and reproducibility check; native checks and container acceptance pass | [Source-only build plan](docs/claude-code/BUILD-FLAG-SETUP-PLAN.md) |
-| Current runtime work | Take the plan's numbered steps in order. Its last step needs a bounded commission from the principal | [Source-only runtime plan](docs/claude-code/RUNTIME-CONFORMANCE-PLAN.md) |
+| Current runtime work | Prepare the real-service check and its bounded commission, then run only under the principal's approval | [Source-only runtime plan](docs/claude-code/RUNTIME-CONFORMANCE-PLAN.md) |
 | Later, after the runtime's real-service check has a reviewed outcome | Align the manager interface, using the development runtime for iteration and including the decided return of the accepted question body with the answer | [MANAGER-ALIGNMENT-PLAN.md](MANAGER-ALIGNMENT-PLAN.md) |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
 | Unselected | Further auditor studies and question-family dogfooding | [Deferred studies](#deferred-studies) |
 
 Further API studies and completion of the API conformance gate are not
-prerequisites for the build setup or the source-only runtime work. That
+prerequisites for the source-only runtime work. That
 runtime's feasibility and adapter contract are decided. Implementation and offline
 verification are authorized; further live checks require their own bounded
 commission. Planning and previous model placements confer no spending authority.

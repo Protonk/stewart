@@ -27,6 +27,13 @@ that what is learned about the manager's interface on one holds on the other.
 Linux x86_64 and aarch64 are the platforms Stewart supports. Apple-silicon
 macOS is a build target without a support or qualification claim.
 
+Runtime-specific contracts, schemas and technical explanations live in this
+directory. Root documents describe excluded adapters and other authentication
+options without naming this runtime, linking its contract or explaining how to
+enable it. The build, crate and apparatus guides carry what building and
+checking require; there is no separate enablement or conversion guide. Code
+and data at the repository root have no special placement rule.
+
 ## Evidence owed
 
 Offline controls must exercise the actual core through MCP: exact traffic,

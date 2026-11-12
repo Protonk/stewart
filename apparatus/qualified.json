@@ -208,16 +208,16 @@
       "pin": null
     },
     {
-      "id": "apparatus-02",
+      "id": "toolchain-runtime-01",
       "kind": "suite",
       "suite": "toolchain",
       "script": {
         "path": "apparatus/step2.sh",
         "sha256": "f3b059ccfc72e9fafddb9f930e6c0d2a11892d623c990e0b0bbe3ed2fd855e0a"
       },
-      "source_commit": "cb84205552d87cc00489dc83a8d196167fea706c",
-      "source_archive_sha256": "2f2997d870e667b1e331789aa656c2a48b177f4ac25e88d0c847efe2b3bb14c4",
-      "date": "2026-11-01T17:09:18Z",
+      "source_commit": "31bced7287bd1cab8488c30916df1bc829fe2eca",
+      "source_archive_sha256": "02caf83d775bf2775a33e992e33fa5f5b414f3e582b9217b440c2ef82e3f280c",
+      "date": "2026-11-12T03:48:38Z",
       "outcome": "qualified",
       "failures": [],
       "vendor": {
@@ -239,7 +239,7 @@
               "static": true,
               "run_exit": 0,
               "offline": true,
-              "sha256": "9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09"
+              "sha256": "3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023"
             },
             {
               "name": "build-arm64-2",
@@ -248,11 +248,11 @@
               "static": true,
               "run_exit": 0,
               "offline": true,
-              "sha256": "9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09"
+              "sha256": "3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023"
             }
           ],
           "reproducible": true,
-          "release_sha256": "9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09",
+          "release_sha256": "3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023",
           "alpine_run_exit": 0
         },
         "linux-x86_64": {
@@ -269,7 +269,7 @@
               "static": true,
               "run_exit": 0,
               "offline": true,
-              "sha256": "4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5"
+              "sha256": "9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973"
             },
             {
               "name": "build-amd64-2",
@@ -278,16 +278,16 @@
               "static": true,
               "run_exit": 0,
               "offline": true,
-              "sha256": "4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5"
+              "sha256": "9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973"
             }
           ],
           "reproducible": true,
-          "release_sha256": "4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5",
+          "release_sha256": "9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973",
           "alpine_run_exit": 0
         }
       },
       "evidence": {
-        "path": ".scratch/apparatus-02",
+        "path": ".scratch/toolchain-runtime-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null

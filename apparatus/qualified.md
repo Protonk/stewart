@@ -22,8 +22,8 @@ not carry them.
 | --- | --- | --- | --- | --- | --- | --- |
 | acceptance | linux-aarch64 | [acceptance-environment-observer-01](#acceptance-environment-observer-01) | 2026-11-12T03:23:04Z | `b4ccba4` | qualified | latest |
 | acceptance | linux-x86_64 | [acceptance-environment-observer-01](#acceptance-environment-observer-01) | 2026-11-12T03:23:04Z | `b4ccba4` | qualified | latest |
-| toolchain | linux-aarch64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
-| toolchain | linux-x86_64 | [apparatus-02](#apparatus-02) | 2026-11-01T17:09:18Z | `cb84205` | qualified | latest |
+| toolchain | linux-aarch64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
+| toolchain | linux-x86_64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
 
 ## Records
 
@@ -68,15 +68,15 @@ not carry them.
 | Synthetic runtime evidence listing SHA-256 | `89c6ab7546fa2527cca0ceb606879266a943133a1ec5e08d9493acbc6ef72a96` | `0cce79478c1d03e7bde5260a774d116107dca2180a3bb0ff7ab0304e2e2b6548` |
 | Synthetic runtime work archive SHA-256 | `ca6878a5aa4a70075c9b1bed6b75b382d880c97097a7548dc352856d0c859b63` | `078fb15fd6071697a40bfab0675311eb555bd9157d64c5261ecc350b00afffce` |
 
-### apparatus-02
+### toolchain-runtime-01
 
 - Suite: toolchain, `apparatus/step2.sh` (SHA-256 `f3b059ccfc72e9fafddb9f930e6c0d2a11892d623c990e0b0bbe3ed2fd855e0a` at the source commit)
-- Source commit: `cb84205552d87cc00489dc83a8d196167fea706c`; archive SHA-256 `2f2997d870e667b1e331789aa656c2a48b177f4ac25e88d0c847efe2b3bb14c4`
-- Finished: 2026-11-01T17:09:18Z
+- Source commit: `31bced7287bd1cab8488c30916df1bc829fe2eca`; archive SHA-256 `02caf83d775bf2775a33e992e33fa5f5b414f3e582b9217b440c2ef82e3f280c`
+- Finished: 2026-11-12T03:48:38Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Vendored crates: 1617 files, listing SHA-256 `e4baa31837339022fe586ec42a551ae4df3c3efa56d145840f1c23478c357680`
-- Evidence: `.scratch/apparatus-02` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/toolchain-runtime-01` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -86,10 +86,10 @@ not carry them.
 | Failures | none | none |
 | Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Build 1 | `build-arm64-1`: 9/9 steps; static yes; offline yes; run exit 0; `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `build-amd64-1`: 9/9 steps; static yes; offline yes; run exit 0; `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
-| Build 2 | `build-arm64-2`: 9/9 steps; static yes; offline yes; run exit 0; `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `build-amd64-2`: 9/9 steps; static yes; offline yes; run exit 0; `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
+| Build 1 | `build-arm64-1`: 9/9 steps; static yes; offline yes; run exit 0; `3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023` | `build-amd64-1`: 9/9 steps; static yes; offline yes; run exit 0; `9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973` |
+| Build 2 | `build-arm64-2`: 9/9 steps; static yes; offline yes; run exit 0; `3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023` | `build-amd64-2`: 9/9 steps; static yes; offline yes; run exit 0; `9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973` |
 | Reproducible | yes | yes |
-| Binary SHA-256 (both builds) | `9553371d20683125874569e471ba38d752d2ed9bff20c0ce8a41e73af86ddb09` | `4fb517ed03ba6806730cc18504b819c308726574d5b7bfacb2259622ae3622f5` |
+| Binary SHA-256 (both builds) | `3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023` | `9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973` |
 | Alpine run exit | 0 | 0 |
 
 ### sanity-live-01
