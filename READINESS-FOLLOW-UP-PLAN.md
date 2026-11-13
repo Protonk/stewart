@@ -9,8 +9,8 @@ other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
 commissioned M3. C1 produced a reviewed supplied-surface check and profile.
 The next service comparison has prepared inputs and a reviewed native procedure,
-including the corrected UTF-8 artifact witness. Its two-start live commission
-remains subject to approval.
+including the corrected UTF-8 artifact witness. Its two-start C2 commission is
+approved; execution starts with the ordinary inquiry.
 
 | Stage | Result |
 | --- | --- |
@@ -299,8 +299,10 @@ dollar ceilings. These experiments do not qualify release models.
   The retained review binds original packets and external witnesses. Keep the
   stopped, unsubmitted bad-init audit through C2 review; no continuation is
   authorized. The earlier unentered preparation has an explicit disposition.
-- [ ] Obtain approval for C2's concrete two-start commission, then execute and
-  review one packet at a time before any close or next start. Correlate
+- [x] Obtain approval for C2's concrete two-start commission. The principal
+  approved C2; `.scratch/readiness-c2-01/AUTHORIZATION.json` binds that approval
+  to the frozen parent manifest and both per-case commissions.
+- [ ] Execute and review one C2 packet at a time before any close or next start. Correlate
   service-owned MCP captures and entry records with the independent package
   witness; this does not independently capture every model action. Stop later
   starts on unknown stopping, authentication failure, quota or paid-usage routing.
@@ -317,7 +319,8 @@ dollar ceilings. These experiments do not qualify release models.
   not. No additional paid usage is authorized and no independent token or billing
   ceiling has been demonstrated. Review the first outcome before the second
   start; ordinary close is included only for a reviewed auditor-submitted,
-  verified package. Both audits remain unaccepted and unstarted pending approval.
+  verified package. Both audits remain unaccepted and unstarted; the next action
+  is the frozen ordinary packet's run command on the native host.
 
 ### Comparisons and proposed bounds
 
