@@ -3,12 +3,12 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; L0, M1 and M2 reviewed; stage 2 awaits C1's host rehearsal.**
+**State: stage 1 complete; L0, M1 and M2 reviewed; stage 2 awaits C1 approval.**
 M2 reproduced a thinking-only response-cap interruption in sw3z default; the
 other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
-commissioned M3. C1's existing procedure needs a fresh offline rehearsal against
-the current helper binary and driver sources before its live commission.
+commissioned M3. C1's refreshed offline rehearsal is reviewed and its concrete
+live packet is frozen. No C1 authentication or model invocation is authorized.
 
 | Stage | Result |
 | --- | --- |
@@ -177,7 +177,7 @@ the specified overlong-name refusal, and signal stopping before publication.
 Archives and ordinary work remained on ext4. The native Cargo checks remain
 at `/private/tmp/stewart-readiness-native-87y7ofsj/RESULT.json`.
 
-The [C10 rehearsal](apparatus/qualified.md#c10-readiness-m2-01) has 18 of 18
+The retained M2 C10 rehearsal at `.scratch/c10-readiness-m2-01/REVIEW.json` has 18 of 18
 expected observations, zero failed, unstarted or skipped audits; reviewer
 comparisons 14/14 with 12/12 controls, operator comparisons 7/7, and reporting
 comparisons 11/11. The four ordinary M2 templates each pass 18/18 comparisons
@@ -256,20 +256,27 @@ dollar ceilings. These experiments do not qualify release models.
   further start is authorized. Retain the firing cap response and 5sgh default's
   near-cap response that completed with tools for stage-three fixtures and cap
   reassessment; the setting remains unchanged pending those comparisons.
-- [ ] Refresh C1's normal, bad-initialization and wrong-authentication synthetic
-  controller rehearsals against the current sources and native helper binary.
-  These use fake peers and make no Claude, provider or credential-store calls.
-  Run `python3 -I -B .tmp/readiness-repairs/rehearse-c1.py` on the host; it uses
-  fresh `.scratch/readiness-c1-rehearsal-02/` evidence. The agent-shell attempt at
-  `readiness-c1-rehearsal-01` stopped with `PermissionError: [Errno 1] Operation
-  not permitted` during listener setup, before any invocation was reserved.
-  Its normal preparation passed, its normal run failed, and the other two
-  scenarios were not started. Do not rerun that entered packet.
-- [ ] Freeze and review C1's separate live packet after its rehearsal. It proposes
+- [x] Review the [refreshed native C1 rehearsal](apparatus/qualified.md#readiness-c1-rehearsal-02):
+  three normal comparisons, 30 observed case checks and 10 aggregate categories;
+  bad-initialization and wrong-authentication controls stop for their intended
+  reasons. All nine synthetic process groups stopped, with guards reaped and
+  EOF on all four fake model streams. Independent review verified 386 evidence
+  members and current source/helper bindings. No Claude, provider or credential
+  call occurred; this is native synthetic evidence, not real-harness qualification.
+- [x] Freeze C1's packet, dated cost/compatibility record and guarded launch
+  procedure under `.scratch/readiness-c1-01/MANIFEST.json`, with the controller's
+  exact six-slot commission at `packet/COMMISSION.json`.
+- [ ] Obtain approval of C1's frozen manifest and confirmation that paid extra
+  usage (usage credits) is disabled. The packet proposes
   three authentication checks of 30 seconds and three supplied-surface fixture
   sessions of 120 seconds, within 450 seconds overall, using the Claude.ai
-  subscription with paid extra usage disabled. Obtain explicit approval of that
-  concrete packet and the required account-setting assertion before any launch.
+  subscription with paid extra usage disabled; no incremental paid spend is
+  authorized. It uses pinned Claude Code 2.1.322 and `claude-haiku-5-5`, 12
+  open-inquiry tools, and the exact fixed record-account fixture prompt. The
+  controller supplies `--max-turns 200` per session, but C1 does not demonstrate
+  that flag's enforcement. No replacement, fallback or continuation is included.
+  The packet is one-use and stops before later slots after a failed comparison,
+  authentication or observation. Actual account settings remain unverified.
 
 ### Comparisons and proposed bounds
 

@@ -610,13 +610,6 @@ M1 report-only direct reply: prose end_turn, one exact reminder, then prepare/su
 - Evidence: `.scratch/readiness-m1-live-direct-inadequate-01/.` (recorded 2026-11-13T19:18:29Z).
 - Retained purpose: Inspect the firing prose-ending/reminder encounter for M1 comparison, M3/C5 preparation and fixture selection.; until Those comparisons and selected fixture reviews finish, and no remaining inspection purpose needs these originals.
 
-### c10-readiness-m2-01
-
-Reviewed Linux C10 rehearsal: 18 expected audits, five exact M2 templates, saved synthetic connection collection; zero model calls.
-
-- Evidence: `.scratch/c10-readiness-m2-01/REVIEW.json` (recorded 2026-11-13T19:25:39Z).
-- Retained purpose: Current launcher and exact-input rehearsal admission for the bounded M2 comparison; private originals remain through review.; until M2 placements have reviewed outcomes or explicit dispositions and this rehearsal no longer admits pending work.
-
 ### readiness-m2-live-5sgh-default-01
 
 M2 5sgh default effort: 24 tool-use turns, eight-entry auditor submission and verified closure; thinking-only max_tokens not reproduced.
@@ -651,3 +644,10 @@ M2 sw3z low effort:12 tool-use turns; revision9 submitted/delivered/closed,38 fi
 
 - Evidence: `.scratch/readiness-m2-live-sw3z-low-01/.` (recorded 2026-11-13T20:35:53Z).
 - Retained purpose: Inspect final sw3z low-effort encounter and successful replacement against the interrupted default arm for M2 and cap-setting/fixture review.; until Those comparisons and fixture reviews finish, with no remaining inspection purpose requiring these originals.
+
+### readiness-c1-rehearsal-02
+
+Reviewed native C1 synthetic controller: three comparisons with 30 observed checks; bad-init and wrong-auth controls fire; zero Claude calls.
+
+- Evidence: `.scratch/readiness-c1-rehearsal-02/REVIEW.json` (recorded 2026-11-13T20:53:16Z).
+- Retained purpose: Current controller/source/helper rehearsal for the bounded C1 supplied-surface commission.; until C1 has a reviewed outcome or explicit disposition and this rehearsal no longer admits pending work.

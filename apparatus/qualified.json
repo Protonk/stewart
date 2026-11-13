@@ -1776,25 +1776,6 @@
       }
     },
     {
-      "id": "c10-readiness-m2-01",
-      "kind": "experiment",
-      "date": "2026-11-13T19:25:39Z",
-      "date_from": "REVIEW.json field finished_at",
-      "summary": "Reviewed Linux C10 rehearsal: 18 expected audits, five exact M2 templates, saved synthetic connection collection; zero model calls.",
-      "result": {
-        "path": "REVIEW.json",
-        "sha256": "90683ae5797f9b19e6be38f1822194772b2593909c6fd1939f14a7f57295f783"
-      },
-      "evidence": {
-        "path": ".scratch/c10-readiness-m2-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Current launcher and exact-input rehearsal admission for the bounded M2 comparison; private originals remain through review.",
-        "until": "M2 placements have reviewed outcomes or explicit dispositions and this rehearsal no longer admits pending work."
-      }
-    },
-    {
       "id": "readiness-m2-live-5sgh-default-01",
       "kind": "experiment",
       "date": "2026-11-13T19:58:21Z",
@@ -1892,6 +1873,25 @@
       "pin": {
         "reason": "Inspect final sw3z low-effort encounter and successful replacement against the interrupted default arm for M2 and cap-setting/fixture review.",
         "until": "Those comparisons and fixture reviews finish, with no remaining inspection purpose requiring these originals."
+      }
+    },
+    {
+      "id": "readiness-c1-rehearsal-02",
+      "kind": "experiment",
+      "date": "2026-11-13T20:53:16Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "Reviewed native C1 synthetic controller: three comparisons with 30 observed checks; bad-init and wrong-auth controls fire; zero Claude calls.",
+      "result": {
+        "path": "REVIEW.json",
+        "sha256": "75b05dbfabc5686e00efb3ff7bf03cb92bcfd20cf03b03a23a20956ddbea03c2"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-c1-rehearsal-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Current controller/source/helper rehearsal for the bounded C1 supplied-surface commission.",
+        "until": "C1 has a reviewed outcome or explicit disposition and this rehearsal no longer admits pending work."
       }
     }
   ]
