@@ -304,6 +304,20 @@ dollar ceilings. These experiments do not qualify release models.
   service-owned MCP captures and entry records with the independent package
   witness; this does not independently capture every model action. Stop later
   starts on unknown stopping, authentication failure, quota or paid-usage routing.
+  The frozen commission is `.scratch/readiness-c2-01/MANIFEST.json`, SHA-256
+  `6912b55b374e06f5b1222921052816ee89f0ebd320947093873fc386ea12eb5b`,
+  prepared from commit `14d47f6`. It binds both packet manifests, the exact
+  native writer/profile, cost assessment and post-approval commands. Each audit
+  permits one Haiku 5.5 placement of 600 seconds including its authentication
+  check; there are two starts total, no retries, replacements or continuation.
+  The ordinary case supplies three materials (1,428 bytes); the inadequate case
+  supplies only the report (591 bytes). Both use the same 83-byte question.
+  Included subscription allowance only: the principal's confirmation that extra
+  usage is disabled carries forward, while C1's exhausted launch authority does
+  not. No additional paid usage is authorized and no independent token or billing
+  ceiling has been demonstrated. Review the first outcome before the second
+  start; ordinary close is included only for a reviewed auditor-submitted,
+  verified package. Both audits remain unaccepted and unstarted pending approval.
 
 ### Comparisons and proposed bounds
 
