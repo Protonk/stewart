@@ -6,10 +6,9 @@ manager-interface plan. It looks for three kinds of trouble that could swamp
 that work once it begins and reports them to the principal, who decides what
 each one means for entry.
 
-**State: A's batches have returned and its unreached-condition check is
-running; B's four sources are in and crossed, with its candidates not yet
-refuted; C's first cold implementer has returned and its second and the
-editor are out.** The orchestrator
+**State: every dispatched agent has returned and the ranked list has been
+delivered to the principal in chat. What remains is the principal's
+disposition of each item, then [completion](#completion).** The orchestrator
 updates this line, the task boxes and the [run record](#run-record) in place
 and commits those updates.
 
@@ -277,8 +276,8 @@ as accepted. Report the inverse where it turns up: a real `claude` or provider
 failure that Stewart presents as its own.
 
 - [x] Dispatch the four agents.
-- [ ] Cross the sources; refute each candidate.
-- [ ] List what only a live run could settle.
+- [x] Cross the sources; refute each candidate.
+- [x] List what only a live run could settle.
 
 ## C: question documentation
 
@@ -298,7 +297,7 @@ and `examples/questions/`.
   (`CARGO_TARGET_DIR=target-local cargo build --locked --offline --features claude-code`).
   This launches nothing. The editor receives both files; the manager's-side
   agent receives `help.txt` only.
-- [ ] **Cold implementer, twice.** Two agents, independently, receive
+- [x] **Cold implementer, twice.** Two agents, independently, receive
   `DESIGN.md`, `CONTRACTS.md`, `ACCEPTANCE.md`, `docs/INTERFACE.md`,
   `docs/QUESTION-FORMS.md`, `docs/claude-code/CONTRACT.md` and
   `examples/questions/`, and nothing from `service/`, `apparatus/`, the
@@ -311,7 +310,7 @@ and `examples/questions/`.
   `.tmp/readiness/c/registry-1.md` and `registry-2.md`. The guesses, and every
   cell where the two disagree, measure what the documentation leaves
   unspecified.
-- [ ] **Editor pass.** One agent reads the specification scope and the rendered
+- [x] **Editor pass.** One agent reads the specification scope and the rendered
   help, passage by passage, and classifies each problem: contradiction; one
   fact with two owners; a named concept with no mechanism; one thing with
   several names; narration of how a decision was reached where current behavior
@@ -320,10 +319,10 @@ and `examples/questions/`.
   specification saying different things. Each gets a proposed edit (delete,
   merge into its owner, keep) and the agent edits nothing. It writes
   `.tmp/readiness/c/editor.md`.
-- [ ] **Manager's side.** One agent receives only `help.txt` and
+- [x] **Manager's side.** One agent receives only `help.txt` and
   `examples/questions/`, reads as a manager choosing a family would, and
   reports what it could not work out, in `.tmp/readiness/c/manager.md`.
-- [ ] Reconcile the four results. Each candidate contradiction goes to a fresh
+- [x] Reconcile the four results. Each candidate contradiction goes to a fresh
   agent, on the session model, given the two passages and told to refute it.
   In the delivered list, a proposed edit to the documentation appears under the
   disposition of the problem it answers.
@@ -450,11 +449,21 @@ only partly obtained and are listed at its end) and `empirical.md` (75 events
 from 53 retained run directories) have also returned. The Claude-side agent
 wrote its own result file and read nothing else locally. `crossed.md` holds
 twelve candidates, `X1` to `X12`, and the list accepted without refutation.
-No candidate has been sent to a refuter yet.
+Each candidate went to one refuter under `REFUTER-BRIEF.md`, which wrote
+`Xn.refute.md`: `X8` stands as written, the other eleven stand in part, and
+none was refuted outright. The refuters' corrected statements, not the
+wording in `crossed.md`, are what was delivered.
 
 **C.** `help.txt` and `help-runtime.txt` are captured from the two builds.
-`registry-1.md` has returned. The second cold implementer (`registry-2.md`)
-and the editor (`editor.md`) are dispatched; the manager's-side agent is not.
+`registry-1.md`, `registry-2.md`, `editor.md` (156 items) and `manager.md`
+have returned. The manager's-side agent had `stewart help` and `help forms`
+only, as specified above; some of what it could not work out is answered by
+`help commands`, `help limits` and `help reader`, which the orchestrator read
+afterwards. `contradictions.md` lists ten candidates, `K1` to `K10`: the
+editor's six and four the cold implementers raised. Each went to one refuter
+under `.tmp/readiness/c/REFUTER-BRIEF.md`, which wrote `Kn.refute.md`: `K1`
+stands, `K4`, `K7` and `K8` are reconcilable only from a passage the others do
+not point to, and the other six were refuted.
 
 ## Completion
 
