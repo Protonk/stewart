@@ -658,3 +658,10 @@ Reviewed native real-Claude ordinary/inadequate service comparison: 2 auditor su
 
 - Evidence: `.scratch/readiness-c2-01/.` (recorded 2026-11-13T23:23:44Z).
 - Retained purpose: Inspect original paired native service encounters, custody and incomplete usage for stage-three capture fixtures and accounting reassessment.; until The comparison and fixture/accounting reviews finish with no unresolved question requiring these originals.
+
+### readiness-c3-01
+
+Native C3 confirms large-page substitution: all 3 MCP payloads exact; 49,152-byte control intact in conversation content, both 65,536-byte pages replaced by external-file pointers/previews despite full auxiliary arrays. Four entries submitted; 15/15 package checks and preserved close; both groups stopped; usage incomplete. C3 consumed.
+
+- Evidence: `.scratch/readiness-c3-01/.` (recorded 2026-11-13T23:56:22Z).
+- Retained purpose: Inspect confirmed page substitution against short control and second full-page comparison; retain exact sources and both stdout representations for stage-three repair and regression fixtures.; until Page-fidelity and usage repairs and fixture reviews finish, and no unresolved finding needs these originals.

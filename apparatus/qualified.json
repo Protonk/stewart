@@ -1914,6 +1914,26 @@
         "reason": "Inspect original paired native service encounters, custody and incomplete usage for stage-three capture fixtures and accounting reassessment.",
         "until": "The comparison and fixture/accounting reviews finish with no unresolved question requiring these originals."
       }
+    },
+    {
+      "id": "readiness-c3-01",
+      "kind": "experiment",
+      "date": "2026-11-13T23:56:22Z",
+      "date_from": "OBSERVATION.json field finished_at",
+      "summary": "Native C3 confirms large-page substitution: all 3 MCP payloads exact; 49,152-byte control intact in conversation content, both 65,536-byte pages replaced by external-file pointers/previews despite full auxiliary arrays. Four entries submitted; 15/15 package checks and preserved close; both groups stopped; usage incomplete. C3 consumed.",
+      "result": {
+        "path": ".",
+        "files": 531,
+        "sha256": "90acab5050a4e04ed77aa8dce7e18740ea0a21c7c20044f487e24d69e3864f62"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-c3-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect confirmed page substitution against short control and second full-page comparison; retain exact sources and both stdout representations for stage-three repair and regression fixtures.",
+        "until": "Page-fidelity and usage repairs and fixture reviews finish, and no unresolved finding needs these originals."
+      }
     }
   ]
 }

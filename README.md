@@ -83,7 +83,9 @@ report observations from actual inquiries.
 The default-off [Claude Code development adapter](docs/claude-code/CONTRACT.md)
 has also completed native ordinary and inadequate-evidence open inquiries with
 auditor submission, verified delivery and close. Captured usage remains partial;
-those encounters do not establish broader model or platform qualification.
+a large-page comparison found that the harness substituted previews for full
+64 KiB material pages in the conversation. These limits remain unresolved, and
+the encounters do not establish broader model or platform qualification.
 
 Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. The
 source also builds on Apple-silicon macOS, without a support or qualification

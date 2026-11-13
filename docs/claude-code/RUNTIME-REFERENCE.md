@@ -43,6 +43,39 @@ The CLI reports the expected version. The successful comparison demonstrates
 the selected model and synthetic tool path under this subscription; complete
 consumption accounting remains unverified.
 
+## Large material pages
+
+The [native large-page comparison](../../apparatus/qualified.md#readiness-c3-01)
+observed a specific substitution under this same profile. All three requested
+`read` replies carried the exact expected source bytes at the MCP boundary:
+
+| Source slice | MCP text | Captured conversation tool result |
+| --- | --- | --- |
+| 49,152-byte ASCII control | Exact, including terminal label | Complete two-block result, including label |
+| First 65,536-byte page | Exact, including terminal label | External-file pointer and preview; label absent |
+| Second 65,536-byte page | Exact, including a different terminal label | External-file pointer and preview; label absent |
+
+For the large replies, stdout `user.message.content` contains a
+`<persisted-output>` string advertising a first-2KB preview. Each replacement is
+2,334 UTF-8 bytes. The same events' auxiliary `tool_use_result` arrays retain the
+full original two-block replies. Inspecting only that auxiliary field would miss
+the substitution in the conversation representation. The supplied range,
+completeness and next-read metadata remain visible; they describe Stewart's
+source read and do not establish that the harness exposed the whole page.
+
+The auditor followed the next offset, 65,536, and reported both large-page tail
+labels unknown. It made no search or extra-offset read. The short control and
+second full-page case distinguish and reproduce the behavior; they do not locate
+an exact threshold or establish how other content would be handled. The captured
+notices refer to files outside the supplied-materials interface. Those files were
+not inspected or used for recovery. These are correlated capture observations,
+not an independent view of provider-network contents.
+
+The submitted answer, verified package and ordinary close preserved what the
+auditor actually recorded. That successful custody path does not repair the
+page-delivery defect. The original source slices, MCP replies, both stdout
+representations and final answer remain retained for the repair and its fixtures.
+
 ## Reviewed native comparison
 
 The principal approved probe 02 on 2026-11-10. It used exactly one fresh
