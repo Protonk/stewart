@@ -3,12 +3,11 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: two driver corrections await a fresh Linux acceptance run.**
-The first run is unqualified because of two partial skips. The driver now uses
-the release binary for the held-run check and a host-mounted source fixture for
-the overlong filename. Native iteration verifies the filename comparison; the
-Linux run must verify both corrections and the mount. The C10 Linux rehearsal
-follows a qualified result. No live packet is approved or started.
+**State: Linux acceptance is qualified; the C10 rehearsal remains.**
+The repaired source passes every selected release and runtime case on both
+architectures without skips. Independent review confirms the held-run and
+filename comparisons. Complete the offline C10 Linux rehearsal before preparing
+live packets. No live packet is approved or started.
 
 | Stage | Result |
 | --- | --- |
@@ -169,70 +168,31 @@ for rewriting when the question is added to the return.
 
 ### Remaining verification
 
-`acceptance-readiness-01` is recorded as **failed qualification** in the
-[qualification index](apparatus/qualified.md#acceptance-readiness-01), despite
-the suite's zero exit. Each architecture reports two partial skips: the held-run
-check on the release binary and the 256-byte source-name component that the
-ext4 fixture cannot create. All runtime cases and controls passed on both
-architectures; independent review confirmed signal ordering, stopping and
-retained-copy consistency. Preserve this run unchanged through the correction.
+The [qualification index](apparatus/qualified.md#acceptance-readiness-02) owns
+the exact Linux counts and binary identities for source `0fdac94`. All cases and
+controls passed. Independent review verified the release-binary held-run
+refusal and stopping, exact 255/256-byte source names on the separate host mount,
+the specified overlong-name refusal, and signal stopping before publication.
+Archives and ordinary work remained on ext4. The native Cargo checks remain
+at `/private/tmp/stewart-readiness-native-87y7ofsj/RESULT.json`.
 
-- [x] Implement the held-run comparison using a release-binary request stalled
-  by the independent fake provider, followed by stopping checks.
-- [x] Add a host-mounted source fixture that can hold a 256-byte UTF-8
-  component. Keep archives on ext4, witness the exact name independently, and
-  require Stewart's specified refusal. A filesystem refusal is not that check.
-- [x] Make the container wrapper reject skipped release cases. Keep the strict
-  qualification rule and historical counts unchanged.
-- [ ] Run and review fresh container acceptance before the C10 rehearsal.
+- [ ] Run the changed C10 apparatus's Linux rehearsal on the qualified binary:
 
-Correction checks and original fixture observations are retained in
-`/private/tmp/stewart-driver-component-repair.D4niAr/` and
-`/private/tmp/stewart-completeness-check-3nz4mnj0/`. The native filename case
-passed all 534 checks, including the actual `bound_exceeded` refusal naming
-`component_bytes`; the lock case remains skipped in the sandbox because
-loopback binding is denied, as do its two controls. Release self-tests report
-384 passed, no failures and two loopback skips; runtime self-tests report 229
-passed with no failures or skips. The wrapper check rejects the retained
-partial-skip result and an empty inventory, and accepts the complete-case control.
+  ```sh
+  python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-readiness-01" --qualification acceptance-readiness-02
+  ```
 
-The reviewed host result is
-`/private/tmp/stewart-readiness-native-87y7ofsj/RESULT.json`: Cargo release
-252 passed, fault/sabotage 317 passed with 35 subprocess-only tests ignored by
-the top-level runner, and runtime 293 passed; no failures. Four fresh builds
-and their marker checks passed. The two corrected runtime cases passed all
-1,371 checks and 6 controls; the package rehearsal passed all 868 checks.
-Neither run skipped a case. Independent review confirmed stopping before
-publication resumed, the permitted `close_requested` without later publication,
-and all nine package snapshots against their expected bytes.
+- [ ] Review all 13 audit outcomes, the firing negative controls, stopping,
+  reviewer/operator/report comparisons and immutable export preservation.
+  Extract no model-conformance claim from this fake-provider rehearsal.
 
-Retain these evidence locations through Linux review:
-
-- `.scratch/readiness-native-jbpx9el6/RESULT.json`: selected release-driver,
-  C10, surface, listener and controller checks, with explicit native/heavy skips
-  and the original runtime path failures. Both controller negatives were
-  reviewed for intended refusal, stopped groups and unused later starts.
-- `/private/tmp/stewart-readiness-native-cgup0_dm/RESULT.json`: 13 runtime
-  cases passed; the two failed cases are superseded by the reviewed retry above.
-  Its passing cases bind the earlier binary, not the rebuilt one.
-- `.tmp/readiness-repairs/`, `/private/tmp/stewart-readiness-service-dCrMiy`,
-  `/private/tmp/stewart-readiness-signal-yxyYNe`,
-  `/private/tmp/stewart-independent-driver.oENjUx` and
-  `/private/tmp/stewart-driver-ordering.fuD22j`: repair checks and driver controls.
-- `/private/tmp/stewart-driver-package-proof-gk4nqkc2.json`: locates the
-  package self-test's 32 passing checks, including all 12 corruption controls;
-  all 203 retained evidence members match their recorded hashes.
-- `/private/tmp/stewart-driver-post-review-57031458.json`: both unknown-stop
-  test groups are absent at review. Cleanup waits for its child, but the run
-  retained no immediate post-cleanup observation; this later check establishes
-  current absence only.
-
-After the corrected container run, extract and check its qualification record.
-The changed C10 operator checker needs a fresh
-retained Linux rehearsal; the frozen runtime controller carries the independent
-`fixture_expectations.py` source. Recheck qualification and launcher bindings
-before freezing any live packet. Native results do not qualify these changes;
-no real Claude, authentication or provider process was invoked by these checks.
+Recheck qualification and launcher bindings before freezing any live packet.
+The frozen runtime controller must carry the independent
+`fixture_expectations.py` source. Retain the native controller evidence in
+`.scratch/readiness-native-jbpx9el6/` for C1 preparation. For L0, that run's
+startup refusals and `/private/tmp/stewart-readiness-native-cgup0_dm/` supply the
+inside/outside ancestry comparison. Apply DEVELOPMENT's retention rules to
+completed repair evidence; historical counts and receipts remain unchanged.
 
 **Complete when:** repairs are checked or explicitly disposed of, expected
 behavior is specified, and corrected tests distinguish their named defects.

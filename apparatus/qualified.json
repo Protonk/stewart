@@ -2,16 +2,16 @@
   "schema": "stewart.qualified/1",
   "entries": [
     {
-      "id": "acceptance-environment-observer-01",
+      "id": "acceptance-readiness-02",
       "kind": "suite",
       "suite": "acceptance",
       "script": {
         "path": "apparatus/acceptance.sh",
-        "sha256": "9b5bf068812f0c1e1963d7e1a09dc56b7bf0727e093ec4c805187d3f0888d0e1"
+        "sha256": "4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d"
       },
-      "source_commit": "b4ccba4c69e32d123bdfaf8d54af67b1c044ca19",
-      "source_archive_sha256": "9d5f38ad13a12dda15728554f01b73e3cdce746ff0caec697abdb7ebf64debe8",
-      "date": "2026-11-12T03:23:04Z",
+      "source_commit": "0fdac9450aa0d1a72d1465b17b7e3e5038796c71",
+      "source_archive_sha256": "01950e1519912fc717728218c645d72b012c09de1f95cdcf74cd3af8a5610b82",
+      "date": "2026-11-13T16:52:45Z",
       "outcome": "qualified",
       "failures": [],
       "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
@@ -23,240 +23,32 @@
           "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
           "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
           "script_checks": {
-            "passed": 40,
-            "total": 40,
+            "passed": 41,
+            "total": 41,
             "controls_fired": 11,
             "controls_total": 11
           },
           "self_test": {
-            "checks": 355,
-            "passed": 355,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 128,
-            "ran": 128,
-            "passed": 128,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 240,
-            "passed": 161,
-            "failed": 79,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 178483,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1209
-          },
-          "controls": {
-            "fired": 79,
-            "total": 79
-          },
-          "driver_controls": {
-            "fired": 21,
-            "total": 21
-          },
-          "timing_gate": {
-            "enabled": true,
-            "passed": true,
-            "threshold_ms": 100.0,
-            "worst_ms": 2.169,
-            "protocol_passed": true,
-            "protocol_worst_ms": 158.548,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 872,
-            "checks_failed": 0
-          },
-          "release_sha256": "3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023",
-          "test_sha256": "712a1adfcf55e29e093e60bf7aa8b1bde81f1a2dfed5bc247af73038f1c2d47b",
-          "result_sha256": "9e9e1ec642160fc7a151f41348085eeae8ac24f5f3cf223e755b9a191b28ad35",
-          "runtime": {
-            "self_test": {
-              "passed": 205,
-              "failed": 0,
-              "skipped": 0
-            },
-            "counts": {
-              "cases": 24,
-              "passed": 24,
-              "failed": 0,
-              "skipped": 0,
-              "checks": 9892,
-              "checks_passed": 9892,
-              "checks_failed": 0,
-              "controls": 73,
-              "controls_fired": 73
-            },
-            "result_sha256": "a0da96085de9a9f6b000b4134a7b4a1ae5ae39df051d790065fee1776358e60a",
-            "environment_sha256": "7bd7e53d7c8badfadb251679598575239add4f87f41dbb273af7e7c587b4272c",
-            "work_sha256": "ca6878a5aa4a70075c9b1bed6b75b382d880c97097a7548dc352856d0c859b63",
-            "evidence": {
-              "files": 1477,
-              "listing_sha256": "89c6ab7546fa2527cca0ceb606879266a943133a1ec5e08d9493acbc6ef72a96"
-            },
-            "development_sha256": "f6b6cb9cdebfd3aaedc040b7ac7d1a5444554dbbda2d414b307b660c641ed761",
-            "release_sha256": "3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023",
-            "variant_sha256": "a63a25f92ad6e549ee1ab06998d372ce8204bcaf68f5f45bc40cc47d2f58f1f2",
-            "driver_sha256": "e8e97e17a1183113fee80c0edfb3b1ad3b546f7306a1cf2bd0aa3538ea0b6de9"
-          }
-        },
-        "linux-x86_64": {
-          "execution": "emulated (Rosetta)",
-          "outcome": "qualified",
-          "failures": [],
-          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 40,
-            "total": 40,
-            "controls_fired": 11,
-            "controls_total": 11
-          },
-          "self_test": {
-            "checks": 355,
-            "passed": 355,
-            "failed": 0,
-            "skipped": 0
-          },
-          "cases": {
-            "selected": 126,
-            "ran": 126,
-            "passed": 126,
-            "failed": 0,
-            "skipped": 0
-          },
-          "variants": {
-            "ran": 240,
-            "passed": 161,
-            "failed": 79,
-            "skipped": 0
-          },
-          "checks": {
-            "passed": 178483,
-            "failed_outside_controls": 0,
-            "failed_inside_controls": 1209
-          },
-          "controls": {
-            "fired": 79,
-            "total": 79
-          },
-          "driver_controls": {
-            "fired": 21,
-            "total": 21
-          },
-          "timing_gate": {
-            "enabled": false,
-            "passed": null,
-            "threshold_ms": 100.0,
-            "worst_ms": 65.588,
-            "protocol_passed": null,
-            "protocol_worst_ms": 230.537,
-            "protocol_threshold_ms": 200.0
-          },
-          "e2e": {
-            "case": "e2e.reacting-audit",
-            "outcome": "pass",
-            "checks_passed": 872,
-            "checks_failed": 0
-          },
-          "release_sha256": "9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973",
-          "test_sha256": "5a71b421bd56bc3f4e91ade3abeb5fff7709372d4c5a1ee2d66e5ea94e9dfae3",
-          "result_sha256": "b9e239c4dd803c339dbed7a18871aa30ec2549bf2e71126ee4967ab7f3ddd16c",
-          "runtime": {
-            "self_test": {
-              "passed": 205,
-              "failed": 0,
-              "skipped": 0
-            },
-            "counts": {
-              "cases": 24,
-              "passed": 24,
-              "failed": 0,
-              "skipped": 0,
-              "checks": 9892,
-              "checks_passed": 9892,
-              "checks_failed": 0,
-              "controls": 73,
-              "controls_fired": 73
-            },
-            "result_sha256": "f07baa5e816fb9a59225db468956793a118028a8b399634e195f8272084b5472",
-            "environment_sha256": "c6d7943d9654620c0ea2670871e1613d747466b77594dd16aa8fa9ef8a360708",
-            "work_sha256": "078fb15fd6071697a40bfab0675311eb555bd9157d64c5261ecc350b00afffce",
-            "evidence": {
-              "files": 1477,
-              "listing_sha256": "0cce79478c1d03e7bde5260a774d116107dca2180a3bb0ff7ab0304e2e2b6548"
-            },
-            "development_sha256": "2b83a5b8c0fbe5f4989de981c8bd7db8b351eed8faea87a38c0398bf1a4e7d52",
-            "release_sha256": "9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973",
-            "variant_sha256": "b0bbfc4bd7d4ae37e9f2530099964eaaf7f559dfca3978cc34b07fa2bf8c9509",
-            "driver_sha256": "e8e97e17a1183113fee80c0edfb3b1ad3b546f7306a1cf2bd0aa3538ea0b6de9"
-          }
-        }
-      },
-      "evidence": {
-        "path": ".scratch/acceptance-environment-observer-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": null
-    },
-    {
-      "id": "acceptance-readiness-01",
-      "kind": "suite",
-      "suite": "acceptance",
-      "script": {
-        "path": "apparatus/acceptance.sh",
-        "sha256": "4e2ad2df76ca3b501e7dafcd4914a4ca8b4d60204a8493766b8c4ab19bf47cc1"
-      },
-      "source_commit": "d33758d599b0076056555cb387f5b46b79d3e3f9",
-      "source_archive_sha256": "285c116c30eae80dbb5c555688ef1cb59a4b62f496ebb6d7a691a31a3ac90948",
-      "date": "2026-11-13T16:05:33Z",
-      "outcome": "failed",
-      "failures": [],
-      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
-      "platforms": {
-        "linux-aarch64": {
-          "execution": "native",
-          "outcome": "failed",
-          "failures": [
-            "cases: 133 selected, 131 passed, 0 failed, 2 skipped"
-          ],
-          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
-          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-          "script_checks": {
-            "passed": 40,
-            "total": 40,
-            "controls_fired": 11,
-            "controls_total": 11
-          },
-          "self_test": {
-            "checks": 398,
-            "passed": 398,
+            "checks": 403,
+            "passed": 403,
             "failed": 0,
             "skipped": 0
           },
           "cases": {
             "selected": 133,
-            "ran": 131,
-            "passed": 131,
+            "ran": 133,
+            "passed": 133,
             "failed": 0,
-            "skipped": 2
+            "skipped": 0
           },
           "variants": {
             "ran": 245,
-            "passed": 164,
+            "passed": 166,
             "failed": 79,
-            "skipped": 2
+            "skipped": 0
           },
           "checks": {
-            "passed": 179768,
+            "passed": 180258,
             "failed_outside_controls": 0,
             "failed_inside_controls": 1213
           },
@@ -272,9 +64,9 @@
             "enabled": true,
             "passed": true,
             "threshold_ms": 100.0,
-            "worst_ms": 2.953,
+            "worst_ms": 2.857,
             "protocol_passed": true,
-            "protocol_worst_ms": 96.753,
+            "protocol_worst_ms": 98.4,
             "protocol_threshold_ms": 200.0
           },
           "e2e": {
@@ -285,7 +77,7 @@
           },
           "release_sha256": "12587c3783a33b6505bf2708698ef861b6f3d833e260c03e82b0ca91575eb86f",
           "test_sha256": "0fae5886abcafeb2f616b56bf9ba76840a85d0537b092167dd5bdff1843712be",
-          "result_sha256": "095467ffeec573c10eeeb1e10fa67030d736217d83d9997a85b94e37456600aa",
+          "result_sha256": "d3be1252e1869ad48a70969906697889f708d08053138a35bd548f6025bc40e0",
           "runtime": {
             "self_test": {
               "passed": 229,
@@ -303,12 +95,12 @@
               "controls": 81,
               "controls_fired": 81
             },
-            "result_sha256": "19880e237769a0391206104c758478b4997e3f224eb97fa61c636d1dc4e7be13",
+            "result_sha256": "fa7157e656a21f12ceadcd3120e628889a3ef47a96ab563d69e342e0bd860f61",
             "environment_sha256": "e0ca37bad060849a714ba86b3e90516a61a00fb1f1b7dc5039a065cf542fb54b",
-            "work_sha256": "85bf145d48536103c7502ac31427facf47d8fa250232cd64ca9b01294a704b6b",
+            "work_sha256": "da8b7ce065664827a0525d5f098092b48d99aac8d30445b4d01504e7a5fc6e3a",
             "evidence": {
               "files": 1768,
-              "listing_sha256": "8c419e647437d407c17940ad2f0fec7b090aa52661fa69bd1541fbaba8149e31"
+              "listing_sha256": "397d1f62622af60e2da3f2c73c7e504dd9a449dd00900f13e0f02fbaf3f21aed"
             },
             "development_sha256": "9eac764a2926dff1d4754b05fc19865e9e2327ba6bcfacf46fe8972cfcee3310",
             "release_sha256": "12587c3783a33b6505bf2708698ef861b6f3d833e260c03e82b0ca91575eb86f",
@@ -318,39 +110,37 @@
         },
         "linux-x86_64": {
           "execution": "emulated (Rosetta)",
-          "outcome": "failed",
-          "failures": [
-            "cases: 131 selected, 129 passed, 0 failed, 2 skipped"
-          ],
+          "outcome": "qualified",
+          "failures": [],
           "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
           "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
           "script_checks": {
-            "passed": 40,
-            "total": 40,
+            "passed": 41,
+            "total": 41,
             "controls_fired": 11,
             "controls_total": 11
           },
           "self_test": {
-            "checks": 398,
-            "passed": 398,
+            "checks": 403,
+            "passed": 403,
             "failed": 0,
             "skipped": 0
           },
           "cases": {
             "selected": 131,
-            "ran": 129,
-            "passed": 129,
+            "ran": 131,
+            "passed": 131,
             "failed": 0,
-            "skipped": 2
+            "skipped": 0
           },
           "variants": {
             "ran": 245,
-            "passed": 164,
+            "passed": 166,
             "failed": 79,
-            "skipped": 2
+            "skipped": 0
           },
           "checks": {
-            "passed": 179768,
+            "passed": 180258,
             "failed_outside_controls": 0,
             "failed_inside_controls": 1213
           },
@@ -366,9 +156,9 @@
             "enabled": false,
             "passed": null,
             "threshold_ms": 100.0,
-            "worst_ms": 44.787,
+            "worst_ms": 35.575,
             "protocol_passed": null,
-            "protocol_worst_ms": 156.098,
+            "protocol_worst_ms": 167.3,
             "protocol_threshold_ms": 200.0
           },
           "e2e": {
@@ -379,7 +169,7 @@
           },
           "release_sha256": "67515fb492a57dceabd129d0bb668c01cad05cb8a8d1f2b6ec4f2516d1b1eb32",
           "test_sha256": "deeb1e127f223dd6931eb3962df64faf4b8c559db38aa6bdfe7029d07bedcbb6",
-          "result_sha256": "6001498f243fa5ffeb0118744ebb3765fe6527d283cc67cf2a884b17ec6e13e1",
+          "result_sha256": "b9da0b487e48de690998d7a0995e35d1a3d348f08e14fe3fbe361fb54ecc756f",
           "runtime": {
             "self_test": {
               "passed": 229,
@@ -397,12 +187,12 @@
               "controls": 81,
               "controls_fired": 81
             },
-            "result_sha256": "f2352c50fdeabf7a4904bb47d36ea3de7a7f3e44cdbd3ea5ab91daf2d54e231e",
+            "result_sha256": "2c6cf25174a5b2b41940adae916091b267cd97c320bd776db10122357624a4cf",
             "environment_sha256": "4349d88419ce7987af5d95222a494945050b4baa585f7d07ad3dafb734efb017",
-            "work_sha256": "5011283c5402d1e9e16a911c55e7f5178eec10856fbf66d1face50be9438903e",
+            "work_sha256": "654e7d12904d4b688d096b49cb500a3e39937e3b25b8761f8a730c4d7995f551",
             "evidence": {
               "files": 1768,
-              "listing_sha256": "b0eb013d31cefca79ece1d54dd56acca3f43035164f4b13cf1e123d0fab60e77"
+              "listing_sha256": "feaa791df0f4eb40d9f6a55c8271ea23d4dd2979896a4fe50e291a3284a2e09e"
             },
             "development_sha256": "1244aca8f905c004c33c1dbcbe65c0d50f97c0a795250719b89898a8dcf3d392",
             "release_sha256": "67515fb492a57dceabd129d0bb668c01cad05cb8a8d1f2b6ec4f2516d1b1eb32",
@@ -412,7 +202,7 @@
         }
       },
       "evidence": {
-        "path": ".scratch/acceptance-readiness-01",
+        "path": ".scratch/acceptance-readiness-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": null

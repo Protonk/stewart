@@ -20,24 +20,22 @@ not carry them.
 
 | Suite | Platform | Run | Finished (UTC) | Source | Outcome | On the front as |
 | --- | --- | --- | --- | --- | --- | --- |
-| acceptance | linux-aarch64 | [acceptance-readiness-01](#acceptance-readiness-01) | 2026-11-13T16:05:33Z | `d33758d` | failed | latest |
-| acceptance | linux-aarch64 | [acceptance-environment-observer-01](#acceptance-environment-observer-01) | 2026-11-12T03:23:04Z | `b4ccba4` | qualified | latest qualified |
-| acceptance | linux-x86_64 | [acceptance-readiness-01](#acceptance-readiness-01) | 2026-11-13T16:05:33Z | `d33758d` | failed | latest |
-| acceptance | linux-x86_64 | [acceptance-environment-observer-01](#acceptance-environment-observer-01) | 2026-11-12T03:23:04Z | `b4ccba4` | qualified | latest qualified |
+| acceptance | linux-aarch64 | [acceptance-readiness-02](#acceptance-readiness-02) | 2026-11-13T16:52:45Z | `0fdac94` | qualified | latest |
+| acceptance | linux-x86_64 | [acceptance-readiness-02](#acceptance-readiness-02) | 2026-11-13T16:52:45Z | `0fdac94` | qualified | latest |
 | toolchain | linux-aarch64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
 | toolchain | linux-x86_64 | [toolchain-runtime-01](#toolchain-runtime-01) | 2026-11-12T03:48:38Z | `31bced7` | qualified | latest |
 
 ## Records
 
-### acceptance-environment-observer-01
+### acceptance-readiness-02
 
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `9b5bf068812f0c1e1963d7e1a09dc56b7bf0727e093ec4c805187d3f0888d0e1` at the source commit)
-- Source commit: `b4ccba4c69e32d123bdfaf8d54af67b1c044ca19`; archive SHA-256 `9d5f38ad13a12dda15728554f01b73e3cdce746ff0caec697abdb7ebf64debe8`
-- Finished: 2026-11-12T03:23:04Z
+- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d` at the source commit)
+- Source commit: `0fdac9450aa0d1a72d1465b17b7e3e5038796c71`; archive SHA-256 `01950e1519912fc717728218c645d72b012c09de1f95cdcf74cd3af8a5610b82`
+- Finished: 2026-11-13T16:52:45Z
 - Outcome: **qualified**
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-environment-observer-01` (local: only on the machine that ran it; clones do not carry it)
+- Evidence: `.scratch/acceptance-readiness-02` (local: only on the machine that ran it; clones do not carry it)
 - Pin: none
 
 | | linux-aarch64 | linux-x86_64 |
@@ -47,69 +45,28 @@ not carry them.
 | Failures | none | none |
 | Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
 | rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 40/40, controls 11/11 | 40/40, controls 11/11 |
-| Driver self-test | 355/355 | 355/355 |
-| Cases passed | 128/128 | 126/126 |
-| Cases | selected 128, ran 128, passed 128, failed 0, skipped 0 | selected 126, ran 126, passed 126, failed 0, skipped 0 |
-| Variants (a fired control's variant fails) | ran 240, passed 161, failed 79, skipped 0 | ran 240, passed 161, failed 79, skipped 0 |
-| Checks | passed 178483, failed outside controls 0, failed inside controls 1209 | passed 178483, failed outside controls 0, failed inside controls 1209 |
+| Script checks (exit records) | 41/41, controls 11/11 | 41/41, controls 11/11 |
+| Driver self-test | 403/403 | 403/403 |
+| Cases passed | 133/133 | 131/131 |
+| Cases | selected 133, ran 133, passed 133, failed 0, skipped 0 | selected 131, ran 131, passed 131, failed 0, skipped 0 |
+| Variants (a fired control's variant fails) | ran 245, passed 166, failed 79, skipped 0 | ran 245, passed 166, failed 79, skipped 0 |
+| Checks | passed 180258, failed outside controls 0, failed inside controls 1213 | passed 180258, failed outside controls 0, failed inside controls 1213 |
 | Sabotage control variants fired (INTERFACE C.2) | 79/79 | 79/79 |
 | Driver controls fired | 21/21 | 21/21 |
-| Timing gate | on, passed: commands worst 2.169 ms (threshold 100.0 ms); protocol worst 158.548 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 65.588 ms (threshold 100.0 ms); protocol worst 230.537 ms (threshold 200.0 ms) |
-| End to end (`e2e.reacting-audit`) | pass, 872/872 checks | pass, 872/872 checks |
-| Release binary SHA-256 | `3bbcc1089951d5a9e9fe2a323ed39130cdd55d7b4c7b5362d9292fe3349fb023` | `9d70a48a1a2ce48e58a48b1aaa9bec65971d89d7ef7bda8680b122a7208d8973` |
-| Test binary SHA-256 | `712a1adfcf55e29e093e60bf7aa8b1bde81f1a2dfed5bc247af73038f1c2d47b` | `5a71b421bd56bc3f4e91ade3abeb5fff7709372d4c5a1ee2d66e5ea94e9dfae3` |
-| RESULT.json SHA-256 | `9e9e1ec642160fc7a151f41348085eeae8ac24f5f3cf223e755b9a191b28ad35` | `b9e239c4dd803c339dbed7a18871aa30ec2549bf2e71126ee4967ab7f3ddd16c` |
-| Synthetic runtime cases | cases 24, passed 24, failed 0, skipped 0 | cases 24, passed 24, failed 0, skipped 0 |
-| Synthetic runtime checks | checks 9892, checks passed 9892, checks failed 0 | checks 9892, checks passed 9892, checks failed 0 |
-| Synthetic runtime controls | 73/73 | 73/73 |
-| Synthetic runtime self-test | passed 205, failed 0, skipped 0 | passed 205, failed 0, skipped 0 |
-| Development binary SHA-256 | `f6b6cb9cdebfd3aaedc040b7ac7d1a5444554dbbda2d414b307b660c641ed761` | `2b83a5b8c0fbe5f4989de981c8bd7db8b351eed8faea87a38c0398bf1a4e7d52` |
-| Second development binary SHA-256 | `a63a25f92ad6e549ee1ab06998d372ce8204bcaf68f5f45bc40cc47d2f58f1f2` | `b0bbfc4bd7d4ae37e9f2530099964eaaf7f559dfca3978cc34b07fa2bf8c9509` |
-| Synthetic runtime RESULT.json SHA-256 | `a0da96085de9a9f6b000b4134a7b4a1ae5ae39df051d790065fee1776358e60a` | `f07baa5e816fb9a59225db468956793a118028a8b399634e195f8272084b5472` |
-| Synthetic runtime evidence listing SHA-256 | `89c6ab7546fa2527cca0ceb606879266a943133a1ec5e08d9493acbc6ef72a96` | `0cce79478c1d03e7bde5260a774d116107dca2180a3bb0ff7ab0304e2e2b6548` |
-| Synthetic runtime work archive SHA-256 | `ca6878a5aa4a70075c9b1bed6b75b382d880c97097a7548dc352856d0c859b63` | `078fb15fd6071697a40bfab0675311eb555bd9157d64c5261ecc350b00afffce` |
-
-### acceptance-readiness-01
-
-- Suite: acceptance, `apparatus/acceptance.sh` (SHA-256 `4e2ad2df76ca3b501e7dafcd4914a4ca8b4d60204a8493766b8c4ab19bf47cc1` at the source commit)
-- Source commit: `d33758d599b0076056555cb387f5b46b79d3e3f9`; archive SHA-256 `285c116c30eae80dbb5c555688ef1cb59a4b62f496ebb6d7a691a31a3ac90948`
-- Finished: 2026-11-13T16:05:33Z
-- Outcome: **failed**
-- Run-level failures: none
-- Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
-- Evidence: `.scratch/acceptance-readiness-01` (local: only on the machine that ran it; clones do not carry it)
-- Pin: none
-
-| | linux-aarch64 | linux-x86_64 |
-| --- | --- | --- |
-| Execution | native | emulated (Rosetta) |
-| Outcome | **failed** | **failed** |
-| Failures | cases: 133 selected, 131 passed, 0 failed, 2 skipped | cases: 131 selected, 129 passed, 0 failed, 2 skipped |
-| Toolchain image | `sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a` | `sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4` |
-| rustc | rustc 1.99.0 (b940084d7 2026-09-28) | rustc 1.99.0 (b940084d7 2026-09-28) |
-| Script checks (exit records) | 40/40, controls 11/11 | 40/40, controls 11/11 |
-| Driver self-test | 398/398 | 398/398 |
-| Cases passed | 131/133 | 129/131 |
-| Cases | selected 133, ran 131, passed 131, failed 0, skipped 2 | selected 131, ran 129, passed 129, failed 0, skipped 2 |
-| Variants (a fired control's variant fails) | ran 245, passed 164, failed 79, skipped 2 | ran 245, passed 164, failed 79, skipped 2 |
-| Checks | passed 179768, failed outside controls 0, failed inside controls 1213 | passed 179768, failed outside controls 0, failed inside controls 1213 |
-| Sabotage control variants fired (INTERFACE C.2) | 79/79 | 79/79 |
-| Driver controls fired | 21/21 | 21/21 |
-| Timing gate | on, passed: commands worst 2.953 ms (threshold 100.0 ms); protocol worst 96.753 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 44.787 ms (threshold 100.0 ms); protocol worst 156.098 ms (threshold 200.0 ms) |
+| Timing gate | on, passed: commands worst 2.857 ms (threshold 100.0 ms); protocol worst 98.4 ms (threshold 200.0 ms) | off (reported, not gated): commands worst 35.575 ms (threshold 100.0 ms); protocol worst 167.3 ms (threshold 200.0 ms) |
 | End to end (`e2e.reacting-audit`) | pass, 872/872 checks | pass, 872/872 checks |
 | Release binary SHA-256 | `12587c3783a33b6505bf2708698ef861b6f3d833e260c03e82b0ca91575eb86f` | `67515fb492a57dceabd129d0bb668c01cad05cb8a8d1f2b6ec4f2516d1b1eb32` |
 | Test binary SHA-256 | `0fae5886abcafeb2f616b56bf9ba76840a85d0537b092167dd5bdff1843712be` | `deeb1e127f223dd6931eb3962df64faf4b8c559db38aa6bdfe7029d07bedcbb6` |
-| RESULT.json SHA-256 | `095467ffeec573c10eeeb1e10fa67030d736217d83d9997a85b94e37456600aa` | `6001498f243fa5ffeb0118744ebb3765fe6527d283cc67cf2a884b17ec6e13e1` |
+| RESULT.json SHA-256 | `d3be1252e1869ad48a70969906697889f708d08053138a35bd548f6025bc40e0` | `b9da0b487e48de690998d7a0995e35d1a3d348f08e14fe3fbe361fb54ecc756f` |
 | Synthetic runtime cases | cases 25, passed 25, failed 0, skipped 0 | cases 25, passed 25, failed 0, skipped 0 |
 | Synthetic runtime checks | checks 12972, checks passed 12972, checks failed 0 | checks 12972, checks passed 12972, checks failed 0 |
 | Synthetic runtime controls | 81/81 | 81/81 |
 | Synthetic runtime self-test | passed 229, failed 0, skipped 0 | passed 229, failed 0, skipped 0 |
 | Development binary SHA-256 | `9eac764a2926dff1d4754b05fc19865e9e2327ba6bcfacf46fe8972cfcee3310` | `1244aca8f905c004c33c1dbcbe65c0d50f97c0a795250719b89898a8dcf3d392` |
 | Second development binary SHA-256 | `65f5b1798003ef588567deb51c6d00f1e9d3bfde1e5798c97a3aff363b536dad` | `5f4fd67ddaaea51b1325dc576104a5c34293216b705f0dfe902eb274e389dd98` |
-| Synthetic runtime RESULT.json SHA-256 | `19880e237769a0391206104c758478b4997e3f224eb97fa61c636d1dc4e7be13` | `f2352c50fdeabf7a4904bb47d36ea3de7a7f3e44cdbd3ea5ab91daf2d54e231e` |
-| Synthetic runtime evidence listing SHA-256 | `8c419e647437d407c17940ad2f0fec7b090aa52661fa69bd1541fbaba8149e31` | `b0eb013d31cefca79ece1d54dd56acca3f43035164f4b13cf1e123d0fab60e77` |
-| Synthetic runtime work archive SHA-256 | `85bf145d48536103c7502ac31427facf47d8fa250232cd64ca9b01294a704b6b` | `5011283c5402d1e9e16a911c55e7f5178eec10856fbf66d1face50be9438903e` |
+| Synthetic runtime RESULT.json SHA-256 | `fa7157e656a21f12ceadcd3120e628889a3ef47a96ab563d69e342e0bd860f61` | `2c6cf25174a5b2b41940adae916091b267cd97c320bd776db10122357624a4cf` |
+| Synthetic runtime evidence listing SHA-256 | `397d1f62622af60e2da3f2c73c7e504dd9a449dd00900f13e0f02fbaf3f21aed` | `feaa791df0f4eb40d9f6a55c8271ea23d4dd2979896a4fe50e291a3284a2e09e` |
+| Synthetic runtime work archive SHA-256 | `da8b7ce065664827a0525d5f098092b48d99aac8d30445b4d01504e7a5fc6e3a` | `654e7d12904d4b688d096b49cb500a3e39937e3b25b8761f8a730c4d7995f551` |
 
 ### toolchain-runtime-01
 
