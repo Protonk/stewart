@@ -226,9 +226,9 @@ to their INTERFACE sections.
 - [x] Write the workflow script and run it: review, then refute, eight agents
   at a time. Record its run identifier and script path in the run record as
   soon as it is launched.
-- [ ] Merge unreached-condition candidates by clause and send each to its
+- [x] Merge unreached-condition candidates by clause and send each to its
   refuter.
-- [ ] Collect survivors per reliance row and apply the trusted-unit test.
+- [x] Collect survivors per reliance row and apply the trusted-unit test.
 
 ## B: interventions on the auditor's return path
 
@@ -435,7 +435,12 @@ set on the session model. Launched as workflow run `wf_e15d37fd-f69`, four
 agents at a time; script `readiness-a-unreached-conditions-wf_e15d37fd-f69.js`
 in the same directory as the first. Each refuter writes
 `unreached-GNN.result.json` with a verdict per candidate: `reached` (unit,
-file, line and tree named), `partly`, `unreached` or `not-specified`.
+file, line and tree named), `partly`, `unreached` or `not-specified`. All 58
+sets returned with every candidate accounted for: 154 reached, 91 partly
+reached, 114 unreached and 20 not specified.
+`.tmp/readiness/a/unreached-merged.json` holds them, rebuilt by
+`.tmp/readiness/tools/merge_unreached.py`. Every reliance row has trusted
+units (`.tmp/readiness/tools/trusted.py`), so no row-level finding was raised.
 
 **B.** Both Stewart-side ledgers have returned: `stewart-messages.md` (74
 rows, `M-01` to `M-74`) and `stewart-claude-code.md` (83 rows, `CC-01` to
