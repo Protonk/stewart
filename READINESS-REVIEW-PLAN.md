@@ -7,7 +7,8 @@ that work once it begins and reports them to the principal, who decides what
 each one means for entry.
 
 **State: A's batches have returned and its unreached-condition check is
-running; B and C have not been dispatched.** The orchestrator
+running; B's four agents are dispatched and two have returned; C's help is
+rendered and its agents have not been dispatched.** The orchestrator
 updates this line, the task boxes and the [run record](#run-record) in place
 and commits those updates.
 
@@ -274,7 +275,7 @@ restrictions that meet none of the three conditions are listed once, briefly,
 as accepted. Report the inverse where it turns up: a real `claude` or provider
 failure that Stewart presents as its own.
 
-- [ ] Dispatch the four agents.
+- [x] Dispatch the four agents.
 - [ ] Cross the sources; refute each candidate.
 - [ ] List what only a live run could settle.
 
@@ -287,7 +288,7 @@ all of `docs/QUESTION-FORMS.md`; INTERFACE 3.2 and section 7; in
 "Help, run requirements and presentation" and "Runtime texts"; ACCEPTANCE C7;
 and `examples/questions/`.
 
-- [ ] **Render the help.** The forms help is assembled when the binary runs.
+- [x] **Render the help.** The forms help is assembled when the binary runs.
   From `service/`, the orchestrator builds both configurations from the
   current source and captures two files. `.tmp/readiness/c/help.txt` holds
   `stewart help` and `stewart help forms` from the release binary
@@ -435,7 +436,15 @@ in the same directory as the first. Each refuter writes
 `unreached-GNN.result.json` with a verdict per candidate: `reached` (unit,
 file, line and tree named), `partly`, `unreached` or `not-specified`.
 
-B and C: nothing has run.
+**B.** Both Stewart-side ledgers have returned: `stewart-messages.md` (74
+rows, `M-01` to `M-74`) and `stewart-claude-code.md` (83 rows, `CC-01` to
+`CC-83`). Both briefs gave the same twelve category keys (`K1` to `K12`) so
+the ledgers can be crossed. The Claude-side and empirical agents are
+dispatched and have not returned. The Claude-side agent was told to write its
+own result file and read nothing else locally.
+
+**C.** `help.txt` and `help-runtime.txt` are captured from the two builds. No
+agent has been dispatched.
 
 ## Completion
 
