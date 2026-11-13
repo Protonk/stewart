@@ -3,13 +3,13 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; L0, M1, M2 and C1 reviewed; stage 2 continues.**
+**State: stage 1 complete; L0, M1, M2, C1 and C2 reviewed; stage 2 continues.**
 M2 reproduced a thinking-only response-cap interruption in sw3z default; the
 other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
 commissioned M3. C1 produced a reviewed supplied-surface check and profile.
-C2's ordinary inquiry submitted, passed review and closed with its package
-preserved. Its inadequate-evidence inquiry is the remaining approved start.
+Both C2 inquiries submitted, passed review and closed with their packages
+preserved. C3's large-page inputs are being frozen for a fresh commission.
 
 | Stage | Result |
 | --- | --- |
@@ -275,63 +275,31 @@ dollar ceilings. These experiments do not qualify release models.
   compatibility, not real-service custody, billing or turn/output-cap enforcement.
   No C1 allowance remains. Use these captures for startup, hook-denial and final
   report fixtures in stage 3 without rewriting originals.
-- **C2 procedure reviewed:** the
-  [native synthetic comparison](apparatus/qualified.md#readiness-c2-procedure-host-02)
-  passed positive, wrong-model and invariance cases. Both positive cases submitted
-  an account and exact UTF-8 artifact, passed 18 package assertions apiece, and
-  closed with their packages and prior archive files preserved. Wrong-model
-  startup stopped with no answer effects; one unanswered request remains reported.
-  The expanded witness passed 880 checks and nine package reviews with 162
-  assertions, including continuation without duplicate entries. All 14 recorded
-  authentication/model groups were observed absent. Review also verified 116
-  apparatus tests, 35 witness checks and 237 runtime-driver checks. The corrected
-  witness now accepts the contract's `utf-8` encoding and refuses `text`.
-  These are synthetic native results, not live-service or Linux qualification.
-- [x] Prepare C2's ordinary and inadequate open-inquiry inputs from the existing
-  C10 specimens, using the reviewed profile. Both local preparations accepted
-  the exact profile. `.scratch/readiness-c2-01/PREPARATION.json` owns references,
-  input witnesses and replies; original work remains at
-  `/private/tmp/stewart-readiness-c2-01`. The frozen audits permit one
-  placement of 600 seconds each; illustrative answers are excluded.
-- [x] Rehearse and review the [bounded service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure).
-  The retained review binds original packets and external witnesses. Keep the
-  stopped, unsubmitted bad-init audit through C2 review; no continuation is
-  authorized. The earlier unentered preparation has an explicit disposition.
-- [x] Obtain approval for C2's concrete two-start commission. The principal
-  approved C2; `.scratch/readiness-c2-01/AUTHORIZATION.json` binds that approval
-  to the frozen parent manifest and both per-case commissions.
-- [ ] Execute and review one C2 packet at a time before any close or next start. Correlate
-  service-owned MCP captures and entry records with the independent package
-  witness; this does not independently capture every model action. Stop later
-  starts on unknown stopping, authentication failure, quota or paid-usage routing.
-  The frozen commission is `.scratch/readiness-c2-01/MANIFEST.json`, SHA-256
-  `6912b55b374e06f5b1222921052816ee89f0ebd320947093873fc386ea12eb5b`,
-  prepared from commit `14d47f6`. It binds both packet manifests, the exact
-  native writer/profile, cost assessment and post-approval commands. Each audit
-  permits one Haiku 5.5 placement of 600 seconds including its authentication
-  check; there are two starts total, no retries, replacements or continuation.
-  The ordinary case supplies three materials (1,428 bytes); the inadequate case
-  supplies only the report (591 bytes). Both use the same 83-byte question.
-  Included subscription allowance only: the principal's confirmation that extra
-  usage is disabled carries forward, while C1's exhausted launch authority does
-  not. No additional paid usage is authorized and no independent token or billing
-  ceiling has been demonstrated. Review the first outcome before the second
-  start; ordinary close is included only for a reviewed auditor-submitted,
-  verified package. The ordinary audit is closed; the inadequate audit remains
-  unaccepted and unstarted. Its frozen run command is the next native-host action.
-- **C2 ordinary reviewed:** the
-  [first real service encounter](apparatus/qualified.md#readiness-c2-01) submitted
-  revision 5 with five entries and four verified citations. All 20 calls have
-  captured results: 17 completed and three citation refusals left the answer
-  unchanged until corrected calls succeeded. Package review passed 15/15 checks;
-  both authentication/model groups stopped. Ordinary close preserved all three
-  package files and all 260 prior archive files. No final harness result was
-  captured, so usage remains one unknown interval with zero reported checkpoints.
-  Partial reports across seven message IDs do not establish total consumption.
-  The observed rate event allowed subscription use with overage disabled and
-  unused. `.scratch/readiness-c2-01/open-ordinary/OBSERVATION.json` owns the
-  reviewed details and remaining one-start allowance. Retain citation recovery
-  and submit-to-stop/partial-usage captures for stage-three fixtures.
+- [x] Complete C2's ordinary and inadequate-evidence service comparison. The
+  [reviewed native encounters](apparatus/qualified.md#readiness-c2-01) both
+  submitted and closed with unchanged packages and prior archive files. Package
+  review passed 30/30 checks. All 30 calls have captured results: 27 completed;
+  three citation refusals in the ordinary case preserved the answer until
+  corrected calls succeeded. Nine citations matched exact supplied bytes.
+  All four authentication/model groups stopped. C2's two starts are consumed.
+- **C2 findings and remaining work:** the ordinary answer drew on implementation,
+  requirements and report; the inadequate answer attributed its narrower account
+  to the sole invented report and explicitly declined confirmation. This records
+  stated evidentiary reach, not an accuracy grade. Neither placement captured a
+  final harness result: both usage intervals remain unknown, with zero reported
+  checkpoints. Partial reports across 12 message IDs do not establish total
+  consumption. Both rate events allowed subscription use with overage disabled
+  and unused. `.scratch/readiness-c2-01/COMPARISON.json` binds the authority,
+  originals, case reviews and closures. Retain citation recovery and
+  submit-to-stop/partial-usage captures for stage-three fixtures and accounting
+  reassessment. No C2 authority remains.
+- [ ] Freeze C3's one-start large-page comparison for fresh approval. Reuse the
+  reviewed one-placement controller and profile. Local inputs in
+  `.scratch/readiness-c3-01` comprise a 49,152-byte ASCII control and a 131,072-byte
+  ASCII source with distinct labels at the ends of its two 65,536-byte pages.
+  Compare exact source slices with service replies, harness echoes and subsequent
+  calls; a missing read is unexercised. The optional token-dense page is omitted.
+  This local preparation has launched no authentication or model process.
 
 ### Comparisons and proposed bounds
 

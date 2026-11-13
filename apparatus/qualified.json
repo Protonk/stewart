@@ -1938,21 +1938,21 @@
     {
       "id": "readiness-c2-01",
       "kind": "experiment",
-      "date": "2026-11-13T23:16:03Z",
-      "date_from": "open-ordinary/OBSERVATION.json field finished_at",
-      "summary": "First native real-Claude service inquiry: 20 calls, 17 completed and 3 exact-citation refusals; five entries submitted at revision 5, four verified citations, 15 package checks passed; both processes stopped and close preserved package/archive. No terminal usage checkpoint; not Linux or broader model qualification.",
+      "date": "2026-11-13T23:23:44Z",
+      "date_from": "COMPARISON.json field finished_at",
+      "summary": "Reviewed native real-Claude ordinary/inadequate service comparison: 2 auditor submissions, 2 verified packages and preserved closes; 30/30 package checks, 30 calls with 3 corrected citation refusals, 9 exact citations, all4 auth/model groups stopped. Both final usage intervals unknown; C2 consumed. No Linux or broader model qualification.",
       "result": {
-        "path": "open-ordinary",
-        "files": 678,
-        "sha256": "226f3fdedab07cbe834e5586e72ab8a4dd8b32dc2608944c7148bdfe97fcb08f"
+        "path": ".",
+        "files": 1138,
+        "sha256": "ae771ad50dadb986341672f87a4313dcc5ad253abb744e212bb8bc9da30a5224"
       },
       "evidence": {
         "path": ".scratch/readiness-c2-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the first native service encounter for the paired inadequate-evidence comparison and stage-three citation/usage/submit-to-stop fixtures.",
-        "until": "C2 and fixture reviews finish and no unresolved custody or usage question needs this original encounter."
+        "reason": "Inspect original paired native service encounters, custody and incomplete usage for stage-three capture fixtures and accounting reassessment.",
+        "until": "The comparison and fixture/accounting reviews finish with no unresolved question requiring these originals."
       }
     }
   ]

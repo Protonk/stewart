@@ -10,10 +10,29 @@ synthetic comparison: successful tool use, a witnessed hook denial and a
 successful repeat in another working directory. The service adapter is now
 implemented under its [development runtime contract](CONTRACT.md) and has passed
 native offline checks through the actual Rust core and Linux container
-acceptance. Those service checks use a synthetic harness; the
+acceptance. Those acceptance checks use a synthetic harness; the
 [qualification record](../../apparatus/qualified.md) identifies their exact
 source, binaries and coverage. Real-Claude service conformance remains
 unqualified.
+
+Native ordinary and inadequate-evidence service inquiries have also completed
+with CLI 2.1.322 and `claude-haiku-5-5`, using the reviewed twelve-tool profile.
+Their [retained comparison](../../apparatus/qualified.md#readiness-c2-01) matches
+the auditor's recorded entries and exact citations to the delivered packages;
+both ordinary closes preserved the packages and prior archive files. The
+inadequate answer expressly limited its account to the supplied invented report.
+These observations establish the witnessed paths, not general answer accuracy.
+
+In both service placements, the final captured MCP response and harness
+tool-result echo acknowledge successful submission before observed stopping.
+Neither capture contains a terminal harness result or complete usage checkpoint.
+Stewart consequently reports an unknown interval for each placement. Assistant
+frames repeat partial usage fields for a message ID and retain null stop reasons;
+summing them would not recover final consumption. The captures keep these fields
+for inspection without promoting them to complete accounting. Both observed rate
+events allowed subscription use and reported overage disabled and unused; they
+do not independently establish billing state. Service-owned capture correlation
+does not rule out a shared omission of provider activity.
 
 The [manifest for this version](https://downloads.claude.ai/claude-code-releases/2.1.322/manifest.json)
 was authenticated against the pinned release signing key on 2026-11-10. The

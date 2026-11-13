@@ -668,7 +668,7 @@ Reviewed native synthetic service procedure: positive and invariance submitted a
 
 ### readiness-c2-01
 
-First native real-Claude service inquiry: 20 calls, 17 completed and 3 exact-citation refusals; five entries submitted at revision 5, four verified citations, 15 package checks passed; both processes stopped and close preserved package/archive. No terminal usage checkpoint; not Linux or broader model qualification.
+Reviewed native real-Claude ordinary/inadequate service comparison: 2 auditor submissions, 2 verified packages and preserved closes; 30/30 package checks, 30 calls with 3 corrected citation refusals, 9 exact citations, all4 auth/model groups stopped. Both final usage intervals unknown; C2 consumed. No Linux or broader model qualification.
 
-- Evidence: `.scratch/readiness-c2-01/open-ordinary` (recorded 2026-11-13T23:16:03Z).
-- Retained purpose: Retain the first native service encounter for the paired inadequate-evidence comparison and stage-three citation/usage/submit-to-stop fixtures.; until C2 and fixture reviews finish and no unresolved custody or usage question needs this original encounter.
+- Evidence: `.scratch/readiness-c2-01/.` (recorded 2026-11-13T23:23:44Z).
+- Retained purpose: Inspect original paired native service encounters, custody and incomplete usage for stage-three capture fixtures and accounting reassessment.; until The comparison and fixture/accounting reviews finish with no unresolved question requiring these originals.
