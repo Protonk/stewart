@@ -1876,22 +1876,23 @@
       }
     },
     {
-      "id": "readiness-c1-rehearsal-02",
+      "id": "readiness-c1-01",
       "kind": "experiment",
-      "date": "2026-11-13T20:53:16Z",
+      "date": "2026-11-13T22:05:39Z",
       "date_from": "REVIEW.json field finished_at",
-      "summary": "Reviewed native C1 synthetic controller: three comparisons with 30 observed checks; bad-init and wrong-auth controls fire; zero Claude calls.",
+      "summary": "Native real Claude Code supplied-surface comparison: 3 sessions, 30 case checks and 10 aggregate categories observed; closed-gate denial fired; 6 invocations stopped; independently reviewed check and assembled profile; no service or Linux qualification.",
       "result": {
-        "path": "REVIEW.json",
-        "sha256": "75b05dbfabc5686e00efb3ff7bf03cb92bcfd20cf03b03a23a20956ddbea03c2"
+        "path": ".",
+        "files": 253,
+        "sha256": "610628e1798c48747624f2fd11ac5b260d79de23d268b2ec2ac7cca4c0455e49"
       },
       "evidence": {
-        "path": ".scratch/readiness-c1-rehearsal-02",
+        "path": ".scratch/readiness-c1-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Current controller/source/helper rehearsal for the bounded C1 supplied-surface commission.",
-        "until": "C1 has a reviewed outcome or explicit disposition and this rehearsal no longer admits pending work."
+        "reason": "The reviewed C1 check and profile support pending bounded service comparisons and stage-three capture fixtures.",
+        "until": "The profile is superseded or no pending service comparison or fixture review depends on these original captures."
       }
     }
   ]

@@ -3,13 +3,13 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; L0, M1 and M2 reviewed; C1 approved and awaiting its host run.**
+**State: stage 1 complete; L0, M1, M2 and C1 reviewed; stage 2 continues.**
 M2 reproduced a thinking-only response-cap interruption in sw3z default; the
 other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
-commissioned M3. C1's refreshed offline rehearsal is reviewed and its concrete
-live packet is frozen and approved, with paid extra usage confirmed disabled.
-Its one-use host run and review remain; no C1 invocation has started.
+commissioned M3. C1 produced a reviewed supplied-surface check and profile.
+The next service comparison needs a refreshed package-witness rehearsal and
+an offline-rehearsed bounded service procedure before its own live commission.
 
 | Stage | Result |
 | --- | --- |
@@ -257,33 +257,41 @@ dollar ceilings. These experiments do not qualify release models.
   further start is authorized. Retain the firing cap response and 5sgh default's
   near-cap response that completed with tools for stage-three fixtures and cap
   reassessment; the setting remains unchanged pending those comparisons.
-- [x] Review the [refreshed native C1 rehearsal](apparatus/qualified.md#readiness-c1-rehearsal-02):
-  three normal comparisons, 30 observed case checks and 10 aggregate categories;
-  bad-initialization and wrong-authentication controls stop for their intended
-  reasons. All nine synthetic process groups stopped, with guards reaped and
-  EOF on all four fake model streams. Independent review verified 386 evidence
-  members and current source/helper bindings. No Claude, provider or credential
-  call occurred; this is native synthetic evidence, not real-harness qualification.
-- [x] Freeze C1's packet, dated cost/compatibility record and guarded launch
-  procedure under `.scratch/readiness-c1-01/MANIFEST.json`, with the controller's
-  exact six-slot commission at `packet/COMMISSION.json`.
-- [x] Obtain approval of C1's frozen manifest and confirmation that paid extra
-  usage (usage credits) is disabled. The principal's exact approval is recorded
-  in `.scratch/readiness-c1-01/AUTHORIZATION.json`. The approved packet allows
-  three authentication checks of 30 seconds and three supplied-surface fixture
-  sessions of 120 seconds, within 450 seconds overall, using the Claude.ai
-  subscription with paid extra usage disabled; no incremental paid spend is
-  authorized. It uses pinned Claude Code 2.1.322 and `claude-haiku-5-5`, 12
-  open-inquiry tools, and the exact fixed record-account fixture prompt. The
-  controller supplies `--max-turns 200` per session, but C1 does not demonstrate
-  that flag's enforcement. No replacement, fallback or continuation is included.
-  The packet is one-use and stops before later slots after a failed comparison,
-  authentication or observation. The principal confirms the account setting;
-  the apparatus does not independently verify it.
-- [ ] Run `.scratch/readiness-c1-01/launch.sh` once on the native host, where
-  observer sockets are permitted, and review the retained observations and
-  process records before attestation or any later commission. Do not restart
-  an entered packet after a failed or uncertain outcome.
+- **C1 reviewed:** the [supplied-surface comparison](apparatus/qualified.md#readiness-c1-01)
+  passed all three comparisons, 30 case checks and 10 aggregate categories.
+  Positive and invariance each produced one exact fixture effect; the closed
+  gate denied the attempt before any MCP tool call or effect. All six invocation
+  groups stopped and all three model streams reached EOF. Independent review
+  verified 131 evidence members and 91 bindings. Three fresh sessions reported
+  Claude Code 2.1.322, Haiku 5.5 and the exact 12-tool inventory. Each preliminary
+  `server/discover` probe received an initialize-first error, then completed
+  initialization and tool listing. The final reports contain six harness turns,
+  12 uncached input, 5,976 cache-creation, 22,790 cache-read and 704 output tokens;
+  the reported $0.0017763 list-price cost is not a verified subscription charge.
+  Rate-limit events reported allowed usage and disabled, unused overage.
+- **C1 follow-ups:** the exact reviewed profile is
+  `.scratch/readiness-c1-01/profile.json`; its parent retains the authority,
+  originals, check and review. C1 establishes native supplied-surface fixture
+  compatibility, not real-service custody, billing or turn/output-cap enforcement.
+  No C1 allowance remains. Use these captures for startup, hook-denial and final
+  report fixtures in stage 3 without rewriting originals.
+- [ ] Refresh the complete-package witness with the current repaired driver and
+  native helper before the service comparison. The earlier rehearsal used older
+  driver sources and a different binary. Keep this synthetic rehearsal distinct
+  from the still-needed bounded live procedure and its own offline rehearsal.
+  The one-use command is
+  `python3 -I -B .scratch/readiness-c2-witness-01/run.py --run`; its originals stay
+  at `/private/tmp/stewart-readiness-c2-witness-01` through review.
+- [x] Prepare C2's ordinary and inadequate open-inquiry inputs from the existing
+  C10 specimens, using the reviewed profile. Both local preparations accepted
+  the exact profile. `.scratch/readiness-c2-01/PREPARATION.json` owns references,
+  input witnesses and replies; original work remains at
+  `/private/tmp/stewart-readiness-c2-01`. No commission has been accepted and no
+  authentication or model process has started. The proposed audits permit one
+  placement of 600 seconds each; illustrative answers are excluded.
+- [ ] Rehearse and review the actual service procedure before freezing C2's
+  two-start commission for approval. Reuse the existing complete-package witness;
+  attribute service-owned captures separately from outside observations.
 
 ### Comparisons and proposed bounds
 

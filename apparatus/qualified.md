@@ -645,9 +645,9 @@ M2 sw3z low effort:12 tool-use turns; revision9 submitted/delivered/closed,38 fi
 - Evidence: `.scratch/readiness-m2-live-sw3z-low-01/.` (recorded 2026-11-13T20:35:53Z).
 - Retained purpose: Inspect final sw3z low-effort encounter and successful replacement against the interrupted default arm for M2 and cap-setting/fixture review.; until Those comparisons and fixture reviews finish, with no remaining inspection purpose requiring these originals.
 
-### readiness-c1-rehearsal-02
+### readiness-c1-01
 
-Reviewed native C1 synthetic controller: three comparisons with 30 observed checks; bad-init and wrong-auth controls fire; zero Claude calls.
+Native real Claude Code supplied-surface comparison: 3 sessions, 30 case checks and 10 aggregate categories observed; closed-gate denial fired; 6 invocations stopped; independently reviewed check and assembled profile; no service or Linux qualification.
 
-- Evidence: `.scratch/readiness-c1-rehearsal-02/REVIEW.json` (recorded 2026-11-13T20:53:16Z).
-- Retained purpose: Current controller/source/helper rehearsal for the bounded C1 supplied-surface commission.; until C1 has a reviewed outcome or explicit disposition and this rehearsal no longer admits pending work.
+- Evidence: `.scratch/readiness-c1-01/.` (recorded 2026-11-13T22:05:39Z).
+- Retained purpose: The reviewed C1 check and profile support pending bounded service comparisons and stage-three capture fixtures.; until The profile is superseded or no pending service comparison or fixture review depends on these original captures.

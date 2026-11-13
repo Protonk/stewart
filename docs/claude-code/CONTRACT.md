@@ -160,8 +160,10 @@ The independent fixture exercises actual helpers offline. A bounded invocation
 library and independent observer have passed native controls. Their integrated
 controller and explicit review workflow have passed native synthetic integration
 rehearsals with the actual helpers, independent traffic witnesses and firing
-failure controls. A reviewed real-harness check and subsequent service comparison
-are still needed.
+failure controls. A reviewed native real-harness supplied-surface comparison has
+produced a profile for the exact open-inquiry surface; the
+[evidence record](../../apparatus/qualified.md) identifies its bindings and scope.
+A real-service comparison is still needed.
 Synthetic driver attestations exercise validation and are not real-harness
 commissioning evidence.
 

@@ -254,8 +254,10 @@ need a separate commission.
   [complete-package witness](../apparatus/driver/CLAUDE-CODE-SERVICE-WITNESS.md);
   first rehearse the procedure offline. Do not rebuild completed apparatus merely
   to restart this work.
-- [ ] Obtain a reviewed real supplied-surface check under its own bounded
-  authority before producing an eligible real profile. The fixture's exact
+- [x] Obtain a reviewed real supplied-surface check under its own bounded
+  authority before producing an eligible real profile. The
+  [reviewed native comparison](../apparatus/qualified.md#readiness-c1-01)
+  supplies the open-inquiry profile. The fixture's exact
   family tool inventory, actual Stewart helpers and independent private sockets
   establish supplied-surface compatibility only, not service custody. No
   placeholder or synthetic observation becomes a real attestation.
