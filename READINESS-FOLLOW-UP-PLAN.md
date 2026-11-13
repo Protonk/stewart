@@ -9,12 +9,25 @@ act on their results; and transfer remaining work to its owning plans.
 | --- | --- |
 | [1. Fixes now](#1-fixes-now) | Consistent specifications and behavior, clearer question documentation, and corrected tests and apparatus. |
 | [2. Live runs](#2-live-runs) | Reviewed outcomes or explicit dispositions for ten bounded comparison packets. |
-| [3. Fixes and reassessment after the live runs](#3-fixes-and-reassessment-after-the-live-runs) | Repairs informed by the outcomes, fixtures grounded in captures, and a readiness decision. |
+| [3. Fixes and reassessment after the live runs](#3-fixes-and-reassessment-after-the-live-runs) | Repairs informed by the outcomes, fixtures grounded in captures, and completion checked against stated conditions. |
 | [4. Outflow to the plans that follow](#4-outflow-to-the-plans-that-follow) | Each remaining task recorded in the plan that will carry it out. |
 
 Each stage finishes or explicitly disposes of its remaining items before the
-next opens. Planning authorizes no model or Claude launch. Each live packet needs
-the principal's approval of its exact scope and budget.
+next opens. The implementer owns routine documentation, diagnostic, schema,
+versioning, test, fixture and retention choices within the settled contracts.
+Complete the stated work and checks without another general approval to proceed.
+
+The principal's intervention is needed for:
+
+- Each concrete live commission: model, inputs, authentication launches, maximum
+  starts, budget and stopping rules. Include deliberate cap tests explicitly in
+  their bounded commissions. Planning supplies no launch or spending authority.
+- Scheduling and running the required container suites.
+- A newly exposed tradeoff that would expand scope, weaken custody or access
+  guarantees, restrict expression, or require more spending. Bring the concrete
+  issue and alternatives; routine repairs implementing agreed policy proceed.
+- An external backup destination or action when selected irreplaceable evidence
+  actually needs one.
 
 Use [DEVELOPMENT's check table](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
 for every change. Preserve driver independence: an author who has read
@@ -31,12 +44,14 @@ needs no live model calls.
 
 ### Reconcile specification and behavior
 
-- [ ] Settle when close waits and when close/status report `close_in_progress`,
-  including the interval after a run records its ending but still holds the
-  lock. Test overlapping closes after launch and the corresponding status.
+- [ ] Preserve close's bounded waiting and make close/status report what is
+  established when a run has recorded its ending but still holds the lock.
+  Do not infer another close solely from that lock. Specify the exact reasons
+  and test overlapping closes after launch and the corresponding status.
 - [ ] Make cancellation, stopping and deadline races at confirmed submission
-  report `placement_stopped` rather than an archive-write failure. Settle the
-  placement ending and test cancellation before the seal is published.
+  report `placement_stopped` rather than an archive-write failure. Derive the
+  placement ending from the actual stopping condition, preserving continuation
+  rights, and test cancellation before the seal is published.
 - [ ] Account for status condition sentences for `limit_reached`,
   `ended_unsubmitted` and `damaged`: show them or remove the unused sentences.
 - [ ] Specify commission outcomes for a changed preparation and for failures
@@ -58,10 +73,10 @@ needs no live model calls.
 - [ ] Apply qualification-record retention and its tests per suite/platform,
   including keeping the last qualified result after a failure.
 
-The principal decides the close/status rule and any repair that changes a
-promised reason, outcome or ending. Settle such changes in the specification
-before implementation. Give remaining relay-loss and stop-cause presentation
-work to stage 4.
+Specify the corrected behavior before implementation. Report cancellation,
+uncertainty and actual write failures distinctly; exact reason names and
+transport handling are engineering choices within those promises. Hand remaining
+relay-loss and stop-cause presentation work on in stage 4.
 
 ### Simplify question documentation
 
@@ -76,24 +91,34 @@ work to stage 4.
 - [ ] Point return-membership explanations to "Returned question and answer",
   version explanations to the runtime leaf-contract rule, and citation names to
   INTERFACE 2.4. Document rejection of the scaffold's placeholder model.
-- [ ] Resolve or explicitly defer the decisions below before making their edits.
+- [ ] Correct the Mission's return-content wording. The intended return adds the
+  exact accepted question body alongside the answer, without operating history
+  or guidance. Use a separate package member when implementing that addition in
+  manager-interface work; keep its pending status explicit here.
+- [ ] Preserve all five family purposes and identify the three implemented
+  families. Retain material-role and manager-guidance commitments with their
+  implementation status explicit; their detailed design belongs to the manager
+  interface and creates no new intake gate here.
+- [ ] Consolidate permissible answers without narrowing them: uncertainty,
+  missing evidence, disagreement, no supported finding and challenges to the
+  premise remain expressible. Keep `answer`, `needs-evidence` and `reframe` as
+  optional descriptions, not mandatory or mutually exclusive labels.
+- [ ] Align terminology for current family components with QUESTION-FORMS;
+  leave the registry's detailed design and version coverage to manager-interface
+  work. Preserve the existing scope of supplied-guidance replacement and the
+  rule that family selection grants no additional authority, access or budget.
+- [ ] Consolidate unselected evidence modules and hidden priors into deferred
+  scope and remove the inapplicable acceptance control. Preserve deterministic
+  rendering and its reproducibility checks without inventing a manager operation.
+- [ ] Choose canonical names, clarify undefined wording and remove duplication
+  while preserving substantive obligations. Avoid cosmetic folder/schema/member
+  renames; necessary changed forms take new versions. Apply the same distinction
+  between wording and substantive obligations to Mission, Principles, pinned
+  text, bounds and acceptance cases.
 
-| Decision | Choice still recorded for the principal |
-| --- | --- |
-| Return contents | Correct the Mission's claim that orientation and stopping rules are recorded in returns, or change what the return contains. |
-| Material roles | Remove claims pending their specification, or retain them as decided but unimplemented. Their design belongs to manager-interface work. |
-| Evidence modules and hidden priors | Remove unused descriptions and the inapplicable acceptance control, or retain one deferred-scope statement. |
-| Family library | Describe three families with two unselected extensions, or retain all five purposes with implementation status explicit. |
-| Expressible answers | Consolidate permitted answers into one list; decide whether `answer`, `needs-evidence` and `reframe` remain descriptive names. |
-| Manager guidance | Remove unsupported claims of family-specific guidance, or leave them pending the guidance work. |
-| Family definition and version | Align current terminology with QUESTION-FORMS now, or defer the definition and version coverage to the registry design. |
-| Returned question | Leave its carrier to manager-interface design: package member, manifest field, rendering block or reply text. |
-| Rendering reproducibility | Name the operation that re-renders and compares, or remove the claim that such an operation exists. |
-| Undefined principles and limits | Define the terms or remove the sentences, preserving any substantive obligation the principal retains. |
-| Differing copies | Settle who may admit an outcome-privileging check, what supplied guidance replaces and what choosing a family grants. |
-| Names | Choose one name per thing. Keep existing folder and reply-member names, or version any changed forms. |
-| Substantive rewrites | Decide proposed changes to pinned text, bounds, acceptance cases and Mission/Principles obligations. |
-| Working evidence | Decide whether to back up the original files under `.tmp/readiness/`; preserve them while they have an unfinished inspection purpose under DEVELOPMENT's retention rules. |
+Retain original working evidence while it has an unfinished inspection purpose
+under DEVELOPMENT's retention rules. Routine selection, redaction and retention
+need no approval per capture class or general backup checkpoint.
 
 ### Repair the tests and instruments
 
@@ -134,11 +159,11 @@ work to stage 4.
   changed launchers needing a fresh Linux rehearsal before live use.
 
 Fixtures needing provider, harness or operating-system captures go to stage 3.
-The shared post-launch return fixture is rewritten with the returned-question
-work in stage 4.
+Stage 4 hands the shared post-launch return fixture to manager-interface work
+for rewriting when the question is added to the return.
 
-**Complete when:** repairs are checked or explicitly disposed of, specification
-decisions are settled, and corrected tests distinguish their named defects.
+**Complete when:** repairs are checked or explicitly disposed of, expected
+behavior is specified, and corrected tests distinguish their named defects.
 Changed service behavior remains unqualified until its user-scheduled container
 run; changed launchers need fresh rehearsals before live use.
 
@@ -176,21 +201,24 @@ real profile. C3, C4 and C5 follow C2; C5 also uses M1/M2 outcomes. M4 follows M
 M3 needs bounded continuation, multi-placement export/review and a witnessed
 interruption point. M4 needs summary/reset reviewer support and trigger
 observation. C2–C5 need a real profile and an offline-rehearsed service procedure.
-The principal decides whether to commission prerequisites under their existing
-owning plans or hand the affected packet on with its design.
+Build only the prerequisites needed for the selected bounded comparisons,
+recording that work under its existing owning plan. Hand broader conformance
+work onward. A concrete scope expansion beyond these prerequisites returns to
+the principal; ordinary prerequisite work needs no additional planning approval.
 
 ### Execution and review
 
-- [ ] Obtain each frozen packet's approval. M2/C5 approvals must state their
-  deliberate output-cap purpose and settle whether a separate usage-limit
-  commission is required. Prior approval, unused allowance and previous runs
-  authorize no replacement or continuation outside that packet.
+- [ ] Obtain each frozen packet's approval. Commission M2/C5 explicitly as
+  deliberate output-cap studies with their own bounds. Prior approval, unused
+  allowance and previous runs authorize no replacement or continuation outside
+  that packet.
 - [ ] Use qualified service binaries and Linux-rehearsed templates/launchers for
   Messages packets. Refresh the supplied-surface check after changes to the
   runtime launch surface or tool definitions.
 - [ ] Give comparisons firing controls, differing cases and invariance cases.
-  Absent behavior is unexercised. Launch Messages arms separately and review each
-  return before the next; retain interrupted audits for an explicit disposition.
+  A target behavior that does not occur is unexercised. Launch Messages arms
+  separately and review each return before the next; retain interrupted audits
+  for an explicit disposition.
 - [ ] Keep input/package/process witnesses outside Stewart's archive and disposal
   scope. Distinguish independent observations from Stewart-owned captures. Retain
   run replies and default, detailed and JSON status after each placement.
@@ -202,8 +230,9 @@ owning plans or hand the affected packet on with its design.
   did not operate the run. Record refused calls, stop reasons and usage basis.
   Preserve capture originals; record source, date, model/version, size and digest
   for selected fixtures. Redact tracked copies and record substitutions; retain
-  no raw authentication output. The principal decides which capture classes to
-  track. Apply DEVELOPMENT's evidence retention and backup rules.
+  no raw authentication output. Select fixtures and apply DEVELOPMENT's retention
+  rules as part of the work; request an external backup destination or action
+  only when selected irreplaceable evidence needs one.
 
 **Complete when:** every packet has a reviewed outcome or a disposition of not
 approved, handed on or unexercised, with no process, start or audit left unknown.
@@ -212,17 +241,23 @@ approved, handed on or unexercised, with no process, start or audit left unknown
 
 ### Act on the outcomes
 
-- [ ] Decide whether prose endings and continuation behavior require changing
-  the one-reminder rule, especially an ending with no reminder delivered in the
-  continuing conversation.
-- [ ] Decide the 16,000-token response cap: retain it with a documented remedy,
-  change it, or explicitly defer it. Compare default/low effort and continuation
-  within remaining allowances.
+- [ ] Apply the one-reminder-per-audit rule across continuation. A subsequent
+  ordinary unsubmitted ending ends authoring, even when it is the first prose
+  ending in the continued placement. Test reminder accounting, delivery and
+  recognition of ordinary model endings; fix transport or event-mapping errors
+  without reopening that settled policy. An expected ending is not a readiness
+  failure and does not imply an auditor seal.
+- [ ] Use the comparisons to retain or adjust the 16,000-token response cap as
+  an engineering setting within the commissioned budget. It is not a fixed
+  product restriction. Compare default/low effort and continuation within the
+  remaining allowance; document the resulting setting, behavior and remedy.
+  Changing it grants no additional audit allowance or live spending authority.
 - [ ] Act on compaction shapes outside the accepted form, unlisted/unprefixed
   tools, missing final usage after submission, truncated/substituted page results,
-  reports per continuation message and harness output-cap endings. The principal
-  decides changes to promised behavior; implement against the settled specification
-  with independent driver work.
+  reports per continuation message and harness output-cap endings. Repair them
+  within the settled promises, specifying expected behavior before implementation
+  and preserving independent driver work. Escalate only a concrete tradeoff of
+  the kinds listed at the start of this plan.
 - [ ] Correct records or usage statements that misreport outcomes. Record reviewed
   observations and their limits in the runtime reference. Pass unresolved stop
   and refused-call presentation to manager-interface work. Give every unprovoked
@@ -250,26 +285,27 @@ approved, handed on or unexercised, with no process, start or audit left unknown
   expected values and no standing or unresolved finding. Recheck previously
   unreached conditions a repair claims to cover, beginning with
   `close_in_progress`. Take changed manager-facing words from actual replies.
-- [ ] Present outcomes, repairs, limitations, coverage counts and a recommendation
-  on proceeding to the principal, who sets any numerical threshold and confirms
-  or changes the readiness decision.
+- [ ] Report outcomes, repairs, limitations and coverage counts against this
+  plan's completion conditions. Counts describe coverage; they impose no
+  numerical threshold or additional approval to proceed.
 
-Reconsider proceeding if ordinary model behavior ends authoring or a placement
-without a decision on that outcome; runtime coverage fails to improve after its
-captures exist; a required area has no trusted tests; a new test relies on its
-own output or can pass without exercising its claim; or stopping/custody remains
-unknown.
+Repair or explicitly dispose of remaining weaknesses, including checks that
+use their own output as the expected value or pass without exercising their
+claim. Do not claim an unexercised behavior is covered. Resolve unknown stopping
+or custody before completing the stage; bring a material unresolved problem
+and its concrete tradeoffs to the principal.
 
-**Complete when:** every outcome has an action, every fixture group is grounded
-or handed on, checks and coverage counts are reported, and the principal has
-settled whether to proceed.
+**Complete when:** every outcome has an action or disposition, every fixture
+group is grounded or handed on, applicable checks pass with exact counts and
+limitations reported, and no stopping/custody uncertainty remains. Completion
+opens stage 4 without a separate readiness approval.
 
 ## 4. Outflow to the plans that follow
 
 - [ ] Add remaining manager work to
   [the manager-interface plan](development/MANAGER-INTERFACE-PLAN.md): material
   roles and family definitions/version coverage; family-selection guidance;
-  the returned question's carrier; stop/refusal presentation; reminders on
+  the separate returned-question member; stop/refusal presentation; reminders on
   continuation; runtime differences; and unresolved real-harness/offline coverage.
   Preserve independent expected values when extracting shared commissioning
   rules. Rewrite the post-launch return fixture from literal forms when adding
@@ -277,16 +313,18 @@ settled whether to proceed.
 - [ ] Add remaining Messages work to
   [the conformance plan](MESSAGES-API-CONFORMANCE-PLAN.md): provider captures,
   compaction strictness, retry/timeout/connection/handshake paths, apparatus
-  controls, deferred continuation/compaction packets and any deferred cap decision.
+  controls, deferred continuation/compaction packets and remaining response-cap
+  coverage or implementation work under the engineering-setting policy above.
 - [ ] Add remaining acceptance work to
   [the release plan](RELEASE-PLAN.md): unreached or partly reached conditions,
   behaviors needing specification, driver counting/exit-status controls and the
   interpretation of timing requirements. Give each a case or disposition.
-- [ ] Move enduring rules into specifications and tests. Resolve working-evidence
-  retention and backup under DEVELOPMENT; if work is deferred indefinitely,
-  the principal chooses whether to retain originals or carry the necessary
-  material into that work's plan.
-- [ ] Once reassessment is settled and every remaining task has its owner, delete
+- [ ] Move enduring rules into specifications and tests. Apply DEVELOPMENT's
+  evidence-retention rules: preserve selected originals for an unfinished
+  inspection purpose and carry necessary task details into the destination plan.
+  Indefinite deferral alone creates no retention obligation. Ask for an external
+  backup destination or action only when selected irreplaceable evidence needs it.
+- [ ] Once stage 3 is complete and every remaining task has its owner, delete
   this plan and its row in the release work order.
 
 **Complete when:** no unfinished task depends on this plan remaining in place.
