@@ -41,7 +41,7 @@ pub fn run(reference: &str, handle: &str, affirmed: bool) -> Reply {
     if !affirmed && !crate::sabotage!("accept_without_affirmation") {
         return Fail::refused(
             "affirmation_missing",
-            "commission needs --i-am-finished: your declaration that you have finished assembling the selection and will leave the folder unchanged until commission returns. Nothing was accepted.",
+            "commission needs --i-am-finished: your declaration that you have finished assembling the selection and will leave the folder unchanged until commission returns. This call made no acceptance attempt.",
         )
         .next(Next::new(audit.argv(&["commission", &audit.reference, handle, "--i-am-finished"]), "Commission this preparation once you have finished editing."))
         .into_reply(OP, eff(acceptance_now, "none"));
@@ -277,7 +277,7 @@ fn commission(audit: &Audit, handle: &str, declared: bool, state: LogState) -> R
     let manifest = match pinned {
         Ok(m) => m,
         Err(e) => {
-            return Fail::failed("record_failed", format!("The preparation's pinned records cannot be used ({e}); nothing was captured. Prepare again."))
+            return Fail::refused("preparation_unreadable", format!("The preparation's pinned records cannot be used ({e}); nothing was captured. Prepare again."))
                 .retain(audit.abs(&format!("prep/{prep}")))
                 .next(Next::new(audit.argv(&["prepare", &audit.reference]), "Prepare the folder again and commission the new handle."))
                 .into_reply(OP, eff("absent", "none"));

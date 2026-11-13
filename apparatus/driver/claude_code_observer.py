@@ -123,6 +123,8 @@ class CaseObserver:
                                  ("environment.json", self.expected["environment"]), ("argv.json", self.expected["model_argv"])):
             if spec.transport_loads((self.inputs / member).read_bytes()) != expected:
                 raise ValueError("prepared supplied surface differs: " + member)
+        self.supplied_bytes = {member: (self.inputs / member).read_bytes()
+                               for member in ("settings.json", "mcp.json", "system.txt")}
         for name in self.stream_bytes:
             (self.root / (name + ".bin")).write_bytes(b"")
 
@@ -161,7 +163,7 @@ class CaseObserver:
         has settings.json/mcp.json/system.txt digests at the launch workspace.
         """
         surface.save(self.root / "launch-observed.json", record)
-        expected_files = {name: spec.sha((self.inputs / name).read_bytes()) for name in ("settings.json", "mcp.json", "system.txt")}
+        expected_files = {name: spec.sha(raw) for name, raw in self.supplied_bytes.items()}
         valid = (record.get("argv") == [self.launch["executable"]] + self.expected["model_argv"]
                  and record.get("env") == self.expected["environment"] and record.get("cwd") == str(self.workspace)
                  and record.get("executable_sha256") == self.launch["sha256"] and record.get("files_sha256") == expected_files)
@@ -459,7 +461,8 @@ class CaseObserver:
             self.fail("confirmed input transmission differs")
         for member in ("settings.json", "mcp.json", "system.txt"):
             try:
-                same = (self.workspace / member).read_bytes() == (self.inputs / member).read_bytes()
+                same = ((self.workspace / member).read_bytes() == self.supplied_bytes[member]
+                        and (self.inputs / member).read_bytes() == self.supplied_bytes[member])
             except OSError:
                 same = False
             if not same:
@@ -524,7 +527,7 @@ def assess_batch(root, cases, mode, *, before_finalize=None):
         (inputs / name).write_bytes((cases[0].inputs / name).read_bytes())
     source = root / "sources"
     source.mkdir()
-    for name in (Path(__file__).name, "claude_code_surface.py", "claude_code.py", "driver_core.py", "rawjson.py"):
+    for name in (Path(__file__).name, "claude_code_surface.py", "claude_code.py", "driver_core.py", "rawjson.py", "fixture_expectations.py"):
         (source / name).write_bytes((HERE / name).read_bytes())
     surface.save(root / "scope.json", {"scope": "supplied-surface", "mode": mode,
         "not_claimed": ["core/service conformance", "exhaustive provider capture", "hidden policy inspection", "launch authority"],
@@ -557,11 +560,27 @@ def _control_observer(root, name, kind):
               "platform": spec.platform_name(), "home": "/synthetic/home", "temporary_directory": "/synthetic/tmp",
               "config_directory": "/synthetic/no-credentials"}
     surface.prepare(prepared, work, Path(__file__).resolve(), compact(launch), "open-inquiry", spec.MODEL)
+    from fixture_expectations import launch_expectation
+    literal = launch_expectation(Path(__file__).resolve(), work, launch, "open-inquiry", spec.MODEL, surface.QUESTION)
     case = CaseObserver(prepared / "inputs", name, kind, work, root / name)
-    case.record_launch({"argv": [case.launch["executable"]] + case.expected["model_argv"],
-        "env": case.expected["environment"], "cwd": str(work), "executable_sha256": case.launch["sha256"],
-        "files_sha256": {member: spec.sha((work / member).read_bytes()) for member in ("settings.json", "mcp.json", "system.txt")}})
-    case.record_input(case.input_raw, case.input_raw)
+    case.record_launch({"argv": [launch["executable"]] + literal["model_argv"],
+        "env": literal["environment"], "cwd": str(work), "executable_sha256": launch["sha256"],
+        "files_sha256": {member: hashlib.sha256(raw).hexdigest() for member, raw in literal["files"].items()}})
+    case.record_input(literal["input"], literal["input"])
+    # A separate sender witness survives corrupt observer counters and digests.
+    sender = root / ("sender-" + name)
+    sender.mkdir()
+    case.control_sender = sender
+    (sender / "input.bin").write_bytes(literal["input"])
+    for channel, method in (("stdout", "feed"), ("stderr", "feed_stderr")):
+        path = sender / (channel + ".bin")
+        path.write_bytes(b"")
+        original = getattr(case, method)
+        def record(raw, path=path, original=original):
+            with path.open("ab") as stream:
+                stream.write(raw)
+            return original(raw)
+        setattr(case, method, record)
     return case
 
 
@@ -753,10 +772,13 @@ def _finish_control(case, **changes):
             case.finish_stream(channel)
         except ObserverStop:
             pass
+    supplied = {channel: (case.control_sender / (channel + ".bin")).read_bytes() for channel in ("stdout", "stderr")}
+    first_input = (case.control_sender / "input.bin").read_bytes()
     process = {"exit": 0, "stop": None, "guard_reason": "worker-exit", "group_gone": True,
-               "guard_reaped": True, "elapsed_seconds": 0, "input_bytes_sent": len(case.input_raw),
-               "input_prefix_sha256": spec.sha(case.input_raw), "stream_eof": {"stdout": True, "stderr": True},
-               "capture_bytes": dict(case.stream_bytes), "capture_sha256": {key: value.hexdigest() for key, value in case.stream_hash.items()}}
+               "guard_reaped": True, "elapsed_seconds": 0, "input_bytes_sent": len(first_input),
+               "input_prefix_sha256": hashlib.sha256(first_input).hexdigest(), "stream_eof": {"stdout": True, "stderr": True},
+               "capture_bytes": {key: len(raw) for key, raw in supplied.items()},
+               "capture_sha256": {key: hashlib.sha256(raw).hexdigest() for key, raw in supplied.items()}}
     process.update(changes)
     case.event("synthetic-control-provenance", auth="supplied synthetic allowlist", process="supplied synthetic result; no process was launched")
     return case.finish(process, {"loggedIn": True, "authMethod": "claude.ai", "configDirectory": case.launch["config_directory"]})
@@ -848,6 +870,21 @@ def self_test():
         _traffic(case)
         result = _finish_control(case, **change)
         check(name, bool(result["errors"]) and result["checks"]["witness-integrity"] == "failed")
+    for name in ("observer-count-corruption", "observer-hash-corruption", "both-supplied-copies-corrupt"):
+        case = _control_observer(root, name, "positive")
+        _traffic(case)
+        if name == "observer-count-corruption":
+            case.stream_bytes["stdout"] += 1
+            diagnostic = "launcher/observer capture differs: stdout"
+        elif name == "observer-hash-corruption":
+            case.stream_hash["stdout"].update(b"not supplied")
+            diagnostic = "launcher/observer capture differs: stdout"
+        else:
+            for base in (case.workspace, case.inputs):
+                (base / "settings.json").write_bytes(b"{}")
+            diagnostic = "supplied file changed during the observation: settings.json"
+        result = _finish_control(case)
+        check(name, diagnostic in result["errors"] and result["checks"]["witness-integrity"] == "failed")
     for endpoint in ("m", "h"):
         case = _control_observer(root, "partial-" + endpoint, "positive")
         case.feed(compact(_init(case)) + b"\n")

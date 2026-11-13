@@ -381,14 +381,50 @@ fn t13_a_run_that_recorded_its_ending_is_waited_for_until_it_exits() {
     let mut waiting = false;
     let mut line = String::new();
     while err.read_line(&mut line).unwrap() > 0 {
-        if line.contains("waiting up to 30 s for the run") {
+        if line.contains("waiting up to 30 s") && line.contains("active lock") {
             waiting = true;
             break;
         }
         line.clear();
     }
+    // A second close starts only after the ending is recorded. The same
+    // held lock cannot establish that either a run or a close owns it.
+    let snapshot = e.run(&["status", &r, "--json"]).json();
+    assert_eq!(
+        s(&snapshot, &["data", "closure", "unfinished_reason"]),
+        "close_in_progress"
+    );
+    let summary = s(&snapshot, &["data", "summary"]);
+    assert!(
+        summary.contains("active lock") && summary.contains("not established"),
+        "{summary}"
+    );
+    assert!(!summary.contains("another close holds"), "{summary}");
+    let mut second = std::process::Command::new(bin())
+        .args(["close", &r, "--json"])
+        .current_dir(&e.cwd)
+        .env_remove("STEWART_TEST_FAULT")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    let mut second_err = std::io::BufReader::new(second.stderr.take().unwrap());
+    let mut second_line = String::new();
+    second_err.read_line(&mut second_line).unwrap();
+    assert!(
+        second_line.contains("30 s") && second_line.contains("active lock"),
+        "{second_line}"
+    );
     to_holder.send("release").unwrap();
     h.join().unwrap();
+    let second_out = second.wait_with_output().unwrap();
+    assert!(second_out.status.success(), "{:?}", second_out);
+    let second_reply = stewart::json::parse(&second_out.stdout).unwrap();
+    assert_eq!(s(&second_reply, &["effects", "run"]), "ended");
+    assert!(matches!(
+        s(&second_reply, &["data", "unfinished_reason"]),
+        "awaiting_confirmation" | "close_in_progress"
+    ));
     let out = child.wait_with_output().unwrap();
     assert!(
         waiting,

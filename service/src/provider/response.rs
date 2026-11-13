@@ -494,18 +494,40 @@ mod tests {
                 .input_tokens,
             40
         );
-        for bad in [
-            "[]",
-            "{}",
-            "[null]",
-            r#"[{"type":"unknown","input_tokens":1,"output_tokens":2}]"#,
-            r#"[{"type":"message","type":"compaction","input_tokens":1,"output_tokens":2}]"#,
-            r#"[{"type":"compaction","input_tokens":1,"output_tokens":2,"output_tokens":3}]"#,
-            r#"[{"type":"compaction","input_tokens":281474976710656,"output_tokens":0},{"type":"message","input_tokens":1,"output_tokens":0}]"#,
-            r#"[{"type":"compaction","input_tokens":-1,"output_tokens":2}]"#,
-            r#"[{"type":"compaction","input_tokens":1,"output_tokens":"2"}]"#,
+        for (bad, expected) in [
+            ("[]", "usage.iterations is empty"),
+            ("{}", "usage.iterations must be one nonempty array or null"),
+            ("[null]", "usage.iterations member is not an object"),
+            (
+                r#"[{"type":"unknown","input_tokens":1,"output_tokens":2}]"#,
+                "usage.iterations type must occur once and be message or compaction",
+            ),
+            (
+                r#"[{"type":"message","type":"compaction","input_tokens":1,"output_tokens":2}]"#,
+                "usage.iterations type must occur once and be message or compaction",
+            ),
+            (
+                r#"[{"type":"compaction","input_tokens":1,"output_tokens":2,"output_tokens":3}]"#,
+                "usage.output_tokens is repeated",
+            ),
+            (
+                r#"[{"type":"compaction","input_tokens":281474976710656,"output_tokens":0},{"type":"message","input_tokens":1,"output_tokens":0}]"#,
+                "summed usage.iterations count exceeds 2^48",
+            ),
+            (
+                r#"[{"type":"compaction","input_tokens":-1,"output_tokens":2}]"#,
+                "usage.input_tokens is not a non-negative integer up to 2^48",
+            ),
+            (
+                r#"[{"type":"compaction","input_tokens":1,"output_tokens":"2"}]"#,
+                "usage.output_tokens is not a non-negative integer up to 2^48",
+            ),
         ] {
-            assert!(decode_message(response(bad).as_bytes()).is_err(), "{bad}");
+            assert_eq!(
+                decode_message(response(bad).as_bytes()).unwrap_err(),
+                expected,
+                "{bad}"
+            );
         }
     }
 

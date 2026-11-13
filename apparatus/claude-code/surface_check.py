@@ -36,7 +36,8 @@ SCHEMA = 'stewart.claude-code.surface-commission/1'
 CONTROLLER = 'sources/apparatus/claude-code/surface_check.py'
 SOURCE_FILES = ('claude-code/surface_check.py', 'claude-code/bounded.py', 'claude-code/profile.py', 'claude-code/pin.py',
                 'driver/claude_code_observer.py', 'driver/claude_code_surface.py', 'driver/claude_code.py',
-                'driver/driver_core.py', 'driver/rawjson.py', 'driver/claude_code_peer.py')
+                'driver/driver_core.py', 'driver/rawjson.py', 'driver/claude_code_peer.py',
+                'driver/fixture_expectations.py')
 
 
 def save(path, value):

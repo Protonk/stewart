@@ -64,10 +64,12 @@ class MarkerChecks(unittest.TestCase):
         self.check("present", 1)
 
     def test_missing_inputs_refuse(self):
+        original = self.binary.read_bytes()
         self.binary.unlink()
-        self.check("absent", 2)
+        self.assertIn(b"cannot read binary:", self.check("absent", 2).stderr)
+        self.binary.write_bytes(original)
         self.markers.unlink()
-        self.check("present", 2)
+        self.assertIn(b"cannot read marker list:", self.check("present", 2).stderr)
 
 
 if __name__ == "__main__":

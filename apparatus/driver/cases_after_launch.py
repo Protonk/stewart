@@ -1481,7 +1481,7 @@ def _close_failures(t, a):
         rep = close_cmd(t, a, name, fault=fault, expect="failed", reason="record_failed")
         eff = rep.effects
         t.eq(name + ".effects.run", eff.get("run"), "ended")
-        t.check(name + ".effects.seal", eff.get("seal") in ("none", "unknown"), eff)
+        t.eq(name + ".effects.seal", eff.get("seal"), "none")
         t.eq(name + ".effects.delivery", eff.get("delivery"), "none")
         # 1.4 as amended: requested when this invocation published close_requested and its reply is
         # failed, whatever else it established; a later failing close reports unfinished.
@@ -1491,7 +1491,9 @@ def _close_failures(t, a):
         t.check(name + ".causes.original-first", isinstance(causes, list) and causes and isinstance(causes[0], dict)
                 and causes[0].get("error") == "EIO", causes)
         if diag == "reported_only":
-            t.check(name + ".causes.diagnostic-second", isinstance(causes, list) and len(causes) >= 2, causes)
+            t.check(name + ".causes.diagnostic-second", isinstance(causes, list) and len(causes) >= 2
+                    and not mentions(causes[0], "diagnostic") and mentions(causes[-1], "diagnostic")
+                    and causes[-1].get("error") == "EIO", causes)
         # retained (1.3 as amended) is checked exactly by close_cmd against the locations the
         # inventories show this close created: its claimed preparation, any seal manifest it
         # claimed and its diagnostic when that was written.

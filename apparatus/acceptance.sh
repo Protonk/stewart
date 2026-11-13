@@ -22,7 +22,8 @@
 # For each architecture it:
 #   1. builds, from a git archive of HEAD plus service/vendor, the release binary,
 #      the test binary (--features fault-injection,sabotage, its own target folder)
-#      the development binaries (--features claude-code, release and debug profiles)
+#      the development binaries (claude-code in release profile, and
+#      claude-code,fault-injection in debug profile for publication-race controls)
 #      and a glibc build used only as a control;
 #   2. checks the apparatus with firing controls: all four musl binaries pass the
 #      static check and the glibc build fails it; the release and test binaries

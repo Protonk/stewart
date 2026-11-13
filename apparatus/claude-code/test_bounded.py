@@ -30,7 +30,9 @@ if mode.startswith('auth'):
     if mode=='auth-number': value['loggedIn']=1
     if mode=='auth-malformed':
         print('discarded-private-auth-canary-3a4f {')
-    elif mode=='auth-overflow': print('discarded-private-auth-canary-3a4f'*4000)
+    elif mode=='auth-overflow':
+        value['padding']='x'*70000
+        print(json.dumps(value))
     else: print(json.dumps(value))
     print('discarded-private-auth-canary-3a4f',file=sys.stderr)
 elif mode=='model':
@@ -160,6 +162,8 @@ class BoundedControls(unittest.TestCase):
             with bounded.Budget(self.budget_root) as book:
                 result = book.execute('fresh-auth')
                 self.assertIsNotNone(result['stop'])
+                if behavior == 'auth-overflow':
+                    self.assertEqual(result['stop'], 'private authentication failed')
                 self.assertTrue(result['group_gone'], result)
                 with self.assertRaisesRegex(ValueError, 'no further start'):
                     book.execute('case')
@@ -167,6 +171,14 @@ class BoundedControls(unittest.TestCase):
                 if path.is_file():
                     self.assertNotIn(SECRET.encode(), path.read_bytes(), str(path))
         self.assertNotIn('model', self.witness.read_text().splitlines())
+        # The same oversized JSON authenticates when only the output bound is
+        # raised. This distinguishes the bound from JSON or route validation.
+        self.budget_root = self.root / 'auth-overflow-nonbinding-control'
+        bounded.prepare(self.budget_root, self.value(auth='auth-overflow'))
+        with patch.object(bounded, 'AUTH_LIMIT', 100000), bounded.Budget(self.budget_root) as book:
+            result = book.execute('fresh-auth')
+            self.assertIsNone(result['stop'], result)
+            self.assertTrue(result['group_gone'], result)
 
     def test_authentication_never_calls_model_observers(self):
         bounded.prepare(self.budget_root, self.value())
@@ -235,12 +247,24 @@ class BoundedControls(unittest.TestCase):
         self.assertEqual(result['guard_reason'], 'deadline')
 
     def test_whole_batch_deadline_cannot_reset_between_slots(self):
-        value = self.value(model='stall', timeout=1)
-        value['overall_timeout_seconds'] = 1
-        result = self.run_pair(value)
+        value = self.value(model='stall', timeout=2)
+        def delayed_pair():
+            bounded.prepare(self.budget_root, value)
+            with bounded.Budget(self.budget_root) as book:
+                self.assertIsNone(book.execute('fresh-auth')['stop'])
+                time.sleep(0.75)
+                return book.execute('case')
+        value['overall_timeout_seconds'] = 2
+        result = delayed_pair()
         self.assertEqual(result['guard_reason'], 'deadline')
         self.assertTrue(result['group_gone'], result)
-        self.assertLess(result['elapsed_seconds'], 1.2)
+        self.assertLess(result['elapsed_seconds'], 1.5)
+        self.budget_root = self.root / 'nonbinding-batch'
+        value['overall_timeout_seconds'] = 10
+        comparison = delayed_pair()
+        self.assertEqual(comparison['guard_reason'], 'deadline')
+        self.assertTrue(comparison['group_gone'], comparison)
+        self.assertGreater(comparison['elapsed_seconds'], 1.8)
 
     def test_nonzero_exit_is_failure(self):
         result = self.run_pair(self.value(model='nonzero'))

@@ -304,7 +304,9 @@ tool order, each object ordered `name`, `description`, `inputSchema`, with the
 original schema value bytes preserved. `surface_sha256` hashes the
 [launch surface](#launch-surface) document the check session exercised; it must
 equal the digest of the surface the running binary supplies. Model and platform
-must match. `checked_at` identifies the check's date, and `evidence_sha256` identifies its independently reviewed record. The embedded
+must match. `checked_at` is a UTF-8 string identifying the check's
+date; it is an attributed label, not a parsed timestamp or an expiry check.
+`evidence_sha256` identifies its independently reviewed record. The embedded
 installation/check entries are attributed attestations; reading and hashing
 them does not redo signature verification or reproduce a live check. They confer
 no permission to invoke Claude.
@@ -334,7 +336,8 @@ are `schema`, `family`, `model`, `guidance`, `orientation`, `system`,
 `surface_sha256`, `effort`, `limits`, `harness_max_turns`,
 `harness_max_output_tokens`, `texts`, `reader`, `renderer`, `reading` and
 `bindings`. Common members retain the interface's meaning. `profile_sha256`
-hashes the captured profile string's UTF-8 bytes. `surface` is the launch
+hashes the captured profile string's UTF-8 bytes. `reading` has the common
+arrangement's exact reading bounds (INTERFACE 6.2). `surface` is the launch
 surface document as a JSON value, written with exactly the document's bytes, and
 `surface_sha256` is their SHA-256; it equals the captured profile's
 `check.surface_sha256`. Receipt readback of the arrangement therefore shows what
@@ -419,9 +422,24 @@ damaged records keep their explicit diagnostics and block a further start.
 Harness `run_started` keeps the common placement, arrangement and observation
 fields, sets `provider` to null, and adds
 `runtime: {kind: "claude-code/1", profile_sha256, placement_timeout_seconds}`.
-API records retain their exact shape. At tool publication, the runtime gate
+API records retain their exact shape. Before reserving another start, an
+unavailable or non-absent prior process
+observation refuses `runtime_stop_unknown`; no authentication or model process
+is launched. Close also refuses `runtime_stop_unknown` before reconciliation,
+sealing or delivery when stopping cannot be established, even with the active
+lock free. Following the common [close ordering](../INTERFACE.md#58-close),
+`close_requested` may already have been recorded before this refusal.
+`--key-fd` or any presence (including an empty value) of
+`ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` refuses
+`runtime_credential_forbidden` before reading credentials or launching.
+At tool publication, including confirmed submission, the runtime gate
 refuses `placement_stopped` if cancellation, stopping or the deadline won before
-the log link. Payload or stage candidates may remain; they are not answer entries.
+the log link. Payload or stage candidates may remain; they are not answer
+entries or a seal. Cancellation of one call leaves the placement available for later calls.
+A global signal, close or deadline derives its placement ending from that
+actual stopping condition; it is not an archive-write failure. A deadline
+interrupts with `placement_deadline` when starts remain, and ends
+`limit_reached` only on the last allowed placement.
 
 `orientation` is the string identifier above. `texts` has exactly the four
 string members `reminder`, `near_limit`, `continuation` and `compacted`.
@@ -505,7 +523,9 @@ on placement stopping, waiting calls never execute and are recorded as
 delivery of their replies after the transport closes.
 
 JSON-RPC envelopes and errors use the transport's number grammar, including
-negative error codes; the unsigned-integer rule for Stewart control arguments
+negative error codes. An error whose request ID cannot be determined uses
+JSON null for `id`; a well-formed notification still receives no reply. The
+unsigned-integer rule for Stewart control arguments
 does not apply to them. After confirmed submission, the runtime captures and
 attempts to send the MCP tool response, then stops the harness without another
 input. The Messages API's recorded-only submit response remains unchanged.

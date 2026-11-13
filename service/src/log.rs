@@ -1195,6 +1195,15 @@ pub(crate) mod tests {
         let state = read(&a);
         assert!(!state.damaged(), "{}", state.bad_names());
         assert_eq!(state.recs.len(), 2);
+        // Hash the independently read files, not the digest reported by
+        // publication or the log reader, to check both reported bindings.
+        use sha2::Digest;
+        for (n, published) in [(1, &r1), (2, &r2)] {
+            let bytes = std::fs::read(p.join(format!("a/log/{n}.json"))).unwrap();
+            let expected = format!("{:x}", sha2::Sha256::digest(bytes));
+            assert_eq!(published.sha256, expected);
+            assert_eq!(state.recs[n - 1].sha256, expected);
+        }
         // A second reference is refused by its precondition.
         assert!(matches!(
             publish(&a, "reference", |s| if s.recs.is_empty() {
@@ -1480,16 +1489,27 @@ pub(crate) mod tests {
         assert!(d[0].incomplete() && !d[0].verified());
         assert_eq!(d[1].plan.replaces, Some(1));
         assert_eq!(s.newest_verified().map(|d| d.attempt), Some(2));
-        let rec2 = &s.recs[ended2 as usize - 1];
+        // INTERFACE 2.3: bind the exact delivery_ended file, and encode the
+        // first 30 digest bits directly instead of using the handle builder.
+        use sha2::Digest;
+        let ended_bytes = std::fs::read(p.join(format!("a/log/{ended2}.json"))).unwrap();
+        let ended_digest = format!("{:x}", sha2::Sha256::digest(ended_bytes));
+        let handle_input = format!(
+            "stewart.handle/1\0{}\0{}\0cf\0cf2\0{}\0{}",
+            a.archive.store,
+            a.id,
+            "e".repeat(64),
+            ended_digest
+        );
+        let digest = sha2::Sha256::digest(handle_input.as_bytes());
+        let first_bits = u32::from_be_bytes(digest[..4].try_into().unwrap()) >> 2;
+        let alphabet = b"abcdefghijklmnopqrstuvwxyz234567";
+        let check: String = (0..6)
+            .map(|i| alphabet[((first_bits >> (25 - 5 * i)) & 31) as usize] as char)
+            .collect();
         assert_eq!(
             crate::delivery::confirmation(&a, &s, 2),
-            Some(crate::ids::cf_handle(
-                &a.archive.store,
-                &a.id,
-                2,
-                &"e".repeat(64),
-                &rec2.sha256
-            ))
+            Some(format!("cf2.{check}"))
         );
         assert_eq!(crate::delivery::confirmation(&a, &s, 1), None);
 

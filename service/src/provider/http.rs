@@ -727,14 +727,20 @@ pub(crate) mod tests {
         let (r, stop) = read_all(
             b"HTTP/1.1 200 OK\r\ntransfer-encoding: chunked\r\n\r\nzz\r\nhello\r\n0\r\n\r\n",
         );
-        assert!(matches!(r.unwrap().end, BodyEnd::Malformed(_)));
+        assert_eq!(
+            r.unwrap().end,
+            BodyEnd::Malformed("the chunked body has an invalid chunk-size line".into())
+        );
         assert_eq!(stop, None);
         let (r, _) = read_all(
             b"HTTP/1.1 200 OK\r\ntransfer-encoding: chunked\r\n\r\n2\r\nhello\r\n0\r\n\r\n",
         );
         let r = r.unwrap();
         assert_eq!(r.body, b"he");
-        assert!(matches!(r.end, BodyEnd::Malformed(_)));
+        assert_eq!(
+            r.end,
+            BodyEnd::Malformed("a chunk is longer than its chunk-size line says".into())
+        );
         // The trailer section must end too.
         let (r, _) = read_all(b"HTTP/1.1 200 OK\r\ntransfer-encoding: chunked\r\n\r\n0\r\n");
         assert_eq!(r.unwrap().end, BodyEnd::CutOff);

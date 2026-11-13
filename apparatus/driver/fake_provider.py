@@ -1379,6 +1379,9 @@ def fake_provider_selftests():
     tu = tool_use("toolu_x1", "read", raw_input=b'{"source":"question"}')
     msg = Message([thinking("t", "sig=="), tu, compaction("summary")], stop_reason="tool_use",
                   usage=Usage(1200, 34, cache_creation=None, cache_read=5))
+    expected_content = (b'[{"type":"thinking","thinking":"t","signature":"sig=="},'
+                        b'{"type":"tool_use","id":"toolu_x1","name":"read","input":{"source":"question"}},'
+                        b'{"type":"compaction","content":"summary"}]')
 
     # Plain HTTP, content-length framing; exact request bytes are recorded.
     for framing in ("length", "chunked", "close"):
@@ -1391,8 +1394,8 @@ def fake_provider_selftests():
         node = rawjson.try_parse(rbody)
         out.append(("fake.%s.status" % framing, status == 200 and complete, (status, complete, raw[:200])))
         out.append(("fake.%s.request-recorded" % framing, ex is not None and ex.raw == req and ex.body == body))
-        out.append(("fake.%s.content-bytes" % framing, node is not None and node.get("content").raw == msg.content_raw
-                    and ex.content_raw == msg.content_raw))
+        out.append(("fake.%s.content-bytes" % framing, node is not None and node.get("content").raw == expected_content
+                    and ex is not None and ex.content_raw == expected_content))
         out.append(("fake.%s.tool-use-bytes" % framing,
                     node is not None and node.get("content").items[1].raw == tu.raw
                     and node.get("content").items[1].get("input").raw == b'{"source":"question"}'))
@@ -1497,22 +1500,26 @@ def fake_provider_selftests():
     except (ssl.SSLError, OSError) as exc:
         out.append(("fake.tls.ip-name", False, str(exc)))
     th.join(5)
-    for label, cert, ca, name in (("untrusted-issuer", "untrusted", "ca", "provider.test"),
-                                  ("wrong-name", "wrongname", "ca", "provider.test"),
-                                  ("expired", "expired", "ca", "provider.test"),
-                                  ("other-root", "provider", "other-ca", "provider.test")):
+    for label, cert, ca, name, code in (("untrusted-issuer", "untrusted", "ca", "provider.test", 20),
+                                       ("wrong-name", "wrongname", "ca", "provider.test", 62),
+                                       ("expired", "expired", "ca", "provider.test", 10),
+                                       ("other-root", "provider", "other-ca", "provider.test", 20)):
         prov = FakeProvider(Script([Message([text("x")])]))
         c, th = _serve_pair(prov, tls=tls_server(cert))
         try:
             _client_tls(c, ca=ca, server_hostname=name)
             refused = False
-        except ssl.SSLError:
-            refused = True
-        except OSError:
-            refused = True
+        except ssl.SSLCertVerificationError as exc:
+            refused = exc.verify_code == code
+            detail = {"verify_code": exc.verify_code, "expected": code, "message": exc.verify_message}
+        except (ssl.SSLError, OSError) as exc:
+            refused = False
+            detail = {"unrelated_error": type(exc).__name__, "message": str(exc)}
+        else:
+            detail = "certificate unexpectedly accepted"
         c.close()
         th.join(5)
-        out.append(("fake.tls.control.%s" % label, refused and not prov.exchanges))
+        out.append(("fake.tls.control.%s" % label, refused and not prov.exchanges, detail))
 
     # The CONNECT proxy: a tunnel to the TLS server, key never in clear; and a refusal.
     prov = FakeProvider(Script([Message([text("via proxy")])]))

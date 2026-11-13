@@ -3,7 +3,12 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: execution has not started.** Update the task boxes as work proceeds.
+**State: stage 1 repairs and native checks complete; Linux verification remains.**
+All three Cargo configurations pass on the repaired source. The two corrected
+runtime cases and the package rehearsal pass with independently reviewed
+publication, package and stopping evidence. Checked items record completed work,
+not Linux qualification. Container acceptance and the C10 rehearsal are next;
+no live packet is approved or started.
 
 | Stage | Result |
 | --- | --- |
@@ -44,33 +49,33 @@ needs no live model calls.
 
 ### Reconcile specification and behavior
 
-- [ ] Preserve close's bounded waiting and make close/status report what is
+- [x] Preserve close's bounded waiting and make close/status report what is
   established when a run has recorded its ending but still holds the lock.
   Do not infer another close solely from that lock. Specify the exact reasons
   and test overlapping closes after launch and the corresponding status.
-- [ ] Make cancellation, stopping and deadline races at confirmed submission
+- [x] Make cancellation, stopping and deadline races at confirmed submission
   report `placement_stopped` rather than an archive-write failure. Derive the
   placement ending from the actual stopping condition, preserving continuation
   rights, and test cancellation before the seal is published.
-- [ ] Account for status condition sentences for `limit_reached`,
+- [x] Account for status condition sentences for `limit_reached`,
   `ended_unsubmitted` and `damaged`: show them or remove the unused sentences.
-- [ ] Specify commission outcomes for a changed preparation and for failures
+- [x] Specify commission outcomes for a changed preparation and for failures
   before the acceptance link or while publishing acceptance. Distinguish known
   absent acceptance from uncertainty and actual recording failure.
-- [ ] Clarify effects reporting on refusal without the finished-material
+- [x] Clarify effects reporting on refusal without the finished-material
   acknowledgment, `not_sent` for notices in cut-off captured requests that were
   never sent, and reserve use at the 1 GiB retained-payload boundary.
-- [ ] Specify details callers depend on and loosen tests of incidental wording
+- [x] Specify details callers depend on and loosen tests of incidental wording
   or order: retained locations, reconciled delivery members, verification causes,
   close's waiting message and strict-JSON rule identifiers.
-- [ ] Specify response-head bounds, interim responses, folded headers, invalid
+- [x] Specify response-head bounds, interim responses, folded headers, invalid
   content lengths and proxy-variable precedence.
-- [ ] Add a worked handle/check example for independently derived test vectors.
-- [ ] Resolve receipt-readback refusal for a planted link; close's delivery/seal
+- [x] Add a worked handle/check example for independently derived test vectors.
+- [x] Resolve receipt-readback refusal for a planted link; close's delivery/seal
   effects under stopping and publication faults; runtime refusals for unknown
   stopping observations and credential options; and JSON-RPC error responses
   whose request ID cannot be determined.
-- [ ] Apply qualification-record retention and its tests per suite/platform,
+- [x] Apply qualification-record retention and its tests per suite/platform,
   including keeping the last qualified result after a failure.
 
 Specify the corrected behavior before implementation. Report cancellation,
@@ -80,37 +85,37 @@ relay-loss and stop-cause presentation work on in stage 4.
 
 ### Simplify question documentation
 
-- [ ] Remove duplicate explanations and give each rule one owner across
+- [x] Remove duplicate explanations and give each rule one owner across
   [CONTRACTS](CONTRACTS.md), [QUESTION-FORMS](docs/QUESTION-FORMS.md),
   [INTERFACE](docs/INTERFACE.md), the [runtime contract](docs/claude-code/CONTRACT.md),
   [ACCEPTANCE](ACCEPTANCE.md), examples and rendered help. Keep pinned product
   text distinct from explanatory prose; update independent copies when needed.
-- [ ] State five missing interface facts: the result after a second unsubmitted
+- [x] State five missing interface facts: the result after a second unsubmitted
   stop, refusal of an over-long `read` source, re-entry gap members, the runtime
   arrangement's `reading` member and the form of `checked_at`.
-- [ ] Point return-membership explanations to "Returned question and answer",
+- [x] Point return-membership explanations to "Returned question and answer",
   version explanations to the runtime leaf-contract rule, and citation names to
   INTERFACE 2.4. Document rejection of the scaffold's placeholder model.
-- [ ] Correct the Mission's return-content wording. The intended return adds the
+- [x] Correct the Mission's return-content wording. The intended return adds the
   exact accepted question body alongside the answer, without operating history
   or guidance. Use a separate package member when implementing that addition in
   manager-interface work; keep its pending status explicit here.
-- [ ] Preserve all five family purposes and identify the three implemented
+- [x] Preserve all five family purposes and identify the three implemented
   families. Retain material-role and manager-guidance commitments with their
   implementation status explicit; their detailed design belongs to the manager
   interface and creates no new intake gate here.
-- [ ] Consolidate permissible answers without narrowing them: uncertainty,
+- [x] Consolidate permissible answers without narrowing them: uncertainty,
   missing evidence, disagreement, no supported finding and challenges to the
   premise remain expressible. Keep `answer`, `needs-evidence` and `reframe` as
   optional descriptions, not mandatory or mutually exclusive labels.
-- [ ] Align terminology for current family components with QUESTION-FORMS;
+- [x] Align terminology for current family components with QUESTION-FORMS;
   leave the registry's detailed design and version coverage to manager-interface
   work. Preserve the existing scope of supplied-guidance replacement and the
   rule that family selection grants no additional authority, access or budget.
-- [ ] Consolidate unselected evidence modules and hidden priors into deferred
+- [x] Consolidate unselected evidence modules and hidden priors into deferred
   scope and remove the inapplicable acceptance control. Preserve deterministic
   rendering and its reproducibility checks without inventing a manager operation.
-- [ ] Choose canonical names, clarify undefined wording and remove duplication
+- [x] Choose canonical names, clarify undefined wording and remove duplication
   while preserving substantive obligations. Avoid cosmetic folder/schema/member
   renames; necessary changed forms take new versions. Apply the same distinction
   between wording and substantive obligations to Mission, Principles, pinned
@@ -122,45 +127,85 @@ need no approval per capture class or general backup checkpoint.
 
 ### Repair the tests and instruments
 
-- [ ] Correct launcher/checker tests for spending authority, credential entry
+- [x] Correct launcher/checker tests for spending authority, credential entry
   and refusal, child environments, authentication output bounds, withheld
   exports, observer failure and unreadable evidence. Match the intended refusal
   beside a valid case.
-- [ ] Correct packet/digest and catalog/template checks, batch deadlines,
+- [x] Correct packet/digest and catalog/template checks, batch deadlines,
   installation/profile pins, build markers, and qualification-record mutations,
   counts and skipped controls. Use independent inventories and controls that
   fail when the named check is removed.
-- [ ] Correct driver counting/exit-status controls, skipped specification
+- [x] Correct driver counting/exit-status controls, skipped specification
   comparisons and partially skipped cases. Require procedures to finish before
   crediting their checks and claimed TLS-attempt records to exist.
-- [ ] Give driver payloads, content bytes, schemas, prepared workspace files,
+- [x] Give driver payloads, content bytes, schemas, prepared workspace files,
   clocks and observer captures independent expected values. Tighten TLS,
   parsing, read-completeness, permission, capture-write, JSON-RPC and
   package-corruption assertions to their intended failure.
-- [ ] Separate driver cases with indistinguishable inputs: diagnostic-cause
+- [x] Separate driver cases with indistinguishable inputs: diagnostic-cause
   order, allowed versus remaining placements, unknown versus present processes,
   and invalid profiles with multiple defects. Test a consistently substituted
   arbitrary helper command.
-- [ ] Cover `new` without an existing folder reference, commission without a
+- [x] Cover `new` without an existing folder reference, commission without a
   leftover diagnostic, published preparation versus unpublished candidates, and
   the close/submission/refusal cases settled above.
-- [ ] Make service tests report unavailable loopback and marked scratch ancestry
+- [x] Make service tests report unavailable loopback and marked scratch ancestry
   as skipped or failed. The 36 loopback-dependent tests must not count as passes
   when their listeners cannot bind.
-- [ ] Tighten service assertions for damaged archive members, malformed usage,
+- [x] Tighten service assertions for damaged archive members, malformed usage,
   chunked bodies, TLS failures, profile members, references, citations and taken
   record names. Distinguish valid UTF-8 carried as base64 and unlinked stage
   records with their own entry IDs.
-- [ ] Derive expected answers, rendering, scaffolds, runtime surface digests,
+- [x] Derive expected answers, rendering, scaffolds, runtime surface digests,
   limits, tool order, record digests and confirmation tokens from specifications
   or independent inputs. Add firing controls for credential output, citation
   schemas, scaffold effort and the fault/sabotage inventory.
-- [ ] Run applicable checks and retain exact counts, failures and skips. Identify
+- [x] Run applicable checks and retain exact counts, failures and skips. Identify
   changed launchers needing a fresh Linux rehearsal before live use.
 
 Fixtures needing provider, harness or operating-system captures go to stage 3.
 Stage 4 hands the shared post-launch return fixture to manager-interface work
 for rewriting when the question is added to the return.
+
+### Remaining verification
+
+The reviewed host result is
+`/private/tmp/stewart-readiness-native-87y7ofsj/RESULT.json`: Cargo release
+252 passed, fault/sabotage 317 passed with 35 subprocess-only tests ignored by
+the top-level runner, and runtime 293 passed; no failures. Four fresh builds
+and their marker checks passed. The two corrected runtime cases passed all
+1,371 checks and 6 controls; the package rehearsal passed all 868 checks.
+Neither run skipped a case. Independent review confirmed stopping before
+publication resumed, the permitted `close_requested` without later publication,
+and all nine package snapshots against their expected bytes.
+
+Retain these evidence locations through Linux review:
+
+- `.scratch/readiness-native-jbpx9el6/RESULT.json`: selected release-driver,
+  C10, surface, listener and controller checks, with explicit native/heavy skips
+  and the original runtime path failures. Both controller negatives were
+  reviewed for intended refusal, stopped groups and unused later starts.
+- `/private/tmp/stewart-readiness-native-cgup0_dm/RESULT.json`: 13 runtime
+  cases passed; the two failed cases are superseded by the reviewed retry above.
+  Its passing cases bind the earlier binary, not the rebuilt one.
+- `.tmp/readiness-repairs/`, `/private/tmp/stewart-readiness-service-dCrMiy`,
+  `/private/tmp/stewart-readiness-signal-yxyYNe`,
+  `/private/tmp/stewart-independent-driver.oENjUx` and
+  `/private/tmp/stewart-driver-ordering.fuD22j`: repair checks and driver controls.
+- `/private/tmp/stewart-driver-package-proof-gk4nqkc2.json`: locates the
+  package self-test's 32 passing checks, including all 12 corruption controls;
+  all 203 retained evidence members match their recorded hashes.
+- `/private/tmp/stewart-driver-post-review-57031458.json`: both unknown-stop
+  test groups are absent at review. Cleanup waits for its child, but the run
+  retained no immediate post-cleanup observation; this later check establishes
+  current absence only.
+
+Commit for the principal's scheduled container acceptance, then extract and
+check its qualification record. The changed C10 operator checker needs a fresh
+retained Linux rehearsal; the frozen runtime controller carries the independent
+`fixture_expectations.py` source. Recheck qualification and launcher bindings
+before freezing any live packet. Native results do not qualify these changes;
+no real Claude, authentication or provider process was invoked by these checks.
 
 **Complete when:** repairs are checked or explicitly disposed of, expected
 behavior is specified, and corrected tests distinguish their named defects.
@@ -318,7 +363,11 @@ opens stage 4 without a separate readiness approval.
 - [ ] Add remaining acceptance work to
   [the release plan](RELEASE-PLAN.md): unreached or partly reached conditions,
   behaviors needing specification, driver counting/exit-status controls and the
-  interpretation of timing requirements. Give each a case or disposition.
+  interpretation of timing requirements. Include missing standalone comparisons
+  for interim/folded/conflicting-length response heads, the retained-payload
+  reserve boundary and `not_sent` notices; clarification and service-unit
+  coverage here do not supply independent black-box coverage. Give each a case
+  or disposition.
 - [ ] Move enduring rules into specifications and tests. Apply DEVELOPMENT's
   evidence-retention rules: preserve selected originals for an unfinished
   inspection purpose and carry necessary task details into the destination plan.

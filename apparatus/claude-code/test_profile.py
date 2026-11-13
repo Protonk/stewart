@@ -215,7 +215,13 @@ class ProfileControls(unittest.TestCase):
 
     def test_failed_installation_record_refuses(self):
         (self.install / 'installation/verification/codesign.exit').write_bytes(b'1\n')
-        self.refused('verification evidence')
+        # Keep the evidence binding valid so only the failed verifier outcome
+        # can refuse this installation, not the changed-file inventory check.
+        path = self.install / 'PREPARATION.json'
+        prepared = json.loads(path.read_bytes())
+        prepared['verification_files'] = profile.verification_inventory(self.install / 'installation')
+        path.write_bytes(profile.compact(prepared))
+        self.refused('installation verification did not pass: codesign')
 
     def test_public_signature_and_key_must_remain_exact_and_present(self):
         for name in ('manifest.json.sig', 'claude-code.asc'):

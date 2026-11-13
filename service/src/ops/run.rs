@@ -534,7 +534,7 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
     let signals = stop::block_signals()
         .map_err(|e| Cause::io("block stop signals", &e))
         .and_then(|_| {
-            stop::receive_signals(abort.clone(), flags.clone())
+            stop::receive_signals(abort.clone(), flags.clone(), || {})
                 .map_err(|e| Cause::io("start the signal thread", &e))
         });
     if let Err(c) = signals {

@@ -29,12 +29,16 @@ python3 -I -B apparatus/driver/claude_code.py \
 `--work` must be absent and its parent must exist. Use a physical absolute path
 without symlink components because the profile contract requires no-follow
 reads. Put the work directory outside the repository checkout so that the
-synthetic launch directory is outside the writer tree. Keep the selected
+synthetic launch directory is outside the writer tree. The driver refuses known
+repository descendants before creating its work directory or any fixtures.
+Keep the selected
 binaries in a separate directory from the work tree and unchanged during the run.
 `--release-binary` is optional; omitting it reports the featureless-build
 case as skipped. `--variant-binary` is optional too: it names a second build
-with the same feature and a different digest, such as the debug build beside a
-release build, and omitting it reports the two-build case as skipped. The
+with `claude-code,fault-injection` and a different digest. It exercises both
+writer invariance and the documented `log.publish:seal=pause` control. Omitting
+it skips those cases; a variant without fault injection skips the publication
+case. The
 driver never substitutes a skipped check for a pass.
 Use repeatable `--case NAME` options to diagnose selected cases; `RESULT.json`
 names the unselected cases separately. The default runs every case.
@@ -134,6 +138,9 @@ deadline and owner-death stopping with a resistant descendant, and API credentia
 option rejection. A controlled missing-stop case retains the original process
 metadata, substitutes an independently owned live group, and checks that restart
 and close cannot silently treat it as stopped or signal that unrelated group.
+Close may record the manager's `close_requested` before its stopping refusal;
+the case requires earlier log bytes to remain unchanged and permits no
+reconciliation, seal, delivery or completion record. A repeat adds nothing.
 A recorder-failure case waits for independently witnessed startup, removes write
 permission from the synthetic run directory, proves a directory write is refused,
 and releases one witnessed authoring attempt. It requires actual group stopping,
@@ -143,6 +150,22 @@ archive. Running as root skips this case explicitly because root can bypass the
 permission control.
 Harness observations and attempted MCP calls are independently
 witnessed outside the archive. Missing final checkpoints must remain unknown.
+
+The submit-publication case uses the fault-enabled variant and fresh fault
+directories. It pauses a confirmed submit immediately before its seal log link.
+The positive control releases it unchanged. A cancellation followed by an
+acknowledged ping must refuse that submit with `placement_stopped`, publish no
+seal, allow re-entry and then permit a second submit in the same placement.
+The signal control first observes the independently witnessed model group
+present, then sends SIGTERM and waits for group absence while the owner remains
+alive at the unreleased pause. Only that observed stopping permits release;
+signal transmission alone is insufficient. Separate controls allow the
+placement deadline to pass before releasing the pause. Release is recorded once,
+including during cleanup, preserving the original marker and witness chronology.
+These controls require the retained submit refusal, no seal and the
+actual global ending: interrupted by signal or deadline, or `limit_reached`
+on the last allowed placement. A specification-only MCP peer exercises the
+fake harness's cancellation/re-entry/retry sequence in the self-test.
 
 Five further runtime cases use the same synthetic executable:
 

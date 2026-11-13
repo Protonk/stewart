@@ -59,8 +59,32 @@ class LaunchTests(unittest.TestCase):
         def fallback(prompt):
             warnings.warn('cannot control echo', launch.getpass.GetPassWarning)
             return 'should-not-be-read'
-        with mock.patch.object(launch.getpass, 'getpass', fallback), self.assertRaises(RuntimeError):
+        with mock.patch.object(launch.getpass, 'getpass', return_value='synthetic-hidden-key'):
+            self.assertEqual(launch.hidden_credential(), b'synthetic-hidden-key')
+        with mock.patch.object(launch.getpass, 'getpass', fallback), self.assertRaisesRegex(RuntimeError, 'hidden terminal input unavailable'):
             launch.hidden_credential()
+
+    def test_real_hidden_entry_without_a_terminal_refuses_before_reading_stdin(self):
+        script = ('import sys; sys.path.insert(0, sys.argv[1]); import launch; '
+                  'launch.hidden_credential()')
+        canary = b'synthetic-stdin-key\n'
+        read_fd, write_fd = os.pipe()
+        try:
+            os.write(write_fd, canary)
+        finally:
+            os.close(write_fd)
+        try:
+            result = subprocess.run(
+                [sys.executable, '-I', '-B', '-c', script, str(Path(__file__).parent.resolve())],
+                stdin=read_fd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                start_new_session=True, timeout=5,
+            )
+            self.assertEqual(os.read(read_fd, len(canary) + 1), canary)
+        finally:
+            os.close(read_fd)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b'hidden terminal input unavailable; no credential was sent', result.stderr)
+        self.assertNotIn(b'synthetic-stdin-key', result.stdout + result.stderr)
 
     def test_host_environment_excludes_credentials_and_routing(self):
         with mock.patch.dict(os.environ, {'PATH': '/bin', 'HOME': '/home/test',
@@ -97,14 +121,33 @@ class LaunchTests(unittest.TestCase):
     def test_live_authority_is_required_before_credential_or_container(self):
         with tempfile.TemporaryDirectory() as folder:
             packet = Path(folder) / 'commission.json'
-            raw = (json.dumps(self.packet()) + '\n').encode()
+            value = self.packet()
+            value['account'] = {'account_label': 'synthetic-account',
+                                'workspace_id': 'synthetic-workspace', 'credential_label': 'synthetic-key'}
+            raw = (json.dumps(value) + '\n').encode()
             packet.write_bytes(raw)
             out = Path(__file__).resolve().parents[2] / '.scratch/test-live-must-not-exist'
             argv = ['launch.py', 'live', str(out), '--qualification', 'unused',
                 '--commission', str(packet), '--approved-commission', digest(raw)]
-            with mock.patch.object(sys, 'argv', argv), mock.patch.object(launch, 'hidden_credential') as hidden, mock.patch.object(launch.subprocess, 'run') as run, redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as stopped:
+            stderr = io.StringIO()
+            with mock.patch.object(sys, 'argv', argv), mock.patch.object(launch, 'hidden_credential') as hidden, mock.patch.object(launch.subprocess, 'run') as run, mock.patch.object(launch.subprocess, 'check_output') as checkout, redirect_stderr(stderr), self.assertRaises(SystemExit) as stopped:
                 launch.main()
             self.assertEqual(stopped.exception.code, 2)
+            self.assertIn("record the principal's bounded spending authorization", stderr.getvalue())
+            hidden.assert_not_called()
+            run.assert_not_called()
+            checkout.assert_not_called()
+            self.assertFalse(out.exists())
+            # Only authority changes. A sentinel at the next boundary establishes
+            # passage through this gate without reaching a credential or container.
+            value['spending_authority'] = 'synthetic gate control; no live invocation'
+            raw = (json.dumps(value) + '\n').encode()
+            packet.write_bytes(raw)
+            argv[-1] = digest(raw)
+            with mock.patch.object(sys, 'argv', argv), mock.patch.object(launch, 'hidden_credential') as hidden, mock.patch.object(launch.subprocess, 'run') as run, mock.patch.object(launch.subprocess, 'check_output', side_effect=RuntimeError('authority gate passed')) as checkout:
+                with self.assertRaisesRegex(RuntimeError, '^authority gate passed$'):
+                    launch.main()
+            checkout.assert_called_once()
             hidden.assert_not_called()
             run.assert_not_called()
             self.assertFalse(out.exists())
@@ -140,12 +183,22 @@ class LaunchTests(unittest.TestCase):
             self.assertEqual(scan_tree(root, b'needle')['errors'], 1)
 
     def test_scan_reports_directory_walk_errors(self):
+        if os.geteuid() == 0:
+            self.skipTest('a root process can read mode-000 directories')
         with tempfile.TemporaryDirectory() as folder:
-            def denied(root, *, followlinks, onerror):
-                onerror(PermissionError('deliberate unreadable directory'))
-                return iter([])
-            with mock.patch('session_support.os.walk', denied):
-                self.assertEqual(scan_tree(Path(folder), b'needle')['errors'], 1)
+            root = Path(folder)
+            hidden = root / 'unreadable'
+            hidden.mkdir()
+            (hidden / 'member').write_bytes(b'ordinary evidence')
+            self.assertEqual(scan_tree(root, b'needle')['errors'], 0)
+            hidden.chmod(0)
+            try:
+                observed = scan_tree(root, b'needle')
+                self.assertEqual(observed['errors'], 1)
+                self.assertEqual(observed['files'], 0)
+            finally:
+                hidden.chmod(0o700)
+            self.assertEqual(scan_tree(root, b'needle')['files'], 1)
 
     def test_export_control_clean_invariance_and_failure_preserve_original(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -173,7 +226,7 @@ class LaunchTests(unittest.TestCase):
     def test_export_requires_complete_witness_and_clean_marker(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            self.assertNotEqual(export_evidence_state(root), 'complete')
+            self.assertEqual(export_evidence_state(root), 'missing_or_malformed_evidence')
             run = self.complete_evidence(root)
             self.assertEqual(export_evidence_state(root), 'complete')
             attempt = run / 'attempt-1-1.json'
@@ -186,6 +239,28 @@ class LaunchTests(unittest.TestCase):
             (run / 'response-9-1.bin').write_bytes(b'orphaned raw body')
             self.assertEqual(export_evidence_state(root), 'unaccounted_capture')
             self.assertTrue((run / 'response-9-1.bin').exists())
+
+    def test_incomplete_evidence_withholds_export_until_completed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            base = Path(folder)
+            root = base / 'private'
+            root.mkdir()
+            for name in ['incomplete', 'complete']:
+                (base / name).mkdir()
+            incomplete = export_work(root, base / 'incomplete', b'synthetic-key')
+            self.assertEqual(incomplete['outcome'], 'withheld')
+            self.assertEqual(incomplete['reason'],
+                'incomplete observation, reflection marker or credential scan; originals remain private')
+            self.assertEqual(incomplete['scan']['files_with_matches'], 0)
+            self.assertEqual(incomplete['scan']['errors'], 0)
+            self.assertEqual(incomplete['evidence_state'], 'missing_or_malformed_evidence')
+            self.assertFalse((base / 'incomplete/work.tar').exists())
+            self.complete_evidence(root)
+            complete = export_work(root, base / 'complete', b'synthetic-key')
+            self.assertEqual(complete['outcome'], 'exported')
+            self.assertNotIn('reason', complete)
+            self.assertEqual(complete['evidence_state'], 'complete')
+            self.assertTrue((base / 'complete/work.tar').is_file())
 
     def test_run_observation_distinguishes_status_metadata_and_requires_same_audit(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -243,15 +318,15 @@ class LaunchTests(unittest.TestCase):
             attempt.write_text(json.dumps(body))
             self.assertEqual(export_evidence_state(root), 'complete')
             fields = [
-                (root / 'evidence/02-status-after-run.stdout', ['data', 'runs', 'count']),
-                (root / 'evidence/02-status-after-run.stdout', ['data', 'runs', 'last', 'number']),
-                (root / 'archive/audits/audit/log/1.json', ['body', 'run']),
-                *[(root / 'archive/audits/audit/log/2.json', ['body', key]) for key in ['run', 'requests', 'attempts']],
-                *[(attempt, ['body', key]) for key in ['request', 'attempt']],
-                (run / 'request-1.json', ['request']),
-                (attempt, ['body', 'response', 'bytes']),
+                (root / 'evidence/02-status-after-run.stdout', ['data', 'runs', 'count'], 'uncertain_writer_state'),
+                (root / 'evidence/02-status-after-run.stdout', ['data', 'runs', 'last', 'number'], 'uncertain_writer_state'),
+                (root / 'archive/audits/audit/log/1.json', ['body', 'run'], 'invalid_run_identity'),
+                *[(root / 'archive/audits/audit/log/2.json', ['body', key], 'invalid_run_counts') for key in ['run', 'requests', 'attempts']],
+                *[(attempt, ['body', key], 'invalid_attempt_identity') for key in ['request', 'attempt']],
+                (run / 'request-1.json', ['request'], 'incomplete_request_evidence'),
+                (attempt, ['body', 'response', 'bytes'], 'incomplete_response_evidence'),
             ]
-            for path, keys in fields:
+            for path, keys, expected in fields:
                 original = path.read_bytes()
                 for bad in [True, False, 1.0, 0, -1, '1']:
                     with self.subTest(path=path.name, keys=keys, bad=bad):
@@ -261,7 +336,7 @@ class LaunchTests(unittest.TestCase):
                             target = target[key]
                         target[keys[-1]] = bad
                         path.write_text(json.dumps(changed) + '\n')
-                        self.assertNotEqual(export_evidence_state(root), 'complete')
+                        self.assertEqual(export_evidence_state(root), expected)
                 path.write_bytes(original)
                 self.assertEqual(export_evidence_state(root), 'complete')
 
@@ -327,6 +402,26 @@ class LaunchTests(unittest.TestCase):
         self.assertEqual(result['access']['mem'], {'allowed': False, 'errno': 13})
         self.assertEqual(result['core_limits'], ['0', 'unknown'])
         self.assertNotIn('potential-secret', json.dumps(result))
+
+    def test_succeeding_observer_releases_and_records_child(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            case = Session.__new__(Session)
+            case.binary, case.root, case.evidence = Path(sys.executable), root, root
+            case.env = {'PATH': os.environ['PATH'], 'HOME': str(root)}
+            case.commission, case.mode, case.index, case.process = {'stop_after_seconds': 60}, 'submitted', 0, None
+            case.spawn = subprocess.Popen
+            case.observe_process = mock.Mock()
+            event, release = mock.Mock(), mock.Mock()
+            event.wait.return_value = True
+            case.command('run', '-I', '-B', '-c', 'print("completed")', raw=True, observe=(event, release))
+            record = strict_json((root / '01-run.json').read_bytes())
+            case.observe_process.assert_called_once_with(record['pid'])
+            release.set.assert_called_once()
+            self.assertEqual(record['exit'], 0)
+            self.assertEqual(record['process_state'], 'exited')
+            self.assertNotIn('failure', record)
+            self.assertEqual((root / '01-run.stdout').read_bytes(), b'completed\n')
 
     def test_observer_failure_retains_command_metadata_and_stops_child(self):
         with tempfile.TemporaryDirectory() as folder:

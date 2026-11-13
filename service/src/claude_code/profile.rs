@@ -245,11 +245,11 @@ impl Profile {
             let i = o.obj("installation")?;
             i.exactly(&["manifest_sha256", "signer", "binary_sha256"])?;
             i.sha256("manifest_sha256")?;
-            if i.str("signer")? != SIGNER || i.sha256("binary_sha256")? != l.sha256("sha256")? {
-                return Err(i.invalid(
-                    "signer",
-                    "installation attestation does not bind this binary and release signer",
-                ));
+            if i.str("signer")? != SIGNER {
+                return Err(i.invalid("signer", "installation attestation does not name the release signer"));
+            }
+            if i.sha256("binary_sha256")? != l.sha256("sha256")? {
+                return Err(i.invalid("binary_sha256", "installation attestation does not bind the launch binary"));
             }
             let c = o.obj("check")?;
             c.exactly(&[
@@ -262,13 +262,11 @@ impl Profile {
                 "outcome",
             ])?;
             let span = o.req("launch")?;
-            if c.sha256("launch_sha256")? != util::sha256_hex(&raw[span.start..span.end])
-                || c.str("outcome")? != "observed"
-            {
-                return Err(c.invalid(
-                    "launch_sha256",
-                    "check must report observed and bind the exact launch object",
-                ));
+            if c.sha256("launch_sha256")? != util::sha256_hex(&raw[span.start..span.end]) {
+                return Err(c.invalid("launch_sha256", "check must bind the exact launch object"));
+            }
+            if c.str("outcome")? != "observed" {
+                return Err(c.invalid("outcome", "check outcome must be observed"));
             }
             c.sha256("evidence_sha256")?;
             let version = l.str("version")?;
@@ -458,6 +456,43 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn profile_refusals_name_the_independently_changed_check_member() {
+        let good = fixture(
+            PROFILE_SCHEMA,
+            "surface_sha256",
+            "e8182ecf0009ee1f3889b8e89902bec5eaef34c8bf4c079c2b78c34684780db5",
+            b"[]",
+        );
+        Profile::parse(good.as_bytes()).unwrap();
+        let wrong_outcome = good.replace(r#""outcome":"observed""#, r#""outcome":"unobserved""#);
+        let refusal = Profile::parse(wrong_outcome.as_bytes()).unwrap_err();
+        assert!(refusal.starts_with("value at /check/outcome "), "{refusal}");
+        let wrong_launch = good.replace(r#""version":"2.1.322""#, r#""version":"2.1.323""#);
+        let refusal = Profile::parse(wrong_launch.as_bytes()).unwrap_err();
+        assert!(
+            refusal.starts_with("value at /check/launch_sha256 "),
+            "{refusal}"
+        );
+        for (changed, pointer) in [
+            (good.replace(SIGNER, "wrong-signer"), "/installation/signer"),
+            (
+                good.replace(
+                    &format!(r#""binary_sha256":"{}""#, "a".repeat(64)),
+                    &format!(r#""binary_sha256":"{}""#, "d".repeat(64)),
+                ),
+                "/installation/binary_sha256",
+            ),
+        ] {
+            let refusal = Profile::parse(changed.as_bytes()).unwrap_err();
+            assert!(
+                refusal.starts_with(&format!("value at {pointer} ")),
+                "{refusal}"
+            );
+        }
+        Profile::parse(good.as_bytes()).unwrap();
+    }
+
+    #[test]
     fn only_the_current_profile_form_is_read() {
         let own = surface::sha256();
         let earlier = fixture(
@@ -472,8 +507,16 @@ pub(crate) mod tests {
             "{refusal}"
         );
         let writer_bound = fixture(PROFILE_SCHEMA, "writer_sha256", &own, b"[]");
-        assert!(Profile::parse(writer_bound.as_bytes()).is_err());
+        let refusal = Profile::parse(writer_bound.as_bytes()).unwrap_err();
+        assert!(
+            refusal.starts_with("unknown_key at /check/writer_sha256 "),
+            "{refusal}"
+        );
         let malformed = fixture(PROFILE_SCHEMA, "surface_sha256", "not-a-digest", b"[]");
-        assert!(Profile::parse(malformed.as_bytes()).is_err());
+        let refusal = Profile::parse(malformed.as_bytes()).unwrap_err();
+        assert!(
+            refusal.starts_with("value at /check/surface_sha256 "),
+            "{refusal}"
+        );
     }
 }

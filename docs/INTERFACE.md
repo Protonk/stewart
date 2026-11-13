@@ -65,7 +65,11 @@ raw bytes.
 - Nesting depth is at most 16. Bounds on sizes are per field and per input.
 
 A refusal names the JSON pointer of the defect (`/citations/2/start`), the rule
-and, for an unknown key, the expected keys. The raw input was captured before
+and, for an unknown key, the expected keys. Rule identifiers are `encoding`,
+`bom`, `trailing`, `syntax`, `duplicate_key`, `unknown_key`, `missing_key`,
+`lone_surrogate`, `nul`, `type`, `integer_sign`, `leading_zero`,
+`not_integer`, `integer_range`, `depth` and `value`; `value` names a
+field-specific constraint. The raw input was captured before
 decoding (C14), and the refusal says so.
 
 ### 1.3 Reply envelope
@@ -91,7 +95,7 @@ only, never an audit or an answer. The envelope's keys, in this order:
 | `reason` | refused, failed | Stable identifier (Appendix A). Tests assert on it. |
 | `message` | refused, failed | One or two plain sentences: what Stewart could not do and why. |
 | `effects` | always | Operation-specific facts (1.4), on completed replies too. |
-| `retained` | manager refused or failed | Archive locations holding attempts, partials and diagnostics: every location this invocation created and kept, each directory it created (a capture attempt, a preparation, a run directory, a delivery package) and each file it created in a directory it did not create (an entry payload, a seal manifest, a delivery plan, its diagnostic when that was written); and, on `log_damaged`, the log directory. Log records and stage files are not listed: the log holds the records, and status reports a stage file without its record as an interrupted publication (4.3). |
+| `retained` | manager refused or failed | Archive locations holding attempts, partials and diagnostics: every location this invocation created and kept, each directory it created (a capture attempt, a preparation, a run directory, a delivery package) and each file it created in a directory it did not create (an entry payload, a seal manifest, a delivery plan, its diagnostic when that was written); and, on `log_damaged`, the log directory. Log records and stage files are not listed: the log holds the records, and status reports a stage file without its record as an interrupted publication (4.3). A refused preparation read also identifies its existing `prep/<n>` evidence. Location order is not significant. |
 | `causes` | failed, or `effects.diagnostic` is `reported_only` | The original cause first, then any reporting failure. |
 | `next` | always | Supported next calls, each with an explanation (1.5). May be empty. |
 | `data` | completed; refused or failed when useful | Operation data, such as the current entry handle on a stale target. |
@@ -273,6 +277,15 @@ delivery attempt.
 A handle of the wrong kind, store or audit, or with a wrong check, is refused
 as `handle_invalid` without revealing whether a similar object exists.
 
+For a worked check, use store `saaaaaaaaaaaaaaaa`, audit `abbbbbbbbbbbbbbbb`, kind
+`mp`, object `mp1` and binding consisting of 64 ASCII zeroes (an illustrative
+prepared-record digest). Include the `stewart.handle/1` prefix; hash the six
+parts with five NUL separators
+and no trailing NUL. The SHA-256 is
+`bca472c3cb24f6d70cf25e288a9ba9a9ca9255938c4a91f145b3d02818de73f5`; its base32 prefix is `xsshfq`,
+so the handle is `mp1.xsshfq`. This specifies a check vector, not an existing
+preparation.
+
 ### 2.4 Names that are not handles
 
 Material and question sources are names, not handles. The auditor and the
@@ -417,8 +430,9 @@ Guidance metadata grants no powers and is not a semantic approval of its text.
 The scaffold created by `new` contains the front matter above with
 `model: REPLACE-WITH-MODEL` and `destination: REPLACE-WITH-ABSOLUTE-DIRECTORY`,
 a comment line `# Write your question below the closing --- line.`, an empty
-body and an empty `materials/`. Prepare refuses the placeholders as invalid
-values and the empty body as `question_empty`, naming what to edit.
+body and an empty `materials/`. The model placeholder `REPLACE-WITH-MODEL`
+is refused as `setting_invalid` until replaced. Prepare refuses the
+placeholders as invalid values and the empty body as `question_empty`, naming what to edit.
 
 ### 3.3 Material scan
 
@@ -1079,8 +1093,9 @@ Refusals: `folder_incomplete`, `front_matter_invalid`, `setting_missing`,
 
 `stewart commission REF HANDLE --i-am-finished` requests acceptance of the
 prepared selection. Without `--i-am-finished` it is refused
-(`affirmation_missing`) with no effects. The flag records the manager's
-declaration that it has finished assembling the selection and will leave the
+(`affirmation_missing`) without starting an intake. Its effects still report
+observed `acceptance` (`absent`, `accepted` or `unknown`) and `attempt: "none"`.
+The flag records the manager's declaration that it has finished assembling the selection and will leave the
 folder unchanged until commissioning returns. The declaration is recorded
 separately from Stewart's observations.
 
@@ -1151,8 +1166,14 @@ outcomes are `selection_changed`, `source_unreadable`, `capture_failed`,
  "data": {"added": [], "removed": [], "changed": ["materials/a.py"]}}
 ```
 
-If publishing `accepted` itself fails, whether it was published cannot be
-assumed:
+A changed or unreadable published preparation refuses `preparation_unreadable`
+before an intake starts, with `acceptance: "absent"` and `attempt: "none"`.
+A failure writing the receipt or publishing acceptance before its log link fails
+`receipt_record_failed`, with acceptance known absent and the attempt partial.
+It records that intake ending when possible; failure to record the ending is
+reported separately. If the acceptance link was made but its durability cannot
+be established, the reply is `acceptance_record_uncertain`, with acceptance
+unknown and the completed capture attempt recorded:
 
 ```json
 {"schema": "stewart.reply/2", "operation": "commission", "outcome": "failed",
@@ -1181,13 +1202,17 @@ live answer or conversation.
 By default the receipt reports recorded facts and says that the bytes were not
 re-verified. `--verify` reads and hashes every item and reports each as
 `verified`, `damaged`, `missing`, `unreadable` or `unsupported`, without
-vouching for the whole commission from one member.
+vouching for the whole commission from one member. Each failed item adds a
+`problem` string naming its verification cause; its wording is diagnostic prose.
 
 `stewart receipt REF --read ITEM` writes the item's captured bytes, exactly, to
 stdout. It then writes one JSON line to stderr: the item, size, SHA-256 and
 `verified: true`, or the diagnostic (`item_unknown`, `item_damaged`,
 `item_missing`, `item_unreadable` or `item_unsupported`). Bytes that fail
-verification are not written. Items: `question-file`, `question-body`, `guidance-file` when supplied,
+verification are not written. A symbolic link in place of an item or a
+containing directory is unsupported
+(`item_unsupported`), even if its target has the expected bytes. Items:
+`question-file`, `question-body`, `guidance-file` when supplied,
 `arrangement`, `arrangement-readable` and `materials/<name>`. The live source
 and the currently installed forms are never consulted.
 
@@ -1293,7 +1318,9 @@ The other members of `data`, in order after `evidence`:
 Status derives a close's `unfinished_reason` the way close would report it
 (5.8): with the lock held, `intake_still_running` when an intake has no
 outcome, `run_still_held` when a placement has no `run_ended`, else
-`close_in_progress`; with the lock free, `awaiting_confirmation` when the
+`close_in_progress`. The latter establishes only that the active lock remains
+held after the recorded endings, not whether its owner is a finishing run or
+another close. With the lock free, `awaiting_confirmation` when the
 newest verified attempt awaits confirmation (8.4), `delivery_incomplete` when a
 seal exists and no verified attempt does, and otherwise null: the last close
 stopped before recording more, and repeating close continues it.
@@ -1459,7 +1486,10 @@ gone. An `intake_planned` without an outcome gets `intake_ended` with
 `outcome: "process_gone"`; a `run_started` without a `run_ended` gets
 `run_ended` `interrupted` with cause `process_gone`, its usage computed as 6.4
 states; a `delivery_planned` without an outcome gets `delivery_ended` `failed`
-with cause `process_gone`. Each records `recorded_by: "close"`.
+with cause `process_gone`, and `package`, `members` and `losses` null:
+reconciliation does not inspect the copy or establish its written membership.
+Its status view has empty verified/unverified member arrays. Each records
+`recorded_by: "close"`.
 
 1. If the log is damaged (4.4), reply unfinished with
    `unfinished_reason: "log_damaged"`, naming the bad records. Close publishes
@@ -1493,15 +1523,16 @@ with cause `process_gone`. Each records `recorded_by: "close"`.
    reconcile, then publish `closed` with `before_launch: true` and whether a
    commission had been accepted. No answer, seal or confirmation is created.
 6. **After launch**, in order:
-   - **Stop.** If the lock is held and a `run_started` has no `run_ended`, wait
-     up to 30 seconds for the run to observe `close_requested` and exit (6.8). If
-     it is still held, reply unfinished, `run_still_held`, with the holder
-     observations. A seal alone never counts as stopped execution. If the lock
-     is held and every `run_started` has its `run_ended`, another close holds
-     it: reply unfinished, `close_in_progress`.
+   - **Stop.** If the lock is held, wait up to 30 seconds for its release.
+     The waiting message identifies the held active lock and the bounded wait;
+     its wording is not pinned. If still held with a placement lacking its
+     `run_ended`, reply unfinished, `run_still_held`, with that placement's
+     observations. Otherwise reply unfinished, `close_in_progress`: all known
+     placement endings are recorded, but the lock holder is unestablished.
+     A seal alone never counts as stopped execution.
    - **Lock.** Take the active lock (4.6) and hold it for the seal and delivery
-     work. If another close holds it, reply unfinished, `close_in_progress`.
-     Otherwise reconcile.
+     work. If it is held again, reply unfinished, `close_in_progress`, without
+     identifying its owner. Otherwise reconcile.
    - **Seal.** An existing seal is kept, whoever made it. Otherwise close
      prepares the selection current at `close_requested` into a new
      `prepared/<n>` and seals it with `actor: "manager"` (8.1). An entry that
@@ -1535,6 +1566,13 @@ with cause `process_gone`. Each records `recorded_by: "close"`.
 Every delivery attempt uses a fresh package and keeps earlier attempts. Close
 leaves the preparation folder and every archive byte alone.
 
+A failed close reports the facts established before its failure. A seal that
+could not be linked has `effects.seal: "none"`; an uncertain seal publication
+has `unknown`. Failure to publish a delivery record has `effects.delivery:
+"unknown"`, preserving any established seal. If this invocation published the
+close request, failure reports `effects.closure: "requested"`; otherwise a
+known unfinished close stays `unfinished`. An uncertain closure stays `unknown`.
+
 `data` of a completed reply, by path:
 
 - **Closed** (including `already_closed`): `closure: "complete"`,
@@ -1565,7 +1603,7 @@ carrying loss IDs, or null.
 | --- | --- | --- | --- | --- |
 | Before launch | `not_started` | `none` | `none` | `complete` or `unfinished` |
 | `run_still_held` | `still_held` | `none` or `existing` | newest attempt's outcome, or `none` | `unfinished` |
-| Other paths after launch | `ended` | `recorded` when this call sealed, else `existing` | presented or newest attempt's outcome, or `none` | `complete` or `unfinished` |
+| Other paths after launch | `ended` | `recorded` when this call sealed, `existing` when a seal preceded it, else `none` | presented or newest attempt's outcome, or `none` | `complete` or `unfinished` |
 | Damaged log | `unknown` | `unknown` | `unknown` | `unfinished` if `close_requested` is readable, else `unknown` |
 
 | `unfinished_reason` | `next` |
@@ -1669,8 +1707,15 @@ followed by the body (4.5, 6.2). No other header is sent. The compaction beta is
 sent on every request, including later requests carrying its signed block.
 `host` carries the port only when the URL names one.
 The response is read to its end by `content-length`, chunked transfer coding or
-the connection closing. A `content-encoding` other than `identity` makes the
-response undecodable.
+the connection closing. Response status/header lines share a 262,144-byte
+bound across interim and final heads. Statuses 100–199 except 101 are interim;
+only the final response supplies retained headers and body. A folded header
+continuation joins the preceding value with one space after removing its leading
+spaces and tabs. Content lengths must be decimal digits (at most 19), and all
+comma-separated or repeated values must be identical digit strings. Conflicting,
+signed or otherwise invalid lengths make the framing malformed: HTTP 200 is
+`response_undecodable`; another received status remains `http_error` (6.6). A `content-encoding`
+other than `identity` makes the response undecodable.
 
 The base is `https://api.anthropic.com` unless `STEWART_PROVIDER_URL` overrides
 it. An override is `https://`, or `http://` for a loopback host only, then a
@@ -1681,7 +1726,9 @@ query or fragment. Loopback hosts are `localhost`, which is connected at
 `[::1]`. Anything else is refused before any request (`provider_url_invalid`).
 The override is recorded in `run_started` and shown by status.
 
-If `HTTPS_PROXY` (or `https_proxy`) is set, the adapter reaches an `https://`
+The first nonempty value of `HTTPS_PROXY`, then `https_proxy`, is selected; an
+invalid selected value is refused rather than falling back to the other.
+If either is selected, the adapter reaches an `https://`
 provider with a non-loopback host through that proxy: it sends
 `CONNECT <host>:<port> HTTP/1.1` with the header `host: <host>:<port>`, and a
 2xx reply opens the tunnel. Stewart resolves only the proxy's host; the proxy
@@ -1720,6 +1767,12 @@ or its absence cannot be established. Stewart supplies no general export or
 redaction service and never rewrites a prior capture.
 
 ### 6.2 Requests and responses
+
+The arrangement's `reading` object pins these exact fields and bounds, in order:
+`read_page_bytes: 65536`, `binary_page_bytes: 49152`,
+`search_text_bytes: 1024`, `search_hits_per_page: 128`,
+`search_context_bytes_per_page: 32768`, `context_bytes_per_hit: 240`,
+`list_page_materials: 128`, `tool_input_bytes: 4194304`.
 
 `arrangement.json` pins, as exact bytes where noted:
 
@@ -1946,7 +1999,9 @@ placement ends `limit_reached` and no reminder is planned. Otherwise, if the
 reminder is unused, a `notice` record with `type: "reminder"` is published, then
 the next request carries it: the tool results of that response if any, the
 reminder block, and the near-limit notice block if that notice is pending. If
-the reminder is already used, the placement ends `ended_unsubmitted`.
+the reminder is already used, the placement ends `ended_unsubmitted`: authoring
+ends, run exits 0 after recording the ending, and no auditor seal is made.
+Close remains available to seal the recorded selection with manager attribution.
 
 The near-limit notice is sent at most once per audit. With remaining =
 max(0, limit − used), it is triggered when, after an attempt is accounted,
@@ -1957,7 +2012,9 @@ first, the record stands and the notice is not sent.
 
 `run_ended` reports each notice record of its placement as `sent` when an
 attempt record of the planned request has `request_written` other than `none`,
-`not_sent` when that request was never captured, and `unknown` otherwise. Both
+`not_sent` when no complete request capture exists, including a cut-off
+capture whose request was never sent, and `unknown` otherwise. A complete
+request capture alone never establishes transmission. Both
 allowances are audit-wide: a continuing placement neither resets nor resends
 them.
 
@@ -2103,6 +2160,8 @@ retains its own exact request, accounting and continuation rules.
 
 `read(source, start = 0)` reads `question`, `materials/<name>`, a current entry
 handle, or a prepared view (`ap<n>.<check>/rendering` or `/selection`).
+An empty source or one exceeding 1,034 UTF-8 bytes refuses `input_invalid`
+at `/source` with rule `value`, before source lookup.
 
 - `start` must be at most the size and on a UTF-8 boundary. Otherwise the call
   is refused (`range_invalid`), giving the nearest boundaries.
@@ -2166,7 +2225,8 @@ A citation is one of:
   refused (`quote_not_found`). More than one is refused (`quote_ambiguous`) with up to 8
   occurrences, each a ready citation.
 
-`source` is `question` or `materials/<name>`. Entries are not citable. An entry
+`source` uses the captured source names of [2.4](#24-names-that-are-not-handles).
+Entries are not citable. An entry
 takes at most 64 citations. Matching is exact: no normalization, no fuzzy match,
 no moving a range to where its quote appears. A defective citation refuses the
 whole call (`citation_invalid`, naming the citation's index and defect). The
@@ -2214,6 +2274,9 @@ To cite a span, take `start` from the read or search result at its beginning and
   selection. Once retained superseded and deleted payloads reach 1 GiB, edits
   larger than 1 MiB are refused (`retained_payload_cap`) and smaller ones draw
   on a 64 MiB reserve (`retained_payload_reserve_exhausted` when it runs out).
+  Admission uses the retained total before the edit. The edit that first reaches
+  or crosses 1 GiB uses no reserve; later additions and replacements charge
+  their full new payload size to it. Deletion consumes no reserve.
   Delete, prepare and submit never refuse on that cap. Through the model
   adapter one call carries at most 4 MiB (7.1), so an entry recorded by a model
   is bounded by that; the 64 MiB per-entry bound applies to the core.
@@ -2275,7 +2338,9 @@ false, a `what_am_i_working_with` call with the `pg.` cursor for the next page.
   `failed`, other than a replay: `run`, `tool_use_id`, `tool`, `outcome`,
   `reason` and `revision`.
 - `gaps` lists each result record that could not be read, as `{run, call,
-  problem}`: recorded data Stewart could not read, distinct from lost context.
+  problem}`: `run` is the placement number, `call` its result number or null
+  when the run directory cannot be listed, and `problem` a diagnostic string.
+  These are recorded-data gaps, distinct from lost context.
 - `allowances` split usage into reported and estimated as status does (5.6).
 - A page holds up to 64 entries; later pages carry only `entries` and `page`.
   A page cursor is bound to its revision. After an intervening edit it is
@@ -2363,7 +2428,10 @@ unproduced.
 A package is a new directory `stewart-return-<audit-id>-<nnn>` inside the
 destination, where `nnn` is the delivery attempt number, zero-padded to at least
 three digits (attempt 1 is `001`). It is created with mode 0700 and its files
-with 0600. It contains only:
+with 0600. The current format contains only the members below.
+[Returned question and answer](../CONTRACTS.md#returned-question-and-answer)
+owns the separate accepted-question member committed for the later return
+format; that addition is not implemented here.
 
 | Member | Role | Content |
 | --- | --- | --- |
@@ -2628,6 +2696,7 @@ Manager:
 | `handle_invalid` | Handle of wrong kind, store, audit or check, including a loss ID that is not one of the confirmed attempt's |
 | `selection_changed` | Source differs from the prepared selection |
 | `intake_in_progress` | Commission could not take the active lock |
+| `preparation_unreadable` | Commission cannot verify the published preparation; no intake starts (5.4) |
 | `acceptance_uncertain` | Status condition: acceptance cannot be established, because the log is damaged before any readable `accepted` (5.6); commission then refuses `log_damaged` |
 | `acceptance_record_uncertain` | Publishing acceptance failed partway |
 | `capture_failed`, `capture_unverified` | Writing or verifying a capture failed |

@@ -516,32 +516,70 @@ mod tests {
         tables
     }
 
-    #[test]
-    fn registries_list_exactly_appendix_c() {
-        let t = appendix_c();
+    fn inventory_differences(
+        t: &std::collections::BTreeMap<String, Vec<String>>,
+    ) -> Vec<&'static str> {
+        let mut differences = Vec::new();
         let mut points = t["Point"].clone();
         points.sort();
         points.dedup();
         let mut ours: Vec<String> = super::POINTS.iter().map(|s| s.to_string()).collect();
         ours.sort();
-        assert_eq!(ours, points);
+        if ours != points {
+            differences.push("fault points");
+        }
         let mut sab = t["Name"].clone();
         sab.sort();
         let mut ours: Vec<String> = super::SABOTAGE.iter().map(|s| s.to_string()).collect();
         ours.sort();
-        assert_eq!(ours, sab, "sabotage controls");
+        if ours != sab {
+            differences.push("sabotage controls");
+        }
         let mut actions = t["Action"].clone();
         actions.sort();
         let mut ours: Vec<String> = super::ACTIONS.iter().map(|s| s.to_string()).collect();
         ours.sort();
-        assert_eq!(ours, actions, "actions");
-        assert_eq!(
-            t["Variable"],
-            [
+        if ours != actions {
+            differences.push("actions");
+        }
+        if t["Variable"]
+            != [
                 "STEWART_TEST_TLS_ROOT",
                 "STEWART_TEST_PROVIDER_TIMEOUT",
-                "STEWART_TEST_RETRY_DELAYS"
+                "STEWART_TEST_RETRY_DELAYS",
             ]
-        );
+        {
+            differences.push("variables");
+        }
+        differences
+    }
+
+    #[test]
+    fn registries_list_exactly_appendix_c() {
+        assert_eq!(inventory_differences(&appendix_c()), Vec::<&str>::new());
+    }
+
+    #[test]
+    fn each_inventory_comparison_fires_and_table_order_is_irrelevant() {
+        let original = appendix_c();
+        assert!(inventory_differences(&original).is_empty());
+        for (table, difference) in [
+            ("Point", "fault points"),
+            ("Name", "sabotage controls"),
+            ("Action", "actions"),
+            ("Variable", "variables"),
+        ] {
+            let mut changed = original.clone();
+            changed
+                .get_mut(table)
+                .unwrap()
+                .push("unregistered-control".into());
+            assert_eq!(inventory_differences(&changed), [difference], "{table}");
+        }
+        let mut reordered = original;
+        for table in ["Point", "Name", "Action"] {
+            reordered.get_mut(table).unwrap().reverse();
+        }
+        assert!(inventory_differences(&reordered).is_empty());
     }
 }

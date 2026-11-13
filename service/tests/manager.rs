@@ -555,6 +555,20 @@ fn receipt_readback_is_exact_and_diagnoses_damage_per_item() {
     assert!(o.stderr.contains("item_missing"));
     let o = e.run(&["receipt", &r, "--read", "materials/c.txt"]);
     assert!(o.stderr.contains("item_unknown"));
+    // A planted link with the original expected bytes is unsupported even
+    // though blindly following it would pass both size and digest checks.
+    let original = e.path("receipt-link-target");
+    std::fs::write(&original, b"alpha\n").unwrap();
+    std::os::unix::fs::symlink(&original, &cap).unwrap();
+    let linked = e.run(&["receipt", &r, "--read", "materials/a.txt"]);
+    assert_eq!(linked.code, Some(3));
+    assert!(linked.stdout.is_empty());
+    let diagnostic = stewart::json::parse(linked.stderr.trim_end().as_bytes()).unwrap();
+    assert_eq!(s(&diagnostic, &["diagnostic"]), "item_unsupported");
+    assert_eq!(
+        e.run(&["receipt", &r, "--read", "materials/b.txt"]).stdout,
+        b"beta"
+    );
     // Without --verify the receipt says the bytes were not re-verified.
     let j = e.run(&["receipt", &r, "--json"]).json();
     assert_eq!(
@@ -820,9 +834,9 @@ fn commission_uses_only_the_verified_pinned_arrangement() {
     std::fs::remove_file(&md).unwrap();
     std::fs::write(&md, &bytes).unwrap();
     let o = e.commission(&r, &h);
-    assert_eq!(o.code, Some(4), "{}", o.text());
+    assert_eq!(o.code, Some(3), "{}", o.text());
     let j = o.json();
-    assert_eq!(s(&j, &["reason"]), "record_failed");
+    assert_eq!(s(&j, &["reason"]), "preparation_unreadable");
     assert_eq!(s(&j, &["effects", "acceptance"]), "absent");
     assert_eq!(s(&j, &["effects", "attempt"]), "none");
     assert_eq!(e.log_kinds(&r), ["reference", "prepared"]);

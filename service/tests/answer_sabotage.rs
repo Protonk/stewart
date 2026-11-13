@@ -208,10 +208,23 @@ fn check_unlinked_stage_files_are_not_entries() {
     let mut l = Live::new();
     l.add("record_account", "linked", "");
     // A staged entry record that no log name holds (a lost publication).
-    let entry = l.file("log/6.json");
+    let linked = String::from_utf8(l.file("log/6.json")).unwrap();
+    // Give the unlinked candidate its own entry identity. A duplicate e1
+    // could be concealed by membership deduplication and would not test this.
+    let entry = linked
+        .replace("\"id\":\"e1\"", "\"id\":\"e2\"")
+        .replace("payload/e1.v1.bin", "payload/e2.v1.bin");
+    assert_ne!(entry, linked);
+    assert!(entry.contains("\"file\":\"payload/e2.v1.bin\""));
+    std::fs::write(
+        format!("{}/payload/e2.v1.bin", l.audit_dir()),
+        l.file("payload/e1.v1.bin"),
+    )
+    .unwrap();
     std::fs::write(format!("{}/stage/unlinked.json", l.audit_dir()), entry).unwrap();
     let r = l.call("what_am_i_working_with", "{}");
     assert_eq!(r.num(&["page", "total"]), 1);
+    assert_eq!(r.str(&["entries", "0", "id"]), "e1");
 }
 
 #[test]

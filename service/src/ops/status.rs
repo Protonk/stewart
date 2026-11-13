@@ -294,7 +294,7 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
                 Some("run_still_held") => {
                     "a run still holds the active lock and has not recorded its ending".to_string()
                 }
-                Some("close_in_progress") => "another close holds the active lock".to_string(),
+                Some("close_in_progress") => "the active lock remains held after the recorded endings; its holder is not established".to_string(),
                 Some("delivery_incomplete") => {
                     "the answer is sealed and no delivery attempt has verified".to_string()
                 }
@@ -902,6 +902,9 @@ pub fn run(reference: &str) -> Reply {
             | "awaiting_confirmation"
             | "run_active"
             | "interrupted"
+            | "limit_reached"
+            | "ended_unsubmitted"
+            | "damaged"
     ) {
         summary.push('\n');
         summary.push_str(&v.summary);

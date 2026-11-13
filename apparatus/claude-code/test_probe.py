@@ -132,11 +132,20 @@ class ProbeControls(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
 
     def test_environment_omits_credentials_and_injection(self):
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "synthetic", "ANTHROPIC_BASE_URL": "synthetic", "DYLD_INSERT_LIBRARIES": "synthetic", "HTTPS_PROXY": "synthetic"}):
+        with patch.dict(os.environ, {"LANG": "C", "ANTHROPIC_API_KEY": "synthetic", "ANTHROPIC_BASE_URL": "synthetic", "DYLD_INSERT_LIBRARIES": "", "HTTPS_PROXY": "synthetic"}):
             env = probe.environment(self.root)
+            inherited = dict(os.environ)
         self.assertFalse(set(env) & {"ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "DYLD_INSERT_LIBRARIES", "HTTPS_PROXY"})
         self.assertEqual(env["CLAUDE_CONFIG_DIR"], str(self.root))
         self.assertEqual(env["DISABLE_UPDATES"], "1")
+        script = ('import json,os; print(json.dumps({k:os.environ.get(k) for k in '
+                  '["LANG","ANTHROPIC_API_KEY","HTTPS_PROXY"]}))')
+        def child(environment):
+            result = subprocess.run([sys.executable, '-I', '-B', '-c', script],
+                                    env=environment, capture_output=True, check=True, timeout=5)
+            return json.loads(result.stdout)
+        self.assertEqual(child(env), {'LANG': 'C', 'ANTHROPIC_API_KEY': None, 'HTTPS_PROXY': None})
+        self.assertEqual(child(inherited), {'LANG': 'C', 'ANTHROPIC_API_KEY': 'synthetic', 'HTTPS_PROXY': 'synthetic'})
 
     def test_reservation_survives_interruption(self):
         state = probe.State(self.root)

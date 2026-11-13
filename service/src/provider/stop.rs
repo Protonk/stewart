@@ -68,8 +68,13 @@ pub fn block_signals() -> std::io::Result<()> {
 /// Start the thread that receives the blocked stop signals. Each one before
 /// a seal fires the stop path with [`StopCause::Signal`]; after a seal it is
 /// noted and the delivery in progress continues. The thread lives until the
-/// process exits.
-pub fn receive_signals(abort: AbortHandle, flags: Flags) -> std::io::Result<()> {
+/// process exits. `before_observation` orders any runtime publication gate
+/// before the signal flag becomes visible to the placement loop.
+pub fn receive_signals(
+    abort: AbortHandle,
+    flags: Flags,
+    before_observation: impl Fn() + Send + 'static,
+) -> std::io::Result<()> {
     std::thread::Builder::new()
         .name("stewart-signals".into())
         .spawn(move || {
@@ -81,13 +86,20 @@ pub fn receive_signals(abort: AbortHandle, flags: Flags) -> std::io::Result<()> 
                 if rc != 0 {
                     continue;
                 }
-                flags.signalled.store(true, Ordering::SeqCst);
-                if !flags.sealed() {
-                    abort.abort(StopCause::Signal);
-                }
+                observe_signal(&abort, &flags, &before_observation);
             }
         })
         .map(|_| ())
+}
+
+/// The callback can order publication against this observation. It runs in
+/// the sigwait thread, not in an asynchronous signal handler, so it may lock.
+fn observe_signal(abort: &AbortHandle, flags: &Flags, before_observation: &impl Fn()) {
+    before_observation();
+    flags.signalled.store(true, Ordering::SeqCst);
+    if !flags.sealed() {
+        abort.abort(StopCause::Signal);
+    }
 }
 
 /// The close watcher: every 250 ms it reads the log, and when a
@@ -132,4 +144,74 @@ pub fn watch<'scope, 'env>(
         }
     });
     Watcher { stop: Some(tx) }
+}
+
+#[cfg(all(test, feature = "claude-code"))]
+mod tests {
+    use super::*;
+    use crate::claude_code::gate::Gate;
+    use crate::log::{self, PubErr};
+    use std::time::Instant;
+
+    #[test]
+    fn observed_signal_prevents_publication_without_an_event_loop_poll() {
+        let (path, audit) = log::tests::scratch_audit();
+        let gate = Gate::new(Instant::now() + Duration::from_secs(60));
+        assert!(
+            gate.within(|| log::publish(&audit, "reference", |_| Ok(log::tests::reference_body())))
+                .is_ok()
+        );
+        let flags = Flags::default();
+        let abort = AbortHandle::new();
+        let result = gate.within(|| {
+            log::publish(&audit, "close_requested", |_| {
+                // The receiver observes the signal after the tool started,
+                // before its publication permit. No event-loop poll intervenes.
+                observe_signal(&abort, &flags, &|| gate.stop());
+                Ok(log::tests::close_body())
+            })
+        });
+        assert!(flags.signalled.load(Ordering::SeqCst));
+        assert_eq!(abort.cause(), Some(StopCause::Signal));
+        assert!(matches!(result, Err(PubErr::Refused(f)) if f.reason == "placement_stopped"));
+        assert_eq!(log::read(&audit).recs.len(), 1);
+        assert_eq!(log::unlinked_stage(&audit, &log::read(&audit)).len(), 1);
+        let fresh = Gate::new(Instant::now() + Duration::from_secs(60));
+        assert!(
+            fresh
+                .within(|| log::publish(
+                    &audit,
+                    "close_requested",
+                    |_| Ok(log::tests::close_body())
+                ))
+                .is_ok()
+        );
+        assert_eq!(log::read(&audit).recs.len(), 2);
+        std::fs::remove_dir_all(path).unwrap();
+    }
+
+    #[test]
+    fn a_publication_permit_orders_before_a_later_signal_observation() {
+        let gate = Gate::new(Instant::now() + Duration::from_secs(60));
+        let flags = Flags::default();
+        let abort = AbortHandle::new();
+        let permit = gate.permit().unwrap();
+        std::thread::scope(|scope| {
+            let (entering, entered) = mpsc::sync_channel(0);
+            let (gate, flags, abort) = (&gate, &flags, &abort);
+            scope.spawn(move || {
+                observe_signal(abort, flags, &|| {
+                    entering.send(()).unwrap();
+                    gate.stop();
+                });
+            });
+            entered.recv().unwrap();
+            assert!(!flags.signalled.load(Ordering::SeqCst));
+            assert_eq!(abort.cause(), None);
+            drop(permit);
+        });
+        assert!(flags.signalled.load(Ordering::SeqCst));
+        assert_eq!(abort.cause(), Some(StopCause::Signal));
+        assert_eq!(gate.permit().err().unwrap().reason, "placement_stopped");
+    }
 }

@@ -381,6 +381,20 @@ mod tests {
     }
 
     #[test]
+    fn handle_check_matches_the_interface_worked_vector() {
+        assert_eq!(
+            handle(
+                "saaaaaaaaaaaaaaaa",
+                "abbbbbbbbbbbbbbbb",
+                "mp",
+                "mp1",
+                &[&"0".repeat(64)]
+            ),
+            "mp1.xsshfq"
+        );
+    }
+
+    #[test]
     fn manager_preparation_handles_parse_strictly() {
         assert_eq!(parse_mp("mp2.k4q7xa"), Some((2, "k4q7xa")));
         for bad in [
@@ -402,7 +416,7 @@ mod tests {
         let sha = "a".repeat(64);
         let e = entry_handle("s", "a", "e3", 2, &sha);
         assert!(e.starts_with("e3.v2."));
-        assert_eq!(&e[6..], check("s", "a", "entry", "e3.v2", &[&sha]));
+        assert_eq!(e, "e3.v2.fabii7");
         assert_eq!(parse_entry_handle(&e), Some(("e3", 2)));
         assert_ne!(e, entry_handle("s", "a", "e3", 2, &"b".repeat(64)));
         for bad in [
@@ -415,21 +429,19 @@ mod tests {
             assert_eq!(parse_entry_handle(bad), None, "{bad}");
         }
         let ap = ap_handle("s", "a", 4, &sha, &sha, 7);
-        assert_eq!(&ap[4..], check("s", "a", "ap", "ap4", &[&sha, &sha, "7"]));
+        assert_eq!(ap, "ap4.caszex");
         assert_ne!(ap, ap_handle("s", "a", 4, &sha, &sha, 8));
         assert_eq!(parse_ap(&ap), Some(4));
         let view = format!("{ap}/rendering");
         assert_eq!(parse_view(&view), Some((ap.as_str(), View::Rendering)));
         assert_eq!(parse_view(&format!("{ap}/other")), None);
         let seal = seal_handle("s", "a", &sha);
-        assert_eq!(
-            seal,
-            format!("seal.{}", check("s", "a", "seal", "seal", &[&sha]))
-        );
+        assert_eq!(seal, "seal.uhkypr");
         let cf = cf_handle("s", "a", 1, &sha, &"c".repeat(64));
+        assert_eq!(cf, "cf1.cpv2w4");
         assert_eq!(parse_cf(&cf), Some(1));
         let loss = loss_handle("s", "a", "answer-md", &sha, &sha);
-        assert!(loss.starts_with("loss.answer-md."));
+        assert_eq!(loss, "loss.answer-md.3qsjje");
         assert_eq!(parse_loss(&loss), Some("answer-md"));
         assert_eq!(parse_loss("loss..abcdef"), None);
     }
@@ -451,20 +463,53 @@ mod tests {
         let r = encode_reference("aqm3x7kd2hz5vw4ny", "s7tq2bk6xm3ra4pfe", odd);
         assert!(r.ends_with("/home/ana/my%20archive%3A%C3%A9%25"));
         assert_eq!(decode_reference(&r).unwrap().root, odd);
-        for bad in [
-            "stw2:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x",
-            "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:x",
-            "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x/",
-            "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x/../y",
-            "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x//y",
-            "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x%2fy",
-            "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x%41",
-            "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/a b",
-            "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/%FF",
-            "stw1:sqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x",
-            "stw1:aqm3x7kd2hz5vw4ny:/x",
+        for (bad, reason) in [
+            (
+                "stw2:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x",
+                "a reference begins with stw1:",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:x",
+                "archive root: the path must be absolute",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x/",
+                "archive root: the path must not end with /",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x/../y",
+                "archive root: the path has a . or .. component",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x//y",
+                "archive root: the path has an empty component (//)",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x%2fy",
+                "a %XX escape must use uppercase hexadecimal",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x%41",
+                "a %XX escape encodes a character that is written plainly",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/a b",
+                "the byte ' ' must be written as %XX",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/%FF",
+                "the archive root is not valid UTF-8",
+            ),
+            (
+                "stw1:sqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/x",
+                "the audit identifier is not a- followed by 16 base32 characters",
+            ),
+            (
+                "stw1:aqm3x7kd2hz5vw4ny:/x",
+                "the reference has no archive root",
+            ),
         ] {
-            assert!(decode_reference(bad).is_err(), "{bad}");
+            assert_eq!(decode_reference(bad).unwrap_err(), reason, "{bad}");
         }
         assert!(decode_reference("stw1:aqm3x7kd2hz5vw4ny:s7tq2bk6xm3ra4pfe:/").is_ok());
     }

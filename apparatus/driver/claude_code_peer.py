@@ -486,11 +486,12 @@ def self_test():
     def check(name, passed):
         checks.append({"name": name, "passed": bool(passed)})
 
-    def refuses(name, call):
+    def refuses(name, call, expected=None, error_type=None):
         try:
             call()
-        except (ValueError, OSError, SystemExit):
-            check(name, True)
+        except (ValueError, OSError, SystemExit) as error:
+            check(name, (expected is None or expected in str(error))
+                  and (error_type is None or isinstance(error, error_type)))
         else:
             check(name, False)
 
@@ -498,11 +499,11 @@ def self_test():
     writer = "/synthetic/gated-stewart"
     binary = b"Stewart development build: claude-code __stewart-cc-relay __stewart-cc-hook"
     launch = {"home": "/synthetic/home", "temporary_directory": "/synthetic/tmp", "config_directory": "/synthetic/config"}
-    expected = spec.filled_launch(writer, str(cwd), launch, "open-inquiry", spec.MODEL)
+    from fixture_expectations import launch_expectation
+    expected = launch_expectation(writer, cwd, launch, "open-inquiry", spec.MODEL, surface.QUESTION)
     env = expected["environment"]
     env_raw = b"".join((name + "=" + value).encode() + b"\0" for name, value in env.items())
-    files = {"settings.json": compact(expected["settings"]), "mcp.json": compact(expected["mcp_config"]),
-             "system.txt": (spec.RUNTIME_ORIENTATION + "\n\n" + spec.FAMILY_TEXT["open-inquiry"]).encode()}
+    files = expected["files"]
     argv = expected["model_argv"]
     context = validate_surface(argv, cwd, validate_environment(env_raw), files, binary)
     check("exact-environment", validate_environment(env_raw) == env)
@@ -536,6 +537,12 @@ def self_test():
         changed = {**files, "mcp.json": compact(config)}
         refuses(name, lambda changed=changed: validate_surface(argv, cwd, env, changed, binary))
     refuses("ungated-writer", lambda: validate_surface(argv, cwd, env, files, b"not a gated binary"))
+    substituted = launch_expectation("/synthetic/arbitrary-helper", cwd, launch, "open-inquiry", spec.MODEL, surface.QUESTION)
+    refuses("consistent-arbitrary-helper-substitution", lambda: validate_surface(
+        substituted["model_argv"], cwd, env, substituted["files"], b"#!/bin/sh\nexit 0\n"))
+    relocated = validate_surface(substituted["model_argv"], cwd, env, substituted["files"], binary)
+    check("relocated-gated-writer-invariance", relocated["writer"] == "/synthetic/arbitrary-helper"
+          and relocated["writer_sha256"] == context["writer_sha256"])
     check("auth-allowlist", set(auth_receipt(context, "normal")) == {"loggedIn", "authMethod", "configDirectory"})
     check("auth-negative", auth_receipt(context, "wrong-auth")["authMethod"] == "api-key")
     check("startup-negative", init_event(context, "bad-init")["apiKeySource"] != "none")
@@ -550,12 +557,17 @@ def self_test():
                       ("id-type", good_reply.replace(b'"id":1', b'"id":"1"')),
                       ("error", b'{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"refused"}}\n'),
                       ("duplicate", b'{"jsonrpc":"2.0","id":1,"id":1,"result":{}}\n')):
-        refuses("mcp-" + name, lambda raw=raw: mcp_reply(raw, 1))
+        expected_error = ("MCP reply is not one bounded complete frame" if name in ("partial", "two-frames")
+                          else "duplicate transport key" if name == "duplicate"
+                          else "helper reply is not the expected successful response")
+        refuses("mcp-" + name, lambda raw=raw: mcp_reply(raw, 1), expected_error, ValueError)
     check("hook-allow", hook_allowed(b'{}\n'))
     check("hook-deny", not hook_allowed(compact(spec.surface_document()["hook_replies"]["deny"]) + b"\n"))
     for name, raw in (("partial", b'{}'), ("two-frames", b'{}\n{}\n'), ("wrong-shape", b'[]\n'),
                       ("different-decision", b'{"allow":true}\n')):
-        refuses("hook-" + name, lambda raw=raw: hook_allowed(raw))
+        refuses("hook-" + name, lambda raw=raw: hook_allowed(raw),
+                "hook reply is not one bounded complete LF-terminated frame" if name in ("partial", "two-frames")
+                else "hook reply differs from both pinned decisions", ValueError)
     with patch("sys.stderr", new=io.StringIO()):
         for name, options in (("unknown", ["--unknown"]), ("abbreviated", ["--self-t"]),
                               ("repeated", ["--self-test", "--self-test"]), ("mixed", ["--self-test", "--", "auth", "status"])):
@@ -622,9 +634,11 @@ def self_test():
         witness_root.mkdir()
         failing = Journal(witness_root)
         (witness_root / "unwritable.bin").mkdir()
-        refuses("witness-write-failure", lambda: failing.append("unwritable.bin", b"observed bytes"))
+        refuses("witness-write-failure", lambda: failing.append("unwritable.bin", b"observed bytes"),
+                error_type=IsADirectoryError)
         failing.written = MAX_CAPTURE
-        refuses("capture-bound", lambda: failing.append("overflow.bin", b"x"))
+        refuses("capture-bound", lambda: failing.append("overflow.bin", b"x"),
+                "peer capture bound exceeded; retained interval is incomplete", ValueError)
     surface.save(root / "SELFTEST.json", {"mode": "synthetic-rehearsal", "helper_transport": "mocked", "checks": checks})
     (root / "claude_code_peer.py").write_bytes(Path(__file__).read_bytes())
     failed = sum(not item["passed"] for item in checks)

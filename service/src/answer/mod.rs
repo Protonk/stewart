@@ -534,6 +534,8 @@ pub enum SealError {
     /// The `seal` record was linked but its durability could not be
     /// confirmed (`seal_uncertain`, `effects.seal: "unknown"`).
     Uncertain(Cause),
+    /// Publication was refused by the active runtime gate; no seal was linked.
+    Refused(Fail),
     /// Nothing was published (`record_failed`).
     NotPublished(Cause),
     /// The log is damaged.

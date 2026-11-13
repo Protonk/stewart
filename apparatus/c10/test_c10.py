@@ -2,9 +2,11 @@
 import argparse
 from contextlib import redirect_stderr
 import copy
+import hashlib
 import io
 import json
 import os
+import shutil
 from pathlib import Path
 import sys
 import tarfile
@@ -15,6 +17,7 @@ from unittest import mock
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import c10
+import common
 from common import (HERE,catalog,compact,digest,inventory,proposal,question_file,read_file,
                     rehearsal_packet,source_hash,strict_json,tree_hash,validate_packet,write_json)
 from batch import credential_marker,check_credential,export_snapshot
@@ -416,7 +419,20 @@ class StudyTests(unittest.TestCase):
 
     def test_template_identity_includes_directory_membership(self):
         evidence=Evidence(self.root)
-        self.assertEqual(tree_inventory_from_evidence(evidence,'submission/'),inventory(self.folder))
+        def member(name, raw):
+            return {'path':name, 'type':'file', 'bytes':len(raw),
+                    'sha256':hashlib.sha256(raw).hexdigest()}
+        expected = [{'path':'materials', 'type':'directory'},
+                    {'path':'materials/empty', 'type':'directory'},
+                    member('materials/text.txt', b'unchanged\r\n'),
+                    member('question.md', (self.folder/'question.md').read_bytes())]
+        self.assertEqual(tree_inventory_from_evidence(evidence,'submission/'),expected)
+        evidence.close()
+        (self.folder/'materials/empty').rmdir()
+        changed_evidence = Evidence(self.root)
+        self.addCleanup(changed_evidence.close)
+        self.assertEqual(tree_inventory_from_evidence(changed_evidence,'submission/'),
+                         [item for item in expected if item['path'] != 'materials/empty'])
 
     def test_invalid_template_cannot_be_proposed(self):
         raw=read_file(self.folder/'question.md')
@@ -492,9 +508,41 @@ class StudyTests(unittest.TestCase):
 class PacketTests(unittest.TestCase):
     def test_catalog_covers_families_and_inadequate_variants(self):
         cases=catalog()
-        self.assertEqual(len(cases),6)
+        self.assertEqual({(item['family'], item['variant']) for item in cases.values()},
+                         {('open-inquiry','ordinary'), ('open-inquiry','inadequate'),
+                          ('inquiry-framing','ordinary'), ('inquiry-framing','inadequate'),
+                          ('comparison','ordinary'), ('comparison','inadequate')})
         self.assertEqual(len(proposal('example-model',repetitions=3)['runs']),18)
         self.assertEqual(len(rehearsal_packet()['runs']),13)
+
+    def test_catalog_refuses_missing_family_or_variant_and_changed_specimen(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            shutil.copytree(HERE/'specimens', root/'specimens')
+            original = read_file(HERE/'catalog.json')
+            (root/'catalog.json').write_bytes(original)
+            with mock.patch.object(common, 'HERE', root):
+                packet = proposal('example-model')
+                for field, value in [('family','comparison'), ('variant','inadequate')]:
+                    changed = json.loads(original)
+                    changed['cases'] = [case for case in changed['cases'] if case[field] != value]
+                    (root/'catalog.json').write_text(json.dumps(changed))
+                    with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'catalog must cover ordinary and inadequate evidence for all three families'):
+                        catalog()
+                (root/'catalog.json').write_bytes(original)
+                self.assertEqual(len(catalog()), 6)
+                path = root/'specimens/open-ordinary/materials/src/a.py'
+                before = path.read_bytes()
+                path.write_bytes(before + b'\nchanged specimen\n')
+                with self.assertRaisesRegex(ValueError, 'specimen differs from packet'):
+                    validate_packet(packet)
+                path.write_bytes(before)
+                extra = root/'specimens/open-ordinary/materials/unlisted.txt'
+                extra.write_bytes(b'unlisted input\n')
+                with self.assertRaisesRegex(ValueError, 'specimen differs from packet'):
+                    validate_packet(packet)
+                extra.unlink()
+                validate_packet(packet)
 
     def test_material_copies_preserve_example_bytes(self):
         for item in strict_json(read_file(HERE/'specimen-provenance.json')):
@@ -568,12 +616,22 @@ class PacketTests(unittest.TestCase):
 
     def test_changed_approved_digest_refuses_before_bindings(self):
         with tempfile.TemporaryDirectory() as temp:
-            packet=Path(temp)/'packet.json';write_json(packet,proposal('example-model'))
+            value = proposal('example-model')
+            value['spending_authority'] = 'synthetic gate control; no launch'
+            value['account'] = {key:'synthetic-label' for key in value['account']}
+            value['bindings'] = {key:'synthetic-binding' for key in value['bindings']}
+            validate_packet(value, approved=True)
+            packet=Path(temp)/'packet.json';write_json(packet,value)
             args=argparse.Namespace(mode='live',evidence=c10.REPO/'.scratch/c10-authority-never-created',
                 commission=packet,approved_commission='0'*64,rehearsal=Path(temp),qualification='unused')
             with mock.patch.object(c10,'bindings') as bind:
-                with self.assertRaises(ValueError):c10.launch_batch(args)
+                with self.assertRaisesRegex(ValueError, 'commission differs from approved digest'):c10.launch_batch(args)
                 bind.assert_not_called()
+            args.approved_commission = digest(read_file(packet))
+            with mock.patch.object(c10,'bindings',side_effect=RuntimeError('digest gate passed')) as bind:
+                with self.assertRaisesRegex(RuntimeError, '^digest gate passed$'):
+                    c10.launch_batch(args)
+                bind.assert_called_once()
 
 
 class EvidenceTests(unittest.TestCase):
@@ -695,15 +753,25 @@ class EvidenceTests(unittest.TestCase):
             path=Path(temp)/'marker.json';key=b'synthetic-very-long-key-for-test'
             credential_marker(path,key);check_credential(path,key)
             self.assertNotIn(key,path.read_bytes())
-            with self.assertRaises(ValueError):check_credential(path,b'wrong-key')
+            with self.assertRaisesRegex(ValueError, 'credential differs from the original placement; export withheld'):
+                check_credential(path,b'wrong-key')
 
     def test_incomplete_export_withholds_and_preserves_originals(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)/'root';root.mkdir();(root/'original').write_bytes(b'untouched')
             result=export_snapshot(root,Path(temp)/'out',b'synthetic')
             self.assertEqual(result['outcome'],'withheld')
+            self.assertEqual(result['reasons'], ['evidence_incomplete'])
+            self.assertEqual(result['evidence_state'], 'missing_or_malformed_evidence')
             self.assertEqual((root/'original').read_bytes(),b'untouched')
             self.assertFalse((Path(temp)/'out/work.tar').exists())
+            import test_launch
+            test_launch.LaunchTests().complete_evidence(root)
+            complete = export_snapshot(root, Path(temp)/'complete-out', b'synthetic')
+            self.assertEqual(complete['outcome'], 'exported')
+            self.assertEqual(complete['reasons'], [])
+            self.assertEqual(complete['evidence_state'], 'complete')
+            self.assertEqual((root/'original').read_bytes(), b'untouched')
 
     def test_usage_iterations_replace_top_level_totals(self):
         counts=usage_counts({'input_tokens':999,'output_tokens':999,

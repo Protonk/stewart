@@ -1018,8 +1018,8 @@ enum Stop {
     Free,
     /// A placement without `run_ended` still holds the lock after the wait.
     RunHeld,
-    /// Every placement has its ending and the lock is held: another close.
-    CloseHeld,
+    /// Every placement has its ending and the lock is held; owner unknown.
+    HeldAfterEnding,
     /// The lock could not be tested.
     Unknown(std::io::Error),
     /// The `seal_as_stopped` sabotage control: a seal taken as stopped
@@ -1032,17 +1032,11 @@ enum Stop {
 /// `close_requested` and exit. Only the lock, tested without taking it, is
 /// evidence of a live holder; elapsed time never is.
 ///
-/// A run publishes `run_ended` and then releases the lock as it exits, so
-/// for a moment the lock is held while every placement has its ending. Once
-/// close is waiting for a run (`run_open`: a placement had no ending when
-/// this close read the log), that moment is the run exiting, and close
-/// keeps waiting for the release instead of taking the holder for another
-/// close. A held lock with every placement ended, when close waited for no
-/// run, is another close.
-fn stop(audit: &Audit, run_open: bool) -> Stop {
+/// A recorded ending does not identify the active lock holder. A finishing
+/// run and another close can both hold it; preserve the same bounded wait.
+fn stop(audit: &Audit) -> Stop {
     let start = Instant::now();
     let mut announced = false;
-    let mut waiting_for_run = run_open;
     loop {
         match audit.lock_held() {
             Ok(false) => return Stop::Free,
@@ -1050,10 +1044,6 @@ fn stop(audit: &Audit, run_open: bool) -> Stop {
             Ok(true) => {
                 let st = log::read(audit);
                 let open = st.open_placement().is_some();
-                if !open && !waiting_for_run {
-                    return Stop::CloseHeld;
-                }
-                waiting_for_run = true;
                 #[cfg(feature = "sabotage")]
                 if crate::sabotage!("seal_as_stopped") && st.seal().is_some() {
                     return Stop::SealedAsStopped;
@@ -1061,11 +1051,15 @@ fn stop(audit: &Audit, run_open: bool) -> Stop {
                 if start.elapsed() >= RUN_WAIT {
                     // Still held: by the run that has not stopped, or, once
                     // every placement has its ending, by whatever holds it now.
-                    return if open { Stop::RunHeld } else { Stop::CloseHeld };
+                    return if open {
+                        Stop::RunHeld
+                    } else {
+                        Stop::HeldAfterEnding
+                    };
                 }
                 if !announced {
                     eprintln!(
-                        "stewart close: waiting up to 30 s for the run holding the audit to observe the close request and stop"
+                        "stewart close: waiting up to 30 s for the active lock to be released"
                     );
                     announced = true;
                 }
@@ -1157,10 +1151,9 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState, ctx: &Ctx) -> Rep
     // wherever the failure happened (1.4).
     let closure_failed = "unfinished";
 
-    // Stop. Whether a placement was open is read from the records as they
-    // stood before the request, so a run that ends meanwhile is still one
-    // close waits for.
-    match stop(audit, state.open_placement().is_some()) {
+    // Wait for the active lock even if a placement has recorded its ending;
+    // that record does not establish which process currently holds the lock.
+    match stop(audit) {
         Stop::Free => {}
         Stop::RunHeld => {
             let st = log::read(audit);
@@ -1177,7 +1170,7 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState, ctx: &Ctx) -> Rep
                 None,
             );
         }
-        Stop::CloseHeld => {
+        Stop::HeldAfterEnding => {
             let st = log::read(audit);
             return unfinished_after(
                 audit,
@@ -1573,6 +1566,10 @@ fn ensure_seal(
             Some(c),
             "unknown",
         ),
+        Err(SealError::Refused(f)) => Err(f.into_reply(
+            OP,
+            eff("ended", "none", delivery_eff(state, None), "unfinished"),
+        )),
         Err(SealError::NotPublished(c)) => fail(
             "record_failed",
             format!(

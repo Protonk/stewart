@@ -360,7 +360,7 @@ def prepare(out, work, writer, launch_raw, family, model):
         (work / name).write_bytes(files[name])
     source = out / "sources"
     source.mkdir()
-    for name in (Path(__file__).name, "claude_code.py", "driver_core.py", "rawjson.py"):
+    for name in (Path(__file__).name, "claude_code.py", "driver_core.py", "rawjson.py", "fixture_expectations.py"):
         (source / name).write_bytes((HERE / name).read_bytes())
     save(inputs / "writer.json", {"path": str(writer), "sha256": spec.sha(writer.read_bytes())})
     return {"launch_sha256": spec.sha(launch_raw), "surface_sha256": spec.sha(files["surface.json"]),
@@ -461,8 +461,8 @@ def self_test():
         fixture.journal.append = fail_effect
         try:
             call(8, "tools/call", name="record_account", arguments={"text": MARKER})
-        except OSError:
-            refused = True
+        except OSError as error:
+            refused = str(error) == "deliberate independent witness failure"
         else:
             refused = False
         check(family + ".failed-witness-stops-effect", refused and len(fixture.effects) == 2)
@@ -470,8 +470,8 @@ def self_test():
         before_reply = (folder / "mcp-supplied.bin").read_bytes()
         try:
             fixture.mcp(malformed)
-        except ValueError:
-            refused = True
+        except ValueError as error:
+            refused = str(error) == "MCP message must be a JSON-RPC 2.0 object"
         else:
             refused = False
         check(family + ".malformed-captured-before-refusal", refused
@@ -484,12 +484,16 @@ def self_test():
     bindings, _ = prepare(root / "prepared", root / "workspace", Path(__file__).resolve(),
                           compact(launch), "open-inquiry", spec.MODEL)
     check("prepare.exact-launch-value-binding", bindings["launch_sha256"] == spec.sha(compact(launch)))
-    check("prepare.workspace-files-match", all((root / "workspace" / name).read_bytes() ==
-          (root / "prepared/inputs" / name).read_bytes() for name in ("settings.json", "mcp.json", "system.txt")))
+    from fixture_expectations import launch_expectation
+    literal = launch_expectation(Path(__file__).resolve(), root / "workspace", launch,
+                                 "open-inquiry", spec.MODEL, QUESTION)
+    check("prepare.workspace-files-match", all((root / "workspace" / name).read_bytes() == raw
+          and (root / "prepared/inputs" / name).read_bytes() == raw for name, raw in literal["files"].items()))
     check("prepare.exact-first-input", json.loads((root / "prepared/inputs/input.jsonl").read_bytes())["message"]["content"] == QUESTION)
     event = json.loads((root / "open-inquiry/events.jsonl").read_bytes().splitlines()[0])
-    check("journal.shared-clock-and-observer", event["clock"] == CLOCK_NAME
-          and event["observer_pid"] == os.getpid() and event["time_ns"] <= time.clock_gettime_ns(CLOCK_ID))
+    clock_name = "CLOCK_UPTIME_RAW" if sys.platform == "darwin" else "CLOCK_MONOTONIC"
+    check("journal.shared-clock-and-observer", event["clock"] == clock_name
+          and event["observer_pid"] == os.getpid() and event["time_ns"] <= time.clock_gettime_ns(getattr(time, clock_name)))
     for name, empty in (("normal", False), ("empty", True), ("invariance", False)):
         folder = root / ("hook-wire-" + name)
         folder.mkdir()

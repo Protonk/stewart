@@ -7,8 +7,8 @@
 #   stewart        release, <arch>-unknown-linux-musl
 #   stewart-test   release profile with --features fault-injection,sabotage (musl)
 #   stewart-local  release profile with --features claude-code (musl)
-#   stewart-local-variant  debug profile with --features claude-code (musl),
-#                  the distinct writer for the unchanged-profile control
+#   stewart-local-variant  debug profile with --features claude-code,fault-injection
+#                  (musl), the distinct writer and publication-race controls
 #   stewart-glibc  release, <arch>-unknown-linux-gnu: the firing control for the
 #                  static check, which must reject it
 # and records the apparatus checks the host script evaluates:
@@ -40,7 +40,7 @@ must unpack sh -c 'mkdir -p /work && tar -xf /in/source.tar -C /work && cp -R /v
 must build-release sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-release cargo build --locked --offline --release --target $MUSL"
 must build-test sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-test cargo build --locked --offline --release --features fault-injection,sabotage --target $MUSL"
 must build-local sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-local cargo build --locked --offline --release --features claude-code --target $MUSL"
-must build-local-variant sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-local-variant cargo build --locked --offline --features claude-code --target $MUSL"
+must build-local-variant sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-local-variant cargo build --locked --offline --features claude-code,fault-injection --target $MUSL"
 step build-glibc sh -c "cd /work/service && CARGO_TARGET_DIR=/work/target-glibc cargo build --locked --offline --release --target $GNU"
 
 must copy-release cp "/work/target-release/$MUSL/release/stewart" /out/stewart

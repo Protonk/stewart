@@ -849,6 +849,24 @@ mod tests {
         let text = scaffold();
         assert!(text.contains("# Optional effort for every request"));
         assert!(!text.lines().any(|l| l.starts_with("effort")));
+        let editable = text
+            .replace("REPLACE-WITH-MODEL", "fixture-model")
+            .replace("REPLACE-WITH-ABSOLUTE-DIRECTORY", "/fixture/returns")
+            + "Question?\n";
+        assert_eq!(parse(editable.as_bytes()).unwrap().settings.effort, None);
+        let explicit = editable.replacen(
+            "\nfamily: open-inquiry\n",
+            "\nfamily: open-inquiry\neffort: high\n",
+            1,
+        );
+        assert_eq!(
+            parse(explicit.as_bytes())
+                .unwrap()
+                .settings
+                .effort
+                .as_deref(),
+            Some("high")
+        );
     }
 
     #[test]

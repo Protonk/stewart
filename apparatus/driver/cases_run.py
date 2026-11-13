@@ -327,9 +327,10 @@ def c_tls_proxy(t):
                                                     if e.get("event") == "tls_handshake_failed"]) == 4,
             fx2.provider.events)
     rd = rs.run_dirs(sub2).get(1)
-    if rd is not None:
-        outs = [(rd.attempts.get((1, a)) or {}).get("body", {}).get("outcome") for a in range(1, 5)]
-        t.eq("tls.untrusted.outcomes", outs, ["connection_failed"] * 4)
+    t.require("tls.untrusted.run-records", rd is not None, "run 1 capture directory missing")
+    t.eq("tls.untrusted.attempt-records", sorted(rd.attempts), [(1, a) for a in range(1, 5)])
+    outs = [(rd.attempts.get((1, a)) or {}).get("body", {}).get("outcome") for a in range(1, 5)]
+    t.eq("tls.untrusted.outcomes", outs, ["connection_failed"] * 4)
 
 
 @case("c12.test-variables", ["C12", "C20", "C17"],
@@ -1029,8 +1030,10 @@ def c_reentry(t):
         fx = box["fx"]
         p.eq("continuation.allowances", f.get("allowances"),
              fp.allowances(fx.totals(upto=pages[0].ex.n - 1), rs.limits_of(sub)))
-        p.check("continuation.gaps", any(isinstance(g, dict) and g.get("run") == 1 and g.get("call") == 1
-                                         for g in f.get("gaps") or []), f.get("gaps"))
+        gaps = f.get("gaps") or []
+        p.check("continuation.gaps", len(gaps) == 1 and isinstance(gaps[0], dict)
+                and set(gaps[0]) == {"run", "call", "problem"} and gaps[0]["run"] == gaps[0]["call"] == 1
+                and isinstance(gaps[0]["problem"], str) and bool(gaps[0]["problem"].strip()), gaps)
         lr = [x for x in f.get("latest_refusals") or [] if isinstance(x, dict) and x.get("tool") == "record_observation"]
         p.eq("continuation.latest-refusal", lr[:1], [{"run": 1, "tool_use_id": refusal.tid, "tool": "record_observation",
                                                       "outcome": "refused", "reason": "quote_not_found", "revision": 71}])
@@ -1103,12 +1106,10 @@ def c_records(t):
                                 ("read", b'{"source":"materials/nope.txt"}', "refused"),
                                 ("search", raw_search, "completed")])
     t.check("c6.search-captured", rs.result_for(sub, "toolu_search_1", 0) is not None, "no capture of the search")
-    for b in rs.entry_bodies(t, sub):
-        pl = b.get("payload") or {}
-        path = os.path.join(sub.audit_dir, pl.get("file", "missing"))
+    for version, expected in ((1, b"v1"), (2, b"v2")):
+        path = os.path.join(sub.audit_dir, "payload", "e1.v%d.bin" % version)
         data = read_bytes(path) if os.path.isfile(path) else None
-        t.check("c6.payload-kept.%s" % pl.get("file"), data is not None and sha256_hex(data) == pl.get("sha256")
-                and len(data) == pl.get("size"), {"payload": pl, "present": data is not None})
+        t.eq("c6.payload-kept.e1.v%d" % version, data, expected)
     t.eq("c6.payload-files", sorted(os.listdir(os.path.join(sub.audit_dir, "payload")))
          if os.path.isdir(os.path.join(sub.audit_dir, "payload")) else None, ["e1.v1.bin", "e1.v2.bin"])
     rs.check_run_records(t, sub, "c6")
@@ -1259,8 +1260,7 @@ def c_prompts(t):
         p.eq("reminder.text", turn.texts, [REMINDER])
         turn = yield fp.HttpError(529, retry_after="0")
         p.check("continued", turn.new_conversation, "no continuation")
-        while True:
-            turn = yield p.end("Stopping again.")
+        yield p.end("Stopping again.")
     p = proc(sub, body)
     fx = rs.provider(t, p, label="reminder")
     r1 = rs.run(t, sub, fx, name="c7.prompts.run-1")
@@ -1281,7 +1281,7 @@ def c_prompts(t):
 
     def limited(p):
         p.usage = lambda: fp.Usage(1000, 1200)
-        while True:
+        for _ in range(8):
             yield p.calls_step(("list", {}))
     p2 = proc(sub2, limited)
     fx2 = rs.provider(t, p2, label="limits")
@@ -1823,7 +1823,16 @@ BAD_INPUTS = [
     ("string-start", "read", b'{"source":"question","start":"0"}', "/start"),
     ("fraction-start", "read", b'{"source":"question","start":1.0}', "/start"),
     ("missing-source", "read", b'{}', "/source"),
+    ("empty-source", "read", b'{"source":""}', "/source"),
+    ("long-source", "read", b'{"source":"' + b"x" * 1035 + b'"}', "/source"),
 ]
+BAD_INPUT_RULES = {
+    "duplicate-key": "duplicate_key", "escaped-duplicate": "duplicate_key", "unknown-field": "unknown_key",
+    "nul": "nul", "not-object": "type", "mistyped-citations": "type", "depth-17": "depth",
+    "negative-start": "integer_sign", "huge-start": "integer_range", "string-start": "type",
+    "fraction-start": "not_integer", "missing-source": "missing_key",
+    "empty-source": "value", "long-source": "value",
+}
 
 
 @case("c20.tool-inputs", ["C20", "C14", "C9"],
@@ -1857,6 +1866,7 @@ def c_tool_inputs(t):
             p.check("input.%s" % lab, r.outcome == "refused" and r.reason == "input_invalid"
                     and (ptr is None or mentions(r.env, ptr)), {"outcome": r.outcome, "reason": r.reason,
                                                                "message": (r.env or {}).get("message")})
+            p.check("input.%s.rule" % lab, mentions(r.env, BAD_INPUT_RULES[lab]), r.env)
             if lab == "unknown-field":
                 p.check("input.unknown-field.expected-keys", mentions(r.env, "citations") and mentions(r.env, "label"), r.env)
         turn = yield p.calls_step(("shell", {"command": "ls"}))

@@ -2,3 +2,4 @@
 /vendor/
 /target-test/
 /target-local/
+/target-runtime-fault/

@@ -239,8 +239,13 @@ impl Mcp {
         })();
         match response {
             Ok(a) => a,
-            Err(e) if id.is_none() => {
-                let _ = e;
+            Err(_)
+                if id.is_none()
+                    && v.text("jsonrpc").as_deref() == Ok("2.0")
+                    && v.text("method").is_ok()
+                    && matches!(v.field("result"), Ok(None))
+                    && matches!(v.field("error"), Ok(None)) =>
+            {
                 Action::Silent
             }
             Err(e) => Action::Reply(error(
@@ -282,6 +287,31 @@ mod tests {
         assert_eq!(v.text("model").unwrap(), "m");
         assert!(v.field("x").is_err());
     }
+    #[test]
+    fn undetermined_request_ids_have_null_error_ids() {
+        for (raw, code) in [
+            ("{", "-32700"),
+            (
+                r#"{"jsonrpc":"2.0","id":1,"id":2,"method":"ping"}"#,
+                "-32600",
+            ),
+            (r#"{"jsonrpc":"2.0","id":{},"method":"ping"}"#, "-32600"),
+            (r#"{"jsonrpc":"1.0","method":"ping"}"#, "-32600"),
+            ("[]", "-32600"),
+        ] {
+            let Action::Reply(reply) = Mcp::default().receive(raw.as_bytes(), b"[]") else {
+                panic!("invalid request received no error: {raw}");
+            };
+            let bytes = reply.bytes();
+            let value = Value::parse(&bytes).unwrap();
+            assert_eq!(value.req("id").unwrap().bytes(), b"null");
+            assert_eq!(
+                value.req("error").unwrap().req("code").unwrap().bytes(),
+                code.as_bytes()
+            );
+        }
+    }
+
     #[test]
     fn notification_never_becomes_a_call() {
         let mut m = Mcp::default();

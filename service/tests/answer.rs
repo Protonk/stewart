@@ -82,6 +82,32 @@ fn list_and_read_serve_the_captures_exactly() {
 }
 
 #[test]
+fn read_source_bound_and_binary_encoding_are_checked_independently() {
+    let mut l = Live::new();
+    for source in [String::new(), "a".repeat(1035)] {
+        let reply = l.call("read", &J::obj().with("source", source).string());
+        assert_eq!(reply.reason(), "input_invalid");
+        assert_eq!(reply.str(&["pointer"]), "/source");
+        assert_eq!(reply.str(&["rule"]), "value");
+    }
+    let valid_length = l.call("read", &J::obj().with("source", "a".repeat(1034)).string());
+    assert_eq!(valid_length.reason(), "source_unknown");
+    // These bytes are valid UTF-8, but the chosen input field determines the
+    // artifact's binary encoding. Invalid UTF-8 cannot distinguish this rule.
+    let entry = l.call(
+        "record_artifact",
+        r#"{"label":"ascii","base64":"aGVsbG8="}"#,
+    );
+    entry.ok();
+    let handle = entry.str(&["entry"]).to_string();
+    let read = l.call("read", &J::obj().with("source", handle).string());
+    read.ok();
+    assert_eq!(read.str(&["artifact_encoding"]), "binary");
+    assert_eq!(read.str(&["base64"]), "aGVsbG8=");
+    assert!(!has(read.data(&[]), "text"));
+}
+
+#[test]
 fn long_sources_come_in_pages_that_end_after_a_line() {
     let mut big = Vec::new();
     for i in 0..3000 {

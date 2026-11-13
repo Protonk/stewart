@@ -1149,7 +1149,10 @@ pub(crate) mod tests {
         assert_eq!(a.written, Written::None);
         assert!(a.reply.is_none());
         let m = a.failure_text().unwrap();
-        assert!(m.contains("handshake") && m.contains("certificate"), "{m}");
+        assert!(
+            m.contains("handshake") && m.contains("UnknownIssuer"),
+            "{m}"
+        );
 
         // Trusted CA, but the certificate does not name this host.
         let c = client("https://other.provider.test", None, Duration::from_secs(10));
@@ -1161,7 +1164,7 @@ pub(crate) mod tests {
         });
         assert_eq!(a.written, Written::None);
         let m = a.failure_text().unwrap();
-        assert!(m.contains("certificate"), "{m}");
+        assert!(m.contains("certificate not valid for name"), "{m}");
     }
 
     #[test]
@@ -1289,19 +1292,13 @@ pub(crate) mod tests {
         assert!(!debug.contains("debug-canary-credential"));
     }
 
-    /// Bind a loopback listener, or `None` when this environment forbids it
-    /// (some sandboxes deny `bind` with EPERM). Tests that need a real
-    /// listener skip then, saying so.
+    /// A required listener must bind; unavailable transport is a failed test.
     pub fn listener(test: &str) -> Option<std::net::TcpListener> {
         match std::net::TcpListener::bind("127.0.0.1:0") {
             Ok(l) => Some(l),
-            Err(e) if e.kind() == io::ErrorKind::PermissionDenied => {
-                eprintln!(
-                    "SKIPPED {test}: binding a loopback listener is not permitted here ({e})"
-                );
-                None
-            }
-            Err(e) => panic!("binding a loopback listener failed: {e}"),
+            Err(e) => panic!(
+                "{test}: binding a required loopback listener failed: {e}; rerun where loopback binding is permitted"
+            ),
         }
     }
 

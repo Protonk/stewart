@@ -123,7 +123,8 @@ pub struct Ended {
 impl Ended {
     /// A notice's `sent` (6.4): `sent` when an attempt record of its planned
     /// request has `request_written` other than `none`, `not_sent` when that
-    /// request was never captured, `unknown` otherwise.
+    /// request was never completely captured (including a cut-off capture),
+    /// `unknown` otherwise.
     pub fn sent(&self, request: u64) -> &'static str {
         match self.seen.get(&request) {
             Some(s) if s.written => "sent",

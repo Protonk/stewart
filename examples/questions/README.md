@@ -1,6 +1,6 @@
 # Worked question examples
 
-One example for each of the three deployed question forms. The invented reminder
+One example for each of the three implemented question forms. The invented reminder
 service supplies a small common world. Each example has:
 
 - `submission/`: a submission folder containing `question.md` with `question/1`

@@ -880,6 +880,7 @@ def check_procedure(t, p, prefix, fx=None):
     """Turn a procedure.Procedure's recorded checks into checks named <prefix>.<name>, and
     each anomaly (envelope, is_error, ordering, request after the end) into a failed check
     <prefix>.<anomaly>. With fx, also check_fake."""
+    p.check_completion()
     for name, ok, detail in p.checks:
         t.check("%s.%s" % (prefix, name), ok, detail)
     seen = set()

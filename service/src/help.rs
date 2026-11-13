@@ -362,7 +362,8 @@ Unfinished closes and how to continue (the reply's unfinished_reason):
                          Run close again.
   run_still_held         A run still holds the audit after 30 s; the reply names
                          its holder. Run close again once it has stopped.
-  close_in_progress      Another close holds the audit. Run close again.
+  close_in_progress      The active lock remains held after recorded endings;
+                         its holder is not established. Run close again.
   delivery_incomplete    No delivery attempt verified. Run close again to retry
                          at the last destination, or, after an attempt that
                          was partial or failed, close REF --destination DIR to

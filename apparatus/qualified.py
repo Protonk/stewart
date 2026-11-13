@@ -1623,8 +1623,8 @@ def front(entries):
         runs.sort(key=lambda e: (e["date"], e["id"]))
         latest = runs[-1]
         keep.setdefault(latest["id"], []).append("%s %s: latest" % (suite, platform))
-        if latest["outcome"] != "qualified":
-            good = [e for e in runs if e["outcome"] == "qualified"]
+        if latest["platforms"][platform]["outcome"] != "qualified":
+            good = [e for e in runs if e["platforms"][platform]["outcome"] == "qualified"]
             if good:
                 keep.setdefault(good[-1]["id"], []).append("%s %s: latest qualified" % (suite, platform))
     return keep
@@ -2523,7 +2523,7 @@ def _runtime_self_test(base, isolated, record_control):
     control("runtime: extracted fields validate and render separately",
             not record_problems(record) and "Synthetic runtime cases" in render(record))
 
-    def mutate(name, rel, transform, unreadable=False):
+    def mutate(name, rel, transform, expected, unreadable=False):
         path = os.path.join(folder, rel)
         original = _read(path)
         try:
@@ -2534,11 +2534,14 @@ def _runtime_self_test(base, isolated, record_control):
                 _write(folder, rel, replacement.decode() if isinstance(replacement, bytes) else replacement)
             try:
                 changed = extract_suite(ctx, "runtime", "acceptance")
-            except ExtractError:
-                rejected = True
+            except ExtractError as error:
+                rejected = unreadable and any(expected in problem for problem in error.problems)
+                details = error.problems
             else:
-                rejected = not unreadable and changed["outcome"] == "failed"
-            control("runtime: " + name, rejected)
+                details = changed['platforms']['linux-aarch64']['failures']
+                rejected = (not unreadable and changed["outcome"] == "failed"
+                            and any(expected in problem for problem in details))
+            control("runtime: " + name, rejected, repr(details))
         finally:
             _write(folder, rel, original.decode())
     result_rel = "driver-arm64/runtime-evidence/RESULT.json"
@@ -2549,24 +2552,33 @@ def _runtime_self_test(base, isolated, record_control):
             fn(value)
             return json.dumps(value)
         return change
-    mutate("missing result cannot qualify", result_rel, lambda raw: None, unreadable=True)
-    mutate("unselected cases fail", result_rel, change_json(lambda obj: obj["not_selected"].append("runtime-one")))
-    mutate("forged aggregate counts fail", result_rel, change_json(lambda obj: obj["counts"].update(checks=2)))
+    mutate("missing result cannot qualify", result_rel, lambda raw: None, result_rel, unreadable=True)
+    mutate("unselected cases fail", result_rel, change_json(lambda obj: obj["not_selected"].append("runtime-one")),
+           "runtime: some cases were not selected")
+    mutate("forged aggregate counts fail", result_rel, change_json(lambda obj: obj["counts"].update(checks=2)),
+           "runtime: reported counts differ from the result rows")
     mutate("unfired controls fail", result_rel, change_json(lambda obj: (
-        obj["controls"][0].update(fired=False), obj["counts"].update(controls_fired=0))))
+        obj["controls"][0].update(fired=False), obj["counts"].update(controls_fired=0))),
+        "runtime: cases/checks/controls are missing, failed, skipped or unfired")
     mutate("a consistently reported skip fails", result_rel, change_json(lambda obj: (
-        obj["cases"][0].update(outcome="skipped", skip_reason="fixture"), obj["counts"].update(passed=0, skipped=1))))
+        obj["cases"][0].update(outcome="skipped", skip_reason="fixture"), obj["counts"].update(passed=0, skipped=1))),
+        "runtime: case runtime-one disagrees with its checks or reports a skip")
     mutate("omitted full-inventory case fails", result_rel, change_json(lambda obj: (
-        obj.update(cases=[], checks=[], controls=[]), obj["counts"].update({key: 0 for key in RUNTIME_COUNTS}))))
-    mutate("different development digest fails", env_rel, change_json(lambda obj: obj.update(binary_sha256="0" * 64)))
+        obj.update(cases=[], checks=[], controls=[]), obj["counts"].update({key: 0 for key in RUNTIME_COUNTS}))),
+        "runtime: case identities/order differ from the source driver's full inventory")
+    mutate("different development digest fails", env_rel, change_json(lambda obj: obj.update(binary_sha256="0" * 64)),
+           "differs from the built binary digest")
     mutate("altered driver snapshot fails", "driver-arm64/runtime-evidence/driver-snapshot/claude_code.py",
-           lambda raw: raw + b"# altered\n")
-    mutate("failed export fails", "driver-arm64/runtime-evidence-copy.exit", lambda raw: "1\n")
-    mutate("missing work archive refuses", "driver-arm64/runtime-work.tar", lambda raw: None, unreadable=True)
-    mutate("corrupt work archive fails", "driver-arm64/runtime-work.tar", lambda raw: raw + b"changed\n")
+           lambda raw: raw + b"# altered\n", "runtime: claude_code.py snapshot differs from the source commit")
+    mutate("failed export fails", "driver-arm64/runtime-evidence-copy.exit", lambda raw: "1\n", "runtime-evidence-copy")
+    mutate("missing work archive refuses", "driver-arm64/runtime-work.tar", lambda raw: None,
+           "driver-arm64/runtime-work.tar", unreadable=True)
+    mutate("corrupt work archive fails", "driver-arm64/runtime-work.tar", lambda raw: raw + b"changed\n",
+           "runtime: work archive differs from its completed-export digest")
     mutate("skipped self-test fails", "driver-arm64/runtime-selftest.stdout",
-           lambda raw: "Self-test: 2 passed, 0 failed, 1 skipped\n")
-    mutate("empty independent witness fails", "driver-arm64/runtime-evidence/witness/traffic", lambda raw: None)
+           lambda raw: "Self-test: 2 passed, 0 failed, 1 skipped\n", "runtime self-test: 2 passed, 0 failed, 1 skipped")
+    mutate("empty independent witness fails", "driver-arm64/runtime-evidence/witness/traffic", lambda raw: None,
+           "runtime: exported witness contains no evidence")
     special = "driver-arm64/runtime-evidence/witness/leftover-pipe"
     os.mkfifo(os.path.join(folder, special))
     try:
@@ -2782,13 +2794,31 @@ def run_self_test(out=print):
     passed, failed = results.count(True), results.count(False)
     out("self-test: %d controls, %d passed, %d failed, %d skipped" % (len(results), passed, failed,
                                                                       len(results) - passed - failed))
-    if failed == 0:
+    success = bool(results) and all(result is True for result in results)
+    if success:
         shutil.rmtree(base)
         out("self-test temporary work removed")
-    return failed == 0
+    return success
 
 
 def _self_test_controls(base, isolated, control):
+    # Exercise the actual runner and exit result with an injected required
+    # control; the child replaces this function, so it cannot recurse.
+    child_root = os.path.join(base, 'runner-controls')
+    os.makedirs(child_root)
+    for value, expected_exit in ((True, 0), (False, 1), (None, 1)):
+        script = ("import importlib.util,sys,tempfile; "
+                  "tempfile.tempdir=sys.argv[2]; "
+                  "spec=importlib.util.spec_from_file_location('qualified',sys.argv[1]); "
+                  "q=importlib.util.module_from_spec(spec); spec.loader.exec_module(q); "
+                  "q._self_test_controls=lambda base,env,control: "
+                  "control('required fixture control'," + repr(value) + ",'fixture'); "
+                  "raise SystemExit(0 if q.run_self_test() else 1)")
+        child = subprocess.run([sys.executable, '-I', '-B', '-c', script, os.path.abspath(__file__), child_root],
+                               env=git_env(isolated), capture_output=True, timeout=30)
+        control("self-test: required control %r gives exit %d" % (value, expected_exit),
+                child.returncode == expected_exit,
+                "exit %d; %s" % (child.returncode, child.stdout.decode('utf-8', 'replace').splitlines()[-2:]))
     _runtime_self_test(base, isolated, control)
     root = os.path.join(base, "repo")
     os.makedirs(root)
@@ -2869,6 +2899,43 @@ def _self_test_controls(base, isolated, control):
     _fixture_run(ctx, "run-a", commit, "2026-01-01T00:00:00Z", False)
     _fixture_run(ctx, "run-b", commit, "2026-01-02T00:00:00Z", False)
     _fixture_run(ctx, "run-c", commit, "2026-01-03T00:00:00Z", True)
+    # A failed case alone must determine failure even if every exit record and
+    # other count says success. Restore this temporary fixture after the check.
+    case_path = os.path.join(ctx.scratch, "run-0", "driver-arm64/evidence/RESULT.json")
+    case_original = _read(case_path)
+    changed_case = json.loads(case_original)
+    changed_case['counts']['cases'].update(passed=2, failed=1)
+    _write(os.path.dirname(case_path), 'RESULT.json', json.dumps(changed_case))
+    case_result = extract_suite(ctx, 'run-0', 'acceptance')
+    case_platform = case_result['platforms']['linux-aarch64']
+    control('outcome: failed case counts alone fail a run with zero exits',
+            case_result['outcome'] == 'failed'
+            and case_platform['failures'] == ['cases: 3 selected, 2 passed, 1 failed, 0 skipped'],
+            repr(case_platform['failures']))
+    _write(os.path.dirname(case_path), 'RESULT.json', case_original.decode())
+
+    # The newest usable result is selected separately for each architecture,
+    # even when none of these entries qualified as a whole run.
+    platform_rows = [
+        {'id':'front-a', 'kind':'suite', 'suite':'acceptance', 'date':'2026-01-01', 'outcome':'failed',
+         'platforms':{'arm':{'outcome':'qualified'}, 'x86':{'outcome':'failed'}}},
+        {'id':'front-b', 'kind':'suite', 'suite':'acceptance', 'date':'2026-01-02', 'outcome':'failed',
+         'platforms':{'arm':{'outcome':'failed'}, 'x86':{'outcome':'qualified'}}},
+        {'id':'front-c', 'kind':'suite', 'suite':'acceptance', 'date':'2026-01-03', 'outcome':'failed',
+         'platforms':{'arm':{'outcome':'failed'}, 'x86':{'outcome':'failed'}}},
+    ]
+    expected_front = {'front-a':['acceptance arm: latest qualified'],
+                      'front-b':['acceptance x86: latest qualified'],
+                      'front-c':['acceptance arm: latest','acceptance x86: latest']}
+    control('front: each platform keeps its own latest qualified result',
+            front(platform_rows) == expected_front, repr(front(platform_rows)))
+    platform_rows[-1]['platforms']['arm']['outcome'] = 'qualified'
+    expected_front.pop('front-a')
+    control('front: a qualified platform drops only its own older result',
+            front(platform_rows) == expected_front, repr(front(platform_rows)))
+    control('front: input order does not affect per-platform retention',
+            front(list(reversed(platform_rows))) == expected_front,
+            repr(front(list(reversed(platform_rows)))))
     # Separate budgets survive extraction without changing historical records.
     timing_path = os.path.join(ctx.scratch, "run-0", "driver-arm64/evidence/RESULT.json")
     timing_original = _read(timing_path)

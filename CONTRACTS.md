@@ -22,8 +22,10 @@ delivery, and states promptly and precisely what it did.
 
 We strive to let the manager attend to the problem rather than the asking.
 Orientation, answer forms, stopping rules and exits preserve the auditor’s
-latitude. They are readable, versioned, previewed and recorded in returns. The
-protocol makes the question, material and recorded answer recoverable.
+latitude. Their exact arrangement is previewed and retained in the archive.
+The protocol makes the question, material and recorded answer recoverable;
+[Returned question and answer](#returned-question-and-answer) defines the
+context included in the return.
 
 Stewart must never judge conclusions. Forms must permit no finding, missing
 evidence or a wrong question without favoring outcomes. Stewart must show that
@@ -97,8 +99,11 @@ surrender remain distinct. Close is the operation ending the undertaking; closed
 is completed custody. A close request can end authoring while close is unfinished.
 Invocation outcome, operation effects and observed audit facts remain separate.
 
-A question family, also called a form, selects the auditor's instructions,
-recording tools and rendering. These names do not denote different mechanisms.
+A question family, also called a form, identifies the inquiry's purpose and
+selects family instructions, ordered recording tools and expected answer
+sections. [QUESTION-FORMS](docs/QUESTION-FORMS.md) defines the implemented
+components and the shared answer/renderer versions. The family contract below
+also defines the intended manager guidance and material roles.
 
 ## Platform and auditor access
 
@@ -621,6 +626,8 @@ revives a closed reference or grants another investigation.
 **The family carries the pairing.** A family brings together preparation guidance,
 expected material roles, auditor instructions and answer expectations. These are
 where Stewart expresses opinions about asking and answering that kind of question.
+The manager-guidance and material-role design is decided but not yet implemented;
+no role declaration or role-based intake gate exists in the current interface.
 The manager chooses the family; a suggestion does not silently change the choice
 or rewrite the question. Its versioned instructions and means of answering belong
 in the pinned arrangement already available through preparation. Family selection
@@ -631,11 +638,6 @@ eventual answer correct.
 the manager to justify avoiding a more specialized family, accept reduced custody
 or investigative means, or perform another commissioning step. Its instructions
 can ask what was examined, what the evidence supports and what remains unresolved.
-Optional evidence modules can add useful prompts and structure; choosing none is
-a complete route. Modules are not a second compulsory taxonomy, and any selected
-module must be explicit rather than inferred silently from the question.
-Modules and their interactions are not first-build requirements; no module
-catalogue or composition system is selected.
 
 **Open-inquiry guidance may be supplied explicitly.** The manager can select one
 `guidance.md` at the submission root to replace the whole family-guidance block.
@@ -669,19 +671,18 @@ family's task of formulating a substitute working question.
 **Guidance must leave a usable route.** A broad request such as "audit our app to
 make sure there are no bugs" can be commissioned through open inquiry under the
 ordinary mechanical intake rules. Material-role prompts can expose missing
-declared mappings without treating an unmapped role as proof that evidence is
-absent from all attached files. They do not force invented evidence or repeated
-justification to proceed. Actual invalid references, unsupported bytes and intake
-limits remain mechanical refusals. Every family must permit disagreement with
-its framing, missing evidence, no supported finding and qualifications; neither
-a defect nor a particular substantive conclusion is mandatory. A bounded
+declared mappings when implemented, without treating an unmapped role as proof
+that evidence is absent from all attached files. They do not force invented
+evidence or repeated justification to proceed. Actual invalid references,
+unsupported bytes and intake limits remain mechanical refusals. The expressive
+latitude in [Principles and scope](#principles-and-scope) applies to every family. A bounded
 assurance remains the auditor's attributed claim, not Stewart's guarantee.
 
 **Implemented library and specification.** Open inquiry, inquiry framing and
 comparison are the implemented first families. Comparison relates the supplied
-alternatives to a criterion
-and allows unequal evidence or inability without requiring a winner. Its tools
-must accommodate observations about one alternative without implying a comparison.
+alternatives to a criterion and allows unequal evidence or inability without
+requiring a winner. Its tools must accommodate observations about one alternative
+without implying a comparison.
 The [form specification](docs/QUESTION-FORMS.md) fixes the exact fields, tools,
 orientation and rendering; the [worked examples](examples/questions/README.md)
 are valid submissions whose hand-written walkthroughs illustrate expression, not
@@ -746,16 +747,16 @@ these suggestions introduce no new intake gates.
 These purposes require neither optimized recipes nor mandatory answer structures.
 The effectiveness of recording tools, material guidance and intellectual returns
 remains an empirical question, separate from procedural conformance.
-No hidden-prior mechanism or elaborate module composition is selected.
 
 ## Returned question and answer
 
 **Decided default, pending implementation:** return the original commissioned
 question alongside the auditor's recorded answer. The added context is the exact
-accepted question body, attributed to the manager separately from the auditor's
-answer. Stewart adds no supplied materials, guidance or operating history to
-provide that context. This does not expand custody of supplied material or alter
-the auditor's text, citations or selected artifacts.
+accepted question body as a separate package member, attributed to the manager
+separately from the auditor's answer. Stewart adds no supplied materials,
+guidance or operating history to provide that context. This does not expand
+custody of supplied material or alter the auditor's text, citations or selected
+artifacts.
 
 The current package in [INTERFACE 8.2](docs/INTERFACE.md#82-the-return-package)
 does not yet include the question. Its package specification, implementation and
@@ -785,15 +786,16 @@ prose, or produce companion copies proposing their removal. Readers may assess
 them; custody and rendering preserve them.
 
 Delivery and later readback verify and return the stored rendering; they do not
-substitute a new rendering from the installed form. A reproducibility check
-compares the stored bytes with the result of the pinned rendering rules, without
-rewriting the sealed answer. Exact field layout, generated filenames and bounded
-rendering mechanics are specified in
+substitute a new rendering from the installed form. Tests compare rendering
+bytes with independently derived examples of the pinned rules. This introduces
+no separate manager operation or rewriting of sealed answers. Exact field layout,
+generated filenames and bounded rendering mechanics are specified in
 [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) and
 [docs/INTERFACE.md](docs/INTERFACE.md).
 
 Each recorded citation keeps the auditor's operands beside Stewart's own
-attributed additions: the source's public name, digest and line span. The
+attributed additions: the source name, digest and line span
+([INTERFACE 2.4](docs/INTERFACE.md#24-names-that-are-not-handles)). The
 rendering presents the name and lines, so a reader can locate each citation in
 any copy of the material and, using the digest, check whether that copy is the
 commissioned one. The return does not carry the material; receipt readback
@@ -838,9 +840,8 @@ material, not Stewart-witnessed executions.
 
 **Form expectations and incomplete answers.** Small entry schemas require
 interpretable arguments; the form's instructions ask for evidence and limits.
-Every family offers ordinary expression of inadequate material, uncertainty,
-disagreement and no supported finding without demanding an invented comparison,
-winner, defect or repair. Preparation reports mechanically observable omissions
+The expressive latitude in [Principles and scope](#principles-and-scope) applies
+to every family's entries. Preparation reports mechanically observable omissions
 concisely with access to the prepared answer: "No comparison entries are recorded"
 is an observation; "the investigation was inadequate" is not.
 
@@ -864,9 +865,10 @@ give at most one procedural reminder across the audit, if allowance remains:
 The reminder permits the ordinary next response without demanding immediate
 submission or another conclusion. Another unsubmitted stop is an ordinary
 ending: no further run follows, and close seals the recorded selection.
-Continuing a dead placement does not reset the reminder's allowance. Provider
-failures, interrupted calls and hard limits are different events, not occasions
-to issue this reminder indiscriminately.
+Continuing a dead placement does not reset the reminder's allowance: if it was
+already spent, the first ordinary unsubmitted stop in the new conversation ends
+authoring. Provider failures, interrupted calls and hard limits are different
+events, not occasions to issue this reminder indiscriminately.
 
 Give at most one factual near-limit notice across the audit, tied to a configured
 threshold and the allowance Stewart actually accounts for. State the remaining
@@ -886,11 +888,13 @@ sizes/digests, writer identity and actual sealer. It is independently verifiable
 without the original process, sources or archive. References inside an answer do
 not recursively add material to the package.
 
-Stewart does not append the question, receipt, arrangement, access log, run
-summary or conversation to the return. Those stay in the archive; operating
-refusals/gaps reach the manager through status and records, not fabricated answer
-members. Auditor-authored content may of course discuss the question or supplied
-material. Stewardship metadata does not certify those claims.
+The current package omits the question; its planned addition is specified once
+in [Returned question and answer](#returned-question-and-answer). Stewart does
+not append the receipt, arrangement, access log, run summary or conversation.
+Those stay in the archive; operating refusals/gaps reach the manager through
+status and records, not fabricated answer members. Auditor-authored content may
+of course discuss the question or supplied material. Stewardship metadata does
+not certify those claims.
 
 The initial destination is selected with the commission. Delivery publishes its
 manifest/selection binding before its members, uses an exclusive new package and
@@ -1212,6 +1216,8 @@ identities are distinct; a matching digest does not imply a supported writer or
 authorize execution of recorded code. Verify the pinned arrangement before use.
 Unsupported writers/records retain their diagnostics; no silent upgrade, fallback
 to current definitions, invocation of recorded code or cross-writer takeover.
+Runtime-specific schemas and limits follow the leaf-contract rule in
+[Run and continuation](#run-and-continuation).
 
 **One writer per audit.** The exact binary that created a reference, identified
 by its SHA-256, is the only writer for that audit. Another binary, including a
@@ -1268,8 +1274,9 @@ interpretation grants no execution or mutation authority.
   claiming to fulfill it.
 - No generic additional-copy service after verified delivery/close or monitoring
   of a delivered copy's present safety. Delivery records describe verified events.
-- Person transport, hidden priors, further family expansion and elaborate module
-  composition are unselected extensions, each requiring its own concrete need.
+- Person transport, hidden priors, evidence modules and their composition, and
+  family expansion beyond the five purposes are unselected extensions, each
+  requiring its own concrete need.
 - Whether read-only inquiry is intellectually useful, and how to admit new family
   opinions on evidence, remain optional studies, not gates on this design.
 - No product-level saved provider connection, bearer or federated

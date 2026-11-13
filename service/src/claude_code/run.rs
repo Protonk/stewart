@@ -119,9 +119,7 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
     }
     let abort = AbortHandle::new();
     let flags = Flags::default();
-    if let Err(e) =
-        stop::block_signals().and_then(|_| stop::receive_signals(abort.clone(), flags.clone()))
-    {
+    if let Err(e) = stop::block_signals() {
         return reject(
             "record_failed",
             format!("Could not prepare stop handling: {e}"),
@@ -140,6 +138,15 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
     };
     let began = Instant::now();
     let deadline = began + Duration::from_secs(h.selection.limits.placement_timeout_seconds);
+    let gate = Gate::new(deadline);
+    let signal_gate = gate.clone();
+    if let Err(e) = stop::receive_signals(abort.clone(), flags.clone(), move || signal_gate.stop())
+    {
+        return reject(
+            "record_failed",
+            format!("Could not prepare stop handling: {e}"),
+        );
+    }
     let published = log::publish(&audit, "run_started", |s| {
         if let Some(f) = crate::ops::run::state_refusal(&audit, s) {
             return Err(f);
@@ -200,6 +207,7 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                 deadline,
                 used_before,
                 flags: &flags,
+                gate: &gate,
                 record_failed: AtomicBool::new(false),
             };
             if let Err(e) = execute(&live, &mut ended) {
@@ -295,6 +303,7 @@ struct Live<'a> {
     deadline: Instant,
     used_before: Usage,
     flags: &'a Flags,
+    gate: &'a Gate,
     record_failed: AtomicBool,
 }
 
@@ -547,7 +556,7 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
     let mut stdin = owner.child.stdin.take().ok_or("missing harness stdin")?;
     let stdout = owner.child.stdout.take().ok_or("missing harness stdout")?;
     let stderr = owner.child.stderr.take().ok_or("missing harness stderr")?;
-    let gate = Gate::new(live.deadline);
+    let gate = live.gate;
     let quitting = Arc::new(AtomicBool::new(false));
     let result = std::thread::scope(|scope| {
         let (tx, rx) = mpsc::sync_channel(16);

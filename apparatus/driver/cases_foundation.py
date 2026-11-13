@@ -355,6 +355,31 @@ def c_scaffold(t):
     t.check_prepared_settings(sub, "scaffold.filled")
 
 
+@case("c11.new-folder-required", ["C11", "C20"], "new without its folder operand is usage, with no reference or archive")
+def c_new_folder_required(t):
+    archive = t.archive_path()
+    rep = t.cmd(["new", "--archive", archive], name="new-no-folder", json_reply=False, envelope=False)
+    t.eq("new-no-folder.exit", rep.rc, 2)
+    t.check("new-no-folder.names-operand", "folder" in rep.text().lower(), rep.text())
+    t.eq("new-no-folder.no-archive", os.path.lexists(archive), False)
+    sub = t.submission(basic_entries(), archive=archive)
+    t.new_ref(sub)
+    t.prepare(sub)
+
+
+@case("c11.commission-without-diagnostic", ["C11", "C17", "C20"],
+      "fresh successful commissioning needs no earlier refusal or diagnostic")
+def c_commission_without_diagnostic(t):
+    sub = t.submission(basic_entries())
+    t.new_ref(sub)
+    t.prepare(sub)
+    diag = os.path.join(sub.audit_dir, "diag")
+    t.eq("fresh-commission.no-earlier-diagnostic", os.listdir(diag) if os.path.isdir(diag) else [], [])
+    rep = t.commission(sub, sub.handles[-1], name="fresh-commission")
+    t.eq("fresh-commission.effects", rep.effects, {"acceptance": "accepted", "attempt": "recorded"})
+    t.eq("fresh-commission.no-diagnostic", os.listdir(diag) if os.path.isdir(diag) else [], [])
+
+
 # ---------------------------------------------------------------------------
 # C11 and C17: commissioning.
 # ---------------------------------------------------------------------------
@@ -584,7 +609,7 @@ def c_damage(t):
         os.symlink(good, p)
     t.mode_exempt.add(p)
     t.driver_change("replace a capture with a link to an identical copy", plant)
-    t.check_readback_refused(sub, "materials/d.txt", ("item_unsupported", "item_unreadable"), "damage.read-link")
+    t.check_readback_refused(sub, "materials/d.txt", "item_unsupported", "damage.read-link")
     rep = t.cmd(["receipt", sub.ref, "--verify"], name="verify-link", expect="completed")
     st = item_state(find_items(rep.data, set(expected)).get("materials/d.txt", {}))
     t.check("verify.link.own-state", st in ("unsupported", "unreadable"), st)
@@ -939,8 +964,9 @@ def c_t11(t):
     causes = (rep.obj or {}).get("causes") or []
     t.check("t11.two-causes", len(causes) >= 2, causes)
     if causes:
-        t.check("t11.original-first", "EIO" not in json.dumps(causes[0]), causes)
-        t.check("t11.diagnostic-write-last", "EIO" in json.dumps(causes[-1]), causes)
+        first, last = json.dumps(causes[0]), json.dumps(causes[-1])
+        t.check("t11.original-first", re.search(r"selection|changed", first, re.I) and "EIO" not in first, causes)
+        t.check("t11.diagnostic-write-last", re.search(r"diag|diagnostic", last, re.I) and "EIO" in last, causes)
     after = sorted(os.listdir(diag)) if os.path.isdir(diag) else []
     t.eq("t11.no-diagnostic-file", after, before)
 
@@ -1010,6 +1036,7 @@ def c_source_permission(t):
     t.cleanup(lambda: os.chmod(p, 0o644))
     rep = t.commission(sub, h, name="permission.unreadable", expect="refused", reason="source_unreadable")
     t.check("permission.names-file", "b.txt" in json.dumps(rep.obj or {}, ensure_ascii=False), rep.obj)
+    t.check("permission.names-cause", re.search(r"EACCES|permission denied", json.dumps(rep.obj or {}), re.I), rep.obj)
     t.driver_change("chmod 0444 materials/b.txt", lambda: os.chmod(p, 0o444))
     srcdir = mat(sub, "src")
     t.driver_change("chmod 0555 materials/src", lambda: os.chmod(srcdir, 0o555))
@@ -1034,7 +1061,7 @@ def c_capture_failures(t):
     cases_ = [("capture-eio", "commission.capture_write=eio", "capture_failed", "EIO", ("partial",)),
               ("capture-enospc", "commission.capture_write=enospc", "capture_failed", "ENOSPC", ("partial",)),
               ("capture-corrupt", "commission.capture_corrupt=corrupt", "capture_unverified", None, ("partial",)),
-              ("receipt-eio", "commission.receipt_write=eio", "receipt_record_failed", "EIO", ("partial", "recorded"))]
+              ("receipt-eio", "commission.receipt_write=eio", "receipt_record_failed", "EIO", ("partial",))]
     for label, fault, reason, err, attempts in cases_:
         n0 = len(t.intake_dirs(sub))
         before = t.audit_locations(sub)
@@ -1098,9 +1125,32 @@ def c_prepare_killed(t):
     st = t.status(sub, name="prep-killed.status")
     t.check_status(st, sub, "prep-killed.status", condition="preparing", accepted="no", next_cmds=("prepare", "close"))
     t.check("prep-killed.no-commission-offer", not any(a[1] == "commission" for a in st.next_argvs()), st.next)
+    refused = t.commission(sub, "mp1.aaaaaa", name="prep-killed.unpublished", expect="refused", reason="handle_invalid")
+    t.eq("prep-killed.unpublished-effects", no_diag(refused.effects), {"acceptance": "absent", "attempt": "none"})
+    t.eq("prep-killed.unpublished-no-intake", t.intake_dirs(sub), [])
     t.prepare(sub, name="prep-killed.again")
     t.check("prep-killed.new-number", len(os.listdir(prep)) == 2, os.listdir(prep))
     t.commission(sub, sub.handles[-1], name="prep-killed.commission")
+
+
+@case("c17.published-preparation-unreadable", ["C17", "C19", "C20"],
+      "a changed published preparation refuses before intake; restoring its exact bytes permits commission")
+def c_published_preparation_unreadable(t):
+    sub = t.submission(basic_entries())
+    t.new_ref(sub)
+    t.prepare(sub)
+    handle = sub.handles[-1]
+    root = os.path.join(sub.audit_dir, "prep", "1")
+    for member in ("manifest.json", "arrangement.json", "arrangement.md"):
+        path = os.path.join(root, member)
+        original = read_bytes(path)
+        t.edit(path, original + b"changed", "change published preparation member " + member)
+        rep = t.commission(sub, handle, name="published-changed." + member,
+                           expect="refused", reason="preparation_unreadable")
+        t.eq("published-changed.%s.effects" % member, no_diag(rep.effects), {"acceptance": "absent", "attempt": "none"})
+        t.eq("published-changed.%s.no-intake" % member, t.intake_dirs(sub), [])
+        t.edit(path, original, "restore exact published preparation member " + member)
+    t.commission(sub, handle, name="published-restored")
 
 
 @case("c17.prepare-reply-lost", ["C17", "C16", "C20"], "a lost prepare reply: status supplies the recorded handle",
@@ -1291,6 +1341,89 @@ def c_close_killed(t):
     t.eq("close-killed.again.closure", rep.data.get("closure"), "complete")
     st = t.status(sub, name="close-killed.final-status")
     t.check_status(st, sub, "close-killed.final-status", condition="closed_before_launch", accepted="no", closed="yes")
+
+
+def _close_after_recorded_start(t, label):
+    """A documented kill before request 1; no listener or provider is needed."""
+    sub = t.submission(basic_entries(), dest_watch="additions")
+    t.new_ref(sub)
+    t.prepare(sub)
+    t.commission(sub, sub.handles[-1])
+    killed = t.cmd(["run", sub.ref], name=label + ".run-killed", envelope=False,
+                   fault="run.after_started=kill",
+                   env={"ANTHROPIC_API_KEY": "synthetic-driver-key", "STEWART_PROVIDER_URL": "http://127.0.0.1:9"})
+    t.eq(label + ".killed-before-request", killed.rc, -signal.SIGKILL)
+    t.eq(label + ".started-without-ending", (t.log_kinds(sub).count("run_started"),
+                                             t.log_kinds(sub).count("run_ended")), (1, 0))
+    return sub
+
+
+@case("close.recorded-ending-held-lock", ["C8", "C16", "C17"],
+      "after recorded endings a held active lock has no established owner; status is immediate and close waits",
+      mode="test", tags=("close",))
+def c_close_recorded_ending_held_lock(t):
+    sub = _close_after_recorded_start(t, "close-recorded")
+    held = t.start(["close", sub.ref], name="close-recorded.first", fault="close.after_seal=pause", timeout=90)
+    stem = t.wait_paused("close.after_seal", held)
+    t.require("close-recorded.paused", stem is not None, "close did not reach the documented pause")
+    try:
+        endings = t.log_bodies(sub, "run_ended")
+        t.eq("close-recorded.ending-recorded", [(e.get("ending"), e.get("cause"), e.get("recorded_by"))
+                                               for e in endings], [("interrupted", "process_gone", "close")])
+        st = t.status(sub, name="close-recorded.status")
+        t.eq("close-recorded.status.reason", (st.data.get("closure") or {}).get("unfinished_reason"), "close_in_progress")
+        t.eq("close-recorded.status.holder-unestablished", (st.data.get("runs") or {}).get("holder"), None)
+        t.check("close-recorded.status.immediate", st.wall_ms < 5000, st.wall_ms)
+        rep = t.cmd(["close", sub.ref], name="close-recorded.second", expect="completed", timeout=45)
+        t.eq("close-recorded.second.reason", rep.data.get("unfinished_reason"), "close_in_progress")
+        t.eq("close-recorded.second.holder-unestablished", rep.data.get("holder"), None)
+        t.eq("close-recorded.second.effects", no_diag(rep.effects),
+             {"run": "ended", "seal": "existing", "delivery": "none", "closure": "unfinished"})
+        t.check("close-recorded.second.bounded-wait", 29000 <= rep.wall_ms < 40000, rep.wall_ms)
+        waiting = rep.stderr.decode("utf-8", "replace").lower()
+        t.check("close-recorded.second.waiting-account", "lock" in waiting and "wait" in waiting and "30" in waiting,
+                waiting)
+        t.eq("close-recorded.no-delivery-while-held", t.log_kinds(sub).count("delivery_planned"), 0)
+    finally:
+        t.release(stem)
+    first = t.finish(held, expect="completed", prefix="close-recorded.first")
+    t.eq("close-recorded.first.after-release", first.data.get("unfinished_reason"), "awaiting_confirmation")
+    st = t.status(sub, name="close-recorded.status-released")
+    t.eq("close-recorded.free-lock-invariance", (st.data.get("closure") or {}).get("unfinished_reason"), "awaiting_confirmation")
+    token = first.data.get("confirmation")
+    t.require("close-recorded.confirmation", isinstance(token, str), token)
+    t.cmd(["close", sub.ref, "--confirm", token], name="close-recorded.confirm", expect="completed")
+
+
+@case("close.gone-delivery-members", ["C8", "C6", "C16"],
+      "a killed delivery retains its copy but reconciliation claims no established membership",
+      mode="test", tags=("close",))
+def c_close_gone_delivery_members(t):
+    sub = _close_after_recorded_start(t, "close-gone")
+    killed = t.cmd(["close", sub.ref], name="close-gone.killed", envelope=False,
+                   fault="delivery.after_member:1=kill")
+    t.eq("close-gone.delivery-killed", killed.rc, -signal.SIGKILL)
+    t.eq("close-gone.open-attempt", (t.log_kinds(sub).count("delivery_planned"),
+                                     t.log_kinds(sub).count("delivery_ended")), (1, 0))
+    rep = t.cmd(["close", sub.ref], name="close-gone.reconcile", expect="completed")
+    ended = t.log_bodies(sub, "delivery_ended")
+    t.require("close-gone.two-endings", len(ended) == 2, ended)
+    first = ended[0]
+    t.eq("close-gone.reconciled-form", [first.get(k) for k in ("outcome", "package", "members", "losses", "recorded_by")],
+         ["failed", None, None, None, "close"])
+    t.eq("close-gone.reconciled-cause", first.get("cause"), {"operation": "deliver", "error": "process_gone"})
+    st = t.status(sub, name="close-gone.status")
+    views = st.data.get("deliveries") or []
+    t.require("close-gone.two-status-attempts", len(views) == 2, views)
+    t.eq("close-gone.status-members", [views[0].get(k) for k in ("verified_members", "unverified_members", "losses")],
+         [[], [], []])
+    t.eq("close-gone.fresh-attempt", [views[1].get(k) for k in ("attempt", "outcome", "replaces")],
+         [2, "verified", 1])
+    t.check("close-gone.new-members-established", bool(views[1].get("verified_members")), views[1])
+    t.eq("close-gone.prior-package-kept", len(os.listdir(sub.dest)), 2)
+    token = rep.data.get("confirmation")
+    t.require("close-gone.confirmation", isinstance(token, str), token)
+    t.cmd(["close", sub.ref, "--confirm", token], name="close-gone.confirm", expect="completed")
 
 
 @case("close.during-intake", ["C8", "C17"], "close races a live intake; their recorded outcomes agree",
@@ -1612,7 +1745,8 @@ def c_permissions(t):
     t.cleanup(lambda: os.chmod(root, 0o700))
     r = t.cmd(["status", sub.ref], name="perm.status")
     t.check("perm.status.not-completed", r.outcome in ("refused", "failed"), r.obj)
-    t.check_readback_refused(sub, "materials/a.txt", ("archive_unavailable", "item_unreadable", "item_missing"),
+    t.eq("perm.status.reason", r.reason, "archive_unavailable")
+    t.check_readback_refused(sub, "materials/a.txt", "archive_unavailable",
                              "perm.read")
     t.driver_change("restore the archive root", lambda: os.chmod(root, 0o700))
     st = t.status(sub, name="perm.status-restored")
@@ -1624,8 +1758,9 @@ def c_permissions(t):
     t.driver_change("chmod 0500 log/", lambda: os.chmod(log, 0o500))
     t.cleanup(lambda: os.chmod(log, 0o700))
     r = t.cmd(["prepare", other.ref], name="perm.prepare", writer=other.writer)
-    t.check("perm.prepare.not-completed", r.outcome in ("refused", "failed"), r.obj)
-    t.check("perm.prepare.no-record", r.effects.get("preparation") in ("none", "unknown"), r.effects)
+    t.eq("perm.prepare.failure", (r.outcome, r.reason), ("failed", "record_failed"))
+    t.eq("perm.prepare.no-record", r.effects.get("preparation"), "none")
+    t.check("perm.prepare.names-cause", re.search(r"EACCES|permission denied", json.dumps(r.obj or {}), re.I), r.obj)
     t.eq("perm.prepare.log", t.log_kinds(other), ["reference"])
     t.driver_change("restore log/", lambda: os.chmod(log, 0o700))
     t.prepare(other, name="perm.prepare-restored")
@@ -2355,7 +2490,7 @@ def c_envelope_refusals(t):
     t.cmd(["commission", sub.ref, "mp1.aaaaaa", "--i-am-finished"], name="refusals.commission", expect="refused",
           reason="handle_invalid")
     t.cmd(["commission", sub.ref, "mp1.aaaaaa"], name="refusals.commission-flag", expect="refused",
-          reason=("affirmation_missing", "handle_invalid"))
+          reason="affirmation_missing")
 
 
 # ---------------------------------------------------------------------------

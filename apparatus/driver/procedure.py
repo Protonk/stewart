@@ -205,7 +205,7 @@ class Procedure:
                 return bytes(buf), pages
             if not nxt or not isinstance(nxt[0].get("input"), dict):
                 self.anomaly("read.incomplete-without-next", {"source": source, "data": short(r.data, 300)})
-                return bytes(buf), pages
+                return None, pages
             inp = nxt[0]["input"]
 
     def wwaw_all(self):
@@ -222,7 +222,12 @@ class Procedure:
             entries += list(r.data.get("entries") or [])
             page = r.data.get("page") or {}
             nxt = r.next_of("what_am_i_working_with")
-            if page.get("complete") is True or not nxt:
+            if page.get("complete") is True:
+                if nxt:
+                    self.anomaly("reentry.next-when-complete", r.data)
+                return first, entries, pages
+            if not nxt or not isinstance(nxt[0].get("input"), dict):
+                self.anomaly("reentry.incomplete-without-next", r.data)
                 return first, entries, pages
             inp = nxt[0].get("input") or {}
 
@@ -240,8 +245,13 @@ class Procedure:
                 return None, pages
             hits += find_hits(r.data)
             nxt = r.next_of("search")
-            if r.data.get("complete") is True or not nxt:
+            if r.data.get("complete") is True:
+                if nxt:
+                    self.anomaly("search.next-when-complete", r.data)
                 return hits, pages
+            if not nxt or not isinstance(nxt[0].get("input"), dict):
+                self.anomaly("search.incomplete-without-next", r.data)
+                return None, pages
             inp = nxt[0].get("input") or {}
 
     def list_all(self):
@@ -254,8 +264,13 @@ class Procedure:
                 return None, pages
             mats += list(r.data.get("materials") or [])
             nxt = r.next_of("list")
-            if r.data.get("complete") is True or not nxt:
+            if r.data.get("complete") is True:
+                if nxt:
+                    self.anomaly("list.next-when-complete", r.data)
                 return mats, pages
+            if not nxt or not isinstance(nxt[0].get("input"), dict):
+                self.anomaly("list.incomplete-without-next", r.data)
+                return None, pages
             inp = nxt[0].get("input") or {}
 
     # -- the responder --------------------------------------------------------------
@@ -337,6 +352,34 @@ class Procedure:
                 "replies": [r.summary() for r in self.replies], "checks": self.checks,
                 "anomalies": self.anomalies, "texts": self.texts}
 
+    def check_completion(self):
+        """After the final run, require that no scripted exchange remains.
+
+        A terminal submit or ordinary stop has no following provider request.
+        Resume that final yield without inventing a reply: only exhaustion is
+        completion. A script requiring another reply, assertion or response
+        still fails. Cases must use finite scripts at their intended boundary.
+        """
+        if self.finished:
+            self.check("procedure.completed", True)
+            return True
+        if self.gen is None:
+            self.check("procedure.completed", False, "no request reached the procedure")
+            return False
+        try:
+            pending = self.gen.send(None)
+        except StopIteration:
+            self.finished = True
+            self.check("procedure.completed", True)
+            return True
+        except Exception as exc:
+            self.check("procedure.completed", False,
+                       "script still needed a reply: %s: %s" % (type(exc).__name__, exc))
+            return False
+        self.check("procedure.completed", False,
+                   "script still had an unsent response: %s" % type(pending).__name__)
+        return False
+
 
 def find_hits(data):
     """Search hits located structurally (7.2 names a hit's members but not the list's key)."""
@@ -391,6 +434,60 @@ def _selftest_procedure():
     out.append(("procedure.sealed", ending == "sealed", ending))
     out.append(("procedure.checks", all(c[1] for c in p.checks) and len(p.checks) == 6, p.checks))
     out.append(("procedure.no-anomalies", not p.anomalies, p.anomalies[:3]))
+    out.append(("procedure.final-submit-completion", p.check_completion(), p.checks[-1:]))
+    absent = Procedure(body)
+    out.append(("procedure.no-request-fires", not absent.check_completion(), absent.checks))
+    def unfinished(p):
+        yield p.end("first response")
+        yield p.end("required final response")
+    short = Procedure(unfinished)
+    short.gen = short.body(short)
+    next(short.gen)
+    out.append(("procedure.early-stop-fires", not short.check_completion(), short.checks))
+    def missing_reply(p):
+        turn = yield p.calls_step(("list", {}))
+        p.eq("reply-required", turn.reply().outcome, "completed")
+    pending = Procedure(missing_reply)
+    pending.gen = pending.body(pending)
+    next(pending.gen)
+    out.append(("procedure.missing-reply-fires", not pending.check_completion(), pending.checks))
+    def terminal(p):
+        yield p.end("final response")
+    invariant = Procedure(terminal)
+    invariant.gen = invariant.body(invariant)
+    next(invariant.gen)
+    out.append(("procedure.terminal-stop-invariance", invariant.check_completion(), invariant.checks))
+    # Exact named completeness controls: a missing next call cannot turn a
+    # partial capture into a complete result. Additional irrelevant fields do
+    # not change the complete case.
+    from types import SimpleNamespace
+    for kind, helper in (("read", lambda p: p.read_all("question")),
+                         ("search", lambda p: p.search_all("needle")),
+                         ("list", lambda p: p.list_all()),
+                         ("reentry", lambda p: p.wwaw_all())):
+        for label, complete, has_next, expected in (
+                ("complete", True, False, []),
+                ("incomplete", False, False, [kind + ".incomplete-without-next"]),
+                ("extra-next", True, True, [kind + ".next-when-complete"])):
+            control = Procedure(terminal)
+            data = {"complete": complete, "page": {"complete": complete},
+                    "materials": [], "entries": [], "irrelevant": "unchanged"}
+            reply = SimpleNamespace(outcome="completed", data=data, page=lambda: b"expected bytes",
+                                    next_of=lambda tool, present=has_next: [{"tool": tool, "input": {}}] if present else [])
+            gen = helper(control)
+            next(gen)
+            try:
+                gen.send(SimpleNamespace(reply=lambda index: reply))
+            except StopIteration as stopped:
+                value = stopped.value
+            else:
+                value = None
+            observed = [a["check"] for a in control.anomalies]
+            out.append(("procedure." + kind + "." + label, observed == expected,
+                        {"expected": expected, "observed": observed}))
+            if kind in ("read", "search", "list") and label == "incomplete":
+                out.append(("procedure." + kind + ".partial-is-not-complete",
+                            value is not None and value[0] is None, value))
     return out
 
 

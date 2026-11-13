@@ -30,13 +30,9 @@ context is selected here.
 
 **Assessment: the specification stage can start once the
 [readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) has passed on what it does
-not fix.** The latest offline
-service/package rehearsal has a reviewed passing outcome and observed process
-stopping. Service code is unchanged since the recorded Linux acceptance source;
-subsequent apparatus additions have native verification, not fresh Linux
-qualification. No unresolved result currently establishes a blocker on manager
-contract work. The remaining runtime and release obligations follow the routing
-above.
+not fix.** The readiness plan owns verification of its repairs. Qualification
+applies to the source and binaries recorded with each result. The remaining
+runtime and release obligations follow the routing above.
 
 1. **Carry the baseline forward.** Use the integrated plan's
    [evidence-review section](development/MANAGER-INTERFACE-PLAN.md#remaining-offline-runtime-coverage-and-evidence-review)

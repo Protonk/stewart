@@ -191,8 +191,9 @@ or `quote` without `start` and `end`. Any other combination is refused
 
 ## Notices
 
-The reminder, sent at most once per audit after a turn ends without submission
-while no limit is exhausted (text from CONTRACTS):
+The reminder text implements [bounded prompting](../CONTRACTS.md#auditor-form-enforcement-and-prompting).
+[INTERFACE 6.4](INTERFACE.md#64-limits-reminder-and-notice) specifies its recording,
+delivery and accounting:
 
 > This turn ended without a submission. Your recorded answer remains unsealed.
 > If you intend to submit it, use prepare and confirm its handle with submit.

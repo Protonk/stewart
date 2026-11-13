@@ -2641,7 +2641,9 @@ class Driver:
             self.log("%s %s [%s] %d/%d checks" % (vr["outcome"].upper().ljust(4), spec.id, name,
                                                  vr["checks_passed"], vr["checks_passed"] + vr["checks_failed"]))
         main = [v for v in res["variants"] if not v["name"].startswith("control-")]
-        if any(v["outcome"] == "skipped" for v in main):
+        if any(v["outcome"] == "fail" for v in main) or not main:
+            res["outcome"] = "fail"
+        elif any(v["outcome"] == "skipped" for v in main):
             res["outcome"] = "skipped"
             res["skip_reason"] = "; ".join(v.get("skip_reason") or "" for v in main if v["outcome"] == "skipped")
         elif all(v["outcome"] == "pass" for v in main):
@@ -2689,7 +2691,11 @@ class Driver:
                 pass
         SocketHolder.sockets = []
         failed = [c for c in t.checks if not c["ok"]]
-        outcome = "skipped" if skip else ("pass" if not failed else "fail")
+        if t.parts_skipped and not skip:
+            skip = "; ".join("%s: %s" % (p["part"], p["reason"]) for p in t.parts_skipped)
+        # Missing comparisons never make a complete pass, and a later skip
+        # cannot erase an already observed failure.
+        outcome = "fail" if failed else ("skipped" if skip else "pass")
         for dc in t.drv_controls:
             dc["case"] = spec.id
             self.driver_controls.append(dc)
@@ -2782,6 +2788,12 @@ class Driver:
                 self.results.append(self.run_case(spec))
         except KeyboardInterrupt:
             interrupted = True
+            completed = {r["id"] for r in self.results}
+            for spec in selected:
+                if spec.id not in completed:
+                    self.results.append({"id": spec.id, "claims": spec.claims, "title": spec.title,
+                                         "doc": spec.doc, "variants": [], "controls": [],
+                                         "outcome": "skipped", "skip_reason": "run interrupted before case completed"})
         table, gate = self.timing_report()
         if gate["enabled"]:
             gres = {"id": "c9.timing-gate", "claims": ["C9"], "title": "startup, status and help within tens of milliseconds",
@@ -2821,7 +2833,7 @@ class Driver:
         if self.args.require_all_controls:
             broken += [{"case": None, "sabotage": s, "status": "unassigned"} for s in unassigned]
             broken += [{"case": None, "sabotage": s, "status": "never_fired"} for s in unfired]
-        exit_code = 1 if (failed_cases or broken or interrupted or not cases) else 0
+        exit_code = 1 if (failed_cases or broken or interrupted or not self.select()) else 0
         result = {
             "schema": DRIVER_SCHEMA, "started_at": self.started_at, "ended_at": utc_now(), "argv": sys.argv,
             "interrupted": interrupted, "platform": platform_info,
@@ -3087,6 +3099,7 @@ def self_test():
     ok("ref.parse", parse_reference(make_reference(a, s, "/r o")) == {"audit": a, "store": s, "root": "/r o"})
     chk = handle_check(s, a, "mp", "mp1", ["0" * 64])
     ok("handle.form", re.fullmatch(r"[a-z2-7]{6}", chk))
+    ok("handle.literal-vector", handle_check("saaaaaaaaaaaaaaaa", "abbbbbbbbbbbbbbbb", "mp", "mp1", ["0" * 64]) == "xsshfq")
     ok("handle.binds", chk != handle_check(s, a, "mp", "mp2", ["0" * 64]) or chk != handle_check(s, a, "ap", "mp1", ["0" * 64]))
     ok("lines", (line_count(b""), line_count(b"\n"), line_count(b"a"), line_count(b"a\nb"), line_count(b"a\n")) == (0, 1, 1, 2, 1))
     ok("split.lf", split_question(b"---\na: b\n---\nbody\n") == b"body\n")
@@ -3179,13 +3192,13 @@ def self_test():
         for name, desc in TOOL_DESC.items():
             ok("docs.tool.%s" % name, ("| `%s` | %s |" % (name, desc)) in text, name)
     else:
-        results.append(("docs.available", True, "docs/QUESTION-FORMS.md not beside the driver; skipped"))
+        results.append(("docs.available", None, "docs/QUESTION-FORMS.md not beside the driver; skipped"))
     iface = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "INTERFACE.md")
     if os.path.isfile(iface):
         for item in _interface_copies(open(iface, encoding="utf-8").read()):
             ok(*item)
     else:
-        results.append(("docs.interface-available", True, "docs/INTERFACE.md not beside the driver; skipped"))
+        results.append(("docs.interface-available", None, "docs/INTERFACE.md not beside the driver; skipped"))
     # Self-tests registered by the driver's other modules (fake provider, auditor, witness).
     for fn in SELF_TESTS:
         try:

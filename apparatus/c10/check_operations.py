@@ -10,6 +10,7 @@ import sys
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import file_hash,read_file,require,strict_json,write_json
 from operations import operate
+from batch import check_credential
 from verify import Evidence,verify
 
 
@@ -33,10 +34,19 @@ def exercise(root, *, private=None, out=None, target=None, key=None, local=True)
     def record(name,ok,value):
         write_json(target/(name+'.json'),value)
         checks.append({'check':name,'passed':bool(ok)})
+    before=operate(private,out,audit,'status',local=local)
+    observed=strict_json(read_file(Path(before['private_reply'])))
+    require(before['exit']==0 and observed['data']['runs']['held'] is False,
+            'wrong-credential control requires a known stopped writer')
+    require(info['audit']==audit and binding['run']['id']==audit and info['local'] is local,
+            'wrong-credential control requires the bound audit')
+    check_credential(private.parent/'credential-check'/(audit+'.json'),key)
     try:
         operate(private,out,audit,'collect',key=b'WRONG-SYNTHETIC-CREDENTIAL',local=local)
-    except ValueError:
-        record('wrong-credential',not (out/audit/'export-0002').exists(),{'refused':True})
+    except ValueError as error:
+        expected='credential differs from the original placement; export withheld'
+        record('wrong-credential',str(error)==expected and not (out/audit/'export-0002').exists(),
+               {'refused':True,'reason':str(error),'writer_held':False,'binding_checked':True})
     else:
         record('wrong-credential',False,{'refused':False})
     first=operate(private,out,audit,'close',local=local)

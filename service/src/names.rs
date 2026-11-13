@@ -306,7 +306,9 @@ mod tests {
         let (n2, d2) = claim_prepared(&audit).unwrap();
         assert_eq!((n1, n2), (1, 2));
         write_prepared_file(&audit, &d2, n2, "answer.json", b"{}\n").unwrap();
-        assert!(write_prepared_file(&audit, &d2, n2, "answer.json", b"x").is_err());
+        let taken = write_prepared_file(&audit, &d2, n2, "answer.json", b"x").unwrap_err();
+        assert_eq!(taken.error, "EEXIST");
+        assert!(taken.operation.starts_with("write prepared file"));
         assert_eq!(
             std::fs::read(p.join("a/prepared/2/answer.json")).unwrap(),
             b"{}\n"

@@ -668,6 +668,14 @@ def self_test():
         "wrong-file-mode": lambda p: (p / "answer.json").chmod(0o644),
         "wrong-package-mode": lambda p: p.chmod(0o755),
     }
+    intended = {
+        "answer-change": "exact-bytes:answer.json", "rendering-change": "exact-bytes:answer.md",
+        "artifact-change": "exact-bytes:artifact-e2.bin", "missing-member": "member-inventory",
+        "extra-member": "member-inventory", "duplicate-entry": "exact-bytes:answer.json",
+        "writer-mismatch": "exact-bytes:manifest.json", "symlink": "regular-file:answer.md",
+        "special-fifo": "regular-file:answer.md", "unlisted-directory": "regular-file:nested",
+        "wrong-file-mode": "file-mode:answer.json", "wrong-package-mode": "package-mode",
+    }
     for name, mutate in mutations.items():
         package = root / name
         package.mkdir(mode=0o700)
@@ -676,7 +684,10 @@ def self_test():
             (package / member).chmod(0o600)
         mutate(package)
         result = review(name, package)
-        check(name, result["outcome"] == "failed" and (root / ("review-" + name) / "REVIEW.json").is_file(), result["diagnostics"])
+        failed_checks = {row["name"] for row in result["checks"] if not row["passed"]}
+        check(name, result["outcome"] == "failed" and intended[name] in failed_checks
+              and (root / ("review-" + name) / "REVIEW.json").is_file(),
+              {"expected_failure": intended[name], "failed_checks": sorted(failed_checks), "diagnostics": result["diagnostics"]})
     corrupt = copy.deepcopy(value)
     corrupt["inputs"]["question"]["sha256"] = "0" * 64
     changed = root / "wrong-input.json"

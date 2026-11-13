@@ -33,6 +33,7 @@ import fake_provider  # noqa: E402,F401
 import reacting_auditor  # noqa: E402,F401
 import run_support  # noqa: E402,F401
 import procedure  # noqa: E402,F401
+import framework_selftest  # noqa: E402,F401
 
 
 def load_case_modules():

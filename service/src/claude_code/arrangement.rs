@@ -398,13 +398,19 @@ mod tests {
         let bytes = record(built());
         let pinned = decode_arrangement(&bytes).unwrap();
         let harness = pinned.harness.unwrap();
-        assert_eq!(harness.surface_sha256, surface::sha256());
-        assert_eq!(harness.profile.surface_sha256, surface::sha256());
+        assert_eq!(
+            harness.surface_sha256,
+            "e8182ecf0009ee1f3889b8e89902bec5eaef34c8bf4c079c2b78c34684780db5"
+        );
+        assert_eq!(
+            harness.profile.surface_sha256,
+            "e8182ecf0009ee1f3889b8e89902bec5eaef34c8bf4c079c2b78c34684780db5"
+        );
         let text = String::from_utf8(bytes).unwrap();
         let document = String::from_utf8(surface::bytes()).unwrap();
         assert!(text.contains(&format!(
             r#""surface":{document},"surface_sha256":"{}""#,
-            surface::sha256()
+            "e8182ecf0009ee1f3889b8e89902bec5eaef34c8bf4c079c2b78c34684780db5"
         )));
     }
 

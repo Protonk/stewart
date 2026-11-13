@@ -21,6 +21,12 @@ authentication and process-result controls; neither launches a subprocess or
 Claude. A socket-bind denial is a failed comparison, not a skipped or passing
 control. Every generated directory remains available through review.
 
+Synthetic controls retain sender bytes outside the observer's captures and derive
+their counts and digests there. Launch expectations are constructed from literal
+contract values independently of the surface builder. Corrupted observer counts,
+digests or matching changes to both supplied-file copies must fail their named
+comparisons; consistency between two outputs alone cannot establish correctness.
+
 The hook capture-failure control sends the same valid session-correlated attempt
 as the positive comparison. It retains the attempted bytes and peer operation
 status outside the sabotaged capture, and requires the exact injected failure,

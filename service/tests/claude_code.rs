@@ -34,6 +34,55 @@ fn expired_deadline_cannot_publish_a_core_record() {
     assert_eq!(live.state().revision(), 0);
 }
 
+#[test]
+fn confirmed_submission_preserves_cancellation_stop_and_deadline_refusals() {
+    for condition in ["cancel", "stop", "deadline"] {
+        let mut live = Live::new();
+        live.call("record_account", r#"{"text":"recorded before the stop"}"#)
+            .ok();
+        let prepared = live.call("prepare", "{}").str(&["prepared"]).to_string();
+        let parent = Gate::new(Instant::now() + Duration::from_secs(60));
+        let gate = match condition {
+            "deadline" => Gate::new(Instant::now() - Duration::from_millis(1)),
+            _ => parent.call(),
+        };
+        match condition {
+            "cancel" => gate.cancel(),
+            "stop" => gate.stop(),
+            _ => (),
+        }
+        let input = format!(r#"{{"prepared":"{prepared}","confirm":true}}"#);
+        let refusal = gate.within(|| live.call("submit", &input));
+        assert_eq!(
+            refusal.outcome(),
+            "refused",
+            "{condition}: {}",
+            refusal.text()
+        );
+        assert_eq!(refusal.reason(), "placement_stopped");
+        assert_eq!(refusal.effect("seal"), "none");
+        assert_eq!(
+            refusal.ex.end, None,
+            "a refused publication is not a write failure"
+        );
+        assert!(live.state().seal().is_none());
+        assert_eq!(live.state().revision(), 1);
+        if condition == "cancel" {
+            // A fresh sibling of the cancelled invocation can seal the same
+            // exact preparation. This also proves the prepared input was valid.
+            let accepted = parent.call().within(|| live.call("submit", &input));
+            accepted.ok();
+            assert_eq!(accepted.effect("seal"), "recorded");
+            assert!(accepted.ex.sealed);
+        } else {
+            let accepted = Gate::new(Instant::now() + Duration::from_secs(60))
+                .within(|| live.call("submit", &input));
+            accepted.ok();
+            assert!(accepted.ex.sealed);
+        }
+    }
+}
+
 /// The launch surface as the runtime contract's worked example gives it,
 /// copied here so these cases do not ask the binary under test for its digest.
 const SURFACE: &str = concat!(
@@ -431,7 +480,24 @@ fn help_leads_to_the_runtime_topic_and_the_scaffold_is_the_common_one() {
     // and nothing about this runtime.
     env.new_ref();
     let scaffold = std::fs::read_to_string(format!("{}/question.md", env.folder)).unwrap();
-    assert_eq!(scaffold, stewart::frontmatter::scaffold());
+    let control_lines: Vec<&str> = scaffold
+        .lines()
+        .filter(|line| !line.starts_with('#') && !line.is_empty())
+        .collect();
+    assert_eq!(
+        control_lines,
+        [
+            "---",
+            "stewart: question/1",
+            "family: open-inquiry",
+            "model: REPLACE-WITH-MODEL",
+            "destination: REPLACE-WITH-ABSOLUTE-DIRECTORY",
+            "limit-turns: 200",
+            "limit-input-tokens: 20000000",
+            "limit-output-tokens: 400000",
+            "---"
+        ]
+    );
     assert!(scaffold.contains("stewart: question/1\n") && scaffold.contains("limit-turns: "));
     assert!(!scaffold.contains("runtime") && !scaffold.contains("placement"));
 }
@@ -550,10 +616,9 @@ fn a_used_placement_is_counted_in_the_singular_with_its_deadline() {
                 .any(|m| a.join(m).symlink_metadata().is_ok())
         })
     {
-        eprintln!(
-            "SKIPPED a_used_placement_is_counted_in_the_singular_with_its_deadline: the scratch directory is under a project or configuration tree"
+        panic!(
+            "required scratch directory is under a project or configuration tree; rerun with a clean TMPDIR"
         );
-        return;
     }
     p.profile(
         "stewart.claude-code.profile/2",

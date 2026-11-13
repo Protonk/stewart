@@ -126,6 +126,7 @@ CASES = (
     ("runtime-ordinary-ending", "Unsubmitted turns, one reminder, a valid usage checkpoint, manager seal and confirmed close"),
     ("runtime-hooks-and-effort", "The hook helper admits only pinned tools after startup; a selected effort reaches the launch"),
     ("runtime-cancellation", "Ordered pipelined calls, cancellation behind a large call, late/unknown cancellations and reused IDs"),
+    ("runtime-submit-publication", "Documented seal-publication pause: cancellation preserves placement; signal and deadline prevent sealing"),
     ("runtime-relay-loss", "The relay dies while the model lives: the placement stops, nothing else writes, a fresh session continues"),
     ("runtime-usage-series", "Two placements: each session's latest checkpoint is summed and a lost interval stays unknown"),
     ("runtime-compaction", "Each compaction boundary is followed by the pinned notice and spends neither allowance"),
@@ -333,13 +334,35 @@ def group_observation(group, probe=os.killpg):
         return "unknown"
 
 
+def release_fault_pauses(directory, observe):
+    """Release each documented pause once, preserving its first release evidence."""
+    for paused in directory.glob("*.paused"):
+        go = paused.with_suffix(".go")
+        try:
+            with go.open("xb"):
+                pass
+        except FileExistsError:
+            continue
+        observe("pause-released", pause=str(paused), go=str(go))
+
+
 def capture_failure_diagnostic(text):
     """A case name or custody path is not an operation failure diagnosis."""
     if not isinstance(text, str):
         return False
     text = re.sub(r"/[^\s\"']+", "<path>", text.lower())
-    return bool(re.search(r"\b(capture|capturing|recorder|write|writing|archive_write_failed|capture_failed|raw_capture)\b", text)
+    return bool(re.search(r"\b(capture|capturing|recorder|archive_write_failed|capture_failed|raw_capture)\b", text)
                 and any(word in text for word in ("fail", "denied", "permission", "error", "cannot", "could not")))
+
+
+def summary_placement_fact(summary, name, value):
+    """Associate a number with its stated meaning; unrelated numbers prove nothing."""
+    n = r"\b%d\b" % value
+    word = {"used": r"(?:used|reserved|started)", "allowed": r"(?:allowed|limit)", "remaining": r"remain(?:ing|s)?"}[name]
+    return bool(re.search(n + r"\s+(?:placement starts?\s+|placements?\s+)?" + word + r"\b", summary, re.I)
+                or re.search(r"\b" + word + r"\s*[:=]?\s*" + n, summary, re.I)
+                or (name == "allowed" and re.search(r"\bused\s+of\s+" + n, summary, re.I))
+                or (name == "allowed" and re.search(r"\bof\s+" + n + r"\s+(?:placement starts?|placements?|allowed)\b", summary, re.I)))
 
 
 def transport_loads(data):
@@ -382,6 +405,8 @@ def mcp_message_loads(data):
     if "id" in value:
         if isinstance(value["id"], str):
             string(value["id"], "MCP id")
+        elif value["id"] is None and "error" in value and "method" not in value:
+            pass  # The originating request ID could not be established.
         elif type(value["id"]) is not int:
             raise ValueError("MCP id must be a string or integer")
     if "method" in value:
@@ -396,6 +421,8 @@ def mcp_message_loads(data):
         if "id" not in value or not isinstance(value["result"], dict):
             raise ValueError("MCP result response needs an id and object result")
     else:
+        if "id" not in value:
+            raise ValueError("MCP error response needs an id (null when unknown)")
         error = value["error"]
         if not isinstance(error, dict) or type(error.get("code")) is not int:
             raise ValueError("MCP error code must be an integer")
@@ -718,8 +745,15 @@ def relay_traffic(binary, variant, env, workspace, witness):
         witness.event("after-worker-cleanup")
 
 
+def validate_work_path(work):
+    """Reject known project ancestry before constructing launch fixtures."""
+    if work.resolve().is_relative_to(HERE.parent.parent.resolve()):
+        raise ValueError("--work must be outside the driver repository; use a fresh physical temporary directory")
+
+
 class Driver:
     def __init__(self, binary, work, release=None, selected=None, variant=None):
+        validate_work_path(work)
         self.binary, self.work, self.release, self.variant = binary, work, release, variant
         self.selected = set(selected) if selected else {name for name, _ in CASES}
         self.work.mkdir(mode=0o700, parents=False, exist_ok=False)
@@ -1007,6 +1041,10 @@ class Driver:
                     "harness_max_output_tokens": 16000, "texts": TEXTS}
         for key, value in expected.items():
             self.eq(label + "." + key, obj.get(key), value)
+        self.eq(label + ".reading", obj.get("reading"), {
+            "read_page_bytes": 65536, "binary_page_bytes": 49152, "search_text_bytes": 1024,
+            "search_hits_per_page": 128, "search_context_bytes_per_page": 32768,
+            "context_bytes_per_hit": 240, "list_page_materials": 128, "tool_input_bytes": 4194304})
         system = compact([{"type": "text", "text": RUNTIME_ORIENTATION},
                           {"type": "text", "text": FAMILY_TEXT[f["family"]]}])
         for key, value in (("system", system), ("tools", f["tools"]), ("mcp_tools", mcp_tools(f["tools"])),
@@ -1088,7 +1126,7 @@ class Driver:
         self.check(label + ".timeout", re.search(r"\b%d seconds?\b" % timeout, summary) is not None, summary)
         for name, value in (("used", used), ("allowed", limits["max_placements"]),
                             ("remaining", limits["max_placements"] - used)):
-            self.check(label + ".starts-" + name, re.search(r"\b%d\b" % value, summary) is not None, summary)
+            self.check(label + ".starts-" + name, summary_placement_fact(summary, name, value), summary)
         self.check(label + ".number-agreement",
                    re.search(r"\b1 placements\b|\b1 have\b|\b(?:0|[2-9]|[1-9][0-9]+) placement has\b", summary) is None,
                    summary)
@@ -1224,7 +1262,8 @@ class Driver:
             (f["witness"] / (section + "-" + key + ".json")).write_bytes(mutated)
             reply = self.prepare(f, section + "-" + key, "refused")
             self.control(section + "-" + key, reply.get("outcome") == "refused")
-            self.profile_refusal("binding." + section + "-" + key, reply)
+            named = "tool" if key == "tools_sha256" else key.split("_")[0]
+            self.profile_refusal("binding." + section + "-" + key, reply, named=(named,))
         changed_launch = json.loads(f["profile"])["launch"]
         changed_launch["platform"] = "linux-x86_64" if platform_name() != "linux-x86_64" else "macos-aarch64"
         node = parse(f["profile"]).get("launch")
@@ -1236,7 +1275,7 @@ class Driver:
         (f["witness"] / "wrong-platform-profile.json").write_bytes(mutated)
         reply = self.prepare(f, "platform", "refused")
         self.control("platform", reply.get("outcome") == "refused")
-        self.profile_refusal("binding.platform", reply)
+        self.profile_refusal("binding.platform", reply, named=("platform",))
         f["profile_path"].write_bytes(f["profile"])
         executable = f["executable"].read_bytes()
         f["executable"].write_bytes(executable + b"# changed digest\n")
@@ -1856,6 +1895,153 @@ class Driver:
         self.check(label + ".mcp-out-capture", bool(received) and retained.startswith(received),
                    {"received": len(received), "retained": len(retained)})
 
+    def runtime_submit_publication(self):
+        if self.variant is None or b"STEWART_TEST_FAULT" not in self.variant.read_bytes():
+            return "--variant-binary with claude-code,fault-injection is required for the documented publication pause"
+        original = self.binary
+        self.binary = self.variant
+        try:
+            for action, placements in (("positive", 3), ("cancel", 3), ("signal", 3),
+                                       ("deadline", 3), ("deadline-last", 1)):
+                self.submit_publication(action, placements)
+        finally:
+            self.binary = original
+
+    def submit_publication(self, action, placements):
+        label = "submit-publication-" + action
+        seconds = 6 if action.startswith("deadline") else 60
+        f = self.fixture(label, scenario="submit-publication", timeout=seconds, placements=placements)
+        self.change_scenario(f, publication_action=action)
+        self.accept(f)
+        faults = f["witness"] / "faults"
+        faults.mkdir()
+        env = dict(self.env, STEWART_TEST_FAULT="log.publish:seal=pause", STEWART_TEST_FAULT_DIR=str(faults))
+        argv = [str(self.binary), "run", f["reference"], "--json"]
+        stdout_path, stderr_path = f["witness"] / "run.stdout", f["witness"] / "run.stderr"
+        before = snapshot(f["archive"])
+        started = time.monotonic()
+        with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+            process = subprocess.Popen(argv, stdout=stdout, stderr=stderr, env=env, cwd=self.cwd)
+            paused = []
+            def await_fact(predicate, bound=12):
+                until = time.monotonic() + bound
+                while process.poll() is None and time.monotonic() < until:
+                    if predicate():
+                        return True
+                    time.sleep(0.01)
+                return bool(predicate())
+            def observed(name):
+                return [e for e in self.harness_events(f) if e.get("event") == name]
+            def boundary(event, **facts):
+                with (f["witness"] / "publication-boundary.jsonl").open("ab") as record:
+                    record.write(compact({"event": event, "monotonic_ns": time.monotonic_ns(), **facts}) + b"\n")
+            def release():
+                release_fault_pauses(faults, boundary)
+            try:
+                self.require(label + ".publication-pause", await_fact(lambda: bool(list(faults.glob("log.publish*.paused")))),
+                             {"exit": process.poll(), "stderr": stderr_path.read_text(errors="replace")})
+                paused = list(faults.glob("log.publish*.paused"))
+                self.require(label + ".independent-submit-sent", bool(observed("submit-publication")),
+                             str(f["witness"] / "harness.jsonl"))
+                status = self.cmd(label + ".status-before-link", ["status", f["reference"]])
+                self.eq(label + ".no-seal-before-link", status["data"].get("seal"), {"state": "absent", "actor": None})
+                if action == "cancel":
+                    (f["witness"] / "cancel-submit").write_bytes(b"")
+                    self.require(label + ".cancellation-observed-before-release",
+                                 await_fact(lambda: bool(observed("submit-cancellation-ping"))),
+                                 "ordered cancellation and following ping were not acknowledged")
+                elif action == "signal":
+                    supplied = observed("submit-publication")[0]
+                    model_group = supplied["group"]
+                    process_record = strict_loads((self.audit_path(f) / "runs" / "1" / "process-model.json").read_bytes())
+                    self.eq(label + ".group-matches-independent-harness", process_record.get("group"), model_group)
+                    self.eq(label + ".group-matches-process-observation", os.getpgid(supplied["pid"]), model_group)
+                    present = group_observation(model_group)
+                    boundary("before-signal", owner_pid=process.pid, owner_alive=process.poll() is None,
+                             model_group=model_group, group_observation=present)
+                    self.require(label + ".model-group-present-control", present == "present", present)
+                    process.send_signal(signal.SIGTERM)
+                    boundary("signal-sent", owner_pid=process.pid, signal="SIGTERM")
+                    self.save("witness/" + label + "/signal.json", {"pid": process.pid, "signal": "SIGTERM",
+                              "model_group": model_group, "monotonic_ns": time.monotonic_ns()})
+                    prior_state = [present]
+                    def stopped():
+                        state = group_observation(model_group)
+                        if state != prior_state[-1]:
+                            boundary("model-group-observation", model_group=model_group, observation=state)
+                            prior_state.append(state)
+                        return state == "absent"
+                    absent = await_fact(stopped, bound=8)
+                    owner_alive = process.poll() is None
+                    still_paused = all(p.exists() and not p.with_suffix(".go").exists() for p in paused)
+                    boundary("stopping-observed-before-release", model_group_absent=absent,
+                             owner_alive=owner_alive, still_paused=still_paused)
+                    self.require(label + ".stopping-won-before-release", absent and owner_alive and still_paused,
+                                 {"group_observations": prior_state, "owner_exit": process.poll(), "still_paused": still_paused})
+                elif action.startswith("deadline"):
+                    # The placement was reserved before this acknowledged pause;
+                    # a full placement interval after it establishes expiry.
+                    end = time.monotonic() + seconds + 0.1
+                    while time.monotonic() < end and process.poll() is None:
+                        time.sleep(0.02)
+                release()
+                if action == "cancel":
+                    self.require(label + ".refusal-and-continuation-observed",
+                                 await_fact(lambda: bool(observed("submit-cancelled-reentry"))),
+                                 str(f["witness"] / "harness.jsonl"))
+                    status = self.cmd(label + ".status-after-cancel", ["status", f["reference"]])
+                    self.eq(label + ".cancel-published-no-seal", status["data"].get("seal"), {"state": "absent", "actor": None})
+                    self.eq(label + ".cancel-kept-placement", process.poll(), None)
+                    (f["witness"] / "retry-submit").write_bytes(b"")
+                process.wait(timeout=15)
+            except BaseException:
+                self.launch_blocked = ("publication control did not finish; inspect retained owner/group evidence at "
+                                       + str(f["witness"]) + " before another launch")
+                raise
+            finally:
+                release()
+                if process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=5)
+                self.save("witness/" + label + "/run-command.json", {"argv": argv, "env": env,
+                          "exit": process.returncode, "elapsed_seconds": time.monotonic() - started,
+                          "pause_files": [str(p) for p in paused]})
+        reply = strict_loads(stdout_path.read_bytes())
+        ending = "sealed" if action in ("positive", "cancel") else "limit_reached" if placements == 1 else "interrupted"
+        cause = "signal" if action == "signal" else "placement_deadline" if action == "deadline" else None
+        self.eq(label + ".outcome", reply.get("outcome"), "completed")
+        self.eq(label + ".ending", reply.get("data", {}).get("ending"), ending)
+        self.eq(label + ".cause", reply.get("data", {}).get("cause"), cause)
+        self.eq(label + ".exit", process.returncode, 5 if ending == "interrupted" else 0)
+        self.eq(label + ".retained-earlier-bytes", immutable_changes(before, snapshot(f["archive"])), [])
+        self.groups_absent(f)
+        status = self.inspect_runtime(f)
+        if action in ("positive", "cancel"):
+            self.check_delivery(f, status)
+        else:
+            self.eq(label + ".no-seal-after-stop", status["data"].get("seal"), {"state": "absent", "actor": None})
+            self.eq(label + ".stop-effects-seal", reply.get("effects", {}).get("seal"), "none")
+        event = observed("submit-publication")[0]
+        run = self.audit_path(f) / "runs" / "1"
+        calls = [path for path in run.glob("call-*.json")
+                 if transport_loads(path.read_bytes()).get("id") == event["id"]]
+        self.require(label + ".submitted-call-retained", len(calls) == 1, [str(p) for p in calls])
+        result = strict_loads((run / calls[0].name.replace("call-", "result-")).read_bytes())["body"]
+        core = strict_loads(result["content"][0]["text"].encode())
+        if action == "positive":
+            self.eq(label + ".positive-submit", core.get("outcome"), "completed")
+        else:
+            self.eq(label + ".submit-refusal", (core.get("outcome"), core.get("reason")), ("refused", "placement_stopped"))
+            self.eq(label + ".submit-refusal-effects", {k: v for k, v in core.get("effects", {}).items() if k != "diagnostic"},
+                    {"seal": "none", "raw_capture": "recorded"})
+            self.eq(label + ".refusal-published-no-log-record", result.get("log_record"), None)
+            self.control(label + "-stops-publication", core.get("reason") == "placement_stopped"
+                         and core.get("effects", {}).get("seal") == "none")
+        if action == "cancel":
+            reentry = observed("submit-cancelled-reentry")[0]["response"]
+            self.eq(label + ".later-call-completed", reentry.get("outcome"), "completed")
+            self.eq(label + ".one-placement", status["data"].get("runs", {}).get("count"), 1)
+
     def runtime_relay_loss(self):
         f = self.fixture("runtime-relay-loss", scenario="relay-loss", timeout=20)
         label = f["label"]
@@ -2113,10 +2299,22 @@ class Driver:
         f = self.fixture("runtime-credential-option", scenario="submit")
         self.accept(f)
         marker = Path(str(f["executable"]) + ".started")
-        reply = self.cmd(f["label"] + ".key-fd", ["run", f["reference"], "--key-fd", "0"],
-                         outcome="refused", input_bytes=b"synthetic-not-a-credential\n")
-        self.eq(f["label"] + ".not-launched", marker.exists(), False)
-        self.control("api-credential-option", reply.get("outcome") == "refused" and not marker.exists())
+        attempts = [("key-fd", ["--key-fd", "0"], self.env)]
+        for key in ("ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"):
+            for label, value in (("empty", ""), ("supplied", "synthetic-not-a-credential")):
+                attempts.append((key + "-" + label, [], dict(self.env, **{key: value})))
+        for suffix, args, env in attempts:
+            name = f["label"] + "." + suffix
+            reply = self.cmd(name, ["run", f["reference"]] + args, env=env,
+                             outcome="refused", input_bytes=b"synthetic-not-a-credential\n")
+            self.eq(name + ".named-refusal", reply.get("reason"), "runtime_credential_forbidden")
+            self.eq(name + ".effects", {k: v for k, v in reply.get("effects", {}).items() if k != "diagnostic"},
+                    {"run": "not_started", "answer": "unchanged", "seal": "none", "delivery": "none"})
+            self.eq(name + ".not-launched", marker.exists(), False)
+            self.control("credential-option-" + suffix, reply.get("reason") == "runtime_credential_forbidden"
+                         and not marker.exists())
+        status = self.cmd(f["label"] + ".no-start-reserved", ["status", f["reference"]])
+        self.eq(f["label"] + ".no-start-reserved", status["data"].get("runs", {}).get("count"), 0)
 
     def runtime_unknown_stop(self):
         f = self.fixture("runtime-unknown-stop", scenario="hang")
@@ -2133,6 +2331,7 @@ class Driver:
         # Never ask recovery to signal it: the live group belongs to this driver.
         unrelated = subprocess.Popen(["/bin/sleep", "60"], start_new_session=True)
         try:
+            self.eq(f["label"] + ".external-group-observed-present", group_observation(unrelated.pid), "present")
             changed = strict_loads(original)
             changed["group"] = unrelated.pid
             process_record.write_bytes(compact(changed) + b"\n")
@@ -2143,14 +2342,37 @@ class Driver:
                 stop_record.unlink()
             marker = Path(str(f["executable"]) + ".started")
             before = marker.read_bytes()
+            log_before = snapshot(self.audit_path(f) / "log")
             reply = self.cmd(f["label"] + ".blocked-restart", ["run", f["reference"]], outcome="refused")
+            self.eq(f["label"] + ".named-stop-refusal", reply.get("reason"), "runtime_stop_unknown")
             self.eq(f["label"] + ".no-start-after-unknown-stop", marker.read_bytes(), before)
+            self.eq(f["label"] + ".restart-published-nothing", snapshot(self.audit_path(f) / "log"), log_before)
             self.eq(f["label"] + ".recovery-did-not-signal", unrelated.poll(), None)
             self.control("unknown-stop-blocks-restart", reply.get("outcome") == "refused" and marker.read_bytes() == before)
-            closed = self.cmd(f["label"] + ".blocked-close", ["close", f["reference"]], outcome=None)
-            self.check(f["label"] + ".close-unfinished", closed.get("effects", {}).get("closure") != "complete", closed)
+            closed = self.cmd(f["label"] + ".blocked-close", ["close", f["reference"]], outcome="refused")
+            self.eq(f["label"] + ".named-close-stop-refusal", closed.get("reason"), "runtime_stop_unknown")
+            log_after = snapshot(self.audit_path(f) / "log")
+            preserved = self.eq(f["label"] + ".prior-log-bytes-preserved", immutable_changes(log_before, log_after), [])
+            added = [strict_loads((self.audit_path(f) / "log" / name).read_bytes())
+                     for name in sorted(set(log_after) - set(log_before))]
+            # INTERFACE 5.8 step 4 records the request before the stopping
+            # prerequisite. Unknown stopping prevents reconciliation, sealing,
+            # delivery and completion; it does not erase the manager's request.
+            only_request = self.eq(f["label"] + ".only-close-requested", [r.get("kind") for r in added],
+                                   ["close_requested"])
+            for record in added:
+                self.eq(f["label"] + ".close-request.schema", record.get("record"), "stewart.record/1")
+                self.eq(f["label"] + ".close-request.audit", record.get("audit"), f["reference"].split(":")[1])
+                self.eq(f["label"] + ".close-request.writer", record.get("writer"), sha(self.binary.read_bytes()))
+                self.eq(f["label"] + ".close-request.flags", record.get("body", {}).get("flags"),
+                        {"confirm": None, "surrender": [], "destination": None})
             self.eq(f["label"] + ".close-did-not-signal", unrelated.poll(), None)
-            self.control("unknown-stop-blocks-close", closed.get("effects", {}).get("closure") != "complete")
+            self.control("unknown-stop-blocks-close", closed.get("reason") == "runtime_stop_unknown"
+                         and preserved and only_request)
+            repeated = self.cmd(f["label"] + ".repeat-blocked-close", ["close", f["reference"]], outcome="refused")
+            self.eq(f["label"] + ".repeat-named-stop-refusal", repeated.get("reason"), "runtime_stop_unknown")
+            self.eq(f["label"] + ".repeat-published-nothing", snapshot(self.audit_path(f) / "log"), log_after)
+            self.eq(f["label"] + ".repeat-did-not-signal", unrelated.poll(), None)
         finally:
             if unrelated.poll() is None:
                 unrelated.terminate()
@@ -2686,8 +2908,32 @@ def synthetic_harness(scenario_path, environment_path, argv):
         prepared = tool("prepare", {})
         if prepared.get("outcome") != "completed":
             raise RuntimeError("prepare did not complete: %r" % prepared)
-        # Submission's recorded core reply is deliberately not awaited: the
-        # common contract stops the placement without transmitting that reply.
+        if scenario["mode"] == "submit-publication":
+            identity = send("tools/call", {"name": "submit", "arguments": {
+                "prepared": prepared["data"]["prepared"], "confirm": True}})
+            event("submit-publication", id=identity, group=os.getpgrp())
+            if scenario.get("publication_action") == "cancel":
+                def wait_marker(name):
+                    until = time.monotonic() + 30
+                    while not (witness / name).exists():
+                        if time.monotonic() >= until:
+                            raise TimeoutError("missing external publication control: " + name)
+                        time.sleep(0.01)
+                wait_marker("cancel-submit")
+                send("notifications/cancelled", {"requestId": identity, "reason": "publication control"}, notification=True)
+                event("submit-cancellation-ping", response=rpc("ping"))
+                event("submit-cancelled-reply", response=receive(identity))
+                event("submit-cancelled-reentry", response=tool("what_am_i_working_with", {}))
+                wait_marker("retry-submit")
+                prepared = tool("prepare", {})
+                send("tools/call", {"name": "submit", "arguments": {
+                    "prepared": prepared["data"]["prepared"], "confirm": True}})
+                event("submit-retried")
+            time.sleep(600)
+            return 9
+        # The runtime captures and attempts to send the submit reply before
+        # stopping the harness. Its independent archive record is checked by
+        # the outer driver even if shutdown wins the peer's next read.
         send("tools/call", {"name": "submit", "arguments": {"prepared": prepared["data"]["prepared"], "confirm": True}})
         time.sleep(600)
         return 9
@@ -2706,6 +2952,45 @@ def self_test():
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
+    with tempfile.TemporaryDirectory(prefix="stewart-work-preflight-") as directory:
+        outside = Path(directory).resolve()
+        for label, path in (("external", outside / "new-work"), ("external-nested", outside / "nested" / "work")):
+            try:
+                validate_work_path(path)
+            except ValueError:
+                accepted = False
+            else:
+                accepted = True
+            check("work-preflight." + label, accepted and not path.exists())
+        forbidden = HERE.parent.parent / outside.name
+        child = subprocess.run([sys.executable, "-I", "-B", str(Path(__file__).resolve()),
+                                "--binary", sys.executable, "--work", str(forbidden)],
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+        check("work-preflight.repository-refused", child.returncode == 2
+              and b"--work must be outside the driver repository" in child.stderr)
+        check("work-preflight.refusal-has-no-files", not forbidden.exists())
+        try:
+            validate_work_path(HERE.parent.parent / "unused" / ".." / ".scratch" / "work")
+        except ValueError:
+            normalized_refused = True
+        else:
+            normalized_refused = False
+        check("work-preflight.normalized-descendant-refused", normalized_refused)
+    with tempfile.TemporaryDirectory(prefix="stewart-release-witness-") as directory:
+        root = Path(directory)
+        paused = root / "log.publish:seal.paused"
+        paused.write_bytes(b"")
+        events = []
+        release_fault_pauses(root, lambda event, **facts: events.append((event, facts)))
+        go = paused.with_suffix(".go")
+        check("fault-release.positive", go.exists() and go.read_bytes() == b"" and len(events) == 1)
+        go.write_bytes(b"first release witness")
+        os.utime(go, ns=(123456789, 123456789))
+        first_time = go.stat().st_mtime_ns
+        release_fault_pauses(root, lambda event, **facts: events.append((event, facts)))
+        check("fault-release.cleanup-keeps-first-bytes-and-time", go.read_bytes() == b"first release witness"
+              and go.stat().st_mtime_ns == first_time)
+        check("fault-release.cleanup-adds-no-second-event", len(events) == 1)
     environment_root = Path(tempfile.mkdtemp(prefix="stewart-environment-driver-selftest-"))
     print("Environment self-test evidence retained: %s" % environment_root, flush=True)
     check("environment.nul-decoder-values", environment_snapshot(b"A=line\nwith=equals\0EMPTY=\0")
@@ -2852,7 +3137,7 @@ def self_test():
     valid_error = b'{"jsonrpc":"2.0","id":3,"error":{"code":-32000,"message":"startup pending"}}'
     check("mcp.signed-error", mcp_message_loads(valid_error)["error"]["code"] == -32000)
     check("mcp.signed-id", mcp_message_loads(b'{"jsonrpc":"2.0","id":-1,"result":{}}')["id"] == -1)
-    check("mcp.unknown-id-error", "id" not in mcp_message_loads(b'{"jsonrpc":"2.0","error":{"code":-32700,"message":"parse error"}}'))
+    check("mcp.unknown-id-error", mcp_message_loads(b'{"jsonrpc":"2.0","id":null,"error":{"code":-32700,"message":"parse error"}}')["id"] is None)
     check("mcp.metadata-numbers", mcp_message_loads(b'{"jsonrpc":"2.0","id":"x","result":{},"_meta":{"n":-1.25}}')["_meta"]["n"] == -1.25)
     malformed = {
         "duplicate-code": b'{"jsonrpc":"2.0","id":3,"error":{"code":-32000,"code":0,"message":"x"}}',
@@ -2863,6 +3148,8 @@ def self_test():
         "fraction-code": b'{"jsonrpc":"2.0","id":3,"error":{"code":-32000.5,"message":"x"}}',
         "missing-message": b'{"jsonrpc":"2.0","id":3,"error":{"code":-32000}}',
         "null-id": b'{"jsonrpc":"2.0","id":null,"result":{}}',
+        "missing-error-id": b'{"jsonrpc":"2.0","error":{"code":-32700,"message":"parse error"}}',
+        "null-request-id": b'{"jsonrpc":"2.0","id":null,"method":"ping"}',
         "bool-id": b'{"jsonrpc":"2.0","id":true,"result":{}}',
         "fraction-id": b'{"jsonrpc":"2.0","id":1.5,"result":{}}',
         "wrong-version": b'{"jsonrpc":"1.0","id":3,"result":{}}',
@@ -2931,9 +3218,9 @@ def self_test():
         base = compact(expected_tools(family))
         mapped = mcp_tools(base)
         check(family + ".tool-order", [x["name"] for x in json.loads(mapped)] == [x["name"] for x in json.loads(base)])
-        for source, target in zip(parse(base).items, parse(mapped).items):
-            check(family + ".schema." + source.get("name").value(),
-                  source.get("input_schema").raw == target.get("inputSchema").raw)
+        for source, target in zip(expected_tools(family), parse(mapped).items):
+            expected_schema = json.dumps(source["input_schema"], ensure_ascii=False, separators=(",", ":")).encode()
+            check(family + ".schema." + source["name"], expected_schema == target.get("inputSchema").raw)
         check(family + ".order", all(node.keys() == ["name", "description", "inputSchema"] for node in parse(mapped).items))
         changed = bytearray(mapped)
         changed[-2] = ord(" ")
@@ -2953,7 +3240,16 @@ def self_test():
     check("recorder-diagnostic.positive", capture_failure_diagnostic("write capture failed: Permission denied"))
     check("recorder-diagnostic.nonfailure-control", not capture_failure_diagnostic("capture completed"))
     check("recorder-diagnostic.path-is-not-evidence", not capture_failure_diagnostic("writer /private/tmp/runtime-recorder-failure"))
+    check("recorder-diagnostic.unrelated-write-is-not-capture", not capture_failure_diagnostic("write diagnostic failed: Permission denied"))
     check("recorder-diagnostic.path-invariance", capture_failure_diagnostic("write capture failed: Permission denied /unrelated/path"))
+    for name, value in (("used", 1), ("allowed", 5), ("remaining", 4)):
+        check("summary.placement." + name, summary_placement_fact("1 used, 5 allowed, 4 remaining; 60 seconds", name, value))
+        check("summary.unrelated-numbers." + name, not summary_placement_fact("1, 5, 4; 60 seconds", name, value))
+    check("summary.allowed-remaining-swap-fires", not summary_placement_fact("1 used, 4 allowed, 5 remaining", "allowed", 5)
+          and not summary_placement_fact("1 used, 4 allowed, 5 remaining", "remaining", 4))
+    check("summary.used-of-and-remain-invariance", all(summary_placement_fact(
+        "Placement starts: 1 used of 5; 4 remain.", name, value)
+        for name, value in (("used", 1), ("allowed", 5), ("remaining", 4))))
     owned = subprocess.Popen(["/bin/sleep", "10"], start_new_session=True)
     try:
         check("group-observer.live-firing-control", group_observation(owned.pid) == "present")
@@ -2986,8 +3282,18 @@ def self_test():
     # Each further scenario runs against a specification-only peer, so that
     # the synthetic harness's own sequencing is known before a binary is used.
     mode_peer = '''import json,sys
+pending_submit=None
+cancelled_submit=False
 for raw in sys.stdin.buffer:
     q=json.loads(raw)
+    if q["method"]=="notifications/cancelled" and pending_submit is not None:
+        result={"content":[{"type":"text","text":json.dumps({"outcome":"refused","reason":"placement_stopped","effects":{"seal":"none","raw_capture":"recorded"}})}]}
+        print(json.dumps({"jsonrpc":"2.0","id":pending_submit,"result":result}),flush=True)
+        pending_submit=None
+        cancelled_submit=True
+    if publication and q.get("params",{}).get("name")=="submit" and not cancelled_submit:
+        pending_submit=q["id"]
+        continue
     if "id" not in q: continue
     method=q["method"]
     result={}
@@ -3002,6 +3308,7 @@ for raw in sys.stdin.buffer:
     submitted = lambda e: e["event"] == "rpc-send" and e["value"].get("params", {}).get("name") == "submit"
     modes = (
         ("cancel", 1, submitted),
+        ("submit-publication", 1, lambda e: e["event"] == "submit-retried"),
         ("compaction", 4, submitted),
         ("hooks", 1, submitted),
         ("relay-loss", 1, lambda e: e["event"] == "second-relay"),
@@ -3017,8 +3324,12 @@ for raw in sys.stdin.buffer:
                         "family": "open-inquiry", "session": "synthetic-" + mode, "account": ACCOUNT,
                         "kept": KEPT, "queued": QUEUED, "cancelled": CANCELLED, "duplicate": DUPLICATE,
                         "second_relay": SECOND_RELAY, "auth_private": "synthetic-private-auth-field"}
+            if mode == "submit-publication":
+                scenario["publication_action"] = "cancel"
+                for marker in ("cancel-submit", "retry-submit"):
+                    (root / marker).write_bytes(b"")
             (root / "scenario.json").write_bytes(compact(scenario))
-            (root / "peer.py").write_text(mode_peer)
+            (root / "peer.py").write_text("publication=%r\n" % (mode == "submit-publication") + mode_peer)
             (root / "settings.json").write_bytes(compact({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [
                 {"type": "command", "command": "cat >/dev/null; printf '{}\\n'", "timeout": 5}]}]}}))
             (root / "prompt").write_text("synthetic self-test prompt")
@@ -3082,6 +3393,15 @@ for raw in sys.stdin.buffer:
                 check("mode.cancel.cancel-targets", cancels == [ids[0], 424242] + ids[5:])
                 check("mode.cancel.race-size", len(race_text(1)) == 262144 and race_text(1) != race_text(2))
                 check("mode.cancel.submits", any(submitted(e) for e in events))
+            elif mode == "submit-publication":
+                transitions = [e["event"] for e in events if e["event"].startswith("submit-")]
+                check("mode.submit-publication.order", transitions == ["submit-publication", "submit-cancellation-ping",
+                      "submit-cancelled-reply", "submit-cancelled-reentry", "submit-retried"])
+                refused = next((e["response"] for e in events if e["event"] == "submit-cancelled-reply"), {})
+                check("mode.submit-publication.named-refusal", (Driver.core_reply(None, refused) or {}).get("reason") == "placement_stopped")
+                check("mode.submit-publication.later-call", any(e["event"] == "submit-cancelled-reentry"
+                      and e["response"].get("outcome") == "completed" for e in events))
+                check("mode.submit-publication.confirmed-retry", sum(submitted(e) for e in events) == 2)
             elif mode == "compaction":
                 check("mode.compaction.sequence", kinds == [("system", "init"), ("system", "compact_boundary"),
                       ("system", "compact_boundary"), ("result", "success")])
@@ -3291,7 +3611,7 @@ def main():
     parser.add_argument("--release-binary", type=Path, help="optional absolute featureless binary for rejection controls")
     parser.add_argument("--variant-binary", type=Path,
                         help="optional absolute second claude-code build with a different digest, for writer invariance")
-    parser.add_argument("--work", type=Path, help="absolute directory that must not already exist; all evidence is retained")
+    parser.add_argument("--work", type=Path, help="fresh physical absolute directory outside the driver repository; all evidence is retained")
     args = parser.parse_args()
     if args.list:
         for name, description in CASES:

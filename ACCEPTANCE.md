@@ -277,23 +277,24 @@ These are acceptance obligations for the selected organizing model. Concrete
 schemas, tools and rendered fixtures are specification deliverables under the
 closed design, not open policy choices.
 
-- **Pass:** each selected family preserves the manager's question verbatim and
-  pins its versioned guidance, material expectations and answer instructions in
-  the prepared arrangement. A broad request commissions through open inquiry
-  with no modules and no extra justification or reduced service.
+- **Pass:** each implemented family preserves the manager's question verbatim
+  and pins its versioned instructions and tools in the prepared arrangement.
+  A broad request commissions through open inquiry without extra justification
+  or reduced service. Manager guidance and declared material roles remain
+  specified obligations pending their interface design and implementation.
 - **Differing:** selecting inquiry framing explicitly commissions formulation
   and investigation within the same undertaking. The original request and the
-  auditor's working question remain distinguishable. Once modules are specified,
-  selecting one changes only its declared prompts and answer expectations.
-- **Invariance:** changing the family or selecting no module never silently
-  rewrites the question or expands material access, tools beyond the declared
-  form, budget or investigation. Missing declared material-role mappings do not
-  block commissioning or become claims that no attached file contains evidence.
-- **Permitted answers:** disagreement with the framing, missing evidence,
-  no supported finding and qualified support can each be expressed and submitted
-  without inventing a defect or repair. Inquiry framing permits an account that
-  useful bounded investigation was impossible. No test grades agreement with an
-  expected substantive conclusion as successful compliance.
+  auditor's working question remain distinguishable.
+- **Invariance:** changing the family never silently rewrites the question or
+  expands material access, tools beyond the declared form, budget or
+  investigation. When material roles are implemented, missing declared mappings
+  must not block commissioning or become claims that no attached file contains
+  evidence.
+- **Permitted answers:** the latitude in
+  [CONTRACTS, Principles and scope](CONTRACTS.md#principles-and-scope) can be
+  expressed and submitted without inventing a defect or repair. Inquiry framing
+  permits an account that useful bounded investigation was impossible. No test
+  grades agreement with an expected substantive conclusion as successful compliance.
 - **Citation controls:** compare a valid locator/quote, a changed range or quote,
   and a valid but irrelevant citation. Only the mechanical mismatch refuses the
   entry mutation; the raw attempted call remains recorded and no answer element
@@ -310,13 +311,12 @@ closed design, not open policy choices.
   placement. Continuation cannot reset the audit's one reminder or one near-limit
   notice. Exercise exhausted allowances, provider failures and interrupted calls
   as differing events; no extra allowance or automatic auditor seal appears.
-- **Sabotage:** a build that paraphrases the manager's question, requires a module
-  for open inquiry, silently gives another family the inquiry-framing task,
+- **Sabotage:** a build that paraphrases the manager's question,
+  silently gives another family the inquiry-framing task,
   grades evidential support, blocks an incomplete selection, or resets a prompt
   allowance after continuation.
 - **Specification:** [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) gives the
-  concrete field/tool schemas and orientation wording. Optional modules and
-  hidden-prior machinery are unselected. C5 owns rendering.
+  concrete field/tool schemas and orientation wording. C5 owns rendering.
 
 ### C8 — Close from every state
 

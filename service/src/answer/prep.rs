@@ -755,10 +755,7 @@ pub fn seal(
                         seal: existing_seal(audit, &st),
                     })
                 }
-                _ => Err(SealError::NotPublished(Cause::new(
-                    "publish seal",
-                    f.message,
-                ))),
+                _ => Err(SealError::Refused(f)),
             }
         }
         Err(PubErr::Damaged(_)) => Err(SealError::LogDamaged),
@@ -948,6 +945,7 @@ fn submit_inner(ctx: &Ctx, v: &Json) -> Result<Out, Fail> {
             };
             Ok(out)
         }
+        Err(SealError::Refused(f)) => Ok(with_seal(Out::fail(f))),
         Err(SealError::NotPublished(cause)) => Ok(with_seal(
             Out::fail(
                 Fail::failed(
@@ -1088,14 +1086,19 @@ mod tests {
                 Prepped::Produced(art, b"ignored".to_vec()),
             ],
         );
-        let c = cites();
         let want = format!(
             "{{\"schema\":\"stewart.answer/1\",\"revision\":7,\"entries\":[\n\
              {{\"id\":\"e1\",\"version\":2,\"kind\":\"record_account\",\"label\":\"\",\"text\":\"Line\\n\\t\\\"q\\\"\\u0001\u{7f}é\",\"citations\":[{},{}]}},\n\
              {{\"id\":\"e3\",\"version\":2,\"kind\":\"record_observation\",\"label\":\"gone\",\"unproduced\":{{\"sha256\":\"{}\",\"size\":120,\"failure\":\"damaged\"}}}},\n\
              {{\"id\":\"e4\",\"version\":2,\"kind\":\"record_artifact\",\"label\":\"trace\",\"encoding\":\"utf-8\",\"member\":\"artifact-e4.bin\",\"size\":120,\"sha256\":\"{}\"}}]}}\n",
-            c[0].to_j().string(),
-            c[1].to_j().string(),
+            format!(
+                r#"{{"source":"materials/a.py","start":50,"end":119,"stewart":{{"name":"materials/a.py","sha256":"{}","lines":[4,6]}}}}"#,
+                "c".repeat(64)
+            ),
+            format!(
+                r#"{{"source":"question","quote":"R1. A \"reminder\"","stewart":{{"name":"question","sha256":"{}","range":[0,46],"lines":[1,1]}}}}"#,
+                "d".repeat(64)
+            ),
             "a".repeat(64),
             "a".repeat(64),
         );

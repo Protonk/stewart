@@ -607,7 +607,25 @@ mod tests {
                 .map(|t| t.obj("").unwrap().str("name").unwrap().to_string())
                 .collect();
             let mut want = vec!["list", "read", "search"];
-            want.extend(f.tools.iter().copied());
+            let family_tools: &[&str] = match f.id {
+                "open-inquiry" => &["record_account", "record_observation", "record_limit"],
+                "inquiry-framing" => &[
+                    "record_working_question",
+                    "record_relation",
+                    "record_observation",
+                    "record_account",
+                    "record_limit",
+                ],
+                "comparison" => &[
+                    "record_criterion",
+                    "record_comparison",
+                    "record_observation",
+                    "record_account",
+                    "record_limit",
+                ],
+                id => panic!("unexpected family: {id}"),
+            };
+            want.extend(family_tools.iter().copied());
             want.extend([
                 "record_artifact",
                 "replace",
@@ -681,9 +699,34 @@ mod tests {
 
     #[test]
     fn citation_schema_is_exact() {
+        let expected = r#"{"type":"object","properties":{"source":{"type":"string","description":"question or materials/<name>."},"start":{"type":"integer","minimum":0,"description":"Byte offset where the cited span begins."},"end":{"type":"integer","minimum":1,"description":"Byte offset just after the cited span."},"quote":{"type":"string","description":"Exact text of the cited span."}},"required":["source"],"additionalProperties":false}"#;
+        assert_eq!(citation_schema().string(), expected);
+        for family in &FAMILIES {
+            let emitted = tools(family).bytes();
+            let parsed = crate::json::parse(&emitted).unwrap();
+            for tool in parsed.as_arr().unwrap() {
+                let object = tool.obj("").unwrap();
+                let name = object.str("name").unwrap();
+                if name == "replace" || (name.starts_with("record_") && name != "record_artifact") {
+                    let schema = object.obj("input_schema").unwrap();
+                    let properties = schema.obj("properties").unwrap();
+                    let citations = properties.obj("citations").unwrap();
+                    assert_eq!(
+                        citations.req("items").unwrap().to_j().string(),
+                        expected,
+                        "{} {name}",
+                        family.id
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn reading_bounds_match_the_interface() {
         assert_eq!(
-            citation_schema().string(),
-            r#"{"type":"object","properties":{"source":{"type":"string","description":"question or materials/<name>."},"start":{"type":"integer","minimum":0,"description":"Byte offset where the cited span begins."},"end":{"type":"integer","minimum":1,"description":"Byte offset just after the cited span."},"quote":{"type":"string","description":"Exact text of the cited span."}},"required":["source"],"additionalProperties":false}"#
+            reading_j().string(),
+            r#"{"read_page_bytes":65536,"binary_page_bytes":49152,"search_text_bytes":1024,"search_hits_per_page":128,"search_context_bytes_per_page":32768,"context_bytes_per_hit":240,"list_page_materials":128,"tool_input_bytes":4194304}"#
         );
     }
 

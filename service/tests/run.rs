@@ -71,16 +71,13 @@ impl Drop for Provider {
     }
 }
 
-/// Bind 127.0.0.1 on port 0, or `None` (the test then skips, saying so)
-/// where binding is not permitted.
+/// A required listener must bind; unavailable transport is a failed test.
 fn listener(test: &str) -> Option<TcpListener> {
     match TcpListener::bind("127.0.0.1:0") {
         Ok(l) => Some(l),
-        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
-            eprintln!("SKIPPED {test}: binding a loopback listener is not permitted here ({e})");
-            None
-        }
-        Err(e) => panic!("binding a loopback listener failed: {e}"),
+        Err(e) => panic!(
+            "{test}: binding a required loopback listener failed: {e}; rerun where loopback binding is permitted"
+        ),
     }
 }
 
@@ -1326,6 +1323,15 @@ fn credential_descriptor_refusals_do_not_launch_or_echo_input() {
         assert_eq!(o.code, Some(3), "{} {:?}", o.stderr, o.reply);
         assert_eq!(sj(&o.reply, &["reason"]), reason);
         assert_eq!(sj(&o.reply, &["effects", "run"]), "not_started");
+        if !bytes.is_empty() {
+            let exposed = |output: &[u8]| output.windows(bytes.len()).any(|part| part == bytes);
+            assert!(
+                exposed(&bytes),
+                "the output scan must detect the complete supplied value"
+            );
+            assert!(!exposed(o.stderr.as_bytes()));
+            assert!(!exposed(o.reply.to_j().bytes().as_slice()));
+        }
     }
     let o = finish(
         run_cmd(&e, &r, "http://127.0.0.1:9", &[])
