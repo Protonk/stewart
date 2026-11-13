@@ -1934,6 +1934,26 @@
         "reason": "Retain the source-bound native procedure review and its original external witnesses for the pending C2 comparison.",
         "until": "C2 review completes and no unresolved capture, package or stopping finding needs these originals."
       }
+    },
+    {
+      "id": "readiness-c2-01",
+      "kind": "experiment",
+      "date": "2026-11-13T23:16:03Z",
+      "date_from": "open-ordinary/OBSERVATION.json field finished_at",
+      "summary": "First native real-Claude service inquiry: 20 calls, 17 completed and 3 exact-citation refusals; five entries submitted at revision 5, four verified citations, 15 package checks passed; both processes stopped and close preserved package/archive. No terminal usage checkpoint; not Linux or broader model qualification.",
+      "result": {
+        "path": "open-ordinary",
+        "files": 678,
+        "sha256": "226f3fdedab07cbe834e5586e72ab8a4dd8b32dc2608944c7148bdfe97fcb08f"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-c2-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the first native service encounter for the paired inadequate-evidence comparison and stage-three citation/usage/submit-to-stop fixtures.",
+        "until": "C2 and fixture reviews finish and no unresolved custody or usage question needs this original encounter."
+      }
     }
   ]
 }

@@ -665,3 +665,10 @@ Reviewed native synthetic service procedure: positive and invariance submitted a
 
 - Evidence: `.scratch/readiness-c2-procedure-host-02/.` (recorded 2026-11-13T22:52:21Z).
 - Retained purpose: Retain the source-bound native procedure review and its original external witnesses for the pending C2 comparison.; until C2 review completes and no unresolved capture, package or stopping finding needs these originals.
+
+### readiness-c2-01
+
+First native real-Claude service inquiry: 20 calls, 17 completed and 3 exact-citation refusals; five entries submitted at revision 5, four verified citations, 15 package checks passed; both processes stopped and close preserved package/archive. No terminal usage checkpoint; not Linux or broader model qualification.
+
+- Evidence: `.scratch/readiness-c2-01/open-ordinary` (recorded 2026-11-13T23:16:03Z).
+- Retained purpose: Retain the first native service encounter for the paired inadequate-evidence comparison and stage-three citation/usage/submit-to-stop fixtures.; until C2 and fixture reviews finish and no unresolved custody or usage question needs this original encounter.

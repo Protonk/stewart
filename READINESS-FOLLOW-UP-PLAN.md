@@ -8,9 +8,8 @@ M2 reproduced a thinking-only response-cap interruption in sw3z default; the
 other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
 commissioned M3. C1 produced a reviewed supplied-surface check and profile.
-The next service comparison has prepared inputs and a reviewed native procedure,
-including the corrected UTF-8 artifact witness. Its two-start C2 commission is
-approved; execution starts with the ordinary inquiry.
+C2's ordinary inquiry submitted, passed review and closed with its package
+preserved. Its inadequate-evidence inquiry is the remaining approved start.
 
 | Stage | Result |
 | --- | --- |
@@ -292,8 +291,7 @@ dollar ceilings. These experiments do not qualify release models.
   C10 specimens, using the reviewed profile. Both local preparations accepted
   the exact profile. `.scratch/readiness-c2-01/PREPARATION.json` owns references,
   input witnesses and replies; original work remains at
-  `/private/tmp/stewart-readiness-c2-01`. No commission has been accepted and no
-  authentication or model process has started. The proposed audits permit one
+  `/private/tmp/stewart-readiness-c2-01`. The frozen audits permit one
   placement of 600 seconds each; illustrative answers are excluded.
 - [x] Rehearse and review the [bounded service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure).
   The retained review binds original packets and external witnesses. Keep the
@@ -319,8 +317,21 @@ dollar ceilings. These experiments do not qualify release models.
   not. No additional paid usage is authorized and no independent token or billing
   ceiling has been demonstrated. Review the first outcome before the second
   start; ordinary close is included only for a reviewed auditor-submitted,
-  verified package. Both audits remain unaccepted and unstarted; the next action
-  is the frozen ordinary packet's run command on the native host.
+  verified package. The ordinary audit is closed; the inadequate audit remains
+  unaccepted and unstarted. Its frozen run command is the next native-host action.
+- **C2 ordinary reviewed:** the
+  [first real service encounter](apparatus/qualified.md#readiness-c2-01) submitted
+  revision 5 with five entries and four verified citations. All 20 calls have
+  captured results: 17 completed and three citation refusals left the answer
+  unchanged until corrected calls succeeded. Package review passed 15/15 checks;
+  both authentication/model groups stopped. Ordinary close preserved all three
+  package files and all 260 prior archive files. No final harness result was
+  captured, so usage remains one unknown interval with zero reported checkpoints.
+  Partial reports across seven message IDs do not establish total consumption.
+  The observed rate event allowed subscription use with overage disabled and
+  unused. `.scratch/readiness-c2-01/open-ordinary/OBSERVATION.json` owns the
+  reviewed details and remaining one-start allowance. Retain citation recovery
+  and submit-to-stop/partial-usage captures for stage-three fixtures.
 
 ### Comparisons and proposed bounds
 

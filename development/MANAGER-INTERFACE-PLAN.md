@@ -27,7 +27,7 @@ This inventory distinguishes existing behavior from work still owed.
 | Documentary output | CLI has structured replies, observed effects and specified help. | Add versioned MCP schemas, per-call detail, and prospective CLI effect descriptions available without executing or inspecting an audit. |
 | Return context | Returning the exact accepted question body with the answer is decided but unimplemented. | Implement the [returned-question contract](../CONTRACTS.md#returned-question-and-answer), with separate manager/auditor attribution and independent package checks. |
 | Lifecycle | Custody, interruption, continuation, delivery and close use one operation core. | Extend comparison coverage across file-only/MCP-assisted construction, direct/wrapped CLI invocation and both implemented runtime arrangements. |
-| Runtime evidence | Linux synthetic runtime acceptance and a reviewed native service procedure exist; no real-Claude service run exists. | Reuse the apparatus for bounded question-family trials. Fake-provider evidence establishes the manager-interface boundary; live trials establish only the additional mechanisms actually witnessed. |
+| Runtime evidence | [Current demonstrations](../README.md#status) and [retained evidence](../apparatus/qualified.md) identify the reviewed native service use and synthetic acceptance coverage. | Reuse the apparatus for bounded question-family trials. Fake-provider evidence establishes the manager-interface boundary; live trials establish only the additional mechanisms actually witnessed. |
 
 The MCP boundary is a separate entry point in the shipped `stewart` binary,
 consistent with the existing single-binary design. Its dispatcher cannot invoke
@@ -242,10 +242,9 @@ the [runtime reference](../docs/claude-code/RUNTIME-REFERENCE.md) owns technical
 limitations. The distributed binary continues to exclude this adapter. Its
 auditor-facing MCP tools do not expose or depend on the manager preparation MCP.
 
-No live invocation is currently authorized. The two earlier probe commissions
-are closed. A prepared packet, successful synthetic rehearsal or previous model
-placement supplies no fresh spending authority. Deliberate usage-limit studies
-need a separate commission.
+A prepared packet, successful synthetic rehearsal or previous model placement
+supplies no fresh spending authority. Each live comparison requires its own
+bounded commission; deliberate usage-limit studies need a separate commission.
 
 ### Prepare a concrete, reusable comparison
 

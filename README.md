@@ -80,6 +80,11 @@ outstanding. The [qualification record](apparatus/qualified.md) identifies those
 builds and results, and the [interaction findings](apparatus/studies/interaction/RESULTS.md)
 report observations from actual inquiries.
 
+The default-off [Claude Code development adapter](docs/claude-code/CONTRACT.md)
+has also completed a native open inquiry with auditor submission, verified
+delivery and close. Its captured usage remains partial; that encounter does not
+establish broader model or platform qualification.
+
 Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. The
 source also builds on Apple-silicon macOS, without a support or qualification
 claim. See [building and testing](development/DEVELOPMENT.md)

@@ -163,7 +163,8 @@ rehearsals with the actual helpers, independent traffic witnesses and firing
 failure controls. A reviewed native real-harness supplied-surface comparison has
 produced a profile for the exact open-inquiry surface; the
 [evidence record](../../apparatus/qualified.md) identifies its bindings and scope.
-A real-service comparison is still needed.
+The [demonstrated status](../../README.md#status) also identifies native
+real-service use and its limits.
 Synthetic driver attestations exercise validation and are not real-harness
 commissioning evidence.
 
