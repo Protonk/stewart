@@ -164,6 +164,75 @@ real-harness startup ordering. Rehearsal observations remain explicitly syntheti
 and both attestation and profile assembly refuse them. The controller's unit
 review records are labelled parser fixtures, not live evidence.
 
+## Native service comparison procedure
+
+`service_check.py` freezes one already-prepared open-inquiry audit, using a
+reviewed profile, for a separately authorized service placement. Preparation
+launches nothing. It copies the exact input witness, preparation, arrangement
+and controller sources; binds their bytes, the original writer, profile,
+harness executable and Python interpreter; and records one service start,
+one authentication invocation and at most one model session. The placement
+deadline includes authentication. The procedure supports at most 600 seconds
+and one placement per packet; these are experiment bounds, not product limits.
+
+```sh
+python3 -I -B apparatus/claude-code/service_check.py prepare \
+  --output /absolute/fresh-packet --preparation /absolute/prepare-reply.json \
+  --reference stw1:... --folder /absolute/submission --writer /absolute/stewart
+```
+
+Only after the principal approves that exact commission, use its bound Python
+and frozen controller. The extra-usage flag conveys the account-setting
+assertion; it does not verify billing or change a setting.
+
+```sh
+ABS_PYTHON -I -B /absolute/fresh-packet/sources/claude-code/service_check.py run \
+  --packet /absolute/fresh-packet --approved-commission EXACT_APPROVED_SHA256 \
+  --extra-usage-disabled
+```
+
+The exclusive execution directory and start record make a packet one-use even
+when acceptance or launch fails. Commissioning and exact receipt readbacks
+precede the run. There is no wrapper retry, continuation, automatic close or
+automatic next audit. Each command retains its argument vector, environment,
+stdout, stderr and direct-child stopping result. The outer run deadline allows
+15 seconds beyond the placement deadline for return and observation; it is not
+additional model time. A failed or uncertain outcome requires review, never a
+repeat of the same command.
+
+After run returns, the procedure reads service-owned auth/model group records
+and independently probes their absence. Missing, present or unknown groups
+prevent further mutations. Once stopping is established, it keeps private
+archive and package snapshots outside the archive, with complete inventories,
+and default, detailed and JSON status. These are local private evidence copies,
+not a product export or an independent capture of provider traffic. No raw
+authentication output is read. Original service records stay unchanged.
+
+`review --packet PATH`, using the frozen controller, checks the execution
+inventory, correlates captured MCP calls and replies with service entry records,
+checks payloads and citations against the outside input witness, and reconstructs
+the full delivered package through the independent package witness. A shared
+omission in service-owned captures can escape this correlation. The reviewer
+does not grade conclusions, establish exhaustive provider capture, or turn an
+unsubmitted ending into a submission. Original streams, startup, usage and stop
+causes still require independent human/agent review.
+
+After that review, `close --packet PATH --reviewed-review REVIEW_SHA256` permits
+ordinary close only for a reviewed auditor-submitted, verified package. It
+revalidates the exact commission, complete execution evidence and current
+stopping first, then preserves another package/archive snapshot. Unsubmitted
+or uncertain cases remain retained for an explicit disposition. No close
+operation launches Claude.
+
+For offline preparation use `prepare-rehearsal --output PATH --writer BINARY
+--work FRESH_ABSOLUTE_PATH`. This accepts only the existing synthetic peer and
+prepares positive, bad-initialization and fresh-session invariance packets.
+Positive cases include a UTF-8 artifact. Use each frozen controller's
+`run-rehearsal`, followed by `review`; the positive cases also exercise `close`.
+Keep the failed-initialization audit and its original captures as the negative
+control. Rehearsal mode refuses real packets or live authority, and supplies no
+eligible check, profile, real-service evidence or Linux qualification.
+
 ## Bounded invocation library
 
 `bounded.py` supplies launch controls for the supplied-surface controller. The

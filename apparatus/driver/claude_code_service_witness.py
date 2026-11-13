@@ -29,6 +29,7 @@ WITNESS_SCHEMA = "stewart.claude-code.service-witness/1"
 REVIEW_SCHEMA = "stewart.claude-code.service-package-review/1"
 MAX_FILE = 64 * 1024 * 1024
 MAX_PACKAGE = 256 * 1024 * 1024
+UTF8_ARTIFACT = {"label": "UTF-8 trace", "text": "A supplied trace: café, 界.\r\nNo execution is claimed.\n"}
 SOURCE_NAMES = (Path(__file__).name, "answer_witness.py", "claude_code.py", "driver_core.py", "rawjson.py")
 PENDING = ["real-harness profile eligibility and bounded commission", "live full-service comparison",
            "externally triggered interruption", "real compaction and post-compaction observations",
@@ -254,7 +255,7 @@ def expected_package(value):
         if not isinstance(entry["label"], str) or not isinstance(entry["citations"], list):
             raise ValueError("invalid witness entry label or citations")
         if entry["kind"] == "record_artifact":
-            if entry["encoding"] not in {"text", "binary"}:
+            if entry["encoding"] not in {"utf-8", "binary"}:
                 raise ValueError("invalid artifact encoding")
         elif entry["encoding"] is not None:
             raise ValueError("non-artifact encoding is not null")
@@ -414,7 +415,10 @@ class RehearsalDriver(runtime.Driver):
 
     def fixture(self, label, **kwargs):
         kwargs.update(timeout=15, placements=2)
-        return super().fixture(label, **kwargs)
+        fixture = super().fixture(label, **kwargs)
+        self.change_scenario(fixture, utf8_artifact=dict(UTF8_ARTIFACT))
+        _save(fixture["witness"] / "utf8-artifact.json", UTF8_ARTIFACT)
+        return fixture
 
     def cmd(self, label, args, outcome="completed", **kwargs):
         starts = args[0] == "run"
@@ -495,9 +499,12 @@ class RehearsalDriver(runtime.Driver):
         return live
 
     def check_delivery(self, f, status_reply, actor="auditor"):
-        # Preserve the original baseline check and add full independent return
-        # comparison. The fixed account belongs only to this synthetic scenario.
-        package = super().check_delivery(f, status_reply, actor)
+        # The account and UTF-8 artifact are independently supplied synthetic
+        # inputs. Compare their full return without using delivered bytes as an oracle.
+        self.eq(f["label"] + "." + actor + "-seal", status_reply["data"].get("seal", {}).get("actor"), actor)
+        delivery = status_reply["data"].get("headline", {}).get("delivered", {})
+        self.require(f["label"] + ".verified-delivery", delivery.get("verified") is True, delivery)
+        package = Path(delivery["location"])
         events = self.harness_clean(f)
         calls = [event for event in events if event["event"] == "rpc-send"
                  and event["value"].get("method") == "tools/call"
@@ -509,6 +516,17 @@ class RehearsalDriver(runtime.Driver):
                    and event["pid"] == call["pid"] and event["value"].get("id") == call["value"]["id"]]
         self.require(f["label"] + ".account-completed-at-peer", len(replies) == 1 and replies[0]
                      and replies[0].get("outcome") == "completed", replies)
+        artifacts = [event for event in events if event["event"] == "rpc-send"
+                     and event["value"].get("method") == "tools/call"
+                     and event["value"].get("params", {}).get("name") == "record_artifact"]
+        self.require(f["label"] + ".one-witnessed-artifact-call", len(artifacts) == 1, artifacts)
+        artifact = artifacts[0]
+        self.eq(f["label"] + ".witnessed-artifact-input", artifact["value"]["params"]["arguments"], UTF8_ARTIFACT)
+        artifact_replies = [self.core_reply(event["value"]) for event in events if event["event"] == "rpc-receive"
+                            and event["pid"] == artifact["pid"] and event["value"].get("id") == artifact["value"]["id"]]
+        self.require(f["label"] + ".artifact-completed-at-peer", len(artifact_replies) == 1 and artifact_replies[0]
+                     and artifact_replies[0].get("outcome") == "completed", artifact_replies)
+        self.eq(f["label"] + ".artifact-encoding-at-peer", artifact_replies[0].get("data", {}).get("encoding"), "utf-8")
         if f["label"] == "runtime-interruption":
             launches = [event for event in events if event["event"] == "launch" and event["role"] == "model"]
             self.require(f["label"] + ".two-model-placements", len(launches) == 2, launches)
@@ -529,14 +547,19 @@ class RehearsalDriver(runtime.Driver):
             self.check(f["label"] + ".reentry-prior-receipt", any(
                 receipt.get("run") == 1 and receipt.get("tool") == "record_account"
                 for receipt in data.get("receipts", [])), data.get("receipts"))
-        entries = [answer.Entry("e1", 1, "record_account", "", runtime.ACCOUNT.encode())]
+        entries = [answer.Entry("e1", 1, "record_account", "", runtime.ACCOUNT.encode()),
+                   answer.Entry("e2", 1, "record_artifact", UTF8_ARTIFACT["label"],
+                                UTF8_ARTIFACT["text"].encode("utf-8"), encoding="utf-8")]
+        expected_answer = answer.answer_json(2, entries)
+        (f["witness"] / "expected-answer.json").write_bytes(expected_answer)
+        self.eq(f["label"] + ".faithful-answer", (package / "answer.json").read_bytes(), expected_answer)
         witness = f["witness"] / "complete-return-witness.json"
         inputs = {name: (f["witness"] / name).read_bytes() for name in
                   ("question-file", "question-body", "report.txt", "profile.json", "tools.json", "mcp-tools.json",
-                   "scenario-initial.json", "harness.jsonl")}
-        digest = write_witness(witness, entries, 1, family=f["family"] + "/1", writer=runtime.sha(self.binary.read_bytes()),
+                   "scenario-initial.json", "utf8-artifact.json", "harness.jsonl")}
+        digest = write_witness(witness, entries, 2, family=f["family"] + "/1", writer=runtime.sha(self.binary.read_bytes()),
             actor=actor, reference=f["reference"], status_raw=self.last_stdout, inputs=inputs,
-            provenance={"kind": "synthetic-peer-input", "description": "fixed account bytes independently supplied and witnessed at the synthetic MCP peer; no real model output",
+            provenance={"kind": "synthetic-peer-input", "description": "fixed account and UTF-8 artifact bytes independently supplied and witnessed at the synthetic MCP peer; no real model output",
                         "interruption": "harness exit after a completed record" if f["label"] == "runtime-interruption" else "none"})
         f["complete_witness"], f["complete_witness_sha256"] = witness, digest
         self._review(f, package, "before-close")
@@ -629,11 +652,13 @@ def self_test():
     checks = []
     def check(name, passed, detail=None):
         checks.append({"name": name, "passed": bool(passed), "detail": detail})
+    utf8_artifact = UTF8_ARTIFACT["text"].encode("utf-8")
     entries = [answer.Entry("e1", 1, "record_account", "", b"A supplied claim; no execution was witnessed.\n"),
-               answer.Entry("e2", 1, "record_artifact", "bytes", b"\x00\xffartifact\n", encoding="binary")]
-    status = {"data": {"seal": {"state": "present", "actor": "auditor", "sealed_at": "2026-11-12T00:00:00.000Z", "revision": 2}}}
+               answer.Entry("e2", 1, "record_artifact", "bytes", b"\x00\xffartifact\n", encoding="binary"),
+               answer.Entry("e3", 1, "record_artifact", "UTF-8 trace", utf8_artifact, encoding="utf-8")]
+    status = {"data": {"seal": {"state": "present", "actor": "auditor", "sealed_at": "2026-11-12T00:00:00.000Z", "revision": 3}}}
     witness = root / "WITNESS.json"
-    pin = write_witness(witness, entries, 2, family="open-inquiry/1", writer="1" * 64,
+    pin = write_witness(witness, entries, 3, family="open-inquiry/1", writer="1" * 64,
         actor="auditor", reference="stw1:synthetic-audit:synthetic-store:" + str(archive), status_raw=compact(status),
         inputs={"question": b"Inspect this synthetic claim.\n", "material": b"A supplied claim.\n"},
         provenance={"kind": "synthetic-self-test", "description": "expected Entry bytes supplied by this no-process control"})
@@ -652,15 +677,31 @@ def self_test():
         return review_package(package, selected, output, witness_sha256=digest, archive_root=archive)
     first = review("positive")
     check("complete-positive-package", first["outcome"] == "observed" and first["complete_capture"])
+    check("utf8-artifact-exact", first["outcome"] == "observed"
+          and expected.get("artifact-e3.bin") == utf8_artifact
+          and runtime.transport_loads(expected["answer.json"])["entries"][2]["encoding"] == "utf-8")
     repeat = review("repeat")
     check("repeat-observation-invariance", repeat["outcome"] == "observed" and repeat["inventory"] == first["inventory"])
+    wrong_encoding = copy.deepcopy(value)
+    wrong_encoding["selection"]["entries"][2]["encoding"] = "text"
+    wrong_encoding_path = root / "wrong-artifact-encoding.json"
+    _save(wrong_encoding_path, wrong_encoding)
+    refused_encoding = review("wrong-artifact-encoding", selected=wrong_encoding_path,
+                              digest=runtime.sha(wrong_encoding_path.read_bytes()))
+    check("text-artifact-encoding-refused", refused_encoding["outcome"] == "failed"
+          and any(item["detail"] == "invalid artifact encoding" for item in refused_encoding["diagnostics"]),
+          refused_encoding["diagnostics"])
+    unchanged = review("utf8-after-encoding-control")
+    check("utf8-original-after-encoding-control", unchanged["outcome"] == "observed"
+          and unchanged["inventory"] == first["inventory"] and witness.read_bytes() == original
+          and (baseline / "artifact-e3.bin").read_bytes() == utf8_artifact)
     mutations = {
         "answer-change": lambda p: (p / "answer.json").write_bytes(b"{}\n"),
         "rendering-change": lambda p: (p / "answer.md").write_bytes(b"changed rendering\n"),
         "artifact-change": lambda p: (p / "artifact-e2.bin").write_bytes(b"changed artifact"),
         "missing-member": lambda p: (p / "answer.md").unlink(),
         "extra-member": lambda p: (p / "conversation.json").write_bytes(b"must not be delivered"),
-        "duplicate-entry": lambda p: (p / "answer.json").write_bytes(answer.answer_json(2, entries + [entries[0]])),
+        "duplicate-entry": lambda p: (p / "answer.json").write_bytes(answer.answer_json(3, entries + [entries[0]])),
         "writer-mismatch": lambda p: (p / "manifest.json").write_bytes(expected["manifest.json"].replace(b"1" * 64, b"2" * 64)),
         "symlink": lambda p: ((p / "answer.md").unlink(), (p / "answer.md").symlink_to(baseline / "answer.md")),
         "special-fifo": lambda p: ((p / "answer.md").unlink(), os.mkfifo(p / "answer.md")),

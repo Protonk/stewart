@@ -651,3 +651,17 @@ Native real Claude Code supplied-surface comparison: 3 sessions, 30 case checks 
 
 - Evidence: `.scratch/readiness-c1-01/.` (recorded 2026-11-13T22:05:39Z).
 - Retained purpose: The reviewed C1 check and profile support pending bounded service comparisons and stage-three capture fixtures.; until The profile is superseded or no pending service comparison or fixture review depends on these original captures.
+
+### readiness-c2-procedure-rehearsal-02
+
+Frozen native synthetic positive, bad-init and invariance packets, original execution inventories, reviews and two closures; reviewed by readiness-c2-procedure-host-02. No real harness invocation or Linux qualification.
+
+- Evidence: `.scratch/readiness-c2-procedure-rehearsal-02/.` (recorded 2026-11-13T22:46:38Z).
+- Retained purpose: Retain exact rehearsal inputs, controller sources, captures and packages behind the reviewed C2 service procedure.; until C2 review completes and no unresolved procedure finding needs these originals.
+
+### readiness-c2-procedure-host-02
+
+Reviewed native synthetic service procedure: positive and invariance submitted and closed with preserved UTF-8 packages; wrong-model startup stopped without answer effects. Expanded witness: 880 checks, 9 package reviews, 162 assertions; all 14 auth/model groups absent. No real Claude use or Linux qualification.
+
+- Evidence: `.scratch/readiness-c2-procedure-host-02/.` (recorded 2026-11-13T22:52:21Z).
+- Retained purpose: Retain the source-bound native procedure review and its original external witnesses for the pending C2 comparison.; until C2 review completes and no unresolved capture, package or stopping finding needs these originals.

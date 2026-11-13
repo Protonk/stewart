@@ -15,7 +15,10 @@ python3 -I -B apparatus/driver/claude_code_service_witness.py \
 ```
 
 The self-test creates synthetic packages and exercises the reviewer without
-launching a subprocess. The rehearsal needs native Unix sockets and process
+launching a subprocess. Its valid selection includes binary and UTF-8 artifacts;
+an independently corrupted witness using `text` as an encoding is refused, and
+the original valid package remains unchanged and reviewable. The rehearsal needs
+native Unix sockets and process
 observation. Its work path must be fresh, physical and absolute, outside the
 repository; the binary must be outside the work directory. Keep the binary
 unchanged during the run. A host watchdog should bound the whole command.
@@ -46,7 +49,9 @@ The `stewart.claude-code.service-witness/1` document contains:
 `answer.json`, `answer.md`, all selected artifacts and the exact manifest using
 the independent [answer witness](answer_witness.py). This initial reviewer
 expects produced entries and complete delivery; loss/surrender comparisons are
-outside its current scope.
+outside its current scope. Artifact encodings are `utf-8` for a `text` input and
+`binary` for a `base64` input, as specified by
+[the recording tools](../../docs/INTERFACE.md#74-recording-and-editing).
 
 `review_package(package, witness_file, evidence_dir, *, witness_sha256,
 archive_root)` launches nothing. The caller supplies the separately retained
@@ -91,11 +96,14 @@ not an externally triggered interruption.
 
 The adapter preserves the existing preparation, receipt readback, launch and
 traffic comparisons. It additionally binds the synthetic peer's single
-completed account call to the outside expectation, reviews the whole package,
+completed account call and UTF-8 artifact call to the outside expectations, reviews the whole package,
 closes every audit, repeats close and verifies refusal of a later run without a
 new launch. Two-placement continuation uses its actual placement count. Exact
 package snapshots are retained before close, after close and after repeated
-close/refused run.
+close/refused run. The artifact is supplied through the fake harness's optional
+`utf8_artifact` scenario field (`label` and `text`), whose literal value is
+exported as `UTF8_ARTIFACT`. During the interrupted case it is recorded only after
+the second placement re-enters; the earlier account is not duplicated.
 Each synthetic fixture permits at most two placements with a 15-second deadline
 per placement. These are offline rehearsal limits, not a real-harness cap study.
 

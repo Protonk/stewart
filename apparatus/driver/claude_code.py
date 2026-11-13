@@ -160,9 +160,9 @@ def environment_snapshot(raw):
     return values
 
 
-def synthetic_executable(script, scenario, witness):
-    """Snapshot after shell startup, before Python can change the environment."""
-    command = [sys.executable, "-I", "-B", str(script), "--synthetic-harness", str(scenario)]
+def synthetic_executable(script, scenario, witness, *, python=None):
+    """Snapshot before Python startup, using the supplied interpreter spelling when bound."""
+    command = [str(python or sys.executable), "-I", "-B", str(script), "--synthetic-harness", str(scenario)]
     # mktemp creates a new mode-0600 file: concurrent launches and PID reuse
     # cannot overwrite a prior witness. All subsequent outputs retain it.
     return ("#!/bin/sh\n"
@@ -934,7 +934,7 @@ class Driver:
             self.check(label + ".states." + word.replace(" ", "-")[:32], word.lower() in lowered, text[:600])
 
     def fixture(self, label, family="open-inquiry", binary=None, scenario=None, timeout=600, placements=3,
-                effort=None):
+                effort=None, *, python=None):
         root = self.work / label
         root.mkdir()
         witness = self.witness / label
@@ -962,7 +962,7 @@ class Driver:
                        "second_relay": SECOND_RELAY,
                        "auth_private": "synthetic-auth-private-output-" + label}) + b"\n")
             (witness / "scenario-initial.json").write_bytes(scenario_path.read_bytes())
-            executable.write_bytes(synthetic_executable(self.harness_script, scenario_path, witness))
+            executable.write_bytes(synthetic_executable(self.harness_script, scenario_path, witness, python=python))
         executable.chmod(0o700)
         self.canaries.append(Path(str(executable) + ".started"))
         launch = {"executable": str(executable), "sha256": sha(executable.read_bytes()),
@@ -2905,6 +2905,10 @@ def synthetic_harness(scenario_path, environment_path, argv):
             turn_ended(CHECKPOINTS[1])
             time.sleep(600)
             return 9
+        if "utf8_artifact" in scenario:
+            artifact = tool("record_artifact", scenario["utf8_artifact"])
+            if artifact.get("outcome") != "completed":
+                raise RuntimeError("record_artifact did not complete: %r" % artifact)
         prepared = tool("prepare", {})
         if prepared.get("outcome") != "completed":
             raise RuntimeError("prepare did not complete: %r" % prepared)
@@ -2952,6 +2956,17 @@ def self_test():
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
+    specimen = (Path("/synthetic dir/harness.py"), Path("/scenario dir/scenario.json"), Path("/witness dir"))
+    default_wrapper = synthetic_executable(*specimen)
+    default_command = shlex.split(default_wrapper.decode().splitlines()[-1])
+    check("synthetic-wrapper.default-interpreter", default_command == ["exec", sys.executable, "-I", "-B",
+          "/synthetic dir/harness.py", "--synthetic-harness", "/scenario dir/scenario.json",
+          "--environment-witness", "$environment_witness", "$@"])
+    bound_wrapper = synthetic_executable(*specimen, python=Path("/bound interpreter/python3.9"))
+    bound_command = shlex.split(bound_wrapper.decode().splitlines()[-1])
+    check("synthetic-wrapper.bound-interpreter-only", bound_command ==
+          ["exec", "/bound interpreter/python3.9"] + default_command[2:]
+          and bound_wrapper.splitlines()[:-1] == default_wrapper.splitlines()[:-1])
     with tempfile.TemporaryDirectory(prefix="stewart-work-preflight-") as directory:
         outside = Path(directory).resolve()
         for label, path in (("external", outside / "new-work"), ("external-nested", outside / "nested" / "work")):
@@ -3307,6 +3322,8 @@ for raw in sys.stdin.buffer:
                         "message": {"role": "user", "content": text}}) + b"\n"
     submitted = lambda e: e["event"] == "rpc-send" and e["value"].get("params", {}).get("name") == "submit"
     modes = (
+        ("submit", 1, submitted),
+        ("record-then-exit", 1, None),
         ("cancel", 1, submitted),
         ("submit-publication", 1, lambda e: e["event"] == "submit-retried"),
         ("compaction", 4, submitted),
@@ -3324,6 +3341,8 @@ for raw in sys.stdin.buffer:
                         "family": "open-inquiry", "session": "synthetic-" + mode, "account": ACCOUNT,
                         "kept": KEPT, "queued": QUEUED, "cancelled": CANCELLED, "duplicate": DUPLICATE,
                         "second_relay": SECOND_RELAY, "auth_private": "synthetic-private-auth-field"}
+            if mode in ("submit", "record-then-exit"):
+                scenario["utf8_artifact"] = {"label": "synthetic UTF-8 artifact", "text": "Exact café trace.\r\n界\n"}
             if mode == "submit-publication":
                 scenario["publication_action"] = "cancel"
                 for marker in ("cancel-submit", "retry-submit"):
@@ -3379,7 +3398,18 @@ for raw in sys.stdin.buffer:
             outputs = [e["value"] for e in events if e["event"] == "output"]
             kinds = [(o.get("type"), o.get("subtype")) for o in outputs]
             consumed = sum(e["event"] == "input" for e in events)
-            if mode == "cancel":
+            if mode in ("submit", "record-then-exit"):
+                calls = [e["value"]["params"] for e in events if e["event"] == "rpc-send"
+                         and e["value"].get("method") == "tools/call"]
+                recorded = [call for call in calls if call["name"] == "record_artifact"]
+                check("mode." + mode + ".optional-artifact", recorded == ([{"name": "record_artifact",
+                      "arguments": {"label": "synthetic UTF-8 artifact", "text": "Exact café trace.\r\n界\n"}}]
+                      if mode == "submit" else []))
+                authoring = [call["name"] for call in calls if call["name"] in
+                             {"record_account", "record_artifact", "prepare", "submit"}]
+                check("mode." + mode + ".authoring-order", authoring ==
+                      (["record_account", "record_artifact", "prepare", "submit"] if mode == "submit" else ["record_account"]))
+            elif mode == "cancel":
                 check("mode.cancel.observations", names == ["first", "ping", "duplicate", "kept", "queued", "predecessor", "cancelled"]
                       + ["race-%d" % number for number in range(1, RACES + 1)] + ["reentry"])
                 check("mode.cancel.pipelined", any(e["event"] == "rpc-transmitted" and e["methods"] ==

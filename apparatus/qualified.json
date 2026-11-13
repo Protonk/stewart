@@ -1894,6 +1894,46 @@
         "reason": "The reviewed C1 check and profile support pending bounded service comparisons and stage-three capture fixtures.",
         "until": "The profile is superseded or no pending service comparison or fixture review depends on these original captures."
       }
+    },
+    {
+      "id": "readiness-c2-procedure-rehearsal-02",
+      "kind": "experiment",
+      "date": "2026-11-13T22:46:38Z",
+      "date_from": "positive/review/REVIEW.json field finished_at",
+      "summary": "Frozen native synthetic positive, bad-init and invariance packets, original execution inventories, reviews and two closures; reviewed by readiness-c2-procedure-host-02. No real harness invocation or Linux qualification.",
+      "result": {
+        "path": ".",
+        "files": 685,
+        "sha256": "e1f464264f56f5b98768c1757b07ab49aae8f00b7b557dd374d65d78996cad73"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-c2-procedure-rehearsal-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain exact rehearsal inputs, controller sources, captures and packages behind the reviewed C2 service procedure.",
+        "until": "C2 review completes and no unresolved procedure finding needs these originals."
+      }
+    },
+    {
+      "id": "readiness-c2-procedure-host-02",
+      "kind": "experiment",
+      "date": "2026-11-13T22:52:21Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "Reviewed native synthetic service procedure: positive and invariance submitted and closed with preserved UTF-8 packages; wrong-model startup stopped without answer effects. Expanded witness: 880 checks, 9 package reviews, 162 assertions; all 14 auth/model groups absent. No real Claude use or Linux qualification.",
+      "result": {
+        "path": ".",
+        "files": 43,
+        "sha256": "fdf8b45e31c2467566a30c813cd9ad8cfd6c659a8158e0df570b07fb6ba6b6b1"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-c2-procedure-host-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the source-bound native procedure review and its original external witnesses for the pending C2 comparison.",
+        "until": "C2 review completes and no unresolved capture, package or stopping finding needs these originals."
+      }
     }
   ]
 }

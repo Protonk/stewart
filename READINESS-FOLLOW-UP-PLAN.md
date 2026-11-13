@@ -8,8 +8,9 @@ M2 reproduced a thinking-only response-cap interruption in sw3z default; the
 other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
 commissioned M3. C1 produced a reviewed supplied-surface check and profile.
-The next service comparison needs a refreshed package-witness rehearsal and
-an offline-rehearsed bounded service procedure before its own live commission.
+The next service comparison has prepared inputs and a reviewed native procedure,
+including the corrected UTF-8 artifact witness. Its two-start live commission
+remains subject to approval.
 
 | Stage | Result |
 | --- | --- |
@@ -275,13 +276,18 @@ dollar ceilings. These experiments do not qualify release models.
   compatibility, not real-service custody, billing or turn/output-cap enforcement.
   No C1 allowance remains. Use these captures for startup, hook-denial and final
   report fixtures in stage 3 without rewriting originals.
-- [ ] Refresh the complete-package witness with the current repaired driver and
-  native helper before the service comparison. The earlier rehearsal used older
-  driver sources and a different binary. Keep this synthetic rehearsal distinct
-  from the still-needed bounded live procedure and its own offline rehearsal.
-  The one-use command is
-  `python3 -I -B .scratch/readiness-c2-witness-01/run.py --run`; its originals stay
-  at `/private/tmp/stewart-readiness-c2-witness-01` through review.
+- **C2 procedure reviewed:** the
+  [native synthetic comparison](apparatus/qualified.md#readiness-c2-procedure-host-02)
+  passed positive, wrong-model and invariance cases. Both positive cases submitted
+  an account and exact UTF-8 artifact, passed 18 package assertions apiece, and
+  closed with their packages and prior archive files preserved. Wrong-model
+  startup stopped with no answer effects; one unanswered request remains reported.
+  The expanded witness passed 880 checks and nine package reviews with 162
+  assertions, including continuation without duplicate entries. All 14 recorded
+  authentication/model groups were observed absent. Review also verified 116
+  apparatus tests, 35 witness checks and 237 runtime-driver checks. The corrected
+  witness now accepts the contract's `utf-8` encoding and refuses `text`.
+  These are synthetic native results, not live-service or Linux qualification.
 - [x] Prepare C2's ordinary and inadequate open-inquiry inputs from the existing
   C10 specimens, using the reviewed profile. Both local preparations accepted
   the exact profile. `.scratch/readiness-c2-01/PREPARATION.json` owns references,
@@ -289,9 +295,15 @@ dollar ceilings. These experiments do not qualify release models.
   `/private/tmp/stewart-readiness-c2-01`. No commission has been accepted and no
   authentication or model process has started. The proposed audits permit one
   placement of 600 seconds each; illustrative answers are excluded.
-- [ ] Rehearse and review the actual service procedure before freezing C2's
-  two-start commission for approval. Reuse the existing complete-package witness;
-  attribute service-owned captures separately from outside observations.
+- [x] Rehearse and review the [bounded service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure).
+  The retained review binds original packets and external witnesses. Keep the
+  stopped, unsubmitted bad-init audit through C2 review; no continuation is
+  authorized. The earlier unentered preparation has an explicit disposition.
+- [ ] Obtain approval for C2's concrete two-start commission, then execute and
+  review one packet at a time before any close or next start. Correlate
+  service-owned MCP captures and entry records with the independent package
+  witness; this does not independently capture every model action. Stop later
+  starts on unknown stopping, authentication failure, quota or paid-usage routing.
 
 ### Comparisons and proposed bounds
 

@@ -27,7 +27,7 @@ This inventory distinguishes existing behavior from work still owed.
 | Documentary output | CLI has structured replies, observed effects and specified help. | Add versioned MCP schemas, per-call detail, and prospective CLI effect descriptions available without executing or inspecting an audit. |
 | Return context | Returning the exact accepted question body with the answer is decided but unimplemented. | Implement the [returned-question contract](../CONTRACTS.md#returned-question-and-answer), with separate manager/auditor attribution and independent package checks. |
 | Lifecycle | Custody, interruption, continuation, delivery and close use one operation core. | Extend comparison coverage across file-only/MCP-assisted construction, direct/wrapped CLI invocation and both implemented runtime arrangements. |
-| Runtime evidence | Linux synthetic runtime acceptance and native offline apparatus checks exist; no real-Claude service run exists. | Reuse the apparatus; prepare the missing real-service procedures and bounded question-family trials. Fake-provider evidence establishes the manager-interface boundary; live trials establish only the additional mechanisms actually witnessed. |
+| Runtime evidence | Linux synthetic runtime acceptance and a reviewed native service procedure exist; no real-Claude service run exists. | Reuse the apparatus for bounded question-family trials. Fake-provider evidence establishes the manager-interface boundary; live trials establish only the additional mechanisms actually witnessed. |
 
 The MCP boundary is a separate entry point in the shipped `stewart` binary,
 consistent with the existing single-binary design. Its dispatcher cannot invoke
@@ -249,11 +249,14 @@ need a separate commission.
 
 ### Prepare a concrete, reusable comparison
 
-- [ ] Extend the implemented [controller and profile apparatus](../apparatus/claude-code/README.md)
+- [x] Extend the implemented [controller and profile apparatus](../apparatus/claude-code/README.md)
   into an actual-service procedure. Reuse the independent helper/observer and
   [complete-package witness](../apparatus/driver/CLAUDE-CODE-SERVICE-WITNESS.md);
   first rehearse the procedure offline. Do not rebuild completed apparatus merely
-  to restart this work.
+  to restart this work. The one-placement controller now freezes inputs, retains
+  receipt/run/status/capture evidence and permits reviewed ordinary close; its
+  native positive, bad-init and invariance rehearsal passed independent review,
+  including UTF-8 artifacts, preserved packages and observed process stopping.
 - [x] Obtain a reviewed real supplied-surface check under its own bounded
   authority before producing an eligible real profile. The
   [reviewed native comparison](../apparatus/qualified.md#readiness-c1-01)
