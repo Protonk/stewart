@@ -9,7 +9,7 @@ in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 
 | Stage | Work | Working document |
 | --- | --- | --- |
-| Check on the entry assessment | Read-only review challenging the entry assessment below: tests that check their own input, interventions on what the auditor returns, and the question documentation. The assessment stands unless the principal decides a finding changes it | [READINESS-REVIEW-PLAN.md](READINESS-REVIEW-PLAN.md) |
+| Readiness follow-up, before the stages below | Correct what the readiness review found that can be corrected now, run the live checks it designs as the principal approves each, reassess, and pass what remains to the plans below as notes | [READINESS-FOLLOW-UP-PLAN.md](READINESS-FOLLOW-UP-PLAN.md) |
 | Current manager work | Specify shared commissioning rules, complete the independent CLI, implement optional preparation MCP, and demonstrate the interface with fake-provider integration | [Integrated manager-interface plan](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately bounded | Prepare source-only runtime comparisons and question-family trials; live starts require the principal's approval and their own verified apparatus/profile prerequisites | The integrated plan owns this testing track; a real-service outcome is not a prerequisite for manager MCP or fake-provider boundary acceptance |
 | Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
@@ -28,7 +28,9 @@ context is selected here.
 
 ## Entry to manager-interface work
 
-**Assessment: the specification stage can start now.** The latest offline
+**Assessment: the specification stage can start once the
+[readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) has passed on what it does
+not fix.** The latest offline
 service/package rehearsal has a reviewed passing outcome and observed process
 stopping. Service code is unchanged since the recorded Linux acceptance source;
 subsequent apparatus additions have native verification, not fresh Linux
