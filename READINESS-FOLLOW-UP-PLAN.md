@@ -3,12 +3,13 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; L0 and M1 reviewed; stage 2 is preparing M2.**
-Linux acceptance and the M1-specific C10 rehearsal pass and have been independently
+**State: stage 1 complete; L0 and M1 reviewed; stage 2 awaits M2 approval.**
+Linux acceptance and the M2-specific C10 rehearsal pass and have been independently
 reviewed. All four approved M1 placements submitted, delivered and closed. The
 report-only direct arm exercised one prose ending and reminder, followed by
-submission. M2's unpaid proposals and exact templates await their Linux rehearsal;
-no M2 live commission is approved.
+submission. M2's exact templates and Linux rehearsal are reviewed; its frozen
+commission requests four placements and one conditional. No M2 live commission
+is approved.
 
 | Stage | Result |
 | --- | --- |
@@ -177,12 +178,13 @@ the specified overlong-name refusal, and signal stopping before publication.
 Archives and ordinary work remained on ext4. The native Cargo checks remain
 at `/private/tmp/stewart-readiness-native-87y7ofsj/RESULT.json`.
 
-The [C10 rehearsal](apparatus/qualified.md#c10-readiness-m1-01) has 17 of 17
+The [C10 rehearsal](apparatus/qualified.md#c10-readiness-m2-01) has 18 of 18
 expected observations, zero failed, unstarted or skipped audits; reviewer
 comparisons 14/14 with 12/12 controls, operator comparisons 7/7, and reporting
-comparisons 11/11. Each of the four M1 templates passes 18/18 comparisons,
-including 16/16 firing controls and two invariances. Independent review checked
-all 16 exported snapshot digests and preservation of earlier snapshots. Collection
+comparisons 11/11. The four ordinary M2 templates each pass 18/18 comparisons
+and 16/16 firing controls; the guidance template passes 22/22 and 20/20:
+94 comparisons and 84 firing controls overall. Independent review checked
+all 17 exported snapshot digests and preservation of earlier snapshots. Collection
 through the synthetic saved connection succeeds in a fresh process. The three
 deliberately unavailable exports retain private originals in their container.
 These are fake-provider results, with no live-access or model-conformance claim.
@@ -242,13 +244,17 @@ dollar ceilings. These experiments do not qualify release models.
   text through current supplied `guidance.md`; it does not recreate the entire
   old study binary or family version. It is available only if neither default
   arm reproduces the thinking-only `max_tokens` response.
-- [ ] Run `sh .tmp/readiness-repairs/rehearse-m2.sh` on the host and review it.
-  This runs 13 fixed fake-provider audits and all five supplied templates through
-  `stewart-synthetic`, including fresh-process collection. It makes no model calls.
-  Its standard rehearsal settings check intake, guidance and custody; they do
-  not exercise M2's live effort comparison or larger cap-study allowances.
-- [ ] After rehearsal review, freeze M2's live packets and status procedure, then
-  request its separate deliberate-cap-study approval. Proposed bounds are 60
+- [x] Review the Linux rehearsal at `.scratch/c10-readiness-m2-01/REVIEW.json`:
+  13 fixed fake-provider audits and all five supplied templates pass through
+  `stewart-synthetic`, including fresh-process collection. No model calls occurred.
+  Its standard settings check intake, guidance and custody; they do not exercise
+  M2's live effort comparison or larger cap-study allowances.
+- [x] Freeze M2's live packets and default/details/JSON status procedure under
+  `.scratch/readiness-m2-01/MANIFEST.json`. Separate launch commands check exact
+  approval and preceding review. The conditional arm additionally needs both
+  complete default comparisons to establish that the target ending did not occur;
+  a missing or inconclusive comparison cannot admit it.
+- [ ] Obtain M2's separate deliberate-cap-study approval. Proposed bounds are 60
   turns, 10,000,000 input tokens, 64,000 output tokens and 3,600 seconds per
   placement, with four ordinary placements and one conditional. `COST.json`
   records the dated rates: full allowances for all five estimate $5.16 at base
@@ -256,6 +262,9 @@ dollar ceilings. These experiments do not qualify release models.
   these are not hard billing ceilings. Review each outcome before another start.
   Retain interrupted, unsealed audits for separately commissioned M3 work;
   no continuation, replacement, extra authentication probe or fallback is included.
+  The per-response cap stays at 16,000 tokens. Unexpected compaction currently
+  leaves the procedural reviewer incomplete: preserve the captures and resolve
+  that outcome before another start.
 
 ### Comparisons and proposed bounds
 

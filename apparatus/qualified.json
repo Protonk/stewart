@@ -1673,25 +1673,6 @@
       }
     },
     {
-      "id": "c10-readiness-m1-01",
-      "kind": "experiment",
-      "date": "2026-11-13T17:13:22Z",
-      "date_from": "REVIEW.json field finished_at",
-      "summary": "Reviewed Linux C10 rehearsal: 17/17 audits, four exact M1 templates and saved-connection collection; no model calls.",
-      "result": {
-        "path": "REVIEW.json",
-        "sha256": "b4f9d1ba9a020ef0f2a86ec41b382b1990bc93bbebe42088655a16b03837e4f1"
-      },
-      "evidence": {
-        "path": ".scratch/c10-readiness-m1-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Current C10 launcher and M1 input qualification for the bounded readiness comparisons.",
-        "until": "A later matching rehearsal replaces this binding, or the bounded comparisons finish and the retained originals have been reviewed."
-      }
-    },
-    {
       "id": "readiness-m1-live-ordinary-01",
       "kind": "experiment",
       "date": "2026-11-13T17:34:32Z",
@@ -1789,6 +1770,25 @@
       "pin": {
         "reason": "Inspect the firing prose-ending/reminder encounter for M1 comparison, M3/C5 preparation and fixture selection.",
         "until": "Those comparisons and selected fixture reviews finish, and no remaining inspection purpose needs these originals."
+      }
+    },
+    {
+      "id": "c10-readiness-m2-01",
+      "kind": "experiment",
+      "date": "2026-11-13T19:25:39Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "Reviewed Linux C10 rehearsal: 18 expected audits, five exact M2 templates, saved synthetic connection collection; zero model calls.",
+      "result": {
+        "path": "REVIEW.json",
+        "sha256": "90683ae5797f9b19e6be38f1822194772b2593909c6fd1939f14a7f57295f783"
+      },
+      "evidence": {
+        "path": ".scratch/c10-readiness-m2-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Current launcher and exact-input rehearsal admission for the bounded M2 comparison; private originals remain through review.",
+        "until": "M2 placements have reviewed outcomes or explicit dispositions and this rehearsal no longer admits pending work."
       }
     }
   ]

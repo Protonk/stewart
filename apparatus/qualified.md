@@ -575,13 +575,6 @@ Completed two-placement guidance comparison: exact inputs, authority, costs, rea
 - Evidence: `.scratch/guidance-cycle-01/.` (recorded 2026-11-10T06:36:11Z).
 - Retained purpose: Interpret the paired encounters against their fixed inputs, explicit commission and attributed measurements.; until The comparison no longer needs its original inputs and authority for inspection.
 
-### c10-readiness-m1-01
-
-Reviewed Linux C10 rehearsal: 17/17 audits, four exact M1 templates and saved-connection collection; no model calls.
-
-- Evidence: `.scratch/c10-readiness-m1-01/REVIEW.json` (recorded 2026-11-13T17:13:22Z).
-- Retained purpose: Current C10 launcher and M1 input qualification for the bounded readiness comparisons.; until A later matching rehearsal replaces this binding, or the bounded comparisons finish and the retained originals have been reviewed.
-
 ### readiness-m1-live-ordinary-01
 
 M1 ordinary wording: one reviewed Haiku 5.5 placement; five tool-use turns, auditor submission and verified closure; prose ending and reminder unexercised.
@@ -616,3 +609,10 @@ M1 report-only direct reply: prose end_turn, one exact reminder, then prepare/su
 
 - Evidence: `.scratch/readiness-m1-live-direct-inadequate-01/.` (recorded 2026-11-13T19:18:29Z).
 - Retained purpose: Inspect the firing prose-ending/reminder encounter for M1 comparison, M3/C5 preparation and fixture selection.; until Those comparisons and selected fixture reviews finish, and no remaining inspection purpose needs these originals.
+
+### c10-readiness-m2-01
+
+Reviewed Linux C10 rehearsal: 18 expected audits, five exact M2 templates, saved synthetic connection collection; zero model calls.
+
+- Evidence: `.scratch/c10-readiness-m2-01/REVIEW.json` (recorded 2026-11-13T19:25:39Z).
+- Retained purpose: Current launcher and exact-input rehearsal admission for the bounded M2 comparison; private originals remain through review.; until M2 placements have reviewed outcomes or explicit dispositions and this rehearsal no longer admits pending work.
