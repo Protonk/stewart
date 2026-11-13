@@ -3,11 +3,12 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; stage 2 awaits M1's bounded live approval.**
+**State: stage 1 complete; L0 and M1 reviewed; stage 2 is preparing M2.**
 Linux acceptance and the M1-specific C10 rehearsal pass and have been independently
-reviewed. L0 is reviewed. M1's four exact inputs and saved-connection collection
-have passed rehearsal; its frozen manifest defines the requested commission.
-No live packet is approved or started.
+reviewed. All four approved M1 placements submitted, delivered and closed. The
+report-only direct arm exercised one prose ending and reminder, followed by
+submission. M2's unpaid proposals and exact templates await their Linux rehearsal;
+no M2 live commission is approved.
 
 | Stage | Result |
 | --- | --- |
@@ -215,32 +216,46 @@ dollar ceilings. These experiments do not qualify release models.
   model ran. The useful ancestry remedy is in `run_ended.message`, absent from
   default, detailed and JSON status. Carry that presentation issue into stage 3
   and the manager handoff; no reproduction or live call is needed.
-- **M1 frozen for approval:** `.scratch/readiness-m1-01/MANIFEST.json`
-  identifies four byte-bound templates and separate one-placement packets.
-  Ordinary, direct-reply and invitation-to-ask wording share the same material;
-  the inadequate arm has the exact direct-reply question with only the supplied
-  report. Model, family and allowances stay fixed. `COST.json` holds the dated
-  provider assessment and proposed $1 campaign budget; authorization is unset.
-- [x] Rehearse the 13 fixed audits and four exact templates through the separate
-  `stewart-synthetic` Keychain item and fake provider. Review all template controls
-  and fresh-process collection. The retained result is
-  `.scratch/c10-readiness-m1-01/REVIEW.json`.
-- [x] Prepare the default, detailed and JSON status capture procedure. Raw replies
-  stay in private evidence until the existing credential-scanned collection
-  exports them. The collector's native read-only check passes all three forms
-  without changing the original archive; its first Linux use remains to be
-  observed. These are later observations after the launcher's ordinary close,
-  where close occurred; the launcher's immediate JSON status is also retained.
-- [x] Freeze the four live packet digests and their common commission in
-  `.scratch/readiness-m1-01/MANIFEST.json` after committing the qualification
-  update. A filled authority field defines the requested scope; it does not
-  record principal approval.
-- [ ] Obtain M1's bounded approval, including the proposed $1 campaign budget
-  and `stewart-haiku` saved connection. The dated estimate prices all token
-  allowances at $0.088 at the base rate or $0.44 at the higher rate; neither is
-  a hard billing ceiling. No extra authentication probe is included.
-  Launch and review one arm at a time. Account labels are copied from the prior
-  commission as a proposal, not as current authorization or verified access.
+- **M1 reviewed:** the [four-arm comparison](apparatus/qualified.md#readiness-m1-01)
+  retains exact inputs, authority and per-arm reviews. All four submitted and
+  closed: 27 turns, 211,079 input and 12,458 output tokens, with a $0.0273369
+  usage-based estimate against the approved $1 budget. Each original and follow-up
+  snapshot passed its procedural review; all 12 status-form invocations succeeded.
+  Nine citation edits were refused without changing the answer and later corrected.
+  Only the report-only direct arm emitted prose/`end_turn`; request 5 carried the
+  exact reminder once, then the model prepared and submitted. This is one
+  observation per arm, with service-owned provider captures and no independent
+  billing or model-conformance claim.
+- **M1 follow-ups:** retain the final arm's exact question and sole supplied report
+  as firing inputs for M3/C5. That audit is sealed; M3 needs its own commissioned,
+  witnessed interruption and continuation. Stage 3 can ground fixtures in the
+  captured prose ending/reminder and natural citation-refusal/recovery sequences.
+  The invitation-to-ask answer records an assumption and its stated inability to
+  ask the manager; treat that as the auditor's account, not a restriction on
+  expression. No second unsubmitted stop or reminder persistence across
+  continuation was exercised.
+- **M2 prepared, not approved:** `.scratch/readiness-m2-01/PREPARATION.json`
+  binds the retained `checklist-5sgh` and `checklist-sw3z` inputs from the two
+  reviewed stress encounters. Their question bodies match; seven material files
+  differ between variants. Preserve each variant exactly for its default/low
+  effort pair. A fifth, conditional `5sgh` arm uses the historical family guidance
+  text through current supplied `guidance.md`; it does not recreate the entire
+  old study binary or family version. It is available only if neither default
+  arm reproduces the thinking-only `max_tokens` response.
+- [ ] Run `sh .tmp/readiness-repairs/rehearse-m2.sh` on the host and review it.
+  This runs 13 fixed fake-provider audits and all five supplied templates through
+  `stewart-synthetic`, including fresh-process collection. It makes no model calls.
+  Its standard rehearsal settings check intake, guidance and custody; they do
+  not exercise M2's live effort comparison or larger cap-study allowances.
+- [ ] After rehearsal review, freeze M2's live packets and status procedure, then
+  request its separate deliberate-cap-study approval. Proposed bounds are 60
+  turns, 10,000,000 input tokens, 64,000 output tokens and 3,600 seconds per
+  placement, with four ordinary placements and one conditional. `COST.json`
+  records the dated rates: full allowances for all five estimate $5.16 at base
+  rates or $25.80 entirely at higher rates, with a proposed $30 campaign budget;
+  these are not hard billing ceilings. Review each outcome before another start.
+  Retain interrupted, unsealed audits for separately commissioned M3 work;
+  no continuation, replacement, extra authentication probe or fallback is included.
 
 ### Comparisons and proposed bounds
 

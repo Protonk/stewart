@@ -581,3 +581,38 @@ Reviewed Linux C10 rehearsal: 17/17 audits, four exact M1 templates and saved-co
 
 - Evidence: `.scratch/c10-readiness-m1-01/REVIEW.json` (recorded 2026-11-13T17:13:22Z).
 - Retained purpose: Current C10 launcher and M1 input qualification for the bounded readiness comparisons.; until A later matching rehearsal replaces this binding, or the bounded comparisons finish and the retained originals have been reviewed.
+
+### readiness-m1-live-ordinary-01
+
+M1 ordinary wording: one reviewed Haiku 5.5 placement; five tool-use turns, auditor submission and verified closure; prose ending and reminder unexercised.
+
+- Evidence: `.scratch/readiness-m1-live-ordinary-01/.` (recorded 2026-11-13T17:34:32Z).
+- Retained purpose: Inspect the original ordinary-wording encounter, inputs, process/custody evidence and status forms for the authorized M1 comparison and fixture selection.; until The M1 comparison and selected fixture review finish, and no remaining inspection purpose needs these originals.
+
+### readiness-m1-live-direct-01
+
+M1 direct-reply wording: seven tool-use turns, three corrected citation refusals, auditor submission and verified closure; prose ending and reminder unexercised.
+
+- Evidence: `.scratch/readiness-m1-live-direct-01/.` (recorded 2026-11-13T17:44:44Z).
+- Retained purpose: Inspect the original direct-reply encounter, citation refusals/recovery and status evidence for the authorized M1 comparison and fixture selection.; until The M1 comparison and selected fixture review finish, and no remaining inspection purpose needs these originals.
+
+### readiness-m1-live-questions-01
+
+M1 invitation to ask: nine tool-use turns, six corrected citation refusals and a declared interpretation; auditor submission and closure, no question or reminder.
+
+- Evidence: `.scratch/readiness-m1-live-questions-01/.` (recorded 2026-11-13T17:59:59Z).
+- Retained purpose: Inspect the original invitation-to-ask encounter, declared assumption, citation refusals/recovery and status evidence for the M1 comparison and fixture selection.; until The M1 comparison and selected fixture review finish, and no remaining inspection purpose needs these originals.
+
+### readiness-m1-01
+
+Completed four-arm M1 comparison: all submitted/closed; only report-only direct wording produced prose and a reminder; 27 turns, USD 0.0273369 usage estimate.
+
+- Evidence: `.scratch/readiness-m1-01/.` (recorded 2026-11-13T19:18:29Z).
+- Retained purpose: Interpret the four encounters against exact common inputs, approval, limits, costs and reviewed comparison; prepare the bounded reminder follow-ups.; until M1 and its selected follow-up/fixture work no longer require these common inputs and authority records.
+
+### readiness-m1-live-direct-inadequate-01
+
+M1 report-only direct reply: prose end_turn, one exact reminder, then prepare/submit; six turns, verified delivery and closure.
+
+- Evidence: `.scratch/readiness-m1-live-direct-inadequate-01/.` (recorded 2026-11-13T19:18:29Z).
+- Retained purpose: Inspect the firing prose-ending/reminder encounter for M1 comparison, M3/C5 preparation and fixture selection.; until Those comparisons and selected fixture reviews finish, and no remaining inspection purpose needs these originals.

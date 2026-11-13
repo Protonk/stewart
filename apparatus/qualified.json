@@ -1690,6 +1690,106 @@
         "reason": "Current C10 launcher and M1 input qualification for the bounded readiness comparisons.",
         "until": "A later matching rehearsal replaces this binding, or the bounded comparisons finish and the retained originals have been reviewed."
       }
+    },
+    {
+      "id": "readiness-m1-live-ordinary-01",
+      "kind": "experiment",
+      "date": "2026-11-13T17:34:32Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M1 ordinary wording: one reviewed Haiku 5.5 placement; five tool-use turns, auditor submission and verified closure; prose ending and reminder unexercised.",
+      "result": {
+        "path": ".",
+        "files": 67,
+        "sha256": "2caab23fdf17fe3f489a58dbbad52e4be8ec744f2001587ba2b7180d3589be52"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m1-live-ordinary-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the original ordinary-wording encounter, inputs, process/custody evidence and status forms for the authorized M1 comparison and fixture selection.",
+        "until": "The M1 comparison and selected fixture review finish, and no remaining inspection purpose needs these originals."
+      }
+    },
+    {
+      "id": "readiness-m1-live-direct-01",
+      "kind": "experiment",
+      "date": "2026-11-13T17:44:44Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M1 direct-reply wording: seven tool-use turns, three corrected citation refusals, auditor submission and verified closure; prose ending and reminder unexercised.",
+      "result": {
+        "path": ".",
+        "files": 67,
+        "sha256": "d9abaf5c014f43ca6c88b5e9f6c8ccd6532d3dccf7a164651c553e73bb5bdbb5"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m1-live-direct-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the original direct-reply encounter, citation refusals/recovery and status evidence for the authorized M1 comparison and fixture selection.",
+        "until": "The M1 comparison and selected fixture review finish, and no remaining inspection purpose needs these originals."
+      }
+    },
+    {
+      "id": "readiness-m1-live-questions-01",
+      "kind": "experiment",
+      "date": "2026-11-13T17:59:59Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M1 invitation to ask: nine tool-use turns, six corrected citation refusals and a declared interpretation; auditor submission and closure, no question or reminder.",
+      "result": {
+        "path": ".",
+        "files": 67,
+        "sha256": "d7861cacdc7a4a70de95cb9c3479dafaec911829c6465c64d33d6402c3aea147"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m1-live-questions-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the original invitation-to-ask encounter, declared assumption, citation refusals/recovery and status evidence for the M1 comparison and fixture selection.",
+        "until": "The M1 comparison and selected fixture review finish, and no remaining inspection purpose needs these originals."
+      }
+    },
+    {
+      "id": "readiness-m1-01",
+      "kind": "experiment",
+      "date": "2026-11-13T19:18:29Z",
+      "date_from": "RESULT.json field finished_at",
+      "summary": "Completed four-arm M1 comparison: all submitted/closed; only report-only direct wording produced prose and a reminder; 27 turns, USD 0.0273369 usage estimate.",
+      "result": {
+        "path": ".",
+        "files": 49,
+        "sha256": "e27e9b4bcf558ca50d5e682786b1748fe2830c5ec610e6154be6bbd5262223bb"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m1-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret the four encounters against exact common inputs, approval, limits, costs and reviewed comparison; prepare the bounded reminder follow-ups.",
+        "until": "M1 and its selected follow-up/fixture work no longer require these common inputs and authority records."
+      }
+    },
+    {
+      "id": "readiness-m1-live-direct-inadequate-01",
+      "kind": "experiment",
+      "date": "2026-11-13T19:18:29Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M1 report-only direct reply: prose end_turn, one exact reminder, then prepare/submit; six turns, verified delivery and closure.",
+      "result": {
+        "path": ".",
+        "files": 65,
+        "sha256": "11b592bf4c9cea5486f2b7f437f5d899e197e660462a86ad4db7cc28fec4bdf4"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m1-live-direct-inadequate-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the firing prose-ending/reminder encounter for M1 comparison, M3/C5 preparation and fixture selection.",
+        "until": "Those comparisons and selected fixture reviews finish, and no remaining inspection purpose needs these originals."
+      }
     }
   ]
 }
