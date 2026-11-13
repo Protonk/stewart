@@ -3,12 +3,12 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 repairs and native checks complete; Linux verification remains.**
-All three Cargo configurations pass on the repaired source. The two corrected
-runtime cases and the package rehearsal pass with independently reviewed
-publication, package and stopping evidence. Checked items record completed work,
-not Linux qualification. Container acceptance and the C10 rehearsal are next;
-no live packet is approved or started.
+**State: two driver corrections await a fresh Linux acceptance run.**
+The first run is unqualified because of two partial skips. The driver now uses
+the release binary for the held-run check and a host-mounted source fixture for
+the overlong filename. Native iteration verifies the filename comparison; the
+Linux run must verify both corrections and the mount. The C10 Linux rehearsal
+follows a qualified result. No live packet is approved or started.
 
 | Stage | Result |
 | --- | --- |
@@ -160,7 +160,7 @@ need no approval per capture class or general backup checkpoint.
   limits, tool order, record digests and confirmation tokens from specifications
   or independent inputs. Add firing controls for credential output, citation
   schemas, scaffold effort and the fault/sabotage inventory.
-- [x] Run applicable checks and retain exact counts, failures and skips. Identify
+- [ ] Run applicable checks and retain exact counts, failures and skips. Identify
   changed launchers needing a fresh Linux rehearsal before live use.
 
 Fixtures needing provider, harness or operating-system captures go to stage 3.
@@ -168,6 +168,33 @@ Stage 4 hands the shared post-launch return fixture to manager-interface work
 for rewriting when the question is added to the return.
 
 ### Remaining verification
+
+`acceptance-readiness-01` is recorded as **failed qualification** in the
+[qualification index](apparatus/qualified.md#acceptance-readiness-01), despite
+the suite's zero exit. Each architecture reports two partial skips: the held-run
+check on the release binary and the 256-byte source-name component that the
+ext4 fixture cannot create. All runtime cases and controls passed on both
+architectures; independent review confirmed signal ordering, stopping and
+retained-copy consistency. Preserve this run unchanged through the correction.
+
+- [x] Implement the held-run comparison using a release-binary request stalled
+  by the independent fake provider, followed by stopping checks.
+- [x] Add a host-mounted source fixture that can hold a 256-byte UTF-8
+  component. Keep archives on ext4, witness the exact name independently, and
+  require Stewart's specified refusal. A filesystem refusal is not that check.
+- [x] Make the container wrapper reject skipped release cases. Keep the strict
+  qualification rule and historical counts unchanged.
+- [ ] Run and review fresh container acceptance before the C10 rehearsal.
+
+Correction checks and original fixture observations are retained in
+`/private/tmp/stewart-driver-component-repair.D4niAr/` and
+`/private/tmp/stewart-completeness-check-3nz4mnj0/`. The native filename case
+passed all 534 checks, including the actual `bound_exceeded` refusal naming
+`component_bytes`; the lock case remains skipped in the sandbox because
+loopback binding is denied, as do its two controls. Release self-tests report
+384 passed, no failures and two loopback skips; runtime self-tests report 229
+passed with no failures or skips. The wrapper check rejects the retained
+partial-skip result and an empty inventory, and accepts the complete-case control.
 
 The reviewed host result is
 `/private/tmp/stewart-readiness-native-87y7ofsj/RESULT.json`: Cargo release
@@ -200,8 +227,8 @@ Retain these evidence locations through Linux review:
   retained no immediate post-cleanup observation; this later check establishes
   current absence only.
 
-Commit for the principal's scheduled container acceptance, then extract and
-check its qualification record. The changed C10 operator checker needs a fresh
+After the corrected container run, extract and check its qualification record.
+The changed C10 operator checker needs a fresh
 retained Linux rehearsal; the frozen runtime controller carries the independent
 `fixture_expectations.py` source. Recheck qualification and launcher bindings
 before freezing any live packet. Native results do not qualify these changes;

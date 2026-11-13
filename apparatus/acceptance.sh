@@ -34,7 +34,9 @@
 #      (loopback only), binaries mounted read-only and archives and homes on the
 #      container's own disk: runs the driver's --self-test, then every case with
 #      --network-isolated --require-all-controls --keep-work failed (every Appendix C.2 sabotage
-#      control assigned and fired). The timing gates are on only for the host's
+#      control assigned and fired). A separate host-backed source folder permits
+#      the UTF-8 component boundary fixture that ext4 cannot hold. Timing gates
+#      are on only for the host's
 #      native architecture; emulated timings are reported, not gated.
 #   4. runs the standalone synthetic runtime driver against the development
 #      binaries in that same container, with no real harness or provider calls.
@@ -167,15 +169,22 @@ for p in $PLATFORMS; do
     [ "$p" = "$NATIVE" ] && gate=on
     d="driver-$p"
     mkdir -p "$OUT/$d"
+    # Only source names for the component-byte comparison use this mount.
+    # Each unprivileged driver creates private case directories inside it;
+    # archives, homes and the rest of the suite stay on the Linux filesystem.
+    mkdir "$OUT/component-source-$p" || stop_here "$p: create component source workspace"
+    chmod 1777 "$OUT/component-source-$p" || stop_here "$p: make component source workspace writable"
     driver_container="stewart-acceptance-$p-$(date -u +%Y%m%dT%H%M%SZ)-$$"
     printf '%s\n' "$driver_container" >"$OUT/host/$d.container"
     hstep "$d" container run --name "$driver_container" --network none --init --cpus 4 --memory 4G --platform "linux/$p" \
         --mount "type=bind,source=$OUT/staging,target=/in,readonly" \
         --mount "type=bind,source=$OUT/bin-$p,target=/bin-in,readonly" \
         --mount "type=bind,source=$OUT/$d,target=/out" \
+        --mount "type=bind,source=$OUT/component-source-$p,target=/component-source-work" \
         "$PYTHON" sh -c "mkdir -p /tmp/s && tar -xf /in/source.tar -C /tmp/s apparatus/container/acceptance-inner-driver.sh && sh /tmp/s/apparatus/container/acceptance-inner-driver.sh $gate $KEEP_WORK" \
         || fail "$d: the self-test or the driver reported failures or broken checks (see $OUT/$d/)"
     expect "$OUT/$d/selftest.exit" 0 "$p: driver self-test"
+    expect "$OUT/$d/driver-complete.exit" 0 "$p: release driver completed every selected case without skips"
     expect "$OUT/$d/evidence-copy.exit" 0 "$p: independent driver evidence retained"
     expect "$OUT/$d/retention.exit" 0 "$p: requested working-file retention completed"
     expect "$OUT/$d/runtime-selftest.exit" 0 "$p: synthetic runtime self-test"

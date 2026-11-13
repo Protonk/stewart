@@ -274,15 +274,22 @@ another checkout uses that checkout's own `service/vendor`.
   two builds byte for byte, checks that the binary is static, runs it in its
   toolchain image, and runs `stewart help` in the pinned alpine image.
 - `acceptance.sh` runs the whole scripted tier of ACCEPTANCE. Per architecture
-  it builds the release binary, the test build, a development build and a glibc
-  control, and checks that all three musl binaries are static and the glibc
+  it builds the release binary, the test build, two development builds and a glibc
+  control, and checks that all four musl binaries are static and the glibc
   control is not, that `cmp` tells the release and test binaries apart, and that
-  only the test build contains the six test-only variable names. The adapter
+  the release binary lacks the six test-only variable names while the test
+  build contains them. The adapter
   marker list must be absent from release/test and present in development.
   Then, in the pinned python image
   with no network and as an unprivileged user, it runs the driver's self-test
-  and every case with `--network-isolated --require-all-controls --keep-work all`, so every
+  and every case with `--network-isolated --require-all-controls`, so every
   sabotage control of Appendix C.2 must be assigned to a case and fire.
+  The release driver must complete every selected case without skips. Only the
+  source fixtures for the UTF-8 filename component bound use a separate writable
+  host mount, which can hold names exceeding ext4's byte limit. Archives, homes,
+  destinations and ordinary source fixtures remain on the container filesystem.
+  The source originals remain in `component-source-<arch>/` in the evidence
+  folder through review; the driver retains independent name and byte witnesses.
   In the same isolated container it runs the standalone runtime driver's
   self-test and every synthetic case, using the development, release and second
   development binaries. Qualification requires no skipped or unselected runtime

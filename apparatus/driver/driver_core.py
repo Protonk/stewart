@@ -3242,6 +3242,11 @@ def parse_args(argv):
     p.add_argument("--work", metavar="DIR",
                    help="parent for the temporary work directory (archives, folders, homes); default: the system "
                         "temporary directory. Must be outside the repository; on Linux use ext4, xfs or btrfs.")
+    p.add_argument("--component-source-work", metavar="ABSOLUTE_WRITABLE_ROOT",
+                   help="existing writable source-only root for C19's 255/256 UTF-8 byte filename specimens; "
+                        "must preserve exact names and permit the 256-byte multibyte name. Archives and ordinary "
+                        "work stay under --work. Fresh source folders are retained here; default: ordinary work, "
+                        "with an explicit skip if that filesystem cannot create the specimen.")
     p.add_argument("--timing-gate", choices=("on", "off"), default="off",
                    help="gate startup, status and help at under 100 ms, and protocol calls except a full-material "
                         "search at under 200 ms (only for native runs in the Linux test image); default off, "
@@ -3276,6 +3281,10 @@ def parse_args(argv):
             p.error("the parent of --evidence %s does not exist" % args.evidence)
         if args.work and not os.path.isdir(args.work):
             p.error("--work %s is not an existing directory" % args.work)
+        if args.component_source_work and not (os.path.isabs(args.component_source_work)
+                and os.path.isdir(args.component_source_work)
+                and os.access(args.component_source_work, os.W_OK | os.X_OK)):
+            p.error("--component-source-work must be an absolute existing directory writable and traversable by this user")
     return args
 
 

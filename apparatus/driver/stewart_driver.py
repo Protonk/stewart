@@ -6,13 +6,17 @@
     python3 -I -B apparatus/driver/stewart_driver.py --self-test
     python3 -I -B apparatus/driver/stewart_driver.py \\
         --binary /abs/stewart --test-binary /abs/stewart-test \\
-        --evidence /abs/new-evidence-folder [--case PATTERN]... [--exclude PATTERN]...
+        --evidence /abs/new-evidence-folder [--case PATTERN]... [--exclude PATTERN]... \\
+        [--component-source-work /abs/writable-source-root]
 
 The driver is several modules in this directory: driver_core (framework),
 rawjson, answer_witness, fake_provider, reacting_auditor, procedure and run_support
 (run support), and the case modules cases_*.py, imported here in name order. A new
 group of cases is a new cases_<name>.py file; nothing here needs editing.
 See apparatus/README.md for the cases, their controls and the evidence.
+The optional component source root supplies only C19's filename specimens on a
+filesystem permitting 256 UTF-8 bytes in one component. It must be writable by
+the driver user and preserve the exact raw names; archives remain under --work.
 """
 import os
 import sys

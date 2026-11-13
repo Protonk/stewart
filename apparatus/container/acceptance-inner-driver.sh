@@ -5,7 +5,9 @@
 # GATE: on (native architecture) or off. KEEP_WORK: failed (default) or all.
 # Inputs: /in/source.tar (git archive of HEAD), /bin-in/stewart and
 # /bin-in/stewart-test, /bin-in/stewart-local and /bin-in/stewart-local-variant
-# (read-only). Output: /out.
+# (read-only). /component-source-work is a writable host-backed source folder
+# for UTF-8 filename bounds; archives remain on the container filesystem.
+# Output: /out.
 #
 # Starts as root only to record the environment, create an unprivileged user
 # (uid 1000) and its work folder on the container's own disk, then, as that user,
@@ -57,6 +59,7 @@ fi
 chown 1000:1000 /work/tmp /work/run
 chmod 0755 /work /work/driver
 rec env-work-mount sh -c 'stat -f -c "%T" /work/tmp 2>/dev/null || true; grep -E " / | /work" /proc/self/mountinfo'
+rec env-component-source-mount sh -c 'stat -f -c "%T" /component-source-work; grep " /component-source-work " /proc/self/mountinfo'
 
 if command -v setpriv >/dev/null 2>&1; then
     set -- setpriv --reuid=1000 --regid=1000 --clear-groups
@@ -75,9 +78,20 @@ rec driver "$@" env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/work/tmp \
     python3 -I -B /work/driver/apparatus/driver/stewart_driver.py \
     --binary /bin-in/stewart --test-binary /bin-in/stewart-test \
     --evidence /work/run/evidence --work /work/tmp --timing-gate "$GATE" \
+    --component-source-work /component-source-work \
     --network-isolated --require-all-controls --keep-work "$KEEP_WORK" $EMULATION
 final_rc=$(cat /out/driver.exit)
 [ "$(cat /out/selftest.exit)" = 0 ] || final_rc=1
+rec driver-complete python3 -I -B -c '
+import json, sys
+with open("/work/run/evidence/RESULT.json", "rb") as source:
+    report = json.load(source)
+counts = report["counts"]["cases"]
+complete = (counts["selected"] > 0 and counts["selected"] == counts["passed"]
+            and counts["failed"] == counts["skipped"] == 0)
+print(json.dumps(counts, sort_keys=True))
+sys.exit(0 if complete else 1)
+' || final_rc=1
 rec evidence-copy cp -R /work/run/evidence /out/evidence || final_rc=1
 # The development adapter is checked by its independent synthetic harness.
 # This interpreter never launches Claude or authenticates with a provider.

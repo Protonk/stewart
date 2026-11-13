@@ -8,6 +8,7 @@ Loaded by stewart_driver.py, which puts this directory on sys.path.
 """
 from __future__ import annotations
 
+import errno
 import json
 import os
 import re
@@ -2505,6 +2506,67 @@ def _bound_refused(t, rep, p, bound, entry=None):
         t.check(p + ".names-entry", ok_entry, rep.obj)
 
 
+def component_source_observation(folder, name, content):
+    """Create one real source file and retain syscall and raw-name observations.
+
+    NAME_MAX is only contextual: some filesystems limit characters while Stewart
+    limits UTF-8 bytes. Only successful creation and exact enumeration establish
+    that the intended overlong name can reach Stewart's scanner.
+    """
+    directory = os.path.join(os.fsencode(folder), b"materials")
+    result = {"folder": os.fsdecode(folder), "name_hex": name.hex(), "name_bytes": len(name),
+              "content_bytes": len(content), "content_sha256": sha256_hex(content), "created": False}
+    operation = "mkdir"
+    try:
+        os.mkdir(directory, 0o700)
+        operation = "create_file"
+        fd = os.open(os.path.join(directory, name), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        result["created"] = True
+        operation = "write_file"
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(content)
+        operation = "read_file"
+        with open(os.path.join(directory, name), "rb") as stream:
+            actual = stream.read()
+        result["read_bytes"] = len(actual)
+        result["read_sha256"] = sha256_hex(actual)
+    except OSError as exc:
+        result["error"] = {"operation": operation, "errno": exc.errno, "message": str(exc)}
+    try:
+        result["enumerated_name_hex"] = sorted(item.hex() for item in os.listdir(directory))
+    except OSError as exc:
+        result["enumeration_error"] = {"errno": exc.errno, "message": str(exc)}
+    try:
+        result["pathconf_name_max"] = os.pathconf(folder, "PC_NAME_MAX")
+    except (OSError, ValueError) as exc:
+        result["pathconf_error"] = str(exc)
+    return result
+
+
+@selftest
+def component_source_selftest():
+    results = []
+    def check(name, ok, detail=None):
+        results.append(("component-source." + name, bool(ok), detail))
+    exact = ("界" * 85).encode("utf-8")
+    over = exact + b"a"
+    check("specimen-byte-boundaries", (len(exact), len(over)) == (255, 256))
+    with tempfile.TemporaryDirectory(prefix="stewart-component-selftest-") as root:
+        name, content = "literal-界".encode("utf-8"), b"independent component specimen\n"
+        observed = component_source_observation(root, name, content)
+        check("created-and-read", observed.get("created") and "error" not in observed
+              and observed.get("read_bytes") == len(content)
+              and observed.get("read_sha256") == sha256_hex(content), observed)
+        check("raw-enumeration", observed.get("enumerated_name_hex") == [name.hex()], observed)
+        refused = component_source_observation(root, b"must-not-be-created", b"different\n")
+        check("syscall-failure-retained", refused.get("created") is False
+              and refused.get("error", {}).get("operation") == "mkdir"
+              and refused.get("error", {}).get("errno") == errno.EEXIST, refused)
+        check("failure-did-not-rewrite", read_bytes(os.path.join(os.fsencode(root), b"materials", name)) == content
+              and refused.get("enumerated_name_hex") == [name.hex()], refused)
+    return results
+
+
 @case("c19.bounds.question", ["C19"], "question.md at exactly 256 KiB is admitted; one byte more is refused")
 def c_bound_question(t):
     """Exact question bytes 262,144 complete and commission; 262,145 refuse
@@ -2555,7 +2617,10 @@ def c_bound_dirs(t):
 def c_bound_paths(t):
     """A 1,024-byte public name, 32 components and a 255-byte component are admitted and
     read back; 1,025 bytes and 33 components refuse bound_exceeded naming the bound.
-    A 256-byte component is tested only where the filesystem can hold one."""
+    Real multibyte components of 255/256 UTF-8 bytes test acceptance/refusal independently
+    of filesystem character limits, using --component-source-work when supplied. Creation,
+    raw enumeration and contents are witnessed before Stewart is invoked; an unavailable
+    source fixture remains an explicit skip with its syscall error."""
     p1024 = "/".join(["a" * 200] * 4 + ["f" * 220])
     p1025 = "/".join(["b" * 200] * 4 + ["g" * 221])
     c32 = "/".join(["c"] * 31 + ["leaf.txt"])
@@ -2572,13 +2637,39 @@ def c_bound_paths(t):
         t.new_ref(over, name="bound-paths.%s.new" % label)
         rep = t.prepare(over, name="bound-paths.%s" % label, expect="refused", reason="bound_exceeded")
         _bound_refused(t, rep, "bound-paths.%s" % label, bound)
-    if _probe_names(t, [b"m" * 256]):
-        over = t.submission([F("m" * 256, b"x\n")])
-        t.new_ref(over, name="bound-paths.component.new")
-        rep = t.prepare(over, name="bound-paths.component", expect="refused", reason="bound_exceeded")
-        _bound_refused(t, rep, "bound-paths.component", "component_bytes")
-    else:
-        t.skip_part("256-byte component", "the filesystem's NAME_MAX is 255, so no such entry can exist")
+    parent = getattr(t.drv.args, "component_source_work", None) or t.root
+    source_root = tempfile.mkdtemp(prefix="stewart-component-sources-", dir=parent)
+    exact_name = "界" * 85
+    content = b"The same literal bytes under each component specimen.\n"
+    for label, name, size in (("exact", exact_name, 255), ("over", exact_name + "a", 256)):
+        prefix = "bound-paths.component." + label
+        t.require(prefix + ".specimen-size", len(name.encode("utf-8")) == size, name)
+        specimen = t.submission([F(name, content)], folder=os.path.join(source_root, label), make_materials=False)
+        observed = t.driver_change("create the %d-byte component source" % size,
+                                  lambda: component_source_observation(specimen.folder, name.encode("utf-8"), content))
+        witness = os.path.join(t.evid, "component-source-%s.json" % label)
+        with open(witness, "w", encoding="utf-8") as stream:
+            json.dump(observed, stream, ensure_ascii=False, indent=1)
+        if not observed["created"]:
+            error = observed.get("error", {})
+            t.skip_part("%d-byte component" % size,
+                        "source fixture unavailable: %s errno=%s; independent witness %s" %
+                        (error.get("operation"), error.get("errno"), witness))
+            continue
+        t.require(prefix + ".source-readable", "error" not in observed, observed)
+        t.require(prefix + ".source-name-bytes", observed.get("enumerated_name_hex") == [name.encode("utf-8").hex()], observed)
+        t.require(prefix + ".source-content", (observed.get("read_bytes"), observed.get("read_sha256")) ==
+                  (len(content), sha256_hex(content)), observed)
+        if label == "exact":
+            t.accept(specimen, prefix=prefix + ".", check_witness=True)
+            t.check_readback_ok(specimen, "materials/" + name, content, prefix + ".readback")
+        else:
+            t.new_ref(specimen, name=prefix + ".new")
+            rep = t.prepare(specimen, name=prefix, expect="refused", reason="bound_exceeded")
+            _bound_refused(t, rep, prefix, "component_bytes", name)
+            t.eq(prefix + ".effects", no_diag(rep.effects), {"preparation": "none"})
+            t.eq(prefix + ".no-preparation-or-acceptance", t.log_kinds(specimen), ["reference"])
+            t.eq(prefix + ".no-intake", t.intake_dirs(specimen), [])
 
 
 @case("c19.bounds.file-bytes", ["C19", "C9", "C15"], "a 16 MiB file is admitted, captured and read back; one byte more is refused",

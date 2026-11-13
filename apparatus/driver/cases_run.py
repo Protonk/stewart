@@ -1359,7 +1359,8 @@ def c_run_refusals(t):
     ending, a limit stop and a seal, run refuses authoring_ended with ended_by ordinary_ending,
     limit or seal and the record that ended authoring, effects stating the recorded facts and
     next calls close and status. On a closed reference it refuses reference_closed. While
-    another run holds the lock (test build on Linux) it refuses run_held naming the holder's
+    another run holds the lock during a request stalled at the independent provider (Linux)
+    it refuses run_held naming the holder's
     observations. Invariance: the same audit run from another directory and HOME differs only
     in run_started observations, which name a process and user ID, never a person."""
     watch = rs.provider(t, fp.Script([]), label="commission-watch")
@@ -1425,23 +1426,35 @@ def c_run_refusals(t):
     r2 = rs.run(t, sub_d, fxd, name="c12.refusals.d.run", expect="refused", reason="reference_closed")
     t.eq("c12.refusals.d.next", sorted({a[1] for a in r2.next_argvs()}), ["close", "status"])
     t.eq("c12.refusals.d.no-request", len(fxd.exchanges), 0)
-    if t.bin["kind"] == "test" and is_linux():
+    if is_linux():
         sub_e = run_submission(t)
-        pe = proc(sub_e, ordinary_body)
-        fxe = rs.provider(t, pe, label="held")
-        h = rs.start_run(t, sub_e, fxe, name="c12.refusals.e.holder", fault="run.after_started=pause")
-        stem = t.wait_paused("run.after_started", h)
-        r2 = rs.run(t, sub_e, fxe, name="c12.refusals.e.second", expect="refused", reason="run_held")
-        started = t.log_bodies(sub_e, "run_started")
-        t.eq("c12.refusals.e.holder", (r2.data.get("run"), r2.data.get("holder")),
-             (1, (started[0] or {}).get("observations") if started else None))
-        t.eq("c12.refusals.e.effects", {k: v for k, v in r2.effects.items() if k != "diagnostic"},
-             {"run": "still_held", "answer": "unchanged", "seal": "none", "delivery": "none"})
-        t.eq("c12.refusals.e.next", sorted({a[1] for a in r2.next_argvs()}), ["close", "status"])
-        t.release(stem)
-        rs.finish_run(t, h)
+        fxe = rs.provider(t, fp.Script([fp.Stall(120)]), label="held")
+        h = rs.start_run(t, sub_e, fxe, name="c12.refusals.e.holder")
+        try:
+            t.require("c12.refusals.e.request-stalled", rs.wait_for(
+                lambda: len(fxe.exchanges) == 1 and fxe.exchanges[0].outcome == "stalled", 30),
+                [e.outcome for e in fxe.exchanges])
+            t.require("c12.refusals.e.holder-live", h["proc"].running(), "holder exited before the competing run")
+            r2 = rs.run(t, sub_e, fxe, name="c12.refusals.e.second", expect="refused", reason="run_held")
+            started = t.log_bodies(sub_e, "run_started")
+            observations = (started[0] or {}).get("observations") if started else None
+            t.eq("c12.refusals.e.observed-pid", (observations or {}).get("pid"), h["proc"].p.pid)
+            t.eq("c12.refusals.e.holder", (r2.data.get("run"), r2.data.get("holder")), (1, observations))
+            t.eq("c12.refusals.e.effects", {k: v for k, v in r2.effects.items() if k != "diagnostic"},
+                 {"run": "still_held", "answer": "unchanged", "seal": "none", "delivery": "none"})
+            t.eq("c12.refusals.e.next", sorted({a[1] for a in r2.next_argvs()}), ["close", "status"])
+            t.eq("c12.refusals.e.no-second-request", len(fxe.exchanges), 1)
+        finally:
+            if h["proc"].running():
+                t.signal(h, signal.SIGTERM)
+            ended = rs.finish_run(t, h)
+        rs.check_run_reply(t, ended, sub_e, "c12.refusals.e.holder", ending="interrupted", cause="signal",
+                           run_number=1, fx=fxe, limits=rs.limits_of(sub_e))
+        t.check("c12.refusals.e.connection-closed", rs.wait_for(
+            lambda: fxe.exchanges[0].outcome == "stalled_client_closed", 5),
+            [e.outcome for e in fxe.exchanges])
     else:
-        t.skip_part("run held", "needs the test build's pause point and Linux OFD locks")
+        t.skip_part("run held", "Linux-only expectation: OFD lock exclusion during a live provider request")
 
 
 # ---------------------------------------------------------------------------
