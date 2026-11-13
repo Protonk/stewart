@@ -1613,26 +1613,6 @@
       }
     },
     {
-      "id": "guidance-rehearsal-01",
-      "kind": "experiment",
-      "date": "2026-11-10T05:45:13Z",
-      "date_from": "DONE",
-      "summary": "Concise reviewed Linux guidance rehearsal and reviewer/operator/report control results; synthetic working evidence retired.",
-      "result": {
-        "path": ".",
-        "files": 14,
-        "sha256": "d63839a588d0dd91f99075d1f0f7c461fa25bf0c064a322694f538ecf0c9fe94"
-      },
-      "evidence": {
-        "path": ".scratch/guidance-rehearsal-01",
-        "where": "local: only on the machine that ran it; clones do not carry it"
-      },
-      "pin": {
-        "reason": "Inspect the current Linux launcher and reviewer qualification results. This trimmed record is not a live launch binding.",
-        "until": "A later launcher rehearsal replaces these current qualification results."
-      }
-    },
-    {
       "id": "guidance-live-01",
       "kind": "experiment",
       "date": "2026-11-10T06:28:18Z",
@@ -1693,22 +1673,22 @@
       }
     },
     {
-      "id": "c10-readiness-01",
+      "id": "c10-readiness-m1-01",
       "kind": "experiment",
-      "date": "2026-11-13T16:58:19Z",
+      "date": "2026-11-13T17:13:22Z",
       "date_from": "REVIEW.json field finished_at",
-      "summary": "Linux C10 rehearsal: 13 expected audit outcomes; reviewer 14/14, operator 7/7, reporting 11/11; no model calls.",
+      "summary": "Reviewed Linux C10 rehearsal: 17/17 audits, four exact M1 templates and saved-connection collection; no model calls.",
       "result": {
         "path": "REVIEW.json",
-        "sha256": "7a1158ce4e2df5a1b15d5aec000c5ba814494913b2cb8755a1b02fd24bd715e4"
+        "sha256": "b4f9d1ba9a020ef0f2a86ec41b382b1990bc93bbebe42088655a16b03837e4f1"
       },
       "evidence": {
-        "path": ".scratch/c10-readiness-01",
+        "path": ".scratch/c10-readiness-m1-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Current reviewed launcher rehearsal and its retained export controls, pending the M1 template rehearsal.",
-        "until": "A reviewed rehearsal with matching bindings covers the next selected live templates and credential route."
+        "reason": "Current C10 launcher and M1 input qualification for the bounded readiness comparisons.",
+        "until": "A later matching rehearsal replaces this binding, or the bounded comparisons finish and the retained originals have been reviewed."
       }
     }
   ]

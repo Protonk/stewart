@@ -554,13 +554,6 @@ Opus blinded sw3z: input-limit stop after prepare, seven recorded entries, manag
 - Evidence: `.scratch/opus-live-04/.` (recorded 2026-11-10T00:11:56Z).
 - Retained purpose: Inspect this encounter, its recorded selection and limit/custody outcome in the disclosed unplanted condition.; until The comparison no longer needs this original encounter for inspection.
 
-### guidance-rehearsal-01
-
-Concise reviewed Linux guidance rehearsal and reviewer/operator/report control results; synthetic working evidence retired.
-
-- Evidence: `.scratch/guidance-rehearsal-01/.` (recorded 2026-11-10T05:45:13Z).
-- Retained purpose: Inspect the current Linux launcher and reviewer qualification results. This trimmed record is not a live launch binding.; until A later launcher rehearsal replaces these current qualification results.
-
 ### guidance-live-01
 
 Built-in guidance: one submitted and closed Opus retry inquiry, original answer and checked agent reading.
@@ -582,9 +575,9 @@ Completed two-placement guidance comparison: exact inputs, authority, costs, rea
 - Evidence: `.scratch/guidance-cycle-01/.` (recorded 2026-11-10T06:36:11Z).
 - Retained purpose: Interpret the paired encounters against their fixed inputs, explicit commission and attributed measurements.; until The comparison no longer needs its original inputs and authority for inspection.
 
-### c10-readiness-01
+### c10-readiness-m1-01
 
-Linux C10 rehearsal: 13 expected audit outcomes; reviewer 14/14, operator 7/7, reporting 11/11; no model calls.
+Reviewed Linux C10 rehearsal: 17/17 audits, four exact M1 templates and saved-connection collection; no model calls.
 
-- Evidence: `.scratch/c10-readiness-01/REVIEW.json` (recorded 2026-11-13T16:58:19Z).
-- Retained purpose: Current reviewed launcher rehearsal and its retained export controls, pending the M1 template rehearsal.; until A reviewed rehearsal with matching bindings covers the next selected live templates and credential route.
+- Evidence: `.scratch/c10-readiness-m1-01/REVIEW.json` (recorded 2026-11-13T17:13:22Z).
+- Retained purpose: Current C10 launcher and M1 input qualification for the bounded readiness comparisons.; until A later matching rehearsal replaces this binding, or the bounded comparisons finish and the retained originals have been reviewed.

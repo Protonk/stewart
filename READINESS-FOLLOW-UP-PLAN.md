@@ -3,11 +3,11 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; stage 2 preparation is underway.**
-Linux acceptance and the C10 rehearsal pass and have been independently reviewed.
-L0 is reviewed. M1's four templates and unpaid proposals are prepared; their
-exact-input and saved-connection rehearsal is next. No live packet is approved
-or started.
+**State: stage 1 complete; stage 2 awaits M1's bounded live approval.**
+Linux acceptance and the M1-specific C10 rehearsal pass and have been independently
+reviewed. L0 is reviewed. M1's four exact inputs and saved-connection collection
+have passed rehearsal; its frozen manifest defines the requested commission.
+No live packet is approved or started.
 
 | Stage | Result |
 | --- | --- |
@@ -176,13 +176,15 @@ the specified overlong-name refusal, and signal stopping before publication.
 Archives and ordinary work remained on ext4. The native Cargo checks remain
 at `/private/tmp/stewart-readiness-native-87y7ofsj/RESULT.json`.
 
-The [C10 rehearsal](apparatus/qualified.md#c10-readiness-01) has 13 of 13
+The [C10 rehearsal](apparatus/qualified.md#c10-readiness-m1-01) has 17 of 17
 expected observations, zero failed, unstarted or skipped audits; reviewer
 comparisons 14/14 with 12/12 controls, operator comparisons 7/7, and reporting
-comparisons 11/11. Independent review checked all 11 exported archive digests
-and preserved snapshots. The three deliberately unavailable exports retain
-private originals in their container. These are fake-provider results, with
-no model-conformance claim.
+comparisons 11/11. Each of the four M1 templates passes 18/18 comparisons,
+including 16/16 firing controls and two invariances. Independent review checked
+all 16 exported snapshot digests and preservation of earlier snapshots. Collection
+through the synthetic saved connection succeeds in a fresh process. The three
+deliberately unavailable exports retain private originals in their container.
+These are fake-provider results, with no live-access or model-conformance claim.
 
 Recheck qualification and launcher bindings before freezing any live packet.
 The frozen runtime controller must carry the independent
@@ -213,19 +215,30 @@ dollar ceilings. These experiments do not qualify release models.
   model ran. The useful ancestry remedy is in `run_ended.message`, absent from
   default, detailed and JSON status. Carry that presentation issue into stage 3
   and the manager handoff; no reproduction or live call is needed.
-- **M1 prepared, not approved:** `.scratch/readiness-m1-01/PREPARATION.json`
-  identifies four byte-bound templates and separate one-placement proposals.
+- **M1 frozen for approval:** `.scratch/readiness-m1-01/MANIFEST.json`
+  identifies four byte-bound templates and separate one-placement packets.
   Ordinary, direct-reply and invitation-to-ask wording share the same material;
   the inadequate arm has the exact direct-reply question with only the supplied
   report. Model, family and allowances stay fixed. `COST.json` holds the dated
   provider assessment and proposed $1 campaign budget; authorization is unset.
-- [ ] Run `sh .tmp/readiness-repairs/rehearse-m1.sh` on the host. It rehearses
-  the 13 fixed controls plus these four templates, using only the separate
-  `stewart-synthetic` Keychain item and a fake provider. The item must be
-  nonfunctional; the launcher refuses any value without its synthetic prefix.
-  Review the fresh-process collection and all template controls before live use.
-- [ ] After that review, freeze the four live packet digests and request M1's
-  bounded authority, including its proposed `stewart-haiku` saved connection.
+- [x] Rehearse the 13 fixed audits and four exact templates through the separate
+  `stewart-synthetic` Keychain item and fake provider. Review all template controls
+  and fresh-process collection. The retained result is
+  `.scratch/c10-readiness-m1-01/REVIEW.json`.
+- [x] Prepare the default, detailed and JSON status capture procedure. Raw replies
+  stay in private evidence until the existing credential-scanned collection
+  exports them. The collector's native read-only check passes all three forms
+  without changing the original archive; its first Linux use remains to be
+  observed. These are later observations after the launcher's ordinary close,
+  where close occurred; the launcher's immediate JSON status is also retained.
+- [x] Freeze the four live packet digests and their common commission in
+  `.scratch/readiness-m1-01/MANIFEST.json` after committing the qualification
+  update. A filled authority field defines the requested scope; it does not
+  record principal approval.
+- [ ] Obtain M1's bounded approval, including the proposed $1 campaign budget
+  and `stewart-haiku` saved connection. The dated estimate prices all token
+  allowances at $0.088 at the base rate or $0.44 at the higher rate; neither is
+  a hard billing ceiling. No extra authentication probe is included.
   Launch and review one arm at a time. Account labels are copied from the prior
   commission as a proposal, not as current authorization or verified access.
 
