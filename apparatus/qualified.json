@@ -1691,6 +1691,25 @@
         "reason": "Interpret the paired encounters against their fixed inputs, explicit commission and attributed measurements.",
         "until": "The comparison no longer needs its original inputs and authority for inspection."
       }
+    },
+    {
+      "id": "c10-readiness-01",
+      "kind": "experiment",
+      "date": "2026-11-13T16:58:19Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "Linux C10 rehearsal: 13 expected audit outcomes; reviewer 14/14, operator 7/7, reporting 11/11; no model calls.",
+      "result": {
+        "path": "REVIEW.json",
+        "sha256": "7a1158ce4e2df5a1b15d5aec000c5ba814494913b2cb8755a1b02fd24bd715e4"
+      },
+      "evidence": {
+        "path": ".scratch/c10-readiness-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Current reviewed launcher rehearsal and its retained export controls, pending the M1 template rehearsal.",
+        "until": "A reviewed rehearsal with matching bindings covers the next selected live templates and credential route."
+      }
     }
   ]
 }

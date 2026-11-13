@@ -3,11 +3,11 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: Linux acceptance is qualified; the C10 rehearsal remains.**
-The repaired source passes every selected release and runtime case on both
-architectures without skips. Independent review confirms the held-run and
-filename comparisons. Complete the offline C10 Linux rehearsal before preparing
-live packets. No live packet is approved or started.
+**State: stage 1 complete; stage 2 preparation is underway.**
+Linux acceptance and the C10 rehearsal pass and have been independently reviewed.
+L0 is reviewed. M1's four templates and unpaid proposals are prepared; their
+exact-input and saved-connection rehearsal is next. No live packet is approved
+or started.
 
 | Stage | Result |
 | --- | --- |
@@ -159,14 +159,14 @@ need no approval per capture class or general backup checkpoint.
   limits, tool order, record digests and confirmation tokens from specifications
   or independent inputs. Add firing controls for credential output, citation
   schemas, scaffold effort and the fault/sabotage inventory.
-- [ ] Run applicable checks and retain exact counts, failures and skips. Identify
+- [x] Run applicable checks and retain exact counts, failures and skips. Identify
   changed launchers needing a fresh Linux rehearsal before live use.
 
 Fixtures needing provider, harness or operating-system captures go to stage 3.
 Stage 4 hands the shared post-launch return fixture to manager-interface work
 for rewriting when the question is added to the return.
 
-### Remaining verification
+### Verified basis for the next comparisons
 
 The [qualification index](apparatus/qualified.md#acceptance-readiness-02) owns
 the exact Linux counts and binary identities for source `0fdac94`. All cases and
@@ -176,22 +176,20 @@ the specified overlong-name refusal, and signal stopping before publication.
 Archives and ordinary work remained on ext4. The native Cargo checks remain
 at `/private/tmp/stewart-readiness-native-87y7ofsj/RESULT.json`.
 
-- [ ] Run the changed C10 apparatus's Linux rehearsal on the qualified binary:
-
-  ```sh
-  python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-readiness-01" --qualification acceptance-readiness-02
-  ```
-
-- [ ] Review all 13 audit outcomes, the firing negative controls, stopping,
-  reviewer/operator/report comparisons and immutable export preservation.
-  Extract no model-conformance claim from this fake-provider rehearsal.
+The [C10 rehearsal](apparatus/qualified.md#c10-readiness-01) has 13 of 13
+expected observations, zero failed, unstarted or skipped audits; reviewer
+comparisons 14/14 with 12/12 controls, operator comparisons 7/7, and reporting
+comparisons 11/11. Independent review checked all 11 exported archive digests
+and preserved snapshots. The three deliberately unavailable exports retain
+private originals in their container. These are fake-provider results, with
+no model-conformance claim.
 
 Recheck qualification and launcher bindings before freezing any live packet.
 The frozen runtime controller must carry the independent
 `fixture_expectations.py` source. Retain the native controller evidence in
-`.scratch/readiness-native-jbpx9el6/` for C1 preparation. For L0, that run's
-startup refusals and `/private/tmp/stewart-readiness-native-cgup0_dm/` supply the
-inside/outside ancestry comparison. Apply DEVELOPMENT's retention rules to
+`.scratch/readiness-native-jbpx9el6/` for C1 preparation. L0's retained comparison
+is `.scratch/readiness-l0-01/RESULT.json`; its original inputs remain at the
+paths it records. Apply DEVELOPMENT's retention rules to
 completed repair evidence; historical counts and receipts remain unchanged.
 
 **Complete when:** repairs are checked or explicitly disposed of, expected
@@ -205,6 +203,31 @@ Freeze each packet's inputs, binary, model, authentication route, limits,
 stopping rules, replacement policy and witnesses before seeking approval.
 Include a dated cost estimate and campaign budget: token/time bounds are not
 dollar ceilings. These experiments do not qualify release models.
+
+### Current preparation
+
+- **L0 reviewed:** `.scratch/readiness-l0-01/RESULT.json` compares retained
+  inside/outside project-ancestry runs and later read-only status in all three
+  forms. The startup stop has no auth/model process records. `launched: yes`
+  follows the specified `run_started` boundary; it does not establish that a
+  model ran. The useful ancestry remedy is in `run_ended.message`, absent from
+  default, detailed and JSON status. Carry that presentation issue into stage 3
+  and the manager handoff; no reproduction or live call is needed.
+- **M1 prepared, not approved:** `.scratch/readiness-m1-01/PREPARATION.json`
+  identifies four byte-bound templates and separate one-placement proposals.
+  Ordinary, direct-reply and invitation-to-ask wording share the same material;
+  the inadequate arm has the exact direct-reply question with only the supplied
+  report. Model, family and allowances stay fixed. `COST.json` holds the dated
+  provider assessment and proposed $1 campaign budget; authorization is unset.
+- [ ] Run `sh .tmp/readiness-repairs/rehearse-m1.sh` on the host. It rehearses
+  the 13 fixed controls plus these four templates, using only the separate
+  `stewart-synthetic` Keychain item and a fake provider. The item must be
+  nonfunctional; the launcher refuses any value without its synthetic prefix.
+  Review the fresh-process collection and all template controls before live use.
+- [ ] After that review, freeze the four live packet digests and request M1's
+  bounded authority, including its proposed `stewart-haiku` saved connection.
+  Launch and review one arm at a time. Account labels are copied from the prior
+  commission as a proposal, not as current authorization or verified access.
 
 ### Comparisons and proposed bounds
 

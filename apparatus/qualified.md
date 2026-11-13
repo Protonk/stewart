@@ -581,3 +581,10 @@ Completed two-placement guidance comparison: exact inputs, authority, costs, rea
 
 - Evidence: `.scratch/guidance-cycle-01/.` (recorded 2026-11-10T06:36:11Z).
 - Retained purpose: Interpret the paired encounters against their fixed inputs, explicit commission and attributed measurements.; until The comparison no longer needs its original inputs and authority for inspection.
+
+### c10-readiness-01
+
+Linux C10 rehearsal: 13 expected audit outcomes; reviewer 14/14, operator 7/7, reporting 11/11; no model calls.
+
+- Evidence: `.scratch/c10-readiness-01/REVIEW.json` (recorded 2026-11-13T16:58:19Z).
+- Retained purpose: Current reviewed launcher rehearsal and its retained export controls, pending the M1 template rehearsal.; until A reviewed rehearsal with matching bindings covers the next selected live templates and credential route.
