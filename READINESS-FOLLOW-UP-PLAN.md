@@ -3,12 +3,13 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; L0, M1 and M2 reviewed; stage 2 awaits C1 approval.**
+**State: stage 1 complete; L0, M1 and M2 reviewed; C1 approved and awaiting its host run.**
 M2 reproduced a thinking-only response-cap interruption in sw3z default; the
 other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
 commissioned M3. C1's refreshed offline rehearsal is reviewed and its concrete
-live packet is frozen. No C1 authentication or model invocation is authorized.
+live packet is frozen and approved, with paid extra usage confirmed disabled.
+Its one-use host run and review remain; no C1 invocation has started.
 
 | Stage | Result |
 | --- | --- |
@@ -266,8 +267,9 @@ dollar ceilings. These experiments do not qualify release models.
 - [x] Freeze C1's packet, dated cost/compatibility record and guarded launch
   procedure under `.scratch/readiness-c1-01/MANIFEST.json`, with the controller's
   exact six-slot commission at `packet/COMMISSION.json`.
-- [ ] Obtain approval of C1's frozen manifest and confirmation that paid extra
-  usage (usage credits) is disabled. The packet proposes
+- [x] Obtain approval of C1's frozen manifest and confirmation that paid extra
+  usage (usage credits) is disabled. The principal's exact approval is recorded
+  in `.scratch/readiness-c1-01/AUTHORIZATION.json`. The approved packet allows
   three authentication checks of 30 seconds and three supplied-surface fixture
   sessions of 120 seconds, within 450 seconds overall, using the Claude.ai
   subscription with paid extra usage disabled; no incremental paid spend is
@@ -276,7 +278,12 @@ dollar ceilings. These experiments do not qualify release models.
   controller supplies `--max-turns 200` per session, but C1 does not demonstrate
   that flag's enforcement. No replacement, fallback or continuation is included.
   The packet is one-use and stops before later slots after a failed comparison,
-  authentication or observation. Actual account settings remain unverified.
+  authentication or observation. The principal confirms the account setting;
+  the apparatus does not independently verify it.
+- [ ] Run `.scratch/readiness-c1-01/launch.sh` once on the native host, where
+  observer sockets are permitted, and review the retained observations and
+  process records before attestation or any later commission. Do not restart
+  an entered packet after a failed or uncertain outcome.
 
 ### Comparisons and proposed bounds
 
