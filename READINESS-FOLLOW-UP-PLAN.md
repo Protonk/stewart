@@ -9,7 +9,7 @@ other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
 commissioned M3. C1 produced a reviewed supplied-surface check and profile.
 Both C2 inquiries submitted, passed review and closed with their packages
-preserved. C3's large-page inputs are being frozen for a fresh commission.
+preserved. C3's large-page commission is frozen and awaits fresh approval.
 
 | Stage | Result |
 | --- | --- |
@@ -293,13 +293,25 @@ dollar ceilings. These experiments do not qualify release models.
   originals, case reviews and closures. Retain citation recovery and
   submit-to-stop/partial-usage captures for stage-three fixtures and accounting
   reassessment. No C2 authority remains.
-- [ ] Freeze C3's one-start large-page comparison for fresh approval. Reuse the
-  reviewed one-placement controller and profile. Local inputs in
+- [x] Freeze C3's one-start large-page comparison. It reuses the reviewed
+  one-placement controller and profile. Local inputs in
   `.scratch/readiness-c3-01` comprise a 49,152-byte ASCII control and a 131,072-byte
   ASCII source with distinct labels at the ends of its two 65,536-byte pages.
   Compare exact source slices with service replies, harness echoes and subsequent
   calls; a missing read is unexercised. The optional token-dense page is omitted.
-  This local preparation has launched no authentication or model process.
+- [ ] Obtain fresh C3 approval, then run and review that packet. The exact
+  commission is `.scratch/readiness-c3-01/MANIFEST.json`, SHA-256
+  `b44fad3b8c05551cfdc3ccfaa51c8a1fa44edb30fab29b08f254bdca8d38b007`.
+  It binds the 180,224 material bytes, question, outside page expectations,
+  unchanged source/profile/writer, cost assessment and post-approval commands.
+  Its maximum is one Haiku 5.5 placement of 600 seconds including authentication,
+  with no retry, replacement or continuation. The existing disabled-extra-usage
+  confirmation carries forward; only included subscription allowance is proposed.
+  Exact text comparisons use original source slices, MCP response IDs and matching
+  harness tool-use IDs; missing or shortened echoes remain explicit observations.
+  Provider-input completeness is not independently established. Local preparation
+  and inspection passed; no commission is accepted and no authentication or model
+  process has started. C2's exhausted authority supplies no C3 launch permission.
 
 ### Comparisons and proposed bounds
 
