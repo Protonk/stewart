@@ -36,7 +36,7 @@ not carry them.
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/acceptance-readiness-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: none
+- Pin: Retain the exact qualified ARM writer needed by the still-open M2 sw3z default audit and its separately commissioned M3 continuation or explicit disposition.; until That audit and any other open audits requiring this writer are closed or otherwise explicitly disposed of, and pending comparisons no longer require this binary.
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
@@ -616,3 +616,38 @@ Reviewed Linux C10 rehearsal: 18 expected audits, five exact M2 templates, saved
 
 - Evidence: `.scratch/c10-readiness-m2-01/REVIEW.json` (recorded 2026-11-13T19:25:39Z).
 - Retained purpose: Current launcher and exact-input rehearsal admission for the bounded M2 comparison; private originals remain through review.; until M2 placements have reviewed outcomes or explicit dispositions and this rehearsal no longer admits pending work.
+
+### readiness-m2-live-5sgh-default-01
+
+M2 5sgh default effort: 24 tool-use turns, eight-entry auditor submission and verified closure; thinking-only max_tokens not reproduced.
+
+- Evidence: `.scratch/readiness-m2-live-5sgh-default-01/.` (recorded 2026-11-13T19:58:21Z).
+- Retained purpose: Inspect original default-effort encounter for the M2 paired comparison, conditional fifth-arm eligibility and cap-setting/fixture review.; until Those comparisons and fixture reviews finish, and no remaining inspection purpose needs these originals.
+
+### readiness-m2-live-sw3z-default-01
+
+M2 sw3z default effort: thinking-only max_tokens on response 9; reviewed interruption, open audit with zero answer entries retained for separate M3.
+
+- Evidence: `.scratch/readiness-m2-live-sw3z-default-01/.` (recorded 2026-11-13T20:11:00Z).
+- Retained purpose: Inspect firing M2 response and paired effort comparison; retain private container, open audit and immutable exports for separately commissioned M3 and fixture/cap-setting review.; until The open audit has an explicit disposition and continuation/comparison/fixture reviews finish, with no remaining inspection purpose requiring these originals.
+
+### readiness-m2-live-5sgh-low-01
+
+M2 5sgh low effort: 14 tool-use turns, eight-entry auditor submission and verified closure; target not reproduced, zero formal citations.
+
+- Evidence: `.scratch/readiness-m2-live-5sgh-low-01/.` (recorded 2026-11-13T20:26:01Z).
+- Retained purpose: Inspect original low-effort encounter against matching default inputs for M2 and stage-three cap-setting/fixture review.; until Those comparisons and fixture reviews finish, with no remaining inspection purpose requiring these originals.
+
+### readiness-m2-01
+
+Completed M2 comparison:four reviewed placements,one thinking-only cap interruption retained open for M3,three submitted; fifth ineligible.
+
+- Evidence: `.scratch/readiness-m2-01/.` (recorded 2026-11-13T20:35:53Z).
+- Retained purpose: Inspect exact inputs, authority, effort pairs and cap finding for M3 preparation and stage-three cap-setting/fixture review.; until Those comparisons and fixture reviews finish, and no remaining inspection purpose needs these inputs or authority records.
+
+### readiness-m2-live-sw3z-low-01
+
+M2 sw3z low effort:12 tool-use turns; revision9 submitted/delivered/closed,38 final citations; target not reproduced.
+
+- Evidence: `.scratch/readiness-m2-live-sw3z-low-01/.` (recorded 2026-11-13T20:35:53Z).
+- Retained purpose: Inspect final sw3z low-effort encounter and successful replacement against the interrupted default arm for M2 and cap-setting/fixture review.; until Those comparisons and fixture reviews finish, with no remaining inspection purpose requiring these originals.

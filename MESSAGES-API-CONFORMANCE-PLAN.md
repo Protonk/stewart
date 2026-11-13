@@ -23,6 +23,17 @@ for their actual binary, inputs and credential route. Completed pilot placements
 authorize no further calls. Retention follows
 [DEVELOPMENT](development/DEVELOPMENT.md#evidence-and-retention).
 
+For bounded continuation preparation, the reviewed cap interruption at
+`.scratch/readiness-m2-live-sw3z-default-01/REVIEW.json` identifies an open audit,
+its retained container and exact writer, immutable snapshots, and remaining
+cumulative allowances. Its final response has only a thinking block and ends
+`max_tokens`; no answer entry was recorded. This is a continuation input, not
+evidence of preserving authored work or authority to resume. The writer is
+explicitly pinned in the qualification index. The reminder comparison can reuse
+the question and sole supplied report from
+`.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json`, but that audit is
+sealed: a fresh, separately commissioned and witnessed interruption is needed.
+
 ## 1. Complete the evidence matrix
 
 The catalog fixes ordinary and inadequate-evidence commissions for all three

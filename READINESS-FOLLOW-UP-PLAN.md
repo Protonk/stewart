@@ -3,13 +3,12 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; L0 and M1 reviewed; stage 2 awaits M2 approval.**
-Linux acceptance and the M2-specific C10 rehearsal pass and have been independently
-reviewed. All four approved M1 placements submitted, delivered and closed. The
-report-only direct arm exercised one prose ending and reminder, followed by
-submission. M2's exact templates and Linux rehearsal are reviewed; its frozen
-commission requests four placements and one conditional. No M2 live commission
-is approved.
+**State: stage 1 complete; L0, M1 and M2 reviewed; stage 2 is preparing C1.**
+M2 reproduced a thinking-only response-cap interruption in sw3z default; the
+other three placements submitted and closed. The conditional fifth arm was
+ineligible. The interrupted audit and exact writer remain retained for separately
+commissioned M3. C1's existing procedure needs a fresh offline rehearsal against
+the current helper binary and driver sources before its live commission.
 
 | Stage | Result |
 | --- | --- |
@@ -236,35 +235,35 @@ dollar ceilings. These experiments do not qualify release models.
   ask the manager; treat that as the auditor's account, not a restriction on
   expression. No second unsubmitted stop or reminder persistence across
   continuation was exercised.
-- **M2 prepared, not approved:** `.scratch/readiness-m2-01/PREPARATION.json`
-  binds the retained `checklist-5sgh` and `checklist-sw3z` inputs from the two
-  reviewed stress encounters. Their question bodies match; seven material files
-  differ between variants. Preserve each variant exactly for its default/low
-  effort pair. A fifth, conditional `5sgh` arm uses the historical family guidance
-  text through current supplied `guidance.md`; it does not recreate the entire
-  old study binary or family version. It is available only if neither default
-  arm reproduces the thinking-only `max_tokens` response.
-- [x] Review the Linux rehearsal at `.scratch/c10-readiness-m2-01/REVIEW.json`:
-  13 fixed fake-provider audits and all five supplied templates pass through
-  `stewart-synthetic`, including fresh-process collection. No model calls occurred.
-  Its standard settings check intake, guidance and custody; they do not exercise
-  M2's live effort comparison or larger cap-study allowances.
-- [x] Freeze M2's live packets and default/details/JSON status procedure under
-  `.scratch/readiness-m2-01/MANIFEST.json`. Separate launch commands check exact
-  approval and preceding review. The conditional arm additionally needs both
-  complete default comparisons to establish that the target ending did not occur;
-  a missing or inconclusive comparison cannot admit it.
-- [ ] Obtain M2's separate deliberate-cap-study approval. Proposed bounds are 60
-  turns, 10,000,000 input tokens, 64,000 output tokens and 3,600 seconds per
-  placement, with four ordinary placements and one conditional. `COST.json`
-  records the dated rates: full allowances for all five estimate $5.16 at base
-  rates or $25.80 entirely at higher rates, with a proposed $30 campaign budget;
-  these are not hard billing ceilings. Review each outcome before another start.
-  Retain interrupted, unsealed audits for separately commissioned M3 work;
-  no continuation, replacement, extra authentication probe or fallback is included.
-  The per-response cap stays at 16,000 tokens. Unexpected compaction currently
-  leaves the procedural reviewer incomplete: preserve the captures and resolve
-  that outcome before another start.
+- **M2 reviewed:** the [four-arm comparison](apparatus/qualified.md#readiness-m2-01)
+  owns inputs, authority, per-arm results and selected capture identities.
+  Three arms submitted; sw3z default response 9 contained one thinking block,
+  no text or tools, and ended `max_tokens` at 16,000 reported output/thinking
+  tokens. The conditional guidance arm was ineligible and did not run.
+  Total use: 59 turns, 3,549,845 input and 110,706 output tokens, estimated at
+  $0.9398803 against the approved $30 budget. Original and follow-up snapshots
+  each passed 313 procedural checks overall; all 12 status forms succeeded.
+  No retries, refusals, reminders or compaction occurred. The three final answers
+  have eight entries each, items 1–40, and 37, 0 and 38 formal citations. The last
+  review's 45 citation checks include seven from a superseded entry version.
+  Single observations establish neither an effort effect nor answer accuracy.
+- **M2 follow-ups:** keep the open sw3z-default audit, container and exact writer
+  identified in its `REVIEW.json`. It has zero recorded answer entries and
+  51 turns, 9,617,683 input and 40,970 output tokens remaining. M3 can examine
+  continuation from this cap stop, but cannot claim preservation of authored
+  work from an empty selection. Its reminder comparison needs M1's retained
+  firing inputs and a separately witnessed interruption. No M2 continuation or
+  further start is authorized. Retain the firing cap response and 5sgh default's
+  near-cap response that completed with tools for stage-three fixtures and cap
+  reassessment; the setting remains unchanged pending those comparisons.
+- [ ] Refresh C1's normal, bad-initialization and wrong-authentication synthetic
+  controller rehearsals against the current sources and native helper binary.
+  These use fake peers and make no Claude, provider or credential-store calls.
+- [ ] Freeze and review C1's separate live packet after its rehearsal. It proposes
+  three authentication checks of 30 seconds and three supplied-surface fixture
+  sessions of 120 seconds, within 450 seconds overall, using the Claude.ai
+  subscription with paid extra usage disabled. Obtain explicit approval of that
+  concrete packet and the required account-setting assertion before any launch.
 
 ### Comparisons and proposed bounds
 

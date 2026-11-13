@@ -205,7 +205,10 @@
         "path": ".scratch/acceptance-readiness-02",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
-      "pin": null
+      "pin": {
+        "reason": "Retain the exact qualified ARM writer needed by the still-open M2 sw3z default audit and its separately commissioned M3 continuation or explicit disposition.",
+        "until": "That audit and any other open audits requiring this writer are closed or otherwise explicitly disposed of, and pending comparisons no longer require this binary."
+      }
     },
     {
       "id": "toolchain-runtime-01",
@@ -1789,6 +1792,106 @@
       "pin": {
         "reason": "Current launcher and exact-input rehearsal admission for the bounded M2 comparison; private originals remain through review.",
         "until": "M2 placements have reviewed outcomes or explicit dispositions and this rehearsal no longer admits pending work."
+      }
+    },
+    {
+      "id": "readiness-m2-live-5sgh-default-01",
+      "kind": "experiment",
+      "date": "2026-11-13T19:58:21Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M2 5sgh default effort: 24 tool-use turns, eight-entry auditor submission and verified closure; thinking-only max_tokens not reproduced.",
+      "result": {
+        "path": ".",
+        "files": 98,
+        "sha256": "2feb709f8cbfda942dfba08fecba45b04d2b8d93cf43eabccaf372bf6a397026"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m2-live-5sgh-default-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect original default-effort encounter for the M2 paired comparison, conditional fifth-arm eligibility and cap-setting/fixture review.",
+        "until": "Those comparisons and fixture reviews finish, and no remaining inspection purpose needs these originals."
+      }
+    },
+    {
+      "id": "readiness-m2-live-sw3z-default-01",
+      "kind": "experiment",
+      "date": "2026-11-13T20:11:00Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M2 sw3z default effort: thinking-only max_tokens on response 9; reviewed interruption, open audit with zero answer entries retained for separate M3.",
+      "result": {
+        "path": ".",
+        "files": 98,
+        "sha256": "3d7a16d635a372cdf83dab9b2b1f4ea2665d1a770761f5a2540ba00065e3488d"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m2-live-sw3z-default-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect firing M2 response and paired effort comparison; retain private container, open audit and immutable exports for separately commissioned M3 and fixture/cap-setting review.",
+        "until": "The open audit has an explicit disposition and continuation/comparison/fixture reviews finish, with no remaining inspection purpose requiring these originals."
+      }
+    },
+    {
+      "id": "readiness-m2-live-5sgh-low-01",
+      "kind": "experiment",
+      "date": "2026-11-13T20:26:01Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M2 5sgh low effort: 14 tool-use turns, eight-entry auditor submission and verified closure; target not reproduced, zero formal citations.",
+      "result": {
+        "path": ".",
+        "files": 98,
+        "sha256": "b27334cae8f0547c91c9c3b25a35f687caf1aa61856dd8f405cec13e92695c93"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m2-live-5sgh-low-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect original low-effort encounter against matching default inputs for M2 and stage-three cap-setting/fixture review.",
+        "until": "Those comparisons and fixture reviews finish, with no remaining inspection purpose requiring these originals."
+      }
+    },
+    {
+      "id": "readiness-m2-01",
+      "kind": "experiment",
+      "date": "2026-11-13T20:35:53Z",
+      "date_from": "RESULT.json field finished_at",
+      "summary": "Completed M2 comparison:four reviewed placements,one thinking-only cap interruption retained open for M3,three submitted; fifth ineligible.",
+      "result": {
+        "path": ".",
+        "files": 202,
+        "sha256": "bc57e7c71d99051b70470d94cd8683238923613ca61efde0ae87cc3309a2a794"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m2-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect exact inputs, authority, effort pairs and cap finding for M3 preparation and stage-three cap-setting/fixture review.",
+        "until": "Those comparisons and fixture reviews finish, and no remaining inspection purpose needs these inputs or authority records."
+      }
+    },
+    {
+      "id": "readiness-m2-live-sw3z-low-01",
+      "kind": "experiment",
+      "date": "2026-11-13T20:35:53Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M2 sw3z low effort:12 tool-use turns; revision9 submitted/delivered/closed,38 final citations; target not reproduced.",
+      "result": {
+        "path": ".",
+        "files": 98,
+        "sha256": "1ae904f7b384f7ec07a73e436c16c7569454163f25e942411ade824dfd725ebc"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m2-live-sw3z-low-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect final sw3z low-effort encounter and successful replacement against the interrupted default arm for M2 and cap-setting/fixture review.",
+        "until": "Those comparisons and fixture reviews finish, with no remaining inspection purpose requiring these originals."
       }
     }
   ]
