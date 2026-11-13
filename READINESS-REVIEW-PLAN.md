@@ -7,8 +7,9 @@ that work once it begins and reports them to the principal, who decides what
 each one means for entry.
 
 **State: A's batches have returned and its unreached-condition check is
-running; B's four agents are dispatched and two have returned; C's help is
-rendered and its agents have not been dispatched.** The orchestrator
+running; B's four sources are in and crossed, with its candidates not yet
+refuted; C's first cold implementer has returned and its second and the
+editor are out.** The orchestrator
 updates this line, the task boxes and the [run record](#run-record) in place
 and commits those updates.
 
@@ -439,12 +440,16 @@ file, line and tree named), `partly`, `unreached` or `not-specified`.
 **B.** Both Stewart-side ledgers have returned: `stewart-messages.md` (74
 rows, `M-01` to `M-74`) and `stewart-claude-code.md` (83 rows, `CC-01` to
 `CC-83`). Both briefs gave the same twelve category keys (`K1` to `K12`) so
-the ledgers can be crossed. The Claude-side and empirical agents are
-dispatched and have not returned. The Claude-side agent was told to write its
-own result file and read nothing else locally.
+the ledgers can be crossed. `claude-side.md` (public documentation fetched 2026-11-12; several pages were
+only partly obtained and are listed at its end) and `empirical.md` (75 events
+from 53 retained run directories) have also returned. The Claude-side agent
+wrote its own result file and read nothing else locally. `crossed.md` holds
+twelve candidates, `X1` to `X12`, and the list accepted without refutation.
+No candidate has been sent to a refuter yet.
 
-**C.** `help.txt` and `help-runtime.txt` are captured from the two builds. No
-agent has been dispatched.
+**C.** `help.txt` and `help-runtime.txt` are captured from the two builds.
+`registry-1.md` has returned. The second cold implementer (`registry-2.md`)
+and the editor (`editor.md`) are dispatched; the manager's-side agent is not.
 
 ## Completion
 
