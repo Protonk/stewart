@@ -3,7 +3,7 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; L0, M1 and M2 reviewed; stage 2 is preparing C1.**
+**State: stage 1 complete; L0, M1 and M2 reviewed; stage 2 awaits C1's host rehearsal.**
 M2 reproduced a thinking-only response-cap interruption in sw3z default; the
 other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
@@ -259,6 +259,12 @@ dollar ceilings. These experiments do not qualify release models.
 - [ ] Refresh C1's normal, bad-initialization and wrong-authentication synthetic
   controller rehearsals against the current sources and native helper binary.
   These use fake peers and make no Claude, provider or credential-store calls.
+  Run `python3 -I -B .tmp/readiness-repairs/rehearse-c1.py` on the host; it uses
+  fresh `.scratch/readiness-c1-rehearsal-02/` evidence. The agent-shell attempt at
+  `readiness-c1-rehearsal-01` stopped with `PermissionError: [Errno 1] Operation
+  not permitted` during listener setup, before any invocation was reserved.
+  Its normal preparation passed, its normal run failed, and the other two
+  scenarios were not started. Do not rerun that entered packet.
 - [ ] Freeze and review C1's separate live packet after its rehearsal. It proposes
   three authentication checks of 30 seconds and three supplied-surface fixture
   sessions of 120 seconds, within 450 seconds overall, using the Claude.ai
