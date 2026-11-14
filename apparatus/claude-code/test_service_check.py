@@ -417,6 +417,114 @@ class Controls(unittest.TestCase):
             with self.subTest(change=change):
                 self.assertFalse(c.deadline_observed(last, dict(stop, **change), 3, 3))
 
+    def test_deadline_cause_label_needs_the_apparatus_measured_run_time(self):
+        manifest = {'max_service_starts': 3, 'placement_timeout_seconds': 6}
+        last = {'number': 1, 'ending': 'interrupted', 'cause': 'placement_deadline'}
+        stop = {'elapsed_ms': 6100, 'deadline_ms': 6000, 'groups_gone': True}
+        self.assertTrue(c.deadline_established(manifest, {'elapsed_seconds': 6.4}, stop, last, 1))
+        # Differing only in the apparatus's own measurement: an early exit that
+        # the service labelled a deadline permits no continuation.
+        self.assertFalse(c.deadline_established(manifest, {'elapsed_seconds': 2.5}, stop, last, 1))
+        self.assertFalse(c.deadline_established(manifest, {'elapsed_seconds': None}, stop, last, 1))
+        self.assertFalse(c.deadline_established(manifest, {'elapsed_seconds': 6.4}, dict(stop, elapsed_ms=2500), last, 1))
+        self.assertFalse(c.deadline_established(manifest, {'elapsed_seconds': 6.4}, stop, dict(last, cause='signal'), 1))
+        self.assertTrue(c.deadline_established(manifest, {'elapsed_seconds': 6.4}, stop, last, 1))
+
+    def package(self, name, directory_mode, file_mode):
+        root = self.root / name
+        root.mkdir()
+        (root / 'answer.json').write_bytes(b'{}\n')
+        (root / 'answer.md').write_bytes(b'answer\n')
+        (root / 'answer.json').chmod(file_mode)
+        (root / 'answer.md').chmod(0o600)
+        root.chmod(directory_mode)
+        return root
+
+    def test_delivered_modes_are_read_from_the_original_not_the_private_copy(self):
+        conforming = self.package('conforming', 0o700, 0o600)
+        rows = c.inventory(conforming)
+        self.assertEqual(c.delivered_modes(conforming), {'.': '0700', 'answer.json': '0600', 'answer.md': '0600'})
+        self.assertEqual(c.package_mode_defects(c.delivered_modes(conforming), rows), [])
+        loose = self.package('loose', 0o755, 0o644)
+        self.assertEqual(c.package_mode_defects(c.delivered_modes(loose), c.inventory(loose)),
+                         ['package directory has mode 0755, not 0700', 'answer.json has mode 0644, not 0600'])
+        only_file = self.package('only-file', 0o700, 0o640)
+        self.assertEqual(c.package_mode_defects(c.delivered_modes(only_file), c.inventory(only_file)),
+                         ['answer.json has mode 0640, not 0600'])
+        # The private copy of the loose package has the same members and
+        # conforming modes: checking modes there cannot fail.
+        self.assertEqual(c.snapshot(loose, self.root / 'copy'), c.inventory(loose))
+        self.assertEqual(c.package_mode_defects(c.delivered_modes(self.root / 'copy'), c.inventory(loose)), [])
+        self.assertEqual(c.package_mode_defects(None, rows),
+                         ['delivered package modes were not captured from the original'])
+        self.assertEqual(c.package_mode_defects({'.': '0700', 'answer.json': '0600'}, rows)[-1],
+                         'captured modes and captured membership name different members')
+        self.assertEqual(c.package_mode_defects(c.delivered_modes(conforming), rows), [])
+
+    def groups(self, placement=1):
+        run = self.root / 'runs' / str(placement)
+        run.mkdir(parents=True)
+        for role in ('auth', 'model'):
+            c.save(run / ('process-' + role + '.json'),
+                   {'schema': 'stewart.claude-code.process/1', 'role': role, 'group': 4242})
+
+    def test_abnormal_run_return_still_probes_the_service_groups(self):
+        self.groups()
+        manifest = {'reference': 'stw1:a:s:/x'}
+        for name, observation, probes in [('present', 'present', c.ABNORMAL_STOP_PROBES), ('absent', 'absent', 1)]:
+            out = self.root / name
+            out.mkdir()
+            result = {'stopping_probed': False, 'stopping_observed': False}
+            with patch.object(c, 'json_command', side_effect=ValueError('run: command exceeded its observation deadline')), \
+                    patch.object(c.witness.runtime, 'group_observation', return_value=observation) as probe, \
+                    patch.object(c.time, 'sleep') as sleep:
+                with self.assertRaisesRegex(ValueError, 'observation deadline'):
+                    c.observed_run(out, manifest, self.root, 1, result)
+            record = json.loads((out / 'STOPPING.json').read_bytes())
+            self.assertEqual((result['stopping_probed'], result['stopping_observed']), (True, observation == 'absent'))
+            self.assertNotIn('run_reply', result)
+            self.assertEqual((record['probes'], probe.call_count, sleep.call_count), (probes, 2 * probes, probes - 1))
+            self.assertEqual((record['clock'], record['observer_pid']), (c.CLOCK_NAME, c.os.getpid()))
+            self.assertEqual({row['probe'] for row in record['observations']}, set(range(1, probes + 1)))
+
+    def test_normal_run_return_probes_once(self):
+        self.groups()
+        result = {'stopping_probed': False, 'stopping_observed': False}
+        with patch.object(c, 'json_command', return_value={'outcome': 'completed'}) as run, \
+                patch.object(c.witness.runtime, 'group_observation', return_value='present') as probe, \
+                patch.object(c.time, 'sleep') as sleep:
+            c.observed_run(self.root, {'reference': 'stw1:a:s:/x'}, self.root, 1, result)
+        self.assertEqual(run.call_args.args[2:], ({'reference': 'stw1:a:s:/x'}, ['run', 'stw1:a:s:/x']))
+        self.assertEqual(result, {'stopping_probed': True, 'stopping_observed': False,
+                                  'run_reply': {'outcome': 'completed'}})
+        self.assertEqual((probe.call_count, sleep.call_count), (2, 0))
+
+    def test_later_absence_after_an_abnormal_return_is_the_last_observation(self):
+        self.groups()
+        with patch.object(c.witness.runtime, 'group_observation',
+                          side_effect=['present', 'present', 'absent', 'absent']), patch.object(c.time, 'sleep'):
+            self.assertTrue(c.stopping(self.root, self.root / 'later.json', probes=c.ABNORMAL_STOP_PROBES))
+        record = json.loads((self.root / 'later.json').read_bytes())
+        self.assertEqual([row['observation'] for row in record['observations']],
+                         ['present', 'present', 'absent', 'absent'])
+        self.assertEqual(record['probes'], 2)
+        with patch.object(c.witness.runtime, 'group_observation',
+                          side_effect=['absent', 'present', 'absent', 'absent']), patch.object(c.time, 'sleep'):
+            # One role absent is not stopping; the second probe decides.
+            self.assertTrue(c.stopping(self.root, self.root / 'second.json', probes=2))
+        with patch.object(c.witness.runtime, 'group_observation',
+                          side_effect=['absent', 'present', 'absent', 'present']), patch.object(c.time, 'sleep'):
+            self.assertFalse(c.stopping(self.root, self.root / 'never.json', probes=2))
+
+    def test_unexpected_exit_is_reported_before_its_output_is_decoded(self):
+        with patch.object(c, 'command', return_value={'exit': -6}):
+            with self.assertRaisesRegex(ValueError, 'status: unexpected exit -6'):
+                c.json_command(self.root, 'status', {'writer': '/w', 'service_command_timeout_seconds': 1}, ['status', 'r'])
+        (self.root / 'status.stdout').write_bytes(b'{"outcome":"completed"}\n')
+        with patch.object(c, 'command', return_value={'exit': 0}):
+            self.assertEqual(c.json_command(self.root, 'status', {'writer': '/w', 'service_command_timeout_seconds': 1},
+                                            ['status', 'r']), {'outcome': 'completed'})
+
 
 if __name__ == '__main__':
     unittest.main()

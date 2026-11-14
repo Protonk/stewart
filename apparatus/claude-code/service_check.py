@@ -28,6 +28,12 @@ SOURCES = ('claude-code/service_check.py', 'claude-code/profile.py', 'claude-cod
            'driver/claude_code_service_witness.py', 'driver/answer_witness.py',
            'driver/claude_code.py', 'driver/driver_core.py', 'driver/rawjson.py')
 ENV = {'PATH': '/usr/bin:/bin', 'TMPDIR': '/private/tmp', 'LANG': 'C.UTF-8'}
+# Python before 3.10 gives macOS time.monotonic_ns() a process-local origin.
+CLOCK_NAME = 'CLOCK_UPTIME_RAW' if sys.platform == 'darwin' else 'CLOCK_MONOTONIC'
+CLOCK = getattr(time, CLOCK_NAME)
+# After an abnormal run return the client may just have been stopped; allow
+# the service's groups this many one-second read-only observations.
+ABNORMAL_STOP_PROBES = 6
 
 
 def utc():
@@ -76,6 +82,34 @@ def snapshot(source, target):
     require(inventory(source) == before and inventory(target) == before,
             'tree membership or bytes changed during capture')
     return before
+
+
+def delivered_modes(root):
+    """Permission bits of a delivered package, read from the original.
+
+    snapshot() publishes its private copy as 0700/0600 whatever the source
+    had, so a mode checked on that copy observes the apparatus, not delivery.
+    """
+    os.close(p.directory(root))
+    rows = {'.': '%04o' % stat.S_IMODE(root.lstat().st_mode)}
+    for item in sorted(root.rglob('*')):
+        rows[str(item.relative_to(root))] = '%04o' % stat.S_IMODE(item.lstat().st_mode)
+    return rows
+
+
+def package_mode_defects(modes, rows):
+    """INTERFACE 8.2: the package directory has mode 0700 and its files 0600."""
+    if type(modes) is not dict:
+        return ['delivered package modes were not captured from the original']
+    defects = []
+    if modes.get('.') != '0700':
+        defects.append('package directory has mode %s, not 0700' % modes.get('.'))
+    for row in rows:
+        if row['type'] == 'file' and modes.get(row['path']) != '0600':
+            defects.append('%s has mode %s, not 0600' % (row['path'], modes.get(row['path'])))
+    if set(modes) - {'.'} != {row['path'] for row in rows}:
+        defects.append('captured modes and captured membership name different members')
+    return defects
 
 
 def profile_from(preparation):
@@ -271,31 +305,75 @@ def command(directory, label, argv, timeout):
 def json_command(directory, label, manifest, args, allowed=(0,)):
     result = command(directory, label, [manifest['writer'], *args, '--json'],
                      manifest['service_command_timeout_seconds'] if args[0] == 'run' else 30)
-    reply = p.decode(p.read_file(directory / (label + '.stdout')))
     require(result['exit'] in allowed, label + ': unexpected exit ' + str(result['exit']))
-    return reply
+    return p.decode(p.read_file(directory / (label + '.stdout')))
 
 
-def stopping(audit, output, placement=1):
-    record = {'service_records': {}, 'observations': [], 'diagnostics': [],
+def stopping(audit, output, placement=1, probes=1, pause=1.0):
+    """Probe the service-recorded groups; only observed absence of both is stopping.
+
+    `probes` bounds repeated read-only observations after an abnormal return.
+    The last one decides; every observation is retained.
+    """
+    record = {'service_records': {}, 'observations': [], 'diagnostics': [], 'probes': 0,
+              'clock': CLOCK_NAME, 'observer_pid': os.getpid(), 'started_at': utc(),
               'scope': 'Copied service-owned group identities; independent read-only absence probes after run return.'}
-    for role in ('auth', 'model'):
-        try:
-            raw = p.read_file(audit / 'runs' / str(placement) / ('process-' + role + '.json'))
-            value = p.decode(raw)
-            record['service_records'][role] = {'raw_base64': base64.b64encode(raw).decode(), 'sha256': p.sha(raw)}
-            require(value['schema'] == 'stewart.claude-code.process/1' and value['role'] == role
-                    and type(value['group']) is int and value['group'] > 1, 'invalid group record')
-            before = time.monotonic_ns()
-            observation = witness.runtime.group_observation(value['group'])
-            record['observations'].append({'role': role, 'group': value['group'], 'observation': observation,
-                                           'started_monotonic_ns': before, 'finished_monotonic_ns': time.monotonic_ns()})
-        except (OSError, ValueError, KeyError, TypeError) as error:
-            record['diagnostics'].append(str(error))
-    record['observed'] = not record['diagnostics'] and len(record['observations']) == 2 and all(
-        row['observation'] == 'absent' for row in record['observations'])
+    observed = False
+    for probe in range(1, probes + 1):
+        record['probes'] = probe
+        rows, diagnostics = [], []
+        for role in ('auth', 'model'):
+            try:
+                raw = p.read_file(audit / 'runs' / str(placement) / ('process-' + role + '.json'))
+                value = p.decode(raw)
+                record['service_records'][role] = {'raw_base64': base64.b64encode(raw).decode(), 'sha256': p.sha(raw)}
+                require(value['schema'] == 'stewart.claude-code.process/1' and value['role'] == role
+                        and type(value['group']) is int and value['group'] > 1, 'invalid group record')
+                before = time.clock_gettime_ns(CLOCK)
+                observation = witness.runtime.group_observation(value['group'])
+                rows.append({'probe': probe, 'role': role, 'group': value['group'], 'observation': observation,
+                             'started_ns': before, 'finished_ns': time.clock_gettime_ns(CLOCK)})
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                diagnostics.append(str(error))
+        record['observations'].extend(rows)
+        record['diagnostics'] = diagnostics
+        observed = not diagnostics and len(rows) == 2 and all(row['observation'] == 'absent' for row in rows)
+        if observed or probe == probes:
+            break
+        time.sleep(pause)
+    record['observed'] = observed
+    record['finished_at'] = utc()
     save(output, record)
-    return record['observed']
+    return observed
+
+
+def observed_run(out, manifest, audit, placement, result):
+    """Run one reserved placement and probe stopping however the command returns.
+
+    A timeout, unexpected exit or unusable reply stops only the client group.
+    That is not an observation of the service's authentication and model
+    groups, so they are probed before the failure propagates. `stopping_probed`
+    separates "not probed" from "probed and not absent".
+    """
+    try:
+        result['run_reply'] = json_command(out, 'run', manifest, ['run', manifest['reference']], allowed=(0, 3, 4, 5))
+    except BaseException:
+        result['stopping_observed'] = stopping(audit, out / 'STOPPING.json', placement, probes=ABNORMAL_STOP_PROBES)
+        result['stopping_probed'] = True
+        raise
+    result['stopping_observed'] = stopping(audit, out / 'STOPPING.json', placement)
+    result['stopping_probed'] = True
+
+
+def deadline_established(manifest, run_result, stop, last_run, placement):
+    """A commissioned deadline needs more than the service's cause label.
+
+    The apparatus's own measurement of the run command must reach the placement
+    deadline, and the retained stop record must show elapsed time and absent groups.
+    """
+    return (deadline_observed(last_run, stop, placement, manifest['max_service_starts'])
+            and type(run_result['elapsed_seconds']) in (int, float)
+            and run_result['elapsed_seconds'] >= manifest['placement_timeout_seconds'])
 
 
 def placement_root(packet, manifest, placement):
@@ -389,9 +467,10 @@ def run(packet, approved=None, extra_usage_disabled=False, rehearsal=False, plac
          'placement': placement, 'reviewed_prior_sha256': reviewed,
          'approved_commission': approved, 'extra_usage_disabled': extra_usage_disabled, 'retry_allowed': False})
     result = {'scope': manifest['scope'], 'placement': placement, 'started': False, 'stopping_observed': False,
-              'outcome': 'incomplete', 'failure': None, 'review_required': True, 'resume_allowed': False}
+              'stopping_probed': False, 'outcome': 'incomplete', 'failure': None, 'review_required': True, 'resume_allowed': False}
     reference = manifest['reference']
     audit = Path(manifest['archive']) / 'audits' / reference.split(':', 3)[1]
+    interrupted = None
     try:
         status = json_command(out, 'status-before', manifest, ['status', reference])
         if placement == 1:
@@ -424,8 +503,7 @@ def run(packet, approved=None, extra_usage_disabled=False, rehearsal=False, plac
         verify(packet)
         save(out / 'RUN-RESERVATION.json', {'at': utc(), 'reference': reference, 'placement': placement, 'max_starts': 1})
         result['started'] = True  # Reservation, not a claim that authentication/model exec occurred.
-        result['run_reply'] = json_command(out, 'run', manifest, ['run', reference], allowed=(0, 3, 4, 5))
-        result['stopping_observed'] = stopping(audit, out / 'STOPPING.json', placement)
+        observed_run(out, manifest, audit, placement, result)
         status = json_command(out, 'status-after', manifest, ['status', reference])
         for label, extra in [('status-default', []), ('status-details', ['--details'])]:
             form = command(out, label, [manifest['writer'], 'status', reference, *extra], 30)
@@ -439,13 +517,22 @@ def run(packet, approved=None, extra_usage_disabled=False, rehearsal=False, plac
         result['archive_provenance'] = 'Exact private copy of service-owned records after stopping; not independent provider evidence.'
         delivered = status['data']['headline']['delivered']
         if delivered['verified']:
+            result['package_modes'] = delivered_modes(Path(delivered['location']))
             result['package_inventory'] = snapshot(Path(delivered['location']), out / 'package')
+            require(delivered_modes(Path(delivered['location'])) == result['package_modes'],
+                    'delivered package modes changed during capture')
         result['outcome'] = 'retained'
     except Exception as error:
         result['failure'] = repr(error)
+    except BaseException as error:  # An operator interrupt still leaves its record.
+        result['failure'] = repr(error)
+        interrupted = error
     result['finished_at'] = utc()
     save(out / 'RESULT.json', result)
     save(out / 'EVIDENCE.json', {'members': inventory(out), 'scope': 'Private execution observations and copied service records.'})
+    if interrupted is not None:
+        print('Interrupted; retained what was observed: ' + str(out), file=sys.stderr)
+        raise interrupted
     print('Retained service placement: ' + str(out))
     print('Outcome: ' + result['outcome'] + '; no close or later start performed.')
     return int(result['outcome'] != 'retained')
@@ -652,8 +739,21 @@ def review(packet, placement=1):
         require(status['data']['runs']['count'] == placement and len(counts['placements']) == placement,
                 'captured placement count differs')
         require(status['data']['answer'] == {'revision': revision, 'entries': len(entries)}, 'status selection differs')
+        eligible = continuation_state(manifest, status, placement)
+        if eligible:
+            try:
+                stop = p.decode(p.read_file(audit / 'runs' / str(placement) / 'runtime-stop.json'))
+                run_result = p.decode(p.read_file(out / 'run.result.json'))
+                eligible = deadline_established(manifest, run_result, stop, status['data']['runs']['last'], placement)
+                report['continuation_basis'] = {
+                    'run_command_elapsed_seconds': run_result['elapsed_seconds'],
+                    'placement_timeout_seconds': manifest['placement_timeout_seconds'],
+                    'service_stop_record': stop, 'deadline_established': eligible}
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                eligible = False
+                report['continuation_basis'] = {'deadline_established': False, 'diagnostic': str(error)}
         report.update(counts, revision=revision, selected_entries=len(entries),
-                      continuation_eligible=continuation_state(manifest, status, placement),
+                      continuation_eligible=eligible,
                       status_condition=status['data']['condition'], last_run=status['data']['runs']['last'],
                       reported_usage=status['data']['allowances']['usage'])
         if counts['auditor_submitted']:
@@ -668,6 +768,13 @@ def review(packet, placement=1):
             report['package_review'] = {'outcome': package_review['outcome'], 'counts': package_review['counts'],
                                         'witness_sha256': pin}
             require(package_review['outcome'] == 'observed', 'complete package comparison failed')
+            defects = package_mode_defects(result.get('package_modes'), result['package_inventory'])
+            report['package_modes'] = {
+                'observed_on': 'delivered package at capture, before the private copy',
+                'modes': result.get('package_modes'), 'defects': defects,
+                'copy_checks': 'The package witness ran its mode checks on the private copy, whose modes the '
+                               'apparatus sets; they do not observe the delivered package.'}
+            require(not defects, 'delivered package modes differ: ' + '; '.join(defects))
         report['outcome'] = 'observed'
     except Exception as error:
         report['failure'] = repr(error)
@@ -699,11 +806,13 @@ def close(packet, reviewed, placement=1):
     delivered = Path(status['data']['headline']['delivered']['location'])
     before = inventory(delivered)
     require(before == original['package_inventory'], 'delivered package changed since reviewed capture')
+    modes = delivered_modes(delivered)
+    require(modes == original.get('package_modes'), 'delivered package modes changed since reviewed capture')
     reply = json_command(out, 'close', manifest, ['close', reference])
     require(reply['outcome'] == 'completed', 'ordinary close did not complete')
     status = json_command(out, 'status-after', manifest, ['status', reference])
     require(status['data']['headline']['closed'] == 'yes', 'closure not established')
-    require(inventory(delivered) == before, 'package changed during close')
+    require(inventory(delivered) == before and delivered_modes(delivered) == modes, 'package changed during close')
     snapshot(delivered, out / 'package')
     after = snapshot(Path(manifest['archive']), out / 'service-archive')
     preserved_members(original['archive_inventory'], after)
@@ -855,8 +964,13 @@ def rehearse(suite, approved_digest):
                 else:
                     check('ordinary-ending.disposition', assessment['status_condition'] == 'ended_unsubmitted'
                           and not assessment['continuation_eligible'])
+            # Without this, an unsubmitted positive case would take the refusal
+            # branch below and the suite would still end observed.
+            check(kind + '.auditor-submitted-as-expected',
+                  assessment['auditor_submitted'] is (kind in ('positive', 'continued', 'invariance')))
             if assessment['auditor_submitted']:
                 check(kind + '.package', assessment['package_review']['outcome'] == 'observed')
+                check(kind + '.delivered-modes', assessment['package_modes']['defects'] == [])
                 scenario = p.decode(p.read_file(Path(manifest['synthetic']['scenario'])))
                 package = packet / 'placements' / str(count) / 'execution/package'
                 answer_data = p.decode(p.read_file(package / 'answer.json'))

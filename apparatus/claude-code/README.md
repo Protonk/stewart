@@ -202,10 +202,18 @@ it grants no additional model time. Failed or uncertain work requires review.
 
 After return, the procedure reads service-owned auth/model group identities and
 independently probes absence. Missing, present or unknown groups block further
-mutation. Once stopping is established, it retains complete archive and package
+mutation. A run command that times out, exits unexpectedly or returns an unusable
+reply stops only its client group, so the same probe still runs, up to six times
+a second apart, before the failure is reported. `STOPPING.json` names its clock
+and observer and keeps every observation; `stopping_probed` in the result
+separates a probe that was never made from one that found a group present.
+Once stopping is established, it retains complete archive and package
 snapshots outside the archive and default, detailed and JSON status. These
 private copies preserve service-owned provenance; they are not product exports
-or independent provider captures. No raw authentication output is read.
+or independent provider captures. The copies are written with the procedure's
+own modes, so the delivered package's directory and file modes are read from
+the original at capture and compared with INTERFACE 8.2 in review. No raw
+authentication output is read.
 
 Use the frozen controller's `review --packet PATH --placement N`. It verifies
 the complete execution inventory, correlates each placement's captured MCP calls
@@ -220,13 +228,16 @@ A later explicit `run` also requires `--reviewed-review SHA256`, naming the
 preceding `placements/N/review/REVIEW.json`. The procedure revalidates that review
 and every earlier execution, then checks current status, stopping and archive
 bytes. Only an open audit interrupted by its commissioned placement deadline, with
-unused starts, can continue. Other interruptions need a separate disposition. Ended,
+unused starts, can continue. The service's cause label does not establish that
+deadline alone: review also requires the procedure's own measurement of the run
+command to reach the placement deadline and the retained stop record to show the
+elapsed time and absent groups. Other interruptions need a separate disposition. Ended,
 sealed, closed, damaged or uncertain work cannot. Every subsequent capture must
 preserve earlier archive members. A failed attempt cannot be skipped or repeated.
 
 After reviewing an auditor-submitted package, `close --packet PATH --placement N
 --reviewed-review SHA256` permits ordinary close. It rechecks the latest attempt,
-commission, evidence, current stopping and archive/package bytes, then preserves
+commission, evidence, current stopping and archive/package bytes and modes, then preserves
 new snapshots and verifies all earlier members remain unchanged. Unsubmitted
 cases remain retained for explicit disposition. Close launches no model.
 
@@ -243,7 +254,9 @@ Run the positive packet's frozen controller with `rehearse --suite PATH
 --rehearsal-sha256 SHA256`, binding the prepared `REHEARSAL.json`. This one-use
 native runner accepts only synthetic packets. It exercises explicit run/review
 steps, bad-review and skipped-start controls, refusal after seal/ending/exhaustion,
-and reviewed close with unchanged packages. It retains unsubmitted controls and
+and reviewed close with unchanged packages. Each comparison must take its expected
+submitted or unsubmitted branch, and each submitted package must show the
+specified delivered modes. It retains unsubmitted controls and
 copies the original peer witnesses for independent review. It launches no real
 Claude process and establishes neither live authority nor Linux qualification.
 
@@ -338,6 +351,7 @@ python3 -I -B apparatus/claude-code/test_bounded.py
 python3 -I -B apparatus/claude-code/test_surface_check.py
 python3 -I -B apparatus/claude-code/test_probe.py
 python3 -I -B apparatus/claude-code/test_protocol.py
+python3 -I -B apparatus/claude-code/test_service_check.py
 ```
 
 The pin/probe checks launch only synthetic Python processes. The probe checks cover actual
