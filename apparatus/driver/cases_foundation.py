@@ -1126,31 +1126,189 @@ def c_prepare_killed(t):
     st = t.status(sub, name="prep-killed.status")
     t.check_status(st, sub, "prep-killed.status", condition="preparing", accepted="no", next_cmds=("prepare", "close"))
     t.check("prep-killed.no-commission-offer", not any(a[1] == "commission" for a in st.next_argvs()), st.next)
-    refused = t.commission(sub, "mp1.aaaaaa", name="prep-killed.unpublished", expect="refused", reason="handle_invalid")
-    t.eq("prep-killed.unpublished-effects", no_diag(refused.effects), {"acceptance": "absent", "attempt": "none"})
-    t.eq("prep-killed.unpublished-no-intake", t.intake_dirs(sub), [])
+    refused = t.commission(sub, "mp1.aaaaaa", name="prep-killed.wrong-check", expect="refused", reason="handle_invalid")
+    t.eq("prep-killed.wrong-check-effects", no_diag(refused.effects), {"acceptance": "absent", "attempt": "none"})
+    t.eq("prep-killed.wrong-check-no-intake", t.intake_dirs(sub), [])
     t.prepare(sub, name="prep-killed.again")
     t.check("prep-killed.new-number", len(os.listdir(prep)) == 2, os.listdir(prep))
     t.commission(sub, sub.handles[-1], name="prep-killed.commission")
+    _unpublished_candidate(t)
+
+
+def staged_prepared_records(sub):
+    """The complete `prepared` records in the audit's stage/ (4.3), each with its file name,
+    SHA-256 and body. A stage file that does not decode strictly as a record is not one."""
+    out = []
+    folder = os.path.join(sub.audit_dir, "stage")
+    for name in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
+        path = os.path.join(folder, name)
+        if not os.path.isfile(path) or os.path.islink(path):
+            continue
+        raw = read_bytes(path)
+        try:
+            obj = strict_loads(raw)
+        except StrictJSONError:
+            continue
+        if isinstance(obj, dict) and obj.get("kind") == "prepared" and isinstance(obj.get("body"), dict):
+            out.append({"file": name, "sha256": sha256_hex(raw), "body": obj["body"]})
+    return out
+
+
+def candidate_handles(sub, digest, numbers):
+    """Well-formed mp handles whose check binds this record digest (2.3), one per number."""
+    return ["mp%d.%s" % (n, handle_check(sub.store, sub.audit, "mp", "mp%d" % n, [digest])) for n in numbers]
+
+
+def _unpublished_candidate(t):
+    """log.publish:prepared=kill dies immediately before the link (C.1), so the complete
+    `prepared` record is in stage/ and has no final name. 4.3: such a stage file is never a
+    record. 2.3: an mp handle binds its `prepared` log record, and a handle for an object the
+    manager was not given is refused handle_invalid without revealing whether a similar
+    object exists. The driver therefore forms the handles the staged record would have had,
+    with a correct check for each plausible number, and requires the same refusal as for a
+    wrong check: no intake, acceptance absent, attempt none, nothing published. Firing
+    control: the same derivation from the stage copy of the published record reproduces the
+    handle prepare returned, and that handle commissions."""
+    sub = t.submission(basic_entries())
+    t.new_ref(sub)
+    r = t.cmd(["prepare", sub.ref], name="prep-unlinked.prepare", envelope=False, fault="log.publish:prepared=kill")
+    t.eq("prep-unlinked.signal", r.rc, -signal.SIGKILL)
+    t.eq("prep-unlinked.log", t.log_kinds(sub), ["reference"])
+    prep = os.path.join(sub.audit_dir, "prep")
+    left = sorted(os.listdir(prep)) if os.path.isdir(prep) else []
+    t.require("prep-unlinked.files-written", len(left) == 1 and left[0].isdigit(), left)
+    staged = staged_prepared_records(sub)
+    t.require("prep-unlinked.staged-record", len(staged) == 1, staged)
+    candidate = staged[0]
+    claimed = int(left[0])
+    t.check("prep-unlinked.staged-names-claimed-preparation",
+            mentions(candidate["body"].get("prep"), str(claimed)), candidate["body"].get("prep"))
+    numbers = sorted({1, 2, claimed})
+    wrong = "mp%d.%s" % (claimed, "aaaaaa" if candidate_handles(sub, candidate["sha256"], [claimed])[0][-6:] != "aaaaaa"
+                         else "bbbbbb")
+
+    def normalized(rep, handle):
+        # The reply apart from what necessarily differs: the handle the caller itself gave
+        # (also split into its object and check), and this refusal's own diagnostic location.
+        obj = rep.obj if isinstance(rep.obj, dict) else {}
+        text = json.dumps({"outcome": obj.get("outcome"), "reason": obj.get("reason"),
+                           "effects": no_diag(rep.effects), "message": obj.get("message"),
+                           "data": obj.get("data")}, ensure_ascii=False, sort_keys=True)
+        name, check = handle.split(".")
+        return text.replace(handle, "<handle>").replace(check, "<check>").replace(name, "<object>")
+
+    def refused_like_wrong_check(stage, published=()):
+        kinds = t.log_kinds(sub)
+        intakes = t.intake_dirs(sub)
+        base = t.commission(sub, wrong, name="prep-unlinked.%s.wrong-check" % stage, expect="refused",
+                            reason="handle_invalid")
+        t.eq("prep-unlinked.%s.wrong-check.effects" % stage, no_diag(base.effects),
+             {"acceptance": "absent", "attempt": "none"})
+        for handle in candidate_handles(sub, candidate["sha256"], numbers):
+            p = "prep-unlinked.%s.%s" % (stage, handle.split(".")[0])
+            t.require(p + ".not-a-given-handle", handle not in published and handle != wrong, handle)
+            rep = t.commission(sub, handle, name=p, expect="refused", reason="handle_invalid")
+            t.eq(p + ".effects", no_diag(rep.effects), {"acceptance": "absent", "attempt": "none"})
+            t.eq(p + ".reveals-nothing", normalized(rep, handle), normalized(base, wrong))
+        t.eq("prep-unlinked.%s.no-intake" % stage, t.intake_dirs(sub), intakes)
+        t.eq("prep-unlinked.%s.published-nothing" % stage, t.log_kinds(sub), kinds)
+
+    refused_like_wrong_check("before-prepare")
+    t.eq("prep-unlinked.before-prepare.no-intake-at-all", t.intake_dirs(sub), [])
+    st = t.status(sub, name="prep-unlinked.status")
+    t.check_status(st, sub, "prep-unlinked.status", condition="preparing", accepted="no", next_cmds=("prepare", "close"))
+    t.prepare(sub, name="prep-unlinked.again")
+    given = sub.handles[-1]
+    # Firing control for the derivation: the published record's own stage copy (4.3 keeps it)
+    # yields exactly the handle prepare returned, so a computed check is a correct check.
+    logged = [sha256_hex(r["raw"]) for r in t.read_log(sub)
+              if isinstance(r["obj"], dict) and r["obj"].get("kind") == "prepared"]
+    t.require("prep-unlinked.one-published-record", len(logged) == 1, logged)
+    copies = [s for s in staged_prepared_records(sub) if s["sha256"] == logged[0]]
+    t.require("prep-unlinked.published-stage-copy", len(copies) == 1, staged_prepared_records(sub))
+    number = int(given.split(".")[0][2:])
+    t.eq("prep-unlinked.derivation-reproduces-given-handle", candidate_handles(sub, copies[0]["sha256"], [number]), [given])
+    t.check("prep-unlinked.candidate-still-staged", candidate["sha256"] in [s["sha256"] for s in staged_prepared_records(sub)]
+            and candidate["sha256"] != logged[0], staged_prepared_records(sub))
+    numbers = sorted(set(numbers) | {number})
+    refused_like_wrong_check("after-prepare", published=(given,))
+    t.eq("prep-unlinked.after-prepare.no-intake-at-all", t.intake_dirs(sub), [])
+    # Differing case: the handle the manager was given commissions the same folder.
+    t.commission(sub, given, name="prep-unlinked.commission")
 
 
 @case("c17.published-preparation-unreadable", ["C17", "C19", "C20"],
       "a changed published preparation refuses before intake; restoring its exact bytes permits commission")
 def c_published_preparation_unreadable(t):
+    """5.4: a changed or unreadable published preparation refuses preparation_unreadable
+    before an intake starts, with acceptance absent and attempt none. Each member of prep/1
+    (4.2) is in turn lengthened, changed in one bit at the same length, moved away and, for
+    an unprivileged run, made mode 000. 1.3: the refusal's retained lists what the invocation
+    created and kept and also identifies the existing prep/<n> evidence, in any order.
+    Nothing is published. Invariance: with every member's exact bytes and mode restored, the
+    same handle commissions; a refusal that reads no preparation (a wrong check) does not
+    list prep/1."""
     sub = t.submission(basic_entries())
     t.new_ref(sub)
     t.prepare(sub)
     handle = sub.handles[-1]
     root = os.path.join(sub.audit_dir, "prep", "1")
-    for member in ("manifest.json", "arrangement.json", "arrangement.md"):
+    members = ("manifest.json", "arrangement.json", "arrangement.md")
+    t.eq("published.members", sorted(os.listdir(root)), sorted(members))
+    originals = {m: read_bytes(os.path.join(root, m)) for m in members}
+    kinds = t.log_kinds(sub)
+    quarantine = t.mkdir("preparation-quarantine")
+
+    def refused(label, member):
+        p = "published-%s.%s" % (label, member)
+        before = t.audit_locations(sub)
+        rep = t.commission(sub, handle, name=p, expect="refused", reason="preparation_unreadable")
+        t.eq(p + ".effects", no_diag(rep.effects), {"acceptance": "absent", "attempt": "none"})
+        t.eq(p + ".no-intake", t.intake_dirs(sub), [])
+        t.eq(p + ".published-nothing", t.log_kinds(sub), kinds)
+        # Exactly the created locations plus the existing preparation (1.3).
+        t.check_retained(rep, sub, p, before, outside=[root])
+        t.check(p + ".retained-names-preparation", root in ((rep.obj or {}).get("retained") or []),
+                (rep.obj or {}).get("retained"))
+
+    def restored(member):
         path = os.path.join(root, member)
-        original = read_bytes(path)
-        t.edit(path, original + b"changed", "change published preparation member " + member)
-        rep = t.commission(sub, handle, name="published-changed." + member,
-                           expect="refused", reason="preparation_unreadable")
-        t.eq("published-changed.%s.effects" % member, no_diag(rep.effects), {"acceptance": "absent", "attempt": "none"})
-        t.eq("published-changed.%s.no-intake" % member, t.intake_dirs(sub), [])
+        t.require("published-restored.%s.bytes" % member, read_bytes(path) == originals[member]
+                  and stat.S_IMODE(os.lstat(path).st_mode) == 0o600, member)
+
+    for member in members:
+        path = os.path.join(root, member)
+        original = originals[member]
+        t.edit(path, original + b"changed", "lengthen published preparation member " + member)
+        refused("changed", member)
+        flipped = original[:len(original) // 2] + bytes([original[len(original) // 2] ^ 0x01]) + original[len(original) // 2 + 1:]
+        t.require("published-same-length.%s.specimen" % member, len(flipped) == len(original) and flipped != original,
+                  len(original))
+        t.edit(path, flipped, "change one bit of published preparation member %s at the same length" % member)
+        refused("same-length", member)
         t.edit(path, original, "restore exact published preparation member " + member)
+        restored(member)
+        away = os.path.join(quarantine, member)
+        t.driver_change("move published preparation member %s out of the archive" % member,
+                        lambda: shutil.move(path, away))
+        t.require("published-missing.%s.specimen" % member, not os.path.lexists(path), path)
+        refused("missing", member)
+        t.driver_change("move published preparation member %s back" % member, lambda: shutil.move(away, path))
+        restored(member)
+        if os.geteuid() != 0:
+            t.mode_exempt.add(path)
+            t.driver_change("chmod 000 published preparation member " + member, lambda: os.chmod(path, 0))
+            t.cleanup(lambda path=path: os.chmod(path, 0o600))
+            refused("mode-000", member)
+            t.driver_change("chmod 0600 published preparation member " + member, lambda: os.chmod(path, 0o600))
+            restored(member)
+        else:
+            t.skip_part("mode-000 member " + member, "running as root: permissions do not stop reads")
+    # A refusal that reads no preparation is not a refused preparation read.
+    wrong = handle.rsplit(".", 1)[0] + "." + ("aaaaaa" if not handle.endswith(".aaaaaa") else "bbbbbb")
+    before = t.audit_locations(sub)
+    rep = t.commission(sub, wrong, name="published-wrong-check", expect="refused", reason="handle_invalid")
+    t.check_retained(rep, sub, "published-wrong-check", before)
     t.commission(sub, handle, name="published-restored")
 
 
@@ -1359,6 +1517,31 @@ def _close_after_recorded_start(t, label):
     return sub
 
 
+def waiting_message_identifies(text):
+    """5.8: the waiting message identifies the held active lock and the bounded wait, and its
+    wording is not pinned. Only those two identifications are judged: the lock by its name
+    and the bound by its 30 seconds (Appendix B), in digits or in words."""
+    low = text.lower()
+    return {"lock": "lock" in low,
+            "bound": re.search(r"(?<![0-9.,])30(?![0-9]|[.,][0-9])|\bthirty\b", low) is not None}
+
+
+@selftest
+def waiting_message_selftest():
+    results = []
+    def check(name, text, lock, bound):
+        got = waiting_message_identifies(text)
+        results.append(("close-waiting-message." + name, got == {"lock": lock, "bound": bound}, {"text": text, "got": got}))
+    check("positive", "The active lock is held; waiting up to 30 seconds for its release.", True, True)
+    check("wording-invariance", "ACTIVE.LOCK busy - close gives it thirty seconds.", True, True)
+    check("unit-invariance", "lock held (bound: 30s)", True, True)
+    check("no-lock-control", "Waiting up to 30 seconds.", False, True)
+    check("no-bound-control", "Waiting for the active lock.", True, False)
+    check("other-number-control", "Waiting 300 seconds or 130 or 30.5 or 1,30,0 for the lock.", True, False)
+    check("empty-control", "", False, False)
+    return results
+
+
 @case("close.recorded-ending-held-lock", ["C8", "C16", "C17"],
       "after recorded endings a held active lock has no established owner; status is immediate and close waits",
       mode="test", tags=("close",))
@@ -1381,9 +1564,9 @@ def c_close_recorded_ending_held_lock(t):
         t.eq("close-recorded.second.effects", no_diag(rep.effects),
              {"run": "ended", "seal": "existing", "delivery": "none", "closure": "unfinished"})
         t.check("close-recorded.second.bounded-wait", 29000 <= rep.wall_ms < 40000, rep.wall_ms)
-        waiting = rep.stderr.decode("utf-8", "replace").lower()
-        t.check("close-recorded.second.waiting-account", "lock" in waiting and "wait" in waiting and "30" in waiting,
-                waiting)
+        waiting = rep.stderr.decode("utf-8", "replace")
+        t.eq("close-recorded.second.waiting-account", waiting_message_identifies(waiting),
+             {"lock": True, "bound": True})
         t.eq("close-recorded.no-delivery-while-held", t.log_kinds(sub).count("delivery_planned"), 0)
     finally:
         t.release(stem)
@@ -1394,6 +1577,59 @@ def c_close_recorded_ending_held_lock(t):
     token = first.data.get("confirmation")
     t.require("close-recorded.confirmation", isinstance(token, str), token)
     t.cmd(["close", sub.ref, "--confirm", token], name="close-recorded.confirm", expect="completed")
+
+
+@case("close.recorded-ending-lock-released", ["C8", "C16", "C17"],
+      "a held active lock released within close's bounded wait lets that close continue",
+      mode="test", tags=("close",))
+def c_close_recorded_ending_lock_released(t):
+    """5.8 Stop: with the lock held, close waits up to 30 seconds for its release. Here every
+    placement ending is recorded and a first close holds the lock at close.after_seal. A second
+    close starts while status reports close_in_progress, is still running three seconds later
+    (it did not reply at once), and the first is then released. The second must continue to
+    Lock, keep the existing seal, present the first close's verified attempt without a new
+    one and reply awaiting_confirmation with the same token, well inside the bound. The
+    timeout sibling close.recorded-ending-held-lock is the case that differs only in the
+    release; an unconditional wait, or a reply without waiting, fails here."""
+    sub = _close_after_recorded_start(t, "close-released")
+    held = t.start(["close", sub.ref], name="close-released.first", fault="close.after_seal=pause", timeout=90)
+    stem = t.wait_paused("close.after_seal", held)
+    t.require("close-released.paused", stem is not None, "close did not reach the documented pause")
+    second = None
+    try:
+        st = t.status(sub, name="close-released.status-held")
+        t.require("close-released.lock-held-with-endings-recorded",
+                  (st.data.get("closure") or {}).get("unfinished_reason") == "close_in_progress", st.data.get("closure"))
+        second = t.start(["close", sub.ref], name="close-released.second", timeout=60)
+        time.sleep(3.0)
+        t.require("close-released.second-waits", second["proc"].running(),
+                  "the second close replied while the lock was still held and the wait was unexpired")
+        t.eq("close-released.no-delivery-while-held", t.log_kinds(sub).count("delivery_planned"), 0)
+    finally:
+        t.release(stem)
+    first = t.finish(held, expect="completed", prefix="close-released.first", sync=False)
+    rep = t.finish(second, expect="completed", prefix="close-released.second")
+    t.eq("close-released.first.reason", first.data.get("unfinished_reason"), "awaiting_confirmation")
+    token = first.data.get("confirmation")
+    t.require("close-released.first.confirmation", isinstance(token, str), token)
+    t.eq("close-released.second.reason", rep.data.get("unfinished_reason"), "awaiting_confirmation")
+    t.eq("close-released.second.same-token", rep.data.get("confirmation"), token)
+    t.eq("close-released.second.holder", rep.data.get("holder"), None)
+    t.eq("close-released.second.effects", no_diag(rep.effects),
+         {"run": "ended", "seal": "existing", "delivery": "verified", "closure": "unfinished"})
+    t.eq("close-released.second.presents-first-attempt", (rep.data.get("delivery") or {}).get("attempt"), 1)
+    t.eq("close-released.one-delivery-attempt", (t.log_kinds(sub).count("delivery_planned"),
+                                                 t.log_kinds(sub).count("delivery_ended")), (1, 1))
+    t.eq("close-released.one-seal", t.log_kinds(sub).count("seal"), 1)
+    # It waited (the release came three seconds after its start) and did not wait out the bound.
+    t.check("close-released.second.waited-then-continued", 2500 <= rep.wall_ms < 25000, rep.wall_ms)
+    t.eq("close-released.second.waiting-account", waiting_message_identifies(rep.stderr.decode("utf-8", "replace")),
+         {"lock": True, "bound": True})
+    st = t.status(sub, name="close-released.status-after")
+    t.eq("close-released.status-after.reason", (st.data.get("closure") or {}).get("unfinished_reason"),
+         "awaiting_confirmation")
+    done = t.cmd(["close", sub.ref, "--confirm", token], name="close-released.confirm", expect="completed")
+    t.eq("close-released.confirm.closure", done.data.get("closure"), "complete")
 
 
 @case("close.gone-delivery-members", ["C8", "C6", "C16"],
@@ -2173,6 +2409,10 @@ def check_arrangement(t, sub, handle, family, p, limits):
     t.eq(p + ".request_extra", rx, {} if sub.effort is None else {"output_config": {"effort": sub.effort}})
     t.eq(p + ".near_limit_percent", members.get("near_limit_percent"), 20)
     t.eq(p + ".request_timeout_seconds", members.get("request_timeout_seconds"), 600)
+    # 6.2: reading pins these exact fields and bounds, in order. It is the same for every
+    # family, guidance and limit, which the callers' several arrangements show.
+    reading = reading_problem(members.get("reading"))
+    t.check(p + ".reading", reading is None, reading)
     t.check(p + ".reader", mentions(members.get("reader"), "utf8-text/1"), members.get("reader"))
     t.check(p + ".renderer", mentions(members.get("renderer"), "stewart.render/1"), members.get("renderer"))
     t.check(p + ".family", mentions(members.get("family"), family), members.get("family"))

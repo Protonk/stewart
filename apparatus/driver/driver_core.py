@@ -662,6 +662,52 @@ def mentions(obj, s):
     return False
 
 
+# INTERFACE 1.2: the closed list of strict-JSON rule identifiers a refusal names.
+RULE_IDENTIFIERS = ("encoding", "bom", "trailing", "syntax", "duplicate_key", "unknown_key", "missing_key",
+                    "lone_surrogate", "nul", "type", "integer_sign", "leading_zero", "not_integer",
+                    "integer_range", "depth", "value")
+
+
+def names_token(obj, token):
+    """True when a string value holds token as a whole identifier.
+
+    An identifier character is a letter, digit or underscore, so `nul` is not
+    found in `null`, `type` in `types` or `value` in `integer_value`. Prose can
+    still use a one-word identifier as a word; only the delimitation is judged.
+    """
+    pattern = re.compile(r"(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % re.escape(token))
+    return any(isinstance(v, str) and pattern.search(v) for v in iter_values(obj))
+
+
+def other_compound_rules(obj, rule):
+    """Compound (underscored) rule identifiers of 1.2 that obj names besides rule.
+
+    A refusal names the rule of its defect. An underscored identifier is never
+    ordinary prose, so naming another one is naming a different rule.
+    """
+    return [r for r in RULE_IDENTIFIERS if "_" in r and r != rule and names_token(obj, r)]
+
+
+# INTERFACE 6.2: the arrangement's reading object, its exact fields and bounds in order.
+READING_BOUNDS = (("read_page_bytes", 65536), ("binary_page_bytes", 49152), ("search_text_bytes", 1024),
+                  ("search_hits_per_page", 128), ("search_context_bytes_per_page", 32768),
+                  ("context_bytes_per_hit", 240), ("list_page_materials", 128), ("tool_input_bytes", 4194304))
+
+
+def reading_problem(value):
+    """None when value is the pinned reading object: these fields, integers and order (6.2)."""
+    if not isinstance(value, dict):
+        return "reading is not an object: %r" % (value,)
+    got = [(k, v) for k, v in value.items()]
+    if any(isinstance(v, bool) or not isinstance(v, int) for _, v in got):
+        return "reading holds a value that is not an integer: %r" % (got,)
+    if got != list(READING_BOUNDS):
+        if sorted(got) == sorted(READING_BOUNDS):
+            return "reading fields are out of order: %r" % ([k for k, _ in got],)
+        return "reading differs from the pinned fields and bounds: %r" % (got,)
+    return None
+
+
 def norm_ws(text):
     text = re.sub(r"(?m)^\s*>\s?", " ", text)
     return " ".join(text.split())
@@ -3100,6 +3146,32 @@ def self_test():
     chk = handle_check(s, a, "mp", "mp1", ["0" * 64])
     ok("handle.form", re.fullmatch(r"[a-z2-7]{6}", chk))
     ok("handle.literal-vector", handle_check("saaaaaaaaaaaaaaaa", "abbbbbbbbbbbbbbbb", "mp", "mp1", ["0" * 64]) == "xsshfq")
+    # 1.2 rule identifiers are matched as whole identifiers, in any string of a reply.
+    ok("rule-token.positive", names_token({"message": "rule nul at /text"}, "nul"))
+    ok("rule-token.nested-and-punctuated", names_token({"data": [{"rule": "integer_sign"}], "message": "(type)."}, "type")
+       and names_token({"data": [{"rule": "integer_sign"}]}, "integer_sign"))
+    ok("rule-token.substring-control", not names_token({"message": "the value is null"}, "nul")
+       and not names_token({"message": "two types"}, "type") and not names_token({"reason": "input_invalid"}, "value")
+       and not names_token({"message": "integer_range"}, "integer") and not names_token({"message": "in-depth2"}, "depth"))
+    ok("rule-token.non-string-control", not names_token({"type": None, "n": 7}, "type"))
+    ok("rule-token.other-compound", other_compound_rules({"m": "integer_sign, not integer_range"}, "integer_sign")
+       == ["integer_range"])
+    ok("rule-token.other-compound-invariance", other_compound_rules({"m": "rule integer_sign; wrong type"}, "integer_sign") == []
+       and other_compound_rules({"m": "a value of the wrong type"}, "value") == [])
+    ok("rule-token.identifiers", len(RULE_IDENTIFIERS) == len(set(RULE_IDENTIFIERS)) == 16)
+    # 6.2 reading: exact fields, integer values and order.
+    exact_reading = b'{"read_page_bytes":65536,"binary_page_bytes":49152,"search_text_bytes":1024,' \
+                    b'"search_hits_per_page":128,"search_context_bytes_per_page":32768,"context_bytes_per_hit":240,' \
+                    b'"list_page_materials":128,"tool_input_bytes":4194304}'
+    ok("reading.literal", reading_problem(strict_loads(exact_reading)) is None)
+    swapped = exact_reading.replace(b'"read_page_bytes":65536,"binary_page_bytes":49152',
+                                    b'"binary_page_bytes":49152,"read_page_bytes":65536')
+    ok("reading.order-control", swapped != exact_reading and "out of order" in (reading_problem(strict_loads(swapped)) or ""))
+    ok("reading.value-control", reading_problem(strict_loads(exact_reading.replace(b"49152", b"49153"))) is not None)
+    ok("reading.missing-control", reading_problem(strict_loads(exact_reading.replace(b',"tool_input_bytes":4194304', b""))) is not None)
+    ok("reading.extra-control", reading_problem(strict_loads(exact_reading[:-1] + b',"extra":1}')) is not None)
+    ok("reading.type-control", reading_problem(strict_loads(exact_reading.replace(b"65536", b'"65536"'))) is not None
+       and reading_problem(None) is not None and reading_problem(dict(READING_BOUNDS, list_page_materials=True)) is not None)
     ok("handle.binds", chk != handle_check(s, a, "mp", "mp2", ["0" * 64]) or chk != handle_check(s, a, "ap", "mp1", ["0" * 64]))
     ok("lines", (line_count(b""), line_count(b"\n"), line_count(b"a"), line_count(b"a\nb"), line_count(b"a\n")) == (0, 1, 1, 2, 1))
     ok("split.lf", split_question(b"---\na: b\n---\nbody\n") == b"body\n")

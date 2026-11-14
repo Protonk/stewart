@@ -19,6 +19,7 @@ import sys
 import tempfile
 import threading
 import time
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -116,15 +117,19 @@ class CaseObserver:
         expected_input["message"]["content"] = (self.inputs / "question.txt").read_text()
         if first != expected_input or not self.input_raw.endswith(b"\n"):
             raise ValueError("first input differs from the exact question and pinned input shape")
+        # Each supplied file is read once. The bytes validated below are the bytes pinned
+        # for the launch and end-of-observation comparisons; a second read could pin
+        # content that was never validated.
+        self.supplied_bytes = {member: (self.inputs / member).read_bytes()
+                               for member in ("settings.json", "mcp.json", "system.txt")}
         expected_system = spec.RUNTIME_ORIENTATION + "\n\n" + spec.FAMILY_TEXT[self.family]
-        if (self.inputs / "system.txt").read_bytes() != expected_system.encode():
+        if self.supplied_bytes["system.txt"] != expected_system.encode():
             raise ValueError("prepared system prompt differs from the pinned text")
         for member, expected in (("settings.json", self.expected["settings"]), ("mcp.json", self.expected["mcp_config"]),
                                  ("environment.json", self.expected["environment"]), ("argv.json", self.expected["model_argv"])):
-            if spec.transport_loads((self.inputs / member).read_bytes()) != expected:
+            raw = self.supplied_bytes[member] if member in self.supplied_bytes else (self.inputs / member).read_bytes()
+            if spec.transport_loads(raw) != expected:
                 raise ValueError("prepared supplied surface differs: " + member)
-        self.supplied_bytes = {member: (self.inputs / member).read_bytes()
-                               for member in ("settings.json", "mcp.json", "system.txt")}
         for name in self.stream_bytes:
             (self.root / (name + ".bin")).write_bytes(b"")
 
@@ -885,6 +890,44 @@ def self_test():
             diagnostic = "supplied file changed during the observation: settings.json"
         result = _finish_control(case)
         check(name, diagnostic in result["errors"] and result["checks"]["witness-integrity"] == "failed")
+    # The supplied files are validated and pinned from one read. The observer's
+    # copy is served valid bytes once and bytes changed by one trailing byte on
+    # every later read. The validated bytes must stay pinned, so the launch
+    # binding still passes and the final comparison names the changed file.
+    # Pinning a second read would instead bind the launch to unvalidated bytes.
+    # The unchanged reader is the invariance case: one construction read, no error.
+    actual_read = Path.read_bytes
+    for member in ("settings.json", "mcp.json", "system.txt"):
+        for label, changing in (("changed-after-validation", True), ("unchanged", False)):
+            name = "single-read-%s-%s" % (member.split(".")[0], label)
+            target, reads = root / name / "inputs" / member, []
+            def served(path, target=target, reads=reads, changing=changing):
+                raw = actual_read(path)
+                if path == target:
+                    reads.append(raw)
+                    if changing and len(reads) > 1:
+                        return raw + b"\n"
+                return raw
+            diagnostic = "supplied file changed during the observation: " + member
+            try:
+                with patch.object(Path, "read_bytes", served):
+                    case = _control_observer(root, name, "positive")
+                    construction_reads = len(reads)
+                    pinned = case.supplied_bytes[member]
+                    launch_bound = case.launch_observed
+                    _traffic(case)
+                    result = _finish_control(case)
+            except (ObserverStop, ValueError, OSError) as error:
+                check(name, False)
+                print("FAIL detail %s: %s: %s" % (name, type(error).__name__, error))
+                continue
+            check(name + ".read-once-at-validation", construction_reads == 1 and pinned == reads[0]
+                  and pinned == actual_read(root / ("prepared-" + name) / "inputs" / member))
+            check(name + ".validated-bytes-bind-launch", launch_bound is True)
+            if changing:
+                check(name, result["errors"] == [diagnostic] and result["checks"]["witness-integrity"] == "failed")
+            else:
+                check(name, not result["errors"] and all(value == "observed" for value in result["checks"].values()))
     for endpoint in ("m", "h"):
         case = _control_observer(root, "partial-" + endpoint, "positive")
         case.feed(compact(_init(case)) + b"\n")
@@ -975,7 +1018,6 @@ def self_test():
     check("hook-peer-unrelated-error-propagates", refused and diagnostic["send_completed"]
           and diagnostic["operation"] == "shutdown" and diagnostic["errno"] == errno.EACCES)
 
-    from unittest.mock import patch
     case = _control_observer(root, "hook-capture-connect-error", "positive")
     case.feed(compact(_init(case)) + b"\n")
     original = case.append

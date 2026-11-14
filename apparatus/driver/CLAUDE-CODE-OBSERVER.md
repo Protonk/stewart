@@ -26,6 +26,11 @@ their counts and digests there. Launch expectations are constructed from literal
 contract values independently of the surface builder. Corrupted observer counts,
 digests or matching changes to both supplied-file copies must fail their named
 comparisons; consistency between two outputs alone cannot establish correctness.
+The observer reads each supplied file once, so the bytes it validates are the
+bytes it binds to the launch and compares at the end. A control serves the valid
+bytes once and changed bytes on later reads: the launch binding must still pass
+and the final comparison must name the changed file. An unchanged reader is the
+invariance case.
 
 The hook capture-failure control sends the same valid session-correlated attempt
 as the positive comparison. It retains the attempted bytes and peer operation

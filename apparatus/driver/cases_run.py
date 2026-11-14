@@ -1823,6 +1823,10 @@ def c_refusals_recorded(t):
 # C20: tool inputs, views and seal facts.
 # ---------------------------------------------------------------------------
 
+# 7.2: a read source may be at most 1,034 UTF-8 bytes (`materials/` and a 1,024-byte name).
+SOURCE_1034_ASCII = b"materials/" + b"y" * 1024
+SOURCE_1034_MULTIBYTE = b"materials/" + "\u00e9".encode("utf-8") * 512
+
 BAD_INPUTS = [
     ("duplicate-key", "record_observation", b'{"text":"a","text":"b"}', "/text"),
     ("escaped-duplicate", "record_observation", b'{"text":"a","\\u0074ext":"b"}', "/text"),
@@ -1838,14 +1842,26 @@ BAD_INPUTS = [
     ("missing-source", "read", b'{}', "/source"),
     ("empty-source", "read", b'{"source":""}', "/source"),
     ("long-source", "read", b'{"source":"' + b"x" * 1035 + b'"}', "/source"),
+    # 7.2 counts UTF-8 bytes: 523 characters, 1,035 bytes.
+    ("long-source-multibyte", "read", b'{"source":"' + SOURCE_1034_MULTIBYTE + b'x"}', "/source"),
+    # 1.2: a lone surrogate escape is refused. The block stays valid JSON for the response envelope.
+    ("lone-surrogate", "record_observation", b'{"text":"a\\ud800b"}', "/text"),
 ]
+# 1.2 names the identifiers. Each defect here is the one its identifier names.
 BAD_INPUT_RULES = {
     "duplicate-key": "duplicate_key", "escaped-duplicate": "duplicate_key", "unknown-field": "unknown_key",
     "nul": "nul", "not-object": "type", "mistyped-citations": "type", "depth-17": "depth",
     "negative-start": "integer_sign", "huge-start": "integer_range", "string-start": "type",
     "fraction-start": "not_integer", "missing-source": "missing_key",
-    "empty-source": "value", "long-source": "value",
+    "empty-source": "value", "long-source": "value", "long-source-multibyte": "value",
+    "lone-surrogate": "lone_surrogate",
 }
+# Not exercised as tool inputs, because INTERFACE does not determine the rule for them here:
+# an `input` is a value inside the provider's response body, which is decoded first and
+# tolerantly (6.2). `encoding`, `bom`, `trailing` and `syntax` defects cannot be placed in
+# that value without making the body itself no longer a JSON object (6.2: undecodable), and a
+# leading zero (`leading_zero`) is likewise not a JSON number, so whether the strict rule or
+# the undecodable response applies is not stated.
 
 
 @case("c20.tool-inputs", ["C20", "C14", "C9"],
@@ -1861,7 +1877,11 @@ def c_tool_inputs(t):
     """Duplicate and escape-equivalent keys, an unknown field, NUL, a non-object input, the
     wrong type, nesting deeper than 16, out-of-bound and non-integer starts and a missing
     required field each refuse input_invalid naming the JSON pointer (an unknown field also
-    naming the expected keys); each call capture keeps the exact block bytes. An unknown tool
+    naming the expected keys) and the rule's identifier of 1.2 as a whole token, with no other
+    compound identifier; so do a lone surrogate escape, an empty read source and one of 1,035
+    UTF-8 bytes, in ASCII and in two-byte characters. A source of exactly 1,034 bytes, in
+    either, is instead looked up and refused source_unknown like a short unknown name.
+    Each call capture keeps the exact block bytes. An unknown tool
     refuses tool_unknown naming the tools. Constructed entry and view handles refuse
     handle_invalid. Replies carry no host path. Prepare names no sealer. Submit with a stale
     preparation refuses stale_preparation with revision_now and a prepare next call; "true"
@@ -1879,9 +1899,20 @@ def c_tool_inputs(t):
             p.check("input.%s" % lab, r.outcome == "refused" and r.reason == "input_invalid"
                     and (ptr is None or mentions(r.env, ptr)), {"outcome": r.outcome, "reason": r.reason,
                                                                "message": (r.env or {}).get("message")})
-            p.check("input.%s.rule" % lab, mentions(r.env, BAD_INPUT_RULES[lab]), r.env)
+            # 1.2: the refusal names the rule, as a whole identifier, and no other compound one.
+            p.check("input.%s.rule" % lab, names_token(r.env, BAD_INPUT_RULES[lab]), r.env)
+            p.eq("input.%s.rule-only" % lab, other_compound_rules(r.env, BAD_INPUT_RULES[lab]), [])
             if lab == "unknown-field":
                 p.check("input.unknown-field.expected-keys", mentions(r.env, "citations") and mentions(r.env, "label"), r.env)
+        # 7.2: a source of exactly 1,034 UTF-8 bytes passes the bound and reaches source lookup,
+        # where the unknown name is refused as any other (Appendix A, source_unknown).
+        turn = yield p.step([p.call("read", raw_input=b'{"source":"' + raw + b'"}')
+                             for raw in (SOURCE_1034_ASCII, SOURCE_1034_MULTIBYTE, b"materials/nope.txt")])
+        for lab, raw, r in zip(("ascii-1034", "multibyte-1034", "short-unknown"),
+                               (SOURCE_1034_ASCII, SOURCE_1034_MULTIBYTE, b"materials/nope.txt"), turn.replies):
+            p.eq("source-bound.%s" % lab, (r.outcome, r.reason), ("refused", "source_unknown"))
+        p.eq("source-bound.specimens", [len(SOURCE_1034_ASCII), len(SOURCE_1034_MULTIBYTE),
+                                        len(SOURCE_1034_MULTIBYTE.decode("utf-8"))], [1034, 1034, 522])
         turn = yield p.calls_step(("shell", {"command": "ls"}))
         r = turn.reply(0)
         p.check("tool-unknown", r.outcome == "refused" and r.reason == "tool_unknown" and mentions(r.env, "record_observation"),

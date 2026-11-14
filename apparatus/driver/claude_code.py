@@ -41,7 +41,7 @@ import traceback
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from driver_core import (CONTINUATION, FAMILY_TEXT, ORIENTATION, REMINDER,
-                         expected_tools, strict_loads)
+                         expected_tools, reading_problem, strict_loads)
 from rawjson import compact, parse
 
 
@@ -1047,10 +1047,13 @@ class Driver:
                     "harness_max_output_tokens": 16000, "texts": TEXTS}
         for key, value in expected.items():
             self.eq(label + "." + key, obj.get(key), value)
+        # CONTRACT: the common arrangement's exact reading bounds (INTERFACE 6.2),
+        # which pins the fields, their values and their order.
         self.eq(label + ".reading", obj.get("reading"), {
             "read_page_bytes": 65536, "binary_page_bytes": 49152, "search_text_bytes": 1024,
             "search_hits_per_page": 128, "search_context_bytes_per_page": 32768,
             "context_bytes_per_hit": 240, "list_page_materials": 128, "tool_input_bytes": 4194304})
+        self.eq(label + ".reading-order", reading_problem(obj.get("reading")), None)
         system = compact([{"type": "text", "text": RUNTIME_ORIENTATION},
                           {"type": "text", "text": FAMILY_TEXT[f["family"]]}])
         for key, value in (("system", system), ("tools", f["tools"]), ("mcp_tools", mcp_tools(f["tools"])),
