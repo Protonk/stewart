@@ -6,17 +6,10 @@ Code subscription trials. The objective is an ordinary-file commission followed
 by bounded CLI execution and faithful custody, with optional MCP assistance
 before commissioning. Neither authority nor lifecycle depends on MCP use.
 
-The principal selected this direction from Riker's proposal and explicitly
-retained admission of empty or insufficient materials. This is a work plan, not
-an implemented interface or permission to launch a model. Implementation follows
-the specification work below; live invocations require a fresh bounded commission.
-
-**Current state:** the manager preparation MCP, shared family/role registry,
-prospective effect inspection and returned-question member remain unimplemented.
-The native service-comparison procedure and open-inquiry profile exist. C1–C4
-have reviewed outcomes; C2/C3/C4 audits are closed. Final usage is incomplete,
-C3 exposed conversation-page substitution, and C4 did not exercise live
-continuation. Broader family, interruption and compaction trials remain open.
+Empty or insufficient materials remain admissible. The manager preparation MCP,
+shared family/role registry, prospective effect inspection and returned-question
+member remain to be implemented. Live trials require a concrete bounded
+commission; this plan grants no model or authentication launch authority.
 
 ## Contract inventory and selected changes
 
@@ -28,7 +21,7 @@ This inventory distinguishes existing behavior from work still owed.
 | Area | Existing commitment or evidence | Selected work |
 | --- | --- | --- |
 | Commission and authority | Ordinary submission files; CLI `prepare` binds a proposal, `commission` explicitly accepts it, and `run` launches only an accepted commission. | Keep these distinct operations. MCP supplies no required token, manifest, registration, certification or privileged handoff. |
-| MCP boundary | The earlier design selected documentary guidance; no manager preparation server is implemented. | Add pure prospective assessment and optional explicit candidate creation to discovery and explanation. These replace the previous exclusion of mechanical checks from MCP. |
+| MCP boundary | No manager preparation server is implemented. | Add pure prospective assessment and optional explicit candidate creation to discovery and explanation. |
 | Shared rules | CLI intake and three implemented question families already have specified rules. | Extract one production commissioning rule implementation for CLI and MCP; keep the acceptance oracle independently authored from specifications. |
 | Material roles | Families have different purposes, instructions and recording tools. Empty materials and intellectual insufficiency remain admissible. | Validate declared role structure and references; give type-specific warnings for missing evidence roles and suggestions for improvements. Do not introduce an evidence-completeness gate. |
 | Documentary output | CLI has structured replies, observed effects and specified help. | Add versioned MCP schemas, per-call detail, and prospective CLI effect descriptions available without executing or inspecting an audit. |
@@ -147,7 +140,13 @@ documentary drift without importing that validator as the acceptance oracle.
   persistence or a credential-store dependency. A hidden prompt remains deferred.
 - [ ] Implement the accepted question body in the returned package. Verify exact
   bytes and provenance separately from the auditor's answer; do not add supplied
-  materials, guidance or operating history as return context.
+  materials, guidance or operating history as return context. Rewrite the shared
+  post-launch return fixture from literal forms with independent expected bytes.
+- [ ] Present recorded stop causes, refused-call effects and supported remedies
+  consistently across status forms. Use `.scratch/readiness-l0-01/RESULT.json`
+  for the startup-ancestry case: the remedy in `run_ended.message` must reach
+  status without implying that `run_started` proves an authentication/model
+  process ran. Cover relay loss and runtime-specific stopping/usage uncertainty.
 - [ ] Exercise direct commands and shell wrappers from different working
   directories and fresh environments. Reconcile repeated/interrupted operations
   against durable records, including reply loss after effects, failed acceptance,
@@ -255,24 +254,12 @@ bounded commission; deliberate usage-limit studies need a separate commission.
 
 ### Prepare a concrete, reusable comparison
 
-- [x] Extend the implemented [controller and profile apparatus](../apparatus/claude-code/README.md)
-  into an actual-service procedure. Reuse the independent helper/observer and
-  [complete-package witness](../apparatus/driver/CLAUDE-CODE-SERVICE-WITNESS.md);
-  first rehearse the procedure offline. Do not rebuild completed apparatus merely
-  to restart this work. The procedure freezes inputs, retains
-  receipt/run/status/capture evidence and permits reviewed ordinary close.
-  The [procedure guide](../apparatus/claude-code/README.md#native-service-comparison-procedure)
-  also owns individually reviewed continuation, cumulative capture/package
-  checks, prior archive preservation and message snapshots separate from
-  checkpoints. Its synthetic rehearsal supplies no live authority or Linux
-  qualification.
-- [x] Obtain a reviewed real supplied-surface check under its own bounded
-  authority before producing an eligible real profile. The
-  [reviewed native comparison](../apparatus/qualified.md#readiness-c1-01)
-  supplies the open-inquiry profile. The fixture's exact
-  family tool inventory, actual Stewart helpers and independent private sockets
-  establish supplied-surface compatibility only, not service custody. No
-  placeholder or synthetic observation becomes a real attestation.
+Use the [service procedure](../apparatus/claude-code/README.md#native-service-comparison-procedure),
+[independent package witness](../apparatus/driver/CLAUDE-CODE-SERVICE-WITNESS.md)
+and reviewed open-inquiry profile at `.scratch/readiness-c1-01/profile.json`.
+Revalidate bindings for each commission; another family or changed surface
+needs its own matching reviewed check. Procedures and profiles grant no starts.
+
 - [ ] Build ordinary and inadequate-evidence specimens for all three implemented
   families, reusing the shared commissioning fixtures and existing
   [question examples](../examples/questions/README.md). Include file-only and
@@ -322,64 +309,27 @@ bounded commission; deliberate usage-limit studies need a separate commission.
   cannot qualify this harness profile, and a subscription result cannot satisfy
   the Messages API release gate.
 
-The surface-only draft at `.scratch/claude-code-surface-proposal-01`
-(commission SHA-256 `da70d69fde47507f5ebff62d27359760c33fa4959ed8b4c4aa6478acbefa9151`)
-is superseded by the completed C1 commission and reviewed profile at
-`.scratch/readiness-c1-01/profile.json`. The old draft was never approved and is
-not a pending launch. Recheck the current profile's bindings for another service
-commission; a changed surface needs its own newly reviewed check. No C1–C4
-launch authority remains, and the family matrix is not commissioned.
-
 ### Remaining offline runtime coverage and evidence review
 
-- [ ] Add the still-missing second-relay-connection refusal within a live
-  placement and a hook call after admission stops. Ground a near-limit notice
-  regression in C4's captured short placement; that notice is now observed in a
-  real encounter but the standalone driver's comparison remains absent.
-  `run` re-verification of a pinned surface currently has unit coverage only;
-  design a suitable independently bound comparison or explicitly retain that
-  limitation. Share common behavior cases only where driver independence permits.
-- [ ] Register the two native probes in the qualification index without inventing
-  the UTC timestamp missing from their records or rewriting receipts. Until that
-  disposition is resolved, retain their original paths below.
-- [ ] Review the selected evidence and release reproducible/superseded work under
-  [evidence and retention](DEVELOPMENT.md#evidence-and-retention). The compact
-  locator below preserves the inspection purpose; it is not a new qualification
-  record or a reason for indefinite retention.
-
-| Evidence to inspect | Scope, unresolved fact and release condition |
-| --- | --- |
-| `.scratch/acceptance-readiness-02`; [qualification index](../apparatus/qualified.md#acceptance-readiness-02) | Current recorded Linux acceptance is source `0fdac94`, on both architectures. Later native procedure changes are not qualified by this run. Its ARM writer is pinned for the open M2 audit. The earlier environment-observer run is superseded as the current baseline. |
-| `.tmp/service-witness/host.mboAA5`, `host-review.log`; `/private/tmp/stewart-service-witness-01` | Latest native complete-package rehearsal: 2 runtime cases, 865 checks, zero runtime control cases; 32 separate self-test controls. Six host commands passed without timeouts/skips, source unchanged, outer groups absent. Review verified 283 root evidence members and 9 package snapshots/72 members. Retain through first service-comparison review; synthetic continuation is exit-after-record. |
-| `.tmp/service-witness/independent-self-test-final.log`, `independent-evidence-review-final.log`, `prior-linux-positive-review-02.log`, `prior-linux-positive-control-02` | Independent witness controls and launch-free comparison to copied Linux evidence; fixed synthetic expectations cannot judge live answers. The first local comparison omitted `actor`; its setup-error log/copy remain at `prior-linux-positive-review.log` and `prior-linux-positive-control`. No original receipt changed. Retain through service-witness review. |
-| `.tmp/surface-controller/host.gt15l7`, `host-02-review.log`; `.scratch/claude-code-observer-rehearsal-03`, `.scratch/claude-code-controller-rehearsal-01` | Native synthetic controller/observer review passed all 14 commands; controller 13 and observer 58 checks, no failures/skips. Five listener controls and normal/bad-init/wrong-auth controller cases passed; failures prevented effects and later starts, all launched groups absent. No eligible real check/profile was emitted. Retain through first real surface review. |
-| `.scratch/claude-code-service-installation-01`, `.scratch/claude-code-surface-rehearsal-01`; `.tmp/profile-bootstrap/host-review.log` | Installation public signing/executable evidence and actual-helper synthetic comparison, with authentication and real startup unexercised. Revalidate the installation and surface against any proposed live packet. |
-| `.tmp/surface-controller/host.ij81RP`, `host-01-review.log`; `.scratch/claude-code-observer-rehearsal-02`; `.tmp/observer-repair/` | Original listener control failed with `ENOTCONN`; 4/5 controls and 12/13 commands passed. Ordered socket comparisons distinguish EPIPE, ENOTCONN and EOF; the original syscall remains unattributed. Repaired correlated-request/attempted-byte controls passed. Keep originals until failure/control review is complete. |
-| `.tmp/bounded-observer/host.Qt0uwr`, `host-01-review.log`, `owner-loss-fix-review.log`, `host.CD7Wrh` | Owner-loss observation encountered EPERM; later absence was observed. Corrected controls preserve EPERM as unknown and require absence. The OS cause is unestablished; retain through stopping-observer review. |
-| `.scratch/acceptance-runtime-queue-01`, `.scratch/relay-diagnostic-01`, `.scratch/relay-inspection-01`, `.scratch/relay-diagnostic-02`, `.scratch/relay-diagnostic-03` | Original Linux initialization failure, timed-out diagnostic and paired copy-loop evidence. Recovery observed the old diagnostic stopped. The paired comparison distinguished blocking standard-library-copy paths from explicit reply copying, without identifying the underlying kernel/library defect. Keep original failed work/exports through diagnosis; never restart the old probe. |
-| `.scratch/acceptance-relay-fix-01`, `.scratch/environment-observer-01`, `.scratch/environment-observer-02`; `/private/tmp/stewart-environment-observer-native-01` | Failed locale witness observed Python startup effects; the repaired observer captures bytes before Python, after shell startup. Paired native/Linux controls and later full Linux acceptance passed. The local wrapper's failed witness is `/private/tmp/stewart-env-cbr34u6i/results`; the passing host comparison is `/private/tmp/stewart-env-dr5n5rw3/results`. Preserve original failed exports (including special entries) and independent earlier/later snapshots through review; do not rewrite them as passes. |
-| `.tmp/runtime-queue/`, `.tmp/relay-fix/`, `.tmp/alignment/host.x1DmST`, `.tmp/driver-gaps/host.QdjlTD`, `.tmp/surface-binding/host.24wFiF`, `.tmp/document-harmonization/`, `.tmp/claude-code-adapter*`, `.tmp/claude-code-contract/`, `.tmp/claude-code-probe/` | Earlier implementation/driver controls, sandbox bind failures and socket EOF comparison. Host `runtime-work.txt` files locate external witnesses where present; the remaining locators are below. Retain selected failures through implementation review, then release reproducible working trees. Do not rebind earlier baselines to a new binary. |
-| `.scratch/claude-code-controller-sandbox-01`, `.tmp/surface-controller/sandbox-run.log`, `.tmp/surface-controller/profile-refactor-tests*.log`, `.tmp/toolchain-refresh/profile-tests.log`; `/private/tmp/stewart-observer-listeners-native-01`, `/private/tmp/stewart-surface-rehearsal-native-02` | Setup/bind/filename failures and corrected offline checks. Bind refusals occurred before starts. Keep through review of the corresponding successful native rehearsal, then dispose under ordinary retention. |
-| `.scratch/claude-code-probe-01`, `.scratch/claude-code-probe-02` | Closed real encounters with frozen original inputs; retain through launch-arrangement review and timestamp-gap disposition. Their observations authorize no further launch. |
-
-External witnesses retained for that earlier implementation review are
-`/private/tmp/stewart-relay-runtime.wx0dO3/run`,
-`/private/tmp/stewart-relay-forwarding-fix-01`,
-`/private/tmp/stewart-queue-runtime.LGe6um/run`,
-`/private/tmp/stewart-align-runtime.SbCg7Q/run`,
-`/private/tmp/stewart-gaps-runtime.sDdJDu/run`,
-`/private/tmp/stewart-surface-runtime.QTlDKw/run`,
-`/private/tmp/stewart-doc-runtime.CGwaur/run`,
-`/private/tmp/stewart-cc-native.DyFPFv/run`,
-`/private/tmp/stewart-claude-driver-checks.AhLaUX`, `/private/tmp/scc5` and
-`/private/tmp/scc6`. Review their selected purpose before disposal; this planning
-consolidation does not delete or revise any evidence.
-
-The first real surface review, first service-comparison review and C4 procedure
-review have finished. Their reproducible rehearsal-only retention conditions no
-longer require keeping the older working trees. The two native probes still
-need a timestamp-gap/index disposition, and unresolved failure reviews remain
-tasks rather than inferred completions.
+- [ ] Add second-relay-connection refusal within an active placement and a hook
+  call after admission stops. Add an independent comparison for `run`'s own
+  pinned-surface re-verification or explicitly retain its unit-only limitation.
+- [ ] Resolve the qualification-index disposition for
+  `.scratch/claude-code-probe-01` and `.scratch/claude-code-probe-02`, whose
+  original records lack UTC timestamps. Preserve those originals; do not invent
+  dates or rewrite receipts to register them.
+- [ ] Finish unresolved observer/failure reviews before releasing their selected
+  witnesses: socket errors in `.tmp/observer-repair/`, stopping-observer EPERM in
+  `.tmp/bounded-observer/`, relay-copy behavior in `.scratch/relay-diagnostic-03`,
+  and observer scope in `.scratch/environment-observer-02`. Recover specific
+  original paths from their records and Git when needed. Distinguish an observed
+  workaround from an established OS/library cause; missing witnesses remain a
+  review limitation. Do not restart old diagnostics or probes.
+- [ ] Apply [evidence retention](DEVELOPMENT.md#evidence-and-retention) after each
+  review. Release reproducible or superseded working trees when their purpose
+  ends; preserve originals needed for unresolved findings and open custody.
+  The [qualification index](../apparatus/qualified.md) owns retained suite results
+  and selected encounters, not this plan.
 
 ## Verification and completion
 
@@ -388,9 +338,8 @@ for every implementation change, retaining outputs through review. Markdown-only
 plan edits need the link check. Changed specifications/pinned texts, service,
 driver and apparatus need their respective named checks; new source is not
 qualified by an older suite. Record exact counts, failures, skips and unexercised
-mechanisms. Fix unavailable-loopback reporting so an actual skip cannot be
-reported as a passing test when adding tests; the existing reporting repair and
-partial-skip controls are complete.
+mechanisms. Unavailable loopback or another skipped prerequisite cannot be
+reported as a passing test.
 
 The manager interface is ready when a manager can construct a conforming
 commission through ordinary files; optionally obtain type-specific guidance,
@@ -402,5 +351,4 @@ Additional real-harness trials have their own reviewed outcome and explicit
 disposition for failures or unexercised work. A deferred live commission is not a
 hidden blocker on the manager-interface boundary, nor permission to call that
 runtime conformant. At completion, put enduring rules in specifications and
-tests, give remaining work an explicit disposition, remove consumed evidence
-locators and delete this plan.
+tests, give remaining work an explicit disposition, and delete this plan.

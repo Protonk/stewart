@@ -7,39 +7,19 @@ owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 [QUESTION-FORMS](docs/QUESTION-FORMS.md) owns the three implemented forms.
 Answer usefulness remains the manager's judgment.
 
-The checked small-commission apparatus is complete. Full conformance still needs
-controlled interruption, actual provider compaction and a reviewed result for
-every required run. A model is supported only after its whole gate passes.
-No further model calls are selected or authorized by this plan.
-
-**Current state:** the small-commission path has reviewed M1/M2 encounters;
-bounded continuation, witnessed interruption, multi-placement export/review and
-actual compaction still need apparatus work and Linux rehearsal. The retained
-M2 audit is the immediate continuation input. No M3 packet is frozen and no
-continuation is authorized. These encounters do not complete the per-model
-release gate.
+Remaining apparatus work covers controlled interruption, bounded continuation,
+complete multi-placement export/review, actual provider compaction and the full
+per-model gate. No live launch is authorized by this plan.
 
 ## Working inputs
 
-The [apparatus instructions](apparatus/c10/README.md) own the implemented packet,
-launcher, reviewer and report interfaces. Small commissions have completed;
-continuation and actual provider compaction remain outside that apparatus path.
-The [qualification index](apparatus/qualified.md) identifies recorded checked
-builds and selected evaluations. New live packets need matching rehearsal coverage
-for their actual binary, inputs and credential route. Completed pilot placements
-authorize no further calls. Retention follows
-[DEVELOPMENT](development/DEVELOPMENT.md#evidence-and-retention).
-
-For bounded continuation preparation, the reviewed cap interruption at
-`.scratch/readiness-m2-live-sw3z-default-01/REVIEW.json` identifies an open audit,
-its retained container and exact writer, immutable snapshots, and remaining
-cumulative allowances. Its final response has only a thinking block and ends
-`max_tokens`; no answer entry was recorded. This is a continuation input, not
-evidence of preserving authored work or authority to resume. The writer is
-explicitly pinned in the qualification index. The reminder comparison can reuse
-the question and sole supplied report from
-`.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json`, but that audit is
-sealed: a fresh, separately commissioned and witnessed interruption is needed.
+The [apparatus instructions](apparatus/c10/README.md) own packet, launcher,
+reviewer and report interfaces; the [host queue](apparatus/c10/HOST-QUEUE.md)
+owns supported operator actions. Extend and rehearse those mechanisms instead
+of bypassing their custody/export guards. The [qualification index](apparatus/qualified.md)
+identifies checked builds and retained evaluations. Each live packet needs
+matching rehearsal coverage for its exact writer, inputs and credential route.
+Keep open audits and their exact writers until closure or explicit disposition.
 
 ## 1. Complete the evidence matrix
 
@@ -100,11 +80,9 @@ remain explicit manager acts under the existing interface.
 
 ## 3. Extend the procedural verifier and its controls
 
-The small-commission reviewer reconstructs ordinary requests, usage and selected
-answer bytes, checks mechanical citations and exact delivery, and reports witness
-scope and unexercised operations. Its [controls](apparatus/c10/check_review.py)
-retain altered views separately from their originals. Remaining work extends
-that checked scope:
+Extend the [procedural reviewer and its controls](apparatus/c10/check_review.py)
+without making service-owned captures independent evidence or treating a
+mechanically valid answer as intellectually correct:
 
 - [ ] Specify each witness's origin, storage, observation time and scope. Input
   copies sit outside Stewart's archive. The fake provider independently retains
@@ -157,6 +135,10 @@ about answer quality remain outside the mechanical gate.
   freezing a live packet: exact model, API/beta versions, effort, compaction,
   authentication, output cap and timeout. Record dated sources and unresolved
   points. Real observations must use the selected release binary and its TLS roots.
+- [ ] Fill remaining provider error/compaction and retry/timeout/connection/
+  handshake fixture gaps for the full conformance matrix, using independently
+  expected values and firing controls. Reuse grounded fixtures; keep unavailable
+  provider captures and unexercised conditions explicit.
 - [ ] Keep real-provider timeout and `max_tokens` behavior explicit in the
   coverage matrix. An output-allowance stop is not a provider `max_tokens` stop;
   a response arriving within the timeout does not demonstrate timeout handling.

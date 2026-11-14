@@ -1,79 +1,31 @@
 # Release and work plan
 
-This plan owns work order and the remaining first-release work. Individual plans
-own their task's decisions and execution details. Product behavior is specified
-in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
-[ACCEPTANCE.md](ACCEPTANCE.md) defines the evidence owed.
-
-**Current state:** readiness stage 1 and L0, M1, M2, C1–C4 are reviewed; M3
-preparation is next, followed by the remaining comparisons, repairs and
-reassessment. M3, M4 and C5 have no live-start authority. Manager-interface
-implementation, full Messages model conformance, native WSL2 qualification and
-the public release remain outstanding.
+This plan owns cross-plan order and first-release obligations. Topic plans own
+remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
+[INTERFACE](docs/INTERFACE.md) own behavior; [ACCEPTANCE](ACCEPTANCE.md) owns the
+evidence owed. [README](README.md#status) owns demonstrated product status and
+the [qualification index](apparatus/qualified.md) owns retained results.
 
 ## Work order
 
-| Stage | Work | Working document |
+| Order | Remaining work | Owner |
 | --- | --- | --- |
-| Readiness follow-up, before the stages below | Correct what the readiness review found that can be corrected now, run the live checks it designs as the principal approves each, reassess, and pass what remains to the plans below as notes | [READINESS-FOLLOW-UP-PLAN.md](READINESS-FOLLOW-UP-PLAN.md) |
-| Current manager work | Specify shared commissioning rules, complete the independent CLI, implement optional preparation MCP, and demonstrate the interface with fake-provider integration | [Integrated manager-interface plan](development/MANAGER-INTERFACE-PLAN.md) |
-| Alongside manager work, separately bounded | Prepare source-only runtime comparisons and question-family trials; live starts require the principal's approval and their own verified apparatus/profile prerequisites | The integrated plan owns this testing track; a real-service outcome is not a prerequisite for manager MCP or fake-provider boundary acceptance |
-| Separately scheduled release work | Complete Messages API conformance, platform qualification and acceptance review | [MESSAGES-API-CONFORMANCE-PLAN.md](MESSAGES-API-CONFORMANCE-PLAN.md) and the release requirements below |
-| Unselected | Broader auditor studies, blinded evaluation and question-family dogfooding beyond the integrated procedural trials | [Deferred studies](#deferred-studies) |
+| Current | Prepare M3 continuation using the necessary Messages apparatus extensions; then complete or dispose of M4/C5, outcome repairs, fixtures and reassessment. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the bounded comparisons; the Messages and manager plans own reusable apparatus work in their respective areas. |
+| After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
+| Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
+| Separately scheduled release work | Complete the Messages model gate, platform qualification and acceptance-policy review. | [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and the requirements below |
+| Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
 
-The integrated plan subsumes the former manager-alignment and runtime-conformance
-plans, including their remaining tasks and evidence-review obligations. It owns
-the local implementation sequence and the shared manager/type test matrix.
-The separate Messages API plan retains the full release-model gate; neither
-subscription trials nor fake-provider acceptance substitute for that gate.
-Planning and previous model placements confer no execution or spending authority.
+Use the existing apparatus and retained exact writers; reconcile uncertain
+processes or effects before reusing them. Build only the prerequisites needed
+for the selected comparison. Full model conformance is separate from the
+bounded readiness observations. Live starts need concrete approval; container
+runs and the public release remain the principal's scheduling decisions.
 
-The return-context decision needs no further presentation tuning or reader
-comparison before implementation. No additional reading interface or return
-context is selected here.
-
-## Entry to manager-interface work
-
-**Assessment: the specification stage can start once the
-[readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) has passed on what it does
-not fix.** The readiness plan owns verification of its repairs. Qualification
-applies to the source and binaries recorded with each result. The remaining
-runtime and release obligations follow the routing above.
-
-1. **Carry the baseline forward.** Use the integrated plan's
-   [evidence-review section](development/MANAGER-INTERFACE-PLAN.md#remaining-offline-runtime-coverage-and-evidence-review)
-   to locate the current results, selected failures and witnesses. Preserve
-   them through their specified reviews. Reconcile any newly discovered uncertain
-   process or durable effect before reusing that work; a fresh broad suite or
-   historical cleanup is not an entry requirement.
-2. **Keep the live-testing handoff explicit.** The
-   [subscription testing track](development/MANAGER-INTERFACE-PLAN.md#additional-claude-code-subscription-testing)
-   uses the implemented service procedure and reviewed open-inquiry profile.
-   The earlier surface draft is superseded; no C1–C4 start remains authorized.
-   Revalidate current profile and procedure bindings for each new commission.
-   The reviewed native encounters leave final usage, page fidelity and live
-   continuation unresolved; broader trials remain separately bounded. Those
-   results do not qualify the manager interface or the Messages release gate.
-3. **Enter the existing plan at stage 1:**
-   [specify the shared contracts](development/MANAGER-INTERFACE-PLAN.md#1-specify-the-shared-commissioning-and-documentary-contracts).
-   Start with the CLI walk-through and rule/diagnostic inventory, then freeze the
-   question-role, MCP and effect-description schemas with their acceptance
-   examples. Arrange implementation-independent driver authorship before changes
-   needing both service and driver work. Implementation follows that plan's
-   sequence and DEVELOPMENT checks.
-
-This transition is complete when stage 1 is underway with the baseline and
-remaining obligations accounted for. Remove this entry section then; the work
-order and topic plans continue to own execution. No model launch or container run
-is required merely to make this transition.
-
-## Current evidence
-
-[README](README.md#status) owns product maturity and coverage limits;
-[the qualification index](apparatus/qualified.md) owns current suite results
-and selected evaluations. Retain originals for inspection under
-[DEVELOPMENT](development/DEVELOPMENT.md#evidence-and-retention), not to reconstruct old
-builds.
+At the manager transition, enter its specification stage and freeze roles,
+diagnostics, MCP and effect-description schemas before dependent implementation.
+Arrange independent driver authorship where service and driver changes are both
+needed. Give residual work one owner in place; do not create a turnover document.
 
 ## Deferred studies
 
@@ -100,7 +52,12 @@ The requirements remain those of ACCEPTANCE while its review is open.
 ### Coverage and acceptance-policy review
 
 Check driver cases against every ACCEPTANCE claim. Uncovered requirements need a
-case or an explicit disposition. Candidate gaps include C17's secondary logging
+case or an explicit disposition. Add independent black-box comparisons for
+interim/folded/conflicting-length response heads, the retained-payload reserve
+boundary and `not_sent` notices; specification text and service-unit checks do
+not establish that coverage. Reassess unreached/partly reached conditions and
+unclear behavioral promises against the actual cases. Candidate gaps include
+C17's secondary logging
 errors, blind repetition after reply failure and omitted partial effects; C18's
 pressure pruning, confusion between retained and delivered bytes, and missing
 archives reported clean; and C11's scans presented as snapshot proof. Driver
