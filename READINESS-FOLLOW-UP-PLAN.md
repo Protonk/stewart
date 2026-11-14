@@ -20,25 +20,19 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### M3 — Continuation
 
-- [ ] Rehearse on Linux the bounded continuation, witnessed interruption and
-  multi-placement export/review of the [Messages apparatus](apparatus/c10/README.md)
-  and [host queue](apparatus/c10/HOST-QUEUE.md), with both audits' templates as
-  `--submission` inputs and the saved synthetic connection. Review all placements,
-  cumulative allowances, prior archive members, re-entry, notices, the recorded
-  interruption timing and process stopping from the retained originals.
-  Reconcile missing replies without inventing an absent effect or a clean run.
-- [ ] Freeze a commission of at most four Messages placements across the two
-  comparisons below. Specify allocation, exact inputs/writers/models, deadlines,
-  cumulative token/turn allowances, cost estimate, campaign budget, stopping and
-  permitted custody actions before asking for approval.
-  The draft is `.scratch/readiness-m3-01`: the two packets that can exist before
-  any placement, the cost assessment, and a gate and runner (`m3.py`) with
-  offline controls. `freeze.py` there writes `MANIFEST.json` only from a retained
-  passing rehearsal; until then nothing is approvable. Packet bindings name the
-  commit and apparatus digest, so bind again after any commit or apparatus
-  repair, and commit nothing between the freeze and the last placement.
-  Each later placement's packet is written from the preceding reviewed export
-  and needs the principal to name its own digest.
+- [ ] Obtain the principal's approval of the commission frozen in
+  `.scratch/readiness-m3-01`: at most four Messages placements across the two
+  comparisons below, stated in `MANIFEST.json` with its cost assessment, the
+  retained Linux rehearsal it binds (`.scratch/m3-rehearsal-01`) and an
+  independent `FREEZE-REVIEW.json`. Approval names the manifest digest and both
+  packet digests. Then run it only through the gate `m3.py` there, in manifest
+  order, with a review and an independent reviewer's record after each placement.
+  Packet bindings name the commit and apparatus digest: commit nothing between
+  the freeze and the last placement, and after any commit or apparatus repair
+  run `freeze.py --rebind` and seek approval again. Each later placement's
+  packet is written from the preceding reviewed export and needs the principal
+  to name its own digest. The retained audit is continued only after a live
+  continuation of the fresh audit has been observed and reviewed.
 - [ ] Continue the open sw3z-default audit identified by
   `.scratch/readiness-m2-live-sw3z-default-01/REVIEW.json`, using its exact retained
   qualified writer and remaining cumulative allowances. Examine the first
@@ -52,11 +46,12 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   with the same image and options kept its inodes, birth times, member bytes
   and bind-mounted bytes across `container stop` and `start`
   (`.scratch/readiness-m3-persistence-01`); a host restart is unobserved.
-  State that exposure in the packet. Its last prompt was 76,034 tokens before a
-  16,000-token thinking block, and the summary trigger is 150,000
-  ([INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses)): a continuation may
-  compact, which the reviewer does not cover. Treat that as an incomplete review
-  that ends this arm, not as grounds for a wider claim.
+  State that exposure in the packet. A continuation is a new conversation
+  ([INTERFACE 6.7](docs/INTERFACE.md#67-continuation)). The first placement
+  reached 76,034 prompt tokens in nine requests and the summary trigger is
+  150,000 ([INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses)), so a
+  long continuation may compact, which the reviewer does not cover. Treat that
+  as an incomplete review that ends this arm, not as grounds for a wider claim.
 - [ ] Use the exact question and sole supplied report identified by
   `.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json` for a fresh
   12-turn reminder audit. The source audit is sealed and cannot continue.
