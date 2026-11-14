@@ -1954,6 +1954,46 @@
         "reason": "Inspect both original encounters and the authored content inconsistency; ground near-limit/partial-submission, required-field recovery and submit-to-stop/partial-usage fixtures.",
         "until": "Selected fixture and accounting reviews finish, and no unresolved finding needs the original encounters."
       }
+    },
+    {
+      "id": "readiness-m3-live-reminder-01",
+      "kind": "experiment",
+      "date": "2026-11-14T15:39:57Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M3 fresh reminder audit: five tool-use turns, auditor submission and verified closure; no prose ending or reminder, so the witnessed interruption is unexercised.",
+      "result": {
+        "path": ".",
+        "files": 67,
+        "sha256": "d839f40407441b796fcd3705507bcf3a042aaed2b90bb61a31cee8a60815d022"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m3-live-reminder-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the unexercised interruption, the second live observation of the M1 direct-inadequate input and both reviews for the M3 disposition and fixture selection.",
+        "until": "M3 has a reviewed outcome or explicit disposition and no remaining inspection purpose needs these originals."
+      }
+    },
+    {
+      "id": "readiness-m3-01",
+      "kind": "experiment",
+      "date": "2026-11-14T15:48:29Z",
+      "date_from": "RESULT.json field finished_at",
+      "summary": "M3 commission: one of four approved placements ran; interruption and continuation unexercised; retained M2 audit not started; gate, approval and freeze reviews.",
+      "result": {
+        "path": ".",
+        "files": 37,
+        "sha256": "1e61c6e6622801a7bab4b903d8d583726caf35f0760cd266d5391b080479a1c7"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m3-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret the M3 outcome against its exact approval, packets, cost assessment and gate; source of the scripts and findings for any further continuation commission.",
+        "until": "M3 has an explicit disposition and no further commission needs these records or scripts."
+      }
     }
   ]
 }

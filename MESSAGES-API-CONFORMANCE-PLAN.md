@@ -7,9 +7,11 @@ owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 [QUESTION-FORMS](docs/QUESTION-FORMS.md) owns the three implemented forms.
 Answer usefulness remains the manager's judgment.
 
-Remaining apparatus work covers controlled interruption, bounded continuation,
-complete multi-placement export/review, actual provider compaction and the full
-per-model gate. No live launch is authorized by this plan.
+Controlled interruption, bounded continuation and multi-placement export and
+review are implemented and rehearsed on Linux with a fake provider; none has a
+live observation. Remaining apparatus work covers abrupt process death, the
+failure controls and interruption timings not yet rehearsed, actual provider
+compaction and the full per-model gate. No live launch is authorized by this plan.
 
 ## Working inputs
 
@@ -49,12 +51,17 @@ to ACCEPTANCE coverage belongs to the principal.
 
 ## 2. Preserve evidence through interruption and later actions
 
-- [ ] Rehearse on Linux the continuation path the [apparatus](apparatus/c10/README.md)
-  now implements: a graceful interruption at a witnessed log record, one
-  separately bound placement on the same reference and exact writer,
-  cumulative accounting, and export and review across placements. Include
+- [ ] Rehearse on Linux what the retained continuation rehearsal did not reach:
   delivery of current apparatus source into a container created by earlier
-  source. Native runs are iteration only.
+  source, and an interruption that meets each of `not_captured`,
+  `captured_not_written` and `answered`. Its four signalled controls all met
+  `written_unanswered`, and its container held source of the same commit. The
+  readiness plan names that rehearsal and what it showed. Native runs are
+  iteration only.
+- [ ] Record the observed end of the process group for every placement. Today
+  that observation is written only after a signal; an unsignalled placement's
+  stopping rests on the launcher reaping the run command and on the service's
+  own status.
 - [ ] Support abrupt process death. A killed placement has no `run_ended` until
   the next `run` reconciles it as `process_gone`; today the export guard
   withholds and the reviewer leaves that placement unassessed. Record process

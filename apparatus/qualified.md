@@ -672,3 +672,17 @@ C4 reviewed: short audit covered 16 of 48 cases and long audit covered all 48; b
 
 - Evidence: `.scratch/readiness-c4-01/.` (recorded 2026-11-14T01:27:57Z).
 - Retained purpose: Inspect both original encounters and the authored content inconsistency; ground near-limit/partial-submission, required-field recovery and submit-to-stop/partial-usage fixtures.; until Selected fixture and accounting reviews finish, and no unresolved finding needs the original encounters.
+
+### readiness-m3-live-reminder-01
+
+M3 fresh reminder audit: five tool-use turns, auditor submission and verified closure; no prose ending or reminder, so the witnessed interruption is unexercised.
+
+- Evidence: `.scratch/readiness-m3-live-reminder-01/.` (recorded 2026-11-14T15:39:57Z).
+- Retained purpose: Inspect the unexercised interruption, the second live observation of the M1 direct-inadequate input and both reviews for the M3 disposition and fixture selection.; until M3 has a reviewed outcome or explicit disposition and no remaining inspection purpose needs these originals.
+
+### readiness-m3-01
+
+M3 commission: one of four approved placements ran; interruption and continuation unexercised; retained M2 audit not started; gate, approval and freeze reviews.
+
+- Evidence: `.scratch/readiness-m3-01/.` (recorded 2026-11-14T15:48:29Z).
+- Retained purpose: Interpret the M3 outcome against its exact approval, packets, cost assessment and gate; source of the scripts and findings for any further continuation commission.; until M3 has an explicit disposition and no further commission needs these records or scripts.
