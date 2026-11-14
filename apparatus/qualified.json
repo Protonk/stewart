@@ -1958,20 +1958,20 @@
     {
       "id": "readiness-c4-01",
       "kind": "experiment",
-      "date": "2026-11-14T00:54:42Z",
-      "date_from": "MANIFEST.json field at",
-      "summary": "Prepared, unapproved C4 continuation comparison: two identical 48-item inquiries, three starts each at 60/240 seconds, at most six auth/model invocations and 900 placement seconds. No audit accepted or Claude invocation authorized.",
+      "date": "2026-11-14T01:01:34Z",
+      "date_from": "AUTHORIZATION.json field at",
+      "summary": "Approved C4 continuation comparison: two identical 48-item inquiries, three starts each at 60/240 seconds, at most six auth/model invocations and 900 placement seconds. Both audits unaccepted and unstarted at approval; short placement 1 is next.",
       "result": {
-        "path": "MANIFEST.json",
-        "sha256": "79fc8eb14052e43a9f1656eb9e2b3472df185dd4a84c73855eb8ed67f2ce3d7c"
+        "path": "AUTHORIZATION.json",
+        "sha256": "30bd66ed4cef617aa802f1c05e9f76416dce0cf776a056b59c40d4b61fa77531"
       },
       "evidence": {
         "path": ".scratch/readiness-c4-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Review and, only after explicit principal approval, execute the two exactly bound C4 audits and eligible deadline continuations.",
-        "until": "C4 is abandoned or completed and its comparison and fixture review no longer require this proposal binding."
+        "reason": "Retain the explicit C4 authority, its bound proposal and exact packets through execution, comparison and fixture review.",
+        "until": "C4 is abandoned or completed and its comparison and fixture review no longer require these authority and input bindings."
       }
     }
   ]

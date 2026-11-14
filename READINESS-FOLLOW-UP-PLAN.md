@@ -350,12 +350,16 @@ the principal; ordinary prerequisite work needs no additional planning approval.
 
 ### Execution and review
 
-**C4 is prepared and awaits approval.** The frozen commission is
+**C4 is approved; the first short placement is next.** The frozen commission is
 `.scratch/readiness-c4-01/MANIFEST.json`, SHA-256
 `79fc8eb14052e43a9f1656eb9e2b3472df185dd4a84c73855eb8ed67f2ce3d7c`.
 Its [retained packet](apparatus/qualified.md#readiness-c4-01) binds both local
-preparations, exact inputs, costs, profile and reviewed procedure. Neither audit
-has been accepted or launched; preparation gives no spending authority.
+preparations, exact inputs, costs, profile and reviewed procedure. The principal's
+“I approve C4” is recorded separately in
+`.scratch/readiness-c4-01/AUTHORIZATION.json`, with the approved manifest and both
+packet digests. Fresh status and binding checks show both audits remain unaccepted
+and unstarted. Issue only the short audit's first placement command, then review
+its retained outcome before another start.
 
 Both audits ask how well 48 invented handoff claims are supported by their
 paired records. They receive the same question body and 97 material files,
