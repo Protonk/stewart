@@ -666,16 +666,9 @@ Native C3 confirms large-page substitution: all 3 MCP payloads exact; 49,152-byt
 - Evidence: `.scratch/readiness-c3-01/.` (recorded 2026-11-13T23:56:22Z).
 - Retained purpose: Inspect confirmed page substitution against short control and second full-page comparison; retain exact sources and both stdout representations for stage-three repair and regression fixtures.; until Page-fidelity and usage repairs and fixture reviews finish, and no unresolved finding needs these originals.
 
-### readiness-c4-procedure-02
-
-Reviewed native synthetic continuation procedure: 6 cases, 12 placements, 113 checks and 10 refusal controls passed; 24 groups stopped; 3 complete packages passed 54 checks and preserved close. No live-model or Linux qualification.
-
-- Evidence: `.scratch/readiness-c4-procedure-02/.` (recorded 2026-11-14T00:51:02Z).
-- Retained purpose: The exact frozen procedure, independent peers and retained closures support the pending C4 continuation commission.; until The first C4 live-comparison review finishes and no remaining question requires these synthetic originals.
-
 ### readiness-c4-01
 
-C4 in progress: short audit submitted a partial answer for 16 of 48 cases before its deadline and closed unchanged; 55 calls, 115 exact citations, 15 package checks, both groups stopped. Two short starts unused; live continuation unexercised. Long arm remains approved and unstarted.
+C4 reviewed: short audit covered 16 of 48 cases and long audit covered all 48; both submitted on placement 1 and closed with preserved packages and prior archives. 209 calls, one corrected required-field refusal, 466 citation checks and 30 package checks; all four groups stopped. Live continuation unexercised; final usage unknown; long summary miscounts matched receipts as 8 rather than 16. No remaining C4 authority or Linux qualification.
 
-- Evidence: `.scratch/readiness-c4-01/short` (recorded 2026-11-14T01:10:19Z).
-- Retained purpose: Inspect the original short-deadline encounter against the pending long audit and preserve near-limit, early-submission and partial-usage captures for C4 review.; until C4 comparison and selected fixture/accounting reviews finish, and no unresolved finding needs these originals.
+- Evidence: `.scratch/readiness-c4-01/.` (recorded 2026-11-14T01:27:57Z).
+- Retained purpose: Inspect both original encounters and the authored content inconsistency; ground near-limit/partial-submission, required-field recovery and submit-to-stop/partial-usage fixtures.; until Selected fixture and accounting reviews finish, and no unresolved finding needs the original encounters.

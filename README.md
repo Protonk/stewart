@@ -85,7 +85,9 @@ has also completed native ordinary and inadequate-evidence open inquiries with
 auditor submission, verified delivery and close. Captured usage remains partial;
 a large-page comparison found that the harness substituted previews for full
 64 KiB material pages in the conversation. These limits remain unresolved, and
-the encounters do not establish broader model or platform qualification.
+live continuation remains unexercised: both audits in a two-deadline comparison
+submitted on their first placement. The encounters do not establish broader
+model or platform qualification.
 
 Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. The
 source also builds on Apple-silicon macOS, without a support or qualification

@@ -3,14 +3,16 @@
 Repair specification, implementation and test weaknesses; run bounded comparisons;
 act on their results; and transfer remaining work to its owning plans.
 
-**State: stage 1 complete; L0, M1, M2 and C1–C3 reviewed; stage 2 continues.**
+**State: stage 1 complete; L0, M1, M2 and C1–C4 reviewed; stage 2 continues.**
 M2 reproduced a thinking-only response-cap interruption in sw3z default; the
 other three placements submitted and closed. The conditional fifth arm was
 ineligible. The interrupted audit and exact writer remain retained for separately
 commissioned M3. C1 produced a reviewed supplied-surface check and profile.
 Both C2 inquiries submitted and closed with preserved packages. C3 confirmed
 that the harness substitutes previews for full 64 KiB pages; its submitted
-answer and archive are preserved and closed. M3, M4, C4 and C5 remain.
+answer and archive are preserved and closed. Both C4 audits submitted on their
+first placement and closed; live continuation was unexercised. M3, M4 and C5
+remain.
 
 | Stage | Result |
 | --- | --- |
@@ -315,6 +317,29 @@ dollar ceilings. These experiments do not qualify release models.
   final usage remains unknown. This is a completed comparison with a confirmed
   page-delivery defect, not a successful page-fidelity result. C3's single start
   is consumed; the optional token-dense page was omitted as commissioned.
+- [x] Complete C4's two-deadline comparison. The
+  [reviewed native encounters](apparatus/qualified.md#readiness-c4-01) submitted
+  on their first placement and closed with unchanged packages and prior archive
+  files. The 60-second arm recorded 16 of 48 cases and explicitly left 32
+  uncovered; the 240-second arm read and recorded all 48. Package review passed
+  30/30 checks. All four authentication/model groups stopped. Of 209 calls, 208
+  completed and one replacement omitted required `citations`; refusal preserved
+  the revision and the corrected call succeeded. All 466 citation checks passed,
+  including replaced versions. No page substitution was observed.
+- **C4 findings and disposition:** both submissions preceded their deadlines,
+  leaving live continuation unexercised and all four unused starts ineligible.
+  No C4 authority remains. One audit per deadline does not establish a causal
+  deadline effect. Neither captured a final result checkpoint; both usage
+  intervals remain unknown. Retain the short arm's near-limit notice followed
+  by explicit partial submission, the long arm's required-field recovery and
+  both submit-to-stop/partial-usage captures for stage-three fixtures. The long
+  answer's overall account says eight cases support matched receipt, but the
+  supplied rule and individual accounts support sixteen: eight matching cases
+  lack acknowledgment, a separate fact. Preserve this authored inconsistency
+  without changing the sealed answer or treating full coverage as correctness.
+  `.scratch/readiness-c4-01/COMPARISON.json` binds the authority, attributed
+  reviews, originals and closures. These native encounters do not establish
+  Linux qualification or comprehensive model conformance.
 
 ### Comparisons and proposed bounds
 
@@ -349,65 +374,6 @@ work onward. A concrete scope expansion beyond these prerequisites returns to
 the principal; ordinary prerequisite work needs no additional planning approval.
 
 ### Execution and review
-
-**C4 is approved; the first long placement is next.** The frozen commission is
-`.scratch/readiness-c4-01/MANIFEST.json`, SHA-256
-`79fc8eb14052e43a9f1656eb9e2b3472df185dd4a84c73855eb8ed67f2ce3d7c`.
-Its [retained packet](apparatus/qualified.md#readiness-c4-01) binds both local
-preparations, exact inputs, costs, profile and reviewed procedure. The principal's
-“I approve C4” is recorded separately in
-`.scratch/readiness-c4-01/AUTHORIZATION.json`, with the approved manifest and both
-packet digests. The short audit submitted and closed after its first placement:
-16 case accounts and an explicit checkpoint leave R017–R048 uncovered. Original
-capture and package review passed, both groups stopped, and close preserved the
-package and prior archive files. Its two unused starts are ineligible after the
-seal; live continuation remains unexercised and final usage remains unknown.
-`.scratch/readiness-c4-01/short/OBSERVATION.json` owns the attributed findings
-and exact verification counts.
-
-The long packet's bindings and local status were rechecked: it remains
-unaccepted and unstarted. Its original three starts of 240 seconds remain
-authorized, with no transfer of the short audit's unused time. Issue only long
-placement 1, then review its retained outcome before another start.
-
-Both audits ask how well 48 invented handoff claims are supported by their
-paired records. They receive the same question body and 97 material files,
-39,867 bytes overall, with no file larger than 1,073 bytes. The auditor records
-one cited account per case as it proceeds, inspects existing work on re-entry,
-and can submit an honest partial answer. The small files keep this comparison
-focused on continuation. No delay or forced completion of three placements is
-requested.
-
-| Audit | Deadline per placement | Maximum starts | Total placement time |
-| --- | --- | --- | --- |
-| Short | 60 seconds | 3 | 180 seconds |
-| Long | 240 seconds | 3 | 720 seconds |
-
-Run the short audit first. Review each placement before issuing another explicit
-start. Approval covers at most six service starts, six authentication checks and
-six model sessions, with 900 seconds of placement deadlines overall;
-authentication consumes that time. Existing shutdown grace follows a deadline,
-and each controller command permits 15 further seconds for return and observation.
-The profile remains C1's reviewed Claude Code 2.1.322 / `claude-haiku-5-5`, with
-default effort and the unchanged native writer and launch surface. Its requested
-200 turns and 16,000 output tokens are not independent billing ceilings.
-
-Only a reviewed, stopped `placement_deadline` interruption with open authoring
-and unused starts permits continuation. Submission, ordinary ending or the final
-deadline leaves any later slots unused. Stop the commission on authentication or
-quota rejection, enabled/used paid overage, unexpected model identity, protocol
-anomaly, uncertain effects or unresolved stopping/custody. There are no retries,
-replacement audits, model substitutions or API fallback. Prior approvals supply
-no authority for these starts.
-
-Compare preserved entries, re-entry and continuation notices, first subsequent
-calls, premature endings, and per-message snapshots versus cumulative usage
-checkpoints. Report unexercised mechanisms explicitly. After independent review,
-ordinary close is included for a verified auditor-submitted package; unsubmitted
-work remains retained for an explicit disposition. Expected incremental charge
-is zero conditional on the already-confirmed disabled-extra-usage setting;
-included subscription consumption is unknown and no paid extra usage is
-authorized. This remains a native experiment, not model or Linux qualification.
 
 - [ ] Obtain each frozen packet's approval. Commission M2/C5 explicitly as
   deliberate output-cap studies with their own bounds. Prior approval, unused

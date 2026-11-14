@@ -254,14 +254,11 @@ bounded commission; deliberate usage-limit studies need a separate commission.
   first rehearse the procedure offline. Do not rebuild completed apparatus merely
   to restart this work. The procedure freezes inputs, retains
   receipt/run/status/capture evidence and permits reviewed ordinary close.
-- [x] Rehearse individually reviewed deadline continuation, cumulative capture
-  and package reconstruction, preservation of earlier archive members and
-  per-message snapshots separate from checkpoints. The
-  [reviewed native procedure](../apparatus/qualified.md#readiness-c4-procedure-02)
-  covers final deadline, early submission, ordinary ending and refusal controls;
-  its originals remain through the first live continuation comparison. The
-  procedure guide owns execution and review rules. This supplies no live
-  authority or Linux qualification.
+  The [procedure guide](../apparatus/claude-code/README.md#native-service-comparison-procedure)
+  also owns individually reviewed continuation, cumulative capture/package
+  checks, prior archive preservation and message snapshots separate from
+  checkpoints. Its synthetic rehearsal supplies no live authority or Linux
+  qualification.
 - [x] Obtain a reviewed real supplied-surface check under its own bounded
   authority before producing an eligible real profile. The
   [reviewed native comparison](../apparatus/qualified.md#readiness-c1-01)
