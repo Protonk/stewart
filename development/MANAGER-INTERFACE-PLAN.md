@@ -11,6 +11,13 @@ retained admission of empty or insufficient materials. This is a work plan, not
 an implemented interface or permission to launch a model. Implementation follows
 the specification work below; live invocations require a fresh bounded commission.
 
+**Current state:** the manager preparation MCP, shared family/role registry,
+prospective effect inspection and returned-question member remain unimplemented.
+The native service-comparison procedure and open-inquiry profile exist. C1–C4
+have reviewed outcomes; C2/C3/C4 audits are closed. Final usage is incomplete,
+C3 exposed conversation-page substitution, and C4 did not exercise live
+continuation. Broader family, interruption and compaction trials remain open.
+
 ## Contract inventory and selected changes
 
 The owning specifications are [DESIGN](../DESIGN.md),
@@ -315,19 +322,20 @@ bounded commission; deliberate usage-limit studies need a separate commission.
   cannot qualify this harness profile, and a subscription result cannot satisfy
   the Messages API release gate.
 
-The existing surface-only draft at `.scratch/claude-code-surface-proposal-01`
+The surface-only draft at `.scratch/claude-code-surface-proposal-01`
 (commission SHA-256 `da70d69fde47507f5ebff62d27359760c33fa4959ed8b4c4aa6478acbefa9151`)
-remains an unapproved draft: three authentication invocations up to 30 seconds
-and three model sessions up to 120 seconds, 450 seconds overall, using the earlier
-probe's proposed `claude-haiku-5-5` and open inquiry. Availability is unprobed; no
-start, reservation or observation exists. Revalidate its scope and pins before
-offering it for approval; a changed surface needs a fresh packet. It commissions
-neither the actual service nor the family matrix.
+is superseded by the completed C1 commission and reviewed profile at
+`.scratch/readiness-c1-01/profile.json`. The old draft was never approved and is
+not a pending launch. Recheck the current profile's bindings for another service
+commission; a changed surface needs its own newly reviewed check. No C1–C4
+launch authority remains, and the family matrix is not commissioned.
 
 ### Remaining offline runtime coverage and evidence review
 
 - [ ] Add the still-missing second-relay-connection refusal within a live
-  placement, a hook call after admission stops, and the near-limit notice.
+  placement and a hook call after admission stops. Ground a near-limit notice
+  regression in C4's captured short placement; that notice is now observed in a
+  real encounter but the standalone driver's comparison remains absent.
   `run` re-verification of a pinned surface currently has unit coverage only;
   design a suitable independently bound comparison or explicitly retain that
   limitation. Share common behavior cases only where driver independence permits.
@@ -341,7 +349,7 @@ neither the actual service nor the family matrix.
 
 | Evidence to inspect | Scope, unresolved fact and release condition |
 | --- | --- |
-| `.scratch/acceptance-environment-observer-01`; [qualification index](../apparatus/qualified.md) | Current recorded Linux synthetic acceptance at `b4ccba4`: each architecture passed 24 runtime cases, 9,892 checks and 73 controls, plus 205 self-tests, with no failures or skips. This binds the recorded source/binaries only; preserve the index-owned evidence under normal retention. |
+| `.scratch/acceptance-readiness-02`; [qualification index](../apparatus/qualified.md#acceptance-readiness-02) | Current recorded Linux acceptance is source `0fdac94`, on both architectures. Later native procedure changes are not qualified by this run. Its ARM writer is pinned for the open M2 audit. The earlier environment-observer run is superseded as the current baseline. |
 | `.tmp/service-witness/host.mboAA5`, `host-review.log`; `/private/tmp/stewart-service-witness-01` | Latest native complete-package rehearsal: 2 runtime cases, 865 checks, zero runtime control cases; 32 separate self-test controls. Six host commands passed without timeouts/skips, source unchanged, outer groups absent. Review verified 283 root evidence members and 9 package snapshots/72 members. Retain through first service-comparison review; synthetic continuation is exit-after-record. |
 | `.tmp/service-witness/independent-self-test-final.log`, `independent-evidence-review-final.log`, `prior-linux-positive-review-02.log`, `prior-linux-positive-control-02` | Independent witness controls and launch-free comparison to copied Linux evidence; fixed synthetic expectations cannot judge live answers. The first local comparison omitted `actor`; its setup-error log/copy remain at `prior-linux-positive-review.log` and `prior-linux-positive-control`. No original receipt changed. Retain through service-witness review. |
 | `.tmp/surface-controller/host.gt15l7`, `host-02-review.log`; `.scratch/claude-code-observer-rehearsal-03`, `.scratch/claude-code-controller-rehearsal-01` | Native synthetic controller/observer review passed all 14 commands; controller 13 and observer 58 checks, no failures/skips. Five listener controls and normal/bad-init/wrong-auth controller cases passed; failures prevented effects and later starts, all launched groups absent. No eligible real check/profile was emitted. Retain through first real surface review. |
@@ -367,6 +375,12 @@ External witnesses retained for that earlier implementation review are
 `/private/tmp/scc6`. Review their selected purpose before disposal; this planning
 consolidation does not delete or revise any evidence.
 
+The first real surface review, first service-comparison review and C4 procedure
+review have finished. Their reproducible rehearsal-only retention conditions no
+longer require keeping the older working trees. The two native probes still
+need a timestamp-gap/index disposition, and unresolved failure reviews remain
+tasks rather than inferred completions.
+
 ## Verification and completion
 
 Use [DEVELOPMENT's check table](DEVELOPMENT.md#what-to-run-for-what-you-changed)
@@ -375,7 +389,8 @@ plan edits need the link check. Changed specifications/pinned texts, service,
 driver and apparatus need their respective named checks; new source is not
 qualified by an older suite. Record exact counts, failures, skips and unexercised
 mechanisms. Fix unavailable-loopback reporting so an actual skip cannot be
-reported as a passing test.
+reported as a passing test when adding tests; the existing reporting repair and
+partial-skip controls are complete.
 
 The manager interface is ready when a manager can construct a conforming
 commission through ordinary files; optionally obtain type-specific guidance,

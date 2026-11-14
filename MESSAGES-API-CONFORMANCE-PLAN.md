@@ -12,6 +12,13 @@ controlled interruption, actual provider compaction and a reviewed result for
 every required run. A model is supported only after its whole gate passes.
 No further model calls are selected or authorized by this plan.
 
+**Current state:** the small-commission path has reviewed M1/M2 encounters;
+bounded continuation, witnessed interruption, multi-placement export/review and
+actual compaction still need apparatus work and Linux rehearsal. The retained
+M2 audit is the immediate continuation input. No M3 packet is frozen and no
+continuation is authorized. These encounters do not complete the per-model
+release gate.
+
 ## Working inputs
 
 The [apparatus instructions](apparatus/c10/README.md) own the implemented packet,

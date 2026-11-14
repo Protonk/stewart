@@ -5,6 +5,12 @@ own their task's decisions and execution details. Product behavior is specified
 in [CONTRACTS.md](CONTRACTS.md) and [docs/INTERFACE.md](docs/INTERFACE.md);
 [ACCEPTANCE.md](ACCEPTANCE.md) defines the evidence owed.
 
+**Current state:** readiness stage 1 and L0, M1, M2, C1–C4 are reviewed; M3
+preparation is next, followed by the remaining comparisons, repairs and
+reassessment. M3, M4 and C5 have no live-start authority. Manager-interface
+implementation, full Messages model conformance, native WSL2 qualification and
+the public release remain outstanding.
+
 ## Work order
 
 | Stage | Work | Working document |
@@ -42,10 +48,12 @@ runtime and release obligations follow the routing above.
    historical cleanup is not an entry requirement.
 2. **Keep the live-testing handoff explicit.** The
    [subscription testing track](development/MANAGER-INTERFACE-PLAN.md#additional-claude-code-subscription-testing)
-   owns the unapproved surface packet, real-profile prerequisites and missing
-   service procedures. Leave that packet unstarted and revalidate its scope and
-   bindings when taking up that track. A reviewed real-service outcome is needed
-   for its claims, not to open manager-interface work.
+   uses the implemented service procedure and reviewed open-inquiry profile.
+   The earlier surface draft is superseded; no C1–C4 start remains authorized.
+   Revalidate current profile and procedure bindings for each new commission.
+   The reviewed native encounters leave final usage, page fidelity and live
+   continuation unresolved; broader trials remain separately bounded. Those
+   results do not qualify the manager interface or the Messages release gate.
 3. **Enter the existing plan at stage 1:**
    [specify the shared contracts](development/MANAGER-INTERFACE-PLAN.md#1-specify-the-shared-commissioning-and-documentary-contracts).
    Start with the CLI walk-through and rule/diagnostic inventory, then freeze the

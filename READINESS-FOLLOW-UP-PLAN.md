@@ -14,6 +14,13 @@ answer and archive are preserved and closed. Both C4 audits submitted on their
 first placement and closed; live continuation was unexercised. M3, M4 and C5
 remain.
 
+**Next: prepare M3.** No M3 packet is frozen and no M3, M4 or C5 live start is
+authorized. M3 needs the Messages apparatus extended and rehearsed for bounded
+continuation, a witnessed interruption after a reminder, and complete export
+and review across placements. Its retained M2 audit must keep its exact writer;
+the sealed M1 audit supplies inputs only. Stage-three repairs and fixture review
+remain open, including page delivery and incomplete final usage.
+
 | Stage | Result |
 | --- | --- |
 | [1. Fixes now](#1-fixes-now) | Consistent specifications and behavior, clearer question documentation, and corrected tests and apparatus. |
@@ -194,8 +201,9 @@ These are fake-provider results, with no live-access or model-conformance claim.
 
 Recheck qualification and launcher bindings before freezing any live packet.
 The frozen runtime controller must carry the independent
-`fixture_expectations.py` source. Retain the native controller evidence in
-`.scratch/readiness-native-jbpx9el6/` for C1 preparation. L0's retained comparison
+`fixture_expectations.py` source. The native controller evidence in
+`.scratch/readiness-native-jbpx9el6/` served C1 preparation; that preparation and
+the real surface review are complete. L0's retained comparison
 is `.scratch/readiness-l0-01/RESULT.json`; its original inputs remain at the
 paths it records. Apply DEVELOPMENT's retention rules to
 completed repair evidence; historical counts and receipts remain unchanged.
