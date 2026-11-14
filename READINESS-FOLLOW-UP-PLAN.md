@@ -43,8 +43,9 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   filesystem of the retained container that record names. Host exports are
   copies, and a copied archive refuses mutation ([INTERFACE 4.9](docs/INTERFACE.md#49-store-marker)).
   Keep that container and its writer mount unchanged. A disposable container
-  with the same image and options kept its inodes, birth times, member bytes
-  and bind-mounted bytes across `container stop` and `start`
+  from the same image, with the launcher's resource options, no network and one
+  read-only mount, kept its inodes, birth times, member bytes and bind-mounted
+  bytes across `container stop` and `start`
   (`.scratch/readiness-m3-persistence-01`); a host restart is unobserved.
   State that exposure in the packet. A continuation is a new conversation
   ([INTERFACE 6.7](docs/INTERFACE.md#67-continuation)). The first placement
