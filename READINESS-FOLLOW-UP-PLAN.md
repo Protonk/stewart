@@ -31,6 +31,14 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   comparisons below. Specify allocation, exact inputs/writers/models, deadlines,
   cumulative token/turn allowances, cost estimate, campaign budget, stopping and
   permitted custody actions before asking for approval.
+  The draft is `.scratch/readiness-m3-01`: the two packets that can exist before
+  any placement, the cost assessment, and a gate and runner (`m3.py`) with
+  offline controls. `freeze.py` there writes `MANIFEST.json` only from a retained
+  passing rehearsal; until then nothing is approvable. Packet bindings name the
+  commit and apparatus digest, so bind again after any commit or apparatus
+  repair, and commit nothing between the freeze and the last placement.
+  Each later placement's packet is written from the preceding reviewed export
+  and needs the principal to name its own digest.
 - [ ] Continue the open sw3z-default audit identified by
   `.scratch/readiness-m2-live-sw3z-default-01/REVIEW.json`, using its exact retained
   qualified writer and remaining cumulative allowances. Examine the first
@@ -44,7 +52,11 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   with the same image and options kept its inodes, birth times, member bytes
   and bind-mounted bytes across `container stop` and `start`
   (`.scratch/readiness-m3-persistence-01`); a host restart is unobserved.
-  State that exposure in the packet.
+  State that exposure in the packet. Its last prompt was 76,034 tokens before a
+  16,000-token thinking block, and the summary trigger is 150,000
+  ([INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses)): a continuation may
+  compact, which the reviewer does not cover. Treat that as an incomplete review
+  that ends this arm, not as grounds for a wider claim.
 - [ ] Use the exact question and sole supplied report identified by
   `.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json` for a fresh
   12-turn reminder audit. The source audit is sealed and cannot continue.
