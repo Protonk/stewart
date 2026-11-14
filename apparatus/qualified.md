@@ -665,3 +665,10 @@ Native C3 confirms large-page substitution: all 3 MCP payloads exact; 49,152-byt
 
 - Evidence: `.scratch/readiness-c3-01/.` (recorded 2026-11-13T23:56:22Z).
 - Retained purpose: Inspect confirmed page substitution against short control and second full-page comparison; retain exact sources and both stdout representations for stage-three repair and regression fixtures.; until Page-fidelity and usage repairs and fixture reviews finish, and no unresolved finding needs these originals.
+
+### readiness-c4-procedure-02
+
+Reviewed native synthetic continuation procedure: 6 cases, 12 placements, 113 checks and 10 refusal controls passed; 24 groups stopped; 3 complete packages passed 54 checks and preserved close. No live-model or Linux qualification.
+
+- Evidence: `.scratch/readiness-c4-procedure-02/.` (recorded 2026-11-14T00:51:02Z).
+- Retained purpose: The exact frozen procedure, independent peers and retained closures support the pending C4 continuation commission.; until The first C4 live-comparison review finishes and no remaining question requires these synthetic originals.

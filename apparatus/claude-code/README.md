@@ -166,14 +166,15 @@ review records are labelled parser fixtures, not live evidence.
 
 ## Native service comparison procedure
 
-`service_check.py` freezes one already-prepared open-inquiry audit, using a
-reviewed profile, for a separately authorized service placement. Preparation
-launches nothing. It copies the exact input witness, preparation, arrangement
-and controller sources; binds their bytes, the original writer, profile,
-harness executable and Python interpreter; and records one service start,
-one authentication invocation and at most one model session. The placement
-deadline includes authentication. The procedure supports at most 600 seconds
-and one placement per packet; these are experiment bounds, not product limits.
+`service_check.py` freezes one already-prepared open-inquiry audit with a
+reviewed profile. Its version-2 commission binds exact input, preparation,
+arrangement and source bytes, the original writer, profile, harness executable
+and Python interpreter. Preparation launches nothing. Experiment bounds are one
+to three service starts, at most 600 seconds per placement and 900 seconds per
+packet. Each start permits one authentication check and at most one model
+session; the placement deadline includes authentication. These are apparatus
+bounds, not product limits. The current controller refuses superseded packet
+schemas; retained historical packets keep their original frozen source.
 
 ```sh
 python3 -I -B apparatus/claude-code/service_check.py prepare \
@@ -181,57 +182,71 @@ python3 -I -B apparatus/claude-code/service_check.py prepare \
   --reference stw1:... --folder /absolute/submission --writer /absolute/stewart
 ```
 
-Only after the principal approves that exact commission, use its bound Python
+Only after the principal approves the exact commission, use its bound Python
 and frozen controller. The extra-usage flag conveys the account-setting
 assertion; it does not verify billing or change a setting.
 
 ```sh
 ABS_PYTHON -I -B /absolute/fresh-packet/sources/claude-code/service_check.py run \
-  --packet /absolute/fresh-packet --approved-commission EXACT_APPROVED_SHA256 \
-  --extra-usage-disabled
+  --packet /absolute/fresh-packet --placement 1 \
+  --approved-commission EXACT_APPROVED_SHA256 --extra-usage-disabled
 ```
 
-The exclusive execution directory and start record make a packet one-use even
-when acceptance or launch fails. Commissioning and exact receipt readbacks
-precede the run. There is no wrapper retry, continuation, automatic close or
-automatic next audit. Each command retains its argument vector, environment,
-stdout, stderr and direct-child stopping result. The outer run deadline allows
-15 seconds beyond the placement deadline for return and observation; it is not
-additional model time. A failed or uncertain outcome requires review, never a
-repeat of the same command.
+Each exclusive `placements/N` directory consumes that numbered attempt even if
+acceptance or launch fails. Commissioning precedes the first run; exact receipt
+readbacks precede every run. There is no automatic retry, continuation, close or
+next audit. Each command retains its argv, environment, stdout, stderr and
+process stopping observations. The run command's observation deadline adds
+15 seconds for return and observation beyond the service placement deadline;
+it grants no additional model time. Failed or uncertain work requires review.
 
-After run returns, the procedure reads service-owned auth/model group records
-and independently probes their absence. Missing, present or unknown groups
-prevent further mutations. Once stopping is established, it keeps private
-archive and package snapshots outside the archive, with complete inventories,
-and default, detailed and JSON status. These are local private evidence copies,
-not a product export or an independent capture of provider traffic. No raw
-authentication output is read. Original service records stay unchanged.
+After return, the procedure reads service-owned auth/model group identities and
+independently probes absence. Missing, present or unknown groups block further
+mutation. Once stopping is established, it retains complete archive and package
+snapshots outside the archive and default, detailed and JSON status. These
+private copies preserve service-owned provenance; they are not product exports
+or independent provider captures. No raw authentication output is read.
 
-`review --packet PATH`, using the frozen controller, checks the execution
-inventory, correlates captured MCP calls and replies with service entry records,
-checks payloads and citations against the outside input witness, and reconstructs
-the full delivered package through the independent package witness. A shared
-omission in service-owned captures can escape this correlation. The reviewer
-does not grade conclusions, establish exhaustive provider capture, or turn an
-unsubmitted ending into a submission. Original streams, startup, usage and stop
-causes still require independent human/agent review.
+Use the frozen controller's `review --packet PATH --placement N`. It verifies
+the complete execution inventory, correlates each placement's captured MCP calls
+and replies with the cumulative entry ledger, and checks payloads and citations
+against outside inputs. It reconstructs a submitted package with the independent
+package witness. Reviews keep assistant frames and message usage snapshots
+separate from result reports, without summing overlapping snapshots. A shared
+omission in service-owned records can escape correlation. Original streams,
+startup, usage, notice delivery and stopping still need independent review.
 
-After that review, `close --packet PATH --reviewed-review REVIEW_SHA256` permits
-ordinary close only for a reviewed auditor-submitted, verified package. It
-revalidates the exact commission, complete execution evidence and current
-stopping first, then preserves another package/archive snapshot. Unsubmitted
-or uncertain cases remain retained for an explicit disposition. No close
-operation launches Claude.
+A later explicit `run` also requires `--reviewed-review SHA256`, naming the
+preceding `placements/N/review/REVIEW.json`. The procedure revalidates that review
+and every earlier execution, then checks current status, stopping and archive
+bytes. Only an open audit interrupted by its commissioned placement deadline, with
+unused starts, can continue. Other interruptions need a separate disposition. Ended,
+sealed, closed, damaged or uncertain work cannot. Every subsequent capture must
+preserve earlier archive members. A failed attempt cannot be skipped or repeated.
+
+After reviewing an auditor-submitted package, `close --packet PATH --placement N
+--reviewed-review SHA256` permits ordinary close. It rechecks the latest attempt,
+commission, evidence, current stopping and archive/package bytes, then preserves
+new snapshots and verifies all earlier members remain unchanged. Unsubmitted
+cases remain retained for explicit disposition. Close launches no model.
 
 For offline preparation use `prepare-rehearsal --output PATH --writer BINARY
---work FRESH_ABSOLUTE_PATH`. This accepts only the existing synthetic peer and
-prepares positive, bad-initialization and fresh-session invariance packets.
-Positive cases include a UTF-8 artifact. Use each frozen controller's
-`run-rehearsal`, followed by `review`; the positive cases also exercise `close`.
-Keep the failed-initialization audit and its original captures as the negative
-control. Rehearsal mode refuses real packets or live authority, and supplies no
-eligible check, profile, real-service evidence or Linux qualification.
+--work FRESH_ABSOLUTE_PATH`. Six synthetic comparisons exercise early submission,
+bad initialization, three-placement deadline continuation and its invariance,
+the last allowed deadline, and ordinary unsubmitted ending. The continuing peer
+keeps independent per-session witnesses and reads prior entries before adding
+work. Its single result checkpoint and overlapping assistant snapshots distinguish
+cumulative accounting from per-message reports. It never rewrites the scenario
+between starts.
+
+Run the positive packet's frozen controller with `rehearse --suite PATH
+--rehearsal-sha256 SHA256`, binding the prepared `REHEARSAL.json`. This one-use
+native runner accepts only synthetic packets. It exercises explicit run/review
+steps, bad-review and skipped-start controls, refusal after seal/ending/exhaustion,
+and reviewed close with unchanged packages. It retains unsubmitted controls and
+copies the original peer witnesses for independent review. It launches no real
+Claude process and establishes neither live authority nor Linux qualification.
+
 
 ## Bounded invocation library
 

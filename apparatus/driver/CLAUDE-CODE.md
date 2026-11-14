@@ -214,6 +214,50 @@ specified environment, an injected `LC_CTYPE=C.UTF-8`, a changed `LANG`, an extr
 variable and a repeated normal launch. They retain raw and interpreted snapshots
 and report their differences without requiring a platform to change its locale.
 
+The offline service controller can also supply an immutable scenario with mode
+`continued-deadline` or `continued-limit`. Each requires `continued_accounts`,
+three distinct nonblank strings of at most 200 UTF-8 bytes, and the existing
+base `session` identifier. `continued-deadline` additionally requires
+`utf8_artifact: {label, text}`. Use three reviewed placements with the same
+scenario bytes; neither mode starts another placement itself.
+
+Only model invocations claim `model-start-0001.json` through
+`model-start-0003.json`, using exclusive creation. Authentication invocations do
+not consume an ordinal. Each claim binds the scenario digest, PID, process group
+and fresh session ID `<session>-placement-000N`. A fourth model invocation refuses
+before reading input or starting its MCP peer. `model-session-000N.jsonl` retains
+that session's events separately; the shared `harness.jsonl` remains available.
+
+Before adding work, every placement checks its re-entry revision, current
+selection and prior receipts. Later placements read each earlier account through
+its current handle and compare the exact bytes with the supplied strings. They
+also witness the initial question and pinned continuation notice. Starts one,
+two and three each add their distinct account, yielding `e1`, `e2`, `e3`, all
+version one, at revisions one, two and three. The first two then remain alive
+for Stewart's actual deadline. On the third start, `continued-deadline` adds the
+UTF-8 artifact as `e4` at revision four and submits that cumulative selection.
+`continued-limit` remains alive after the third account, so the final deadline
+must end authoring with `limit_reached` and no seal.
+
+Only the first placement emits a valid main-loop result: two harness turns,
+11 input tokens, 120 cache-creation input tokens, 300 cache-read input tokens and
+40 output tokens. It consumes the single pinned reminder, then emits an
+assistant snapshot. All three placements emit two overlapping assistant snapshots
+with the same message ID: output tokens zero, then that placement's
+`CONTINUED_ASSISTANT_USAGE` count, with unchanged input counts. These partial observations must not be added to the
+main-loop result. Subsequent placements emit no result, avoiding an ordinary
+ending after the audit-wide reminder has been used. After each stop, the expected
+reported-placement count remains one and the unknown-interval count is one,
+two, then three. The provider completeness remains unverified. A six-second
+placement timeout exercises the deadline; native evidence must establish the
+actual ending and group absence before another start.
+
+The self-test preserves three-start fake-peer sequences, unchanged scenario and
+prior-session witnesses, and controls for missing/malformed re-entry, changed
+prior account bytes and a fourth model invocation. Its own controller terminates
+the waiting fake processes; that sequencing test does not establish Stewart's
+deadline enforcement. Its retained evidence path is printed with the self-test.
+
 Not exercised: the internal waiting state or queue count/byte overflow;
 `run`'s own re-verification of a pinned surface, which has no
 black-box firing control because one binary cannot hold an arrangement that

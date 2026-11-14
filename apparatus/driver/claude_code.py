@@ -102,6 +102,12 @@ SECOND_RELAY = "A note attempted through a second relay after the first was lost
 # A fresh session's series; lower than the first session's on purpose.
 SECOND_SESSION = {"num_turns": 1, "usage": {"input_tokens": 5, "cache_creation_input_tokens": 0,
                                             "cache_read_input_tokens": 210, "output_tokens": 9}}
+CONTINUED_MODES = {"continued-deadline", "continued-limit"}
+CONTINUED_ASSISTANT_USAGE = (
+    {"input_tokens": 101, "cache_creation_input_tokens": 1001, "cache_read_input_tokens": 10001, "output_tokens": 41},
+    {"input_tokens": 202, "cache_creation_input_tokens": 2002, "cache_read_input_tokens": 20002, "output_tokens": 82},
+    {"input_tokens": 303, "cache_creation_input_tokens": 3003, "cache_read_input_tokens": 30003, "output_tokens": 123},
+)
 RACES = 6
 
 
@@ -2521,9 +2527,70 @@ class Driver:
         return 1 if report["counts"]["failed"] else 0
 
 
+def claim_continued_session(scenario, scenario_raw):
+    """Claim one of three model starts without modifying the scenario or old claims."""
+    accounts = scenario.get("continued_accounts")
+    if (not isinstance(accounts, list) or len(accounts) != 3
+            or any(not isinstance(text, str) or not text.strip() or len(text.encode("utf-8")) > 200 for text in accounts)
+            or len(set(accounts)) != 3):
+        raise ValueError("continued_accounts must contain three distinct nonblank texts of at most 200 UTF-8 bytes")
+    if scenario["mode"] == "continued-deadline":
+        artifact = scenario.get("utf8_artifact")
+        if (not isinstance(artifact, dict) or set(artifact) != {"label", "text"}
+                or not all(isinstance(artifact[key], str) for key in artifact) or not artifact["label"]):
+            raise ValueError("continued-deadline requires utf8_artifact with label and text")
+    for ordinal in range(1, 4):
+        path = Path(scenario["witness"]) / ("model-start-%04d.json" % ordinal)
+        try:
+            stream = path.open("xb")
+        except FileExistsError:
+            continue
+        session = scenario["session"] + "-placement-%04d" % ordinal
+        with stream:
+            stream.write(compact({"ordinal": ordinal, "session": session, "mode": scenario["mode"],
+                "pid": os.getpid(), "group": os.getpgrp(), "scenario_sha256": sha(scenario_raw),
+                "monotonic_ns": time.monotonic_ns()}) + b"\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        return ordinal, session
+    raise ValueError("three synthetic model starts are already claimed; no fourth placement")
+
+
+def continued_reentry_handles(reply, ordinal, accounts):
+    """Check independently expected prior work before this placement may add anything."""
+    if not isinstance(reply, dict):
+        raise ValueError("continued re-entry is not a reply object")
+    data = reply.get("data")
+    prior = ordinal - 1
+    if (reply.get("outcome") != "completed" or not isinstance(data, dict)
+            or data.get("run") != {"number": ordinal, "continuing": ordinal > 1}
+            or data.get("revision") != prior or data.get("authoring") != {"state": "open", "ended_by": None}
+            or data.get("seal") != {"state": "absent", "actor": None}
+            or data.get("page") != {"bound_revision": prior, "returned": prior, "total": prior, "complete": True}
+            or not isinstance(data.get("entries"), list) or len(data["entries"]) != prior
+            or not isinstance(data.get("receipts"), list) or len(data["receipts"]) != prior):
+        raise ValueError("continued re-entry does not describe the expected prior selection")
+    handles = []
+    for number, (entry, text) in enumerate(zip(data["entries"], accounts), 1):
+        expected = {"id": "e%d" % number, "kind": "record_account", "label": "", "encoding": None,
+                    "size": len(text.encode("utf-8")), "preview": text, "preview_complete": True, "problem": None}
+        if (not isinstance(entry, dict) or any(entry.get(key) != value for key, value in expected.items())
+                or not isinstance(entry.get("entry"), str)
+                or not re.fullmatch(r"e%d\.v1\.[a-z2-7]{6}" % number, entry.get("entry", ""))):
+            raise ValueError("continued re-entry changed or omitted prior account e%d" % number)
+        handles.append(entry["entry"])
+    for number, receipt in zip(range(prior, 0, -1), data["receipts"]):
+        expected = {"run": number, "tool": "record_account", "action": "add", "target": None,
+                    "entry": handles[number - 1], "revision": number}
+        if not isinstance(receipt, dict) or any(receipt.get(key) != value for key, value in expected.items()):
+            raise ValueError("continued re-entry changed or omitted prior receipt %d" % number)
+    return handles
+
+
 def synthetic_harness(scenario_path, environment_path, argv):
     """Synthetic executable only: no provider or real harness is ever invoked."""
-    scenario = strict_loads(Path(scenario_path).read_bytes())
+    scenario_raw = Path(scenario_path).read_bytes()
+    scenario = strict_loads(scenario_raw)
     witness = Path(scenario["witness"])
     environment_path = Path(environment_path)
     if environment_path.parent != witness:
@@ -2531,11 +2598,15 @@ def synthetic_harness(scenario_path, environment_path, argv):
     environment_raw = environment_path.read_bytes()
     initial_environment = environment_snapshot(environment_raw)
     event_lock = threading.Lock()
+    session_events = None
+    ordinal = None
 
     def event(kind, **data):
         with event_lock:
-            with open(witness / "harness.jsonl", "ab") as stream:
-                stream.write(compact({"event": kind, "pid": os.getpid(), "monotonic_ns": time.monotonic_ns(), **data}) + b"\n")
+            raw = compact({"event": kind, "pid": os.getpid(), "monotonic_ns": time.monotonic_ns(), **data}) + b"\n"
+            for path in [witness / "harness.jsonl"] + ([session_events] if session_events else []):
+                with open(path, "ab") as stream:
+                    stream.write(raw)
 
     with open(scenario["marker"], "ab") as stream:
         stream.write(compact(argv) + b"\n")
@@ -2552,6 +2623,12 @@ def synthetic_harness(scenario_path, environment_path, argv):
     input_thread = None
     stop_inputs = threading.Event()
     try:
+        if scenario["mode"] in CONTINUED_MODES:
+            ordinal, scenario["session"] = claim_continued_session(scenario, scenario_raw)
+            session_events = witness / ("model-session-%04d.jsonl" % ordinal)
+            with session_events.open("xb"):
+                pass
+            launch.update(ordinal=ordinal, session=scenario["session"])
         def option(name):
             return argv[argv.index(name) + 1]
         settings = strict_loads(Path(option("--settings")).read_bytes())
@@ -2581,7 +2658,7 @@ def synthetic_harness(scenario_path, environment_path, argv):
                     incoming.put(value)
         input_thread = threading.Thread(target=read_inputs, daemon=True)
         input_thread.start()
-        incoming.get(timeout=10)
+        initial_input = incoming.get(timeout=10)
 
         def transmit(stream, raw, kind, **fields):
             # A correct receiver may stop this process as soon as it receives
@@ -2767,6 +2844,61 @@ def synthetic_harness(scenario_path, environment_path, argv):
                   "uuid": "00000000-0000-4000-8000-%012d" % serial,
                   "compact_metadata": {"trigger": "auto", "pre_tokens": 150000 + serial}})
 
+        if scenario["mode"] in CONTINUED_MODES:
+            def continued_notice(expected, kind):
+                # The six-second fixture can receive the audit's near-limit
+                # notice while waiting for the reminder or continuation.
+                near = re.escape(NEAR_LIMIT).replace(re.escape("{seconds}"), r"[0-9]+")
+                near = near.replace(re.escape("{placements}"), str(3 - ordinal))
+                deadline = time.monotonic() + 8
+                while True:
+                    notice = incoming.get(timeout=max(0.01, deadline - time.monotonic()))
+                    content = notice.get("message", {}).get("content")
+                    if content == expected:
+                        event(kind, ordinal=ordinal, value=notice)
+                        return
+                    if isinstance(content, str) and re.fullmatch(near, content):
+                        event("continued-near-limit", ordinal=ordinal, value=notice)
+                    else:
+                        raise ValueError("continued placement received an unexpected input while awaiting " + kind)
+            event("continued-initial-input", ordinal=ordinal, value=initial_input)
+            if ordinal > 1:
+                continued_notice(CONTINUATION, "continued-notice")
+            event("continued-reentry", ordinal=ordinal, reply=reentry)
+            handles = continued_reentry_handles(reentry, ordinal, scenario["continued_accounts"])
+            for number, handle in enumerate(handles, 1):
+                response = rpc("tools/call", {"name": "read", "arguments": {"source": handle}})
+                event("continued-prior-read", ordinal=ordinal, entry=handle, response=response)
+                blocks = response.get("result", {}).get("content", [])
+                core = strict_loads(blocks[0]["text"].encode()) if blocks else {}
+                data = core.get("data") or {}
+                text = blocks[1].get("text") if len(blocks) == 2 and blocks[1].get("type") == "text" else data.get("text")
+                expected = scenario["continued_accounts"][number - 1]
+                if (core.get("outcome") != "completed" or text != expected or data.get("source") != handle
+                        or data.get("kind") != "entry" or data.get("complete") is not True
+                        or data.get("size") != len(expected.encode("utf-8"))
+                        or data.get("range") != [0, len(expected.encode("utf-8"))]):
+                    raise ValueError("continued read changed or omitted prior account e%d" % number)
+            recorded = tool("record_account", {"text": scenario["continued_accounts"][ordinal - 1]})
+            event("continued-account", ordinal=ordinal, reply=recorded)
+            if (recorded.get("outcome") != "completed" or recorded.get("data", {}).get("id") != "e%d" % ordinal
+                    or recorded.get("data", {}).get("revision") != ordinal):
+                raise ValueError("continued account was not added at the expected revision")
+            if ordinal == 1:
+                turn_ended(CHECKPOINTS[0])
+                continued_notice(REMINDER, "continued-reminder")
+            for output_tokens in (0, CONTINUED_ASSISTANT_USAGE[ordinal - 1]["output_tokens"]):
+                emit({"type": "assistant", "session_id": scenario["session"], "message": {
+                    "id": "synthetic-continued-%d" % ordinal, "type": "message", "role": "assistant", "model": "<synthetic>",
+                    "content": [{"type": "text", "text": "Synthetic placement %d recorded e%d; this is not an execution finding." % (ordinal, ordinal)}],
+                    "usage": dict(CONTINUED_ASSISTANT_USAGE[ordinal - 1], output_tokens=output_tokens)}})
+            if ordinal < 3 or scenario["mode"] == "continued-limit":
+                event("continued-waiting-for-deadline", ordinal=ordinal)
+                time.sleep(600)
+                return 9
+            # Only the third explicitly started placement may prepare and submit.
+            scenario["skip_record"] = True
+
         if scenario["mode"] == "hooks":
             pinned = "mcp__stewart__" + expected_tools(scenario["family"])[0]["name"]
             for tool_name in (pinned, "mcp__stewart__record_account", "Bash",
@@ -2950,6 +3082,174 @@ def synthetic_harness(scenario_path, environment_path, argv):
             input_thread.join(timeout=1)
         if mcp is not None and mcp.stdin is not None:
             mcp.stdin.close()
+
+
+def continued_modes_selftest(check):
+    """Actual fake processes and specification-only replies; no Stewart or deadline claim."""
+    root = Path(tempfile.mkdtemp(prefix="stewart-c4-synthetic-")).resolve()
+    accounts = ["First placement: supplied report remains a claim.\n",
+                "Second placement: earlier work was re-read, not repeated.\n",
+                "Third placement: preserve both earlier records.\n"]
+    artifact = {"label": "UTF-8 continuation", "text": "Café trace.\r\n界\n"}
+    peer = '''import json,sys
+from pathlib import Path
+root=Path(sys.argv[1])
+ordinal=max(int(p.stem.split('-')[-1]) for p in root.glob('model-start-*.json'))
+ledger_path=root/'peer-ledger.json'
+ledger=json.loads(ledger_path.read_bytes()) if ledger_path.exists() else []
+def handle(n): return 'e%d.v1.abcdef'%n
+for raw in sys.stdin.buffer:
+    q=json.loads(raw)
+    if 'id' not in q: continue
+    result={}
+    if q['method']=='initialize': result={'protocolVersion':'2025-11-25','capabilities':{'tools':{}},'serverInfo':{'name':'c4-self-test','version':'1'}}
+    if q['method']=='tools/list': result={'tools':[]}
+    if q['method']=='tools/call':
+        name=q['params']['name']; args=q['params']['arguments']; data={}
+        control=(root/'peer-control').read_text() if (root/'peer-control').exists() else ''
+        if name=='what_am_i_working_with':
+            entries=[{'id':'e%d'%n,'entry':handle(n),'kind':'record_account','label':'','encoding':None,
+                      'size':len(item['text'].encode()),'preview':item['text'],'preview_complete':True,'problem':None}
+                     for n,item in enumerate(ledger,1)]
+            receipts=[{'run':n,'tool':'record_account','action':'add','target':None,'entry':handle(n),'revision':n}
+                      for n in range(len(ledger),0,-1)]
+            data={'run':{'number':ordinal,'continuing':ordinal>1},'revision':len(ledger),
+                  'authoring':{'state':'open','ended_by':None},'seal':{'state':'absent','actor':None},
+                  'entries':entries,'receipts':receipts,
+                  'page':{'bound_revision':len(ledger),'returned':len(ledger),'total':len(ledger),'complete':True}}
+            if control=='missing': data['entries']=[]
+            if control=='malformed': data=[]
+        elif name=='read':
+            number=int(args['source'].split('.')[0][1:]); text=ledger[number-1]['text']
+            data={'source':args['source'],'kind':'entry','size':len(text.encode()),'range':[0,len(text.encode())],'complete':True}
+            if control=='changed-bytes': text='!'+text[1:]
+        elif name in ('record_account','record_artifact'):
+            ledger.append({'kind':name,**args}); ledger_path.write_text(json.dumps(ledger))
+            data={'id':'e%d'%len(ledger),'entry':handle(len(ledger)),'revision':len(ledger),'encoding':'utf-8' if name=='record_artifact' else None}
+        elif name=='prepare': data={'prepared':'ap%d.abcdef'%len(ledger)}
+        result={'content':[{'type':'text','text':json.dumps({'outcome':'completed','data':data})}]}
+        if name=='read': result['content'].append({'type':'text','text':text})
+    print(json.dumps({'jsonrpc':'2.0','id':q['id'],'result':result}),flush=True)
+'''
+    def setup(label, mode):
+        folder = root / label
+        folder.mkdir()
+        scenario = {"mode": mode, "witness": str(folder), "marker": str(folder / "started"),
+                    "config": str(folder), "version": "synthetic-offline-1", "model": MODEL,
+                    "family": "open-inquiry", "session": label, "continued_accounts": accounts,
+                    "utf8_artifact": artifact, "auth_private": "synthetic-only"}
+        raw = compact(scenario) + b"\n"
+        (folder / "scenario.json").write_bytes(raw)
+        (folder / "peer.py").write_text(peer)
+        (folder / "settings.json").write_bytes(b"{}\n")
+        (folder / "prompt").write_bytes(b"synthetic C4 self-test\n")
+        (folder / "mcp.json").write_bytes(compact({"mcpServers": {"stewart": {"command": sys.executable,
+            "args": ["-I", "-B", str(folder / "peer.py"), str(folder)]}}}))
+        executable = folder / "synthetic-harness"
+        executable.write_bytes(synthetic_executable(Path(__file__).resolve(), folder / "scenario.json", folder))
+        executable.chmod(0o700)
+        return folder, executable, raw
+    def user(text):
+        return compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
+                        "message": {"role": "user", "content": text}}) + b"\n"
+    def launch(folder, executable, ordinal, invalid=False):
+        before = {p.name: p.read_bytes() for p in folder.glob("model-start-*.json")}
+        auth = subprocess.run([str(executable), "auth", "status"], capture_output=True, timeout=5,
+                              env={"PATH": "/usr/bin:/bin"})
+        check("continued.%s.%d.auth-does-not-claim" % (folder.name, ordinal), auth.returncode == 0
+              and before == {p.name: p.read_bytes() for p in folder.glob("model-start-*.json")})
+        process = subprocess.Popen([str(executable), "-p", "--settings", str(folder / "settings.json"),
+            "--mcp-config", str(folder / "mcp.json"), "--system-prompt-file", str(folder / "prompt")],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            env={"PATH": "/usr/bin:/bin"}, cwd=folder, start_new_session=True)
+        events = []
+        try:
+            if ordinal <= 3:
+                process.stdin.write(user("The original supplied question.\n")
+                                    + user(REMINDER if ordinal == 1 else CONTINUATION))
+                process.stdin.flush()
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                path = folder / "harness.jsonl"
+                events = [json.loads(line) for line in path.read_bytes().splitlines()
+                          if line] if path.exists() else []
+                events = [event for event in events if event["pid"] == process.pid]
+                done = any(event["event"] in {"continued-waiting-for-deadline", "fatal"}
+                           or (event["event"] == "rpc-transmitted" and any(
+                               sent["event"] == "rpc-send" and sent["value"].get("params", {}).get("name") == "submit"
+                               and sent["value"].get("id") in event["ids"] for sent in events)) for event in events)
+                if done or process.poll() is not None:
+                    break
+                time.sleep(0.01)
+            if invalid:
+                process.wait(timeout=3)
+            elif process.poll() is None:
+                process.terminate()
+            out, err = process.communicate(timeout=5)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=3)
+            if group_observation(process.pid) == "present":
+                os.killpg(process.pid, signal.SIGKILL)
+        (folder / ("selftest-model-%04d.stdout" % ordinal)).write_bytes(out)
+        (folder / ("selftest-model-%04d.stderr" % ordinal)).write_bytes(err)
+        check("continued.%s.%d.claims-preserved" % (folder.name, ordinal),
+              all((folder / name).read_bytes() == raw for name, raw in before.items()))
+        return events, process.returncode
+    for mode in sorted(CONTINUED_MODES):
+        folder, executable, original = setup(mode, mode)
+        earlier_sessions = {}
+        for ordinal in (1, 2, 3):
+            events, code = launch(folder, executable, ordinal)
+            prefix = "continued.%s.%d." % (mode, ordinal)
+            check(prefix + "no-fatal", not any(e["event"] == "fatal" for e in events))
+            calls = [e["value"]["params"] for e in events if e["event"] == "rpc-send"
+                     and e["value"].get("method") == "tools/call"]
+            check(prefix + "one-account", [c["arguments"] for c in calls if c["name"] == "record_account"]
+                  == [{"text": accounts[ordinal - 1]}])
+            check(prefix + "prior-reads", [c["arguments"]["source"] for c in calls if c["name"] == "read"]
+                  == ["e%d.v1.abcdef" % n for n in range(1, ordinal)])
+            ids = [e["value"]["id"] for e in events if e["event"] == "rpc-send" and "id" in e["value"]]
+            check(prefix + "unique-request-ids", len(ids) == len(set(ids)))
+            outputs = [e["value"] for e in events if e["event"] == "output"]
+            check(prefix + "first-checkpoint-only", [o["usage"] for o in outputs if o["type"] == "result"]
+                  == ([CHECKPOINTS[0]["usage"]] if ordinal == 1 else []))
+            check(prefix + "assistant-snapshot", [o["message"]["usage"] for o in outputs if o["type"] == "assistant"]
+                  == [dict(CONTINUED_ASSISTANT_USAGE[ordinal - 1], output_tokens=0), CONTINUED_ASSISTANT_USAGE[ordinal - 1]])
+            check(prefix + "overlapping-message-identity", [o["message"]["id"] for o in outputs if o["type"] == "assistant"]
+                  == ["synthetic-continued-%d" % ordinal] * 2)
+            final = ordinal == 3 and mode == "continued-deadline"
+            check(prefix + "submission-boundary", [c["name"] for c in calls if c["name"] in {"record_artifact", "prepare", "submit"}]
+                  == (["record_artifact", "prepare", "submit"] if final else []))
+            check(prefix + "prior-session-witnesses-preserved", all((folder / name).read_bytes() == raw
+                  for name, raw in earlier_sessions.items()))
+            path = folder / ("model-session-%04d.jsonl" % ordinal)
+            earlier_sessions[path.name] = path.read_bytes()
+            check(prefix + "session-and-scenario", (folder / "scenario.json").read_bytes() == original
+                  and json.loads((folder / ("model-start-%04d.json" % ordinal)).read_bytes())["scenario_sha256"] == sha(original)
+                  and [o["session_id"] for o in outputs if o["type"] == "system"] == [mode + "-placement-%04d" % ordinal])
+        ledger = json.loads((folder / "peer-ledger.json").read_bytes())
+        check("continued." + mode + ".cumulative-selection", ledger ==
+              [{"kind": "record_account", "text": text} for text in accounts]
+              + ([{"kind": "record_artifact", **artifact}] if mode == "continued-deadline" else []))
+        events, code = launch(folder, executable, 4, invalid=True)
+        check("continued." + mode + ".fourth-refused-before-interaction", code == 8
+              and any(e["event"] == "fatal" and "no fourth placement" in e["error"] for e in events)
+              and not any(e["event"] in {"input", "launch", "rpc-send", "output"} for e in events)
+              and not (folder / "model-start-0004.json").exists())
+    for defect in ("missing", "malformed", "changed-bytes"):
+        folder, executable, original = setup(defect, "continued-deadline")
+        launch(folder, executable, 1)
+        prior = (folder / "peer-ledger.json").read_bytes()
+        (folder / "peer-control").write_text(defect)
+        events, code = launch(folder, executable, 2, invalid=True)
+        check("continued.control." + defect, code == 8 and any(e["event"] == "fatal" and
+              ("continued re-entry" in e["error"] or "continued read" in e["error"]) for e in events)
+              and (folder / "peer-ledger.json").read_bytes() == prior
+              and not any(e["event"] == "rpc-send" and e["value"].get("params", {}).get("name")
+                          in {"record_account", "record_artifact", "prepare", "submit"} for e in events))
+    print("C4 synthetic sequencing self-test evidence retained: " + str(root))
 
 
 def self_test():
@@ -3620,6 +3920,7 @@ for raw in sys.stdin.buffer:
                 check("synthetic." + variant + ".firing-control", finished and process.returncode == 8
                       and any(e["event"] == "fatal" for e in observed)
                       and not any(e["event"] == "output-transmitted" for e in observed))
+    continued_modes_selftest(check)
     for name, ok in checks:
         if not ok:
             print("FAIL " + name)

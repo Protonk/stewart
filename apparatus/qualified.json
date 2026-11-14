@@ -1934,6 +1934,26 @@
         "reason": "Inspect confirmed page substitution against short control and second full-page comparison; retain exact sources and both stdout representations for stage-three repair and regression fixtures.",
         "until": "Page-fidelity and usage repairs and fixture reviews finish, and no unresolved finding needs these originals."
       }
+    },
+    {
+      "id": "readiness-c4-procedure-02",
+      "kind": "experiment",
+      "date": "2026-11-14T00:51:02Z",
+      "date_from": "REVIEW.json field at",
+      "summary": "Reviewed native synthetic continuation procedure: 6 cases, 12 placements, 113 checks and 10 refusal controls passed; 24 groups stopped; 3 complete packages passed 54 checks and preserved close. No live-model or Linux qualification.",
+      "result": {
+        "path": ".",
+        "files": 2895,
+        "sha256": "a7c565ae579dbee588eb142a0ceb99fb0180aefd51e0c4aa12a7a963228f7da3"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-c4-procedure-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The exact frozen procedure, independent peers and retained closures support the pending C4 continuation commission.",
+        "until": "The first C4 live-comparison review finishes and no remaining question requires these synthetic originals."
+      }
     }
   ]
 }

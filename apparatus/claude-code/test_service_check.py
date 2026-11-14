@@ -49,8 +49,9 @@ class Controls(unittest.TestCase):
                {'jsonrpc': '2.0', 'id': 4, 'result': {'content': result['content'], 'isError': False}})
         return audit, payload
 
-    def append_call(self, audit, tool, operands, revision, data, edit=None):
-        run = audit / 'runs/1'
+    def append_call(self, audit, tool, operands, revision, data, edit=None, placement=1):
+        run = audit / 'runs' / str(placement)
+        run.mkdir(exist_ok=True)
         number = len(list(run.glob('result-*.json'))) + 1
         call = {'jsonrpc': '2.0', 'method': 'tools/call', 'id': number + 3,
                 'params': {'name': tool, 'arguments': operands}}
@@ -60,7 +61,7 @@ class Controls(unittest.TestCase):
         if edit is not None:
             logs = sorted((audit / 'log').glob('*.json'), key=lambda path: int(path.stem))
             edit.update(prev=c.p.sha(logs[-1].read_bytes()), tool=tool, revision=revision,
-                        invocation={'run': 1, 'tool_use_id': 'mcp-%d' % (number + 3), 'call': number})
+                        invocation={'run': placement, 'tool_use_id': 'mcp-%d' % (number + 3), 'call': number})
             log_name = 'log/%d.json' % (len(logs) + 1)
             c.save(audit / log_name, {'kind': 'entry', 'body': edit})
         reply = {'operation': tool, 'outcome': 'completed', 'data': data}
@@ -129,6 +130,8 @@ class Controls(unittest.TestCase):
         for _ in range(2):
             entries, revision, counts = c.capture_selection(audit, {})
             self.assertEqual((revision, len(entries), entries[0].data), (1, 1, payload))
+            observations = counts.pop('placements')
+            self.assertEqual([(row['placement'], row['revision']) for row in observations], [(1, 1)])
             self.assertEqual(counts, {'completed_calls': 1, 'refused_or_failed_calls': 0,
                                      'citations_checked': 0, 'auditor_submitted': False,
                                      'incoming_tool_calls': 1, 'tool_results': 1, 'unresolved_mcp_calls': 0})
@@ -204,7 +207,7 @@ class Controls(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'principal approval'):
                     c.run(self.root, digest, extra)
                 launch.assert_not_called()
-                self.assertFalse((self.root / 'execution').exists())
+                self.assertFalse((self.root / 'placements').exists())
 
     def test_real_packet_cannot_use_rehearsal_entry(self):
         with patch.object(c, 'verify', return_value=({'mode': 'real-harness'}, b'x')), patch.object(c, 'command') as launch:
@@ -213,10 +216,10 @@ class Controls(unittest.TestCase):
             launch.assert_not_called()
 
     def test_entered_packet_refuses_before_any_command(self):
-        (self.root / 'execution').mkdir()
-        with patch.object(c, 'verify', return_value=({'mode': 'real-harness'}, b'x')), \
+        (self.root / 'placements/1').mkdir(parents=True)
+        with patch.object(c, 'verify', return_value=({'mode': 'real-harness', 'max_service_starts': 3}, b'x')), \
                 patch.object(c, 'frozen_executor'), patch.object(c, 'command') as launch:
-            with self.assertRaises(FileExistsError):
+            with self.assertRaisesRegex(ValueError, 'one-use'):
                 c.run(self.root, c.p.sha(b'x'), True)
             launch.assert_not_called()
 
@@ -251,10 +254,10 @@ class Controls(unittest.TestCase):
                 self.assertEqual(c.stopping(self.root, self.root / (state + '.json')), state == 'absent')
 
     def test_close_requires_explicit_review_digest(self):
-        (self.root / 'review').mkdir()
-        c.save(self.root / 'review/REVIEW.json', {'outcome': 'observed', 'auditor_submitted': True,
+        (self.root / 'placements/1/review').mkdir(parents=True)
+        c.save(self.root / 'placements/1/review/REVIEW.json', {'outcome': 'observed', 'auditor_submitted': True,
                                                'package_review': {'outcome': 'observed'}})
-        with patch.object(c, 'verify', return_value=({}, b'x')), patch.object(c, 'command') as launch:
+        with patch.object(c, 'verify', return_value=({'max_service_starts': 3}, b'x')), patch.object(c, 'command') as launch:
             with self.assertRaisesRegex(ValueError, 'explicit review'):
                 c.close(self.root, 'wrong')
             launch.assert_not_called()
@@ -272,6 +275,147 @@ class Controls(unittest.TestCase):
         fresh = c.command(self.root, 'invariance', [python, '-I', '-B', '-c', "print('complete')"], 5)
         self.assertEqual(fresh['exit'], 0)
         self.assertEqual((self.root / 'positive.stdout').read_bytes(), (self.root / 'invariance.stdout').read_bytes())
+
+    def test_continued_replacement_uses_prior_selection_and_new_run_identity(self):
+        audit, _ = self.selection()
+        payload = b'Continued revision of the original entry.\n'
+        (audit / 'payload/e1.v2.bin').write_bytes(payload)
+        self.append_call(audit, 'replace', {'entry': 'e1.v1.fixture', 'text': payload.decode()}, 2,
+                         {'entry': 'e1.v2.fixture', 'revision': 2},
+                         {'action': 'replace', 'id': 'e1', 'version': 2, 'kind': 'record_account',
+                          'label': '', 'citations': [], 'encoding': None,
+                          'payload': {'file': 'payload/e1.v2.bin', 'sha256': c.p.sha(payload), 'size': len(payload)}},
+                         placement=2)
+        entries, revision, counts = c.capture_selection(audit, {})
+        self.assertEqual((revision, len(entries), entries[0].data), (2, 1, payload))
+        self.assertEqual([(r['placement'], r['revision']) for r in counts['placements']], [(1, 1), (2, 2)])
+        log = audit / 'log/2.json'
+        value = json.loads(log.read_bytes())
+        value['body']['invocation']['run'] = 1
+        log.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, 'invocation differs'):
+            c.capture_selection(audit, {})
+
+    def test_missing_prior_placement_is_not_a_fresh_audit(self):
+        audit, _ = self.selection()
+        (audit / 'runs/1').rename(audit / 'runs/2')
+        with self.assertRaisesRegex(ValueError, 'placement numbering gap'):
+            c.capture_selection(audit, {})
+
+    def test_archive_growth_preserves_earlier_bytes(self):
+        before = [{'path': 'old', 'type': 'file', 'bytes': 3, 'sha256': 'original'}]
+        c.preserved_members(before, before + [{'path': 'new', 'type': 'directory'}])
+        for after in [[], [dict(before[0], sha256='changed')]]:
+            with self.assertRaisesRegex(ValueError, 'changed or disappeared'):
+                c.preserved_members(before, after)
+
+    def test_stream_snapshots_are_not_summed_or_counted_as_results(self):
+        rows = [{'type': 'assistant', 'message': {'id': 'same', 'usage': {'output_tokens': n}}} for n in [7, 11]]
+        rows.append({'type': 'assistant', 'message': {'id': 'other'}})
+        channels = {'stdout': b'\n'.join(c.p.compact(row) for row in rows) + b'\n{"incomplete":'}
+        observed = c.stream_observations(channels)
+        self.assertEqual(observed['assistant_frames'], 3)
+        self.assertEqual(observed['assistant_messages'], [
+            {'id': 'same', 'frames': 2, 'usage_snapshots': [{'output_tokens': 7}, {'output_tokens': 11}]},
+            {'id': 'other', 'frames': 1, 'usage_snapshots': []}])
+        self.assertEqual(observed['result_reports'], [])
+        self.assertEqual(len(observed['stdout_diagnostics']), 1)
+
+    def test_continuation_requires_open_interruption_with_unused_starts(self):
+        manifest = {'max_service_starts': 3, 'placement_timeout_seconds': 6, 'continuation_causes': ['placement_deadline']}
+        status = {'outcome': 'completed', 'data': {
+            'condition': 'interrupted', 'runs': {'count': 1, 'held': False,
+                'last': {'number': 1, 'ending': 'interrupted', 'cause': 'placement_deadline'}},
+            'headline': {'accepted': 'yes', 'launched': 'yes', 'authoring': {'state': 'open', 'ended_by': None},
+                         'closed': 'no', 'delivered': {'verified': False}},
+            'seal': {'state': 'absent'}, 'closure': None,
+            'allowances': {'placements': {'used': 1, 'limit': 3, 'remaining': 2}, 'placement_timeout_seconds': 6}}}
+        self.assertTrue(c.continuation_state(manifest, status, 1))
+        for path, value in [(('condition',), 'ended_unsubmitted'), (('condition',), 'log_damaged'),
+                (('runs', 'held'), True), (('runs', 'count'), 2), (('closure',), {}),
+                (('runs', 'last', 'cause'), 'protocol_anomaly'), (('runs', 'last', 'cause'), 'signal'),
+                (('seal', 'state'), 'present'), (('seal', 'state'), 'unknown'),
+                (('headline', 'closed'), 'unfinished'), (('headline', 'authoring', 'state'), 'ended'),
+                (('allowances', 'placements', 'remaining'), 0)]:
+            changed = json.loads(json.dumps(status))
+            target = changed['data']
+            for key in path[:-1]:
+                target = target[key]
+            target[path[-1]] = value
+            with self.subTest(path=path, value=value):
+                self.assertFalse(c.continuation_state(manifest, changed, 1))
+        self.assertFalse(c.continuation_state(dict(manifest, max_service_starts=1), status, 1))
+
+    def test_skipped_or_excess_start_refuses_before_commands(self):
+        manifest = {'mode': 'real-harness', 'max_service_starts': 3}
+        for placement in [0, 2, 4]:
+            with patch.object(c, 'verify', return_value=(manifest, b'x')), patch.object(c, 'frozen_executor'), \
+                    patch.object(c, 'command') as launch:
+                with self.assertRaises(ValueError):
+                    c.run(self.root, c.p.sha(b'x'), True, placement=placement)
+                launch.assert_not_called()
+        self.assertFalse((self.root / 'placements').exists())
+
+    def test_review_binding_detects_prior_capture_tampering(self):
+        out = self.root / 'placements/1/execution'
+        review = self.root / 'placements/1/review'
+        out.mkdir(parents=True)
+        review.mkdir()
+        c.save(out / 'RESULT.json', {'outcome': 'retained', 'stopping_observed': True})
+        (out / 'capture').write_bytes(b'prior exact capture')
+        c.save(out / 'EVIDENCE.json', {'members': c.inventory(out)})
+        report = {'outcome': 'observed', 'placement': 1, 'commission_sha256': c.p.sha(b'commission'),
+                  'execution_result_sha256': c.p.sha((out / 'RESULT.json').read_bytes()),
+                  'execution_evidence_sha256': c.execution_evidence(out)}
+        c.save(review / 'REVIEW.json', report)
+        digest = c.p.sha((review / 'REVIEW.json').read_bytes())
+        args = (self.root, {'max_service_starts': 3}, b'commission', 1)
+        c.reviewed_execution(*args, digest)
+        with self.assertRaisesRegex(ValueError, 'explicit review'):
+            c.reviewed_execution(*args, 'wrong')
+        (out / 'capture').write_bytes(b'changed')
+        with self.assertRaisesRegex(ValueError, 'execution evidence'):
+            c.reviewed_execution(*args, digest)
+
+    def test_stopping_probes_the_requested_placement(self):
+        for number in [1, 2]:
+            run = self.root / 'runs' / str(number)
+            run.mkdir(parents=True)
+            for role in ['auth', 'model']:
+                c.save(run / ('process-' + role + '.json'),
+                       {'schema': 'stewart.claude-code.process/1', 'role': role, 'group': 100 + number})
+        with patch.object(c.witness.runtime, 'group_observation', return_value='absent') as probe:
+            self.assertTrue(c.stopping(self.root, self.root / 'stop.json', 2))
+            self.assertEqual([call.args for call in probe.call_args_list], [(102,), (102,)])
+
+    def test_superseded_commission_is_refused(self):
+        c.save(self.root / 'COMMISSION.json', {'schema': 'stewart.claude-code.service-commission/1'})
+        with self.assertRaisesRegex(ValueError, 'unknown commission schema'):
+            c.verify(self.root)
+
+    def test_final_deadline_ends_authoring_without_interruption_cause(self):
+        # Retained native limit comparison: final ending is not an interruption.
+        last = {'number': 3, 'ending': 'limit_reached', 'cause': None}
+        stop = {'elapsed_ms': 8026, 'deadline_ms': 6000, 'groups_gone': True}
+        self.assertTrue(c.deadline_observed(last, stop, 3, 3))
+        self.assertFalse(c.deadline_observed(dict(last, cause='placement_deadline'), stop, 3, 3))
+        self.assertFalse(c.deadline_observed(dict(last, ending='interrupted'), stop, 3, 3))
+        self.assertTrue(c.deadline_observed(dict(last, number=1), stop, 1, 1))
+
+    def test_earlier_deadline_requires_its_interruption_cause(self):
+        last = {'number': 1, 'ending': 'interrupted', 'cause': 'placement_deadline'}
+        stop = {'elapsed_ms': 8000, 'deadline_ms': 6000, 'groups_gone': True}
+        self.assertTrue(c.deadline_observed(last, stop, 1, 3))
+        for cause in [None, 'signal', 'protocol_anomaly']:
+            self.assertFalse(c.deadline_observed(dict(last, cause=cause), stop, 1, 3))
+        self.assertFalse(c.deadline_observed(dict(last, number=2), stop, 1, 3))
+
+    def test_deadline_label_does_not_establish_elapsed_time_or_stopping(self):
+        last = {'number': 3, 'ending': 'limit_reached', 'cause': None}
+        stop = {'elapsed_ms': 8026, 'deadline_ms': 6000, 'groups_gone': True}
+        for change in [dict(elapsed_ms=5999), dict(deadline_ms=0), dict(groups_gone=False), dict(groups_gone='unknown')]:
+            with self.subTest(change=change):
+                self.assertFalse(c.deadline_observed(last, dict(stop, **change), 3, 3))
 
 
 if __name__ == '__main__':
