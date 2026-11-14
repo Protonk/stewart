@@ -1958,20 +1958,21 @@
     {
       "id": "readiness-c4-01",
       "kind": "experiment",
-      "date": "2026-11-14T01:01:34Z",
-      "date_from": "AUTHORIZATION.json field at",
-      "summary": "Approved C4 continuation comparison: two identical 48-item inquiries, three starts each at 60/240 seconds, at most six auth/model invocations and 900 placement seconds. Both audits unaccepted and unstarted at approval; short placement 1 is next.",
+      "date": "2026-11-14T01:10:19Z",
+      "date_from": "short/OBSERVATION.json field at",
+      "summary": "C4 in progress: short audit submitted a partial answer for 16 of 48 cases before its deadline and closed unchanged; 55 calls, 115 exact citations, 15 package checks, both groups stopped. Two short starts unused; live continuation unexercised. Long arm remains approved and unstarted.",
       "result": {
-        "path": "AUTHORIZATION.json",
-        "sha256": "30bd66ed4cef617aa802f1c05e9f76416dce0cf776a056b59c40d4b61fa77531"
+        "path": "short",
+        "files": 2157,
+        "sha256": "8478d5e6ea32d80d270ea22a1f538470fc5b04ca217dca4dbfcf7454461f0cdf"
       },
       "evidence": {
         "path": ".scratch/readiness-c4-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Retain the explicit C4 authority, its bound proposal and exact packets through execution, comparison and fixture review.",
-        "until": "C4 is abandoned or completed and its comparison and fixture review no longer require these authority and input bindings."
+        "reason": "Inspect the original short-deadline encounter against the pending long audit and preserve near-limit, early-submission and partial-usage captures for C4 review.",
+        "until": "C4 comparison and selected fixture/accounting reviews finish, and no unresolved finding needs these originals."
       }
     }
   ]

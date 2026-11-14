@@ -350,16 +350,25 @@ the principal; ordinary prerequisite work needs no additional planning approval.
 
 ### Execution and review
 
-**C4 is approved; the first short placement is next.** The frozen commission is
+**C4 is approved; the first long placement is next.** The frozen commission is
 `.scratch/readiness-c4-01/MANIFEST.json`, SHA-256
 `79fc8eb14052e43a9f1656eb9e2b3472df185dd4a84c73855eb8ed67f2ce3d7c`.
 Its [retained packet](apparatus/qualified.md#readiness-c4-01) binds both local
 preparations, exact inputs, costs, profile and reviewed procedure. The principal's
 “I approve C4” is recorded separately in
 `.scratch/readiness-c4-01/AUTHORIZATION.json`, with the approved manifest and both
-packet digests. Fresh status and binding checks show both audits remain unaccepted
-and unstarted. Issue only the short audit's first placement command, then review
-its retained outcome before another start.
+packet digests. The short audit submitted and closed after its first placement:
+16 case accounts and an explicit checkpoint leave R017–R048 uncovered. Original
+capture and package review passed, both groups stopped, and close preserved the
+package and prior archive files. Its two unused starts are ineligible after the
+seal; live continuation remains unexercised and final usage remains unknown.
+`.scratch/readiness-c4-01/short/OBSERVATION.json` owns the attributed findings
+and exact verification counts.
+
+The long packet's bindings and local status were rechecked: it remains
+unaccepted and unstarted. Its original three starts of 240 seconds remain
+authorized, with no transfer of the short audit's unused time. Issue only long
+placement 1, then review its retained outcome before another start.
 
 Both audits ask how well 48 invented handoff claims are supported by their
 paired records. They receive the same question body and 97 material files,

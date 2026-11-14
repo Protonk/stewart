@@ -675,7 +675,7 @@ Reviewed native synthetic continuation procedure: 6 cases, 12 placements, 113 ch
 
 ### readiness-c4-01
 
-Approved C4 continuation comparison: two identical 48-item inquiries, three starts each at 60/240 seconds, at most six auth/model invocations and 900 placement seconds. Both audits unaccepted and unstarted at approval; short placement 1 is next.
+C4 in progress: short audit submitted a partial answer for 16 of 48 cases before its deadline and closed unchanged; 55 calls, 115 exact citations, 15 package checks, both groups stopped. Two short starts unused; live continuation unexercised. Long arm remains approved and unstarted.
 
-- Evidence: `.scratch/readiness-c4-01/AUTHORIZATION.json` (recorded 2026-11-14T01:01:34Z).
-- Retained purpose: Retain the explicit C4 authority, its bound proposal and exact packets through execution, comparison and fixture review.; until C4 is abandoned or completed and its comparison and fixture review no longer require these authority and input bindings.
+- Evidence: `.scratch/readiness-c4-01/short` (recorded 2026-11-14T01:10:19Z).
+- Retained purpose: Inspect the original short-deadline encounter against the pending long audit and preserve near-limit, early-submission and partial-usage captures for C4 review.; until C4 comparison and selected fixture/accounting reviews finish, and no unresolved finding needs these originals.
