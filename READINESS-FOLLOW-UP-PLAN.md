@@ -350,6 +350,52 @@ the principal; ordinary prerequisite work needs no additional planning approval.
 
 ### Execution and review
 
+**C4 is prepared and awaits approval.** The frozen commission is
+`.scratch/readiness-c4-01/MANIFEST.json`, SHA-256
+`79fc8eb14052e43a9f1656eb9e2b3472df185dd4a84c73855eb8ed67f2ce3d7c`.
+Its [retained packet](apparatus/qualified.md#readiness-c4-01) binds both local
+preparations, exact inputs, costs, profile and reviewed procedure. Neither audit
+has been accepted or launched; preparation gives no spending authority.
+
+Both audits ask how well 48 invented handoff claims are supported by their
+paired records. They receive the same question body and 97 material files,
+39,867 bytes overall, with no file larger than 1,073 bytes. The auditor records
+one cited account per case as it proceeds, inspects existing work on re-entry,
+and can submit an honest partial answer. The small files keep this comparison
+focused on continuation. No delay or forced completion of three placements is
+requested.
+
+| Audit | Deadline per placement | Maximum starts | Total placement time |
+| --- | --- | --- | --- |
+| Short | 60 seconds | 3 | 180 seconds |
+| Long | 240 seconds | 3 | 720 seconds |
+
+Run the short audit first. Review each placement before issuing another explicit
+start. Approval covers at most six service starts, six authentication checks and
+six model sessions, with 900 seconds of placement deadlines overall;
+authentication consumes that time. Existing shutdown grace follows a deadline,
+and each controller command permits 15 further seconds for return and observation.
+The profile remains C1's reviewed Claude Code 2.1.322 / `claude-haiku-5-5`, with
+default effort and the unchanged native writer and launch surface. Its requested
+200 turns and 16,000 output tokens are not independent billing ceilings.
+
+Only a reviewed, stopped `placement_deadline` interruption with open authoring
+and unused starts permits continuation. Submission, ordinary ending or the final
+deadline leaves any later slots unused. Stop the commission on authentication or
+quota rejection, enabled/used paid overage, unexpected model identity, protocol
+anomaly, uncertain effects or unresolved stopping/custody. There are no retries,
+replacement audits, model substitutions or API fallback. Prior approvals supply
+no authority for these starts.
+
+Compare preserved entries, re-entry and continuation notices, first subsequent
+calls, premature endings, and per-message snapshots versus cumulative usage
+checkpoints. Report unexercised mechanisms explicitly. After independent review,
+ordinary close is included for a verified auditor-submitted package; unsubmitted
+work remains retained for an explicit disposition. Expected incremental charge
+is zero conditional on the already-confirmed disabled-extra-usage setting;
+included subscription consumption is unknown and no paid extra usage is
+authorized. This remains a native experiment, not model or Linux qualification.
+
 - [ ] Obtain each frozen packet's approval. Commission M2/C5 explicitly as
   deliberate output-cap studies with their own bounds. Prior approval, unused
   allowance and previous runs authorize no replacement or continuation outside

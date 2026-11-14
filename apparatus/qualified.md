@@ -672,3 +672,10 @@ Reviewed native synthetic continuation procedure: 6 cases, 12 placements, 113 ch
 
 - Evidence: `.scratch/readiness-c4-procedure-02/.` (recorded 2026-11-14T00:51:02Z).
 - Retained purpose: The exact frozen procedure, independent peers and retained closures support the pending C4 continuation commission.; until The first C4 live-comparison review finishes and no remaining question requires these synthetic originals.
+
+### readiness-c4-01
+
+Prepared, unapproved C4 continuation comparison: two identical 48-item inquiries, three starts each at 60/240 seconds, at most six auth/model invocations and 900 placement seconds. No audit accepted or Claude invocation authorized.
+
+- Evidence: `.scratch/readiness-c4-01/MANIFEST.json` (recorded 2026-11-14T00:54:42Z).
+- Retained purpose: Review and, only after explicit principal approval, execute the two exactly bound C4 audits and eligible deadline continuations.; until C4 is abandoned or completed and its comparison and fixture review no longer require this proposal binding.
