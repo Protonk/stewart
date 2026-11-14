@@ -20,10 +20,12 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### M3 — Continuation
 
-- [ ] Extend and rehearse bounded continuation, witnessed interruption and
-  multi-placement export/review through the [Messages apparatus](apparatus/c10/README.md)
-  and [host queue](apparatus/c10/HOST-QUEUE.md). Verify all placements, cumulative
-  allowances, prior archive members, re-entry, notices and process stopping.
+- [ ] Rehearse on Linux the bounded continuation, witnessed interruption and
+  multi-placement export/review of the [Messages apparatus](apparatus/c10/README.md)
+  and [host queue](apparatus/c10/HOST-QUEUE.md), with both audits' templates as
+  `--submission` inputs and the saved synthetic connection. Review all placements,
+  cumulative allowances, prior archive members, re-entry, notices, the recorded
+  interruption timing and process stopping from the retained originals.
   Reconcile missing replies without inventing an absent effect or a clean run.
 - [ ] Freeze a commission of at most four Messages placements across the two
   comparisons below. Specify allocation, exact inputs/writers/models, deadlines,
@@ -38,9 +40,11 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   commission or an explicit disposition. The archive exists only in the root
   filesystem of the retained container that record names. Host exports are
   copies, and a copied archive refuses mutation ([INTERFACE 4.9](docs/INTERFACE.md#49-store-marker)).
-  Keep that container and its writer mount unchanged. Before freezing, observe
-  on a disposable container whether a stop or host restart preserves such a
-  filesystem, and state the result and the remaining exposure in the packet.
+  Keep that container and its writer mount unchanged. A disposable container
+  with the same image and options kept its inodes, birth times, member bytes
+  and bind-mounted bytes across `container stop` and `start`
+  (`.scratch/readiness-m3-persistence-01`); a host restart is unobserved.
+  State that exposure in the packet.
 - [ ] Use the exact question and sole supplied report identified by
   `.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json` for a fresh
   12-turn reminder audit. The source audit is sealed and cannot continue.
@@ -48,6 +52,11 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   subsequent ending. The reminder allowance is audit-wide; another ordinary
   unsubmitted ending ends authoring. Failure to reach the selected interruption
   point is unexercised, not authority for an automatic replacement.
+  Size the output allowance for the interruption: a request aborted in flight is
+  charged one estimated turn and its whole `max_tokens`, up to 16,000 output
+  tokens ([INTERFACE 6.4](docs/INTERFACE.md#64-limits-reminder-and-notice)).
+  M1's 12,000-token allowance would leave under 1,024 and end the continuation
+  `limit_reached` before any request.
 
 ### M4 — Compaction on another model
 

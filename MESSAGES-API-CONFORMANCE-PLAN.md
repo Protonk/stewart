@@ -49,28 +49,22 @@ to ACCEPTANCE coverage belongs to the principal.
 
 ## 2. Preserve evidence through interruption and later actions
 
-- [ ] Design a witnessed interruption point after actual recorded work and
-  before submission. Record the selected point, process identity, signal and
-  observed termination. Rehearse graceful interruption and abrupt process death;
-  choose the C10 kill case explicitly. A sleep alone does not establish the point.
-- [ ] Add bounded continuation on the same reference and exact writer. Preserve
-  the pre-kill witness outside the audit, verify the fresh conversation's pinned
-  arrangement and continuation notice, and reconcile every placement's reported
-  and estimated usage into the cumulative limits. An already sealed audit goes
-  to custody completion, not another model placement.
-- [ ] Extend evidence membership checks across all placements, request attempts,
-  partial captures, reconciliation records and later operator actions. Distinguish
-  established absence from an unobserved or unreadable member. A killed process
-  with no final reply must remain reviewable without fabricating a run result.
-- [ ] Extend the implemented immutable follow-up export path to interrupted
-  and multi-placement evidence. Preserve earlier observations, re-establish the
-  stopped writer and full membership, and retain the original-key check without
-  persisting the live key. The current path deliberately withholds incomplete
-  runs; do not weaken that guard merely to obtain an export.
-- [ ] Keep private originals and independent witnesses when export is withheld
-  or fails. Rehearse missing captures, reflection, contamination and export
-  failure across continuation and follow-up collection. Never copy a retained
-  container wholesale to bypass those checks.
+- [ ] Rehearse on Linux the continuation path the [apparatus](apparatus/c10/README.md)
+  now implements: a graceful interruption at a witnessed log record, one
+  separately bound placement on the same reference and exact writer,
+  cumulative accounting, and export and review across placements. Include
+  delivery of current apparatus source into a container created by earlier
+  source. Native runs are iteration only.
+- [ ] Support abrupt process death. A killed placement has no `run_ended` until
+  the next `run` reconciles it as `process_gone`; today the export guard
+  withholds and the reviewer leaves that placement unassessed. Record process
+  identity and observed termination, keep such a run reviewable without
+  fabricating a result, and choose the C10 kill case explicitly.
+- [ ] Rehearse missing captures, reflection, contamination and export failure
+  across continuation and follow-up collection, and a placement that ends
+  before sending any request. Keep private originals and independent witnesses
+  when export is withheld or fails. Never copy a retained container wholesale
+  to bypass those checks.
 
 **Done when:** a no-kill case and a controlled killed-and-continued case yield
 fully accounted histories; controls for missing/repeated effects, reset limits,
