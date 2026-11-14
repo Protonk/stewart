@@ -100,9 +100,49 @@ def review_exports(folder):
                     if e is not None:
                         e.close()
                 snapshots.append(row)
-        results.append({'audit':item['id'],'case':item['case'],'snapshots':snapshots})
+        results.append({'audit':item['id'],'case':item['case'],'snapshots':snapshots,
+                        'continuations':read_continuations(folder,item['id'])})
     return {'schema':'stewart.c10-batch-review/2','plan':identity(folder/'PLAN.json',raw),
             'commission':packet,'planned':len(ids),'audits':results}
+
+
+def read_continuations(folder, audit):
+    """Every attempt at a later placement, linked beside the snapshots they produced."""
+    rows = []
+    parent = folder/'continuations'
+    attempts = []
+    for placed in sorted(parent.iterdir()) if parent.is_dir() else []:
+        match = re.fullmatch(re.escape(audit)+r'-p([2-9])',placed.name)
+        for path in sorted(placed.iterdir(),key=lambda item:(len(item.name),item.name)) if match and placed.is_dir() else []:
+            number = re.fullmatch(r'attempt-([1-9][0-9]*)',path.name)
+            require(number is not None and path.is_dir() and not path.is_symlink(),'unknown continuation member')
+            attempts.append((int(match[1]),int(number[1]),path))
+    for placement,attempt,path in attempts:
+        row = {'placement':placement,'attempt':attempt,'source':None,'assessment':'missing','record':None}
+        try:
+            raw = read_file(path/'RESULT.json')
+            row['source'] = identity(path/'RESULT.json',raw)
+            record = strict_json(raw)
+            if record.get('schema') != 'stewart.c10-continuation-session/1':
+                row['assessment'] = 'unsupported_schema'
+            else:
+                require(record['audit']==audit and record['placement']==row['placement']
+                        and record['attempt']==row['attempt']
+                        and record['placement_state'] in ['observed','unknown','not_started']
+                        and type(record['failed']) is bool and record['mode'] in ['live','rehearse'],
+                        'continuation record invalid')
+                witness = record['interruption']
+                # Controlled members only; the snapshot review carries the evidence itself.
+                row.update(assessment='read',record={**{key:record.get(key) for key in
+                    ['mode','placement_state','outcome','failed','stop_reason','snapshot','exit','timed_out',
+                     'credential_checked','expected_observation','controls','failure']},
+                    'interruption':None if witness is None else {'after':witness['after'],'state':witness['state']}})
+        except FileNotFoundError:
+            pass
+        except (OSError,ValueError,KeyError,TypeError,UnicodeError):
+            row['assessment'] = 'unreadable'
+        rows.append(row)
+    return rows
 
 
 def read_session(folder, ids):
@@ -221,6 +261,20 @@ def current_issues(report):
                 observed = next(r for r in session['record']['audits'] if r['audit']==row['audit'])
                 if observed['placement']=='not_started':
                     issues.append((label+' / '+row['audit'],'placement_observed_after_not_started_record'))
+            where = label+' / '+row['audit']
+            reviewed = len(review.get('placements') or []) if review else 0
+            attempts = row.get('continuations',[])
+            for later in attempts:
+                if later['assessment'] != 'read':
+                    issues.append((where,'continuation_record_'+later['assessment']))
+                elif later['record']['placement_state']=='unknown' and reviewed < later['placement']:
+                    # Only a checked snapshot that shows the placement settles what it did.
+                    issues.append((where,'continuation_effects_unknown'))
+            for placement in sorted({later['placement'] for later in attempts}):
+                states = [later['record']['placement_state'] for later in attempts
+                          if later['placement']==placement and later['assessment']=='read']
+                if reviewed >= placement and states and all(state=='not_started' for state in states):
+                    issues.append((where,'placement_observed_after_not_started_record'))
     return issues
 
 
@@ -242,7 +296,7 @@ def render(report):
         lines += ['',f"### Batch: {label}",'',
                   f"{batch['planned']} planned audit(s); model `{packet['model']}`. "+source_link('Commission and placement inventory',batch['plan'])+'.',
                   f"Per audit: at most {limits['turns']:,} turns, {limits['input_tokens']:,} input tokens and {limits['output_tokens']:,} output tokens; watchdog {packet['stop_after_seconds']:,} seconds.",
-                  f"At most {packet['max_placements']} placement; {packet['permitted_request_attempts']} built-in attempts per provider request; automatic continuation {'permitted' if packet['automatic_continuation'] else 'not permitted'}."]
+                  f"At most {packet['max_placements']} placement{'s' if packet['max_placements']>1 else ''}; {packet['permitted_request_attempts']} built-in attempts per provider request; automatic continuation {'permitted' if packet['automatic_continuation'] else 'not permitted'}."]
         if packet.get('study_build'):
             lines += ['The commission declares an unqualified study build.']
         session = batch['session']
@@ -267,6 +321,18 @@ def render(report):
                     # Fixed safe classifications; arbitrary exception messages are never included.
                     detail = placement['failure']
                     lines += [f"Operation failure: `{detail.get('error_type','unknown')}`; phase `{detail.get('phase','unknown')}`. Inspect retained private records."]
+            for later in row.get('continuations',[]):
+                # A separately commissioned placement; its record never stands in for the evidence.
+                if later['assessment']!='read':
+                    lines += [f"Placement {later['placement']} attempt {later['attempt']} session record: {later['assessment'].replace('_',' ')}; no inference about that placement."]
+                else:
+                    r = later['record']
+                    lines += [f"Placement {later['placement']} attempt {later['attempt']} (separately commissioned continuation): `{r['placement_state']}`; record outcome `{r['outcome']}`"
+                              + (f"; stopped for `{r['stop_reason']}`" if r['stop_reason'] else '')
+                              + (f"; planned interruption `{r['interruption']['after']}` {r['interruption']['state']}" if r['interruption'] else '')
+                              + ('; operation failure recorded' if r['failure'] else '')+'.']
+                if later['source']:
+                    lines += [source_link(f"Placement {later['placement']} attempt {later['attempt']} source",later['source'])+'.']
             if not row['snapshots']:
                 lines += ['No collected snapshot. Evidence, ending, usage and custody remain unknown.']
             checked = [i for i,s in enumerate(row['snapshots']) if s['review'] and s['review']['outcome']=='checked']
@@ -292,6 +358,20 @@ def render(report):
                           ('Auditor submitted' if review['auditor_submitted'] else 'No auditor submission')+
                           '; '+seal+'; '+('delivery verified' if review['delivery_verified'] else 'delivery not verified')+
                           '; custody '+('closed' if review['closed'] else 'open')+'.']
+                if len(review['placements'])>1 or review['placements'][0]['interruption']:
+                    # One line per placement; the totals below are cumulative across them.
+                    for item in review['placements']:
+                        text = f"Placement {item['run']}: {item['ending'].replace('_',' ')}"
+                        if item['cause'] is not None:
+                            text += ' ('+item['cause'].replace('_',' ')+')'
+                        text += f"; {item['requests']} requests, {item['attempts']} attempts"
+                        text += ''.join(f"; {n['type'].replace('_',' ')} notice {n['sent'].replace('_',' ')}" for n in item['notices'])
+                        witness = item['interruption']
+                        if witness is not None:
+                            text += f"; planned interruption `{witness['point']}` {witness['state']}"
+                            if witness['state']=='signalled':
+                                text += ' after `'+witness['record']+'`'+('' if witness['followed_by_signal_ending'] else ', which did not end the placement')
+                        lines += [text+'.']
                 if snapshot['caller_reply_lost']:
                     lines += ['The caller reply was lost. This later checked observation does not imply the reply was received.']
                 if index==checked[-1]:

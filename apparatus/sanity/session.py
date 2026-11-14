@@ -75,6 +75,221 @@ def safe_observation(value):
     return result
 
 
+class RequestSeen:
+    """The sanity interruption: its fake reports the request that is in flight.
+
+    Twenty seconds without that report is a failed rehearsal, never a point.
+    """
+    def __init__(self, event):
+        self.event = event
+
+    def await_point(self, proc, limit):
+        if not self.event.wait(20):
+            raise RuntimeError('interruption witness did not observe the request')
+        return True
+
+    def sent(self, proc):
+        pass
+
+    def missed(self, proc):
+        raise
+
+    def remaining(self, limit):
+        return limit
+
+    def ended(self, proc, rc, timed_out):
+        pass
+
+
+def process_identity(pid):
+    """What an outside observer can read about a process; None where unavailable.
+
+    `start_ticks` is field 22 of /proc/<pid>/stat, the value INTERFACE 4.4 says a
+    placement records about itself, so the two can be compared.
+    """
+    result = {'pid': pid, 'start_ticks': None, 'uid': None, 'boot_id': None}
+    try:
+        stat = Path(f'/proc/{pid}/stat').read_bytes()
+        result['start_ticks'] = int(stat[stat.rindex(b')') + 2:].split()[19])
+        for line in Path(f'/proc/{pid}/status').read_bytes().splitlines():
+            if line.startswith(b'Uid:'):
+                result['uid'] = int(line.split()[1])
+        result['boot_id'] = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+    except (OSError, ValueError, IndexError):
+        pass
+    return result
+
+
+def signal_timing(captured, attempts):
+    """Where a stop found one request, in the terms INTERFACE 6.4 charges and reports it."""
+    if not captured:
+        return 'not_captured'
+    if any(row['outcome'] == 'response' for row in attempts):
+        return 'answered'
+    if any(row['request_written'] != 'none' for row in attempts):
+        return 'written_unanswered'
+    return 'captured_not_written'
+
+
+LOG_POINTS = {'reminder_notice': lambda record: record.get('kind') == 'notice'
+                  and record['body'].get('type') == 'reminder',
+              'entry_record': lambda record: record.get('kind') == 'entry'}
+
+
+class LogPoint:
+    """Signal one placement after it publishes a named record in its audit log.
+
+    The log is read from outside the service process. Only a record numbered
+    after those present before the placement started can be the point, so an
+    earlier placement's record never selects it; neither does elapsed time. The
+    pause between looks only spaces the observations. When the placement ends
+    first, or its watchdog expires, nothing is signalled and the interruption is
+    recorded as unexercised. Each witness file is written once, exclusively, in
+    a folder outside Stewart's archive.
+
+    `in_flight` is a rehearsal aid: the fake provider's report that it holds the
+    request following the point. Waiting for it makes the estimated charge of
+    INTERFACE 6.4 deterministic. Without it, as in a live placement, the signal
+    goes as soon as the record is seen, whatever the next request has reached:
+    not yet captured, captured, on the wire or already answered. Which of those
+    it was is read from the placement's own run directory, once when the record
+    is seen and again after the process has stopped, and kept with the witness.
+    """
+    def __init__(self, log, point, folder, *, in_flight=None):
+        if point not in LOG_POINTS:
+            raise ValueError('unknown interruption point')
+        self.log, self.point, self.folder, self.in_flight = Path(log), point, Path(folder), in_flight
+        self.before = self.numbers()
+        self.next = max(self.before, default=0) + 1
+        self.started = self.waited = None
+        self.state = 'unexercised'
+        self.folder.mkdir(mode=0o700)
+        write_json(self.folder / 'selected.json', {'point': point, 'signal': 'SIGTERM',
+            'log_records_before_placement': len(self.before), 'at': time.time(),
+            'observer': {'pid': os.getpid(), 'uid': os.getuid()}})
+
+    def numbers(self):
+        return sorted(int(path.stem) for path in self.log.iterdir()
+                      if re.fullmatch(r'[1-9][0-9]*\.json', path.name))
+
+    def look(self):
+        """The first new record that is the point, or None. Records are linked whole."""
+        while True:
+            path = self.log / f'{self.next}.json'
+            try:
+                raw = path.read_bytes()
+            except FileNotFoundError:
+                return None
+            record = strict_json(raw)
+            if LOG_POINTS[self.point](record):
+                body = record['body']
+                # The placement, and for a notice the request planned to carry it (INTERFACE 4.4).
+                self.run = body['run'] if record['kind'] == 'notice' else body['invocation']['run']
+                self.carrying = body['request'] if record['kind'] == 'notice' else None
+                return {'record': f'log/{self.next}.json', 'sha256': digest(raw), 'kind': record['kind']}
+            self.next += 1
+
+    def captures(self):
+        """Request captures and attempt records of the placement, by number."""
+        run = self.log.parent / 'runs' / str(self.run)
+        requests, attempts = [], {}
+        for path in run.iterdir() if run.is_dir() else []:
+            request = re.fullmatch(r'request-([1-9][0-9]*)\.json', path.name)
+            attempt = re.fullmatch(r'attempt-([1-9][0-9]*)-([1-9][0-9]*)\.json', path.name)
+            if request:
+                requests.append(int(request[1]))
+            if attempt:
+                attempts.setdefault(int(attempt[1]), []).append(int(attempt[2]))
+        return run, sorted(requests), attempts
+
+    def timing(self):
+        """What the signal found, from the stopped placement's captures and attempt records."""
+        run, requests, attempts = self.captures()
+        request = self.carrying if self.carrying is not None else max(requests, default=None)
+        rows = []
+        for number in sorted(attempts.get(request, [])):
+            body = strict_json((run / f'attempt-{request}-{number}.json').read_bytes())['body']
+            rows.append({'attempt': number, 'outcome': body['outcome'], 'request_written': body['request_written'],
+                         'charge_basis': body['charged']['basis']})
+        return {'placement': self.run, 'request': request, 'named_by_the_notice': self.carrying is not None,
+                'request_captured': request in requests, 'attempts': rows, 'requests_captured': len(requests),
+                'timing': signal_timing(request in requests, rows),
+                'source': "the placement's own captures and attempt records, read after it stopped"}
+
+    def await_point(self, proc, limit):
+        self.started = time.monotonic()
+        while True:
+            found = self.look()
+            if found is not None:
+                break
+            ended = proc.poll() is not None
+            if ended or time.monotonic() - self.started >= limit:
+                # The process may have published the record as it ended; nothing
+                # can be signalled then, and the result must not claim otherwise.
+                self.waited = time.monotonic() - self.started
+                write_json(self.folder / 'unexercised.json', {
+                    'reason': 'placement_ended_first' if ended else 'watchdog_expired_first',
+                    'new_log_records_seen': self.next - 1 - max(self.before, default=0),
+                    'signal_sent': False, 'at': time.time()})
+                return False
+            time.sleep(0.01)
+        held = None
+        if self.in_flight is not None:
+            held = self.in_flight.wait(20)
+            if not held:
+                raise RuntimeError('rehearsal provider did not report the request in flight after the point')
+        self.waited = time.monotonic() - self.started
+        _, requests, attempts = self.captures()
+        write_json(self.folder / 'point.json', {'point': self.point, **found, 'observed_at': time.time(),
+            'process': process_identity(proc.pid), 'process_running': proc.poll() is None,
+            'rehearsal_request_in_flight': held,
+            # Seen from outside just before the signal; the placement keeps running meanwhile.
+            'run_directory_when_seen': {'request_captures': len(requests),
+                'attempt_records': sum(len(numbers) for numbers in attempts.values()),
+                'carrying_request_captured': None if self.carrying is None else self.carrying in requests}})
+        return True
+
+    def sent(self, proc):
+        write_json(self.folder / 'signal.json', {'signal': 'SIGTERM', 'number': int(signal.SIGTERM),
+            'process_group': proc.pid, 'sent_at': time.time()})
+        self.state = 'signalled'
+
+    def missed(self, proc):
+        # The record was seen, but the process had gone before a signal could reach it.
+        write_json(self.folder / 'unexercised.json', {'reason': 'placement_ended_at_the_point',
+            'new_log_records_seen': self.next - max(self.before, default=0),
+            'signal_sent': False, 'at': time.time()})
+
+    def remaining(self, limit):
+        # One watchdog covers reaching the point and stopping after it; a
+        # signalled service still gets ten seconds to record its ending.
+        left = max(0, limit - self.waited)
+        return max(left, 10) if self.state == 'signalled' else left
+
+    def ended(self, proc, rc, timed_out):
+        if self.state != 'signalled':
+            return
+        try:
+            os.killpg(proc.pid, 0)
+            group_gone = False
+        except ProcessLookupError:
+            group_gone = True
+        except PermissionError:
+            group_gone = None
+        write_json(self.folder / 'termination.json', {'exit': rc, 'timed_out': timed_out,
+            'process_group_gone': group_gone, 'observed_at': time.time()})
+        if rc is not None:
+            write_json(self.folder / 'timing.json', self.timing())
+
+    def summary(self):
+        """Controlled facts only; the witness files hold the full observation."""
+        result = {'after': self.point, 'state': self.state, 'witness': self.folder.name}
+        for name in ['point', 'signal', 'termination', 'timing', 'unexercised']:
+            path = self.folder / (name + '.json')
+            result[name] = strict_json(path.read_bytes()) if path.exists() else None
+        return result
+
+
 class Session:
     def spawn(self, argv, **options):
         """Run the production Linux path as the unprivileged audit owner."""
@@ -148,12 +363,19 @@ class Session:
                         raise RuntimeError('process observation witness did not observe the request')
                     self.observe_process(proc.pid)
                     release.set()
+                limit = self.commission['stop_after_seconds'] if key is not None else 40
                 if interrupt is not None:
-                    if not interrupt.wait(20):
-                        raise RuntimeError('interruption witness did not observe the request')
-                    os.killpg(proc.pid, signal.SIGTERM)
+                    self.phase = 'interruption-witness'
+                    if interrupt.await_point(proc, limit):
+                        try:
+                            os.killpg(proc.pid, signal.SIGTERM)
+                        except ProcessLookupError:
+                            interrupt.missed(proc)
+                        else:
+                            interrupt.sent(proc)
+                    limit = interrupt.remaining(limit)
                 try:
-                    rc = proc.wait(timeout=self.commission['stop_after_seconds'] if key is not None else 40)
+                    rc = proc.wait(timeout=limit)
                 except subprocess.TimeoutExpired:
                     timed_out = True
                     os.killpg(proc.pid, signal.SIGTERM)
@@ -179,6 +401,11 @@ class Session:
                 except BaseException as error:
                     cleanup_error = error
                 rc = proc.poll() if proc is not None else None
+                if interrupt is not None and proc is not None and cleanup_error is None:
+                    try:
+                        interrupt.ended(proc, rc, timed_out)
+                    except BaseException as error:
+                        primary_error = primary_error or error
                 metadata = {'argv': argv, 'exit': rc, 'pid': proc.pid if proc is not None else None,
                     'process_state': 'not_started' if proc is None else 'exited' if rc is not None else 'unknown',
                     'timed_out': timed_out, 'started_at': started, 'ended_at': time.time(),
@@ -351,7 +578,8 @@ time.sleep(60)
             endpoint = f'http://127.0.0.1:{fake.server.server_port}'
             fake.__enter__()
         try:
-            reply, rc, timed_out = self.command('run', 'run', self.ref, key=key, endpoint=endpoint, interrupt=interrupt, observe=observe)
+            reply, rc, timed_out = self.command('run', 'run', self.ref, key=key, endpoint=endpoint,
+                interrupt=None if interrupt is None else RequestSeen(interrupt), observe=observe)
         finally:
             if interrupt is not None:
                 release.set()
@@ -412,105 +640,171 @@ time.sleep(60)
         return summary
 
 
+def placement_folder(evidence, placement):
+    """Where one placement's launcher records live, outside Stewart's archive.
+
+    The first placement keeps its names directly in `evidence/`. Each later one
+    has `evidence/placement-NNNN/`, so no earlier record is ever rewritten.
+    """
+    return evidence if placement == 1 else evidence / f'placement-{placement:04d}'
+
+
+def numbered_records(evidence, pattern):
+    found = []
+    for path in evidence.iterdir():
+        match = re.fullmatch(pattern, path.name)
+        if match is not None:
+            found.append((int(match[1]), path))
+    return [path for _, path in sorted(found)], [number for number, _ in sorted(found)]
+
+
+# Attempt outcomes whose response capture may be cut off (INTERFACE 6.6): every
+# outcome with a status line except `response`, a complete decodable message.
+CUT_OFF_OUTCOMES = ['response_undecodable', 'http_error', 'timeout', 'connection_lost',
+                    'aborted_by_close', 'aborted_by_signal']
+
+
+def run_capture_state(run, ended):
+    """Account every capture of one placement against its recorded ending."""
+    attempts = list(run.glob('attempt-*.json'))
+    requests = list(run.glob('request-*.json'))
+    if not attempts or not requests:
+        return 'missing_attempt_evidence'
+    if ended.get('requests') != len(requests) or ended.get('attempts') != len(attempts) or str(ended.get('run')) != run.name:
+        return 'capture_counts_disagree'
+    witnessed_responses = set()
+    witnessed_requests = set()
+    attempt_numbers = {}
+    for path in attempts:
+        value = strict_json(path.read_bytes())
+        if value.get('kind') != 'provider_attempt':
+            return 'invalid_attempt_evidence'
+        body = value['body']
+        if any(type(body.get(field)) is not int or body[field] <= 0 for field in ['request', 'attempt']):
+            return 'invalid_attempt_identity'
+        match = re.fullmatch(r'attempt-([1-9][0-9]*)-([1-9][0-9]*)\.json', path.name)
+        if match is None or (int(match[1]), int(match[2])) != (body.get('request'), body.get('attempt')):
+            return 'attempt_identity_disagrees'
+        attempt_numbers.setdefault(body['request'], []).append(body['attempt'])
+        marker = body['credential_reflection']
+        if not isinstance(marker, dict) or set(marker) != {'body', 'headers'} or type(marker['body']) is not bool or not isinstance(marker['headers'], list) or any(h not in ['content-type', 'request-id', 'retry-after'] for h in marker['headers']):
+            return 'invalid_reflection_marker'
+        if marker['body'] or marker['headers']:
+            return 'credential_reflection_recorded'
+        witnessed_requests.add('request-' + str(body['request']) + '.json')
+        response = body['response']
+        if response is not None:
+            name = response['file']
+            if name != f"response-{body['request']}-{body['attempt']}.bin":
+                return 'invalid_response_membership'
+            raw = (run / name).read_bytes()
+            # INTERFACE 4.5: a response capture is written "once its body ended or
+            # was cut off", the attempt record "binds its size and SHA-256", and
+            # `complete` "is false when the body was cut off or exceeded 32 MiB".
+            # A cut-off body bound exactly by its record is therefore a complete
+            # observation of an incomplete response. It is accepted only for an
+            # outcome that INTERFACE 6.6 does not define as a complete decodable
+            # body, and only with the clean reflection marker required above.
+            # Anything used as a response must be whole, and any size or digest
+            # difference withholds as before.
+            whole = response['complete'] is True or (response['complete'] is False
+                and body.get('outcome') in CUT_OFF_OUTCOMES)
+            if not whole or type(response.get('bytes')) is not int or response['bytes'] < 0 or len(raw) != response['bytes'] or digest(raw) != response['sha256']:
+                return 'incomplete_response_evidence'
+            witnessed_responses.add(name)
+    if witnessed_responses != {path.name for path in run.glob('response-*.bin')} or witnessed_requests != {path.name for path in requests}:
+        return 'unaccounted_capture'
+    if witnessed_requests != {f'request-{n}.json' for n in range(1, len(requests) + 1)} or any(sorted(numbers) != list(range(1, len(numbers) + 1)) for numbers in attempt_numbers.values()):
+        return 'noncontiguous_attempt_evidence'
+    for path in requests:
+        raw = path.read_bytes()
+        request = strict_json(raw)
+        if not raw.endswith(b'\n') or not isinstance(request, dict) or type(request.get('request')) is not int or request['request'] <= 0 or path.name != f"request-{request.get('request')}.json":
+            return 'incomplete_request_evidence'
+    # A staged provider attempt must have an identical published record.
+    published = {path.read_bytes() for path in attempts}
+    for path in (run / 'stage').glob('*'):
+        if path.is_file():
+            raw = path.read_bytes()
+            value = strict_json(raw)
+            if value.get('kind') == 'provider_attempt' and raw not in published:
+                return 'unpublished_attempt_evidence'
+    return None
+
+
 def export_evidence_state(root):
     """Require complete stopped-run observations and independently check markers.
 
-    A crash between raw capture and marker publication cannot authorize export.
-    Raw bodies, orphaned captures and staged records remain private on failure.
+    Every placement needs its own launcher result, run command, status
+    observation, log boundary and run directory, in the same order, and every
+    capture of every placement is accounted. An audit continued after an
+    interruption therefore exports only when each placement would have exported
+    alone. A crash between raw capture and marker publication cannot authorize
+    export. Raw bodies, orphaned captures and staged records remain private on
+    failure.
     """
     try:
-        result = strict_json((root / 'evidence/RESULT.json').read_bytes())
-        if result.get('failure') is not False:
-            return 'procedure_not_complete'
-        commands = [path for path in (root / 'evidence').iterdir()
-                    if re.fullmatch(r'[0-9]{2,}-run\.json', path.name)]
-        statuses = [path for path in (root / 'evidence').iterdir()
-                    if re.fullmatch(r'[0-9]{2,}-status-after-run\.stdout', path.name)]
-        if len(commands) != 1 or len(statuses) != 1:
+        evidence = root / 'evidence'
+        commands, command_numbers = numbered_records(evidence, r'([0-9]{2,})-run\.json')
+        statuses, status_numbers = numbered_records(evidence, r'([0-9]{2,})-status-after-run\.stdout')
+        later = sorted(path.name for path in evidence.iterdir() if path.name.startswith('placement-'))
+        placements = max(len(commands), 1)
+        for number in range(1, placements + 1):
+            result = strict_json((placement_folder(evidence, number) / 'RESULT.json').read_bytes())
+            if result.get('failure') is not False:
+                return 'procedure_not_complete'
+        # A placement folder without its run command is an intended start whose
+        # effects were never observed.
+        if (not commands or len(commands) != len(statuses)
+                or later != [f'placement-{number:04d}' for number in range(2, placements + 1)]):
             return 'missing_run_observation'
-        command = strict_json(commands[0].read_bytes())
-        status_command = strict_json(statuses[0].with_suffix('.json').read_bytes())
-        run_argv, status_argv = command.get('argv'), status_command.get('argv')
-        if not isinstance(run_argv, list) or not isinstance(status_argv, list) or len(run_argv) < 3 or len(status_argv) < 3 or run_argv[1] != 'run' or status_argv[1] != 'status' or run_argv[0] != status_argv[0] or run_argv[2] != status_argv[2]:
-            return 'mismatched_run_observation'
-        if type(status_command.get('exit')) is not int or status_command['exit'] != 0 or status_command.get('timed_out') is not False:
-            return 'uncertain_writer_state'
-        status = strict_json(statuses[0].read_bytes())['data']['runs']
-        if type(command.get('exit')) is not int or command['exit'] < 0 or command.get('timed_out') is not False:
-            return 'uncertain_process_exit'
-        if status.get('held') is not False or type(status.get('count')) is not int or status['count'] != 1 or not status.get('last', {}).get('ending'):
-            return 'uncertain_writer_state'
+        order = sorted([(number, 'run') for number in command_numbers] + [(number, 'status') for number in status_numbers])
+        if [kind for _, kind in order] != ['run', 'status'] * placements:
+            return 'missing_run_observation'
+        observed = []
+        first_argv = None
+        for number, (command_path, status_path) in enumerate(zip(commands, statuses), 1):
+            command = strict_json(command_path.read_bytes())
+            status_command = strict_json(status_path.with_suffix('.json').read_bytes())
+            run_argv, status_argv = command.get('argv'), status_command.get('argv')
+            if not isinstance(run_argv, list) or not isinstance(status_argv, list) or len(run_argv) < 3 or len(status_argv) < 3 or run_argv[1] != 'run' or status_argv[1] != 'status' or run_argv[0] != status_argv[0] or run_argv[2] != status_argv[2]:
+                return 'mismatched_run_observation'
+            first_argv = first_argv or run_argv
+            if run_argv[0] != first_argv[0] or run_argv[2] != first_argv[2]:
+                return 'mismatched_run_observation'
+            if type(status_command.get('exit')) is not int or status_command['exit'] != 0 or status_command.get('timed_out') is not False:
+                return 'uncertain_writer_state'
+            status = strict_json(status_path.read_bytes())['data']['runs']
+            if type(command.get('exit')) is not int or command['exit'] < 0 or command.get('timed_out') is not False:
+                return 'uncertain_process_exit'
+            if status.get('held') is not False or type(status.get('count')) is not int or status['count'] != number or not status.get('last', {}).get('ending'):
+                return 'uncertain_writer_state'
+            observed.append(status)
         audits = list((root / 'archive/audits').iterdir())
         if len(audits) != 1:
             return 'unknown_audit_membership'
-        logs = [strict_json(path.read_bytes()) for path in (audits[0] / 'log').glob('*.json')]
-        if sum(record.get('kind') == 'run_started' for record in logs) != 1 or sum(record.get('kind') == 'run_ended' for record in logs) != 1:
+        logs = sorted((audits[0] / 'log').glob('*.json'), key=lambda path: (len(path.stem), path.stem))
+        logs = [strict_json(path.read_bytes()) for path in logs]
+        starts = [record['body'] for record in logs if record.get('kind') == 'run_started']
+        ends = [record['body'] for record in logs if record.get('kind') == 'run_ended']
+        if len(starts) != placements or len(ends) != placements:
             return 'missing_run_boundary'
-        started = next(record['body'] for record in logs if record['kind'] == 'run_started')
-        ended = next(record['body'] for record in logs if record['kind'] == 'run_ended')
-        if any(type(ended.get(field)) is not int or ended[field] <= 0 for field in ['run', 'requests', 'attempts']):
-            return 'invalid_run_counts'
-        if type(started.get('run')) is not int or started['run'] <= 0 or started['run'] != ended['run']:
-            return 'invalid_run_identity'
-        last = status['last']
-        if type(last.get('number')) is not int or last['number'] <= 0 or last['number'] != ended['run']:
-            return 'uncertain_writer_state'
-        run_dirs = [path for path in (audits[0] / 'runs').iterdir() if path.is_dir()]
-        if len(run_dirs) != 1:
+        for number, (started, ended, status) in enumerate(zip(starts, ends, observed), 1):
+            if any(type(ended.get(field)) is not int or ended[field] <= 0 for field in ['run', 'requests', 'attempts']):
+                return 'invalid_run_counts'
+            if type(started.get('run')) is not int or started['run'] <= 0 or started['run'] != ended['run'] or started['run'] != number:
+                return 'invalid_run_identity'
+            last = status['last']
+            if type(last.get('number')) is not int or last['number'] <= 0 or last['number'] != ended['run']:
+                return 'uncertain_writer_state'
+        run_dirs = sorted((path for path in (audits[0] / 'runs').iterdir() if path.is_dir()),
+                          key=lambda path: (len(path.name), path.name))
+        if len(run_dirs) != placements:
             return 'unknown_run_membership'
-        run = run_dirs[0]
-        attempts = list(run.glob('attempt-*.json'))
-        requests = list(run.glob('request-*.json'))
-        if not attempts or not requests:
-            return 'missing_attempt_evidence'
-        if ended.get('requests') != len(requests) or ended.get('attempts') != len(attempts) or str(ended.get('run')) != run.name:
-            return 'capture_counts_disagree'
-        witnessed_responses = set()
-        witnessed_requests = set()
-        attempt_numbers = {}
-        for path in attempts:
-            value = strict_json(path.read_bytes())
-            if value.get('kind') != 'provider_attempt':
-                return 'invalid_attempt_evidence'
-            body = value['body']
-            if any(type(body.get(field)) is not int or body[field] <= 0 for field in ['request', 'attempt']):
-                return 'invalid_attempt_identity'
-            match = re.fullmatch(r'attempt-([1-9][0-9]*)-([1-9][0-9]*)\.json', path.name)
-            if match is None or (int(match[1]), int(match[2])) != (body.get('request'), body.get('attempt')):
-                return 'attempt_identity_disagrees'
-            attempt_numbers.setdefault(body['request'], []).append(body['attempt'])
-            marker = body['credential_reflection']
-            if not isinstance(marker, dict) or set(marker) != {'body', 'headers'} or type(marker['body']) is not bool or not isinstance(marker['headers'], list) or any(h not in ['content-type', 'request-id', 'retry-after'] for h in marker['headers']):
-                return 'invalid_reflection_marker'
-            if marker['body'] or marker['headers']:
-                return 'credential_reflection_recorded'
-            witnessed_requests.add('request-' + str(body['request']) + '.json')
-            response = body['response']
-            if response is not None:
-                name = response['file']
-                if name != f"response-{body['request']}-{body['attempt']}.bin":
-                    return 'invalid_response_membership'
-                raw = (run / name).read_bytes()
-                if response['complete'] is not True or type(response.get('bytes')) is not int or response['bytes'] < 0 or len(raw) != response['bytes'] or digest(raw) != response['sha256']:
-                    return 'incomplete_response_evidence'
-                witnessed_responses.add(name)
-        if witnessed_responses != {path.name for path in run.glob('response-*.bin')} or witnessed_requests != {path.name for path in requests}:
-            return 'unaccounted_capture'
-        if witnessed_requests != {f'request-{n}.json' for n in range(1, len(requests) + 1)} or any(sorted(numbers) != list(range(1, len(numbers) + 1)) for numbers in attempt_numbers.values()):
-            return 'noncontiguous_attempt_evidence'
-        for path in requests:
-            raw = path.read_bytes()
-            request = strict_json(raw)
-            if not raw.endswith(b'\n') or not isinstance(request, dict) or type(request.get('request')) is not int or request['request'] <= 0 or path.name != f"request-{request.get('request')}.json":
-                return 'incomplete_request_evidence'
-        # A staged provider attempt must have an identical published record.
-        published = {path.read_bytes() for path in attempts}
-        for path in (run / 'stage').glob('*'):
-            if path.is_file():
-                raw = path.read_bytes()
-                value = strict_json(raw)
-                if value.get('kind') == 'provider_attempt' and raw not in published:
-                    return 'unpublished_attempt_evidence'
+        for run, ended in zip(run_dirs, ends):
+            state = run_capture_state(run, ended)
+            if state is not None:
+                return state
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         return 'missing_or_malformed_evidence'
     return 'complete'

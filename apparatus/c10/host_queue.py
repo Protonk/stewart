@@ -15,7 +15,8 @@ import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import (REPO, HERE, SOURCE_PATHS, digest, fields, identifier, read_file,
-                    require, source_hash, strict_json, validate_packet, write_json)
+                    require, source_hash, strict_json, validate_continuation, validate_packet,
+                    write_json)
 from connections import validate_label
 from launch import host_environment
 
@@ -91,6 +92,30 @@ def command(request, config, live):
         require(len(packet['runs']) == 1, 'dispatch one audit, then review before selecting another')
         return base + ['live', str(out), '--qualification', config['qualification'],
             '--commission', request['packet'], '--approved-commission', request['sha256'],
+            '--rehearsal', str(evidence_path(request['rehearsal'])),
+            '--connection', config['account']['credential_label']], 1
+    if kind == 'continue':
+        # One later placement of a retained audit. The launcher repeats every
+        # check below and adds the retained-record, prior-state and writer checks.
+        fields(request, ['operation', 'evidence', 'record', 'packet', 'sha256', 'rehearsal'],
+               'continuation request')
+        require(live, 'this host session is offline; restart with --live after enabling')
+        configuration(config, True)
+        evidence = evidence_path(request['evidence'])
+        require(evidence.is_dir(), 'retained evidence of the original launch is missing')
+        record = evidence_path(request['record'])
+        require(not record.exists(), 'continuation record already exists; reconcile it, never repeat it')
+        raw = read_file(Path(request['packet']))
+        require(digest(raw) == request['sha256'], 'packet digest differs')
+        packet = validate_continuation(strict_json(raw), approved=True)
+        require(packet['model'] == config['model'] and packet['account'] == config['account']
+                and packet['spending_authority'] == config['authority']
+                and packet['bindings']['qualification_id'] == config['qualification'],
+                'packet exceeds or differs from this campaign')
+        require(packet['evidence'] == str(evidence), 'packet continues an audit in another evidence folder')
+        return base + ['continue', 'live', str(evidence), str(record),
+            '--qualification', config['qualification'], '--packet', request['packet'],
+            '--approved-packet', request['sha256'],
             '--rehearsal', str(evidence_path(request['rehearsal'])),
             '--connection', config['account']['credential_label']], 1
     require(kind in ['status', 'inspect', 'close', 'collect'], 'unsupported operation')

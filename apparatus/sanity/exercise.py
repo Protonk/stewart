@@ -80,10 +80,18 @@ class Fake:
                         raise ValueError('unexpected API version')
                     if self.headers.get('anthropic-beta') != 'compact-2026-09-04':
                         raise ValueError('unexpected compaction beta')
-                    status, response = fake.respond(json.loads(body))
+                    answer = fake.respond(json.loads(body))
                 except Exception as error:
                     fake.failures.append(str(error))
-                    status, response = 400, {'error': {'type': 'rehearsal_error', 'message': str(error)}}
+                    answer = 400, {'error': {'type': 'rehearsal_error', 'message': str(error)}}
+                if answer is None:
+                    # A request held until its client was signalled: the request
+                    # bytes are witnessed, no response exists and none is sent.
+                    write_json(evidence / f'exchange-{n}.json', {'status': None, 'response': 'withheld_after_signal',
+                        'synthetic_auth_matched': self.headers.get('x-api-key') == fake.key, 'observed_at': time.time()})
+                    self.close_connection = True
+                    return
+                status, response = answer
                 raw = json.dumps(response, separators=(',', ':')).encode()
                 (evidence / f'response-{n}.json').write_bytes(raw)
                 write_json(evidence / f'exchange-{n}.json', {'status': status, 'synthetic_auth_matched': self.headers.get('x-api-key') == fake.key, 'observed_at': time.time()})
@@ -106,8 +114,8 @@ class Fake:
             blocks.append({'type': 'tool_use', 'id': tid, 'name': name, 'input': operands})
         return self.message(blocks, 'tool_use')
 
-    def message(self, content, stop):
-        return 200, {'id': f'rehearsal-{self.requests}', 'type': 'message', 'role': 'assistant', 'model': 'rehearsal-only', 'content': content, 'stop_reason': stop, 'stop_sequence': None, 'usage': {'input_tokens': 1000, 'output_tokens': 200}}
+    def message(self, content, stop, output=200):
+        return 200, {'id': f'rehearsal-{self.requests}', 'type': 'message', 'role': 'assistant', 'model': 'rehearsal-only', 'content': content, 'stop_reason': stop, 'stop_sequence': None, 'usage': {'input_tokens': 1000, 'output_tokens': output}}
 
     def respond(self, body):
         if body['model'] != 'rehearsal-only' or 'output_config' in body:

@@ -17,8 +17,42 @@ SOURCE_PATHS = ['apparatus/c10', 'apparatus/sanity',
     'apparatus/driver/credential_observer.py', 'apparatus/driver/driver_core.py',
     'apparatus/driver/rawjson.py', 'apparatus/driver/answer_witness.py']
 FAMILIES = ['open-inquiry', 'inquiry-framing', 'comparison']
+# Rehearsal controls that need more than one placement. Each first placement
+# ends interrupted; a separately bound continuation packet starts the next one.
+# `interruption` names the witnessed point after which the apparatus signals the
+# placement, or None when the fake provider ends it. `held` says whether the
+# fake withholds its response to the request in flight until the signal has been
+# sent: True makes the aborted-in-flight case certain; False signals as soon as
+# the record is seen, as a live interruption does, so the request may or may not
+# have been written. `endings` are the (ending, cause) pairs INTERFACE 6.5 gives
+# each placement in order; they hold for either timing.
+CONTINUED = {
+    # A thinking-only response at the output cap; no entry exists to preserve.
+    'continue-cap': {'interruption': None, 'held': None,
+        'endings': [['interrupted', 'max_tokens'], ['sealed', None]]},
+    # The same ending after a recorded entry, which the next placement revises.
+    'continue-entries': {'interruption': None, 'held': None,
+        'endings': [['interrupted', 'max_tokens'], ['sealed', None]]},
+    # Interrupted after its reminder; the next ordinary ending ends authoring.
+    'reminder-spent': {'interruption': 'reminder_notice', 'held': True,
+        'endings': [['interrupted', 'signal'], ['ended_unsubmitted', None]]},
+    # The same without holding the request: the timing a live interruption has.
+    'reminder-spent-unheld': {'interruption': 'reminder_notice', 'held': False,
+        'endings': [['interrupted', 'signal'], ['ended_unsubmitted', None]]},
+    # Interrupted after its reminder; the next placement submits unprompted.
+    'reminder-spent-submits': {'interruption': 'reminder_notice', 'held': True,
+        'endings': [['interrupted', 'signal'], ['sealed', None]]},
+    # Interrupted before any reminder; the next placement receives the reminder.
+    'reminder-unused': {'interruption': 'entry_record', 'held': True,
+        'endings': [['interrupted', 'signal'], ['sealed', None]]},
+}
+INTERRUPTION_POINTS = ['reminder_notice', 'entry_record']
+CONTINUABLE_CAUSES = ['signal', 'max_tokens', 'provider_unavailable', 'provider_rejected',
+    'context_exhausted', 'provider_refusal', 'protocol_anomaly']
+MAX_PLACEMENTS = 4
 SCENARIOS = ['submitted', 'empty', 'unsubmitted', 'provider-rejected',
-    'lost-run-reply', 'reflected-body', 'export-contamination', 'export-failure']
+    'lost-run-reply', 'reflected-body', 'export-contamination', 'export-failure',
+    *CONTINUED]
 BINDINGS = ['qualification_id', 'binary_sha256', 'source_commit', 'apparatus_sha256',
             'image', 'catalog_sha256']
 LIMITS = ['turns', 'input_tokens', 'output_tokens']
@@ -148,15 +182,36 @@ def catalog():
     return found
 
 
+def validate_interruption(value, *, rehearsal=False):
+    """A witnessed point after which the apparatus sends one signal to the placement.
+
+    Live packets may select only the recorded reminder notice. The point is a
+    log record published by that placement; elapsed time never selects it.
+    """
+    fields(value, ['after', 'signal'], 'interruption')
+    require(value['after'] in (INTERRUPTION_POINTS if rehearsal else ['reminder_notice'])
+            and value['signal'] == 'SIGTERM', 'unsupported interruption point or signal')
+    return value
+
+
 def validate_packet(packet, *, rehearsal=False, approved=False):
     interface_study = packet.get('schema') == 'stewart.interface-commission/1'
+    # A study audit whose first placement is interrupted at a witnessed point.
+    # Later placements each need their own stewart.c10-continuation/1 packet.
+    interrupted_study = packet.get('schema') == 'stewart.interruption-commission/1'
     fields(packet, ['schema', 'model', 'effort', 'limits', 'endpoint', 'proxy', 'runs',
         'max_placements', 'permitted_request_attempts', 'automatic_continuation',
         'stop_after_seconds', 'spending_authority', 'account', 'bindings']
-        + (['study_build'] if interface_study else []), 'commission')
+        + (['study_build'] if interface_study else [])
+        + (['interruption'] if interrupted_study else []), 'commission')
     require(packet['schema'] in ['stewart.c10-commission/1', 'stewart.study-commission/1',
-                                'stewart.interface-commission/1'], 'unsupported commission schema')
+                                'stewart.interface-commission/1',
+                                'stewart.interruption-commission/1'], 'unsupported commission schema')
     study = packet['schema'] != 'stewart.c10-commission/1'
+    if interrupted_study:
+        validate_interruption(packet['interruption'], rehearsal=rehearsal)
+        require(isinstance(packet['runs'], list) and len(packet['runs']) == 1,
+                'an interrupted study names exactly one audit')
     if interface_study:
         from study_build import validate
         validate(packet['study_build'], bound=approved)
@@ -169,9 +224,13 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
     require(packet['limits']['output_tokens'] >= 1024, 'output allowance cannot launch')
     require(packet['endpoint'] == ('loopback-fake' if rehearsal else 'https://api.anthropic.com')
             and packet['proxy'] is None, 'unapproved provider route')
-    require(type(packet['max_placements']) is int and packet['max_placements'] == 1
+    # Every launch performs one placement. An interrupted study records the
+    # audit's commissioned ceiling; its later placements are separately bound.
+    require(type(packet['max_placements']) is int
+            and (2 <= packet['max_placements'] <= MAX_PLACEMENTS if interrupted_study
+                 else packet['max_placements'] == 1)
             and type(packet['permitted_request_attempts']) is int and packet['permitted_request_attempts'] == 4
-            and packet['automatic_continuation'] is False, 'one placement, built-in retries and no continuation required')
+            and packet['automatic_continuation'] is False, 'one placement per launch, built-in retries and no automatic continuation required')
     require(type(packet['stop_after_seconds']) is int and 60 <= packet['stop_after_seconds'] <= 14400, 'invalid watchdog')
     cases = catalog()
     require(isinstance(packet['runs'], list) and 0 < len(packet['runs']) <= 64, 'batch needs 1–64 explicit audits')
@@ -213,6 +272,61 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
     return packet
 
 
+def validate_continuation(packet, *, rehearsal=False, approved=False):
+    """One later placement of one retained audit, bound to its observed prior state.
+
+    `prior.log_head_sha256` and `prior.usage` may be null when the preceding
+    placement has not happened yet; the launcher then records what it finds.
+    Nothing here starts a placement automatically or permits a replacement.
+    """
+    fields(packet, ['schema', 'evidence', 'audit', 'container', 'reference', 'placement',
+        'max_placements', 'prior', 'model', 'limits', 'endpoint', 'proxy', 'interruption',
+        'permitted_request_attempts', 'automatic_continuation', 'stop_after_seconds',
+        'spending_authority', 'account', 'bindings'], 'continuation')
+    require(packet['schema'] == 'stewart.c10-continuation/1', 'unsupported continuation schema')
+    evidence = packet['evidence']
+    require(isinstance(evidence, str) and Path(evidence).is_absolute()
+            and not any(ord(c) < 32 for c in evidence), 'continuation needs the absolute retained evidence folder')
+    require(identifier(packet['audit']), 'invalid audit identity')
+    require(isinstance(packet['container'], str)
+            and re.fullmatch(r'stewart-c10-[0-9]+-[0-9]+', packet['container']), 'unknown container identity')
+    require(isinstance(packet['reference'], str)
+            and re.fullmatch(r'stw1:[a-z2-7]{17}:[a-z2-7]{17}:/[\x21-\x7e]{1,1024}', packet['reference']),
+            'invalid audit reference')
+    require(type(packet['placement']) is int and type(packet['max_placements']) is int
+            and 2 <= packet['placement'] <= packet['max_placements'] <= MAX_PLACEMENTS,
+            'placement outside the commissioned ceiling')
+    prior = packet['prior']
+    fields(prior, ['runs', 'last_ending', 'last_cause', 'log_head_sha256', 'usage'], 'prior state')
+    require(prior['runs'] == packet['placement'] - 1 and prior['last_ending'] == 'interrupted'
+            and prior['last_cause'] in CONTINUABLE_CAUSES,
+            'only the next placement of an audit whose last placement was recorded interrupted')
+    require(prior['log_head_sha256'] is None or isinstance(prior['log_head_sha256'], str)
+            and re.fullmatch(r'[0-9a-f]{64}', prior['log_head_sha256']), 'invalid log head digest')
+    if prior['usage'] is not None:
+        fields(prior['usage'], LIMITS, 'prior usage')
+        require(all(type(n) is int and 0 <= n <= 2**48 for n in prior['usage'].values()), 'invalid prior usage')
+    model = packet['model']
+    require(isinstance(model, str) and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]{0,127}', model), 'invalid model')
+    require((model == 'rehearsal-only') == rehearsal and not model.startswith('REPLACE'), 'model does not match launch mode')
+    fields(packet['limits'], LIMITS, 'limits')
+    require(all(type(n) is int and 0 < n <= 2**48 for n in packet['limits'].values()), 'invalid allowance')
+    require(packet['endpoint'] == ('loopback-fake' if rehearsal else 'https://api.anthropic.com')
+            and packet['proxy'] is None, 'unapproved provider route')
+    if packet['interruption'] is not None:
+        validate_interruption(packet['interruption'], rehearsal=rehearsal)
+    require(type(packet['permitted_request_attempts']) is int and packet['permitted_request_attempts'] == 4
+            and packet['automatic_continuation'] is False, 'built-in retries and no automatic continuation required')
+    require(type(packet['stop_after_seconds']) is int and 60 <= packet['stop_after_seconds'] <= 14400, 'invalid watchdog')
+    fields(packet['bindings'], BINDINGS, 'bindings')
+    fields(packet['account'], ['account_label', 'workspace_id', 'credential_label'], 'account')
+    for value in [*packet['bindings'].values(), *packet['account'].values(), packet['spending_authority']]:
+        require(value is None or isinstance(value, str) and 0 < len(value) <= 4096, 'invalid packet metadata')
+        if approved:
+            require(isinstance(value, str) and bool(value.strip()), 'approved packet has unfilled authority or bindings')
+    return packet
+
+
 def proposal(model, case_ids=None, repetitions=1, *, rehearsal=False):
     cases = catalog()
     selected = list(cases) if case_ids is None else case_ids
@@ -233,6 +347,13 @@ def proposal(model, case_ids=None, repetitions=1, *, rehearsal=False):
 def rehearsal_packet():
     packet = proposal('rehearsal-only', rehearsal=True)
     packet['stop_after_seconds'] = 60
+    # A request aborted by a signal after any byte was written is charged its
+    # whole max_tokens as an estimate (INTERFACE 6.4), and max_tokens is the
+    # lesser of 16,000 and what remains. With the proposal's 12,000 the
+    # interrupted controls would leave under 1,024 output tokens and the next
+    # placement would end limit_reached before any request. 30,000 leaves room
+    # for one such estimate while keeping later requests below the 16,000 cap.
+    packet['limits']['output_tokens'] = 30000
     for scenario in SCENARIOS[1:]:
         packet['runs'].append({'id': 'control-' + scenario, 'case': 'open-ordinary',
             'repetition': 1, 'scenario': scenario,

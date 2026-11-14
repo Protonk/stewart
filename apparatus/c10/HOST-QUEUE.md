@@ -32,7 +32,8 @@ python3 -I -B apparatus/c10/host_queue.py /absolute/campaign/queue \
 ```
 
 The first command handles at most one offline request, such as a full Linux
-rehearsal with synthetic saved-connection collection. Inspect that result before
+rehearsal with synthetic saved-connection collection and continuation controls.
+Inspect that result before
 enabling live work. The second runs until `queue/STOP` exists or an operation
 fails. It snapshots its configuration and apparatus identity at startup, and
 refuses further dispatch if apparatus files change. After a reviewed apparatus
@@ -41,8 +42,8 @@ change, restart it; paid launch still needs the new matching rehearsal.
 One advisory lock excludes concurrent runners on the same queue. Use one queue
 for the entire campaign; starting a new directory would lose its placement count.
 All launch paths for the campaign must use that queue. It conservatively charges
-one slot when claiming a live command, including a failed preflight; actual
-placement observations remain in the C10 records. Missing claim metadata also
+one slot when claiming a `live` or `continue` command, including a failed
+preflight; actual placement observations remain in the C10 records. Missing claim metadata also
 reserves one slot. Slots are never automatically refunded. This small dispatch
 bound is not a credit reservation or a measurement of spend.
 
@@ -63,6 +64,7 @@ experiment scheduler. Examples, with absolute paths abbreviated:
 ```json
 {"operation":"rehearse","evidence":"/repo/.scratch/rehearsal-01","submissions":[["case-a","/repo/.scratch/inputs/case-a"]]}
 {"operation":"live","evidence":"/repo/.scratch/live-01","packet":"/repo/.scratch/packet.json","sha256":"EXACT_PACKET_SHA256","rehearsal":"/repo/.scratch/rehearsal-01"}
+{"operation":"continue","evidence":"/repo/.scratch/live-01","record":"/repo/.scratch/continue-01","packet":"/repo/.scratch/continuation-packet.json","sha256":"EXACT_PACKET_SHA256","rehearsal":"/repo/.scratch/rehearsal-02"}
 {"operation":"inspect","evidence":"/repo/.scratch/live-01","audit":"case-a","confirm":null}
 {"operation":"close","evidence":"/repo/.scratch/live-01","audit":"case-a","confirm":null}
 {"operation":"close","evidence":"/repo/.scratch/live-01","audit":"case-a","confirm":"EXACT_RETURNED_CONFIRMATION"}
@@ -70,12 +72,36 @@ experiment scheduler. Examples, with absolute paths abbreviated:
 ```
 
 `status` has the same shape as `inspect`. Only ordinary close is supported; there
-is no surrender, disposal or continuation command. A live request names exactly
+is no surrender or disposal command. A live request names exactly
 one audit and must match the campaign's model, account, authority and base
 qualification. The existing launcher checks its exact packet digest, clean
 committed apparatus, declared binary, input hashes and complete rehearsal before
 credential access. A packet's authority text records the delegation; it does not
 prove permission. Follow-ups get new packets and evidence folders.
+
+`continue` starts one [later placement](README.md#continue-a-retained-audit) of
+a retained audit. `evidence` is the original launch's folder, which the packet
+must name; `record` is a new folder for this placement's host records; `packet`
+is a `stewart.c10-continuation/1` packet with its exact digest. It has the same
+guarantees as `live`: it needs a live-enabled session and current Console
+record, must match the campaign's model, account, authority and base
+qualification, charges one slot when claimed, is never dispatched twice, and
+waits behind any unreconciled claim. The launcher then repeats those checks and
+adds its own against the retained records, the audit's prior state, its writer
+and the rehearsal's continuation controls. A first-launch packet is refused
+under `continue`, and a continuation packet under `live`. For status,
+inspection, close or collection of a continued audit, name the continuation's
+record folder as `evidence`. Nothing here selects or starts a continuation by
+itself; each one is a request the experimenter publishes after reviewing the
+placement before it.
+
+A `continue` launch whose host record says `not_started` stopped before any
+model process, for example on a denied Keychain lookup or a different key. It
+still exits nonzero, keeps its charged slot and blocks paid dispatch until its
+claim is reconciled. A further attempt of the same placement is a new request
+with a new `record` folder and its own slot. The launcher permits it only while
+every earlier attempt is recorded as not started; a placement that started or
+may have started is never dispatched again.
 
 `claims/NAME/` is created exclusively before subprocess execution. It retains the
 request, command, streams and result. A claimed name is never dispatched twice,

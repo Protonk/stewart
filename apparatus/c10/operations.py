@@ -11,7 +11,7 @@ import time
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from common import credential_bytes, digest, identifier, read_file, require, strict_json, write_json
-from batch import check_credential, event, export_snapshot
+from batch import check_credential, event, export_snapshot, next_snapshot
 from control import safe_state
 from exercise import verify_package
 
@@ -59,12 +59,7 @@ def operate(private, out, audit_id, operation, *, confirm=None, key=None, local=
             check_credential(private.parent/'credential-check'/(audit_id+'.json'),key)
             folder=out/audit_id
             folder.mkdir(mode=0o700,exist_ok=True)
-            numbers=[]
-            for path in folder.iterdir():
-                match=re.fullmatch(r'export-([0-9]{4})',path.name)
-                require(match is not None and path.is_dir(),'unknown export membership')
-                numbers.append(int(match[1]))
-            next_export=folder/f'export-{max(numbers,default=0)+1:04d}'
+            next_export=next_snapshot(folder)
             event(root/'evidence','followup_collection',snapshot=next_export.name)
             summary['export']=export_snapshot(root,next_export,key)
             summary['snapshot']=next_export.name

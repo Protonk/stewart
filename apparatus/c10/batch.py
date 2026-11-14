@@ -1,4 +1,8 @@
-"""One placement per planned audit; retained, immutable evidence and exports."""
+"""One placement per launch of each planned audit; retained, immutable evidence and exports.
+
+A first placement may carry a witnessed interruption. Later placements of a
+retained audit are started one at a time by placements.py.
+"""
 import argparse
 import fcntl
 import hashlib
@@ -6,6 +10,7 @@ import hmac
 import os
 from pathlib import Path
 import platform
+import re
 import resource
 import shutil
 import subprocess
@@ -15,9 +20,9 @@ import threading
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import (catalog, credential_bytes, digest, file_hash, inventory, question_file,
+from common import (CONTINUED, catalog, credential_bytes, digest, file_hash, inventory, question_file,
     read_file, require, scan_tree, source_hash, strict_json, validate_packet, write_json)
-from session import Session, export_evidence_state, failure_details
+from session import LogPoint, Session, export_evidence_state, failure_details, placement_folder
 from control import safe_state
 from fake import Auditor
 from verify import Evidence, inventory_from_evidence, ordinary_submission, verify
@@ -41,6 +46,72 @@ def check_credential(path, key):
     marker = strict_json(read_file(path))
     require(hmac.compare_digest(marker['tag'], hmac.digest(key, bytes.fromhex(marker['nonce']), 'sha256').hex()),
             'credential differs from the original placement; export withheld')
+
+
+def rehearsal_script(packet, run):
+    """The fake auditor's script for one rehearsal audit."""
+    scenario = run['scenario']
+    if packet.get('schema') != 'stewart.interruption-commission/1':
+        return scenario
+    after = packet['interruption']['after']
+    if scenario in CONTINUED:
+        require(CONTINUED[scenario]['interruption'] == after,
+                'rehearsal interruption differs from its control scenario')
+        return scenario
+    # A supplied study may only name `submitted`, which never reaches a point.
+    # Its rehearsal therefore follows the fixed control that does: prose that
+    # draws the reminder and a later unprompted submission, or entries first.
+    # Both are held controls by choice, so this rehearsal shows the request
+    # aborted in flight; the unheld timing is the fixed control's alone.
+    # Expectations come from that CONTINUED entry.
+    return {'reminder_notice': 'reminder-spent-submits', 'entry_record': 'reminder-unused'}[after]
+
+
+def first_interruption(packet, run, mode):
+    """The witnessed point of a first placement, or None: the packet's, else the control's."""
+    if packet.get('schema') == 'stewart.interruption-commission/1':
+        return packet['interruption']
+    after = CONTINUED.get(run['scenario'], {}).get('interruption') if mode == 'rehearse' else None
+    return None if after is None else {'after': after, 'signal': 'SIGTERM'}
+
+
+def allowance_facts(allowances, interruption=None):
+    """What INTERFACE 6.3 and 6.4 determine before a start, as plain numbers.
+
+    A limit is exhausted when no turn remains, the input allowance is used up or
+    fewer than 1,024 output tokens remain; a placement started then ends
+    `limit_reached` before any request. A request aborted by a signal after any
+    byte was written is charged its whole `max_tokens`, the lesser of 16,000 and
+    the remaining output allowance. Output reported before the point lowers what
+    remains further, so these figures are the most favourable case.
+    """
+    left = {name: max(0, allowances[name]['limit'] - allowances[name]['used'])
+            for name in ['turns', 'input_tokens', 'output_tokens']}
+    facts = {'used': {name: allowances[name]['used'] for name in left},
+             'limit': {name: allowances[name]['limit'] for name in left}, 'remaining': left,
+             'this_placement_ends_limit_reached_before_any_request':
+                 left['turns'] == 0 or left['input_tokens'] == 0 or left['output_tokens'] < 1024,
+             'planned_interruption': None}
+    if interruption is not None:
+        estimate = min(16000, left['output_tokens'])
+        after = left['output_tokens'] - estimate
+        facts['planned_interruption'] = {'point': interruption['after'],
+            'output_charge_if_one_request_is_aborted_in_flight': estimate,
+            'output_remaining_after_that_charge': after,
+            'next_placement_ends_limit_reached_before_any_request': after < 1024,
+            'reported_output_before_the_point_that_still_leaves_1024': max(0, after - 1024),
+            'also_charged': 'one estimated turn and ceil(request body bytes / 3) input tokens'}
+    return facts
+
+
+def next_snapshot(folder):
+    """The next immutable export of one audit; an unknown member refuses."""
+    numbers = []
+    for path in folder.iterdir():
+        match = re.fullmatch(r'export-([0-9]{4})', path.name)
+        require(match is not None and path.is_dir(), 'unknown export membership')
+        numbers.append(int(match[1]))
+    return folder/f'export-{max(numbers, default=0)+1:04d}'
 
 
 class Audit(Session):
@@ -83,6 +154,46 @@ class Audit(Session):
             'binary_sha256':file_hash(binary), 'input_inventory':inputs, 'destination':str(self.destination),
             'input_directories':[item['path'] for item in inventory(self.folder) if item['type']=='directory']})
 
+    @classmethod
+    def attach(cls, binary, root, *, mode, stop_after_seconds, local=False):
+        """Bind to a retained audit for a later placement; create and rewrite nothing.
+
+        Everything comes from the audit's own retained records, never from the
+        catalog or a staged submission, so it also fits a root made by an
+        earlier launcher. Command records continue after the highest number used.
+        """
+        self = cls.__new__(cls)
+        self.binary, self.root, self.mode, self.local = Path(binary), Path(root), mode, local
+        self.folder, self.archive, self.destination, self.evidence = [self.root / name for name in ['submission','archive','returns','evidence']]
+        binding = strict_json(read_file(self.evidence/'binding.json'))
+        require(binding['schema'] == 'stewart.c10-audit/1' and binding['mode'] == mode, 'audit binding differs')
+        info = strict_json(read_file(self.root/'operator.json'))
+        require(info['audit'] == binding['run']['id'] == self.root.name and info['local'] is local,
+                'operator binding differs')
+        # The audit keeps its commission; only this placement's watchdog is new.
+        self.commission = {**binding['commission'], 'stop_after_seconds': stop_after_seconds}
+        self.run_item, self.ref = binding['run'], info['reference']
+        self.specimen = strict_json(read_file(self.evidence/'specimen.json'))['case']
+        witness = self.evidence/'input-witness'
+        self.question = read_file(witness/'question.md').split(b'---\n', 2)[2].decode()
+        self.materials = {path.relative_to(witness).as_posix():read_file(path)
+                          for path in sorted((witness/'materials').rglob('*')) if path.is_file()}
+        self.env = {'PATH':'/usr/local/bin:/usr/bin:/bin', 'HOME':info['home'], 'LANG':'C.UTF-8'}
+        self.index_after_retained()
+        self.phase, self.observer_state, self.witness, self.process = 'attached', None, None, None
+        self.before, self.run_attempted = None, False
+        return self
+
+    def index_after_retained(self):
+        """Number the next command record after every one already retained."""
+        used = [int(match[1]) for match in (re.match(r'([0-9]{2,})-', path.name) for path in self.evidence.iterdir()) if match]
+        self.index = max(used, default=0)
+
+    def log_folder(self):
+        audits = list((self.archive/'audits').iterdir())
+        require(len(audits) == 1, 'expected one audit in its archive')
+        return audits[0]/'log'
+
     def spawn(self, argv, **options):
         if self.local:
             # Only smoke.py constructs this test path; the live CLI has no local option.
@@ -110,28 +221,40 @@ class Audit(Session):
             require(raw == expected, 'input readback differs from independent witness')
             readbacks.append({'item':item,'command':f'{self.index:02}-{label}', 'sha256':digest(raw)})
         write_json(self.evidence/'readbacks.json', readbacks)
-        self.command('status-before', 'status', self.ref)
+        self.before, _, _ = self.command('status-before', 'status', self.ref)
         event(self.evidence, 'intake_verified')
 
     def execute(self, key, witness=None):
+        return self.place(key, witness, 1, first_interruption(self.commission, self.run_item, self.mode))
+
+    def place(self, key, witness, placement, interruption, intent=None):
+        """Start one placement, observe its ending and review the whole audit."""
         self.phase = 'provider-setup'
-        fake, observe, release = None, None, None
+        # False until the run command is about to be spawned: a failure before
+        # then provably started nothing.
+        self.run_attempted = False
+        folder = placement_folder(self.evidence, placement)
+        if placement > 1:
+            # Exclusive: a placement's records are made once and never reused.
+            folder.mkdir(mode=0o700)
+        fake, observe, release, point = None, None, None, None
         scenario = self.run_item['scenario']
+        name = self.run_item['id'] if placement == 1 else f"{self.run_item['id']}-p{placement}"
         if self.mode == 'rehearse':
-            fake_root = self.evidence/'fake-provider'
+            fake_root = folder/'fake-provider'
             fake_root.mkdir()
-            witnessed = witness / self.run_item['id']
+            witnessed = witness / name
             witnessed.mkdir(mode=0o700)
             def auth(n, received):
                 (witnessed/f'received-{n}.bin').write_bytes(received)
                 write_json(witnessed/f'received-{n}.json', {'matches_canary':received==key,
                     'bytes':len(received), 'observed_at':time.time()})
-            fake = Auditor(scenario, fake_root, self.materials, self.question, self.specimen['family'], auth,
-                           packet=self.commission,
+            fake = Auditor(rehearsal_script(self.commission, self.run_item), fake_root, self.materials,
+                           self.question, self.specimen['family'], auth, packet=self.commission,
                            guidance=read_file(self.evidence/'input-witness/guidance.md')
-                               if self.specimen.get('guidance') else None)
+                               if self.specimen.get('guidance') else None, placement=placement)
             fake.key = key.decode('ascii')
-            if not self.local and self.run_item['id'] == 'open-ordinary-r1':
+            if not self.local and placement == 1 and self.run_item['id'] == 'open-ordinary-r1':
                 seen, release = threading.Event(), threading.Event()
                 original = fake.respond
                 def held(body):
@@ -145,15 +268,25 @@ class Audit(Session):
             fake.__enter__()
         else:
             endpoint = self.commission['endpoint']
-        write_json(self.evidence/'launch-intent.json', {'reference':self.ref,
-            'placement':1, 'at':time.time(), 'automatic_continuation':False})
-        event(self.evidence, 'placement_requested')
         try:
-            reply, rc, timed_out = self.command('run','run',self.ref,key=key,endpoint=endpoint,observe=observe)
+            write_json(folder/'launch-intent.json', {'reference':self.ref, 'placement':placement,
+                'at':time.time(), 'automatic_continuation':False, 'interruption':interruption, **(intent or {})})
+            event(self.evidence, 'placement_requested', placement=placement)
+            if interruption is not None:
+                # Reads the log before the start: only this placement's records can be the point.
+                # Only a held control waits for its fake to hold the request; an
+                # unheld one, like a live placement, is signalled on sight.
+                held = fake is not None and CONTINUED.get(fake.mode, {}).get('held') is True
+                point = LogPoint(self.log_folder(), interruption['after'], folder/'interruption',
+                                 in_flight=fake.holding if held else None)
+            self.run_attempted = True
+            reply, rc, timed_out = self.command('run','run',self.ref,key=key,endpoint=endpoint,
+                                                observe=observe,interrupt=point)
         finally:
             if release is not None:
                 release.set()
             if fake is not None:
+                fake.release.set()
                 fake.__exit__(None,None,None)
         if fake is not None:
             require(not fake.failures, 'fake exchange failed')
@@ -166,10 +299,10 @@ class Audit(Session):
             event(self.evidence, 'caller_reply_lost', placement_effects='unknown')
         status, _, _ = self.command('status-after-run','status',self.ref)
         event(self.evidence, 'placement_observed', state=safe_state(status), caller_reply_lost=lost_reply)
-        write_json(self.evidence/'RESULT.json', {'failure':False, 'caller_reply_lost':lost_reply,
+        write_json(folder/'RESULT.json', {'failure':False, 'caller_reply_lost':lost_reply,
             'exit':rc, 'timed_out':timed_out})
         observation = verify(Evidence(self.root))
-        write_json(self.evidence/'review-before-close.json', observation)
+        write_json(folder/'review-before-close.json', observation)
         # Only a fully checked auditor submission takes ordinary automatic close.
         closure = None
         if ordinary_submission(observation) and not lost_reply:
@@ -179,7 +312,9 @@ class Audit(Session):
                        'timed_out':close_timeout or status_timeout, 'state':safe_state(final)}
         if scenario == 'export-contamination':
             (self.root/'deliberately-contaminated-control').write_bytes(key)
-        return {'audit':self.run_item['id'], 'placement':'observed', 'caller_reply_lost':lost_reply,
+        return {'audit':self.run_item['id'], 'placement':'observed', 'run':placement,
+                'exit':rc, 'timed_out':timed_out, 'caller_reply_lost':lost_reply,
+                'interruption':point.summary() if point is not None else None,
                 'review_before_close':observation, 'automatic_close':closure,
                 'fake_requests':fake.requests if fake else None}
 
@@ -241,7 +376,26 @@ def stop_reason(observed, export):
     return None
 
 
+def continued_match(observed, export, script, placement):
+    """A fixed continued control against its CONTINUED entry, one placement at a time."""
+    review, witness = observed['review_before_close'], observed['interruption']
+    ending, cause = CONTINUED[script]['endings'][placement-1]
+    point = CONTINUED[script]['interruption'] if placement == 1 else None
+    return (review['outcome'] == 'checked' and len(review['placements']) == placement
+            and [review['ending'], review['cause']] == [ending, cause]
+            and (ordinary_submission(review) if ending == 'sealed' else review['auditor_submitted'] is False)
+            and (witness is None if point is None else witness is not None
+                 and witness['after'] == point and witness['state'] == 'signalled'
+                 and witness['termination'] is not None and witness['termination']['timed_out'] is False
+                 and review['placements'][-1]['interruption']['followed_by_signal_ending'] is True)
+            and export['outcome'] == 'exported' and observed['caller_reply_lost'] is False
+            and observed['timed_out'] is False
+            and stop_reason(observed, export) != 'custody_observation_incomplete')
+
+
 def rehearsal_match(observed, export, scenario):
+    if scenario in CONTINUED:
+        return continued_match(observed, export, scenario, 1)
     expected_export = {'reflected-body':'withheld','export-contamination':'withheld',
                        'export-failure':'failed'}.get(scenario,'exported')
     review = observed['review_before_close']
@@ -273,7 +427,7 @@ def execute_batch(binary, private, out, packet, mode, key, sessions, witness, *,
             reason = stop_reason(observed, export)
             row = {**observed,'export':export}
             if mode == 'rehearse':
-                row['expected_observation'] = rehearsal_match(observed,export,item['scenario'])
+                row['expected_observation'] = rehearsal_match(observed,export,rehearsal_script(packet,item))
                 row['failed'] = not row['expected_observation']
                 reason = 'rehearsal_expectation_mismatch' if row['failed'] else None
             else:
@@ -289,13 +443,17 @@ def execute_batch(binary, private, out, packet, mode, key, sessions, witness, *,
             rows.append({**row,'failure':detail,'export':None,'failed':True})
             halt = {'audit':item['id'],'reason':'operation_failed'}
     failed = sum(r.get('failed') is True for r in rows)
+    # Those controls need the fixed rehearsal inventory; a rehearsal of one
+    # interrupted study says so here and therefore admits no live launch.
+    lone_study = mode == 'rehearse' and packet.get('schema') == 'stewart.interruption-commission/1'
     report = {'schema':'stewart.c10-session/2', 'mode':mode, 'local_iteration_only':local,
         'outcome':('incomplete' if failed else 'observed') if mode=='live' else ('failed' if halt else 'passed'),
         'planned':len(sessions), 'observed':sum(r['placement']=='observed' for r in rows),
         'failed':failed, 'halt':halt,
         'not_started':sum(r['placement']=='not_started' for r in rows), 'audits':rows,
         'model_calls':0 if mode=='rehearse' else None, 'model_qualified':False,
-        'skipped_checks':['Linux process-access controls (native iteration)'] if local else [],
+        'skipped_checks':(['Linux process-access controls (native iteration)'] if local else [])
+            + (['fixed-inventory reviewer, operator and report controls (one interrupted study)'] if lone_study else []),
         'environment':{'system':platform.system(),'machine':platform.machine(),'kernel':platform.release(),
                        'uid':os.getuid()}}
     write_json(out/'RESULT.json',report)
@@ -308,11 +466,20 @@ def prepare_batch(binary, private, out, packet, mode, *, local=False, submission
     out.mkdir(mode=0o700,exist_ok=True)
     write_json(out/'PLAN.json', {'schema':'stewart.c10-plan/1','commission':packet,
         'binary_sha256':file_hash(binary), 'audits':[r['id'] for r in packet['runs']]})
-    sessions=[]
+    sessions, planned = [], []
     for run in packet['runs']:
         audit = Audit(binary,private/run['id'],packet,run,mode=mode,local=local,submissions=submissions)
         sessions.append(audit)
         audit.intake()
+        interruption = first_interruption(packet,run,mode)
+        if interruption is not None:
+            # A plain fact for whoever commissions the next placement; never a refusal.
+            facts = allowance_facts(audit.before['data']['allowances'],interruption)
+            write_json(audit.evidence/'interruption-preflight.json',facts)
+            planned.append({'audit':run['id'], **facts})
+    if planned:
+        write_json(out/'INTERRUPTION-PREFLIGHT.json',{'schema':'stewart.c10-interruption-preflight/1',
+            'basis':'INTERFACE 6.3 and 6.4 applied to status before any placement','audits':planned})
     return sessions
 
 
@@ -351,7 +518,7 @@ def main():
             witness.mkdir(mode=0o700)
             (witness/'canary.bin').write_bytes(key)
         report=execute_batch(args.binary,args.private,args.out,packet,args.mode,key,sessions,witness)
-        if args.mode=='rehearse' and report['failed']==report['not_started']==0:
+        if args.mode=='rehearse' and report['failed']==report['not_started']==0 and not report['skipped_checks']:
             from check_operations import exercise as exercise_operations
             operator_root=args.private.parent/'c10-operator-controls'
             operator_controls=exercise_operations(args.private.parent,private=args.private,out=args.out,

@@ -4,8 +4,8 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from common import file_hash, read_file, require, strict_json, write_json
-from reporting import assemble, latest_review, render, write_report
+from common import CONTINUED, file_hash, read_file, require, strict_json, write_json
+from reporting import assemble, current_issues, latest_review, render, write_report
 
 
 def exercise(batch, target):
@@ -19,6 +19,8 @@ def exercise(batch, target):
         for path in sorted((batch/run['id']).glob('export-*/*')):
             if path.name in ['EXPORT.json','work.tar']:
                 sources.append(path)
+    later = sorted((batch/'continuations').glob('*/attempt-*/RESULT.json')) if (batch/'continuations').is_dir() else []
+    sources += later
     def source_identity(path):
         if path.is_dir():
             # The archive-write firing control deliberately puts an empty
@@ -61,6 +63,28 @@ def exercise(batch, target):
           and audits[name]['snapshots'][-1]['reasons'] for name in adverse))
     check('technical-return-before-assessment',report['assessment'] is None
           and 'Pending.' in render(report))
+    scenarios = {run['id']:run['scenario'] for run in plan['commission']['runs']}
+    several = [row for row in audits.values() if scenarios[row['audit']] in CONTINUED
+               and len((latest_review(row) or {}).get('placements') or [])>1]
+    if several:
+        # Only a batch that holds a later placement can show these; all three are counted when it does.
+        def endings(review):
+            return [[item['ending'],item['cause']] for item in (review or {}).get('placements') or []]
+        check('continued-audit-shows-every-placement',all(
+            endings(latest_review(row))==CONTINUED[scenarios[row['audit']]]['endings'][:len(endings(latest_review(row)))]
+            for row in several))
+        check('earlier-snapshot-keeps-its-own-placement',all(
+            endings(row['snapshots'][0]['review'])==CONTINUED[scenarios[row['audit']]]['endings'][:1] for row in several))
+        # An attempt whose session record is absent, as this one's is while its
+        # controls run, is linked as missing and listed as remaining work.
+        folders = sorted(str(path.relative_to(batch/'continuations')) for path in (batch/'continuations').glob('*/attempt-*'))
+        linked = {f"{row['audit']}-p{item['placement']}/attempt-{item['attempt']}":item
+                  for row in audits.values() for item in row['continuations']}
+        unrecorded = [name for name in folders if not (batch/'continuations'/name/'RESULT.json').exists()]
+        issues = [reason for _,reason in current_issues(report)]
+        check('continuation-records-linked-or-remaining-work',sorted(linked)==folders
+              and all(linked[name]['assessment']==('missing' if name in unrecorded else 'read') for name in folders)
+              and issues.count('continuation_record_missing')==len(unrecorded))
     assessment = target/'assessment.md'
     assessment.write_text('This authored control assessment leaves its scientific judgment unresolved. '
         'There was no paid work; independent billing is not an apparatus observation. '
