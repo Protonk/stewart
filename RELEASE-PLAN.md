@@ -10,7 +10,8 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Prepare M3 continuation using the necessary Messages apparatus extensions; then complete or dispose of M4/C5, outcome repairs, fixtures and reassessment. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the bounded comparisons; the Messages and manager plans own reusable apparatus work in their respective areas. |
+| Current | Audit the readiness session's work and planning cleanup, make needed repairs, and resolve material findings. | [Readiness lookback](READINESS-LOOKBACK-PLAN.md) |
+| After lookback | Prepare M3 continuation using the necessary Messages apparatus extensions; then complete or dispose of M4/C5, outcome repairs, fixtures and reassessment. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the bounded comparisons; the Messages and manager plans own reusable apparatus work in their respective areas. |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separately scheduled release work | Complete the Messages model gate, platform qualification and acceptance-policy review. | [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and the requirements below |
