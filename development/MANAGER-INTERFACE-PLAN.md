@@ -131,6 +131,9 @@ documentary drift without importing that validator as the acceptance oracle.
   contact; authentication route and credential use; transmitted material;
   resource limits/stops; retries; interruption and repeat behavior; inspection,
   execution and custody. Distinguish possible effects from observed outcomes.
+  Describe where the two runtime arrangements differ for a manager: request
+  retries, an unlisted tool name, usage after a submitted audit, full `read`
+  pages against the harness's result limit, and local network failures.
   Inspection reads compiled descriptions, not audit state or credential stores,
   and neither launches providers nor creates references or prepares a selection.
 - [ ] Keep provider identity and authentication mode explicit, with descriptions
@@ -205,6 +208,8 @@ information. Human and agent managers can use the same ordinary file handoff.
   prepares every worked example, including MCP-created candidates.
 - [ ] Explain bounded autonomy, dead-placement continuation and the distinction
   between intellectual outcome, authoring end, seal, verified delivery and close.
+  Say where continuation is explained that the reminder is spent once per audit:
+  a continued placement can end authoring at its first unsubmitted turn.
   Keep required acknowledgment, placement confirmation and loss surrender; do not
   turn them into intellectual endorsement or remove them as unnecessary approvals.
 

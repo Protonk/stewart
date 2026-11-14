@@ -35,7 +35,12 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   responses after the thinking-only `max_tokens` stop, re-entry and submission.
   Its answer selection is empty, so this arm cannot demonstrate preservation of
   prior authored entries. Do not close, resume or replace it without the concrete
-  commission or an explicit disposition.
+  commission or an explicit disposition. The archive exists only in the root
+  filesystem of the retained container that record names. Host exports are
+  copies, and a copied archive refuses mutation ([INTERFACE 4.9](docs/INTERFACE.md#49-store-marker)).
+  Keep that container and its writer mount unchanged. Before freezing, observe
+  on a disposable container whether a stop or host restart preserves such a
+  filesystem, and state the result and the remaining exposure in the packet.
 - [ ] Use the exact question and sole supplied report identified by
   `.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json` for a fresh
   12-turn reminder audit. The source audit is sealed and cannot continue.
@@ -65,6 +70,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   [service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure).
   Freeze at most three service starts of 900 seconds each, including exact
   authentication bounds, witnesses, stop rules and disabled paid extra usage.
+  Rehearse the changed `service_check.py` again. Give its packet bindings and
+  real-mode gates firing controls, have `close` retain an evidence record, count
+  authentication and model starts instead of stating them, and decide whether
+  unresolved MCP calls block continuation; or state each limit in the packet.
   Commission this explicitly as a deliberate output-cap study; requested harness
   settings alone do not establish enforced token or spending ceilings.
 - [ ] Observe cap handling, reported versus unknown usage and whether a
@@ -84,8 +93,12 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 - [ ] Keep independent input/package/process witnesses outside the audit and
   disposal scope. Retain run replies and default, detailed and JSON status;
   distinguish service-owned captures from independent observations. Include a
-  review by someone who did not operate the run. Count starts, attempts,
-  refusals, checks, failures, skips and unknown intervals as observed.
+  review by someone who did not operate the run, and retain that reviewer's own
+  record: an attribution written by the operator does not establish the review.
+  Record each approval with the exact packet digest the principal named, and
+  retain every digest shown for approval. Observe process stopping beyond the
+  moment the run command returns. Count starts, attempts, refusals, checks,
+  failures, skips and unknown intervals as observed.
 - [ ] Apply [retention rules](development/DEVELOPMENT.md#evidence-and-retention)
   after review. Preserve selected original encounters for their stated inspection
   purpose; redact tracked fixtures and record substitutions. Keep no raw
@@ -112,6 +125,14 @@ start or audit state.
   `OBSERVATION.json`. Compare auditor-facing conversation content as well as
   Stewart's MCP payload; full auxiliary arrays do not prove auditor visibility.
   Do not rescue answers from harness external files or rewrite sealed returns.
+  The harness also kept each substituted reply as a file in the profile's
+  configuration directory, despite `--no-session-persistence`; the
+  [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md#large-material-pages)
+  locates the two C3 files. Decide how the runtime prevents, detects or removes
+  such copies of supplied material outside the archive, and keep those two
+  files until that review ends. A range citation over a substituted page
+  validates against the source without showing the auditor saw those bytes;
+  the procedure's review must not count it as grounded reading.
 - [ ] Address missing final usage, overlapping assistant snapshots, per-session
   checkpoints, compaction shapes outside the accepted form, unlisted/unprefixed
   tools and output-cap endings. Use `.scratch/readiness-c2-01/COMPARISON.json`,
@@ -124,6 +145,13 @@ start or audit state.
   authored matched-receipt inconsistency for inspection without changing the
   sealed answer. Live harness continuation remains unexercised; that disposition
   grants no replacement run. Give new exceptional events an action or disposition.
+  The C2–C4 package reviews made their directory and file mode checks on the
+  procedure's private copies, so those counts establish no delivered mode.
+- [ ] Specify the refusal a confirmed submission receives when close is requested
+  during a live runtime placement: the runtime contract's publication gate gives
+  `placement_stopped`, INTERFACE's log precondition `authoring_ended`. Then add
+  the independent runtime case: the placement ends `stopped_by_close`, no auditor
+  seal exists and close seals with manager attribution.
 
 ### Ground fixtures and reassess
 
@@ -147,8 +175,12 @@ start or audit state.
   reviewer challenge new findings.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,
   runtime comparisons and Messages conformance. Recheck unreached conditions
-  a repair claims to cover, beginning with `close_in_progress`. Counts describe
-  coverage, not a numerical target; unexercised behavior cannot count as covered.
+  a repair claims to cover, beginning with `close_in_progress`: the service test
+  asserts it in status and accepts either reason from the second close. Counts
+  describe coverage, not a numerical target; unexercised behavior cannot count
+  as covered. The earlier per-unit classification and its counting tool are the
+  untracked `.tmp/readiness/a/` and `.tmp/readiness/tools/trusted.py`; no backup
+  exists. Release `.tmp/readiness/` once this report no longer needs them.
 - [ ] Run [DEVELOPMENT's required checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed).
   Changed service behavior needs container acceptance before another Messages
   packet; changed runtime surfaces need a newly approved reviewed surface check

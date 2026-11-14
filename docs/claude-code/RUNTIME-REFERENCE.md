@@ -66,10 +66,26 @@ source read and do not establish that the harness exposed the whole page.
 The auditor followed the next offset, 65,536, and reported both large-page tail
 labels unknown. It made no search or extra-offset read. The short control and
 second full-page case distinguish and reproduce the behavior; they do not locate
-an exact threshold or establish how other content would be handled. The captured
-notices refer to files outside the supplied-materials interface. Those files were
-not inspected or used for recovery. These are correlated capture observations,
-not an independent view of provider-network contents.
+an exact threshold or establish how other content would be handled. The auditor
+was asked to read by offset and not to search, so that sequence shows no
+independent choice. The two full pages come from one file in one session; the
+second repeats the first observation and is not an independent case. These are
+correlated capture observations, not an independent view of provider-network
+contents.
+
+The captured notices name files outside the supplied-materials interface: one
+per substituted reply, under `projects/<workspace>/<session>/tool-results/` in
+the profile's configuration directory. The launch requested
+`--no-session-persistence`; that setting did not prevent them. A listing on
+2026-11-14 (UTC), after the audit closed and its workspace was emptied, found both
+files (67,205 and 67,089 bytes) and nothing else under `projects/`. Their
+contents were not read or used for recovery. Each is a copy of supplied material
+that Stewart's archive, delivery and close neither record nor remove.
+
+Two of the answer's three citations are range citations over the substituted
+pages. They validate against the source bytes and the auditor's own entry says
+it could not see the range's end; a passing citation check is not evidence that
+the cited bytes reached the auditor.
 
 The submitted answer, verified package and ordinary close preserved what the
 auditor actually recorded. That successful custody path does not repair the

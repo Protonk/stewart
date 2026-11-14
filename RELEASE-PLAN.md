@@ -10,8 +10,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Audit the readiness session's work and planning cleanup, make needed repairs, and resolve material findings. | [Readiness lookback](READINESS-LOOKBACK-PLAN.md) |
-| After lookback | Prepare M3 continuation using the necessary Messages apparatus extensions; then complete or dispose of M4/C5, outcome repairs, fixtures and reassessment. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the bounded comparisons; the Messages and manager plans own reusable apparatus work in their respective areas. |
+| Current | Prepare M3 continuation using the necessary Messages apparatus extensions; then complete or dispose of M4/C5, outcome repairs, fixtures and reassessment. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the bounded comparisons; the Messages and manager plans own reusable apparatus work in their respective areas. |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separately scheduled release work | Complete the Messages model gate, platform qualification and acceptance-policy review. | [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and the requirements below |
@@ -56,7 +55,11 @@ Check driver cases against every ACCEPTANCE claim. Uncovered requirements need a
 case or an explicit disposition. Add independent black-box comparisons for
 interim/folded/conflicting-length response heads, the retained-payload reserve
 boundary and `not_sent` notices; specification text and service-unit checks do
-not establish that coverage. Reassess unreached/partly reached conditions and
+not establish that coverage. The driver also lacks cases for close's `unknown`
+seal, delivery and closure effects after a failed publication, the `--verify`
+`problem` member and a symbolic link above an item, `receipt_record_failed`
+before the acceptance link, a `checked_at` that is not a timestamp, and a null
+JSON-RPC error `id` from the binary. Reassess unreached/partly reached conditions and
 unclear behavioral promises against the actual cases. Candidate gaps include
 C17's secondary logging
 errors, blind repetition after reply failure and omitted partial effects; C18's
