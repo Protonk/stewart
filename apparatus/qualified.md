@@ -36,7 +36,7 @@ not carry them.
 - Run-level failures: none
 - Python image: `sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb`
 - Evidence: `.scratch/acceptance-readiness-02` (local: only on the machine that ran it; clones do not carry it)
-- Pin: Retain the exact qualified ARM writer needed by the still-open M2 sw3z default audit and its separately commissioned M3 continuation or explicit disposition.; until That audit and any other open audits requiring this writer are closed or otherwise explicitly disposed of, and pending comparisons no longer require this binary.
+- Pin: Retain the exact qualified ARM writer for selected Messages encounters, pending comparisons and their fixture reviews; the M2 and M4 audits have reviewed closure.; until No open audit or pending comparison requires this writer, and the selected fixture reviews no longer need it.
 
 | | linux-aarch64 | linux-x86_64 |
 | --- | --- | --- |
@@ -728,3 +728,17 @@ M3 custody disposition: approved manager close, loss-free verified delivery and 
 
 - Evidence: `.scratch/readiness-m3-close-01/.` (recorded 2026-11-15T15:52:28Z).
 - Retained purpose: Inspect the exact approval, manager-attributed partial return, delivery/confirmation reviews and preserved custody chain for return, continuation, refusal and cap-setting fixtures.; until The assigned fixture and cap-setting reviews finish and no current inspection purpose needs these original custody records.
+
+### readiness-m4-01
+
+M4 approved one Opus 5.5 placement: exact packet, specimen, dated cost basis, principal authorization, launch and post-return collectors. The placement completed with real compaction and verified closure; calculated reported-token cost USD 3.037196 and no remaining launch authority.
+
+- Evidence: `.scratch/readiness-m4-01/.` (recorded 2026-11-15T19:34:59Z).
+- Retained purpose: Interpret the original M4 encounter against its exact approved inputs, account/spending scope and process/status observation procedure.; until The selected compaction, usage and entry-continuity fixture reviews no longer need these exact approval and input records.
+
+### readiness-m4-live-01
+
+M4: Opus 5.5 crossed the real compaction trigger, reused its signed summary, recovered and revised e1, then submitted three entries with verified delivery and closure. 10 requests/attempts, no retries, 737969 input and 4266 output tokens; 12 summary comparisons passed with 10 corruption controls. Local PID/group absence observed. Citation-support limits retained; no full model qualification or remaining launch authority.
+
+- Evidence: `.scratch/readiness-m4-live-01/.` (recorded 2026-11-15T19:34:59Z).
+- Retained purpose: Inspect the original signed summary, iteration usage, retained account identity and submitted answer; ground compaction and re-entry fixtures without changing the original encounter.; until The assigned compaction, usage and entry-continuity fixture reviews finish and no unresolved finding needs this original encounter.

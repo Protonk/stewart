@@ -24,6 +24,9 @@ The reviewed full-size synthetic rehearsal is
 `.scratch/readiness-m4-rehearsal-02/REVIEW.json`; it binds apparatus, writer,
 image, supplied inputs and saved-connection coverage. Recheck that binding for
 each live packet. It does not establish real-provider compaction.
+The [bounded real compaction encounter](apparatus/studies/interaction/RESULTS.md#messages-compaction)
+supplies summary, usage and entry-continuity fixture material; it does not replace
+the per-model conformance matrix.
 
 ## 1. Complete the evidence matrix
 
@@ -109,12 +112,12 @@ about answer quality remain outside the mechanical gate.
 
 ## 4. Establish real compaction and provider coverage
 
-- [ ] Establish whether the prepared full-size specimen reaches the pinned trigger in
+- [ ] For each release model, require the pinned trigger in
   [INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses), currently 150,000
   tokens, with recorded work before compaction and ordinary work afterwards.
-  Observe actual top-level usage and report an unreached trigger explicitly.
-  Do not lower the release trigger to obtain a passing result.
-- [ ] Require a real summary request/response, the signed content block reused
+  Reuse the prepared specimen where appropriate; report an unreached trigger
+  explicitly rather than lowering the release trigger.
+- [ ] In each model's gate, require a real summary request/response, the signed content block reused
   unchanged on the next ordinary request, the correct replacement of context,
   accounted iteration usage and the subsequent preservation of recorded work.
   A fake summary tests the apparatus and cannot qualify provider compaction.

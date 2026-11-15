@@ -78,7 +78,9 @@ with verified delivery across all three forms. Recorded Linux acceptance runs
 cover their exact builds; full model and platform qualification remains
 outstanding. Bounded Messages continuations preserved recorded work; one audit
 submitted and another exhausted its allowance with a partial account later
-sealed and closed by the manager. The [qualification record](apparatus/qualified.md)
+sealed and closed by the manager. A bounded Opus encounter preserved an account
+through real provider compaction, revised it and submitted a verified return.
+The [qualification record](apparatus/qualified.md)
 identifies those builds and results, and the [interaction findings](apparatus/studies/interaction/RESULTS.md)
 report observations from actual inquiries.
 

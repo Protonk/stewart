@@ -88,6 +88,42 @@ cancellation. These encounters and their independent reviews supply bounded
 evidence and fixture inputs, not a full model-conformance result. The earlier
 one-placement campaign, which submitted without a reminder, remains unchanged.
 
+## Messages compaction
+
+The 2026-11-15 encounter `.scratch/readiness-m4-live-01` used the qualified
+`acceptance-readiness-02` writer and `claude-opus-5-5` with effort omitted.
+The auditor recorded account e1 before reading eight 64 KiB synthetic transfer
+traces. Request 4 reported 341,007 input and 505 output tokens, crossing the
+150,000-token trigger. Request 5 returned one signed compaction block; its
+top-level usage was zero, while its compaction iteration reported 344,449 input
+and 1,212 output tokens. Stewart charged that iteration once.
+
+Request 6 reused the signed content bytes unchanged and replaced the old
+conversation. The auditor re-entered, read e1, replaced that same entry as v2,
+added an observation and a limit, then prepared and submitted three entries.
+Both exported snapshots passed procedural review; delivery was verified and
+ordinary closure completed without loss surrender. An independent post-return
+observer found the local PID and process group absent. All earlier exported
+members survived the later status collection unchanged.
+
+The encounter used 10 requests and attempts, with no retries, estimated usage
+or refused tool calls: 737,969 input and 4,266 output tokens. Calculated cost was
+USD 3.037196 at the dated standard rates; Console billing was not independently
+observed. Twelve comparisons on altered views of its real summary passed,
+including ten firing corruption controls and two invariances. Original captures
+remain unchanged. Live provider traffic and authoring captures are service-owned;
+separate input copies and process observations do not make a live wire witness.
+
+The non-operator's reading found the correct six matching receipts, T06's digest
+conflict and T07's missing receiver. Many receipt citations select common line
+prefixes without the transfer IDs or digests needed to support those claims.
+The answer also treats a deliberately shortened filler row as possible capture
+truncation despite the supplied complete receipt footers. These are limits of
+the answer's support, distinct from preservation through compaction. The review,
+original answer and controls are bound by `REVIEW.json`; the exact commission
+and approval are in `.scratch/readiness-m4-01`. This is one bounded observation,
+not full model qualification. Its single approved placement is consumed.
+
 ## Opus comparison
 
 Four independent `claude-opus-5-5` placements at medium effort used

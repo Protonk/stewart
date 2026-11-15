@@ -2,7 +2,7 @@
 
 Complete the remaining bounded comparisons, repair or dispose of their findings,
 ground the affected tests, and assign any residual work to its owner.
-M4 and C5 have no approved live packet.
+C5 has no approved live packet.
 
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
 [QUESTION-FORMS](docs/QUESTION-FORMS.md), the
@@ -18,28 +18,17 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ## Remaining live comparisons
 
-### M4 — Compaction on another model
-
-- [ ] Obtain approval or an explicit disposition for the prepared M4 packet in
-  `.scratch/readiness-m4-01/packet.json`, with its dated `ASSESSMENT.json`,
-  exact submission and proposed reuse of M3's account. The requested scope is
-  one `claude-opus-5-5` Messages placement, 24 turns, 1,000,000 input and 24,000
-  output tokens, with a 1,800-second watchdog and USD 10 spending provision.
-  This provision is not a hard billing ceiling. Confirm the account and spending
-  authority when approving the exact digest. The byte-size/token sensitivity
-  calculation is not a provider token count; an unreached trigger stays explicit.
-- [ ] Cross the specified summary trigger; observe summary shape, iteration
-  types, signed-block reuse, context replacement, usage and later work. Mutate
-  copies to exercise reviewer controls; keep originals unchanged. Report an
-  unreached trigger explicitly.
-
 ### C5 — Harness turn endings
 
 - [ ] Prepare three service comparisons: the thinking-heavy checklist, a
   requested entry longer than 16,000 tokens, and M1's prose-ending wording.
   Reuse the input bindings in `.scratch/readiness-m2-01/RESULT.json` and
   `.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json` where applicable.
-- [ ] Revalidate `.scratch/readiness-c1-01/profile.json` and rehearse the actual
+- [ ] Review the prepared native rehearsal at
+  `.tmp/readiness-c5-01/rehearsal/`, launched by
+  `.tmp/readiness-c5-01/run-host-rehearsal.py`. The revalidated C1 profile is
+  `.scratch/readiness-c5-01/profile.json`; it is byte-identical to the original
+  and grants no new start. Rehearse the actual
   [service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure).
   Freeze at most three service starts of 900 seconds each, including exact
   authentication bounds, witnesses, stop rules and disabled paid extra usage.
@@ -82,7 +71,7 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   and selected private archives and exact writers remain retained for their
   current inspection purposes even after closure.
 
-**Complete when:** M4 and C5 each have a reviewed outcome or explicit
+**Complete when:** C5 has a reviewed outcome or explicit
 not-approved, handed-on or unexercised disposition, with no unknown process,
 start or audit state.
 
@@ -136,7 +125,9 @@ start or audit state.
   authentication reports, MCP traffic and hook inputs in retained captures.
   Select the M1/C2/C3 citation recovery, M2/M3 cap and near-limit responses,
   M3's re-entry, preserved entry, missing-citations replacement refusal and
-  spent-reminder continuation, C1 surface events, and C4 near-limit partial
+  spent-reminder continuation, M4's real summary with zero top-level usage and
+  charged compaction iteration, signed-block reuse and preserved/revised account,
+  C1 surface events, and C4 near-limit partial
   submission, required-field recovery and submit-to-stop sequences. Ground
   reminder delivery and ordinary-ending recognition with M3's captures plus the
   synthetic continued-placement prose-ending control; that branch and aborted
