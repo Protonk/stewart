@@ -1,10 +1,8 @@
 # Readiness follow-up
 
 Complete the remaining bounded comparisons, repair or dispose of their findings,
-ground the affected tests, and assign any residual work to its owner. M3's
-commission ran one placement and left interruption and continuation unexercised;
-its disposition is the next decision. No M3, M4 or C5 packet is approved for
-live use.
+ground the affected tests, and assign any residual work to its owner.
+M4 and C5 have no approved live packet.
 
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
 [QUESTION-FORMS](docs/QUESTION-FORMS.md), the
@@ -20,106 +18,13 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ## 2. Remaining live comparisons
 
-### M3 — Continuation
-
-The commission the principal approved on 2026-11-14 ran one of its four
-placements and stopped. `.scratch/readiness-m3-01/RESULT.json` records the
-outcome; the manifest, approval, cost assessment, gate (`m3.py`), its controls
-and the independent `FREEZE-REVIEW.json` are beside it.
-
-- The fresh reminder audit used the exact question and sole supplied report of
-  `.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json` with a 40,000
-  output allowance. It submitted in five tool-use requests with no ordinary
-  unsubmitted ending, so no reminder was recorded and nothing was signalled.
-  It is sealed by the auditor, delivered and closed
-  (`.scratch/readiness-m3-live-reminder-01/REVIEW.json`, with the reviewer's
-  own `INDEPENDENT-REVIEW.json`). This input has now reached a reminder in one
-  of two live runs.
-- That commission admitted its continuation only after a witnessed
-  interruption, and the sw3z continuation only after a reviewed live
-  continuation. Neither ran. Its approval is spent: unused placements, its
-  packets and its digests authorize nothing.
-- Unexercised live: the witnessed interruption, the estimate charged for a
-  request aborted in flight, a continuation, the continuation notice, the
-  one-reminder rule across placements, delivery of new source into the older
-  sw3z container, and a gate-driven continuation.
-- Shown by Linux rehearsal only (`.scratch/m3-rehearsal-01` and its six
-  `-p2` record folders, fake provider): all six continuation controls,
-  signalling of a uid-1000 placement by the root observer, the saved connection
-  in a second launcher process, source delivery beside launch-time source of
-  the same commit, and host collection through a continuation's record folder.
-  All four signalled controls met `written_unanswered`; the other three timings
-  have no Linux observation.
-
-Remaining:
-
-- A new, unapproved proposal is being prepared in `.scratch/readiness-m3-02/`
-  for the first option below: deliberately repeat the reminder-interruption
-  attempt, keeping the retained sw3z continuation conditional on a reviewed live
-  continuation first. It preserves the spent commission's outcome and needs
-  approval of its own manifest and each packet digest. Preparation does not
-  decide the principal's disposition.
-- [ ] Bring the M3 disposition to the principal; it is not a routine choice.
-  The options are a new commission that tries the reminder interruption again,
-  as a deliberate repetition and not a replacement; a new commission that
-  continues the sw3z audit without a prior live continuation, accepting that
-  the first live continuation then lands on an audit that cannot be recreated;
-  or an explicit unexercised disposition, which hands the one-reminder rule to
-  section 3 on rehearsal evidence and still needs a disposition of the open
-  sw3z audit. Each new commission needs its own freeze and approval.
-- [ ] Keep the open sw3z-default audit of
-  `.scratch/readiness-m2-live-sw3z-default-01/REVIEW.json`, its container and
-  its exact qualified writer unchanged until that disposition. Do not close,
-  resume or replace it without a concrete commission. Its answer selection is
-  empty, so it cannot demonstrate preservation of authored entries. The archive
-  exists only in the root filesystem of the retained container that record
-  names; host exports are copies, and a copied archive refuses mutation
-  ([INTERFACE 4.9](docs/INTERFACE.md#49-store-marker)). A disposable container
-  from the same image, with the launcher's resource options, no network and one
-  read-only mount, kept its inodes, birth times, member bytes and bind-mounted
-  bytes across `container stop` and `start`
-  (`.scratch/readiness-m3-persistence-01`); a host restart is unobserved.
-- [ ] If a new Messages commission is selected, assemble it in a new folder
-  from the scripts in `.scratch/readiness-m3-01` (`freeze.py`, `m3.py`,
-  `test_m3.py`, `capture-status.py`), and state these in its packet:
-  - **Rehearsal.** `.scratch/m3-rehearsal-01` admits a live packet only while
-    the apparatus digest, writer, image and catalog are the ones it records.
-    After any change under the apparatus source paths, rehearse on Linux again
-    with both templates and the saved synthetic connection, as the
-    [apparatus instructions](apparatus/c10/README.md#continue-a-retained-audit) describe.
-  - **Bindings.** Packets name the commit and apparatus digest. Commit before
-    binding, and nothing between the freeze and the last placement.
-  - **Pinned evidence.** `qualified.py check` recomputes the listing of every
-    pinned folder, and the launcher refuses `packet`, `live`, `continue` and
-    `rehearse` while that check fails. The sw3z evidence folder is pinned
-    whole, and a continuation publishes into its `container/`. Plan the
-    record's update after each such placement and before the next launcher
-    action, and write nothing else into a pinned folder.
-  - **Sizing.** A request aborted in flight is charged one estimated turn and
-    its whole `max_tokens`, up to 16,000 output tokens
-    ([INTERFACE 6.4](docs/INTERFACE.md#64-limits-reminder-and-notice)); an
-    interrupted audit's output allowance must cover what it uses before the
-    point, that estimate and 1,024 more. A continuation is a new conversation
-    ([INTERFACE 6.7](docs/INTERFACE.md#67-continuation)). The sw3z audit's
-    first placement reached 76,034 prompt tokens in nine requests and the
-    summary trigger is 150,000
-    ([INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses)), so a long
-    continuation may compact, which the reviewer does not cover; treat that as
-    an incomplete review that ends the arm.
-  - **Gate limits.** The gate verifies its own digest, has no host wait
-    timeout, gives a first placement one evidence folder, keeps no transcript
-    or exit status of its own run and has driven one real first launch and no
-    continuation. Releases between placements are
-    attested by the review and the independent record it requires, not checked
-    against the evidence.
-  - **Approval.** Have the principal name the manifest digest and each packet
-    digest. In the spent commission the principal named the manifest digest
-    alone, and the record says so.
-
 ### M4 — Compaction on another model
 
-- [ ] Add and rehearse summary/reset review and trigger observation. Freeze a
-  long-page commission on `claude-opus-5-5` or the principal's selected model:
+- [ ] Prepare the long-page specimen with recorded work before compaction and
+  ordinary work afterward. Rehearse trigger observation and the summary/reset
+  path with [the procedural reviewer](apparatus/c10/verify.py) before binding
+  the live packet; its current ordinary-only review cannot admit this case.
+  Freeze a commission on `claude-opus-5-5` or the principal's selected model:
   at most one Messages placement, 24 turns, 1,000,000 input and 24,000 output
   tokens. Fix remaining bounds and a dated cost estimate in the approval packet.
 - [ ] Cross the specified summary trigger; observe summary shape, iteration
@@ -173,9 +78,10 @@ Remaining:
   not more spending or a broader qualification claim. A launch leaves its
   container running until someone removes it; `host/container.name` in an
   evidence folder names it. Removing one is a custody action for the principal,
-  and the sw3z container holds the only copy of an open audit.
+  and selected private archives and exact writers remain retained for their
+  current inspection purposes even after closure.
 
-**Complete when:** M3, M4 and C5 each have a reviewed outcome or explicit
+**Complete when:** M4 and C5 each have a reviewed outcome or explicit
 not-approved, handed-on or unexercised disposition, with no unknown process,
 start or audit state.
 
@@ -183,12 +89,21 @@ start or audit state.
 
 ### Act on the outcomes
 
-- [ ] Apply and test the one-reminder-per-audit rule across continuation,
-  including delivery, ordinary-ending recognition and the first prose ending
-  of a continued placement. An expected unsubmitted ending is not an auditor
-  seal. Repair transport/event mapping within the settled policy.
+- [ ] Test the one-reminder-per-audit rule across continuation, including
+  delivery, ordinary-ending recognition and the first prose ending of a
+  continued placement. Use M3's captured spent-reminder re-entry and submission
+  alongside the rehearsal's ordinary-ending control; that branch remains
+  unexercised live. An expected unsubmitted ending is not an auditor seal.
+  Repair any confirmed transport/event mismatch within the settled policy.
+- [ ] Correct actionable continuation advice when output is exhausted. M3's
+  final sw3z status suggests `run` at 64,000/64,000 output tokens, although its
+  recorded `interrupted/max_tokens` ending follows the specified loop. Preserve
+  that historical ending and test the advice against sufficient, below-minimum
+  and exhausted remaining allowances.
 - [ ] Retain or adjust the 16,000-token response cap as an engineering setting
-  using the effort and continuation comparisons. Document behavior and remedy;
+  using the effort and continuation comparisons, including M3's final 6,170-token
+  cap and preserved partial account. Repeated capped responses alone do not
+  identify a cause. Document behavior and remedy;
   changing the setting grants no extra allowance or spending authority.
 - [ ] Repair conversation-page fidelity using the exact short control and two
   full-page cases in `.scratch/readiness-c3-01/PAGE-COMPARISON.json` and
@@ -227,9 +142,12 @@ start or audit state.
 
 - [ ] Ground provider tool/error/compaction, harness startup/result/rate events,
   authentication reports, MCP traffic and hook inputs in retained captures.
-  Select the M1/C2/C3 citation recovery, M2 cap/near-cap responses, C1 surface
-  events, and C4 near-limit partial submission, required-field recovery and
-  submit-to-stop sequences. Derive variants by one named change. Record origin,
+  Select the M1/C2/C3 citation recovery, M2/M3 cap and near-limit responses,
+  M3's re-entry, preserved entry, missing-citations replacement refusal and
+  spent-reminder continuation, C1 surface events, and C4 near-limit partial
+  submission, required-field recovery and submit-to-stop sequences. Keep the
+  aborted-in-flight charge as rehearsal evidence; M3's live abort was not sent
+  and charged nothing. Derive variants by one named change. Record origin,
   date, model/version, size and digest with each selected fixture.
 - [ ] Add the standalone runtime driver's missing near-limit comparison from
   C4's short-placement capture, preserving independent authorship and expected

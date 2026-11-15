@@ -1800,19 +1800,19 @@
       "kind": "experiment",
       "date": "2026-11-13T20:11:00Z",
       "date_from": "REVIEW.json field finished_at",
-      "summary": "M2 sw3z default effort: thinking-only max_tokens on response 9; reviewed interruption, open audit with zero answer entries retained for separate M3.",
+      "summary": "M2 sw3z default: three capped placements exhausted 64000 output with one partial account. Approved manager close sealed, delivered and confirmed that unchanged account; audit closed without auditor submission. Originals retained for fixture/cap-setting review.",
       "result": {
         "path": ".",
-        "files": 98,
-        "sha256": "3d7a16d635a372cdf83dab9b2b1f4ea2665d1a770761f5a2540ba00065e3488d"
+        "files": 116,
+        "sha256": "3c0e96a16277da4b138b8366df7f3a1bd9cc35b585cf4b108dfdb6399e5c7a8b"
       },
       "evidence": {
         "path": ".scratch/readiness-m2-live-sw3z-default-01",
         "where": "local: only on the machine that ran it; clones do not carry it"
       },
       "pin": {
-        "reason": "Inspect firing M2 response and paired effort comparison; retain private container, open audit and immutable exports for separately commissioned M3 and fixture/cap-setting review.",
-        "until": "The open audit has an explicit disposition and continuation/comparison/fixture reviews finish, with no remaining inspection purpose requiring these originals."
+        "reason": "Inspect the exact capped encounters, preserved partial account, replacement refusal and manager-attributed return for grounded fixtures and cap-setting review; retain the selected private archive and exact writer.",
+        "until": "The assigned continuation, refusal, return and cap-setting fixture reviews finish and no current inspection purpose needs these originals."
       }
     },
     {
@@ -1993,6 +1993,126 @@
       "pin": {
         "reason": "Interpret the M3 outcome against its exact approval, packets, cost assessment and gate; source of the scripts and findings for any further continuation commission.",
         "until": "M3 has an explicit disposition and no further commission needs these records or scripts."
+      }
+    },
+    {
+      "id": "readiness-m3-live-reminder-02",
+      "kind": "experiment",
+      "date": "2026-11-15T14:03:52Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M3 reminder audit: witnessed signal interruption then approved continuation; three entries recovered, reminder stayed spent, citation refusal corrected, auditor submission and verified closure. Live ordinary-ending and in-flight estimate branches unexercised.",
+      "result": {
+        "path": ".",
+        "files": 73,
+        "sha256": "a6f0b2b1c3c99a7a81c00b2aee165047a6216c220d83aff784b375cccaa4eadc"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m3-live-reminder-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the live reminder interruption, independent witness, original authored entries and continued submitted return for reminder/re-entry and citation fixtures.",
+        "until": "M3 custody has an explicit reviewed disposition and the assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals."
+      }
+    },
+    {
+      "id": "readiness-m3-02-continue-reminder-p2-01",
+      "kind": "experiment",
+      "date": "2026-11-15T14:28:04Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M3 reminder continuation: six responses; three preserved entries, one corrected citation refusal, auditor submission and closure. Operator and independent reviews bind original exports and stopping witness.",
+      "result": {
+        "path": ".",
+        "files": 55,
+        "sha256": "945f62266c93baf898781f3d4ac0918d60ee7221356f64db6273c63e2d4537cc"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m3-02-continue-reminder-p2-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Interpret the fresh reminder continuation against its approved packet, source delivery, retained process observation and attributed reviews.",
+        "until": "M3 custody has an explicit reviewed disposition and the assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals."
+      }
+    },
+    {
+      "id": "readiness-m3-02-continue-sw3z-p2-01",
+      "kind": "experiment",
+      "date": "2026-11-15T14:40:14Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M3 first continuation of retained M2: ten responses; one partial account recorded before a thinking-only max_tokens ending. Original records preserved; local stopping observed.",
+      "result": {
+        "path": ".",
+        "files": 55,
+        "sha256": "6cb3f37f8473312970d681d7cc9a02d601c4edad988ae04b17b9178205d0a4d2"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m3-02-continue-sw3z-p2-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the preserved-account and capped-response encounter, original continuation source/packet, host capture and both reviews for cap-setting and fixture work.",
+        "until": "M3 custody has an explicit reviewed disposition and the assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals."
+      }
+    },
+    {
+      "id": "readiness-m3-02-continue-sw3z-p3-01",
+      "kind": "experiment",
+      "date": "2026-11-15T15:09:09Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "M3 final continuation exhausted output and preserved the partial account after a missing-citations refusal. Approved manager close and confirmation completed loss-free delivery of that account. Original placement, stopping and custody records retained.",
+      "result": {
+        "path": ".",
+        "files": 96,
+        "sha256": "b063d4d740514fb8a71b4b3918a9450bbb25c6c18dc23c96b2964edd36f280ec"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m3-02-continue-sw3z-p3-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect final re-entry, required-field refusal, shrinking caps, near-limit notice, exhausted-limit advice and external stopping evidence; retain the original state through custody disposition and fixture review.",
+        "until": "M3 custody has an explicit reviewed disposition and the assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals."
+      }
+    },
+    {
+      "id": "readiness-m3-02",
+      "kind": "experiment",
+      "date": "2026-11-15T15:13:25Z",
+      "date_from": "RESULT.json field finished_at",
+      "summary": "M3 continuation campaign: all four approved placements reviewed; fresh audit interrupted and continued to auditor submission/closure; retained M2 exhausted output with a partial account, then closed under a separate approved manager-custody packet.",
+      "result": {
+        "path": ".",
+        "files": 71,
+        "sha256": "0182363b5f11bbb173ac08c939befe255d1fae9554d18c04687b5981dff5fcc8"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m3-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the exact approvals, packets, invocation records and external process witnesses for the bounded reminder/continuation observations and assigned fixture work.",
+        "until": "The assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals."
+      }
+    },
+    {
+      "id": "readiness-m3-close-01",
+      "kind": "experiment",
+      "date": "2026-11-15T15:52:28Z",
+      "date_from": "RESULT.json field finished_at",
+      "summary": "M3 custody disposition: approved manager close, loss-free verified delivery and exact conditional confirmation closed the exhausted M2 audit. Original 788-byte partial account, usage and history preserved; independently reviewed.",
+      "result": {
+        "path": ".",
+        "files": 14,
+        "sha256": "a52a22dc538a427818a4b1868dac1e3e11a415b8bfa0c797354bffea9c949aed"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-m3-close-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Inspect the exact approval, manager-attributed partial return, delivery/confirmation reviews and preserved custody chain for return, continuation, refusal and cap-setting fixtures.",
+        "until": "The assigned fixture and cap-setting reviews finish and no current inspection purpose needs these original custody records."
       }
     }
   ]

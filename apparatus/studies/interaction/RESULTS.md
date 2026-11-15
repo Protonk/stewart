@@ -59,6 +59,35 @@ settle unimodality as magic varies; full-domain coverage differs from exhaustive
 pointwise enumeration. The completed reading selected no product change. The
 principal reported billing agreement with USD 3.51, without token-level detail.
 
+## Messages continuation
+
+The 2026-11-15 four-placement campaign `.scratch/readiness-m3-02` used the
+qualified exact writer and `claude-haiku-5-5` with effort omitted. A fresh audit
+was signalled at its witnessed reminder notice, then continued in a new
+conversation with its three entries and spent-reminder state intact. It corrected
+a citation refusal, submitted and delivered a verified return, then closed.
+The signal arrived before the interrupted attempt wrote any request bytes;
+no in-flight estimate was charged. The continuation had no ordinary prose
+ending, so the spent-reminder ordinary-ending branch remains unexercised live.
+
+The retained M2 checklist audit continued twice on its original writer and
+container, recording one partial account and later retrieving it unchanged.
+Both continuations ended on thinking-only `max_tokens` responses; the final
+cap was 6,170 tokens because the remaining output allowance had shrunk. The
+audit used all 64,000 output tokens across three placements. A replacement
+omitting citations was refused without altering the account. Repeated capped
+responses do not identify their cause. No compaction occurred.
+
+Under the separately approved custody packet in `.scratch/readiness-m3-close-01`,
+the manager sealed the same 788-byte partial account, inspected its loss-free
+delivery and confirmed closure. The 40-item checklist remains incomplete; the
+auditor did not submit it. Original records and returned bytes survived each
+export and custody action. The live captures are service-owned; separate
+post-return observers established local PID/group absence, not provider
+cancellation. These encounters and their independent reviews supply bounded
+evidence and fixture inputs, not a full model-conformance result. The earlier
+one-placement campaign, which submitted without a reminder, remains unchanged.
+
 ## Opus comparison
 
 Four independent `claude-opus-5-5` placements at medium effort used

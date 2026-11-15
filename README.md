@@ -76,8 +76,10 @@ also defines structured JSON replies for scripts and agent managers.
 **Version 0.0.2 — experimental.** Small live commissions have returned answers
 with verified delivery across all three forms. Recorded Linux acceptance runs
 cover their exact builds; full model and platform qualification remains
-outstanding. The [qualification record](apparatus/qualified.md) identifies those
-builds and results, and the [interaction findings](apparatus/studies/interaction/RESULTS.md)
+outstanding. Bounded Messages continuations preserved recorded work; one audit
+submitted and another exhausted its allowance with a partial account later
+sealed and closed by the manager. The [qualification record](apparatus/qualified.md)
+identifies those builds and results, and the [interaction findings](apparatus/studies/interaction/RESULTS.md)
 report observations from actual inquiries.
 
 The default-off [Claude Code development adapter](docs/claude-code/CONTRACT.md)

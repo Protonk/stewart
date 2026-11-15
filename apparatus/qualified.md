@@ -619,10 +619,10 @@ M2 5sgh default effort: 24 tool-use turns, eight-entry auditor submission and ve
 
 ### readiness-m2-live-sw3z-default-01
 
-M2 sw3z default effort: thinking-only max_tokens on response 9; reviewed interruption, open audit with zero answer entries retained for separate M3.
+M2 sw3z default: three capped placements exhausted 64000 output with one partial account. Approved manager close sealed, delivered and confirmed that unchanged account; audit closed without auditor submission. Originals retained for fixture/cap-setting review.
 
 - Evidence: `.scratch/readiness-m2-live-sw3z-default-01/.` (recorded 2026-11-13T20:11:00Z).
-- Retained purpose: Inspect firing M2 response and paired effort comparison; retain private container, open audit and immutable exports for separately commissioned M3 and fixture/cap-setting review.; until The open audit has an explicit disposition and continuation/comparison/fixture reviews finish, with no remaining inspection purpose requiring these originals.
+- Retained purpose: Inspect the exact capped encounters, preserved partial account, replacement refusal and manager-attributed return for grounded fixtures and cap-setting review; retain the selected private archive and exact writer.; until The assigned continuation, refusal, return and cap-setting fixture reviews finish and no current inspection purpose needs these originals.
 
 ### readiness-m2-live-5sgh-low-01
 
@@ -686,3 +686,45 @@ M3 commission: one of four approved placements ran; interruption and continuatio
 
 - Evidence: `.scratch/readiness-m3-01/.` (recorded 2026-11-14T15:48:29Z).
 - Retained purpose: Interpret the M3 outcome against its exact approval, packets, cost assessment and gate; source of the scripts and findings for any further continuation commission.; until M3 has an explicit disposition and no further commission needs these records or scripts.
+
+### readiness-m3-live-reminder-02
+
+M3 reminder audit: witnessed signal interruption then approved continuation; three entries recovered, reminder stayed spent, citation refusal corrected, auditor submission and verified closure. Live ordinary-ending and in-flight estimate branches unexercised.
+
+- Evidence: `.scratch/readiness-m3-live-reminder-02/.` (recorded 2026-11-15T14:03:52Z).
+- Retained purpose: Inspect the live reminder interruption, independent witness, original authored entries and continued submitted return for reminder/re-entry and citation fixtures.; until M3 custody has an explicit reviewed disposition and the assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals.
+
+### readiness-m3-02-continue-reminder-p2-01
+
+M3 reminder continuation: six responses; three preserved entries, one corrected citation refusal, auditor submission and closure. Operator and independent reviews bind original exports and stopping witness.
+
+- Evidence: `.scratch/readiness-m3-02-continue-reminder-p2-01/.` (recorded 2026-11-15T14:28:04Z).
+- Retained purpose: Interpret the fresh reminder continuation against its approved packet, source delivery, retained process observation and attributed reviews.; until M3 custody has an explicit reviewed disposition and the assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals.
+
+### readiness-m3-02-continue-sw3z-p2-01
+
+M3 first continuation of retained M2: ten responses; one partial account recorded before a thinking-only max_tokens ending. Original records preserved; local stopping observed.
+
+- Evidence: `.scratch/readiness-m3-02-continue-sw3z-p2-01/.` (recorded 2026-11-15T14:40:14Z).
+- Retained purpose: Inspect the preserved-account and capped-response encounter, original continuation source/packet, host capture and both reviews for cap-setting and fixture work.; until M3 custody has an explicit reviewed disposition and the assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals.
+
+### readiness-m3-02-continue-sw3z-p3-01
+
+M3 final continuation exhausted output and preserved the partial account after a missing-citations refusal. Approved manager close and confirmation completed loss-free delivery of that account. Original placement, stopping and custody records retained.
+
+- Evidence: `.scratch/readiness-m3-02-continue-sw3z-p3-01/.` (recorded 2026-11-15T15:09:09Z).
+- Retained purpose: Inspect final re-entry, required-field refusal, shrinking caps, near-limit notice, exhausted-limit advice and external stopping evidence; retain the original state through custody disposition and fixture review.; until M3 custody has an explicit reviewed disposition and the assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals.
+
+### readiness-m3-02
+
+M3 continuation campaign: all four approved placements reviewed; fresh audit interrupted and continued to auditor submission/closure; retained M2 exhausted output with a partial account, then closed under a separate approved manager-custody packet.
+
+- Evidence: `.scratch/readiness-m3-02/.` (recorded 2026-11-15T15:13:25Z).
+- Retained purpose: Inspect the exact approvals, packets, invocation records and external process witnesses for the bounded reminder/continuation observations and assigned fixture work.; until The assigned reminder, continuation, refusal and cap-setting fixture reviews no longer need these originals.
+
+### readiness-m3-close-01
+
+M3 custody disposition: approved manager close, loss-free verified delivery and exact conditional confirmation closed the exhausted M2 audit. Original 788-byte partial account, usage and history preserved; independently reviewed.
+
+- Evidence: `.scratch/readiness-m3-close-01/.` (recorded 2026-11-15T15:52:28Z).
+- Retained purpose: Inspect the exact approval, manager-attributed partial return, delivery/confirmation reviews and preserved custody chain for return, continuation, refusal and cap-setting fixtures.; until The assigned fixture and cap-setting reviews finish and no current inspection purpose needs these original custody records.

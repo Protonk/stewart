@@ -8,8 +8,11 @@ owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 Answer usefulness remains the manager's judgment.
 
 Controlled interruption, bounded continuation and multi-placement export and
-review are implemented and rehearsed on Linux with a fake provider; none has a
-live observation. Remaining apparatus work covers abrupt process death, the
+review are implemented and rehearsed on Linux with a fake provider. Bounded
+live observations now include reminder interruption, continuation, preservation
+of recorded work and manager closure; the
+[interaction findings](apparatus/studies/interaction/RESULTS.md#messages-continuation)
+state their limits. Remaining apparatus work covers abrupt process death, the
 failure controls and interruption timings not yet rehearsed, actual provider
 compaction and the full per-model gate. No live launch is authorized by this plan.
 
@@ -56,12 +59,13 @@ to ACCEPTANCE coverage belongs to the principal.
   source, and an interruption that meets each of `not_captured`,
   `captured_not_written` and `answered`. Its four signalled controls all met
   `written_unanswered`, and its container held source of the same commit. The
-  readiness plan names that rehearsal and what it showed. Native runs are
-  iteration only.
+  retained `.scratch/m3-rehearsal-01` and its six continuation record folders
+  contain those observations. Native runs are iteration only.
 - [ ] Record the observed end of the process group for every placement. Today
-  that observation is written only after a signal; an unsignalled placement's
-  stopping rests on the launcher reaping the run command and on the service's
-  own status.
+  the reusable launcher records that observation only after a signal. The
+  completed continuation campaign's separate post-return observers supply
+  unsignalled local PID/group observations to ground this addition; integrate
+  and rehearse that mechanism in the reusable apparatus.
 - [ ] Support abrupt process death. A killed placement has no `run_ended` until
   the next `run` reconciles it as `process_gone`; today the export guard
   withholds and the reviewer leaves that placement unassessed. Record process
@@ -97,10 +101,18 @@ mechanically valid answer as intellectually correct:
   by re-entry. Legitimate edits and fresh equal-byte entries remain distinct;
   content equality alone cannot establish an accidental replay. Define what
   needs human inspection and report unresolved comparisons explicitly.
-- [ ] Extend ordinary usage reconciliation to compaction, notices and every
-  placement, including estimates after interruption. Report re-entry calls and
-  their timing, submission, delivery and close separately. Keep provider usage,
-  calculated cost and independently observed billing distinguishable.
+- [ ] Extend [verify.py](apparatus/c10/verify.py) from
+  [INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses): it currently
+  requires every request to have `compaction: false` and `reset: false`.
+  Reconstruct summary/reset requests, check the trigger from top-level usage
+  separately from iteration-based charges, preserve the signed content array
+  byte for byte and replace active context. Check unsuccessful compaction and
+  reject tools executed from a summary. Keep ordinary and continuation controls
+  passing; extend [check_review.py](apparatus/c10/check_review.py) with omitted
+  or altered summaries, retained old context, omitted usage and below-trigger
+  invariance. Reconcile notices and every placement, including interrupted
+  estimates. Report re-entry timing, submission, delivery and close separately;
+  keep provider usage, calculated cost and observed billing distinguishable.
 - [ ] Make all required missing, malformed, duplicated, uninspected or conflicting
   evidence visible. Use bounded inspection and streaming hashes where needed;
   large captures cannot silently disappear behind an indexing cutoff. Exercise
@@ -173,7 +185,7 @@ coverage remains outstanding until those authorized runs supply the evidence.
 [AGENTS](AGENTS.md) owns independent authorship, commits and host handoffs.
 Use the [host queue](apparatus/c10/HOST-QUEUE.md) and its saved-connection route
 for supported operations under the bounded commission; extend and rehearse that
-route before delegating currently unsupported continuation operations.
+route before using an operation outside its checked scope.
 
 Complete this plan when the apparatus is demonstrated and every commissioned
 model has a reviewed gate outcome, with failures and unexercised work explicitly
