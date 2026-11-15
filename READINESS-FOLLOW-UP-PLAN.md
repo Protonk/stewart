@@ -53,6 +53,12 @@ and the independent `FREEZE-REVIEW.json` are beside it.
 
 Remaining:
 
+- A new, unapproved proposal is being prepared in `.scratch/readiness-m3-02/`
+  for the first option below: deliberately repeat the reminder-interruption
+  attempt, keeping the retained sw3z continuation conditional on a reviewed live
+  continuation first. It preserves the spent commission's outcome and needs
+  approval of its own manifest and each packet digest. Preparation does not
+  decide the principal's disposition.
 - [ ] Bring the M3 disposition to the principal; it is not a routine choice.
   The options are a new commission that tries the reminder interruption again,
   as a deliberate repetition and not a replacement; a new commission that
