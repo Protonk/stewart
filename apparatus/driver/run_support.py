@@ -313,6 +313,13 @@ def check_run_reply(t, rep, sub, name, *, ending, cause=None, run_number=None, f
         t.eq(name + ".run", d.get("run"), run_number)
         t.eq(name + ".continuing", d.get("continuing"), run_number > 1)
     want_next = NEXT_FOR_ENDING.get(ending, ())
+    if ending == "interrupted" and fx is not None and limits is not None:
+        # INTERFACE 5.6/5.7: derive advice from the independent provider's
+        # cumulative charges, never from the reply being checked.
+        known = fp.allowances(fx.totals(), limits)
+        remaining = {k: v["limit"] - v["used"] for k, v in known.items()}
+        if remaining["turns"] <= 0 or remaining["input_tokens"] <= 0 or remaining["output_tokens"] < 1024:
+            want_next = ("close",)
     got_next = sorted({a[1] for a in rep.next_argvs()})
     t.eq(name + ".next", got_next, sorted(want_next))
     if fx is not None:

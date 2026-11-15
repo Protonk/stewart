@@ -842,7 +842,15 @@ pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply
     let headline = super::headline(audit, &state).to_j();
     let allowances =
         super::presentation::allowances(audit, &state, super::status::Lock::Held, &mut diagnostics);
-    let summary = super::presentation::summary(&state, &headline, &allowances);
+    let unavailable = super::presentation::request_unavailable(&allowances);
+    let mut summary = super::presentation::summary(&state, &headline, &allowances);
+    if matches!(e.ending, Ending::Interrupted(_)) {
+        summary.push('\n');
+        summary.push_str(&super::presentation::interrupted_advice(
+            run,
+            unavailable.as_deref(),
+        ));
+    }
     let mut data = J::obj()
         .with("run", run)
         .with("continuing", run > 1)
@@ -869,22 +877,26 @@ pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply
     data.push("headline", headline);
     data.push("summary", summary);
     let mut reply = Reply::completed(OP, effects("ended"), data);
-    reply.next = next_calls(audit, &e);
+    reply.next = next_calls(audit, &e, unavailable.is_none());
     reply
 }
 
-fn next_calls(audit: &Audit, e: &Ended) -> Vec<Next> {
+fn next_calls(audit: &Audit, e: &Ended, request_available: bool) -> Vec<Next> {
     match e.ending {
-        Ending::Interrupted(_) => vec![
-            run_next(
-                audit,
-                "Continue the audit in a new conversation under the same cumulative limits.",
-            ),
-            close_next(
+        Ending::Interrupted(_) => {
+            let mut next = Vec::new();
+            if request_available {
+                next.push(run_next(
+                    audit,
+                    "Continue the audit in a new conversation under the same cumulative limits.",
+                ));
+            }
+            next.push(close_next(
                 audit,
                 "Close the audit; it seals the recorded selection with manager attribution.",
-            ),
-        ],
+            ));
+            next
+        }
         Ending::EndedUnsubmitted | Ending::LimitReached | Ending::Damaged => vec![close_next(
             audit,
             "Close the audit; it seals the recorded selection with manager attribution.",

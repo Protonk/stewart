@@ -87,6 +87,7 @@ pub struct View {
     pub headline: J,
     pub diagnostics: Vec<J>,
     pub lock: Lock,
+    pub allowances: J,
 }
 
 /// Establish the condition, its evidence and the next calls from the log
@@ -125,6 +126,7 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
     for d in recorded_diagnostics(audit) {
         diagnostics.push(d);
     }
+    let allowances = super::presentation::allowances(audit, state, lock, &mut diagnostics);
     let hl = headline(audit, state);
     let accepted = state.accepted();
     let latest_prep = state.latest_prepared();
@@ -480,20 +482,20 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
                 "run_started without run_ended; lock free",
             )),
         }
-        next.push(n(
-            &["run", r],
-            "Continue the audit in a new placement under the same cumulative limits.",
-        ));
+        let unavailable = super::presentation::request_unavailable(&allowances);
+        if unavailable.is_none() {
+            next.push(n(
+                &["run", r],
+                "Continue the audit in a new placement under the same cumulative limits.",
+            ));
+        }
         next.push(n(
             &["close", r],
             "End authoring and seal the recorded selection with manager attribution.",
         ));
         (
             "interrupted",
-            format!(
-                "Run {} was interrupted; the answer is not submitted. Run continues it, or close ends authoring.",
-                p.run
-            ),
+            super::presentation::interrupted_advice(p.run, unavailable.as_deref()),
         )
     } else if let Some(a) = accepted {
         evidence.push(ev(
@@ -593,6 +595,7 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
         headline: hl.to_j(),
         diagnostics,
         lock,
+        allowances,
     }
 }
 
@@ -889,7 +892,7 @@ pub fn run(reference: &str) -> Reply {
     log::sabotage_unknown_as_absent(&mut state);
     let v = view(&audit, &state);
     let mut diagnostics = v.diagnostics;
-    let allowances = super::presentation::allowances(&audit, &state, v.lock, &mut diagnostics);
+    let allowances = v.allowances;
     let mut summary = super::presentation::summary(&state, &v.headline, &allowances);
     if matches!(
         v.condition,

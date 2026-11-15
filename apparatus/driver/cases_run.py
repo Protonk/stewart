@@ -1348,6 +1348,82 @@ def ordinary_body(p):
     yield from finish_ordinary(p)
 
 
+@case("c13.allowance-advice", ["C13", "C16", "C7"],
+      "interrupted advice uses cumulative allowances without changing the recorded ending",
+      needs=("loopback",))
+def c_allowance_advice(t):
+    """Two max_tokens placements preserve interrupted history. The second differs
+    only in a charged allowance: enough output, exactly 1,024, 1,023, zero,
+    exhausted input (including cache charges), or exhausted turns. Status and
+    run advise close alone when a request is impossible. A direct run still
+    records limit_reached without a request. Changing status's HOME/cwd leaves
+    these observations unchanged. All expectations come from the fake ledger.
+
+    The pre-repair writer is a regression control: below-minimum and exhausted
+    cases must reject its unconditional run advice, while sufficient cases pass.
+    """
+    specimens = [
+        ("sufficient", 2048, None),
+        ("minimum", 1024, None),
+        ("below-minimum", 1023, "output"),
+        ("output-exhausted", 0, "output"),
+        ("input-exhausted", 2048, "input"),
+        ("cache-input-exhausted", 2048, "input"),
+        ("turns-exhausted", 2048, "turn"),
+    ]
+    for label, output_remaining, blocked in specimens:
+        pre = "c13.advice." + label
+        q = {"turns": "2" if label == "turns-exhausted" else "10",
+             "input_tokens": "5000", "output_tokens": "8192"}
+        sub = run_submission(t, entries=[], body=b"Explain the supplied question.\n", q=q)
+        last_input = 4800 if label == "input-exhausted" else 200
+        cache = {"cache_creation": 2300, "cache_read": 2300} if label == "cache-input-exhausted" else {}
+        script = fp.Script([
+            fp.Message([fp.text("First cut.")], stop_reason="max_tokens", usage=fp.Usage(200, 2048)),
+            fp.Message([fp.text("Second cut.")], stop_reason="max_tokens",
+                       usage=fp.Usage(last_input, 6144 - output_remaining, **cache)),
+            fp.Message([fp.text("Continuation.")], stop_reason="max_tokens", usage=fp.Usage(1, 1)),
+        ])
+        fx = rs.provider(t, script, label=label)
+        for number in (1, 2):
+            name = pre + ".run-%d" % number
+            rep = rs.run(t, sub, fx, name=name)
+            rs.check_run_reply(t, rep, sub, name, ending="interrupted", cause="max_tokens",
+                               run_number=number, fx=fx, limits=rs.limits_of(sub))
+            rs.check_run_ended(t, sub, number, name, ending="interrupted", cause="max_tokens",
+                               requests=1, attempts=1)
+        t.eq(pre + ".requests", len(fx.exchanges), 2)
+        t.eq(pre + ".request-caps", [e.max_tokens() for e in fx.exchanges], [8192, 6144])
+        expected_next = ["close"] if blocked else ["close", "run"]
+        status = t.status(sub, name=pre + ".status")
+        t.eq(pre + ".status.condition", status.data.get("condition"), "interrupted")
+        last = (status.data.get("runs") or {}).get("last") or {}
+        t.eq(pre + ".status.last-ending", [last.get(k) for k in ("number", "ending", "cause")],
+             [2, "interrupted", "max_tokens"])
+        t.eq(pre + ".status.next", sorted({a[1] for a in status.next_argvs()}), expected_next)
+        t.eq(pre + ".status.allowances", status.data.get("allowances"), fp.allowances(fx.totals(), rs.limits_of(sub)))
+        if blocked:
+            for kind, reply in (("run", rep), ("status", status)):
+                summary = reply.data.get("summary", "").lower()
+                t.check(pre + "." + kind + ".summary-allowance", blocked in summary and "allowance" in summary, summary)
+        human = t.cmd(["status", sub.ref], json_reply=False, envelope=False, name=pre + ".human")
+        t.check(pre + ".human-summary", norm_ws(status.data.get("summary", "")) in
+                norm_ws(human.stdout.decode("utf-8", "replace")), human.stdout)
+        again = t.status(sub, name=pre + ".elsewhere", cwd=t.fresh_dir(label + " cwd"),
+                         env={"HOME": t.fresh_dir(label + " home")})
+        for key in ("condition", "runs", "allowances", "summary"):
+            t.eq(pre + ".invariant." + key, again.data.get(key), status.data.get(key))
+        t.eq(pre + ".invariant.next", again.next_argvs(), status.next_argvs())
+        name = pre + ".direct-run"
+        direct = rs.run(t, sub, fx, name=name)
+        rs.check_run_reply(t, direct, sub, name, ending="limit_reached" if blocked else "interrupted",
+                           cause=None if blocked else "max_tokens", run_number=3,
+                           fx=fx, limits=rs.limits_of(sub))
+        t.eq(pre + ".direct-request-count", len(fx.exchanges), 2 if blocked else 3)
+        t.eq(pre + ".script-not-exhausted", script.exhausted, [])
+        t.eq(pre + ".no-seal", t.log_bodies(sub, "seal"), [])
+
+
 @case("c12.run-refusals", ["C12", "C16", "C20"],
       "run refuses an ended, limited, sealed, closed or held audit with a sign; commission needs no key or network",
       needs=("loopback",),

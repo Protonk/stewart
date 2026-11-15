@@ -1046,6 +1046,268 @@ fn an_undecodable_response_is_charged_and_ends_with_a_protocol_anomaly() {
 // ---------------------------------------------------------------------------
 // Limits and the near-limit notice.
 
+/// The advice describes whether another request fits; it must not replace the
+/// interruption recorded by the provider response with a limit ending.
+fn assert_interrupted_advice(reply: &Json, can_run: bool, limiting: &str) {
+    let next: Vec<_> = at(reply, &["next"])
+        .as_arr()
+        .unwrap()
+        .iter()
+        .map(|n| sj(n, &["argv", "1"]))
+        .collect();
+    assert_eq!(
+        next,
+        if can_run {
+            vec!["run", "close"]
+        } else {
+            vec!["close"]
+        }
+    );
+    let summary = sj(reply, &["data", "summary"]);
+    assert!(summary.contains("interrupted (max_tokens)"), "{summary}");
+    assert!(summary.contains("not submitted"), "{summary}");
+    assert_eq!(summary.contains("Run continues"), can_run, "{summary}");
+    if !can_run {
+        assert!(summary.contains(limiting), "{summary}");
+        assert!(
+            summary.contains("No further provider request can be sent"),
+            "{summary}"
+        );
+        assert!(summary.contains("Close ends authoring"), "{summary}");
+    }
+}
+
+#[test]
+fn interrupted_run_advice_observes_allowance_boundaries() {
+    for (label, limits, input, output, can_run, limiting) in [
+        ("sufficient", (4, 1_000, 16_000), 100, 8_000, true, ""),
+        ("output_1024", (4, 1_000, 16_000), 100, 14_976, true, ""),
+        (
+            "output_1023",
+            (4, 1_000, 16_000),
+            100,
+            14_977,
+            false,
+            "1023 tokens remaining",
+        ),
+        (
+            "output_zero",
+            (4, 1_000, 16_000),
+            100,
+            16_000,
+            false,
+            "0 tokens remaining",
+        ),
+        (
+            "turns_zero",
+            (1, 1_000, 16_000),
+            100,
+            100,
+            false,
+            "turn allowance",
+        ),
+        (
+            "input_zero",
+            (4, 1_000, 16_000),
+            1_000,
+            100,
+            false,
+            "input token allowance",
+        ),
+        (
+            "input_exceeded",
+            (4, 1_000, 16_000),
+            1_001,
+            100,
+            false,
+            "input token allowance",
+        ),
+    ] {
+        let p = provider!(
+            label,
+            vec![Act::Reply(
+                200,
+                vec![],
+                message(
+                    r#"[{"type":"text","text":"unfinished"}]"#,
+                    "max_tokens",
+                    input,
+                    output
+                )
+            )]
+        );
+        let e = Env::new();
+        let r = commissioned(&e, limits);
+        let o = run(&e, &r, &p, &[]);
+        assert_eq!(o.code, Some(5), "{label}: {}", o.stderr);
+        assert_eq!(sj(&o.reply, &["data", "ending"]), "interrupted");
+        assert_eq!(sj(&o.reply, &["data", "cause"]), "max_tokens");
+        assert_interrupted_advice(&o.reply, can_run, limiting);
+        let before = e.log_kinds(&r);
+        let status = e.run(&["status", &r, "--json"]).json();
+        assert_eq!(sj(&status, &["data", "condition"]), "interrupted");
+        assert_interrupted_advice(&status, can_run, limiting);
+        assert_eq!(
+            sj(&status, &["data", "summary"]),
+            sj(&o.reply, &["data", "summary"])
+        );
+        assert_eq!(e.log_kinds(&r), before, "status must not change the ending");
+        let ending = body_of(&e, &r, before.len());
+        assert_eq!(sj(&ending, &["ending"]), "interrupted");
+        assert_eq!(sj(&ending, &["cause"]), "max_tokens");
+        assert_eq!(p.bodies().len(), 1);
+        if !can_run {
+            // Advice is not a new refusal or lifecycle: an explicit run still
+            // records a limit ending without contacting the provider.
+            let direct = run(&e, &r, &p, &[]);
+            assert_eq!(direct.code, Some(0), "{label}: {}", direct.stderr);
+            assert_eq!(sj(&direct.reply, &["data", "ending"]), "limit_reached");
+            assert_eq!(p.bodies().len(), 1);
+            assert_eq!(sj(&body_of(&e, &r, before.len()), &["cause"]), "max_tokens");
+        }
+    }
+}
+
+#[test]
+fn interrupted_status_advice_counts_prior_and_estimated_usage() {
+    use stewart::archive::Audit;
+    use stewart::bodies::{ProviderUse, RunEnded, RunObservations, RunStarted};
+    use stewart::log;
+    use stewart::usage::{Split, Usage};
+
+    for (label, turns, input, output, estimated_output, can_run, limiting) in [
+        ("sufficient", 1, 100, 4_000, 0, true, ""),
+        ("output_1024", 1, 100, 6_976, 0, true, ""),
+        (
+            "output_1023",
+            1,
+            100,
+            6_977,
+            0,
+            false,
+            "1023 tokens remaining",
+        ),
+        ("output_zero", 1, 100, 8_000, 0, false, "0 tokens remaining"),
+        (
+            "estimated_output",
+            1,
+            100,
+            4_000,
+            4_000,
+            false,
+            "0 tokens remaining",
+        ),
+        ("turns_zero", 3, 100, 100, 0, false, "turn allowance"),
+        ("input_zero", 1, 900, 100, 0, false, "input token allowance"),
+        (
+            "input_exceeded",
+            1,
+            901,
+            100,
+            0,
+            false,
+            "input token allowance",
+        ),
+    ] {
+        let e = Env::new();
+        let r = commissioned(&e, (4, 1_000, 16_000));
+        let mut audit = Audit::open(&r).unwrap();
+        audit.exe = Some(stewart::platform::Exe {
+            path: audit.refile.writer_path.clone(),
+            sha256: audit.refile.writer_sha256.clone(),
+        });
+        let world = stewart::world::load(&audit, &log::read(&audit)).unwrap();
+        for (run, turns, input, output, estimated) in [
+            (1, 1, 100, 8_000, 0),
+            (2, turns, input, output, estimated_output),
+        ] {
+            let start = RunStarted {
+                #[cfg(feature = "claude-code")]
+                runtime: None,
+                run,
+                arrangement_sha256: world.arrangement_sha256.clone(),
+                provider: Some(ProviderUse {
+                    base_url: "https://api.anthropic.com".into(),
+                    overridden: false,
+                    proxy: None,
+                    anthropic_version: stewart::forms::ANTHROPIC_VERSION.into(),
+                }),
+                observations: RunObservations::current(),
+            };
+            log::publish(&audit, "run_started", |_| Ok(start.to_j()))
+                .ok()
+                .unwrap();
+            let reported = |n| Split {
+                reported: n,
+                estimated: 0,
+            };
+            let end = RunEnded {
+                run,
+                ending: "interrupted".into(),
+                cause: Some("max_tokens".into()),
+                recorded_by: "run".into(),
+                provider: None,
+                requests: 0,
+                attempts: 0,
+                usage: Usage {
+                    #[cfg(feature = "claude-code")]
+                    harness: None,
+                    turns: reported(turns),
+                    input_tokens: reported(input),
+                    output_tokens: Split {
+                        reported: output,
+                        estimated,
+                    },
+                },
+                notices: vec![],
+                seal: None,
+                message: "Synthetic accounting observation for advice comparison.".into(),
+            };
+            log::publish(&audit, "run_ended", |_| Ok(end.to_j()))
+                .ok()
+                .unwrap();
+        }
+        let before = log::read(&audit);
+        assert!(!before.damaged(), "{label}: {:?}", before.damage);
+        let status = e.run(&["status", &r, "--json"]).json();
+        assert_eq!(
+            sj(&status, &["data", "condition"]),
+            "interrupted",
+            "{label}"
+        );
+        assert_interrupted_advice(&status, can_run, limiting);
+        assert_eq!(
+            n(&status, &["data", "allowances", "output_tokens", "used"]),
+            8_000 + output + estimated_output
+        );
+        let human = e.run(&["status", &r]);
+        assert_eq!(human.code, Some(0), "{label}: {}", human.stderr);
+        assert_eq!(
+            human.text().contains("Run continues"),
+            can_run,
+            "{label}: {}",
+            human.text()
+        );
+        if !can_run {
+            assert!(human.text().contains(limiting), "{label}: {}", human.text());
+            assert!(
+                !human.text().contains("Continue the audit"),
+                "{label}: {}",
+                human.text()
+            );
+        }
+        let after = log::read(&audit);
+        assert_eq!(after.recs.len(), before.recs.len());
+        assert_eq!(
+            after.recs.last().unwrap().sha256,
+            before.recs.last().unwrap().sha256
+        );
+        let ended = after.latest_placement().unwrap().ended.unwrap().1;
+        assert_eq!(ended.ending, "interrupted");
+        assert_eq!(ended.cause.as_deref(), Some("max_tokens"));
+    }
+}
+
 #[test]
 fn limits_and_the_near_limit_notice() {
     // After request 1 exactly 1,024 output tokens remain: a request is still

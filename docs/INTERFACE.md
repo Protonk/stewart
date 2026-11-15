@@ -1336,7 +1336,7 @@ Conditions, matching the CONTRACTS status table:
 | `log_damaged` | Log damaged after a readable `accepted` | receipt; status after the manager restores its storage |
 | `not_started` | Accepted; no `run_started` | run, close |
 | `run_active` | A placement holds the lock | status, close |
-| `interrupted` | The latest placement ended `interrupted`, or has no `run_ended` and the lock is free; authoring has not ended | run, close |
+| `interrupted` | The latest placement ended `interrupted`, or has no `run_ended` and the lock is free; authoring has not ended | run when the remaining allowance permits a request, close |
 | `ended_unsubmitted` | The latest placement ended `ended_unsubmitted` | close |
 | `limit_reached` | The latest placement ended `limit_reached` | close |
 | `damaged` | The latest placement ended `damaged` | close |
@@ -1348,6 +1348,14 @@ Conditions, matching the CONTRACTS status table:
 | `closed` | Closed after launch; names the delivery, or the surrendered losses | none |
 
 A verified attempt is one that ended `verified` or `verified_with_losses`.
+
+An interrupted ending does not establish that another provider request is
+possible. When the known cumulative allowances meet an exhaustion condition in
+6.4, status keeps the recorded ending and condition, omits `run` from `next`,
+and explains in its summary which allowance prevents further requests. It
+offers `close` to settle the recorded work. At least 1,024 remaining output
+tokens are needed even when the output limit has not been fully used. This
+changes advice, not the historical ending or the behavior of a direct `run`.
 
 `condition` is the first of these that applies:
 
@@ -1454,10 +1462,13 @@ order. These diagnostics add no persisted record or mutation.
 
 | Ending | `next` |
 | --- | --- |
-| `interrupted` | `run` (continues under the same limits), `close` |
+| `interrupted` | `run` when the remaining allowance permits a request (continues under the same limits), `close` |
 | `ended_unsubmitted`, `limit_reached`, `damaged` | `close` (seals the recorded selection with manager attribution) |
 | `stopped_by_close` | `status`, `close` (continues the close another invocation requested) |
 | `sealed` | `close`; after an incomplete delivery its explanation offers `--destination DIR` |
+
+An interrupted run reply applies the same allowance-aware advice and summary
+as status (5.6), without replacing its recorded ending or cause.
 
 Refusals carry the next calls that fit: `close` (and `status`) for
 `authoring_ended` and `reference_closed`; `status` and `close` for `run_held`;

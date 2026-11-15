@@ -165,8 +165,9 @@ Commands
       environment exposure; descriptor input avoids putting the key there.
       STEWART_PROVIDER_URL (https://, or
       http:// to a loopback host) and HTTPS_PROXY (http://host:port) are
-      optional. An interrupted run exits 5; run again to continue under the
-      same cumulative limits. A run can stop without ending authoring, and
+      optional. An interrupted run exits 5; run can continue when the remaining
+      cumulative allowances permit another request. Follow the reply's next
+      calls. A run can stop without ending authoring, and
       authoring can end while custody remains unfinished. The seal actor names
       who sealed: a manager seal is not auditor submission.
       A reflected credential stops before tools or retries. Raw response bodies
@@ -177,7 +178,8 @@ Commands
       End the reference. See: stewart help close.
 
 Replies: exit 0 completed, 2 usage, 3 refused, 4 failed; run exits 5 when its
-placement was interrupted and recorded, and run continues it. A missing reply
+placement was interrupted and recorded; its next calls account for the remaining
+allowances. A missing reply
 means the effects are unknown; status reconciles from the records.
 "
     .to_string()

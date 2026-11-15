@@ -5,7 +5,7 @@ use super::status::Lock;
 use crate::archive::{self, Audit};
 use crate::json::J;
 use crate::log::LogState;
-use crate::usage::Limits;
+use crate::usage::{Limits, MIN_OUTPUT_FOR_REQUEST};
 
 fn unknown_usage(limits: &Limits) -> J {
     #[cfg(feature = "claude-code")]
@@ -69,6 +69,45 @@ pub fn allowances(audit: &Audit, state: &LogState, lock: Lock, diagnostics: &mut
         return unknown_usage(&limits);
     }
     limits.allowances_j(&used)
+}
+
+/// Explain only exhaustion established by the same allowance observation the
+/// reply presents. Unknown usage is not zero usage, and runtime placements do
+/// not have Messages token or turn allowances.
+pub fn request_unavailable(allowances: &J) -> Option<String> {
+    let remaining = |key| {
+        let allowance = allowances.get(key)?;
+        match (allowance.get("used"), allowance.get("limit")) {
+            (Some(J::Int(used)), Some(J::Int(limit))) => Some(limit.saturating_sub(*used)),
+            _ => None,
+        }
+    };
+    let reason = if remaining("turns") == Some(0) {
+        "the turn allowance is exhausted".to_string()
+    } else if remaining("input_tokens") == Some(0) {
+        "the input token allowance is exhausted".to_string()
+    } else if let Some(output) = remaining("output_tokens").filter(|n| *n < MIN_OUTPUT_FOR_REQUEST)
+    {
+        format!(
+            "the output token allowance has {output} tokens remaining, fewer than the 1,024 required"
+        )
+    } else {
+        return None;
+    };
+    Some(format!(
+        "No further provider request can be sent: {reason}."
+    ))
+}
+
+pub fn interrupted_advice(run: u64, unavailable: Option<&str>) -> String {
+    let action = match unavailable {
+        Some(reason) => format!(
+            "{reason} Close ends authoring and seals the recorded selection with manager attribution."
+        ),
+        None => "Run continues it under the same cumulative limits, or close ends authoring."
+            .to_string(),
+    };
+    format!("Run {run} was interrupted; the answer is not submitted. {action}")
 }
 
 fn text(value: Option<&J>) -> &str {
@@ -296,6 +335,25 @@ fn runtime_lines(allowances: &J) -> Vec<String> {
     lines
 }
 
+#[cfg(test)]
+mod allowance_tests {
+    use super::*;
+
+    #[test]
+    fn unknown_usage_does_not_establish_request_exhaustion() {
+        let limits = Limits {
+            #[cfg(feature = "claude-code")]
+            harness: None,
+            turns: 4,
+            input_tokens: 1_000,
+            output_tokens: 16_000,
+        };
+        assert!(request_unavailable(&unknown_usage(&limits)).is_none());
+        assert!(request_unavailable(&J::Str("unknown".into())).is_none());
+        assert!(request_unavailable(&J::Null).is_none());
+    }
+}
+
 #[cfg(all(test, feature = "claude-code"))]
 mod tests {
     use super::*;
@@ -326,6 +384,9 @@ mod tests {
 
     #[test]
     fn the_summary_states_the_deadline_and_agrees_in_number() {
+        // Runtime placement accounting has its own continuation rule; Messages
+        // token thresholds must not reinterpret it.
+        assert!(request_unavailable(&allowances(2, 2, 600, Some([2, 0, 2]))).is_none());
         let lines = runtime_lines(&allowances(1, 2, 600, Some([1, 0, 1])));
         assert_eq!(lines.len(), 2);
         assert!(lines[0].contains("1 used of 2; 1 remains."), "{}", lines[0]);

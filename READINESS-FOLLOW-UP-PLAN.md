@@ -19,11 +19,6 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### Act on the outcomes
 
-- [ ] Correct actionable continuation advice when output is exhausted. M3's
-  final sw3z status suggests `run` at 64,000/64,000 output tokens, although its
-  recorded `interrupted/max_tokens` ending follows the specified loop. Preserve
-  that historical ending and test the advice against sufficient, below-minimum
-  and exhausted remaining allowances.
 - [ ] Retain or adjust the 16,000-token response cap as an engineering setting
   using the effort and continuation comparisons, including M3's final 6,170-token
   cap and preserved partial account. C5's harness-reported cap recovery is in
