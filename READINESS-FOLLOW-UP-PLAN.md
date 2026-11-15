@@ -2,8 +2,8 @@
 
 Complete the remaining bounded comparisons, repair or dispose of their findings,
 ground the affected tests, and assign any residual work to its owner.
-C5's exact live packet is approved. The checklist is reviewed and closed;
-the long-entry and prose-ending cases remain unlaunched.
+C5's exact live packet is approved. The checklist and long-entry cases are
+reviewed and closed; the prose-ending case remains unlaunched.
 
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
 [QUESTION-FORMS](docs/QUESTION-FORMS.md), the
@@ -21,8 +21,8 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### C5 — Harness turn endings
 
-- [ ] Execute the approved `.scratch/readiness-c5-01/MANIFEST.json` in case
-  order, next `long-entry`, then `prose-ending`. `AUTHORIZATION.json` records the principal's
+- [ ] Execute the remaining `prose-ending` case in the approved
+  `.scratch/readiness-c5-01/MANIFEST.json`. `AUTHORIZATION.json` records the principal's
   approval of the read packet, its account and included-subscription scope,
   including the required disabled-extra-usage assertion; billing settings are
   not independently observed. Its three frozen service packets use the exact M2 sw3z
@@ -37,7 +37,7 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   included. The approval explicitly commissions a deliberate output-cap study;
   requested harness settings do not establish token or spending ceilings.
 - [ ] Before each start, revalidate the manifest and frozen packet bindings.
-  The two remaining preparations passed revalidation and are untouched.
+  The remaining prose-ending preparation passed revalidation and is untouched.
   Live runs need the host because the agent sandbox cannot bind Unix sockets.
   The C1 profile remains byte-identical. `.scratch/readiness-c5-01/READINESS.json`
   records the reviewed native rehearsal (122 checks passed, zero failed,
@@ -54,6 +54,12 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   refusal, observed stopping and unchanged delivery through ordinary close.
   Its final usage is unknown. The review permits the next approved case; it
   does not establish an exact token threshold or provider-side enforcement.
+  `long-entry/REVIEW.json` records one account covering all 48 cases, an exact
+  replacement with both versions retained, complete captured input pages and
+  unchanged delivery through close. The auditor expressly declined to pad the
+  answer to the requested length; no cap event or final usage report arrived.
+  Give the over-16,000-token entry boundary an unexercised disposition, without
+  inferring a token count or commissioning another attempt.
 - [ ] Apply the packet's explicit observer limits: real start counts come from
   service-owned process records, sanitized authentication and initialization,
   without an independent witness of all OS launches or provider requests.
@@ -66,6 +72,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 - [ ] Observe cap handling, reported versus unknown usage and whether a
   post-report reminder reaches another turn. Separate ordinary endings from
   submission. No fallback, retry or replacement beyond the approved packet.
+- [ ] After the final case review, extend the C5 experiment pin to the campaign
+  approvals and selected original encounters, and publish the combined findings.
+  The current pin covers `checklist/`; `long-entry/` and the remaining preparation
+  stay retained as active campaign evidence.
 
 ### Execution and review
 
