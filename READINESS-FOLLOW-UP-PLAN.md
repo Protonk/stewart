@@ -20,16 +20,14 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### M4 — Compaction on another model
 
-- [ ] Finish Linux rehearsal of the long-page specimen with recorded
-  work before compaction and ordinary work afterward. The exact generated
-  submission, unbound proposal and dated compatibility/cost assessment are in
-  `.scratch/readiness-m4-01/`. Rehearse the trigger, summary/reset
-  path and evidence volume with [the procedural reviewer](apparatus/c10/verify.py)
-  before binding the live packet. The byte-size/token sensitivity calculation
-  is not a measured provider token count; an unreached live trigger stays explicit.
-  Freeze a commission on `claude-opus-5-5` or the principal's selected model:
-  at most one Messages placement, 24 turns, 1,000,000 input and 24,000 output
-  tokens. Fix remaining bounds and a dated cost estimate in the approval packet.
+- [ ] Obtain approval or an explicit disposition for the prepared M4 packet in
+  `.scratch/readiness-m4-01/packet.json`, with its dated `ASSESSMENT.json`,
+  exact submission and proposed reuse of M3's account. The requested scope is
+  one `claude-opus-5-5` Messages placement, 24 turns, 1,000,000 input and 24,000
+  output tokens, with a 1,800-second watchdog and USD 10 spending provision.
+  This provision is not a hard billing ceiling. Confirm the account and spending
+  authority when approving the exact digest. The byte-size/token sensitivity
+  calculation is not a provider token count; an unreached trigger stays explicit.
 - [ ] Cross the specified summary trigger; observe summary shape, iteration
   types, signed-block reuse, context replacement, usage and later work. Mutate
   copies to exercise reviewer controls; keep originals unchanged. Report an

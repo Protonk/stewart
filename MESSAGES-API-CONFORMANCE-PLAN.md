@@ -7,7 +7,7 @@ owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 [QUESTION-FORMS](docs/QUESTION-FORMS.md) owns the three implemented forms.
 Answer usefulness remains the manager's judgment.
 
-Remaining work covers full-size compaction rehearsal, abrupt process
+Remaining work covers real compaction, abrupt process
 death, unexercised failure/timing/scale controls and the full per-model gate.
 No live launch is authorized by this plan.
 
@@ -20,6 +20,10 @@ of bypassing their custody/export guards. The [qualification index](apparatus/qu
 identifies checked builds and retained evaluations. Each live packet needs
 matching rehearsal coverage for its exact writer, inputs and credential route.
 Keep open audits and their exact writers until closure or explicit disposition.
+The reviewed full-size synthetic rehearsal is
+`.scratch/readiness-m4-rehearsal-02/REVIEW.json`; it binds apparatus, writer,
+image, supplied inputs and saved-connection coverage. Recheck that binding for
+each live packet. It does not establish real-provider compaction.
 
 ## 1. Complete the evidence matrix
 
@@ -88,15 +92,6 @@ mechanically valid answer as intellectually correct:
   by re-entry. Legitimate edits and fresh equal-byte entries remain distinct;
   content equality alone cannot establish an accidental replay. Define what
   needs human inspection and report unresolved comparisons explicitly.
-- [ ] Run the retained Linux rehearsal of supplied full-size compaction cases,
-  including exact template bindings, reviewer controls and evidence volume.
-  Native results in `.tmp/readiness-m4-03/host-checks-01.json` cover the repaired
-  fake request-size bound and all three large cases. The prepared command is
-  `.tmp/readiness-m4-03/run-linux-rehearsal.py`, using the new
-  `.scratch/readiness-m4-rehearsal-02/` destination. It includes ordinary,
-  saved-connection, process-access and continuation controls. Review the actual
-  resource observations before binding a live packet; the current source has
-  no matching Linux rehearsal yet.
 - [ ] Add targeted summary interruption/HTTP-refusal comparisons, exhaustion
   on the summary's own charge, and reminder/near-limit transitions at
   summary/reset. Reconcile notices, cumulative charges and interrupted estimates
@@ -114,11 +109,11 @@ about answer quality remain outside the mechanical gate.
 
 ## 4. Establish real compaction and provider coverage
 
-- [ ] Design a separate specimen that reaches the pinned trigger in
+- [ ] Establish whether the prepared full-size specimen reaches the pinned trigger in
   [INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses), currently 150,000
   tokens, with recorded work before compaction and ordinary work afterwards.
-  Specify how reaching the trigger will be observed and how failure to reach it
-  will be reported. Do not lower the release trigger to obtain a passing result.
+  Observe actual top-level usage and report an unreached trigger explicitly.
+  Do not lower the release trigger to obtain a passing result.
 - [ ] Require a real summary request/response, the signed content block reused
   unchanged on the next ordinary request, the correct replacement of context,
   accounted iteration usage and the subsequent preservation of recorded work.
