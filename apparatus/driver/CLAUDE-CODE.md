@@ -126,6 +126,13 @@ not new exceptions to the launch contract. A recorded canary start fails the loc
 inventory checks detect changes or removals of earlier records around synchronous
 manager commands. The owner-death, missing-stop and recorder-failure cases
 separately witness the process or archive state they deliberately alter.
+Every transformed tool carries the runtime contract's fixed result-size
+annotation. Binding controls refuse a profile checked against the otherwise
+identical unannotated inventory, and the restored inventory prepares normally.
+This checks Stewart's supplied bytes and profile binding; the synthetic harness
+does not establish that a real harness honors the annotation or avoids external
+copies.
+
 Runtime controls include successful auditor submission and verified delivery,
 followed by an ordinary close that leaves the delivered package unchanged and
 admits no further launch. An ordinary-ending case ends two turns without

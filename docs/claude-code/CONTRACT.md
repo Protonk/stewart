@@ -57,10 +57,24 @@ general file access, retrieval, execution or delegation.
 The transport changes the presentation: concatenate the orientation and effective
 family text with a pinned paragraph separator for the CLI system-prompt file;
 map each tool's `input_schema` to MCP `inputSchema`, preserving the schema value
-and descriptions; record the harness-assigned names such as
+and descriptions. Each mapped tool has exactly `name`, `description`,
+`inputSchema`, then `_meta: {"anthropic/maxResultSizeChars": 500000}`, in that
+order. This requests the harness's maximum documented inline text-result
+threshold without changing a source page, tool input or core reply. Record the
+harness-assigned names such as
 `mcp__stewart__record_account`. MCP text results carry the auditor reply and text
 pages, including refusals, through the same role-specific core. Pin these
 transformed bytes as well as the originals. They are not the Messages wire array.
+
+The annotation is a requested transport setting, not evidence of faithful
+conversation delivery. Its tool-definition digest requires a newly reviewed
+check before a profile can attest compatibility with this build. Successful replies larger
+than that threshold, long error replies and later harness context management
+remain separate fidelity obligations; no caller input or authored entry is
+shortened or refused to fit this setting. Compare captured conversation
+tool-result content with supplied MCP replies, separately from auxiliary result
+copies, when assessing fidelity. An exact auxiliary copy or valid source
+citation alone does not establish what the auditor received.
 
 The harness may add reminders, built-in instructions or managed policy that
 Stewart cannot fully inspect. Accordingly, this profile promises exact capture
@@ -303,8 +317,9 @@ binary reads; there is no reader for another form.
 SHA-256 values are lowercase 64-digit hexadecimal strings. `launch_sha256`
 hashes the original JSON value bytes of `launch`, including their internal
 whitespace. `tools_sha256` hashes the compact MCP tool array: pinned family
-tool order, each object ordered `name`, `description`, `inputSchema`, with the
-original schema value bytes preserved. `surface_sha256` hashes the
+tool order, each object ordered `name`, `description`, `inputSchema`, `_meta`,
+with the original schema value bytes preserved and the exact annotation above.
+`surface_sha256` hashes the
 [launch surface](#launch-surface) document the check session exercised; it must
 equal the digest of the surface the running binary supplies. Model and platform
 must match. `checked_at` is a UTF-8 string identifying the check's

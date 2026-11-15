@@ -292,6 +292,81 @@ fn prepare_refuses_a_check_of_another_surface_and_reports_its_own() {
 }
 
 #[test]
+fn an_unannotated_tools_check_refuses_before_any_harness_start() {
+    let mut p = Prepared::new();
+    let witness = p.env.path("launch-witness");
+    p.executable = format!(
+        "#!/bin/sh\n: > '{}'\nexit 99\n",
+        witness.replace('\'', "'\\''")
+    );
+    std::fs::write(p.env.path("harness"), &p.executable).unwrap();
+    p.profile(
+        "stewart.claude-code.profile/2",
+        "surface_sha256",
+        SURFACE_SHA256,
+    );
+    let profile_path = p.env.path("profile.json");
+    let current_profile = std::fs::read_to_string(&profile_path).unwrap();
+    let family = stewart::forms::family("open-inquiry").unwrap();
+    let original = stewart::forms::tools(family).bytes();
+    let original_json = json::parse(&original).unwrap();
+    // The earlier mapped form had only these three fields, in this order.
+    // Construct its real digest, rather than substituting an arbitrary hash.
+    let old_tools = json::J::Arr(
+        original_json
+            .as_arr()
+            .unwrap()
+            .iter()
+            .map(|tool| {
+                let tool = tool.obj("").unwrap();
+                let schema = tool.req("input_schema").unwrap();
+                json::J::obj()
+                    .with("name", tool.str("name").unwrap())
+                    .with("description", tool.str("description").unwrap())
+                    .with(
+                        "inputSchema",
+                        json::J::Raw(original[schema.start..schema.end].to_vec()),
+                    )
+            })
+            .collect(),
+    )
+    .bytes();
+    let old_digest = stewart::util::sha256_hex(&old_tools);
+    let current = json::parse(current_profile.as_bytes()).unwrap();
+    let current_digest = common::s(&current, &["check", "tools_sha256"]);
+    assert_ne!(old_digest, current_digest);
+    assert_eq!(current_profile.matches(current_digest).count(), 1);
+    std::fs::write(
+        &profile_path,
+        current_profile.replace(current_digest, &old_digest),
+    )
+    .unwrap();
+
+    let out = p.prepare();
+    let reply = out.json();
+    assert_eq!(out.code, Some(3), "{}{}", out.text(), out.stderr);
+    assert_eq!(common::s(&reply, &["reason"]), "runtime_profile_invalid");
+    assert_eq!(common::s(&reply, &["effects", "preparation"]), "none");
+    let message = common::s(&reply, &["message"]);
+    assert!(message.contains("MCP tool surface"), "{message}");
+    assert!(message.contains("No harness was launched"), "{message}");
+    assert_eq!(
+        reported_surface(&out),
+        (SURFACE.as_bytes().to_vec(), SURFACE_SHA256.to_string())
+    );
+    assert!(!std::path::Path::new(&witness).exists());
+    assert_eq!(p.env.log_kinds(&p.reference), ["reference"]);
+
+    // Only the tool-definition binding changes: the same launch surface,
+    // executable, model and question now prepare successfully without a start.
+    std::fs::write(&profile_path, current_profile).unwrap();
+    let out = p.prepare();
+    assert_eq!(out.code, Some(0), "{}{}", out.text(), out.stderr);
+    assert!(!std::path::Path::new(&witness).exists());
+    assert_eq!(p.env.log_kinds(&p.reference), ["reference", "prepared"]);
+}
+
+#[test]
 fn another_profile_form_is_refused_by_name() {
     let p = Prepared::new();
     // The earlier identifier, here with members that would otherwise pass.

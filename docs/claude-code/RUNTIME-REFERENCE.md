@@ -23,6 +23,25 @@ both ordinary closes preserved the packages and prior archive files. The
 inadequate answer expressly limited its account to the supplied invented report.
 These observations establish the witnessed paths, not general answer accuracy.
 
+A later [two-deadline comparison](../../apparatus/qualified.md#readiness-c4-01)
+used the same 48 fictional handoff cases. The 60-second placement received a
+near-limit notice and submitted an explicit partial account covering 16 cases;
+the 240-second placement submitted accounts covering all 48. Both submitted on
+their first placement and closed, so live harness continuation remains
+unexercised. One encounter at each deadline does not isolate a deadline effect.
+Neither supplied a final usage checkpoint.
+
+The longer answer's overall account counted eight matched receipts, although
+the supplied rule and its individual accounts establish sixteen; eight of
+those also had an acknowledgment. The sealed answer remains unchanged for
+inspection. That authored inconsistency does not invalidate verified custody
+or establish an accuracy grade for its other claims.
+
+File-mode checks in these service procedures and the large-page procedure
+below examined the controller's private package copies. They do not establish
+the modes of the original delivered files. Byte and content comparisons retain
+their stated scope.
+
 In both service placements, the final captured MCP response and harness
 tool-result echo acknowledge successful submission before observed stopping.
 Neither capture contains a terminal harness result or complete usage checkpoint.
@@ -91,6 +110,23 @@ The submitted answer, verified package and ordinary close preserved what the
 auditor actually recorded. That successful custody path does not repair the
 page-delivery defect. The original source slices, MCP replies, both stdout
 representations and final answer remain retained for the repair and its fixtures.
+
+The mapped tools now request `_meta["anthropic/maxResultSizeChars"]: 500000`.
+Anthropic's [MCP output documentation](https://code.claude.com/docs/en/mcp#mcp-output-limits-and-warnings),
+checked 2026-11-15, describes a default 50,000-character persistence threshold
+for successful text results and this per-tool override up to 500,000 characters.
+Raising `MAX_MCP_OUTPUT_TOKENS` alone does not change the character threshold.
+Static inspection found the annotation reader in the pinned 2.1.322 executable;
+that is not an execution comparison. The changed tool digest requires a fresh
+reviewed compatibility check before live service use.
+
+This is a prevention candidate for ordinary material pages, with their original
+boundaries and complete text intact. It is not a general reply-size bound:
+permitted quoted citations, source-name lists and re-entry gaps can produce
+larger replies. Error clipping and later context management are separate paths.
+No permitted expression is shortened to fit the annotation. Conversation
+fidelity and the absence of additional files still require observation; the
+two original C3 copies remain retained and uninspected.
 
 ## Output-cap handling
 

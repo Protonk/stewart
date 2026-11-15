@@ -195,7 +195,8 @@ def mcp_tools(base):
     for tool in parse(base).items:
         out.append(b'{"name":' + tool.get("name").raw
                    + b',"description":' + tool.get("description").raw
-                   + b',"inputSchema":' + tool.get("input_schema").raw + b'}')
+                   + b',"inputSchema":' + tool.get("input_schema").raw
+                   + b',"_meta":{"anthropic/maxResultSizeChars":500000}}')
     return b'[' + b','.join(out) + b']'
 
 
@@ -1258,6 +1259,21 @@ class Driver:
     def binding_controls(self):
         f = self.fixture("binding")
         self.prepare(f, "positive")
+        # A previously checked inventory cannot attest the newly supplied
+        # annotation. This is a different digest of otherwise identical tools.
+        unannotated = json.loads(mcp_tools(f["tools"]))
+        for tool in unannotated:
+            del tool["_meta"]
+        node = parse(f["profile"]).get("check").get("tools_sha256")
+        stale = f["profile"][:node.start] + compact(sha(compact(unannotated))) + f["profile"][node.end:]
+        f["profile_path"].write_bytes(stale)
+        (f["witness"] / "unannotated-tools-profile.json").write_bytes(stale)
+        reply = self.prepare(f, "unannotated-tools", "refused")
+        self.profile_refusal("binding.unannotated-tools", reply, named=("tool",))
+        marker = Path(str(f["executable"]) + ".started")
+        self.control("unannotated-tools-binding", reply.get("outcome") == "refused" and not marker.exists())
+        f["profile_path"].write_bytes(f["profile"])
+        self.prepare(f, "annotation-restored")
         for section, key, value in (
                 ("check", "surface_sha256", "0" * 64),
                 ("check", "launch_sha256", sha(compact(json.loads(f["profile"])["launch"]))),
@@ -3539,7 +3555,10 @@ def self_test():
         for source, target in zip(expected_tools(family), parse(mapped).items):
             expected_schema = json.dumps(source["input_schema"], ensure_ascii=False, separators=(",", ":")).encode()
             check(family + ".schema." + source["name"], expected_schema == target.get("inputSchema").raw)
-        check(family + ".order", all(node.keys() == ["name", "description", "inputSchema"] for node in parse(mapped).items))
+        check(family + ".order", all(node.keys() == ["name", "description", "inputSchema", "_meta"]
+                                     for node in parse(mapped).items))
+        check(family + ".result-threshold", all(node.get("_meta").raw ==
+              b'{"anthropic/maxResultSizeChars":500000}' for node in parse(mapped).items))
         changed = bytearray(mapped)
         changed[-2] = ord(" ")
         check(family + ".hash-control", sha(changed) != sha(mapped))

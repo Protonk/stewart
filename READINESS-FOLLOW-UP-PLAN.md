@@ -30,6 +30,16 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   sealed returns. A valid range citation alone does not establish that the
   auditor saw the page; the procedure's review must not count it as grounded
   reading.
+  The fixed MCP result-size annotation in the runtime contract is implemented
+  as a bounded prevention candidate, with native checks reviewed in
+  `.tmp/readiness-pages-01/host-01/`. Before real service use, prepare a fresh, separately
+  approved compatibility check for the changed tool digest and a page-fidelity
+  comparison. The 500,000-character setting does not cover all permitted
+  replies, error clipping or aggregate context management. Correlating the
+  captured `claudecode/toolUseId` metadata with conversation results is a
+  detection candidate; no acknowledgment gate or expression restriction is
+  decided. Keep external-copy prevention and any late mismatch after submission
+  explicit in that review.
 - [ ] Address missing final usage, overlapping assistant snapshots, per-session
   checkpoints, compaction shapes outside the accepted form, unlisted/unprefixed
   tools and output-cap endings. Use `.scratch/readiness-c2-01/COMPARISON.json`,
@@ -38,12 +48,6 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   `.scratch/readiness-c5-01/RESULT.json` as bounded observations. Unknown
   intervals stay unknown; cumulative/overlapping fields cannot be added as
   independent consumption.
-- [ ] Correct misleading maintained outcome/usage claims and update the
-  [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md). Preserve the C4
-  authored matched-receipt inconsistency for inspection without changing the
-  sealed answer. Report live harness continuation as unexercised and give
-  exceptional events an action or disposition. Scope C2–C4 mode claims to the
-  procedure's private copies; those checks establish no delivered mode.
 - [ ] Specify the refusal a confirmed submission receives when close is requested
   during a live runtime placement: the runtime contract's publication gate gives
   `placement_stopped`, INTERFACE's log precondition `authoring_ended`. Then add
