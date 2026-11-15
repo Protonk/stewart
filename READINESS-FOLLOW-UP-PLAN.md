@@ -2,7 +2,7 @@
 
 Complete the remaining bounded comparisons, repair or dispose of their findings,
 ground the affected tests, and assign any residual work to its owner.
-C5 has no approved live packet.
+C5's exact live packet is approved; its three cases remain unlaunched.
 
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
 [QUESTION-FORMS](docs/QUESTION-FORMS.md), the
@@ -20,9 +20,11 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### C5 — Harness turn endings
 
-- [ ] Obtain approval of the prepared `.scratch/readiness-c5-01/MANIFEST.json`,
-  its account and included-subscription scope, with confirmation that paid extra
-  usage is disabled. Its three frozen service packets use the exact M2 sw3z
+- [ ] Execute the approved `.scratch/readiness-c5-01/MANIFEST.json` in case
+  order, starting with `checklist`. `AUTHORIZATION.json` records the principal's
+  approval of the read packet, its account and included-subscription scope,
+  including the required disabled-extra-usage assertion; billing settings are
+  not independently observed. Its three frozen service packets use the exact M2 sw3z
   checklist body/materials, a new request for one 18,000–20,000-token account
   over C4's fictional handoff records, and the exact M1 prose-ending body/material.
   `INPUTS.json` records the original bindings; `REQUEST.md` presents the scope.
@@ -31,9 +33,12 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   before each next case. This stays within the existing
   [service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure)
   bound of 600 seconds per placement. No retry, continuation or replacement is
-  included. Commission this explicitly as a deliberate output-cap study;
+  included. The approval explicitly commissions a deliberate output-cap study;
   requested harness settings do not establish token or spending ceilings.
-- [ ] At approval, revalidate the manifest and frozen packet bindings. The C1
+- [ ] Before each start, revalidate the manifest and frozen packet bindings.
+  Approval-time validation passed for all three untouched preparations; the
+  first host run is pending because the agent sandbox cannot bind Unix sockets.
+  The C1
   profile remains byte-identical. `.scratch/readiness-c5-01/READINESS.json`
   records the reviewed native rehearsal (122 checks passed, zero failed,
   12 synthetic placements), independently counted peer starts, close records,
