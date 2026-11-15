@@ -32,9 +32,14 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   reading.
   The fixed MCP result-size annotation in the runtime contract is implemented
   as a bounded prevention candidate, with native checks reviewed in
-  `.tmp/readiness-pages-01/host-01/`. Before real service use, prepare a fresh, separately
-  approved compatibility check for the changed tool digest and a page-fidelity
-  comparison. The 500,000-character setting does not cover all permitted
+  `.tmp/readiness-pages-01/host-01/`. The fresh
+  compatibility packet at `.scratch/readiness-pages-surface-01/REQUEST.md` for the
+  changed tool digest is prepared and awaits explicit approval plus confirmation
+  that paid extra usage is disabled. Its `MANIFEST.json` SHA-256 is
+  `1f529292eb045d65c125af992707ce316f449f6c9e29ecc863236469695bf8f5`;
+  no invocation has begun. Review its original results before assembling a new
+  profile, then prepare a separately approved page-fidelity comparison.
+  The 500,000-character setting does not cover all permitted
   replies, error clipping or aggregate context management. Correlating the
   captured `claudecode/toolUseId` metadata with conversation results is a
   detection candidate; no acknowledgment gate or expression restriction is
