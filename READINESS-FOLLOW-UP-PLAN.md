@@ -2,7 +2,8 @@
 
 Complete the remaining bounded comparisons, repair or dispose of their findings,
 ground the affected tests, and assign any residual work to its owner.
-C5's exact live packet is approved; its three cases remain unlaunched.
+C5's exact live packet is approved. The checklist is reviewed and closed;
+the long-entry and prose-ending cases remain unlaunched.
 
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
 [QUESTION-FORMS](docs/QUESTION-FORMS.md), the
@@ -21,7 +22,7 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 ### C5 — Harness turn endings
 
 - [ ] Execute the approved `.scratch/readiness-c5-01/MANIFEST.json` in case
-  order, starting with `checklist`. `AUTHORIZATION.json` records the principal's
+  order, next `long-entry`, then `prose-ending`. `AUTHORIZATION.json` records the principal's
   approval of the read packet, its account and included-subscription scope,
   including the required disabled-extra-usage assertion; billing settings are
   not independently observed. Its three frozen service packets use the exact M2 sw3z
@@ -36,10 +37,9 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   included. The approval explicitly commissions a deliberate output-cap study;
   requested harness settings do not establish token or spending ceilings.
 - [ ] Before each start, revalidate the manifest and frozen packet bindings.
-  Approval-time validation passed for all three untouched preparations; the
-  first host run is pending because the agent sandbox cannot bind Unix sockets.
-  The C1
-  profile remains byte-identical. `.scratch/readiness-c5-01/READINESS.json`
+  The two remaining preparations passed revalidation and are untouched.
+  Live runs need the host because the agent sandbox cannot bind Unix sockets.
+  The C1 profile remains byte-identical. `.scratch/readiness-c5-01/READINESS.json`
   records the reviewed native rehearsal (122 checks passed, zero failed,
   12 synthetic placements), independently counted peer starts, close records,
   and 18 passing packet-binding/authority comparisons with no live mutation.
@@ -47,8 +47,13 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   controller and witness self-test outputs are in `.tmp/readiness-m4-04/`
   (41 tests passed; 35 passed, zero failed or skipped, respectively).
   These are native development checks, not Linux qualification. The first
-  checklist prepare refusal and its corrected preparation are retained; all
-  three references are prepared, unaccepted and unlaunched.
+  checklist prepare refusal and its corrected preparation are retained.
+  `checklist/REVIEW.json` records the first live outcome: a harness-reported
+  output-cap message followed by authoring and submission in the same session,
+  complete input pages in captured conversation content, a corrected citation
+  refusal, observed stopping and unchanged delivery through ordinary close.
+  Its final usage is unknown. The review permits the next approved case; it
+  does not establish an exact token threshold or provider-side enforcement.
 - [ ] Apply the packet's explicit observer limits: real start counts come from
   service-owned process records, sanitized authentication and initialization,
   without an independent witness of all OS launches or provider requests.

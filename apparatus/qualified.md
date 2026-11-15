@@ -742,3 +742,10 @@ M4: Opus 5.5 crossed the real compaction trigger, reused its signed summary, rec
 
 - Evidence: `.scratch/readiness-m4-live-01/.` (recorded 2026-11-15T19:34:59Z).
 - Retained purpose: Inspect the original signed summary, iteration usage, retained account identity and submitted answer; ground compaction and re-entry fixtures without changing the original encounter.; until The assigned compaction, usage and entry-continuity fixture reviews finish and no unresolved finding needs this original encounter.
+
+### readiness-c5-01
+
+Native C5 checklist: harness output-cap message followed by same-session authoring and submission; verified closed package; final usage unknown
+
+- Evidence: `.scratch/readiness-c5-01/checklist` (recorded 2026-11-15T20:10:22Z).
+- Retained purpose: Keep the selected original checklist encounter, its exact prepared inputs/writer bindings, raw cap message and following calls, independently reviewed conversation pages, corrected citation refusal, usage gap, package and close for the remaining C5 comparisons and grounded runtime fixtures. This pin covers checklist/; the approved campaign inputs and other prepared cases remain active work.; until C5 comparisons and the cap/reminder, error-reply and usage fixtures have been reviewed, with retained original scope reassessed and no open custody dependency

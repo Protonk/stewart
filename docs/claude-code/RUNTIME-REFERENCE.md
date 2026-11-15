@@ -92,6 +92,32 @@ auditor actually recorded. That successful custody path does not repair the
 page-delivery defect. The original source slices, MCP replies, both stdout
 representations and final answer remain retained for the repair and its fixtures.
 
+## Output-cap handling
+
+The [native checklist encounter](../../apparatus/qualified.md#readiness-c5-01)
+used the same question body and materials as an earlier Messages checklist.
+With CLI 2.1.322 and `claude-haiku-5-5`, the captured conversation contains a
+synthetic harness user message reporting an output-token limit and directing
+resumption in smaller pieces. The same session then recorded its account,
+prepared and submitted 14 entries. Stewart's input channel contains only the
+original question; this message is a harness addition, not Stewart's ordinary
+post-report reminder. No final harness result or complete usage checkpoint
+arrived. The observed sequence establishes recovery after a harness-reported
+cap, not the exact 16,000-token threshold, provider-side enforcement or total
+consumption. Different runtime and allowance settings prevent a causal account
+of the difference from the Messages encounter.
+
+All 34 material files and the question appeared whole in the captured
+conversation tool results, checked separately from their auxiliary copies.
+This does not extend the large-page result above. One inexact quotation was
+refused without changing the answer; the auditor corrected it and continued.
+For that refusal, the harness flattened the single MCP text block to an error
+string while preserving its exact text and error flag. The independently
+reviewed package matched the recorded selection, both recorded process groups
+were observed absent after return and again during review, and ordinary close
+left the delivered package unchanged. These remain bounded native observations,
+without an independent witness of provider traffic or every process launch.
+
 ## Reviewed native comparison
 
 The principal approved probe 02 on 2026-11-10. It used exactly one fresh
@@ -575,9 +601,10 @@ Not demonstrated under the selected native launch arrangement:
 
 - a supported configuration check before the first message is sent; the
   observed `system/init` ordering does not provide one;
-- actual-adapter capture and failure recovery with the real harness; native
-  synthetic service checks exercise the writer, without establishing Claude's
-  behavior or complete provider accounting;
+- failure recovery beyond the observed quotation refusals and harness-reported
+  output-cap sequence, or complete provider accounting; native synthetic
+  service checks exercise additional failures without establishing the real
+  harness's behavior in those cases;
 - real-harness behavior for relay loss, MCP cancellation, usage checkpoints
   across placements, and compaction with re-entry, its notice and the
   one-reminder policy; the independent synthetic service suite exercises each

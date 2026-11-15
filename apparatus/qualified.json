@@ -2154,6 +2154,26 @@
         "reason": "Inspect the original signed summary, iteration usage, retained account identity and submitted answer; ground compaction and re-entry fixtures without changing the original encounter.",
         "until": "The assigned compaction, usage and entry-continuity fixture reviews finish and no unresolved finding needs this original encounter."
       }
+    },
+    {
+      "id": "readiness-c5-01",
+      "kind": "experiment",
+      "date": "2026-11-15T20:10:22Z",
+      "date_from": "checklist/REVIEW.json field finished_at",
+      "summary": "Native C5 checklist: harness output-cap message followed by same-session authoring and submission; verified closed package; final usage unknown",
+      "result": {
+        "path": "checklist",
+        "files": 2638,
+        "sha256": "c10840f60c1de64f990fa5c395180f8a43ab16a7097082bad6297cf880ccc056"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-c5-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Keep the selected original checklist encounter, its exact prepared inputs/writer bindings, raw cap message and following calls, independently reviewed conversation pages, corrected citation refusal, usage gap, package and close for the remaining C5 comparisons and grounded runtime fixtures. This pin covers checklist/; the approved campaign inputs and other prepared cases remain active work.",
+        "until": "C5 comparisons and the cap/reminder, error-reply and usage fixtures have been reviewed, with retained original scope reassessed and no open custody dependency"
+      }
     }
   ]
 }
