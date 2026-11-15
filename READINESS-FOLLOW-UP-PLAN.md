@@ -20,24 +20,39 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### C5 — Harness turn endings
 
-- [ ] Prepare three service comparisons: the thinking-heavy checklist, a
-  requested entry longer than 16,000 tokens, and M1's prose-ending wording.
-  Reuse the input bindings in `.scratch/readiness-m2-01/RESULT.json` and
-  `.scratch/readiness-m1-live-direct-inadequate-01/REVIEW.json` where applicable.
-- [ ] Review the prepared native rehearsal at
-  `.tmp/readiness-c5-01/rehearsal/`, launched by
-  `.tmp/readiness-c5-01/run-host-rehearsal.py`. The revalidated C1 profile is
-  `.scratch/readiness-c5-01/profile.json`; it is byte-identical to the original
-  and grants no new start. Rehearse the actual
-  [service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure).
-  Freeze at most three service starts of 900 seconds each, including exact
-  authentication bounds, witnesses, stop rules and disabled paid extra usage.
-  Rehearse the changed `service_check.py` again. Give its packet bindings and
-  real-mode gates firing controls, have `close` retain an evidence record, count
-  authentication and model starts instead of stating them, and decide whether
-  unresolved MCP calls block continuation; or state each limit in the packet.
-  Commission this explicitly as a deliberate output-cap study; requested harness
-  settings alone do not establish enforced token or spending ceilings.
+- [ ] Obtain approval of the prepared `.scratch/readiness-c5-01/MANIFEST.json`,
+  its account and included-subscription scope, with confirmation that paid extra
+  usage is disabled. Its three frozen service packets use the exact M2 sw3z
+  checklist body/materials, a new request for one 18,000–20,000-token account
+  over C4's fictional handoff records, and the exact M1 prose-ending body/material.
+  `INPUTS.json` records the original bindings; `REQUEST.md` presents the scope.
+  Each case has one 600-second placement, including one authentication check
+  and at most one model session: three starts and 1,800 seconds total, with review
+  before each next case. This stays within the existing
+  [service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure)
+  bound of 600 seconds per placement. No retry, continuation or replacement is
+  included. Commission this explicitly as a deliberate output-cap study;
+  requested harness settings do not establish token or spending ceilings.
+- [ ] At approval, revalidate the manifest and frozen packet bindings. The C1
+  profile remains byte-identical. `.scratch/readiness-c5-01/READINESS.json`
+  records the reviewed native rehearsal (122 checks passed, zero failed,
+  12 synthetic placements), independently counted peer starts, close records,
+  and 18 passing packet-binding/authority comparisons with no live mutation.
+  Original rehearsal and control outputs remain in `.tmp/readiness-c5-01/`;
+  controller and witness self-test outputs are in `.tmp/readiness-m4-04/`
+  (41 tests passed; 35 passed, zero failed or skipped, respectively).
+  These are native development checks, not Linux qualification. The first
+  checklist prepare refusal and its corrected preparation are retained; all
+  three references are prepared, unaccepted and unlaunched.
+- [ ] Apply the packet's explicit observer limits: real start counts come from
+  service-owned process records, sanitized authentication and initialization,
+  without an independent witness of all OS launches or provider requests.
+  Count reservations separately and leave missing counts unknown. Repeat
+  independent group-absence probes during review. The controller reports
+  unresolved MCP calls but does not gate continuation on them; this packet
+  grants no continuation and requires their documented disposition before
+  another case or ordinary close. Retain stopped unsubmitted work for the
+  principal; ordinary close is included only for a fully reviewed auditor return.
 - [ ] Observe cap handling, reported versus unknown usage and whether a
   post-report reminder reaches another turn. Separate ordinary endings from
   submission. No fallback, retry or replacement beyond the approved packet.
