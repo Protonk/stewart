@@ -19,14 +19,6 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### Act on the outcomes
 
-- [ ] Retain or adjust the 16,000-token response cap as an engineering setting
-  using the effort and continuation comparisons, including M3's final 6,170-token
-  cap and preserved partial account. C5's harness-reported cap recovery is in
-  `.scratch/readiness-c5-01/RESULT.json`; its requested long-entry boundary and
-  live post-report reminder remain explicitly unexercised. No further live
-  attempt is assigned. Repeated capped responses alone do not identify a cause.
-  Document behavior and remedy; changing the setting grants no extra allowance
-  or spending authority.
 - [ ] Repair conversation-page fidelity using the exact short control and two
   full-page cases in `.scratch/readiness-c3-01/PAGE-COMPARISON.json` and
   `OBSERVATION.json`. Compare auditor-facing conversation content as well as

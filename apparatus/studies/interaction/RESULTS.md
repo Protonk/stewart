@@ -88,6 +88,18 @@ cancellation. These encounters and their independent reviews supply bounded
 evidence and fixture inputs, not a full model-conformance result. The earlier
 one-placement campaign, which submitted without a reminder, remains unchanged.
 
+The response cap remains 16,000 tokens. These encounters show that a cap can
+interrupt thinking without producing a complete account, and that continuation
+can preserve work while consuming the remaining allowance. They do not show
+that a larger cap would remedy the incomplete checklist. The
+[harness comparison](../../../docs/claude-code/RUNTIME-REFERENCE.md#output-cap-handling)
+observed cap recovery under a different runtime, but did not exercise its
+requested long-entry boundary. Neither comparison isolates a better cap.
+Continuation therefore remains an explicit choice under the original cumulative
+limits; when another request is impossible, status offers close to settle the
+recorded work. The cap is an engineering setting, not a guarantee of a finished
+entry or a separate spending allowance.
+
 ## Messages compaction
 
 The 2026-11-15 encounter `.scratch/readiness-m4-live-01` used the qualified
