@@ -128,8 +128,8 @@ The subsequent [annotated-page comparison](../../apparatus/qualified.md#readines
 used C3's exact question body and material bytes. All three source slices,
 including both full pages, matched the actual captured conversation arrays as
 well as the MCP replies and separately checked auxiliary arrays. The auditor
-reported all three terminal labels, corrected four refused citations and
-submitted one account. Ordinary close preserved the verified answer and prior
+reported all three terminal labels, recovered from four citation refusals and
+submitted one corrected account. Ordinary close preserved the verified answer and prior
 archive members. No final usage checkpoint arrived; consumption remains partly
 unknown.
 
