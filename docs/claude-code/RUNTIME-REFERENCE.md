@@ -65,8 +65,9 @@ consumption accounting remains unverified.
 ## Large material pages
 
 The [native large-page comparison](../../apparatus/qualified.md#readiness-c3-01)
-observed a specific substitution under this same profile. All three requested
-`read` replies carried the exact expected source bytes at the MCP boundary:
+observed a specific substitution under the original unannotated tool profile.
+All three requested `read` replies carried the exact expected source bytes at
+the MCP boundary:
 
 | Source slice | MCP text | Captured conversation tool result |
 | --- | --- | --- |
@@ -116,9 +117,12 @@ Anthropic's [MCP output documentation](https://code.claude.com/docs/en/mcp#mcp-o
 checked 2026-11-15, describes a default 50,000-character persistence threshold
 for successful text results and this per-tool override up to 500,000 characters.
 Raising `MAX_MCP_OUTPUT_TOKENS` alone does not change the character threshold.
-Static inspection found the annotation reader in the pinned 2.1.322 executable;
-that is not an execution comparison. The changed tool digest requires a fresh
-reviewed compatibility check before live service use.
+Static inspection found the annotation reader in the pinned 2.1.322 executable.
+The [annotated-tool compatibility comparison](../../apparatus/qualified.md#readiness-pages-surface-01)
+has since observed successful fixture use, a hook denial without an effect, and
+a successful repeat in a fresh session. Its reviewed profile binds the changed
+tool digest. That comparison supplied the annotated inventory and short replies;
+it did not exercise large-page delivery or enforcement of the size threshold.
 
 This is a prevention candidate for ordinary material pages, with their original
 boundaries and complete text intact. It is not a general reply-size bound:

@@ -2174,6 +2174,26 @@
         "reason": "Inspect the exact C5 approval and all three original encounters, outside input/package witnesses, cap message and following authoring, preserved error text and exact-version replacement, unknown usage and independently reviewed closure. Ground the assigned runtime fixtures without rewriting historical records.",
         "until": "Assigned cap/reminder, conversation-fidelity, error-reply and usage fixture reviews are complete and no unresolved finding requires these original encounters or their exact writer"
       }
+    },
+    {
+      "id": "readiness-pages-surface-01",
+      "kind": "experiment",
+      "date": "2026-11-15T22:59:39Z",
+      "date_from": "REVIEW.json field finished_at",
+      "summary": "Native annotated-tool compatibility: three cases, 30 checks observed, denial control fired; six invocations stopped; reviewed profile; page fidelity and Linux qualification unexercised",
+      "result": {
+        "path": ".",
+        "files": 260,
+        "sha256": "c19d47fb6734a045c6e8671b831b8ca72c29131ec3def84a9ef0ebbcb1eb3683"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-pages-surface-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "The exact annotated-tool profile, original streams, approval and review support the pending page-delivery comparison and grounded runtime fixtures.",
+        "until": "No pending service comparison or fixture review depends on this profile and its original compatibility captures"
+      }
     }
   ]
 }

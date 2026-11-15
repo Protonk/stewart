@@ -32,15 +32,16 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   reading.
   The fixed MCP result-size annotation in the runtime contract is implemented
   as a bounded prevention candidate, with native checks reviewed in
-  `.tmp/readiness-pages-01/host-01/`. The fresh
-  compatibility packet at `.scratch/readiness-pages-surface-01/REQUEST.md` for the
-  changed tool digest is approved, including confirmation that paid extra usage
-  remains disabled, as recorded in its `AUTHORIZATION.json`. Its `MANIFEST.json` SHA-256 is
-  `1f529292eb045d65c125af992707ce316f449f6c9e29ecc863236469695bf8f5`;
-  no invocation has begun. Run its frozen `launch.py` once on the host with the
-  manifest's bound Python; the agent shell cannot create the observer's Unix
-  sockets. Review its original results before assembling a new
-  profile, then prepare a separately approved page-fidelity comparison.
+  `.tmp/readiness-pages-01/host-01/`. The
+  [reviewed compatibility comparison](apparatus/qualified.md#readiness-pages-surface-01)
+  supplies a profile for the changed tool digest; all its invocation slots are
+  consumed. The separate page-fidelity packet at
+  `.scratch/readiness-pages-service-01/REQUEST.md` is prepared and awaits approval.
+  Its `MANIFEST.json` SHA-256 is
+  `a57913bd8f10360f88151492373585673158d72f41fc69131573b3939c9044d0`.
+  No service placement has begun. Use its frozen launcher once on the host after
+  approval, then review the original page representations, scoped external-file
+  metadata snapshots, stopping and package before close or another disposition.
   The 500,000-character setting does not cover all permitted
   replies, error clipping or aggregate context management. Correlating the
   captured `claudecode/toolUseId` metadata with conversation results is a

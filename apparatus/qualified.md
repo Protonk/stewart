@@ -749,3 +749,10 @@ Three native C5 placements reviewed and closed: harness-reported cap recovery; r
 
 - Evidence: `.scratch/readiness-c5-01/.` (recorded 2026-11-15T20:31:30Z).
 - Retained purpose: Inspect the exact C5 approval and all three original encounters, outside input/package witnesses, cap message and following authoring, preserved error text and exact-version replacement, unknown usage and independently reviewed closure. Ground the assigned runtime fixtures without rewriting historical records.; until Assigned cap/reminder, conversation-fidelity, error-reply and usage fixture reviews are complete and no unresolved finding requires these original encounters or their exact writer
+
+### readiness-pages-surface-01
+
+Native annotated-tool compatibility: three cases, 30 checks observed, denial control fired; six invocations stopped; reviewed profile; page fidelity and Linux qualification unexercised
+
+- Evidence: `.scratch/readiness-pages-surface-01/.` (recorded 2026-11-15T22:59:39Z).
+- Retained purpose: The exact annotated-tool profile, original streams, approval and review support the pending page-delivery comparison and grounded runtime fixtures.; until No pending service comparison or fixture review depends on this profile and its original compatibility captures
