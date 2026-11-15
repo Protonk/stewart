@@ -124,13 +124,29 @@ a successful repeat in a fresh session. Its reviewed profile binds the changed
 tool digest. That comparison supplied the annotated inventory and short replies;
 it did not exercise large-page delivery or enforcement of the size threshold.
 
-This is a prevention candidate for ordinary material pages, with their original
-boundaries and complete text intact. It is not a general reply-size bound:
-permitted quoted citations, source-name lists and re-entry gaps can produce
-larger replies. Error clipping and later context management are separate paths.
-No permitted expression is shortened to fit the annotation. Conversation
-fidelity and the absence of additional files still require observation; the
-two original C3 copies remain retained and uninspected.
+The subsequent [annotated-page comparison](../../apparatus/qualified.md#readiness-pages-service-01)
+used C3's exact question body and material bytes. All three source slices,
+including both full pages, matched the actual captured conversation arrays as
+well as the MCP replies and separately checked auxiliary arrays. The auditor
+reported all three terminal labels, corrected four refused citations and
+submitted one account. Ordinary close preserved the verified answer and prior
+archive members. No final usage checkpoint arrived; consumption remains partly
+unknown.
+
+The configured `projects` tree had the same six metadata entries immediately
+before and after that placement, including the two original C3 copy paths.
+Those directory walks observed no added, removed or changed entries. They read
+no file contents and cannot exclude transient or outside-tree copies, prove
+unchanged contents, or establish universal prevention. The two original copies
+remain untouched and unread.
+
+This demonstrates ordinary-page prevention in one bounded native encounter,
+with original page boundaries and complete text intact. It does not isolate
+every change since the historical C3 encounter or establish a general reply-size
+bound: permitted quoted citations, source-name lists and re-entry gaps can
+produce larger replies. Error clipping and later context management are separate
+paths. No permitted expression is shortened to fit the annotation. Automatic
+comparison of conversation results with MCP replies is not implemented.
 
 ## Output-cap handling
 

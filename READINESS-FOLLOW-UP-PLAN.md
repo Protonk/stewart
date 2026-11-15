@@ -30,25 +30,15 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   sealed returns. A valid range citation alone does not establish that the
   auditor saw the page; the procedure's review must not count it as grounded
   reading.
-  The fixed MCP result-size annotation in the runtime contract is implemented
-  as a bounded prevention candidate, with native checks reviewed in
-  `.tmp/readiness-pages-01/host-01/`. The
-  [reviewed compatibility comparison](apparatus/qualified.md#readiness-pages-surface-01)
-  supplies a profile for the changed tool digest; all its invocation slots are
-  consumed. The separate page-fidelity packet at
-  `.scratch/readiness-pages-service-01/REQUEST.md` is approved, as recorded in its
-  `AUTHORIZATION.json`; the disabled-extra-usage confirmation carries forward.
-  Its `MANIFEST.json` SHA-256 is
-  `a57913bd8f10360f88151492373585673158d72f41fc69131573b3939c9044d0`.
-  No service placement has begun. Use its frozen launcher once on the host,
-  then review the original page representations, scoped external-file
-  metadata snapshots, stopping and package before close or another disposition.
-  The 500,000-character setting does not cover all permitted
-  replies, error clipping or aggregate context management. Correlating the
-  captured `claudecode/toolUseId` metadata with conversation results is a
-  detection candidate; no acknowledgment gate or expression restriction is
-  decided. Keep external-copy prevention and any late mismatch after submission
-  explicit in that review.
+  The fixed MCP result-size annotation has a reviewed compatible profile and
+  a completed native page comparison in `.scratch/readiness-pages-service-01/`.
+  The short control and both full pages matched the actual captured conversation;
+  the scoped before/after project metadata was unchanged. The 500,000-character
+  setting does not cover all permitted replies, error clipping or aggregate
+  context management. Decide the proposed mismatch behavior below, then ground
+  its implementation and independent controls in both original encounters.
+  All compatibility and page-comparison invocation slots are consumed. Keep the
+  two external C3 copies untouched pending their separate custody disposition.
 - [ ] Address missing final usage, overlapping assistant snapshots, per-session
   checkpoints, compaction shapes outside the accepted form, unlisted/unprefixed
   tools and output-cap endings. Use `.scratch/readiness-c2-01/COMPARISON.json`,
@@ -62,6 +52,40 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   `placement_stopped`, INTERFACE's log precondition `authoring_ended`. Then add
   the independent runtime case: the placement ends `stopped_by_close`, no auditor
   seal exists and close seals with manager attribution.
+
+### Decision needed: observed reply mismatches
+
+The ordinary-page prevention comparison passed. Remaining reply sizes and
+harness transformations still need detection. The principal must decide the
+new automatic stopping condition and its treatment after submission before it
+becomes a product contract. The recommendation is:
+
+| Observation | Proposed behavior |
+| --- | --- |
+| A uniquely correlated conversation tool result preserves the supplied MCP content and error state. | Mark that observed result exact. Compare `user.message.content`; an auxiliary copy does not satisfy this check. Accept the observed single-error-text flattening only when its text and error state remain exact. |
+| A uniquely correlated conversation result substitutes, truncates or changes the supplied result. | Preserve both originals and a manager-visible mismatch diagnostic. Stop admitting further auditor tool work and apply the existing stopping gate to authoring and submission publications. An unsealed placement ends interrupted, with authoring still open and prior effects preserved. A later explicit `run` remains available under existing allowances and known-stopping requirements; status must warn about the mismatch when presenting that option. No automatic resumption or replacement. |
+| A result is absent, incomplete or cannot be uniquely correlated. | Record an explicit reply-fidelity unknown, never a passing fidelity result. Keep this separate from usage accounting's `unknown_intervals`. This proposal does not make the absence itself a new stopping condition or delay calls waiting for echoes. Existing malformed-frame, duplicate-ID and capture-bound enforcement continues. |
+| A mismatch is observed after a seal or delivery already exists. | Preserve the actual seal, delivered bytes and lifecycle outcome. Report the affected reply and timing to the manager. Permit normal delivery and close of that unchanged seal, including when delivery was still pending at detection; do not retract or rewrite historical effects. |
+| A result names an external persisted copy. | Retain its notice and correlation in private evidence. Do not read, rescue from or automatically delete that file. Disposition of the two known C3 copies remains separate. |
+
+Use MCP `claudecode/toolUseId`, assistant, hook and conversation records to
+establish correlation; contradictory or duplicate identities cannot be exact.
+No source page, tool input or authored entry is shortened or newly refused to
+fit the annotation. This proposal introduces no acknowledgment gate: stopping
+begins when a mismatch is observed, so it cannot undo an external copy, guarantee
+that no later effect won the race, or prove provider-network input fidelity.
+Detection covers observed conversation-result discrepancies; later context
+replacement without a corresponding observable result remains outside its
+evidence.
+
+If approved, move the behavior into the runtime contract and define the exact
+failure/diagnostic schema before separate service and driver authors implement
+it. Required comparisons include the retained C3 substitutions, exact annotated
+pages, exact short error flattening, wrong error flags, changed text, missing and
+ambiguous echoes, and a late mismatch after submission. Verify effects and
+stopping, not just parser output. Native checks precede landing; Linux
+qualification remains the principal's scheduled container run. This decision
+authorizes no further model invocation.
 
 ### Ground fixtures and reassess
 
