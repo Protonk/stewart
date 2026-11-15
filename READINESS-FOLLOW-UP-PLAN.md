@@ -36,11 +36,12 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   [reviewed compatibility comparison](apparatus/qualified.md#readiness-pages-surface-01)
   supplies a profile for the changed tool digest; all its invocation slots are
   consumed. The separate page-fidelity packet at
-  `.scratch/readiness-pages-service-01/REQUEST.md` is prepared and awaits approval.
+  `.scratch/readiness-pages-service-01/REQUEST.md` is approved, as recorded in its
+  `AUTHORIZATION.json`; the disabled-extra-usage confirmation carries forward.
   Its `MANIFEST.json` SHA-256 is
   `a57913bd8f10360f88151492373585673158d72f41fc69131573b3939c9044d0`.
-  No service placement has begun. Use its frozen launcher once on the host after
-  approval, then review the original page representations, scoped external-file
+  No service placement has begun. Use its frozen launcher once on the host,
+  then review the original page representations, scoped external-file
   metadata snapshots, stopping and package before close or another disposition.
   The 500,000-character setting does not cover all permitted
   replies, error clipping or aggregate context management. Correlating the
