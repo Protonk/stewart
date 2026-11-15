@@ -88,9 +88,11 @@ def compaction_cases(original, baseline, base, case):
                  if n.startswith(base+'log/') and original.json(n)['kind']=='accepted')
     arrangement=rawjson.parse(original.read(base+original.json(base+receipt)['body']['arrangement']['machine'])).get('body')
     scenario=original.json('evidence/binding.json')['run']['scenario']
-    # All three scripts record two entries in ordinary request 3. Only the
-    # top-level usage count determines whether request 4 asks for a summary.
-    summary=4
+    # Pagination can add requests before the two entries are recorded. Locate
+    # that response by its tool invocation, independently of the request flags.
+    recorded=next(original.json(n)['body']['request'] for n in original.names
+                  if n.startswith(run+'result-') and original.json(n)['body']['tool']=='record_artifact')
+    summary=recorded+1
     response=run+f'response-{summary}-1.bin'
     attempt=run+f'attempt-{summary}-1.json'
     def response_bytes(view, raw):
@@ -269,6 +271,8 @@ def exercise(root,out):
     missing=[]
     if binding['run']['scenario'].startswith('compaction'):
         compaction_cases(original,baseline,base,case)
+        if binding['run'].get('submission_folder') is not None:
+            template_cases(original,case)
         return finish(root,out,baseline,rows,missing)
     if len(baseline['placements'])>1:
         continued_cases(original,baseline,base,case,lambda name,reason:missing.append({'case':name,'reason':reason}))
@@ -318,13 +322,7 @@ def exercise(root,out):
         view.change_json(run+'attempt-1-1.json',lambda r:r['body']['response'].update(bytes=len(raw),sha256=digest(raw)))
     case('large-response-invariance',large_response,None,control=False)
     if binding['run'].get('submission_folder') is not None:
-        template='evidence/submission-template/'
-        question=template+'question.md'
-        selected=next(n for n in original.names if n.startswith(template+'materials/'))
-        case('changed-template-question',lambda v:v.changes.update({question:v.read(question)+b'changed'}),'study_template_binding')
-        case('changed-template-material',lambda v:v.changes.update({selected:v.read(selected)+b'changed'}),'study_template_binding')
-        case('missing-template-material',lambda v:v.removed.add(selected),'study_template_binding')
-        case('added-template-directory',lambda v:v.added_directories.add(template+'materials/control-empty-directory'),'study_template_binding')
+        template_cases(original,case)
     if (baseline.get('guidance') or {}).get('source') == 'guidance.md':
         receipt_name = next(original.json(n)['body']['receipt'] for n in original.names
                             if n.startswith(base+'log/') and original.json(n)['kind'] == 'accepted')
@@ -335,6 +333,16 @@ def exercise(root,out):
         case('changed-template-guidance', lambda v:v.changes.update({'evidence/submission-template/guidance.md':b'changed'}), 'study_template_binding')
         case('changed-guidance-readback', lambda v:v.changes.update({'evidence/'+rb['command']+'.stdout':b'changed'}), 'exact_receipt_readback')
     return finish(root,out,baseline,rows,missing)
+
+
+def template_cases(original,case):
+    template='evidence/submission-template/'
+    question=template+'question.md'
+    selected=next(n for n in original.names if n.startswith(template+'materials/'))
+    case('changed-template-question',lambda v:v.changes.update({question:v.read(question)+b'changed'}),'study_template_binding')
+    case('changed-template-material',lambda v:v.changes.update({selected:v.read(selected)+b'changed'}),'study_template_binding')
+    case('missing-template-material',lambda v:v.removed.add(selected),'study_template_binding')
+    case('added-template-directory',lambda v:v.added_directories.add(template+'materials/control-empty-directory'),'study_template_binding')
 
 
 def finish(root,out,baseline,rows,missing):
@@ -350,15 +358,22 @@ def finish(root,out,baseline,rows,missing):
     return result
 
 
-def exercise_compactions(private, out):
+def exercise_compactions(private, out, audits=None):
     """Review all three controls and compare the selected answers across the trigger."""
+    scenarios=['compaction', 'compaction-below', 'compaction-invalid']
+    audits=audits or {scenario:'control-'+scenario for scenario in scenarios}
+    require(set(audits)==set(scenarios),'compaction comparison needs all three scenarios')
+    bindings=[Evidence(private/audits[scenario]).json('evidence/binding.json') for scenario in scenarios]
+    require(all(binding['run']['scenario']==scenario for binding,scenario in zip(bindings,scenarios))
+            and len({binding['run']['submission_sha256'] for binding in bindings})==1,
+            'compaction comparisons need matching inputs and their named scenarios')
     out.mkdir(mode=0o700)
     results=[]
-    for scenario in ['compaction', 'compaction-below', 'compaction-invalid']:
-        result=exercise(private/('control-'+scenario),out/scenario)
+    for scenario in scenarios:
+        result=exercise(private/audits[scenario],out/scenario)
         results.append(result)
     def selected(scenario):
-        e=Evidence(private/('control-'+scenario))
+        e=Evidence(private/audits[scenario])
         name=next(n for n in e.names if n.startswith('returns/') and n.endswith('/answer.json'))
         value=e.json(name)
         # Handles bind each audit separately. Compare the answer's content,

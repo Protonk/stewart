@@ -470,6 +470,37 @@ successful reviews. Native iteration accepts the same `--submission ID FOLDER`
 arguments on `smoke.py`; run `check_review.py` on each resulting study audit.
 Native checks are not Linux qualification.
 
+To exercise compaction on supplied bytes, add `--study-scenario ID compaction`
+to `rehearse` or `smoke.py`. The other choices are `compaction-below` and
+`compaction-invalid`. Name each comparison as a separate `--submission`; the
+same folder can supply all three. These scenarios use built-in guidance, keep
+the full fixed rehearsal inventory, and are refused for live packets. The
+successful script records entries, summarizes twice, recovers and revises the
+same entry, then submits. Its comparison changes only the reported trigger
+count; the invalid summary leaves recorded work unsubmitted. They still use
+synthetic token counts, regardless of file size.
+
+`compaction_specimen.py /absolute/new-submission` generates eight deterministic
+65,536-byte trace files and a short receipt rule. Its question asks for an early
+recorded account and later revision after reading the traces. The generator
+makes no provider calls; its byte count does not establish a token count or
+promise that a live model reaches the compaction trigger. Keep the generated
+inventory and rehearse its exact hash before binding a live packet.
+
+Each supplied compaction audit adds four template-tampering controls to its
+compaction comparisons: 16 checks for `compaction`, eight for
+`compaction-below`, and 13 for `compaction-invalid`. Each includes two
+invariances. `check_review.exercise_compactions` can compare three named audits
+over the same template, including equality of the selected answers above and
+below the trigger: 38 checks in total, with 31 negative controls. Review actual
+request/export sizes and Linux memory observations separately from the synthetic
+usage ledger; a small charged count cannot establish a small evidence footprint.
+The loopback fake accepts request bodies through 64 MiB, matching the reviewer's
+evidence-member bound; larger or incomplete bodies are refused. This is an
+apparatus resource bound, not a provider or Stewart input limit. Native rehearsal
+starts no later continuation after a failed first-placement batch or control,
+keeping the failed batch for review.
+
 The reviewer binds template inventory to the packet, checks deterministic
 rendering, then verifies the captured commission and answer. The auditor gets
 the question body, existing form/tools and ordinary material access. Reviewer

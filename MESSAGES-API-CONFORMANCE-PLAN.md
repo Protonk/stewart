@@ -7,7 +7,7 @@ owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 [QUESTION-FORMS](docs/QUESTION-FORMS.md) owns the three implemented forms.
 Answer usefulness remains the manager's judgment.
 
-Remaining work covers Linux qualification of compaction review, abrupt process
+Remaining work covers full-size compaction rehearsal, abrupt process
 death, unexercised failure/timing/scale controls and the full per-model gate.
 No live launch is authorized by this plan.
 
@@ -88,12 +88,15 @@ mechanically valid answer as intellectually correct:
   by re-entry. Legitimate edits and fresh equal-byte entries remain distinct;
   content equality alone cannot establish an accidental replay. Define what
   needs human inspection and report unresolved comparisons explicitly.
-- [ ] Run the retained Linux rehearsal from committed source for the
-  [compaction reviewer and controls](apparatus/c10/check_review.py), including
-  the existing ordinary and continuation controls. Native review inputs are
-  `.tmp/readiness-m4-01/host-checks-01.json`, `native-full-01/` and
-  `independent-host-review.md` in that working folder. The changed apparatus
-  has no matching Linux qualification or live launch binding yet.
+- [ ] Run the retained Linux rehearsal of supplied full-size compaction cases,
+  including exact template bindings, reviewer controls and evidence volume.
+  Native results in `.tmp/readiness-m4-03/host-checks-01.json` cover the repaired
+  fake request-size bound and all three large cases. The prepared command is
+  `.tmp/readiness-m4-03/run-linux-rehearsal.py`, using the new
+  `.scratch/readiness-m4-rehearsal-02/` destination. It includes ordinary,
+  saved-connection, process-access and continuation controls. Review the actual
+  resource observations before binding a live packet; the current source has
+  no matching Linux rehearsal yet.
 - [ ] Add targeted summary interruption/HTTP-refusal comparisons, exhaustion
   on the summary's own charge, and reminder/near-limit transitions at
   summary/reset. Reconcile notices, cumulative charges and interrupted estimates

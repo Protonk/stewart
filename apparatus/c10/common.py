@@ -248,7 +248,9 @@ def validate_packet(packet, *, rehearsal=False, approved=False):
                     and not any(ord(c) < 32 for c in folder), 'study submission needs an absolute folder')
             require(identifier(run['case']) and run['case'] == run['id']
                     and run['id'] not in cases and not run['id'].startswith('control-'), 'invalid study identity')
-            require(run['repetition'] == 1 and run['scenario'] == 'submitted', 'study packet names each placement once')
+            require(run['repetition'] == 1 and run['scenario'] in
+                    (['submitted', 'compaction', 'compaction-below', 'compaction-invalid'] if rehearsal else ['submitted']),
+                    'study packet names each placement once; compaction controls are rehearsal-only')
             require(isinstance(run['submission_sha256'], str)
                     and re.fullmatch(r'[0-9a-f]{64}', run['submission_sha256']), 'invalid submission digest')
             study_count += 1

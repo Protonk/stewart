@@ -32,6 +32,7 @@ from study import (case_from_question, copy_submission, inspect_submission,
 from verify import tree_inventory_from_evidence
 import study_build
 import host_queue
+import smoke
 from fake import follow_pages
 
 
@@ -452,6 +453,23 @@ class StudyTests(unittest.TestCase):
         packet['schema']='stewart.c10-commission/1'
         with self.assertRaises(ValueError):validate_packet(packet)
 
+    def test_supplied_compaction_scenarios_remain_offline_and_bind_exact_inputs(self):
+        for scenario in ['compaction','compaction-below','compaction-invalid']:
+            packet=study_proposal('rehearsal-only',[('problem-a',self.folder)],rehearsal=True,
+                                 scenarios=[('problem-a',scenario)])
+            self.assertEqual(packet['runs'][-1]['scenario'],scenario)
+            live=study_proposal('example-model',[('problem-a',self.folder)])
+            c10.check_rehearsal_inputs(packet,live)
+            live['runs'][0]['scenario']=scenario
+            with self.assertRaisesRegex(ValueError,'rehearsal-only'):
+                validate_packet(live)
+        for scenarios in [[('absent','compaction')],[('problem-a','unsubmitted')],
+                          [('problem-a','compaction'),('problem-a','compaction-below')]]:
+            with self.subTest(scenarios=scenarios),self.assertRaises(ValueError):
+                study_proposal('rehearsal-only',[('problem-a',self.folder)],rehearsal=True,scenarios=scenarios)
+        with self.assertRaisesRegex(ValueError,'rehearsal-only'):
+            study_proposal('example-model',[('problem-a',self.folder)],scenarios=[('problem-a','compaction')])
+
     def test_interrupted_study_names_one_audit_its_point_and_its_ceiling(self):
         study=study_proposal('example-model',[('problem-a',self.folder)])
         packet=validate_packet(c10.interrupted_study(study,'reminder_notice',3))
@@ -593,6 +611,38 @@ class StudyTests(unittest.TestCase):
         with self.assertRaises(ValueError):c10.check_rehearsal_inputs(rehearsal_packet(),live)
         rehearsed['runs'].pop(0)
         with self.assertRaises(ValueError):c10.check_rehearsal_inputs(rehearsed,live)
+
+
+class NativeSmokeTests(unittest.TestCase):
+    def test_failures_stop_later_continuations_and_clean_batch_runs_them(self):
+        for failure, not_started, continued_failure, expected_calls in [
+                (1, 0, False, 0), (0, 1, False, 0),
+                (0, 0, True, 1), (0, 0, False, 2)]:
+            with self.subTest(failure=failure, not_started=not_started, continued_failure=continued_failure), \
+                    tempfile.TemporaryDirectory() as folder:
+                root=Path(folder)/'evidence'
+                packet=rehearsal_packet()
+                packet['runs']=[r for r in packet['runs'] if r['id'] in
+                                ['control-continue-cap','control-continue-entries']]
+                report={'audits':[{'audit':r['id'],'placement':'observed','expected_observation':True}
+                                  for r in packet['runs']],
+                        'planned':2,'observed':2-not_started,'failed':failure,
+                        'not_started':not_started,'skipped_checks':[]}
+                result={'failed':continued_failure,'review':{},'attempt':2,'placement_state':'observed',
+                        'expected_observation':not continued_failure,'export':{},'second_start':{},'controls':{}}
+                with mock.patch.object(sys,'argv',['smoke.py','--binary',str(root.parent/'binary'),
+                                                  '--evidence',str(root)]), \
+                        mock.patch.object(smoke,'rehearsal_packet',return_value=packet), \
+                        mock.patch.object(smoke,'file_hash',return_value='0'*64), \
+                        mock.patch.object(smoke,'prepare_batch',return_value=[]), \
+                        mock.patch.object(smoke,'execute_batch',return_value=report), \
+                        mock.patch.object(smoke,'continuation_packet',return_value={}) as bind, \
+                        mock.patch.object(smoke,'continue_with_attempt_controls',return_value=(result,[{'passed':True}])) as later, \
+                        redirect_stdout(io.StringIO()):
+                    self.assertEqual(smoke.main(),bool(failure or not_started or continued_failure))
+                self.assertEqual(later.call_count,expected_calls)
+                self.assertEqual(bind.call_count,expected_calls)
+                self.assertEqual(len(list((root/'continuation-packets').glob('*.json'))),expected_calls)
 
 
 class PacketTests(unittest.TestCase):
@@ -2353,6 +2403,36 @@ class ContinuationTests(unittest.TestCase):
             write_json(container/name/'RESULT.json',value)
         report=c10.check_rehearsal(self.evidence,self.bound)
         self.assertEqual([row['audit'] for row in report['audits']],REHEARSAL_AUDITS)
+        # Supplied scenarios require their own template controls and must still
+        # leave the whole inventory available for the later admission checks.
+        supplied=copy.deepcopy(self.original)
+        supplied['schema']='stewart.study-commission/1'
+        for run in supplied['runs']:
+            run['submission_folder']=None
+        extended=copy.deepcopy(session)
+        added=[]
+        for scenario,count in [('compaction',16),('compaction-below',8),('compaction-invalid',13)]:
+            audit='large-'+scenario
+            added.append(audit);self.audits.append(audit)
+            self.export(audit,[['interrupted','protocol_anomaly']] if scenario=='compaction-invalid' else [['sealed',None]])
+            supplied['runs'].append({'id':audit,'case':audit,'repetition':1,'scenario':scenario,
+                'submission_sha256':'a'*64,'submission_folder':str(self.root/'large-submission')})
+            extended['audits'].append({'audit':audit,'expected_observation':True})
+            path=container/'study-review-controls'/audit
+            path.mkdir(parents=True)
+            write_json(path/'RESULT.json',{'failed':0,'run':count,'passed':count,'controls':count-2,
+                       'controls_fired':count-2,'original_unchanged':True})
+        extended['planned']=extended['observed']=len(supplied['runs'])
+        with self.replaced(container/'PLAN.json',{'schema':'stewart.c10-plan/1','commission':supplied}),\
+                self.replaced(container/'RESULT.json',extended):
+            c10.check_rehearsal(self.evidence,self.bound)
+            for audit in added:
+                path=container/'study-review-controls'/audit/'RESULT.json'
+                value=strict_json(read_file(path))
+                with self.replaced(path,{**value,'controls_fired':value['controls_fired']-1}):
+                    with self.assertRaisesRegex(ValueError,'study template controls missing or incomplete'):
+                        c10.check_rehearsal(self.evidence,self.bound)
+        self.audits=[audit for audit in self.audits if audit not in added]
         compaction=container/'compaction-controls/RESULT.json'
         checked=strict_json(read_file(compaction))
         for changed in [{'failed':1},{'controls_fired':18},{'passed':25},

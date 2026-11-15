@@ -15,10 +15,75 @@ import warnings
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import launch
+import exercise
 import review
 from control import safe_state
 from session import Session, export_evidence_state, export_work, failure_details, safe_choice, safe_observation, safe_usage
 from session_support import credential_bytes, digest, scan_tree, secret_matches, strict_json, validate_commission, write_json
+
+
+class FakeTransportTests(unittest.TestCase):
+    def exchange(self, root, body, *, limit=None, declared=None, path='/v1/messages'):
+        """Run the real HTTP handler with memory streams; only socket creation is replaced."""
+        root.mkdir()
+        with mock.patch.object(exercise, 'HTTPServer') as server:
+            provider = exercise.Fake('submitted', root, {}, 'Question')
+            handler_type = server.call_args.args[1]
+        if limit is not None:
+            provider.max_request_bytes = limit
+        provider.respond = mock.Mock(return_value=(200, {'content': [], 'stop_reason': 'end_turn'}))
+        handler = object.__new__(handler_type)
+        handler.path = path
+        handler.headers = {'Content-Length': str(len(body) if declared is None else declared),
+            'x-api-key': provider.key, 'anthropic-version': '2026-10-21',
+            'anthropic-beta': 'compact-2026-09-04'}
+        handler.rfile, handler.wfile = io.BytesIO(body), io.BytesIO()
+        handler.send_response = mock.Mock()
+        handler.send_header = mock.Mock()
+        handler.end_headers = mock.Mock()
+        handler.do_POST()
+        return provider, handler
+
+    def test_large_body_is_witnessed_exactly_and_small_body_is_unchanged(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            for name, body in [('small', b'{"padding":"x"}'),
+                               ('large', b'{"padding":"'+b'x'*(1024*1024)+b'"}')]:
+                with self.subTest(name=name):
+                    provider, handler=self.exchange(root/name,body)
+                    self.assertEqual(provider.max_request_bytes,64*1024*1024)
+                    handler.send_response.assert_called_once_with(200)
+                    provider.respond.assert_called_once_with(json.loads(body))
+                    self.assertEqual((root/name/'request-1.json').read_bytes(),body)
+                    self.assertEqual(provider.failures,[])
+
+    def test_inclusive_bound_and_over_bound_control(self):
+        body=b'{"padding":"'+b'x'*1024+b'"}'
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            accepted, handler=self.exchange(root/'at-bound',body,limit=len(body))
+            handler.send_response.assert_called_once_with(200)
+            self.assertEqual(accepted.failures,[])
+            refused, handler=self.exchange(root/'over-bound',body,limit=len(body)-1)
+            handler.send_response.assert_called_once_with(400)
+            refused.respond.assert_not_called()
+            self.assertEqual(handler.rfile.tell(),0)
+            self.assertFalse((root/'over-bound/request-1.json').exists())
+            self.assertEqual(refused.failures,['request size outside fake provider bound'])
+
+    def test_incomplete_body_and_wrong_endpoint_are_distinct_refusals(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            for name, options, reason in [
+                ('short', {'declared':3}, 'incomplete fake provider request body'),
+                ('path', {'path':'/wrong'}, 'unexpected endpoint'),
+                ('empty', {'declared':0}, 'request size outside fake provider bound')]:
+                with self.subTest(name=name):
+                    provider, handler=self.exchange(root/name,b'{}',**options)
+                    handler.send_response.assert_called_once_with(400)
+                    provider.respond.assert_not_called()
+                    self.assertEqual(provider.failures,[reason])
+                    self.assertFalse((root/name/'request-1.json').exists())
 
 
 class LaunchTests(unittest.TestCase):

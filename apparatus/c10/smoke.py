@@ -105,13 +105,18 @@ def main():
     parser.add_argument('--check-operations',action='store_true',help='After an unsubmitted control, explicitly test manager close and collection')
     parser.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                         help='Add a hashed study template to the full rehearsal')
+    parser.add_argument('--study-scenario',action='append',nargs=2,metavar=('ID','SCENARIO'),
+                        help='For a supplied ID: compaction, compaction-below or compaction-invalid; synthetic usage only')
     parser.add_argument('--interface',type=Path,help='Native-only family-guidance specification; no live authority')
     parser.add_argument('--interruption',choices=INTERRUPTION_POINTS,
                         help='With exactly one --submission: rehearse it alone as an interruption commission, then its continuation')
     args=parser.parse_args()
     require(args.evidence.is_absolute() and not args.evidence.exists(),'use a new absolute evidence directory')
     args.evidence.mkdir(mode=0o700)
-    packet=study_proposal('rehearsal-only',args.submission,rehearsal=True) if args.submission else rehearsal_packet()
+    require(not args.study_scenario or args.submission,'study scenarios need explicit submissions')
+    require(not args.study_scenario or not (args.interruption or args.interface),
+            'compaction study scenarios cannot be combined with interruption or guidance overrides')
+    packet=study_proposal('rehearsal-only',args.submission,rehearsal=True,scenarios=args.study_scenario) if args.submission else rehearsal_packet()
     if args.interruption:
         # The shape of a live interrupted study: one supplied audit, a witnessed
         # point in its first placement and a separately bound second placement.
@@ -159,6 +164,9 @@ def main():
         controls=exercise(args.evidence)
         print(f"Operator controls: run={controls['run']} passed={controls['passed']} failed={controls['failed']}; original snapshot unchanged={controls['original_snapshot_unchanged']}")
         failed=controls['failed']>0
+    if failed:
+        print('Native rehearsal failed; no later continuation controls started. Inspect retained records before another run.')
+        return True
     # Later placements, one separately bound packet each; a failed first placement gets none.
     whole=args.case is None and args.audit is None and not args.submission and not args.interface
     packets=args.evidence/'continuation-packets';packets.mkdir(mode=0o700)
@@ -180,7 +188,8 @@ def main():
             bad=result['failed'] or not all(row['passed'] for row in attempts)
             failed=failed or bad
             if bad:
-                break
+                print('Native continuation failed; no later continuation controls started. Inspect retained records before another run.')
+                return True
     held=args.evidence/'private/control-reminder-spent'
     if not failed and held.exists():
         # The held control always has a request aborted on the wire to build these on.

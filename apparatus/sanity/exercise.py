@@ -50,6 +50,10 @@ def verify_package(package, manifest_bytes):
 
 
 class Fake:
+    # A non-compacted full-size history can exceed 1 MiB. Keep the fake bounded
+    # by the procedural reviewer's maximum evidence-member size instead.
+    max_request_bytes = 64 * 1024 * 1024
+
     def __init__(self, mode, evidence, materials, question, auth_observer=None):
         self.mode, self.evidence = mode, evidence
         self.materials, self.question = materials, question
@@ -68,9 +72,13 @@ class Fake:
                 n = fake.requests
                 try:
                     size = int(self.headers['Content-Length'])
-                    if self.path != '/v1/messages' or not 0 < size < 1024 * 1024:
-                        raise ValueError('unexpected endpoint or request size')
+                    if self.path != '/v1/messages':
+                        raise ValueError('unexpected endpoint')
+                    if not 0 < size <= fake.max_request_bytes:
+                        raise ValueError('request size outside fake provider bound')
                     body = self.rfile.read(size)
+                    if len(body) != size:
+                        raise ValueError('incomplete fake provider request body')
                     (evidence / f'request-{n}.json').write_bytes(body)
                     if auth_observer is not None:
                         auth_observer(n, (self.headers.get('x-api-key') or '').encode('latin1'))

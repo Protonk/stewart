@@ -20,10 +20,13 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### M4 — Compaction on another model
 
-- [ ] Prepare the long-page specimen with recorded work before compaction and
-  ordinary work afterward. Rehearse that specimen's trigger, summary/reset path
-  and evidence volume with [the procedural reviewer](apparatus/c10/verify.py)
-  before binding the live packet.
+- [ ] Finish Linux rehearsal of the long-page specimen with recorded
+  work before compaction and ordinary work afterward. The exact generated
+  submission, unbound proposal and dated compatibility/cost assessment are in
+  `.scratch/readiness-m4-01/`. Rehearse the trigger, summary/reset
+  path and evidence volume with [the procedural reviewer](apparatus/c10/verify.py)
+  before binding the live packet. The byte-size/token sensitivity calculation
+  is not a measured provider token count; an unreached live trigger stays explicit.
   Freeze a commission on `claude-opus-5-5` or the principal's selected model:
   at most one Messages placement, 24 turns, 1,000,000 input and 24,000 output
   tokens. Fix remaining bounds and a dated cost estimate in the approval packet.

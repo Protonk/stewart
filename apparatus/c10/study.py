@@ -91,8 +91,16 @@ def copy_submission(source, target, expected):
     require(tree_hash(source) == tree_hash(target) == expected, 'study submission changed during copy')
 
 
-def study_proposal(model, submissions, *, rehearsal=False):
+def study_proposal(model, submissions, *, rehearsal=False, scenarios=None):
     require(bool(submissions), 'supply at least one study submission')
+    scenarios = scenarios or []
+    require(not scenarios or rehearsal, 'study scenarios are rehearsal-only')
+    selected = {}
+    for name, scenario in scenarios:
+        require(name not in selected and scenario in ['compaction', 'compaction-below', 'compaction-invalid'],
+                'select each study scenario once from the compaction controls')
+        selected[name] = scenario
+    require(set(selected) <= {name for name, _ in submissions}, 'study scenario names an absent submission')
     packet = rehearsal_packet() if rehearsal else proposal(model)
     packet['schema'] = 'stewart.study-commission/1'
     packet['runs'] = ([{**run, 'submission_folder': None} for run in packet['runs']]
@@ -100,7 +108,9 @@ def study_proposal(model, submissions, *, rehearsal=False):
     for name, folder in submissions:
         folder = Path(folder).absolute()
         case = inspect_submission(folder, name)
-        packet['runs'].append({'id': name, 'case': name, 'repetition': 1, 'scenario': 'submitted',
+        require(name not in selected or case.get('guidance') is None,
+                'compaction study controls use builtin guidance')
+        packet['runs'].append({'id': name, 'case': name, 'repetition': 1, 'scenario': selected.get(name, 'submitted'),
             'submission_folder': str(folder), 'submission_sha256': case['sha256']})
     return validate_packet(packet, rehearsal=rehearsal)
 

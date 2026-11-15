@@ -551,8 +551,10 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
         controls=strict_json(read_file(path/'container/study-review-controls'/run['id']/'RESULT.json'))
         reviewed = next(r for r in report['audits'] if r['audit'] == run['id'])['snapshots'][0]['review']
         guidance_extra = 4 if (reviewed.get('guidance') or {}).get('source') == 'guidance.md' else 0
-        require(controls['failed']==0 and controls['passed']==controls['run']==18+extra+guidance_extra
-                and controls['controls']==controls['controls_fired']==16+extra+guidance_extra and controls['original_unchanged'] is True,
+        expected_checks={'submitted':18+extra+guidance_extra,'compaction':16,
+                         'compaction-below':8,'compaction-invalid':13}[run['scenario']]
+        require(controls['failed']==0 and controls['passed']==controls['run']==expected_checks
+                and controls['controls']==controls['controls_fired']==expected_checks-2 and controls['original_unchanged'] is True,
                 'study template controls missing or incomplete')
     for row,item in zip(report['audits'],expected):
         latest=row['snapshots'][0]
@@ -583,6 +585,7 @@ def launch_batch(args):
     if mode=='live':
         require(getattr(args,'study_build',None) is None,'live study identity comes from the approved packet')
         require(not getattr(args,'submission',None),'live submissions come from the approved packet')
+        require(not getattr(args,'study_scenario',None),'study scenarios are rehearsal-only')
         require(args.commission is not None and args.approved_commission is not None and args.rehearsal is not None,
                 'live needs an exact approved commission and a retained rehearsal')
         raw=read_file(args.commission)
@@ -591,9 +594,14 @@ def launch_batch(args):
     else:
         require(args.commission is None and args.approved_commission is None and args.rehearsal is None,
                 'rehearsal accepts no live packet')
-        packet=(study_proposal('rehearsal-only',args.submission,rehearsal=True)
+        require(not getattr(args,'study_scenario',None) or getattr(args,'submission',None),
+                'study scenarios need explicit submissions')
+        packet=(study_proposal('rehearsal-only',args.submission,rehearsal=True,
+                              scenarios=getattr(args,'study_scenario',None))
                 if getattr(args,'submission',None) else rehearsal_packet())
         if getattr(args,'study_build',None) is not None:
+            require(not getattr(args,'study_scenario',None),
+                    'compaction study scenarios cannot be combined with a guidance override')
             packet=study_build.attach(packet,strict_json(read_file(args.study_build)))
     connection=getattr(args,'connection',None)
     if connection is not None:
@@ -1140,6 +1148,9 @@ def main():
         p.add_argument('--connection',help='Read the stewart-provider Keychain item; live label must match credential_label')
         p.add_argument('--submission',action='append',nargs=2,metavar=('ID','FOLDER'),
                        help='Rehearsal only: include these study inputs alongside all conformance controls')
+        if mode=='rehearse':
+            p.add_argument('--study-scenario',action='append',nargs=2,metavar=('ID','SCENARIO'),
+                           help='For a supplied ID: compaction, compaction-below or compaction-invalid; synthetic usage, no live token estimate')
     p=subs.add_parser('review',help='Read all immutable exports without extracting or launching')
     p.add_argument('evidence',type=Path)
     p=subs.add_parser('report',help='Assemble a proposal, checked technical return and optional attributed assessment; read-only')
