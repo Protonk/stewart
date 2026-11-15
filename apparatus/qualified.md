@@ -745,7 +745,7 @@ M4: Opus 5.5 crossed the real compaction trigger, reused its signed summary, rec
 
 ### readiness-c5-01
 
-Native C5 checklist: harness output-cap message followed by same-session authoring and submission; verified closed package; final usage unknown
+Three native C5 placements reviewed and closed: harness-reported cap recovery; requested long-entry boundary and ordinary-ending reminder unexercised; final usage unknown
 
-- Evidence: `.scratch/readiness-c5-01/checklist` (recorded 2026-11-15T20:10:22Z).
-- Retained purpose: Keep the selected original checklist encounter, its exact prepared inputs/writer bindings, raw cap message and following calls, independently reviewed conversation pages, corrected citation refusal, usage gap, package and close for the remaining C5 comparisons and grounded runtime fixtures. This pin covers checklist/; the approved campaign inputs and other prepared cases remain active work.; until C5 comparisons and the cap/reminder, error-reply and usage fixtures have been reviewed, with retained original scope reassessed and no open custody dependency
+- Evidence: `.scratch/readiness-c5-01/.` (recorded 2026-11-15T20:31:30Z).
+- Retained purpose: Inspect the exact C5 approval and all three original encounters, outside input/package witnesses, cap message and following authoring, preserved error text and exact-version replacement, unknown usage and independently reviewed closure. Ground the assigned runtime fixtures without rewriting historical records.; until Assigned cap/reminder, conversation-fidelity, error-reply and usage fixture reviews are complete and no unresolved finding requires these original encounters or their exact writer

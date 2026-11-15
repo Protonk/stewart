@@ -1,9 +1,7 @@
 # Readiness follow-up
 
-Complete the remaining bounded comparisons, repair or dispose of their findings,
-ground the affected tests, and assign any residual work to its owner.
-C5's exact live packet is approved. The checklist and long-entry cases are
-reviewed and closed; the prose-ending case remains unlaunched.
+Repair or dispose of the bounded comparisons' findings, ground the affected
+tests, and assign any residual work to its owner.
 
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
 [QUESTION-FORMS](docs/QUESTION-FORMS.md), the
@@ -17,99 +15,6 @@ changes to promises or expression, and external backup destinations when needed.
 No unused allowance, old packet or retained audit supplies new launch authority.
 Keep exact writers for open audits, and preserve original captures and receipts.
 
-## Remaining live comparisons
-
-### C5 — Harness turn endings
-
-- [ ] Execute the remaining `prose-ending` case in the approved
-  `.scratch/readiness-c5-01/MANIFEST.json`. `AUTHORIZATION.json` records the principal's
-  approval of the read packet, its account and included-subscription scope,
-  including the required disabled-extra-usage assertion; billing settings are
-  not independently observed. Its three frozen service packets use the exact M2 sw3z
-  checklist body/materials, a new request for one 18,000–20,000-token account
-  over C4's fictional handoff records, and the exact M1 prose-ending body/material.
-  `INPUTS.json` records the original bindings; `REQUEST.md` presents the scope.
-  Each case has one 600-second placement, including one authentication check
-  and at most one model session: three starts and 1,800 seconds total, with review
-  before each next case. This stays within the existing
-  [service procedure](apparatus/claude-code/README.md#native-service-comparison-procedure)
-  bound of 600 seconds per placement. No retry, continuation or replacement is
-  included. The approval explicitly commissions a deliberate output-cap study;
-  requested harness settings do not establish token or spending ceilings.
-- [ ] Before each start, revalidate the manifest and frozen packet bindings.
-  The remaining prose-ending preparation passed revalidation and is untouched.
-  Live runs need the host because the agent sandbox cannot bind Unix sockets.
-  The C1 profile remains byte-identical. `.scratch/readiness-c5-01/READINESS.json`
-  records the reviewed native rehearsal (122 checks passed, zero failed,
-  12 synthetic placements), independently counted peer starts, close records,
-  and 18 passing packet-binding/authority comparisons with no live mutation.
-  Original rehearsal and control outputs remain in `.tmp/readiness-c5-01/`;
-  controller and witness self-test outputs are in `.tmp/readiness-m4-04/`
-  (41 tests passed; 35 passed, zero failed or skipped, respectively).
-  These are native development checks, not Linux qualification. The first
-  checklist prepare refusal and its corrected preparation are retained.
-  `checklist/REVIEW.json` records the first live outcome: a harness-reported
-  output-cap message followed by authoring and submission in the same session,
-  complete input pages in captured conversation content, a corrected citation
-  refusal, observed stopping and unchanged delivery through ordinary close.
-  Its final usage is unknown. The review permits the next approved case; it
-  does not establish an exact token threshold or provider-side enforcement.
-  `long-entry/REVIEW.json` records one account covering all 48 cases, an exact
-  replacement with both versions retained, complete captured input pages and
-  unchanged delivery through close. The auditor expressly declined to pad the
-  answer to the requested length; no cap event or final usage report arrived.
-  Give the over-16,000-token entry boundary an unexercised disposition, without
-  inferring a token count or commissioning another attempt.
-- [ ] Apply the packet's explicit observer limits: real start counts come from
-  service-owned process records, sanitized authentication and initialization,
-  without an independent witness of all OS launches or provider requests.
-  Count reservations separately and leave missing counts unknown. Repeat
-  independent group-absence probes during review. The controller reports
-  unresolved MCP calls but does not gate continuation on them; this packet
-  grants no continuation and requires their documented disposition before
-  another case or ordinary close. Retain stopped unsubmitted work for the
-  principal; ordinary close is included only for a fully reviewed auditor return.
-- [ ] Observe cap handling, reported versus unknown usage and whether a
-  post-report reminder reaches another turn. Separate ordinary endings from
-  submission. No fallback, retry or replacement beyond the approved packet.
-- [ ] After the final case review, extend the C5 experiment pin to the campaign
-  approvals and selected original encounters, and publish the combined findings.
-  The current pin covers `checklist/`; `long-entry/` and the remaining preparation
-  stay retained as active campaign evidence.
-
-### Execution and review
-
-- [ ] Use qualified exact writers and matching Linux-rehearsed launchers for
-  Messages packets. A changed runtime surface/tool inventory requires a fresh
-  approved and reviewed supplied-surface check. Freeze the independent fixture
-  sources with each controller.
-- [ ] Give each claimed mechanism a firing control, a differing case and an
-  invariance case. Review each placement before another start. Stop on uncertain
-  effects, stopping or custody, withheld exports, or the packet's rejection
-  conditions. Retain unsubmitted work for an explicit disposition.
-- [ ] Keep independent input/package/process witnesses outside the audit and
-  disposal scope. Retain run replies and default, detailed and JSON status;
-  distinguish service-owned captures from independent observations. Include a
-  review by someone who did not operate the run, and retain that reviewer's own
-  record: an attribution written by the operator does not establish the review.
-  Record each approval with the exact packet digest the principal named, and
-  retain every digest shown for approval. Observe process stopping beyond the
-  moment the run command returns. Count starts, attempts, refusals, checks,
-  failures, skips and unknown intervals as observed.
-- [ ] Apply [retention rules](development/DEVELOPMENT.md#evidence-and-retention)
-  after review. Preserve selected original encounters for their stated inspection
-  purpose; redact tracked fixtures and record substitutions. Keep no raw
-  authentication output. A missing mechanism earns an explicit disposition,
-  not more spending or a broader qualification claim. A launch leaves its
-  container running until someone removes it; `host/container.name` in an
-  evidence folder names it. Removing one is a custody action for the principal,
-  and selected private archives and exact writers remain retained for their
-  current inspection purposes even after closure.
-
-**Complete when:** C5 has a reviewed outcome or explicit
-not-approved, handed-on or unexercised disposition, with no unknown process,
-start or audit state.
-
 ## Repairs, fixtures and reassessment
 
 ### Act on the outcomes
@@ -121,9 +26,12 @@ start or audit state.
   and exhausted remaining allowances.
 - [ ] Retain or adjust the 16,000-token response cap as an engineering setting
   using the effort and continuation comparisons, including M3's final 6,170-token
-  cap and preserved partial account. Repeated capped responses alone do not
-  identify a cause. Document behavior and remedy; changing the setting grants
-  no extra allowance or spending authority.
+  cap and preserved partial account. C5's harness-reported cap recovery is in
+  `.scratch/readiness-c5-01/RESULT.json`; its requested long-entry boundary and
+  live post-report reminder remain explicitly unexercised. No further live
+  attempt is assigned. Repeated capped responses alone do not identify a cause.
+  Document behavior and remedy; changing the setting grants no extra allowance
+  or spending authority.
 - [ ] Repair conversation-page fidelity using the exact short control and two
   full-page cases in `.scratch/readiness-c3-01/PAGE-COMPARISON.json` and
   `OBSERVATION.json`. Compare auditor-facing conversation content as well as
@@ -139,7 +47,8 @@ start or audit state.
   checkpoints, compaction shapes outside the accepted form, unlisted/unprefixed
   tools and output-cap endings. Use `.scratch/readiness-c2-01/COMPARISON.json`,
   `.scratch/readiness-c3-01/OBSERVATION.json` and
-  `.scratch/readiness-c4-01/COMPARISON.json` as bounded observations. Unknown
+  `.scratch/readiness-c4-01/COMPARISON.json` and
+  `.scratch/readiness-c5-01/RESULT.json` as bounded observations. Unknown
   intervals stay unknown; cumulative/overlapping fields cannot be added as
   independent consumption.
 - [ ] Correct misleading maintained outcome/usage claims and update the
@@ -163,7 +72,10 @@ start or audit state.
   spent-reminder continuation, M4's real summary with zero top-level usage and
   charged compaction iteration, signed-block reuse and preserved/revised account,
   C1 surface events, and C4 near-limit partial
-  submission, required-field recovery and submit-to-stop sequences. Ground
+  submission, required-field recovery and submit-to-stop sequences. Include C5's
+  harness cap message and subsequent authoring, flattened error text preserving
+  the full refusal, exact-version account replacement and three missing final
+  usage checkpoints. Ground
   reminder delivery and ordinary-ending recognition with M3's captures plus the
   synthetic continued-placement prose-ending control; that branch and aborted
   in-flight charging remain rehearsal-only observations. Derive variants by one

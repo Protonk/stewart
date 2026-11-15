@@ -118,6 +118,23 @@ were observed absent after return and again during review, and ordinary close
 left the delivered package unchanged. These remain bounded native observations,
 without an independent witness of provider traffic or every process launch.
 
+Two further placements in the same bounded comparison also submitted and
+closed. A request for one 18,000–20,000-token entry returned a 26,809-byte account
+whose author expressly declined to pad it to the requested length. It replaced
+a preliminary entry by exact version, retaining both payloads. No cap message
+was observed; the requested token boundary remains unexercised, and byte size
+does not establish token usage. The third placement reused earlier direct-answer
+wording, but authored an account and a limit through tools without an ordinary
+prose ending or post-report reminder. That live reminder interaction remains
+unexercised. Neither placement supplied a final usage checkpoint.
+
+Across these three placements, all 45 independent package checks passed and
+all 166 tool calls have results, including one corrected quotation refusal.
+All delivered packages remained unchanged through ordinary close. The three
+recorded authentication and model process pairs were observed absent after
+return and again during review. These counts describe the recorded local
+placements, not all provider requests; all three usage intervals remain unknown.
+
 ## Reviewed native comparison
 
 The principal approved probe 02 on 2026-11-10. It used exactly one fresh
