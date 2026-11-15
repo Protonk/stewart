@@ -43,11 +43,15 @@ def follow_pages(calls, results, materials, continued):
 # One response per step, per placement. A scenario without an entry here answers
 # before any step (a rejection or a reflected credential).
 SUBMITS = ['orient', 'read', 'record', 'revise', 'prepare', 'inspect', 'submit']
+COMPACT_SUBMITS = ['orient', 'read', 'record', 'orient', 'read', 'revise_recorded',
+                   'orient', 'prepare', 'inspect', 'submit']
 SCRIPTS = {
     'submitted': [SUBMITS], 'lost-run-reply': [SUBMITS],
     'export-contamination': [SUBMITS], 'export-failure': [SUBMITS],
     'empty': [['prepare', 'submit']],
     'unsubmitted': [['orient', 'read', 'record', 'revise', 'prose', 'prose']],
+    'compaction': [COMPACT_SUBMITS], 'compaction-below': [COMPACT_SUBMITS],
+    'compaction-invalid': [COMPACT_SUBMITS],
     # A thinking-only response at the output cap, nothing recorded; then ordinary work.
     'continue-cap': [['cap'], SUBMITS],
     # The same stop after two recorded entries; the next placement finds them
@@ -96,6 +100,7 @@ class Auditor(Fake):
         self.stage = 0
         self.continued = set()
         self.reminded = 0
+        self.summaries, self.context_start, self.summary_block = 0, 0, None
         # Set when a request is being held; the launcher releases it after signalling.
         self.holding, self.release = threading.Event(), threading.Event()
 
@@ -104,8 +109,15 @@ class Auditor(Fake):
         require(body['system'] == strict_json(system_bytes(self.packet, self.family, self.guidance))
                 and body['tools'] == spec.expected_tools(self.family), 'fake arrangement differs from specification')
         # A new conversation every placement; nothing earlier is replayed.
-        require(body['messages'][0] == first_message(self.question, self.placement),
+        opening = (first_message(self.question, self.placement) if self.summary_block is None else
+                   {'role':'assistant', 'content':[self.summary_block]})
+        require(body['messages'][0] == opening,
                 'fake first message differs from the specification')
+        if self.summary_block is not None:
+            require(body['messages'][1]['content'][0] == text_block(spec.POST_COMPACTION),
+                    'fake missing post-compaction notice')
+            if len(self.calls) == self.context_start:
+                require(len(body['messages']) == 2, 'fake retained pre-compaction context')
         if self.mode == 'provider-rejected':
             return 401, {'type':'error','error':{'type':'authentication_error','message':'Synthetic rejection.'}}
         if self.mode == 'reflected-body':
@@ -117,16 +129,38 @@ class Auditor(Fake):
                     if block['type'] == 'tool_result':
                         results[block['tool_use_id']] = block['content']
         replies = {}
-        for call in self.calls:
+        context_calls = self.calls[self.context_start:]
+        for call in context_calls:
             require(call['id'] in results, 'fake missing tool reply')
             blocks = results[call['id']]
             reply = strict_json(blocks[0]['text'])
             require(reply['outcome'] == 'completed', 'fake unexpected refusal')
             replies[call['name']] = reply['data']
-        continuations, _ = follow_pages(self.calls, results, self.materials, self.continued)
+        continuations, _ = follow_pages(context_calls, results, self.materials, self.continued)
         if continuations:
             # Materials larger than one page: fetch the rest before the script advances.
             return self.tools(continuations)
+        if 'compaction' in body:
+            require(self.mode in ['compaction', 'compaction-invalid'] and self.stage in [3, 6]
+                    and self.summaries == (0 if self.stage == 3 else 1)
+                    and body['compaction'] == {'type':'summarize'}, 'fake unexpected summary request')
+            self.summaries += 1
+            self.summary_block = {'type':'compaction', 'content':'Synthetic summary ' + str(self.summaries),
+                                  'signature':'synthetic-signed-' + str(self.summaries),
+                                  'opaque':{'retain':['unknown member', 7]}}
+            content, stop = [self.summary_block], 'compaction'
+            if self.mode == 'compaction-invalid':
+                # A summary is never a tool turn, even with an ordinary stop reason.
+                content, stop = [{'type':'tool_use', 'id':'summary-must-not-run', 'name':'record_artifact',
+                                  'input':{'label':'forbidden summary tool', 'base64':'AA=='}}], 'end_turn'
+            self.context_start = len(self.calls)
+            status, response = super().message(content, stop)
+            response['usage']['iterations'] = [
+                {'type':'message', 'input_tokens':1000, 'output_tokens':80},
+                {'type':'compaction', 'input_tokens':2000, 'output_tokens':120}]
+            return status, response
+        require(self.mode not in ['compaction', 'compaction-invalid'] or self.stage not in [3, 6]
+                or self.summaries == (1 if self.stage == 3 else 2), 'fake omitted summary request')
         script = SCRIPTS[self.mode][self.placement - 1]
         self.stage += 1
         require(self.stage <= len(script) or script[-1] == 'idle', 'unexpected fake request')
@@ -142,11 +176,18 @@ class Auditor(Fake):
                 'fake received a reminder it did not draw')
         if previous == 'orient' and self.placement > 1:
             self.check_reentry(replies['what_am_i_working_with'])
+        if self.mode.startswith('compaction') and self.stage in [5, 8]:
+            data = replies['what_am_i_working_with']
+            revision, entries = (2, 2) if self.stage == 5 else (4, 1)
+            require(data['revision'] == revision and len(data['entries']) == entries
+                    and data['run'] == {'number':1, 'continuing':False}, 'fake compaction lost recorded work')
         kind = {'open-inquiry':'record_account', 'inquiry-framing':'record_working_question',
                 'comparison':'record_criterion'}[self.family]
-        citations = [strict_json(results[c['id']][0]['text'])['data']['cite'] for c in self.calls
+        citations = [strict_json(results[c['id']][0]['text'])['data']['cite'] for c in context_calls
                      if c['name']=='read' and c['input']['source'] in self.materials]
         citations = [c for c in citations if c is not None]
+        if self.mode.startswith('compaction'):
+            citations = [c for n, c in enumerate(citations) if c not in citations[:n]]
         if step == 'hold':
             # The launcher signals the placement while this request is in flight.
             # No response is ever given: a late answer would let the run go on.
@@ -197,6 +238,15 @@ class Auditor(Fake):
         if step == 'submit':
             return self.tools([('submit', {'prepared':replies['prepare']['prepared'], 'confirm':True})])
         raise ValueError('unexpected fake request')
+
+    def message(self, content, stop, output=200):
+        status, response = super().message(content, stop, output)
+        if self.mode.startswith('compaction') and self.stage in [3, 6]:
+            # Same work and iteration charge, differing only in the top-level
+            # trigger count. A summary's mixed iteration charge differs again.
+            response['usage']['input_tokens'] = 149799 if self.mode == 'compaction-below' else 149800
+            response['usage']['iterations'] = [{'type':'message', 'input_tokens':1000, 'output_tokens':200}]
+        return status, response
 
     def check_reentry(self, data):
         """INTERFACE 7.5 against what the script did before the interruption."""

@@ -16,14 +16,14 @@ changes to promises or expression, and external backup destinations when needed.
 No unused allowance, old packet or retained audit supplies new launch authority.
 Keep exact writers for open audits, and preserve original captures and receipts.
 
-## 2. Remaining live comparisons
+## Remaining live comparisons
 
 ### M4 — Compaction on another model
 
 - [ ] Prepare the long-page specimen with recorded work before compaction and
-  ordinary work afterward. Rehearse trigger observation and the summary/reset
-  path with [the procedural reviewer](apparatus/c10/verify.py) before binding
-  the live packet; its current ordinary-only review cannot admit this case.
+  ordinary work afterward. Rehearse that specimen's trigger, summary/reset path
+  and evidence volume with [the procedural reviewer](apparatus/c10/verify.py)
+  before binding the live packet.
   Freeze a commission on `claude-opus-5-5` or the principal's selected model:
   at most one Messages placement, 24 turns, 1,000,000 input and 24,000 output
   tokens. Fix remaining bounds and a dated cost estimate in the approval packet.
@@ -85,16 +85,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 not-approved, handed-on or unexercised disposition, with no unknown process,
 start or audit state.
 
-## 3. Repairs, fixtures and reassessment
+## Repairs, fixtures and reassessment
 
 ### Act on the outcomes
 
-- [ ] Test the one-reminder-per-audit rule across continuation, including
-  delivery, ordinary-ending recognition and the first prose ending of a
-  continued placement. Use M3's captured spent-reminder re-entry and submission
-  alongside the rehearsal's ordinary-ending control; that branch remains
-  unexercised live. An expected unsubmitted ending is not an auditor seal.
-  Repair any confirmed transport/event mismatch within the settled policy.
 - [ ] Correct actionable continuation advice when output is exhausted. M3's
   final sw3z status suggests `run` at 64,000/64,000 output tokens, although its
   recorded `interrupted/max_tokens` ending follows the specified loop. Preserve
@@ -103,21 +97,19 @@ start or audit state.
 - [ ] Retain or adjust the 16,000-token response cap as an engineering setting
   using the effort and continuation comparisons, including M3's final 6,170-token
   cap and preserved partial account. Repeated capped responses alone do not
-  identify a cause. Document behavior and remedy;
-  changing the setting grants no extra allowance or spending authority.
+  identify a cause. Document behavior and remedy; changing the setting grants
+  no extra allowance or spending authority.
 - [ ] Repair conversation-page fidelity using the exact short control and two
   full-page cases in `.scratch/readiness-c3-01/PAGE-COMPARISON.json` and
   `OBSERVATION.json`. Compare auditor-facing conversation content as well as
   Stewart's MCP payload; full auxiliary arrays do not prove auditor visibility.
-  Do not rescue answers from harness external files or rewrite sealed returns.
-  The harness also kept each substituted reply as a file in the profile's
-  configuration directory, despite `--no-session-persistence`; the
+  Resolve prevention, detection or removal of substituted reply copies outside
+  the archive. Preserve the two C3 files identified by the
   [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md#large-material-pages)
-  locates the two C3 files. Decide how the runtime prevents, detects or removes
-  such copies of supplied material outside the archive, and keep those two
-  files until that review ends. A range citation over a substituted page
-  validates against the source without showing the auditor saw those bytes;
-  the procedure's review must not count it as grounded reading.
+  until that review ends. Do not rescue answers from those files or rewrite
+  sealed returns. A valid range citation alone does not establish that the
+  auditor saw the page; the procedure's review must not count it as grounded
+  reading.
 - [ ] Address missing final usage, overlapping assistant snapshots, per-session
   checkpoints, compaction shapes outside the accepted form, unlisted/unprefixed
   tools and output-cap endings. Use `.scratch/readiness-c2-01/COMPARISON.json`,
@@ -128,10 +120,9 @@ start or audit state.
 - [ ] Correct misleading maintained outcome/usage claims and update the
   [runtime reference](docs/claude-code/RUNTIME-REFERENCE.md). Preserve the C4
   authored matched-receipt inconsistency for inspection without changing the
-  sealed answer. Live harness continuation remains unexercised; that disposition
-  grants no replacement run. Give new exceptional events an action or disposition.
-  The C2–C4 package reviews made their directory and file mode checks on the
-  procedure's private copies, so those counts establish no delivered mode.
+  sealed answer. Report live harness continuation as unexercised and give
+  exceptional events an action or disposition. Scope C2–C4 mode claims to the
+  procedure's private copies; those checks establish no delivered mode.
 - [ ] Specify the refusal a confirmed submission receives when close is requested
   during a live runtime placement: the runtime contract's publication gate gives
   `placement_stopped`, INTERFACE's log precondition `authoring_ended`. Then add
@@ -145,10 +136,12 @@ start or audit state.
   Select the M1/C2/C3 citation recovery, M2/M3 cap and near-limit responses,
   M3's re-entry, preserved entry, missing-citations replacement refusal and
   spent-reminder continuation, C1 surface events, and C4 near-limit partial
-  submission, required-field recovery and submit-to-stop sequences. Keep the
-  aborted-in-flight charge as rehearsal evidence; M3's live abort was not sent
-  and charged nothing. Derive variants by one named change. Record origin,
-  date, model/version, size and digest with each selected fixture.
+  submission, required-field recovery and submit-to-stop sequences. Ground
+  reminder delivery and ordinary-ending recognition with M3's captures plus the
+  synthetic continued-placement prose-ending control; that branch and aborted
+  in-flight charging remain rehearsal-only observations. Derive variants by one
+  named change. Record origin, date, model/version, size and digest with each
+  selected fixture.
 - [ ] Add the standalone runtime driver's missing near-limit comparison from
   C4's short-placement capture, preserving independent authorship and expected
   values. A live observation alone does not provide that regression coverage.
@@ -181,12 +174,8 @@ start or audit state.
 are grounded or assigned, required checks pass, and no stopping/custody
 uncertainty remains. Bring substantive tradeoffs to the principal.
 
-## 4. Finish
-
-- [ ] Update the owning live plans in place with residual work and necessary
-  inputs. Keep each task in one place; do not create a handoff log or history.
-- [ ] Move enduring behavior and explanations into specifications and tests.
-  Release reproducible evidence whose inspection purpose has ended while
-  preserving open custody and selected originals.
-- [ ] Delete this plan and its coordinating work-order entry once all remaining
-  tasks have outcomes or owners. No further general readiness approval is needed.
+At completion, keep enduring behavior in specifications/tests and release
+reproducible evidence whose inspection purpose has ended, preserving open custody
+and selected originals. Delete this plan and its coordinating work-order entry
+once every remaining task has an outcome or owner. No further general readiness
+approval is needed.

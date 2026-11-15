@@ -529,6 +529,12 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
         and [r['audit'] for r in session['audits']]==[r['id'] for r in expected]
         and all(r['expected_observation'] is True for r in session['audits']), 'incomplete rehearsal inventory')
     report=review_batch(path)
+    compaction=strict_json(read_file(path/'container/compaction-controls/RESULT.json'))
+    require(compaction['schema']=='stewart.c10-compaction-controls/1'
+            and compaction['failed']==0 and compaction['run']==compaction['passed']==26
+            and compaction['controls']==compaction['controls_fired']==19
+            and compaction['original_unchanged'] is True and compaction['same_selected_answer'] is True,
+            'compaction controls missing or incomplete')
     controls=strict_json(read_file(path/'container/review-controls/RESULT.json'))
     extra=2 if rehearsed.get('study_build') else 0
     require(controls['failed']==0 and controls['controls']==controls['controls_fired']==12+extra
@@ -550,7 +556,7 @@ def check_rehearsal(path,bound,packet=None,*,connection=False):
                 'study template controls missing or incomplete')
     for row,item in zip(report['audits'],expected):
         latest=row['snapshots'][0]
-        if item['scenario'] in ['submitted','empty','lost-run-reply']:
+        if item['scenario'] in ['submitted','empty','lost-run-reply','compaction','compaction-below']:
             require(latest.get('review') is not None and ordinary_submission(latest['review']),'rehearsal submission review failed')
     if connection:
         first_audit=report['audits'][0]

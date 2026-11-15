@@ -71,12 +71,83 @@ def rebind(view,arrangement,run,number,change):
         if k==number:
             raw=change(raw)
         node=rawjson.parse(raw)
+        if node.get('reset').value():
+            active=[]
         active.extend(item.raw for item in node.get('appended').items)
-    body=ordinary_body(arrangement,node.get('max_tokens').value(),active)
+    body=ordinary_body(arrangement,node.get('max_tokens').value(),active,node.get('compaction').value())
     for key,value in sorted([('body_bytes',str(len(body)).encode()),('body_sha256',b'"'+digest(body).encode()+b'"')],
                             key=lambda item:-node.get(item[0]).start):
         raw=raw[:node.get(key).start]+value+raw[node.get(key).end:]
     view.changes[name]=raw
+
+
+def compaction_cases(original, baseline, base, case):
+    """INTERFACE 6.2 controls; rebind changed captures so size/hash is not the test."""
+    run=base+'runs/1/'
+    receipt=next(original.json(n)['body']['receipt'] for n in original.names
+                 if n.startswith(base+'log/') and original.json(n)['kind']=='accepted')
+    arrangement=rawjson.parse(original.read(base+original.json(base+receipt)['body']['arrangement']['machine'])).get('body')
+    scenario=original.json('evidence/binding.json')['run']['scenario']
+    # All three scripts record two entries in ordinary request 3. Only the
+    # top-level usage count determines whether request 4 asks for a summary.
+    summary=4
+    response=run+f'response-{summary}-1.bin'
+    attempt=run+f'attempt-{summary}-1.json'
+    def response_bytes(view, raw):
+        view.changes[response]=raw
+        view.changes[f'evidence/fake-provider/response-{summary}.json']=raw
+        view.change_json(attempt,lambda r:r['body']['response'].update(bytes=len(raw),sha256=digest(raw)))
+    def change_response(view, fn):
+        value=view.json(response);fn(value);response_bytes(view,compact(value))
+    def flag(view, number, key, value):
+        view.change_json(run+f'request-{number}.json',lambda r:r.update({key:value}))
+    def appended(view, fn):
+        def change(raw):
+            node=rawjson.parse(raw).get('appended')
+            value=node.value();fn(value)
+            return raw[:node.start]+compact(value)+raw[node.end:]
+        rebind(view,arrangement,run,summary+1,change)
+    if scenario=='compaction-below':
+        case('below-trigger-forced-summary',lambda v:flag(v,summary,'compaction',True),'compaction_from_top_level_usage')
+        case('below-trigger-forced-reset',lambda v:flag(v,summary,'reset',True),'context_reset_after_compaction')
+    else:
+        case('omitted-summary-request',lambda v:flag(v,summary,'compaction',False),'compaction_from_top_level_usage')
+        case('omitted-summary-response',lambda v:v.removed.add(response),'missing_evidence')
+        case('missing-summary-iterations',lambda v:change_response(v,lambda r:r['usage'].pop('iterations')),
+             'summary_usage_iterations')
+        case('ignored-summary-iteration-charge',lambda v:v.change_json(attempt,
+             lambda r:r['body']['charged'].update(input_tokens=1000)),'attempt_charge')
+        def summary_tool(view):
+            value=view.json(run+'result-1.json')
+            value['body'].update(request=summary,attempt=1)
+            number=1+len([n for n in view.names if n.startswith(run+'result-')])
+            view.put(run+f'result-{number}.json',value)
+        case('tool-executed-from-summary',summary_tool,'summary_executes_no_tools')
+        def duplicate_iteration(view):
+            raw=view.read(response)
+            require(raw.count(b'"type":"compaction"') >= 1,'compaction iteration absent')
+            node=rawjson.parse(raw).get('usage').get('iterations').items[-1]
+            raw=raw[:node.end-1]+b',"type":"compaction"'+raw[node.end-1:]
+            response_bytes(view,raw)
+        case('repeated-summary-iteration-type',duplicate_iteration,'response_usage_members')
+        if scenario=='compaction':
+            case('changed-signed-summary',lambda v:appended(v,
+                 lambda a:a[0]['content'][0].update(signature='changed')),'signed_summary_and_post_compaction_notice')
+            case('omitted-signed-summary',lambda v:appended(v,
+                 lambda a:a[0].update(content=[])),'signed_summary_and_post_compaction_notice')
+            case('retained-old-context',lambda v:flag(v,summary+1,'reset',False),'context_reset_after_compaction')
+            case('changed-post-compaction-notice',lambda v:appended(v,
+                 lambda a:a[1]['content'][0].update(text='Changed.')),'signed_summary_and_post_compaction_notice')
+        else:
+            ended=next(n for n in original.names if n.startswith(base+'log/') and original.json(n)['kind']=='run_ended')
+            def wrong_ending(view):
+                view.change_json(ended,lambda r:r['body'].update(cause='provider_refusal'))
+                view.rechain(base)
+                status=next(n for n in view.names if n.endswith('-status-after-run.stdout'))
+                view.change_json(status,lambda r:r['data']['runs']['last'].update(cause='provider_refusal'))
+            case('wrong-failed-summary-ending',wrong_ending,'failed_compaction_ending')
+    case('unaltered-compaction-evidence',lambda v:None,None,control=False)
+    case('large-response-invariance',lambda v:response_bytes(v,v.read(response)+b' '*(2*1024*1024)),None,control=False)
 
 
 def continued_cases(original,baseline,base,case,absent):
@@ -196,6 +267,9 @@ def exercise(root,out):
         write_json(folder/'review.json',result)
         rows.append({'case':name,'control':control,'expected':expected,'outcome':'pass' if ok else 'fail','observed':result['outcome'],'failures':result['failures']})
     missing=[]
+    if binding['run']['scenario'].startswith('compaction'):
+        compaction_cases(original,baseline,base,case)
+        return finish(root,out,baseline,rows,missing)
     if len(baseline['placements'])>1:
         continued_cases(original,baseline,base,case,lambda name,reason:missing.append({'case':name,'reason':reason}))
         return finish(root,out,baseline,rows,missing)
@@ -272,6 +346,41 @@ def finish(root,out,baseline,rows,missing):
             'skipped':0,'not_applicable':missing,
             'controls':sum(r['control'] for r in rows),'controls_fired':sum(r['control'] and r['outcome']=='pass' for r in rows),
             'original_unchanged':True,'model_calls':0}
+    write_json(out/'RESULT.json',result)
+    return result
+
+
+def exercise_compactions(private, out):
+    """Review all three controls and compare the selected answers across the trigger."""
+    out.mkdir(mode=0o700)
+    results=[]
+    for scenario in ['compaction', 'compaction-below', 'compaction-invalid']:
+        result=exercise(private/('control-'+scenario),out/scenario)
+        results.append(result)
+    def selected(scenario):
+        e=Evidence(private/('control-'+scenario))
+        name=next(n for n in e.names if n.startswith('returns/') and n.endswith('/answer.json'))
+        value=e.json(name)
+        # Handles bind each audit separately. Compare the answer's content,
+        # versions and source/range/digest metadata, not those audit-local handles.
+        for entry in value['entries']:
+            entry.pop('id')
+            for citation in entry.get('citations',[]):
+                citation['source']=citation['stewart']['name']
+        return value
+    firing, below=selected('compaction'),selected('compaction-below')
+    same=(firing==below and firing['revision']==4 and len(firing['entries'])==1
+          and firing['entries'][0]['version']==2)
+    write_json(out/'answer-comparison.json',{'same_selected_answer':same,
+        'scope':'content, revision, entry versions and resolved citations; audit-local handles excluded',
+        'compaction':firing,'below_trigger':below})
+    result={'schema':'stewart.c10-compaction-controls/1',
+        'run':sum(r['run'] for r in results)+1, 'passed':sum(r['passed'] for r in results)+int(same),
+        'failed':sum(r['failed'] for r in results)+int(not same),
+        'controls':sum(r['controls'] for r in results),
+        'controls_fired':sum(r['controls_fired'] for r in results),
+        'original_unchanged':all(r['original_unchanged'] for r in results),
+        'same_selected_answer':same, 'model_calls':0}
     write_json(out/'RESULT.json',result)
     return result
 

@@ -23,7 +23,8 @@ from common import (HERE,catalog,compact,digest,inventory,proposal,question_file
                     rehearsal_packet,source_hash,strict_json,tree_hash,validate_packet,write_json)
 from batch import credential_marker,check_credential,export_snapshot
 from batch import execute_batch
-from verify import Evidence,PagingObservation,usage_counts,verify
+from verify import Evidence,PagingObservation,usage_counts,verify,trigger_tokens,compaction_cause,ordinary_body,response_usage
+import rawjson
 import reporting
 import connections
 from study import (case_from_question, copy_submission, inspect_submission,
@@ -35,12 +36,13 @@ from fake import follow_pages
 
 
 # The rehearsal inventory, written out from the control specification: six fixed
-# cases, seven single-placement controls and six controls whose first placement
+# cases, ten single-placement controls and six controls whose first placement
 # ends interrupted and whose later placement is a separately bound continuation.
 FIXED_CASES = ['open-ordinary', 'open-inadequate', 'framing-ordinary', 'framing-inadequate',
                'comparison-ordinary', 'comparison-inadequate']
 SINGLE_PLACEMENT_CONTROLS = ['empty', 'unsubmitted', 'provider-rejected', 'lost-run-reply',
-                             'reflected-body', 'export-contamination', 'export-failure']
+                             'reflected-body', 'export-contamination', 'export-failure',
+                             'compaction', 'compaction-below', 'compaction-invalid']
 # Control: (witnessed interruption point of the first placement, each placement's ending and cause).
 CONTINUED_CONTROLS = {
     'continue-cap': (None, [['interrupted', 'max_tokens'], ['sealed', None]]),
@@ -610,7 +612,7 @@ class PacketTests(unittest.TestCase):
         self.assertEqual({name:(value['interruption'],value['endings']) for name,value in common.CONTINUED.items()},
                          CONTINUED_CONTROLS)
         self.assertEqual({name:value['held'] for name,value in common.CONTINUED.items()},HELD_CONTROLS)
-        self.assertEqual((len(packet['runs']),len(common.CONTINUED)),(19,6))
+        self.assertEqual((len(packet['runs']),len(common.CONTINUED)),(22,6))
         # Every first launch is one placement; a later one is never implied by the packet.
         self.assertEqual((packet['max_placements'],packet['automatic_continuation']),(1,False))
         # INTERFACE 6.4: an interrupted in-flight request is charged its whole
@@ -900,6 +902,78 @@ class EvidenceTests(unittest.TestCase):
                       [{'type':'message','input_tokens':True,'output_tokens':0}],
                       [{'type':'message','input_tokens':2**48,'output_tokens':0}]*2]:
             with self.subTest(value=value),self.assertRaises(ValueError):usage_counts({'input_tokens':0,'output_tokens':0,'iterations':value})
+
+    def test_compaction_trigger_uses_all_top_level_counts_independently_of_charges(self):
+        usage={'input_tokens':100000,'cache_creation_input_tokens':30000,
+               'cache_read_input_tokens':19799,'output_tokens':200,
+               'iterations':[{'type':'message','input_tokens':900000,'output_tokens':1}]}
+        self.assertEqual(trigger_tokens(usage),149999)
+        self.assertEqual(usage_counts(usage)['input_tokens'],900000)
+        usage['cache_read_input_tokens']=19800
+        self.assertEqual(trigger_tokens(usage),150000)
+        usage['iterations']=[{'type':'message','input_tokens':1,'output_tokens':1}]
+        self.assertEqual(trigger_tokens(usage),150000)
+        self.assertEqual(usage_counts(usage)['input_tokens'],1)
+        for invalid in [True,-1,2**48+1,None]:
+            with self.subTest(invalid=invalid),self.assertRaises(ValueError):
+                trigger_tokens({**usage,'input_tokens':invalid})
+
+    def test_signed_summary_shape_and_failure_causes(self):
+        def response(blocks,stop='compaction'):
+            return rawjson.parse(b'{"content":'+blocks+b',"stop_reason":'+compact(stop)+b'}')
+        signed=b'{"type":"compaction","content":"summary","signature":"signed"}'
+        self.assertIsNone(compaction_cause(response(b'['+signed+b']')))
+        opaque=signed[:-1]+b',"opaque":1,"opaque":2}'
+        self.assertIsNone(compaction_cause(response(b'[ '+opaque+b' ]')))
+        for block in [b'[]',b'['+signed+b','+signed+b']',b'[null]',
+                      b'['+signed.replace(b'"signed"',b'""')+b']',
+                      b'['+signed.replace(b'"summary"',b'5')+b']',
+                      b'['+signed[:-1]+b',"signature":"signed"}]',
+                      b'['+signed[:-1]+b',"type":"compaction"}]']:
+            with self.subTest(block=block):
+                self.assertEqual(compaction_cause(response(block)),'protocol_anomaly')
+        for stop,cause in [('max_tokens','max_tokens'),('refusal','provider_refusal'),
+                           ('model_context_window_exceeded','context_exhausted'),
+                           ('end_turn','protocol_anomaly'),('stop_sequence','protocol_anomaly'),
+                           ('tool_use','protocol_anomaly'),('new_stop','protocol_anomaly')]:
+            with self.subTest(stop=stop):
+                self.assertEqual(compaction_cause(response(b'['+signed+b']',stop)),cause)
+
+    def test_summary_request_splices_pinned_settings_and_signed_bytes(self):
+        arrangement=rawjson.parse(b'{"model":"m","system":[ ],"tools":[],"request_extra":'
+                                  b'{"output_config": {"effort":"high"}},'
+                                  b'"compaction":{"trigger_tokens":150000,"request":{"type":"summarize"}}}')
+        signed=b'{"role":"assistant","content":[ {"type":"compaction", "content":"s", "signature":"x", "unknown":7} ]}'
+        prefix=b'{"model":"m","max_tokens":1234,"system":[ ],"tools":[],"output_config": {"effort":"high"}'
+        self.assertEqual(ordinary_body(arrangement,1234,[signed],True),
+                         prefix+b',"compaction":{"type":"summarize"},"messages":['+signed+b']}')
+        self.assertEqual(ordinary_body(arrangement,1234,[signed]),prefix+b',"messages":['+signed+b']}')
+
+    def test_raw_response_usage_refuses_duplicates_and_invalid_top_level_counts(self):
+        usage=(b'{"input_tokens":999,"output_tokens":999,"iterations":['
+               b'{"type":"message","input_tokens":2,"output_tokens":3},'
+               b'{"type":"compaction","input_tokens":5,"output_tokens":7}]}')
+        def parse(raw):
+            return rawjson.parse(b'{"content":[],"stop_reason":"compaction","usage":'+raw+b'}')
+        self.assertEqual(response_usage(parse(usage),True),
+                         {'input_tokens':7,'output_tokens':10,'cache_creation_input_tokens':0,'cache_read_input_tokens':0})
+        for raw in [usage.replace(b'"type":"compaction"',b'"type":"compaction","type":"compaction"'),
+                    usage.replace(b'"input_tokens":5',b'"input_tokens":5,"input_tokens":5'),
+                    usage[:-1]+b',"iterations":null}',
+                    usage.replace(b'"input_tokens":999',b'"input_tokens":999,"input_tokens":999')]:
+            with self.subTest(raw=raw),self.assertRaisesRegex(ValueError,'response_usage_members'):
+                response_usage(parse(raw),True)
+        for raw in [usage.replace(b'"input_tokens":999',b'"input_tokens":true'),
+                    usage.replace(b'"output_tokens":999',b'"output_tokens":-1')]:
+            with self.subTest(raw=raw),self.assertRaisesRegex(ValueError,'invalid_usage_count'):
+                response_usage(parse(raw),True)
+        for raw in [b'{"input_tokens":1,"output_tokens":2}',
+                    b'{"input_tokens":1,"output_tokens":2,"iterations":null}',
+                    usage.replace(b'"type":"compaction"',b'"type":"message"')]:
+            with self.subTest(raw=raw),self.assertRaisesRegex(ValueError,'summary_usage_iterations'):
+                response_usage(parse(raw),True)
+        unknown=usage.replace(b'"type":"compaction"',b'"type":"compaction","opaque":1,"opaque":2')
+        self.assertEqual(response_usage(parse(unknown),True),response_usage(parse(usage),True))
 
 
 class ReportingTests(unittest.TestCase):
@@ -2270,12 +2344,22 @@ class ContinuationTests(unittest.TestCase):
             'audits':[{'audit':audit,'expected_observation':True} for audit in REHEARSAL_AUDITS]}
         write_json(container/'RESULT.json',session)
         for name,value in [('review-controls',{'failed':0,'controls':12,'controls_fired':12,'passed':14,'run':14,'original_unchanged':True}),
+                           ('compaction-controls',{'schema':'stewart.c10-compaction-controls/1','failed':0,
+                               'controls':19,'controls_fired':19,'passed':26,'run':26,
+                               'original_unchanged':True,'same_selected_answer':True}),
                            ('operator-controls',{'failed':0,'passed':7,'run':7,'original_snapshot_unchanged':True}),
                            ('report-controls',{'failed':0,'passed':11,'run':11,'original_unchanged':True})]:
             (container/name).mkdir()
             write_json(container/name/'RESULT.json',value)
         report=c10.check_rehearsal(self.evidence,self.bound)
         self.assertEqual([row['audit'] for row in report['audits']],REHEARSAL_AUDITS)
+        compaction=container/'compaction-controls/RESULT.json'
+        checked=strict_json(read_file(compaction))
+        for changed in [{'failed':1},{'controls_fired':18},{'passed':25},
+                        {'original_unchanged':False},{'same_selected_answer':False}]:
+            with self.subTest(changed=changed),self.replaced(compaction,{**checked,**changed}):
+                with self.assertRaisesRegex(ValueError,'compaction controls missing or incomplete'):
+                    c10.check_rehearsal(self.evidence,self.bound)
         with self.assertRaisesRegex(ValueError,'rehearsal source, binary, image or catalog differs'):
             c10.check_rehearsal(self.evidence,{**self.bound,'apparatus_sha256':'9'*64})
         # The earlier thirteen-audit inventory is not a rehearsal of this apparatus.

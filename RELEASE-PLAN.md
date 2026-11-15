@@ -10,7 +10,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Complete or dispose of M4/C5, beginning with compaction-reviewer preparation, then outcome repairs, fixtures and reassessment. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the bounded comparisons; the Messages and manager plans own reusable apparatus work in their respective areas. |
+| Current | Qualify the compaction apparatus on Linux, prepare and rehearse the M4 specimen, complete or dispose of M4/C5, then address outcome repairs, fixtures and reassessment. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the bounded comparisons; [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) owns the reusable Messages apparatus. |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separately scheduled release work | Complete the Messages model gate, platform qualification and acceptance-policy review. | [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and the requirements below |
@@ -29,9 +29,8 @@ needed. Give residual work one owner in place; do not create a turnover document
 
 ## Deferred studies
 
-The integrated plan includes preparation of bounded procedural question-family
-trials, without authorizing live calls. Broader blinded evaluation and family
-dogfooding remain deferred; the [family contract](CONTRACTS.md#question-families-and-open-inquiry)
+Broader blinded evaluation and family dogfooding remain deferred; the
+[family contract](CONTRACTS.md#question-families-and-open-inquiry)
 owns their product boundaries. An agent-manager study omitting the question from
 returns is only an option after the manager interface is established and the
 principal selects it, not a pending task. A future study needs a named uncertainty
@@ -61,9 +60,8 @@ seal, delivery and closure effects after a failed publication, the `--verify`
 before the acceptance link, a `checked_at` that is not a timestamp, and a null
 JSON-RPC error `id` from the binary. Reassess unreached/partly reached conditions and
 unclear behavioral promises against the actual cases. Candidate gaps include
-C17's secondary logging
-errors, blind repetition after reply failure and omitted partial effects; C18's
-pressure pruning, confusion between retained and delivered bytes, and missing
+C17's secondary logging errors, blind repetition after reply failure and omitted
+partial effects; C18's pressure pruning, confusion between retained and delivered bytes, and missing
 archives reported clean; and C11's scans presented as snapshot proof. Driver
 changes require an implementation-independent author.
 

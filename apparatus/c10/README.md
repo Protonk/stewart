@@ -10,9 +10,10 @@ Every launch performs one placement of each audit it names. It covers small
 fixed commissions, lost caller replies, later custody actions, a first placement
 interrupted at a witnessed point, and [separately approved later placements](#continue-a-retained-audit)
 of an audit whose last placement was recorded interrupted. Nothing continues an
-audit automatically. A placement whose process died, real provider compaction,
-full-size histories and the full C10 repetition matrix remain outside its
-checked scope. The live provider route is direct TLS; the reviewer correlates
+audit automatically. The reviewer reconstructs provider compaction from captured
+exchanges; its offline controls use synthetic summaries. Real provider compaction,
+a placement whose process died, full-size histories and the full C10 repetition
+matrix still need their own evidence. The live provider route is direct TLS; the reviewer correlates
 Stewart-owned provider captures there. Only rehearsal has an independent
 provider witness. This limitation must remain visible in any live report.
 
@@ -66,8 +67,8 @@ commit, acceptance folder, exact guidance and the unqualified status.
 Rehearse with `--study-build /absolute/study-build.json` and the same
 `--submission ID FOLDER` arguments proposed for live use. This runs the ordinary
 offline controls plus two altered-guidance/version reviewer controls; with two
-study templates the first placements cover 21 audits and 56 reviewer
-comparisons. A saved connection also needs the ordinary synthetic
+study templates the first placements cover 24 audits and 56 ordinary/template
+reviewer comparisons, plus the 26 compaction comparisons. A saved connection also needs the ordinary synthetic
 later-collection and continuation checks.
 
 Use `packet --study-build /absolute/study-build.json` to bind an unpaid proposal.
@@ -161,7 +162,7 @@ originals. The Linux process-access checks use the existing launcher's same-user
 and different-user controls. Environment, filesystem observations and process
 RSS high-water marks are retained; these do not qualify full-size C10 workloads.
 
-The rehearsal contains 19 audits and 25 placements: the six fixed cases, seven
+The rehearsal contains 22 audits and 28 placements: the six fixed cases, ten
 single-placement controls and six continued controls of two placements each.
 Its output allowance is 30,000 tokens, not the proposal default, so that an
 interrupted control can absorb one estimated request and still start again
@@ -176,6 +177,17 @@ interrupted control can absorb one estimated request and still start again
 | Reflected synthetic credential | Incomplete review; export withheld |
 | Export contamination | Private original retained; export withheld |
 | Export failure | Failed export recorded; private original retained |
+| Compaction | Two summaries, unchanged signed arrays, replaced context and preserved recorded work; auditor submission |
+| Below compaction trigger | Same selected answer at 149,999 top-level tokens, with no summary or reset |
+| Invalid compaction | Summary tool block executes nothing and consumes no reminder; interrupted with `protocol_anomaly`, recorded work retained |
+
+The compaction scripts differ in their top-level trigger count: 150,000 or
+149,999, including output. Iteration charges are smaller; the fake tests which
+count governs the trigger without producing a real 150,000-token conversation.
+Two entries precede the first summary, re-entry checks them before revision,
+and re-entry after the second checks the revised selection. Summary usage has
+both `message` and `compaction` iterations and differs from top-level usage.
+These are apparatus controls, not provider or full-history scale evidence.
 
 The lost-reply control discards the caller's returned value while preserving the
 original process streams. It does not claim to test a killed launcher or auditor.
@@ -209,6 +221,13 @@ rest not started, and the rehearsal fails.
 
 Linux rehearsal also runs 14 reviewer comparisons (12 altered-evidence controls
 and two invariances) and seven operator comparisons on the first placements.
+Another 26 comparisons cover compaction: 19 altered-evidence controls, six
+unchanged/large-response invariances and equality of the selected answer above
+and below the trigger. They exercise omitted summary requests/responses,
+changed/omitted signed blocks, retained old context, missing iterations, omitted
+charges, repeated interpreted iteration fields, summary tool execution, changed post-summary notices and wrong failure
+endings. The final answer comparison retains revisions, entry versions, text
+and resolved citation metadata while excluding audit-local handles.
 The latter exercise wrong-key
 refusal, manager close, inspection, explicit confirmation, follow-up export,
 manager attribution and preservation of the original snapshot. Eleven report
@@ -247,9 +266,10 @@ found a written request, which charges the estimate; hence its two shapes.
 
 Live launch and live continuation require all of this from one retained
 rehearsal made by the same committed apparatus, binary, image and catalog:
-19 planned and observed first placements with none failed, skipped or not
+22 planned and observed first placements with none failed, skipped or not
 started; the 14, seven and eleven first-placement comparisons with every
-control fired and originals unchanged; six continuations planned and completed
+control fired and originals unchanged; all 26 compaction comparisons passed,
+all 19 controls fired and the selected answers equal; six continuations planned and completed
 through the host path at their first attempt, each with its own host record
 bound to the rehearsal's container and bindings and to the digest of the
 container's result; the second start refused at the placement count each time;
@@ -439,7 +459,7 @@ python3 -I -B apparatus/c10/c10.py rehearse "$PWD/.scratch/c10-launch-NN" \
   --submission problem-b /absolute/submission-b
 ```
 
-This runs all 19 fixed audits plus one audit per template. The rehearsal
+This runs all 22 fixed audits plus one audit per template. The rehearsal
 auditor follows the ready `next` read when a material exceeds one 65,536-byte
 page and requires the reassembled pages to equal the witnessed bytes. The ordinary 14
 reviewer comparisons and seven operator comparisons remain required. Each study
@@ -675,8 +695,9 @@ understands every placement; collection scans both folders. `review` and
 - The archive exists only in the retained container's filesystem. Whether that
   filesystem survives a stop or host restart is not established here; a
   continuation needs the container running and unchanged.
-- Real provider compaction is outside the reviewer's scope, in a continued
-  audit as in any other.
+- Compaction review uses the same capture reconstruction in every placement.
+  Real-provider coverage requires a real summary and later ordinary work;
+  the synthetic rehearsal alone supplies neither observation.
 - The rehearsal interrupts synthetic scripts at the same witnessed points. A
   study template runs there once, as an ordinary submitted audit, and gets the
   template-tampering reviewer controls on that one placement. A continued audit
@@ -742,7 +763,12 @@ reads are bounded at 64 MiB, with a 32 MiB response limit. A greater-than-2-MiB
 response invariance exercises the removal of the older indexer's one-MiB cutoff;
 it is not a full-history scale test.
 
-The reviewer reconstructs raw ordinary requests, reconciles request attempts and
+The reviewer reconstructs raw ordinary and summary requests, checks the top-level
+trigger separately from iteration charges, retains the signed content array
+byte for byte and replaces active context after a successful summary. It rejects
+summary tool execution and checks decoded unsuccessful summary endings. A cut-off
+or undecodable provider response remains outside its decoded-response checks.
+It reconciles request attempts and
 reported/estimated usage, checks the pinned arrangement and output caps, links
 tool effects to accepted edits, validates mechanical citations against witnessed
 inputs, and derives prepared/selected answer bytes and exact delivered membership
@@ -762,6 +788,12 @@ establishes what was offered and attempted in complete captures. It does not
 infer understanding, complete reading, successful pagination or answer quality;
 semantically equivalent calls are outside its exact-match count. Missing evidence
 produces unknown coverage, not zero. Live captures remain Stewart-owned evidence.
+Compaction coverage counts summary requests, successful and failed decoded
+summaries, subsequent context resets and completed re-entry inspections after
+a reset. A successful summary at the last allowed request can have no reset or
+later re-entry; the counts expose that unexercised path. A run with no summary
+explicitly leaves compaction unassessed. Synthetic exchanges remain labeled as
+insufficient to establish real-provider compaction.
 
 The version 2 session records distinguish placement observation, lost caller
 reply, pre-close review, automatic close and export. The host retains its own

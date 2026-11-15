@@ -7,14 +7,9 @@ owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 [QUESTION-FORMS](docs/QUESTION-FORMS.md) owns the three implemented forms.
 Answer usefulness remains the manager's judgment.
 
-Controlled interruption, bounded continuation and multi-placement export and
-review are implemented and rehearsed on Linux with a fake provider. Bounded
-live observations now include reminder interruption, continuation, preservation
-of recorded work and manager closure; the
-[interaction findings](apparatus/studies/interaction/RESULTS.md#messages-continuation)
-state their limits. Remaining apparatus work covers abrupt process death, the
-failure controls and interruption timings not yet rehearsed, actual provider
-compaction and the full per-model gate. No live launch is authorized by this plan.
+Remaining work covers Linux qualification of compaction review, abrupt process
+death, unexercised failure/timing/scale controls and the full per-model gate.
+No live launch is authorized by this plan.
 
 ## Working inputs
 
@@ -27,12 +22,6 @@ matching rehearsal coverage for its exact writer, inputs and credential route.
 Keep open audits and their exact writers until closure or explicit disposition.
 
 ## 1. Complete the evidence matrix
-
-The catalog fixes ordinary and inadequate-evidence commissions for all three
-families, with byte-preserved materials, nested paths and illustrative returns
-kept outside model inputs. Operation coverage and failure dispositions are
-reported separately from answer quality. Empty submissions and missing sections
-remain admissible.
 
 - [ ] Extend the six-case inventory into the full obligation matrix: choose
   specimens and the effort level for the three additional mechanism audits,
@@ -54,18 +43,16 @@ to ACCEPTANCE coverage belongs to the principal.
 
 ## 2. Preserve evidence through interruption and later actions
 
-- [ ] Rehearse on Linux what the retained continuation rehearsal did not reach:
-  delivery of current apparatus source into a container created by earlier
-  source, and an interruption that meets each of `not_captured`,
-  `captured_not_written` and `answered`. Its four signalled controls all met
-  `written_unanswered`, and its container held source of the same commit. The
-  retained `.scratch/m3-rehearsal-01` and its six continuation record folders
-  contain those observations. Native runs are iteration only.
+- [ ] Rehearse delivery of current apparatus source into a container created by
+  earlier source, and Linux interruptions at `not_captured`,
+  `captured_not_written` and `answered`. Use `.scratch/m3-rehearsal-01` and its
+  six continuation record folders as the existing `written_unanswered` and
+  same-source comparisons.
 - [ ] Record the observed end of the process group for every placement. Today
   the reusable launcher records that observation only after a signal. The
-  completed continuation campaign's separate post-return observers supply
-  unsignalled local PID/group observations to ground this addition; integrate
-  and rehearse that mechanism in the reusable apparatus.
+  [continuation evidence](apparatus/studies/interaction/RESULTS.md#messages-continuation)
+  supplies post-return PID/group observations for unsignalled placements;
+  integrate and rehearse that mechanism in the reusable apparatus.
 - [ ] Support abrupt process death. A killed placement has no `run_ended` until
   the next `run` reconciles it as `process_gone`; today the export guard
   withholds and the reviewer leaves that placement unassessed. Record process
@@ -101,28 +88,21 @@ mechanically valid answer as intellectually correct:
   by re-entry. Legitimate edits and fresh equal-byte entries remain distinct;
   content equality alone cannot establish an accidental replay. Define what
   needs human inspection and report unresolved comparisons explicitly.
-- [ ] Extend [verify.py](apparatus/c10/verify.py) from
-  [INTERFACE 6.2](docs/INTERFACE.md#62-requests-and-responses): it currently
-  requires every request to have `compaction: false` and `reset: false`.
-  Reconstruct summary/reset requests, check the trigger from top-level usage
-  separately from iteration-based charges, preserve the signed content array
-  byte for byte and replace active context. Check unsuccessful compaction and
-  reject tools executed from a summary. Keep ordinary and continuation controls
-  passing; extend [check_review.py](apparatus/c10/check_review.py) with omitted
-  or altered summaries, retained old context, omitted usage and below-trigger
-  invariance. Reconcile notices and every placement, including interrupted
-  estimates. Report re-entry timing, submission, delivery and close separately;
-  keep provider usage, calculated cost and observed billing distinguishable.
+- [ ] Run the retained Linux rehearsal from committed source for the
+  [compaction reviewer and controls](apparatus/c10/check_review.py), including
+  the existing ordinary and continuation controls. Native review inputs are
+  `.tmp/readiness-m4-01/host-checks-01.json`, `native-full-01/` and
+  `independent-host-review.md` in that working folder. The changed apparatus
+  has no matching Linux qualification or live launch binding yet.
+- [ ] Add targeted summary interruption/HTTP-refusal comparisons, exhaustion
+  on the summary's own charge, and reminder/near-limit transitions at
+  summary/reset. Reconcile notices, cumulative charges and interrupted estimates
+  against [INTERFACE 6.2–6.4](docs/INTERFACE.md#62-requests-and-responses).
 - [ ] Make all required missing, malformed, duplicated, uninspected or conflicting
   evidence visible. Use bounded inspection and streaming hashes where needed;
   large captures cannot silently disappear behind an indexing cutoff. Exercise
   representative large histories and export sizes within measured container
   memory/storage limits before selecting live resource settings.
-- [ ] Pair checks with firing controls, differing cases and invariance cases.
-  Cover altered/missing returns, invalid citations, changed arrangement bytes,
-  false auditor attribution, omitted history, duplicated effects, changed signed
-  summaries, missing summary usage and reset cumulative limits. Work on copies
-  and retain originals. Report case/variant counts and skips as actually run.
 
 **Done when:** the verifier derives each gate result from named evidence, detects
 the broken controls and preserves the unchanged comparisons. Reports distinguish
@@ -166,11 +146,10 @@ coverage remains outstanding until those authorized runs supply the evidence.
 
 ## 5. Rehearse, commission and report
 
-- [ ] Freeze schema and observation extensions before implementing dependent
-  paths; extend the apparatus instructions and operator procedures with them.
-- [ ] Demonstrate interruption/continuation, multi-placement export, compaction
-  verification and scale controls in Linux rehearsals. Derive all gate cases and
-  budgets from the manifest; recheck exact live bindings before credential use.
+- [ ] For the remaining observation and scale extensions, freeze schemas before
+  dependent implementation, update the apparatus/operator instructions and
+  demonstrate the new controls on Linux. Derive gate cases and budgets from
+  the manifest; recheck exact live bindings before credential use.
 - [ ] Prepare bounded conformance packets through the
   [apparatus workflow](apparatus/c10/README.md), including the additional mechanism
   cases, permitted recovery/replacements and dated cost estimates. Obtain the

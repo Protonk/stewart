@@ -52,7 +52,7 @@ CONTINUABLE_CAUSES = ['signal', 'max_tokens', 'provider_unavailable', 'provider_
 MAX_PLACEMENTS = 4
 SCENARIOS = ['submitted', 'empty', 'unsubmitted', 'provider-rejected',
     'lost-run-reply', 'reflected-body', 'export-contamination', 'export-failure',
-    *CONTINUED]
+    'compaction', 'compaction-below', 'compaction-invalid', *CONTINUED]
 BINDINGS = ['qualification_id', 'binary_sha256', 'source_commit', 'apparatus_sha256',
             'image', 'catalog_sha256']
 LIMITS = ['turns', 'input_tokens', 'output_tokens']

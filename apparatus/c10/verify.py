@@ -94,11 +94,63 @@ def usage_counts(value):
     return total
 
 
+def trigger_tokens(usage):
+    """INTERFACE 6.2: the trigger uses top-level counts, never iteration charges."""
+    return sum(usage_counts({k: v for k, v in usage.items() if k != 'iterations'}).values())
+
+
+def response_usage(response, summary=False):
+    """Validate interpreted members before dictionary decoding can discard duplicates."""
+    require(response.kind == 'object' and all(response.count(k) == 1
+            for k in ['content', 'stop_reason', 'usage'])
+            and response.get('content').kind == 'array' and response.get('stop_reason').kind == 'string',
+            'response_interpreted_members')
+    usage = response.get('usage')
+    def row(node, iteration=False):
+        required = ['input_tokens', 'output_tokens'] + (['type'] if iteration else [])
+        require(node.kind == 'object' and all(node.count(k) == 1 for k in required)
+                and all(node.count(k) <= 1 for k in ['cache_creation_input_tokens', 'cache_read_input_tokens']),
+                'response_usage_members')
+        if iteration:
+            require(node.get('type').kind == 'string' and node.get('type').value() in ['message', 'compaction'],
+                    'invalid_usage_iteration_type')
+        # Validate each row independently, including the top level when its
+        # counts do not determine the charge. Unknown fields remain opaque.
+        usage_counts({k: v for k, v in node.value().items() if k != 'iterations'})
+    row(usage)
+    require(usage.count('iterations') <= 1, 'response_usage_members')
+    iterations = usage.get('iterations')
+    if iterations is not None and iterations.kind != 'null':
+        require(iterations.kind == 'array' and bool(iterations.items), 'invalid_usage_iterations')
+        for item in iterations.items:
+            row(item, True)
+    if summary:
+        require(iterations is not None and iterations.kind == 'array'
+                and any(item.get('type').value() == 'compaction' for item in iterations.items),
+                'summary_usage_iterations')
+    return usage_counts(usage.value())
+
+
+def compaction_cause(response):
+    """A decoded summary either supplies exactly one signed block or interrupts."""
+    stop = response.get('stop_reason').value()
+    content = response.get('content')
+    if stop == 'compaction' and content.kind == 'array' and len(content.items) == 1:
+        block = content.items[0]
+        if (block.kind == 'object' and all(block.count(k) == 1 for k in ['type', 'content', 'signature'])
+                and block.get('type').value() == 'compaction'
+                and all(isinstance(block.get(k).value(), str) and block.get(k).value()
+                        for k in ['content', 'signature'])):
+            return None
+    return {'max_tokens': 'max_tokens', 'refusal': 'provider_refusal',
+            'model_context_window_exceeded': 'context_exhausted'}.get(stop, 'protocol_anomaly')
+
+
 def verify(evidence):
     """Conservative small-commission report. Unsupported mechanisms stay incomplete."""
     report = {'schema': 'stewart.c10-review/3', 'outcome': 'incomplete',
         'checks': [], 'failures': [], 'coverage': None, 'model_qualified': False,
-        'unassessed': ['full C10 repetition matrix', 'compaction',
+        'unassessed': ['full C10 repetition matrix',
                        'a placement reconciled after its process died (process_gone)',
                        'a response the provider cut off or that Stewart could not decode'],
         'witness_scope': None}
@@ -145,13 +197,14 @@ def first_message(question, continuing):
     return user_message([text_block(question)] + ([text_block(spec.CONTINUATION)] if continuing else []))
 
 
-def ordinary_body(arrnode, max_tokens, active):
-    """INTERFACE 4.5: an ordinary request body spliced from pinned bytes and active messages."""
+def ordinary_body(arrnode, max_tokens, active, compaction=False):
+    """INTERFACE 4.5: a request body spliced from pinned bytes and active messages."""
     extra = arrnode.get('request_extra')
     suffix = b''.join(b',' + extra.data[start:value.end] for _, start, _, value in extra.members)
     return (b'{"model":' + arrnode.get('model').raw + b',"max_tokens":' + str(max_tokens).encode()
         + b',"system":' + arrnode.get('system').raw + b',"tools":' + arrnode.get('tools').raw
-        + suffix + b',"messages":[' + b','.join(active) + b']}')
+        + suffix + (b',"compaction":' + arrnode.get('compaction').get('request').raw if compaction else b'')
+        + b',"messages":[' + b','.join(active) + b']}')
 
 
 def limit_exhausted(limits, used):
@@ -339,6 +392,8 @@ def _verify(e, report, check):
     check(arr['request_extra'] == expected_extra, 'effort_parameter')
     check(arr['max_tokens_per_request'] == 16000 and arr['request_timeout_seconds'] == 600,
           'release_request_bounds')
+    check(arr['compaction'] == spec.COMPACTION and arr['anthropic_beta'] == spec.ANTHROPIC_BETA,
+          'release_compaction_settings')
     limits = packet['limits']
     index = {record_name: n for n, record_name in enumerate(by_name, 1)}
     starts = [(n, r['body']) for n, r in enumerate(records, 1) if r['kind'] == 'run_started']
@@ -391,6 +446,8 @@ def _verify(e, report, check):
     near_expected, near_done = None, False
     additions, repeated_payloads = {}, 0
     rows = []
+    compactions = dict(summary_requests=0, successful_summaries=0, failed_summaries=0,
+                       context_resets=0, reentries_after_reset=0)
     for placement, ((opened, started), (closed_at, ended)) in enumerate(zip(starts, ends), 1):
         folder = placement_evidence(placement)
         check(started['arrangement_sha256'] == digest(arrangement_raw)
@@ -422,28 +479,54 @@ def _verify(e, report, check):
             answered.setdefault((node.get('request').value(), node.get('attempt').value()), []).append(node)
         spent = {key: dict(value) for key, value in total.items()}
         active, taken, stops, written, after, facts = [], {}, {}, {}, {}, {}
+        summaries, resets = {}, set()
         attempts_seen = []
         fake_exchange = 0
         for number, name in enumerate(requests, 1):
             raw = e.read(name)
             reqnode = rawjson.parse(raw)
             req = reqnode.value()
-            check(raw.endswith(b'\n') and req['request'] == number and req['compaction'] is False
-                  and req['reset'] is False, 'ordinary_request_capture')
+            check(raw.endswith(b'\n') and req['request'] == number and type(req['compaction']) is bool
+                  and type(req['reset']) is bool, 'request_capture')
+            summary, reset = False, False
+            if number > 1:
+                check(number - 1 in taken, 'request_follows_a_used_response')
+                previous = responses[placement, number - 1, taken[number - 1]]
+                if summaries[number - 1]:
+                    check(compaction_cause(previous) is None, 'no_request_after_failed_compaction')
+                    reset = True
+                else:
+                    summary = trigger_tokens(previous.value()['usage']) >= spec.COMPACTION['trigger_tokens']
+            check(req['compaction'] is summary, 'compaction_from_top_level_usage')
+            check(req['reset'] is reset, 'context_reset_after_compaction')
+            summaries[number] = summary
+            if summary:
+                compactions['summary_requests'] += 1
+            if reset:
+                active = []
+                resets.add(number)
+                compactions['context_resets'] += 1
             appended = [item.raw for item in reqnode.get('appended').items]
             # A placement's conversation starts empty: no earlier one is replayed (INTERFACE 6.7).
             active.extend(appended)
-            body = ordinary_body(arrnode, req['max_tokens'], active)
+            body = ordinary_body(arrnode, req['max_tokens'], active, summary)
             check(len(body) == req['body_bytes'] and digest(body) == req['body_sha256'], 'request_body_binding')
             request_bodies[placement, number] = body
             opening = [{'type':'text','text':qbody.decode()}]
-            if placement == 1:
+            if number == 1 and placement == 1:
                 check(strict_json(body)['messages'][0] == {'role': 'user', 'content': opening}, 'first_question_unchanged')
-            else:
+            elif number == 1:
                 check(strict_json(body)['messages'][0] == {'role': 'user', 'content': opening
                       + [{'type':'text','text':spec.CONTINUATION}]}, 'continuation_notice_first_message')
             if number == 1:
                 expected = [first_message(qbody.decode(), placement > 1)]
+            elif reset:
+                check(not answered.get((number - 1, taken[number - 1])), 'summary_executes_no_tools')
+                carried = [text_block(spec.POST_COMPACTION)]
+                carried += [text_block(item['text']) for item in planned.get((placement, number), [])
+                            if item['type'] == 'near_limit']
+                expected = [b'{"role":"assistant","content":' + previous.get('content').raw + b'}',
+                            user_message(carried)]
             else:
                 # INTERFACE 6.2: the response's content verbatim, then one result per
                 # tool_use block in order, the reminder when planned for this
@@ -460,7 +543,7 @@ def _verify(e, report, check):
                 for kind in ['reminder', 'near_limit']:
                     carried += [text_block(body_['text']) for body_ in planned.get((placement, number), []) if body_['type'] == kind]
                 expected = [b'{"role":"assistant","content":' + previous.get('content').raw + b'}', user_message(carried)]
-            check(appended == expected, 'conversation_message_layout')
+            check(appended == expected, 'signed_summary_and_post_compaction_notice' if reset else 'conversation_message_layout')
             # Allowances are cumulative across placements (INTERFACE 6.4).
             remaining = limits['output_tokens'] - sum(total['output_tokens'].values())
             check(req['max_tokens'] == min(16000, remaining) and remaining >= 1024
@@ -519,13 +602,13 @@ def _verify(e, report, check):
                         check(e.read(sent_) == body, 'independent_exchange_bytes')
                 if a['outcome'] == 'response':
                     value = response.value()
-                    counts = usage_counts(value['usage'])
+                    counts = response_usage(response, summary)
                     check(a['usage'] == counts and a['stop_reason'] == value['stop_reason'], 'reported_response_usage')
                     charge = {'basis': 'reported', 'turns': 1,
                               'input_tokens': sum(counts[k] for k in counts if k != 'output_tokens'),
                               'output_tokens': counts['output_tokens']}
                     check(charge['output_tokens'] <= req['max_tokens'], 'response_output_cap')
-                    if a['then'] == 'use':
+                    if a['then'] == 'use' and not summary:
                         for block_index, block in enumerate(response.get('content').items):
                             if block.get('type') is not None and block.get('type').value() == 'tool_use':
                                 response_blocks[placement, number, attempt_number, block_index] = block.raw
@@ -544,6 +627,13 @@ def _verify(e, report, check):
                     if a['then'] == 'use':
                         taken[number] = attempt_number
                         stops[number] = a['stop_reason']
+                        if summary:
+                            cause = compaction_cause(response)
+                            compactions['successful_summaries' if cause is None else 'failed_summaries'] += 1
+                            check(not answered.get((number, attempt_number)), 'summary_executes_no_tools')
+                            check(cause is None or number == len(requests)
+                                  and (ended['ending'], ended['cause']) == ('interrupted', cause),
+                                  'failed_compaction_ending')
                 if charge['basis'] != 'none':
                     for key in LIMITS:
                         total[key][charge['basis']] += charge[key]
@@ -608,6 +698,8 @@ def _verify(e, report, check):
                 continue
             data, inp = reply['data'], strict_json(operands.raw)
             if tool == 'what_am_i_working_with' and 'page' not in inp:
+                if resets and result['request'] >= min(resets):
+                    compactions['reentries_after_reset'] += 1
                 check(data['family'] == versioned_family, 'reentry_captured_family')
                 check(data['authoring'] == {'state':'open','ended_by':None}
                       and data['seal'] == {'state':'absent','actor':None}, 'reentry_authoring_and_seal')
@@ -711,7 +803,7 @@ def _verify(e, report, check):
         # stop_sequence with allowance left, once per audit; afterwards such an
         # ending ends authoring.
         for number in taken:
-            ordinary = stops[number] in ['end_turn', 'stop_sequence'] and sealed_in != number
+            ordinary = not summaries[number] and stops[number] in ['end_turn', 'stop_sequence'] and sealed_in != number
             mine = reminder is not None and (reminder['run'], reminder['request']) == (placement, number + 1)
             check(not mine or ordinary and not limit_exhausted(limits, {key: sum(after[number][key].values()) for key in LIMITS}),
                   'reminder_only_after_ordinary_ending')
@@ -719,7 +811,7 @@ def _verify(e, report, check):
                 check(mine, 'request_after_ordinary_ending_carries_the_reminder')
         last = len(requests)
         spent_before = reminder is not None and (reminder['run'], reminder['request']) <= (placement, last)
-        check(ended['ending'] != 'ended_unsubmitted' or last in taken and stops[last] in ['end_turn', 'stop_sequence']
+        check(ended['ending'] != 'ended_unsubmitted' or last in taken and not summaries[last] and stops[last] in ['end_turn', 'stop_sequence']
               and sealed_in != last and spent_before, 'unsubmitted_ending_after_spent_reminder')
         check(reminder is None or reminder['run'] != placement or reminder['request'] - 1 in taken, 'reminder_only_after_ordinary_ending')
         mine = [(position, body) for position, body in notices if body['run'] == placement]
@@ -751,10 +843,15 @@ def _verify(e, report, check):
             'kept outside the archive; the stop path and its charge are Stewart-recorded')
     check(consumed == set(entry_records), 'all_entry_effects_accounted')
     report['coverage'] = {'operations': dict(operations), 'refused_or_failed_calls': refusals,
+        'compaction': compactions,
         'citations_checked': citations_checked, 'selected_entries': len(selected),
         'pagination':paging.counts,
         'unused_tools': [tool['name'] for tool in arr['tools'] if not operations[tool['name']]],
         'equal_payload_additions_in_a_later_placement': repeated_payloads}
+    if not compactions['summary_requests']:
+        report['unassessed'].append('provider compaction (not exercised)')
+    elif binding['mode'] == 'rehearse':
+        report['unassessed'].append('real-provider compaction (synthetic exchanges only)')
     seals = [r for r in records if r['kind'] == 'seal']
     report.update(auditor_submitted=False, seal_actor=None, delivery_verified=False,
                   closed=any(r['kind']=='closed' for r in records))

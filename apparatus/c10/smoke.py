@@ -147,6 +147,13 @@ def main():
         print(item['audit'],item['placement'],item.get('review_before_close',{}).get('failures',[]))
     print(f"Native iteration only: planned={report['planned']} observed={report['observed']} failed={report['failed']} not_started={report['not_started']} skipped_checks={len(report['skipped_checks'])}; model_calls=0")
     failed=report['failed'] > 0 or report['not_started'] > 0
+    if not failed and all((args.evidence/'private'/('control-'+name)).exists()
+                          for name in ['compaction','compaction-below','compaction-invalid']):
+        from check_review import exercise_compactions
+        controls=exercise_compactions(args.evidence/'private',args.evidence/'compaction-controls')
+        print(f"Compaction controls: run={controls['run']} passed={controls['passed']} failed={controls['failed']} "
+              f"controls_fired={controls['controls_fired']}/{controls['controls']}; same answer={controls['same_selected_answer']}")
+        failed=controls['failed']>0 or not controls['original_unchanged']
     if args.check_operations and not failed:
         from check_operations import exercise
         controls=exercise(args.evidence)

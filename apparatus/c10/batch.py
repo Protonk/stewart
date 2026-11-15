@@ -403,8 +403,18 @@ def rehearsal_match(observed, export, scenario):
         expected_review = review['outcome'] == 'incomplete'
     elif scenario in ['unsubmitted','provider-rejected']:
         expected_review = review['outcome'] == 'checked' and review['auditor_submitted'] is False
+    elif scenario == 'compaction-invalid':
+        expected_review = (review['outcome'] == 'checked' and review['auditor_submitted'] is False
+                           and (review['ending'], review['cause']) == ('interrupted', 'protocol_anomaly')
+                           and review['coverage']['compaction']['failed_summaries'] == 1
+                           and review['coverage']['selected_entries'] == 2)
     else:
         expected_review = ordinary_submission(review)
+        if scenario in ['compaction', 'compaction-below']:
+            count = 2 if scenario == 'compaction' else 0
+            expected_review = (expected_review and review['coverage']['compaction'] == {
+                'summary_requests':count, 'successful_summaries':count, 'failed_summaries':0,
+                'context_resets':count, 'reentries_after_reset':count})
     return (expected_review and export['outcome'] == expected_export
             and observed['caller_reply_lost'] is (scenario == 'lost-run-reply')
             and stop_reason(observed, export) != 'custody_observation_incomplete')
@@ -534,6 +544,13 @@ def main():
             require(not scan['files_with_matches'] and not scan['errors'],'review-control export scan failed')
             shutil.copytree(controls_root,args.out/'review-controls')
             require(controls['failed']==0,'reviewer controls failed')
+            from check_review import exercise_compactions
+            compaction_root=args.private.parent/'c10-compaction-controls'
+            compaction_controls=exercise_compactions(args.private,compaction_root)
+            scan=scan_tree(compaction_root,key)
+            require(not scan['files_with_matches'] and not scan['errors'],'compaction-control export scan failed')
+            shutil.copytree(compaction_root,args.out/'compaction-controls')
+            require(compaction_controls['failed']==0,'compaction controls failed')
             if supplied_runs(packet):
                 study_controls=args.private.parent/'c10-study-review-controls'
                 study_controls.mkdir(mode=0o700)
