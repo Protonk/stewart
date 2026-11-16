@@ -34,6 +34,53 @@ own transmitted response and received request bytes outside Stewart's archive.
 Fixture self-tests pin the original bytes, exact changed fields and literal
 expected charges. No test reads the retained study directory or invokes a model.
 
+### M2/M3 cap and replacement forms
+
+These originals come from `claude-haiku-5-5`, effort omitted, on 2026-11-13
+(M2) and 2026-11-15 (M3). Their shared retained export is
+`.scratch/readiness-m2-live-sw3z-default-01/container/m2-sw3z-default/export-0009/work.tar`:
+4608000 bytes, SHA-256
+`1c30749b8ea004762c1abebeab3674fc9a97cc6c65e2772e5a143c76a9bb757b`.
+Member paths below are relative to `private/archive/audits/arlu5pv4dlxmku2na/`.
+These are service-owned captures, including the notice record; the synthetic
+fake provider supplies a separate witness of transmitted and received bytes.
+
+| Fixture | Original member | Bytes | SHA-256 |
+| --- | --- | --- | --- |
+| [M2 cap](messages/m2-cap.json) | `runs/1/response-9-1.bin` | 54949 | `f2dc69b90bd373506e4029d09df7490e67f3f801a69863e59915fd6f8da1d562` |
+| [M3 cap](messages/m3-cap.json) | `runs/3/response-9-1.bin` | 21530 | `7d6e531186186ba37cc42388d2d6f5680115dc3d56d23387ee3ccae76082a7b1` |
+| [Incomplete replacement](messages/m3-replace-missing-citations.json) | `runs/3/call-19.json` | 1030 | `e480c004bea835f76e0deaea7b2a56a6c2d3a43a0051e8ebfaf0d90765f7254c` |
+| [Near-limit text](messages/m3-near-limit.txt) | `log/11.json`'s decoded `body.text`, UTF-8 without a trailing LF | 182 | `e2c5ac7ed5659d93d7150e7ba1a85703bf7a016efdf95f8451843a5ed2eb3a95` |
+
+The [captured cap case](../cases_captured.py) serves both complete cap bodies,
+each containing one signed thinking block and no tool call. Its synthetic
+two-placement schedule records a supplied account, interrupts, re-enters and
+reads that same entry, attempts the captured replacement, then checks the
+unchanged entry and payload before the final cap. The replacement changes only
+its audit-specific entry handle; its omitted `citations` must produce
+`fields_invalid` with unchanged-answer effects and the precise missing-field
+description. The complete refusal is observed in the next provider request.
+
+Synthetic charges leave 6170 output tokens for the final response, matching the
+captured M3 cap. The test derives every request cap and the single transmitted
+near-limit notice from its own ledger; the notice self-test separately pins the
+original M3 text and numbers. These are two synthetic placements, not a replay
+of the original three-placement history or its full charge schedule.
+
+The original final `max_tokens` response must leave an interrupted ending even
+when no output remains; advice then offers only close. A differing control
+changes only that stop reason to `end_turn`, which ends with `limit_reached`.
+An invariance control changes only the uninterpreted `thinking_tokens`
+diagnostic to 1; usage and ending stay unchanged. Neither capped response spends
+the ordinary reminder. Sabotage controls reset cumulative limits, hide the old
+ledger or omit refusal effects; each must fail its named check.
+
+The original thinking and proposed replacement text are opaque fixture content,
+not expected answers to the synthetic question. Expected account bytes, counts
+and endings come from the supplied script and interface contract. Coverage ends
+with stopped, unsubmitted audits and retained work; it establishes neither a
+better response cap nor live continuation, cancellation, delivery or close.
+
 ## `tls/`: TEST-ONLY certificates and keys
 
 These certificates and their **private keys are deliberately published**. They

@@ -21,9 +21,8 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 - [ ] Ground provider tool/error/compaction, harness startup/result/rate events,
   authentication reports, MCP traffic and hook inputs in retained captures.
-  Select the M1/C2/C3 citation recovery, M2/M3 cap and near-limit responses,
-  M3's re-entry, preserved entry, missing-citations replacement refusal and
-  spent-reminder continuation, C1 surface events, and C4 near-limit partial
+  Select the M1/C2/C3 citation recovery, M3's spent-reminder continuation,
+  C1 surface events, and C4 near-limit partial
   submission, required-field recovery and submit-to-stop sequences. Include C5's
   flattened error text preserving the full refusal and exact-version account
   replacement. Ground
@@ -61,6 +60,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   are retained in `.tmp/readiness-messages-fixtures-01/`; `native-review.json`
   binds the passing baselines and firing sabotage controls. The altered-summary
   legacy control's downstream failures are not additional independent coverage.
+  M2/M3's cap, continuation and refused-replacement comparison is retained in
+  `.tmp/readiness-cap-fixtures-01/`; `native-review.json` binds both passing
+  baselines and the three firing controls. The synthetic schedule and original
+  capture scope remain distinct in the fixture guide.
   Their results name external synthetic witnesses.
   Keep these through the remaining reassessment, then release reproducible work.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,

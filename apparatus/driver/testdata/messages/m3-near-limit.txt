@@ -1,0 +1,1 @@
+Allowance notice: 35 turns, 9145049 input tokens and 12271 output tokens remain for this audit. When an allowance runs out the run stops, and an unsubmitted answer stays unsubmitted.
