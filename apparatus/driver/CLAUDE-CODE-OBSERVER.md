@@ -21,6 +21,16 @@ authentication and process-result controls; neither launches a subprocess or
 Claude. A socket-bind denial is a failed comparison, not a skipped or passing
 control. Every generated directory remains available through review.
 
+Rehearsal startup, rate, result, authentication, MCP and hook inputs use the
+[documented C1 capture projections](testdata/README.md#runtime-c1-surface-observer-captures).
+Only the control generators use these fixtures; live callbacks still receive
+observed bytes. The fixtures preserve additional metadata and distinguish allowed
+subscription usage with disabled overage from the synthetic rejection controls.
+Positive and fragmented cases retain the same fixture effect and literal reported
+checkpoint; output-count, cost, missing-field and error-flag variants exercise the
+specified differences. Full result prose is retained as reported data, not an
+oracle for what the synthetic peer did.
+
 Synthetic controls retain sender bytes outside the observer's captures and derive
 their counts and digests there. Launch expectations are constructed from literal
 contract values independently of the surface builder. Corrupted observer counts,

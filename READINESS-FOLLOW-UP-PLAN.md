@@ -21,7 +21,7 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 - [ ] Ground provider tool/error/compaction, harness startup/result/rate events,
   authentication reports, MCP traffic and hook inputs in retained captures.
-  Select the M1/C2/C3 citation recovery, C1 surface events, and C4 near-limit
+  Select the M1/C2/C3 citation recovery and C4 near-limit
   partial submission, required-field recovery and submit-to-stop sequences.
   Include C5's flattened error text preserving the full refusal and exact-version
   account replacement. Derive variants by one named change. Record origin,
@@ -65,6 +65,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   unchanged cap regression. The original live reminder remains `unknown`;
   known transmission, HTTP interruption and continued prose ending are synthetic
   comparisons. Aborted in-flight charging remains rehearsal-only.
+  C1's surface-observer fixtures are retained in `.tmp/readiness-c1-fixtures-01/`;
+  `native-review.json` binds the passing selftest/listener comparisons and direct
+  sender/capture checks. Authentication and process results remain supplied
+  controls; those results do not establish execution of the corresponding helpers.
   Their results name external synthetic witnesses.
   Keep these through the remaining reassessment, then release reproducible work.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,

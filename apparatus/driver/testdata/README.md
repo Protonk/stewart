@@ -126,6 +126,65 @@ re-entry item or remove the superseded payload. The original live continuation
 submitted; it supplies no evidence for the synthetic prose-ending branch.
 These comparisons do not exercise live interruption, delivery or close.
 
+## `runtime/`: C1 surface-observer captures
+
+These inputs come from the 2026-11-13 native C1 supplied-surface encounter,
+CLI `2.1.322`, model `claude-haiku-5-5`, effort omitted. Originals live under
+`.scratch/readiness-c1-01/packet/observation/cases/`; the
+[qualification index](../../qualified.md#readiness-c1-01) binds that retained
+encounter. These are separately observed harness/helper bytes, not provider
+HTTP capture. Authentication is the already sanitized three-member receipt,
+not raw authentication output.
+
+| Fixture | Original relative path / slice | Original bytes | Original SHA-256 |
+| --- | --- | ---: | --- |
+| [`c1-init.json`](runtime/c1-init.json) | `positive/stdout.bin line 1` | 2730 | `476a551295d1d5be167af4574d3586c2e58ec7241837c85267c45d302e1ff4b9` |
+| [`c1-rate.json`](runtime/c1-rate.json) | `positive/stdout.bin line 3` | 403 | `ca9dca9a62370cd22670a82f6e5b6d45043b5853a778d55e4aed497b6fd80d5b` |
+| [`c1-result-positive.json`](runtime/c1-result-positive.json) | `positive/stdout.bin final line` | 2422 | `e16b4d239f22c402580fe7bd71b32d462dbd5e3bdf432ed3eff01f5fec5f7199` |
+| [`c1-result-closed-gate.json`](runtime/c1-result-closed-gate.json) | `closed-gate/stdout.bin final line` | 2731 | `05b52ac15dc3998925323784730abb29f2864a0a6690aaa23a06149cbbb4a84b` |
+| [`c1-hook.json`](runtime/c1-hook.json) | `positive/hook-0001-received.bin` | 655 | `8e7a3de2386fd55678a9924b90ccedb1a4b80ae77a6238a103d9e5682763ef5c` |
+| [`c1-auth.json`](runtime/c1-auth.json) | `positive/authentication.json` | 124 | `be1c88efda8ff76a7f5ade3ea2928a1b22b41c7d74f9ff47bc78a3784defd676` |
+| [`c1-mcp.jsonl`](runtime/c1-mcp.jsonl) | `positive/mcp-received.bin` | 1155 | `120d2aabbc2653d5618f77debcc3e3e2ecc7fb5a59b1d83b9cd3eaa74bce7bd6` |
+
+Line slices include their terminating LF. The positive stdout is 8374 bytes,
+SHA-256 `dbbee298a581558f684c10acf62788703755284535957a196dea7c7e7ef79ed0`;
+the closed-gate stdout is 11374 bytes,
+SHA-256 `088a77b8479fbc55c5d46ffe3cd9e7bdf1a43aa802f735d23513cc8afd8faa5e`.
+
+The stored startup changes only `cwd` and `original_cwd` to
+`/synthetic/workspace`. The hook changes only `cwd` to that path and
+`transcript_path` to `/synthetic/transcript.jsonl`. Authentication changes only
+`configDirectory` to `/synthetic/no-credentials`. Both results replace only
+`credential_expires_at` with `2099-01-01T00:00:00.000Z`; no real expiry is claimed.
+Rate and MCP bytes are unchanged. The observer self-test pins every stored size
+and digest. No fixture opens a captured or placeholder path.
+
+The [observer controls](../claude_code_observer.py) bind startup session, version,
+model, tool inventory and working directory to each synthetic case. Other
+session-bearing records take that session; the hook takes the case directory,
+and authentication takes the bound configuration directory. The MCP stream
+preserves discovery, initialization, notification, inventory and the correlated
+tool-use/progress metadata. Its refused pre-initialization discovery does not
+prevent the subsequent valid handshake. Closed-gate cases omit the denied MCP
+call and use the captured closed-gate result. The synthetic schedule does not
+replay the complete assistant conversation or original timing.
+
+The positive and fragmented invariance cases observe the same one fixture
+effect and the literal checkpoint: 2 turns, 4 input, 4819 cache creation,
+4692 cache read and 161 output tokens. Overlapping per-model fields are not
+added. Changing one output count changes only that reported count; changing
+cost leaves it invariant; removing a required usage field leaves it unknown.
+The captured rate event allows subscription use while reporting overage rejected.
+Changing only quota status, overage-in-use, or adding overage-enabled causes the
+specified stop; changing only result `is_error` also stops. These mutated events
+are synthetic negative controls, not observed live rejection or overage forms.
+
+Control sender witnesses remain outside observer captures. Rehearsal evidence
+includes the exact fixture files. This establishes observer behavior on these
+forms, not real cap enforcement, provider completeness, billing, authentication
+execution or process stopping. Those distinctions also apply to the copied
+result prose and reported costs.
+
 ## `tls/`: TEST-ONLY certificates and keys
 
 These certificates and their **private keys are deliberately published**. They

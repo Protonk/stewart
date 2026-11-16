@@ -33,6 +33,7 @@ PLUGINS = [{"name": name, "path": "builtin", "source": name + "@builtin"} for na
     "cc-plugin-agents-md", "cc-plugin-privacy", "cc-plugin-plugin-authoring")]
 MAX_FRAME = 8 * 1024 * 1024
 MAX_CAPTURE = 256 * 1024 * 1024
+CONTROL_CAPTURES = HERE / "testdata" / "runtime"
 
 
 class ObserverStop(RuntimeError):
@@ -534,6 +535,11 @@ def assess_batch(root, cases, mode, *, before_finalize=None):
     source.mkdir()
     for name in (Path(__file__).name, "claude_code_surface.py", "claude_code.py", "driver_core.py", "rawjson.py", "fixture_expectations.py"):
         (source / name).write_bytes((HERE / name).read_bytes())
+    if mode == "synthetic-rehearsal":
+        captures = source / "testdata" / "runtime"
+        captures.mkdir(parents=True)
+        for path in sorted(CONTROL_CAPTURES.glob("c1-*")):
+            (captures / path.name).write_bytes(path.read_bytes())
     surface.save(root / "scope.json", {"scope": "supplied-surface", "mode": mode,
         "not_claimed": ["core/service conformance", "exhaustive provider capture", "hidden policy inspection", "launch authority"],
         "fresh_sessions_and_workspaces": fresh, "comparison_order": list(KINDS)})
@@ -589,12 +595,23 @@ def _control_observer(root, name, kind):
     return case
 
 
+def _capture(name):
+    """C1 projections are control inputs only; live observations never use them."""
+    return spec.transport_loads((CONTROL_CAPTURES / ("c1-" + name + ".json")).read_bytes())
+
+
 def _init(case):
-    return {"type": "system", "subtype": "init", "session_id": "synthetic-" + case.case_id,
-            "claude_code_version": case.launch["version"], "model": case.model, "apiKeySource": "none",
-            "permissionMode": "dontAsk", "tools": ["mcp__stewart__" + item["name"] for item in json.loads(case.tools_raw)],
-            "mcp_servers": [{"name": "stewart", "status": "connected"}], "plugins": copy.deepcopy(PLUGINS),
-            "plugin_errors": [], "mcp_server_errors": []}
+    value = _capture("init")
+    value.update(session_id="synthetic-" + case.case_id, claude_code_version=case.launch["version"],
+                 model=case.model, cwd=str(case.workspace), original_cwd=str(case.workspace),
+                 tools=["mcp__stewart__" + item["name"] for item in json.loads(case.tools_raw)])
+    return value
+
+
+def _session_capture(case, name):
+    value = _capture(name)
+    value["session_id"] = case.init["session_id"]
+    return value
 
 
 def _connect(case, endpoint, listeners):
@@ -620,9 +637,9 @@ def _line(client):
 
 
 def _hook_input(case):
-    return compact({"hook_event_name": "PreToolUse", "session_id": case.init["session_id"],
-        "tool_use_id": "toolu-synthetic", "tool_name": "mcp__stewart__record_account",
-        "tool_input": {"text": surface.MARKER}})
+    value = _session_capture(case, "hook")
+    value["cwd"] = str(case.workspace)
+    return compact(value)
 
 
 def _hook_failure_peer(peer, raw, before_operation=None, report=None):
@@ -728,28 +745,41 @@ def _hook_capture_failure(case, listeners=False, order="concurrent"):
             surface.save(case.root / "control-hook-failure.json", control)
 
 
-def _traffic(case, listeners=False, fragmented=False, no_attempt=False, bypass=False):
+def _traffic(case, listeners=False, fragmented=False, no_attempt=False, bypass=False, result_change=None):
     raw = compact(_init(case)) + b"\n"
     for chunk in ([raw[n:n + 1] for n in range(len(raw))] if fragmented else [raw]):
         case.feed(chunk)
     client = _connect(case, "m", listeners)
     try:
-        def request(number, method, params=None):
-            value = {"jsonrpc": "2.0", "method": method}
-            if number is not None:
-                value["id"] = number
-            if params is not None:
-                value["params"] = params
-            client.sendall(compact(value) + b"\n")
-            return _line(client) if number is not None else None
-        request(1, "initialize", {"protocolVersion": "2025-11-25", "capabilities": {}, "clientInfo": {"name": "synthetic", "version": "1"}})
-        request(None, "notifications/initialized")
-        listed = request(2, "tools/list")
+        def request(raw):
+            value = spec.mcp_message_loads(raw)
+            with (case.control_sender / "mcp-attempted.bin").open("ab") as witness:
+                witness.write(raw)
+            client.sendall(raw)
+            with (case.control_sender / "mcp-transmitted.bin").open("ab") as witness:
+                witness.write(raw)
+            reply = _line(client) if "id" in value else None
+            if reply is not None and reply.get("id") != value["id"]:
+                raise ValueError("synthetic peer saw a different MCP reply id")
+            return reply
+        frames = (CONTROL_CAPTURES / "c1-mcp.jsonl").read_bytes().splitlines(keepends=True)
+        discovery = request(frames[0])
+        if discovery.get("error", {}).get("code") != -32000:
+            raise ValueError("pre-initialization discovery did not refuse")
+        request(frames[1])
+        request(frames[2])
+        listed = request(frames[3])
         if listed.get("result", {}).get("tools") != json.loads(case.tools_raw):
             raise ValueError("synthetic peer saw a different tool inventory")
+        rate = compact(_session_capture(case, "rate")) + b"\n"
+        for chunk in ([rate[n:n + 1] for n in range(len(rate))] if fragmented else [rate]):
+            case.feed(chunk)
         if not no_attempt:
             with _connect(case, "h", listeners) as hook:
-                hook.sendall(_hook_input(case))
+                hook_raw = _hook_input(case)
+                (case.control_sender / "hook-attempted.bin").write_bytes(hook_raw)
+                hook.sendall(hook_raw)
+                (case.control_sender / "hook-transmitted.bin").write_bytes(hook_raw)
                 hook.shutdown(socket.SHUT_WR)
                 reply = bytearray()
                 while True:
@@ -761,14 +791,16 @@ def _traffic(case, listeners=False, fragmented=False, no_attempt=False, bypass=F
                 if spec.transport_loads(bytes(reply)) != expected:
                     raise ValueError("synthetic peer saw a different hook decision")
             if case.kind != "closed-gate" or bypass:
-                # Unknown params metadata is contract-tolerated and must not
-                # invalidate an otherwise exact interpreted tool call.
-                request(3, "tools/call", {"name": "record_account", "arguments": {"text": surface.MARKER},
-                                          "_meta": {"synthetic-control": True}})
+                # Preserve the actual tool-use correlation and progress metadata.
+                request(frames[4])
     finally:
         client.close()
-    case.feed(compact({"type": "result", "session_id": case.init["session_id"], "is_error": False,
-                       "num_turns": 1, "usage": {name: 1 for name in TOKEN_FIELDS}}) + b"\n")
+    result = _session_capture(case, "result-closed-gate" if case.kind == "closed-gate" else "result-positive")
+    if result_change is not None:
+        result_change(result)
+    raw = compact(result) + b"\n"
+    for chunk in ([raw[n:n + 1] for n in range(len(raw))] if fragmented else [raw]):
+        case.feed(chunk)
 
 
 def _finish_control(case, **changes):
@@ -786,7 +818,9 @@ def _finish_control(case, **changes):
                "capture_sha256": {key: hashlib.sha256(raw).hexdigest() for key, raw in supplied.items()}}
     process.update(changes)
     case.event("synthetic-control-provenance", auth="supplied synthetic allowlist", process="supplied synthetic result; no process was launched")
-    return case.finish(process, {"loggedIn": True, "authMethod": "claude.ai", "configDirectory": case.launch["config_directory"]})
+    auth = _capture("auth")
+    auth["configDirectory"] = case.launch["config_directory"]
+    return case.finish(process, auth)
 
 
 def self_test():
@@ -794,6 +828,20 @@ def self_test():
     checks = []
     def check(name, passed):
         checks.append({"name": name, "passed": bool(passed)})
+    capture_identities = {
+        "c1-init.json": (2678, "3097b2a68598f38f61267a6a18cd3cac3a0993c6df601af713bdf01a13264873"),
+        "c1-rate.json": (403, "ca9dca9a62370cd22670a82f6e5b6d45043b5853a778d55e4aed497b6fd80d5b"),
+        "c1-result-positive.json": (2422, "914fe8d51213c8fc51b463efcdc9da24641bc9dfbed3aebfa1ed262ae7e736be"),
+        "c1-result-closed-gate.json": (2731, "40b1024bf66b2fb87fce4ce514a3ff51abe20866603efe26a15084f69175f5a7"),
+        "c1-hook.json": (497, "e49bc4ee3c7626cd1a160510f6e431a6f98d74311e8b938d55a81e3c656294a2"),
+        "c1-auth.json": (89, "78b4e26ce73bfe13a995821d9b4ca7ac00819ac95891124b95652269d89473b7"),
+        "c1-mcp.jsonl": (1155, "120d2aabbc2653d5618f77debcc3e3e2ecc7fb5a59b1d83b9cd3eaa74bce7bd6"),
+    }
+    for name, expected in capture_identities.items():
+        raw = (CONTROL_CAPTURES / name).read_bytes()
+        check("capture." + name, (len(raw), spec.sha(raw)) == expected)
+    checkpoint = {"num_turns": 2, "usage": {"input_tokens": 4, "cache_creation_input_tokens": 4819,
+                  "cache_read_input_tokens": 4692, "output_tokens": 161}}
     normal = []
     for kind in KINDS:
         case = _control_observer(root, kind, kind)
@@ -801,7 +849,34 @@ def self_test():
         result = _finish_control(case)
         check(kind + ".observed-with-metadata-and-framing-invariance", not result["errors"]
               and all(value == "observed" for value in result["checks"].values()))
+        if kind != "closed-gate":
+            check(kind + ".captured-usage-not-overlapping-model-totals", result["usage_checkpoint"] == {
+                "state": "reported", "latest_valid": checkpoint, "provider_completeness": "unverified"})
+        check(kind + ".captured-rate-allows-disabled-overage", any(
+            value.get("type") == "rate_limit_event" and value["rate_limit_info"]["overageStatus"] == "rejected"
+            for value in map(spec.transport_loads, (case.root / "stdout.bin").read_bytes().splitlines())))
+        mcp = (CONTROL_CAPTURES / "c1-mcp.jsonl").read_bytes().splitlines(keepends=True)
+        expected_mcp = b"".join(mcp[:4] if kind == "closed-gate" else mcp)
+        check(kind + ".captured-MCP-with-correlated-metadata", all(
+            path.read_bytes() == expected_mcp for path in (
+                case.control_sender / "mcp-attempted.bin", case.control_sender / "mcp-transmitted.bin",
+                case.root / "mcp-received.bin")))
+        check(kind + ".complete-hook-capture", (case.root / "hook-0001-received.bin").read_bytes()
+              == (case.control_sender / "hook-transmitted.bin").read_bytes()
+              == (case.control_sender / "hook-attempted.bin").read_bytes())
         normal.append(case)
+    for name, change, expected in (
+            ("one-output-token", lambda value: value["usage"].update(output_tokens=162),
+             {"num_turns": 2, "usage": {**checkpoint["usage"], "output_tokens": 162}}),
+            ("cost-invariance", lambda value: value.update(total_cost_usd=1), checkpoint),
+            ("missing-checkpoint-field", lambda value: value["usage"].pop("input_tokens"), None)):
+        case = _control_observer(root, name, "positive")
+        _traffic(case, result_change=change)
+        result = _finish_control(case)
+        check(name + ".captured-result", not result["errors"] and result["usage_checkpoint"] == {
+            "state": "reported" if expected else "unknown", "latest_valid": expected,
+            "provider_completeness": "unverified"})
+        check(name + ".same-effect", case.fixture.effects == [{"text": surface.MARKER}])
     case = _control_observer(root, "missing-attempt", "closed-gate")
     _traffic(case, no_attempt=True)
     check("missing-attempt-is-unexercised", _finish_control(case)["comparison"] == "unexercised")
@@ -836,16 +911,23 @@ def self_test():
         "background": {"type": "system", "subtype": "task_started"},
         "retry": {"type": "system", "subtype": "api_retry"},
         "install": {"type": "system", "subtype": "plugin_install"},
-        "overage-enabled": {"type": "rate_limit_event", "rate_limit_info": {"overageEnabled": True}},
-        "overage-used": {"type": "rate_limit_event", "rate_limit_info": {"isUsingOverage": True}},
-        "quota": {"type": "rate_limit_event", "rate_limit_info": {"status": "rejected"}},
         "malformed-assistant": {"type": "assistant", "message": ["not an object"]},
         "assistant-tool": {"type": "assistant", "message": {"model": spec.MODEL, "content": [{"type": "tool_use", "name": "Bash"}]}},
         "compaction": {"type": "system", "subtype": "compact_boundary"},
     }
+    for name, field, changed in (("overage-enabled", "overageEnabled", True),
+                                 ("overage-used", "isUsingOverage", True), ("quota", "status", "rejected")):
+        value = _capture("rate")
+        value["rate_limit_info"][field] = changed
+        events[name] = value
+    failed_result = _capture("result-positive")
+    failed_result["is_error"] = True
+    events["captured-error-result"] = failed_result
     for name, value in events.items():
         case = _control_observer(root, name, "positive")
         case.feed(compact(_init(case)) + b"\n")
+        if "session_id" in value:
+            value["session_id"] = case.init["session_id"]
         try:
             case.feed(compact(value) + b"\n")
         except ObserverStop:
@@ -853,6 +935,11 @@ def self_test():
         else:
             stopped = False
         check(name, stopped and not case.gate_open())
+        if name in {"overage-enabled", "overage-used", "quota", "captured-error-result"}:
+            reason = ("error or repeated final result" if name == "captured-error-result"
+                      else "quota rejected or paid extra usage enabled/in use")
+            check(name + ".intended-reason", case.errors == ["harness observation failed: " + reason]
+                  and not case.fixture.effects)
         _finish_control(case, stop="observer-stop")
     for name, raw in (("duplicate-init", None), ("duplicate-member", b'{"type":"system","type":"result"}\n'),
                       ("partial-stdout", b'{"type":')):
