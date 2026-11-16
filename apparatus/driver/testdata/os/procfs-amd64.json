@@ -1,0 +1,168 @@
+{
+  "control": {
+    "schema": "stewart.credential-observation/1",
+    "observer_uid": 1000,
+    "observer_pid": 297,
+    "target_pid": 17050,
+    "started_at": "2026-11-13T16:46:47.108280+00:00",
+    "scope": "Linux procfs reads; no ptrace or administrator claim",
+    "access": {
+      "cmdline": {
+        "allowed": true
+      },
+      "environ": {
+        "allowed": true
+      },
+      "maps": {
+        "allowed": true
+      },
+      "fd": {
+        "allowed": true
+      },
+      "mem": {
+        "allowed": true,
+        "read_bytes": 1
+      }
+    },
+    "cmdline_sha256": "c226ce728d54e8c1d70456eaf5b013972d11fae7f82bd3f623b5f3df494cbc88",
+    "cmdline_bytes": 60,
+    "target_uids": [
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "core_limits": [
+      "0",
+      "unlimited"
+    ],
+    "elapsed_ms": 3.2
+  },
+  "before_input": [
+    {
+      "schema": "stewart.credential-observation/1",
+      "observer_uid": 1000,
+      "observer_pid": 297,
+      "target_pid": 17064,
+      "started_at": "2026-11-13T16:46:47.207761+00:00",
+      "scope": "Linux procfs reads; no ptrace or administrator claim",
+      "access": {
+        "cmdline": {
+          "allowed": true
+        },
+        "environ": {
+          "allowed": true
+        },
+        "maps": {
+          "allowed": true
+        },
+        "fd": {
+          "allowed": true
+        },
+        "mem": {
+          "allowed": true,
+          "read_bytes": 1
+        }
+      },
+      "cmdline_sha256": "3a482982a315528ffc8367e279e28ec417c35ceac084afe7b275d71ad477c2c2",
+      "cmdline_bytes": 232,
+      "target_uids": [
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "core_limits": [
+        "0",
+        "unlimited"
+      ],
+      "elapsed_ms": 0.412
+    },
+    {
+      "schema": "stewart.credential-observation/1",
+      "observer_uid": 1000,
+      "observer_pid": 297,
+      "target_pid": 17064,
+      "started_at": "2026-11-13T16:46:47.229014+00:00",
+      "scope": "Linux procfs reads; no ptrace or administrator claim",
+      "access": {
+        "cmdline": {
+          "allowed": true
+        },
+        "environ": {
+          "allowed": false,
+          "errno": 13
+        },
+        "maps": {
+          "allowed": false,
+          "errno": 13
+        },
+        "fd": {
+          "allowed": false,
+          "errno": 13
+        },
+        "mem": {
+          "allowed": false,
+          "errno": 13
+        }
+      },
+      "cmdline_sha256": "3888b7caa8ad8df204f30a72ad16b8325924aefbcc0dfa9028d1bf6e69e299a5",
+      "cmdline_bytes": 253,
+      "target_uids": [
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "core_limits": [
+        "0",
+        "0"
+      ],
+      "elapsed_ms": 0.218
+    }
+  ],
+  "during_request": {
+    "schema": "stewart.credential-observation/1",
+    "observer_uid": 1000,
+    "observer_pid": 297,
+    "target_pid": 17064,
+    "started_at": "2026-11-13T16:46:47.251570+00:00",
+    "scope": "Linux procfs reads; no ptrace or administrator claim",
+    "access": {
+      "cmdline": {
+        "allowed": true
+      },
+      "environ": {
+        "allowed": false,
+        "errno": 13
+      },
+      "maps": {
+        "allowed": false,
+        "errno": 13
+      },
+      "fd": {
+        "allowed": false,
+        "errno": 13
+      },
+      "mem": {
+        "allowed": false,
+        "errno": 13
+      }
+    },
+    "cmdline_sha256": "3888b7caa8ad8df204f30a72ad16b8325924aefbcc0dfa9028d1bf6e69e299a5",
+    "cmdline_bytes": 253,
+    "target_uids": [
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "core_limits": [
+      "0",
+      "0"
+    ],
+    "elapsed_ms": 0.169,
+    "cmdline_form": "rosetta"
+  },
+  "boundary": "same-user parent procfs observer; different-user and export checks are launch-apparatus work"
+}

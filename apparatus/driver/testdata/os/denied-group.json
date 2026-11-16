@@ -1,0 +1,17 @@
+{
+  "scope": "read-only metadata and signal0 for system group1; no signal delivered",
+  "observer_pid": 88091,
+  "observer_uid": 501,
+  "group": 1,
+  "signal": 0,
+  "at": "2026-11-16T18:01:57.035050+00:00",
+  "ps_error": {
+    "type": "PermissionError",
+    "errno": 1,
+    "message": "[Errno 1] Operation not permitted: '/bin/ps'"
+  },
+  "outcome": "raised",
+  "errno": 1,
+  "error_type": "PermissionError",
+  "message": "[Errno 1] Operation not permitted"
+}

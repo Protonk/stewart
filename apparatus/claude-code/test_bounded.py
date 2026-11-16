@@ -13,6 +13,9 @@ import time
 import unittest
 from unittest.mock import patch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'driver'))
+from os_fixtures import group_probe
+
 spec = importlib.util.spec_from_file_location('bounded', Path(__file__).with_name('bounded.py'))
 bounded = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bounded)
@@ -193,7 +196,7 @@ class BoundedControls(unittest.TestCase):
         killpg = os.killpg
         def unavailable(group, sig):
             if sig == 0:
-                raise PermissionError('process observation denied by control')
+                return group_probe('denied')(group, sig)
             return killpg(group, sig)
         with bounded.Budget(self.budget_root) as book:
             with patch.object(bounded.os, 'killpg', unavailable):
@@ -435,30 +438,26 @@ b.supervise(json.loads(Path(sys.argv[2]).read_bytes()),Path(sys.argv[3]),b.now()
             bounded.record(self.root / 'owner-loss-cleanup.json', cleanup)
 
     def test_group_observation_distinguishes_denial_from_absence(self):
-        outcomes = iter(('present', 'denied', 'denied', 'absent'))
+        outcomes = iter(('ready-child', 'denied', 'denied', 'reaped-child'))
         def transition(group, sig):
             self.assertEqual(sig, 0)
             state = next(outcomes)
-            if state == 'denied':
-                raise PermissionError(1, 'controlled observation denial')
-            if state == 'absent':
-                raise ProcessLookupError(3, 'controlled absence')
+            return group_probe(state)(group, sig)
         result = observe_group(123, 1, transition)
         bounded.record(self.root / 'transition.json', result)
         self.assertEqual(result['state'], 'absent')
         self.assertEqual([item['state'] for item in result['observations']],
                          ['present', 'unknown', 'unknown', 'absent'])
-        def denied(group, sig):
-            raise PermissionError(1, 'persistent controlled denial')
+        denied = group_probe('denied')
         result = observe_group(123, 0.04, denied)
         bounded.record(self.root / 'persistent-denial.json', result)
         self.assertEqual(result['state'], 'unknown')
         self.assertTrue(all(item['state'] == 'unknown' for item in result['observations']))
-        result = observe_group(123, 0, lambda group, sig: None)
+        self.assertTrue(all(item['errno'] == 1 for item in result['observations']))
+        result = observe_group(123, 0, group_probe('ready-child'))
         bounded.record(self.root / 'present.json', result)
         self.assertEqual(result['state'], 'present')
-        def absent(group, sig):
-            raise ProcessLookupError(3, 'controlled absence')
+        absent = group_probe('reaped-child')
         for identity in (123, 456):
             result = observe_group(identity, 0, absent)
             bounded.record(self.root / ('absent-%d.json' % identity), result)

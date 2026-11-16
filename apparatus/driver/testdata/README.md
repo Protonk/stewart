@@ -327,6 +327,13 @@ that history or evidence that the model would make the same decision at a
 new deadline. Original notice provenance and the timing comparison's limits are
 in the [runtime driver guide](../CLAUDE-CODE.md).
 
+## `os/`: local environment and process observations
+
+[Local OS fixtures](os/README.md) preserve complete NUL-delimited environment
+output, owned-group and denied signal-0 observations, and Linux procfs
+readable/denied comparisons. Their controls keep the observer mechanisms and
+synthetic replay limits separate.
+
 ## `tls/`: TEST-ONLY certificates and keys
 
 These certificates and their **private keys are deliberately published**. They

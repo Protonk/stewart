@@ -1,0 +1,32 @@
+[
+  {
+    "phase": "ready-child",
+    "group": 87322,
+    "signal": 0,
+    "at": "2026-11-16T18:01:12.109056+00:00",
+    "outcome": "returned",
+    "errno": null,
+    "error_type": null,
+    "message": null
+  },
+  {
+    "phase": "acknowledged-child",
+    "group": 87322,
+    "signal": 0,
+    "at": "2026-11-16T18:01:12.109167+00:00",
+    "outcome": "returned",
+    "errno": null,
+    "error_type": null,
+    "message": null
+  },
+  {
+    "phase": "reaped-child",
+    "group": 87322,
+    "signal": 0,
+    "at": "2026-11-16T18:01:12.113017+00:00",
+    "outcome": "raised",
+    "errno": 3,
+    "error_type": "ProcessLookupError",
+    "message": "[Errno 3] No such process"
+  }
+]

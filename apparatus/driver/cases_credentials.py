@@ -14,6 +14,7 @@ is treated as proof of process memory erasure.
 from __future__ import annotations
 
 import errno
+import copy
 import json
 import os
 import signal
@@ -442,15 +443,26 @@ def c_process(t):
 
 @selftest
 def credential_selftests():
+    import os_fixtures
     secret = "synthetic-A/z+9"
     out = [("credentials.escape-equivalence", json.loads(b'"' + escape_canary(secret) + b'"') == secret),
            ("credentials.escape-no-literal", secret.encode() not in escape_canary(secret)),
            ("credentials.display-clean", safe_diagnostics({"problem": "unrelated"}, secret)),
            ("credentials.display-control", not safe_diagnostics({"error": {"message": secret}}, secret))]
-    denied = {"access": {n: {"allowed": False, "errno": 13} for n in ("environ", "maps", "mem", "fd")}}
-    missing = {"access": {n: {"allowed": False, "errno": 2} for n in ("environ", "maps", "mem", "fd")}}
-    out += [("credentials.observer-denial", observer.inspection_denied(denied)),
-            ("credentials.observer-disappearance-control", not observer.inspection_denied(missing))]
+    for arch in ("arm64", "amd64"):
+        observed = os_fixtures.document("procfs-" + arch + ".json")
+        denied = observed["during_request"]
+        pre = "credentials.observer." + arch
+        out += [(pre + ".readable-control", not observer.inspection_denied(observed["control"])),
+                (pre + ".before-input-transition", [observer.inspection_denied(row) for row in observed["before_input"]] == [False, True]),
+                (pre + ".denial", observer.inspection_denied(denied)),
+                (pre + ".member-order-invariance", observer.inspection_denied(json.loads(json.dumps(denied, sort_keys=True))))]
+        for member in ("environ", "maps", "mem", "fd"):
+            # Change only one read's errno: a disappearance is not proof that
+            # access was denied, even if the other three denials remain.
+            missing = copy.deepcopy(denied)
+            missing["access"][member]["errno"] = 2
+            out.append((pre + ".disappearance-" + member, not observer.inspection_denied(missing)))
     argv = ["/synthetic/stewart", "run", "synthetic-reference", "--key-fd", "7", "--json"]
     def observed_argv(args):
         data = b"\0".join(os.fsencode(arg) for arg in args) + b"\0"

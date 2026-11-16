@@ -283,6 +283,9 @@ Environment controls exercise the actual wrapper and inspection path with the
 specified environment, an injected `LC_CTYPE=C.UTF-8`, a changed `LANG`, an extra
 variable and a repeated normal launch. They retain raw and interpreted snapshots
 and report their differences without requiring a platform to change its locale.
+The decoder and group-observer selfchecks also use [captured local OS
+observations](testdata/os/README.md), keeping denied observations unknown and
+distinguishing captured results from synthetic retry schedules.
 
 The offline service controller can also supply an immutable scenario with mode
 `continued-deadline` or `continued-limit`. Each requires `continued_accounts`,

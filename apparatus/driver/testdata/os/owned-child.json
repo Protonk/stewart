@@ -1,0 +1,13 @@
+{
+  "observer_pid": 87315,
+  "child_source": "import json,os,sys; print(json.dumps({\"pid\":os.getpid(),\"group\":os.getpgrp()}),flush=True); sys.stdin.readline(); print(\"alive-after-observation\",flush=True); sys.stdin.readline()",
+  "child_pid": 87322,
+  "ready": {
+    "pid": 87322,
+    "group": 87322
+  },
+  "poll_before_observation": null,
+  "poll_after_acknowledgement": null,
+  "wait_exit": 0,
+  "final_exit": 0
+}

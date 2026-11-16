@@ -4456,6 +4456,7 @@ def authoring_selftest(check):
 
 
 def self_test():
+    import os_fixtures
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
@@ -4567,9 +4568,19 @@ def self_test():
         check("fault-release.cleanup-adds-no-second-event", len(events) == 1)
     environment_root = Path(tempfile.mkdtemp(prefix="stewart-environment-driver-selftest-"))
     print("Environment self-test evidence retained: %s" % environment_root, flush=True)
-    check("environment.nul-decoder-values", environment_snapshot(b"A=line\nwith=equals\0EMPTY=\0")
+    check("environment.nul-decoder-values", environment_snapshot(os_fixtures.raw("env-original.bin"))
           == {"A": "line\nwith=equals", "EMPTY": ""})
-    check("environment.empty-decoder", environment_snapshot(b"") == {})
+    check("environment.changed-value", environment_snapshot(os_fixtures.raw("env-changed-value.bin"))
+          == {"A": "line with=equals", "EMPTY": ""})
+    check("environment.member-order-invariance", environment_snapshot(os_fixtures.raw("env-reordered.bin"))
+          == {"A": "line\nwith=equals", "EMPTY": ""})
+    check("environment.empty-decoder", environment_snapshot(os_fixtures.raw("env-empty.bin")) == {})
+    try:
+        environment_snapshot(os_fixtures.raw("env-original.bin")[:-1])
+    except ValueError as error:
+        check("environment.captured-truncation-control", str(error) == "environment witness is not NUL terminated")
+    else:
+        check("environment.captured-truncation-control", False)
     for name, raw in (("truncated", b"A=1"), ("duplicate", b"A=1\0A=2\0"),
                       ("empty-entry", b"A=1\0\0"), ("no-equals", b"A\0"),
                       ("empty-name", b"=1\0"), ("invalid-utf8", b"A=\xff\0")):
@@ -4840,9 +4851,11 @@ def self_test():
         finally:
             unrelated.terminate()
             unrelated.wait(timeout=5)
-        def denied(group, sig):
-            raise PermissionError("synthetic observer denial")
+        denied = os_fixtures.group_probe("denied")
         check("group-observer.denial-is-unknown", group_observation(owned.pid, denied) == "unknown")
+        check("group-observer.captured-present", group_observation(owned.pid, os_fixtures.group_probe("ready-child")) == "present")
+        check("group-observer.captured-absence", group_observation(owned.pid, os_fixtures.group_probe("reaped-child")) == "absent")
+        check("group-observer.denial-target-invariance", group_observation(owned.pid + 1, denied) == "unknown")
     finally:
         if owned.poll() is None:
             owned.terminate()

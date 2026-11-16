@@ -15,6 +15,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'driver'))
+from os_fixtures import group_probe
+
 spec = importlib.util.spec_from_file_location("probe", Path(__file__).with_name("probe.py"))
 probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
@@ -164,11 +167,19 @@ class ProbeControls(unittest.TestCase):
         probe.validate_event({"type": "rate_limit_event", "rate_limit_info": {"status": "allowed_warning", "overageEnabled": False}})
 
     def test_group_observation_does_not_treat_denial_as_absence(self):
-        with patch.object(probe.os, "killpg", side_effect=[PermissionError(), ProcessLookupError()]):
+        transitions = iter((group_probe('denied'), group_probe('reaped-child')))
+        def transition(group, sig):
+            return next(transitions)(group, sig)
+        with patch.object(probe.os, "killpg", side_effect=transition):
             self.assertFalse(probe.group_alive(12345))
-        with patch.object(probe.os, "killpg", side_effect=PermissionError()):
-            with self.assertRaises(PermissionError):
+        with patch.object(probe.os, "killpg", side_effect=group_probe('denied')):
+            with self.assertRaises(PermissionError) as refused:
                 probe.group_alive(12345)
+            self.assertEqual(refused.exception.errno, 1)
+        with patch.object(probe.os, "killpg", side_effect=group_probe('ready-child')):
+            self.assertTrue(probe.group_alive(12345))
+        with patch.object(probe.os, "killpg", side_effect=group_probe('reaped-child')):
+            self.assertFalse(probe.group_alive(54321))
 
     def test_api_key_source_refuses(self):
         event = {"type": "system", "subtype": "init", "model": probe.MODEL,

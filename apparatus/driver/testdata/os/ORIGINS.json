@@ -1,0 +1,47 @@
+{
+  "env-original.bin": {
+    "origin": ".tmp/readiness-os-fixtures-01/capture-20261116T180112Z-1f5f1540/env-original.bin",
+    "bytes": 26,
+    "sha256": "4e41031b16d95ac7357c18c8749fb155f6f1e57ef75d56171b1f65f24c291f88"
+  },
+  "env-changed-value.bin": {
+    "origin": ".tmp/readiness-os-fixtures-01/capture-20261116T180112Z-1f5f1540/env-changed-value.bin",
+    "bytes": 26,
+    "sha256": "4d9390361a18aea73719ed002f431ff949fc7a95160d9072b98702c7988687be"
+  },
+  "env-reordered.bin": {
+    "origin": ".tmp/readiness-os-fixtures-01/capture-20261116T180112Z-1f5f1540/env-reordered.bin",
+    "bytes": 26,
+    "sha256": "66d1cf50a6eab4632702e0faed1a852c17086fd7bcc780800ab18da081bb1111"
+  },
+  "env-empty.bin": {
+    "origin": ".tmp/readiness-os-fixtures-01/capture-20261116T180112Z-1f5f1540/env-empty.bin",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "owned-group.json": {
+    "origin": ".tmp/readiness-os-fixtures-01/capture-20261116T180112Z-1f5f1540/group-observations.json",
+    "bytes": 675,
+    "sha256": "2030fd24ee215e9ebd2e0b5bbca46777213b6b073c18db4f309bcfb45a27c49c"
+  },
+  "owned-child.json": {
+    "origin": ".tmp/readiness-os-fixtures-01/capture-20261116T180112Z-1f5f1540/child-witness.json",
+    "bytes": 422,
+    "sha256": "0abe0f1fe291b5ae906fb345422a144a6e91aee6127b6bdc81f19fbfb6e251c1"
+  },
+  "denied-group.json": {
+    "origin": ".tmp/readiness-os-fixtures-01/system-group-observation/observation.json",
+    "bytes": 460,
+    "sha256": "c9a1a982427505fd39ca88f3ec9ea659a655f354ff79ba61495d3911b73f60f7"
+  },
+  "procfs-arm64.json": {
+    "origin": ".scratch/acceptance-readiness-02/driver-arm64/evidence/cases/credentials.process/release/process-observers.json",
+    "bytes": 3765,
+    "sha256": "5942d7b036d0519ce22e18fe9017a5bec9513bf22c8102e05edd5d250a67b171"
+  },
+  "procfs-amd64.json": {
+    "origin": ".scratch/acceptance-readiness-02/driver-amd64/evidence/cases/credentials.process/release/process-observers.json",
+    "bytes": 3765,
+    "sha256": "3da1570c7ff1adb35e841cbd2a972381bfb10b7aa7d13d510880db0b7a54953b"
+  }
+}
