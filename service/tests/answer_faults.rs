@@ -224,6 +224,10 @@ fn case_t6_submit_paused_before_its_link() {
     // its request in another writer.
     let r_ref = l.r.clone();
     let dir = l.audit_dir();
+    #[cfg(feature = "claude-code")]
+    let gate = stewart::claude_code::gate::Gate::new(Instant::now() + Duration::from_secs(60));
+    #[cfg(feature = "claude-code")]
+    let stop_gate = gate.clone();
     let closer = on_pause("log.publish:seal", move || {
         let mut audit = stewart::archive::Audit::open(&r_ref).unwrap();
         audit.exe = Some(stewart::platform::Exe {
@@ -233,17 +237,30 @@ fn case_t6_submit_paused_before_its_link() {
         let body = stewart::bodies::CloseRequested {
             flags: Default::default(),
         };
-        stewart::log::publish(&audit, "close_requested", |_| Ok(body.to_j()))
+        let n = stewart::log::publish(&audit, "close_requested", |_| Ok(body.to_j()))
             .ok()
             .unwrap()
-            .n
+            .n;
+        #[cfg(feature = "claude-code")]
+        stop_gate.stop();
+        n
     });
+    #[cfg(feature = "claude-code")]
+    let r = gate.within(|| l.call("submit", &submit(&ap)));
+    #[cfg(not(feature = "claude-code"))]
     let r = l.call("submit", &submit(&ap));
     let close = closer.join().unwrap();
     assert_eq!(r.reason(), "authoring_ended");
     assert_eq!(r.str(&["ended_by"]), "close");
     assert!(r.data(&["close_requested_at"]).as_str().is_some());
     assert!(r.str(&["seal", "state"]) == "absent" && r.data(&["seal", "actor"]).is_null());
+    assert_eq!(r.outcome(), "refused");
+    assert_eq!(r.effect("seal"), "none");
+    assert_eq!(
+        r.ex.end, None,
+        "a lost publication is not an archive-write failure"
+    );
+    assert!(!r.ex.sealed);
     assert_eq!(
         kinds(&dir).last().map(String::as_str),
         Some("close_requested")

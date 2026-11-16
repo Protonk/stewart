@@ -134,7 +134,7 @@ CASES = (
     ("runtime-ordinary-ending", "Unsubmitted turns, one reminder, a valid usage checkpoint, manager seal and confirmed close"),
     ("runtime-hooks-and-effort", "The hook helper admits only pinned tools after startup; a selected effort reaches the launch"),
     ("runtime-cancellation", "Ordered pipelined calls, cancellation behind a large call, late/unknown cancellations and reused IDs"),
-    ("runtime-submit-publication", "Documented seal-publication pause: cancellation preserves placement; signal and deadline prevent sealing"),
+    ("runtime-submit-publication", "Seal-publication order: close owns the seal; cancellation preserves placement; signal and deadline stop"),
     ("runtime-relay-loss", "The relay dies while the model lives: the placement stops, nothing else writes, a fresh session continues"),
     ("runtime-usage-series", "Two placements: each session's latest checkpoint is summed and a lost interval stays unknown"),
     ("runtime-compaction", "Each compaction boundary is followed by the pinned notice and spends neither allowance"),
@@ -975,7 +975,8 @@ class Driver:
                   "do not bound a stalled read; the owner never reads helper stdout. Byte and progress "
                   "witnesses remain outside the audit, including after a worker timeout.")
 
-    def cmd(self, label, args, outcome="completed", binary=None, raw=False, env=None, cwd=None, input_bytes=None):
+    def cmd(self, label, args, outcome="completed", binary=None, raw=False, env=None, cwd=None, input_bytes=None,
+            timeout=30):
         self.serial += 1
         prefix = "%04d-%s" % (self.serial, label)
         argv = [str(binary or self.binary)] + [str(x) for x in args] + ([] if raw else ["--json"])
@@ -984,12 +985,12 @@ class Driver:
         started = time.monotonic()
         try:
             process = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                     env=env or self.env, cwd=cwd or self.cwd, input=input_bytes, timeout=30)
+                                     env=env or self.env, cwd=cwd or self.cwd, input=input_bytes, timeout=timeout)
         except subprocess.TimeoutExpired as exc:
             (self.commands / (prefix + ".stdout")).write_bytes(exc.stdout or b"")
             (self.commands / (prefix + ".stderr")).write_bytes(exc.stderr or b"")
-            self.save("commands/" + prefix + ".json", {"argv": argv, "timeout": True})
-            self.require(label + ".deadline", False, "local command exceeded 30 seconds")
+            self.save("commands/" + prefix + ".json", {"argv": argv, "timeout": True, "bound_seconds": timeout})
+            self.require(label + ".deadline", False, "local command exceeded %s seconds" % timeout)
         (self.commands / (prefix + ".stdout")).write_bytes(process.stdout)
         (self.commands / (prefix + ".stderr")).write_bytes(process.stderr)
         self.last_stdout = process.stdout
@@ -2287,7 +2288,7 @@ class Driver:
         original = self.binary
         self.binary = self.variant
         try:
-            for action, placements in (("positive", 3), ("cancel", 3), ("signal", 3),
+            for action, placements in (("positive", 3), ("close", 3), ("cancel", 3), ("signal", 3),
                                        ("deadline", 3), ("deadline-last", 1)):
                 self.submit_publication(action, placements)
         finally:
@@ -2304,14 +2305,21 @@ class Driver:
         env = dict(self.env, STEWART_TEST_FAULT="log.publish:seal=pause", STEWART_TEST_FAULT_DIR=str(faults))
         argv = [str(self.binary), "run", f["reference"], "--json"]
         stdout_path, stderr_path = f["witness"] / "run.stdout", f["witness"] / "run.stderr"
+        close_process = None
+        close_faults = f["witness"] / "close-faults"
+        close_stdout, close_stderr = f["witness"] / "close.stdout", f["witness"] / "close.stderr"
+        close_argv = [str(self.binary), "close", f["reference"], "--json"]
+        close_requested = None
         before = snapshot(f["archive"])
         started = time.monotonic()
-        with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+        with contextlib.ExitStack() as streams:
+            stdout = streams.enter_context(stdout_path.open("wb"))
+            stderr = streams.enter_context(stderr_path.open("wb"))
             process = subprocess.Popen(argv, stdout=stdout, stderr=stderr, env=env, cwd=self.cwd)
             paused = []
-            def await_fact(predicate, bound=12):
+            def await_fact(predicate, bound=12, owner=process):
                 until = time.monotonic() + bound
-                while process.poll() is None and time.monotonic() < until:
+                while owner.poll() is None and time.monotonic() < until:
                     if predicate():
                         return True
                     time.sleep(0.01)
@@ -2336,20 +2344,39 @@ class Driver:
                     self.require(label + ".cancellation-observed-before-release",
                                  await_fact(lambda: bool(observed("submit-cancellation-ping"))),
                                  "ordered cancellation and following ping were not acknowledged")
-                elif action == "signal":
+                elif action in ("signal", "close"):
                     supplied = observed("submit-publication")[0]
                     model_group = supplied["group"]
                     process_record = strict_loads((self.audit_path(f) / "runs" / "1" / "process-model.json").read_bytes())
                     self.eq(label + ".group-matches-independent-harness", process_record.get("group"), model_group)
                     self.eq(label + ".group-matches-process-observation", os.getpgid(supplied["pid"]), model_group)
                     present = group_observation(model_group)
-                    boundary("before-signal", owner_pid=process.pid, owner_alive=process.poll() is None,
+                    boundary("before-" + action, owner_pid=process.pid, owner_alive=process.poll() is None,
                              model_group=model_group, group_observation=present)
                     self.require(label + ".model-group-present-control", present == "present", present)
-                    process.send_signal(signal.SIGTERM)
-                    boundary("signal-sent", owner_pid=process.pid, signal="SIGTERM")
-                    self.save("witness/" + label + "/signal.json", {"pid": process.pid, "signal": "SIGTERM",
-                              "model_group": model_group, "monotonic_ns": time.monotonic_ns()})
+                    if action == "signal":
+                        process.send_signal(signal.SIGTERM)
+                        boundary("signal-sent", owner_pid=process.pid, signal="SIGTERM")
+                        self.save("witness/" + label + "/signal.json", {"pid": process.pid, "signal": "SIGTERM",
+                                  "model_group": model_group, "monotonic_ns": time.monotonic_ns()})
+                    else:
+                        close_faults.mkdir()
+                        close_env = dict(self.env, STEWART_TEST_FAULT="log.publish:seal=pause",
+                                         STEWART_TEST_FAULT_DIR=str(close_faults))
+                        close_process = subprocess.Popen(close_argv,
+                            stdout=streams.enter_context(close_stdout.open("wb")),
+                            stderr=streams.enter_context(close_stderr.open("wb")),
+                            env=close_env, cwd=self.cwd)
+                        boundary("close-started", close_pid=close_process.pid, argv=close_argv)
+                        def close_records():
+                            return [r for p in (self.audit_path(f) / "log").glob("*.json")
+                                    for r in [strict_loads(p.read_bytes())] if r.get("kind") == "close_requested"]
+                        self.require(label + ".close-request-won-before-release", await_fact(close_records),
+                                     str(self.audit_path(f) / "log"))
+                        requests = close_records()
+                        self.require(label + ".one-close-request", len(requests) == 1, requests)
+                        close_requested = requests[0]
+                        boundary("close-request-observed", record=close_requested)
                     prior_state = [present]
                     def stopped():
                         state = group_observation(model_group)
@@ -2364,6 +2391,12 @@ class Driver:
                              owner_alive=owner_alive, still_paused=still_paused)
                     self.require(label + ".stopping-won-before-release", absent and owner_alive and still_paused,
                                  {"group_observations": prior_state, "owner_exit": process.poll(), "still_paused": still_paused})
+                    if action == "close":
+                        status = self.cmd(label + ".status-while-stopping", ["status", f["reference"]])
+                        self.eq(label + ".close-has-no-seal-yet", status["data"].get("seal"),
+                                {"state": "absent", "actor": None})
+                        self.eq(label + ".close-waits-for-placement",
+                                (status["data"].get("closure") or {}).get("unfinished_reason"), "run_still_held")
                 elif action.startswith("deadline"):
                     # The placement was reserved before this acknowledged pause;
                     # a full placement interval after it establishes expiry.
@@ -2380,20 +2413,58 @@ class Driver:
                     self.eq(label + ".cancel-kept-placement", process.poll(), None)
                     (f["witness"] / "retry-submit").write_bytes(b"")
                 process.wait(timeout=15)
+                if action == "close":
+                    self.require(label + ".manager-seal-publication-paused",
+                                 await_fact(lambda: bool(list(close_faults.glob("log.publish*.paused"))),
+                                            owner=close_process),
+                                 {"exit": close_process.poll(), "stderr": close_stderr.read_text(errors="replace")})
+                    status = self.cmd(label + ".status-close-in-progress", ["status", f["reference"]])
+                    self.eq(label + ".ended-before-manager-seal",
+                            (status["data"].get("runs", {}).get("last") or {}).get("ending"), "stopped_by_close")
+                    self.eq(label + ".status-close-in-progress",
+                            (status["data"].get("closure") or {}).get("unfinished_reason"), "close_in_progress")
+                    self.eq(label + ".manager-seal-not-yet-linked", status["data"].get("seal"),
+                            {"state": "absent", "actor": None})
+                    # INTERFACE 5.8 allows 30 seconds for the held active lock;
+                    # this caller's bound must exceed that documented wait.
+                    second = self.cmd(label + ".second-close", ["close", f["reference"]], timeout=40)
+                    self.eq(label + ".second-close-in-progress",
+                            second.get("data", {}).get("unfinished_reason"), "close_in_progress")
+                    self.eq(label + ".second-close-no-holder", second.get("data", {}).get("holder"), None)
+                    still_paused = (close_process.poll() is None and
+                                    all(not p.with_suffix(".go").exists()
+                                        for p in close_faults.glob("*.paused")))
+                    self.control(label + "-close-in-progress",
+                                 second.get("data", {}).get("unfinished_reason") == "close_in_progress"
+                                 and still_paused)
+                    boundary("second-close-finished", close_alive=close_process.poll() is None,
+                             manager_seal_still_paused=still_paused, reply=second)
+                    release_fault_pauses(close_faults, boundary)
+                    close_process.wait(timeout=15)
             except BaseException:
                 self.launch_blocked = ("publication control did not finish; inspect retained owner/group evidence at "
                                        + str(f["witness"]) + " before another launch")
                 raise
             finally:
                 release()
+                release_fault_pauses(close_faults, boundary)
                 if process.poll() is None:
                     process.kill()
                     process.wait(timeout=5)
+                if close_process is not None:
+                    try:
+                        close_process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        close_process.kill()
+                        close_process.wait(timeout=5)
+                    self.save("witness/" + label + "/close-command.json", {
+                              "argv": close_argv, "env": close_env, "exit": close_process.returncode})
                 self.save("witness/" + label + "/run-command.json", {"argv": argv, "env": env,
                           "exit": process.returncode, "elapsed_seconds": time.monotonic() - started,
                           "pause_files": [str(p) for p in paused]})
         reply = strict_loads(stdout_path.read_bytes())
-        ending = "sealed" if action in ("positive", "cancel") else "limit_reached" if placements == 1 else "interrupted"
+        ending = ("sealed" if action in ("positive", "cancel") else "stopped_by_close" if action == "close"
+                  else "limit_reached" if placements == 1 else "interrupted")
         cause = "signal" if action == "signal" else "placement_deadline" if action == "deadline" else None
         self.eq(label + ".outcome", reply.get("outcome"), "completed")
         self.eq(label + ".ending", reply.get("data", {}).get("ending"), ending)
@@ -2403,7 +2474,12 @@ class Driver:
         self.groups_absent(f)
         status = self.inspect_runtime(f)
         if action in ("positive", "cancel"):
-            self.check_delivery(f, status)
+            package = self.check_delivery(f, status)
+            if action == "positive":
+                self.close_after_delivery(f, package)
+        elif action == "close":
+            self.eq(label + ".stopped-run-seal-effect", reply.get("effects", {}).get("seal"), "none")
+            self.close_publication_result(f, close_process.returncode, strict_loads(close_stdout.read_bytes()), status)
         else:
             self.eq(label + ".no-seal-after-stop", status["data"].get("seal"), {"state": "absent", "actor": None})
             self.eq(label + ".stop-effects-seal", reply.get("effects", {}).get("seal"), "none")
@@ -2417,16 +2493,59 @@ class Driver:
         if action == "positive":
             self.eq(label + ".positive-submit", core.get("outcome"), "completed")
         else:
-            self.eq(label + ".submit-refusal", (core.get("outcome"), core.get("reason")), ("refused", "placement_stopped"))
+            reason = "authoring_ended" if action == "close" else "placement_stopped"
+            self.eq(label + ".submit-refusal", (core.get("outcome"), core.get("reason")), ("refused", reason))
             self.eq(label + ".submit-refusal-effects", {k: v for k, v in core.get("effects", {}).items() if k != "diagnostic"},
                     {"seal": "none", "raw_capture": "recorded"})
             self.eq(label + ".refusal-published-no-log-record", result.get("log_record"), None)
-            self.control(label + "-stops-publication", core.get("reason") == "placement_stopped"
+            self.control(label + "-stops-publication", core.get("reason") == reason
                          and core.get("effects", {}).get("seal") == "none")
+            if action == "close":
+                self.eq(label + ".close-refusal-data", core.get("data"), {
+                    "ended_by": "close", "close_requested_at": close_requested["at"],
+                    "seal": {"state": "absent", "actor": None}})
+                self.eq(label + ".close-refusal-data-order", list(core.get("data", {})),
+                        ["ended_by", "close_requested_at", "seal"])
         if action == "cancel":
             reentry = observed("submit-cancelled-reentry")[0]["response"]
             self.eq(label + ".later-call-completed", reentry.get("outcome"), "completed")
             self.eq(label + ".one-placement", status["data"].get("runs", {}).get("count"), 1)
+
+    def close_publication_result(self, f, exit_code, closing, status):
+        label = f["label"]
+        self.eq(label + ".close-exit", exit_code, 0)
+        self.eq(label + ".close-outcome", closing.get("outcome"), "completed")
+        self.eq(label + ".close-effects", closing.get("effects"),
+                {"run": "ended", "seal": "recorded", "delivery": "verified", "closure": "unfinished"})
+        data = closing.get("data") or {}
+        self.eq(label + ".close-awaits-confirmation", data.get("unfinished_reason"), "awaiting_confirmation")
+        self.eq(label + ".close-runs", data.get("runs"),
+                {"count": 1, "held": False, "last_ending": "stopped_by_close"})
+        self.runtime_allowances(label + ".close", data, 1, f)
+        records = [strict_loads(p.read_bytes()) for p in sorted((self.audit_path(f) / "log").glob("*.json"),
+                                                              key=lambda p: int(p.stem))]
+        selected = [r for r in records if r.get("kind") in ("close_requested", "run_ended", "seal")]
+        self.eq(label + ".close-stop-seal-order", [r.get("kind") for r in selected],
+                ["close_requested", "run_ended", "seal"])
+        self.eq(label + ".only-manager-seal", [r["body"].get("actor") for r in selected if r["kind"] == "seal"],
+                ["manager"])
+        self.eq(label + ".manager-seal-has-no-auditor-invocation",
+                [r["body"].get("invocation") for r in selected if r["kind"] == "seal"], [None])
+        package = self.check_delivery(f, status, "manager")
+        delivered = self.package_identity(package)
+        launches = self.launch_count(f)
+        token = data.get("confirmation")
+        self.require(label + ".confirmation-token", isinstance(token, str) and token.startswith("cf1."), token)
+        again = self.cmd(label + ".close-without-confirmation", ["close", f["reference"]])
+        self.eq(label + ".repeat-still-awaits-confirmation", again.get("data", {}).get("unfinished_reason"),
+                "awaiting_confirmation")
+        done = self.cmd(label + ".confirm-close", ["close", f["reference"], "--confirm", token])
+        self.eq(label + ".closed", done.get("data", {}).get("closure"), "complete")
+        self.eq(label + ".confirmed-placement", done.get("data", {}).get("placement"), "confirmed")
+        self.eq(label + ".preserved-manager-attribution", done.get("data", {}).get("seal", {}).get("actor"), "manager")
+        self.eq(label + ".package-unchanged", self.package_identity(package), delivered)
+        self.eq(label + ".one-package", [p.name for p in sorted(package.parent.iterdir())], [package.name])
+        self.eq(label + ".no-launch-during-close", self.launch_count(f), launches)
 
     def runtime_relay_loss(self):
         f = self.fixture("runtime-relay-loss", scenario="relay-loss", timeout=20)

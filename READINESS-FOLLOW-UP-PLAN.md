@@ -27,11 +27,6 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   `.scratch/readiness-c5-01/RESULT.json` as bounded observations. Unknown
   intervals stay unknown; cumulative/overlapping fields cannot be added as
   independent consumption.
-- [ ] Specify the refusal a confirmed submission receives when close is requested
-  during a live runtime placement: the runtime contract's publication gate gives
-  `placement_stopped`, INTERFACE's log precondition `authoring_ended`. Then add
-  the independent runtime case: the placement ends `stopped_by_close`, no auditor
-  seal exists and close seals with manager attribution.
 
 ### Ground fixtures and reassess
 
@@ -66,12 +61,15 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   The native reply-fidelity working set is `.tmp/readiness-fidelity-01/`:
   `native-20261115T235927Z-bf346e3b/` holds the passing Cargo suites and original
   driver failures; `native-20261116T002310Z-d9cdcb68/` holds the repaired cases
-  and Messages regression. Their results name external synthetic witnesses.
+  and Messages regression. The close/publication comparison is retained at
+  `.tmp/readiness-close-submit-01/native-20261116T012140Z-3b3f4f47/`, with
+  review in `.tmp/readiness-close-submit-01/native-review.json`.
+  Their results name external synthetic witnesses.
   Keep these through the remaining reassessment, then release reproducible work.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,
   runtime comparisons and Messages conformance. Recheck unreached conditions
-  a repair claims to cover, beginning with `close_in_progress`: the service test
-  asserts it in status and accepts either reason from the second close. Counts
+  a repair claims to cover, using the independent cases' firing conditions and
+  receipts when replacing earlier per-unit classifications. Counts
   describe coverage, not a numerical target; unexercised behavior cannot count
   as covered. The earlier per-unit classification and its counting tool are the
   untracked `.tmp/readiness/a/` and `.tmp/readiness/tools/trusted.py`; no backup

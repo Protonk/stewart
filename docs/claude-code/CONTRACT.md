@@ -525,10 +525,15 @@ lock free. Following the common [close ordering](../INTERFACE.md#58-close),
 `--key-fd` or any presence (including an empty value) of
 `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` refuses
 `runtime_credential_forbidden` before reading credentials or launching.
-At tool publication, including confirmed submission, the runtime gate
-refuses `placement_stopped` if cancellation, stopping or the deadline won before
-the log link. Payload or stage candidates may remain; they are not answer
-entries or a seal. Cancellation of one call leaves the placement available for later calls.
+At an executing mutation's publication, including confirmed submission, the
+common authoring-ended precondition takes precedence over the runtime gate.
+If a durable `close_requested` won before the log link, the tool refuses
+`authoring_ended`, with `ended_by: "close"`, `close_requested_at` and the seal
+observation defined in [INTERFACE](../INTERFACE.md#76-prepare-and-submit).
+Otherwise, when authoring has not ended, the runtime gate refuses
+`placement_stopped` if cancellation, stopping or the deadline won before the
+log link. Payload or stage candidates may remain; they are not answer entries
+or a seal. Cancellation of one call leaves the placement available for later calls.
 A global signal, close or deadline derives its placement ending from that
 actual stopping condition; it is not an archive-write failure. A deadline
 interrupts with `placement_deadline` when starts remain, and ends

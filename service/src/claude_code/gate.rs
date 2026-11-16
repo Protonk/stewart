@@ -123,4 +123,88 @@ mod tests {
         gate.within(|| assert!(current().unwrap().permit().is_err()));
         assert!(current().is_none());
     }
+
+    #[test]
+    fn durable_close_precondition_wins_over_stopped_or_cancelled_publication() {
+        for close_wins in [false, true] {
+            for cancel in [false, true] {
+                let (path, audit) = log::tests::scratch_audit();
+                let gate = Gate::new(Instant::now() + Duration::from_secs(60));
+                gate.within(|| {
+                    log::publish(&audit, "reference", |_| Ok(log::tests::reference_body()))
+                })
+                .ok()
+                .expect("firing control publishes through the same gate");
+                let call = gate.call();
+                let mut checks = 0;
+                let result = call.within(|| {
+                    log::publish(&audit, "entry", |state| {
+                        checks += 1;
+                        if let Some(close) = state.close_requested() {
+                            return Err(Fail::refused("authoring_ended", "Close won publication.")
+                                .data(
+                                    crate::json::J::obj()
+                                        .with("ended_by", "close")
+                                        .with("close_requested_at", close.at.as_str())
+                                        .with("seal", state.seal_observation_j()),
+                                ));
+                        }
+                        if close_wins {
+                            // The independent manager thread has no runtime gate.
+                            // Its record wins after this mutation checked state.
+                            std::thread::scope(|scope| {
+                                scope
+                                    .spawn(|| {
+                                        log::publish(&audit, "close_requested", |_| {
+                                            Ok(log::tests::close_body())
+                                        })
+                                    })
+                                    .join()
+                                    .unwrap()
+                                    .ok()
+                                    .expect("close wins the staged candidate's slot");
+                            });
+                        }
+                        if cancel {
+                            call.cancel();
+                        } else {
+                            gate.stop();
+                        }
+                        Ok(crate::json::J::obj())
+                    })
+                });
+                let Err(PubErr::Refused(refusal)) = result else {
+                    panic!("publication must refuse")
+                };
+                assert_eq!(
+                    refusal.reason,
+                    if close_wins {
+                        "authoring_ended"
+                    } else {
+                        "placement_stopped"
+                    }
+                );
+                assert_eq!(checks, if close_wins { 2 } else { 1 });
+                let state = log::read(&audit);
+                assert_eq!(state.recs.len(), if close_wins { 2 } else { 1 });
+                assert!(!state.damaged());
+                assert!(state.seal().is_none());
+                if close_wins {
+                    let data = refusal.data.unwrap();
+                    assert_eq!(
+                        data.get("ended_by"),
+                        Some(&crate::json::J::Str("close".into()))
+                    );
+                    assert_eq!(
+                        data.get("close_requested_at"),
+                        Some(&crate::json::J::Str(
+                            state.close_requested().unwrap().at.clone()
+                        ))
+                    );
+                    assert_eq!(data.get("seal"), Some(&state.seal_observation_j()));
+                }
+                std::fs::remove_dir_all(path).unwrap();
+            }
+        }
+    }
 }

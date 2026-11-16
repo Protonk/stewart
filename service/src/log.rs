@@ -1000,11 +1000,22 @@ where
         #[cfg(feature = "claude-code")]
         let runtime_gate = crate::claude_code::gate::current();
         #[cfg(feature = "claude-code")]
-        let _runtime_permit = runtime_gate
-            .as_ref()
-            .map(|g| g.permit())
-            .transpose()
-            .map_err(PubErr::Refused)?;
+        let _runtime_permit = match runtime_gate.as_ref().map(|g| g.permit()).transpose() {
+            Ok(permit) => permit,
+            Err(stopped) => {
+                // A manager may have won the log slot while this candidate
+                // was staged. Preserve the mutation's specific authoring-ended
+                // refusal instead of hiding that durable fact behind the gate.
+                let current = read(audit);
+                if current.damaged() {
+                    return Err(PubErr::Damaged(current));
+                }
+                if current.close_requested().is_some() || current.seal().is_some() {
+                    body(&current).map_err(PubErr::Refused)?;
+                }
+                return Err(PubErr::Refused(stopped));
+            }
+        };
         match stage_dir.link_to(&stage_name, &log_dir, &final_name) {
             Ok(()) => {}
             Err(e) if e.raw_os_error() == Some(libc::EEXIST) => continue,

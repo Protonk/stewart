@@ -203,7 +203,19 @@ witnessed outside the archive. Missing final checkpoints must remain unknown.
 
 The submit-publication case uses the fault-enabled variant and fresh fault
 directories. It pauses a confirmed submit immediately before its seal log link.
-The positive control releases it unchanged. A cancellation followed by an
+The positive control releases it unchanged, then closes the delivered audit
+without changing its auditor attribution or package. A close-winning control
+publishes the close request while submit is paused, observes the live model
+group stop before releasing submit, and requires the retained refusal
+`authoring_ended`, with the exact close timestamp and absent seal observation.
+The placement must end `stopped_by_close`; only close may then seal, with
+manager attribution, preserving the submitted account bytes. That close has
+its own seal pause in a separate fault directory. With the placement ended and
+the active lock still held, both status and a second close must report
+`close_in_progress`; the second close has a 40-second caller bound around the
+documented 30-second lock wait. Releasing the manager's seal permits delivery,
+which still needs explicit confirmation. The witness records each release and
+the close/stop/seal log order. A cancellation followed by an
 acknowledged ping must refuse that submit with `placement_stopped`, publish no
 seal, allow re-entry and then permit a second submit in the same placement.
 The signal control first observes the independently witnessed model group
@@ -212,8 +224,8 @@ alive at the unreleased pause. Only that observed stopping permits release;
 signal transmission alone is insufficient. Separate controls allow the
 placement deadline to pass before releasing the pause. Release is recorded once,
 including during cleanup, preserving the original marker and witness chronology.
-These controls require the retained submit refusal, no seal and the
-actual global ending: interrupted by signal or deadline, or `limit_reached`
+The signal and deadline controls require the retained submit refusal, no seal
+and the actual global ending: interrupted by signal or deadline, or `limit_reached`
 on the last allowed placement. A specification-only MCP peer exercises the
 fake harness's cancellation/re-entry/retry sequence in the self-test.
 
