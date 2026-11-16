@@ -1,15 +1,17 @@
 # Messages API real-model conformance
 
+**Current status:** Reusable launch/review apparatus and captured continuation,
+cap and compaction fixtures are available. The full 21-audit gate per model,
+abrupt-death review, independent live-witness design and remaining failure,
+timing and scale controls are outstanding. Changed apparatus needs matching
+Linux rehearsal before live use. No live launch is authorized by this plan.
+
 Build a reusable Messages API apparatus that can establish whether a named model
 uses Stewart's arrangement and finishes. The gate and required observations are
 owned by [ACCEPTANCE C10](ACCEPTANCE.md#the-real-model-conformance-tier);
 [INTERFACE](docs/INTERFACE.md#6-the-run-adapter) owns the adapter behavior and
 [QUESTION-FORMS](docs/QUESTION-FORMS.md) owns the three implemented forms.
 Answer usefulness remains the manager's judgment.
-
-Remaining work covers real compaction, abrupt process
-death, unexercised failure/timing/scale controls and the full per-model gate.
-No live launch is authorized by this plan.
 
 ## Working inputs
 
@@ -20,13 +22,10 @@ of bypassing their custody/export guards. The [qualification index](apparatus/qu
 identifies checked builds and retained evaluations. Each live packet needs
 matching rehearsal coverage for its exact writer, inputs and credential route.
 Keep open audits and their exact writers until closure or explicit disposition.
-The reviewed full-size synthetic rehearsal is
-`.scratch/readiness-m4-rehearsal-02/REVIEW.json`; it binds apparatus, writer,
-image, supplied inputs and saved-connection coverage. Recheck that binding for
-each live packet. It does not establish real-provider compaction.
-The [bounded real compaction encounter](apparatus/studies/interaction/RESULTS.md#messages-compaction)
-supplies summary, usage and entry-continuity fixture material; it does not replace
-the per-model conformance matrix.
+Use the [lookback evidence map](development/LOOKBACK-AUDIT.md#evidence-for-the-audit)
+to locate the full-size synthetic rehearsal and bounded live compaction inputs.
+Recheck source, writer, image, input and saved-connection bindings for each new
+packet. These inputs do not replace the per-model conformance matrix.
 
 ## 1. Complete the evidence matrix
 

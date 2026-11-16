@@ -1,15 +1,17 @@
 # Manager interface implementation and testing
 
+**Current status:** The ordinary-file commissioning and custody path exists.
+The shared family/role registry, optional preparation MCP, prospective effect
+inspection and returned-question member remain unimplemented. Exact schemas
+must be specified before implementation. Empty or insufficient materials remain
+admissible. Live trials require a concrete bounded commission; this plan grants
+no model or authentication launch authority.
+
 This plan owns the manager CLI, optional preparation MCP server, question-type
 guidance and their integration tests, including separately commissioned Claude
 Code subscription trials. The objective is an ordinary-file commission followed
 by bounded CLI execution and faithful custody, with optional MCP assistance
 before commissioning. Neither authority nor lifecycle depends on MCP use.
-
-Empty or insufficient materials remain admissible. The manager preparation MCP,
-shared family/role registry, prospective effect inspection and returned-question
-member remain to be implemented. Live trials require a concrete bounded
-commission; this plan grants no model or authentication launch authority.
 
 ## Contract inventory and selected changes
 
@@ -74,6 +76,13 @@ and independent-driver work between authors.
   accepted roles, optional evidence classes, declaration shape, structural
   constraints, recommended roles and explanation/remedy text. Derive meanings
   from the existing families, not filenames or an inferred reading of prose.
+- [ ] Apply the [lookback audit questions](LOOKBACK-AUDIT.md#question-families-materials-and-evidence)
+  before freezing that registry. Separate material roles, presentation advice,
+  mechanical requirements and evidence expectations; identify which facts belong
+  in the pinned arrangement and which are derived views. Keep runtime mapping
+  separate so a family addition does not require another lifecycle implementation.
+  Bring any proposed evidence-sufficiency gate or changed expressive obligation
+  to the principal instead of implementing it as a structural validation rule.
 - [ ] Specify how the manager declares roles in the ordinary question-file
   contract, how paths bind to literal selected materials, and what acceptance
   captures. Preserve the current submission boundary and explicit open-inquiry
@@ -261,7 +270,8 @@ bounded commission; deliberate usage-limit studies need a separate commission.
 
 Use the [service procedure](../apparatus/claude-code/README.md#native-service-comparison-procedure),
 [independent package witness](../apparatus/driver/CLAUDE-CODE-SERVICE-WITNESS.md)
-and reviewed open-inquiry profile at `.scratch/readiness-c1-01/profile.json`.
+and reviewed annotated open-inquiry profile at
+`.scratch/readiness-pages-surface-01/profile.json`.
 Revalidate bindings for each commission; another family or changed surface
 needs its own matching reviewed check. Procedures and profiles grant no starts.
 

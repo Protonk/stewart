@@ -1,13 +1,19 @@
 # Readiness follow-up
 
-Repair or dispose of the bounded comparisons' findings, ground the affected
-tests, and assign any residual work to its owner.
+**Current status:** The bounded encounters have reviewed outcomes, and the
+selected service repairs and capture-grounded fixtures have native checks.
+The latest OS fixture batch passes all required native suites. Remaining work is
+fixture-gap disposition, a fresh coverage reassessment and Linux qualification
+of changed source. Readiness is not complete; no live packet is active.
 
+This plan owns residual readiness findings and their disposition.
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
 [QUESTION-FORMS](docs/QUESTION-FORMS.md), the
 [runtime contract](docs/claude-code/CONTRACT.md) and [ACCEPTANCE](ACCEPTANCE.md)
 own behavior and evidence obligations. The [qualification index](apparatus/qualified.md)
-owns retained results and binary identities.
+owns retained results and binary identities. The
+[lookback guide](development/LOOKBACK-AUDIT.md) supplies the session context,
+audit questions and current evidence map.
 
 Routine preparation, repairs and checks are authorized. The principal retains
 approval of each concrete live commission, container scheduling, new spending,
@@ -15,101 +21,56 @@ changes to promises or expression, and external backup destinations when needed.
 No unused allowance, old packet or retained audit supplies new launch authority.
 Keep exact writers for open audits, and preserve original captures and receipts.
 
-## Repairs, fixtures and reassessment
+## Remaining fixtures and dispositions
 
-### Ground fixtures and reassess
+- [ ] Ground wire/proxy stand-ins in local HTTP/CONNECT framing and refusal
+  transcripts. Ground Keychain helper exit/error forms without retaining secret
+  lookup output. Neither task needs a model launch.
+- [ ] Give C1's supplied authentication/process-result controls actual helper or
+  launcher observations, or explicitly retain their limited scope. A supplied
+  result does not establish execution of the helper that could produce it.
+- [ ] Inventory the remaining capture groups: provider errors, rejected/overage
+  events, alternative runtime compaction shapes and terminal-cap results. Reuse
+  suitable retained observations after checking provenance; give unavailable
+  captures and unexercised conditions an owner or explicit disposition. Synthetic
+  frames do not establish live forms or cap enforcement.
 
-- [ ] Ground wire/proxy, OS/environment, process-observation and Keychain
-  stand-ins in local observations. These need no model launch.
-  Recheck actual permission-denial output for process observers; native absence
-  already has a witness. Select environment values containing LF, `=` and empty
-  values, local HTTP/CONNECT framing/refusal transcripts, and Keychain helper
-  exit/error forms without retaining secret lookup output. C1's supplied
-  process-result controls need launcher results or an explicit limited-scope
-  disposition.
-  Give missing capture groups, including provider errors,
-  rejected/overage events, alternative runtime compaction shapes and terminal-cap
-  results, an owner or explicit disposition. Preserve the driver guide's stated
-  limits: synthetic frames do not establish live forms or cap enforcement.
-- [ ] Reassess changed, added or newly grounded tests using independent expected
-  values, firing/differing/invariance controls and wrong-reason/skip checks.
-  Preserve driver independence under [AGENTS](AGENTS.md); use a separate author
-  for driver work when service implementation has been read. Have a fresh
-  reviewer challenge new findings.
-  The native reply-fidelity working set is `.tmp/readiness-fidelity-01/`:
-  `native-20261115T235927Z-bf346e3b/` holds the passing Cargo suites and original
-  driver failures; `native-20261116T002310Z-d9cdcb68/` holds the repaired cases
-  and Messages regression. The close/publication comparison is retained at
-  `.tmp/readiness-close-submit-01/native-20261116T012140Z-3b3f4f47/`, with
-  review in `.tmp/readiness-close-submit-01/native-review.json`.
-  The near-limit working set is `.tmp/readiness-near-limit-01/`; its
-  `native-review.json` binds the original timing failure and corrected
-  comparison for reassessment.
-  The C5 accounting and assistant-name working set is
-  `.tmp/readiness-observations-01/`; `native-review.json` binds the original
-  file-count assertion failures and the passing accounting retry. An
-  implementation-informed, non-author review found no blocker; it does not
-  replace independent driver authorship or Linux qualification.
-  M4's captured-summary comparison and existing provider-compaction regression
-  are retained in `.tmp/readiness-messages-fixtures-01/`; `native-review.json`
-  binds the passing baselines and firing sabotage controls. The altered-summary
-  legacy control's downstream failures are not additional independent coverage.
-  M2/M3's cap, continuation and refused-replacement comparison is retained in
-  `.tmp/readiness-cap-fixtures-01/`; `native-review.json` binds both passing
-  baselines and the three firing controls. The synthetic schedule and original
-  capture scope remain distinct in the fixture guide.
-  M3's ordinary-ending, spent/unused-reminder continuation and citation-recovery
-  comparison is retained in `.tmp/readiness-reminder-fixtures-01/`;
-  `native-review.json` binds its passing baselines, three firing controls and
-  unchanged cap regression. The original live reminder remains `unknown`;
-  known transmission, HTTP interruption and continued prose ending are synthetic
-  comparisons. Aborted in-flight charging remains rehearsal-only.
-  C1's surface-observer fixtures are retained in `.tmp/readiness-c1-fixtures-01/`;
-  `native-review.json` binds the passing selftest/listener comparisons and direct
-  sender/capture checks. Authentication and process results remain supplied
-  controls; those results do not establish execution of the corresponding helpers.
-  C4 field recovery and C5 full-refusal/exact-version replacement are retained
-  in `.tmp/readiness-authoring-fixtures-01/`; `native-review.json` binds the
-  three passing variants, targeted wrong-flag diagnostic, exact selections and
-  payloads, submit-to-stop, and existing submission/fidelity regressions.
-  M1/C2/C3 citation recovery and C4's partial account are retained in
-  `.tmp/readiness-final-captures-01/`; `native-review.json` binds the two clean
-  citation baselines, three firing controls, partial-account timing/continuation
-  and submission regression. Original and member-order variants deliver identical
-  answers; quote correction changes only the named citation operand.
-  Local signature-verifier captures and controls are retained in
-  `.tmp/readiness-verifier-fixtures-01/`; `native-review.json` binds all six
-  passing apparatus suites and the protocol's Rust checks. Replayed outputs
-  establish parsing, retention and refusal propagation, not fresh signature
-  verification of the synthetic installation inputs.
-  Complete acceptance-reader fixtures are retained in
-  `.tmp/readiness-qualification-fixtures-01/`; `native-review.json` binds the
-  passing C10, placement, sanity and driver checks. The study difference remains
-  synthetic; the historical skipped run is refused for its actual skip condition.
-  Their results name external synthetic witnesses.
-  Keep these through the remaining reassessment, then release reproducible work.
+## Reassess coverage
+
+- [ ] Challenge repaired and newly grounded tests using independent expected
+  values, firing controls, a differing case and an invariance. Check exact
+  refusal reasons, skipped prerequisites and whether each claimed condition was
+  reached. Use the lookback guide's evidence map to retrieve original failures
+  and corrected comparisons. Preserve driver independence under [AGENTS](AGENTS.md)
+  and have a fresh reviewer challenge findings.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,
-  runtime comparisons and Messages conformance. Recheck unreached conditions
-  a repair claims to cover, using the independent cases' firing conditions and
-  receipts when replacing earlier per-unit classifications. Counts
-  describe coverage, not a numerical target; unexercised behavior cannot count
-  as covered. The earlier per-unit classification and its counting tool are the
-  untracked `.tmp/readiness/a/` and `.tmp/readiness/tools/trusted.py`; no backup
-  exists. Release `.tmp/readiness/` once this report no longer needs them.
-- [ ] Run [DEVELOPMENT's required checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed).
-  Changed service behavior needs container acceptance before another Messages
-  packet; changed runtime surfaces need a newly approved reviewed surface check
-  before service use. Keep actual outputs through review. The acceptance driver
-  and the launchers have changed since the last qualified source, which
-  `qualified.py check` lists as drift; they stay unqualified until a container
-  acceptance run, which the principal schedules.
+  runtime comparisons and Messages conformance. Derive it from actual case
+  conditions, witnesses and receipts. Counts describe coverage, not a target;
+  unexercised behavior cannot count as covered. Treat the earlier untracked
+  `.tmp/readiness/a/` classifications and `.tmp/readiness/tools/trusted.py` as
+  provisional inputs, not the current verdict. No backup exists; release that
+  working set only when the reassessment no longer needs it.
+- [ ] Assign each remaining finding a repair, a bounded comparison or an explicit
+  limitation/disposition. Keep proposed shared-runtime and question-family
+  refactors distinct from demonstrated defects and from decisions that change
+  the product's obligations.
+
+## Verify and close the work
+
+- [ ] Run [DEVELOPMENT's required checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
+  for further changes, retaining actual outputs through review. Changed service
+  behavior needs container acceptance before another Messages packet; changed
+  runtime surfaces need a newly approved reviewed surface check before service
+  use. The acceptance driver and launchers differ from qualified source; a new
+  container run, scheduled by the principal, must qualify the changed source.
+- [ ] After reassessment, release reproducible working evidence whose inspection
+  purpose has ended under [retention rules](development/DEVELOPMENT.md#evidence-and-retention).
+  Preserve selected originals, exact writers and unresolved custody witnesses.
+  A guide citation creates no indefinite retention obligation.
 
 **Complete when:** each finding has a repair or explicit disposition, fixtures
 are grounded or assigned, required checks pass, and no stopping/custody
-uncertainty remains. Bring substantive tradeoffs to the principal.
-
-At completion, keep enduring behavior in specifications/tests and release
-reproducible evidence whose inspection purpose has ended, preserving open custody
-and selected originals. Delete this plan and its coordinating work-order entry
-once every remaining task has an outcome or owner. No further general readiness
-approval is needed.
+uncertainty remains. Bring substantive tradeoffs to the principal. Keep enduring
+behavior in specifications/tests; delete this plan and its coordinating
+work-order entry once every remaining task has an outcome or owner. No further
+general readiness approval is needed.

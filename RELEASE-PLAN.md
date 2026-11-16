@@ -1,5 +1,11 @@
 # Release and work plan
 
+**Current status:** Release execution is set aside for the requested developer
+lookback. The [audit guide](development/LOOKBACK-AUDIT.md) is ready for that
+review. Readiness reassessment and qualification of changed source remain open;
+manager-interface implementation and the full model/platform gates remain ahead.
+No live packet is active and the public release is not scheduled by this plan.
+
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
 [INTERFACE](docs/INTERFACE.md) own behavior; [ACCEPTANCE](ACCEPTANCE.md) owns the
@@ -10,7 +16,8 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Address the bounded comparisons' outcome repairs, fixtures and reassessment. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the findings; [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) owns the reusable Messages apparatus. |
+| Current review | Assess the session's evidence and opportunities for shared runtime semantics and modular question-family materials/evidence guidance. Record proposed changes and their required decisions before selecting implementation. | [Lookback audit guide](development/LOOKBACK-AUDIT.md) |
+| On resuming readiness | Finish remaining fixture dispositions, coverage reassessment and qualification. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the findings; [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) owns the reusable Messages apparatus. |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separately scheduled release work | Complete the Messages model gate, platform qualification and acceptance-policy review. | [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and the requirements below |
@@ -34,8 +41,8 @@ Broader blinded evaluation and family dogfooding remain deferred; the
 owns their product boundaries. An agent-manager study omitting the question from
 returns is only an option after the manager interface is established and the
 principal selects it, not a pending task. A future study needs a named uncertainty
-and bounded commission. [Completed interaction findings](apparatus/studies/interaction/RESULTS.md)
-and the evidence index retain the observations and original input locations.
+and bounded commission. Use the [interaction findings](apparatus/studies/interaction/RESULTS.md)
+and evidence index when selecting its inputs and discriminating comparison.
 
 ## First-release requirements
 
