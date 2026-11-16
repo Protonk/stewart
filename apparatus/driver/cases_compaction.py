@@ -7,7 +7,9 @@ separate memory-loss/reentry specimens in cases_run remain separate evidence.
 from __future__ import annotations
 
 import signal
+from pathlib import Path
 
+import answer_witness as aw
 import fake_provider as fp
 import rawjson
 import run_support as rs
@@ -41,14 +43,41 @@ def summary(index=1, usage=None):
     return step
 
 
+class CapturedSummary(fp.Message):
+    """M4's complete response body, with two single-field usage controls."""
+    def __init__(self, variant="original"):
+        captured = (Path(__file__).parent / "testdata/messages/m4-summary.json").read_bytes()
+        node = rawjson.parse(captured)
+        if variant == "top-level":
+            target, value = node.get("usage").get("input_tokens"), b"7"
+        elif variant == "iteration":
+            target, value = node.get("usage").get("iterations").items[0].get("output_tokens"), b"1213"
+        elif variant != "original":
+            raise ValueError(variant)
+        if variant != "original":
+            captured = captured[:target.start] + value + captured[target.end:]
+        self.captured = captured
+        content = rawjson.parse(captured).get("content")
+        super().__init__([fp.Block(b.raw, "compaction") for b in content.items], stop_reason="compaction",
+                         usage=fp.Usage(7 if variant == "top-level" else 0, 0, 0, 0,
+                                        iterations=[iteration("compaction", 344449,
+                                                              1213 if variant == "iteration" else 1212, 0, 0)]),
+                         label="M4 captured summary: " + variant)
+        self.content_raw = content.raw
+
+    def body(self, ex):
+        return self.captured
+
+
 class SummarizingProcedure:
     """Absorb tool results before summarizing, then resume the scripted auditor.
 
     Prepare its next ordinary response from the summary request's tool results, but
     deliver it only on the following ordinary request. Retries get the same Step.
     """
-    def __init__(self, procedure):
+    def __init__(self, procedure, summary_factory=summary):
         self.procedure = procedure
+        self.summary_factory = summary_factory
         self.pending = None
         self.summaries = []
         self.answers = {}
@@ -59,7 +88,7 @@ class SummarizingProcedure:
             return self.answers[key]
         if rs.is_compaction_request(ex):
             self.pending = self.procedure(ex)
-            step = summary(len(self.summaries) + 1)
+            step = self.summary_factory(len(self.summaries) + 1)
             self.summaries.append(step)
         elif self.pending is not None:
             step, self.pending = self.pending, None
@@ -137,6 +166,73 @@ def c_provider_compaction(t):
         answers[label] = answer_of(t, rep, pre)
     t.check("compact.same-answer", answers.get("repeat") is not None and answers.get("repeat") == answers.get("below"),
             "compaction changed the sealed structured answer")
+
+
+@case("c4.captured-compaction", ["C4", "C6", "C18"],
+      "M4's signed summary: charge iterations despite zero top-level usage and preserve the account through revision",
+      needs=("loopback",), controls=[
+          Control("omit_compaction", [r"^captured\.compaction\.original\.summary-count$"]),
+          Control("alter_compaction_summary", [r"^captured\.compaction\.original\.history\..*\.summary-exact$"]),
+          Control("retain_precompaction_context", [r"^captured\.compaction\.original\.history\..*\.reset-two$"]),
+          Control("ignore_compaction_usage", [r"^captured\.compaction\.original\.(usage|run-ended-usage)$",
+                                              r"^captured\.compaction\.original\.capture\..*\.(charged|usage)$"])])
+def c_captured_compaction(t):
+    usages, answers = {}, {}
+    before = b"The supplied source permits duplicate delivery."
+    after = b"Delivery precedes marking; the supplied source does not establish recovery."
+    for variant in ("original", "top-level", "iteration"):
+        pre = "captured.compaction." + variant
+        sub = run_submission(t, body=b"Audit the captured source.\n")
+
+        def body(p):
+            turn = yield p.calls_step(("record_account", {"text": before.decode(), "label": "account"}),
+                                      usage=trigger_usage())
+            r = turn.reply()
+            p.eq("recorded", (r.outcome, r.data.get("id"), r.data.get("revision")), ("completed", "e1", 1))
+            handle = r.data.get("entry")
+            state, entries, _ = yield from p.wwaw_all()
+            p.eq("reentry", ((state or {}).get("revision"), [(e.get("id"), e.get("entry")) for e in entries]),
+                 (1, [("e1", handle)]))
+            text, _ = yield from p.read_all(handle)
+            p.eq("preserved-account", text, before)
+            turn = yield p.calls_step(("replace", {"entry": handle, "text": after.decode(),
+                                                   "citations": [], "label": "account"}))
+            r = turn.reply()
+            p.eq("revised", (r.outcome, r.data.get("revision")), ("completed", 2))
+            p.check("revised-same-entry", isinstance(r.data.get("entry"), str)
+                    and r.data["entry"].startswith("e1.v2.") and r.data["entry"] != handle, r.summary())
+            yield from prepare_and_submit(p)
+        p = proc(sub, body)
+        wrapped = SummarizingProcedure(p, lambda index: CapturedSummary(variant))
+        fx = rs.provider(t, wrapped, label=variant, accepts=fp.MESSAGES_API)
+        rep = rs.run(t, sub, fx, name=pre)
+        check_common(t, sub, fx, pre, rep, "sealed")
+        rs.check_procedure(t, p, pre, fx)
+        t.eq(pre + ".summary-count", len(wrapped.summaries), 1)
+        summaries = [ex for ex in fx.exchanges if rs.is_compaction_request(ex)]
+        t.eq(pre + ".summary-request-count", len(summaries), 1)
+        for ex in summaries:
+            t.eq(pre + ".summary-body", fp.response_body(ex), CapturedSummary(variant).captured)
+            t.eq(pre + ".summary-charge", ex.charge,
+                 {"basis": "reported", "turns": 1, "input_tokens": 344449,
+                  "output_tokens": 1213 if variant == "iteration" else 1212})
+        t.eq(pre + ".entry-actions", [b.get("action") for b in rs.entry_bodies(t, sub)], ["add", "replace"])
+        for version, expected in ((1, before), (2, after)):
+            path = Path(sub.audit_dir) / "payload" / ("e1.v%d.bin" % version)
+            t.eq(pre + ".retained-payload.v%d" % version, path.read_bytes() if path.is_file() else None, expected)
+        t.eq(pre + ".one-placement", len(t.log_bodies(sub, "run_started")), 1)
+        t.eq(pre + ".one-seal", len(t.log_bodies(sub, "seal")), 1)
+        t.eq(pre + ".no-notice-charge", t.log_bodies(sub, "notice"), [])
+        usages[variant] = rep.data.get("usage", {})
+        answers[variant] = answer_of(t, rep, pre)
+        t.eq(pre + ".expected-answer", answers[variant],
+             aw.answer_json(2, [aw.Entry("e1", 2, "record_account", "account", after)]))
+    t.eq("captured.compaction.top-level-invariance", usages["top-level"], usages["original"])
+    for key in ("turns", "input_tokens"):
+        t.eq("captured.compaction.iteration-invariance." + key, usages["iteration"].get(key), usages["original"].get(key))
+    t.eq("captured.compaction.iteration-difference", usages["iteration"].get("output_tokens"),
+         {"reported": usages["original"].get("output_tokens", {}).get("reported", -1) + 1, "estimated": 0})
+    t.eq("captured.compaction.answer-invariance", list(answers.values()), [answers["original"]] * 3)
 
 
 def trigger_step():
@@ -416,6 +512,42 @@ def compaction_reply_selftests():
     unchanged.data["summary"] = "A different truthful presentation of the same observed placement."
     failures = observe(unchanged, "sealed")
     out.append(("compaction.reply.prose-invariant", not failures, failures))
+    return out
+
+
+@selftest
+def captured_compaction_selftests():
+    import copy
+    import json
+    from driver_core import sha256_hex
+    original = CapturedSummary()
+    value = json.loads(original.captured)
+    out = [
+        ("compaction.m4.size", len(original.captured) == 5779),
+        ("compaction.m4.digest", sha256_hex(original.captured) ==
+         "87d8c3ec491c8ee5b91a344472207a59effbae9964c09c0314ac433f01d77820"),
+        ("compaction.m4.content-digest", sha256_hex(original.content_raw) ==
+         "c513090fa4b59dba5a7a0b523b0e73a0260d9fefdc23d44e056d6603ed0c70a1"),
+        ("compaction.m4.zero-top-level", all(value["usage"][key] == 0 for key in
+         ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))),
+        ("compaction.m4.charge", original.charge(None) ==
+         {"basis": "reported", "turns": 1, "input_tokens": 344449, "output_tokens": 1212}),
+        ("compaction.m4.top-level-byte-change", CapturedSummary("top-level").captured ==
+         original.captured.replace(b'"usage":{"input_tokens":0,', b'"usage":{"input_tokens":7,', 1)),
+        ("compaction.m4.iteration-byte-change", CapturedSummary("iteration").captured ==
+         original.captured.replace(b'"output_tokens":1212,', b'"output_tokens":1213,', 1)),
+    ]
+    for variant in ("original", "top-level", "iteration"):
+        step, expected = CapturedSummary(variant), copy.deepcopy(value)
+        if variant == "top-level":
+            expected["usage"]["input_tokens"] = 7
+        if variant == "iteration":
+            expected["usage"]["iterations"][0]["output_tokens"] = 1213
+        out.append(("compaction.m4." + variant + ".one-change", json.loads(step.body(None)) == expected))
+        out.append(("compaction.m4." + variant + ".content-invariant", step.content_raw == original.content_raw))
+        out.append(("compaction.m4." + variant + ".charge", step.charge(None) ==
+                    {"basis": "reported", "turns": 1, "input_tokens": 344449,
+                     "output_tokens": 1213 if variant == "iteration" else 1212}))
     return out
 
 

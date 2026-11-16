@@ -23,9 +23,7 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   authentication reports, MCP traffic and hook inputs in retained captures.
   Select the M1/C2/C3 citation recovery, M2/M3 cap and near-limit responses,
   M3's re-entry, preserved entry, missing-citations replacement refusal and
-  spent-reminder continuation, M4's real summary with zero top-level usage and
-  charged compaction iteration, signed-block reuse and preserved/revised account,
-  C1 surface events, and C4 near-limit partial
+  spent-reminder continuation, C1 surface events, and C4 near-limit partial
   submission, required-field recovery and submit-to-stop sequences. Include C5's
   flattened error text preserving the full refusal and exact-version account
   replacement. Ground
@@ -59,6 +57,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   file-count assertion failures and the passing accounting retry. An
   implementation-informed, non-author review found no blocker; it does not
   replace independent driver authorship or Linux qualification.
+  M4's captured-summary comparison and existing provider-compaction regression
+  are retained in `.tmp/readiness-messages-fixtures-01/`; `native-review.json`
+  binds the passing baselines and firing sabotage controls. The altered-summary
+  legacy control's downstream failures are not additional independent coverage.
   Their results name external synthetic witnesses.
   Keep these through the remaining reassessment, then release reproducible work.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,

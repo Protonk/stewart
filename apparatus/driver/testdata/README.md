@@ -1,5 +1,39 @@
 # Driver test data
 
+## `messages/`: captured provider responses
+
+[`messages/m4-summary.json`](messages/m4-summary.json) is the exact HTTP response
+body from the 2026-11-15 M4 encounter, model `claude-opus-5-5`, effort omitted.
+This is Stewart-owned capture, not an independent live wire witness.
+
+| Origin | Bytes | SHA-256 |
+| --- | --- | --- |
+| `.scratch/readiness-m4-live-01/container/m4/export-0001/work.tar` | 5027840 | `c22abed412f2f7122c30fd03bc3d492976a81ea1823eaaee52f5920d41f2d2aa` |
+| Member `private/archive/audits/alln5scv7txvccchz/runs/1/response-5-1.bin` | 5779 | `87d8c3ec491c8ee5b91a344472207a59effbae9964c09c0314ac433f01d77820` |
+| Its complete `content` array, including signature | 5092 | `c513090fa4b59dba5a7a0b523b0e73a0260d9fefdc23d44e056d6603ed0c70a1` |
+
+The [captured compaction case](../cases_compaction.py) serves that body unchanged
+after a synthetic trigger. It checks exact signed-content reuse, context reset,
+retained captures, one placement and preservation of a supplied account through
+re-entry, read, exact-version replacement and auditor submission. It compares
+both retained payload versions and the delivered `answer.json` with independent
+expected bytes. Package-wide verification and close have separate cases. The scripted
+auditor does not interpret the captured summary as instructions or as an account
+of its synthetic question. This tests opaque custody and accounting, not the
+summary's meaning, cryptographic validity or real-model behavior.
+
+The original has zero top-level usage and one compaction iteration reporting
+344449 input and 1212 output tokens. One variant changes only top-level
+`usage.input_tokens` from 0 to 7: the charge and answer must stay the same.
+Another changes only the iteration's `output_tokens` from 1212 to 1213: the
+output charge must increase by one, with input, turns and answer unchanged.
+Mutations replace the selected numeric span; every other byte stays unchanged.
+Existing sabotage controls must detect omitted compaction, changed signed bytes,
+retained old context and ignored iteration usage. The fake provider retains its
+own transmitted response and received request bytes outside Stewart's archive.
+Fixture self-tests pin the original bytes, exact changed fields and literal
+expected charges. No test reads the retained study directory or invokes a model.
+
 ## `tls/`: TEST-ONLY certificates and keys
 
 These certificates and their **private keys are deliberately published**. They
