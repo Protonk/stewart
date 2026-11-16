@@ -17,6 +17,8 @@ import warnings
 from unittest import mock
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
+sys.path.insert(0,str(Path(__file__).resolve().parents[1] / 'testdata'))
+import acceptance_fixtures as captured_acceptance
 import c10
 import common
 from common import (HERE,catalog,compact,digest,inventory,proposal,question_file,read_file,
@@ -172,25 +174,20 @@ class StudyBuildTests(unittest.TestCase):
                         'family':'open-inquiry','version':2,'instructions':'Compose an account.'}
         self.expected={'failed_cases':{'c19.arrangement':['open.system-bytes']},
                        'selftest_failures':['docs.family open-inquiry']}
-        def case(name):
-            return {'id':name,'outcome':'pass','variants':[{'binary':'release','sabotage':None,
-                'outcome':'pass','parts_skipped':[],'skip_reason':None,'failed_names':[]}]}
-        cases=[case(name) for name in ['credentials.arguments','credentials.input',
-               'credentials.reflection','credentials.process','c19.arrangement']]
-        self.baseline={'cases':copy.deepcopy(cases)}
-        cases[-1]['outcome']='fail';cases[-1]['variants'][0].update(outcome='fail',failed_names=['open.system-bytes'])
-        self.result={'schema':'stewart.acceptance-driver/1','interrupted':False,'exit':1,
-            'platform':{'system':'Linux','machine':'aarch64','euid':1000},'cases':cases,
-            'failed_cases':['c19.arrangement'], 'controls_unassigned':[], 'controls_never_fired':[],
-            'controls':[],'broken_checks':[],
-            'counts':{'cases':{'selected':5,'ran':5,'skipped':0,'failed':1},
-                      'driver_controls':{'total':1,'fired':1}}}
+        self.baseline=captured_acceptance.result()
+        self.result=captured_acceptance.study_result()
 
     def check(self,value):
         study_build.check_result(value,self.baseline,self.expected,'arm64')
 
     def test_declared_difference_is_not_qualification(self):
         self.check(self.result)
+        self.assertEqual(len(self.baseline['cases']),133)
+        self.assertEqual(self.result['counts']['cases'],
+                         {'selected':133,'ran':133,'passed':132,'failed':1,'skipped':0})
+        self.assertEqual(self.result['counts']['controls']['fired'],79)
+        with self.assertRaisesRegex(ValueError,'did not finish with its declared differences'):
+            self.check(self.baseline)
         packet=study_build.attach(rehearsal_packet(),study_build.draft(self.interface))
         validate_packet(packet,rehearsal=True)
         self.assertEqual(packet['study_build']['status'],'unqualified')
@@ -215,17 +212,38 @@ class StudyBuildTests(unittest.TestCase):
         with self.assertRaises(ValueError):validate_packet(packet,rehearsal=True)
 
     def test_unexpected_failures_and_skips_are_refused(self):
-        mutations=[lambda r:r['cases'][-1]['variants'][0]['failed_names'].append('custody.failed'),
-            lambda r:r['cases'][0]['variants'][0].update(outcome='fail'),
-            lambda r:r['cases'][0]['variants'][0]['parts_skipped'].append('process'),
-            lambda r:r['cases'].pop(),lambda r:r.update(interrupted=True),
-            lambda r:r['platform'].update(system='Darwin'),
-            lambda r:r['counts']['driver_controls'].update(fired=0),
-            lambda r:r['controls_unassigned'].append('unchecked'),
-            lambda r:r['broken_checks'].append({'case':'unrelated','sabotage':'x','status':'baseline_failed'})]
-        for mutation in mutations:
+        variant=captured_acceptance.release
+        mutations=[('unexpected-check',lambda r:variant(r,'c19.arrangement')['failed_names'].append('custody.failed'),
+                    'acceptance failure names differ'),
+            ('credential-failure',lambda r:variant(r,'credentials.arguments').update(outcome='fail'),
+             'study native credential checks did not pass'),
+            ('partial-skip',lambda r:variant(r,'c19.arrangement')['parts_skipped'].append('process'),
+             'study acceptance skipped a variant'),
+            ('missing-case',lambda r:r['cases'].pop(),'omitted or changed the case inventory'),
+            ('interrupted',lambda r:r.update(interrupted=True),'did not finish with its declared differences'),
+            ('platform',lambda r:r['platform'].update(system='Darwin'),'study acceptance platform differs'),
+            ('unfired-driver',lambda r:r['counts']['driver_controls'].update(fired=0),'driver controls did not all fire'),
+            ('unassigned',lambda r:r['controls_unassigned'].append('unchecked'),'unassigned acceptance controls'),
+            ('broken-control',lambda r:r['broken_checks'].append({'case':'unrelated','sabotage':'x','status':'baseline_failed'}),
+             'unexpected broken acceptance check')]
+        for name,mutation,reason in mutations:
             value=copy.deepcopy(self.result);mutation(value)
-            with self.subTest(mutation=mutation),self.assertRaises(ValueError):self.check(value)
+            with self.subTest(mutation=name),self.assertRaisesRegex(ValueError,reason):self.check(value)
+
+    def test_historical_skips_refuse_after_same_study_projection(self):
+        original=captured_acceptance.result(run='readiness-01')
+        self.assertEqual(original['exit'],0)
+        self.assertEqual([c['id'] for c in original['cases'] if c['outcome']=='skipped'],
+                         ['c12.run-refusals','c19.bounds.paths'])
+        with self.assertRaisesRegex(ValueError,'study acceptance skipped a case'):
+            self.check(captured_acceptance.study_result(run='readiness-01'))
+
+    def test_member_order_invariance_and_both_architecture_records(self):
+        self.check(json.loads(json.dumps(self.result,sort_keys=True)))
+        baseline=captured_acceptance.result('amd64')
+        result=captured_acceptance.study_result('amd64')
+        self.assertEqual(len(baseline['cases']),131)
+        study_build.check_result(result,baseline,self.expected,'amd64')
 
     def test_credential_failure_cannot_be_declared_expected(self):
         expected=copy.deepcopy(self.expected)
@@ -235,12 +253,14 @@ class StudyBuildTests(unittest.TestCase):
     def test_changed_text_control_baseline_remains_failed(self):
         value=copy.deepcopy(self.result)
         control={'case':'c19.arrangement','sabotage':'changed-text','status':'baseline_failed'}
-        value['controls']=[control];value['controls_never_fired']=['changed-text']
+        value['controls'].append(control);value['controls_never_fired']=['changed-text']
+        value['counts']['controls']['total']+=1
+        value['counts']['controls']['baseline_failed']+=1
         value['broken_checks']=[control,{'case':None,'sabotage':'changed-text','status':'never_fired'}]
         self.check(value)
-        self.assertEqual(value['controls'][0]['status'],'baseline_failed')
-        value['controls'][0]['status']='not_fired'
-        with self.assertRaises(ValueError):self.check(value)
+        self.assertEqual(value['controls'][-1]['status'],'baseline_failed')
+        value['controls'][-1]['status']='not_fired'
+        with self.assertRaisesRegex(ValueError,'an acceptance control did not fire'):self.check(value)
 
     def test_rehearsal_cannot_be_reused_for_another_variant(self):
         packet=study_build.attach(rehearsal_packet(),study_build.draft(self.interface))
@@ -275,23 +295,26 @@ class StudyBuildTests(unittest.TestCase):
             put(acceptance/'host/DONE',b'done fixture failures=4\n')
             put(acceptance/'staging/source.tar',b'archive fixture')
             for arch in ('arm64','amd64'):
-                r=copy.deepcopy(self.result)
-                r['platform']['machine']='aarch64' if arch=='arm64' else 'x86_64'
+                r=captured_acceptance.study_result(arch)
                 r['binaries']={'release':{'sha256':digest(b'release fixture')},
                                'test':{'sha256':digest(b'test fixture')}}
                 put(acceptance/f'bin-{arch}/stewart',b'release fixture')
                 put(acceptance/f'bin-{arch}/stewart-test',b'test fixture')
                 put(acceptance/f'driver-{arch}/evidence/RESULT.json',compact(r))
-                put(base/f'driver-{arch}/evidence/RESULT.json',compact(self.baseline))
-                for name in ('evidence-copy','retention-archive','retention-list','retention-sha256'):
+                put(base/f'driver-{arch}/evidence/RESULT.json',captured_acceptance.captured(
+                    f'readiness-02/driver-{arch}/evidence/RESULT.json'))
+                put(acceptance/f'driver-{arch}/evidence-copy.exit',captured_acceptance.captured(
+                    f'readiness-02/driver-{arch}/evidence-copy.exit'))
+                # The observed successful run did not retain a release work
+                # archive. These study-failure retention flags remain supplied.
+                for name in ('retention-archive','retention-list','retention-sha256'):
                     put(acceptance/f'driver-{arch}/{name}.exit',b'0\n')
                 put(acceptance/f'driver-{arch}/selftest.exit',b'1\n')
-                put(acceptance/f'driver-{arch}/selftest.stdout',
-                    b'FAIL docs.family open-inquiry (fixture)\nself-test: 2 checks, 1 passed, 1 failed, 0 skipped\n')
-                for name,code in [('build-release',0),('build-test',0),('static-stewart',0),
-                    ('static-stewart-test',0),('build-glibc',0),('static-stewart-glibc',1),
-                    ('cmp-release-test',1),('run-release',0)]:
-                    put(acceptance/f'build-{arch}/{name}.exit',(str(code)+'\n').encode())
+                put(acceptance/f'driver-{arch}/selftest.stdout',captured_acceptance.study_selftest(arch))
+                for name in ('build-release','build-test','static-stewart',
+                    'static-stewart-test','build-glibc','static-stewart-glibc','cmp-release-test','run-release'):
+                    put(acceptance/f'build-{arch}/{name}.exit',captured_acceptance.captured(
+                        f'readiness-02/build-{arch}/{name}.exit'))
             def git(argv,**kwargs):
                 if argv[1]=='rev-parse':return ('2'*40+'\n').encode()
                 if argv[1]=='merge-base':return ('1'*40+'\n').encode()
@@ -305,15 +328,21 @@ class StudyBuildTests(unittest.TestCase):
             with mock.patch.object(study_build.subprocess,'check_output',side_effect=git):
                 value=study_build.make(root,qualification,self.interface,acceptance,self.expected)
                 self.assertEqual(study_build.select(root,qualification,value),acceptance/'bin-arm64')
-                for name in ['bin-arm64/stewart','bin-amd64/stewart-test',
-                             'driver-arm64/evidence/RESULT.json','staging/source.tar',
-                             'build-arm64/static-stewart.exit','driver-arm64/evidence-copy.exit']:
+                for name,reason in [('bin-arm64/stewart','study binary digest differs'),
+                             ('bin-amd64/stewart-test','study test binary digest differs'),
+                             ('driver-arm64/evidence/RESULT.json','study result digest changed'),
+                             ('staging/source.tar','study acceptance source binding differs'),
+                             ('build-arm64/static-stewart.exit','study binary build/static controls differ'),
+                             ('driver-arm64/evidence-copy.exit','study acceptance evidence incomplete'),
+                             ('driver-arm64/selftest.exit','study self-test exit differs'),
+                             ('driver-arm64/selftest.stdout','study self-test differs from declared failures')]:
                     path=acceptance/name;old=path.read_bytes();path.write_bytes(old+b'changed')
-                    with self.subTest(path=name),self.assertRaises(ValueError):
+                    with self.subTest(path=name),self.assertRaisesRegex(ValueError,reason):
                         study_build.select(root,qualification,value)
                     path.write_bytes(old)
                 changed=copy.deepcopy(value);changed['qualified_base_commit']='3'*40
-                with self.assertRaises(ValueError):study_build.select(root,qualification,changed)
+                with self.assertRaisesRegex(ValueError,'study qualified base differs'):
+                    study_build.select(root,qualification,changed)
                 def changed_driver(argv,**kwargs):
                     if argv[1]=='diff' and argv[-1]=='apparatus/driver':
                         return b'apparatus/driver/driver_core.py\n'

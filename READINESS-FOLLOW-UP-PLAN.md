@@ -19,10 +19,8 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### Ground fixtures and reassess
 
-- [ ] Ground wire/proxy, OS/environment, process-observation, Keychain and
-  driver-record stand-ins in local observations. These need no model launch.
-  Use full acceptance records with the required credential cases for the C10
-  and sanity qualification readers, rather than selected-case summaries.
+- [ ] Ground wire/proxy, OS/environment, process-observation and Keychain
+  stand-ins in local observations. These need no model launch.
   Recheck actual permission-denial output for process observers; native absence
   already has a witness. Select environment values containing LF, `=` and empty
   values, local HTTP/CONNECT framing/refusal transcripts, and Keychain helper
@@ -84,6 +82,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   passing apparatus suites and the protocol's Rust checks. Replayed outputs
   establish parsing, retention and refusal propagation, not fresh signature
   verification of the synthetic installation inputs.
+  Complete acceptance-reader fixtures are retained in
+  `.tmp/readiness-qualification-fixtures-01/`; `native-review.json` binds the
+  passing C10, placement, sanity and driver checks. The study difference remains
+  synthetic; the historical skipped run is refused for its actual skip condition.
   Their results name external synthetic witnesses.
   Keep these through the remaining reassessment, then release reproducible work.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,

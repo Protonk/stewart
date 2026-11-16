@@ -30,6 +30,10 @@ and its version; tool schemas, citation checks, rendering, revision and submissi
 keep the ordinary procedural checks. It makes no product or model qualification
 claim and does not update the qualification front.
 
+The offline reader tests use [complete captured acceptance records](../testdata/acceptance/README.md).
+Their declared study difference is a named synthetic projection; original
+records, including historical skips, remain unchanged.
+
 Keep the variant in a reachable branch commit. Change its specification and
 service together, run both native Cargo configurations, and use the independent
 driver from the committed apparatus checkout unchanged on the study branch.

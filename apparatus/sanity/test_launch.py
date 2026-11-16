@@ -1,5 +1,6 @@
 """Provider-free controls for sanity launch, export and offline review helpers."""
 from contextlib import redirect_stderr
+import copy
 import io
 import json
 import os
@@ -14,6 +15,8 @@ from unittest import mock
 import warnings
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'testdata'))
+import acceptance_fixtures as captured_acceptance
 import launch
 import exercise
 import review
@@ -406,11 +409,31 @@ class LaunchTests(unittest.TestCase):
                 self.assertEqual(export_evidence_state(root), 'complete')
 
     def test_credential_qualification_requires_each_unskipped_release_case(self):
-        cases = [{'id': name, 'variants': [{'binary': 'release', 'sabotage': None, 'outcome': 'pass', 'parts_skipped': [], 'skip_reason': None}]} for name in ['credentials.arguments', 'credentials.input', 'credentials.reflection', 'credentials.process']]
-        self.assertTrue(launch.credential_cases_qualified({'cases': cases}))
-        self.assertFalse(launch.credential_cases_qualified({'cases': cases[:-1]}))
-        cases[0]['variants'][0]['parts_skipped'] = ['process observation unavailable']
-        self.assertFalse(launch.credential_cases_qualified({'cases': cases}))
+        names=['credentials.arguments','credentials.input','credentials.reflection','credentials.process']
+        for arch in ('arm64','amd64'):
+            original=captured_acceptance.result(arch)
+            self.assertTrue(launch.credential_cases_qualified(original))
+            reordered=copy.deepcopy(original);reordered['cases'].reverse()
+            self.assertTrue(launch.credential_cases_qualified(reordered))
+            for name in names:
+                for change in ('missing','duplicate','failed','partial-skip','skip-reason','wrong-binary','sabotage'):
+                    value=copy.deepcopy(original)
+                    entry=captured_acceptance.case(value,name)
+                    variant=captured_acceptance.release(value,name)
+                    if change=='missing':value['cases'].remove(entry)
+                    elif change=='duplicate':value['cases'].append(copy.deepcopy(entry))
+                    elif change=='failed':variant['outcome']='fail'
+                    elif change=='partial-skip':variant['parts_skipped']=['process observation unavailable']
+                    elif change=='skip-reason':variant['skip_reason']='process observation unavailable'
+                    elif change=='wrong-binary':variant['binary']='test'
+                    elif change=='sabotage':variant['sabotage']='synthetic-control'
+                    with self.subTest(arch=arch,case=name,change=change):
+                        self.assertFalse(launch.credential_cases_qualified(value))
+        # This helper checks the credential cases only. The historical two-skip
+        # run still passed those cases; it does not establish whole-run fitness.
+        historical=captured_acceptance.result(run='readiness-01')
+        self.assertEqual(historical['counts']['cases']['skipped'],2)
+        self.assertTrue(launch.credential_cases_qualified(historical))
 
     def test_safe_summary_does_not_forward_arbitrary_provider_strings(self):
         self.assertEqual(safe_choice('potential-secret', ['interrupted']), 'unknown')
