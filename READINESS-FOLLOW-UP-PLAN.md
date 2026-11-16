@@ -26,6 +26,7 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   detection are described by the [runtime contract](docs/claude-code/CONTRACT.md#observed-reply-fidelity)
   and [independent driver coverage](apparatus/driver/CLAUDE-CODE.md).
   All compatibility and page-comparison invocation slots are consumed.
+  The concrete proposal is below; preparation has read no external file contents.
 - [ ] Address missing final usage, overlapping assistant snapshots, per-session
   checkpoints, compaction shapes outside the accepted form, unlisted/unprefixed
   tools and output-cap endings. Use `.scratch/readiness-c2-01/COMPARISON.json`,
@@ -39,6 +40,48 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   `placement_stopped`, INTERFACE's log precondition `authoring_ended`. Then add
   the independent runtime case: the placement ends `stopped_by_close`, no auditor
   seal exists and close seals with manager attribution.
+
+### Approval packet: disposition of the two C3 copies
+
+**Pending principal approval.** Recommend a bounded comparison and removal of
+the two named files, preserving their original bytes outside the disposal through
+review. The packet at `.tmp/readiness-c3-disposition-01/PACKET.json` is
+`c3-copy-disposition-01`, SHA-256
+`cf9ab1279ab3d5a990cb7133a4adfc187bf90e09c84baf345a2fbb3811bb4783`.
+It pins `.tmp/readiness-c3-disposition-01/dispose.py`, expected MCP content
+arrays and the retained metadata observation. Its nine offline controls
+pass, including differing content, duplicate JSON members, leaf/ancestor
+symlinks, changed metadata, tampered expectations and a reported partial removal.
+
+Both files are in this exact directory:
+
+```text
+/Users/raccoon/.local/share/stewart-claude-code/probe-config/projects/-private-tmp-stewart-cc-service-pzN1HN-stewart-bmokii6un2bq44l6/07705a0a-0d24-421e-87c8-a9d5390c506b/tool-results
+```
+
+| File | Retained size | Expected original reply |
+| --- | ---: | --- |
+| `toolu_01SVodmcS4VpN5vmW4bSiWBt.json` | 67,205 bytes | C3 `read` RPC 3, source range `[0,65536]` |
+| `toolu_01Jrow16CCr9yD5ksw59myvb.json` | 67,089 bytes | C3 `read` RPC 4, source range `[65536,131072]` |
+
+The authority requested is to read these two files once (134,294 bytes), compare
+their decoded JSON with the original captured MCP content arrays, retain exact
+private witnesses in `.tmp/readiness-c3-disposition-01/execution/`, and unlink
+only these two files if both match. Open all ancestry and files without following
+symlinks. Before reading, require regular files, one hard link, and the exact
+size, mode and modification time from the retained 2026-11-15 metadata walk.
+Before either removal, verify both witnesses and recheck both file identities;
+then recheck each immediately before unlinking it. Changed facts refuse removal.
+Record each effect and observe absence afterward. A partial removal stops and is
+reported exactly, without automatic retry or restoration.
+
+This touches no credential contents, other files or directory entries beyond the
+two names, and starts no Claude/authentication process or audit. It changes no
+historical receipt, answer or seal and spends no model allowance. Keep the
+independent witnesses through disposition review, then release reproducible work.
+The earlier approval covered detector implementation; the principal's retained
+custody authority and the instruction to preserve these copies require this
+separate decision before executing the packet.
 
 ### Ground fixtures and reassess
 
