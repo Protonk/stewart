@@ -804,6 +804,157 @@ fn t12_missing_sections_are_noted_and_never_block() {
     r.ok();
 }
 
+/// Every recording tool a family pins records an entry of its own kind, the
+/// rendering heads it by that kind and nothing is left unfilled.
+#[test]
+fn every_pinned_recording_tool_records_its_own_kind() {
+    for family in ["open-inquiry", "inquiry-framing", "comparison"] {
+        let mut l = Live::open(family, "Q?\n", &[("a.txt", b"A\n")]);
+        let recording: Vec<String> = l
+            .world
+            .arrangement
+            .tool_names
+            .iter()
+            .filter(|t| t.starts_with("record_") && *t != "record_artifact")
+            .cloned()
+            .collect();
+        assert!(recording.len() >= 3, "{family}");
+        for (i, tool) in recording.iter().enumerate() {
+            let r = l.call(tool, r#"{"text":"x"}"#);
+            r.ok();
+            assert_eq!(r.str(&["id"]), format!("e{}", i + 1), "{family} {tool}");
+            assert_eq!(r.effect("answer"), "changed", "{family} {tool}");
+        }
+        let state = l.state();
+        let kinds: Vec<&str> = state
+            .selection()
+            .iter()
+            .map(|c| c.version.kind.as_str())
+            .collect();
+        assert_eq!(kinds, recording, "{family}");
+
+        let r = l.call("prepare", "{}");
+        r.ok();
+        let counts: Vec<String> = recording.iter().map(|t| format!("\"{t}\":1")).collect();
+        assert_eq!(
+            r.data(&["counts"]).to_j().string(),
+            format!("{{{},\"record_artifact\":0}}", counts.join(",")),
+            "{family}"
+        );
+        assert_eq!(r.data(&["notices"]).to_j().string(), "[]", "{family}");
+        // The heading is the kind without its prefix, underscores as spaces.
+        let rendering = String::from_utf8(l.file("prepared/1/answer.md")).unwrap();
+        let headings: Vec<&str> = rendering.lines().filter(|l| l.starts_with("## ")).collect();
+        let want: Vec<String> = recording
+            .iter()
+            .enumerate()
+            .map(|(i, t)| {
+                let words = t.strip_prefix("record_").unwrap().replace('_', " ");
+                let (first, rest) = words.split_at(1);
+                format!("## {}{rest} — e{}", first.to_uppercase(), i + 1)
+            })
+            .collect();
+        assert_eq!(headings, want, "{family}");
+    }
+    // The rule gives these headings literally.
+    let mut l = Live::open("comparison", "Q?\n", &[("a.txt", b"A\n")]);
+    l.add("record_criterion", "c", "");
+    l.add("record_comparison", "x", "");
+    l.call("prepare", "{}").ok();
+    let rendering = String::from_utf8(l.file("prepared/1/answer.md")).unwrap();
+    assert!(rendering.contains("\n## Criterion — e1\n"), "{rendering}");
+    assert!(rendering.contains("\n## Comparison — e2\n"), "{rendering}");
+}
+
+#[test]
+fn each_family_notes_exactly_its_unfilled_sections() {
+    for (family, unfilled) in [
+        (
+            "open-inquiry",
+            &[
+                "section_unfilled:record_observation",
+                "section_unfilled:record_limit",
+            ][..],
+        ),
+        (
+            "inquiry-framing",
+            &[
+                "section_unfilled:record_working_question",
+                "section_unfilled:record_relation",
+                "section_unfilled:record_observation",
+                "section_unfilled:record_limit",
+            ][..],
+        ),
+        (
+            "comparison",
+            &[
+                "section_unfilled:record_criterion",
+                "section_unfilled:record_comparison",
+                "section_unfilled:record_limit",
+            ][..],
+        ),
+    ] {
+        let mut l = Live::open(family, "Q?\n", &[("a.txt", b"A\n")]);
+        // An empty answer has one notice of its own.
+        let r = l.call("prepare", "{}");
+        r.ok();
+        let reasons: Vec<&str> = r
+            .data(&["notices"])
+            .as_arr()
+            .unwrap()
+            .iter()
+            .map(|n| s(n, &["reason"]))
+            .collect();
+        assert_eq!(reasons, ["answer_empty"], "{family}");
+        l.add("record_account", "Only this.", "");
+        let r = l.call("prepare", "{}");
+        r.ok();
+        let notices: Vec<String> = r
+            .data(&["notices"])
+            .as_arr()
+            .unwrap()
+            .iter()
+            .map(|n| format!("{}:{}", s(n, &["reason"]), s(n, &["tool"])))
+            .collect();
+        assert_eq!(notices, unfilled, "{family}");
+    }
+}
+
+#[test]
+fn another_familys_recording_tool_is_unknown() {
+    let kinds = [
+        "record_account",
+        "record_observation",
+        "record_limit",
+        "record_working_question",
+        "record_relation",
+        "record_criterion",
+        "record_comparison",
+    ];
+    for family in ["open-inquiry", "inquiry-framing", "comparison"] {
+        let mut l = Live::open(family, "Q?\n", &[("a.txt", b"A\n")]);
+        let own = l.world.arrangement.tool_names.clone();
+        let mut refused = 0;
+        for kind in kinds.iter().filter(|k| !own.iter().any(|t| t == *k)) {
+            let r = l.call(kind, r#"{"text":"x"}"#);
+            assert_eq!(r.reason(), "tool_unknown", "{family} {kind}");
+            assert_eq!(s(&r.env, &["operation"]), *kind);
+            assert_eq!(
+                at(&r.env, &["effects"]).to_j().string(),
+                r#"{"raw_capture":"recorded"}"#,
+                "{family} {kind}"
+            );
+            assert_eq!(strs(&r.env, &["data", "tools"]), own, "{family} {kind}");
+            refused += 1;
+        }
+        assert!(refused >= 2, "{family}");
+        assert_eq!(l.state().revision(), 0, "{family}: no refusal recorded");
+        // The family's own tools still record afterwards.
+        l.add("record_account", "ok", "");
+        assert_eq!(l.state().revision(), 1, "{family}");
+    }
+}
+
 #[test]
 fn submit_answers_every_case_of_its_table() {
     let mut l = Live::new();

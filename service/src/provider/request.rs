@@ -760,4 +760,48 @@ pub(crate) mod tests {
             br#"{"role":"assistant","content":[]}"#
         );
     }
+
+    #[test]
+    fn supplied_guidance_decodes_only_for_its_family() {
+        let supplied = "Use plain words.\n";
+        let record = |family: &str| {
+            let a = arrangement(&ArrangementInput {
+                guidance: Some(supplied),
+                settings: &settings(family, "claude-test-1"),
+                question_body_sha256: &"a".repeat(64),
+                material_index_sha256: &"b".repeat(64),
+            });
+            record_bytes(
+                "arrangement",
+                Some("aqm3x7kd2hz5vw4ny"),
+                &"c".repeat(64),
+                a.body,
+            )
+        };
+        let open = record("open-inquiry");
+        let p = decode_arrangement(&open).unwrap();
+        assert_eq!(p.guidance_source, "guidance.md");
+        assert_eq!(p.guidance_size, supplied.len() as u64);
+        assert_eq!(p.guidance_sha256, util::sha256_hex(supplied.as_bytes()));
+        // The same bytes under another family's identity are refused.
+        let text = String::from_utf8(open).unwrap();
+        for other in ["comparison/1", "inquiry-framing/1"] {
+            let moved = text.replace(
+                r#""family":"open-inquiry/1""#,
+                &format!(r#""family":"{other}""#),
+            );
+            assert_ne!(moved, text);
+            let e = decode_arrangement(moved.as_bytes()).unwrap_err();
+            assert!(
+                e.starts_with("value at /body/guidance/source (byte ")
+                    && e.ends_with("): expected builtin or guidance.md for open-inquiry/1"),
+                "{other}: {e}"
+            );
+        }
+        // Built-in guidance decodes under every family.
+        for family in ["open-inquiry", "inquiry-framing", "comparison"] {
+            let p = decode_arrangement(&arrangement_record(&settings(family, "m"))).unwrap();
+            assert_eq!(p.guidance_source, "builtin", "{family}");
+        }
+    }
 }

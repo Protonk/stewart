@@ -414,4 +414,118 @@ mod tests {
                 .unwrap();
         assert!(Charge::decode(&bad.obj("").unwrap()).is_err());
     }
+
+    // Harness accounting through the shared types, as written today.
+
+    #[cfg(feature = "claude-code")]
+    fn harness_usage(placements: u64, reported: bool) -> Usage {
+        Usage {
+            harness: Some(crate::claude_code::accounting::Summary {
+                placements,
+                stopped: placements,
+                reported_placements: u64::from(reported),
+                turns: if reported { 3 } else { 0 },
+                output: if reported { 9 } else { 0 },
+                ..Default::default()
+            }),
+            ..Usage::default()
+        }
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn harness_usage_is_written_and_read_as_its_summary() {
+        let u = harness_usage(2, true);
+        assert_eq!(u.to_j().string(), u.harness.unwrap().to_j().string());
+        assert_eq!(
+            u.to_j().string(),
+            r#"{"runtime":"claude-code/1","placements":2,"unknown_intervals":0,"stopped":2,"reported_placements":1,"reported_main_loop":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":9,"harness_turns":3},"provider_completeness":"unverified"}"#
+        );
+        let back = crate::json::parse(&u.to_j().bytes()).unwrap();
+        let back = Usage::decode(&back.obj("").unwrap()).unwrap();
+        assert_eq!(back, u);
+        assert_eq!(
+            (back.turns, back.input_tokens, back.output_tokens),
+            (Split::default(), Split::default(), Split::default())
+        );
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn adding_usage_across_runtimes_follows_the_receiving_side() {
+        let sum = |u: &Usage| u.harness.unwrap().placements;
+        // Messages-zero plus harness takes the harness figures.
+        let mut u = Usage::default();
+        u.add(&harness_usage(1, true));
+        assert_eq!(u, harness_usage(1, true));
+        // Harness plus harness sums.
+        u.add(&harness_usage(1, false));
+        assert_eq!(sum(&u), 2);
+        assert_eq!(u.harness.unwrap().reported_placements, 1);
+        // Harness plus Messages: the harness member is unchanged, and the
+        // Messages figures accumulate unseen (accepted today).
+        let before = u.to_j().string();
+        let mut messages = Usage::default();
+        messages.turns.reported = 5;
+        u.add(&messages);
+        assert_eq!(u.to_j().string(), before);
+        assert_eq!(u.turns.reported, 5);
+        assert_eq!(u.harness, harness_usage(2, true).harness);
+        // Messages plus harness: the other side's Messages figures are dropped
+        // (accepted today), the receiver's own are kept.
+        let mut u = Usage::default();
+        u.turns.reported = 3;
+        let mut other = harness_usage(1, false);
+        other.turns.reported = 9;
+        u.add(&other);
+        assert_eq!(u.turns.reported, 3);
+        assert_eq!(sum(&u), 1);
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn harness_limits_are_exhausted_when_every_placement_is_used() {
+        let l = Limits {
+            harness: Some(crate::claude_code::profile::Limits {
+                max_placements: 2,
+                placement_timeout_seconds: 60,
+            }),
+            turns: 0,
+            input_tokens: 0,
+            output_tokens: 0,
+        };
+        assert!(!l.exhausted(&Usage::default()), "no placement used yet");
+        assert!(!l.exhausted(&harness_usage(1, false)));
+        assert!(l.exhausted(&harness_usage(2, false)));
+        assert_eq!(
+            l.allowances_j(&harness_usage(1, false)).string(),
+            r#"{"runtime":"claude-code/1","placements":{"used":1,"limit":2,"remaining":1},"placement_timeout_seconds":60,"usage":{"runtime":"claude-code/1","placements":1,"unknown_intervals":0,"stopped":1,"reported_placements":0,"reported_main_loop":null,"provider_completeness":"unverified"}}"#
+        );
+        // The Messages-shaped calls still compile for a harness limit and
+        // read its zeroed figures (accepted today): nothing remains, a
+        // near-limit notice is due and no output is allowed.
+        let used = harness_usage(1, false);
+        let r = l.remaining(&used);
+        assert_eq!((r.turns, r.input_tokens, r.output_tokens), (0, 0, 0));
+        assert!(r.harness.is_none());
+        assert!(l.near_limit(&used, 20));
+        assert_eq!(l.max_tokens(&used, 16_000), 0);
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn harness_remaining_is_written_as_seconds_and_placements() {
+        let r = Remaining {
+            harness: Some((12, 2)),
+            turns: 0,
+            input_tokens: 0,
+            output_tokens: 0,
+        };
+        assert_eq!(
+            r.to_j().string(),
+            r#"{"runtime":"claude-code/1","seconds":12,"placements":2}"#
+        );
+        let back = crate::json::parse(&r.to_j().bytes()).unwrap();
+        assert_eq!(Remaining::decode(&back.obj("").unwrap()).unwrap(), r);
+    }
 }

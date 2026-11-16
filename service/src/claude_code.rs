@@ -186,4 +186,30 @@ mod tests {
         let expected = br#"[{"name":"read","description":"Read a \"page\".\nExactly.","inputSchema":{ "type" : "object", "properties": {"source":{"type":"string","description":"\u0061"}}, "required" : [ "source" ], "additionalProperties":false },"_meta":{"anthropic/maxResultSizeChars":500000}}]"#;
         assert_eq!(mcp_tools(original).unwrap(), expected);
     }
+
+    /// The profile `tools_sha256` of each family's released tools: a profile
+    /// check binds these bytes, so a changed tool needs a new family version
+    /// (QUESTION-FORMS, the opening paragraph) and fresh checked profiles.
+    #[test]
+    fn released_family_mcp_tools_are_frozen() {
+        let want = [
+            (
+                "open-inquiry",
+                "65a18b015056d61e3f448381fdc302c6e799f8ef1974a56a037eb3c9a1d4df4f",
+            ),
+            (
+                "inquiry-framing",
+                "c2837f64cf0ffb259cb512ba5719a3586ba8db5924132c480923f5a5efc38748",
+            ),
+            (
+                "comparison",
+                "4caa08d648c41514c12b47b73739bb366608e865e1e88d6495dfbf44af59cb8a",
+            ),
+        ];
+        for (family, (id, digest)) in crate::forms::FAMILIES.iter().zip(want) {
+            assert_eq!(family.id, id);
+            let mapped = mcp_tools(&crate::forms::tools(family).bytes()).unwrap();
+            assert_eq!(crate::util::sha256_hex(&mapped), digest, "{id}");
+        }
+    }
 }

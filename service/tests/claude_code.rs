@@ -789,3 +789,112 @@ fn a_used_placement_is_counted_in_the_singular_with_its_deadline() {
     let refused = p.env.run(&["run", &p.reference, "--json"]).json();
     assert_eq!(common::s(&refused, &["outcome"]), "refused");
 }
+
+/// The raw bytes of one log record's body, from after its `prev` member.
+fn body_after_prev(e: &common::Env, r: &str, n: usize) -> String {
+    let raw = std::fs::read(format!("{}/log/{n}.json", e.audit_dir(r))).unwrap();
+    let parsed = json::parse(&raw).unwrap();
+    let body = common::at(&parsed, &["body"]);
+    let text = String::from_utf8(raw[body.start..body.end].to_vec()).unwrap();
+    assert!(text.starts_with(r#"{"prev":"#), "{text}");
+    let at = text.find(r#","run":"#).expect("a run record");
+    format!("{{{}", &text[at + 1..])
+}
+
+/// What a harness placement writes when its first start fails: the run
+/// records and the usage checkpoint, byte for byte where the bytes do not
+/// depend on the process or the machine.
+#[test]
+fn a_failed_start_leaves_the_harness_records_and_usage_checkpoint() {
+    let p = Prepared::with(RECORDING, &Prepared::fields);
+    // The runtime refuses a launch directory under project instructions.
+    if std::path::Path::new(&p.env.path("tmp"))
+        .ancestors()
+        .any(|a| {
+            [".git", "CLAUDE.md", "AGENTS.md", ".claude"]
+                .iter()
+                .any(|m| a.join(m).symlink_metadata().is_ok())
+        })
+    {
+        panic!(
+            "required scratch directory is under a project or configuration tree; rerun with a clean TMPDIR"
+        );
+    }
+    p.profile(
+        "stewart.claude-code.profile/2",
+        "surface_sha256",
+        SURFACE_SHA256,
+    );
+    let reply = p.prepare().json();
+    let out = p
+        .env
+        .commission(&p.reference, common::s(&reply, &["data", "prepared"]));
+    assert_eq!(out.code, Some(0), "{}{}", out.text(), out.stderr);
+    let run = p
+        .env
+        .run_env(&["run", &p.reference], &[("STEWART_IT_CALLER", "caller")]);
+    assert!(
+        run.text().contains("Run 1 was interrupted (protocol_anomaly)."),
+        "{}{}",
+        run.text(),
+        run.stderr
+    );
+
+    let kinds = p.env.log_kinds(&p.reference);
+    assert_eq!(
+        kinds,
+        [
+            "reference",
+            "prepared",
+            "intake_planned",
+            "accepted",
+            "run_started",
+            "run_ended"
+        ]
+    );
+
+    // run_started: the harness member follows the observations, the
+    // provider is null, and the profile digest is that of the profile file.
+    let arrangement = common::s(
+        &p.env.log_record(&p.reference, 2),
+        &["body", "arrangement_sha256"],
+    )
+    .to_string();
+    let profile = std::fs::read(p.env.path("profile.json")).unwrap();
+    let started = body_after_prev(&p.env, &p.reference, 5);
+    let (head, rest) = started.split_once(r#""observations":"#).unwrap();
+    let (observations, runtime) = rest.split_once(r#","runtime":"#).unwrap();
+    assert_eq!(
+        head,
+        format!(
+            r#"{{"run":1,"continuing":false,"dir":"runs/1","arrangement_sha256":"{arrangement}","provider":null,"#
+        )
+    );
+    // The values are the process's own; the order is the record's.
+    let order: Vec<usize> = ["pid", "start_ticks", "uid", "host", "boot_id"]
+        .iter()
+        .map(|k| observations.find(&format!(r#""{k}":"#)).unwrap())
+        .collect();
+    assert!(order.windows(2).all(|w| w[0] < w[1]), "{observations}");
+    assert_eq!(
+        runtime,
+        format!(
+            r#"{{"kind":"claude-code/1","profile_sha256":"{}","placement_timeout_seconds":60}}}}"#,
+            stewart::util::sha256_hex(&profile)
+        )
+    );
+
+    // run_ended: the usage is the reserved placement, observed stopped.
+    let summary = r#"{"runtime":"claude-code/1","placements":1,"unknown_intervals":1,"stopped":1,"reported_placements":0,"reported_main_loop":null,"provider_completeness":"unverified"}"#;
+    let ended = body_after_prev(&p.env, &p.reference, 6);
+    let (ended, _message) = ended.split_once(r#","message":"#).unwrap();
+    assert_eq!(
+        ended,
+        format!(
+            r#"{{"run":1,"ending":"interrupted","cause":"protocol_anomaly","recorded_by":"run","provider":null,"requests":0,"attempts":0,"usage":{summary},"notices":[],"seal":null"#
+        )
+    );
+    // The checkpoint file holds the same summary, with no trailing newline.
+    let checkpoint = format!("{}/runs/1/runtime-usage-1.json", p.env.audit_dir(&p.reference));
+    assert_eq!(std::fs::read_to_string(checkpoint).unwrap(), summary);
+}

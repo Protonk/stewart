@@ -556,3 +556,54 @@ pub fn seal(
 ) -> Result<Sealed, SealError> {
     prep::seal(audit, family, prepared, sealer)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::forms::{FAMILIES, tools};
+
+    /// The nine tools every family offers, then each family's recording
+    /// tools: `TOOLS` is exactly their union, so a tool a family adds is
+    /// dispatched and a tool no family offers is not accepted.
+    #[test]
+    fn tool_union_is_common_tools_and_family_kinds() {
+        let common = [
+            "list",
+            "read",
+            "search",
+            "record_artifact",
+            "replace",
+            "delete",
+            "what_am_i_working_with",
+            "prepare",
+            "submit",
+        ];
+        let mut want: Vec<&str> = common.to_vec();
+        for f in &FAMILIES {
+            for t in f.tools {
+                if !want.contains(t) {
+                    want.push(t);
+                }
+            }
+        }
+        let mut have = TOOLS.to_vec();
+        have.sort();
+        want.sort();
+        assert_eq!(have, want, "TOOLS holds each name once");
+        assert_eq!(TOOLS.len(), 16);
+        for f in &FAMILIES {
+            let parsed = crate::json::parse(&tools(f).bytes()).unwrap();
+            let offered: Vec<&str> = parsed
+                .as_arr()
+                .unwrap()
+                .iter()
+                .map(|t| t.obj("").unwrap().str("name").unwrap())
+                .collect();
+            for name in offered {
+                assert_eq!(known(Some(name)), Some(name), "{} {name}", f.id);
+            }
+        }
+        assert_eq!(known(Some("record_survey")), None);
+        assert_eq!(known(None), None);
+    }
+}

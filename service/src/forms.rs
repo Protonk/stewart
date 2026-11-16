@@ -697,6 +697,39 @@ mod tests {
         );
     }
 
+    /// The bytes of the arrangement body, as `prepare` records them (the
+    /// record header adds a timestamp, so the body is what is pinned).
+    #[test]
+    fn a_messages_arrangement_body_is_frozen() {
+        let settings = crate::frontmatter::Settings {
+            #[cfg(feature = "claude-code")]
+            harness: None,
+            guidance: None,
+            family: "comparison".into(),
+            model: "claude-opus-5-5".into(),
+            effort: None,
+            destination: "/d".into(),
+            turns: 200,
+            input_tokens: 20_000_000,
+            output_tokens: 400_000,
+            inquiry: None,
+            varies: None,
+        };
+        let body = arrangement(&ArrangementInput {
+            guidance: None,
+            settings: &settings,
+            question_body_sha256: &"1".repeat(64),
+            material_index_sha256: &"2".repeat(64),
+        })
+        .body
+        .bytes();
+        assert_eq!(body.len(), 14565);
+        assert_eq!(
+            crate::util::sha256_hex(&body),
+            "49c1db2b0d586bbf869be5593d24bb3b6c8bee568ff65779aedb9fb27759b065"
+        );
+    }
+
     #[test]
     fn citation_schema_is_exact() {
         let expected = r#"{"type":"object","properties":{"source":{"type":"string","description":"question or materials/<name>."},"start":{"type":"integer","minimum":0,"description":"Byte offset where the cited span begins."},"end":{"type":"integer","minimum":1,"description":"Byte offset just after the cited span."},"quote":{"type":"string","description":"Exact text of the cited span."}},"required":["source"],"additionalProperties":false}"#;
@@ -829,5 +862,178 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// The rows of the first table whose header line starts with `header`,
+    /// as trimmed cells, read from QUESTION-FORMS.
+    fn spec_table(header: &str) -> Vec<Vec<String>> {
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../docs/QUESTION-FORMS.md");
+        let doc = std::fs::read_to_string(path)
+            .expect("docs/QUESTION-FORMS.md is part of the repository");
+        let mut lines = doc.lines().skip_while(|l| !l.starts_with(header));
+        assert!(lines.next().is_some(), "no table headed {header}");
+        lines
+            .skip(1)
+            .take_while(|l| l.starts_with('|'))
+            .map(|l| {
+                l.trim_matches('|')
+                    .split(" | ")
+                    .map(|c| c.trim().trim_matches('|').trim().to_string())
+                    .collect()
+            })
+            .collect()
+    }
+
+    fn unticked(cell: &str) -> &str {
+        cell.trim_matches('`')
+    }
+
+    #[test]
+    fn question_forms_family_table_matches() {
+        let rows = spec_table("| Family | Recording tools");
+        assert_eq!(rows.len(), FAMILIES.len());
+        for (f, row) in FAMILIES.iter().zip(&rows) {
+            assert_eq!(row[0], f.title);
+            let tools: Vec<&str> = row[1].split(", ").map(unticked).collect();
+            assert_eq!(tools, f.tools, "{} tools", f.id);
+            // "all three" or a list of short section names.
+            let sections: Vec<String> = match row[2].strip_prefix("all ") {
+                Some(count) => {
+                    let n = ["one", "two", "three", "four", "five"]
+                        .iter()
+                        .position(|w| *w == count)
+                        .expect("a spelled-out count")
+                        + 1;
+                    assert_eq!(n, f.tools.len(), "{} count", f.id);
+                    f.tools.iter().map(|t| t.to_string()).collect()
+                }
+                None => row[2].split(", ").map(|n| format!("record_{n}")).collect(),
+            };
+            assert_eq!(sections, f.sections, "{} sections", f.id);
+        }
+    }
+
+    /// Every tool any family offers, with its description, each paired with
+    /// the specification's row for it; a swapped pair fails here.
+    #[test]
+    fn tool_descriptions_pair_with_question_forms() {
+        let rows = spec_table("| Tool | Description |");
+        let mut offered: Vec<String> = Vec::new();
+        for f in &FAMILIES {
+            let parsed = crate::json::parse(&tools(f).bytes()).unwrap();
+            for t in parsed.as_arr().unwrap() {
+                let name = t.obj("").unwrap().str("name").unwrap().to_string();
+                if !offered.contains(&name) {
+                    offered.push(name);
+                }
+            }
+        }
+        let mut documented: Vec<&str> = rows.iter().map(|r| unticked(&r[0])).collect();
+        let mut names: Vec<&str> = offered.iter().map(String::as_str).collect();
+        documented.sort();
+        names.sort();
+        assert_eq!(documented, names);
+        for row in &rows {
+            assert_eq!(tool_description(unticked(&row[0])), row[1], "{}", row[0]);
+        }
+
+        // Each property description pairs with its (tool, property) row;
+        // `record_<kind>` stands for every recording tool but the artifact.
+        let props = spec_table("| Tool | Property | Type |");
+        let mut used: Vec<(String, String)> = Vec::new();
+        for f in &FAMILIES {
+            let parsed = crate::json::parse(&tools(f).bytes()).unwrap();
+            for t in parsed.as_arr().unwrap() {
+                let o = t.obj("").unwrap();
+                let name = o.str("name").unwrap();
+                let key = if name.starts_with("record_") && name != "record_artifact" {
+                    "record_<kind>"
+                } else {
+                    name
+                };
+                for (prop, p) in o
+                    .obj("input_schema")
+                    .unwrap()
+                    .obj("properties")
+                    .unwrap()
+                    .members
+                {
+                    let row = props
+                        .iter()
+                        .find(|r| unticked(&r[0]) == key && unticked(&r[1]) == prop)
+                        .unwrap_or_else(|| panic!("no row for {key} {prop}"));
+                    assert_eq!(
+                        p.obj("").unwrap().str("description").unwrap(),
+                        row[5],
+                        "{key} {prop}"
+                    );
+                    used.push((key.to_string(), prop.to_string()));
+                }
+            }
+        }
+        for row in props.iter().filter(|r| r[1] != "none") {
+            let key = (unticked(&row[0]).to_string(), unticked(&row[1]).to_string());
+            assert!(used.contains(&key), "{key:?} is in no tool");
+        }
+    }
+
+    #[test]
+    fn one_version_per_family_id() {
+        for (i, f) in FAMILIES.iter().enumerate() {
+            assert!(
+                FAMILIES[..i].iter().all(|g| g.id != f.id),
+                "{} appears twice",
+                f.id
+            );
+            assert_eq!(family(f.id).map(|g| g.version), Some(f.version));
+        }
+    }
+
+    const ORIENTATION_DIGEST: &str =
+        "15a7e9ee0a5f67caddda664ec616c184e7a27d8f59b761a76ec0d75a4a702193";
+    // Digests of the tools array, the system array, the instructions and the
+    // sections list (joined by LF).
+    const OPEN_INQUIRY_DIGESTS: [&str; 4] = [
+        "5ed1f6788425a79af2e8e00a51f0af90fcbeb02b89325d9714c307237f8fb17b",
+        "f8b6bf95d3b259e3b3d61ffc1b3e7cc035400d1d4a012a71755b0bdfd2038cde",
+        "a28413fef1be58952fe0604eb50f9924834e8410aa2ebcb78e3cc8af4ba7a693",
+        "5a0b205b1ea4e2583549a0082eb858994c40c453c976195b71457bf21408fb40",
+    ];
+    const INQUIRY_FRAMING_DIGESTS: [&str; 4] = [
+        "20df856fdef2bd8f78b6ea5a47b93c02bc60bd58bb14cc12ad2890e84763cadb",
+        "409776f5e27b16b63a1fbf58968a1c97f36bef6e551f18b42f1fe1c38e875abc",
+        "6161d80e8b8b72111bb591fcbf1f3df6b89a19786ac4c6509eaa627590eda515",
+        "2c2943df4f295495eae4499e31dae5f70bc5b2dbff0fdba973d907ad53fc5e58",
+    ];
+    const COMPARISON_DIGESTS: [&str; 4] = [
+        "d6a32f2e9380aef070eccd6bff945f25602c6e368c7c2ce25c7485f78f77adc7",
+        "f488f098b5b45a48567aa1a92100386a15cffb92236a696cf66cc665ea537dab",
+        "6c010a7fe8fed94f523bd3e08d37537574ddb1e8601daa429ecafd5daf10368b",
+        "2149afcf99067285ce156557ae4b01c838ae29901c8055ed3203dc24d56940f4",
+    ];
+
+    /// The released bytes of each family. A pinned text, tool definition or
+    /// section list changes only with a new family version (QUESTION-FORMS,
+    /// the opening paragraph), so a change that moves any digest here is a new
+    /// version, not an edit.
+    #[test]
+    fn released_family_forms_are_frozen() {
+        use crate::util::sha256_hex;
+        let want: [(&str, [&str; 4]); 3] = [
+            ("open-inquiry/1", OPEN_INQUIRY_DIGESTS),
+            ("inquiry-framing/1", INQUIRY_FRAMING_DIGESTS),
+            ("comparison/1", COMPARISON_DIGESTS),
+        ];
+        for (f, (id, digests)) in FAMILIES.iter().zip(want) {
+            assert_eq!(f.versioned_id(), id);
+            let got = [
+                sha256_hex(&tools(f).bytes()),
+                sha256_hex(&system(f)),
+                sha256_hex(f.instructions.as_bytes()),
+                sha256_hex(f.sections.join("\n").as_bytes()),
+            ];
+            assert_eq!(got, digests, "{id}: tools, system, instructions, sections");
+        }
+        assert_eq!(sha256_hex(ORIENTATION.as_bytes()), ORIENTATION_DIGEST);
     }
 }

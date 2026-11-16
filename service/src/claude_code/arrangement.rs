@@ -300,7 +300,10 @@ mod tests {
     use crate::provider::request::decode_arrangement;
 
     fn built() -> J {
-        let tools = forms::tools(forms::family("comparison").unwrap()).bytes();
+        built_for("comparison", None)
+    }
+    fn built_for(family: &str, guidance: Option<&str>) -> J {
+        let tools = forms::tools(forms::family(family).unwrap()).bytes();
         let mcp = super::super::mcp_tools(&tools).unwrap();
         let settings = crate::frontmatter::Settings {
             harness: Some(Selection {
@@ -316,8 +319,8 @@ mod tests {
                     &mcp,
                 )),
             }),
-            guidance: None,
-            family: "comparison".into(),
+            guidance: guidance.map(|_| "guidance.md".to_string()),
+            family: family.into(),
             model: "fixture-model".into(),
             effort: None,
             destination: "/d".into(),
@@ -328,7 +331,7 @@ mod tests {
             varies: None,
         };
         forms::arrangement(&ArrangementInput {
-            guidance: None,
+            guidance,
             settings: &settings,
             question_body_sha256: &"1".repeat(64),
             material_index_sha256: &"2".repeat(64),
@@ -343,6 +346,56 @@ mod tests {
             members.iter_mut().find(|(k, _)| k == key).unwrap().1 = value;
         }
         body
+    }
+
+    /// The body with the platform-dependent profile text and its digest
+    /// replaced, so the pinned bytes hold on every platform.
+    fn normalized(body: &J) -> String {
+        let text = String::from_utf8(body.bytes()).unwrap();
+        let pinned = decode_arrangement(&record(body.clone())).unwrap();
+        let profile = pinned.harness.unwrap().selection.profile.unwrap();
+        let normal = text
+            .replace(&J::from(profile.as_str()).string(), r#""<profile>""#)
+            .replace(&util::sha256_hex(profile.as_bytes()), "<profile_sha256>");
+        let platform = format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH);
+        assert!(!normal.contains(&platform), "platform left in the body");
+        normal
+    }
+
+    #[test]
+    fn a_harness_arrangement_body_is_frozen() {
+        let text = normalized(&built());
+        assert_eq!(text.len(), 30474);
+        assert_eq!(
+            util::sha256_hex(text.as_bytes()),
+            "c4b78abd491f59764cd67dfe34145af290b8bd93e7c583f28a5ca56a147deeff"
+        );
+    }
+
+    /// A decoded harness arrangement fills the Messages-only members of the
+    /// pin with fixed placeholders; nothing reads them for a harness run.
+    #[test]
+    fn a_decoded_harness_arrangement_carries_placeholder_api_members() {
+        let pinned = decode_arrangement(&record(built())).unwrap();
+        assert_eq!(pinned.anthropic_version, "");
+        assert_eq!(pinned.max_tokens_per_request, 0);
+        assert!(pinned.request_extra.is_empty());
+        assert_eq!(pinned.near_limit_percent, 20);
+        assert_eq!(pinned.retry_attempts, 0);
+        assert!(pinned.retry_delays_seconds.is_empty());
+        assert_eq!(pinned.retry_after_ceiling_seconds, 0);
+        assert_eq!(pinned.request_timeout_seconds, 0);
+        let l = pinned.limits;
+        assert_eq!((l.turns, l.input_tokens, l.output_tokens), (0, 0, 0));
+        assert_eq!(
+            l.harness,
+            Some(profile::Limits {
+                max_placements: 2,
+                placement_timeout_seconds: 60
+            })
+        );
+        assert_eq!(pinned.family, "comparison/1");
+        assert!(pinned.harness.is_some());
     }
 
     /// The runtime's pinned texts equal the contract's quoted blocks, read
@@ -445,5 +498,33 @@ mod tests {
                 && refusal.contains(profile::ARRANGEMENT_SCHEMA),
             "{refusal}"
         );
+    }
+
+    #[test]
+    fn supplied_guidance_decodes_only_for_its_family() {
+        let supplied = "Use plain words.\n";
+        let open = built_for("open-inquiry", Some(supplied));
+        let pinned = decode_arrangement(&record(open.clone())).unwrap();
+        assert_eq!(pinned.guidance_source, "guidance.md");
+        assert_eq!(pinned.guidance_size, supplied.len() as u64);
+        assert_eq!(
+            pinned.guidance_sha256,
+            util::sha256_hex(supplied.as_bytes())
+        );
+        // The same bytes under another family's identity are refused.
+        for other in ["comparison/1", "inquiry-framing/1"] {
+            let moved = replace(open.clone(), "family", J::from(other));
+            let refusal = decode_arrangement(&record(moved)).unwrap_err();
+            assert!(
+                refusal.starts_with("value at /body/guidance (byte ")
+                    && refusal.ends_with("): unsupported guidance source for the family"),
+                "{other}: {refusal}"
+            );
+        }
+        // Built-in guidance decodes under every family.
+        for family in ["open-inquiry", "inquiry-framing", "comparison"] {
+            let pinned = decode_arrangement(&record(built_for(family, None))).unwrap();
+            assert_eq!(pinned.guidance_source, "builtin", "{family}");
+        }
     }
 }

@@ -739,3 +739,124 @@ impl ReceiptLoadError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn decode(family: &str, guidance: Option<&str>) -> Result<Settings, String> {
+        let guidance = guidance
+            .map(|g| format!(r#","guidance":"{g}""#))
+            .unwrap_or_default();
+        let text = format!(
+            r#"{{"family":"{family}","model":"m","destination":"/d","limits":{{"turns":1,"input_tokens":1,"output_tokens":1}}{guidance}}}"#
+        );
+        let parsed = json::parse(text.as_bytes()).unwrap();
+        decode_settings(&parsed.obj("/body/settings").unwrap()).map_err(|e| e.to_string())
+    }
+
+    #[test]
+    fn settings_guidance_follows_the_family() {
+        let ok = decode("open-inquiry", Some("guidance.md")).unwrap();
+        assert_eq!(ok.guidance.as_deref(), Some("guidance.md"));
+        assert_eq!(decode("comparison", None).unwrap().guidance, None);
+        for (family, guidance) in [
+            ("comparison", "guidance.md"),
+            ("inquiry-framing", "guidance.md"),
+            ("open-inquiry", "other.md"),
+        ] {
+            let e = decode(family, Some(guidance)).unwrap_err();
+            assert!(
+                e.starts_with("value at /body/settings/guidance (byte ")
+                    && e.ends_with("): expected guidance.md for open-inquiry"),
+                "{family} {guidance}: {e}"
+            );
+        }
+    }
+
+    fn messages_settings() -> Settings {
+        Settings {
+            #[cfg(feature = "claude-code")]
+            harness: None,
+            guidance: Some("guidance.md".into()),
+            family: "open-inquiry".into(),
+            model: "claude-opus-5-5".into(),
+            effort: Some("high".into()),
+            destination: "/d".into(),
+            turns: 200,
+            input_tokens: 20_000_000,
+            output_tokens: 400_000,
+            inquiry: Some("a".into()),
+            varies: Some("b".into()),
+        }
+    }
+
+    fn round_trip(settings: &Settings) -> (String, Settings) {
+        let text = settings.to_j().string();
+        let parsed = json::parse(text.as_bytes()).unwrap();
+        let back = decode_settings(&parsed.obj("/body/settings").unwrap())
+            .unwrap_or_else(|e| panic!("{e}: {text}"));
+        (text, back)
+    }
+
+    #[test]
+    fn messages_settings_are_written_in_their_fixed_order() {
+        let (text, back) = round_trip(&messages_settings());
+        assert_eq!(back, messages_settings());
+        assert_eq!(
+            text,
+            r#"{"family":"open-inquiry","model":"claude-opus-5-5","destination":"/d","limits":{"turns":200,"input_tokens":20000000,"output_tokens":400000},"guidance":"guidance.md","effort":"high","inquiry":"a","varies":"b"}"#
+        );
+    }
+
+    #[cfg(feature = "claude-code")]
+    fn harness_settings() -> Settings {
+        let tools = crate::forms::tools(crate::forms::family("open-inquiry").unwrap()).bytes();
+        let mcp = crate::claude_code::mcp_tools(&tools).unwrap();
+        let profile = crate::claude_code::profile::tests::fixture(
+            crate::claude_code::profile::PROFILE_SCHEMA,
+            "surface_sha256",
+            &crate::claude_code::surface::sha256(),
+            &mcp,
+        );
+        Settings {
+            harness: Some(crate::claude_code::profile::Selection {
+                path: "/fixture/profile.json".into(),
+                limits: crate::claude_code::profile::Limits {
+                    max_placements: 2,
+                    placement_timeout_seconds: 60,
+                },
+                profile: Some(profile),
+            }),
+            turns: 0,
+            input_tokens: 0,
+            output_tokens: 0,
+            ..messages_settings()
+        }
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn harness_settings_replace_the_limits_and_follow_them_with_the_runtime() {
+        let s = harness_settings();
+        let (text, back) = round_trip(&s);
+        assert_eq!(back, s);
+        // The captured profile text is escaped inside the runtime member;
+        // the rest of the bytes are exact.
+        let profile = s.harness.as_ref().unwrap().profile.clone().unwrap();
+        let escaped = J::from(profile.as_str()).string();
+        assert!(text.contains(&escaped));
+        assert_eq!(
+            text.replace(&escaped, "<profile>"),
+            r#"{"family":"open-inquiry","model":"claude-opus-5-5","destination":"/d","limits":{"max_placements":2,"placement_timeout_seconds":60},"runtime":{"kind":"claude-code/1","profile_path":"/fixture/profile.json","profile":<profile>},"guidance":"guidance.md","effort":"high","inquiry":"a","varies":"b"}"#
+        );
+        // Harness limits take no Messages figures.
+        let extra = text.replace(
+            r#""placement_timeout_seconds":60}"#,
+            r#""placement_timeout_seconds":60,"turns":1}"#,
+        );
+        let parsed = json::parse(extra.as_bytes()).unwrap();
+        let e = decode_settings(&parsed.obj("/body/settings").unwrap()).unwrap_err();
+        assert!(e.to_string().contains("/limits/turns"), "{e}");
+    }
+}

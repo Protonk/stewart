@@ -1374,6 +1374,47 @@ mod tests {
         std::fs::remove_dir_all(p).unwrap();
     }
 
+    /// A harness placement writes request 1, attempt 1, the call number as
+    /// the block, and an `mcp-<call>` id; the record is the same form as a
+    /// Messages one.
+    #[test]
+    fn a_tool_result_for_a_harness_call_has_a_fixed_request_attempt_and_id() {
+        let t = ToolResult {
+            call: 7,
+            request: 1,
+            attempt: 1,
+            block: 7,
+            call_bytes: 42,
+            call_sha256: "b".repeat(64),
+            tool_use_id: "mcp-7".into(),
+            tool: Some("read".into()),
+            input_sha256: Some("c".repeat(64)),
+            replay_of: None,
+            outcome: "completed".into(),
+            reason: None,
+            revision: 3,
+            log_record: None,
+            is_error: false,
+            content: br#"[{"type":"text","text":"{}"}]"#.to_vec(),
+        };
+        let text = t.to_j().string();
+        assert_eq!(
+            text,
+            format!(
+                r#"{{"call":7,"request":1,"attempt":1,"block":7,"call_file":"call-7.json","call_bytes":42,"call_sha256":"{}","tool_use_id":"mcp-7","tool":"read","input_sha256":"{}","replay_of":null,"outcome":"completed","reason":null,"revision":3,"log_record":null,"is_error":false,"content":[{{"type":"text","text":"{{}}"}}]}}"#,
+                "b".repeat(64),
+                "c".repeat(64)
+            )
+        );
+        let parsed = json::parse(text.as_bytes()).unwrap();
+        let back = ToolResult::decode(&parsed.obj("/body").unwrap(), text.as_bytes()).unwrap();
+        assert_eq!(back, t);
+        assert_eq!(
+            back.block_bytes(),
+            br#"{"type":"tool_result","tool_use_id":"mcp-7","content":[{"type":"text","text":"{}"}],"is_error":false}"#
+        );
+    }
+
     #[test]
     fn an_open_placement_is_accounted_from_its_records_and_captures() {
         let (p, audit) = crate::log::tests::scratch_audit();

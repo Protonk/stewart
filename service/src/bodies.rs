@@ -2058,4 +2058,188 @@ mod tests {
             r#"{"prev":null,"before_launch":false,"accepted":true,"outcome":"closed_delivered"}"#;
         assert!(refuses(short, |o| Closed::decode(o).map(|_| ())).contains("missing"));
     }
+
+    // Harness (claude-code) records: the bytes written today, including what
+    // the decoders accept without checking.
+
+    #[cfg(feature = "claude-code")]
+    fn harness_observations() -> RunObservations {
+        RunObservations {
+            pid: 4182,
+            start_ticks: Some(912873),
+            uid: 1000,
+            host: Some("ana-laptop".into()),
+            boot_id: None,
+        }
+    }
+
+    #[cfg(feature = "claude-code")]
+    fn harness_started() -> RunStarted {
+        RunStarted {
+            run: 1,
+            arrangement_sha256: h('a'),
+            provider: None,
+            runtime: Some(crate::claude_code::accounting::Start {
+                profile_sha256: h('b'),
+                placement_timeout_seconds: 60,
+            }),
+            observations: harness_observations(),
+        }
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn a_harness_run_started_writes_runtime_after_observations_and_a_null_provider() {
+        let r = harness_started();
+        let (text, back) = round(r.to_j(), RunStarted::decode);
+        assert_eq!(back, r);
+        assert_eq!(
+            text,
+            format!(
+                r#"{{"prev":null,"run":1,"continuing":false,"dir":"runs/1","arrangement_sha256":"{}","provider":null,"observations":{{"pid":4182,"start_ticks":912873,"uid":1000,"host":"ana-laptop","boot_id":null}},"runtime":{{"kind":"claude-code/1","profile_sha256":"{}","placement_timeout_seconds":60}}}}"#,
+                h('a'),
+                h('b')
+            )
+        );
+        let dec = |o: &Obj| RunStarted::decode(o).map(|_| ());
+        // Exactly one of provider and runtime: both, or neither.
+        let provider = r#""provider":{"base_url":"https://api.anthropic.com","override":false,"proxy":null,"anthropic_version":"2026-10-21"}"#;
+        let both = text.replace(r#""provider":null"#, provider);
+        assert!(refuses(&both, dec).contains("/provider"), "both selected");
+        let neither = text.replace(
+            &format!(
+                r#","runtime":{{"kind":"claude-code/1","profile_sha256":"{}","placement_timeout_seconds":60}}"#,
+                h('b')
+            ),
+            "",
+        );
+        assert!(refuses(&neither, dec).contains("/provider"), "neither selected");
+        let kind = text.replace("claude-code/1", "claude-code/2");
+        assert!(refuses(&kind, dec).contains("/runtime/kind"));
+        let zero = text.replace(
+            r#""placement_timeout_seconds":60"#,
+            r#""placement_timeout_seconds":0"#,
+        );
+        assert!(refuses(&zero, dec).contains("/runtime/placement_timeout_seconds"));
+    }
+
+    #[cfg(feature = "claude-code")]
+    fn harness_ended(summary: crate::claude_code::accounting::Summary) -> RunEnded {
+        RunEnded {
+            run: 1,
+            ending: "interrupted".into(),
+            cause: Some("placement_deadline".into()),
+            recorded_by: "run".into(),
+            provider: None,
+            requests: 0,
+            attempts: 0,
+            usage: Usage {
+                harness: Some(summary),
+                ..Usage::default()
+            },
+            notices: vec![],
+            seal: None,
+            message: "The placement reached its deadline.".into(),
+        }
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn a_harness_run_ended_carries_zero_requests_and_harness_usage() {
+        use crate::claude_code::accounting::Summary;
+        let reported = Summary {
+            placements: 1,
+            unknown_intervals: 0,
+            stopped: 1,
+            reported_placements: 1,
+            input: 120,
+            cache_creation: 30,
+            cache_read: 400,
+            output: 55,
+            turns: 4,
+        };
+        let r = harness_ended(reported);
+        let (text, back) = round(r.to_j(), RunEnded::decode);
+        assert_eq!(back, r);
+        assert_eq!(
+            text,
+            r#"{"prev":null,"run":1,"ending":"interrupted","cause":"placement_deadline","recorded_by":"run","provider":null,"requests":0,"attempts":0,"usage":{"runtime":"claude-code/1","placements":1,"unknown_intervals":0,"stopped":1,"reported_placements":1,"reported_main_loop":{"input_tokens":120,"cache_creation_input_tokens":30,"cache_read_input_tokens":400,"output_tokens":55,"harness_turns":4},"provider_completeness":"unverified"},"notices":[],"seal":null,"message":"The placement reached its deadline."}"#
+        );
+        // Nothing reported: the main-loop member is null.
+        let none = Summary {
+            stopped: 1,
+            ..Summary::reserved()
+        };
+        let r = harness_ended(none);
+        let (text, back) = round(r.to_j(), RunEnded::decode);
+        assert_eq!(back, r);
+        assert!(text.contains(
+            r#""usage":{"runtime":"claude-code/1","placements":1,"unknown_intervals":1,"stopped":1,"reported_placements":0,"reported_main_loop":null,"provider_completeness":"unverified"}"#
+        ));
+
+        let dec = |o: &Obj| RunEnded::decode(o).map(|_| ());
+        // Control: the same cause with Messages usage is refused.
+        let messages = text.replace(
+            r#"{"runtime":"claude-code/1","placements":1,"unknown_intervals":1,"stopped":1,"reported_placements":0,"reported_main_loop":null,"provider_completeness":"unverified"}"#,
+            r#"{"turns":{"reported":0,"estimated":0},"input_tokens":{"reported":0,"estimated":0},"output_tokens":{"reported":0,"estimated":0}}"#,
+        );
+        assert!(refuses(&messages, dec).contains("/cause"));
+        // Accepted today: the decoder does not tie a harness record to zero
+        // requests and attempts, nor to the causes a harness placement can have.
+        let counted = text.replace(r#""requests":0,"attempts":0"#, r#""requests":3,"attempts":0"#);
+        assert!(json::parse(counted.as_bytes())
+            .map(|v| RunEnded::decode(&v.obj("/body").unwrap()).is_ok())
+            .unwrap());
+        let api_cause = text.replace("placement_deadline", "max_tokens");
+        assert!(json::parse(api_cause.as_bytes())
+            .map(|v| RunEnded::decode(&v.obj("/body").unwrap()).is_ok())
+            .unwrap());
+    }
+
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn a_harness_notice_states_seconds_and_placements() {
+        let n = Notice {
+            kind: "near_limit".into(),
+            run: 1,
+            request: 1,
+            text: "Allowance notice: 12 seconds remain".into(),
+            remaining: Some(Remaining {
+                harness: Some((12, 2)),
+                turns: 0,
+                input_tokens: 0,
+                output_tokens: 0,
+            }),
+        };
+        let (text, back) = round(n.to_j(), Notice::decode);
+        assert_eq!(back, n);
+        assert_eq!(
+            text,
+            r#"{"prev":null,"type":"near_limit","run":1,"request":1,"text":"Allowance notice: 12 seconds remain","remaining":{"runtime":"claude-code/1","seconds":12,"placements":2}}"#
+        );
+        let dec = |o: &Obj| Notice::decode(o).map(|_| ());
+        let other = text.replace("claude-code/1", "claude-code/2");
+        assert!(refuses(&other, dec).contains("/remaining/runtime"));
+        let long = text.replace(r#""seconds":12"#, r#""seconds":86401"#);
+        assert!(refuses(&long, dec).contains("/remaining/seconds"));
+        let extra = text.replace(r#""placements":2}"#, r#""placements":2,"turns":0}"#);
+        assert!(refuses(&extra, dec).contains("/remaining/turns"));
+        // A harness reminder is the same body as a Messages reminder.
+        let reminder = Notice {
+            kind: "reminder".into(),
+            run: 1,
+            request: 1,
+            text: crate::forms::REMINDER.into(),
+            remaining: None,
+        };
+        let (text, back) = round(reminder.to_j(), Notice::decode);
+        assert_eq!(back, reminder);
+        assert_eq!(
+            text,
+            format!(
+                r#"{{"prev":null,"type":"reminder","run":1,"request":1,"text":"{}","remaining":null}}"#,
+                crate::forms::REMINDER
+            )
+        );
+    }
 }

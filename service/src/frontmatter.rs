@@ -898,4 +898,65 @@ mod tests {
         assert_eq!(first_non_text(b"ab\xffc"), Some(2));
         assert_eq!(first_non_text(b"\xe2\x82"), Some(0));
     }
+
+    #[test]
+    fn family_vocabulary_is_the_forms_families() {
+        let ids: Vec<&str> = crate::forms::FAMILIES.iter().map(|f| f.id).collect();
+        assert_eq!(FAMILIES.to_vec(), ids);
+        let scaffold = scaffold();
+        let commands = crate::help::topic("commands").unwrap();
+        for id in ids {
+            assert!(scaffold.contains(id), "scaffold names {id}");
+            assert!(commands.contains(id), "help names {id}");
+        }
+    }
+
+    #[test]
+    fn an_unknown_family_names_the_choices_and_nearest() {
+        for (family, quoted, nearest) in [
+            ("survey", "\"survey\"", "comparison"),
+            ("comparision", "\"comparision\"", "comparison"),
+            ("open-inquiries", "\"open-inquiries\"", "open-inquiry"),
+        ] {
+            let defects = parse(
+                GOOD.replace("family: open-inquiry", &format!("family: {family}"))
+                    .as_bytes(),
+            )
+            .unwrap_err();
+            assert_eq!(defects.len(), 1, "{family}");
+            assert_eq!(defects[0].reason, "setting_invalid");
+            assert_eq!(defects[0].key.as_deref(), Some("family"));
+            assert_eq!(
+                defects[0].message,
+                format!(
+                    "line 4: family must be open-inquiry, inquiry-framing or comparison; {quoted} is none of these (nearest: {nearest})."
+                )
+            );
+        }
+    }
+
+    #[test]
+    fn guidance_follows_the_family() {
+        let with = |family: &str, guidance: &str| {
+            GOOD.replace(
+                "family: open-inquiry\n",
+                &format!("family: {family}\nguidance: {guidance}\n"),
+            )
+        };
+        let q = parse(with("open-inquiry", "guidance.md").as_bytes()).unwrap();
+        assert_eq!(q.settings.guidance.as_deref(), Some("guidance.md"));
+        assert_eq!(q.settings.family, "open-inquiry");
+        let refused = "line 5: guidance must be exactly guidance.md and requires family: open-inquiry; no other path or family is supported.";
+        for (family, guidance) in [
+            ("comparison", "guidance.md"),
+            ("inquiry-framing", "guidance.md"),
+            ("open-inquiry", "notes/guidance.md"),
+        ] {
+            let defects = parse(with(family, guidance).as_bytes()).unwrap_err();
+            assert_eq!(defects.len(), 1, "{family} {guidance}");
+            assert_eq!(defects[0].reason, "setting_invalid");
+            assert_eq!(defects[0].key.as_deref(), Some("guidance"));
+            assert_eq!(defects[0].message, refused, "{family} {guidance}");
+        }
+    }
 }

@@ -322,3 +322,105 @@ pub fn account(audit: &crate::archive::Audit, run: u64) -> crate::runs::Account 
     }
     acc
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::json;
+
+    fn summary(text: &str) -> Result<Summary, String> {
+        let parsed = json::parse(text.as_bytes()).unwrap();
+        Summary::decode(&parsed.obj("/body/usage").unwrap()).map_err(|e| e.to_string())
+    }
+
+    const RESERVED: &str = r#"{"runtime":"claude-code/1","placements":1,"unknown_intervals":1,"stopped":0,"reported_placements":0,"reported_main_loop":null,"provider_completeness":"unverified"}"#;
+    const REPORTED: &str = r#"{"runtime":"claude-code/1","placements":2,"unknown_intervals":1,"stopped":2,"reported_placements":1,"reported_main_loop":{"input_tokens":120,"cache_creation_input_tokens":30,"cache_read_input_tokens":400,"output_tokens":55,"harness_turns":4},"provider_completeness":"unverified"}"#;
+
+    #[test]
+    fn a_summary_writes_a_null_main_loop_until_a_placement_reports() {
+        assert_eq!(Summary::reserved().to_j().string(), RESERVED);
+        let populated = Summary {
+            placements: 2,
+            unknown_intervals: 1,
+            stopped: 2,
+            reported_placements: 1,
+            input: 120,
+            cache_creation: 30,
+            cache_read: 400,
+            output: 55,
+            turns: 4,
+        };
+        assert_eq!(populated.to_j().string(), REPORTED);
+        assert_eq!(summary(REPORTED).unwrap(), populated);
+        assert_eq!(summary(RESERVED).unwrap(), Summary::reserved());
+    }
+
+    #[test]
+    fn a_summary_that_disagrees_with_itself_is_refused() {
+        let pointer = |e: String| {
+            assert!(
+                e.starts_with("value at /body/usage/"),
+                "unexpected refusal: {e}"
+            );
+            e
+        };
+        let more_unknown = RESERVED.replace(r#""unknown_intervals":1"#, r#""unknown_intervals":2"#);
+        assert!(pointer(summary(&more_unknown).unwrap_err()).contains("/reported_placements"));
+        let more_stopped = RESERVED.replace(r#""stopped":0"#, r#""stopped":2"#);
+        assert!(pointer(summary(&more_stopped).unwrap_err()).contains("/reported_placements"));
+        // A report is counted exactly when its figures are present.
+        let counted_without = RESERVED.replace(
+            r#""reported_placements":0"#,
+            r#""reported_placements":1"#,
+        );
+        assert!(pointer(summary(&counted_without).unwrap_err()).contains("/reported_placements"));
+        let figures_without_count = REPORTED.replace(
+            r#""reported_placements":1"#,
+            r#""reported_placements":0"#,
+        );
+        assert!(
+            pointer(summary(&figures_without_count).unwrap_err()).contains("/reported_placements")
+        );
+        let completeness = RESERVED.replace(r#""unverified""#, r#""verified""#);
+        assert!(pointer(summary(&completeness).unwrap_err()).contains("/runtime"));
+        let runtime = RESERVED.replace("claude-code/1", "claude-code/2");
+        assert!(pointer(summary(&runtime).unwrap_err()).contains("/runtime"));
+    }
+
+    #[test]
+    fn a_start_names_its_runtime_profile_and_timeout() {
+        let start = Start {
+            profile_sha256: "b".repeat(64),
+            placement_timeout_seconds: 60,
+        };
+        assert_eq!(
+            start.to_j().string(),
+            format!(
+                r#"{{"kind":"claude-code/1","profile_sha256":"{}","placement_timeout_seconds":60}}"#,
+                "b".repeat(64)
+            )
+        );
+        let decode = |text: &str| {
+            let parsed = json::parse(text.as_bytes()).unwrap();
+            Start::decode(&parsed.obj("/body/runtime").unwrap()).map_err(|e| e.to_string())
+        };
+        assert_eq!(decode(&start.to_j().string()).unwrap(), start);
+        let text = start.to_j().string();
+        assert!(
+            decode(&text.replace("claude-code/1", "claude-code/2"))
+                .unwrap_err()
+                .contains("/kind")
+        );
+        assert!(
+            decode(&text.replace(":60}", ":0}"))
+                .unwrap_err()
+                .contains("/placement_timeout_seconds")
+        );
+        assert!(
+            decode(&text.replace(":60}", ":86401}"))
+                .unwrap_err()
+                .contains("/placement_timeout_seconds")
+        );
+        assert!(decode(&text.replace(":60}", ":60,\"x\":1}")).is_err());
+    }
+}
