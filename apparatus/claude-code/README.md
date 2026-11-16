@@ -364,8 +364,11 @@ for a fresh commission also verify offline preparation, prior-record
 preservation, the approval gate, the single fresh
 authentication check, all three synthetic cases and refusal of another start.
 
-Profile controls use temporary synthetic signature/observation/review records,
-never real-harness evidence. They exercise exact launch-byte preservation,
+Pin and profile controls use [captured local verification output](testdata/verification/README.md)
+from GPG and code-signature checks, supplied as subprocess results. The temporary
+installation, public-input canaries, observation and review records remain
+synthetic; these tests do not verify a real executable's signature or establish
+real-harness compatibility. They exercise exact launch-byte preservation,
 review/input bindings, changed/missing/unlisted witnesses, symlink/special-file
 refusals, changed executables, failed installation verification, rehearsal
 refusal and normal invariance. A canary executable witnesses that the producer

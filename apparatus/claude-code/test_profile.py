@@ -1,4 +1,4 @@
-"""Offline profile-producer controls. All signature/live records here are temporary synthetic fixtures."""
+"""Offline profile controls: captured verifier output, synthetic installation and live-check records."""
 
 import contextlib
 import copy
@@ -14,6 +14,7 @@ import unittest
 from unittest import mock
 
 HERE = Path(__file__).resolve().parent
+FIXTURES = HERE / 'testdata/verification'
 spec = importlib.util.spec_from_file_location('profile_producer', HERE / 'profile.py')
 profile = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(profile)
@@ -74,12 +75,9 @@ class ProfileControls(unittest.TestCase):
     def fake_verify(self, out, name, argv):
         self.calls.append((name, argv))
         self.assertNotEqual(argv[0], str(self.binary))
-        data = (('[GNUPG:] VALIDSIG %s 2026-11-10 1794340800 0 4 0 1 10 00\n' % profile.pin.FINGERPRINT).encode()
-                if name == 'signature' else b'')
-        (out / (name + '.stdout')).write_bytes(data)
-        (out / (name + '.stderr')).write_bytes(b'')
-        (out / (name + '.exit')).write_bytes(b'0\n')
-        return data
+        for channel in ('stdout', 'stderr', 'exit'):
+            (out / (name + '.' + channel)).write_bytes((FIXTURES / (name + '.' + channel)).read_bytes())
+        return (out / (name + '.stdout')).read_bytes()
 
     def rebind(self, observation_change=None, review_change=None):
         members = []
@@ -127,6 +125,10 @@ class ProfileControls(unittest.TestCase):
         self.assertEqual(result['check']['launch_sha256'], profile.sha(launch))
         self.assertEqual(result['check']['evidence_sha256'], profile.sha(self.review.read_bytes()))
         self.assertEqual([name for name, _ in self.calls], ['dearmor', 'signature', 'codesign'])
+        for name in ('dearmor', 'signature', 'codesign'):
+            for channel in ('stdout', 'stderr', 'exit'):
+                self.assertEqual((self.install / 'installation/verification' / (name + '.' + channel)).read_bytes(),
+                                 (FIXTURES / (name + '.' + channel)).read_bytes())
         self.assertFalse(self.marker.exists())
         with self.assertRaises(FileExistsError):
             self.assemble()
@@ -251,12 +253,40 @@ class ProfileControls(unittest.TestCase):
         out = self.root / 'wrong-signature'
         def wrong(out, name, argv):
             result = self.fake_verify(out, name, argv)
-            return result.replace(profile.pin.FINGERPRINT.encode(), b'A' * 40)
+            changed = result.replace(profile.pin.FINGERPRINT.encode(), b'A' * 40)
+            (out / (name + '.stdout')).write_bytes(changed)
+            return changed
+        before = len(self.calls)
         with mock.patch.object(profile.pin, 'run_logged', side_effect=wrong), \
                 mock.patch.object(profile.shutil, 'which', return_value='/synthetic/verifier'):
             with self.assertRaisesRegex(ValueError, 'pinned release key'):
                 profile.prepare(self.pin_root / 'pin.json', out, self.config, self.home, self.tmp)
+        self.assertEqual([name for name, _ in self.calls[before:]], ['dearmor', 'signature'])
+        self.assertEqual((out / 'installation/verification/signature.stdout').read_bytes(),
+                         (FIXTURES / 'signature.stdout').read_bytes().replace(profile.pin.FINGERPRINT.encode(), b'A' * 40))
         self.assertFalse((out / 'launch.json').exists())
+        self.assertFalse(self.marker.exists())
+
+    def test_captured_codesign_failure_stops_preparation_and_retains_diagnostic(self):
+        out = self.root / 'failed-codesign'
+        calls = []
+        def observed_result(argv, **kwargs):
+            name = 'codesign-refused' if argv[0] == '/usr/bin/codesign' else (
+                'signature' if '--status-fd' in argv else 'dearmor')
+            calls.append(name)
+            return subprocess.CompletedProcess(argv, int((FIXTURES / (name + '.exit')).read_bytes()),
+                                               (FIXTURES / (name + '.stdout')).read_bytes(),
+                                               (FIXTURES / (name + '.stderr')).read_bytes())
+        with mock.patch.object(profile.pin.subprocess, 'run', side_effect=observed_result), \
+                mock.patch.object(profile.shutil, 'which', side_effect=lambda name: '/synthetic/' + name):
+            with self.assertRaisesRegex(RuntimeError, 'codesign failed \\(exit 1\\)'):
+                profile.prepare(self.pin_root / 'pin.json', out, self.config, self.home, self.tmp)
+        self.assertEqual(calls, ['dearmor', 'signature', 'codesign-refused'])
+        for channel in ('stdout', 'stderr', 'exit'):
+            self.assertEqual((out / 'installation/verification' / ('codesign.' + channel)).read_bytes(),
+                             (FIXTURES / ('codesign-refused.' + channel)).read_bytes())
+        self.assertFalse((out / 'launch.json').exists())
+        self.assertFalse((out / 'PREPARATION.json').exists())
         self.assertFalse(self.marker.exists())
 
     def test_duplicate_control_json_refuses(self):

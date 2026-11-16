@@ -19,9 +19,17 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ### Ground fixtures and reassess
 
-- [ ] Ground wire/proxy, OS/environment, process-observation, Keychain,
-  signature-tool and driver-record stand-ins in local observations. These need
-  no model launch. Give missing capture groups, including provider errors,
+- [ ] Ground wire/proxy, OS/environment, process-observation, Keychain and
+  driver-record stand-ins in local observations. These need no model launch.
+  Use full acceptance records with the required credential cases for the C10
+  and sanity qualification readers, rather than selected-case summaries.
+  Recheck actual permission-denial output for process observers; native absence
+  already has a witness. Select environment values containing LF, `=` and empty
+  values, local HTTP/CONNECT framing/refusal transcripts, and Keychain helper
+  exit/error forms without retaining secret lookup output. C1's supplied
+  process-result controls need launcher results or an explicit limited-scope
+  disposition.
+  Give missing capture groups, including provider errors,
   rejected/overage events, alternative runtime compaction shapes and terminal-cap
   results, an owner or explicit disposition. Preserve the driver guide's stated
   limits: synthetic frames do not establish live forms or cap enforcement.
@@ -71,6 +79,11 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   citation baselines, three firing controls, partial-account timing/continuation
   and submission regression. Original and member-order variants deliver identical
   answers; quote correction changes only the named citation operand.
+  Local signature-verifier captures and controls are retained in
+  `.tmp/readiness-verifier-fixtures-01/`; `native-review.json` binds all six
+  passing apparatus suites and the protocol's Rust checks. Replayed outputs
+  establish parsing, retention and refusal propagation, not fresh signature
+  verification of the synthetic installation inputs.
   Their results name external synthetic witnesses.
   Keep these through the remaining reassessment, then release reproducible work.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,
