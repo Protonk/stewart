@@ -137,6 +137,7 @@ CASES = (
     ("runtime-submit-publication", "Seal-publication order: close owns the seal; cancellation preserves placement; signal and deadline stop"),
     ("runtime-relay-loss", "The relay dies while the model lives: the placement stops, nothing else writes, a fresh session continues"),
     ("runtime-usage-series", "Two placements: each session's latest checkpoint is summed and a lost interval stays unknown"),
+    ("runtime-near-limit", "C4-grounded notice: deadline comparison, explicit submission and audit-wide allowance across continuation"),
     ("runtime-compaction", "Each compaction boundary is followed by the pinned notice and spends neither allowance"),
     ("runtime-init-control", "Attempted authoring before a mismatched startup never changes the answer"),
     ("runtime-interruption", "Interrupted work and unknown usage continue in a fresh session without duplication"),
@@ -447,6 +448,15 @@ def group_observation(group, probe=os.killpg):
         return "absent"
     except PermissionError:
         return "unknown"
+
+
+def near_limit_values(text):
+    if not isinstance(text, str):
+        return None
+    pattern = re.escape(NEAR_LIMIT).replace(re.escape("{seconds}"), r"(?P<seconds>0|[1-9][0-9]*)")
+    pattern = pattern.replace(re.escape("{placements}"), r"(?P<placements>0|[1-9][0-9]*)")
+    match = re.fullmatch(pattern, text)
+    return {key: int(value) for key, value in match.groupdict().items()} if match else None
 
 
 def release_fault_pauses(directory, observe):
@@ -2622,6 +2632,121 @@ class Driver:
         self.eq(label + ".inputs", contents, [f["body"].decode(), REMINDER, f["body"].decode(), CONTINUATION])
         self.control("reminder-is-audit-wide", contents.count(REMINDER) == 1 and ending == "ended_unsubmitted")
 
+    def runtime_near_limit(self):
+        # The same 16-second observation window crosses the short placement's
+        # near-limit region, but not the long placement's. Both peers record the
+        # same partial account before waiting and submit only after the window.
+        for label, seconds in (("near-limit-submit", 20), ("near-limit-long", 200),
+                               ("near-limit-continuation", 20)):
+            f = self.fixture(label, scenario="near-limit", timeout=seconds)
+            continuing = label == "near-limit-continuation"
+            self.change_scenario(f, observe_seconds=16, interrupt_after_notice=continuing)
+            self.accept(f)
+            first = self.cmd(label + ".run-1", ["run", f["reference"]])
+            self.groups_absent(f)
+            self.eq(label + ".first-ending", first.get("data", {}).get("ending"),
+                    "interrupted" if continuing else "sealed")
+            self.inspect_near_limit(f, first, run=1, expected=0 if seconds == 200 else 1)
+            if continuing:
+                self.check(label + ".interruption-before-deadline",
+                           first.get("data", {}).get("cause") != "placement_deadline", first.get("data"))
+                status = self.inspect_runtime(f)
+                self.eq(label + ".unsubmitted-seal", status["data"].get("seal"),
+                        {"state": "absent", "actor": None})
+                self.eq(label + ".preserved-partial-answer", status["data"].get("answer"),
+                        {"revision": 1, "entries": 1})
+                self.change_scenario(f, skip_record=True, interrupt_after_notice=False,
+                                     session=label + "-session-2")
+                second = self.cmd(label + ".run-2", ["run", f["reference"]])
+                self.groups_absent(f, run=2)
+                self.eq(label + ".continued-ending", second.get("data", {}).get("ending"), "sealed")
+                self.inspect_near_limit(f, second, run=2, expected=0)
+            placements = 2 if continuing else 1
+            package = self.check_delivery(f, self.inspect_runtime(f, placements=placements))
+            self.close_after_delivery(f, package, placements=placements)
+        self.control("near-limit-crosses-short-not-long-deadline",
+                     self.near_counts.get(("near-limit-submit", 1)) == 1
+                     and self.near_counts.get(("near-limit-long", 1)) == 0)
+        self.control("near-limit-allowance-survives-continuation",
+                     self.near_counts.get(("near-limit-continuation", 1)) == 1
+                     and self.near_counts.get(("near-limit-continuation", 2)) == 0)
+
+    def inspect_near_limit(self, f, reply, run, expected):
+        label = f["label"] + ".notice-%d" % run
+        events = self.harness_clean(f)
+        models = [e for e in events if e["event"] == "launch" and e["role"] == "model"]
+        self.require(label + ".model-count", len(models) == run, len(models))
+        pid = models[-1]["pid"]
+        current = [e for e in events if e["pid"] == pid]
+        shaped, contents = self.message_contents(current)
+        self.eq(label + ".input-shape", shaped, True)
+        notices = [e for e in current if e["event"] == "input"
+                   and near_limit_values(e["value"].get("message", {}).get("content")) is not None]
+        count_ok = self.eq(label + ".notice-count", len(notices), expected)
+        if not hasattr(self, "near_counts"):
+            self.near_counts = {}
+        self.near_counts[(f["label"], run)] = len(notices) if count_ok else None
+        expected_contents = [f["body"].decode()] + ([CONTINUATION] if run > 1 else [])
+        expected_contents += [e["value"]["message"]["content"] for e in notices]
+        self.eq(label + ".only-expected-inputs", contents, expected_contents)
+        self.eq(label + ".input-capture", self.captured_channel(f, "input", run).hex(),
+                b"".join(bytes.fromhex(e["raw_hex"]) for e in current if e["event"] == "input").hex())
+        windows = [e for e in current if e["event"] == "near-limit-window"]
+        self.require(label + ".complete-window", len(windows) == 2, windows)
+        self.eq(label + ".window-events", [e.get("phase") for e in windows], ["start", "end"])
+        elapsed = (windows[1]["monotonic_ns"] - windows[0]["monotonic_ns"]) / 1_000_000_000
+        interrupted = f["label"] == "near-limit-continuation" and run == 1
+        self.eq(label + ".window-ended-by", windows[1].get("ended_by"), "notice" if interrupted else "timeout")
+        if interrupted:
+            self.require(label + ".notice-triggered-exit", len(notices) == 1, notices)
+            self.check(label + ".receipt-before-interruption",
+                       notices[0]["monotonic_ns"] < windows[1]["monotonic_ns"], windows)
+        else:
+            self.check(label + ".observed-full-window", elapsed >= 16, elapsed)
+        submits = [e for e in current if e["event"] == "rpc-send"
+                   and e["value"].get("params", {}).get("name") == "submit"]
+        self.eq(label + ".explicit-submit-count", len(submits), 0 if interrupted else 1)
+        self.eq(label + ".deliberate-interruption-count",
+                sum(e["event"] == "deliberate-interruption" for e in current), 1 if interrupted else 0)
+        if submits:
+            self.check(label + ".submit-after-window",
+                       submits[0]["monotonic_ns"] > windows[1]["monotonic_ns"], submits[0])
+            self.check(label + ".notice-before-submit",
+                       all(e["monotonic_ns"] < submits[0]["monotonic_ns"] for e in notices), notices)
+        logs = [(p, strict_loads(p.read_bytes())) for p in (self.audit_path(f) / "log").glob("*.json")]
+        near_records = [(p, r) for p, r in logs if r.get("kind") == "notice"
+                        and r["body"].get("type") == "near_limit"]
+        self.eq(label + ".audit-wide-claim-count", len(near_records),
+                0 if f["label"] == "near-limit-long" else 1)
+        this_run = [(p, r) for p, r in near_records if r["body"].get("run") == run]
+        self.eq(label + ".this-run-claim-count", len(this_run), expected)
+        for event, (path, record) in zip(notices, this_run):
+            content = event["value"]["message"]["content"]
+            values = near_limit_values(content)
+            self.eq(label + ".remaining-starts", values["placements"], f["limits"]["max_placements"] - run)
+            self.check(label + ".remaining-time-in-bounds",
+                       0 <= values["seconds"] <= f["limits"]["placement_timeout_seconds"], values)
+            self.eq(label + ".logged-text", record["body"].get("text"), content)
+            self.eq(label + ".logged-remaining", record["body"].get("remaining"),
+                    {"runtime": "claude-code/1", **values})
+            ended = [r for _, r in logs if r["kind"] == "run_ended" and r["body"].get("run") == run]
+            self.require(label + ".ending-record", len(ended) == 1, ended)
+            self.eq(label + ".notice-transmission-record", ended[0]["body"].get("notices"),
+                    [{"type": "near_limit", "record": "log/" + path.name, "sent": "sent"}])
+        self.eq(label + ".run-notices", reply.get("data", {}).get("notices"),
+                [{"type": "near_limit", "sent": "sent"}] if expected else [])
+        reentries = [e["response"] for e in current if e["event"] == "near-limit-reentry"]
+        self.require(label + ".reentry-observed", len(reentries) == 1, reentries)
+        data = reentries[0].get("data") or {}
+        self.eq(label + ".notices-used", data.get("notices_used"),
+                {"reminder": False, "near_limit": f["label"] != "near-limit-long"})
+        self.eq(label + ".notice-does-not-seal", data.get("seal"), {"state": "absent", "actor": None})
+        self.eq(label + ".notice-does-not-edit", data.get("revision"), 1)
+        self.eq(label + ".no-duplicate-account", len(data.get("entries", [])), 1)
+        self.eq(label + ".preserved-account", (data.get("entries") or [{}])[0].get("preview"), ACCOUNT)
+        claims = [r for _, r in logs if r["kind"] == "notice" and r["body"].get("type") == "reminder"]
+        self.eq(label + ".no-reminder-spent", claims, [])
+
     def runtime_compaction(self):
         f = self.fixture("runtime-compaction", scenario="compaction")
         label = f["label"]
@@ -3643,6 +3768,29 @@ def synthetic_harness(scenario_path, environment_path, argv):
             recorded = tool("record_account", {"text": scenario["account"]})
             if recorded.get("outcome") != "completed":
                 raise RuntimeError("record_account did not complete: %r" % recorded)
+        if scenario["mode"] == "near-limit":
+            seconds = scenario["observe_seconds"]
+            event("near-limit-window", phase="start", seconds=seconds)
+            end = time.monotonic() + seconds
+            ended_by = "timeout"
+            while time.monotonic() < end:
+                try:
+                    value = incoming.get(timeout=max(0, end - time.monotonic()))
+                except queue.Empty:
+                    break
+                text = value.get("message", {}).get("content")
+                if near_limit_values(text) is None and not (scenario.get("skip_record") and text == CONTINUATION):
+                    raise ValueError("unexpected input during near-limit observation")
+                if near_limit_values(text) is not None and scenario.get("interrupt_after_notice"):
+                    ended_by = "notice"
+                    break
+            if scenario.get("interrupt_after_notice") and ended_by != "notice":
+                raise ValueError("no near-limit notice observed before the interruption bound")
+            event("near-limit-window", phase="end", seconds=seconds, ended_by=ended_by)
+            event("near-limit-reentry", response=tool("what_am_i_working_with", {}))
+            if scenario.get("interrupt_after_notice"):
+                event("deliberate-interruption")
+                return 7
         if scenario["mode"] == "record-then-exit":
             event("deliberate-interruption")
             return 7
@@ -3871,6 +4019,22 @@ def self_test():
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
+    c4_notice = NEAR_LIMIT.format(seconds=12, placements=2)
+    c4_input = compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
+                        "message": {"role": "user", "content": c4_notice}}) + b"\n"
+    check("near-limit.c4-input-size", len(c4_input) == 283)
+    check("near-limit.c4-input-digest", sha(c4_input) ==
+          "1e6192fe759bc3a8bd0a20708601f7afcad94dddda72290a4ab271adc95c1adf")
+    check("near-limit.c4-values", near_limit_values(c4_notice) == {"seconds": 12, "placements": 2})
+    check("near-limit.zero-values", near_limit_values(NEAR_LIMIT.format(seconds=0, placements=0)) ==
+          {"seconds": 0, "placements": 0})
+    for name, value in (("wrong-units", c4_notice.replace("seconds", "tokens")),
+                        ("leading-zero", c4_notice.replace("12 seconds", "012 seconds")),
+                        ("negative", c4_notice.replace("12 seconds", "-1 seconds")),
+                        ("extra-text", c4_notice + " Submit now."),
+                        ("missing-ending", c4_notice.rsplit(" When", 1)[0]),
+                        ("non-text", None)):
+        check("near-limit.refuse-" + name, near_limit_values(value) is None)
     for index, page in enumerate(FIDELITY_PAGES):
         data = fidelity_page(page)
         check("fidelity.source-size-%d" % index, len(data) == page[1])
@@ -4271,6 +4435,8 @@ for raw in sys.stdin.buffer:
         ("record-then-exit", 1, None),
         ("cancel", 1, submitted),
         ("submit-publication", 1, lambda e: e["event"] == "submit-retried"),
+        ("near-limit", 2, submitted),
+        ("near-limit-interrupt", 2, None),
         ("compaction", 4, submitted),
         ("hooks", 1, submitted),
         ("relay-loss", 1, lambda e: e["event"] == "second-relay"),
@@ -4292,6 +4458,10 @@ for raw in sys.stdin.buffer:
                 scenario["publication_action"] = "cancel"
                 for marker in ("cancel-submit", "retry-submit"):
                     (root / marker).write_bytes(b"")
+            if mode.startswith("near-limit"):
+                scenario["mode"] = "near-limit"
+                scenario["observe_seconds"] = 1
+                scenario["interrupt_after_notice"] = mode == "near-limit-interrupt"
             (root / "scenario.json").write_bytes(compact(scenario))
             (root / "peer.py").write_text("publication=%r\n" % (mode == "submit-publication") + mode_peer)
             (root / "settings.json").write_bytes(compact({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [
@@ -4307,7 +4477,10 @@ for raw in sys.stdin.buffer:
                  "--mcp-config", str(root / "mcp.json"), "--system-prompt-file", str(root / "prompt")],
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 env={"PATH": "/usr/bin:/bin"}, cwd=root)
-            process.stdin.write(b"".join(user("synthetic input %d" % n) for n in range(inputs)))
+            supplied_inputs = [user("synthetic input %d" % n) for n in range(inputs)]
+            if mode.startswith("near-limit"):
+                supplied_inputs[1] = user(NEAR_LIMIT.format(seconds=12, placements=2))
+            process.stdin.write(b"".join(supplied_inputs))
             process.stdin.flush()
             deadline = time.monotonic() + 20
             events = []
@@ -4377,6 +4550,21 @@ for raw in sys.stdin.buffer:
                 check("mode.submit-publication.later-call", any(e["event"] == "submit-cancelled-reentry"
                       and e["response"].get("outcome") == "completed" for e in events))
                 check("mode.submit-publication.confirmed-retry", sum(submitted(e) for e in events) == 2)
+            elif mode.startswith("near-limit"):
+                windows = [e.get("phase") for e in events if e["event"] == "near-limit-window"]
+                check("mode." + mode + ".window", windows == ["start", "end"])
+                check("mode." + mode + ".observed-input", consumed == 2)
+                ended_at = next((i for i, e in enumerate(events)
+                                 if e["event"] == "near-limit-window" and e["phase"] == "end"), None)
+                submitted_at = next((i for i, e in enumerate(events) if submitted(e)), None)
+                if mode == "near-limit-interrupt":
+                    check("mode." + mode + ".exit-on-notice", code == 7 and ended_at is not None
+                          and events[ended_at].get("ended_by") == "notice" and submitted_at is None)
+                    check("mode." + mode + ".interruption-witness",
+                          sum(e["event"] == "deliberate-interruption" for e in events) == 1)
+                else:
+                    check("mode." + mode + ".submits-after-window",
+                          ended_at is not None and submitted_at is not None and ended_at < submitted_at)
             elif mode == "compaction":
                 check("mode.compaction.sequence", kinds == [("system", "init"), ("system", "compact_boundary"),
                       ("system", "compact_boundary"), ("result", "success")])

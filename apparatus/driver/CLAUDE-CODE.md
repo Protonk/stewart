@@ -320,11 +320,37 @@ prior account bytes and a fourth model invocation. Its own controller terminates
 the waiting fake processes; that sequencing test does not establish Stewart's
 deadline enforcement. Its retained evidence path is printed with the self-test.
 
+The `runtime-near-limit` case holds the same partial account and observes input
+for 16 seconds with a 20-second and a 200-second placement deadline. The short
+case must receive one exact near-limit message; the long case none. Both
+explicitly submit after the window. A third audit interrupts upon receipt of
+the notice, leaving time for stopping, then continues through a full short
+window: its prior account and
+spent notice allowance must survive, without a second notice or duplicate
+entry. Re-entry must still show an unsealed answer and unused reminder before
+submission. Each peer's exact input bytes are compared with the archive; notice
+text, remaining starts and time units are checked against the logged claim and
+run reply. All resulting packages preserve the supplied account through close.
+The case checks time values against the configured bound; it does not measure
+subsecond rounding or the exact threshold crossing.
+
+This notice fixture is grounded in C4's short placement on 2026-11-14, using
+Claude Code 2.1.322 and `claude-haiku-5-5`. Its retained input is
+`.scratch/readiness-c4-01/short/packet/closure/service-archive/audits/ah3m7bxzpowsvmtfn/runs/1/runtime-316-input.bin`:
+283 bytes, SHA-256 `1e6192fe759bc3a8bd0a20708601f7afcad94dddda72290a4ab271adc95c1adf`.
+The corresponding `log/20.json` is 569 bytes, SHA-256
+`31c4884f8012889f53657eba16c58403ddfe8debc1682288f4d1038e55fb1443`.
+The self-test reconstructs the original 12-second/two-start input byte for byte;
+runtime variants change the deadline and, for continuation, exit upon receipt
+of the notice. They use synthetic inputs and a fixed partial account,
+and do not replay the live audit or depend on its retained directory. The
+original input was a service-owned capture, not a provider-network witness.
+
 Not exercised: the internal waiting state or queue count/byte overflow;
 `run`'s own re-verification of a pinned surface, which has no
 black-box firing control because one binary cannot hold an arrangement that
 pins a different surface; a hook call after the placement has stopped admitting
-calls; and the near-limit notice. The contract's
+calls. The contract's
 [demonstrated scope](../../docs/claude-code/CONTRACT.md) distinguishes this
 synthetic runtime evidence from other checks and remaining qualification work.
 

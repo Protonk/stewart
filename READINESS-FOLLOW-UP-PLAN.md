@@ -46,9 +46,6 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   in-flight charging remain rehearsal-only observations. Derive variants by one
   named change. Record origin, date, model/version, size and digest with each
   selected fixture.
-- [ ] Add the standalone runtime driver's missing near-limit comparison from
-  C4's short-placement capture, preserving independent authorship and expected
-  values. A live observation alone does not provide that regression coverage.
 - [ ] Ground wire/proxy, OS/environment, process-observation, Keychain,
   signature-tool and driver-record stand-ins in local observations. These need
   no model launch. Give missing capture groups, including provider errors and
@@ -64,6 +61,9 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   and Messages regression. The close/publication comparison is retained at
   `.tmp/readiness-close-submit-01/native-20261116T012140Z-3b3f4f47/`, with
   review in `.tmp/readiness-close-submit-01/native-review.json`.
+  The near-limit working set is `.tmp/readiness-near-limit-01/`; its
+  `native-review.json` binds the original timing failure and corrected
+  comparison for reassessment.
   Their results name external synthetic witnesses.
   Keep these through the remaining reassessment, then release reproducible work.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,
