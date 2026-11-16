@@ -1,0 +1,8 @@
+Case: R002
+Record: receiver receipt supplied with R002
+Received bundle tag: bundle-5514c5aa6a76
+Observed bytes: 8706
+Recorded destination: shelf-03
+Recipient acknowledgment: not recorded
+Receiver account: the values above were copied from the receiving desk record. No other receiving record is included in this case packet.
+Scope: this is an invented receipt, not independently observed execution.

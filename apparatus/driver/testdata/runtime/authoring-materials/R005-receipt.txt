@@ -1,0 +1,8 @@
+Case: R005
+Record: receiver receipt supplied with R005
+Received bundle tag: bundle-6a8bf8ded2dd
+Observed bytes: 9477
+Recorded destination: unrecorded
+Recipient acknowledgment: recorded by the recipient clerk
+Receiver account: the values above were copied from the receiving desk record. No other receiving record is included in this case packet.
+Scope: this is an invented receipt, not independently observed execution.

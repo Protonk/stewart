@@ -1,0 +1,8 @@
+Case: R004
+Record: sender handoff claim
+Claimed status: complete
+Expected bundle tag: bundle-05cc1402b624
+Expected bytes: 9220
+Expected destination: shelf-05
+Sender account: the prepared bundle was handed over and the case was marked complete. The sender refers to the separately supplied receipt as support.
+Scope: this is an invented sender account, not independently observed execution.

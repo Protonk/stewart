@@ -1,0 +1,7 @@
+Fictional handoff review rules
+
+Each case concerns a separately identified return bundle. The sender's claim names the expected bundle tag, byte count and destination slot. A receipt can support matched receipt only when it identifies the same case and bundle tag, gives the full expected byte count, and names the expected destination slot. Do not borrow a field from a different case or an earlier bundle.
+
+Recipient acknowledgment is a separate fact from matched receipt. A matching receipt without acknowledgment does not establish that the recipient accepted the delivery. A bare statement that delivery is complete does not replace the supporting fields. A mismatch or missing field limits what these records establish; it does not by itself prove what happened outside them.
+
+These texts are supplied claims. None is an independent observation by the auditor, a test execution, or a guarantee that the fictional system behaved as described. Report evidence limits and reasonable follow-up checks. No preferred number of successful or unsuccessful cases is required.

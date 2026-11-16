@@ -185,6 +185,76 @@ forms, not real cap enforcement, provider completeness, billing, authentication
 execution or process stopping. Those distinctions also apply to the copied
 result prose and reported costs.
 
+### C4/C5 authoring and error forms
+
+`runtime-captured-authoring` uses these exact captured calls and one complete
+conversation result from native CLI `2.1.322`, model `claude-haiku-5-5`, effort
+omitted. C4 ran on 2026-11-14; C5 on 2026-11-15. Calls are Stewart-owned captures;
+the C5 user frame is captured harness output, not provider HTTP. Materials are
+from the separately frozen pre-intake packet inputs.
+
+The table's origin prefixes are:
+
+- `C4`: `.scratch/readiness-c4-01/long/packet/closure/service-archive/audits/akyhrcucf3yvc5zkh/runs/1/`
+- `C5-checklist`: `.scratch/readiness-c5-01/checklist/archive/audits/aplifuihi4h2xrht5/runs/1/`
+- `C5-long`: `.scratch/readiness-c5-01/long-entry/archive/audits/a7ygtsnnhccz3vz5y/runs/1/`
+- Material paths: the matching C5 arm's `packet/inputs/submission/materials/`.
+
+| Fixture | Origin | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| [c4-account.json](runtime/c4-account.json) | `C4 / call-150.json` | 2121 | `053812aae916a50722882c238849af911c25b6628f401bb7c83261a1fe7f5328` |
+| [c4-replace-missing.json](runtime/c4-replace-missing.json) | `C4 / call-151.json` | 1930 | `ef69aa5c530fe963dd5ef898673f102d5f2bdff454d9f4b460bf98368cc823d6` |
+| [c4-replace-corrected.json](runtime/c4-replace-corrected.json) | `C4 / call-152.json` | 1945 | `b8904a9aea51fbaa24a8b1b6459e68d32fa1e35cb96eca131ad4e3f368476bdb` |
+| [c5-quote-call.json](runtime/c5-quote-call.json) | `C5-checklist / call-50.json` | 1391 | `8bc749174d6ed1c3cde45f52f74acb027cc6d7126d391be98b910f68ee3928a2` |
+| [c5-replace-account.json](runtime/c5-replace-account.json) | `C5-long / call-102.json` | 29128 | `c773ec95caccd20e1fe9b07d54812746a9da628e49b825293f01d6e836941c62` |
+| [c5-quote-result.json](runtime/c5-quote-result.json) | `C5-checklist / runtime-447-stdout.bin (complete LF-terminated user frame)` | 1256 | `c4d932e271161c9e2de5e009307c9b117b5122efab43a9b403863b6aa459a180` |
+| [authoring-materials/R/frsr.R](runtime/authoring-materials/R/frsr.R) | `C5-checklist material R/frsr.R` | 7800 | `5a96c182f9f322e9d04426c860c2f281d3f23d73ec8ede1993fd8ec5e14e41b0` |
+| [authoring-materials/00-review-rules.txt](runtime/authoring-materials/00-review-rules.txt) | `C5-long material 00-review-rules.txt` | 1073 | `5da12479c3a190c1b3864c2ec65bb09119d326e4e3b16f3be7438cf3ce976487` |
+| [authoring-materials/R001-claim.txt](runtime/authoring-materials/R001-claim.txt) | `C5-long material R001-claim.txt` | 390 | `7a43df94f3dff98410a76eccb1a9c5e9b4cc3fbc3be09b2e8b25f5607ea35f1e` |
+| [authoring-materials/R001-receipt.txt](runtime/authoring-materials/R001-receipt.txt) | `C5-long material R001-receipt.txt` | 418 | `3edccbfd1c4b0a931dc9509830eb1c22b97187912604221caf807b289e63775a` |
+| [authoring-materials/R002-receipt.txt](runtime/authoring-materials/R002-receipt.txt) | `C5-long material R002-receipt.txt` | 399 | `53b97e0e54f98326b622911737fc813e2f65fa944bae120350e2774f554ff340` |
+| [authoring-materials/R003-receipt.txt](runtime/authoring-materials/R003-receipt.txt) | `C5-long material R003-receipt.txt` | 426 | `dd7dba83039e7a43e84e764f9b036aee8df3ccdd8ce2905e9a7f8b1a0fe8df54` |
+| [authoring-materials/R004-claim.txt](runtime/authoring-materials/R004-claim.txt) | `C5-long material R004-claim.txt` | 390 | `f80dce402282d4f3a0d7f14be975529d2515946d7fee3ee1cc8c53403692b9db` |
+| [authoring-materials/R004-receipt.txt](runtime/authoring-materials/R004-receipt.txt) | `C5-long material R004-receipt.txt` | 418 | `801bac2f6439bd9d8898a0e8138a3c74c470712a46df7e0a8de064bfb367a49b` |
+| [authoring-materials/R005-receipt.txt](runtime/authoring-materials/R005-receipt.txt) | `C5-long material R005-receipt.txt` | 420 | `cd5032e8b9c0b1bec8685852c3bfa000e2b180371c8e6dbfa987c3a97be0fc53` |
+| [authoring-materials/R006-claim.txt](runtime/authoring-materials/R006-claim.txt) | `C5-long material R006-claim.txt` | 390 | `f801a3b8460ee9a542dd7f49aae4d5388ca66ea06dd30cf5eba6fb9677695e61` |
+| [authoring-materials/R006-receipt.txt](runtime/authoring-materials/R006-receipt.txt) | `C5-long material R006-receipt.txt` | 418 | `5f6e37340feb19efde8c30ef3c8e052a4a07eb3ab2da06bac17eb67b1ea0b398` |
+| [authoring-materials/R048-receipt.txt](runtime/authoring-materials/R048-receipt.txt) | `C5-long material R048-receipt.txt` | 419 | `f5213f294bdf6a25828cc1ed28225e2ae5dd53f15195e5fd84d066130b1b9d55` |
+
+The script reuses each call's `arguments`, changing only a replacement's exact
+entry handle. Fresh assistant, hook and MCP identifiers correlate the new calls;
+original RPC envelopes are retained fixtures, not replayed request identities.
+The C5 refusal is compared byte for byte with the captured 344-byte complete
+text (SHA-256 `4d287a2987efce5a306249415d9028f3ab98aa21f9dbac7900dfc91d8af4af09`).
+Its conversation frame changes only session ID and the two tool-use identity
+fields. The auxiliary `Error: ` string remains unchanged and is not used as
+the conversation result.
+
+The synthetic sequence records one C4 account, refuses its replacement without
+`citations`, reads the old version, then applies the captured correction with
+`citations: []`. C5's missing-quote call must refuse without an edit. The long
+C5 replacement then creates version 3 of the same entry. A fresh call deliberately
+targets the superseded version 2 and must refuse with `stale_entry`; it cannot
+overwrite the long account. Reads and all three retained payloads must be exact.
+Independent citation annotations, the complete prepared selection and delivered
+`answer.json` come from the supplied material and call bytes. Close preserves
+the delivered package. The peer remains alive after explicit submission, so its
+own exit or an ordinary result cannot stand in for Stewart stopping it.
+
+A second variant changes only the missing-quote conversation content from the
+captured string to a one-text-block array; it must deliver the same answer.
+A differing variant changes only its error flag to false and keeps the peer
+alive. Stewart must interrupt for a reply mismatch, preserve version 2 and
+publish no seal. The three variants retain external input/output/MCP witnesses,
+correlated hook calls, and observed absent authentication/model groups.
+
+These are combined synthetic sequences, not replays of either full live audit.
+Captured account prose is opaque authored content, not a correctness claim about
+the selected synthetic question. C4's original correction was entry 49 at
+revision 51, and C5's original long replacement was entry 1 version 2. The new
+sequence deliberately uses one entry and three versions. It does not establish
+live near-limit partial submission, timing, model behavior or provider usage.
+
 ## `tls/`: TEST-ONLY certificates and keys
 
 These certificates and their **private keys are deliberately published**. They

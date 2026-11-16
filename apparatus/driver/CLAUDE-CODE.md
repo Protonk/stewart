@@ -133,6 +133,14 @@ This checks Stewart's supplied bytes and profile binding; the synthetic harness
 does not establish that a real harness honors the annotation or avoids external
 copies.
 
+`runtime-captured-authoring` exercises the [C4/C5 captured authoring
+forms](testdata/README.md#c4c5-authoring-and-error-forms): required-field recovery,
+full flattened refusal, exact-version long replacement, stale-target refusal,
+prepared/delivered answer equality and submit-to-stop. Array-form invariance
+keeps the same answer; a changed error flag interrupts with the prior version
+preserved. All supplied material and historical payload bytes have external
+witnesses. Its combined schedule is synthetic and makes no live near-limit claim.
+
 The reply-fidelity cases use the short control and two full pages from the native
 C3 encounter (2026-11-13, CLI 2.1.322, `claude-haiku-5-5`), repeated unchanged in
 the annotated-page encounter (2026-11-15, the same CLI/model). The generator pins

@@ -156,6 +156,7 @@ CASES = (
     ("release-gate", "Optional featureless binary: runtime fields unknown, no topic or notice, same scaffold"),
     ("runtime-relay-forwarding", "Direct relay: arbitrary whole and segmented bytes before EOF, pipe observer control and bounded stopping"),
     ("runtime-submit", "Actual MCP record/prepare/submit, faithful delivery and fresh-session invariance"),
+    ("runtime-captured-authoring", "C4 field recovery and C5 full refusal, exact-version replacement and submit stop"),
     ("runtime-reply-fidelity", "Grounded pages, substitutions, error flattening and unknown echoes; explicit continuation"),
     ("runtime-fidelity-publication", "Reply mismatch closes a paused seal gate; late drain preserves a winning seal"),
     ("runtime-ordinary-ending", "Unsubmitted turns, one reminder, a valid usage checkpoint, manager seal and confirmed close"),
@@ -184,10 +185,13 @@ def sha(data):
 
 def fixture_material_index(materials):
     """Expected inventory from supplied fixture bytes, never a service reply."""
+    directories = {"materials"}
+    for name in materials:
+        directories.update(str(parent) for parent in Path(name).parents if str(parent) != ".")
     return {"files": [{"name": name, "size": len(data), "sha256": sha(data),
                        "lines": data.count(b"\n") + int(bool(data) and not data.endswith(b"\n"))}
                       for name, data in sorted(materials.items(), key=lambda pair: pair[0].encode())],
-            "directories": ["materials"]}
+            "directories": sorted(directories, key=lambda name: name.encode())}
 
 
 # Retained C3 material bytes, reconstructed without depending on a run directory.
@@ -444,6 +448,38 @@ def platform_name():
              ("Linux", "x86_64"): "linux-x86_64"}.get((system, machine))
     if value is None:
         raise ValueError("unsupported native driver platform: %s %s" % (system, machine))
+    return value
+
+
+def authoring_capture(name):
+    return transport_loads((HERE / "testdata" / "runtime" / (name + ".json")).read_bytes())
+
+
+def authoring_arguments(name, entry=None):
+    arguments = authoring_capture(name)["params"]["arguments"]
+    if entry is not None:
+        arguments["entry"] = entry
+    return arguments
+
+
+def authoring_materials():
+    root = HERE / "testdata" / "runtime" / "authoring-materials"
+    return {"materials/" + str(p.relative_to(root)): p.read_bytes()
+            for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def authoring_echo(session, identity, variant):
+    value = authoring_capture("c5-quote-result")
+    value["session_id"] = session
+    block = value["message"]["content"][0]
+    block["tool_use_id"] = identity
+    value["tool_result_meta"][0]["id"] = identity
+    if variant == "array":
+        block["content"] = [{"type": "text", "text": block["content"]}]
+    elif variant == "wrong-flag":
+        block["is_error"] = False
+    elif variant != "flat":
+        raise ValueError("unknown captured authoring variant")
     return value
 
 
@@ -913,8 +949,13 @@ class Driver:
         self.work.mkdir(mode=0o700, parents=False, exist_ok=False)
         source = work / "driver-snapshot"
         source.mkdir()
-        for name in ("claude_code.py", "driver_core.py", "rawjson.py"):
+        for name in ("claude_code.py", "driver_core.py", "rawjson.py", "answer_witness.py"):
             (source / name).write_bytes((HERE / name).read_bytes())
+        for path in (HERE / "testdata" / "runtime").rglob("*"):
+            if path.is_file():
+                target = source / path.relative_to(HERE)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(path.read_bytes())
         self.harness_script = source / "claude_code.py"
         self.witness = work / "witness"
         self.witness.mkdir()
@@ -1917,6 +1958,125 @@ class Driver:
             package = self.check_delivery(f, self.inspect_runtime(f))
             if label == "runtime-positive":
                 self.close_after_delivery(f, package)
+
+    def runtime_captured_authoring(self):
+        import answer_witness as aw
+        initial = authoring_arguments("c4-account")
+        corrected = authoring_arguments("c4-replace-corrected")
+        replacement = authoring_arguments("c5-replace-account")
+        materials = authoring_materials()
+        citations = [aw.record_citation(c, materials) for c in replacement["citations"]]
+        expected = aw.answer_json(3, [aw.Entry("e1", 3, "record_account", replacement["label"],
+                                              replacement["text"].encode(), citations)])
+        packages = []
+        for variant in ("flat", "array", "wrong-flag"):
+            label = "captured-authoring-" + variant
+            f = self.fixture(label, scenario="fidelity", timeout=60)
+            self.change_scenario(f, fidelity_variant="captured-authoring", authoring_variant=variant)
+            for source, raw in materials.items():
+                f["materials"][source] = raw
+                for base in (f["folder"], f["witness"] / "supplied"):
+                    path = base / source
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(raw)
+            (f["witness"] / "expected-answer.json").write_bytes(expected)
+            self.accept(f)
+            reply = self.cmd(label + ".run", ["run", f["reference"]])
+            self.groups_absent(f)
+            events = self.harness_clean(f)
+            mismatch = variant == "wrong-flag"
+            status = self.inspect_runtime(f)
+            self.eq(label + ".ending", reply["data"].get("ending"), "interrupted" if mismatch else "sealed")
+            self.eq(label + ".cause", reply["data"].get("cause"), "protocol_anomaly" if mismatch else None)
+            self.eq(label + ".answer", status["data"].get("answer"),
+                    {"revision": 2 if mismatch else 3, "entries": 1})
+            steps = {e["step"]: e for e in events if e["event"] == "authoring-step"}
+            order = [e["step"] for e in events if e["event"] == "authoring-step"]
+            sequence = ["initial", "missing-fields", "read-v1", "corrected", "missing-quote"]
+            if not mismatch:
+                sequence += ["read-v2", "long-replacement", "stale-target", "read-v3", "membership", "prepare", "selection"]
+            self.require(label + ".sequence", order == sequence, order)
+            for name, reason, data in (
+                    ("missing-fields", "fields_invalid", {"entry_kind": "record_account", "missing": ["citations"], "not_allowed": []}),
+                    ("missing-quote", "quote_not_found", {"index": 0, "source": "materials/R/frsr.R"})):
+                core = steps[name]["core"]
+                self.eq(label + "." + name + ".outcome", core.get("outcome"), "refused")
+                self.eq(label + "." + name + ".reason", core.get("reason"), reason)
+                self.eq(label + "." + name + ".data", core.get("data"), data)
+                self.eq(label + "." + name + ".effects", core.get("effects"),
+                        {"answer": "unchanged", "raw_capture": "recorded"})
+            error = steps["missing-quote"]["response"]["result"]
+            observed_text = authoring_capture("c5-quote-result")["message"]["content"][0]["content"]
+            self.eq(label + ".full-refusal", error, {"content": [{"type": "text", "text": observed_text}], "isError": True})
+            for number, args in ((1, initial), (2, corrected), (3, replacement)):
+                if number == 3 and mismatch:
+                    continue
+                payload = self.audit_path(f) / "payload" / ("e1.v%d.bin" % number)
+                self.require(label + ".retained-v%d" % number, payload.exists(), str(payload))
+                self.eq(label + ".payload-v%d" % number, payload.read_bytes(), args["text"].encode())
+                step = steps.get("read-v%d" % number)
+                if step:
+                    content = step["response"]["result"]["content"]
+                    self.eq(label + ".read-v%d" % number, content[1:] , [{"type": "text", "text": args["text"]}])
+                    self.eq(label + ".read-v%d-range" % number, step["core"].get("data", {}).get("range"),
+                            [0, len(args["text"].encode())])
+                    self.eq(label + ".read-v%d-complete" % number, step["core"].get("data", {}).get("complete"), True)
+            self.fidelity_record(f, 4 if mismatch else 12, int(mismatch))
+            for channel, event_name in (("stdout", "output"), ("input", "input"), ("mcp", "rpc-send")):
+                sent = b"".join(bytes.fromhex(e["raw_hex"]) for e in events if e["event"] == event_name)
+                self.eq(label + ".capture-" + channel, self.captured_channel(f, channel), sent)
+            shaped, inputs = self.message_contents(events)
+            self.check(label + ".one-input", shaped and inputs == [f["body"].decode()], inputs)
+            submits = [e for e in events if e["event"] == "authoring-submit"]
+            self.eq(label + ".explicit-submits", len(submits), 0 if mismatch else 1)
+            submit_requests = [e for e in events if e["event"] == "rpc-send"
+                               and e["value"].get("params", {}).get("name") == "submit"]
+            self.eq(label + ".transmitted-submits", len(submit_requests), 0 if mismatch else 1)
+            if mismatch:
+                self.eq(label + ".no-seal", status["data"].get("seal"), {"state": "absent", "actor": None})
+                diagnostics = [strict_loads(p.read_bytes())["body"] for p in (self.audit_path(f) / "diag").glob("*.json")]
+                diagnostics = [d for d in diagnostics if d.get("reason") == "runtime_reply_mismatch"]
+                self.control("captured-error-flag-stops", reply["data"].get("cause") == "protocol_anomaly"
+                             and len(diagnostics) == 1)
+                self.require(label + ".one-mismatch-diagnostic", len(diagnostics) == 1, diagnostics)
+                context = diagnostics[0].get("context", {})
+                for key, value in (("run", 1), ("phase", "live"), ("seal_record", None),
+                                   ("tool_use_id", "toolu_fidelity_5")):
+                    self.eq(label + ".diagnostic-" + key, context.get(key), value)
+                observed = context["observed_stdout"]
+                raw = self.captured_channel(f, "stdout")
+                frame = raw[observed["offset"]:observed["offset"] + observed["length"]]
+                self.eq(label + ".diagnostic-frame-digest", sha(frame), observed["sha256"])
+                self.eq(label + ".diagnostic-target-frame", transport_loads(frame),
+                        authoring_echo(label + "-session-1", "toolu_fidelity_5", "wrong-flag"))
+                retained = context["expected_result"]
+                self.eq(label + ".diagnostic-result-path", retained["path"],
+                        "runs/1/result-%d.json" % context["call"])
+                result_raw = (self.audit_path(f) / retained["path"]).read_bytes()
+                self.eq(label + ".diagnostic-result-digest", sha(result_raw), retained["sha256"])
+                result_body = strict_loads(result_raw)["body"]
+                self.eq(label + ".diagnostic-expected-refusal", result_body.get("content"), error["content"])
+                self.eq(label + ".diagnostic-expected-flag", result_body.get("is_error"), True)
+                continue
+            changed = steps["long-replacement"]["core"].get("data", {})
+            for key, value in (("id", "e1"), ("version", 3), ("revision", 3), ("citations", citations)):
+                self.eq(label + ".replacement-" + key, changed.get(key), value)
+            stale = steps["stale-target"]["core"]
+            self.eq(label + ".stale-reason", stale.get("reason"), "stale_entry")
+            self.eq(label + ".stale-current", stale.get("data", {}).get("current"), changed.get("entry"))
+            self.eq(label + ".stale-effects", stale.get("effects"), {"answer": "unchanged", "raw_capture": "recorded"})
+            membership = steps["membership"]["core"].get("data", {})
+            self.eq(label + ".membership-revision", membership.get("revision"), 3)
+            self.eq(label + ".membership-entries", [e.get("entry") for e in membership.get("entries", [])], [changed.get("entry")])
+            selection = steps["selection"]["response"]["result"]["content"][1:]
+            self.eq(label + ".prepared-selection", selection, [{"type": "text", "text": expected.decode()}])
+            delivery = status["data"].get("headline", {}).get("delivered", {})
+            self.require(label + ".verified-delivery", delivery.get("verified") is True, delivery)
+            package = Path(delivery["location"])
+            self.eq(label + ".delivered-selection", (package / "answer.json").read_bytes(), expected)
+            packages.append((package / "answer.json").read_bytes())
+            self.close_after_delivery(f, package)
+        self.control("captured-flat-and-array-invariance", packages == [expected, expected])
 
     def fidelity_fixture(self, label, variant, placements=3):
         f = self.fixture(label, scenario="fidelity", timeout=60, placements=placements)
@@ -3675,6 +3835,48 @@ def synthetic_harness(scenario_path, environment_path, argv):
                     emit(message)
                 return strict_loads(result["content"][0]["text"].encode()), message, response
 
+            if "authoring_variant" in scenario:
+                def step(label, name, arguments):
+                    core, message, response = fidelity_call(name, arguments)
+                    event("authoring-step", step=label, name=name, arguments=arguments,
+                          core=core, response=response)
+                    return core
+
+                first = step("initial", "record_account", authoring_arguments("c4-account"))
+                v1 = first["data"]["entry"]
+                step("missing-fields", "replace", authoring_arguments("c4-replace-missing", v1))
+                step("read-v1", "read", {"source": v1})
+                second = step("corrected", "replace", authoring_arguments("c4-replace-corrected", v1))
+                v2 = second["data"]["entry"]
+                arguments = authoring_arguments("c5-quote-call")
+                identity, rpc_id = fidelity_start("record_observation", arguments)
+                response = receive(rpc_id)
+                result = response["result"]
+                captured = authoring_capture("c5-quote-result")["message"]["content"][0]["content"]
+                if result != {"content": [{"type": "text", "text": captured}], "isError": True}:
+                    raise RuntimeError("captured full refusal differs from the core reply")
+                event("fidelity-result", id=rpc_id, tool_use_id=identity, name="record_observation",
+                      change=scenario["authoring_variant"], response=response)
+                event("authoring-step", step="missing-quote", name="record_observation", arguments=arguments,
+                      core=strict_loads(captured.encode()), response=response)
+                emit(authoring_echo(scenario["session"], identity, scenario["authoring_variant"]))
+                if scenario["authoring_variant"] == "wrong-flag":
+                    time.sleep(600)  # Stewart must stop this peer for the changed error flag.
+                    return 9
+                step("read-v2", "read", {"source": v2})
+                third = step("long-replacement", "replace", authoring_arguments("c5-replace-account", v2))
+                v3 = third["data"]["entry"]
+                step("stale-target", "replace", authoring_arguments("c4-replace-corrected", v2))
+                step("read-v3", "read", {"source": v3})
+                step("membership", "what_am_i_working_with", {})
+                prepared = step("prepare", "prepare", {})
+                target = prepared["data"]["prepared"]
+                step("selection", "read", {"source": target + "/selection"})
+                event("authoring-submit", prepared=target, group=os.getpgrp())
+                fidelity_start("submit", {"prepared": target, "confirm": True})
+                time.sleep(600)  # No voluntary exit or result can impersonate submit-to-stop.
+                return 9
+
             if not scenario.get("skip_record", False):
                 recorded, _, _ = fidelity_call("record_account", {"text": scenario["account"]})
                 if recorded.get("outcome") != "completed":
@@ -4174,10 +4376,73 @@ for raw in sys.stdin.buffer:
     print("C4 synthetic sequencing self-test evidence retained: " + str(root))
 
 
+def authoring_selftest(check):
+    import answer_witness as aw
+    identities = {
+        'c4-account.json': (2121, '053812aae916a50722882c238849af911c25b6628f401bb7c83261a1fe7f5328'),
+        'c4-replace-missing.json': (1930, 'ef69aa5c530fe963dd5ef898673f102d5f2bdff454d9f4b460bf98368cc823d6'),
+        'c4-replace-corrected.json': (1945, 'b8904a9aea51fbaa24a8b1b6459e68d32fa1e35cb96eca131ad4e3f368476bdb'),
+        'c5-quote-call.json': (1391, '8bc749174d6ed1c3cde45f52f74acb027cc6d7126d391be98b910f68ee3928a2'),
+        'c5-replace-account.json': (29128, 'c773ec95caccd20e1fe9b07d54812746a9da628e49b825293f01d6e836941c62'),
+        'c5-quote-result.json': (1256, 'c4d932e271161c9e2de5e009307c9b117b5122efab43a9b403863b6aa459a180'),
+        'authoring-materials/R/frsr.R': (7800, '5a96c182f9f322e9d04426c860c2f281d3f23d73ec8ede1993fd8ec5e14e41b0'),
+        'authoring-materials/00-review-rules.txt': (1073, '5da12479c3a190c1b3864c2ec65bb09119d326e4e3b16f3be7438cf3ce976487'),
+        'authoring-materials/R001-claim.txt': (390, '7a43df94f3dff98410a76eccb1a9c5e9b4cc3fbc3be09b2e8b25f5607ea35f1e'),
+        'authoring-materials/R001-receipt.txt': (418, '3edccbfd1c4b0a931dc9509830eb1c22b97187912604221caf807b289e63775a'),
+        'authoring-materials/R002-receipt.txt': (399, '53b97e0e54f98326b622911737fc813e2f65fa944bae120350e2774f554ff340'),
+        'authoring-materials/R003-receipt.txt': (426, 'dd7dba83039e7a43e84e764f9b036aee8df3ccdd8ce2905e9a7f8b1a0fe8df54'),
+        'authoring-materials/R004-claim.txt': (390, 'f80dce402282d4f3a0d7f14be975529d2515946d7fee3ee1cc8c53403692b9db'),
+        'authoring-materials/R004-receipt.txt': (418, '801bac2f6439bd9d8898a0e8138a3c74c470712a46df7e0a8de064bfb367a49b'),
+        'authoring-materials/R005-receipt.txt': (420, 'cd5032e8b9c0b1bec8685852c3bfa000e2b180371c8e6dbfa987c3a97be0fc53'),
+        'authoring-materials/R006-claim.txt': (390, 'f801a3b8460ee9a542dd7f49aae4d5388ca66ea06dd30cf5eba6fb9677695e61'),
+        'authoring-materials/R006-receipt.txt': (418, '5f6e37340feb19efde8c30ef3c8e052a4a07eb3ab2da06bac17eb67b1ea0b398'),
+        'authoring-materials/R048-receipt.txt': (419, 'f5213f294bdf6a25828cc1ed28225e2ae5dd53f15195e5fd84d066130b1b9d55'),
+    }
+    for name, identity in identities.items():
+        raw = (HERE / "testdata" / "runtime" / name).read_bytes()
+        check("authoring.fixture." + name, (len(raw), sha(raw)) == identity)
+    missing = authoring_arguments("c4-replace-missing")
+    corrected = authoring_arguments("c4-replace-corrected")
+    check("authoring.c4-correction-only-citations", corrected == dict(missing, citations=[]))
+    for name in ("c4-replace-missing", "c4-replace-corrected", "c5-replace-account"):
+        before = authoring_arguments(name)
+        after = authoring_arguments(name, "e1.v2.synthetic")
+        check("authoring.handle-only." + name, after == dict(before, entry="e1.v2.synthetic"))
+    materials = authoring_materials()
+    check("authoring.nested-material-directories", fixture_material_index(materials)["directories"] ==
+          ["materials", "materials/R"])
+    try:
+        aw.record_citation(authoring_arguments("c5-quote-call")["citations"][0], materials)
+    except aw.CitationDefect as defect:
+        check("authoring.missing-quote-independent", defect.reason == "quote_not_found")
+    else:
+        check("authoring.missing-quote-independent", False)
+    citations = [aw.record_citation(c, materials) for c in authoring_arguments("c5-replace-account")["citations"]]
+    check("authoring.long-unique-citations", len(citations) == 12 and all("range" in c["stewart"] for c in citations))
+    original = authoring_capture("c5-quote-result")
+    flat = authoring_echo("fresh-session", "toolu_fresh", "flat")
+    expected = copy.deepcopy(original)
+    expected["session_id"] = "fresh-session"
+    expected["message"]["content"][0]["tool_use_id"] = "toolu_fresh"
+    expected["tool_result_meta"][0]["id"] = "toolu_fresh"
+    check("authoring.echo-only-session-and-identities", flat == expected)
+    full_text = flat["message"]["content"][0]["content"]
+    check("authoring.full-refusal-digest", len(full_text.encode()) == 344 and sha(full_text.encode()) ==
+          "4d287a2987efce5a306249415d9028f3ab98aa21f9dbac7900dfc91d8af4af09")
+    check("authoring.auxiliary-keeps-error-prefix", flat["tool_use_result"] == "Error: " + full_text)
+    expected = copy.deepcopy(flat)
+    expected["message"]["content"][0]["content"] = [{"type": "text", "text": full_text}]
+    check("authoring.array-only-content-form", authoring_echo("fresh-session", "toolu_fresh", "array") == expected)
+    expected = copy.deepcopy(flat)
+    expected["message"]["content"][0]["is_error"] = False
+    check("authoring.wrong-flag-only", authoring_echo("fresh-session", "toolu_fresh", "wrong-flag") == expected)
+
+
 def self_test():
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
+    authoring_selftest(check)
     check("c5.partial-usage-size", len(compact(C5_PARTIAL_USAGE)) == 251)
     check("c5.partial-usage-digest", sha(compact(C5_PARTIAL_USAGE)) ==
           "db6136588bc9b971abaf7a1a6da35f877e3a05253ddad40d54e5b0ec018272c9")
