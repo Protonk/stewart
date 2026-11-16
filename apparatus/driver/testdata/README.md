@@ -81,6 +81,51 @@ and endings come from the supplied script and interface contract. Coverage ends
 with stopped, unsubmitted audits and retained work; it establishes neither a
 better response cap nor live continuation, cancellation, delivery or close.
 
+### M3 ordinary ending and citation recovery
+
+The following originals come from the 2026-11-15 `claude-haiku-5-5` encounter,
+effort omitted. The export is
+`.scratch/readiness-m3-live-reminder-02/container/m3-reminder/export-0004/work.tar`:
+788480 bytes, SHA-256
+`0c9551f2e56266d5e6eaf9337bb5b61bf2afb4376306af6c880a9c650c9e35c4`.
+Response and call paths below are relative to
+`private/archive/audits/akzdcvcj6ajscilan/`; they are Stewart-owned captures.
+The material comes from the separate pre-intake input witness.
+
+| Fixture | Original member | Bytes | SHA-256 |
+| --- | --- | --- | --- |
+| [Ordinary ending](messages/m3-ordinary-ending.json) | `runs/1/response-4-1.bin` | 1555 | `ee1df6b283c322424e116e2e9a692a44ebd27e07546d5bd1928f27f407753728` |
+| [Invalid citation](messages/m3-citation-invalid.json) | `runs/2/call-5.json` | 1187 | `bff4227f27d85e7991fa9e05d33dd35904c2d9b2a723eeeeb4fa842dc53291ff` |
+| [Corrected citation](messages/m3-citation-corrected.json) | `runs/2/call-6.json` | 1167 | `1a6ea9ccc7d0936579e1734a30300f972e088e6e6f5fb6ad5fb816a8fd260b88` |
+| [Supplied report](messages/m3-supplied-report.txt) | `private/evidence/input-witness/materials/context/supplied-report.txt` | 591 | `86b5be5c14dad39f2facfb70607658bdc637f2df5a678e78e70972c459b9296d` |
+
+`c13.captured-reminder` serves the complete ordinary-ending response after
+recording three supplied entries. Its reported charge is 6660 input and 248
+output tokens. The fake provider witnesses the resulting reminder in a request,
+then returns retryable HTTP errors until the placement interrupts. The next
+placement re-enters with the same entries and reminder state. The original live
+interruption was a signal before any request byte was written; its reminder
+transmission was `unknown`. The synthetic HTTP sequence independently exercises
+known transmission and does not change that historical result.
+
+Both captured replacement calls change only their entry handle. The invalid
+call combines the whole-file range `[0,591)` with a shorter quote. Refusal must
+preserve every entry, the revision and the old account bytes. Its captured
+correction removes that incorrect range, keeping the three unique quotes; a
+fresh invocation ID distinguishes the new call. The test checks exact citation
+annotations, version 2 of the same entry, both retained payload versions and
+the complete prepared selection against independent expected bytes.
+
+A synthetic prose ending then ends authoring without submission or another
+reminder. In the differing variant, only the first response's stop reason is
+changed to `max_tokens`; the reminder remains available until the continuation
+ends. Changing only its uninterpreted thinking-count diagnostic leaves the
+original path invariant. Every variant uses the reminder once and produces the
+same prepared selection. Sabotage controls reset the reminder allowance, hide a
+re-entry item or remove the superseded payload. The original live continuation
+submitted; it supplies no evidence for the synthetic prose-ending branch.
+These comparisons do not exercise live interruption, delivery or close.
+
 ## `tls/`: TEST-ONLY certificates and keys
 
 These certificates and their **private keys are deliberately published**. They

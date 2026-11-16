@@ -5,11 +5,12 @@ are synthetic. Origins and precise projection limits live in testdata/README.md.
 """
 from pathlib import Path
 
+import answer_witness as aw
 import fake_provider as fp
 import rawjson
 import run_support as rs
 from cases_run import proc, run_submission
-from driver_core import CONTINUATION, NEAR_LIMIT, Control, case, selftest, sha256_hex
+from driver_core import CONTINUATION, NEAR_LIMIT, REMINDER, Control, F, case, selftest, sha256_hex
 
 
 FIXTURES = Path(__file__).parent / "testdata/messages"
@@ -43,9 +44,9 @@ class CapturedCap(fp.Message):
         return self.captured
 
 
-def captured_replacement(handle):
+def captured_replacement(handle, filename="m3-replace-missing-citations.json"):
     """Change only the original call's now-unusable audit-specific entry handle."""
-    body = (FIXTURES / "m3-replace-missing-citations.json").read_bytes()
+    body = (FIXTURES / filename).read_bytes()
     target = rawjson.parse(body).get("input").get("entry")
     return body[:target.start] + rawjson.compact(handle) + body[target.end:]
 
@@ -156,6 +157,218 @@ def c_captured_cap(t):
         t.eq(pre + ".literal-total", fx.totals(), expected)
         t.eq(pre + ".cumulative-allowances", totals[variant], fp.allowances(expected, rs.limits_of(sub)))
     t.eq("captured.cap.usage-invariance", list(totals.values()), [totals["original"]] * 3)
+
+
+class CapturedOrdinary(fp.Message):
+    def __init__(self, variant="spent"):
+        body = (FIXTURES / "m3-ordinary-ending.json").read_bytes()
+        node = rawjson.parse(body)
+        if variant == "unused":
+            target, value = node.get("stop_reason"), b'"max_tokens"'
+        elif variant == "diagnostic":
+            target, value = node.get("usage").get("output_tokens_details").get("thinking_tokens"), b"1"
+        elif variant != "spent":
+            raise ValueError(variant)
+        if variant != "spent":
+            body = body[:target.start] + value + body[target.end:]
+        self.captured = body
+        content = rawjson.parse(body).get("content")
+        super().__init__([fp.Block(b.raw, "text") for b in content.items],
+                         stop_reason="max_tokens" if variant == "unused" else "end_turn",
+                         model="claude-haiku-5-5", label="M3 ordinary ending: " + variant,
+                         usage=fp.Usage(6660, 248, 0, 0, iterations=[
+                             {"type": "message", "input_tokens": 6660, "output_tokens": 248,
+                              "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0}]))
+        self.content_raw = content.raw
+
+    def body(self, ex):
+        return self.captured
+
+
+def replacement_call(p, filename, handle):
+    raw = captured_replacement(handle, filename)
+    call = rawjson.parse(raw)
+    return p.call("replace", input=call.get("input").value(), raw_input=call.get("input").raw,
+                  tid=call.get("id").value(), raw_block=raw)
+
+
+@case("c13.captured-reminder", ["C4", "C6", "C7", "C13", "C14"],
+      "M3 ordinary ending and citation recovery preserve entries and spend the reminder only once across continuation",
+      needs=("loopback",), controls=[
+          Control("reset_notice_allowance", [r"^captured\.reminder\.spent\.reminder-once$"]),
+          Control("reentry_omit_entry", [r"^captured\.reminder\.spent\.reentry\.entries$"]),
+          Control("remove_superseded_payload", [r"^captured\.reminder\.spent\.retained-v1$"])])
+def c_captured_reminder(t):
+    material = (FIXTURES / "m3-supplied-report.txt").read_bytes()
+    corrected = rawjson.parse((FIXTURES / "m3-citation-corrected.json").read_bytes()).get("input").value()
+    citations = [aw.record_citation(c, {"materials/context/supplied-report.txt": material})
+                 for c in corrected["citations"]]
+    observation = b"The supplied report is an illustrative fixture."
+    limit = b"This comparison witnesses no execution of the report's subject."
+    expected_selection = aw.answer_json(4, [
+        aw.Entry("e1", 2, "record_account", corrected["label"], corrected["text"].encode(), citations=citations),
+        aw.Entry("e2", 1, "record_observation", "", observation),
+        aw.Entry("e3", 1, "record_limit", "", limit)])
+    selections, totals = {}, {}
+    for variant in ("spent", "unused", "diagnostic"):
+        pre = "captured.reminder." + variant
+        spent = variant != "unused"
+        sub = run_submission(t, entries=[F("context/supplied-report.txt", material)],
+                             body=b"What does the supplied report establish?\n", model="claude-haiku-5-5")
+        observed = {}
+
+        def body(p):
+            p.usage = lambda: fp.Usage(1000, 50)
+            turn = yield p.calls_step(("record_account", {"text": ACCOUNT.decode()}),
+                                      ("record_observation", {"text": observation.decode()}),
+                                      ("record_limit", {"text": limit.decode()}))
+            p.eq("recorded", [r.outcome for r in turn.replies], ["completed"] * 3)
+            handles = [r.data.get("entry") for r in turn.replies]
+            turn = yield CapturedOrdinary(variant)
+            if spent:
+                p.eq("first-reminder", turn.texts, [REMINDER])
+                # The original interruption was a signal before transmission.
+                # Here an observed HTTP retry exhaustion makes transmission
+                # and the continuation boundary deterministic.
+                turn = yield fp.HttpError(529, retry_after="0")
+            p.eq("fresh-conversation", turn.new_conversation, True)
+            p.eq("continuation-input", turn.first_message.value() if turn.first_message else None,
+                 {"role": "user", "content": [{"type": "text", "text": sub.body.decode()},
+                                               {"type": "text", "text": CONTINUATION}]})
+            state, entries, _ = yield from p.wwaw_all()
+            p.eq("reentry.entries", [(e.get("id"), e.get("entry")) for e in entries],
+                 list(zip(("e1", "e2", "e3"), handles)))
+            p.eq("reentry.revision", (state or {}).get("revision"), 3)
+            p.eq("reentry.reminder-spent", (state or {}).get("notices_used", {}).get("reminder"), spent)
+            handle = entries[0].get("entry") if entries else handles[0]
+            old, _ = yield from p.read_all(handle)
+            p.eq("account-before-refusal", old, ACCOUNT)
+            turn = yield p.calls_step(replacement_call(p, "m3-citation-invalid.json", handle))
+            r = turn.reply()
+            p.eq("citation-refusal", (r.outcome, r.reason), ("refused", "citation_invalid"))
+            p.eq("citation-refusal-index", r.data.get("index"), 0)
+            p.eq("citation-refusal-effects", r.effects, {"answer": "unchanged", "raw_capture": "recorded"})
+            state, entries, _ = yield from p.wwaw_all()
+            p.eq("refusal-preserves-revision", (state or {}).get("revision"), 3)
+            p.eq("refusal-preserves-entries", [(e.get("id"), e.get("entry")) for e in entries],
+                 list(zip(("e1", "e2", "e3"), handles)))
+            old, _ = yield from p.read_all(handle)
+            p.eq("account-after-refusal", old, ACCOUNT)
+            turn = yield p.calls_step(replacement_call(p, "m3-citation-corrected.json", handle))
+            r = turn.reply()
+            p.eq("corrected-replacement", (r.outcome, r.data.get("id"), r.data.get("version"), r.data.get("revision")),
+                 ("completed", "e1", 2, 4))
+            p.eq("corrected-citations", r.data.get("citations"), citations)
+            turn = yield p.calls_step(("prepare", {}))
+            prepared = turn.reply().data.get("prepared")
+            observed["selection"], _ = yield from p.read_all(prepared + "/selection")
+            turn = yield p.end("Synthetic continuation ends without submitting.")
+            if not spent:
+                p.eq("continuation-reminder", turn.texts, [REMINDER])
+                yield p.end("Synthetic ending after the reminder.")
+
+        p = proc(sub, body)
+        fx = rs.provider(t, p, label=variant, accepts=fp.MESSAGES_API)
+        first_name, second_name = pre + ".first", pre + ".second"
+        first = rs.run(t, sub, fx, name=first_name)
+        cause = "provider_unavailable" if spent else "max_tokens"
+        rs.check_run_reply(t, first, sub, first_name, ending="interrupted", cause=cause, run_number=1,
+                           fx=fx, limits=rs.limits_of(sub))
+        rs.check_run_ended(t, sub, 1, first_name, ending="interrupted", cause=cause,
+                           requests=3 if spent else 2, attempts=6 if spent else 2)
+        t.eq(pre + ".first-notice", first.data.get("notices"), [{"type": "reminder", "sent": "sent"}] if spent else [])
+        second = rs.run(t, sub, fx, name=second_name)
+        rs.check_run_reply(t, second, sub, second_name, ending="ended_unsubmitted", run_number=2,
+                           fx=fx, limits=rs.limits_of(sub))
+        rs.check_run_ended(t, sub, 2, second_name, ending="ended_unsubmitted", cause=None,
+                           requests=9 if spent else 10, attempts=9 if spent else 10)
+        rs.check_procedure(t, p, pre, fx)
+        rs.check_requests(t, fx, sub, pre)
+        rs.check_history(t, fx, pre)
+        rs.check_run_records(t, sub, pre)
+        for number, name in enumerate((first_name, second_name), 1):
+            exs = fx.exchanges_of(name)
+            rs.check_captures(t, sub, fx, name, run_number=number, exchanges=exs)
+            t.eq(name + ".run-ended-usage", (rs.run_ended_of(t, sub, number) or {}).get("usage"), fx.totals(exs))
+        t.eq(pre + ".reminder-once", p.texts, [REMINDER])
+        notices = t.log_bodies(sub, "notice")
+        t.eq(pre + ".notice-record", [(n.get("type"), n.get("run"), n.get("request"), n.get("text")) for n in notices],
+             [("reminder", 1 if spent else 2, 3 if spent else 10, REMINDER)])
+        t.eq(pre + ".second-notice", second.data.get("notices"), [] if spent else [{"type": "reminder", "sent": "sent"}])
+        t.eq(pre + ".entry-actions", [b.get("action") for b in rs.entry_bodies(t, sub)], ["add"] * 3 + ["replace"])
+        for version, expected in ((1, ACCOUNT), (2, corrected["text"].encode())):
+            path = Path(sub.audit_dir) / "payload" / ("e1.v%d.bin" % version)
+            t.eq(pre + ".retained-v%d" % version, path.read_bytes() if path.is_file() else None, expected)
+        selections[variant] = observed.get("selection")
+        t.eq(pre + ".prepared-selection", selections[variant], expected_selection)
+        t.eq(pre + ".no-seal", t.log_bodies(sub, "seal"), [])
+        refused = rs.run(t, sub, fx, name=pre + ".after-ending", expect="refused", reason="authoring_ended")
+        t.eq(pre + ".ended-by", refused.data.get("ended_by"), "ordinary_ending")
+        t.eq(pre + ".no-request-after-ending", fx.exchanges_of(pre + ".after-ending"), [])
+        totals[variant] = fx.totals()
+        t.eq(pre + ".literal-total", totals[variant], {
+            "turns": {"reported": 11 if spent else 12, "estimated": 0},
+            "input_tokens": {"reported": 16660 if spent else 17660, "estimated": 0},
+            "output_tokens": {"reported": 748 if spent else 798, "estimated": 0}})
+    t.eq("captured.reminder.selection-invariance", list(selections.values()), [expected_selection] * 3)
+    t.eq("captured.reminder.diagnostic-invariance", totals["diagnostic"], totals["spent"])
+
+
+@selftest
+def captured_reminder_selftests():
+    import copy
+    import json
+    out = []
+    for filename, size, digest in (
+        ("m3-ordinary-ending.json", 1555, "ee1df6b283c322424e116e2e9a692a44ebd27e07546d5bd1928f27f407753728"),
+        ("m3-citation-invalid.json", 1187, "bff4227f27d85e7991fa9e05d33dd35904c2d9b2a723eeeeb4fa842dc53291ff"),
+        ("m3-citation-corrected.json", 1167, "1a6ea9ccc7d0936579e1734a30300f972e088e6e6f5fb6ad5fb816a8fd260b88"),
+        ("m3-supplied-report.txt", 591, "86b5be5c14dad39f2facfb70607658bdc637f2df5a678e78e70972c459b9296d"),
+    ):
+        raw = (FIXTURES / filename).read_bytes()
+        out.append(("m3.reminder." + filename + ".origin", len(raw) == size and sha256_hex(raw) == digest))
+    original = CapturedOrdinary()
+    for variant in ("unused", "diagnostic"):
+        step = CapturedOrdinary(variant)
+        expected = json.loads(original.captured)
+        if variant == "unused":
+            expected["stop_reason"] = "max_tokens"
+            raw = original.captured.replace(b'"stop_reason":"end_turn"', b'"stop_reason":"max_tokens"', 1)
+        else:
+            expected["usage"]["output_tokens_details"]["thinking_tokens"] = 1
+            raw = original.captured.replace(b'"thinking_tokens":0', b'"thinking_tokens":1', 1)
+        out += [("m3.reminder." + variant + ".one-field", json.loads(step.captured) == expected),
+                ("m3.reminder." + variant + ".one-span", step.captured == raw),
+                ("m3.reminder." + variant + ".content", step.content_raw == original.content_raw),
+                ("m3.reminder." + variant + ".charge", step.charge(None) ==
+                 {"basis": "reported", "turns": 1, "input_tokens": 6660, "output_tokens": 248})]
+    bad = json.loads((FIXTURES / "m3-citation-invalid.json").read_bytes())
+    good = json.loads((FIXTURES / "m3-citation-corrected.json").read_bytes())
+    expected = copy.deepcopy(bad)
+    expected["id"] = good["id"]
+    expected["input"]["citations"][0].pop("start")
+    expected["input"]["citations"][0].pop("end")
+    out.append(("m3.citation.range-correction", expected == good))
+    sources = {"materials/context/supplied-report.txt": (FIXTURES / "m3-supplied-report.txt").read_bytes()}
+    try:
+        aw.record_citation(bad["input"]["citations"][0], sources)
+        refused = False
+    except aw.CitationDefect as exc:
+        refused = exc.reason == "citation_invalid"
+    out.append(("m3.citation.invalid-control", refused))
+    out.append(("m3.citation.corrected-ranges", [aw.record_citation(c, sources)["stewart"]["range"]
+                                               for c in good["input"]["citations"]] ==
+                [[347, 428], [431, 507], [98, 125]]))
+    for filename in ("m3-citation-invalid.json", "m3-citation-corrected.json"):
+        raw = (FIXTURES / filename).read_bytes()
+        expected = json.loads(raw)
+        old = expected["input"]["entry"]
+        expected["input"]["entry"] = "e1.v1.synthetic"
+        projected = captured_replacement("e1.v1.synthetic", filename)
+        out += [("m3.citation." + filename + ".handle-only", json.loads(projected) == expected),
+                ("m3.citation." + filename + ".handle-span",
+                 projected == raw.replace(old.encode(), b"e1.v1.synthetic", 1))]
+    return out
 
 
 @selftest
