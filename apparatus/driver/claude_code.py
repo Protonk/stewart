@@ -129,6 +129,8 @@ CASES = (
     ("release-gate", "Optional featureless binary: runtime fields unknown, no topic or notice, same scaffold"),
     ("runtime-relay-forwarding", "Direct relay: arbitrary whole and segmented bytes before EOF, pipe observer control and bounded stopping"),
     ("runtime-submit", "Actual MCP record/prepare/submit, faithful delivery and fresh-session invariance"),
+    ("runtime-reply-fidelity", "Grounded pages, substitutions, error flattening and unknown echoes; explicit continuation"),
+    ("runtime-fidelity-publication", "Reply mismatch closes a paused seal gate; late drain preserves a winning seal"),
     ("runtime-ordinary-ending", "Unsubmitted turns, one reminder, a valid usage checkpoint, manager seal and confirmed close"),
     ("runtime-hooks-and-effort", "The hook helper admits only pinned tools after startup; a selected effort reaches the launch"),
     ("runtime-cancellation", "Ordered pipelined calls, cancellation behind a large call, late/unknown cancellations and reused IDs"),
@@ -148,6 +150,112 @@ CASES = (
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def fixture_material_index(materials):
+    """Expected inventory from supplied fixture bytes, never a service reply."""
+    return {"files": [{"name": name, "size": len(data), "sha256": sha(data),
+                       "lines": data.count(b"\n") + int(bool(data) and not data.endswith(b"\n"))}
+                      for name, data in sorted(materials.items(), key=lambda pair: pair[0].encode())],
+            "directories": ["materials"]}
+
+
+# Retained C3 material bytes, reconstructed without depending on a run directory.
+FIDELITY_PAGES = (
+    ("Short control source", 49152, "C3_CONTROL_8A79D4", "materials/control.txt", 0,
+     "947ae167c6e71f036d5c603c3f273706c2252b1b18d381bbf7da3045da49e0d2"),
+    ("First full page of the two-page source", 65536, "C3_PAGE_ONE_B613F2", "materials/two-pages.txt", 0,
+     "e68bd1dcda95edf47c668475d810f587ad80c382afe00cc8bfa8f36ae969ca2a"),
+    ("Second full page of the two-page source", 65536, "C3_PAGE_TWO_E90C75", "materials/two-pages.txt", 65536,
+     "7f451bbeacea11971c367fd63b96f513ddbdeea38edf74bd68e7c8fbfec12a92"),
+)
+
+
+def fidelity_page(specimen):
+    title, size, label, _, _, _ = specimen
+    head = (title + "\nThe repeated lines are filler, not evidence about the final label.\n").encode()
+    tail = ("TAIL-LABEL: " + label + "\n").encode()
+    filler = b"Ordinary padding line for the page transmission comparison.\n"
+    space = size - len(head) - len(tail) - 1
+    return head + (filler * ((space + len(filler) - 1) // len(filler)))[:space] + b"\n" + tail
+
+
+def fidelity_echo(identity, result, variant="exact"):
+    """Synthetic harness transformation, not the independent verdict."""
+    block = {"type": "tool_result", "tool_use_id": identity,
+             "content": json.loads(json.dumps(result["content"])),
+             "is_error": result.get("isError", False)}
+    if variant == "changed-text":
+        block["content"][-1]["text"] = block["content"][-1]["text"][:-1]
+    elif variant == "wrong-error":
+        block["is_error"] = not block["is_error"]
+    elif variant in ("error-flat", "success-flat"):
+        block["content"] = result["content"][0]["text"]
+    elif variant in ("c3-one", "c3-two"):
+        block["content"] = C3_NOTICES[0 if variant == "c3-one" else 1]
+    elif variant == "reordered":
+        block["content"] = [dict(reversed(list(v.items()))) for v in block["content"]]
+        if not block["is_error"]:
+            del block["is_error"]
+    return block
+
+
+# Original conversation notice text with only the external path replaced.
+# Provenance and original content digests are in CLAUDE-CODE.md.
+C3_NOTICES = (
+    (
+        '<persisted-output>\nOutput too large (65.6KB). Full output saved to: /synthetic/external/to'
+        'ol-result.json\n\nPreview (first 2KB):\n[\n  {\n    "type": "text",\n    "text": "{\\"schema\\":\\"'
+        'stewart.reply/2\\",\\"operation\\":\\"read\\",\\"outcome\\":\\"completed\\",\\"effects\\":{\\"raw_capt'
+        'ure\\":\\"recorded\\"},\\"next\\":[{\\"tool\\":\\"read\\",\\"input\\":{\\"source\\":\\"materials/two-pag'
+        'es.txt\\",\\"start\\":65536},\\"why\\":\\"Read the rest of this source.\\"}],\\"data\\":{\\"source\\"'
+        ':\\"materials/two-pages.txt\\",\\"kind\\":\\"material\\",\\"size\\":131072,\\"range\\":[0,65536],\\"l'
+        'ines\\":[1,1093],\\"complete\\":false,\\"cite\\":{\\"source\\":\\"materials/two-pages.txt\\",\\"star'
+        't\\":0,\\"end\\":65536}}}"\n  },\n  {\n    "type": "text",\n    "text": "First full page of the t'
+        'wo-page source\\nThe repeated lines are filler, not evidence about the final label.\\nOrdina'
+        'ry padding line for the page transmission comparison.\\nOrdinary padding line for the page '
+        'transmission comparison.\\nOrdinary padding line for the page transmission comparison.\\nOrd'
+        'inary padding line for the page transmission comparison.\\nOrdinary padding line for the pa'
+        'ge transmission comparison.\\nOrdinary padding line for the page transmission comparison.\\n'
+        'Ordinary padding line for the page transmission comparison.\\nOrdinary padding line for the'
+        ' page transmission comparison.\\nOrdinary padding line for the page transmission comparison'
+        '.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padding line for '
+        'the page transmission comparison.\\nOrdinary padding line for the page transmission compari'
+        'son.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padding line f'
+        'or the page transmission comparison.\\nOrdinary padding line for the page transmission comp'
+        'arison.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padding lin'
+        'e for the page transmission comparison.\\nOrdinary padding line for the page transmission c'
+        'omparison.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padding '
+        'line for the page transmission comparison.\\nOrdinary padding line for the page transmissio'
+        'n comparison.\\nOrdinary padding line for the page transmi\n...\n</persisted-output>'
+    ),
+    (
+        '<persisted-output>\nOutput too large (65.5KB). Full output saved to: /synthetic/external/to'
+        'ol-result.json\n\nPreview (first 2KB):\n[\n  {\n    "type": "text",\n    "text": "{\\"schema\\":\\"'
+        'stewart.reply/2\\",\\"operation\\":\\"read\\",\\"outcome\\":\\"completed\\",\\"effects\\":{\\"raw_capt'
+        'ure\\":\\"recorded\\"},\\"next\\":[],\\"data\\":{\\"source\\":\\"materials/two-pages.txt\\",\\"kind\\":'
+        '\\"material\\",\\"size\\":131072,\\"range\\":[65536,131072],\\"lines\\":[1094,2186],\\"complete\\":t'
+        'rue,\\"cite\\":{\\"source\\":\\"materials/two-pages.txt\\",\\"start\\":65536,\\"end\\":131072}}}"\n  '
+        '},\n  {\n    "type": "text",\n    "text": "Second full page of the two-page source\\nThe repea'
+        'ted lines are filler, not evidence about the final label.\\nOrdinary padding line for the p'
+        'age transmission comparison.\\nOrdinary padding line for the page transmission comparison.\\'
+        'nOrdinary padding line for the page transmission comparison.\\nOrdinary padding line for th'
+        'e page transmission comparison.\\nOrdinary padding line for the page transmission compariso'
+        'n.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padding line for'
+        ' the page transmission comparison.\\nOrdinary padding line for the page transmission compar'
+        'ison.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padding line '
+        'for the page transmission comparison.\\nOrdinary padding line for the page transmission com'
+        'parison.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padding li'
+        'ne for the page transmission comparison.\\nOrdinary padding line for the page transmission '
+        'comparison.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padding'
+        ' line for the page transmission comparison.\\nOrdinary padding line for the page transmissi'
+        'on comparison.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary padd'
+        'ing line for the page transmission comparison.\\nOrdinary padding line for the page transmi'
+        'ssion comparison.\\nOrdinary padding line for the page transmission comparison.\\nOrdinary p'
+        'adding line for the page transmission comparison.\\nOrdinary padding line for the page tran'
+        'smission comparison.\\nOrdinary padding line for the page \n...\n</persisted-output>'
+    ),
+)
 
 
 def environment_snapshot(raw):
@@ -1002,7 +1110,7 @@ class Driver:
                    "reference": reference, "profile_path": profile_path, "profile": profile,
                    "family": family, "tools": tools, "fields": fields, "body": body,
                    "launch": launch, "effort": effort,
-                   "material": material, "witness": witness, "executable": executable,
+                   "materials": {"materials/report.txt": material}, "witness": witness, "executable": executable,
                    "limits": {"max_placements": placements, "placement_timeout_seconds": timeout},
                    "scenario": root / "scenario.json" if scenario else None}
         self.question(fixture)
@@ -1064,9 +1172,7 @@ class Driver:
         bindings = obj.get("bindings", {})
         self.eq(label + ".binding-keys", sorted(bindings), ["material_index_sha256", "question_body_sha256"])
         self.eq(label + ".question-binding", bindings.get("question_body_sha256"), sha(f["body"]))
-        material = (f["witness"] / "report.txt").read_bytes()
-        index = {"files": [{"name": "materials/report.txt", "size": len(material),
-                            "sha256": sha(material), "lines": material.count(b"\n")}], "directories": ["materials"]}
+        index = fixture_material_index(f["materials"])
         self.eq(label + ".material-index-binding", bindings.get("material_index_sha256"), sha(compact(index)))
         self.eq(label + ".reply-digest", data["arrangement"]["sha256"], sha(raw))
         self.eq(label + ".settings-runtime", data["settings"].get("runtime"), expected["runtime"])
@@ -1076,14 +1182,13 @@ class Driver:
         prepared = self.prepare(f)
         question = (f["witness"] / "question-file").read_bytes()
         body = (f["witness"] / "question-body").read_bytes()
-        material = (f["witness"] / "report.txt").read_bytes()
+        index = fixture_material_index(f["materials"])
         self.eq(f["label"] + ".question-inventory", prepared["data"].get("question"),
                 {"file_bytes": len(question), "file_sha256": sha(question),
                  "body_bytes": len(body), "body_sha256": sha(body)})
         self.eq(f["label"] + ".material-inventory", prepared["data"].get("materials"),
-                {"count": 1, "bytes": len(material), "directories": ["materials"],
-                 "files": [{"name": "materials/report.txt", "size": len(material),
-                            "sha256": sha(material), "lines": material.count(b"\n")}]})
+                {"count": len(index["files"]), "bytes": sum(row["size"] for row in index["files"]),
+                 "directories": index["directories"], "files": index["files"]})
         raw = Path(prepared["data"]["arrangement"]["machine"]).read_bytes()
         self.arrangement(f, prepared["data"], raw)
         reply = self.cmd(f["label"] + ".commission",
@@ -1668,7 +1773,7 @@ class Driver:
     def launch_count(self, f):
         return sum(e["event"] == "launch" for e in self.harness_events(f))
 
-    def close_after_delivery(self, f, package):
+    def close_after_delivery(self, f, package, placements=1, mismatch=False):
         """An ordinary close of a copy delivered before close, as on the Messages path."""
         label = f["label"]
         delivered = self.package_identity(package)
@@ -1681,8 +1786,10 @@ class Driver:
                            ("placement", "delivered_before_close"), ("surrendered", [])):
             self.eq(label + ".close-" + key, data.get(key), value)
         self.eq(label + ".close-seal-actor", (data.get("seal") or {}).get("actor"), "auditor")
-        self.eq(label + ".close-runs", data.get("runs"), {"count": 1, "held": False, "last_ending": "sealed"})
-        self.runtime_allowances(label + ".close", data, 1, f)
+        self.eq(label + ".close-runs", data.get("runs"), {"count": placements, "held": False, "last_ending": "sealed"})
+        self.runtime_allowances(label + ".close", data, placements, f)
+        if mismatch:
+            self.check(label + ".close-warning", "mismatch" in data.get("summary", "").lower(), data)
         status_reply = self.cmd(label + ".status-closed", ["status", f["reference"]])
         headline = status_reply["data"].get("headline", {})
         self.eq(label + ".closed-headline", headline.get("closed"), "yes")
@@ -1690,6 +1797,8 @@ class Driver:
         self.eq(label + ".delivery-confirmed", headline.get("delivered", {}).get("confirmed"), True)
         repeat = self.cmd(label + ".close-again", ["close", f["reference"]])
         self.eq(label + ".close-again-already", (repeat.get("data") or {}).get("already_closed"), True)
+        if mismatch:
+            self.check(label + ".close-again-warning", "mismatch" in repeat.get("data", {}).get("summary", "").lower(), repeat)
         self.eq(label + ".package-unchanged", self.package_identity(package), delivered)
         self.eq(label + ".one-package", [path.name for path in sorted(package.parent.iterdir())], [package.name])
         refused = self.cmd(label + ".run-after-close", ["run", f["reference"]], "refused")
@@ -1768,6 +1877,258 @@ class Driver:
             package = self.check_delivery(f, self.inspect_runtime(f))
             if label == "runtime-positive":
                 self.close_after_delivery(f, package)
+
+    def fidelity_fixture(self, label, variant, placements=3):
+        f = self.fixture(label, scenario="fidelity", timeout=60, placements=placements)
+        self.change_scenario(f, fidelity_variant=variant)
+        for source in {p[3] for p in FIDELITY_PAGES}:
+            data = b"".join(fidelity_page(p) for p in FIDELITY_PAGES if p[3] == source)
+            f["materials"][source] = data
+            (f["folder"] / source).write_bytes(data)
+            (f["witness"] / Path(source).name).write_bytes(data)
+        self.accept(f)
+        return f
+
+    def fidelity_record(self, f, exact, mismatches, unknown_min=1, run=1):
+        label = f["label"] + ".fidelity-%d" % run
+        path = self.audit_path(f) / "runs" / str(run) / "runtime-fidelity.json"
+        self.require(label + ".exists", path.exists(), str(path))
+        record = strict_loads(path.read_bytes())
+        self.eq(label + ".members", sorted(record), sorted(("schema", "run", "supplied", "exact",
+                  "mismatch", "unknown", "unmatched", "capture_complete")))
+        self.eq(label + ".schema", record.get("schema"), "stewart.claude-code.fidelity/1")
+        self.eq(label + ".run", record.get("run"), run)
+        self.check(label + ".counts", all(type(record.get(k)) is int and record[k] >= 0
+                   for k in ("supplied", "exact", "mismatch", "unknown", "unmatched")), record)
+        self.eq(label + ".exact", record.get("exact"), exact)
+        self.eq(label + ".mismatch", record.get("mismatch"), mismatches)
+        self.check(label + ".unknown", record.get("unknown", -1) >= unknown_min, record)
+        self.eq(label + ".capture-complete", record.get("capture_complete"), True)
+        mcp = [transport_loads(raw) for raw in self.captured_channel(f, "mcp", run).splitlines()]
+        outgoing = [transport_loads(raw) for raw in self.captured_channel(f, "mcp-out", run).splitlines()]
+        calls = {v["id"] for v in mcp if v.get("method") == "tools/call" and "id" in v}
+        supplied = [v for v in outgoing if v.get("id") in calls and isinstance(v.get("result"), dict)
+                    and isinstance(v["result"].get("content"), list)]
+        self.eq(label + ".supplied-raw-envelopes", record.get("supplied"), len(supplied))
+        self.eq(label + ".partition", record.get("supplied"), sum(record[k] for k in ("exact", "mismatch", "unknown")))
+        return record
+
+    def fidelity_page_witness(self, f):
+        events = self.harness_events(f)
+        pages = [e for e in events if e.get("event") == "fidelity-result" and e.get("name") == "read"]
+        self.require(f["label"] + ".page-comparison-fired", bool(pages), str(f["witness"]))
+        for number, event in enumerate(pages):
+            prefix = f["label"] + ".page-%d" % number
+            result = event["response"]["result"]
+            self.eq(prefix + ".success", result.get("isError", False), False)
+            content = result["content"]
+            self.require(prefix + ".two-blocks", len(content) == 2, len(content))
+            core = strict_loads(content[0]["text"].encode())
+            data = core["data"]
+            matches = [p for p in FIDELITY_PAGES if p[3] == data["source"] and p[4] == data["range"][0]]
+            self.require(prefix + ".requested-page", len(matches) == 1, data)
+            specimen = matches[0]
+            self.eq(prefix + ".source-bytes", sha(content[1]["text"].encode()), specimen[5])
+            self.eq(prefix + ".range", data["range"], [specimen[4], specimen[4] + specimen[1]])
+            self.eq(prefix + ".complete", data["complete"], specimen != FIDELITY_PAGES[1])
+            self.eq(prefix + ".source-size", data["size"], 49152 if specimen == FIDELITY_PAGES[0] else 131072)
+
+    def fidelity_diagnostics(self, f, mismatch, phase=None, sealed=False):
+        label = f["label"]
+        audit = self.audit_path(f)
+        rows = [(p, strict_loads(p.read_bytes())["body"]) for p in sorted((audit / "diag").glob("*.json"))]
+        rows = [(p, d) for p, d in rows if d.get("reason") == "runtime_reply_mismatch"]
+        self.eq(label + ".mismatch-diagnostic-count", len(rows), 1 if mismatch else 0)
+        for path, diagnostic in rows:
+            self.eq(label + ".diagnostic-operation", diagnostic.get("operation"), "run")
+            ctx = diagnostic.get("context") or {}
+            self.eq(label + ".diagnostic-members", sorted(ctx), sorted(("run", "call", "tool_use_id", "phase",
+                        "seal_record", "expected_result", "observed_stdout")))
+            if phase:
+                self.eq(label + ".observation-phase", ctx.get("phase"), phase)
+            seal = ctx.get("seal_record")
+            self.check(label + ".seal-at-detection", isinstance(seal, str) if sealed else seal is None, ctx)
+            if isinstance(seal, str):
+                self.check(label + ".diagnostic-seal-exists", (audit / seal).is_file(), ctx)
+            expected = ctx["expected_result"]
+            self.eq(label + ".expected-reference", expected["path"], "runs/%d/result-%d.json" % (ctx["run"], ctx["call"]))
+            self.eq(label + ".expected-digest", sha((audit / expected["path"]).read_bytes()), expected["sha256"])
+            ref = ctx["observed_stdout"]
+            raw = self.captured_channel(f, "stdout", ctx["run"])
+            frame = raw[ref["offset"]:ref["offset"] + ref["length"]]
+            self.eq(label + ".observed-digest", sha(frame), ref["sha256"])
+            self.check(label + ".observed-frame-boundary", frame.endswith(b"\n") and
+                       (ref["offset"] == 0 or raw[ref["offset"] - 1] == 10), ref)
+            value = transport_loads(frame)
+            block = value["message"]["content"][ref["block_index"]]
+            self.eq(label + ".observed-identity", block.get("tool_use_id"), ctx["tool_use_id"])
+            witness = [e for e in self.harness_events(f) if e.get("event") == "fidelity-result"
+                       and e.get("tool_use_id") == ctx["tool_use_id"]]
+            self.require(label + ".independent-expected-reply", len(witness) == 1, witness)
+            supplied = witness[0]["response"]["result"]
+            self.eq(label + ".auxiliary-invariance", value.get("tool_use_result"), supplied["content"])
+            # Express the verdict independently of the harness transformation.
+            actual = block["content"]
+            equal = actual == supplied["content"]
+            if isinstance(actual, str) and supplied.get("isError") is True and len(supplied["content"]) == 1:
+                equal = actual == supplied["content"][0]["text"]
+            equal = equal and block.get("is_error", False) == supplied.get("isError", False)
+            self.control(label + "-different-conversation-exact-auxiliary", not equal)
+        return rows
+
+    def runtime_reply_fidelity(self):
+        mismatching = {"c3-one", "c3-two", "changed-text", "wrong-error", "success-flat", "error-wrong-flag"}
+        for variant in ("exact", "reordered", "error-flat", "missing", "duplicate", "c3-one", "c3-two",
+                        "changed-text", "wrong-error", "success-flat", "error-wrong-flag", "last-start"):
+            mismatch = variant in mismatching or variant == "last-start"
+            actual = "c3-two" if variant == "last-start" else variant
+            f = self.fidelity_fixture("fidelity-" + variant, actual, placements=1 if variant == "last-start" else 3)
+            label = f["label"]
+            reply = self.cmd(label + ".run", ["run", f["reference"]])
+            self.groups_absent(f)
+            self.harness_clean(f)
+            self.fidelity_page_witness(f)
+            status = self.inspect_runtime(f)
+            self.eq(label + ".ending", reply.get("data", {}).get("ending"), "interrupted" if mismatch else "sealed")
+            self.eq(label + ".cause", reply.get("data", {}).get("cause"), "protocol_anomaly" if mismatch else None)
+            self.eq(label + ".preserved-entry", status["data"].get("answer", {}).get("entries"), 1)
+            exact = 2 if actual == "c3-one" else 4 if actual == "error-wrong-flag" else 3 if mismatch else 6 if variant == "error-flat" else 4 if variant in ("missing", "duplicate") else 5
+            self.fidelity_record(f, exact, int(mismatch), unknown_min=2 if variant in ("missing", "duplicate") else 1)
+            self.fidelity_diagnostics(f, mismatch, phase="live" if mismatch else None)
+            self.check(label + ".summary-fidelity", "fidelity" in status["data"].get("summary", "").lower(), status["data"])
+            if mismatch:
+                self.eq(label + ".unsealed", status["data"].get("seal"), {"state": "absent", "actor": None})
+                for context, data in (("run", reply["data"]), ("status", status["data"])):
+                    self.check(label + "." + context + "-warning", "mismatch" in data.get("summary", "").lower(), data)
+                advice = [item.get("argv") for item in status.get("next", [])]
+                offers_run = [str(self.binary), "run", f["reference"]] in advice
+                self.eq(label + ".continuation-advice", offers_run, variant != "last-start")
+                if variant == "last-start":
+                    launches = self.launch_count(f)
+                    self.cmd(label + ".exhausted", ["run", f["reference"]], outcome="refused")
+                    self.eq(label + ".no-extra-launch", self.launch_count(f), launches)
+                if variant == "c3-two":
+                    self.change_scenario(f, fidelity_variant="exact", skip_record=True, session="fidelity-resumed-session-2")
+                    self.cmd(label + ".explicit-run", ["run", f["reference"]])
+                    self.groups_absent(f, run=2)
+                    self.fidelity_record(f, 4, 0, run=2)
+                    continued = self.inspect_runtime(f, placements=2)
+                    package = self.check_delivery(f, continued)
+                    self.check(label + ".continuation-warning-preserved", "mismatch" in continued["data"]["summary"].lower(), continued)
+                    self.close_after_delivery(f, package, placements=2, mismatch=True)
+            else:
+                package = self.check_delivery(f, status)
+                if variant == "exact":
+                    self.close_after_delivery(f, package)
+
+    def runtime_fidelity_publication(self):
+        # First show shutdown-drain behavior without a fault-injection build.
+        for variant in ("late-exact", "late-mismatch"):
+            f = self.fidelity_fixture("fidelity-" + variant, variant)
+            reply = self.cmd(f["label"] + ".run", ["run", f["reference"]])
+            self.groups_absent(f)
+            self.harness_clean(f)
+            self.fidelity_page_witness(f)
+            late = f["witness"] / "late-echo.bin"
+            self.require(f["label"] + ".late-transmitted", late.exists() and late.stat().st_size > 0, str(late))
+            self.check(f["label"] + ".late-captured", late.read_bytes() in self.captured_channel(f, "stdout"), str(late))
+            mismatch = variant == "late-mismatch"
+            self.fidelity_record(f, 4 if mismatch else 5, int(mismatch))
+            self.fidelity_diagnostics(f, mismatch, phase="drain" if mismatch else None, sealed=True)
+            self.eq(f["label"] + ".seal-won", reply.get("data", {}).get("ending"), "sealed")
+            status = self.inspect_runtime(f)
+            package = self.check_delivery(f, status)
+            if mismatch:
+                self.check(f["label"] + ".sealed-warning", "mismatch" in status["data"]["summary"].lower(), status)
+            self.close_after_delivery(f, package, mismatch=mismatch)
+            if mismatch:
+                closed = self.cmd(f["label"] + ".closed-status", ["status", f["reference"]])
+                self.check(f["label"] + ".closed-warning", "mismatch" in closed["data"]["summary"].lower(), closed)
+        if self.variant is None or b"STEWART_TEST_FAULT" not in self.variant.read_bytes():
+            return "--variant-binary with claude-code,fault-injection is required for the fidelity publication pause"
+        original = self.binary
+        self.binary = self.variant
+        try:
+            for variant in ("paused-exact", "paused-mismatch"):
+                self.fidelity_publication_pause(variant)
+        finally:
+            self.binary = original
+
+    def fidelity_publication_pause(self, variant):
+        f = self.fidelity_fixture("fidelity-" + variant, variant)
+        label = f["label"]
+        mismatch = variant == "paused-mismatch"
+        faults = f["witness"] / "faults"
+        faults.mkdir()
+        env = dict(self.env, STEWART_TEST_FAULT="log.publish:seal=pause", STEWART_TEST_FAULT_DIR=str(faults))
+        argv = [str(self.binary), "run", f["reference"], "--json"]
+        stdout_path, stderr_path = f["witness"] / "run.stdout", f["witness"] / "run.stderr"
+        before = snapshot(f["archive"])
+        def boundary(event, **facts):
+            with (f["witness"] / "publication-boundary.jsonl").open("ab") as stream:
+                stream.write(compact({"event": event, "monotonic_ns": time.monotonic_ns(), **facts}) + b"\n")
+        with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+            process = subprocess.Popen(argv, stdout=stdout, stderr=stderr, env=env, cwd=self.cwd)
+            def await_fact(predicate, seconds=12):
+                until = time.monotonic() + seconds
+                while process.poll() is None and time.monotonic() < until:
+                    if predicate():
+                        return True
+                    time.sleep(0.01)
+                return bool(predicate())
+            try:
+                self.require(label + ".paused", await_fact(lambda: bool(list(faults.glob("log.publish*.paused")))),
+                             {"exit": process.poll(), "stderr": stderr_path.read_text(errors="replace")})
+                submitted = [e for e in self.harness_events(f) if e.get("event") == "fidelity-submit"]
+                self.require(label + ".submit-witness", len(submitted) == 1, submitted)
+                group = submitted[0]["group"]
+                self.eq(label + ".live-control", group_observation(group), "present")
+                status = self.cmd(label + ".before-echo", ["status", f["reference"]])
+                self.eq(label + ".no-seal-yet", status["data"]["seal"], {"state": "absent", "actor": None})
+                (f["witness"] / "release-echo").write_bytes(b"")
+                if mismatch:
+                    stopped = await_fact(lambda: group_observation(group) == "absent", 8)
+                    paused = list(faults.glob("log.publish*.paused"))
+                    held = bool(paused) and all(not p.with_suffix(".go").exists() for p in paused)
+                    boundary("mismatch-stop-before-publication", group_absent=stopped,
+                             owner_alive=process.poll() is None, pause_held=held)
+                    self.require(label + ".stopping-won", stopped and held and process.poll() is None,
+                                 {"stopped": stopped, "held": held, "owner_exit": process.poll()})
+                else:
+                    self.require(label + ".exact-echo-sent", await_fact(lambda: any(
+                        e.get("event") == "fidelity-held-echo-sent" for e in self.harness_events(f))), str(f["witness"]))
+                    self.eq(label + ".exact-kept-model", group_observation(group), "present")
+                release_fault_pauses(faults, boundary)
+                process.wait(timeout=15)
+            except BaseException:
+                self.launch_blocked = "fidelity publication control failed; inspect retained owner/group evidence at " + str(f["witness"])
+                raise
+            finally:
+                release_fault_pauses(faults, boundary)
+                if process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=5)
+                self.save("witness/" + label + "/run-command.json", {"argv": argv, "env": env, "exit": process.returncode})
+        reply = strict_loads(stdout_path.read_bytes())
+        self.eq(label + ".outcome", reply.get("outcome"), "completed")
+        self.eq(label + ".ending", reply.get("data", {}).get("ending"), "interrupted" if mismatch else "sealed")
+        self.eq(label + ".exit", process.returncode, 5 if mismatch else 0)
+        self.eq(label + ".earlier-bytes", immutable_changes(before, snapshot(f["archive"])), [])
+        self.groups_absent(f)
+        self.fidelity_record(f, 4 if mismatch else 5, int(mismatch))
+        self.fidelity_diagnostics(f, mismatch, phase="live" if mismatch else None)
+        status = self.inspect_runtime(f)
+        if mismatch:
+            self.eq(label + ".still-unsealed", status["data"]["seal"], {"state": "absent", "actor": None})
+            run = self.audit_path(f) / "runs" / "1"
+            calls = [p for p in run.glob("call-*.json") if transport_loads(p.read_bytes())["params"]["name"] == "submit"]
+            self.require(label + ".submit-retained", len(calls) == 1, [p.name for p in calls])
+            result = strict_loads((run / calls[0].name.replace("call-", "result-")).read_bytes())["body"]
+            core = strict_loads(result["content"][0]["text"].encode())
+            self.eq(label + ".publication-refused", (core.get("outcome"), core.get("reason")), ("refused", "placement_stopped"))
+            self.control(label + "-gate-enforced", core.get("effects", {}).get("seal") == "none" and result.get("log_record") is None)
+        else:
+            self.check_delivery(f, status)
 
     def harness_clean(self, f):
         events = self.harness_events(f)
@@ -2315,6 +2676,10 @@ class Driver:
         usage = status_reply["data"].get("allowances", {}).get("usage", {})
         self.check(f["label"] + ".missing-end-not-zero", usage.get("unknown_intervals") == 1,
                    status_reply["data"].get("allowances"))
+        fidelity = self.audit_path(f) / "runs" / "1" / "runtime-fidelity.json"
+        self.eq(f["label"] + ".missing-final-fidelity", fidelity.exists(), False)
+        summary = status_reply["data"].get("summary", "").lower()
+        self.check(f["label"] + ".missing-fidelity-is-unknown", "fidelity" in summary and "unknown" in summary, summary)
         self.change_scenario(f, mode="submit", session="runtime-owner-death-session-2")
         self.cmd(f["label"] + ".recover", ["run", f["reference"]])
         self.groups_absent(f, run=2)
@@ -2863,6 +3228,118 @@ def synthetic_harness(scenario_path, environment_path, argv):
                   "uuid": "00000000-0000-4000-8000-%012d" % serial,
                   "compact_metadata": {"trigger": "auto", "pre_tokens": 150000 + serial}})
 
+        if scenario["mode"] == "fidelity":
+            variant = scenario["fidelity_variant"]
+            serial = 0
+
+            def fidelity_start(name, arguments):
+                nonlocal serial
+                serial += 1
+                identity = "toolu_fidelity_%d" % serial
+                prefixed = "mcp__stewart__" + name
+                emit({"type": "assistant", "session_id": scenario["session"], "parent_tool_use_id": None,
+                      "message": {"model": scenario["model"], "id": "msg_fidelity_%d" % serial,
+                                  "type": "message", "role": "assistant", "content": [
+                                      {"type": "tool_use", "id": identity, "name": prefixed, "input": arguments}]}})
+                payload = {"session_id": scenario["session"], "hook_event_name": "PreToolUse",
+                           "tool_name": prefixed, "tool_input": arguments, "tool_use_id": identity}
+                hook_command = settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+                probe = subprocess.run(["/bin/sh", "-c", hook_command], input=compact(payload) + b"\n",
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=6)
+                event("fidelity-hook", payload=payload, exit=probe.returncode,
+                      stdout=probe.stdout.decode(), stderr=probe.stderr.decode())
+                if probe.returncode or strict_loads(probe.stdout) != {}:
+                    raise RuntimeError("fidelity fixture hook did not admit call")
+                rpc_id = send("tools/call", {"name": name, "arguments": arguments,
+                              "_meta": {"claudecode/toolUseId": identity}})
+                return identity, rpc_id
+
+            def fidelity_message(identity, result, change="exact"):
+                block = fidelity_echo(identity, result, change)
+                blocks = [block, block] if change == "duplicate" else [block]
+                # The auxiliary array stays exact in every mismatch control.
+                return {"type": "user", "session_id": scenario["session"], "parent_tool_use_id": None,
+                        "message": {"role": "user", "content": blocks}, "tool_use_result": result["content"]}
+
+            def fidelity_call(name, arguments, change="exact"):
+                identity, rpc_id = fidelity_start(name, arguments)
+                response = receive(rpc_id)
+                result = response["result"]
+                message = fidelity_message(identity, result, change)
+                event("fidelity-result", id=rpc_id, tool_use_id=identity, name=name, change=change,
+                      response=response)
+                if change not in ("missing", "held"):
+                    emit(message)
+                return strict_loads(result["content"][0]["text"].encode()), message, response
+
+            if not scenario.get("skip_record", False):
+                recorded, _, _ = fidelity_call("record_account", {"text": scenario["account"]})
+                if recorded.get("outcome") != "completed":
+                    raise RuntimeError("fidelity fixture failed to preserve its first account")
+            held = None
+            for index, specimen in enumerate(FIDELITY_PAGES):
+                change = "exact"
+                target = 1 if variant == "c3-one" else 2
+                if index == target:
+                    change = variant if variant in ("changed-text", "wrong-error", "success-flat", "c3-one",
+                                                    "c3-two", "reordered", "missing", "duplicate") else "exact"
+                    if variant.startswith(("paused-", "late-")):
+                        change = "held"
+                core, message, response = fidelity_call("read", {"source": specimen[3], "start": specimen[4]}, change)
+                if core.get("outcome") != "completed":
+                    raise RuntimeError("fidelity page was refused")
+                if change == "held":
+                    held = (message, response["result"])
+                if change in ("changed-text", "wrong-error", "success-flat", "c3-one", "c3-two"):
+                    time.sleep(600)  # only Stewart's observed stop ends this process
+                    return 9
+            if variant in ("error-flat", "error-wrong-flag"):
+                change = "error-flat" if variant == "error-flat" else "wrong-error"
+                refused, _, _ = fidelity_call("record_account", {"text": "Invalid range/quote control.",
+                    "citations": [{"source": "materials/control.txt", "start": 0, "end": 49152,
+                                   "quote": "TAIL-LABEL: C3_CONTROL_8A79D4"}]}, change)
+                if refused.get("reason") != "citation_invalid":
+                    raise RuntimeError("short-error control failed for the wrong reason")
+                if variant == "error-wrong-flag":
+                    time.sleep(600)
+                    return 9
+            prepared, _, _ = fidelity_call("prepare", {})
+            if prepared.get("outcome") != "completed":
+                raise RuntimeError("fidelity fixture could not prepare submission")
+            if variant.startswith("late-"):
+                message, result = held
+                if variant == "late-mismatch":
+                    identity = message["message"]["content"][0]["tool_use_id"]
+                    message = fidelity_message(identity, result, "c3-two")
+                raw = compact(message) + b"\n"
+                # No shared event lock in a signal handler. Its separate witness
+                # is outside archive disposal and records completed transmission.
+                late_fd = os.open(witness / "late-echo.bin", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                def late_echo(signum, frame):
+                    offset = 0
+                    while offset < len(raw):
+                        offset += os.write(sys.stdout.fileno(), raw[offset:])
+                    os.write(late_fd, raw)
+                    os.fsync(late_fd)
+                    os._exit(0)
+                signal.signal(signal.SIGTERM, late_echo)
+            identity, rpc_id = fidelity_start("submit", {"prepared": prepared["data"]["prepared"], "confirm": True})
+            event("fidelity-submit", id=rpc_id, tool_use_id=identity, group=os.getpgrp())
+            if variant.startswith("paused-"):
+                until = time.monotonic() + 30
+                while not (witness / "release-echo").exists():
+                    if time.monotonic() >= until:
+                        raise TimeoutError("driver did not release held fidelity echo")
+                    time.sleep(0.01)
+                message, result = held
+                if variant == "paused-mismatch":
+                    identity = message["message"]["content"][0]["tool_use_id"]
+                    message = fidelity_message(identity, result, "c3-two")
+                emit(message)
+                event("fidelity-held-echo-sent")
+            time.sleep(600)
+            return 9
+
         if scenario["mode"] in CONTINUED_MODES:
             def continued_notice(expected, kind):
                 # The six-second fixture can receive the audit's near-limit
@@ -3275,6 +3752,33 @@ def self_test():
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
+    for index, page in enumerate(FIDELITY_PAGES):
+        data = fidelity_page(page)
+        check("fidelity.source-size-%d" % index, len(data) == page[1])
+        check("fidelity.source-digest-%d" % index, sha(data) == page[5])
+        check("fidelity.tail-%d" % index, data.endswith(("TAIL-LABEL: " + page[2] + "\n").encode()))
+    check("fidelity.two-page-digest", sha(fidelity_page(FIDELITY_PAGES[1]) + fidelity_page(FIDELITY_PAGES[2])) ==
+          "67926d9628757c6f2604e9154e8fe6a2ba015ad26846c48ccb1547cc42fff501")
+    check("fidelity.notices-grounded", len(C3_NOTICES) == 2 and all(
+          "<persisted-output>" in text and "/synthetic/external/tool-result.json" in text
+          and "/Users/" not in text and "Preview (first 2KB)" in text for text in C3_NOTICES))
+    check("fidelity.notices-omit-tails", all(page[2] not in text for page, text in zip(FIDELITY_PAGES[1:], C3_NOTICES)))
+    fixture_materials = {"materials/report.txt":
+        "Supplied report: café passed.\r\nThis is not an observed execution.\n".encode()}
+    expected_files = [{"name": "materials/report.txt", "size": 67,
+        "sha256": "a88e54595d1933a64e9877372085f09efcf70c0be7d7b31875d6d142ae2d08ba", "lines": 2}]
+    check("fixture.single-material-invariance", fixture_material_index(fixture_materials) ==
+          {"files": expected_files, "directories": ["materials"]})
+    fixture_materials.update({"materials/control.txt": fidelity_page(FIDELITY_PAGES[0]),
+        "materials/two-pages.txt": fidelity_page(FIDELITY_PAGES[1]) + fidelity_page(FIDELITY_PAGES[2])})
+    expected_files = [{"name": "materials/control.txt", "size": 49152,
+        "sha256": "947ae167c6e71f036d5c603c3f273706c2252b1b18d381bbf7da3045da49e0d2", "lines": 821}] + expected_files + [
+        {"name": "materials/two-pages.txt", "size": 131072,
+         "sha256": "67926d9628757c6f2604e9154e8fe6a2ba015ad26846c48ccb1547cc42fff501", "lines": 2186}]
+    check("fixture.all-supplied-materials", fixture_material_index(fixture_materials) ==
+          {"files": expected_files, "directories": ["materials"]})
+    check("fixture.material-order-invariance", fixture_material_index(dict(reversed(list(fixture_materials.items())))) ==
+          {"files": expected_files, "directories": ["materials"]})
     specimen = (Path("/synthetic dir/harness.py"), Path("/scenario dir/scenario.json"), Path("/witness dir"))
     default_wrapper = synthetic_executable(*specimen)
     default_command = shlex.split(default_wrapper.decode().splitlines()[-1])

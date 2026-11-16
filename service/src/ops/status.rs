@@ -687,7 +687,7 @@ fn unpublished_candidates(audit: &Audit, state: &LogState) -> Vec<String> {
 }
 
 /// Diagnostics recorded by earlier invocations (`diag/`).
-fn recorded_diagnostics(audit: &Audit) -> Vec<J> {
+pub(crate) fn recorded_diagnostics(audit: &Audit) -> Vec<J> {
     let mut out = Vec::new();
     let Ok(diag) = audit.dir.open_dir("diag") else {
         return out;
@@ -914,6 +914,8 @@ pub fn run(reference: &str) -> Reply {
     }
     let (seal, seal_diag) = seal_j(&audit, &state);
     diagnostics.extend(seal_diag);
+    #[cfg(feature = "claude-code")]
+    crate::claude_code::fidelity::present(&audit, &state, &mut summary, &mut diagnostics);
     let answer = if state.damaged() && state.launched() {
         J::obj()
             .with("revision", "unknown")

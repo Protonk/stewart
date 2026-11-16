@@ -133,6 +133,49 @@ This checks Stewart's supplied bytes and profile binding; the synthetic harness
 does not establish that a real harness honors the annotation or avoids external
 copies.
 
+The reply-fidelity cases use the short control and two full pages from the native
+C3 encounter (2026-11-13, CLI 2.1.322, `claude-haiku-5-5`), repeated unchanged in
+the annotated-page encounter (2026-11-15, the same CLI/model). The generator pins
+the exact source bytes, including each tail label:
+
+| Source slice | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `control.txt`, start 0 | 49,152 | `947ae167c6e71f036d5c603c3f273706c2252b1b18d381bbf7da3045da49e0d2` |
+| `two-pages.txt`, start 0 | 65,536 | `e68bd1dcda95edf47c668475d810f587ad80c382afe00cc8bfa8f36ae969ca2a` |
+| `two-pages.txt`, start 65536 | 65,536 | `7f451bbeacea11971c367fd63b96f513ddbdeea38edf74bd68e7c8fbfec12a92` |
+
+Original sources and MCP/assistant/hook/conversation captures are retained in the
+[C3 and annotated-page evidence](../qualified.md#readiness-c3-01). The two C3
+conversation substitution strings have original decoded UTF-8 digests
+`40567555b890b8d1ac20737aa03b0c479fad1a088834e45bec027ca78be9642c` and
+`c3bf6e1d68e7a60e891adca34be624d411dcad44daa231a4752e4d8ca8cc6f75`.
+The fixture replaces only each absolute external filename with
+`/synthetic/external/tool-result.json`; the notice and truncated preview stay
+unchanged. No fixture opens or creates that named file. The runnable driver has
+no dependency on the retained run directories.
+
+`runtime-reply-fidelity` sends each actual Stewart reply through correlated
+assistant, admitted hook, MCP metadata and conversation records. It checks the
+material bytes independently of the echo. Positive and object-order/omitted-false
+invariance cases seal normally. Differing cases change one conversation property:
+the C3 notice, one removed text byte, an error flag or success-text flattening.
+Their auxiliary arrays remain exact. A range/quote refusal reproduces the short
+error shape; exact error-text flattening is accepted, while the wrong flag stops.
+Absent and duplicate echoes remain unknown without preventing submission.
+Mismatch cases preserve the first account, stop both groups, retain a diagnostic
+whose byte references resolve, and interrupt without a seal. Explicit continuation
+submits that unchanged account; exhausted starts offer no direct run.
+
+`runtime-fidelity-publication` withholds a page echo until the documented seal
+publication pause. The mismatch must stop the model group while the owner is
+still paused, then refuse the pending seal with `placement_stopped`. An exact
+held echo permits sealing. Separate TERM-triggered echoes exercise shutdown drain:
+the winning seal and its delivered package survive a late mismatch, with warnings
+through close and repeated close. Their independent raw witness sits outside the
+archive. The existing owner-death case also requires a missing final fidelity
+record to remain explicitly unknown. These comparisons exercise observable
+conversation records, not hidden provider traffic or real-harness prevention.
+
 Runtime controls include successful auditor submission and verified delivery,
 followed by an ordinary close that leaves the delivered package unchanged and
 admits no further launch. An ordinary-ending case ends two turns without

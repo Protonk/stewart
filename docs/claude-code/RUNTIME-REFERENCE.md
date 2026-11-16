@@ -145,8 +145,11 @@ with original page boundaries and complete text intact. It does not isolate
 every change since the historical C3 encounter or establish a general reply-size
 bound: permitted quoted citations, source-name lists and re-entry gaps can
 produce larger replies. Error clipping and later context management are separate
-paths. No permitted expression is shortened to fit the annotation. Automatic
-comparison of conversation results with MCP replies is not implemented.
+paths. No permitted expression is shortened to fit the annotation. The adapter's
+[observed reply-fidelity comparison](CONTRACT.md#observed-reply-fidelity) also
+checks captured conversation results against supplied MCP replies. That detector
+does not widen this encounter's evidence to hidden provider traffic or later
+context replacement.
 
 ## Output-cap handling
 

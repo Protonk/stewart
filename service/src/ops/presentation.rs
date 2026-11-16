@@ -82,6 +82,12 @@ pub fn request_unavailable(allowances: &J) -> Option<String> {
             _ => None,
         }
     };
+    #[cfg(feature = "claude-code")]
+    if remaining("placements") == Some(0) {
+        return Some(
+            "No further runtime placement can start: the placement allowance is exhausted.".into(),
+        );
+    }
     let reason = if remaining("turns") == Some(0) {
         "the turn allowance is exhausted".to_string()
     } else if remaining("input_tokens") == Some(0) {
@@ -386,7 +392,12 @@ mod tests {
     fn the_summary_states_the_deadline_and_agrees_in_number() {
         // Runtime placement accounting has its own continuation rule; Messages
         // token thresholds must not reinterpret it.
-        assert!(request_unavailable(&allowances(2, 2, 600, Some([2, 0, 2]))).is_none());
+        assert!(
+            request_unavailable(&allowances(2, 2, 600, Some([2, 0, 2])))
+                .unwrap()
+                .contains("placement allowance is exhausted")
+        );
+        assert!(request_unavailable(&allowances(1, 2, 600, None)).is_none());
         let lines = runtime_lines(&allowances(1, 2, 600, Some([1, 0, 1])));
         assert_eq!(lines.len(), 2);
         assert!(lines[0].contains("1 used of 2; 1 remains."), "{}", lines[0]);

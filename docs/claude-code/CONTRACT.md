@@ -100,6 +100,81 @@ supplies separately to the API route. The boundary uses neither
 a token-prefix discriminator nor a credential-store read.
 
 
+## Observed reply fidelity
+
+For each supplied MCP `tools/call` result, compare its decoded `content` and
+effective `isError` with the actual captured `user.message.content` tool-result
+block and its effective `is_error`. An omitted error flag means false. An
+auxiliary `tool_use_result` is retained evidence, never the conversation result
+for this verdict. JSON whitespace and object-member order do not change decoded
+equality. A string conversation result is exact only for an erroneous MCP reply
+containing one text block, with identical decoded text and a true error flag.
+Flattening a successful reply is not an accepted transformation.
+
+Correlation requires one consistent MCP `_meta.claudecode/toolUseId`, assistant
+tool-use block, admitted pre-tool hook and conversation result. Their session,
+prefixed tool name and decoded arguments must agree wherever supplied; the MCP
+name maps to its pinned `mcp__stewart__` name. Assistant message IDs alone do not
+identify tool blocks. Missing, incomplete, duplicate or contradictory witnesses
+make the result unknown, without relaxing existing malformed-frame or duplicate
+request-ID enforcement. Missing echoes do not delay calls or introduce a new
+stopping condition. Reply-fidelity unknown is separate from usage accounting's
+`unknown_intervals`.
+
+A uniquely correlated changed, truncated or substituted result immediately
+closes the existing tool admission and authoring/submission publication gate,
+before diagnostic I/O. Stop the placement and retain prior published effects.
+Without a seal it ends `interrupted` with cause `protocol_anomaly`; authoring
+remains open. Existing close, signal, damage and storage-failure precedence
+continues to apply. A later explicit `run` is permitted under the ordinary
+remaining placement allowance and known-stopping requirements. Its advice must
+warn about the mismatch; there is no automatic resumption or replacement.
+
+Observe the same comparison during bounded shutdown drain. A seal that won the
+publication race remains the seal: preserve its attribution, lifecycle outcome
+and delivered bytes, and allow normal delivery and close of that unchanged
+seal, including delivery still pending when the mismatch is observed. Record
+when and which reply differed. A later ambiguity never erases a diagnostic or
+undoes an observed stop.
+
+Write the mismatch through the existing private diagnostic mechanism. Its record
+envelope is unchanged; the diagnostic `body` contains
+`reason: runtime_reply_mismatch`, `operation: run`, a descriptive message and a
+`context` containing exactly `run`, `call` (positive numbers), `tool_use_id`,
+`phase` (`live` or `drain`), `seal_record` (archive-relative log record path or
+null), `expected_result` and `observed_stdout`. `expected_result` contains
+`path` (archive-relative `runs/N/result-C.json`) and `sha256`.
+`observed_stdout` contains `offset`, `length`, `sha256` and `block_index`:
+zero-based byte offset and length of the complete LF-delimited stdout frame in
+the concatenated numeric-order stdout stream, its byte digest, and the
+zero-based index within `message.content`. Original MCP, assistant, hook and
+conversation captures retain the correlation and both reply forms. Existing
+diagnostic failure/fallback rules apply. Do not copy reply bodies into summaries.
+
+After bounded drain, write once to `runs/N/runtime-fidelity.json`. It has exactly
+`schema: stewart.claude-code.fidelity/1`, positive `run`, nonnegative integer
+`supplied`, `exact`, `mismatch`, `unknown`, `unmatched`, and boolean
+`capture_complete`. `supplied = exact + mismatch + unknown`. Count supplied MCP
+tool-result envelopes captured for transmission, excluding transport errors and
+queued refusals retained only as call-result records. A captured transmission
+attempt does not prove that the peer received it. Final classifications use all captured witnesses;
+`unmatched` counts conversation tool-result blocks that cannot identify one
+supplied result. `capture_complete` means the bounded raw capture and drain
+completed without a capture gap, not that the provider conversation is complete.
+A missing, unreadable or unfinished final record is explicitly unknown, never
+zero exactness or a passing result. The human summaries of `run`, `status` and
+`close` report these counts and unknown evidence, and preserve mismatch warnings
+through the existing diagnostic references. Manager JSON adds no top-level
+field for this record.
+
+An external persisted-copy notice stays in private original evidence. Stewart
+does not read, rescue from or automatically delete the named file. No source
+page, tool input or authored entry is shortened or newly refused to fit the
+transport annotation. Detection begins at observation: it cannot undo an
+external copy or an effect that already won the race, prove provider-network
+input fidelity, or detect later context replacement without an observable
+conversation result.
+
 ## Limits, usage and continuation
 
 This profile requires cumulative `max_placements` and per-placement

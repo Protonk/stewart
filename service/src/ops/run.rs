@@ -851,6 +851,8 @@ pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply
             unavailable.as_deref(),
         ));
     }
+    #[cfg(feature = "claude-code")]
+    crate::claude_code::fidelity::present(audit, &state, &mut summary, &mut diagnostics);
     let mut data = J::obj()
         .with("run", run)
         .with("continuing", run > 1)

@@ -353,6 +353,8 @@ fn completed_data(audit: &Audit, state: &LogState, mut data: J) -> J {
     if let Some(J::Str(reason)) = data.get("unfinished_reason") {
         summary.push_str(&format!("\nClose remains unfinished: {reason}."));
     }
+    #[cfg(feature = "claude-code")]
+    crate::claude_code::fidelity::present(audit, state, &mut summary, &mut diagnostics);
     if !diagnostics.is_empty() {
         data.push("diagnostics", J::Arr(diagnostics));
     }

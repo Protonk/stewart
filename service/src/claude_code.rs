@@ -77,6 +77,15 @@ Running
   should start it in the background. Usage is what the harness reports and may
   remain partial or unknown. The placement limits are not token or money caps,
   and help limits describes allowances that do not apply to a runtime question.
+
+Reply fidelity
+  Stewart compares observed conversation tool results with the replies it
+  supplied. A changed reply stops the placement and produces a diagnostic;
+  missing or ambiguous evidence stays unknown. Run, status and close report
+  these observations separately from usage. Review mismatch diagnostics before
+  continuing explicitly under the remaining allowance. A seal that already
+  exists remains unchanged and can still be delivered and closed. This check
+  cannot establish everything the provider received or remove external copies.
 ",
         placements = profile::MAX_PLACEMENTS,
         seconds = profile::MAX_SECONDS,
@@ -87,6 +96,7 @@ Running
 pub mod accounting;
 pub mod arrangement;
 pub mod events;
+pub mod fidelity;
 pub mod gate;
 pub mod process;
 pub mod profile;

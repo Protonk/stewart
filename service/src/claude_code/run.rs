@@ -3,6 +3,7 @@
 use super::{
     accounting::{self, Summary},
     events::{Event, Observed},
+    fidelity,
     gate::Gate,
     process, profile, surface,
     wire::{self, Action, Value},
@@ -25,7 +26,7 @@ use std::collections::{BTreeMap, VecDeque};
 use std::io::{Read, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::{
-    Arc,
+    Arc, Mutex,
     atomic::{AtomicBool, Ordering},
     mpsc,
 };
@@ -191,6 +192,7 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         delivered: None,
         message: String::new(),
     };
+    let mut fidelity_diagnostics = Vec::new();
     match runs::RunDir::create(&audit, run) {
         Err(e) => {
             ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
@@ -209,15 +211,22 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                 flags: &flags,
                 gate: &gate,
                 record_failed: AtomicBool::new(false),
+                fidelity_diagnostics: Mutex::new(Vec::new()),
             };
             if let Err(e) = execute(&live, &mut ended) {
                 ended.message = e;
             }
+            fidelity_diagnostics = live
+                .fidelity_diagnostics
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .clone();
             if live.record_failed.load(Ordering::SeqCst) {
                 ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
                 ended.usage.harness.as_mut().unwrap().unknown_intervals = 1;
             } else if Instant::now() >= deadline
                 && matches!(ended.ending, Ending::Interrupted(Cause::ProtocolAnomaly))
+                && fidelity_diagnostics.is_empty()
             {
                 ended.ending = if run >= h.selection.limits.max_placements {
                     Ending::LimitReached
@@ -291,7 +300,34 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
             "The harness placement stopped; retained captures describe the observed boundary."
                 .into();
     }
-    crate::ops::run::finish(&audit, run, started_n, ended)
+    let mut reply = crate::ops::run::finish(&audit, run, started_n, ended);
+    for diagnostic in fidelity_diagnostics {
+        match diagnostic {
+            Ok(path) => {
+                if !reply.retained.contains(&path) {
+                    reply.retained.push(path);
+                }
+                if !reply.effects.contains(&("diagnostic", "reported_only")) {
+                    reply.set_effect("diagnostic", "durable");
+                }
+            }
+            Err(cause) => {
+                reply.set_effect("diagnostic", "reported_only");
+                reply
+                    .causes
+                    .push(crate::reply::Cause::new("run", fidelity::REASON));
+                reply.causes.push(cause);
+                if let Some(J::Obj(data)) = &mut reply.data {
+                    if let Some((_, J::Str(summary))) =
+                        data.iter_mut().find(|(key, _)| key == "summary")
+                    {
+                        summary.push_str("\nWarning: runtime_reply_mismatch was observed, but its diagnostic could not be retained. Original captures remain the evidence; review before continuation.");
+                    }
+                }
+            }
+        }
+    }
+    reply
 }
 
 struct Live<'a> {
@@ -305,6 +341,7 @@ struct Live<'a> {
     flags: &'a Flags,
     gate: &'a Gate,
     record_failed: AtomicBool,
+    fidelity_diagnostics: Mutex<Vec<Result<String, crate::reply::Cause>>>,
 }
 
 impl Live<'_> {
@@ -368,12 +405,89 @@ impl Capture<'_> {
         Ok(())
     }
     fn send(&mut self, channel: &str, out: &mut impl Write, bytes: &[u8]) -> Result<(), String> {
+        self.for_send(channel, bytes)?;
+        out.write_all(bytes)
+            .map_err(|e| format!("{channel} write failed: {e}"))
+    }
+    fn for_send(&mut self, channel: &str, bytes: &[u8]) -> Result<(), String> {
         if Instant::now() >= self.deadline {
             return Err("placement deadline reached before transmission".into());
         }
-        self.raw(channel, bytes)?;
-        out.write_all(bytes)
-            .map_err(|e| format!("{channel} write failed: {e}"))
+        self.raw(channel, bytes)
+    }
+}
+
+fn fidelity_mismatches(
+    live: &Live,
+    fidelity: &mut fidelity::Observer,
+    phase: &str,
+) -> Result<bool, String> {
+    let contexts = fidelity.mismatches(live.run, phase);
+    if contexts.is_empty() {
+        return Ok(false);
+    }
+    live.gate.stop();
+    let seal = log::read(live.audit).seal().map(|(r, _)| r.name());
+    for mut context in contexts {
+        if let J::Obj(fields) = &mut context {
+            for (key, value) in fields {
+                if key == "seal_record" {
+                    *value = seal.clone().map(J::Str).unwrap_or(J::Null);
+                }
+            }
+        }
+        let diagnostic = live.audit.write_diag(J::obj()
+            .with("operation", "run").with("outcome", "failed")
+            .with("reason", fidelity::REASON)
+            .with("message", "The captured conversation changed a supplied tool reply. The placement gate stopped further authoring; already published effects and any seal remain unchanged.")
+            .with("context", context));
+        live.fidelity_diagnostics
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .push(diagnostic.clone());
+        diagnostic.map_err(|e| {
+            live.record_error(format!(
+                "runtime_reply_mismatch; diagnostic could not be retained: {}: {}",
+                e.operation, e.error
+            ))
+        })?;
+    }
+    Ok(true)
+}
+
+fn drain_stdout(
+    live: &Live,
+    observed: &mut Observed,
+    fidelity: &mut fidelity::Observer,
+    output: &mut Vec<u8>,
+    offset: &mut u64,
+    mismatch_seen: &mut bool,
+    error: &mut Option<String>,
+) {
+    let h = live.world.arrangement.harness.as_ref().unwrap();
+    while let Some(end) = output.iter().position(|b| *b == b'\n') {
+        let raw: Vec<_> = output.drain(..=end).collect();
+        let at = *offset;
+        *offset += raw.len() as u64;
+        if end > wire::FRAME_LIMIT {
+            *error = Some("runtime frame exceeds 8 MiB during drain".into());
+            continue;
+        }
+        if raw.iter().all(u8::is_ascii_whitespace) {
+            continue;
+        }
+        if let Err(e) = observed.receive(&raw, h, &live.world.arrangement.tool_names) {
+            *error = Some(e);
+        }
+        fidelity.stdout(&raw, at);
+        match fidelity_mismatches(live, fidelity, "drain") {
+            Ok(true) => *mismatch_seen = true,
+            Ok(false) => (),
+            Err(e) => {
+                *mismatch_seen = true;
+                *error = Some(e);
+            }
+        }
     }
 }
 
@@ -620,6 +734,9 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
         });
         let mut connection: Option<UnixStream> = None;
         let mut observed = Observed::default();
+        let mut fidelity = fidelity::Observer::default();
+        let mut stdout_offset = 0u64;
+        let mut mismatch_seen = false;
         let mut mcp = wire::Mcp::default();
         let mut output = Vec::new();
         let mut incoming = Vec::new();
@@ -761,6 +878,11 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                             && gate.permit().is_ok();
                         let reply = surface::hook_reply(allowed);
                         cap.send("hook-out", &mut stream, &wire::line(reply))?;
+                        fidelity.hook(&bytes, allowed);
+                        if fidelity_mismatches(live, &mut fidelity, "live")? {
+                            mismatch_seen = true;
+                            return Err("runtime_reply_mismatch: captured conversation differs from the supplied reply".into());
+                        }
                     }
                     Input::Bytes(channel, bytes) => {
                         cap.raw(channel, &bytes)?;
@@ -775,15 +897,25 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                                 return Err("runtime frame exceeds 8 MiB".into());
                             }
                             let raw: Vec<u8> = buffer.drain(..=end).collect();
+                            let at = stdout_offset;
+                            if channel == "stdout" {
+                                stdout_offset += raw.len() as u64;
+                            }
                             if raw.iter().all(u8::is_ascii_whitespace) {
                                 continue;
                             }
                             if channel == "stdout" {
-                                match observed.receive(
+                                let event = observed.receive(
                                     &raw,
                                     h,
                                     &live.world.arrangement.tool_names,
-                                )? {
+                                )?;
+                                fidelity.stdout(&raw, at);
+                                if fidelity_mismatches(live, &mut fidelity, "live")? {
+                                    mismatch_seen = true;
+                                    return Err("runtime_reply_mismatch: captured conversation differs from the supplied reply".into());
+                                }
+                                match event {
                                     Event::Compacted => {
                                         cap.send(
                                             "input",
@@ -908,7 +1040,8 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                             is_error: result.is_error,
                             content: result.content,
                         };
-                        live.dir
+                        let result_bytes = live
+                            .dir
                             .publish(
                                 live.audit,
                                 "tool_result",
@@ -916,16 +1049,29 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                                 record.to_j(),
                             )
                             .map_err(|e| live.record_error(e.error))?;
-                        cap.send(
-                            "mcp-out",
-                            connection.as_mut().ok_or("MCP missing")?,
-                            &wire::line(wire::result(
-                                &p.id,
-                                J::obj()
-                                    .with("content", J::Raw(record.content))
-                                    .with("isError", record.is_error),
-                            )),
-                        )?;
+                        let reply_bytes = wire::line(wire::result(
+                            &p.id,
+                            J::obj()
+                                .with("content", J::Raw(record.content.clone()))
+                                .with("isError", record.is_error),
+                        ));
+                        cap.for_send("mcp-out", &reply_bytes)?;
+                        fidelity.supplied(
+                            p.call,
+                            &p.raw,
+                            &record.content,
+                            record.is_error,
+                            &result_bytes,
+                        );
+                        if fidelity_mismatches(live, &mut fidelity, "live")? {
+                            mismatch_seen = true;
+                            return Err("runtime_reply_mismatch: captured conversation differs from the supplied reply".into());
+                        }
+                        connection
+                            .as_mut()
+                            .ok_or("MCP missing")?
+                            .write_all(&reply_bytes)
+                            .map_err(|e| format!("mcp-out write failed: {e}"))?;
                         if result.sealed {
                             live.flags.set_sealed();
                             ended.ending = Ending::Sealed;
@@ -966,6 +1112,15 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
         // enforced. Drain them to capture before joining; no tool is dispatched.
         let drain_deadline = Instant::now() + Duration::from_secs(3);
         let mut drain_error = None;
+        drain_stdout(
+            live,
+            &mut observed,
+            &mut fidelity,
+            &mut output,
+            &mut stdout_offset,
+            &mut mismatch_seen,
+            &mut drain_error,
+        );
         while eof.len() < readers || pending.is_some() {
             if Instant::now() >= drain_deadline {
                 drain_error = Some(
@@ -978,26 +1133,33 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                 Ok(Input::Bytes(channel, bytes)) => {
                     if let Err(e) = cap.raw(channel, &bytes) {
                         drain_error = Some(e);
+                        continue;
                     }
                     if channel == "stdout" {
                         output.extend_from_slice(&bytes);
-                        while let Some(end) = output.iter().position(|b| *b == b'\n') {
-                            let raw: Vec<_> = output.drain(..=end).collect();
-                            if raw.iter().all(u8::is_ascii_whitespace) {
-                                continue;
-                            }
-                            if let Err(e) =
-                                observed.receive(&raw, h, &live.world.arrangement.tool_names)
-                            {
-                                drain_error = Some(e);
-                            }
-                        }
+                        drain_stdout(
+                            live,
+                            &mut observed,
+                            &mut fidelity,
+                            &mut output,
+                            &mut stdout_offset,
+                            &mut mismatch_seen,
+                            &mut drain_error,
+                        );
                     }
                 }
                 Ok(Input::Eof(channel)) => {
                     eof.insert(channel);
                 }
                 Ok(Input::Tool(result)) => {
+                    match result.end {
+                        Some(answer::End::LogDamaged) => ended.log_damaged = true,
+                        Some(answer::End::AnswerDamaged) => ended.ending = Ending::Damaged,
+                        Some(answer::End::ArchiveWriteFailed) => {
+                            ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed)
+                        }
+                        None => (),
+                    }
                     if let Some(p) = pending.take() {
                         if let Err(e) = retain_tool(live, &p, &result) {
                             drain_error = Some(e);
@@ -1007,7 +1169,9 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                 Ok(Input::Hook(_, bytes)) => {
                     if let Err(e) = cap.raw("hook-in", &bytes) {
                         drain_error = Some(e);
+                        continue;
                     }
+                    fidelity.hook(&bytes, false);
                 }
                 Ok(Input::Error(e)) => {
                     drain_error = Some(e);
@@ -1038,6 +1202,21 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
             drain_error =
                 Some("runtime ended with a partial frame; original chunks retained".into());
         }
+        let complete = drain_error.is_none()
+            && eof.len() == readers
+            && !live.record_failed.load(Ordering::SeqCst)
+            && cap.bytes <= 256 * 1024 * 1024;
+        if let Err(e) = live.write(
+            fidelity::FILE,
+            &fidelity.report(live.run, complete).to_j().bytes(),
+        ) {
+            drain_error = Some(e);
+        }
+        if mismatch_seen {
+            if matches!(ended.ending, Ending::EndedUnsubmitted) {
+                ended.ending = Ending::Interrupted(Cause::ProtocolAnomaly);
+            }
+        }
         if drain_error.is_some() {
             observed.usage.unknown_intervals = 1;
         }
@@ -1047,6 +1226,7 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
         drop(rx);
         drop(tx);
         match (outcome, drain_error) {
+            (Ok(()), None) if mismatch_seen => Err("runtime_reply_mismatch: captured conversation differs from a supplied reply; see the retained diagnostic".into()),
             (Ok(()), Some(e)) => Err(e),
             (Err(e), Some(d)) => Err(format!("{e} Shutdown: {d}")),
             (result, None) => result,
