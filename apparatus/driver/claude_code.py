@@ -102,6 +102,33 @@ SECOND_RELAY = "A note attempted through a second relay after the first was lost
 # A fresh session's series; lower than the first session's on purpose.
 SECOND_SESSION = {"num_turns": 1, "usage": {"input_tokens": 5, "cache_creation_input_tokens": 0,
                                             "cache_read_input_tokens": 210, "output_tokens": 9}}
+# C5 usage projection and complete cap frame; origins/digests in CLAUDE-CODE.md.
+C5_PARTIAL_USAGE = {
+    "input_tokens": 2, "cache_creation_input_tokens": 5116, "cache_read_input_tokens": 0,
+    "cache_creation": {"ephemeral_5m_input_tokens": 0, "ephemeral_1h_input_tokens": 5116},
+    "output_tokens": 7, "service_tier": "standard", "inference_geo": "global", "speed": "standard",
+}
+C5_CAP = {
+    "type": "user", "message": {"role": "user", "content": [{"type": "text", "text":
+        "Output token limit hit. Resume directly — no apology, no recap of what you were doing. "
+        "Pick up mid-thought if that is where the cut happened. Break remaining work into smaller pieces."}]},
+    "parent_tool_use_id": None, "session_id": "e108dc8c-2a43-432a-9895-b7ce02dc1560",
+    "uuid": "d7d37c01-0dfc-4792-8ee8-379a675585ef", "timestamp": "2026-11-15T20:01:34.772Z",
+    "isSynthetic": True,
+}
+
+
+def c5_partial_frame(session, serial, later=False):
+    # Only the usage object and repeated/null-stop semantics are projected from
+    # the capture. Content, envelope identities and model are synthetic.
+    return {"type": "assistant", "session_id": session, "parent_tool_use_id": None,
+            "uuid": "00000000-0000-4000-8000-%012d" % serial,
+            "message": {"model": MODEL, "id": "c5-later" if later else "c5-repeated",
+                        "type": "message", "role": "assistant",
+                        "content": [{"type": "text", "text": "Synthetic partial snapshot; work continues."}],
+                        "stop_reason": None, "stop_sequence": None, "usage": copy.deepcopy(C5_PARTIAL_USAGE)}}
+
+
 CONTINUED_MODES = {"continued-deadline", "continued-limit"}
 CONTINUED_ASSISTANT_USAGE = (
     {"input_tokens": 101, "cache_creation_input_tokens": 1001, "cache_read_input_tokens": 10001, "output_tokens": 41},
@@ -137,6 +164,8 @@ CASES = (
     ("runtime-submit-publication", "Seal-publication order: close owns the seal; cancellation preserves placement; signal and deadline stop"),
     ("runtime-relay-loss", "The relay dies while the model lives: the placement stops, nothing else writes, a fresh session continues"),
     ("runtime-usage-series", "Two placements: each session's latest checkpoint is summed and a lost interval stays unknown"),
+    ("runtime-captured-accounting", "C5 cap and overlapping partial reports: unknown totals, duplicate invariance and checkpoint control"),
+    ("runtime-tool-names", "Prefixed assistant tools and bare MCP calls work; unprefixed and unlisted assistant tools stop"),
     ("runtime-near-limit", "C4-grounded notice: deadline comparison, explicit submission and audit-wide allowance across continuation"),
     ("runtime-compaction", "Each compaction boundary is followed by the pinned notice and spends neither allowance"),
     ("runtime-init-control", "Attempted authoring before a mismatched startup never changes the answer"),
@@ -2632,6 +2661,107 @@ class Driver:
         self.eq(label + ".inputs", contents, [f["body"].decode(), REMINDER, f["body"].decode(), CONTINUATION])
         self.control("reminder-is-audit-wide", contents.count(REMINDER) == 1 and ending == "ended_unsubmitted")
 
+    def runtime_captured_accounting(self):
+        observations = {}
+        for variant in ("missing", "duplicate", "checkpoint"):
+            f = self.fixture("captured-accounting-" + variant, scenario="captured-accounting")
+            label = f["label"]
+            self.change_scenario(f, accounting_variant=variant)
+            self.accept(f)
+            reply = self.cmd(label + ".run", ["run", f["reference"]])
+            self.groups_absent(f)
+            self.eq(label + ".ending", reply.get("data", {}).get("ending"), "sealed")
+            events = self.harness_clean(f)
+            frames = [e["value"] for e in events if e["event"] == "output"]
+            assistants = [v for v in frames if v.get("type") == "assistant"]
+            repeats = 2 if variant == "duplicate" else 1
+            expected_frames = [c5_partial_frame(label + "-session-1", n) for _ in range(repeats) for n in range(4)]
+            if variant == "checkpoint":
+                expected_frames += [c5_partial_frame(label + "-session-1", 4, later=True)]
+            self.eq(label + ".exact-partial-projection", assistants, expected_frames)
+            cap = copy.deepcopy(C5_CAP)
+            cap["session_id"] = label + "-session-1"
+            self.eq(label + ".captured-cap-shape", [v for v in frames if v.get("type") == "user"], [cap])
+            self.eq(label + ".stdout-capture", self.captured_channel(f, "stdout").hex(),
+                    b"".join(bytes.fromhex(e["raw_hex"]) for e in events if e["event"] == "output").hex())
+            shaped, contents = self.message_contents(events)
+            self.eq(label + ".input-shape", shaped, True)
+            self.eq(label + ".cap-is-not-service-input", contents,
+                    [f["body"].decode()] + ([REMINDER] if variant == "checkpoint" else []))
+            self.eq(label + ".input-capture", self.captured_channel(f, "input").hex(),
+                    b"".join(bytes.fromhex(e["raw_hex"]) for e in events if e["event"] == "input").hex())
+            after_cap = [e["response"] for e in events if e["event"] == "accounting-after-cap"]
+            self.require(label + ".cap-reentry", len(after_cap) == 1, after_cap)
+            self.eq(label + ".cap-spends-no-notice", after_cap[0].get("data", {}).get("notices_used"),
+                    {"reminder": False, "near_limit": False})
+            self.eq(label + ".cap-keeps-authoring-open", after_cap[0].get("data", {}).get("authoring"),
+                    {"state": "open", "ended_by": None})
+            status = self.inspect_runtime(f, terminal=variant == "checkpoint")
+            reported = (dict(CHECKPOINTS[1]["usage"], harness_turns=CHECKPOINTS[1]["num_turns"])
+                        if variant == "checkpoint" else None)
+            expected = {"runtime": "claude-code/1", "placements": 1, "unknown_intervals": 1,
+                        "stopped": 1, "reported_placements": 1 if reported else 0,
+                        "reported_main_loop": reported, "provider_completeness": "unverified"}
+            self.eq(label + ".usage", self.usage_of(status), expected)
+            self.eq(label + ".run-usage", reply.get("data", {}).get("usage"), expected)
+            checkpoints = sorted((self.audit_path(f) / "runs/1").glob("runtime-usage-*.json"),
+                                 key=lambda p: int(p.stem.rsplit("-", 1)[1]))
+            self.require(label + ".usage-records-present", bool(checkpoints))
+            records = [strict_loads(p.read_bytes()) for p in checkpoints]
+            # These records include stopping observations; their number is not
+            # the number of model reports. Check the retained accounting itself.
+            self.eq(label + ".final-usage-record", records[-1], expected)
+            self.check(label + ".no-partial-reports",
+                       all(r.get("reported_main_loop") in (None, reported) for r in records), records)
+            self.eq(label + ".notice-transmissions", reply.get("data", {}).get("notices"),
+                    [{"type": "reminder", "sent": "sent"}] if reported else [])
+            observations[variant] = self.usage_of(status)
+            self.close_after_delivery(f, self.check_delivery(f, status))
+        self.control("captured-partials-stay-unknown",
+                     observations["missing"]["reported_main_loop"] is None
+                     and observations["missing"]["unknown_intervals"] == 1)
+        self.control("duplicated-partials-add-no-consumption", observations["duplicate"] == observations["missing"])
+        self.control("valid-checkpoint-is-distinct-from-partials",
+                     observations["checkpoint"]["reported_main_loop"] ==
+                     dict(CHECKPOINTS[1]["usage"], harness_turns=CHECKPOINTS[1]["num_turns"])
+                     and observations["checkpoint"]["unknown_intervals"] == 1)
+
+    def runtime_tool_names(self):
+        for variant, name in (("prefixed", "mcp__stewart__record_account"),
+                              ("unprefixed", "record_account"), ("unlisted", "mcp__stewart__not_pinned")):
+            f = self.fixture("tool-name-" + variant, scenario="tool-name", timeout=20)
+            label = f["label"]
+            self.change_scenario(f, assistant_tool=name)
+            self.accept(f)
+            reply = self.cmd(label + ".run", ["run", f["reference"]])
+            self.groups_absent(f)
+            events = self.harness_clean(f)
+            selected = [e for e in events if e["event"] == "output" and e["value"].get("type") == "assistant"]
+            self.require(label + ".assistant-frame-observed", len(selected) == 1, selected)
+            block = selected[0]["value"]["message"]["content"][0]
+            self.eq(label + ".named-tool", block.get("name"), name)
+            self.eq(label + ".same-arguments", block.get("input"), {"text": ACCOUNT})
+            self.check(label + ".assistant-frame-transmitted", any(e["event"] == "output-transmitted"
+                       and e["sha256"] == sha(bytes.fromhex(selected[0]["raw_hex"])) for e in events))
+            self.eq(label + ".stdout-capture", self.captured_channel(f, "stdout").hex(),
+                    b"".join(bytes.fromhex(e["raw_hex"]) for e in events if e["event"] == "output").hex())
+            status = self.inspect_runtime(f)
+            if variant == "prefixed":
+                self.eq(label + ".ending", reply.get("data", {}).get("ending"), "sealed")
+                calls = [e["value"]["params"] for e in events if e["event"] == "rpc-send"
+                         and e["value"].get("method") == "tools/call"]
+                self.eq(label + ".bare-mcp-positive", [c for c in calls if c["name"] == "record_account"],
+                        [{"name": "record_account", "arguments": {"text": ACCOUNT}}])
+                self.close_after_delivery(f, self.check_delivery(f, status))
+            else:
+                data = reply.get("data") or {}
+                self.eq(label + ".ending", data.get("ending"), "interrupted")
+                self.eq(label + ".validation-cause", data.get("cause"), "protocol_anomaly")
+                self.eq(label + ".no-entry", status["data"].get("answer"), {"revision": 0, "entries": 0})
+                self.eq(label + ".no-seal", status["data"].get("seal"), {"state": "absent", "actor": None})
+                self.control(label + "-stopped", data.get("ending") == "interrupted"
+                             and data.get("cause") == "protocol_anomaly")
+
     def runtime_near_limit(self):
         # The same 16-second observation window crosses the short placement's
         # near-limit region, but not the long placement's. Both peers record the
@@ -3472,6 +3602,35 @@ def synthetic_harness(scenario_path, environment_path, argv):
                   "uuid": "00000000-0000-4000-8000-%012d" % serial,
                   "compact_metadata": {"trigger": "auto", "pre_tokens": 150000 + serial}})
 
+        if scenario["mode"] == "captured-accounting":
+            variant = scenario["accounting_variant"]
+            for _ in range(2 if variant == "duplicate" else 1):
+                for serial in range(4):
+                    emit(c5_partial_frame(scenario["session"], serial))
+            cap = copy.deepcopy(C5_CAP)
+            cap["session_id"] = scenario["session"]
+            emit(cap)
+            event("accounting-after-cap", response=tool("what_am_i_working_with", {}))
+            if variant == "checkpoint":
+                turn_ended(CHECKPOINTS[1])
+                supplied = incoming.get(timeout=10)
+                if supplied.get("message", {}).get("content") != REMINDER:
+                    raise ValueError("ordinary result did not receive the still-unused reminder")
+                emit(c5_partial_frame(scenario["session"], 4, later=True))
+
+        if scenario["mode"] == "tool-name":
+            name = scenario["assistant_tool"]
+            emit({"type": "assistant", "session_id": scenario["session"], "parent_tool_use_id": None,
+                  "message": {"model": scenario["model"], "id": "tool-name-control", "role": "assistant",
+                              "content": [{"type": "tool_use", "id": "toolu_name_control", "name": name,
+                                           "input": {"text": scenario["account"]}}]}})
+            event("tool-name-frame-sent", name=name)
+            if name != "mcp__stewart__record_account":
+                # No self-ending result or voluntary exit: Stewart must stop
+                # this live peer for the named protocol defect, not a deadline.
+                time.sleep(600)
+                return 9
+
         if scenario["mode"] == "fidelity":
             variant = scenario["fidelity_variant"]
             serial = 0
@@ -4019,6 +4178,12 @@ def self_test():
     checks = []
     def check(name, value):
         checks.append((name, bool(value)))
+    check("c5.partial-usage-size", len(compact(C5_PARTIAL_USAGE)) == 251)
+    check("c5.partial-usage-digest", sha(compact(C5_PARTIAL_USAGE)) ==
+          "db6136588bc9b971abaf7a1a6da35f877e3a05253ddad40d54e5b0ec018272c9")
+    check("c5.cap-size", len(compact(C5_CAP) + b"\n") == 447)
+    check("c5.cap-digest", sha(compact(C5_CAP) + b"\n") ==
+          "7a5ec002a7e8dc060c463d2d7ec9394130cd708c8b36c9074dea6b407e262a78")
     c4_notice = NEAR_LIMIT.format(seconds=12, placements=2)
     c4_input = compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
                         "message": {"role": "user", "content": c4_notice}}) + b"\n"
@@ -4437,6 +4602,11 @@ for raw in sys.stdin.buffer:
         ("submit-publication", 1, lambda e: e["event"] == "submit-retried"),
         ("near-limit", 2, submitted),
         ("near-limit-interrupt", 2, None),
+        ("captured-accounting", 1, submitted),
+        ("captured-accounting-duplicate", 1, submitted),
+        ("captured-accounting-checkpoint", 2, submitted),
+        ("tool-name", 1, submitted),
+        ("tool-name-denied", 1, lambda e: e["event"] == "tool-name-frame-sent"),
         ("compaction", 4, submitted),
         ("hooks", 1, submitted),
         ("relay-loss", 1, lambda e: e["event"] == "second-relay"),
@@ -4462,6 +4632,14 @@ for raw in sys.stdin.buffer:
                 scenario["mode"] = "near-limit"
                 scenario["observe_seconds"] = 1
                 scenario["interrupt_after_notice"] = mode == "near-limit-interrupt"
+            if mode.startswith("captured-accounting"):
+                scenario["mode"] = "captured-accounting"
+                scenario["accounting_variant"] = (mode.removeprefix("captured-accounting-")
+                                                 if mode != "captured-accounting" else "missing")
+            if mode.startswith("tool-name"):
+                scenario["mode"] = "tool-name"
+                scenario["assistant_tool"] = ("record_account" if mode.endswith("-denied")
+                                             else "mcp__stewart__record_account")
             (root / "scenario.json").write_bytes(compact(scenario))
             (root / "peer.py").write_text("publication=%r\n" % (mode == "submit-publication") + mode_peer)
             (root / "settings.json").write_bytes(compact({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [
@@ -4480,6 +4658,8 @@ for raw in sys.stdin.buffer:
             supplied_inputs = [user("synthetic input %d" % n) for n in range(inputs)]
             if mode.startswith("near-limit"):
                 supplied_inputs[1] = user(NEAR_LIMIT.format(seconds=12, placements=2))
+            if mode == "captured-accounting-checkpoint":
+                supplied_inputs[1] = user(REMINDER)
             process.stdin.write(b"".join(supplied_inputs))
             process.stdin.flush()
             deadline = time.monotonic() + 20
@@ -4565,6 +4745,21 @@ for raw in sys.stdin.buffer:
                 else:
                     check("mode." + mode + ".submits-after-window",
                           ended_at is not None and submitted_at is not None and ended_at < submitted_at)
+            elif mode.startswith("captured-accounting"):
+                partials = [o for o in outputs if o.get("type") == "assistant"]
+                expected = 8 if mode.endswith("-duplicate") else 5 if mode.endswith("-checkpoint") else 4
+                check("mode." + mode + ".partials", len(partials) == expected
+                      and all(o["message"]["usage"] == C5_PARTIAL_USAGE for o in partials))
+                check("mode." + mode + ".cap", sum(o.get("type") == "user" and o.get("isSynthetic") is True
+                                                 for o in outputs) == 1)
+                check("mode." + mode + ".checkpoint", sum(o.get("type") == "result" for o in outputs)
+                      == (1 if mode.endswith("-checkpoint") else 0))
+                check("mode." + mode + ".submits", sum(submitted(e) for e in events) == 1)
+            elif mode.startswith("tool-name"):
+                check("mode." + mode + ".assistant",
+                      sum(o.get("type") == "assistant" for o in outputs) == 1)
+                check("mode." + mode + ".submits", sum(submitted(e) for e in events)
+                      == (0 if mode.endswith("-denied") else 1))
             elif mode == "compaction":
                 check("mode.compaction.sequence", kinds == [("system", "init"), ("system", "compact_boundary"),
                       ("system", "compact_boundary"), ("result", "success")])

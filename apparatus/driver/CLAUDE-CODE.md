@@ -346,6 +346,57 @@ of the notice. They use synthetic inputs and a fixed partial account,
 and do not replay the live audit or depend on its retained directory. The
 original input was a service-owned capture, not a provider-network witness.
 
+The `runtime-captured-accounting` case projects the repeated usage fields from
+four C5 assistant frames and replays C5's complete synthetic cap-message shape.
+The usage projection preserves every usage member and the repeated message-ID
+and null-stop semantics. Content, model and envelope identities are synthetic;
+the cap frame changes only its session ID. Missing final results must leave
+totals unknown, and repeating the four-frame projection twice must change no
+reported consumption. A separate control supplies one known cumulative result,
+receives the still-unused ordinary reminder, then supplies another partial
+assistant frame: the checkpoint counts survive while the later interval remains
+unknown. Retained usage records must not promote partial fields to reported
+totals, and the last record must agree with the final usage object. Their file
+count is not a model-report count: records also preserve stopping observations.
+All variants author and submit the same supplied account after the cap,
+then close without changing its package. The cap text is harness output, never
+Stewart's input or an English-text instruction to its accounting logic.
+
+The originals are from 2026-11-15, Claude Code 2.1.322 and `claude-haiku-5-5`,
+under `.scratch/readiness-c5-01/checklist/archive/audits/aplifuihi4h2xrht5/runs/1/`.
+Concatenating stdout chunks in numeric order gives 611,370 bytes with SHA-256
+`0e4f7791fa55bc78eb8dbb124262b478c966bdd65f4e20b6be45907ff682736a`.
+The selected LF-terminated assistant frames have these offsets and digests:
+
+| Offset | Bytes | SHA-256 |
+| --- | --- | --- |
+| 2764 | 1829 | `1b2733a90a651f98d40ddeb5438296e4ddb44d6f33a82a23c7c1b6f314a551c0` |
+| 4593 | 1069 | `65f850391a86406d9b3eb9e39a1d202542720e20b45088dd1c54f1d9e746031a` |
+| 5662 | 1015 | `2652549cb33d88fd81121beb344d72e4fb5f76f01fbc0c87a0df46c0d51878f1` |
+| 15533 | 1034 | `8e19536e52030fd5254c378111c2cfcb717db484fa81b4d9143a084d6a25eb1d` |
+
+Their identical compact usage objects are 251 bytes, SHA-256
+`db6136588bc9b971abaf7a1a6da35f877e3a05253ddad40d54e5b0ec018272c9`.
+The cap is the complete 447-byte `runtime-339-stdout.bin`, at combined offset
+497621, SHA-256 `7a5ec002a7e8dc060c463d2d7ec9394130cd708c8b36c9074dea6b407e262a78`.
+The self-test pins these reconstructed cap and usage bytes. The valid cumulative
+checkpoint control is synthetic: this live encounter contained no result frame.
+These fixtures establish neither the exact output-token cap nor provider billing.
+
+The `runtime-tool-names` case changes only the name in a synthetic assistant
+tool-use frame: a pinned prefixed name, its unprefixed stem, or an unlisted
+prefixed name. The positive control sends an ordinary bare-name MCP call and
+submits its account. The two negative peers remain alive until Stewart stops
+them; they must end with a protocol anomaly, no answer entry or seal, and
+observed absent groups. Those stopped, unsubmitted controls remain for review.
+The negative names are synthetic; C2–C5 supplied no such assistant frame.
+
+C2–C5 supplied no final result checkpoints or compaction boundaries. The
+checkpoint and `system/compact_boundary` comparisons remain synthetic; no other
+compaction form is grounded in those encounters. C5's cap message was followed
+by authoring, not a terminal cap result. These fixtures make no claim about
+unobserved terminal-cap forms or actual harness cap enforcement.
+
 Not exercised: the internal waiting state or queue count/byte overflow;
 `run`'s own re-verification of a pinned surface, which has no
 black-box firing control because one binary cannot hold an arrangement that

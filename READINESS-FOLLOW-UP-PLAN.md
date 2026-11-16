@@ -17,17 +17,6 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ## Repairs, fixtures and reassessment
 
-### Act on the outcomes
-
-- [ ] Address missing final usage, overlapping assistant snapshots, per-session
-  checkpoints, compaction shapes outside the accepted form, unlisted/unprefixed
-  tools and output-cap endings. Use `.scratch/readiness-c2-01/COMPARISON.json`,
-  `.scratch/readiness-c3-01/OBSERVATION.json` and
-  `.scratch/readiness-c4-01/COMPARISON.json` and
-  `.scratch/readiness-c5-01/RESULT.json` as bounded observations. Unknown
-  intervals stay unknown; cumulative/overlapping fields cannot be added as
-  independent consumption.
-
 ### Ground fixtures and reassess
 
 - [ ] Ground provider tool/error/compaction, harness startup/result/rate events,
@@ -38,9 +27,8 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   charged compaction iteration, signed-block reuse and preserved/revised account,
   C1 surface events, and C4 near-limit partial
   submission, required-field recovery and submit-to-stop sequences. Include C5's
-  harness cap message and subsequent authoring, flattened error text preserving
-  the full refusal, exact-version account replacement and three missing final
-  usage checkpoints. Ground
+  flattened error text preserving the full refusal and exact-version account
+  replacement. Ground
   reminder delivery and ordinary-ending recognition with M3's captures plus the
   synthetic continued-placement prose-ending control; that branch and aborted
   in-flight charging remain rehearsal-only observations. Derive variants by one
@@ -48,8 +36,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   selected fixture.
 - [ ] Ground wire/proxy, OS/environment, process-observation, Keychain,
   signature-tool and driver-record stand-ins in local observations. These need
-  no model launch. Give missing capture groups, including provider errors and
-  rejected/overage events, an owner or explicit disposition.
+  no model launch. Give missing capture groups, including provider errors,
+  rejected/overage events, alternative runtime compaction shapes and terminal-cap
+  results, an owner or explicit disposition. Preserve the driver guide's stated
+  limits: synthetic frames do not establish live forms or cap enforcement.
 - [ ] Reassess changed, added or newly grounded tests using independent expected
   values, firing/differing/invariance controls and wrong-reason/skip checks.
   Preserve driver independence under [AGENTS](AGENTS.md); use a separate author
@@ -64,6 +54,11 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   The near-limit working set is `.tmp/readiness-near-limit-01/`; its
   `native-review.json` binds the original timing failure and corrected
   comparison for reassessment.
+  The C5 accounting and assistant-name working set is
+  `.tmp/readiness-observations-01/`; `native-review.json` binds the original
+  file-count assertion failures and the passing accounting retry. An
+  implementation-informed, non-author review found no blocker; it does not
+  replace independent driver authorship or Linux qualification.
   Their results name external synthetic witnesses.
   Keep these through the remaining reassessment, then release reproducible work.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,
