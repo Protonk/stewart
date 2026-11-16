@@ -98,9 +98,9 @@ per substituted reply, under `projects/<workspace>/<session>/tool-results/` in
 the profile's configuration directory. The launch requested
 `--no-session-persistence`; that setting did not prevent them. A listing on
 2026-11-14 (UTC), after the audit closed and its workspace was emptied, found both
-files (67,205 and 67,089 bytes) and nothing else under `projects/`. Their
-contents were not read or used for recovery. Each is a copy of supplied material
-that Stewart's archive, delivery and close neither record nor remove.
+files (67,205 and 67,089 bytes) and nothing else under `projects/`. That listing
+did not read their contents or use them for recovery. The harness-created copies
+sit outside the custody performed by Stewart's archive, delivery and close.
 
 Two of the answer's three citations are range citations over the substituted
 pages. They validate against the source bytes and the auditor's own entry says
@@ -137,8 +137,18 @@ The configured `projects` tree had the same six metadata entries immediately
 before and after that placement, including the two original C3 copy paths.
 Those directory walks observed no added, removed or changed entries. They read
 no file contents and cannot exclude transient or outside-tree copies, prove
-unchanged contents, or establish universal prevention. The two original copies
-remain untouched and unread.
+unchanged contents, or establish universal prevention.
+
+The principal later approved a bounded comparison and removal of those two
+named C3 files. The [disposition evidence](../../apparatus/qualified.md#readiness-c3-disposition-01)
+records their 2026-11-16 UTC inspection: both complete decoded arrays exactly
+matched their original supplied MCP replies. Private byte-for-byte witnesses
+were preserved and verified before either file was removed, and a separate
+review observed both names absent. The originals and disposition receipts remain
+available for the C3 reassessment. This manual cleanup read no credential or
+unrelated file contents, started no harness or audit, and changed no sealed
+answer. It establishes the disposition of those two copies, not automatic
+cleanup by Stewart or absence of other copies.
 
 This demonstrates ordinary-page prevention in one bounded native encounter,
 with original page boundaries and complete text intact. It does not isolate

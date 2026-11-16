@@ -2214,6 +2214,26 @@
         "reason": "Inspect the original C3-sized page comparison, exact conversation versus auxiliary representations, refusal recovery, scoped external-copy observations and preserved custody; ground remaining fidelity controls.",
         "until": "The reply-fidelity repair and fixture reviews are complete and no unresolved custody or comparison finding requires these original captures"
       }
+    },
+    {
+      "id": "readiness-c3-disposition-01",
+      "kind": "experiment",
+      "date": "2026-11-16T00:51:22Z",
+      "date_from": "execution/RESULT.json field finished_at",
+      "summary": "Approved removal of two C3 spill files after exact comparison with original MCP replies; private witnesses and independent absence observations retained; no harness invocation",
+      "result": {
+        "path": ".",
+        "files": 11,
+        "sha256": "d0a2b4c2bcb633a1f27e94ac83fa3f2d041d050ea6277503d8d233350de61fc8"
+      },
+      "evidence": {
+        "path": ".scratch/readiness-c3-disposition-01",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": {
+        "reason": "Retain the originals needed to inspect the C3 external-copy finding and its authorized disposition during readiness reassessment.",
+        "until": "The C3 fixture and custody reassessment no longer needs the original external-copy witnesses or disposition receipts."
+      }
     }
   ]
 }

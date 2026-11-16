@@ -763,3 +763,10 @@ Native annotated-page comparison: all three pages exact in captured conversation
 
 - Evidence: `.scratch/readiness-pages-service-01/.` (recorded 2026-11-15T23:23:59Z).
 - Retained purpose: Inspect the original C3-sized page comparison, exact conversation versus auxiliary representations, refusal recovery, scoped external-copy observations and preserved custody; ground remaining fidelity controls.; until The reply-fidelity repair and fixture reviews are complete and no unresolved custody or comparison finding requires these original captures
+
+### readiness-c3-disposition-01
+
+Approved removal of two C3 spill files after exact comparison with original MCP replies; private witnesses and independent absence observations retained; no harness invocation
+
+- Evidence: `.scratch/readiness-c3-disposition-01/.` (recorded 2026-11-16T00:51:22Z).
+- Retained purpose: Retain the originals needed to inspect the C3 external-copy finding and its authorized disposition during readiness reassessment.; until The C3 fixture and custody reassessment no longer needs the original external-copy witnesses or disposition receipts.
