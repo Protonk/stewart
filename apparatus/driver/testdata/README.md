@@ -255,6 +255,78 @@ revision 51, and C5's original long replacement was entry 1 version 2. The new
 sequence deliberately uses one entry and three versions. It does not establish
 live near-limit partial submission, timing, model behavior or provider usage.
 
+## `citations/`: M1/C2/C3 recovery operands
+
+These are exact captured calls from M1 direct (Messages API, 2026-11-13), C2
+ordinary (native CLI, 2026-11-13), and C3 pages (native CLI, 2026-11-13). All used
+`claude-haiku-5-5`, effort omitted; the two CLI encounters used `2.1.322`.
+Calls are Stewart-owned capture, not an independent provider wire witness.
+Material bytes come from the separate pre-intake inputs. M1's independent
+input witness has exactly the same 175-byte `src/a.py` as C2's packet.
+
+Origin prefixes:
+
+- `M1`: `.scratch/readiness-m1-live-direct-01/container/m1-direct/export-0002/work.tar`,
+  member `private/archive/audits/aujahvrflxkzbthr2/runs/1/`.
+- `C2`: `.scratch/readiness-c2-01/open-ordinary/packet/closure/service-archive/audits/alwuy5pjrhn2vlugq/runs/1/`.
+- `C3`: `.scratch/readiness-c3-01/packet/closure/service-archive/audits/a3gyjpm2wnl2vnrtj/runs/1/`.
+- Material paths: the corresponding packet's `inputs/submission/materials/`.
+
+The M1 export is 706560 bytes, SHA-256
+`311e5dda499fd40c643facb6a937c33536a229a70f397ad9a9ac656ead9b248f`.
+
+| Fixture | Origin | Bytes | SHA-256 |
+| --- | --- | ---: | --- |
+| [m1-invalid.json](citations/m1-invalid.json) | `M1 / call-7.json` | 553 | `7921ec111192371e6b680bc8a455ae684c2bb47a94b519fb53d65e65b3ef237d` |
+| [m1-corrected.json](citations/m1-corrected.json) | `M1 / call-13.json` | 407 | `a46aaa88d900600cd71c080ffbfb58b2f84954c74c47f4702ffb13d15c68e221` |
+| [c2-invalid.json](citations/c2-invalid.json) | `C2 / call-8.json` | 801 | `59c95bcf98e1cdb247e10d98267b9997cfbf19a8d024224eae809fd5dd99af68` |
+| [c2-corrected.json](citations/c2-corrected.json) | `C2 / call-16.json` | 711 | `7a9977e1c379e2071242d58d84f9c982ccf9f6013d0d9c60685709de6b2346ca` |
+| [c3-invalid.json](citations/c3-invalid.json) | `C3 / call-5.json` | 607 | `847bc04962038544049e39a208c48f348076af37ed067f4d984af53e499b282f` |
+| [c3-corrected.json](citations/c3-corrected.json) | `C3 / call-9.json` | 587 | `276dd05080de15a031453a0dd27370bf530302daccdba00359397ec647105d97` |
+| [a.py.txt](citations/a.py.txt) | `C2 material src/a.py` | 175 | `3fed093a5696428b7440ae3a0f93d2bd3bc93084b495fc3ec6297ab78c23afce` |
+| [control.txt](citations/control.txt) | `C3 material control.txt` | 49152 | `947ae167c6e71f036d5c603c3f273706c2252b1b18d381bbf7da3045da49e0d2` |
+
+[`c14.captured-citations`](../cases_citation_captures.py) supplies M1's complete
+Messages tool blocks unchanged. It projects C2/C3 MCP calls into Messages tool
+blocks using their tool names, correlated tool-use IDs and exact raw argument
+objects. The original MCP envelopes and metadata remain in these fixture files;
+this comparison exercises shared citation behavior through Messages, not MCP
+framing or real-harness behavior.
+
+Each synthetic audit first records a control account. The original malformed
+range/quote call must refuse at citation 0, preserve that account and revision,
+and retain its exact raw block and error result. The captured corrected call
+must then add the expected observation with independently derived annotations.
+The prepared selection, delivered `answer.json` and every retained payload are
+compared with the supplied inputs. Captured prose remains opaque authored text,
+not an oracle about the subject of the synthetic question.
+
+The differing variant changes only the invalid call's `quote` to the exact
+bytes of its unchanged range. That call must now add an observation, so this
+variant deliberately has one more entry and revision. The invariance variant
+changes only top-level input-member order: it must preserve the refusal and
+produce the same final answer as the original. Each origin has all three
+variants. Controls omit refused capture, omit refusal effects or add a support
+grade to the recorded citation; each must fail its named check.
+
+### C4 partial account in the timing comparison
+
+The existing `runtime-near-limit` case uses
+[`runtime/c4-partial-account.json`](runtime/c4-partial-account.json), the exact
+C4 short-placement call from 2026-11-14, CLI `2.1.322`, `claude-haiku-5-5`,
+effort omitted. Its origin is
+`.scratch/readiness-c4-01/short/packet/closure/service-archive/audits/ah3m7bxzpowsvmtfn/runs/1/call-53.json`:
+931 bytes, SHA-256 `6b1cfbfd4c6d179d195a91489473ff7dcbb463b6f222e2535ad8d45caedbefe0`.
+
+The script sends its complete argument object unchanged with fresh MCP identity.
+The literal label and 708-byte account must survive the short/long timing
+comparison, explicit continuation and verified delivery/close. The comparison
+records one copy before its synthetic observation window; the original audit
+added this checkpoint after sixteen earlier accounts. This is not a replay of
+that history or evidence that the model would make the same decision at a
+new deadline. Original notice provenance and the timing comparison's limits are
+in the [runtime driver guide](../CLAUDE-CODE.md).
+
 ## `tls/`: TEST-ONLY certificates and keys
 
 These certificates and their **private keys are deliberately published**. They

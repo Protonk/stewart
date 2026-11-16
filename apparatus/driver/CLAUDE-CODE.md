@@ -354,6 +354,11 @@ of the notice. They use synthetic inputs and a fixed partial account,
 and do not replay the live audit or depend on its retained directory. The
 original input was a service-owned capture, not a provider-network witness.
 
+The timing case uses the [captured C4 partial account](testdata/README.md#c4-partial-account-in-the-timing-comparison)
+as its one authored entry. Its complete arguments, retained payload and exact
+expected answer must agree across the timing/continuation paths. Only the
+synthetic schedule changes; the original multi-entry audit is not replayed.
+
 The `runtime-captured-accounting` case projects the repeated usage fields from
 four C5 assistant frames and replays C5's complete synthetic cap-message shape.
 The usage projection preserves every usage member and the repeated message-ID

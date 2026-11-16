@@ -1826,15 +1826,16 @@ class Driver:
                 self.check(f["label"] + ".stop." + key, type(record.get(key)) is int and record[key] >= 0, record)
         return live
 
-    def check_delivery(self, f, status_reply, actor="auditor"):
+    def check_delivery(self, f, status_reply, actor="auditor", *, expected=None):
         data = status_reply["data"]
         self.eq(f["label"] + "." + actor + "-seal", data.get("seal", {}).get("actor"), actor)
         delivery = data.get("headline", {}).get("delivered", {})
         self.require(f["label"] + ".verified-delivery", delivery.get("verified") is True, delivery)
         package = Path(delivery["location"])
-        expected = (b'{"schema":"stewart.answer/1","revision":1,"entries":[\n'
-                    + compact({"id": "e1", "version": 1, "kind": "record_account", "label": "",
-                               "text": ACCOUNT, "citations": []}) + b']}\n')
+        if expected is None:
+            expected = (b'{"schema":"stewart.answer/1","revision":1,"entries":[\n'
+                        + compact({"id": "e1", "version": 1, "kind": "record_account", "label": "",
+                                   "text": ACCOUNT, "citations": []}) + b']}\n')
         (f["witness"] / "expected-answer.json").write_bytes(expected)
         self.eq(f["label"] + ".faithful-answer", (package / "answer.json").read_bytes().decode(), expected.decode())
         return package
@@ -2923,6 +2924,10 @@ class Driver:
                              and data.get("cause") == "protocol_anomaly")
 
     def runtime_near_limit(self):
+        import answer_witness as aw
+        partial = authoring_arguments("c4-partial-account")
+        expected = aw.answer_json(1, [aw.Entry("e1", 1, "record_account", partial["label"],
+                                              partial["text"].encode())])
         # The same 16-second observation window crosses the short placement's
         # near-limit region, but not the long placement's. Both peers record the
         # same partial account before waiting and submit only after the window.
@@ -2930,7 +2935,7 @@ class Driver:
                                ("near-limit-continuation", 20)):
             f = self.fixture(label, scenario="near-limit", timeout=seconds)
             continuing = label == "near-limit-continuation"
-            self.change_scenario(f, observe_seconds=16, interrupt_after_notice=continuing)
+            self.change_scenario(f, observe_seconds=16, interrupt_after_notice=continuing, captured_partial=True)
             self.accept(f)
             first = self.cmd(label + ".run-1", ["run", f["reference"]])
             self.groups_absent(f)
@@ -2952,7 +2957,12 @@ class Driver:
                 self.eq(label + ".continued-ending", second.get("data", {}).get("ending"), "sealed")
                 self.inspect_near_limit(f, second, run=2, expected=0)
             placements = 2 if continuing else 1
-            package = self.check_delivery(f, self.inspect_runtime(f, placements=placements))
+            package = self.check_delivery(f, self.inspect_runtime(f, placements=placements), expected=expected)
+            payload = self.audit_path(f) / "payload/e1.v1.bin"
+            self.eq(label + ".captured-partial-retained", payload.read_bytes(), partial["text"].encode())
+            calls = [e["value"]["params"]["arguments"] for e in self.harness_events(f)
+                     if e["event"] == "rpc-send" and e["value"].get("params", {}).get("name") == "record_account"]
+            self.eq(label + ".captured-partial-once", calls, [partial])
             self.close_after_delivery(f, package, placements=placements)
         self.control("near-limit-crosses-short-not-long-deadline",
                      self.near_counts.get(("near-limit-submit", 1)) == 1
@@ -3033,7 +3043,12 @@ class Driver:
         self.eq(label + ".notice-does-not-seal", data.get("seal"), {"state": "absent", "actor": None})
         self.eq(label + ".notice-does-not-edit", data.get("revision"), 1)
         self.eq(label + ".no-duplicate-account", len(data.get("entries", [])), 1)
-        self.eq(label + ".preserved-account", (data.get("entries") or [{}])[0].get("preview"), ACCOUNT)
+        entry = (data.get("entries") or [{}])[0]
+        partial = authoring_arguments("c4-partial-account")
+        self.eq(label + ".preserved-account", entry.get("preview"), partial["text"].encode()[:200].decode())
+        self.eq(label + ".partial-preview-complete", entry.get("preview_complete"), False)
+        self.eq(label + ".partial-size", entry.get("size"), 708)
+        self.eq(label + ".partial-label", entry.get("label"), "Overall checkpoint")
         claims = [r for _, r in logs if r["kind"] == "notice" and r["body"].get("type") == "reminder"]
         self.eq(label + ".no-reminder-spent", claims, [])
 
@@ -4126,7 +4141,9 @@ def synthetic_harness(scenario_path, environment_path, argv):
             time.sleep(600)
             return 9
         if not scenario.get("skip_record", False):
-            recorded = tool("record_account", {"text": scenario["account"]})
+            arguments = (authoring_arguments("c4-partial-account") if scenario.get("captured_partial")
+                         else {"text": scenario["account"]})
+            recorded = tool("record_account", arguments)
             if recorded.get("outcome") != "completed":
                 raise RuntimeError("record_account did not complete: %r" % recorded)
         if scenario["mode"] == "near-limit":
@@ -4449,6 +4466,12 @@ def self_test():
     check("c5.cap-size", len(compact(C5_CAP) + b"\n") == 447)
     check("c5.cap-digest", sha(compact(C5_CAP) + b"\n") ==
           "7a5ec002a7e8dc060c463d2d7ec9394130cd708c8b36c9074dea6b407e262a78")
+    partial_raw = (HERE / "testdata/runtime/c4-partial-account.json").read_bytes()
+    check("near-limit.partial-origin", (len(partial_raw), sha(partial_raw)) ==
+          (931, '6b1cfbfd4c6d179d195a91489473ff7dcbb463b6f222e2535ad8d45caedbefe0'))
+    partial = authoring_arguments("c4-partial-account")
+    check("near-limit.partial-preview", len(partial["text"].encode()) == 708 and partial["text"].encode()[:200].decode() ==
+          "Partial answer. Covered cases R001 through R016 in ascending order, each read from its claim and receipt. Not covered: R017 through R048; no account is recorded for them, and no conclusion is drawn fo")
     c4_notice = NEAR_LIMIT.format(seconds=12, placements=2)
     c4_input = compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
                         "message": {"role": "user", "content": c4_notice}}) + b"\n"
@@ -4896,6 +4919,7 @@ for raw in sys.stdin.buffer:
             if mode.startswith("near-limit"):
                 scenario["mode"] = "near-limit"
                 scenario["observe_seconds"] = 1
+                scenario["captured_partial"] = True
                 scenario["interrupt_after_notice"] = mode == "near-limit-interrupt"
             if mode.startswith("captured-accounting"):
                 scenario["mode"] = "captured-accounting"
@@ -4996,6 +5020,9 @@ for raw in sys.stdin.buffer:
                       and e["response"].get("outcome") == "completed" for e in events))
                 check("mode.submit-publication.confirmed-retry", sum(submitted(e) for e in events) == 2)
             elif mode.startswith("near-limit"):
+                accounts = [e["value"]["params"]["arguments"] for e in events if e["event"] == "rpc-send"
+                            and e["value"].get("params", {}).get("name") == "record_account"]
+                check("mode." + mode + ".captured-partial", accounts == [authoring_arguments("c4-partial-account")])
                 windows = [e.get("phase") for e in events if e["event"] == "near-limit-window"]
                 check("mode." + mode + ".window", windows == ["start", "end"])
                 check("mode." + mode + ".observed-input", consumed == 2)
