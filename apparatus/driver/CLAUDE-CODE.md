@@ -280,7 +280,11 @@ It also exercises the direct relay observer with a raw pipe, actual blocked-read
 workers at setup/read/cleanup checkpoints, a resistant descendant after its
 worker exits, subsequent normal operation, and the refusal to launch further
 selected cases after unresolved stopping. The self-test prints the retained
-directory containing these partial witnesses and watchdog results.
+directory containing these partial witnesses and watchdog results. It checks the
+pipe packing rule for both platforms with controls (merging, page-sized and large
+writes, packet mode, other geometries), then compares it with fresh unread pipes
+on the host and prints the host's packing facts. On Linux that comparison is the
+direct kernel witness for the notice cases' page packing.
 Environment controls exercise the actual wrapper and inspection path with the
 specified environment, an injected `LC_CTYPE=C.UTF-8`, a changed `LANG`, an extra
 variable and a repeated normal launch. They retain raw and interpreted snapshots
@@ -475,11 +479,11 @@ of a named kind (reminder, near-limit, continuation or compaction notice), expos
 compaction boundaries, send a tool call without awaiting its reply, emit an
 assistant tool use with a chosen name, resist TERM (each received TERM is written
 to a separate witness, so shutdown must escalate), stop reading input, wait for a
-driver-written file or a wall-clock instant, fill the unread input pipe with
-compaction notices, publish a marker, then submit, exit or hang. Stopping reading
-records any other process holding the input pipe's read side. Wall-clock instants
-are used because monotonic clocks are not shared between processes on every
-host. The harness draws no conclusions.
+driver-written file or a wall-clock instant, expose as many compaction boundaries
+as their notices fit in the unread input pipe (optionally more), publish a marker,
+then submit, exit or hang. Stopping reading records any other process holding the
+input pipe's read side. Wall-clock instants are used because monotonic clocks are
+not shared between processes on every host. The harness draws no conclusions.
 
 - **Start reservation.** With the fault-enabled variant, `runtime-start-races-close`
   holds `run` immediately before linking `run_started` and holds close after its
@@ -528,16 +532,34 @@ host. The harness draws no conclusions.
   its starts are the unused ones. The opposite order, followed by owner death,
   must leave both claims `unknown` after recovery. A final placement with a long
   timeout gets no notice. A harness that stops reading exposes as many
-  boundaries as their notices fit in its input pipe (65,536 bytes on macOS; the
-  reported capacity on Linux), then ends its turn, so the reminder's frame cannot
-  fit: captured, it is `unknown`; never captured, `not_sent`, and the arm reports
-  that the incomplete write was not reached. The capture must show that the
-  unread input before the reminder left it no room. This assumes that no other
-  holder of the input pipe's read side reads it; the harness records such
-  holders.
+  boundaries as their notices fit in its input pipe, then ends its turn, so the
+  reminder's frame cannot fit: captured, it is `unknown`; never captured,
+  `not_sent`, and the arm reports that the incomplete write was not reached.
+  Fit follows the platform's packing, not raw bytes. A macOS pipe holds 65,536
+  bytes. A Linux pipe holds `F_GETPIPE_SZ` / page size page buffers, and a small
+  write merges into the last one only when it fits there whole (`fs/pipe.c`), so
+  the 255-byte notice fits 256 times in sixteen 4 KiB pages, not 257. The harness
+  probes fresh unread pipes of the same capacity, and they must accept exactly
+  what that rule predicts. The capture, packed by the same rule, must show that
+  the unread input before the reminder left it no room. The harness then hangs, so
+  the reminder's write fails only when the supervisor stops the group at the
+  deadline, and the deadline must decide the ending, as in the blocked-write case.
+  This assumes that no other holder of the input pipe's read side reads it; the
+  harness records such holders.
   `runtime-notice-not-sent` (variant) fails the reminder claim's directory sync:
   the placement ends `archive_write_failed`, the reminder frame is not captured
   and the claim is `not_sent`.
+- **Blocked write.** `runtime-blocked-write` exposes one boundary more than fit,
+  so Stewart's write of the last notice cannot complete while the harness hangs.
+  The supervisor's deadline stop makes that write fail after the deadline, which
+  must decide the ending: `interrupted` with `placement_deadline` and authoring
+  open when starts remain, `limit_reached` with authoring ended by `limit` on the
+  only placement. `runtime-stop.json` must show stopping observed after the
+  deadline. Differing: the harness exits once the driver has seen the blocked
+  notice captured, long before a 30-second deadline. Stopping observed before the
+  deadline must leave `interrupted` with `protocol_anomaly`. No result is
+  emitted, so the reminder is never due; a near-limit notice could only queue
+  behind the blocked write and must not be `sent`.
 - **Results.** `runtime-result-rules`: a `result` with `is_error` true and subtype
   `success` interrupts with `protocol_anomaly` and claims no reminder; its usage
   is the latest reported checkpoint but its interval stays unknown. `is_error`

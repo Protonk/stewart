@@ -203,6 +203,8 @@ CASES = (
                                     "or a blocked write; never due by placements"),
     ("runtime-notice-not-sent", "A claim whose directory sync fails stops the placement before capture and "
                                 "is listed not_sent"),
+    ("runtime-blocked-write", "A write to the harness that fails only once the deadline stopped it is the deadline; "
+                              "a harness exit observed before the deadline stays a harness error"),
     ("runtime-result-rules", "An error result interrupts whatever its subtype; is_error false with any subtype "
                              "receives the reminder"),
     ("runtime-result-during-call", "A result while a call executes stops the placement; the held call is refused "
@@ -699,6 +701,55 @@ def sequence_selftest(check):
     check("sequence.pipe-readers.sole-holder-control", alone is None or alone == [])
     os.close(read_end)
     os.close(write_end)
+    pipe_packing_selftest(check)
+
+
+def pipe_packing_selftest(check):
+    """The packing rule for the runtime's notice frames, with controls, then the rule against
+    the actual kernel through fresh unread pipes on this host."""
+    notice, reminder = len(user_frame(COMPACTED)), len(user_frame(REMINDER))
+    check("pipe-packing.frame-lengths", (notice, reminder) == (255, 249))
+    linux = {"platform": "linux", "capacity": 65536, "page_size": 4096, "packet": False}
+    macos = {"platform": "darwin", "capacity": MACOS_PIPE_BYTES, "page_size": None, "packet": False}
+    # Linux: 16 notices fill a 4 KiB page (4,080 bytes), 16 pages hold 256; macOS holds 257 in
+    # 65,535 bytes. Raw bytes overstate Linux by one notice.
+    check("pipe-packing.linux-pages", pipe_frames_fit(notice, linux) == 256)
+    check("pipe-packing.macos-bytes", pipe_frames_fit(notice, macos) == 257)
+    check("pipe-packing.byte-count-control", 65536 // notice == 257 and pipe_accepts([notice] * 257, linux) == 256)
+    # After the fitting notices the reminder cannot complete; one notice fewer leaves it room.
+    check("pipe-packing.linux-reminder-blocked", pipe_accepts([notice] * 256 + [reminder], linux) == 256
+          and pipe_accepts([notice] * 255 + [reminder], linux) == 256)
+    check("pipe-packing.macos-reminder-blocked", pipe_accepts([notice] * 257 + [reminder], macos) == 257
+          and pipe_accepts([notice] * 256 + [reminder], macos) == 257)
+    # A sub-page write merges into the last page only when it fits there whole.
+    check("pipe-packing.linux-merge-fits-whole", pipe_accepts([notice] * 256 + [16, 1], linux) == 257
+          and pipe_accepts([notice] * 256 + [17], linux) == 256)
+    check("pipe-packing.linux-page-write-takes-a-slot", pipe_accepts([4096] * 17, linux) == 16
+          and pipe_accepts([1, 4096], dict(linux, capacity=4096)) == 1)
+    check("pipe-packing.linux-packet-mode", pipe_frames_fit(notice, dict(linux, packet=True)) == 16)
+    # Large writes: the sub-page remainder merges first, the rest takes whole pages.
+    check("pipe-packing.linux-large-writes", pipe_accepts([30000] * 3, linux) == 2
+          and pipe_accepts([30000] * 2 + [4096], linux) == 3 and pipe_accepts([30000] * 2 + [4097], linux) == 2)
+    check("pipe-packing.linux-other-geometry", pipe_frames_fit(notice, dict(linux, capacity=8192)) == 32
+          and pipe_frames_fit(notice, dict(linux, capacity=1 << 20, page_size=65536)) == 16 * 257)
+    # The actual kernel, through fresh pipes of this host's default geometry.
+    read_end, write_end = os.pipe()
+    try:
+        facts = input_pipe_facts(read_end)
+    finally:
+        os.close(read_end)
+        os.close(write_end)
+    fit = pipe_frames_fit(notice, facts)
+    sequences = ([notice] * (fit + 1), [notice] * fit + [reminder], [notice] * (fit - 1) + [reminder],
+                 [30000] * 3, [30000] * 2 + [4096])
+    probed = [pipe_probe(writes, facts["capacity"]) for writes in sequences]
+    print("Pipe packing on this host: %s; %d notice frames fit" % (compact(facts).decode(), fit))
+    # By the rule: one notice more is refused, the reminder after them too, and one notice
+    # fewer leaves the reminder room. The kernel must agree on every sequence.
+    check("pipe-packing.host-rule", [pipe_accepts(writes, facts) for writes in sequences[:3]] == [fit, fit, fit])
+    check("pipe-packing.host-probe", [p["accepted"] for p in probed] == [pipe_accepts(w, facts) for w in sequences])
+    check("pipe-packing.host-probe-capacity", all(p["capacity"] == (facts["capacity"] if facts["page_size"] else None)
+                                                   for p in probed))
 
 
 def snapshot(root):
@@ -753,6 +804,12 @@ def input_kind(content):
     if near_limit_values(content) is not None:
         return "near_limit"
     return "other"
+
+
+def user_frame(text):
+    """One supplied input frame with this content, as CONTRACT's wire section defines it."""
+    return compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
+                    "message": {"role": "user", "content": text}}) + b"\n"
 
 
 def input_frames(stream):
@@ -829,6 +886,99 @@ def pipe_readers(fd=0):
         return sorted([pid, int(name)] for pid, name, device in everyone
                       if device == own[0] and name.isdigit() and (pid, name) != (me, str(fd)))
     return None
+
+
+LINUX_F_SETPIPE_SZ = 1031
+LINUX_F_GETPIPE_SZ = 1032
+# XNU grows a pipe's single byte buffer on demand up to this bound (BIG_PIPE_SIZE). No call
+# reports it; pipe_probe and the self-test observe it.
+MACOS_PIPE_BYTES = 65536
+
+
+def input_pipe_facts(fd=0):
+    """The facts that decide how writes pack into the pipe on descriptor fd. On Linux,
+    F_GETPIPE_SZ reports the pipe's page-buffer slots times the page size, and a packet-mode
+    (O_DIRECT) pipe never merges writes. A macOS pipe is one byte buffer, so it has no page
+    size here."""
+    if sys.platform.startswith("linux"):
+        import fcntl
+        return {"platform": "linux", "capacity": fcntl.fcntl(fd, LINUX_F_GETPIPE_SZ),
+                "page_size": os.sysconf("SC_PAGESIZE"),
+                "packet": bool(fcntl.fcntl(fd, fcntl.F_GETFL) & getattr(os, "O_DIRECT", 0))}
+    if sys.platform == "darwin":
+        return {"platform": "darwin", "capacity": MACOS_PIPE_BYTES, "page_size": None, "packet": False}
+    raise ValueError("no pipe packing rule for " + sys.platform)
+
+
+def pipe_accepts(writes, facts):
+    """How many of the leading writes complete in full, in order, in an initially empty pipe
+    that nobody reads, each being one write(2) of that many bytes (facts from
+    input_pipe_facts). The first write that cannot complete ends the count: a blocking writer
+    waits there, holding everything after it.
+
+    Linux pipes are page-granular (fs/pipe.c, pipe_write). When the pipe is not empty, a
+    write's sub-page remainder merges into the last page buffer if it fits there whole;
+    everything else takes fresh page buffers, of which the pipe has capacity / page size.
+    Packet-mode pipes never merge. A macOS pipe accepts bytes up to its buffer bound."""
+    if facts["page_size"] is None:
+        used = 0
+        for count, size in enumerate(writes):
+            if used + size > facts["capacity"]:
+                return count
+            used += size
+        return len(writes)
+    page = facts["page_size"]
+    slots = facts["capacity"] // page
+    buffers = []  # bytes held by each page buffer in use, oldest first; nothing is read
+    for count, size in enumerate(writes):
+        if size <= 0:
+            raise ValueError("a write has at least one byte")
+        merged = size % page
+        if not (buffers and merged and not facts["packet"] and buffers[-1] + merged <= page):
+            merged = 0
+        rest = size - merged
+        if len(buffers) + -(-rest // page) > slots:
+            return count
+        if merged:
+            buffers[-1] += merged
+        while rest:
+            buffers.append(min(page, rest))
+            rest -= buffers[-1]
+    return len(writes)
+
+
+def pipe_frames_fit(frame_bytes, facts):
+    """How many writes of frame_bytes each complete in an empty, unread pipe."""
+    return pipe_accepts([frame_bytes] * (facts["capacity"] // frame_bytes + 1), facts)
+
+
+def pipe_probe(writes, capacity=None):
+    """Observe how many of the leading writes complete in full in a fresh pipe that nobody
+    reads. Each is one nonblocking write(2) of that many bytes; the first that is refused or
+    only partly written ends the count. On Linux the probe pipe first gets the stated
+    capacity where it differs; the result reports the capacity it actually had."""
+    read_end, write_end = os.pipe()
+    try:
+        os.set_blocking(write_end, False)
+        observed = None
+        if sys.platform.startswith("linux"):
+            import fcntl
+            if capacity is not None and fcntl.fcntl(write_end, LINUX_F_GETPIPE_SZ) != capacity:
+                try:
+                    fcntl.fcntl(write_end, LINUX_F_SETPIPE_SZ, capacity)
+                except OSError:
+                    pass  # the reported capacity shows the difference
+            observed = fcntl.fcntl(write_end, LINUX_F_GETPIPE_SZ)
+        for count, size in enumerate(writes):
+            try:
+                if os.write(write_end, b"\0" * size) != size:
+                    return {"accepted": count, "capacity": observed}
+            except BlockingIOError:
+                return {"accepted": count, "capacity": observed}
+        return {"accepted": len(writes), "capacity": observed}
+    finally:
+        os.close(read_end)
+        os.close(write_end)
 
 
 def release_fault_pauses(directory, observe):
@@ -5056,17 +5206,49 @@ class Driver:
         self.eq(label + ".reply-notices", data.get("notices"), [{"type": "reminder", "sent": "not_sent"}])
         self.control("notice-not-sent", data.get("notices") == [{"type": "reminder", "sent": "not_sent"}])
 
+    def pipe_filled(self, f, label):
+        """The harness's single fill and its probe witness. Fresh pipes of the same capacity
+        accepted exactly the frames the platform's packing rule (pipe_accepts) predicted, one
+        more was refused, and the outer driver's next frame, where given, was refused after
+        them. Without that agreement the case cannot reach the blocked write it intends."""
+        filled = [e for e in self.harness_events(f) if e["event"] == "seq-filled"]
+        self.require(label + ".filled", len(filled) == 1, filled)
+        fill = filled[0]
+        facts, count, probe = fill["facts"], fill["count"], fill["probe"]
+        self.eq(label + ".pipe-rule-count", count, pipe_frames_fit(fill["frame_bytes"], facts))
+        observed = {"frames": probe["frames"]["accepted"], "next": (probe.get("next") or {}).get("accepted"),
+                    "probe_capacity": probe["frames"]["capacity"]}
+        expected = {"frames": count,
+                    "next": None if fill["next_bytes"] is None
+                    else pipe_accepts([fill["frame_bytes"]] * count + [fill["next_bytes"]], facts),
+                    "probe_capacity": facts["capacity"] if facts["page_size"] is not None else None}
+        self.eq(label + ".pipe-probe", observed, expected)
+        return fill
+
+    def unread_input(self, f, label):
+        """The lengths and contents of the captured input frames after those the harness
+        read, in order. The harness's reads must be a prefix of the capture."""
+        read = b"".join(bytes.fromhex(e["raw_hex"]) for e in self.harness_events(f) if e["event"] == "input")
+        stream = self.captured_channel(f, "input")
+        self.require(label + ".read-prefix", stream.startswith(read),
+                     {"read_bytes": len(read), "captured_bytes": len(stream)})
+        pending = stream[len(read):]
+        return [len(raw) + 1 for raw in pending.split(b"\n")[:-1]], input_frames(pending)
+
     def notice_write_incomplete(self):
         """The harness stops reading its input, then exposes as many compaction boundaries as
         their pinned notices fit in the input pipe, then ends a turn. The reminder is claimed
         when its frame no longer fits, so no write of it can complete: a complete capture is
         listed unknown, a frame never captured not_sent (CONTRACT, accounting record). The
-        unread bytes before it, from the capture, show it could not fit. This assumes no other
-        holder of the pipe's read side reads the harness's input."""
+        unread frames before it, from the capture and packed by the platform's rule, show it
+        could not fit. This assumes no other holder of the pipe's read side reads the
+        harness's input. The harness then hangs: the supervisor stops it at the deadline,
+        so the failed write, first observed after the deadline, is the deadline (CONTRACT,
+        wire and process); this audit has starts left."""
         timeout = 12
-        frame = compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
-                         "message": {"role": "user", "content": COMPACTED}}) + b"\n"
-        steps = [{"op": "record"}, {"op": "stop_reading"}, {"op": "fill_input", "frame_bytes": len(frame)},
+        frame = user_frame(COMPACTED)
+        steps = [{"op": "record"}, {"op": "stop_reading"},
+                 {"op": "fill_input", "frame_bytes": len(frame), "next_bytes": len(user_frame(REMINDER))},
                  {"op": "result", "is_error": False, "checkpoint": 0}, {"op": "marker", "name": "result-emitted"},
                  {"op": "hang"}]
         f = self.sequence_fixture("notice-write-incomplete", steps, timeout=timeout)
@@ -5076,6 +5258,7 @@ class Driver:
         self.groups_absent(f)
         stopped = [e for e in self.harness_events(f) if e["event"] == "seq-stopped-reading"]
         self.require(label + ".stopped-reading", len(stopped) == 1 and not stopped[0]["reader_alive"], stopped)
+        fill = self.pipe_filled(f, label)
         self.require(label + ".result-emitted", (f["witness"] / "result-emitted").exists(),
                      "the harness could not emit its result; its output was not read")
         claims = self.notice_records(f)
@@ -5083,20 +5266,15 @@ class Driver:
                      "no reminder claim while input was blocked; the incomplete-write path was not exercised")
         captured = self.captured_reminder(f)
         if captured:
-            # A write can be incomplete only if the unread input before the reminder exceeds
-            # the pipe's capacity: Linux reports it; 65,536 bytes is the macOS pipe bound.
-            stream = self.captured_channel(f, "input")
-            frame = compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
-                             "message": {"role": "user", "content": REMINDER}}) + b"\n"
-            offsets = [i for i, content in enumerate(input_frames(stream)) if content == REMINDER]
-            before = sum(len(line) + 1 for line in stream.split(b"\n")[:offsets[0]]) if offsets else 0
-            read = sum(len(bytes.fromhex(e["raw_hex"])) for e in self.harness_events(f) if e["event"] == "input")
-            filled = [e for e in self.harness_events(f) if e["event"] == "seq-filled"]
-            capacity = filled[0]["capacity"] if filled else 65536
-            self.boundary(f, "input-pipe", unread_before_reminder=before - read, capacity=capacity,
-                          reminder_frame_bytes=len(frame))
-            self.require(label + ".input-pipe-full", before - read <= capacity < before - read + len(frame),
-                         {"unread_before_reminder": before - read, "capacity": capacity, "reminder": len(frame)})
+            # A write can be incomplete only if the unread input before the reminder leaves
+            # no room for it, by the platform's packing: pages on Linux, bytes on macOS.
+            lengths, contents = self.unread_input(f, label)
+            at = contents.index(REMINDER)
+            accepted = pipe_accepts(lengths[:at + 1], fill["facts"])
+            detail = {"frames_before_reminder": at, "unread_before_reminder": sum(lengths[:at]),
+                      "reminder_frame_bytes": lengths[at], "accepted": accepted, "facts": fill["facts"]}
+            self.boundary(f, "input-pipe", **detail)
+            self.require(label + ".input-pipe-full", accepted == at, detail)
         expected = "unknown" if captured else "not_sent"
         if not captured:
             self.note(label + ".path", "the reminder frame was never captured; not_sent applies and the "
@@ -5104,7 +5282,127 @@ class Driver:
         self.notice_expectations(f, 1, label, types=["reminder"], sent=[expected], timeout=timeout)
         self.eq(label + ".reply-notices", (reply or {}).get("data", {}).get("notices"),
                 [{"type": "reminder", "sent": expected}])
+        self.deadline_ending(f, label, reply, placements=3)
         return expected
+
+    def deadline_ending(self, f, label, reply, *, placements):
+        """The deadline decided the placement: stopping was observed once the deadline had
+        passed; with starts left it is interrupted with placement_deadline and authoring stays
+        open, and on the last allowed placement it is limit_reached (CONTRACT, wire and process;
+        INTERFACE 1.6). Returns the recorded (ending, cause)."""
+        stop = strict_loads((self.audit_path(f) / "runs" / "1" / "runtime-stop.json").read_bytes())
+        self.require(label + ".stopped-after-deadline", stop.get("elapsed_ms", -1) >= stop.get("deadline_ms", 0)
+                     and stop.get("groups_gone") is True, stop)
+        last = placements == 1
+        expected = ("limit_reached", None) if last else ("interrupted", "placement_deadline")
+        data = (reply or {}).get("data", {})
+        self.eq(label + ".deadline-ending", (data.get("ending"), data.get("cause")), expected)
+        _, ended = self.run_ended_record(f, 1)
+        body = (ended or {}).get("body", {})
+        self.eq(label + ".deadline-run_ended", (body.get("ending"), body.get("cause")), expected)
+        self.eq(label + ".deadline-authoring", data.get("headline", {}).get("authoring"),
+                {"state": "ended", "ended_by": "limit"} if last else {"state": "open", "ended_by": None})
+        status = self.cmd(label + ".deadline-status", ["status", f["reference"]])
+        sdata = status.get("data", {})
+        self.eq(label + ".deadline-status", (sdata.get("condition"), (sdata.get("runs", {}).get("last") or {}).get("cause"),
+                                             self.next_tools(status)),
+                (expected[0], expected[1], ["close"] if last else ["close", "run"]))
+        return body.get("ending"), body.get("cause")
+
+    # -- A blocked write to the harness and the deadline (CONTRACT, wire and process) ----------
+
+    def blocked_notice_captured(self, f):
+        """Whether the input capture already holds every exposed notice, including the one
+        whose write cannot complete. Read while run is live: an incomplete record is absent."""
+        try:
+            lines = (f["witness"] / "harness.jsonl").read_bytes().split(b"\n")[:-1]
+            exposed = [transport_loads(line)["exposed"] for line in lines if b'"seq-filled"' in line]
+            return (len(exposed) == 1
+                    and input_frames(self.captured_channel(f, "input")).count(COMPACTED) >= exposed[0])
+        except (OSError, ValueError, KeyError):
+            return False
+
+    def blocked_write(self, label, *, placements, timeout, exit_early=False):
+        """The harness stops reading, then exposes one compaction boundary more than their
+        pinned notices fit in its input pipe by the platform's packing, so Stewart's write of
+        the last notice cannot complete while the harness lives. The harness then hangs until
+        the supervisor stops its group at the deadline or, with exit_early, exits as soon as
+        the driver has seen that notice captured, long before the deadline. No result is
+        emitted, so the reminder is never due. Returns the fixture, run reply and run exit."""
+        frame = user_frame(COMPACTED)
+        tail = ([{"op": "wait_file", "name": "release-exit", "timeout": timeout}, {"op": "exit", "code": 7}]
+                if exit_early else [{"op": "hang"}])
+        steps = [{"op": "record"}, {"op": "stop_reading"},
+                 {"op": "fill_input", "frame_bytes": len(frame), "beyond": 1}] + tail
+        f = self.sequence_fixture(label, steps, timeout=timeout, placements=placements)
+        self.accept(f)
+        blocked = None
+        run = self.spawn(f, "run", ["run", f["reference"]])
+        try:
+            if exit_early:
+                blocked = self.await_fact(lambda: self.blocked_notice_captured(f), run["process"], timeout)
+                self.boundary(f, "release-exit", blocked_notice_captured=blocked, owner_exit=run["process"].poll())
+                publish_witness(f["witness"] / "release-exit", compact({"blocked_notice_captured": blocked}) + b"\n")
+            reply = self.collect(run, timeout + 30)
+        finally:
+            self.stop_leftovers(run)
+        self.groups_absent(f)
+        if exit_early:
+            self.require(label + ".blocked-before-exit", blocked,
+                         "the last notice was not captured before the harness exited; no blocked write was established")
+        events = self.harness_events(f)
+        stopped = [e for e in events if e["event"] == "seq-stopped-reading"]
+        self.require(label + ".stopped-reading", len(stopped) == 1 and not stopped[0]["reader_alive"], stopped)
+        fill = self.pipe_filled(f, label)
+        # Every exposed notice was captured and none was read. The platform's packing admits
+        # all but the last, so its write could not complete while the harness lived. A
+        # near-limit notice, due in the deadline's last fifth, could only queue behind it.
+        lengths, contents = self.unread_input(f, label)
+        exposed = fill["exposed"]
+        self.eq(label + ".unread-input", (contents[:exposed], [input_kind(c) for c in contents[exposed:]]),
+                ([COMPACTED] * exposed, ["near_limit"] * (len(contents) - exposed)))
+        accepted = pipe_accepts(lengths[:exposed], fill["facts"])
+        detail = {"unread_notices": exposed, "accepted": accepted, "count": fill["count"], "facts": fill["facts"]}
+        self.boundary(f, "input-pipe", **detail)
+        self.require(label + ".last-write-blocked", accepted == exposed - 1 == fill["count"], detail)
+        self.eq(label + ".harness-end", [e["event"] for e in events if e["event"] in
+                                         ("seq-hang", "deliberate-interruption", "fatal")],
+                ["deliberate-interruption"] if exit_early else ["seq-hang"])
+        notices = (reply or {}).get("data", {}).get("notices")
+        self.check(label + ".nothing-sent-after-block", isinstance(notices, list) and all(
+            n.get("type") == "near_limit" and n.get("sent") != "sent" for n in notices), notices)
+        return f, reply, run["process"].returncode
+
+    def runtime_blocked_write(self):
+        """CONTRACT, wire and process: the supervisor stops the harness group at the deadline
+        on its own clock, so a failed write to the harness that the owner first observes once
+        the deadline has passed is the deadline, not a harness error."""
+        # Firing control: the write fails only when the deadline's stop closes the pipe.
+        f, reply, code = self.blocked_write("blocked-write-deadline", placements=3, timeout=10)
+        decided = self.deadline_ending(f, f["label"], reply, placements=3)
+        self.eq(f["label"] + ".exit", code, 5)
+        # Invariance: on the last allowed placement the same deadline ends it limit_reached.
+        f, reply, code = self.blocked_write("blocked-write-deadline-last", placements=1, timeout=10)
+        last = self.deadline_ending(f, f["label"], reply, placements=1)
+        self.eq(f["label"] + ".exit", code, 0)
+        # Differing: the harness exits while the same write is blocked, long before the
+        # deadline. Stopping observed before the deadline means the owner observed the exit or
+        # failed write first, and that is a harness error.
+        f, reply, code = self.blocked_write("blocked-write-exit", placements=3, timeout=30, exit_early=True)
+        label = f["label"]
+        stop = strict_loads((self.audit_path(f) / "runs" / "1" / "runtime-stop.json").read_bytes())
+        self.require(label + ".stopped-before-deadline", stop.get("elapsed_ms", 0) < stop.get("deadline_ms", 0)
+                     and stop.get("groups_gone") is True, stop)
+        data = (reply or {}).get("data", {})
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause"), code), ("interrupted", "protocol_anomaly", 5))
+        _, ended = self.run_ended_record(f, 1)
+        early = ((ended or {}).get("body", {}).get("ending"), (ended or {}).get("body", {}).get("cause"))
+        self.eq(label + ".run_ended", early, ("interrupted", "protocol_anomaly"))
+        self.eq(label + ".authoring-open", data.get("headline", {}).get("authoring"), {"state": "open", "ended_by": None})
+        self.control("blocked-write-after-deadline-is-deadline",
+                     decided == ("interrupted", "placement_deadline") and last == ("limit_reached", None)
+                     and early == ("interrupted", "protocol_anomaly"),
+                     {"after_deadline": decided, "after_deadline_last_placement": last, "before_deadline": early})
 
     # -- Result rules (CONTRACT, runtime texts) -------------------------------------------------
 
@@ -5658,16 +5956,21 @@ def synthetic_harness(scenario_path, environment_path, argv):
                     for serial in range(step["serial"], step["serial"] + step.get("count", 1)):
                         compacted(serial)
                 elif op == "fill_input":
-                    # Expose as many boundaries as their pinned notices fit in the unread
-                    # input pipe: Linux reports its capacity; 65,536 bytes is the macOS bound.
-                    capacity = 65536
-                    if sys.platform.startswith("linux"):
-                        import fcntl
-                        capacity = fcntl.fcntl(0, 1032)  # F_GETPIPE_SZ
-                    count = capacity // step["frame_bytes"]
-                    for serial in range(1, count + 1):
+                    # Expose as many boundaries as their pinned notices fit in the unread input
+                    # pipe, packed by the platform's rule (pipe_accepts), then `beyond` more.
+                    # Probes of fresh pipes with the same capacity witness that rule: the
+                    # fitting frames plus one, and the outer driver's next frame after them.
+                    facts = input_pipe_facts(0)
+                    size = step["frame_bytes"]
+                    count = pipe_frames_fit(size, facts)
+                    probe = {"frames": pipe_probe([size] * (count + 1), facts["capacity"])}
+                    if step.get("next_bytes"):
+                        probe["next"] = pipe_probe([size] * count + [step["next_bytes"]], facts["capacity"])
+                    exposed = count + step.get("beyond", 0)
+                    for serial in range(1, exposed + 1):
                         compacted(serial)
-                    event("seq-filled", count=count, capacity=capacity)
+                    event("seq-filled", count=count, exposed=exposed, capacity=facts["capacity"],
+                          facts=facts, frame_bytes=size, next_bytes=step.get("next_bytes"), probe=probe)
                 elif op == "call_begin":
                     value = frame("tools/call", {"name": step["tool"], "arguments": step.get("arguments", {})})
                     send_frames([value])
@@ -5710,7 +6013,7 @@ def synthetic_harness(scenario_path, environment_path, argv):
                     capacity = None
                     if sys.platform.startswith("linux"):
                         import fcntl
-                        capacity = fcntl.fcntl(0, 1032)  # F_GETPIPE_SZ
+                        capacity = fcntl.fcntl(0, LINUX_F_GETPIPE_SZ)
                     event("seq-stopped-reading", readers=pipe_readers(0), parent=os.getppid(),
                           reader_alive=input_thread.is_alive(), pipe_capacity=capacity)
                 elif op == "submit":
@@ -6961,7 +7264,7 @@ for raw in sys.stdin.buffer:
                 scenario["steps"] = [{"op": "wait_until", "key": "reached"}, {"op": "resist_term"},
                                      {"op": "assistant_tool", "name": "record_account"}, {"op": "stop_reading"},
                                      {"op": "compact", "serial": 1, "count": 3},
-                                     {"op": "fill_input", "frame_bytes": 30000},
+                                     {"op": "fill_input", "frame_bytes": 30000, "next_bytes": 4096, "beyond": 1},
                                      {"op": "marker", "name": "stopped-reading"}, {"op": "exit", "code": 7}]
             (root / "scenario.json").write_bytes(compact(scenario))
             (root / "peer.py").write_text("publication=%r\n" % (mode == "submit-publication") + mode_peer)
@@ -7154,10 +7457,17 @@ for raw in sys.stdin.buffer:
                 check("mode.sequence-controls.stopped-reading", len(stopped) == 1 and not stopped[0]["reader_alive"]
                       and stopped[0]["readers"] in (None, []) and (root / "stopped-reading").exists())
                 filled = [e for e in events if e["event"] == "seq-filled"]
-                check("mode.sequence-controls.fill", len(filled) == 1 and filled[0]["count"] ==
-                      filled[0]["capacity"] // 30000 and filled[0]["capacity"] >= 4096)
+                fill = filled[0] if len(filled) == 1 else {}
+                facts = fill.get("facts") or {}
+                check("mode.sequence-controls.fill", bool(fill) and facts.get("capacity", 0) >= 4096
+                      and fill["count"] == pipe_frames_fit(30000, facts) and fill["exposed"] == fill["count"] + 1)
+                # The harness's probes agree with the packing rule; 4,096 more bytes fit after them.
+                check("mode.sequence-controls.fill-probe", bool(fill)
+                      and fill["probe"]["frames"]["accepted"] == fill["count"]
+                      and fill["probe"]["next"]["accepted"] == pipe_accepts([30000] * fill["count"] + [4096], facts)
+                      == fill["count"] + 1)
                 check("mode.sequence-controls.compaction-count", kinds.count(("system", "compact_boundary"))
-                      == 3 + (filled[0]["count"] if filled else 0))
+                      == 3 + fill.get("exposed", 0))
     with tempfile.TemporaryDirectory(prefix="stewart-synthetic-protocol-") as directory:
         root = Path(directory)
         scenario = {"mode": "record-then-exit", "witness": str(root), "marker": str(root / "started"),
