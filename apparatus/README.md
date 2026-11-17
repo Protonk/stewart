@@ -23,8 +23,8 @@ The [standalone runtime driver](driver/CLAUDE-CODE.md) checks the gated Claude
 Code adapter against a synthetic executable. It has its own self-test, case
 list and native runtime command, and invokes no real harness or provider.
 `acceptance.sh` builds two gated binaries, checks their markers and runs these
-runtime cases on both Linux architectures. The separate [probe apparatus](claude-code/README.md)
-retains the closed native feasibility comparison and an offline protocol prototype.
+runtime cases on both Linux architectures. The separate [profile apparatus](claude-code/README.md)
+prepares installation evidence and runtime profiles.
 
 ## Running the scripts
 

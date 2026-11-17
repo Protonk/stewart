@@ -155,7 +155,3 @@ is denied. Prepare the command and ask the user to run it with `!`.
 Run Python with an explicit interpreter and isolated startup (`-I`, plus `-B`
 where bytecode must stay unwritten). Isolated mode ignores `PYTHONPATH`, so
 documented commands do not set it.
-
-For user-relayed consultation, [riker/RIKER.md](riker/RIKER.md) defines “ask Riker
-for help.” Consultation is optional; relayed advice is not automatically the
-user's endorsement.
