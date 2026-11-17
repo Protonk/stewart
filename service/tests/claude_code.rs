@@ -1061,3 +1061,316 @@ fn a_linked_but_unconfirmed_reminder_is_listed_by_its_placement_as_not_sent() {
         }
     }
 }
+
+/// A `run` of this binary under `env`, with its output piped, started in
+/// the background.
+#[cfg(feature = "fault-injection")]
+fn spawned(e: &common::Env, args: &[&str], vars: &[(&str, &str)]) -> std::process::Child {
+    let mut c = std::process::Command::new(common::bin());
+    c.args(args)
+        .current_dir(&e.cwd)
+        .env_remove("STEWART_ARCHIVE")
+        .env_remove("STEWART_TEST_FAULT")
+        .env_remove("STEWART_TEST_SABOTAGE");
+    for (k, v) in vars {
+        c.env(k, v);
+    }
+    c.stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap()
+}
+
+/// Wait up to 30 seconds for `ready`.
+#[cfg(feature = "fault-injection")]
+fn until(ready: impl Fn() -> bool) -> bool {
+    let start = Instant::now();
+    while start.elapsed() < Duration::from_secs(30) {
+        if ready() {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    false
+}
+
+/// The harness runtime reserves its start as the Messages runtime does
+/// (INTERFACE 5.7). A `run_started` that was not linked started nothing:
+/// `failed` `record_failed`, `effects.run` `not_started`, and the slot stays
+/// free. One linked without confirmed durability may stand and so consumes
+/// its slot: `failed` `record_failed`, `effects.run` `unknown`, no harness
+/// launched, and the next run reconciles that placement as gone before
+/// using the second slot.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_harness_start_reservation_reports_what_it_linked() {
+    let p = commissioned(RECORDING);
+    let reference = p.reference.as_str();
+    let launched = || std::path::Path::new(&p.env.path("home/observed")).exists();
+    let faulted = |fault: &str| {
+        p.env.run_env(
+            &["run", reference, "--json"],
+            &[("STEWART_TEST_FAULT", fault)],
+        )
+    };
+    for (fault, run, linked, operation) in [
+        (
+            "log.publish:run_started=eio",
+            "not_started",
+            false,
+            "link run_started record",
+        ),
+        (
+            "log.dirsync:run_started=eio",
+            "unknown",
+            true,
+            "fsync log directory",
+        ),
+    ] {
+        let out = faulted(fault);
+        let reply = out.json();
+        assert_eq!(out.code, Some(4), "{fault}: {}{}", out.text(), out.stderr);
+        assert_eq!(
+            (
+                common::s(&reply, &["outcome"]),
+                common::s(&reply, &["reason"])
+            ),
+            ("failed", "record_failed"),
+            "{fault}: {}",
+            out.text()
+        );
+        for (effect, value) in [
+            ("run", run),
+            ("answer", "unchanged"),
+            ("seal", "none"),
+            ("delivery", "none"),
+            ("diagnostic", "durable"),
+        ] {
+            assert_eq!(common::s(&reply, &["effects", effect]), value, "{fault}");
+        }
+        assert_eq!(
+            common::s(&reply, &["causes", "0", "operation"]),
+            operation,
+            "{fault}"
+        );
+        let kinds = p.env.log_kinds(reference);
+        if linked {
+            assert_eq!(
+                common::s(&reply, &["message"]),
+                "run_started was linked as log/5.json but its durability could not be confirmed; the run did not continue."
+            );
+            assert_eq!(common::strs(&reply, &["next", "0", "argv"])[1], "status");
+            assert_eq!(kinds[4..], ["run_started"], "{fault}");
+        } else {
+            assert_eq!(
+                common::s(&reply, &["message"]),
+                "run_started could not be recorded, so no placement started."
+            );
+            assert_eq!(kinds.len(), 4, "{fault}: {kinds:?}");
+        }
+        assert!(!launched(), "{fault}: no harness is launched");
+        let dir = format!("{}/runs/1", p.env.audit_dir(reference));
+        assert!(!std::path::Path::new(&dir).exists(), "{fault}");
+    }
+    // The linked placement used the first slot; the next run records it as
+    // gone and uses the second.
+    let human = p.env.run(&["run", reference]).text();
+    assert!(human.contains("2 used of 2; 0 remain."), "{human}");
+    let kinds = p.env.log_kinds(reference);
+    assert_eq!(
+        kinds[4..],
+        ["run_started", "run_ended", "run_started", "run_ended"]
+    );
+    let gone = p.env.log_record(reference, 6);
+    assert_eq!(common::at(&gone, &["body", "run"]).as_u64(), Some(1));
+    assert_eq!(common::s(&gone, &["body", "cause"]), "process_gone");
+    assert_eq!(common::s(&gone, &["body", "recorded_by"]), "run");
+    assert!(launched());
+}
+
+/// A close linked while the harness runtime's reservation waits to link
+/// wins the log slot, and run refuses `reference_closed` as it does once
+/// that close is settled (INTERFACE 5.7); nothing starts and the close
+/// completes. Control: the same pause released without a close reserves
+/// the start and launches the harness.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_close_that_wins_the_harness_start_reservation_is_refused_reference_closed() {
+    for close in [false, true] {
+        let p = commissioned(RECORDING);
+        let reference = p.reference.as_str();
+        let faults = p.env.path("faults");
+        std::fs::create_dir(&faults).unwrap();
+        let run = spawned(
+            &p.env,
+            &["run", reference, "--json"],
+            &[
+                ("STEWART_TEST_FAULT", "log.publish:run_started=pause"),
+                ("STEWART_TEST_FAULT_DIR", &faults),
+            ],
+        );
+        let paused = format!("{faults}/log.publish:run_started.paused");
+        assert!(until(|| std::path::Path::new(&paused).exists()));
+        let closing = close.then(|| {
+            let child = spawned(&p.env, &["close", reference, "--json"], &[]);
+            assert!(until(|| p
+                .env
+                .log_kinds(reference)
+                .iter()
+                .any(|k| k == "close_requested")));
+            child
+        });
+        std::fs::write(format!("{faults}/log.publish:run_started.go"), b"").unwrap();
+        let out = run.wait_with_output().unwrap();
+        let reply = json::parse(&out.stdout).unwrap();
+        let launched = std::path::Path::new(&p.env.path("home/observed")).exists();
+        let kinds = p.env.log_kinds(reference);
+        if !close {
+            assert_eq!(out.status.code(), Some(5), "control");
+            assert_eq!(common::s(&reply, &["data", "ending"]), "interrupted");
+            assert_eq!(kinds[4..], ["run_started", "run_ended"], "control");
+            assert!(launched, "control");
+            continue;
+        }
+        assert_eq!(
+            out.status.code(),
+            Some(3),
+            "{}{}",
+            String::from_utf8_lossy(&out.stdout),
+            String::from_utf8_lossy(&out.stderr)
+        );
+        assert_eq!(
+            (
+                common::s(&reply, &["outcome"]),
+                common::s(&reply, &["reason"]),
+                common::s(&reply, &["message"]),
+                common::s(&reply, &["effects", "run"]),
+            ),
+            (
+                "refused",
+                "reference_closed",
+                "Close was requested before the run could start.",
+                "not_started"
+            )
+        );
+        assert!(!launched);
+        let closed = closing.unwrap().wait_with_output().unwrap();
+        assert_eq!(
+            closed.status.code(),
+            Some(0),
+            "{}",
+            String::from_utf8_lossy(&closed.stdout)
+        );
+        let kinds = p.env.log_kinds(reference);
+        assert_eq!(kinds[4], "close_requested");
+        assert!(!kinds.iter().any(|k| k == "run_started"), "{kinds:?}");
+        // Once the close is settled, the state check refuses the same way.
+        let settled = p.env.run(&["run", reference, "--json"]);
+        assert_eq!(settled.code, Some(3));
+        assert_eq!(common::s(&settled.json(), &["reason"]), "reference_closed");
+    }
+}
+
+/// A synthetic harness that passes the authentication check, reads the
+/// question and starts its session, then, through Stewart's MCP relay at
+/// `writer`, initializes and makes two tool calls: `list`, which completes,
+/// and `nope`, which is not a tool of the arrangement. Once both replies
+/// have arrived it closes its side of the relay, which stays to forward
+/// replies, and ends two turns as `two_turns` does.
+fn two_tool_calls(writer: &str) -> String {
+    let result = |turns: u64| {
+        format!(
+            r#"{{"type":"result","session_id":"s1","is_error":false,"num_turns":{turns},"usage":{{"input_tokens":{turns},"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":{turns}}}}}"#
+        )
+    };
+    format!(
+        concat!(
+            "#!/bin/sh\n",
+            "if [ \"$1\" = auth ]; then\n",
+            "  printf '{{\"loggedIn\":true,\"authMethod\":\"claude.ai\",\"configDirectory\":\"%s\"}}\\n' \"$CLAUDE_CONFIG_DIR\"\n",
+            "  exit 0\n",
+            "fi\n",
+            "IFS= read -r question\n",
+            "printf '%s\\n' '{init}'\n",
+            "sleep 0.5\n",
+            "{{\n",
+            "  printf '%s\\n' '{{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{{\"tools\":{{}}}},\"clientInfo\":{{\"name\":\"fixture\",\"version\":\"1\"}}}}}}'\n",
+            "  printf '%s\\n' '{{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}}'\n",
+            "  printf '%s\\n' '{{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{{\"name\":\"list\",\"arguments\":{{}}}}}}'\n",
+            "  printf '%s\\n' '{{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{{\"name\":\"nope\",\"arguments\":{{}}}}}}'\n",
+            "  while ! grep -q '\"id\":3,' \"$HOME/mcp-out\" 2>/dev/null; do sleep 0.05; done\n",
+            "}} | '{writer}' __stewart-cc-relay m > \"$HOME/mcp-out\" &\n",
+            "while ! grep -q '\"id\":3,' \"$HOME/mcp-out\" 2>/dev/null; do sleep 0.05; done\n",
+            "printf '%s\\n' '{first}'\n",
+            "IFS= read -r reminder || exit 0\n",
+            "printf '%s\\n' '{second}'\n",
+            "while :; do sleep 1; done\n",
+        ),
+        init = init_event(),
+        writer = writer,
+        first = result(1),
+        second = result(2),
+    )
+}
+
+/// The result records a harness placement writes for its MCP calls, and the
+/// replies it sends, byte for byte: request and attempt 1, the call number
+/// as the block, an `mcp-<call>` invocation ID, and the reply's content and
+/// error flag as the record states them.
+#[test]
+fn harness_tool_calls_keep_their_result_records_and_replies() {
+    let p = commissioned(&two_tool_calls(common::bin()));
+    let reply = p.env.run(&["run", &p.reference, "--json"]).json();
+    let kinds = p.env.log_kinds(&p.reference);
+    let ended = p.env.log_record(&p.reference, kinds.len());
+    // A refused Unix socket, as in a sandbox, ends the placement early;
+    // the recorded message says so.
+    assert_eq!(
+        common::s(&reply, &["data", "ending"]),
+        "ended_unsubmitted",
+        "{}",
+        common::s(&ended, &["body", "message"])
+    );
+    let dir = format!("{}/runs/1", p.env.audit_dir(&p.reference));
+    let body = |name: &str| {
+        let raw = std::fs::read(format!("{dir}/{name}")).unwrap();
+        let record = json::parse(&raw).unwrap();
+        let body = common::at(&record, &["body"]);
+        String::from_utf8(raw[body.start..body.end].to_vec()).unwrap()
+    };
+    let results = [body("result-1.json"), body("result-2.json")];
+    let mut chunks: Vec<(u64, String)> = std::fs::read_dir(&dir)
+        .unwrap()
+        .filter_map(|d| {
+            let name = d.ok()?.file_name().into_string().ok()?;
+            let n = name
+                .strip_prefix("runtime-")?
+                .strip_suffix("-mcp-out.bin")?;
+            Some((n.parse().ok()?, name))
+        })
+        .collect();
+    chunks.sort();
+    let sent: Vec<u8> = chunks
+        .iter()
+        .flat_map(|(_, name)| std::fs::read(format!("{dir}/{name}")).unwrap())
+        .collect();
+    let sent = String::from_utf8(sent).unwrap();
+    assert_eq!(results[0], RESULT_1);
+    assert_eq!(results[1], RESULT_2);
+    assert_eq!(sent, MCP_OUT);
+}
+
+/// The result records of `harness_tool_calls_keep_their_result_records_and_replies`.
+const RESULT_1: &str = r#"{"call":1,"request":1,"attempt":1,"block":1,"call_file":"call-1.json","call_bytes":87,"call_sha256":"fcd3575cdfbfe38151c1a3674efbd21aa79c6242cc919394a4ceca05e9319597","tool_use_id":"mcp-1","tool":"list","input_sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","replay_of":null,"outcome":"completed","reason":null,"revision":0,"log_record":null,"is_error":false,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"list\",\"outcome\":\"completed\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"materials\":[{\"source\":\"materials/note.txt\",\"size\":8,\"lines\":1}],\"directories\":[\"materials\"],\"returned\":1,\"total\":1,\"complete\":true}}"}]}"#;
+const RESULT_2: &str = r#"{"call":2,"request":1,"attempt":1,"block":2,"call_file":"call-2.json","call_bytes":87,"call_sha256":"c0c0c0affcabc6a834cf5eb553c28925318a69a0d5ec6e2a09accf1e75272af3","tool_use_id":"mcp-2","tool":"nope","input_sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","replay_of":null,"outcome":"refused","reason":"tool_unknown","revision":0,"log_record":null,"is_error":true,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"nope\",\"outcome\":\"refused\",\"reason\":\"tool_unknown\",\"message\":\"No tool is named \\\"nope\\\". The tools are: list, read, search, record_account, record_observation, record_limit, record_artifact, replace, delete, what_am_i_working_with, prepare, submit.\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"tool\":\"nope\",\"tools\":[\"list\",\"read\",\"search\",\"record_account\",\"record_observation\",\"record_limit\",\"record_artifact\",\"replace\",\"delete\",\"what_am_i_working_with\",\"prepare\",\"submit\"]}}"}]}"#;
+/// What the harness placement sent on its MCP connection: the
+/// initialization result and the two tool replies.
+const MCP_OUT: &str = concat!(
+    r#"{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-11-25","capabilities":{"tools":{}},"serverInfo":{"name":"stewart","version":"1"}}}"#,
+    "\n",
+    r#"{"jsonrpc":"2.0","id":2,"result":{"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"list\",\"outcome\":\"completed\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"materials\":[{\"source\":\"materials/note.txt\",\"size\":8,\"lines\":1}],\"directories\":[\"materials\"],\"returned\":1,\"total\":1,\"complete\":true}}"}],"isError":false}}"#,
+    "\n",
+    r#"{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"nope\",\"outcome\":\"refused\",\"reason\":\"tool_unknown\",\"message\":\"No tool is named \\\"nope\\\". The tools are: list, read, search, record_account, record_observation, record_limit, record_artifact, replace, delete, what_am_i_working_with, prepare, submit.\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"tool\":\"nope\",\"tools\":[\"list\",\"read\",\"search\",\"record_account\",\"record_observation\",\"record_limit\",\"record_artifact\",\"replace\",\"delete\",\"what_am_i_working_with\",\"prepare\",\"submit\"]}}"}],"isError":true}}"#,
+    "\n",
+);

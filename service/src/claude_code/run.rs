@@ -20,7 +20,7 @@ use crate::usage::Usage;
 use crate::{
     answer, bodies, delivery,
     json::{self, J},
-    log, runs, util, world,
+    log, runs, world,
 };
 use std::collections::{BTreeMap, VecDeque};
 use std::io::{Read, Write};
@@ -148,32 +148,18 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
             format!("Could not prepare stop handling: {e}"),
         );
     }
-    let published = log::publish(&audit, "run_started", |s| {
-        if let Some(f) = crate::ops::run::state_refusal(&audit, s) {
-            return Err(f);
-        }
-        if s.open_placement().is_some() || s.next_run() != run {
-            return Err(Fail::refused("run_held", "Another placement started."));
-        }
-        if world.arrangement.limits.exhausted(&s.recorded_usage()) {
-            return Err(Fail::refused(
-                "authoring_ended",
-                "No placement starts remain.",
-            ));
-        }
-        Ok(started.to_j())
+    // The slot is reserved as on the Messages runtime; the commissioned
+    // placement allowance is this runtime's further start condition.
+    let reserved = crate::ops::run::reserve(&audit, &state, &started, |s| {
+        world
+            .arrangement
+            .limits
+            .exhausted(&s.recorded_usage())
+            .then(|| Fail::refused("authoring_ended", "No placement starts remain."))
     });
-    let started_n = match published {
-        Ok(p) => p.n,
-        Err(e) => {
-            return reject(
-                "record_failed",
-                format!(
-                    "The start reservation was not confirmed ({}); no harness was launched.",
-                    publication_error(e)
-                ),
-            );
-        }
+    let started_n = match reserved {
+        Ok(n) => n,
+        Err(reply) => return reply,
     };
     let mut ended = Ended {
         ending: Ending::Interrupted(Cause::ProtocolAnomaly),
@@ -192,6 +178,11 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         message: String::new(),
     };
     let mut fidelity_diagnostics = Vec::new();
+    let mut later = Later {
+        run,
+        max_placements: h.selection.limits.max_placements,
+        ..Later::default()
+    };
     match runs::RunDir::create(&audit, run) {
         Err(e) => {
             ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
@@ -212,7 +203,7 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                 record_failed: AtomicBool::new(false),
                 fidelity_diagnostics: Mutex::new(Vec::new()),
             };
-            if let Err(e) = execute(&live, &mut ended) {
+            if let Err(e) = execute(&live, &mut ended, &mut later) {
                 ended.message = e;
             }
             fidelity_diagnostics = live
@@ -220,18 +211,11 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
                 .clone();
-            if live.record_failed.load(Ordering::SeqCst) {
-                ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
+            later.record_failed = live.record_failed.load(Ordering::SeqCst);
+            later.past_deadline = Instant::now() >= deadline;
+            later.fidelity_diagnostic = !fidelity_diagnostics.is_empty();
+            if later.record_failed {
                 ended.usage.harness.as_mut().unwrap().unknown_intervals = 1;
-            } else if Instant::now() >= deadline
-                && matches!(ended.ending, Ending::Interrupted(Cause::ProtocolAnomaly))
-                && fidelity_diagnostics.is_empty()
-            {
-                ended.ending = if run >= h.selection.limits.max_placements {
-                    Ending::LimitReached
-                } else {
-                    Ending::Interrupted(Cause::PlacementDeadline)
-                };
             }
             let groups = accounting::groups_gone(&audit, run);
             ended.usage.harness.as_mut().unwrap().stopped = u64::from(matches!(groups, Ok(true)));
@@ -249,14 +233,14 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                 )
                 .with("groups_gone", matches!(groups, Ok(true)));
             if let Err(e) = dir.dir.write_excl("runtime-stop.json", &stop.bytes()) {
-                ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
+                later.stop_unretained = true;
                 ended.message.push_str(&format!(
                     " Stop observation could not be retained: {}.",
                     e.err
                 ));
             }
             if let Err(e) = checkpoint(&dir, ended.usage.harness.unwrap()) {
-                ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
+                later.stop_unretained = true;
                 ended
                     .message
                     .push_str(&format!(" Usage checkpoint could not be retained: {e}."));
@@ -264,18 +248,19 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         }
     }
     let current = log::read(&audit);
-    if current.seal().is_none() {
-        if current.close_requested().is_some() {
-            ended.ending = Ending::StoppedByClose;
-        } else if flags.signalled.load(Ordering::SeqCst) {
-            ended.ending = Ending::Interrupted(Cause::Signal);
-        }
-    }
+    let sealed_here = current
+        .seal()
+        .filter(|(rec, _)| rec.n > started_n)
+        .map(|(rec, _)| rec.name());
+    later.seal = current.seal().is_some();
+    later.sealed_here = sealed_here.is_some();
+    later.close_requested = current.close_requested().is_some();
+    later.signalled = flags.signalled.load(Ordering::SeqCst);
+    ended.ending = ending(ended.ending, &later);
     ended.entries = current.entries().any(|(_, e)| e.invocation.run == run);
-    if let Some((rec, _)) = current.seal().filter(|(rec, _)| rec.n > started_n) {
+    if let Some(seal) = sealed_here {
         flags.set_sealed();
-        ended.seal = Some(rec.name());
-        ended.ending = Ending::Sealed;
+        ended.seal = Some(seal);
         if ended.usage.harness.unwrap().stopped == 1 {
             if let Some(destination) = crate::ops::run::destination(&current) {
                 ended.delivered = Some(delivery::deliver(
@@ -327,6 +312,100 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         }
     }
     reply
+}
+
+/// What the owner observes after a placement's loop has decided its ending,
+/// in the order it observes them: the shutdown drain, its own write and
+/// clock checks, then the log and the stop flag. A field left at its
+/// default was not observed.
+#[derive(Clone, Copy, Debug, Default)]
+struct Later {
+    /// This placement's number and the commissioned number of placements.
+    run: u64,
+    max_placements: u64,
+    /// The end required by a core call that finished during the shutdown
+    /// drain: damaged answer bytes or a write failure (a damaged log is
+    /// reported apart from the ending).
+    drained_end: Option<answer::End>,
+    /// A changed tool reply was observed, live or during the drain.
+    mismatch: bool,
+    /// A capture or record write of the placement failed.
+    record_failed: bool,
+    /// The deadline had passed when the owner looked after shutdown.
+    past_deadline: bool,
+    /// A reply-fidelity diagnostic was taken, whether or not it was written.
+    fidelity_diagnostic: bool,
+    /// `runtime-stop.json` or the final usage checkpoint was not written.
+    stop_unretained: bool,
+    /// The log, read after shutdown, holds a seal; `sealed_here` when this
+    /// placement published it, after its `run_started`.
+    seal: bool,
+    sealed_here: bool,
+    /// The log, read after shutdown, holds `close_requested`.
+    close_requested: bool,
+    /// A stop signal had been received when the owner looked.
+    signalled: bool,
+}
+
+/// The ending a placement records when its loop decided `decided` and the
+/// owner then observed `later`. Each step replaces the ending reached so far:
+///
+/// 1. a call that finished during the drain and required an end: damaged
+///    answer bytes give `damaged`, a write failure `archive_write_failed`;
+/// 2. a reply mismatch turns `ended_unsubmitted` into `protocol_anomaly`;
+/// 3. a failed capture or record write gives `archive_write_failed`;
+///    otherwise, once the deadline has passed, a `protocol_anomaly` that no
+///    fidelity diagnostic explains is reported as the deadline's ending;
+/// 4. an unwritten stop observation or final usage checkpoint gives
+///    `archive_write_failed`;
+/// 5. without a seal in the log, `close_requested` gives `stopped_by_close`,
+///    else a received signal `interrupted` (`signal`);
+/// 6. a seal this placement published gives `sealed`.
+fn ending(decided: Ending, later: &Later) -> Ending {
+    let mut ending = decided;
+    match later.drained_end {
+        Some(answer::End::AnswerDamaged) => ending = Ending::Damaged,
+        Some(answer::End::ArchiveWriteFailed) => {
+            ending = Ending::Interrupted(Cause::ArchiveWriteFailed)
+        }
+        Some(answer::End::LogDamaged) | None => (),
+    }
+    if later.mismatch && ending == Ending::EndedUnsubmitted {
+        ending = Ending::Interrupted(Cause::ProtocolAnomaly);
+    }
+    if later.record_failed {
+        ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
+    } else if later.past_deadline
+        && ending == Ending::Interrupted(Cause::ProtocolAnomaly)
+        && !later.fidelity_diagnostic
+    {
+        ending = deadline_ending(later.run, later.max_placements);
+    }
+    if later.stop_unretained {
+        ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
+    }
+    if !later.seal {
+        if later.close_requested {
+            ending = Ending::StoppedByClose;
+        } else if later.signalled {
+            ending = Ending::Interrupted(Cause::Signal);
+        }
+    }
+    if later.sealed_here {
+        ending = Ending::Sealed;
+    }
+    ending
+}
+
+/// The ending a passed deadline gives placement `run`: `interrupted`
+/// (`placement_deadline`) while further starts remain, `limit_reached` on
+/// the last commissioned placement.
+fn deadline_ending(run: u64, max_placements: u64) -> Ending {
+    if run >= max_placements {
+        Ending::LimitReached
+    } else {
+        Ending::Interrupted(Cause::PlacementDeadline)
+    }
 }
 
 struct Live<'a> {
@@ -555,7 +634,7 @@ fn reader(mut input: impl Read, channel: &'static str, tx: mpsc::SyncSender<Inpu
         }
     }
 }
-fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
+fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), String> {
     let h = live.world.arrangement.harness.as_ref().unwrap();
     let tmp = crate::fsx::Dir::open_nofollow(&h.profile.temporary_directory)
         .map_err(|e| format!("private working directory parent: {e:?}"))?;
@@ -796,11 +875,7 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                     return Ok(());
                 }
                 if Instant::now() >= live.deadline {
-                    ended.ending = if live.run >= h.selection.limits.max_placements {
-                        Ending::LimitReached
-                    } else {
-                        Ending::Interrupted(Cause::PlacementDeadline)
-                    };
+                    ended.ending = deadline_ending(live.run, h.selection.limits.max_placements);
                     return Err("placement deadline reached; stopping the harness group".into());
                 }
                 if observed.initialized && !state.notice_used("near_limit") {
@@ -1018,33 +1093,7 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                     }
                     Input::Tool(result) => {
                         let p = pending.take().ok_or("tool result without a pending call")?;
-                        let record = runs::ToolResult {
-                            call: p.call,
-                            request: 1,
-                            attempt: 1,
-                            block: p.call,
-                            call_bytes: p.raw.len() as u64,
-                            call_sha256: util::sha256_hex(&p.raw),
-                            tool_use_id: format!("mcp-{}", p.call),
-                            tool: Some(p.name),
-                            input_sha256: Some(util::sha256_hex(&p.arguments)),
-                            replay_of: None,
-                            outcome: result.outcome.name().into(),
-                            reason: result.reason,
-                            revision: result.revision,
-                            log_record: result.log_record,
-                            is_error: result.is_error,
-                            content: result.content,
-                        };
-                        let result_bytes = live
-                            .dir
-                            .publish(
-                                live.audit,
-                                "tool_result",
-                                &runs::result_name(p.call),
-                                record.to_j(),
-                            )
-                            .map_err(|e| live.record_error(e.error))?;
+                        let (record, result_bytes) = retain_tool(live, &p, &result)?;
                         let reply_bytes = wire::line(wire::result(
                             &p.id,
                             J::obj()
@@ -1150,10 +1199,7 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                 Ok(Input::Tool(result)) => {
                     match result.end {
                         Some(answer::End::LogDamaged) => ended.log_damaged = true,
-                        Some(answer::End::AnswerDamaged) => ended.ending = Ending::Damaged,
-                        Some(answer::End::ArchiveWriteFailed) => {
-                            ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed)
-                        }
+                        Some(end) => later.drained_end = Some(end),
                         None => (),
                     }
                     if let Some(p) = pending.take() {
@@ -1208,11 +1254,7 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
         ) {
             drain_error = Some(e);
         }
-        if mismatch_seen {
-            if matches!(ended.ending, Ending::EndedUnsubmitted) {
-                ended.ending = Ending::Interrupted(Cause::ProtocolAnomaly);
-            }
-        }
+        later.mismatch = mismatch_seen;
         if drain_error.is_some() {
             observed.usage.unknown_intervals = 1;
         }
@@ -1287,26 +1329,19 @@ impl Waiting {
     }
 }
 
-fn retain_tool(live: &Live, p: &Pending, result: &answer::Executed) -> Result<(), String> {
-    let record = runs::ToolResult {
-        call: p.call,
-        request: 1,
-        attempt: 1,
-        block: p.call,
-        call_bytes: p.raw.len() as u64,
-        call_sha256: util::sha256_hex(&p.raw),
-        tool_use_id: format!("mcp-{}", p.call),
-        tool: Some(p.name.clone()),
-        input_sha256: Some(util::sha256_hex(&p.arguments)),
-        replay_of: None,
-        outcome: result.outcome.name().into(),
-        reason: result.reason.clone(),
-        revision: result.revision,
-        log_record: result.log_record.clone(),
-        is_error: result.is_error,
-        content: result.content.clone(),
-    };
-    live.dir
+/// Publish the result record of MCP call `p`, whose account is `result`,
+/// and return it with its record bytes. This placement's one MCP connection
+/// places every call at request and attempt 1, with the call number as its
+/// block and `mcp-<call>` as its invocation ID.
+fn retain_tool(
+    live: &Live,
+    p: &Pending,
+    result: &answer::Executed,
+) -> Result<(runs::ToolResult, Vec<u8>), String> {
+    let call_id = format!("mcp-{}", p.call);
+    let record = runs::ToolResult::of(&p.as_call(&call_id), &p.raw, (1, 1, p.call), result, None);
+    let bytes = live
+        .dir
         .publish(
             live.audit,
             "tool_result",
@@ -1314,7 +1349,7 @@ fn retain_tool(live: &Live, p: &Pending, result: &answer::Executed) -> Result<()
             record.to_j(),
         )
         .map_err(|e| live.record_error(e.error))?;
-    Ok(())
+    Ok((record, bytes))
 }
 
 /// The near-limit notice due when `left` remains before the placement
@@ -1638,6 +1673,220 @@ mod tests {
                 assert_eq!(text, due.unwrap().to_string());
             }
         }
+    }
+
+    /// The agent owner's recorded ending, as it is derived today from the
+    /// loop's decision and what the owner observes after shutdown.
+    #[test]
+    fn a_placement_ending_follows_the_owners_later_observations_in_order() {
+        use Cause::{ArchiveWriteFailed, PlacementDeadline, ProtocolAnomaly, Signal};
+        use Ending::{
+            Damaged, EndedUnsubmitted, Interrupted, LimitReached, Sealed, StoppedByClose,
+        };
+        let first = Later {
+            run: 1,
+            max_placements: 2,
+            ..Later::default()
+        };
+        let last = Later { run: 2, ..first };
+        let anomaly = Interrupted(ProtocolAnomaly);
+        let rows: &[(&str, Ending, Later, Ending)] = &[
+            (
+                "the loop's decision stands",
+                EndedUnsubmitted,
+                first,
+                EndedUnsubmitted,
+            ),
+            ("an unexplained stop stands", anomaly, first, anomaly),
+            (
+                "a call drained with damaged answer bytes",
+                anomaly,
+                Later {
+                    drained_end: Some(answer::End::AnswerDamaged),
+                    ..first
+                },
+                Damaged,
+            ),
+            (
+                "a call drained after a failed write",
+                anomaly,
+                Later {
+                    drained_end: Some(answer::End::ArchiveWriteFailed),
+                    ..first
+                },
+                Interrupted(ArchiveWriteFailed),
+            ),
+            (
+                "a call drained on a damaged log, which is reported apart",
+                EndedUnsubmitted,
+                Later {
+                    drained_end: Some(answer::End::LogDamaged),
+                    ..first
+                },
+                EndedUnsubmitted,
+            ),
+            (
+                "a reply mismatch makes an ordinary ending an anomaly",
+                EndedUnsubmitted,
+                Later {
+                    mismatch: true,
+                    ..first
+                },
+                anomaly,
+            ),
+            (
+                "a reply mismatch leaves another ending",
+                LimitReached,
+                Later {
+                    mismatch: true,
+                    ..first
+                },
+                LimitReached,
+            ),
+            (
+                "a failed write replaces the decision",
+                EndedUnsubmitted,
+                Later {
+                    record_failed: true,
+                    ..first
+                },
+                Interrupted(ArchiveWriteFailed),
+            ),
+            (
+                "a failed write outranks the deadline",
+                anomaly,
+                Later {
+                    record_failed: true,
+                    past_deadline: true,
+                    ..first
+                },
+                Interrupted(ArchiveWriteFailed),
+            ),
+            // Current behaviour pending a decision: whatever stopped the
+            // placement without a named cause, even an anomaly observed
+            // before the deadline, is reported as the deadline's ending
+            // when the owner looks only after the deadline has passed.
+            (
+                "a passed deadline names an unexplained stop while starts remain",
+                anomaly,
+                Later {
+                    past_deadline: true,
+                    ..first
+                },
+                Interrupted(PlacementDeadline),
+            ),
+            (
+                "a passed deadline on the last placement reaches the limit",
+                anomaly,
+                Later {
+                    past_deadline: true,
+                    ..last
+                },
+                LimitReached,
+            ),
+            (
+                "a fidelity diagnostic keeps the anomaly past the deadline",
+                anomaly,
+                Later {
+                    past_deadline: true,
+                    fidelity_diagnostic: true,
+                    ..first
+                },
+                anomaly,
+            ),
+            (
+                "a passed deadline leaves a named ending",
+                EndedUnsubmitted,
+                Later {
+                    past_deadline: true,
+                    ..first
+                },
+                EndedUnsubmitted,
+            ),
+            (
+                "an unwritten stop observation or checkpoint",
+                EndedUnsubmitted,
+                Later {
+                    stop_unretained: true,
+                    ..first
+                },
+                Interrupted(ArchiveWriteFailed),
+            ),
+            (
+                "a close requested by then",
+                EndedUnsubmitted,
+                Later {
+                    close_requested: true,
+                    ..first
+                },
+                StoppedByClose,
+            ),
+            (
+                "a close outranks a signal",
+                Interrupted(Signal),
+                Later {
+                    close_requested: true,
+                    signalled: true,
+                    ..first
+                },
+                StoppedByClose,
+            ),
+            // Current behaviour pending a decision: a signal received after
+            // the loop decided an ordinary ending, while the harness was
+            // being stopped, replaces that ending, so authoring stays open.
+            (
+                "a late signal replaces an ordinary ending",
+                EndedUnsubmitted,
+                Later {
+                    signalled: true,
+                    ..first
+                },
+                Interrupted(Signal),
+            ),
+            (
+                "a late signal replaces damage and a failed stop record",
+                Damaged,
+                Later {
+                    stop_unretained: true,
+                    signalled: true,
+                    ..first
+                },
+                Interrupted(Signal),
+            ),
+            (
+                "this placement's seal outranks every later observation",
+                anomaly,
+                Later {
+                    drained_end: Some(answer::End::AnswerDamaged),
+                    record_failed: true,
+                    past_deadline: true,
+                    stop_unretained: true,
+                    seal: true,
+                    sealed_here: true,
+                    close_requested: true,
+                    signalled: true,
+                    ..first
+                },
+                Sealed,
+            ),
+            (
+                "a seal from before this placement keeps close and signal out",
+                anomaly,
+                Later {
+                    seal: true,
+                    close_requested: true,
+                    signalled: true,
+                    ..first
+                },
+                anomaly,
+            ),
+        ];
+        for (row, decided, later, expected) in rows {
+            assert_eq!(ending(*decided, later), *expected, "{row}");
+        }
+        // The loop's own deadline check uses the same rule.
+        assert_eq!(deadline_ending(1, 2), Interrupted(PlacementDeadline));
+        assert_eq!(deadline_ending(2, 2), LimitReached);
     }
 
     #[test]

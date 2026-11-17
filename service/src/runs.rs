@@ -770,6 +770,40 @@ pub struct ToolResult {
 }
 
 impl ToolResult {
+    /// The record of `call`, captured as `raw`, from `ex`, the account of
+    /// its execution or of the earlier call `replay_of` whose result it
+    /// repeats. `(request, attempt, block)` place the call: the Messages
+    /// runtime gives the response attempt and the block's index in it, the
+    /// agent runtime request and attempt 1 and the call number. The record
+    /// is an error, with the envelope's reason, exactly when the outcome is
+    /// not `completed`.
+    pub fn of(
+        call: &crate::answer::Call,
+        raw: &[u8],
+        (request, attempt, block): (u64, u64, u64),
+        ex: &crate::answer::Executed,
+        replay_of: Option<u64>,
+    ) -> ToolResult {
+        let completed = ex.outcome == crate::reply::Outcome::Completed;
+        ToolResult {
+            call: call.call,
+            request,
+            attempt,
+            block,
+            call_bytes: raw.len() as u64,
+            call_sha256: util::sha256_hex(raw),
+            tool_use_id: call.tool_use_id.to_string(),
+            tool: call.name.map(str::to_string),
+            input_sha256: call.input.map(util::sha256_hex),
+            replay_of,
+            outcome: ex.outcome.name().to_string(),
+            reason: if completed { None } else { ex.reason.clone() },
+            revision: ex.revision,
+            log_record: ex.log_record.clone(),
+            is_error: !completed,
+            content: ex.content.clone(),
+        }
+    }
     pub fn call_file(&self) -> String {
         call_name(self.call)
     }

@@ -1830,6 +1830,14 @@ fn tool_calls_are_captured_executed_replayed_and_answered() {
     assert_eq!(n(&r2, &["replay_of"]), 1);
     let r3 = record_body(&run_file(&e, &r, 1, "result-3.json"));
     assert_eq!(sj(&r3, &["reason"]), "invocation_id_reused");
+    // Each result record's body, byte for byte: an execution, its replay
+    // and a refused reuse of the ID.
+    for (c, expected) in [(1, RESULT_1), (2, RESULT_2), (3, RESULT_3)] {
+        let raw = run_file(&e, &r, 1, &format!("result-{c}.json"));
+        let body = at(&json::parse(&raw).unwrap(), &["body"]).clone();
+        let body = String::from_utf8(raw[body.start..body.end].to_vec()).unwrap();
+        assert_eq!(body, expected, "result-{c}.json");
+    }
     // The next request copies the assistant content exactly and answers each
     // block in order.
     let second = String::from_utf8(p.bodies()[1].clone()).unwrap();
@@ -1841,6 +1849,11 @@ fn tool_calls_are_captured_executed_replayed_and_answered() {
         3
     );
 }
+
+/// The result records of `tool_calls_are_captured_executed_replayed_and_answered`.
+const RESULT_1: &str = r#"{"call":1,"request":1,"attempt":1,"block":1,"call_file":"call-1.json","call_bytes":59,"call_sha256":"659be35e2cb9a0071079fbef16346449edccdc5eac1fdcd60e112fb84f085bfb","tool_use_id":"toolu_1","tool":"list","input_sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","replay_of":null,"outcome":"completed","reason":null,"revision":0,"log_record":null,"is_error":false,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"list\",\"outcome\":\"completed\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"materials\":[{\"source\":\"materials/a.py\",\"size\":17,\"lines\":1}],\"directories\":[\"materials\"],\"returned\":1,\"total\":1,\"complete\":true}}"}]}"#;
+const RESULT_2: &str = r#"{"call":2,"request":1,"attempt":1,"block":2,"call_file":"call-2.json","call_bytes":59,"call_sha256":"659be35e2cb9a0071079fbef16346449edccdc5eac1fdcd60e112fb84f085bfb","tool_use_id":"toolu_1","tool":"list","input_sha256":"44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","replay_of":1,"outcome":"completed","reason":null,"revision":0,"log_record":null,"is_error":false,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"list\",\"outcome\":\"completed\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"materials\":[{\"source\":\"materials/a.py\",\"size\":17,\"lines\":1}],\"directories\":[\"materials\"],\"returned\":1,\"total\":1,\"complete\":true}}"}]}"#;
+const RESULT_3: &str = r#"{"call":3,"request":1,"attempt":1,"block":3,"call_file":"call-3.json","call_bytes":67,"call_sha256":"2133cb63763ee6420583577c443d8e7cd15d35d0e40fe62d2201152f0597ed23","tool_use_id":"toolu_1","tool":"list","input_sha256":"d2b1aa3ff997f14c3e8732df2a969a3ace7ea9912524a0d5e0a954b06910f3eb","replay_of":null,"outcome":"refused","reason":"invocation_id_reused","revision":0,"log_record":null,"is_error":true,"content":[{"type":"text","text":"{\"schema\":\"stewart.reply/2\",\"operation\":\"list\",\"outcome\":\"refused\",\"reason\":\"invocation_id_reused\",\"message\":\"The tool_use ID \\\"toolu_1\\\" was already executed in this placement (call 1) with a different name or input; it was not executed again. A new call needs a new ID.\",\"effects\":{\"raw_capture\":\"recorded\"},\"next\":[],\"data\":{\"tool_use_id\":\"toolu_1\",\"original_call\":1}}"}]}"#;
 
 /// The auditor preparation handle in a request body: the `prepared` member
 /// of the prepare reply, as it appears JSON-escaped inside a text block.
@@ -2528,6 +2541,130 @@ fn a_notice_that_was_never_linked_is_not_listed() {
         assert!(listed.as_arr().unwrap().is_empty());
     }
 }
+
+/// A reply's bytes with this test's own locations and reference replaced
+/// by fixed names, so that the rest compares byte for byte.
+#[cfg(feature = "fault-injection")]
+fn normalized(e: &Env, r: &str, stdout: &[u8]) -> String {
+    String::from_utf8(stdout.to_vec())
+        .unwrap()
+        .replace(r, "<ref>")
+        .replace(bin(), "<bin>")
+        .replace(&e.audit_dir(r), "<audit>")
+        .replace(e.base.to_str().unwrap(), "<base>")
+}
+
+/// Wait up to 30 seconds for `path` to exist.
+#[cfg(feature = "fault-injection")]
+fn appears(path: &str) -> bool {
+    let start = Instant::now();
+    while start.elapsed() < Duration::from_secs(30) {
+        if std::path::Path::new(path).exists() {
+            return true;
+        }
+        thread::sleep(Duration::from_millis(10));
+    }
+    false
+}
+
+/// Run's start reservation (5.7) reports what it linked. A `run_started`
+/// that was not linked started nothing: `failed`, `effects.run`
+/// `not_started`. One linked without confirmed durability may stand:
+/// `failed`, `effects.run` `unknown`, and the next run reconciles that
+/// placement as gone before starting another. A close that wins the
+/// reservation's log slot leaves nothing started: `refused`
+/// `reference_closed`. The replies are pinned byte for byte, apart from
+/// this test's locations and reference.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_start_reservation_reports_what_it_linked() {
+    let p = provider!(
+        "a_start_reservation_reports_what_it_linked",
+        vec![text_turn("max_tokens")]
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let faulted = |fault: &str| {
+        let o = run_cmd(&e, &r, &p.url(), &[("STEWART_TEST_FAULT", fault)])
+            .output()
+            .unwrap();
+        (o.status.code(), normalized(&e, &r, &o.stdout))
+    };
+    let (code, reply) = faulted("log.publish:run_started=eio");
+    assert_eq!((code, reply.as_str()), (Some(4), NOT_LINKED), "{reply}");
+    assert!(!e.log_kinds(&r).iter().any(|k| k == "run_started"));
+    let (code, reply) = faulted("log.dirsync:run_started=eio");
+    assert_eq!((code, reply.as_str()), (Some(4), UNCONFIRMED), "{reply}");
+    assert_eq!(e.log_kinds(&r)[4..], ["run_started"]);
+    assert!(!std::path::Path::new(&format!("{}/runs/1", e.audit_dir(&r))).exists());
+    assert!(p.requests().is_empty());
+    // The linked placement is reconciled as gone; the next one is placement 2.
+    let o = run(&e, &r, &p, &[]);
+    assert_eq!(o.code, Some(5), "{}", o.stderr);
+    assert_eq!(n(&o.reply, &["data", "run"]), 2);
+    assert_eq!(
+        e.log_kinds(&r)[4..],
+        ["run_started", "run_ended", "run_started", "run_ended"]
+    );
+    let gone = body_of(&e, &r, 6);
+    assert_eq!(
+        (
+            n(&gone, &["run"]),
+            sj(&gone, &["cause"]),
+            sj(&gone, &["recorded_by"])
+        ),
+        (1, "process_gone", "run")
+    );
+
+    // A close that is linked while the reservation waits to link.
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let faults = e.path("faults");
+    std::fs::create_dir(&faults).unwrap();
+    let child = run_cmd(
+        &e,
+        &r,
+        &p.url(),
+        &[
+            ("STEWART_TEST_FAULT", "log.publish:run_started=pause"),
+            ("STEWART_TEST_FAULT_DIR", &faults),
+        ],
+    )
+    .spawn()
+    .unwrap();
+    assert!(appears(&format!("{faults}/log.publish:run_started.paused")));
+    request_close(&r);
+    std::fs::write(format!("{faults}/log.publish:run_started.go"), b"").unwrap();
+    let o = child.wait_with_output().unwrap();
+    let reply = normalized(&e, &r, &o.stdout);
+    assert_eq!(
+        (o.status.code(), reply.as_str()),
+        (Some(3), CLOSE_WON),
+        "{reply}"
+    );
+    assert_eq!(e.log_kinds(&r)[4..], ["close_requested"]);
+    assert_eq!(
+        p.requests().len(),
+        1,
+        "only the continuation above reached the provider"
+    );
+}
+
+#[cfg(feature = "fault-injection")]
+const NOT_LINKED: &str = concat!(
+    r#"{"schema":"stewart.reply/2","operation":"run","outcome":"failed","reason":"record_failed","message":"run_started could not be recorded, so no placement started.","effects":{"run":"not_started","answer":"unchanged","seal":"none","delivery":"none","diagnostic":"durable"},"retained":["<audit>/diag/1.json"],"causes":[{"operation":"link run_started record","error":"EIO"}],"next":[]}"#,
+    "\n"
+);
+#[cfg(feature = "fault-injection")]
+const UNCONFIRMED: &str = concat!(
+    r#"{"schema":"stewart.reply/2","operation":"run","outcome":"failed","reason":"record_failed","message":"run_started was linked as log/5.json but its durability could not be confirmed; the run did not continue.","effects":{"run":"unknown","answer":"unchanged","seal":"none","delivery":"none","diagnostic":"durable"},"retained":["<audit>/diag/2.json"],"causes":[{"operation":"fsync log directory","error":"EIO"}],"next":[{"argv":["<bin>","status","<ref>"],"why":"See where the audit stands."}]}"#,
+    "\n"
+);
+#[cfg(feature = "fault-injection")]
+const CLOSE_WON: &str = concat!(
+    r#"{"schema":"stewart.reply/2","operation":"run","outcome":"refused","reason":"reference_closed","message":"Close was requested before the run could start.","effects":{"run":"not_started","answer":"unchanged","seal":"none","delivery":"none","diagnostic":"durable"},"retained":["<audit>/diag/1.json"],"next":[]}"#,
+    "\n"
+);
 
 /// Whether request 1 carried exactly the pinned system, tools and question.
 #[cfg(feature = "sabotage")]

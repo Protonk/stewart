@@ -288,6 +288,89 @@ fn publish_ended(audit: &Audit, run: u64, body: &RunEnded) -> Result<log::Publis
     })
 }
 
+/// Reserve placement `started.run` by publishing its `run_started` (5.7),
+/// for either runtime. Returns the record's log number, or the reply to give
+/// instead.
+///
+/// Against the log the publication reads, the audit must still be accepted,
+/// without a close request, with authoring open and with no other placement
+/// started; `further`, a runtime's own start condition, may refuse as well.
+/// A refusal or a damaged log changes nothing. A record that was not linked
+/// started nothing (`failed` `record_failed`, `effects.run` `not_started`).
+/// A record linked without confirmed durability may stand, and its slot is
+/// then used: the reply is `failed` `record_failed` with `effects.run`
+/// `unknown`, and the next run or close records that placement as gone.
+///
+/// `state` is the log as the caller last read it; refusals report their
+/// effects from it.
+pub(crate) fn reserve(
+    audit: &Audit,
+    state: &LogState,
+    started: &RunStarted,
+    further: impl Fn(&LogState) -> Option<Fail>,
+) -> Result<u64, Reply> {
+    let run = started.run;
+    let published = log::publish(audit, "run_started", |st| {
+        if st.accepted().is_none() {
+            return Err(Fail::refused("not_accepted", "No accepted commission."));
+        }
+        if st.close_requested().is_some() {
+            return Err(Fail::refused(
+                "reference_closed",
+                "Close was requested before the run could start.",
+            ));
+        }
+        if let Some(end) = st.authoring_end() {
+            return Err(Fail::refused(
+                "authoring_ended",
+                format!("Authoring ended ({} {}).", end.by.name(), end.record.name()),
+            ));
+        }
+        if st.open_placement().is_some() || st.next_run() != run {
+            return Err(Fail::refused(
+                "run_held",
+                "Another placement started before this one.",
+            ));
+        }
+        if let Some(f) = further(st) {
+            return Err(f);
+        }
+        Ok(started.to_j())
+    });
+    match published {
+        Ok(p) => Ok(p.n),
+        Err(PubErr::Refused(f)) => Err(refuse(audit, f, Some(state))),
+        Err(PubErr::Damaged(s)) => Err(refuse(audit, log::damaged_fail(audit, &s), Some(&s))),
+        Err(PubErr::NotPublished(c)) => {
+            let f = Fail::failed(
+                "record_failed",
+                "run_started could not be recorded, so no placement started.",
+            )
+            .cause(c);
+            Err(refuse(audit, f, Some(state)))
+        }
+        Err(PubErr::Uncertain { n, cause }) => {
+            let mut reply = Fail::failed(
+                "record_failed",
+                format!("run_started was linked as log/{n}.json but its durability could not be confirmed; the run did not continue."),
+            )
+            .cause(cause)
+            .next(status_next(audit))
+            .into_reply(
+                OP,
+                vec![
+                    ("run", "unknown"),
+                    ("answer", "unchanged"),
+                    ("seal", "none"),
+                    ("delivery", eff(Some(state), None)[3].1),
+                ],
+            );
+            audit.diagnose(&mut reply, J::obj().with("run", run));
+            Err(reply)
+        }
+    }
+}
+
 /// Apply the test build's request sabotage to what is sent (never to what
 /// is pinned): an extra tool, a changed orientation word, a trimmed question,
 /// a misspelled effort parameter, or the effort moved into the question.
@@ -524,64 +607,9 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
         }),
         observations: RunObservations::current(),
     };
-    let published = log::publish(&audit, "run_started", |st| {
-        if st.accepted().is_none() {
-            return Err(Fail::refused("not_accepted", "No accepted commission."));
-        }
-        if st.close_requested().is_some() {
-            return Err(Fail::refused(
-                "reference_closed",
-                "Close was requested before the run could start.",
-            ));
-        }
-        if let Some(end) = st.authoring_end() {
-            return Err(Fail::refused(
-                "authoring_ended",
-                format!("Authoring ended ({} {}).", end.by.name(), end.record.name()),
-            ));
-        }
-        if st.open_placement().is_some() || st.next_run() != run {
-            return Err(Fail::refused(
-                "run_held",
-                "Another placement started before this one.",
-            ));
-        }
-        Ok(started.to_j())
-    });
-    let started_n = match published {
-        Ok(p) => p.n,
-        Err(PubErr::Refused(f)) => return refuse(&audit, f, Some(&state)),
-        Err(PubErr::Damaged(s)) => {
-            let f = log::damaged_fail(&audit, &s);
-            return refuse(&audit, f, Some(&s));
-        }
-        Err(PubErr::NotPublished(c)) => {
-            let f = Fail::failed(
-                "record_failed",
-                "run_started could not be recorded, so no placement started.",
-            )
-            .cause(c);
-            return refuse(&audit, f, Some(&state));
-        }
-        Err(PubErr::Uncertain { n, cause }) => {
-            let mut reply = Fail::failed(
-                "record_failed",
-                format!("run_started was linked as log/{n}.json but its durability could not be confirmed; the run did not continue."),
-            )
-            .cause(cause)
-            .next(status_next(&audit))
-            .into_reply(
-                OP,
-                vec![
-                    ("run", "unknown"),
-                    ("answer", "unchanged"),
-                    ("seal", "none"),
-                    ("delivery", eff(Some(&state), None)[3].1),
-                ],
-            );
-            audit.diagnose(&mut reply, J::obj().with("run", run));
-            return reply;
-        }
+    let started_n = match reserve(&audit, &state, &started, |_| None) {
+        Ok(n) => n,
+        Err(reply) => return reply,
     };
 
     let used_before = if crate::sabotage!("reset_limits_on_continuation") && run > 1 {

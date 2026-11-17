@@ -909,25 +909,7 @@ impl State<'_, '_> {
         ex: &Executed,
         replay_of: Option<u64>,
     ) -> Result<(), reply::Cause> {
-        let completed = ex.outcome == CallOutcome::Completed;
-        let r = ToolResult {
-            call: call.call,
-            request: k,
-            attempt: a,
-            block: block as u64,
-            call_bytes: raw.len() as u64,
-            call_sha256: util::sha256_hex(raw),
-            tool_use_id: call.tool_use_id.to_string(),
-            tool: call.name.map(str::to_string),
-            input_sha256: call.input.map(util::sha256_hex),
-            replay_of,
-            outcome: ex.outcome.name().to_string(),
-            reason: if completed { None } else { ex.reason.clone() },
-            revision: ex.revision,
-            log_record: ex.log_record.clone(),
-            is_error: !completed,
-            content: ex.content.clone(),
-        };
+        let r = ToolResult::of(call, raw, (k, a, block as u64), ex, replay_of);
         self.live
             .dir
             .publish(
