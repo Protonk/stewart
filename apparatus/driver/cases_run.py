@@ -1420,6 +1420,10 @@ def c_allowance_advice(t):
                            cause=None if blocked else "max_tokens", run_number=3,
                            fx=fx, limits=rs.limits_of(sub))
         t.eq(pre + ".direct-request-count", len(fx.exchanges), 2 if blocked else 3)
+        if not blocked:
+            # 6.4: the request's max_tokens is the lesser of 16,000 and the remaining output.
+            t.eq(pre + ".direct-request-cap", fx.exchanges[2].max_tokens() if len(fx.exchanges) == 3 else None,
+                 min(MAX_TOKENS_PER_REQUEST, output_remaining))
         t.eq(pre + ".script-not-exhausted", script.exhausted, [])
         t.eq(pre + ".no-seal", t.log_bodies(sub, "seal"), [])
 

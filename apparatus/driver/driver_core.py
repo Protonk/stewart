@@ -679,6 +679,28 @@ def names_token(obj, token):
     return any(isinstance(v, str) and pattern.search(v) for v in iter_values(obj))
 
 
+def names_record(obj, record):
+    """True when a string value names the archive record `record` as a whole.
+
+    `record` is an audit-relative path such as `log/4.json` (INTERFACE 4.4: names
+    such as `log/9.json` are relative to the audit directory; status diagnostics
+    name "the record and the cause", 5.6). A string names it when it holds that
+    path as a whole token (an ancestor directory before it is allowed), or holds the
+    record's final component standing alone. A different file whose name merely ends
+    with the same text (`stage/q4ilokjcgdorcv24.json` for `4.json`), a same-named file
+    in another directory (`stage/4.json`) or a longer name (`log/14.json`,
+    `log/4.json.tmp`) does not name it.
+    """
+    after = r"(?![A-Za-z0-9_~/-]|\.[A-Za-z0-9])"
+    whole = re.compile(r"(?<![A-Za-z0-9._~-])%s%s" % (re.escape(record), after))
+    leaf = record.rsplit("/", 1)[-1]
+    alone = re.compile(r"(?<![A-Za-z0-9._~/-])%s%s" % (re.escape(leaf), after))
+    for v in iter_values(obj):
+        if isinstance(v, str) and (whole.search(v) or alone.search(v)):
+            return True
+    return False
+
+
 def other_compound_rules(obj, rule):
     """Compound (underscored) rule identifiers of 1.2 that obj names besides rule.
 
@@ -3154,6 +3176,17 @@ def self_test():
        and not names_token({"message": "two types"}, "type") and not names_token({"reason": "input_invalid"}, "value")
        and not names_token({"message": "integer_range"}, "integer") and not names_token({"message": "in-depth2"}, "depth"))
     ok("rule-token.non-string-control", not names_token({"type": None, "n": 7}, "type"))
+    # 5.6: diagnostics name a record as a whole path or name, never by a suffix of another file.
+    ok("record-name.path", names_record({"diagnostics": [{"record": "log/4.json", "cause": "torn"}]}, "log/4.json"))
+    ok("record-name.ancestor-and-prose", names_record(["/a/audits/x/log/4.json"], "log/4.json")
+       and names_record({"message": "Record 4.json is torn."}, "log/4.json")
+       and names_record({"bad_records": ["log/4.json"]}, "log/4.json"))
+    ok("record-name.suffix-control", not names_record({"diagnostics": [{"record": "stage/q4ilokjcgdorcv24.json"},
+                                                                        {"record": "intake/1/receipt.json"}]},
+                                                       "log/4.json"))
+    ok("record-name.other-directory-control", not names_record(["stage/4.json"], "log/4.json"))
+    ok("record-name.longer-name-control", not names_record(["log/14.json", "log/4.json.tmp", "4.jsonl"], "log/4.json"))
+    ok("record-name.loose-substring-would-match", mentions({"record": "stage/q4ilokjcgdorcv24.json"}, "4.json"))
     ok("rule-token.other-compound", other_compound_rules({"m": "integer_sign, not integer_range"}, "integer_sign")
        == ["integer_range"])
     ok("rule-token.other-compound-invariance", other_compound_rules({"m": "rule integer_sign; wrong type"}, "integer_sign") == []

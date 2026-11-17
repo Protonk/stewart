@@ -1858,7 +1858,7 @@ def _damaged_log(t, a):
     t.eq("c8.damaged-log.status.authoring", hl.get("authoring"), {"state": "ended", "ended_by": "ordinary_ending"})
     t.eq("c8.damaged-log.status.delivered", hl.get("delivered"), {"verified": "unknown", "confirmed": "unknown"})
     t.eq("c8.damaged-log.status.closed", hl.get("closed"), "unknown")
-    t.check("c8.damaged-log.status.names-record", mentions(d.get("diagnostics"), "%d.json" % (n + 1)),
+    t.check("c8.damaged-log.status.names-record", names_record(d.get("diagnostics"), "log/%d.json" % (n + 1)),
             d.get("diagnostics"))
     t.check("c8.damaged-log.status.next-receipt", "receipt" in commands_of(st.obj), st.next)
     names = sorted(os.listdir(os.path.join(a.sub.audit_dir, "log")))
@@ -1867,7 +1867,7 @@ def _damaged_log(t, a):
          ["unfinished", "log_damaged"])
     t.eq("c8.damaged-log.close.effects", no_diag(rep.effects),
          {"run": "unknown", "seal": "unknown", "delivery": "unknown", "closure": "unknown"})
-    t.check("c8.damaged-log.close.bad_records", mentions(rep.data.get("bad_records"), "%d.json" % (n + 1)),
+    t.check("c8.damaged-log.close.bad_records", names_record(rep.data.get("bad_records"), "log/%d.json" % (n + 1)),
             rep.data.get("bad_records"))
     t.eq("c8.damaged-log.close.next", commands_of(rep.obj), ["status"])
     t.eq("c8.damaged-log.close.published-nothing", sorted(os.listdir(os.path.join(a.sub.audit_dir, "log"))), names)

@@ -413,6 +413,62 @@ compaction form is grounded in those encounters. C5's cap message was followed
 by authoring, not a terminal cap result. These fixtures make no claim about
 unobserved terminal-cap forms or actual harness cap enforcement.
 
+Scripted sequences use the synthetic harness's `scripted` mode. The outer driver
+writes the scenario's `script`: an ordered list of tool calls, each with a label,
+arguments and optionally a fixed request ID. An argument
+`{"$ref": [label, key, ...], "$append": text}` takes a value from the core reply
+of an earlier labelled step, such as a prepared handle or a page's `cite`. A
+step marked `follow` keeps calling the same tool with each reply's `next` input
+until the page reports completion. The harness records every request, MCP reply
+and decoded core reply as a `script-step` event. A `final` confirmed submit is
+sent without awaiting its reply, so only Stewart's stop ends the session;
+otherwise `script_end: "exit"` exits like an interrupted harness. The harness
+draws no conclusions; every expectation is in the outer case.
+
+- **Family sequences.** `runtime-family-sequences` runs the release driver's
+  `c7.families` operations over MCP for each family, with its materials and
+  citation operands. Each audit checks:
+  - empty preparation: `answer_empty`, zero counts in tools order and the
+    empty views;
+  - an inability account, plus the comparison observation or framing working
+    question, then `section_unfilled` notices in tools order; the comparison
+    observation fills no section;
+  - for open inquiry, recorded and refused citations, with ambiguous quotes
+    listing their ready citations;
+  - an equal-label pair (`label_duplicate` on the second), its exact delete and
+    the repeated delete;
+  - the final selection and rendering views;
+  - the core's `tools/list` result against the pinned MCP mapping, members in
+    order.
+
+  The delivered manifest, answer, rendering and artifacts are compared with
+  independently built bytes. Each family also seals an empty answer. An audit
+  with no materials lists nothing and records only an artifact: every section
+  stays unfilled and `answer_empty` is not reported.
+- **Reads and search.** `runtime-read-search` checks:
+  - pages of a 3-byte-character file without a final LF;
+  - start refusals naming the nearest boundaries, and the empty page at the
+    end;
+  - literal overlapping search hits in pages of at most 128, with `sc.` cursors
+    and completion, under default and explicit scope;
+  - absence only when complete, and the search text bound;
+  - the question read whole, and `list`.
+- **Request identity.** `runtime-identity-across-placements` reuses one request
+  ID in a fresh placement, which must record a new entry. Reused again inside
+  that placement, the ID must be answered with no effect, and a fresh ID with the
+  same arguments records another entry.
+- **Drain unknowns.** `runtime-fidelity-drain-unknown` makes the TERM-time echo
+  missing or duplicated. The fidelity record must stay unknown with no mismatch
+  or diagnostic, while the seal, delivery and close are unchanged.
+- **Late close.** With the fault-enabled variant, `runtime-sealed-late-close`
+  pauses the run's delivery after an auditor seal and requests close. The seal
+  must keep its actor, the run must deliver attempt 1 after `close_requested`,
+  close must await confirmation for that copy, and confirmation closes it
+  unchanged.
+
+Preparation acceptance reads back every selected material, not only the default
+report, against the driver's own bytes.
+
 Not exercised: the internal waiting state or queue count/byte overflow;
 `run`'s own re-verification of a pinned surface, which has no
 black-box firing control because one binary cannot hold an arrangement that

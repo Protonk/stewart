@@ -17,6 +17,7 @@ witness outside the archive. No successful or failed working tree is deleted.
 from __future__ import annotations
 
 import argparse
+import base64
 import contextlib
 import copy
 import hashlib
@@ -40,8 +41,8 @@ import traceback
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from driver_core import (CONTINUATION, FAMILY_TEXT, ORIENTATION, REMINDER,
-                         expected_tools, reading_problem, strict_loads)
+from driver_core import (CONTINUATION, FAMILY_TEXT, FAMILY_TOOLS, ORIENTATION, REMINDER,
+                         expected_tools, iter_values, parse_reference, reading_problem, strict_loads)
 from rawjson import compact, parse
 
 
@@ -176,6 +177,16 @@ CASES = (
     ("runtime-unknown-stop", "An unresolved live group prevents restart and close cleanup without being signaled"),
     ("runtime-recorder-failure", "A witnessed capture-write failure stops before an attempted answer mutation"),
     ("runtime-credential-option", "A Claude Code run refuses an API credential option before invoking the harness"),
+    ("runtime-family-sequences", "All three families over MCP: preparation notices, citations, labels, delete, "
+                                 "empty answer, empty materials and exact packages"),
+    ("runtime-read-search", "Paged reads across multibyte boundaries, start refusals, literal search pages, "
+                            "scope invariance and list over MCP"),
+    ("runtime-identity-across-placements", "A request ID reused in a fresh placement is a new call; "
+                                           "reused inside a placement it has no effect"),
+    ("runtime-fidelity-drain-unknown", "Missing and duplicate echoes in the shutdown drain stay unknown; "
+                                       "the seal and delivery stand"),
+    ("runtime-sealed-late-close", "Close while an auditor seal's delivery is paused keeps the seal; "
+                                  "the later copy awaits confirmation"),
 )
 
 
@@ -481,6 +492,167 @@ def authoring_echo(session, identity, variant):
     elif variant != "flat":
         raise ValueError("unknown captured authoring variant")
     return value
+
+
+def resolve_script_value(value, replies):
+    """A scripted step's arguments with each {"$ref": [label, key, ...]} replaced by that
+    value of the labelled step's first core reply, plus any "$append" text. An unresolvable
+    reference becomes null, so the call itself shows the gap."""
+    if isinstance(value, dict) and "$ref" in value:
+        path = value["$ref"]
+        node = replies.get(path[0])
+        for key in path[1:]:
+            try:
+                node = node[key]
+            except (KeyError, IndexError, TypeError):
+                node = None
+        if "$append" in value:
+            return node + value["$append"] if isinstance(node, str) else None
+        return node
+    if isinstance(value, dict):
+        return {key: resolve_script_value(item, replies) for key, item in value.items()}
+    if isinstance(value, list):
+        return [resolve_script_value(item, replies) for item in value]
+    return value
+
+
+def script_follow_input(core, tool):
+    """The input of the reply's next call to the same tool while its page is incomplete
+    (INTERFACE 7.1, 7.2, 7.5), else None."""
+    if not isinstance(core, dict) or core.get("outcome") != "completed":
+        return None
+    data = core.get("data") if isinstance(core.get("data"), dict) else {}
+    complete = data.get("complete") if "complete" in data else (data.get("page") or {}).get("complete")
+    if complete is True:
+        return None
+    later = [n for n in core.get("next") or [] if isinstance(n, dict) and n.get("tool") == tool]
+    return later[0]["input"] if later and isinstance(later[0].get("input"), dict) else None
+
+
+# The release driver's scenario materials (cases_run.scenario_entries), so the runtime
+# family sequences can use the same citation operands as the Messages c7.families case.
+SCENARIO_MATERIALS = {
+    "materials/a.py": b"def send(r):\n    deliver(r)\n    mark_sent(r)\n",
+    "materials/notes/R1.txt": "R1. A reminder ID is sent at most once.\r\nrésumé line\r\n".encode(),
+    "materials/empty.txt": b"",
+}
+# INTERFACE 7.6: the preparation reply's keys, in order.
+PREPARE_KEYS = ["prepared", "family", "revision", "entry_count", "counts", "notices", "rendering", "selection"]
+INABILITY = "I cannot answer this as asked: the materials do not show what happens across a restart."
+PROSE = "See materials/a.py lines 1–2 [0, 13) \"def send(r):\" for the start."
+
+
+def family_sections(family):
+    """QUESTION-FORMS: the expected sections; comparison's observation tool is auxiliary."""
+    return [name for name in FAMILY_TOOLS[family] if not (family == "comparison" and name == "record_observation")]
+
+
+def expected_prepare(family, kinds):
+    """INTERFACE 7.6 counts (tools order, then record_artifact) and notices for the selected kinds:
+    answer_empty alone for an empty selection, else one section_unfilled per empty section.
+    Artifacts fill no section (7.4)."""
+    counts = {name: 0 for name in FAMILY_TOOLS[family] + ["record_artifact"]}
+    for kind in kinds:
+        counts[kind] += 1
+    if not kinds:
+        return counts, [("answer_empty", None)]
+    return counts, [("section_unfilled", name) for name in family_sections(family) if counts[name] == 0]
+
+
+def notice_pairs(data):
+    return [(n.get("reason"), n.get("tool")) if n.get("reason") == "section_unfilled" else (n.get("reason"), None)
+            for n in (data or {}).get("notices") or [] if isinstance(n, dict)]
+
+
+def citation_cases(a):
+    """c7.families' citation operands over SCENARIO_MATERIALS (INTERFACE 7.3): label,
+    citations and the refusal reason, None when the call records an entry."""
+    s = a.find(b"deliver(r)")
+    return [
+        ("range", [{"source": "materials/a.py", "start": s, "end": s + 10}], None),
+        ("quote", [{"source": "materials/a.py", "quote": "mark_sent(r)"}], None),
+        ("range-and-quote", [{"source": "materials/a.py", "start": s, "end": s + 10, "quote": "deliver(r)"}], None),
+        ("changed-range", [{"source": "materials/a.py", "start": s, "end": s + 11, "quote": "deliver(r)"}],
+         "citation_invalid"),
+        ("missing-quote", [{"source": "materials/a.py", "quote": "not there"}], "quote_not_found"),
+        ("ambiguous-quote", [{"source": "materials/a.py", "quote": "(r)"}], "quote_ambiguous"),
+        ("irrelevant", [{"source": "materials/notes/R1.txt", "quote": "R1."}], None),
+        ("prose", [], None),
+        ("read-cite", [{"$ref": ["read-a", "data", "cite"]}], None),
+    ]
+
+
+def script_step(label, tool, arguments=None, **options):
+    return dict({"label": label, "tool": tool, "arguments": arguments or {}}, **options)
+
+
+def step_page_bytes(event):
+    """A read page's bytes from a scripted step: the second text block, else data.text or
+    data.base64 (INTERFACE 7.1)."""
+    content = ((event.get("response") or {}).get("result") or {}).get("content") or []
+    data = (event.get("core") or {}).get("data") or {}
+    if isinstance(data.get("base64"), str):
+        return base64.b64decode(data["base64"])
+    if len(content) > 1 and content[1].get("type") == "text":
+        return content[1]["text"].encode()
+    return data["text"].encode() if isinstance(data.get("text"), str) else None
+
+
+def scripted_selftest(check):
+    """Pure checks of the scripted-sequence helpers and their expectations."""
+    import answer_witness as aw
+    replies = {"prepare": {"data": {"prepared": "ap1.x"}}, "read": {"data": {"cite": {"source": "q", "start": 0, "end": 1}}}}
+    check("scripted.ref", resolve_script_value({"prepared": {"$ref": ["prepare", "data", "prepared"]}, "confirm": True},
+                                               replies) == {"prepared": "ap1.x", "confirm": True})
+    check("scripted.append", resolve_script_value({"$ref": ["prepare", "data", "prepared"], "$append": "/rendering"},
+                                                  replies) == "ap1.x/rendering")
+    check("scripted.nested-list", resolve_script_value([{"$ref": ["read", "data", "cite"]}], replies)
+          == [{"source": "q", "start": 0, "end": 1}])
+    check("scripted.unresolved-is-null", resolve_script_value({"$ref": ["absent", "data"]}, replies) is None
+          and resolve_script_value({"$ref": ["prepare", "nothing"], "$append": "/x"}, replies) is None)
+    page = {"outcome": "completed", "data": {"complete": False},
+            "next": [{"tool": "list", "input": {}}, {"tool": "read", "input": {"source": "s", "start": 9}}]}
+    check("scripted.follow-incomplete", script_follow_input(page, "read") == {"source": "s", "start": 9})
+    check("scripted.follow-complete", script_follow_input(dict(page, data={"complete": True}), "read") is None)
+    check("scripted.follow-reentry-page", script_follow_input(
+        {"outcome": "completed", "data": {"page": {"complete": False}},
+         "next": [{"tool": "what_am_i_working_with", "input": {"page": "pg.x"}}]}, "what_am_i_working_with")
+        == {"page": "pg.x"})
+    check("scripted.follow-refused", script_follow_input(dict(page, outcome="refused"), "read") is None)
+    counts, notices = expected_prepare("comparison", ["record_account", "record_observation"])
+    check("scripted.comparison-observation-not-a-section",
+          notices == [("section_unfilled", "record_criterion"), ("section_unfilled", "record_comparison"),
+                      ("section_unfilled", "record_limit")] and counts["record_observation"] == 1)
+    # QUESTION-FORMS: comparison's observation is auxiliary, open inquiry's is a section.
+    check("scripted.observation-is-auxiliary-only-in-comparison",
+          ("section_unfilled", "record_observation") not in expected_prepare("comparison", ["record_account"])[1]
+          and ("section_unfilled", "record_observation") in expected_prepare("open-inquiry", ["record_account"])[1])
+    check("scripted.artifact-fills-no-section", expected_prepare("open-inquiry", ["record_artifact"])[1]
+          == [("section_unfilled", "record_account"), ("section_unfilled", "record_observation"),
+              ("section_unfilled", "record_limit")])
+    check("scripted.empty", expected_prepare("inquiry-framing", []) ==
+          ({name: 0 for name in FAMILY_TOOLS["inquiry-framing"] + ["record_artifact"]}, [("answer_empty", None)]))
+    a = SCENARIO_MATERIALS["materials/a.py"]
+    sources = dict(SCENARIO_MATERIALS, question=b"q")
+    outcomes = []
+    for label, citations, reason in citation_cases(a):
+        if label == "read-cite":
+            continue
+        try:
+            [aw.record_citation(c, sources) for c in citations]
+            outcomes.append((label, None))
+        except aw.CitationDefect as defect:
+            outcomes.append((label, defect.reason))
+    check("scripted.citation-cases-agree-with-witness",
+          outcomes == [(label, reason) for label, _, reason in citation_cases(a) if label != "read-cite"])
+    entries = [aw.Entry("e1", 1, "record_account", "", b"x"), aw.Entry("e2", 1, "record_limit", "", b"y")]
+    check("scripted.control-dropped-entry-differs", aw.answer_json(2, entries) != aw.answer_json(2, entries[:1])
+          and aw.render(entries) != aw.render(entries[:1]))
+    check("scripted.page-bytes", step_page_bytes({"response": {"result": {"content": [{"type": "text", "text": "{}"},
+                                                                                    {"type": "text", "text": "é"}]}},
+                                                  "core": {"data": {}}}) == "é".encode()
+          and step_page_bytes({"response": {"result": {"content": [{"type": "text", "text": "{}"}]}},
+                               "core": {"data": {"text": ""}}}) == b"")
 
 
 def snapshot(root):
@@ -1289,10 +1461,11 @@ class Driver:
         receipt = self.cmd(f["label"] + ".receipt", ["receipt", f["reference"], "--verify"])
         self.eq(f["label"] + ".receipt-settings", receipt["data"].get("settings"), prepared["data"]["settings"])
         self.eq(f["label"] + ".receipt-run-needs", receipt["data"].get("run_needs"), needs)
-        for item, expected in (("question-file", (f["witness"] / "question-file").read_bytes()),
-                               ("question-body", (f["witness"] / "question-body").read_bytes()),
-                               ("materials/report.txt", (f["witness"] / "report.txt").read_bytes()),
-                               ("arrangement", raw)):
+        # Every selected material reads back as the driver's own copy of its bytes (5.5).
+        materials = sorted(f["materials"].items(), key=lambda pair: pair[0].encode())
+        for item, expected in ([("question-file", (f["witness"] / "question-file").read_bytes()),
+                                ("question-body", (f["witness"] / "question-body").read_bytes())]
+                               + materials + [("arrangement", raw)]):
             got = self.cmd(f["label"] + ".read-" + item.replace("/", "-"),
                            ["receipt", f["reference"], "--read", item], raw=True)
             self.eq(f["label"] + ".read-" + item, got.hex(), expected.hex())
@@ -3419,6 +3592,517 @@ class Driver:
         self.control("recorder-failure-stops-before-effects", natural_stop and groups_gone and explicit
                      and not any(r.get("kind") == "entry" for r in records) and answer.get("entries") == 0)
 
+    # -- scripted MCP sequences (specification-derived calls, outer expectations) -------------
+
+    def scripted_fixture(self, label, family="open-inquiry", *, extra=None, empty=False, script=(), end=None):
+        f = self.fixture(label, family, scenario="scripted")
+        if empty:
+            (f["folder"] / "materials" / "report.txt").unlink()
+            f["materials"] = {}
+        for name, data in (extra or {}).items():
+            for base in (f["folder"], f["witness"] / "supplied"):
+                path = base / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
+            f["materials"][name] = data
+        self.change_scenario(f, script=list(script), script_end=end)
+        return f
+
+    def run_script(self, f, suffix="run", run=1):
+        reply = self.cmd(f["label"] + "." + suffix, ["run", f["reference"]], outcome=None)
+        self.groups_absent(f, run=run)
+        events = self.harness_clean(f)
+        steps = {}
+        for event in events:
+            if event["event"] == "script-step":
+                steps.setdefault(event["label"], []).append(event)
+        return reply, events, steps
+
+    def check_tools_list(self, f, events):
+        """CONTRACT, arrangement and observation: the fixed tools/list result is the pinned
+        MCP mapping, in family order, each tool's members exactly name, description,
+        inputSchema, _meta."""
+        label = f["label"] + ".tools-list"
+        asked = [e["value"]["id"] for e in events if e["event"] == "rpc-send" and e["value"].get("method") == "tools/list"]
+        replies = {e["value"].get("id"): e for e in events if e["event"] == "rpc-receive"}
+        self.require(label + ".observed", bool(asked) and all(i in replies for i in asked), asked)
+        want = json.loads(mcp_tools(f["tools"]))
+        for identity in asked:
+            node = parse(bytes.fromhex(replies[identity]["raw_hex"])).get("result")
+            tools = node.get("tools") if node is not None else None
+            self.eq(label + ".value", tools.value() if tools is not None else None, want)
+            self.eq(label + ".member-order", [item.keys() for item in tools.items] if tools is not None else None,
+                    [["name", "description", "inputSchema", "_meta"]] * len(want))
+
+    def check_package_bytes(self, f, status, entries, revision, actor="auditor"):
+        """The delivered package against independently built members (INTERFACE 8.2;
+        QUESTION-FORMS answer and rendering)."""
+        import answer_witness as aw
+        label = f["label"] + ".package"
+        answer = aw.answer_json(revision, entries)
+        package = self.check_delivery(f, status, actor, expected=answer)
+        rendering = aw.render(entries)
+        self.eq(label + ".rendering", (package / "answer.md").read_bytes().decode(), rendering.decode())
+        ids = parse_reference(f["reference"]) or {}
+        seal = status["data"].get("seal") or {}
+        manifest = aw.manifest(ids.get("audit"), ids.get("store"), f["family"] + "/1", sha(self.binary.read_bytes()),
+                               actor, seal.get("sealed_at"), revision, aw.members(entries, answer, rendering))
+        self.eq(label + ".manifest", (package / "manifest.json").read_bytes().decode(), manifest.decode())
+        artifacts = {e.member: e.data for e in entries if e.kind == "record_artifact"}
+        self.eq(label + ".members", sorted(p.name for p in package.iterdir()),
+                sorted(["manifest.json", "answer.json", "answer.md"] + list(artifacts)))
+        for member, data in artifacts.items():
+            self.eq(label + "." + member, (package / member).read_bytes().hex(), data.hex())
+        return package
+
+    def check_prepare(self, f, label, data, kinds, revision):
+        counts, notices = expected_prepare(f["family"], kinds)
+        self.eq(label + ".keys", list(data), PREPARE_KEYS)
+        self.eq(label + ".family", data.get("family"), f["family"] + "/1")
+        self.eq(label + ".revision", (data.get("revision"), data.get("entry_count")), (revision, len(kinds)))
+        self.eq(label + ".counts", data.get("counts"), counts)
+        self.eq(label + ".counts-order", list(data.get("counts") or {}), list(counts))
+        self.eq(label + ".notices", notice_pairs(data), notices)
+
+    def runtime_family_sequences(self):
+        for family in FAMILY_TEXT:
+            self.family_sequence(family)
+            self.family_empty_answer(family)
+        self.family_empty_materials()
+
+    def family_sequence(self, family):
+        import answer_witness as aw
+        a = SCENARIO_MATERIALS["materials/a.py"]
+        script = [script_step("prepare-empty", "prepare"),
+                  script_step("rendering-empty", "read", {"source": {"$ref": ["prepare-empty", "data", "prepared"],
+                                                                      "$append": "/rendering"}}, follow=True),
+                  script_step("selection-empty", "read", {"source": {"$ref": ["prepare-empty", "data", "prepared"],
+                                                                      "$append": "/selection"}}, follow=True),
+                  script_step("inability", "record_account", {"text": INABILITY})]
+        aux = {"comparison": ("record_observation", "Only one alternative is described."),
+               "inquiry-framing": ("record_working_question", "The question is precise; it is my working question.")}
+        if family in aux:
+            script.append(script_step("aux", aux[family][0], {"text": aux[family][1]}))
+        script.append(script_step("prepare-partial", "prepare"))
+        cases = citation_cases(a) if family == "open-inquiry" else []
+        if cases:
+            script.append(script_step("read-a", "read", {"source": "materials/a.py"}, follow=True))
+            for lab, citations, _ in cases:
+                text = PROSE if lab == "prose" else "Citation case %s." % lab
+                script.append(script_step("cite-" + lab, "record_observation", {"text": text, "citations": citations}))
+        script += [script_step("same-1", "record_observation", {"text": "Same words.", "label": "same"}),
+                   script_step("same-2", "record_observation", {"text": "Same words.", "label": "same"}),
+                   script_step("delete", "delete", {"entry": {"$ref": ["same-2", "data", "entry"]}}),
+                   script_step("delete-again", "delete", {"entry": {"$ref": ["same-2", "data", "entry"]}}),
+                   script_step("prepare-final", "prepare"),
+                   script_step("selection-final", "read", {"source": {"$ref": ["prepare-final", "data", "prepared"],
+                                                                      "$append": "/selection"}}, follow=True),
+                   script_step("rendering-final", "read", {"source": {"$ref": ["prepare-final", "data", "prepared"],
+                                                                      "$append": "/rendering"}}, follow=True),
+                   script_step("submit", "submit", {"prepared": {"$ref": ["prepare-final", "data", "prepared"]},
+                                                    "confirm": True}, final=True)]
+        f = self.scripted_fixture("family-sequence-" + family, family, extra=SCENARIO_MATERIALS, script=script)
+        label = f["label"]
+        self.accept(f)
+        reply, events, steps = self.run_script(f)
+        sources = dict(f["materials"], question=f["body"])
+
+        def core(name):
+            return (steps.get(name) or [{}])[0].get("core") or {}
+
+        def pages(name):
+            got = [step_page_bytes(e) for e in steps.get(name) or []]
+            return b"".join(got) if got and None not in got else None
+
+        def outcome(name):
+            c = core(name)
+            return (c.get("outcome"), c.get("reason"))
+
+        self.require(label + ".all-steps", all(s["label"] in steps for s in script if not s.get("final")),
+                     sorted(set(s["label"] for s in script) - set(steps)))
+        self.check_prepare(f, label + ".prepare-empty", core("prepare-empty").get("data") or {}, [], 0)
+        self.check(label + ".prepare-empty.no-sealer", not {"seal", "sealer"} & set(core("prepare-empty").get("data") or {}),
+                   core("prepare-empty"))
+        self.eq(label + ".rendering-empty", pages("rendering-empty"), aw.EMPTY_RENDERING)
+        self.eq(label + ".selection-empty", pages("selection-empty"), aw.answer_json(0, []))
+        entries, kinds, revision, created = [], [], 0, 0
+
+        def added(name, kind, text, citations=(), label_=""):
+            nonlocal revision, created
+            revision += 1
+            created += 1
+            data = core(name).get("data") or {}
+            ident = "e%d" % created
+            self.eq(label + "." + name, (outcome(name), data.get("id"), data.get("version"), data.get("revision")),
+                    (("completed", None), ident, 1, revision))
+            entries.append(aw.Entry(ident, 1, kind, label_, text.encode(), list(citations)))
+            kinds.append(kind)
+            return data
+
+        added("inability", "record_account", INABILITY)
+        if family in aux:
+            added("aux", aux[family][0], aux[family][1])
+        self.check_prepare(f, label + ".prepare-partial", core("prepare-partial").get("data") or {}, kinds, revision)
+        if cases:
+            read_pages = steps.get("read-a") or []
+            page_cite = ((read_pages[0].get("core") or {}).get("data") or {}).get("cite") if read_pages else None
+            self.eq(label + ".read-a.cite", page_cite, {"source": "materials/a.py", "start": 0, "end": len(a)})
+            for lab, citations, reason in cases:
+                name = "cite-" + lab
+                resolved = [page_cite] if lab == "read-cite" else citations
+                if reason is None:
+                    want = [aw.record_citation(c, sources) for c in resolved]
+                    data = added(name, "record_observation", PROSE if lab == "prose" else "Citation case %s." % lab, want)
+                    self.eq(label + "." + name + ".citations", data.get("citations"), want)
+                else:
+                    c = core(name)
+                    self.eq(label + "." + name, (c.get("outcome"), c.get("reason"), (c.get("effects") or {}).get("answer")),
+                            ("refused", reason, "unchanged"))
+                    if lab == "ambiguous-quote":
+                        found = []
+                        for value in iter_values(c.get("data")):
+                            if isinstance(value, list) and value and all(isinstance(x, dict) and
+                                                                         {"source", "start", "end"} <= set(x) for x in value):
+                                found = value
+                                break
+                        self.eq(label + "." + name + ".occurrences",
+                                [(x.get("source"), x.get("start"), x.get("end")) for x in found],
+                                [("materials/a.py", o, o + 3) for o in aw.occurrences(a, b"(r)")[:8]])
+            self.control("family-refused-citation-creates-no-entry",
+                         all(outcome("cite-" + lab)[0] == "refused" for lab, _, reason in cases if reason))
+        first = added("same-1", "record_observation", "Same words.", label_="same")
+        self.check(label + ".same-1.no-label-notice", "label_duplicate" not in json.dumps(first.get("notices")), first)
+        second = added("same-2", "record_observation", "Same words.", label_="same")
+        self.check(label + ".same-2.label-duplicate", "label_duplicate" in json.dumps(second.get("notices")), second)
+        removed = {"id": entries[-1].id, "version": 1}
+        entries.pop()
+        kinds.pop()
+        revision += 1
+        d1, d2 = core("delete"), core("delete-again")
+        self.eq(label + ".delete", (d1.get("outcome"), (d1.get("data") or {}).get("removed"),
+                                    (d1.get("data") or {}).get("already_removed"), (d1.get("data") or {}).get("revision")),
+                ("completed", removed, False, revision))
+        self.eq(label + ".delete-again", (d2.get("outcome"), (d2.get("data") or {}).get("removed"),
+                                          (d2.get("data") or {}).get("already_removed"),
+                                          (d2.get("data") or {}).get("revision"), (d2.get("effects") or {}).get("answer")),
+                ("completed", removed, True, revision, "unchanged"))
+        self.check_prepare(f, label + ".prepare-final", core("prepare-final").get("data") or {}, kinds, revision)
+        self.eq(label + ".selection-final", pages("selection-final"), aw.answer_json(revision, entries))
+        self.eq(label + ".rendering-final", pages("rendering-final"), aw.render(entries))
+        self.eq(label + ".ending", (reply.get("data") or {}).get("ending"), "sealed")
+        self.check_tools_list(f, events)
+        status = self.inspect_runtime(f)
+        package = self.check_package_bytes(f, status, entries, revision)
+        self.close_after_delivery(f, package)
+
+    def family_empty_answer(self, family):
+        script = [script_step("prepare", "prepare"),
+                  script_step("submit", "submit", {"prepared": {"$ref": ["prepare", "data", "prepared"]},
+                                                   "confirm": True}, final=True)]
+        f = self.scripted_fixture("family-empty-answer-" + family, family, script=script)
+        self.accept(f)
+        reply, events, steps = self.run_script(f)
+        data = ((steps.get("prepare") or [{}])[0].get("core") or {}).get("data") or {}
+        self.check_prepare(f, f["label"] + ".prepare", data, [], 0)
+        self.eq(f["label"] + ".ending", (reply.get("data") or {}).get("ending"), "sealed")
+        self.check_tools_list(f, events)
+        self.check_package_bytes(f, self.inspect_runtime(f), [], 0)
+
+    def family_empty_materials(self):
+        import answer_witness as aw
+        text = "No materials were selected, so nothing here is established from them.\n"
+        script = [script_step("list", "list", follow=True),
+                  script_step("artifact", "record_artifact", {"label": "note", "text": text}),
+                  script_step("prepare", "prepare"),
+                  script_step("submit", "submit", {"prepared": {"$ref": ["prepare", "data", "prepared"]},
+                                                   "confirm": True}, final=True)]
+        f = self.scripted_fixture("family-empty-materials", empty=True, script=script)
+        label = f["label"]
+        self.accept(f)
+        reply, events, steps = self.run_script(f)
+        listed = ((steps.get("list") or [{}])[0].get("core") or {})
+        data = listed.get("data") or {}
+        self.eq(label + ".list", (listed.get("outcome"), data.get("materials"), data.get("returned"), data.get("total"),
+                                  data.get("complete")), ("completed", [], 0, 0, True))
+        made = ((steps.get("artifact") or [{}])[0].get("core") or {})
+        self.eq(label + ".artifact", (made.get("outcome"), (made.get("data") or {}).get("id"),
+                                      (made.get("data") or {}).get("encoding")), ("completed", "e1", "utf-8"))
+        # 7.4: artifacts fill no section, so every expected section is unfilled and the
+        # selection is not empty.
+        self.check_prepare(f, label + ".prepare", ((steps.get("prepare") or [{}])[0].get("core") or {}).get("data") or {},
+                           ["record_artifact"], 1)
+        self.eq(label + ".ending", (reply.get("data") or {}).get("ending"), "sealed")
+        entry = aw.Entry("e1", 1, "record_artifact", "note", text.encode(), encoding="utf-8")
+        self.check_package_bytes(f, self.inspect_runtime(f), [entry], 1)
+
+    def runtime_read_search(self):
+        import answer_witness as aw
+        multi = b"zz" + ("€" * 30000).encode()
+        extra = {"materials/multi.txt": multi, "materials/hits.txt": b"aaa\n" * 200 + b"abc\n",
+                 "materials/few.txt": b"one aa here\n"}
+        scope = ["question"] + sorted(list(extra) + ["materials/report.txt"], key=lambda n: n.encode())
+        script = [script_step("read-multi", "read", {"source": "materials/multi.txt"}, follow=True),
+                  script_step("start-mid", "read", {"source": "materials/multi.txt", "start": 3}),
+                  script_step("start-past", "read", {"source": "materials/multi.txt", "start": len(multi) + 1}),
+                  script_step("start-end", "read", {"source": "materials/multi.txt", "start": len(multi)}),
+                  script_step("search-hits", "search", {"text": "aa", "sources": ["materials/hits.txt"]}, follow=True),
+                  script_step("search-default", "search", {"text": "aa"}, follow=True),
+                  script_step("search-explicit", "search", {"text": "aa", "sources": scope}, follow=True),
+                  script_step("search-aaa", "search", {"text": "aaa", "sources": ["materials/hits.txt"]}, follow=True),
+                  script_step("search-absent", "search", {"text": "not present anywhere"}, follow=True),
+                  script_step("search-1025", "search", {"text": "q" * 1025}),
+                  script_step("search-1024", "search", {"text": "q" * 1024}),
+                  script_step("read-question", "read", {"source": "question"}, follow=True),
+                  script_step("list", "list", follow=True),
+                  script_step("prepare", "prepare"),
+                  script_step("submit", "submit", {"prepared": {"$ref": ["prepare", "data", "prepared"]},
+                                                   "confirm": True}, final=True)]
+        f = self.scripted_fixture("read-search", extra=extra, script=script)
+        label = f["label"]
+        self.accept(f)
+        reply, events, steps = self.run_script(f)
+        sources = dict(f["materials"], question=f["body"])
+
+        def cores(name):
+            return [e.get("core") or {} for e in steps.get(name) or []]
+
+        def witness_hits(text, names):
+            return [{"source": s, "start": o, "end": o + len(text.encode()), "line": aw.line_of(sources[s], o)}
+                    for s in names for o in aw.occurrences(sources[s], text.encode())]
+
+        def hits_of(name):
+            out = []
+            for c in cores(name):
+                out += [{k: h.get(k) for k in ("source", "start", "end", "line")}
+                        for h in ((c.get("data") or {}).get("hits") or [])]
+            return out
+
+        pages = steps.get("read-multi") or []
+        ranges = [((e.get("core") or {}).get("data") or {}).get("range") for e in pages]
+        self.eq(label + ".read.ranges", ranges, [list(r) for r in aw.read_pages(multi)])
+        got = [step_page_bytes(e) for e in pages]
+        self.eq(label + ".read.bytes", b"".join(got).hex() if got and None not in got else None, multi.hex())
+        for index, event in enumerate(pages):
+            data = (event.get("core") or {}).get("data") or {}
+            start, end = data.get("range") or (None, None)
+            self.eq(label + ".read.page-%d" % index, (data.get("cite"), data.get("lines"), data.get("complete")),
+                    ({"source": "materials/multi.txt", "start": start, "end": end},
+                     aw.lines_span(multi, start, end) if isinstance(start, int) else None, index == len(pages) - 1))
+        mid = (cores("start-mid") or [{}])[0]
+        mid_ints = [v for v in iter_values(mid.get("data")) if type(v) is int]
+        self.eq(label + ".range.mid-codepoint", (mid.get("outcome"), mid.get("reason"), 2 in mid_ints and 5 in mid_ints),
+                ("refused", "range_invalid", True))
+        past = (cores("start-past") or [{}])[0]
+        self.eq(label + ".range.past-end", (past.get("outcome"), past.get("reason")), ("refused", "range_invalid"))
+        at_end = (steps.get("start-end") or [{}])[0]
+        data = (at_end.get("core") or {}).get("data") or {}
+        blocks = ((at_end.get("response") or {}).get("result") or {}).get("content") or []
+        self.eq(label + ".range.at-end", ((at_end.get("core") or {}).get("outcome"), data.get("range"), data.get("complete"),
+                                          data.get("lines"), data.get("cite"), data.get("text"), len(blocks)),
+                ("completed", [len(multi), len(multi)], True, None, None, "", 1))
+        self.control("read-start-inside-code-point-refused", mid.get("reason") == "range_invalid")
+        hits = cores("search-hits")
+        self.eq(label + ".search.hits", hits_of("search-hits"), witness_hits("aa", ["materials/hits.txt"]))
+        self.check(label + ".search.page-bound", all(len((c.get("data") or {}).get("hits") or []) <= 128 for c in hits),
+                   [len((c.get("data") or {}).get("hits") or []) for c in hits])
+        self.eq(label + ".search.completion", [(c.get("data") or {}).get("complete") for c in hits],
+                [False] * (len(hits) - 1) + [True])
+        self.check(label + ".search.cursors", len(hits) > 1 and all(
+            any(n.get("tool") == "search" and str((n.get("input") or {}).get("cursor", "")).startswith("sc.")
+                for n in c.get("next") or []) for c in hits[:-1]), [c.get("next") for c in hits])
+        self.check(label + ".search.cites", all(h.get("cite") == {"source": h.get("source"), "start": h.get("start"),
+                                                                   "end": h.get("end")}
+                                                for c in hits for h in (c.get("data") or {}).get("hits") or []), "cite")
+        self.eq(label + ".search.default-scope", hits_of("search-default"), witness_hits("aa", scope))
+        self.eq(label + ".search.scope-stated", ((cores("search-default") or [{}])[0].get("data") or {}).get("scope"), scope)
+        self.eq(label + ".search.invariance.explicit-scope", hits_of("search-explicit"), hits_of("search-default"))
+        self.eq(label + ".search.differing.aaa", hits_of("search-aaa"), witness_hits("aaa", ["materials/hits.txt"]))
+        absent = cores("search-absent")
+        self.eq(label + ".search.absent", (hits_of("search-absent"), (absent[-1].get("data") or {}).get("complete")
+                                           if absent else None), ([], True))
+        self.eq(label + ".search.text-bounds", [((cores(n) or [{}])[0]).get("outcome") for n in ("search-1025", "search-1024")],
+                ["refused", "completed"])
+        question = [step_page_bytes(e) for e in steps.get("read-question") or []]
+        self.eq(label + ".read.question", b"".join(question).hex() if question and None not in question else None,
+                f["body"].hex())
+        listed = cores("list")
+        index = fixture_material_index(f["materials"])
+        self.eq(label + ".list", [m for c in listed for m in (c.get("data") or {}).get("materials") or []],
+                [{"source": row["name"], "size": row["size"], "lines": row["lines"]} for row in index["files"]])
+        self.eq(label + ".list.complete", [((c.get("data") or {}).get("total"), (c.get("data") or {}).get("complete"))
+                                           for c in listed[-1:]], [(len(index["files"]), True)])
+        self.eq(label + ".ending", (reply.get("data") or {}).get("ending"), "sealed")
+        self.check_package_bytes(f, self.inspect_runtime(f), [], 0)
+
+    def runtime_identity_across_placements(self):
+        import answer_witness as aw
+        note = {"text": "The same words are recorded again.", "label": "same"}
+        first = [script_step("first", "record_account", note, id="identity-same")]
+        f = self.scripted_fixture("identity-across-placements", script=first, end="exit")
+        label = f["label"]
+        self.accept(f)
+        reply, _, steps = self.run_script(f, "run-1")
+        one = ((steps.get("first") or [{}])[0].get("core") or {})
+        self.eq(label + ".first", (one.get("outcome"), (one.get("data") or {}).get("id")), ("completed", "e1"))
+        self.eq(label + ".first-ending", (reply.get("data") or {}).get("ending"), "interrupted")
+        second = [script_step("again", "record_account", note, id="identity-same"),
+                  script_step("duplicate", "record_account", note, id="identity-same"),
+                  script_step("fresh-id", "record_account", note, id="identity-fresh"),
+                  script_step("prepare", "prepare"),
+                  script_step("submit", "submit", {"prepared": {"$ref": ["prepare", "data", "prepared"]},
+                                                   "confirm": True}, final=True)]
+        self.change_scenario(f, script=second, script_end=None, session=label + "-session-2")
+        reply, _, steps = self.run_script(f, "run-2", run=2)
+
+        def step(name):
+            event = (steps.get(name) or [{}])[0]
+            return event.get("core") or {}, event.get("response")
+
+        again, _ = step("again")
+        duplicate, answered = step("duplicate")
+        fresh, _ = step("fresh-id")
+        # CONTRACT: request IDs are unique within a placement, so placement 2 may use the ID
+        # again for a new invocation; inside it a repeated ID is refused with no effect.
+        self.eq(label + ".new-placement-new-invocation", (again.get("outcome"), (again.get("data") or {}).get("id"),
+                                                          (again.get("data") or {}).get("revision")), ("completed", "e2", 2))
+        self.check(label + ".label-duplicate", "label_duplicate" in json.dumps((again.get("data") or {}).get("notices")),
+                   again)
+        self.check(label + ".duplicate-answered", bool(answered), "no reply to a reused request ID")
+        self.check(label + ".duplicate-not-completed", duplicate.get("outcome") != "completed", duplicate)
+        self.eq(label + ".fresh-id", (fresh.get("outcome"), (fresh.get("data") or {}).get("id"),
+                                      (fresh.get("data") or {}).get("revision")), ("completed", "e3", 3))
+        self.eq(label + ".ending", (reply.get("data") or {}).get("ending"), "sealed")
+        entries = [aw.Entry(e, 1, "record_account", "same", note["text"].encode()) for e in ("e1", "e2", "e3")]
+        package = self.check_package_bytes(f, self.inspect_runtime(f, placements=2), entries, 3)
+        self.control("reused-id-in-placement-has-no-effect", duplicate.get("outcome") != "completed"
+                     and (package / "answer.json").read_bytes() == aw.answer_json(3, entries))
+
+    def runtime_fidelity_drain_unknown(self):
+        """Missing and duplicate echoes during the shutdown drain stay unknown and leave a
+        winning seal and its delivery alone (CONTRACT, observed reply fidelity)."""
+        for variant in ("late-missing", "late-duplicate"):
+            f = self.fidelity_fixture("fidelity-" + variant, variant)
+            label = f["label"]
+            reply = self.cmd(label + ".run", ["run", f["reference"]])
+            self.groups_absent(f)
+            self.harness_clean(f)
+            self.fidelity_page_witness(f)
+            late = f["witness"] / "late-echo.bin"
+            self.require(label + ".late-handler-ran", late.exists(), str(late))
+            if variant == "late-missing":
+                self.eq(label + ".nothing-echoed", late.read_bytes(), b"")
+            else:
+                self.check(label + ".late-captured", late.stat().st_size > 0
+                           and late.read_bytes() in self.captured_channel(f, "stdout"), str(late))
+            self.fidelity_record(f, 4, 0, unknown_min=2)
+            self.fidelity_diagnostics(f, False)
+            self.eq(label + ".seal-won", (reply.get("data") or {}).get("ending"), "sealed")
+            status = self.inspect_runtime(f)
+            self.check(label + ".summary-fidelity", "fidelity" in status["data"].get("summary", "").lower(), status["data"])
+            self.close_after_delivery(f, self.check_delivery(f, status))
+
+    def runtime_sealed_late_close(self):
+        if self.variant is None or b"STEWART_TEST_FAULT" not in self.variant.read_bytes():
+            return "--variant-binary with claude-code,fault-injection is required for the delivery pause"
+        original = self.binary
+        self.binary = self.variant
+        try:
+            self.sealed_late_close()
+        finally:
+            self.binary = original
+
+    def sealed_late_close(self):
+        """An auditor seal is linked and the run pauses in its delivery; close is requested
+        then. The seal stands with its actor, the run's delivery completes, and because that
+        attempt ended after the first close_requested, close awaits confirmation
+        (INTERFACE 5.8, 8.3, 8.4; CONTRACTS, close continues delivery)."""
+        f = self.fixture("sealed-late-close", scenario="submit")
+        label = f["label"]
+        self.accept(f)
+        faults = f["witness"] / "faults"
+        faults.mkdir()
+        env = dict(self.env, STEWART_TEST_FAULT="delivery.after_member:1=pause", STEWART_TEST_FAULT_DIR=str(faults))
+        argv = [str(self.binary), "run", f["reference"], "--json"]
+        close_argv = [str(self.binary), "close", f["reference"], "--json"]
+        paths = {name: f["witness"] / name for name in ("run.stdout", "run.stderr", "close.stdout", "close.stderr")}
+        before = snapshot(f["archive"])
+
+        def boundary(event, **facts):
+            with (f["witness"] / "publication-boundary.jsonl").open("ab") as stream:
+                stream.write(compact({"event": event, "monotonic_ns": time.monotonic_ns(), **facts}) + b"\n")
+
+        def records(kind):
+            return [r for p in sorted((self.audit_path(f) / "log").glob("*.json"), key=lambda p: int(p.stem))
+                    for r in [strict_loads(p.read_bytes())] if r.get("kind") == kind]
+
+        def await_fact(predicate, owner, seconds=15):
+            until = time.monotonic() + seconds
+            while owner.poll() is None and time.monotonic() < until:
+                if predicate():
+                    return True
+                time.sleep(0.01)
+            return bool(predicate())
+
+        close_process = None
+        with contextlib.ExitStack() as streams:
+            out = {name: streams.enter_context(path.open("wb")) for name, path in paths.items()}
+            process = subprocess.Popen(argv, stdout=out["run.stdout"], stderr=out["run.stderr"], env=env, cwd=self.cwd)
+            try:
+                self.require(label + ".delivery-paused", await_fact(lambda: bool(list(faults.glob("delivery.after_member*.paused"))),
+                                                                    process), paths["run.stderr"].read_text(errors="replace"))
+                status = self.cmd(label + ".status-paused", ["status", f["reference"]])
+                self.eq(label + ".seal-before-close", status["data"].get("seal", {}).get("actor"), "auditor")
+                close_process = subprocess.Popen(close_argv, stdout=out["close.stdout"], stderr=out["close.stderr"],
+                                                 env=self.env, cwd=self.cwd)
+                self.require(label + ".close-requested-while-paused",
+                             await_fact(lambda: bool(records("close_requested")), close_process), str(self.audit_path(f)))
+                boundary("close-requested-observed", owner_alive=process.poll() is None)
+                release_fault_pauses(faults, boundary)
+                process.wait(timeout=30)
+                close_process.wait(timeout=60)
+            finally:
+                release_fault_pauses(faults, boundary)
+                for owner in (process, close_process):
+                    if owner is not None and owner.poll() is None:
+                        owner.kill()
+                        owner.wait(timeout=5)
+        reply = strict_loads(paths["run.stdout"].read_bytes())
+        closing = strict_loads(paths["close.stdout"].read_bytes())
+        data, cdata = reply.get("data") or {}, closing.get("data") or {}
+        self.eq(label + ".run", (reply.get("outcome"), data.get("ending"), process.returncode,
+                                 (data.get("seal") or {}).get("actor"), (data.get("delivery") or {}).get("outcome")),
+                ("completed", "sealed", 0, "auditor", "verified"))
+        self.eq(label + ".retained-earlier-bytes", immutable_changes(before, snapshot(f["archive"])), [])
+        self.groups_absent(f)
+        self.eq(label + ".close-effects", closing.get("effects"),
+                {"run": "ended", "seal": "existing", "delivery": "verified", "closure": "unfinished"})
+        self.eq(label + ".close", (closing.get("outcome"), close_process.returncode, cdata.get("unfinished_reason"),
+                                   (cdata.get("seal") or {}).get("actor"), cdata.get("runs")),
+                ("completed", 0, "awaiting_confirmation", "auditor", {"count": 1, "held": False, "last_ending": "sealed"}))
+        token = cdata.get("confirmation")
+        self.require(label + ".confirmation-token", isinstance(token, str) and token.startswith("cf1."), token)
+        kinds = [r.get("kind") for p in sorted((self.audit_path(f) / "log").glob("*.json"), key=lambda p: int(p.stem))
+                 for r in [strict_loads(p.read_bytes())]]
+        order = [k for k in kinds if k in ("seal", "close_requested", "delivery_ended")]
+        self.eq(label + ".seal-close-delivery-order", order, ["seal", "close_requested", "delivery_ended"])
+        seals = records("seal")
+        self.eq(label + ".one-auditor-seal", [(r["body"].get("actor"), r["body"].get("invocation") is not None)
+                                               for r in seals], [("auditor", True)])
+        ended = records("delivery_ended")
+        self.eq(label + ".run-delivered", [(r["body"].get("attempt"), r["body"].get("outcome"), r["body"].get("recorded_by"))
+                                           for r in ended], [(1, "verified", "run")])
+        self.control("late-close-keeps-auditor-seal", [r["body"].get("actor") for r in seals] == ["auditor"]
+                     and cdata.get("unfinished_reason") == "awaiting_confirmation")
+        status = self.cmd(label + ".status-awaiting", ["status", f["reference"]])
+        package = self.check_delivery(f, status)
+        delivered = self.package_identity(package)
+        done = self.cmd(label + ".confirm", ["close", f["reference"], "--confirm", token])
+        ddata = done.get("data") or {}
+        self.eq(label + ".closed", (ddata.get("closure"), ddata.get("placement"), (ddata.get("seal") or {}).get("actor")),
+                ("complete", "confirmed", "auditor"))
+        self.eq(label + ".package-unchanged", self.package_identity(package), delivered)
+        self.eq(label + ".one-package", [p.name for p in sorted(package.parent.iterdir())], [package.name])
+
     def run(self):
         for name, _ in CASES:
             if name not in self.selected:
@@ -3777,6 +4461,44 @@ def synthetic_harness(scenario_path, environment_path, argv):
                   "uuid": "00000000-0000-4000-8000-%012d" % serial,
                   "compact_metadata": {"trigger": "auto", "pre_tokens": 150000 + serial}})
 
+        if scenario["mode"] == "scripted":
+            # A specification-derived call list from the outer driver; each step may name
+            # values from earlier core replies. Its expectations live in the outer driver.
+            replies = {}
+            for step in scenario["script"]:
+                label, name = step["label"], step["tool"]
+                arguments = resolve_script_value(step.get("arguments", {}), replies)
+                if step.get("final"):
+                    value = frame("tools/call", {"name": name, "arguments": arguments}, identity=step.get("id"))
+                    send_frames([value])
+                    event("script-final", label=label, id=value["id"], name=name, arguments=arguments,
+                          group=os.getpgrp())
+                    time.sleep(600)  # Only Stewart's stop after a confirmed submit ends this process.
+                    return 9
+                page = 0
+                while True:
+                    value = frame("tools/call", {"name": name, "arguments": arguments},
+                                  identity=step.get("id") if page == 0 else None)
+                    send_frames([value])
+                    try:
+                        response = receive(value["id"])
+                    except TimeoutError:
+                        response = {}  # unanswered; the outer driver judges the missing reply
+                    content = (response.get("result") or {}).get("content") or []
+                    core = (strict_loads(content[0]["text"].encode())
+                            if content and content[0].get("type") == "text" else None)
+                    event("script-step", label=label, page=page, request=value, response=response, core=core)
+                    replies.setdefault(label, core)
+                    more = script_follow_input(core, name) if step.get("follow") else None
+                    if more is None:
+                        break
+                    arguments, page = more, page + 1
+            event("script-ended", end=scenario.get("script_end"))
+            if scenario.get("script_end") == "exit":
+                event("deliberate-interruption")
+                return 7
+            raise RuntimeError("a script without a final submit must end by exit")
+
         if scenario["mode"] == "captured-accounting":
             variant = scenario["accounting_variant"]
             for _ in range(2 if variant == "duplicate" else 1):
@@ -3928,10 +4650,13 @@ def synthetic_harness(scenario_path, environment_path, argv):
                 raise RuntimeError("fidelity fixture could not prepare submission")
             if variant.startswith("late-"):
                 message, result = held
+                identity = message["message"]["content"][0]["tool_use_id"]
                 if variant == "late-mismatch":
-                    identity = message["message"]["content"][0]["tool_use_id"]
                     message = fidelity_message(identity, result, "c3-two")
-                raw = compact(message) + b"\n"
+                elif variant == "late-duplicate":
+                    message = fidelity_message(identity, result, "duplicate")
+                # late-missing: the held echo never appears, during the drain or after it.
+                raw = b"" if variant == "late-missing" else compact(message) + b"\n"
                 # No shared event lock in a signal handler. Its separate witness
                 # is outside archive disposal and records completed transmission.
                 late_fd = os.open(witness / "late-echo.bin", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
@@ -4461,6 +5186,7 @@ def self_test():
     def check(name, value):
         checks.append((name, bool(value)))
     authoring_selftest(check)
+    scripted_selftest(check)
     check("c5.partial-usage-size", len(compact(C5_PARTIAL_USAGE)) == 251)
     check("c5.partial-usage-digest", sha(compact(C5_PARTIAL_USAGE)) ==
           "db6136588bc9b971abaf7a1a6da35f877e3a05253ddad40d54e5b0ec018272c9")
@@ -4914,6 +5640,8 @@ for raw in sys.stdin.buffer:
         ("checkpoint-then-crash", 2, None),
         ("resume-no-submit", 1, lambda e: e["event"] == "output-transmitted" and e.get("last")),
         ("no-submit", 2, lambda e: e["event"] == "output-transmitted" and e.get("last")),
+        ("scripted", 1, lambda e: e["event"] == "script-final"),
+        ("scripted-exit", 1, None),
     )
     for mode, inputs, finished in modes:
         with tempfile.TemporaryDirectory(prefix="stewart-synthetic-mode-") as directory:
@@ -4942,6 +5670,15 @@ for raw in sys.stdin.buffer:
                 scenario["mode"] = "tool-name"
                 scenario["assistant_tool"] = ("record_account" if mode.endswith("-denied")
                                              else "mcp__stewart__record_account")
+            if mode.startswith("scripted"):
+                scenario["mode"] = "scripted"
+                scenario["script"] = [script_step("record", "record_account", {"text": "x", "label": "same"},
+                                                  id="identity-41")]
+                if mode == "scripted":
+                    scenario["script"] += [script_step("prepare", "prepare"), script_step(
+                        "submit", "submit", {"prepared": {"$ref": ["prepare", "data", "prepared"]}, "confirm": True},
+                        final=True)]
+                scenario["script_end"] = "exit" if mode == "scripted-exit" else None
             (root / "scenario.json").write_bytes(compact(scenario))
             (root / "peer.py").write_text("publication=%r\n" % (mode == "submit-publication") + mode_peer)
             (root / "settings.json").write_bytes(compact({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [
@@ -5091,6 +5828,18 @@ for raw in sys.stdin.buffer:
             elif mode == "resume-no-submit":
                 check("mode.resume-no-submit.result", [o["usage"] for o in outputs if o.get("type") == "result"]
                       == [SECOND_SESSION["usage"]])
+            elif mode.startswith("scripted"):
+                labels = [e["label"] for e in events if e["event"] == "script-step"]
+                requests = [e["request"] for e in events if e["event"] == "script-step"]
+                final = [e for e in events if e["event"] == "script-final"]
+                check("mode." + mode + ".steps", labels == (["record", "prepare"] if mode == "scripted" else ["record"]))
+                check("mode." + mode + ".fixed-id", requests and requests[0]["id"] == "identity-41")
+                if mode == "scripted":
+                    check("mode.scripted.resolved-final", len(final) == 1 and final[0]["arguments"]
+                          == {"prepared": "ap1.selftest", "confirm": True} and any(submitted(e) for e in events))
+                else:
+                    check("mode.scripted-exit.exit", code == 7 and not final
+                          and sum(e["event"] == "deliberate-interruption" for e in events) == 1)
             elif mode == "no-submit":
                 check("mode.no-submit.results", [o["num_turns"] for o in outputs if o.get("type") == "result"] == [2, 3])
     with tempfile.TemporaryDirectory(prefix="stewart-synthetic-protocol-") as directory:

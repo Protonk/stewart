@@ -761,7 +761,7 @@ def c_log_damaged(t):
     t.mode_exempt.add(bad)
     st = t.status(sub, name="damaged.status")
     t.check_status(st, sub, "damaged.status", condition="log_damaged", accepted="yes", next_cmds=("receipt",))
-    t.check("damaged.status.names-record", mentions(st.data.get("diagnostics"), "%d.json" % (n + 1)), st.data.get("diagnostics"))
+    t.check("damaged.status.names-record", names_record(st.data.get("diagnostics"), "log/%d.json" % (n + 1)), st.data.get("diagnostics"))
     before = t.audit_locations(sub)
     rep = t.prepare(sub, name="damaged.prepare", expect="refused", reason="log_damaged")
     t.check_retained(rep, sub, "damaged.prepare", before)
@@ -777,7 +777,7 @@ def c_log_damaged(t):
     # close_requested is readable, and none is here.
     t.eq("damaged.close.effects", no_diag(rep.effects),
          {"run": "unknown", "seal": "unknown", "delivery": "unknown", "closure": "unknown"})
-    t.check("damaged.close.bad_records", mentions(rep.data.get("bad_records"), "%d.json" % (n + 1)),
+    t.check("damaged.close.bad_records", names_record(rep.data.get("bad_records"), "log/%d.json" % (n + 1)),
             rep.data.get("bad_records"))
     t.eq("damaged.close.next", sorted({a[1] for a in rep.next_argvs()}), ["status"])
     t.eq("damaged.close.published-nothing", sorted(os.listdir(os.path.join(sub.audit_dir, "log"))), names)
@@ -927,7 +927,7 @@ def c_acceptance_uncertain(t):
     st = t.status(sub, name="uncertain.status")
     t.check_status(st, sub, "uncertain.status", condition="acceptance_uncertain", accepted="unknown",
                    next_cmds=("status",))
-    t.check("uncertain.status.names-record", mentions(st.data.get("diagnostics"), rec["name"]), st.data.get("diagnostics"))
+    t.check("uncertain.status.names-record", names_record(st.data.get("diagnostics"), "log/" + rec["name"]), st.data.get("diagnostics"))
     intakes = t.intake_dirs(sub)
     before = t.audit_locations(sub)
     rep = t.commission(sub, h, name="uncertain.commission", expect="refused", reason="log_damaged")
@@ -943,7 +943,7 @@ def c_acceptance_uncertain(t):
     t.eq("uncertain.close.reason", rep.data.get("unfinished_reason"), "log_damaged")
     t.eq("uncertain.close.effects", no_diag(rep.effects),
          {"run": "unknown", "seal": "unknown", "delivery": "unknown", "closure": "unknown"})
-    t.check("uncertain.close.bad_records", mentions(rep.data.get("bad_records"), rec["name"]), rep.data.get("bad_records"))
+    t.check("uncertain.close.bad_records", names_record(rep.data.get("bad_records"), "log/" + rec["name"]), rep.data.get("bad_records"))
     t.eq("uncertain.close.published-nothing", sorted(os.listdir(os.path.join(sub.audit_dir, "log"))), names)
 
 
