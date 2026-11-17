@@ -81,8 +81,7 @@ submitted and another exhausted its allowance with a partial account later
 sealed and closed by the manager. A bounded Opus encounter preserved an account
 through real provider compaction, revised it and submitted a verified return.
 The [qualification record](apparatus/qualified.md)
-identifies those builds and results, and the [interaction findings](apparatus/studies/interaction/RESULTS.md)
-report observations from actual inquiries.
+identifies those builds and results.
 
 The default-off [Claude Code development adapter](docs/claude-code/CONTRACT.md)
 has also completed native ordinary and inadequate-evidence open inquiries with

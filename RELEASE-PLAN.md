@@ -22,7 +22,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separately scheduled release work | Complete the Messages model gate, platform qualification and acceptance-policy review. | [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and the requirements below |
 | Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
-| Unselected | The lookback's behavior-preserving refactor candidates and public-form candidates. | [Lookback findings](development/LOOKBACK-AUDIT.md#findings-and-dispositions) |
+| Unselected | The lookback's behavior-preserving refactor candidates and public-form candidates. | [Unselected candidates](#unselected-candidates) |
 
 Use the existing apparatus and retained exact writers; reconcile uncertain
 processes or effects before reusing them. Build only the prerequisites needed
@@ -42,8 +42,54 @@ Broader blinded evaluation and family dogfooding remain deferred; the
 owns their product boundaries. An agent-manager study omitting the question from
 returns is only an option after the manager interface is established and the
 principal selects it, not a pending task. A future study needs a named uncertainty
-and bounded commission. Use the [interaction findings](apparatus/studies/interaction/RESULTS.md)
-and evidence index when selecting its inputs and discriminating comparison.
+and bounded commission. Select its inputs and discriminating comparison from the
+qualification index's evaluation records and the interaction findings
+(`apparatus/studies/interaction/RESULTS.md` at `77375f1`).
+
+## Unselected candidates
+
+The developer lookback (2026-11-16 and 17) left these candidates. None is
+selected. Behavior-preserving candidates keep every public byte and need only
+the usual checks:
+
+- Split the pinned arrangement into common and per-runtime parts. Agent
+  arrangements still carry Messages placeholder members, and an archive with
+  Messages settings beside an agent arrangement, which Stewart cannot
+  produce, panics after `run_started` instead of refusing.
+- Type usage, limits and remaining allowances by runtime. Agent limits can
+  still reach Messages arithmetic (unreachable today), and adding usage
+  across runtimes drops the other runtime's values silently.
+- Move placement outcome types out of the Messages provider module, so the
+  agent runtime stops depending on Messages abort and placement machinery.
+- One notice claim for both runtimes. Their preconditions differ: Messages can
+  claim a reminder after `close_requested`, the agent runtime cannot.
+  Aligning them needs a small decision.
+- One family resolution at preparation with a cross-runtime arrangement byte
+  test; pinned and compiled family facts are not compared at run.
+- Enforce the Messages request timeout from the pinned arrangement rather than
+  an equal constant.
+- Pin the agent readable view in a Cargo test, and decide whether a bad API
+  limit beside a profile should keep reporting two defects for one key.
+
+Public-form candidates change a recorded or reply form and need the
+principal's decision:
+
+- Agent records without Messages placeholders (`provider`, `requests`,
+  `attempts`), with a top-level runtime and only agent causes.
+- Agent accounting naming its session and accepted checkpoint, with stopping
+  outside usage.
+- Agent notice identity with a durable transmission observation, so recovery
+  could report `sent` rather than `unknown`.
+- Agent `tool_result` without transport coordinates; named agent stop causes
+  instead of one `protocol_anomaly`; a defined
+  `claude-code,fault-injection,sabotage` build.
+- Smaller wording and form gaps: sealed advice says "An ordinary close confirms
+  where the delivered copy is" when `run` did not deliver; an agent seal on a
+  damaged log reports delivery `unknown` where Messages gives `none`; `run`'s
+  binding refusal `runtime_profile_invalid` carries no `data.surface`, which
+  the contract requires only of `prepare`.
+
+Family-descriptor candidates belong to the manager interface's registry stage.
 
 ## First-release requirements
 

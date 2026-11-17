@@ -22,8 +22,9 @@ of bypassing their custody/export guards. The [qualification index](apparatus/qu
 identifies checked builds and retained evaluations. Each live packet needs
 matching rehearsal coverage for its exact writer, inputs and credential route.
 Keep open audits and their exact writers until closure or explicit disposition.
-Use the [lookback evidence map](development/LOOKBACK-AUDIT.md#evidence-for-the-audit)
-to locate the full-size synthetic rehearsal and bounded live compaction inputs.
+The full-size synthetic compaction rehearsal is reviewed in
+`.scratch/readiness-m4-rehearsal-02/REVIEW.json`, the bounded live compaction
+encounter in `.scratch/readiness-m4-live-01/REVIEW.json`.
 Recheck source, writer, image, input and saved-connection bindings for each new
 packet. These inputs do not replace the per-model conformance matrix.
 
@@ -56,8 +57,8 @@ to ACCEPTANCE coverage belongs to the principal.
   same-source comparisons.
 - [ ] Record the observed end of the process group for every placement. Today
   the reusable launcher records that observation only after a signal. The
-  [continuation evidence](apparatus/studies/interaction/RESULTS.md#messages-continuation)
-  supplies post-return PID/group observations for unsignalled placements;
+  continuation evidence (`apparatus/studies/interaction/RESULTS.md` at
+  `77375f1`, "Messages continuation") supplies post-return PID/group observations for unsignalled placements;
   integrate and rehearse that mechanism in the reusable apparatus.
 - [ ] Support abrupt process death. A killed placement has no `run_ended` until
   the next `run` reconciles it as `process_gone`; today the export guard

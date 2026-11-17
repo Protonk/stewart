@@ -69,15 +69,15 @@ and independent-driver work between authors.
 
 - [ ] Walk `new`, `prepare`, `commission`, `run`, `receipt`, `status`, `close`
   and the return against the owning contracts and the
-  [interaction findings](../apparatus/studies/interaction/RESULTS.md). Record
+  interaction findings (`apparatus/studies/interaction/RESULTS.md` at
+  `77375f1`; the qualification index identifies their originals). Record
   actionable mismatches here as they are found, without reopening the decided
   return-context change for another reader study.
 - [ ] Specify the family registry: identity/version, availability, purpose,
   accepted roles, optional evidence classes, declaration shape, structural
   constraints, recommended roles and explanation/remedy text. Derive meanings
   from the existing families, not filenames or an inferred reading of prose.
-- [ ] Apply the [lookback audit questions](LOOKBACK-AUDIT.md#question-families-materials-and-evidence)
-  and its unselected [family-descriptor candidates](LOOKBACK-AUDIT.md#public-form-candidates-not-selected)
+- [ ] Apply the [family registry design inputs](#family-registry-design-inputs)
   before freezing that registry. Separate material roles, presentation advice,
   mechanical requirements and evidence expectations; identify which facts belong
   in the pinned arrangement and which are derived views. Keep runtime mapping
@@ -107,6 +107,47 @@ and independent-driver work between authors.
 **Complete when:** each promised rule has one owner; examples distinguish invalid
 structure from admissible insufficiency; exact schemas and test obligations are
 reviewable before implementation.
+
+#### Family registry design inputs
+
+The family definition already owns identity/version, guidance, ordered
+recording tools and expected sections, and arrangement construction feeds both
+runtimes. Materials instead share one literal recursive UTF-8 world, and
+citation checks use one exact-locator and quote policy. Start from a typed
+family definition with explicit presentation and evidence-policy descriptors
+that select today's behavior for every family; a plugin loader, a second
+material reader or a family-specific custody path is not needed for that seam.
+
+| Component | What it should be able to express | Boundary to preserve |
+| --- | --- | --- |
+| Material roles | Explicit manager-declared roles and references to selected material; family-specific explanations and remedies. | Meaning comes from declarations, not filename guesses or prose classification. All literal selected bytes remain captured. A missing mapping does not prove evidence absent elsewhere. |
+| Presentation policy | Role grouping, ordering, navigation and guidance about which sources serve which purpose. Identify derived views separately from originals. | Stable source identity, byte ranges, pagination and search completeness. No silent filtering, truncation, rewritten source or substituted excerpt; a changed access promise requires a decision. |
+| Evidence expectations | Recommended evidence classes, provenance/context prompts, and explanations of what a missing source prevents establishing. | Separate structural invalidity from admissible insufficiency. A supplied report remains its author's claim; a proposed experiment is not witnessed execution. |
+| Mechanical rules | Well-formed declarations, supported roles and valid references, with stable errors, warnings and suggestions. | Current empty/unequal/insufficient evidence stays admissible. A future mandatory evidence rule needs an explicit predicate and a principal decision about refusal versus advice. |
+| Answer vocabulary and rendering | Family-owned authoring kinds, expected-section notices and presentation of the auditor's attributed account. | Missing sections and empty answers remain allowed. Citation validity does not grade support. Do not require a finding, winner, fixed hypothesis or answer endorsement. |
+| Runtime mapping | Render the same effective family facts into Messages system/tools or the agent arrangement. | Family choice grants no extra access, execution, budget or lifecycle authority. Keep supplied open-inquiry guidance distinct from product-owned orientation and tools. |
+
+Decide which descriptors are versioned and pinned at preparation and
+acceptance, which declarations belong in the question file, and which views
+derive from captured facts; a later registry change must not silently alter an
+accepted arrangement. On paper first, use the worked examples for a
+change-impact exercise: add a hypothetical evidence role, change only its
+presentation advice and list every module, pinned document and test that would
+move. The desirable result is a versioned family descriptor with focused tests
+and no new lifecycle or per-runtime authoring branch.
+
+Controls compare valid/invalid references, missing mappings, empty materials,
+unequal evidence and renaming invariance, and detect a lost material, a falsely
+required advisory role, a changed accepted guidance block and a family change
+leaking into runtime permissions. Before any new policy, show that extraction
+preserves each family's exact tool order, schemas, arrangement and section
+notices in both runtimes.
+
+Unselected family-descriptor candidates from the developer lookback: verify the
+pinned arrangement against the compiled family at run; pin answer
+expectations; family-owned presentation separate from replaceable guidance;
+role-aware reading presentation; tool identity on refusal paths; a
+presentation-advice channel.
 
 ### 2. Implement one set of production rules
 
