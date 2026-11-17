@@ -2,9 +2,17 @@
 //! signals SIGTERM, SIGINT and SIGHUP.
 //!
 //! Both fire the placement's [`AbortHandle`], which shuts down any in-flight
-//! provider request and is checked before every request and every tool call.
-//! Neither fires once a seal is recorded: the run then finishes its delivery
-//! first, and the placement ends `sealed`.
+//! provider request, wakes a retry delay and is checked before every request
+//! and every tool call. Neither fires once a seal is recorded: the run then
+//! finishes its delivery first, and the placement ends `sealed`.
+//!
+//! A signal first closes the placement's publication gate
+//! ([`crate::gate::Gate`]). A mutation executing then whose log record has
+//! not begun to link is refused `placement_stopped` and links nothing, unless
+//! a durable `close_requested` refuses it `authoring_ended` first; one whose
+//! link has begun holds the gate's permit, and the signal waits for that link.
+//! After a seal the closed gate changes nothing: reads are not gated, and
+//! every mutation already refuses `authoring_ended`.
 //!
 //! Signals are blocked in every thread of the process and received by one
 //! dedicated thread with `sigwait`, so no code runs in a signal handler and
@@ -68,8 +76,9 @@ pub fn block_signals() -> std::io::Result<()> {
 /// Start the thread that receives the blocked stop signals. Each one before
 /// a seal fires the stop path with [`StopCause::Signal`]; after a seal it is
 /// noted and the delivery in progress continues. The thread lives until the
-/// process exits. `before_observation` orders any runtime publication gate
-/// before the signal flag becomes visible to the placement loop.
+/// process exits. `before_observation` closes the placement's publication
+/// gate, waiting for a link in progress, before the signal flag becomes
+/// visible to the placement loop.
 pub fn receive_signals(
     abort: AbortHandle,
     flags: Flags,
@@ -146,10 +155,10 @@ pub fn watch<'scope, 'env>(
     Watcher { stop: Some(tx) }
 }
 
-#[cfg(all(test, feature = "claude-code"))]
+#[cfg(test)]
 mod tests {
     use super::*;
-    use crate::claude_code::gate::Gate;
+    use crate::gate::Gate;
     use crate::log::{self, PubErr};
     use std::time::Instant;
 
@@ -158,18 +167,18 @@ mod tests {
         let (path, audit) = log::tests::scratch_audit();
         let gate = Gate::new(Instant::now() + Duration::from_secs(60));
         assert!(
-            gate.within(|| log::publish(&audit, "reference", |_| Ok(log::tests::reference_body())))
-                .is_ok()
+            log::publish_under(&audit, "reference", Some(&gate), |_| Ok(
+                log::tests::reference_body()
+            ))
+            .is_ok()
         );
         let flags = Flags::default();
         let abort = AbortHandle::new();
-        let result = gate.within(|| {
-            log::publish(&audit, "close_requested", |_| {
-                // The receiver observes the signal after the tool started,
-                // before its publication permit. No event-loop poll intervenes.
-                observe_signal(&abort, &flags, &|| gate.stop());
-                Ok(log::tests::close_body())
-            })
+        let result = log::publish_under(&audit, "close_requested", Some(&gate), |_| {
+            // The receiver observes the signal after the tool started,
+            // before its publication permit. No event-loop poll intervenes.
+            observe_signal(&abort, &flags, &|| gate.stop());
+            Ok(log::tests::close_body())
         });
         assert!(flags.signalled.load(Ordering::SeqCst));
         assert_eq!(abort.cause(), Some(StopCause::Signal));
@@ -178,13 +187,10 @@ mod tests {
         assert_eq!(log::unlinked_stage(&audit, &log::read(&audit)).len(), 1);
         let fresh = Gate::new(Instant::now() + Duration::from_secs(60));
         assert!(
-            fresh
-                .within(|| log::publish(
-                    &audit,
-                    "close_requested",
-                    |_| Ok(log::tests::close_body())
-                ))
-                .is_ok()
+            log::publish_under(&audit, "close_requested", Some(&fresh), |_| Ok(
+                log::tests::close_body()
+            ))
+            .is_ok()
         );
         assert_eq!(log::read(&audit).recs.len(), 2);
         std::fs::remove_dir_all(path).unwrap();

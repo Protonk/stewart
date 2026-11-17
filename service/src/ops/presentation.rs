@@ -84,9 +84,7 @@ pub fn request_unavailable(allowances: &J) -> Option<String> {
     };
     #[cfg(feature = "claude-code")]
     if remaining("placements") == Some(0) {
-        return Some(
-            "No further runtime placement can start: the placement allowance is exhausted.".into(),
-        );
+        return Some(PLACEMENTS_EXHAUSTED.into());
     }
     let reason = if remaining("turns") == Some(0) {
         "the turn allowance is exhausted".to_string()
@@ -105,15 +103,162 @@ pub fn request_unavailable(allowances: &J) -> Option<String> {
     ))
 }
 
-pub fn interrupted_advice(run: u64, unavailable: Option<&str>) -> String {
-    let action = match unavailable {
-        Some(reason) => format!(
-            "{reason} Close ends authoring and seals the recorded selection with manager attribution."
+/// What may follow an interrupted placement, as status and run advise it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Continuation {
+    /// Another placement may start under the same cumulative limits.
+    Open,
+    /// No further request can be sent, for the reason given; authoring stays
+    /// open until close ends it.
+    Unavailable(String),
+    /// The final permitted placement ended, and authoring ended with it as
+    /// `limit` (1.6): no placement start remains.
+    PlacementsExhausted,
+    /// A placement's stopping is unknown, so run and close would refuse
+    /// until status observes its launched process groups absent.
+    StopUnknown,
+}
+
+impl Continuation {
+    /// The continuation an interrupted placement's advice offers, from the
+    /// same observations the reply presents: the placements whose stopping
+    /// is unknown, the authoring state and the allowances.
+    pub fn of(state: &LogState, allowances: &J, stop_unknown: &StopUnknown) -> Continuation {
+        if !stop_unknown.is_empty() {
+            Continuation::StopUnknown
+        } else if state
+            .authoring_end()
+            .is_some_and(|e| e.by == crate::log::EndedBy::Limit)
+        {
+            Continuation::PlacementsExhausted
+        } else {
+            match request_unavailable(allowances) {
+                Some(reason) => Continuation::Unavailable(reason),
+                None => Continuation::Open,
+            }
+        }
+    }
+    /// Whether advice offers `run`.
+    pub fn may_run(&self) -> bool {
+        *self == Continuation::Open
+    }
+}
+
+pub fn interrupted_advice(run: u64, continuation: &Continuation) -> String {
+    let action = match continuation {
+        Continuation::Open => {
+            " Run continues it under the same cumulative limits, or close ends authoring."
+                .to_string()
+        }
+        Continuation::Unavailable(reason) => format!(
+            " {reason} Close ends authoring and seals the recorded selection with manager attribution."
         ),
-        None => "Run continues it under the same cumulative limits, or close ends authoring."
-            .to_string(),
+        Continuation::PlacementsExhausted => format!(
+            " {PLACEMENTS_EXHAUSTED} Close seals the recorded selection with manager attribution."
+        ),
+        // The summary's stopping line says what waits and why.
+        Continuation::StopUnknown => String::new(),
     };
-    format!("Run {run} was interrupted; the answer is not submitted. {action}")
+    format!("Run {run} was interrupted; the answer is not submitted.{action}")
+}
+
+const PLACEMENTS_EXHAUSTED: &str =
+    "No further runtime placement can start: the placement allowance is exhausted.";
+
+/// The placements that make run and close refuse `runtime_stop_unknown`
+/// (runtime contract, harness accounting record), by the check those
+/// refusals use, so status and run replies offer neither while any remains.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct StopUnknown {
+    /// Placements whose launched process groups were not observed absent.
+    pub groups: Vec<u64>,
+    /// Placements without a recorded ending whose runtime observations
+    /// cannot be read.
+    pub records: Vec<u64>,
+}
+
+impl StopUnknown {
+    pub fn is_empty(&self) -> bool {
+        self.groups.is_empty() && self.records.is_empty()
+    }
+    /// The summary lines naming each such placement and why.
+    pub fn lines(&self) -> String {
+        let mut lines = Vec::new();
+        if !self.groups.is_empty() {
+            lines.push(stop_unknown_line(&self.groups));
+        }
+        if !self.records.is_empty() {
+            lines.push(unreadable_line(&self.records));
+        }
+        lines.join("\n")
+    }
+}
+
+/// The placements that block a start and close cleanup. `live` is a
+/// placement that may still be running under the active lock: its owner
+/// observes its stopping, which is pending rather than unknown. The
+/// Messages runtime launches no process groups.
+pub fn stop_unknown(audit: &Audit, state: &LogState, live: Option<u64>) -> StopUnknown {
+    #[cfg(feature = "claude-code")]
+    {
+        use crate::claude_code::accounting::{StopBlock, stop_block};
+        let mut found = StopUnknown::default();
+        for p in state
+            .placements()
+            .iter()
+            .filter(|p| p.start.runtime.is_some() && Some(p.run) != live)
+        {
+            match stop_block(audit, p) {
+                Some(StopBlock::Groups(_)) => found.groups.push(p.run),
+                Some(StopBlock::Records(_)) => found.records.push(p.run),
+                None => (),
+            }
+        }
+        found
+    }
+    #[cfg(not(feature = "claude-code"))]
+    {
+        let _ = (audit, state, live);
+        StopUnknown::default()
+    }
+}
+
+/// The summary line naming each placement whose stopping is unknown.
+pub fn stop_unknown_line(runs: &[u64]) -> String {
+    let names: Vec<String> = runs.iter().map(u64::to_string).collect();
+    let (placements, their) = if runs.len() == 1 {
+        ("placement", "its")
+    } else {
+        ("placements", "their")
+    };
+    format!(
+        "Stopping of {placements} {} is unknown: {their} launched process groups were not observed absent. Run and close would refuse runtime_stop_unknown until they are; status observes stopping again.",
+        names.join(", ")
+    )
+}
+
+/// The summary line naming each placement without a recorded ending whose
+/// runtime observations cannot be read.
+pub fn unreadable_line(runs: &[u64]) -> String {
+    let names: Vec<String> = runs.iter().map(u64::to_string).collect();
+    let (placements, has, their) = if runs.len() == 1 {
+        ("Placement", "has", "its")
+    } else {
+        ("Placements", "have", "their")
+    };
+    format!(
+        "{placements} {} {has} no recorded ending, and {their} runtime observations cannot be read. Run and close would refuse runtime_stop_unknown until they can; status reads them again.",
+        names.join(", ")
+    )
+}
+
+/// The one next call while stopping is unknown: status, which observes it
+/// again.
+pub fn observe_stopping_next(audit: &Audit) -> crate::reply::Next {
+    crate::reply::Next::new(
+        audit.argv(&["status", &audit.reference]),
+        "Observe stopping again; once the launched process groups are observed absent and the runtime observations can be read, status offers run or close as the audit allows.",
+    )
 }
 
 fn text(value: Option<&J>) -> &str {
@@ -357,6 +502,67 @@ mod allowance_tests {
         assert!(request_unavailable(&unknown_usage(&limits)).is_none());
         assert!(request_unavailable(&J::Str("unknown".into())).is_none());
         assert!(request_unavailable(&J::Null).is_none());
+    }
+
+    #[test]
+    fn interrupted_advice_follows_what_may_continue() {
+        let advice = |c: Continuation| interrupted_advice(3, &c);
+        let head = "Run 3 was interrupted; the answer is not submitted.";
+        assert_eq!(
+            advice(Continuation::Open),
+            format!(
+                "{head} Run continues it under the same cumulative limits, or close ends authoring."
+            )
+        );
+        assert_eq!(
+            advice(Continuation::Unavailable("No turn remains.".into())),
+            format!(
+                "{head} No turn remains. Close ends authoring and seals the recorded selection with manager attribution."
+            )
+        );
+        // Authoring has already ended, so close only seals.
+        assert_eq!(
+            advice(Continuation::PlacementsExhausted),
+            format!(
+                "{head} No further runtime placement can start: the placement allowance is exhausted. Close seals the recorded selection with manager attribution."
+            )
+        );
+        // The stopping line names what waits; the advice offers nothing.
+        assert_eq!(advice(Continuation::StopUnknown), head);
+        assert!(Continuation::Open.may_run());
+        for c in [
+            Continuation::Unavailable(String::new()),
+            Continuation::PlacementsExhausted,
+            Continuation::StopUnknown,
+        ] {
+            assert!(!c.may_run(), "{c:?}");
+        }
+    }
+
+    #[test]
+    fn the_stopping_line_names_each_placement_in_number() {
+        assert_eq!(
+            stop_unknown_line(&[2]),
+            "Stopping of placement 2 is unknown: its launched process groups were not observed absent. Run and close would refuse runtime_stop_unknown until they are; status observes stopping again."
+        );
+        assert!(
+            stop_unknown_line(&[1, 3]).starts_with(
+                "Stopping of placements 1, 3 is unknown: their launched process groups"
+            )
+        );
+        assert_eq!(
+            unreadable_line(&[2]),
+            "Placement 2 has no recorded ending, and its runtime observations cannot be read. Run and close would refuse runtime_stop_unknown until they can; status reads them again."
+        );
+        let both = StopUnknown {
+            groups: vec![1],
+            records: vec![2],
+        };
+        assert_eq!(
+            both.lines(),
+            format!("{}\n{}", stop_unknown_line(&[1]), unreadable_line(&[2]))
+        );
+        assert!(StopUnknown::default().is_empty() && !both.is_empty());
     }
 }
 

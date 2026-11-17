@@ -35,6 +35,7 @@ use crate::answer::{self, Call, Executed, NoticesUsed};
 use crate::archive::{Audit, Fail};
 use crate::bodies::{Notice, ProviderFacts};
 use crate::delivery::{self, By, Delivered, Destination};
+use crate::gate::Gate;
 use crate::log::{self, LogState, PubErr};
 use crate::provider::policy::{self, Next, RetryPolicy, Then};
 use crate::provider::request::{Conversation, Parts, first_user_message, turn, user_message};
@@ -57,6 +58,9 @@ pub struct Live<'a> {
     pub client: &'a Client,
     pub abort: &'a AbortHandle,
     pub flags: &'a Flags,
+    /// The publication gate a stop signal closes; each call's entry or seal
+    /// links under it (6.8).
+    pub gate: &'a Gate,
     /// The pinned bytes each request splices (as sent).
     pub parts: Parts,
     /// The question body exactly as the first user message carries it.
@@ -832,7 +836,13 @@ impl State<'_, '_> {
                     (answer::reused(&call, p.call, self.revision), None)
                 }
                 _ => (
-                    answer::execute(live.audit, live.world, &self.placement(), &call),
+                    answer::execute(
+                        live.audit,
+                        live.world,
+                        &self.placement(),
+                        &call,
+                        Some(live.gate),
+                    ),
                     None,
                 ),
             };

@@ -18,6 +18,7 @@
 //! - `runs`: run directories, raw captures and their linked records.
 //! - `returns`: the return manifest and delivery plans.
 //! - `world`: a placement's verified captures and pinned arrangement.
+//! - `gate`: a placement's publication gate, which a stop closes.
 //! - `answer`, `delivery`: the auditor's tools, preparation and seal; delivery.
 //! - `provider`: the provider transport and the placement loop.
 //! - `frontmatter`, `scan`, `forms`: the submission folder and the arrangement.
@@ -59,6 +60,7 @@ pub mod delivery;
 pub mod forms;
 pub mod frontmatter;
 pub mod fsx;
+pub mod gate;
 pub mod help;
 pub mod ids;
 pub mod json;

@@ -204,7 +204,7 @@ Implementation reviewers can trace [run tests](../service/tests/run.rs),
 [runtime tests](../service/tests/claude_code.rs), and focused
 [fidelity](../service/src/claude_code/fidelity.rs),
 [accounting](../service/src/claude_code/accounting.rs) and
-[gate](../service/src/claude_code/gate.rs) checks. Existing tests are starting
+[gate](../service/src/gate.rs) checks. Existing tests are starting
 points; each proposed extraction needs controls that would detect its own drift.
 
 ## Question families materials and evidence

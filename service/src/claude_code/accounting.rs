@@ -212,6 +212,53 @@ pub fn groups_gone(audit: &crate::archive::Audit, run: u64) -> Result<bool, Stri
     Ok(true)
 }
 
+/// Why a placement blocks a further start and close cleanup
+/// (`runtime_stop_unknown`), with the refusal's message.
+pub enum StopBlock {
+    /// A launched group was not observed absent, or could not be observed.
+    Groups(String),
+    /// The placement has no recorded ending and its runtime observations
+    /// cannot be read.
+    Records(String),
+}
+
+impl StopBlock {
+    pub fn message(self) -> String {
+        match self {
+            StopBlock::Groups(m) | StopBlock::Records(m) => m,
+        }
+    }
+}
+
+/// The one check behind `runtime_stop_unknown`: run and close refuse on it,
+/// and status and run replies advise from it.
+pub fn stop_block(
+    audit: &crate::archive::Audit,
+    p: &crate::log::Placement<'_>,
+) -> Option<StopBlock> {
+    match groups_gone(audit, p.run) {
+        Ok(true) => (),
+        Ok(false) => {
+            return Some(StopBlock::Groups(format!(
+                "Placement {} still has an observed process group. The active lock alone does not establish stopping; no new placement or close cleanup is permitted.",
+                p.run
+            )));
+        }
+        Err(e) => return Some(StopBlock::Groups(e)),
+    }
+    if p.ended.is_none() {
+        let accounted = account(audit, p.run);
+        if !accounted.problems.is_empty() {
+            return Some(StopBlock::Records(format!(
+                "Placement {} has unreadable runtime observations: {}. Resolve them before starting or disposing of its evidence.",
+                p.run,
+                accounted.problems.join("; ")
+            )));
+        }
+    }
+    None
+}
+
 pub fn ensure_stopped(
     audit: &crate::archive::Audit,
     state: &crate::log::LogState,
@@ -221,21 +268,8 @@ pub fn ensure_stopped(
         .iter()
         .filter(|p| p.start.runtime.is_some())
     {
-        if !groups_gone(audit, p.run)? {
-            return Err(format!(
-                "Placement {} still has an observed process group. The active lock alone does not establish stopping; no new placement or close cleanup is permitted.",
-                p.run
-            ));
-        }
-        if p.ended.is_none() {
-            let accounted = account(audit, p.run);
-            if !accounted.problems.is_empty() {
-                return Err(format!(
-                    "Placement {} has unreadable runtime observations: {}. Resolve them before starting or disposing of its evidence.",
-                    p.run,
-                    accounted.problems.join("; ")
-                ));
-            }
+        if let Some(block) = stop_block(audit, p) {
+            return Err(block.message());
         }
     }
     Ok(())

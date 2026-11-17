@@ -21,9 +21,11 @@ use crate::answer::NoticesUsed;
 use crate::archive::{Audit, Fail};
 use crate::bodies::{NoticeReport, ProviderUse, RunEnded, RunObservations, RunStarted};
 use crate::delivery::By;
+use crate::gate::Gate;
 use crate::json::J;
 use crate::log::{self, Body, EndedBy, LogState, PubErr};
 use crate::ops::close::delivery_value;
+use crate::ops::presentation::Continuation;
 use crate::provider::placement::{self, Ended, Live};
 use crate::provider::request::Parts;
 use crate::provider::stop::{self, Flags};
@@ -292,48 +294,31 @@ fn publish_ended(audit: &Audit, run: u64, body: &RunEnded) -> Result<log::Publis
 /// for either runtime. Returns the record's log number, or the reply to give
 /// instead.
 ///
-/// Against the log the publication reads, the audit must still be accepted,
-/// without a close request, with authoring open and with no other placement
-/// started; `further`, a runtime's own start condition, may refuse as well.
-/// A refusal or a damaged log changes nothing. A record that was not linked
+/// Against the log the publication reads, under the caller's active lock,
+/// the audit-state check of 5.7 step 2 is repeated, so a refusal carries the
+/// data and next calls that step 2 gives the same reason, and no other
+/// placement may have started. Exhausting the development runtime's placement
+/// allowance ends authoring (`limit`), so step 2 also refuses a start beyond
+/// it. A refusal or a damaged log changes nothing, and keeps a
+/// reconciliation the caller recorded before it. A record that was not linked
 /// started nothing (`failed` `record_failed`, `effects.run` `not_started`).
 /// A record linked without confirmed durability may stand, and its slot is
 /// then used: the reply is `failed` `record_failed` with `effects.run`
 /// `unknown`, and the next run or close records that placement as gone.
 ///
-/// `state` is the log as the caller last read it; refusals report their
-/// effects from it.
-pub(crate) fn reserve(
-    audit: &Audit,
-    state: &LogState,
-    started: &RunStarted,
-    further: impl Fn(&LogState) -> Option<Fail>,
-) -> Result<u64, Reply> {
+/// `state` is the log as the caller last read it, after any reconciliation;
+/// refusals report the recorded facts in their effects from it.
+pub(crate) fn reserve(audit: &Audit, state: &LogState, started: &RunStarted) -> Result<u64, Reply> {
     let run = started.run;
     let published = log::publish(audit, "run_started", |st| {
-        if st.accepted().is_none() {
-            return Err(Fail::refused("not_accepted", "No accepted commission."));
-        }
-        if st.close_requested().is_some() {
-            return Err(Fail::refused(
-                "reference_closed",
-                "Close was requested before the run could start.",
-            ));
-        }
-        if let Some(end) = st.authoring_end() {
-            return Err(Fail::refused(
-                "authoring_ended",
-                format!("Authoring ended ({} {}).", end.by.name(), end.record.name()),
-            ));
+        if let Some(f) = state_refusal(audit, st) {
+            return Err(f);
         }
         if st.open_placement().is_some() || st.next_run() != run {
             return Err(Fail::refused(
                 "run_held",
                 "Another placement started before this one.",
             ));
-        }
-        if let Some(f) = further(st) {
-            return Err(f);
         }
         Ok(started.to_j())
     });
@@ -571,13 +556,16 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
     }
 
     // The stop signals are blocked before any thread starts, so only the
-    // signal thread receives them.
+    // signal thread receives them. A signal closes the placement's
+    // publication gate before the loop can observe it (6.8).
     let abort = AbortHandle::new();
     let flags = Flags::default();
+    let gate = Gate::without_deadline();
+    let signal_gate = gate.clone();
     let signals = stop::block_signals()
         .map_err(|e| Cause::io("block stop signals", &e))
         .and_then(|_| {
-            stop::receive_signals(abort.clone(), flags.clone(), || {})
+            stop::receive_signals(abort.clone(), flags.clone(), move || signal_gate.stop())
                 .map_err(|e| Cause::io("start the signal thread", &e))
         });
     if let Err(c) = signals {
@@ -607,7 +595,7 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
         }),
         observations: RunObservations::current(),
     };
-    let started_n = match reserve(&audit, &state, &started, |_| None) {
+    let started_n = match reserve(&audit, &state, &started) {
         Ok(n) => n,
         Err(reply) => return reply,
     };
@@ -654,6 +642,7 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
                 client: &client,
                 abort: &abort,
                 flags: &flags,
+                gate: &gate,
                 parts,
                 question,
                 used_before,
@@ -824,14 +813,18 @@ pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply
     let headline = super::headline(audit, &state).to_j();
     let allowances =
         super::presentation::allowances(audit, &state, super::status::Lock::Held, &mut diagnostics);
-    let unavailable = super::presentation::request_unavailable(&allowances);
+    // Every placement has ended: the run observed its own placement's
+    // stopping before recording the ending.
+    let stop_unknown = super::presentation::stop_unknown(audit, &state, None);
+    let continuation = Continuation::of(&state, &allowances, &stop_unknown);
     let mut summary = super::presentation::summary(&state, &headline, &allowances);
     if matches!(e.ending, Ending::Interrupted(_)) {
         summary.push('\n');
-        summary.push_str(&super::presentation::interrupted_advice(
-            run,
-            unavailable.as_deref(),
-        ));
+        summary.push_str(&super::presentation::interrupted_advice(run, &continuation));
+    }
+    if !stop_unknown.is_empty() {
+        summary.push('\n');
+        summary.push_str(&stop_unknown.lines());
     }
     #[cfg(feature = "claude-code")]
     crate::claude_code::fidelity::present(audit, &state, &mut summary, &mut diagnostics);
@@ -861,7 +854,7 @@ pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply
     data.push("headline", headline);
     data.push("summary", summary);
     let mut reply = Reply::completed(OP, effects("ended"), data);
-    reply.next = next_calls(audit, &e, unavailable.is_none());
+    reply.next = next_calls(audit, &e, &continuation);
     reply
 }
 
@@ -879,11 +872,17 @@ fn notices_j(notices: &[NoticeReport]) -> J {
     )
 }
 
-fn next_calls(audit: &Audit, e: &Ended, request_available: bool) -> Vec<Next> {
+/// The run reply's next calls (5.7): by its ending, except that while a
+/// placement's stopping is unknown only status is offered, since run and
+/// close would refuse `runtime_stop_unknown`.
+fn next_calls(audit: &Audit, e: &Ended, continuation: &Continuation) -> Vec<Next> {
+    if *continuation == Continuation::StopUnknown {
+        return vec![super::presentation::observe_stopping_next(audit)];
+    }
     match e.ending {
         Ending::Interrupted(_) => {
             let mut next = Vec::new();
-            if request_available {
+            if continuation.may_run() {
                 next.push(run_next(
                     audit,
                     "Continue the audit in a new conversation under the same cumulative limits.",

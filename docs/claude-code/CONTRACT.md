@@ -125,17 +125,23 @@ A uniquely correlated changed, truncated or substituted result immediately
 closes the existing tool admission and authoring/submission publication gate,
 before diagnostic I/O. Stop the placement and retain prior published effects.
 Without a seal it ends `interrupted` with cause `protocol_anomaly`; authoring
-remains open. Existing close, signal, damage and storage-failure precedence
-continues to apply. A later explicit `run` is permitted under the ordinary
+remains open unless this was the final permitted placement
+([limits](#limits-usage-and-continuation)). The mismatch decides the ending
+only when it is the first stopping condition the owner observes; a condition
+observed earlier keeps its own ending ([ending rule](#development-wire-and-process-contract)).
+A later explicit `run` is permitted under the ordinary
 remaining placement allowance and known-stopping requirements. Its advice must
 warn about the mismatch; there is no automatic resumption or replacement.
 
 Observe the same comparison during bounded shutdown drain. A seal that won the
 publication race remains the seal: preserve its attribution, lifecycle outcome
 and delivered bytes, and allow normal delivery and close of that unchanged
-seal, including delivery still pending when the mismatch is observed. Record
-when and which reply differed. A later ambiguity never erases a diagnostic or
-undoes an observed stop.
+seal, including delivery still pending when the mismatch is observed. A
+mismatch first observed during drain turns a decided `ended_unsubmitted` into
+`interrupted` with cause `protocol_anomaly`, because the auditor ended after
+receiving a changed reply; any other decided ending keeps its own value and
+cause. Record when and which reply differed. A later ambiguity never erases a
+diagnostic or undoes an observed stop.
 
 Write the mismatch through the existing private diagnostic mechanism. Its record
 envelope is unchanged; the diagnostic `body` contains
@@ -219,6 +225,19 @@ the existing re-entry tools. Unknown token usage alone does not prohibit it unde
 these placement limits; an uncertain effect is reconciled and the prior process
 must be stopped first. Ordinary unsubmitted ending after the single reminder,
 submission, close, damage or exhausted placement allowance still ends authoring.
+The allowance is exhausted once the final permitted placement has ended. A
+deadline there ends it `limit_reached`. Any `interrupted` ending of that
+placement keeps its recorded ending and cause, and also ends authoring as
+`limit`, with that placement's `run_ended` as the establishing record
+([INTERFACE 1.6](../INTERFACE.md#16-observed-authoring-and-seal)). A later
+`run` refuses `authoring_ended` with `data.ended_by` `limit` and that
+`data.record`, offering `close` and `status`. Status keeps the recorded
+ending and its condition, does not offer `run`, and its summary says that no
+placement start remains. When the final placement's process is gone without a
+`run_ended`, `run` first reconciles it ([INTERFACE 6.7](../INTERFACE.md#67-continuation)),
+recording `interrupted` with cause `process_gone`, and then refuses
+`authoring_ended` at its start reservation with that record as
+`data.record`.
 Harness-native resume/fork/clear and automatic restart are excluded initially.
 
 Harness-managed compaction within a placement does not grant a new slot, reset
@@ -474,7 +493,17 @@ The runtime's exact post-compaction notice is:
 > action.
 
 The template values are observed whole seconds rounded down and unused placement
-slots. Publish the near-limit notice's and reminder's audit-wide claims before
+slots. One observation of the remaining time fills both the text and the
+record's `remaining`. The near-limit notice is due, at most once per audit and
+only after startup validation, when the placement's remaining whole seconds are
+at most `placement_timeout_seconds` / 5, rounded down; remaining placement
+starts never make it due. The reminder follows a harness `result` with
+`is_error` false while no tool call executes and no seal exists: an unused
+reminder is claimed and sent, and a used one ends the placement
+`ended_unsubmitted`. A `result` with `is_error` true, or one that arrives while
+a tool call executes, stops the placement `interrupted` with cause
+`protocol_anomaly`; a result's `subtype` is not interpreted.
+Publish the near-limit notice's and reminder's audit-wide claims before
 transmission; a missing transmission observation is unknown, never a reason to
 restore either allowance. A post-compaction notice follows each exposed
 compaction boundary and does not consume either allowance.
@@ -502,13 +531,27 @@ permitted when slots remain and stopping is known. Reaching the deadline on
 the final permitted placement ends authoring with `limit_reached`. Near-limit
 notice records use `remaining: {runtime: "claude-code/1", seconds, placements}`.
 An interrupted deadline has cause `placement_deadline`; this cause is admitted
-only with harness usage. A missing transmission observation during recovery
-leaves a claimed notice `unknown` and does not restore its allowance.
+only with harness usage. In `run_ended.notices`, a harness notice is `sent`
+when its input frame was captured completely and then written in full to the
+harness's standard input; `not_sent` when its input frame was never captured
+completely, because the placement stopped first or the capture failed; and
+`unknown` otherwise, including a write that did not complete. A missing
+transmission observation during recovery leaves every claimed notice of that
+placement `unknown` and does not restore its allowance. A harness notice
+record's `request` is the notice's position among its placement's notice
+records in log order, starting at 1; it names no API request.
 
 Runtime allowances in status, close and re-entry contain `runtime`,
 `placements: {used,limit,remaining}`, `placement_timeout_seconds` and `usage`
 in the shape above. They never show API token allowances. Unknown stopping or
 damaged records keep their explicit diagnostics and block a further start.
+While `run` and close would refuse `runtime_stop_unknown`, because a
+placement's launched groups were not observed absent or a placement without a
+recorded ending has runtime observations that cannot be read, the `next` of
+status and of a run reply offers neither `run` nor `close`. It offers
+`status`, explaining that these are observed again there, and the summary
+names each such placement and why. Once neither holds, the ordinary advice
+applies.
 
 ## Development wire and process contract
 
@@ -534,10 +577,27 @@ Otherwise, when authoring has not ended, the runtime gate refuses
 `placement_stopped` if cancellation, stopping or the deadline won before the
 log link. Payload or stage candidates may remain; they are not answer entries
 or a seal. Cancellation of one call leaves the placement available for later calls.
-A global signal, close or deadline derives its placement ending from that
-actual stopping condition; it is not an archive-write failure. A deadline
-interrupts with `placement_deadline` when starts remain, and ends
-`limit_reached` only on the last allowed placement.
+
+A placement's ending is decided by the first stopping condition its owner
+observes: the auditor's confirmed submission, an ordinary ending, a harness
+error, exit or violation, a reply mismatch, an archive-write failure, close, a
+signal or the deadline. When the owner observes several at the same point,
+close precedes a signal and a signal precedes the deadline. A condition first
+observed later, including during shutdown and drain, does not replace the
+decided ending. A later signal or close does not change the recorded ending,
+so a later signal cannot reopen authoring, while a close request still ends it
+through its own record; a later deadline does not turn another cause into
+`placement_deadline` or `limit_reached`; and a later failure to write `runtime-stop.json` or the final
+usage checkpoint leaves stopping or that usage interval unknown, with its
+diagnostic, rather than becoming `archive_write_failed`. Only two observations
+apply after the decision: a seal published during the placement makes the
+ending `sealed`, and a reply mismatch first observed during drain turns
+`ended_unsubmitted` into `interrupted` with cause `protocol_anomaly`
+([observed reply fidelity](#observed-reply-fidelity)). A signal, close or
+deadline that decides the ending derives it from that actual stopping
+condition; it is not an archive-write failure. A deadline interrupts with
+`placement_deadline` when starts remain, and ends `limit_reached` only on the
+last allowed placement.
 
 `orientation` is the string identifier above. `texts` has exactly the four
 string members `reminder`, `near_limit`, `continuation` and `compacted`.
@@ -564,7 +624,14 @@ single quotes (each `'` in the path written `'\''`), `__stewart-cc-hook` and
 `'h'`, separated by single spaces. MCP config has exactly one server, `stewart`,
 with `type: stdio`, the Stewart writer as `command`, and the arguments
 `__stewart-cc-relay` and `m`. The working directory is a fresh, private
-directory outside the submission, archive and project ancestry. It holds the
+directory outside the submission, archive and project ancestry. Before
+reserving a start, `run` checks the profile's `temporary_directory`, which
+will hold it: neither that directory nor any ancestor may contain an entry
+named `.git`, `CLAUDE.md`, `AGENTS.md` or `.claude`, and it may not be or lie
+within the archive, the submission folder or the writer's directory. A failed
+check, or one that cannot inspect an ancestor, refuses `runtime_profile_invalid`
+and consumes no start. The same checks apply to the fresh directory after the
+reservation; a failure there consumes the start. The fresh directory holds the
 three supplied files `settings.json`, `mcp.json` and `system.txt`, which the
 `PATH` arguments name absolutely, and the two private sockets `m` and `h`, which
 the relay and hook name relatively.
@@ -586,14 +653,20 @@ injection is forwarded.
 Input is LF-delimited JSON. Each supplied message has `type: user`,
 `session_id: ""`, `parent_tool_use_id: null`, and
 `message: {role: user, content: TEXT}`. The first content is the exact question
-body; continuation and notices are separate inputs. MCP uses LF-delimited
+body; continuation and notices are separate inputs, each sent when it is
+claimed. None waits for a later carrier, so no notice is pending across a
+compaction boundary. MCP uses LF-delimited
 JSON-RPC 2.0 and protocol version `2025-11-25`. The initialization result has
 exactly `protocolVersion`, `capabilities: {tools: {}}` and
 `serverInfo: {name: stewart, version: "1"}`. Initialization, initialized
 notification, ping, fixed tools/list, tools/call and cancellation are supported.
 Unknown methods return method-not-found. Notifications never execute tools or
-receive replies. IDs are strings or integers, unique within a placement;
-duplicates are refused, including a repeated ID with different arguments.
+receive replies. IDs are strings or integers, unique within a placement. A
+request reusing an ID, whatever its method or arguments, receives JSON-RPC
+error `-32600` naming the reuse, with that ID; it executes nothing, takes no
+call number and writes no `call-C.json`. Unlike the Messages adapter's replay
+rule ([INTERFACE 6.3](../INTERFACE.md#63-the-loop-and-invocation-identity)),
+a repeated identical call is not a replay.
 Unknown metadata is tolerated; repeated interpreted members are refused.
 Interpreted strings require well-formed Unicode without NUL. Core invocation
 IDs are `mcp-C` for call number C; the original JSON-RPC ID remains in the
@@ -645,11 +718,17 @@ before this event passes. Input may already have reached the harness.
 Assistant messages must name the commissioned model or `<synthetic>` and may
 name only the prefixed tools. Delegated sessions, background task starts,
 plugin installation, API retries and rejected quota or enabled/in-use overage
-stop execution. A `system/compact_boundary` event is retained and followed by
+stop execution. A stopping condition that this contract gives no other cause,
+including these, an error result, a harness or relay exit, a startup or wire
+rule violation and a frame or capture bound, ends the placement `interrupted`
+with cause `protocol_anomaly` when it decides the ending. A `system/compact_boundary` event is retained and followed by
 the pinned compaction notice. A `result` may carry `usage` with the four token
 counts above and `num_turns`. Those fields are a cumulative main-loop
-checkpoint. Counts must not regress. Missing, malformed, regressing or error
-results retain earlier reports and mark the uncovered interval unknown.
+checkpoint. Counts must not regress. Missing, malformed or regressing results
+retain earlier reports and mark the uncovered interval unknown. An error result
+whose usage is well formed and does not regress is kept as the session's latest
+reported checkpoint, but it is not a valid terminal checkpoint: the interval it
+ends stays unknown.
 
 Each launch has a supervisor group. Its ID is durably written to
 `runs/N/process-auth.json` or `process-model.json` before the owner permits the

@@ -10,6 +10,8 @@
 //! write the complete record to a fresh stage file, then `linkat` it to the
 //! next number. `EEXIST` means another writer won that number: re-read,
 //! re-check and either try the next number or refuse with the state found.
+//! A publication made under a [`PublicationGate`] links only with that
+//! gate's permit, which is held across the link and its directory sync.
 
 use crate::archive::{Audit, Fail, RECORD_LIMIT, decode_record};
 use crate::bodies::{
@@ -561,7 +563,10 @@ impl LogState {
     }
     /// What ended authoring, if anything has: the earliest seal,
     /// `close_requested`, or placement ending `ended_unsubmitted`,
-    /// `limit_reached` or `damaged`.
+    /// `limit_reached` or `damaged`. In an audit commissioned for the
+    /// development runtime, the final permitted placement's `interrupted`
+    /// ending also ends authoring as `limit`, because no placement can
+    /// follow it (1.6); its recorded ending and cause stay as they are.
     pub fn authoring_end(&self) -> Option<AuthoringEnd<'_>> {
         self.recs.iter().find_map(|r| {
             let by = match &r.body {
@@ -571,12 +576,25 @@ impl LogState {
                     "ended_unsubmitted" => EndedBy::OrdinaryEnding,
                     "limit_reached" => EndedBy::Limit,
                     "damaged" => EndedBy::Damage,
+                    "interrupted" if self.final_placement() == Some(e.run) => EndedBy::Limit,
                     _ => return None,
                 },
                 _ => return None,
             };
             Some(AuthoringEnd { by, record: r })
         })
+    }
+    /// The number of the final placement the accepted commission permits:
+    /// the development runtime's `max_placements`. A Messages commission
+    /// has no placement allowance, and so no final placement.
+    pub fn final_placement(&self) -> Option<u64> {
+        match self.settings()?.runtime {
+            crate::frontmatter::RuntimeSettings::Messages(_) => None,
+            #[cfg(feature = "claude-code")]
+            crate::frontmatter::RuntimeSettings::Agent(selection) => {
+                Some(selection.limits.max_placements)
+            }
+        }
     }
     /// The usage recorded in every `run_ended`. A placement without one is
     /// accounted from its run directory (`runs::account`), and the totals add
@@ -594,14 +612,18 @@ impl LogState {
     /// accepted preparation's `prepared` record, decoded as reading the log
     /// decoded them.
     pub fn limits(&self) -> Option<Limits> {
+        Some(self.settings()?.runtime.limits())
+    }
+    /// The accepted commission's settings, from the accepted preparation's
+    /// `prepared` record.
+    pub fn settings(&self) -> Option<crate::frontmatter::Settings> {
         let prep = match &self.accepted()?.body {
             Body::Accepted { prep, .. } => *prep,
             _ => return None,
         };
         let p = self.prepared(prep)?;
         let settings = p.body_obj().obj("settings").ok()?;
-        let settings = crate::records::decode_settings(&settings).ok()?;
-        Some(settings.runtime.limits())
+        crate::records::decode_settings(&settings).ok()
     }
 }
 
@@ -928,9 +950,45 @@ pub struct Published {
     pub at: String,
 }
 
+/// What an authoring publication runs under: the gate of the placement, or
+/// of the call, whose mutation publishes it. A stop or cancellation closes the
+/// gate; the deadline of a development runtime placement closes it too.
+pub trait PublicationGate {
+    /// Refuse (`placement_stopped`) when the gate is closed; otherwise return
+    /// a permit. The publication holds the permit across its link and the
+    /// directory sync, so a stop issued after the permit waits for both.
+    fn permit(&self) -> Result<Permit<'_>, Fail>;
+}
+
+/// A gate's permit, held until its publication has linked and synced.
+pub type Permit<'a> = Box<dyn Held + 'a>;
+
+/// What a permit holds, such as the gate's lock guards.
+pub trait Held {}
+impl<T> Held for T {}
+
 /// Publish one log record of `kind`. `body` checks preconditions against the
-/// freshly read log and returns the body members (without `prev`).
-pub fn publish<F>(audit: &Audit, kind: &'static str, mut body: F) -> Result<Published, PubErr>
+/// freshly read log and returns the body members (without `prev`). The
+/// record is not gated: the manager's records and a placement owner's own
+/// records (its start, notices, delivery and ending) are published this way.
+pub fn publish<F>(audit: &Audit, kind: &'static str, body: F) -> Result<Published, PubErr>
+where
+    F: FnMut(&LogState) -> Result<J, Fail>,
+{
+    publish_under(audit, kind, None, body)
+}
+
+/// Publish as [`publish`] does, linking only with `gate`'s permit when there
+/// is a gate (INTERFACE 6.8). The body's precondition runs first, so a
+/// durable `close_requested` or seal refuses as the body says, also when
+/// the gate is closed. A closed gate refuses `placement_stopped`; the staged
+/// candidate stays unlinked.
+pub fn publish_under<F>(
+    audit: &Audit,
+    kind: &'static str,
+    gate: Option<&dyn PublicationGate>,
+    mut body: F,
+) -> Result<Published, PubErr>
 where
     F: FnMut(&LogState) -> Result<J, Fail>,
 {
@@ -984,10 +1042,8 @@ where
                 at: at_of(&bytes),
             });
         }
-        #[cfg(feature = "claude-code")]
-        let runtime_gate = crate::claude_code::gate::current();
-        #[cfg(feature = "claude-code")]
-        let _runtime_permit = match runtime_gate.as_ref().map(|g| g.permit()).transpose() {
+        // Held to the end of this attempt: across the link and the sync.
+        let _permit = match gate.map(|g| g.permit()).transpose() {
             Ok(permit) => permit,
             Err(stopped) => {
                 // A manager may have won the log slot while this candidate

@@ -2014,6 +2014,195 @@ fn a_seal_that_was_not_linked_is_not_delivered() {
     assert_eq!(p.requests().len(), 2);
 }
 
+/// A provider that records an account and prepares, then confirms a submit
+/// of the handle that prepare returned and lists the materials in the same
+/// response, and would otherwise end its turn.
+#[cfg(feature = "fault-injection")]
+fn submitting_and_listing_provider(test: &str) -> Option<Provider> {
+    let submit: Responder = Arc::new(|body: &[u8]| {
+        let h = prepared_handle(body);
+        message(
+            &format!(
+                r#"[{{"type":"tool_use","id":"t3","name":"submit","input":{{"prepared":"{h}","confirm":true}}}},{{"type":"tool_use","id":"t4","name":"list","input":{{}}}}]"#
+            ),
+            "tool_use",
+            100,
+            10,
+        )
+    });
+    let script = vec![
+        ok(
+            r#"[{"type":"tool_use","id":"t1","name":"record_account","input":{"text":"The restart path re-sends one reminder."}},{"type":"tool_use","id":"t2","name":"prepare","input":{}}]"#,
+            "tool_use",
+        ),
+        Act::Respond(submit),
+        text_turn("end_turn"),
+        text_turn("end_turn"),
+    ];
+    listener(test).map(|l| Provider::start(l, script))
+}
+
+/// Run a placement of `submitting_and_listing_provider` whose confirmed
+/// submit pauses at fault point `point`; `during` acts while it waits, then
+/// the submit continues. Returns the environment, reference, the run's reply
+/// and the number of requests the provider received.
+#[cfg(feature = "fault-injection")]
+fn paused_submit(
+    test: &str,
+    point: &str,
+    during: impl FnOnce(&str, &Child),
+) -> Option<(Env, String, Ran, usize)> {
+    let p = submitting_and_listing_provider(test)?;
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let faults = e.path("faults");
+    std::fs::create_dir(&faults).unwrap();
+    let fault = format!("{point}=pause");
+    let child = run_cmd(
+        &e,
+        &r,
+        &p.url(),
+        &[
+            ("STEWART_TEST_FAULT", &fault),
+            ("STEWART_TEST_FAULT_DIR", &faults),
+        ],
+    )
+    .spawn()
+    .unwrap();
+    assert!(
+        appears(&format!("{faults}/{point}.paused")),
+        "{test}: the submit never paused at {point}"
+    );
+    during(&r, &child);
+    std::fs::write(format!("{faults}/{point}.go"), b"").unwrap();
+    let o = finish(child);
+    let requests = p.requests().len();
+    Some((e, r, o, requests))
+}
+
+/// A stop signal closes the publication gate of the executing mutation
+/// (6.8). A confirmed submit paused before its seal links, and released
+/// after the signal was observed, is refused `placement_stopped` and links
+/// nothing: no seal, no delivery, no later block or request, and the
+/// placement ends `interrupted` with cause `signal`. The other cases differ
+/// in what precedes the release. Without a signal the seal links and is
+/// delivered. A `close_requested` recorded before the release outranks the
+/// closed gate (`authoring_ended`). A seal whose link was complete when the
+/// signal came stands: the placement ends `sealed`, the run's delivery
+/// attempt fails with cause `signal`, and the block after the submit still
+/// reads, because reads are not gated.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_signal_before_the_seal_links_refuses_the_submit() {
+    let test = "a_signal_before_the_seal_links_refuses_the_submit";
+    let signal = |_: &str, child: &Child| {
+        kill(child, libc::SIGTERM);
+        // The signal thread observes it well within this.
+        thread::sleep(Duration::from_millis(300));
+    };
+    let submit = |e: &Env, r: &str| record_body(&run_file(e, r, 1, "result-3.json"));
+    let listed = |e: &Env, r: &str| {
+        std::path::Path::new(&format!("{}/runs/1/result-4.json", e.audit_dir(r))).exists()
+    };
+    let no_seal = |e: &Env, r: &str| {
+        let kinds = e.log_kinds(r);
+        assert!(
+            !kinds
+                .iter()
+                .any(|k| k == "seal" || k.starts_with("delivery")),
+            "{kinds:?}"
+        );
+        assert_eq!(kinds.last().map(String::as_str), Some("run_ended"));
+    };
+
+    // Firing control: the pause alone changes nothing.
+    let Some((e, r, o, requests)) = paused_submit(test, "log.publish:seal", |_, _| {}) else {
+        return;
+    };
+    assert_eq!(o.code, Some(0), "{}", o.stderr);
+    assert_eq!(sj(&o.reply, &["data", "ending"]), "sealed");
+    assert_eq!(sj(&o.reply, &["effects", "seal"]), "recorded");
+    assert_eq!(sj(&o.reply, &["data", "delivery", "outcome"]), "verified");
+    assert_eq!(sj(&submit(&e, &r), &["outcome"]), "completed");
+    assert!(listed(&e, &r));
+    assert_eq!(requests, 2);
+
+    // The signal is observed before the seal's link.
+    let Some((e, r, o, requests)) = paused_submit(test, "log.publish:seal", signal) else {
+        return;
+    };
+    assert_eq!(o.code, Some(5), "{}", o.stderr);
+    assert_eq!(sj(&o.reply, &["data", "ending"]), "interrupted");
+    assert_eq!(sj(&o.reply, &["data", "cause"]), "signal");
+    assert_eq!(sj(&o.reply, &["effects", "seal"]), "none");
+    assert_eq!(sj(&o.reply, &["effects", "delivery"]), "none");
+    let refused = submit(&e, &r);
+    assert_eq!(sj(&refused, &["outcome"]), "refused");
+    assert_eq!(sj(&refused, &["reason"]), "placement_stopped");
+    assert!(is_null(&refused, &["log_record"]));
+    let envelope = json::parse(sj(&refused, &["content", "0", "text"]).as_bytes()).unwrap();
+    assert_eq!(sj(&envelope, &["effects", "seal"]), "none");
+    no_seal(&e, &r);
+    assert!(!listed(&e, &r), "no block after the refused submit ran");
+    assert_eq!(requests, 2, "no request followed the signal");
+
+    // Invariance: a close recorded before the link outranks the closed gate.
+    // The signal came first, so the placement still ends on the signal.
+    let Some((e, r, o, _)) = paused_submit(test, "log.publish:seal", |r, child| {
+        signal(r, child);
+        request_close(r);
+    }) else {
+        return;
+    };
+    assert_eq!(o.code, Some(5), "{}", o.stderr);
+    assert_eq!(sj(&o.reply, &["data", "ending"]), "interrupted");
+    assert_eq!(sj(&o.reply, &["data", "cause"]), "signal");
+    let refused = submit(&e, &r);
+    assert_eq!(sj(&refused, &["reason"]), "authoring_ended");
+    let envelope = json::parse(sj(&refused, &["content", "0", "text"]).as_bytes()).unwrap();
+    assert_eq!(sj(&envelope, &["data", "ended_by"]), "close");
+    no_seal(&e, &r);
+    assert!(e.log_kinds(&r).iter().any(|k| k == "close_requested"));
+
+    // Control: the seal was linked when the signal came; it stands.
+    let Some((e, r, o, requests)) = paused_submit(test, "seal.after_link", signal) else {
+        return;
+    };
+    assert_eq!(o.code, Some(0), "{}", o.stderr);
+    assert_eq!(sj(&o.reply, &["data", "ending"]), "sealed");
+    assert_eq!(sj(&o.reply, &["effects", "seal"]), "recorded");
+    assert_eq!(sj(&o.reply, &["data", "seal", "actor"]), "auditor");
+    let delivery = at(&o.reply, &["data", "delivery"]);
+    assert_eq!(sj(delivery, &["outcome"]), "failed", "{}", o.stderr);
+    assert_eq!(
+        (
+            sj(delivery, &["cause", "operation"]),
+            sj(delivery, &["cause", "error"])
+        ),
+        ("deliver", "signal")
+    );
+    assert_eq!(sj(&submit(&e, &r), &["outcome"]), "completed");
+    assert!(listed(&e, &r), "the read after the seal still ran");
+    assert_eq!(
+        sj(
+            &record_body(&run_file(&e, &r, 1, "result-4.json")),
+            &["outcome"]
+        ),
+        "completed"
+    );
+    let kinds = e.log_kinds(&r);
+    let seal = kinds
+        .iter()
+        .position(|k| k == "seal")
+        .expect("the seal stands");
+    assert_eq!(
+        kinds[seal + 1..],
+        ["delivery_planned", "delivery_ended", "run_ended"],
+        "{kinds:?}"
+    );
+    assert_eq!(requests, 2);
+}
+
 #[test]
 fn an_unanswerable_block_is_captured_and_ends_the_run() {
     let p = provider!(
@@ -2573,8 +2762,9 @@ fn appears(path: &str) -> bool {
 /// `failed`, `effects.run` `unknown`, and the next run reconciles that
 /// placement as gone before starting another. A close that wins the
 /// reservation's log slot leaves nothing started: `refused`
-/// `reference_closed`. The replies are pinned byte for byte, apart from
-/// this test's locations and reference.
+/// `reference_closed`, with the data and next calls the state check gives
+/// that reason. The replies are pinned byte for byte, apart from this
+/// test's locations and reference.
 #[cfg(feature = "fault-injection")]
 #[test]
 fn a_start_reservation_reports_what_it_linked() {
@@ -2662,7 +2852,7 @@ const UNCONFIRMED: &str = concat!(
 );
 #[cfg(feature = "fault-injection")]
 const CLOSE_WON: &str = concat!(
-    r#"{"schema":"stewart.reply/2","operation":"run","outcome":"refused","reason":"reference_closed","message":"Close was requested before the run could start.","effects":{"run":"not_started","answer":"unchanged","seal":"none","delivery":"none","diagnostic":"durable"},"retained":["<audit>/diag/1.json"],"next":[]}"#,
+    r#"{"schema":"stewart.reply/2","operation":"run","outcome":"refused","reason":"reference_closed","message":"Close was requested (log/5.json), so no run can start.","effects":{"run":"not_started","answer":"unchanged","seal":"none","delivery":"none","diagnostic":"durable"},"retained":["<audit>/diag/1.json"],"next":[{"argv":["<bin>","close","<ref>"],"why":"Continue the close."},{"argv":["<bin>","status","<ref>"],"why":"See where the audit stands."}],"data":{"record":"log/5.json"}}"#,
     "\n"
 );
 
@@ -3155,5 +3345,46 @@ fn effort_and_rejection_sabotage_break_only_their_own_property() {
         assert_eq!(o.code, Some(5), "{control}: {}", o.stderr);
         assert_eq!(sj(&o.reply, &["data", "cause"]), cause, "{control}");
         assert_eq!(p.requests().len(), requests, "{control}");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// The Messages runtime and the placement allowance.
+
+/// A Messages commission has no placement allowance, so an interruption
+/// never ends authoring (INTERFACE 1.6): after each interrupted placement
+/// the run reply and status keep authoring open and offer run and close.
+#[test]
+fn a_messages_interruption_leaves_authoring_open() {
+    let p = provider!(
+        "a_messages_interruption_leaves_authoring_open",
+        vec![text_turn("max_tokens"), text_turn("max_tokens")]
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    for placement in [1, 2] {
+        let o = run(&e, &r, &p, &[]);
+        assert_eq!(o.code, Some(5), "{}", o.stderr);
+        assert_eq!(n(&o.reply, &["data", "run"]), placement);
+        assert_eq!(sj(&o.reply, &["data", "ending"]), "interrupted");
+        let status = e.run(&["status", &r, "--json"]).json();
+        for reply in [&o.reply, &status] {
+            assert_eq!(
+                sj(reply, &["data", "headline", "authoring", "state"]),
+                "open",
+                "placement {placement}"
+            );
+            assert!(is_null(
+                reply,
+                &["data", "headline", "authoring", "ended_by"]
+            ));
+            let next: Vec<_> = at(reply, &["next"])
+                .as_arr()
+                .unwrap()
+                .iter()
+                .map(|n| sj(n, &["argv", "1"]))
+                .collect();
+            assert_eq!(next, ["run", "close"], "placement {placement}");
+        }
     }
 }

@@ -97,7 +97,6 @@ pub mod accounting;
 pub mod arrangement;
 pub mod events;
 pub mod fidelity;
-pub mod gate;
 pub mod process;
 pub mod profile;
 pub mod run;

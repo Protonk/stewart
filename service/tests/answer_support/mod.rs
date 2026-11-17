@@ -159,6 +159,19 @@ impl Live {
     /// Execute a block as the run would: capture it, execute it, record
     /// its result.
     pub fn call_raw(&mut self, name: Option<&str>, input: Option<&[u8]>) -> Res {
+        self.call_by(name, input, |audit, world, placement, call| {
+            answer::execute(audit, world, placement, call, None)
+        })
+    }
+
+    /// As `call_raw`, with `execute` in the place of the core's ungated
+    /// execution: under a publication gate, or as a runtime dispatches.
+    pub fn call_by(
+        &mut self,
+        name: Option<&str>,
+        input: Option<&[u8]>,
+        execute: impl FnOnce(&Audit, &World, &Placement, &Call) -> Executed,
+    ) -> Res {
         self.calls += 1;
         let c = self.calls;
         let id = format!("toolu_{:02}_{c}", self.placement.run);
@@ -177,7 +190,7 @@ impl Live {
             name,
             input,
         };
-        let ex = answer::execute(&self.audit, &self.world, &self.placement, &call);
+        let ex = execute(&self.audit, &self.world, &self.placement, &call);
         self.record(c, &id, name, input, &block, &ex);
         decode(ex)
     }

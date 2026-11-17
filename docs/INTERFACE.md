@@ -180,7 +180,11 @@ An `authoring` observation has exactly `state`, `ended_by`, in that order.
 except when `state` is `ended`, when it is the reason for the first recorded
 ending in log order: `seal` for a seal record, `close` for `close_requested`,
 `ordinary_ending` for `run_ended` `ended_unsubmitted`, `limit` for
-`limit_reached`, or `damage` for `damaged`. A readable ending remains
+`limit_reached`, or `damage` for `damaged`. In an audit commissioned for the
+development runtime, an `interrupted` `run_ended` of the final permitted
+placement also establishes `limit`, because no placement can follow it
+([runtime contract](claude-code/CONTRACT.md#limits-usage-and-continuation)).
+A readable ending remains
 established despite later damage. With no established ending, incomplete
 relevant evidence gives `unknown`; complete evidence gives `not_started` when
 there is no launch and `open` otherwise. Interruption alone does not end
@@ -1403,8 +1407,10 @@ nothing; its effects state the recorded facts (1.4), with `answer: "unchanged"`.
 2. The audit's state: `not_accepted`; `reference_closed` when `close_requested`
    exists; `authoring_ended` when authoring has ended, which a seal or a
    placement ending `ended_unsubmitted`, `limit_reached` or `damaged`
-   establishes, with `data.ended_by` (`seal`, `ordinary_ending`, `limit` or
-   `damage`) and `data.record`, the record that ended it.
+   establishes (or, for the development runtime, the final permitted
+   placement's `interrupted` ending, 1.6), with `data.ended_by` (`seal`,
+   `ordinary_ending`, `limit` or `damage`) and `data.record`, the record that
+   ended it.
 3. Credential source, protection and input: `provider_key_source_conflict`,
    `provider_key_protection_failed`, `provider_key_unreadable`,
    `provider_key_missing` (unset or empty), `provider_key_invalid` (outside the
@@ -1418,7 +1424,10 @@ nothing; its effects state the recorded facts (1.4), with `answer: "unchanged"`.
    `{item, problem}` using receipt item IDs (2.4).
 
 It then reconciles a dead placement (6.7), publishes `run_started`, creates
-`runs/<n>` and runs the loop (6.3). Once `run_started` is published, `run`
+`runs/<n>` and runs the loop (6.3). The publication of `run_started` repeats
+the audit-state check of step 2 under the active lock; a refusal there keeps
+any reconciliation record it followed, carries the data and next calls that
+step 2 gives the same reason, and states the recorded facts in its effects. Once `run_started` is published, `run`
 replies `completed` whenever it recorded the placement's ending, whatever the
 ending, and `failed` when it could not: `record_failed`, or `log_damaged` when
 it found the log damaged (6.5), with `effects.run` `started`. Exit status is 5
@@ -2105,8 +2114,20 @@ fails to claim its log slot and is reported to the model as `authoring_ended`.
 
 On SIGTERM, SIGINT or SIGHUP before a seal the adapter takes the same path
 (`aborted_by_signal`), records `interrupted` with cause `signal` and exits 5.
-After a seal a signal ends the delivery attempt `failed` with cause `signal`,
-and the placement ends `sealed`. The `run_needs` of the commission and receipt
+The signal also closes the publication gate of the executing mutation. A
+mutation, including a confirmed submit, whose log record has not begun to link
+when the signal is observed is refused `placement_stopped` and links nothing.
+Its result record holds that refusal; a retained payload or stage file it left
+is neither an answer entry nor a seal. When a durable `close_requested` won
+the log order first, the mutation is refused `authoring_ended` as above
+instead. A mutation whose link had begun when the signal was observed
+completes it. If that mutation was the auditor's seal, the seal stands and the
+placement ends `sealed`, with the delivery attempt failing as below. After a
+seal a signal ends the delivery attempt `failed` with cause `signal`, and the
+placement ends `sealed`. When both a close request and a signal are observed
+before a seal, the first observed decides the ending: `stopped_by_close`, or
+`interrupted` with cause `signal`. An executing mutation is still refused by
+whichever reached its log slot first, as above. The `run_needs` of the commission and receipt
 replies says that the run is in the foreground until the placement ends, and
 that callers with command timeouts should start it in the background.
 
@@ -2143,8 +2164,9 @@ retains its own exact request, accounting and continuation rules.
   "additionalProperties": false}`, with the properties and descriptions given in
   QUESTION-FORMS.
 - After a seal or close, mutations refuse `authoring_ended`, naming what ended
-  authoring and, if a seal exists, who sealed. Reads continue to work until the
-  placement ends.
+  authoring and, if a seal exists, who sealed. A mutation stopped by a signal
+  before its log link refuses `placement_stopped` (6.8). Reads continue to work
+  until the placement ends.
 - When an archive write fails during a call (its payload, its log record or its
   result record), the call fails with `record_failed`. Its `effects` state what
   is known, with `unknown` where the write's outcome cannot be established. No
@@ -2735,7 +2757,8 @@ verified capture could not be read during the placement), `range_invalid`,
 `entry_deleted`, `fields_invalid`, `stale_view`, `stale_preparation`,
 `answer_damaged`, `retained_payload_cap`, `retained_payload_reserve_exhausted`,
 `entry_limit`, `selection_limit`, `authoring_ended` (seal or close, named),
-`invocation_id_reused`, `handle_invalid`, `seal_uncertain`, `record_failed` (an
+`placement_stopped` (a signal stopped the placement before the mutation's log
+link, 6.8), `invocation_id_reused`, `handle_invalid`, `seal_uncertain`, `record_failed` (an
 archive write failed; effects state what is known). Notices:
 `section_unfilled`, `answer_empty`, `label_duplicate`,
 `folder_already_referenced`.

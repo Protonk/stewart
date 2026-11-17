@@ -154,17 +154,6 @@ pub fn sabotage_reach_provider() -> Result<(), Fail> {
     Ok(())
 }
 
-/// The accepted commission's settings, from the `prepared` record of the
-/// accepted preparation.
-pub fn accepted_settings(state: &LogState) -> Option<crate::frontmatter::Settings> {
-    let prep = match &state.accepted()?.body {
-        crate::log::Body::Accepted { prep, .. } => *prep,
-        _ => return None,
-    };
-    let p = state.prepared(prep)?;
-    crate::records::decode_settings(&p.body_obj().obj("settings").ok()?).ok()
-}
-
 /// What the headline says about delivery (INTERFACE 5.6).
 pub enum DeliveredFacts {
     /// The log is damaged: neither verification nor confirmation can be

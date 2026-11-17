@@ -368,7 +368,7 @@ fn publish(ctx: &Ctx, action: Action, tool: &str, target: Option<&Item>, new: Op
     let invocation = ctx.call.invocation(ctx.placement.run);
     let run = ctx.placement.run;
     let mut revision = 0;
-    let p = log::publish(ctx.audit, "entry", |st| {
+    let p = log::publish_under(ctx.audit, "entry", ctx.gate, |st| {
         if let Some(f) = authoring_ended(ctx, st) {
             return Err(f);
         }

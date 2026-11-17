@@ -19,7 +19,7 @@ use crate::archive::{Audit, Fail};
 use crate::bodies::{Actor, Invocation, Payload};
 use crate::forms::{Common, EntrySchema, Family, Tool};
 use crate::json::J;
-use crate::log::{EndedBy, LogState};
+use crate::log::{EndedBy, LogState, PublicationGate};
 use crate::reply::{Cause, Outcome, Reply};
 use crate::returns::{Member, Unproduced};
 use crate::usage::{Limits, Usage};
@@ -237,16 +237,19 @@ fn finish(
 /// `effects` (a failed call also writes a diagnostic, 4.8). Mutations refuse
 /// `authoring_ended` once a seal or `close_requested` exists, and an
 /// in-progress mutation that loses its log slot to `close_requested`
-/// reports `authoring_ended` too (6.8).
-pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call) -> Executed {
+/// reports `authoring_ended` too (6.8). Under `gate`, an entry or seal links
+/// only while the gate is open: a gate closed before the link refuses
+/// `placement_stopped`, unless authoring has ended, and links nothing. Reads
+/// are not gated; whether a call may start at all is the runtime's decision.
+pub fn execute(
+    audit: &Audit,
+    world: &World,
+    placement: &Placement,
+    call: &Call,
+    gate: Option<&dyn PublicationGate>,
+) -> Executed {
     let state = crate::log::read(audit);
     let revision = state.revision();
-    #[cfg(feature = "claude-code")]
-    if let Some(gate) = crate::claude_code::gate::current() {
-        if let Err(failure) = gate.permit() {
-            return refused_before_execution(call, revision, failure);
-        }
-    }
     let tool =
         known(call.name).filter(|t| world.arrangement.tool_names.iter().any(|n| n == t.name()));
     let Some(tool) = tool else {
@@ -305,6 +308,7 @@ pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call)
         placement,
         call,
         state,
+        gate,
     };
     // Every tool has its own arm: a tool added to the forms does not compile
     // until it is handled here.
@@ -515,7 +519,8 @@ pub enum SealError {
     /// The `seal` record was linked but its durability could not be
     /// confirmed (`seal_uncertain`, `effects.seal: "unknown"`).
     Uncertain(Cause),
-    /// Publication was refused by the active runtime gate; no seal was linked.
+    /// Publication was refused by the gate it ran under (`placement_stopped`);
+    /// no seal was linked.
     Refused(Fail),
     /// Nothing was published (`record_failed`).
     NotPublished(Cause),
@@ -529,13 +534,15 @@ pub enum SealError {
 /// is taken by an edit the auditor's submit is stale; by `close_requested`,
 /// authoring has ended; by another `seal`, that seal stands. `family` is the
 /// pinned family's versioned ID (`open-inquiry/1`) the manifest records.
+/// The seal links under `gate` when there is one; close seals without one.
 pub fn seal(
     audit: &Audit,
     family: &str,
     prepared: &Prepared,
     sealer: Sealer,
+    gate: Option<&dyn PublicationGate>,
 ) -> Result<Sealed, SealError> {
-    prep::seal(audit, family, prepared, sealer)
+    prep::seal(audit, family, prepared, sealer, gate)
 }
 
 #[cfg(test)]

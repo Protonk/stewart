@@ -13,7 +13,7 @@ use crate::bodies::{ARTIFACT_TOOL, Actor, SealRec};
 use crate::forms::{Family, RENDERER_ID};
 use crate::ids;
 use crate::json::{self, J, Json};
-use crate::log::{self, EndedBy, LogState, PubErr};
+use crate::log::{self, EndedBy, LogState, PubErr, PublicationGate};
 use crate::names;
 use crate::reply::{Cause, ToolNext};
 use crate::returns::{self, Manifest, Member, Unproduced};
@@ -649,12 +649,13 @@ fn reverify(audit: &Audit, p: &Prepared) -> Result<(), String> {
     Ok(())
 }
 
-/// Seal a preparation (8.1).
+/// Seal a preparation (8.1), linking under `gate` when there is one.
 pub fn seal(
     audit: &Audit,
     family: &str,
     prepared: &Prepared,
     sealer: Sealer,
+    gate: Option<&dyn PublicationGate>,
 ) -> Result<Sealed, SealError> {
     reverify(audit, prepared).map_err(SealError::Damaged)?;
     let mut actor = match sealer {
@@ -703,7 +704,7 @@ pub fn seal(
         invocation,
     };
     let auditor = matches!(sealer, Sealer::Auditor(_));
-    let p = log::publish(audit, "seal", |st| {
+    let p = log::publish_under(audit, "seal", gate, |st| {
         if st.seal().is_some() {
             return Err(Fail::refused("sealed", "a seal stands"));
         }
@@ -882,6 +883,7 @@ fn submit_inner(ctx: &Ctx, v: &Json) -> Result<Out, Fail> {
         &family.versioned_id(),
         &prepared,
         Sealer::Auditor(invocation),
+        ctx.gate,
     ) {
         Ok(s) => {
             let mut data = sealed_data(&s, false);

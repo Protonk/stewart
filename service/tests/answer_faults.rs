@@ -224,9 +224,9 @@ fn case_t6_submit_paused_before_its_link() {
     // its request in another writer.
     let r_ref = l.r.clone();
     let dir = l.audit_dir();
-    #[cfg(feature = "claude-code")]
-    let gate = stewart::claude_code::gate::Gate::new(Instant::now() + Duration::from_secs(60));
-    #[cfg(feature = "claude-code")]
+    // The submit runs under a placement gate, which a stop closes while it
+    // waits, after close was recorded: the durable close still decides.
+    let gate = stewart::gate::Gate::without_deadline();
     let stop_gate = gate.clone();
     let closer = on_pause("log.publish:seal", move || {
         let mut audit = stewart::archive::Audit::open(&r_ref).unwrap();
@@ -241,14 +241,14 @@ fn case_t6_submit_paused_before_its_link() {
             .ok()
             .unwrap()
             .n;
-        #[cfg(feature = "claude-code")]
         stop_gate.stop();
         n
     });
-    #[cfg(feature = "claude-code")]
-    let r = gate.within(|| l.call("submit", &submit(&ap)));
-    #[cfg(not(feature = "claude-code"))]
-    let r = l.call("submit", &submit(&ap));
+    let r = l.call_by(
+        Some("submit"),
+        Some(submit(&ap).as_bytes()),
+        |audit, world, placement, call| answer::execute(audit, world, placement, call, Some(&gate)),
+    );
     let close = closer.join().unwrap();
     assert_eq!(r.reason(), "authoring_ended");
     assert_eq!(r.str(&["ended_by"]), "close");
@@ -269,6 +269,6 @@ fn case_t6_submit_paused_before_its_link() {
     let state = l.state();
     let family = l.world.arrangement.family().unwrap();
     let p = answer::prepare(&l.audit, family, &state, close, Preparer::Manager).unwrap();
-    let s = answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager).unwrap();
+    let s = answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager, None).unwrap();
     assert_eq!((s.actor, s.revision), (stewart::bodies::Actor::Manager, 7));
 }

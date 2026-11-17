@@ -3,12 +3,11 @@
 use super::{
     accounting::{self, Summary},
     events::{Event, Observed},
-    fidelity,
-    gate::Gate,
-    process, profile, surface,
+    fidelity, process, profile, surface,
     wire::{self, Action, Value},
 };
 use crate::archive::{Audit, Fail};
+use crate::gate::Gate;
 use crate::provider::{
     Cause, Ending,
     placement::Ended,
@@ -65,7 +64,11 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         return crate::ops::run::refuse(&audit, f, Some(&state));
     }
     if let Err(e) = accounting::ensure_stopped(&audit, &state) {
-        return reject("runtime_stop_unknown", e);
+        // Status observes stopping and the runtime records again; run and
+        // close keep refusing until it finds them settled.
+        let f = Fail::refused("runtime_stop_unknown", e)
+            .next(crate::ops::presentation::observe_stopping_next(&audit));
+        return crate::ops::run::refuse(&audit, f, Some(&state));
     }
     let world = match world::load(&audit, &state) {
         Ok(w) => w, Err(_) => return reject("commission_damaged", "The accepted commission could not be loaded intact. Run receipt --verify; no harness was launched.".into()),
@@ -91,6 +94,19 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
             format!("{e}. No harness was launched."),
         );
     }
+    // A temporary directory that cannot hold a launch directory refuses
+    // here, before a start is reserved; the fresh directory is checked again
+    // once it exists.
+    if let Err(problem) = launch_directory(&audit, &h.profile.temporary_directory) {
+        let refusal = Fail::refused(
+            "runtime_profile_invalid",
+            format!(
+                "The profile's temporary_directory cannot hold the private launch directory: {problem}. No placement start was used and no harness was launched."
+            ),
+        )
+        .data(surface::report());
+        return crate::ops::run::refuse(&audit, refusal, Some(&state));
+    }
     let question = match world
         .question
         .bytes()
@@ -112,12 +128,6 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
     }
     let state = log::read(&audit);
     let used_before = state.recorded_usage();
-    if world.arrangement.limits.exhausted(&used_before) {
-        return reject(
-            "authoring_ended",
-            "The commissioned placement allowance is exhausted.".into(),
-        );
-    }
     let abort = AbortHandle::new();
     let flags = Flags::default();
     if let Err(e) = stop::block_signals() {
@@ -148,15 +158,10 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
             format!("Could not prepare stop handling: {e}"),
         );
     }
-    // The slot is reserved as on the Messages runtime; the commissioned
-    // placement allowance is this runtime's further start condition.
-    let reserved = crate::ops::run::reserve(&audit, &state, &started, |s| {
-        world
-            .arrangement
-            .limits
-            .exhausted(&s.recorded_usage())
-            .then(|| Fail::refused("authoring_ended", "No placement starts remain."))
-    });
+    // The slot is reserved as on the Messages runtime. A start beyond the
+    // placement allowance is refused there: the final placement's ending
+    // ended authoring (INTERFACE 1.6).
+    let reserved = crate::ops::run::reserve(&audit, &state, &started);
     let started_n = match reserved {
         Ok(n) => n,
         Err(reply) => return reply,
@@ -178,11 +183,7 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         message: String::new(),
     };
     let mut fidelity_diagnostics = Vec::new();
-    let mut later = Later {
-        run,
-        max_placements: h.selection.limits.max_placements,
-        ..Later::default()
-    };
+    let mut later = Later::default();
     match runs::RunDir::create(&audit, run) {
         Err(e) => {
             ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
@@ -195,6 +196,7 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                 world: &world,
                 dir: &dir,
                 run,
+                max_placements: h.selection.limits.max_placements,
                 question: &question,
                 deadline,
                 used_before,
@@ -203,7 +205,8 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                 record_failed: AtomicBool::new(false),
                 fidelity_diagnostics: Mutex::new(Vec::new()),
             };
-            if let Err(e) = execute(&live, &mut ended, &mut later) {
+            let mut workspace = None;
+            if let Err(e) = execute(&live, &mut ended, &mut later, &mut workspace) {
                 ended.message = e;
             }
             fidelity_diagnostics = live
@@ -211,15 +214,23 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
                 .clone();
-            later.record_failed = live.record_failed.load(Ordering::SeqCst);
-            later.past_deadline = Instant::now() >= deadline;
-            later.fidelity_diagnostic = !fidelity_diagnostics.is_empty();
-            if later.record_failed {
-                ended.usage.harness.as_mut().unwrap().unknown_intervals = 1;
+            // From here on the ending is decided. What the owner observes
+            // now, including its own failures to retain the stop observation
+            // or the final checkpoint, changes the accounting, not the ending.
+            let usage = ended.usage.harness.as_mut().unwrap();
+            if live.record_failed.load(Ordering::SeqCst) {
+                usage.unknown_intervals = 1;
             }
             let groups = accounting::groups_gone(&audit, run);
-            ended.usage.harness.as_mut().unwrap().stopped = u64::from(matches!(groups, Ok(true)));
-            if !matches!(groups, Ok(true)) {
+            let gone = matches!(groups, Ok(true));
+            usage.stopped = u64::from(gone);
+            if gone {
+                // Absence is established, so nothing launched can still be
+                // using the private launch directory.
+                if let Some(workspace) = &workspace {
+                    let _ = std::fs::remove_dir_all(workspace);
+                }
+            } else {
                 ended.message.push_str(&format!(" Stopping is unconfirmed: {groups:?}. Further starts and close cleanup are blocked."));
             }
             let stop = J::obj()
@@ -231,16 +242,17 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
                     "deadline_ms",
                     h.selection.limits.placement_timeout_seconds * 1000,
                 )
-                .with("groups_gone", matches!(groups, Ok(true)));
+                .with("groups_gone", gone);
             if let Err(e) = dir.dir.write_excl("runtime-stop.json", &stop.bytes()) {
-                later.stop_unretained = true;
+                // Without its retained observation, stopping stays unknown.
+                usage.stopped = 0;
                 ended.message.push_str(&format!(
                     " Stop observation could not be retained: {}.",
                     e.err
                 ));
             }
-            if let Err(e) = checkpoint(&dir, ended.usage.harness.unwrap()) {
-                later.stop_unretained = true;
+            if let Err(e) = checkpoint(&dir, *usage) {
+                usage.unknown_intervals = 1;
                 ended
                     .message
                     .push_str(&format!(" Usage checkpoint could not be retained: {e}."));
@@ -252,10 +264,7 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         .seal()
         .filter(|(rec, _)| rec.n > started_n)
         .map(|(rec, _)| rec.name());
-    later.seal = current.seal().is_some();
     later.sealed_here = sealed_here.is_some();
-    later.close_requested = current.close_requested().is_some();
-    later.signalled = flags.signalled.load(Ordering::SeqCst);
     ended.ending = ending(ended.ending, &later);
     ended.entries = current.entries().any(|(_, e)| e.invocation.run == run);
     if let Some(seal) = sealed_here {
@@ -314,87 +323,35 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
     reply
 }
 
-/// What the owner observes after a placement's loop has decided its ending,
-/// in the order it observes them: the shutdown drain, its own write and
-/// clock checks, then the log and the stop flag. A field left at its
-/// default was not observed.
+/// The two observations that still change a placement's ending once the
+/// first stopping condition its owner observed has decided it (runtime
+/// contract). Nothing else the owner observes later, during shutdown, the
+/// drain or its own final writes, reaches the ending: not a signal, a close
+/// request, the deadline, a call that finished during the drain, or a
+/// failure to retain the stop observation or the final checkpoint.
 #[derive(Clone, Copy, Debug, Default)]
 struct Later {
-    /// This placement's number and the commissioned number of placements.
-    run: u64,
-    max_placements: u64,
-    /// The end required by a core call that finished during the shutdown
-    /// drain: damaged answer bytes or a write failure (a damaged log is
-    /// reported apart from the ending).
-    drained_end: Option<answer::End>,
-    /// A changed tool reply was observed, live or during the drain.
-    mismatch: bool,
-    /// A capture or record write of the placement failed.
-    record_failed: bool,
-    /// The deadline had passed when the owner looked after shutdown.
-    past_deadline: bool,
-    /// A reply-fidelity diagnostic was taken, whether or not it was written.
-    fidelity_diagnostic: bool,
-    /// `runtime-stop.json` or the final usage checkpoint was not written.
-    stop_unretained: bool,
-    /// The log, read after shutdown, holds a seal; `sealed_here` when this
-    /// placement published it, after its `run_started`.
-    seal: bool,
+    /// A changed tool reply was first observed during the shutdown drain.
+    drain_mismatch: bool,
+    /// The log, read after shutdown, holds a seal this placement published,
+    /// after its `run_started`.
     sealed_here: bool,
-    /// The log, read after shutdown, holds `close_requested`.
-    close_requested: bool,
-    /// A stop signal had been received when the owner looked.
-    signalled: bool,
 }
 
-/// The ending a placement records when its loop decided `decided` and the
-/// owner then observed `later`. Each step replaces the ending reached so far:
-///
-/// 1. a call that finished during the drain and required an end: damaged
-///    answer bytes give `damaged`, a write failure `archive_write_failed`;
-/// 2. a reply mismatch turns `ended_unsubmitted` into `protocol_anomaly`;
-/// 3. a failed capture or record write gives `archive_write_failed`;
-///    otherwise, once the deadline has passed, a `protocol_anomaly` that no
-///    fidelity diagnostic explains is reported as the deadline's ending;
-/// 4. an unwritten stop observation or final usage checkpoint gives
-///    `archive_write_failed`;
-/// 5. without a seal in the log, `close_requested` gives `stopped_by_close`,
-///    else a received signal `interrupted` (`signal`);
-/// 6. a seal this placement published gives `sealed`.
+/// The ending a placement records when the first stopping condition its
+/// owner observed decided `decided` and the owner then observed `later`: a
+/// seal this placement published makes it `sealed`, and a reply mismatch
+/// first observed during the drain turns `ended_unsubmitted` into
+/// `interrupted` (`protocol_anomaly`), since the auditor ended after
+/// receiving a changed reply. Any other decided ending stands.
 fn ending(decided: Ending, later: &Later) -> Ending {
-    let mut ending = decided;
-    match later.drained_end {
-        Some(answer::End::AnswerDamaged) => ending = Ending::Damaged,
-        Some(answer::End::ArchiveWriteFailed) => {
-            ending = Ending::Interrupted(Cause::ArchiveWriteFailed)
-        }
-        Some(answer::End::LogDamaged) | None => (),
-    }
-    if later.mismatch && ending == Ending::EndedUnsubmitted {
-        ending = Ending::Interrupted(Cause::ProtocolAnomaly);
-    }
-    if later.record_failed {
-        ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
-    } else if later.past_deadline
-        && ending == Ending::Interrupted(Cause::ProtocolAnomaly)
-        && !later.fidelity_diagnostic
-    {
-        ending = deadline_ending(later.run, later.max_placements);
-    }
-    if later.stop_unretained {
-        ending = Ending::Interrupted(Cause::ArchiveWriteFailed);
-    }
-    if !later.seal {
-        if later.close_requested {
-            ending = Ending::StoppedByClose;
-        } else if later.signalled {
-            ending = Ending::Interrupted(Cause::Signal);
-        }
-    }
     if later.sealed_here {
-        ending = Ending::Sealed;
+        Ending::Sealed
+    } else if later.drain_mismatch && decided == Ending::EndedUnsubmitted {
+        Ending::Interrupted(Cause::ProtocolAnomaly)
+    } else {
+        decided
     }
-    ending
 }
 
 /// The ending a passed deadline gives placement `run`: `interrupted`
@@ -408,11 +365,91 @@ fn deadline_ending(run: u64, max_placements: u64) -> Ending {
     }
 }
 
+/// What the owner sees of the conditions that stop a placement from outside
+/// it, at one point: a close request and a seal in the log, a received stop
+/// signal and the deadline.
+#[derive(Clone, Copy, Debug, Default)]
+struct Outside {
+    sealed: bool,
+    close_requested: bool,
+    signalled: bool,
+    past_deadline: bool,
+}
+
+impl Outside {
+    /// The ending of the condition among them that stops the placement at
+    /// this point, if any: close precedes a signal, and a signal precedes
+    /// the deadline. Close and a signal stop a placement only while it has
+    /// no seal; the seal decides then.
+    fn ending(self, run: u64, max_placements: u64) -> Option<Ending> {
+        if !self.sealed && self.close_requested {
+            Some(Ending::StoppedByClose)
+        } else if !self.sealed && self.signalled {
+            Some(Ending::Interrupted(Cause::Signal))
+        } else if self.past_deadline {
+            Some(deadline_ending(run, max_placements))
+        } else {
+            None
+        }
+    }
+}
+
+/// A stopping condition the placement's owner observed, with what the
+/// placement's `run_ended` message says about it. The first one observed
+/// decides the placement's ending (runtime contract).
+#[derive(Debug)]
+struct Stopped {
+    condition: Condition,
+    message: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Condition {
+    /// The ending the owner established where it observed the condition.
+    Ending(Ending),
+    /// The deadline, observed by a clock check alone. Close and a received
+    /// signal, observed at the same point, precede it.
+    Deadline,
+    /// A condition the contract gives no other cause, such as a harness
+    /// error, exit or violation, a startup or wire rule violation, or a
+    /// frame or capture bound: `interrupted` with cause `protocol_anomaly`.
+    Unexplained,
+}
+
+impl Stopped {
+    fn ending(ending: Ending, message: impl Into<String>) -> Self {
+        Self {
+            condition: Condition::Ending(ending),
+            message: message.into(),
+        }
+    }
+    /// An archive write of the placement failed.
+    fn write_failed(message: impl Into<String>) -> Self {
+        Self::ending(Ending::Interrupted(Cause::ArchiveWriteFailed), message)
+    }
+}
+
+impl From<String> for Stopped {
+    fn from(message: String) -> Self {
+        Self {
+            condition: Condition::Unexplained,
+            message,
+        }
+    }
+}
+
+impl From<&str> for Stopped {
+    fn from(message: &str) -> Self {
+        message.to_string().into()
+    }
+}
+
 struct Live<'a> {
     audit: &'a Audit,
     world: &'a world::World,
     dir: &'a runs::RunDir,
     run: u64,
+    max_placements: u64,
     question: &'a str,
     deadline: Instant,
     used_before: Usage,
@@ -423,16 +460,101 @@ struct Live<'a> {
 }
 
 impl Live<'_> {
-    fn record_error(&self, message: impl Into<String>) -> String {
+    fn record_error(&self, message: impl Into<String>) -> Stopped {
         self.record_failed.store(true, Ordering::SeqCst);
-        message.into()
+        Stopped::write_failed(message)
     }
-    fn write(&self, name: &str, bytes: &[u8]) -> Result<(), String> {
+    fn write(&self, name: &str, bytes: &[u8]) -> Result<(), Stopped> {
         self.dir
             .dir
             .write_excl(name, bytes)
             .map_err(|e| self.record_error(format!("retain {name}: {}", e.err)))
     }
+    /// The outside conditions as the owner observes them now.
+    fn outside(&self) -> Outside {
+        let state = log::read(self.audit);
+        Outside {
+            sealed: state.seal().is_some(),
+            close_requested: state.close_requested().is_some(),
+            signalled: self.flags.signalled.load(Ordering::SeqCst),
+            past_deadline: Instant::now() >= self.deadline,
+        }
+    }
+    /// The ending `condition` gives, decided now: the deadline yields to a
+    /// close request or a signal observed with it.
+    fn decide(&self, condition: Condition) -> Ending {
+        match condition {
+            Condition::Ending(ending) => ending,
+            Condition::Deadline => Outside {
+                past_deadline: true,
+                ..self.outside()
+            }
+            .ending(self.run, self.max_placements)
+            .expect("a passed deadline stops the placement"),
+            Condition::Unexplained => Ending::Interrupted(Cause::ProtocolAnomaly),
+        }
+    }
+    /// A stop whose clock check found the deadline passed, decided now.
+    fn at_deadline(&self, message: impl Into<String>) -> Stopped {
+        Stopped::ending(self.decide(Condition::Deadline), message)
+    }
+    /// The harness, or part of it, ended without a settled result. Once the
+    /// deadline has passed, its supervisor stopped it at the deadline, so
+    /// the deadline is the condition observed; before it the exit is
+    /// unexplained.
+    fn harness_ended(&self, message: impl Into<String>) -> Stopped {
+        if Instant::now() >= self.deadline {
+            self.at_deadline(message)
+        } else {
+            Stopped::from(message.into())
+        }
+    }
+}
+
+/// Why `path` cannot hold the private launch directory, if it cannot
+/// (runtime contract): neither it nor any ancestor may hold an entry named
+/// `.git`, `CLAUDE.md`, `AGENTS.md` or `.claude`, every ancestor must be
+/// inspectable, and it may not be or lie within the archive, the submission
+/// folder or the writer's directory.
+fn launch_directory(audit: &Audit, path: &str) -> Result<(), String> {
+    for parent in std::path::Path::new(path).ancestors() {
+        for marker in [".git", "CLAUDE.md", "AGENTS.md", ".claude"] {
+            match std::fs::symlink_metadata(parent.join(marker)) {
+                Ok(_) => {
+                    return Err(format!(
+                        "{} holds {marker}, so the harness would find project or configuration files there; choose a temporary_directory outside any such tree",
+                        parent.display()
+                    ));
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
+                Err(e) => {
+                    return Err(format!(
+                        "cannot inspect {} for project or configuration files: {e}",
+                        parent.display()
+                    ));
+                }
+            }
+        }
+    }
+    let writer = &audit.refile.writer_path;
+    for (what, root) in [
+        ("the archive", audit.archive.path.as_str()),
+        ("the submission folder", audit.refile.folder.as_str()),
+        (
+            "the writer's directory",
+            match writer.rsplit_once('/') {
+                Some(("", _)) => "/",
+                Some((dir, _)) => dir,
+                None => writer.as_str(),
+            },
+        ),
+    ] {
+        let inside = root.trim_end_matches('/');
+        if path == root || path.starts_with(&format!("{inside}/")) {
+            return Err(format!("{path} is or lies within {what}, {root}"));
+        }
+    }
+    Ok(())
 }
 
 fn checkpoint(dir: &runs::RunDir, usage: Summary) -> Result<(), String> {
@@ -461,45 +583,99 @@ struct Capture<'a> {
     record_failed: &'a AtomicBool,
     deadline: Instant,
 }
+const CAPTURE_LIMIT: usize = 256 * 1024 * 1024;
+const CAPTURE_EXCEEDED: &str =
+    "placement capture exceeded 256 MiB; stopping with an uncovered interval";
+
 impl Capture<'_> {
-    fn raw(&mut self, channel: &str, bytes: &[u8]) -> Result<(), String> {
+    /// Retain `bytes` as the next capture of `channel`. `Ok` means the
+    /// capture is complete; it holds false once the placement's captures
+    /// exceed their bound, so the placement must stop.
+    fn retain(&mut self, channel: &str, bytes: &[u8]) -> Result<bool, Stopped> {
         self.sequence += 1;
         self.dir
             .dir
             .write_excl(&format!("runtime-{}-{channel}.bin", self.sequence), bytes)
             .map_err(|e| {
                 self.record_failed.store(true, Ordering::SeqCst);
-                format!(
+                Stopped::write_failed(format!(
                     "capture failed before interpretation/transmission: {}",
                     e.err
-                )
+                ))
             })?;
         self.bytes = self.bytes.saturating_add(bytes.len());
-        if self.bytes > 256 * 1024 * 1024 {
-            return Err(
-                "placement capture exceeded 256 MiB; stopping with an uncovered interval".into(),
-            );
+        Ok(self.bytes <= CAPTURE_LIMIT)
+    }
+    fn raw(&mut self, channel: &str, bytes: &[u8]) -> Result<(), Stopped> {
+        if !self.retain(channel, bytes)? {
+            return Err(CAPTURE_EXCEEDED.into());
         }
         Ok(())
     }
-    fn send(&mut self, channel: &str, out: &mut impl Write, bytes: &[u8]) -> Result<(), String> {
+    /// Capture bytes about to be transmitted on `channel`: nothing is
+    /// captured once the deadline has passed. As for `retain`, `Ok` means
+    /// the capture is complete.
+    fn outgoing(&mut self, channel: &str, bytes: &[u8]) -> Result<bool, Stopped> {
+        if Instant::now() >= self.deadline {
+            return Err(Stopped {
+                condition: Condition::Deadline,
+                message: "placement deadline reached before transmission".into(),
+            });
+        }
+        self.retain(channel, bytes)
+    }
+    fn send(&mut self, channel: &str, out: &mut impl Write, bytes: &[u8]) -> Result<(), Stopped> {
         self.for_send(channel, bytes)?;
         out.write_all(bytes)
-            .map_err(|e| format!("{channel} write failed: {e}"))
+            .map_err(|e| Stopped::from(format!("{channel} write failed: {e}")))
     }
-    fn for_send(&mut self, channel: &str, bytes: &[u8]) -> Result<(), String> {
-        if Instant::now() >= self.deadline {
-            return Err("placement deadline reached before transmission".into());
+    fn for_send(&mut self, channel: &str, bytes: &[u8]) -> Result<(), Stopped> {
+        if !self.outgoing(channel, bytes)? {
+            return Err(CAPTURE_EXCEEDED.into());
         }
-        self.raw(channel, bytes)
+        Ok(())
     }
 }
 
+/// Transmit a notice's input `frame` to the harness: capture it completely,
+/// then write it in full to `out`. `seen` records how far it got, which is
+/// what the notice's `sent` reports (runtime contract): nothing while the
+/// frame was never captured completely (`not_sent`), captured once it was
+/// (`unknown`, also when its write did not complete), and written once it
+/// was written in full (`sent`).
+fn transmit(
+    cap: &mut Capture<'_>,
+    out: &mut impl Write,
+    frame: &[u8],
+    seen: &mut Option<crate::provider::placement::Seen>,
+) -> Result<(), Stopped> {
+    let within = cap.outgoing("input", frame)?;
+    *seen = Some(crate::provider::placement::Seen {
+        captured: true,
+        written: false,
+    });
+    if !within {
+        return Err(CAPTURE_EXCEEDED.into());
+    }
+    out.write_all(frame)
+        .map_err(|e| Stopped::from(format!("input write failed: {e}")))?;
+    *seen = Some(crate::provider::placement::Seen {
+        captured: true,
+        written: true,
+    });
+    Ok(())
+}
+
+/// Report the changed replies the fidelity observer found, if any. A
+/// mismatch closes the gate before any diagnostic I/O and decides the
+/// placement's ending when it is the first condition observed; a
+/// diagnostic that cannot be retained is reported, and the mismatch still
+/// decides.
 fn fidelity_mismatches(
     live: &Live,
     fidelity: &mut fidelity::Observer,
     phase: &str,
-) -> Result<bool, String> {
+) -> Result<bool, Stopped> {
     let contexts = fidelity.mismatches(live.run, phase);
     if contexts.is_empty() {
         return Ok(false);
@@ -524,10 +700,14 @@ fn fidelity_mismatches(
             .unwrap_or_else(|e| e.into_inner())
             .push(diagnostic.clone());
         diagnostic.map_err(|e| {
-            live.record_error(format!(
+            let unretained = live.record_error(format!(
                 "runtime_reply_mismatch; diagnostic could not be retained: {}: {}",
                 e.operation, e.error
-            ))
+            ));
+            Stopped::ending(
+                Ending::Interrupted(Cause::ProtocolAnomaly),
+                unretained.message,
+            )
         })?;
     }
     Ok(true)
@@ -539,7 +719,7 @@ fn drain_stdout(
     fidelity: &mut fidelity::Observer,
     output: &mut Vec<u8>,
     offset: &mut u64,
-    mismatch_seen: &mut bool,
+    drain_mismatch: &mut bool,
     error: &mut Option<String>,
 ) {
     let h = live.world.arrangement.harness.as_ref().unwrap();
@@ -559,11 +739,11 @@ fn drain_stdout(
         }
         fidelity.stdout(&raw, at);
         match fidelity_mismatches(live, fidelity, "drain") {
-            Ok(true) => *mismatch_seen = true,
+            Ok(true) => *drain_mismatch = true,
             Ok(false) => (),
             Err(e) => {
-                *mismatch_seen = true;
-                *error = Some(e);
+                *drain_mismatch = true;
+                *error = Some(e.message);
             }
         }
     }
@@ -634,7 +814,30 @@ fn reader(mut input: impl Read, channel: &'static str, tx: mpsc::SyncSender<Inpu
         }
     }
 }
-fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), String> {
+/// Run placement `live` and set `ended.ending` to the ending decided by the
+/// first stopping condition its owner observed, returning the message its
+/// `run_ended` gives that condition. The private launch directory, once
+/// created, is named in `workspace`; the caller removes it once it observes
+/// that the launched groups are gone.
+fn execute(
+    live: &Live,
+    ended: &mut Ended,
+    later: &mut Later,
+    workspace: &mut Option<String>,
+) -> Result<(), String> {
+    place(live, ended, later, workspace).map_err(|stopped| {
+        ended.ending = live.decide(stopped.condition);
+        stopped.message
+    })
+}
+
+/// Launch the harness for placement `live` and run its owner loop.
+fn place(
+    live: &Live,
+    ended: &mut Ended,
+    later: &mut Later,
+    created: &mut Option<String>,
+) -> Result<(), Stopped> {
     let h = live.world.arrangement.harness.as_ref().unwrap();
     let tmp = crate::fsx::Dir::open_nofollow(&h.profile.temporary_directory)
         .map_err(|e| format!("private working directory parent: {e:?}"))?;
@@ -648,42 +851,13 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
         h.profile.temporary_directory.trim_end_matches('/'),
         name
     );
+    *created = Some(workspace.clone());
     let cwd = tmp.open_dir(&name).map_err(|e| e.to_string())?;
-    for parent in std::path::Path::new(&workspace).ancestors() {
-        for marker in [".git", "CLAUDE.md", "AGENTS.md", ".claude"] {
-            match std::fs::symlink_metadata(parent.join(marker)) {
-                Ok(_) => {
-                    return Err(format!(
-                        "private launch directory has project/configuration ancestry at {}; choose a temporary_directory outside it",
-                        parent.display()
-                    ));
-                }
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => (),
-                Err(e) => {
-                    return Err(format!(
-                        "cannot inspect launch ancestry {}: {e}",
-                        parent.display()
-                    ));
-                }
-            }
-        }
-    }
-    // Freshness is not enough if the requested temporary root is under a
-    // submission/archive/project. Refuse before the first harness invocation.
-    for forbidden in [
-        &live.audit.archive.path,
-        &live.audit.refile.folder,
-        &live.audit.refile.writer_path,
-    ] {
-        let root = if forbidden == &live.audit.refile.writer_path {
-            forbidden.rsplit_once('/').map(|p| p.0).unwrap_or(forbidden)
-        } else {
-            forbidden.as_str()
-        };
-        if workspace.starts_with(&format!("{root}/")) {
-            return Err("temporary working directory overlaps archive or writer tree".into());
-        }
-    }
+    // The temporary directory passed these checks before the start was
+    // reserved. Check the fresh directory, as it now exists, before the
+    // first harness invocation; a failure here has used the start.
+    launch_directory(live.audit, &workspace)
+        .map_err(|problem| format!("private launch directory refused: {problem}"))?;
     // The owner and both harness helpers use this same private working
     // directory. Relative socket names avoid sockaddr_un's short path bound
     // on macOS, including its normal long TMPDIR. All audit I/O is descriptor
@@ -733,7 +907,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
         .with("environment", surface::environment_j(&slots));
     live.write("runtime-launch.json", &launch.bytes())?;
     if Instant::now() >= live.deadline {
-        return Err("placement deadline expired during startup".into());
+        return Err(live.at_deadline("placement deadline expired during startup"));
     }
     let mut owner = process::Owned::start(
         slots.writer,
@@ -750,7 +924,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
     let stderr = owner.child.stderr.take().ok_or("missing harness stderr")?;
     let gate = live.gate;
     let quitting = Arc::new(AtomicBool::new(false));
-    let result = std::thread::scope(|scope| {
+    std::thread::scope(|scope| {
         let (tx, rx) = mpsc::sync_channel(16);
         for (channel, input) in [
             ("stdout", Box::new(stdout) as Box<dyn Read + Send>),
@@ -814,7 +988,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
         let mut observed = Observed::default();
         let mut fidelity = fidelity::Observer::default();
         let mut stdout_offset = 0u64;
-        let mut mismatch_seen = false;
+        let mut drain_mismatch = false;
         let mut mcp = wire::Mcp::default();
         let mut output = Vec::new();
         let mut incoming = Vec::new();
@@ -842,16 +1016,16 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
             scope.spawn(move || {
                 let call_id = format!("mcp-{}", worker.call);
                 let call = worker.as_call(&call_id);
-                let result = worker
-                    .gate
-                    .within(|| answer::execute(live.audit, live.world, &placement, &call));
+                let result = dispatch(live.audit, live.world, &placement, &call, &worker.gate);
                 let _ = tx.send(Input::Tool(result));
             });
         };
         let mut calls = 0u64;
         let mut readers = 2usize;
         let mut eof = std::collections::BTreeSet::new();
-        let outcome = (|| {
+        // The loop returns at the first stopping condition the owner
+        // observes, with the ending that condition gives.
+        let outcome = (|| -> Result<Ending, Stopped> {
             cap.send("input", &mut stdin, &wire::user(live.question))?;
             if live.run > 1 {
                 cap.send(
@@ -866,17 +1040,25 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                     ended.log_damaged = true;
                     return Err("audit log damaged during placement".into());
                 }
-                if state.close_requested().is_some() && state.seal().is_none() {
-                    ended.ending = Ending::StoppedByClose;
-                    return Ok(());
-                }
-                if live.flags.signalled.load(Ordering::SeqCst) && state.seal().is_none() {
-                    ended.ending = Ending::Interrupted(Cause::Signal);
-                    return Ok(());
-                }
-                if Instant::now() >= live.deadline {
-                    ended.ending = deadline_ending(live.run, h.selection.limits.max_placements);
-                    return Err("placement deadline reached; stopping the harness group".into());
+                let outside = Outside {
+                    sealed: state.seal().is_some(),
+                    close_requested: state.close_requested().is_some(),
+                    signalled: live.flags.signalled.load(Ordering::SeqCst),
+                    past_deadline: Instant::now() >= live.deadline,
+                };
+                match outside.ending(live.run, live.max_placements) {
+                    Some(
+                        ending @ (Ending::StoppedByClose | Ending::Interrupted(Cause::Signal)),
+                    ) => {
+                        return Ok(ending);
+                    }
+                    Some(deadline) => {
+                        return Err(Stopped::ending(
+                            deadline,
+                            "placement deadline reached; stopping the harness group",
+                        ));
+                    }
+                    None => (),
                 }
                 if observed.initialized && !state.notice_used("near_limit") {
                     let left = live.deadline.saturating_duration_since(Instant::now());
@@ -903,16 +1085,18 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                     Err(_) => return Err("runtime observers disconnected".into()),
                 };
                 match event {
-                    Input::Error(e) => return Err(e),
+                    Input::Error(e) => return Err(e.into()),
                     Input::Eof(channel) => {
                         eof.insert(channel);
                         if channel == "stdout" {
-                            return Err(
-                                "harness stdout ended without a settled placement result".into()
-                            );
+                            return Err(live.harness_ended(
+                                "harness stdout ended without a settled placement result",
+                            ));
                         }
                         if channel == "mcp" && pending.is_some() {
-                            return Err("MCP disconnected with a tool in flight".into());
+                            return Err(
+                                live.harness_ended("MCP disconnected with a tool in flight")
+                            );
                         }
                     }
                     Input::Mcp(stream) => {
@@ -950,8 +1134,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                         cap.send("hook-out", &mut stream, &wire::line(reply))?;
                         fidelity.hook(&bytes, allowed);
                         if fidelity_mismatches(live, &mut fidelity, "live")? {
-                            mismatch_seen = true;
-                            return Err("runtime_reply_mismatch: captured conversation differs from the supplied reply".into());
+                            return Err(mismatch());
                         }
                     }
                     Input::Bytes(channel, bytes) => {
@@ -982,8 +1165,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                                 )?;
                                 fidelity.stdout(&raw, at);
                                 if fidelity_mismatches(live, &mut fidelity, "live")? {
-                                    mismatch_seen = true;
-                                    return Err("runtime_reply_mismatch: captured conversation differs from the supplied reply".into());
+                                    return Err(mismatch());
                                 }
                                 match event {
                                     Event::Compacted => {
@@ -1006,7 +1188,12 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                                             );
                                         }
                                         if log::read(live.audit).seal().is_some() {
-                                            return Ok(());
+                                            // No reminder follows a seal. A
+                                            // seal this placement published
+                                            // makes the ending `sealed`;
+                                            // otherwise this stop has no
+                                            // other cause.
+                                            return Ok(Ending::Interrupted(Cause::ProtocolAnomaly));
                                         }
                                         if !log::read(live.audit).notice_used("reminder") {
                                             notice(
@@ -1020,8 +1207,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                                             )?;
                                             observed.usage.unknown_intervals = 1;
                                         } else {
-                                            ended.ending = Ending::EndedUnsubmitted;
-                                            return Ok(());
+                                            return Ok(Ending::EndedUnsubmitted);
                                         }
                                     }
                                     _ => (),
@@ -1109,8 +1295,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                             &result_bytes,
                         );
                         if fidelity_mismatches(live, &mut fidelity, "live")? {
-                            mismatch_seen = true;
-                            return Err("runtime_reply_mismatch: captured conversation differs from the supplied reply".into());
+                            return Err(mismatch());
                         }
                         connection
                             .as_mut()
@@ -1119,21 +1304,21 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                             .map_err(|e| format!("mcp-out write failed: {e}"))?;
                         if result.sealed {
                             live.flags.set_sealed();
-                            ended.ending = Ending::Sealed;
-                            return Ok(());
+                            return Ok(Ending::Sealed);
                         }
                         if let Some(end) = result.end {
-                            match end {
-                                answer::End::LogDamaged => ended.log_damaged = true,
-                                answer::End::AnswerDamaged => ended.ending = Ending::Damaged,
-                                answer::End::ArchiveWriteFailed => {
-                                    ended.ending = Ending::Interrupted(Cause::ArchiveWriteFailed)
+                            let message =
+                                "core tool required the placement to stop; see its retained result";
+                            return Err(match end {
+                                answer::End::LogDamaged => {
+                                    ended.log_damaged = true;
+                                    message.into()
                                 }
-                            }
-                            return Err(
-                                "core tool required the placement to stop; see its retained result"
-                                    .into(),
-                            );
+                                answer::End::AnswerDamaged => {
+                                    Stopped::ending(Ending::Damaged, message)
+                                }
+                                answer::End::ArchiveWriteFailed => Stopped::write_failed(message),
+                            });
                         }
                         if let Some(task) = waiting.pop() {
                             start_tool(&task, observed.usage);
@@ -1143,6 +1328,14 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                 }
             }
         })();
+        // The ending is decided now, at the loop's exit and before shutdown:
+        // nothing the owner observes from here on replaces it, apart from
+        // this placement's seal and a reply mismatch first observed in the
+        // drain (`ending`).
+        let (decided, failure) = match outcome {
+            Ok(ending) => (ending, None),
+            Err(stopped) => (live.decide(stopped.condition), Some(stopped.message)),
+        };
         gate.stop();
         if let Some(p) = &pending {
             p.gate.cancel();
@@ -1163,7 +1356,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
             &mut fidelity,
             &mut output,
             &mut stdout_offset,
-            &mut mismatch_seen,
+            &mut drain_mismatch,
             &mut drain_error,
         );
         while eof.len() < readers || pending.is_some() {
@@ -1177,7 +1370,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
             match rx.recv_timeout(Duration::from_millis(25)) {
                 Ok(Input::Bytes(channel, bytes)) => {
                     if let Err(e) = cap.raw(channel, &bytes) {
-                        drain_error = Some(e);
+                        drain_error = Some(e.message);
                         continue;
                     }
                     if channel == "stdout" {
@@ -1188,7 +1381,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                             &mut fidelity,
                             &mut output,
                             &mut stdout_offset,
-                            &mut mismatch_seen,
+                            &mut drain_mismatch,
                             &mut drain_error,
                         );
                     }
@@ -1197,20 +1390,22 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                     eof.insert(channel);
                 }
                 Ok(Input::Tool(result)) => {
-                    match result.end {
-                        Some(answer::End::LogDamaged) => ended.log_damaged = true,
-                        Some(end) => later.drained_end = Some(end),
-                        None => (),
+                    // A damaged log is reported apart from the ending. Any
+                    // other end the call required comes after the decision
+                    // and leaves the ending as decided; its result record
+                    // states it.
+                    if result.end == Some(answer::End::LogDamaged) {
+                        ended.log_damaged = true;
                     }
                     if let Some(p) = pending.take() {
                         if let Err(e) = retain_tool(live, &p, &result) {
-                            drain_error = Some(e);
+                            drain_error = Some(e.message);
                         }
                     }
                 }
                 Ok(Input::Hook(_, bytes)) => {
                     if let Err(e) = cap.raw("hook-in", &bytes) {
-                        drain_error = Some(e);
+                        drain_error = Some(e.message);
                         continue;
                     }
                     fidelity.hook(&bytes, false);
@@ -1237,7 +1432,7 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
                 task.gate.permit().err().expect("placement gate is stopped"),
             );
             if let Err(e) = retain_tool(live, &task, &refusal) {
-                drain_error = Some(e);
+                drain_error = Some(e.message);
             }
         }
         if !output.is_empty() || !incoming.is_empty() {
@@ -1247,14 +1442,14 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
         let complete = drain_error.is_none()
             && eof.len() == readers
             && !live.record_failed.load(Ordering::SeqCst)
-            && cap.bytes <= 256 * 1024 * 1024;
+            && cap.bytes <= CAPTURE_LIMIT;
         if let Err(e) = live.write(
             fidelity::FILE,
             &fidelity.report(live.run, complete).to_j().bytes(),
         ) {
-            drain_error = Some(e);
+            drain_error = Some(e.message);
         }
-        later.mismatch = mismatch_seen;
+        later.drain_mismatch = drain_mismatch;
         if drain_error.is_some() {
             observed.usage.unknown_intervals = 1;
         }
@@ -1263,17 +1458,28 @@ fn execute(live: &Live, ended: &mut Ended, later: &mut Later) -> Result<(), Stri
         // Disconnect first, so bounded reader queues cannot block scoped joins.
         drop(rx);
         drop(tx);
-        match (outcome, drain_error) {
-            (Ok(()), None) if mismatch_seen => Err("runtime_reply_mismatch: captured conversation differs from a supplied reply; see the retained diagnostic".into()),
-            (Ok(()), Some(e)) => Err(e),
-            (Err(e), Some(d)) => Err(format!("{e} Shutdown: {d}")),
-            (result, None) => result,
+        let message = match (failure, drain_error) {
+            (None, None) if drain_mismatch => Some("runtime_reply_mismatch: captured conversation differs from a supplied reply; see the retained diagnostic".into()),
+            (None, drained) => drained,
+            (Some(e), Some(d)) => Some(format!("{e} Shutdown: {d}")),
+            (Some(e), None) => Some(e),
+        };
+        match message {
+            Some(message) => Err(Stopped::ending(decided, message)),
+            None => {
+                ended.ending = decided;
+                Ok(())
+            }
         }
-    });
-    if ended.usage.harness.is_some_and(|u| u.stopped == 1) {
-        let _ = std::fs::remove_dir_all(&workspace);
-    }
-    result
+    })
+}
+
+/// A reply mismatch observed while the placement runs.
+fn mismatch() -> Stopped {
+    Stopped::ending(
+        Ending::Interrupted(Cause::ProtocolAnomaly),
+        "runtime_reply_mismatch: captured conversation differs from the supplied reply",
+    )
 }
 
 #[derive(Clone)]
@@ -1329,6 +1535,26 @@ impl Waiting {
     }
 }
 
+/// Execute an MCP call as this runtime dispatches it, under its call gate. A
+/// call whose gate closed before it starts (the placement stopped, the call
+/// was cancelled or the deadline passed) is refused `placement_stopped`
+/// without entering a tool. A call that starts links its entry or seal only
+/// while its gate stays open; the authoring-ended precondition still takes
+/// precedence at the link (runtime contract).
+pub fn dispatch(
+    audit: &Audit,
+    world: &world::World,
+    placement: &answer::Placement,
+    call: &answer::Call,
+    gate: &Gate,
+) -> answer::Executed {
+    let revision = log::read(audit).revision();
+    if let Err(stopped) = gate.permit() {
+        return answer::refused_before_execution(call, revision, stopped);
+    }
+    answer::execute(audit, world, placement, call, Some(gate))
+}
+
 /// Publish the result record of MCP call `p`, whose account is `result`,
 /// and return it with its record bytes. This placement's one MCP connection
 /// places every call at request and attempt 1, with the call number as its
@@ -1337,7 +1563,7 @@ fn retain_tool(
     live: &Live,
     p: &Pending,
     result: &answer::Executed,
-) -> Result<(runs::ToolResult, Vec<u8>), String> {
+) -> Result<(runs::ToolResult, Vec<u8>), Stopped> {
     let call_id = format!("mcp-{}", p.call);
     let record = runs::ToolResult::of(&p.as_call(&call_id), &p.raw, (1, 1, p.call), result, None);
     let bytes = live
@@ -1381,11 +1607,16 @@ fn near_limit_notice(
 }
 
 /// Claim the audit-wide `kind` allowance with a `notice` record, then send
-/// `text` to the harness. The record's `request` numbers this placement's
-/// notices in log order. Only a text written to the harness counts as
-/// sent. A failed claim ends the placement before anything is sent; one
-/// that was linked although its durability is unconfirmed stays in the
-/// log, and the placement's `run_ended` lists it as `not_sent`.
+/// `text` to the harness. The record's `request` is the notice's position
+/// among this placement's notice records in log order, starting at 1. The
+/// placement's `run_ended` lists the notice as `sent` once its input frame
+/// was captured completely and then written in full, `not_sent` while it was
+/// never captured completely, and `unknown` otherwise (`transmit`).
+///
+/// A failed claim ends the placement before anything is sent; one that was
+/// linked although its durability is unconfirmed stays in the log, and is
+/// listed as `not_sent`. A claim refused because close, the seal or the
+/// deadline came first stops the placement with that condition.
 fn notice(
     live: &Live,
     ended: &mut Ended,
@@ -1394,7 +1625,7 @@ fn notice(
     kind: &'static str,
     text: &str,
     remaining: Option<crate::usage::Remaining>,
-) -> Result<(), String> {
+) -> Result<(), Stopped> {
     let mut n = 0;
     log::publish(live.audit, "notice", |s| {
         if s.close_requested().is_some() || s.seal().is_some() || Instant::now() >= live.deadline {
@@ -1425,26 +1656,32 @@ fn notice(
         Ok(body.to_j())
     })
     .map_err(|e| {
-        if !matches!(&e, log::PubErr::Refused(_)) {
-            live.record_failed.store(true, Ordering::SeqCst);
+        let stopped = matches!(&e, log::PubErr::Refused(f) if f.reason == "placement_stopped");
+        let refused = matches!(&e, log::PubErr::Refused(_));
+        let message = format!("notice claim failed: {}", publication_error(e));
+        if !refused {
+            return live.record_error(message);
         }
-        format!("notice claim failed: {}", publication_error(e))
+        // The stopping condition the refusal found is observed here, with
+        // close and a signal preceding the deadline. A seal alone decides
+        // nothing here; it makes the ending `sealed` afterwards.
+        match stopped.then(|| live.outside().ending(live.run, live.max_placements)) {
+            Some(Some(ending)) => Stopped::ending(ending, message),
+            _ => Stopped::from(message),
+        }
     })?;
-    cap.send("input", out, &wire::user(text))?;
-    ended.seen.insert(
-        n,
-        crate::provider::placement::Seen {
-            captured: true,
-            written: true,
-        },
-    );
-    Ok(())
+    let mut seen = None;
+    let sent = transmit(cap, out, &wire::user(text), &mut seen);
+    if let Some(seen) = seen {
+        ended.seen.insert(n, seen);
+    }
+    sent
 }
 
-fn authenticate(live: &Live, workspace: &str) -> Result<J, String> {
+fn authenticate(live: &Live, workspace: &str) -> Result<J, Stopped> {
     let h = live.world.arrangement.harness.as_ref().unwrap();
     if Instant::now() >= live.deadline {
-        return Err("placement deadline expired before auth check".into());
+        return Err(live.at_deadline("placement deadline expired before auth check"));
     }
     let slots = surface::Slots::launch(&h.profile, workspace, &live.audit.refile.writer_path);
     let mut owner = process::Owned::start(
@@ -1471,13 +1708,13 @@ fn authenticate(live: &Live, workspace: &str) -> Result<J, String> {
         let mut out = Vec::new();
         let mut err_bytes = 0;
         let mut eof = 0;
-        let result = (|| -> Result<Vec<u8>, String> {
+        let result = (|| -> Result<Vec<u8>, Stopped> {
             while eof < 2 {
-                if Instant::now() >= live.deadline
-                    || live.flags.signalled.load(Ordering::SeqCst)
-                    || log::read(live.audit).close_requested().is_some()
-                {
-                    return Err("authentication check stopped before a model session; no raw output retained".into());
+                if let Some(ending) = live.outside().ending(live.run, live.max_placements) {
+                    return Err(Stopped::ending(
+                        ending,
+                        "authentication check stopped before a model session; no raw output retained",
+                    ));
                 }
                 match rx.recv_timeout(Duration::from_millis(25)) {
                     Ok(Input::Bytes("stdout", b)) => out.extend_from_slice(&b),
@@ -1500,19 +1737,25 @@ fn authenticate(live: &Live, workspace: &str) -> Result<J, String> {
             }
             Ok(out)
         })();
+        // Its supervisor ends the check at the deadline, so a check that
+        // ended once the deadline had passed stopped at the deadline. Decide
+        // that now, not after the bounded stop below.
+        let ended = (Instant::now() >= live.deadline).then(|| live.decide(Condition::Deadline));
         let stopped = owner.stop();
         drop(rx);
         if stopped != Ok(true) {
             return Err("authentication process stopping is unconfirmed".into());
         }
-        result
+        result.map(|out| (out, ended))
     });
-    let output = output?;
+    let (output, ended) = output?;
     if owner.exit_code != Some(0) {
-        return Err(
-            "authentication check did not complete successfully; raw output was not retained"
-                .into(),
-        );
+        let message =
+            "authentication check did not complete successfully; raw output was not retained";
+        return Err(match ended {
+            Some(ending) => Stopped::ending(ending, message),
+            None => message.into(),
+        });
     }
     let valid = (|| {
         let v = Value::parse(&output)?;
@@ -1527,7 +1770,7 @@ fn authenticate(live: &Live, workspace: &str) -> Result<J, String> {
             .with("authMethod", method)
             .with("configDirectory", config))
     })();
-    valid.map_err(|_: String| "authentication report did not verify the selected subscription login; raw output was not retained".into())
+    valid.map_err(|_: String| Stopped::from("authentication report did not verify the selected subscription login; raw output was not retained"))
 }
 
 fn publication_error(error: log::PubErr) -> String {
@@ -1563,8 +1806,10 @@ mod tests {
         let gate = Gate::new(Instant::now() + Duration::from_secs(60));
         // Prove that the real publication path fires before altering cancellation.
         assert!(
-            gate.within(|| log::publish(&audit, "reference", |_| Ok(log::tests::reference_body())))
-                .is_ok()
+            log::publish_under(&audit, "reference", Some(&gate), |_| Ok(
+                log::tests::reference_body()
+            ))
+            .is_ok()
         );
         let count = audit.sub("log").unwrap().names().unwrap().len();
         let mut waiting = Waiting::default();
@@ -1576,9 +1821,9 @@ mod tests {
         waiting.cancel("n:2");
         let cancelled = waiting.pop().unwrap();
         assert_eq!(cancelled.call, 2);
-        let result = cancelled
-            .gate
-            .within(|| log::publish(&audit, "close_requested", |_| Ok(log::tests::close_body())));
+        let result = log::publish_under(&audit, "close_requested", Some(&cancelled.gate), |_| {
+            Ok(log::tests::close_body())
+        });
         assert!(matches!(result, Err(log::PubErr::Refused(f)) if f.reason == "placement_stopped"));
         assert_eq!(audit.sub("log").unwrap().names().unwrap().len(), count);
         let reply = answer::refused_before_execution(
@@ -1592,12 +1837,10 @@ mod tests {
         let sibling = waiting.pop().unwrap();
         assert_eq!(sibling.call, 3);
         assert!(
-            sibling
-                .gate
-                .within(|| {
-                    log::publish(&audit, "close_requested", |_| Ok(log::tests::close_body()))
-                })
-                .is_ok()
+            log::publish_under(&audit, "close_requested", Some(&sibling.gate), |_| Ok(
+                log::tests::close_body()
+            ))
+            .is_ok()
         );
         assert_eq!(audit.sub("log").unwrap().names().unwrap().len(), count + 1);
         assert_eq!(waiting.bytes, 0);
@@ -1675,218 +1918,192 @@ mod tests {
         }
     }
 
-    /// The agent owner's recorded ending, as it is derived today from the
-    /// loop's decision and what the owner observes after shutdown.
+    /// The agent owner's recorded ending: the ending the first stopping
+    /// condition decided, changed afterwards only by this placement's seal
+    /// and by a reply mismatch first observed in the drain. Two rows of the
+    /// earlier derivation flipped with this rule: a signal received after an
+    /// ordinary ending, and the deadline passing after an unexplained stop,
+    /// no longer reach the ending at all, so `Later` has no field for them;
+    /// `tests/claude_code.rs` shows both at the binary.
     #[test]
-    fn a_placement_ending_follows_the_owners_later_observations_in_order() {
+    fn a_decided_ending_changes_only_for_its_seal_or_a_drained_mismatch() {
         use Cause::{ArchiveWriteFailed, PlacementDeadline, ProtocolAnomaly, Signal};
         use Ending::{
             Damaged, EndedUnsubmitted, Interrupted, LimitReached, Sealed, StoppedByClose,
         };
-        let first = Later {
-            run: 1,
-            max_placements: 2,
-            ..Later::default()
-        };
-        let last = Later { run: 2, ..first };
-        let anomaly = Interrupted(ProtocolAnomaly);
-        let rows: &[(&str, Ending, Later, Ending)] = &[
-            (
-                "the loop's decision stands",
-                EndedUnsubmitted,
-                first,
-                EndedUnsubmitted,
-            ),
-            ("an unexplained stop stands", anomaly, first, anomaly),
-            (
-                "a call drained with damaged answer bytes",
-                anomaly,
-                Later {
-                    drained_end: Some(answer::End::AnswerDamaged),
-                    ..first
-                },
-                Damaged,
-            ),
-            (
-                "a call drained after a failed write",
-                anomaly,
-                Later {
-                    drained_end: Some(answer::End::ArchiveWriteFailed),
-                    ..first
-                },
-                Interrupted(ArchiveWriteFailed),
-            ),
-            (
-                "a call drained on a damaged log, which is reported apart",
-                EndedUnsubmitted,
-                Later {
-                    drained_end: Some(answer::End::LogDamaged),
-                    ..first
-                },
-                EndedUnsubmitted,
-            ),
-            (
-                "a reply mismatch makes an ordinary ending an anomaly",
-                EndedUnsubmitted,
-                Later {
-                    mismatch: true,
-                    ..first
-                },
-                anomaly,
-            ),
-            (
-                "a reply mismatch leaves another ending",
-                LimitReached,
-                Later {
-                    mismatch: true,
-                    ..first
-                },
-                LimitReached,
-            ),
-            (
-                "a failed write replaces the decision",
-                EndedUnsubmitted,
-                Later {
-                    record_failed: true,
-                    ..first
-                },
-                Interrupted(ArchiveWriteFailed),
-            ),
-            (
-                "a failed write outranks the deadline",
-                anomaly,
-                Later {
-                    record_failed: true,
-                    past_deadline: true,
-                    ..first
-                },
-                Interrupted(ArchiveWriteFailed),
-            ),
-            // Current behaviour pending a decision: whatever stopped the
-            // placement without a named cause, even an anomaly observed
-            // before the deadline, is reported as the deadline's ending
-            // when the owner looks only after the deadline has passed.
-            (
-                "a passed deadline names an unexplained stop while starts remain",
-                anomaly,
-                Later {
-                    past_deadline: true,
-                    ..first
-                },
-                Interrupted(PlacementDeadline),
-            ),
-            (
-                "a passed deadline on the last placement reaches the limit",
-                anomaly,
-                Later {
-                    past_deadline: true,
-                    ..last
-                },
-                LimitReached,
-            ),
-            (
-                "a fidelity diagnostic keeps the anomaly past the deadline",
-                anomaly,
-                Later {
-                    past_deadline: true,
-                    fidelity_diagnostic: true,
-                    ..first
-                },
-                anomaly,
-            ),
-            (
-                "a passed deadline leaves a named ending",
-                EndedUnsubmitted,
-                Later {
-                    past_deadline: true,
-                    ..first
-                },
-                EndedUnsubmitted,
-            ),
-            (
-                "an unwritten stop observation or checkpoint",
-                EndedUnsubmitted,
-                Later {
-                    stop_unretained: true,
-                    ..first
-                },
-                Interrupted(ArchiveWriteFailed),
-            ),
-            (
-                "a close requested by then",
-                EndedUnsubmitted,
-                Later {
-                    close_requested: true,
-                    ..first
-                },
-                StoppedByClose,
-            ),
-            (
-                "a close outranks a signal",
-                Interrupted(Signal),
-                Later {
-                    close_requested: true,
-                    signalled: true,
-                    ..first
-                },
-                StoppedByClose,
-            ),
-            // Current behaviour pending a decision: a signal received after
-            // the loop decided an ordinary ending, while the harness was
-            // being stopped, replaces that ending, so authoring stays open.
-            (
-                "a late signal replaces an ordinary ending",
-                EndedUnsubmitted,
-                Later {
-                    signalled: true,
-                    ..first
-                },
-                Interrupted(Signal),
-            ),
-            (
-                "a late signal replaces damage and a failed stop record",
-                Damaged,
-                Later {
-                    stop_unretained: true,
-                    signalled: true,
-                    ..first
-                },
-                Interrupted(Signal),
-            ),
-            (
-                "this placement's seal outranks every later observation",
-                anomaly,
-                Later {
-                    drained_end: Some(answer::End::AnswerDamaged),
-                    record_failed: true,
-                    past_deadline: true,
-                    stop_unretained: true,
-                    seal: true,
-                    sealed_here: true,
-                    close_requested: true,
-                    signalled: true,
-                    ..first
-                },
-                Sealed,
-            ),
-            (
-                "a seal from before this placement keeps close and signal out",
-                anomaly,
-                Later {
-                    seal: true,
-                    close_requested: true,
-                    signalled: true,
-                    ..first
-                },
-                anomaly,
-            ),
+        let decided = [
+            EndedUnsubmitted,
+            Sealed,
+            Damaged,
+            LimitReached,
+            StoppedByClose,
+            Interrupted(Signal),
+            Interrupted(PlacementDeadline),
+            Interrupted(ArchiveWriteFailed),
+            Interrupted(ProtocolAnomaly),
         ];
-        for (row, decided, later, expected) in rows {
-            assert_eq!(ending(*decided, later), *expected, "{row}");
+        let nothing = Later::default();
+        let mismatch = Later {
+            drain_mismatch: true,
+            ..nothing
+        };
+        let sealed = Later {
+            sealed_here: true,
+            ..nothing
+        };
+        let both = Later {
+            drain_mismatch: true,
+            sealed_here: true,
+        };
+        for ending in decided {
+            // Invariance: nothing observed later leaves the decision.
+            assert_eq!(super::ending(ending, &nothing), ending, "{ending:?}");
+            // This placement's seal outranks every decided ending.
+            assert_eq!(super::ending(ending, &sealed), Sealed, "{ending:?}");
+            assert_eq!(super::ending(ending, &both), Sealed, "{ending:?}");
+            // A drained mismatch changes only an ordinary ending.
+            let expected = if ending == EndedUnsubmitted {
+                Interrupted(ProtocolAnomaly)
+            } else {
+                ending
+            };
+            assert_eq!(super::ending(ending, &mismatch), expected, "{ending:?}");
         }
         // The loop's own deadline check uses the same rule.
         assert_eq!(deadline_ending(1, 2), Interrupted(PlacementDeadline));
         assert_eq!(deadline_ending(2, 2), LimitReached);
+    }
+
+    /// Conditions the owner observes at one point: close precedes a signal,
+    /// a signal precedes the deadline, and a seal in the log keeps close
+    /// and a signal from stopping the placement.
+    #[test]
+    fn close_precedes_a_signal_and_a_signal_precedes_the_deadline() {
+        use Cause::{PlacementDeadline, Signal};
+        use Ending::{Interrupted, LimitReached, StoppedByClose};
+        for bits in 0..16u8 {
+            let outside = Outside {
+                sealed: bits & 1 != 0,
+                close_requested: bits & 2 != 0,
+                signalled: bits & 4 != 0,
+                past_deadline: bits & 8 != 0,
+            };
+            let expected = if !outside.sealed && outside.close_requested {
+                Some(StoppedByClose)
+            } else if !outside.sealed && outside.signalled {
+                Some(Interrupted(Signal))
+            } else if outside.past_deadline {
+                Some(Interrupted(PlacementDeadline))
+            } else {
+                None
+            };
+            assert_eq!(outside.ending(1, 2), expected, "{outside:?}");
+            // On the last placement the deadline reaches the limit.
+            let last = expected.map(|e| match e {
+                Interrupted(PlacementDeadline) => LimitReached,
+                other => other,
+            });
+            assert_eq!(outside.ending(2, 2), last, "{outside:?}");
+        }
+        // Spot checks of the precedence itself.
+        let all = Outside {
+            sealed: false,
+            close_requested: true,
+            signalled: true,
+            past_deadline: true,
+        };
+        assert_eq!(all.ending(1, 2), Some(StoppedByClose));
+        let signal_and_deadline = Outside {
+            close_requested: false,
+            ..all
+        };
+        assert_eq!(signal_and_deadline.ending(1, 2), Some(Interrupted(Signal)));
+    }
+
+    /// A notice's `sent` follows how far its input frame got: written in
+    /// full after a complete capture is `sent`; captured completely but not
+    /// written in full is `unknown`; never captured completely is
+    /// `not_sent`, whether the deadline came first or the capture failed.
+    #[test]
+    fn a_notice_is_sent_only_when_captured_and_written_in_full() {
+        struct Broken;
+        impl Write for Broken {
+            fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
+                Err(std::io::ErrorKind::BrokenPipe.into())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        let (path, audit) = log::tests::scratch_audit();
+        audit.dir.mkdir("runs").unwrap();
+        let dir = runs::RunDir::create(&audit, 1).unwrap();
+        let failed = AtomicBool::new(false);
+        let capture = |deadline| Capture {
+            dir: &dir,
+            sequence: 0,
+            bytes: 0,
+            record_failed: &failed,
+            deadline,
+        };
+        let open = Instant::now() + Duration::from_secs(60);
+        let frame = b"notice frame\n";
+        let sent_as = |seen: Option<crate::provider::placement::Seen>| {
+            let mut ended = Ended {
+                ending: Ending::EndedUnsubmitted,
+                log_damaged: false,
+                provider: None,
+                requests: 0,
+                attempts: 0,
+                usage: Usage::default(),
+                seen: BTreeMap::new(),
+                entries: false,
+                seal: None,
+                delivered: None,
+                message: String::new(),
+            };
+            if let Some(seen) = seen {
+                ended.seen.insert(1, seen);
+            }
+            ended.sent(1)
+        };
+        // Firing control: captured, then written in full.
+        let mut cap = capture(open);
+        let (mut out, mut seen) = (Vec::new(), None);
+        assert!(transmit(&mut cap, &mut out, frame, &mut seen).is_ok());
+        assert_eq!(out, frame);
+        assert_eq!(sent_as(seen), "sent");
+        // Captured completely, but the write did not complete.
+        let mut seen = None;
+        let stopped = transmit(&mut cap, &mut Broken, frame, &mut seen).unwrap_err();
+        assert_eq!(stopped.condition, Condition::Unexplained);
+        assert_eq!(
+            dir.dir.read_regular("runtime-2-input.bin", 100).unwrap().0,
+            frame
+        );
+        assert_eq!(sent_as(seen), "unknown");
+        // Never captured: the deadline came first. Nothing is written.
+        let mut late = capture(Instant::now() - Duration::from_millis(1));
+        let (mut out, mut seen) = (Vec::new(), None);
+        let stopped = transmit(&mut late, &mut out, frame, &mut seen).unwrap_err();
+        assert_eq!(stopped.condition, Condition::Deadline);
+        assert!(out.is_empty());
+        assert_eq!(sent_as(seen), "not_sent");
+        assert!(!failed.load(Ordering::SeqCst));
+        // Never captured completely: the capture failed. Nothing is written.
+        dir.dir
+            .write_excl("runtime-3-input.bin", b"independent obstruction")
+            .unwrap();
+        let (mut out, mut seen) = (Vec::new(), None);
+        let stopped = transmit(&mut cap, &mut out, frame, &mut seen).unwrap_err();
+        assert_eq!(
+            stopped.condition,
+            Condition::Ending(Ending::Interrupted(Cause::ArchiveWriteFailed))
+        );
+        assert!(out.is_empty());
+        assert!(failed.load(Ordering::SeqCst));
+        assert_eq!(sent_as(seen), "not_sent");
+        std::fs::remove_dir_all(path).unwrap();
     }
 
     #[test]

@@ -1067,7 +1067,7 @@ fn t6_close_first_ends_authoring_and_close_seals_as_manager() {
     let family = l.world.arrangement.family().unwrap();
     let p = answer::prepare(&l.audit, family, &state, close, Preparer::Manager).unwrap();
     assert_eq!(p.revision, 7);
-    let s = answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager).unwrap();
+    let s = answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager, None).unwrap();
     assert_eq!(
         (s.actor, s.revision, s.existing),
         (stewart::bodies::Actor::Manager, 7, false)
@@ -1134,7 +1134,7 @@ fn t6_reverse_order_the_auditor_seal_stands_and_close_keeps_it() {
         Preparer::Manager,
     )
     .unwrap();
-    match answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager) {
+    match answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager, None) {
         Err(answer::SealError::AuthoringEnded { seal: Some(s), .. }) => {
             assert_eq!(
                 (s.actor, s.existing),
@@ -1169,7 +1169,7 @@ fn a_manager_seal_names_unreadable_entries_and_never_renders_around_them() {
     assert!(
         !std::path::Path::new(&format!("{}/prepared/{}/answer.md", l.audit_dir(), p.n)).exists()
     );
-    let s = answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager).unwrap();
+    let s = answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager, None).unwrap();
     let st = l.state();
     let rec = st.seal().unwrap().1;
     assert!(rec.rendering_sha256.is_none());

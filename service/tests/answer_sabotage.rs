@@ -266,7 +266,7 @@ fn check_close_seals_as_manager() {
     let state = l.state();
     let family = l.world.arrangement.family().unwrap();
     let p = answer::prepare(&l.audit, family, &state, close, Preparer::Manager).unwrap();
-    answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager).unwrap();
+    answer::seal(&l.audit, &family.versioned_id(), &p, Sealer::Manager, None).unwrap();
     assert_eq!(
         l.state().seal().unwrap().1.actor,
         stewart::bodies::Actor::Manager

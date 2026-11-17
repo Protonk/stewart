@@ -8,6 +8,7 @@
 //! first of the interface's list that applies, so a later, weaker fact never
 //! hides an earlier one.
 
+use super::presentation::Continuation;
 use super::{answer_j, headline, seal_j};
 use crate::archive::{self, Audit, Fail};
 use crate::delivery;
@@ -88,6 +89,9 @@ pub struct View {
     pub diagnostics: Vec<J>,
     pub lock: Lock,
     pub allowances: J,
+    /// The placements that block a start and close cleanup, when that
+    /// decides the next calls (empty otherwise).
+    pub stop_unknown: super::presentation::StopUnknown,
 }
 
 /// Establish the condition, its evidence and the next calls from the log
@@ -144,6 +148,20 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
     let mut next = Vec::new();
     let open_place = state.open_placement();
     let latest = state.latest_placement();
+    // Run and close refuse `runtime_stop_unknown` while a placement's
+    // launched process groups are not observed absent. An open placement
+    // whose process may still hold the lock is its owner's to stop, so its
+    // stopping is pending rather than unknown; a closed audit or a damaged
+    // log has its own next calls.
+    let stop_unknown = if !state.damaged() && state.closed().is_none() {
+        let live = open_place
+            .as_ref()
+            .filter(|_| lock != Lock::Free)
+            .map(|p| p.run);
+        super::presentation::stop_unknown(audit, state, live)
+    } else {
+        super::presentation::StopUnknown::default()
+    };
     let lock_evidence = |evidence: &mut Vec<J>| match lock {
         Lock::Held => evidence.push(ev("a process holds the active lock", "lock held")),
         Lock::Free => evidence.push(ev("no process holds the active lock", "lock free")),
@@ -482,8 +500,8 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
                 "run_started without run_ended; lock free",
             )),
         }
-        let unavailable = super::presentation::request_unavailable(&allowances);
-        if unavailable.is_none() {
+        let continuation = Continuation::of(state, &allowances, &stop_unknown);
+        if continuation.may_run() {
             next.push(n(
                 &["run", r],
                 "Continue the audit in a new placement under the same cumulative limits.",
@@ -491,11 +509,15 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
         }
         next.push(n(
             &["close", r],
-            "End authoring and seal the recorded selection with manager attribution.",
+            if continuation == Continuation::PlacementsExhausted {
+                "Close the audit; it seals the recorded selection with manager attribution."
+            } else {
+                "End authoring and seal the recorded selection with manager attribution."
+            },
         ));
         (
             "interrupted",
-            super::presentation::interrupted_advice(p.run, unavailable.as_deref()),
+            super::presentation::interrupted_advice(p.run, &continuation),
         )
     } else if let Some(a) = accepted {
         evidence.push(ev(
@@ -587,6 +609,9 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
         ));
         ("preparing", "No commission is accepted yet.".to_string())
     };
+    if !stop_unknown.is_empty() {
+        next = vec![super::presentation::observe_stopping_next(audit)];
+    }
     View {
         condition,
         summary,
@@ -596,6 +621,7 @@ pub fn view(audit: &Audit, state: &LogState) -> View {
         diagnostics,
         lock,
         allowances,
+        stop_unknown,
     }
 }
 
@@ -911,6 +937,10 @@ pub fn run(reference: &str) -> Reply {
     ) {
         summary.push('\n');
         summary.push_str(&v.summary);
+    }
+    if !v.stop_unknown.is_empty() {
+        summary.push('\n');
+        summary.push_str(&v.stop_unknown.lines());
     }
     let (seal, seal_diag) = seal_j(&audit, &state);
     diagnostics.extend(seal_diag);

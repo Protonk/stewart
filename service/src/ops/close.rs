@@ -20,7 +20,7 @@
 //! and not in the preparation folder. A seal alone never counts as stopped
 //! execution, and a copy existing now never turns a repeat into confirmation.
 
-use super::{accepted_settings, gone_run_ended, headline, seal_j};
+use super::{gone_run_ended, headline, seal_j};
 use crate::answer::{self, PrepareError, Preparer, SealError, Sealer};
 use crate::archive::{self, Audit, Fail};
 use crate::bodies::{
@@ -1251,7 +1251,7 @@ fn after_launch(audit: &Audit, flags: &Flags, state: LogState, ctx: &Ctx) -> Rep
             Some(p) => Destination::replacement(p.clone()),
             None => match st.deliveries().last() {
                 Some(d) => Destination::of(d.plan),
-                None => match accepted_settings(&st) {
+                None => match st.settings() {
                     Some(s) => Destination::commissioned(s.destination),
                     None => {
                         return Fail::failed(
@@ -1452,7 +1452,9 @@ fn ensure_seal(
         }
         Err(f.into_reply(OP, eff("ended", seal, "none", closure_failed)))
     };
-    let Some(family) = accepted_settings(state).and_then(|s| crate::forms::family(&s.family))
+    let Some(family) = state
+        .settings()
+        .and_then(|s| crate::forms::family(&s.family))
     else {
         return fail(
             "record_failed",
@@ -1498,7 +1500,13 @@ fn ensure_seal(
             );
         }
     };
-    match answer::seal(audit, &family.versioned_id(), &prepared, Sealer::Manager) {
+    match answer::seal(
+        audit,
+        &family.versioned_id(),
+        &prepared,
+        Sealer::Manager,
+        None,
+    ) {
         Ok(s) => Ok(!s.existing),
         // Another seal took the slot first; it stands, whoever made it.
         Err(SealError::AuthoringEnded { seal: Some(_), .. }) => Ok(false),
@@ -1561,7 +1569,7 @@ fn sabotage_empty_return(audit: &Audit) {
     use crate::bodies::{Actor, SealRec};
     use crate::returns::{Manifest, Member};
     let st = log::read(audit);
-    let Some(settings) = accepted_settings(&st) else {
+    let Some(settings) = st.settings() else {
         return;
     };
     let family = crate::forms::family(&settings.family)

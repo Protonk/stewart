@@ -8,7 +8,7 @@ use crate::bodies::{Citation, Payload};
 use crate::fsx::ReadError;
 use crate::ids;
 use crate::json::J;
-use crate::log::{EndedBy, LogState, VersionState};
+use crate::log::{EndedBy, LogState, PublicationGate, VersionState};
 use crate::reply::ToolNext;
 use crate::util;
 use crate::world::World;
@@ -21,6 +21,8 @@ pub struct Ctx<'a> {
     pub call: &'a Call<'a>,
     /// The log as read when the call began.
     pub state: LogState,
+    /// The gate the call's entry or seal links under, if any (6.8).
+    pub gate: Option<&'a dyn PublicationGate>,
 }
 
 impl Ctx<'_> {
