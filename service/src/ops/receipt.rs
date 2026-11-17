@@ -453,7 +453,10 @@ fn sabotage_regenerate(audit: &Audit, machine: bool) -> Option<Vec<u8>> {
         .ok()?;
     let parsed = crate::frontmatter::parse(&q).ok()?;
     #[cfg(feature = "claude-code")]
-    if parsed.settings.harness.is_some() {
+    if matches!(
+        parsed.settings.runtime,
+        crate::frontmatter::RuntimeSettings::Agent(_)
+    ) {
         return None;
     }
     let body = &q[parsed.body_offset..];

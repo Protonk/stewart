@@ -728,6 +728,39 @@ fn a_damaged_log_is_diagnosed_never_repaired() {
     );
 }
 
+/// Status reports each commissioned limit under its own quantity, from the
+/// accepted preparation's settings: before any run, and with usage unknown
+/// once the log after the acceptance is damaged.
+#[test]
+fn status_reports_each_commissioned_limit() {
+    let e = Env::new();
+    let (r, h) = e.prepared(&[("a", b"a")]);
+    assert_eq!(e.commission(&r, &h).code, Some(0));
+    let allowances = |e: &Env| {
+        let j = e.run(&["status", &r, "--json"]).json();
+        at(&j, &["data", "allowances"]).to_j().string()
+    };
+    assert_eq!(
+        allowances(&e),
+        r#"{"turns":{"used":0,"reported":0,"estimated":0,"limit":200},"input_tokens":{"used":0,"reported":0,"estimated":0,"limit":20000000},"output_tokens":{"used":0,"reported":0,"estimated":0,"limit":400000}}"#
+    );
+    std::fs::write(format!("{}/log/6.json", e.audit_dir(&r)), b"{}").unwrap();
+    let unknown = |limit: u64| {
+        format!(
+            r#"{{"used":"unknown","reported":"unknown","estimated":"unknown","limit":{limit}}}"#
+        )
+    };
+    assert_eq!(
+        allowances(&e),
+        format!(
+            r#"{{"turns":{},"input_tokens":{},"output_tokens":{}}}"#,
+            unknown(200),
+            unknown(20_000_000),
+            unknown(400_000)
+        )
+    );
+}
+
 #[test]
 fn a_held_lock_is_an_intake_in_progress() {
     use std::os::fd::AsRawFd;

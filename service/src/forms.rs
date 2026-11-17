@@ -623,10 +623,13 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
     let guidance = input.guidance.unwrap_or_else(|| instructions(f));
     let system = system_with_guidance(guidance);
     let tools = tools(f).bytes();
-    #[cfg(feature = "claude-code")]
-    if s.harness.is_some() {
-        return crate::claude_code::arrangement::build(input, guidance, &tools);
-    }
+    let limits = match &s.runtime {
+        crate::frontmatter::RuntimeSettings::Messages(limits) => *limits,
+        #[cfg(feature = "claude-code")]
+        crate::frontmatter::RuntimeSettings::Agent(selection) => {
+            return crate::claude_code::arrangement::build(input, selection, guidance, &tools);
+        }
+    };
     let body = J::obj()
         .with("schema", ARRANGEMENT_SCHEMA)
         .with("family", f.versioned_id())
@@ -666,13 +669,7 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
                 .with("continuation", CONTINUATION)
                 .with("compacted", COMPACTED),
         )
-        .with(
-            "limits",
-            J::obj()
-                .with("turns", s.turns)
-                .with("input_tokens", s.input_tokens)
-                .with("output_tokens", s.output_tokens),
-        )
+        .with("limits", limits.to_j())
         .with("near_limit_percent", NEAR_LIMIT_PERCENT)
         .with(
             "retry",
@@ -694,7 +691,7 @@ pub fn arrangement(input: &ArrangementInput) -> Arrangement {
                 .with("question_body_sha256", input.question_body_sha256)
                 .with("material_index_sha256", input.material_index_sha256),
         );
-    let readable = readable(f, input, &tools);
+    let readable = readable(f, input, &tools, limits);
     Arrangement { body, readable }
 }
 
@@ -711,7 +708,12 @@ fn quoted_block(text: &str) -> String {
         .join("\n")
 }
 
-fn readable(f: &Family, input: &ArrangementInput, tools_bytes: &[u8]) -> String {
+fn readable(
+    f: &Family,
+    input: &ArrangementInput,
+    tools_bytes: &[u8],
+    limits: crate::frontmatter::MessagesLimits,
+) -> String {
     let s = input.settings;
     let mut md = String::new();
     md.push_str("# Stewart arrangement\n\n");
@@ -747,7 +749,7 @@ fn readable(f: &Family, input: &ArrangementInput, tools_bytes: &[u8]) -> String 
     md.push_str("Cumulative across every run of the audit, from the provider's usage reports, with stated estimates for lost responses:\n\n");
     md.push_str(&format!(
         "- Turns: {}\n- Input tokens: {}\n- Output tokens: {}\n",
-        s.turns, s.input_tokens, s.output_tokens
+        limits.turns, limits.input_tokens, limits.output_tokens
     ));
     md.push_str(&format!("- Near-limit notice: once per audit, when {NEAR_LIMIT_PERCENT}% or less of any allowance remains\n"));
     md.push_str("- Provider retry: at most 4 attempts per request, waiting 2, 8 and 30 seconds (or a retry-after of at most 60 seconds); request timeout 600 seconds\n\n");
@@ -865,16 +867,18 @@ mod tests {
     #[test]
     fn a_pinned_arrangement_reads_back_with_its_exact_bytes() {
         let settings = crate::frontmatter::Settings {
-            #[cfg(feature = "claude-code")]
-            harness: None,
             guidance: None,
             family: "comparison".into(),
             model: "claude-opus-5-5".into(),
             effort: None,
             destination: "/d".into(),
-            turns: 200,
-            input_tokens: 20_000_000,
-            output_tokens: 400_000,
+            runtime: crate::frontmatter::RuntimeSettings::Messages(
+                crate::frontmatter::MessagesLimits {
+                    turns: 200,
+                    input_tokens: 20_000_000,
+                    output_tokens: 400_000,
+                },
+            ),
             inquiry: None,
             varies: None,
         };
@@ -912,16 +916,18 @@ mod tests {
     #[test]
     fn a_messages_arrangement_body_is_frozen() {
         let settings = crate::frontmatter::Settings {
-            #[cfg(feature = "claude-code")]
-            harness: None,
             guidance: None,
             family: "comparison".into(),
             model: "claude-opus-5-5".into(),
             effort: None,
             destination: "/d".into(),
-            turns: 200,
-            input_tokens: 20_000_000,
-            output_tokens: 400_000,
+            runtime: crate::frontmatter::RuntimeSettings::Messages(
+                crate::frontmatter::MessagesLimits {
+                    turns: 200,
+                    input_tokens: 20_000_000,
+                    output_tokens: 400_000,
+                },
+            ),
             inquiry: None,
             varies: None,
         };
@@ -937,6 +943,36 @@ mod tests {
         assert_eq!(
             crate::util::sha256_hex(&body),
             "49c1db2b0d586bbf869be5593d24bb3b6c8bee568ff65779aedb9fb27759b065"
+        );
+    }
+
+    /// The readable view of the same settings, parsed from a question: each
+    /// Messages limit is stated under its own name, and the view is frozen.
+    #[test]
+    fn a_messages_readable_view_states_each_limit_and_is_frozen() {
+        let question = "---\nstewart: question/1\nfamily: comparison\nmodel: claude-opus-5-5\ndestination: /d\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\nQ\n";
+        let q = crate::frontmatter::parse(question.as_bytes()).unwrap();
+        let a = arrangement(&ArrangementInput {
+            guidance: None,
+            settings: &q.settings,
+            question_body_sha256: &"1".repeat(64),
+            material_index_sha256: &"2".repeat(64),
+        });
+        assert_eq!(
+            crate::util::sha256_hex(&a.body.bytes()),
+            "49c1db2b0d586bbf869be5593d24bb3b6c8bee568ff65779aedb9fb27759b065"
+        );
+        assert!(
+            a.readable.contains(
+                "\n\n- Turns: 200\n- Input tokens: 20000000\n- Output tokens: 400000\n- Near-limit notice: "
+            ),
+            "{}",
+            a.readable
+        );
+        assert_eq!(a.readable.len(), 19072);
+        assert_eq!(
+            crate::util::sha256_hex(a.readable.as_bytes()),
+            "9b486084fa272a9d5c2ff6db643189da511a2eefba474cdbfaf88a518a88b648"
         );
     }
 

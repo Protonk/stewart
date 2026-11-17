@@ -1,7 +1,8 @@
 //! The `question/1` front matter grammar of `question.md` (INTERFACE 3.2).
 
 use crate::ids;
-use crate::json::J;
+use crate::json::{J, JsonError, Obj};
+use crate::usage::Limits;
 use crate::util;
 
 /// The values `family:` accepts: the IDs of the families this release
@@ -70,10 +71,83 @@ pub fn scaffold() -> String {
     .join("\n")
 }
 
+/// A Messages API question's cumulative limits across all runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MessagesLimits {
+    pub turns: u64,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+}
+
+impl MessagesLimits {
+    /// The `limits` member, as settings and the Messages arrangement write it.
+    pub fn to_j(self) -> J {
+        J::obj()
+            .with("turns", self.turns)
+            .with("input_tokens", self.input_tokens)
+            .with("output_tokens", self.output_tokens)
+    }
+    /// The three values of a `limits` member whose keys the caller has
+    /// checked, each within the front matter's bound.
+    pub fn decode_values(l: &Obj) -> Result<Self, JsonError> {
+        Ok(Self {
+            turns: l.u64("turns", MAX_TURNS)?,
+            input_tokens: l.u64("input_tokens", MAX_INPUT_TOKENS)?,
+            output_tokens: l.u64("output_tokens", MAX_OUTPUT_TOKENS)?,
+        })
+    }
+}
+
+/// The runtime a question commissions, with that runtime's own limits: the
+/// Messages API's cumulative limits or, in the development build, the agent
+/// runtime's profile selection, which carries its placement limits. Neither
+/// runtime's allowance is expressed in the other's units.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RuntimeSettings {
+    Messages(MessagesLimits),
+    #[cfg(feature = "claude-code")]
+    Agent(crate::claude_code::profile::Selection),
+}
+
+impl RuntimeSettings {
+    /// The audit's cumulative limits as accounting reads them.
+    pub fn limits(&self) -> Limits {
+        match self {
+            RuntimeSettings::Messages(limits) => Limits::from(*limits),
+            #[cfg(feature = "claude-code")]
+            RuntimeSettings::Agent(selection) => Limits::from(selection.limits),
+        }
+    }
+}
+
+// The one conversion from a runtime's own limits to the accounting limits,
+// which still hold both runtimes' members; the other runtime's are zero.
+impl From<MessagesLimits> for Limits {
+    fn from(l: MessagesLimits) -> Limits {
+        Limits {
+            #[cfg(feature = "claude-code")]
+            harness: None,
+            turns: l.turns,
+            input_tokens: l.input_tokens,
+            output_tokens: l.output_tokens,
+        }
+    }
+}
+
+#[cfg(feature = "claude-code")]
+impl From<crate::claude_code::profile::Limits> for Limits {
+    fn from(l: crate::claude_code::profile::Limits) -> Limits {
+        Limits {
+            harness: Some(l),
+            turns: 0,
+            input_tokens: 0,
+            output_tokens: 0,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Settings {
-    #[cfg(feature = "claude-code")]
-    pub harness: Option<crate::claude_code::profile::Selection>,
     pub family: String,
     pub model: String,
     /// Explicit fixed-file family guidance selection.
@@ -82,34 +156,27 @@ pub struct Settings {
     /// no effort, so the provider's default for the model applies.
     pub effort: Option<String>,
     pub destination: String,
-    pub turns: u64,
-    pub input_tokens: u64,
-    pub output_tokens: u64,
+    pub runtime: RuntimeSettings,
     pub inquiry: Option<String>,
     pub varies: Option<String>,
 }
 
 impl Settings {
-    /// The settings as reported and recorded (INTERFACE 5.3).
+    /// The settings as reported and recorded (INTERFACE 5.3): the runtime's
+    /// `limits` follow the destination, and the agent runtime's selection
+    /// follows its limits.
     pub fn to_j(&self) -> J {
         let mut o = J::obj()
             .with("family", self.family.as_str())
             .with("model", self.model.as_str())
-            .with("destination", self.destination.as_str())
-            .with(
-                "limits",
-                J::obj()
-                    .with("turns", self.turns)
-                    .with("input_tokens", self.input_tokens)
-                    .with("output_tokens", self.output_tokens),
-            );
-        #[cfg(feature = "claude-code")]
-        if let Some(runtime) = &self.harness {
-            if let J::Obj(fields) = &mut o {
-                fields.retain(|(key, _)| key != "limits");
+            .with("destination", self.destination.as_str());
+        match &self.runtime {
+            RuntimeSettings::Messages(limits) => o.push("limits", limits.to_j()),
+            #[cfg(feature = "claude-code")]
+            RuntimeSettings::Agent(selection) => {
+                o.push("limits", selection.limits.to_j());
+                o.push("runtime", selection.to_j());
             }
-            o.push("limits", runtime.limits.to_j());
-            o.push("runtime", runtime.to_j());
         }
         if let Some(g) = &self.guidance {
             o.push("guidance", g.as_str());
@@ -347,20 +414,20 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
         defects.push(Defect::new("setting_invalid", Some(line), Some(key), msg))
     };
 
-    let mut settings = Settings {
-        #[cfg(feature = "claude-code")]
-        harness: None,
-        guidance: None,
-        family: String::new(),
-        model: String::new(),
-        effort: None,
-        destination: String::new(),
+    // Each value is kept only when the parse has no defect, so every
+    // required one has then been set.
+    let mut family = String::new();
+    let mut guidance = None;
+    let mut model = String::new();
+    let mut effort = None;
+    let mut destination = String::new();
+    let mut limits = MessagesLimits {
         turns: 0,
         input_tokens: 0,
         output_tokens: 0,
-        inquiry: None,
-        varies: None,
     };
+    let mut inquiry = None;
+    let mut varies = None;
     if let Some((v, l)) = get("stewart") {
         if v != "question/1" {
             invalid(
@@ -373,7 +440,7 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
     if let Some((v, l)) = get("family") {
         let ids = family_ids();
         if ids.contains(&v) {
-            settings.family = v.to_string();
+            family = v.to_string();
         } else {
             invalid(
                 "family",
@@ -387,10 +454,10 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
         }
     }
     if let Some((v, l)) = get("guidance") {
-        let admitted = crate::forms::family(&settings.family)
-            .is_some_and(crate::forms::Family::admits_guidance_file);
+        let admitted =
+            crate::forms::family(&family).is_some_and(crate::forms::Family::admits_guidance_file);
         if v == "guidance.md" && admitted {
-            settings.guidance = Some(v.to_string());
+            guidance = Some(v.to_string());
         } else {
             invalid(
                 "guidance",
@@ -421,12 +488,12 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
                 format!("line {l}: model must be 1–128 characters from A–Z a–z 0–9 . _ : -."),
             );
         } else {
-            settings.model = v.to_string();
+            model = v.to_string();
         }
     }
     if let Some((v, l)) = get("effort") {
         if EFFORT_LEVELS.contains(&v) {
-            settings.effort = Some(v.to_string());
+            effort = Some(v.to_string());
         } else {
             invalid(
                 "effort",
@@ -466,20 +533,20 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
                 format!("line {l}: destination must not contain control characters."),
             );
         } else {
-            settings.destination = v.to_string();
+            destination = v.to_string();
         }
     }
     for (key, max, slot) in [
-        ("limit-turns", MAX_TURNS, &mut settings.turns),
+        ("limit-turns", MAX_TURNS, &mut limits.turns),
         (
             "limit-input-tokens",
             MAX_INPUT_TOKENS,
-            &mut settings.input_tokens,
+            &mut limits.input_tokens,
         ),
         (
             "limit-output-tokens",
             MAX_OUTPUT_TOKENS,
-            &mut settings.output_tokens,
+            &mut limits.output_tokens,
         ),
     ] {
         if let Some((v, l)) = get(key) {
@@ -503,12 +570,12 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
                 format!("line {l}: inquiry must be 1–128 characters with no control characters."),
             );
         } else {
-            settings.inquiry = Some(v.to_string());
+            inquiry = Some(v.to_string());
         }
     }
     if let Some((v, l)) = get("varies") {
         match ids::decode_reference(v) {
-            Ok(_) => settings.varies = Some(v.to_string()),
+            Ok(_) => varies = Some(v.to_string()),
             Err(e) => invalid(
                 "varies",
                 l,
@@ -529,8 +596,16 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
             ));
         }
     }
+    // A question that names a profile takes the agent runtime, valid or not;
+    // its checks follow the common ones.
     #[cfg(feature = "claude-code")]
-    crate::claude_code::profile::frontmatter(&fields, is_harness, &mut settings, &mut defects);
+    let runtime = match crate::claude_code::profile::frontmatter(&fields, is_harness, &mut defects)
+    {
+        Some(selection) => RuntimeSettings::Agent(selection),
+        None => RuntimeSettings::Messages(limits),
+    };
+    #[cfg(not(feature = "claude-code"))]
+    let runtime = RuntimeSettings::Messages(limits);
     let body = &text[body_offset..];
     if !body.chars().any(|c| !c.is_whitespace()) {
         defects.push(Defect::new(
@@ -542,7 +617,16 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
     }
     if defects.is_empty() {
         Ok(Question {
-            settings,
+            settings: Settings {
+                family,
+                model,
+                guidance,
+                effort,
+                destination,
+                runtime,
+                inquiry,
+                varies,
+            },
             body_offset,
             line_ending: if ending == "\n" { "LF" } else { "CRLF" },
         })
@@ -569,6 +653,13 @@ mod tests {
 
     const GOOD: &str = "---\nstewart: question/1\n# comment\nfamily: open-inquiry\nmodel: claude-opus-5-5\ndestination: /home/ana/returns\n\nlimit-turns: 200\nlimit-input-tokens: 20000000\nlimit-output-tokens: 400000\n---\nAudit our app to make sure there are no bugs.\n";
 
+    /// The limits `GOOD` sets.
+    const EXAMPLE_LIMITS: MessagesLimits = MessagesLimits {
+        turns: 200,
+        input_tokens: 20_000_000,
+        output_tokens: 400_000,
+    };
+
     fn reasons(s: &str) -> Vec<&'static str> {
         parse(s.as_bytes())
             .unwrap_err()
@@ -584,7 +675,10 @@ mod tests {
             &GOOD[q.body_offset..],
             "Audit our app to make sure there are no bugs.\n"
         );
-        assert_eq!(q.settings.turns, 200);
+        assert_eq!(
+            q.settings.runtime,
+            RuntimeSettings::Messages(EXAMPLE_LIMITS)
+        );
         assert_eq!(q.settings.family, "open-inquiry");
         assert_eq!(q.line_ending, "LF");
     }
@@ -630,14 +724,19 @@ mod tests {
     #[test]
     fn the_profile_field_selects_the_runtime_on_the_one_version() {
         let q = parse(RUNTIME.as_bytes()).unwrap();
-        let selected = q.settings.harness.expect("runtime selected");
+        let RuntimeSettings::Agent(selected) = q.settings.runtime else {
+            panic!("runtime selected: {:?}", q.settings.runtime);
+        };
         assert_eq!(selected.path, "/home/ana/profile.json");
         assert_eq!(selected.limits.max_placements, 3);
         assert_eq!(selected.limits.placement_timeout_seconds, 600);
+        assert_eq!(selected.profile, None);
         // Invariance: without the field the question is a Messages question.
         let q = parse(GOOD.as_bytes()).unwrap();
-        assert!(q.settings.harness.is_none());
-        assert_eq!(q.settings.turns, 200);
+        assert_eq!(
+            q.settings.runtime,
+            RuntimeSettings::Messages(EXAMPLE_LIMITS)
+        );
 
         let defects = |text: &str| -> Vec<(&'static str, Option<String>, String)> {
             parse(text.as_bytes())
@@ -696,6 +795,98 @@ mod tests {
         assert_eq!(found[0].1.as_deref(), Some("placement-timeout-seconds"));
         // The scaffold is the common one and names no runtime field.
         assert!(!scaffold().contains("runtime") && !scaffold().contains("placement"));
+    }
+
+    /// The selector's presence, not its validity, decides which limits a
+    /// question takes, and the common checks come before the runtime's. Each
+    /// list is every defect in its reported order.
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn a_profile_beside_an_api_limit_reports_each_defect_in_order() {
+        let all = |text: &str| -> Vec<(&'static str, Option<usize>, Option<String>, String)> {
+            parse(text.as_bytes())
+                .unwrap_err()
+                .into_iter()
+                .map(|d| (d.reason, d.line, d.key, d.message))
+                .collect()
+        };
+        let d = |reason, line, key: &str, message: &str| {
+            (reason, line, Some(key.to_string()), message.to_string())
+        };
+        let api = "limit-turns is a Messages API limit; a question that names runtime-profile takes max-placements and placement-timeout-seconds instead";
+        let range = "line 8: limit-turns must be a whole number from 1 to 10000, written without sign, separators or leading zeros.";
+        let placement = "max-placements applies only to a question that names runtime-profile; without it the question uses limit-turns, limit-input-tokens and limit-output-tokens";
+        let with_limit = |limit: &str| {
+            RUNTIME.replace(
+                "max-placements: 3\n",
+                &format!("max-placements: 3\nlimit-turns: {limit}\n"),
+            )
+        };
+        // A profile that is not an absolute path still selects the runtime:
+        // the API limit is refused, and no API limit is reported missing.
+        assert_eq!(
+            all(&with_limit("200").replace(": /home/ana/profile.json", ": profile.json")),
+            [
+                d("setting_invalid", Some(8), "limit-turns", api),
+                d(
+                    "setting_invalid",
+                    Some(6),
+                    "runtime-profile",
+                    "a runtime profile must be an absolute file path"
+                ),
+            ]
+        );
+        // An API limit with a bad value beside a profile: its own check, then the runtime's.
+        assert_eq!(
+            all(&with_limit("0")),
+            [
+                d("setting_invalid", Some(8), "limit-turns", range),
+                d("setting_invalid", Some(8), "limit-turns", api),
+            ]
+        );
+        // A missing common key comes first; a missing placement field last.
+        let text = RUNTIME
+            .replace("family: open-inquiry\n", "")
+            .replace("max-placements: 3\n", "limit-turns: 200\n");
+        assert_eq!(
+            all(&text),
+            [
+                (
+                    "setting_missing",
+                    None,
+                    Some("family".to_string()),
+                    "the required key family is missing from the front matter.".to_string()
+                ),
+                d("setting_invalid", Some(6), "limit-turns", api),
+                (
+                    "setting_missing",
+                    None,
+                    Some("max-placements".to_string()),
+                    "the required key max-placements is missing from the front matter; a question that names runtime-profile needs it.".to_string()
+                ),
+            ]
+        );
+        // Without a profile, the API limits are checked and required, then
+        // the placement field is refused.
+        assert_eq!(
+            all(&GOOD.replace("limit-turns: 200\n", "limit-turns: 0\nmax-placements: 3\n")),
+            [
+                d("setting_invalid", Some(8), "limit-turns", range),
+                d("setting_invalid", Some(9), "max-placements", placement),
+            ]
+        );
+        assert_eq!(
+            all(&GOOD.replace("limit-turns: 200\n", "max-placements: 3\n")),
+            [
+                (
+                    "setting_missing",
+                    None,
+                    Some("limit-turns".to_string()),
+                    "the required key limit-turns is missing from the front matter.".to_string()
+                ),
+                d("setting_invalid", Some(8), "max-placements", placement),
+            ]
+        );
     }
 
     #[test]

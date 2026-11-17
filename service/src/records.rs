@@ -3,7 +3,7 @@
 //! check the bindings the log holds for them.
 
 use crate::archive::{Audit, RECORD_LIMIT, decode_record};
-use crate::frontmatter::Settings;
+use crate::frontmatter::{MessagesLimits, RuntimeSettings, Settings};
 use crate::json::{self, J, JsonError, Obj};
 use crate::util;
 
@@ -37,17 +37,18 @@ pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
     #[cfg(feature = "claude-code")]
     allowed.push("runtime");
     s.only(&allowed)?;
+    // A runtime member selects the agent runtime, whose limits it checks
+    // with the selection; otherwise `limits` holds the Messages API limits.
     let l = s.obj("limits")?;
     #[cfg(feature = "claude-code")]
-    let harness = s
+    let agent = s
         .get("runtime")
         .map(|_| crate::claude_code::profile::Selection::decode(&s.obj("runtime")?, &l))
-        .transpose()?;
-    #[cfg(feature = "claude-code")]
-    let is_harness = harness.is_some();
+        .transpose()?
+        .map(RuntimeSettings::Agent);
     #[cfg(not(feature = "claude-code"))]
-    let is_harness = false;
-    if !is_harness {
+    let agent = None;
+    if agent.is_none() {
         l.only(&["turns", "input_tokens", "output_tokens"])?;
     }
     let effort = s.opt_str("effort")?;
@@ -71,27 +72,14 @@ pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
         ));
     }
     Ok(Settings {
-        #[cfg(feature = "claude-code")]
-        harness,
         guidance: guidance.map(str::to_string),
         family: s.str("family")?.to_string(),
         model: s.str("model")?.to_string(),
         effort: effort.map(|x| x.to_string()),
         destination: s.str("destination")?.to_string(),
-        turns: if is_harness {
-            0
-        } else {
-            l.u64("turns", crate::frontmatter::MAX_TURNS)?
-        },
-        input_tokens: if is_harness {
-            0
-        } else {
-            l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?
-        },
-        output_tokens: if is_harness {
-            0
-        } else {
-            l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?
+        runtime: match agent {
+            Some(agent) => agent,
+            None => RuntimeSettings::Messages(MessagesLimits::decode_values(&l)?),
         },
         inquiry: s.opt_str("inquiry")?.map(|x| x.to_string()),
         varies: s.opt_str("varies")?.map(|x| x.to_string()),
@@ -783,18 +771,83 @@ mod tests {
         }
     }
 
+    /// Damaged settings are refused at their first problem, in a fixed order:
+    /// members, then the runtime's limit members, then effort and guidance,
+    /// then the common values in record order, the limit values and the labels.
+    #[test]
+    fn damaged_settings_are_refused_at_the_first_problem_in_a_fixed_order() {
+        let first = |text: &str| {
+            let parsed = json::parse(text.as_bytes()).unwrap();
+            decode_settings(&parsed.obj("/body/settings").unwrap())
+                .unwrap_err()
+                .to_string()
+        };
+        let with = |limits: &str, rest: &str| {
+            format!(
+                r#"{{"family":"comparison","model":"m","destination":"/d","limits":{{{limits}}}{rest}}}"#
+            )
+        };
+        let good = r#""turns":1,"input_tokens":1,"output_tokens":1"#;
+        let over = r#""turns":10001,"input_tokens":1,"output_tokens":1"#;
+        let members = format!(
+            "unknown_key at /body/settings/x (byte 114): unknown key; expected keys: family, model, destination, limits, guidance, effort, inquiry, varies{}",
+            if cfg!(feature = "claude-code") {
+                ", runtime"
+            } else {
+                ""
+            }
+        );
+        for (text, error) in [
+            (with(good, r#","x":1,"effort":"extreme""#), members.as_str()),
+            (
+                with(&format!(r#"{good},"x":1"#), r#","effort":"extreme""#),
+                "unknown_key at /body/settings/limits/x (byte 113): unknown key; expected keys: turns, input_tokens, output_tokens",
+            ),
+            (
+                with(over, r#","effort":"extreme""#),
+                "value at /body/settings/effort (byte 123): expected an effort level",
+            ),
+            (
+                with(over, r#","guidance":"guidance.md""#),
+                "value at /body/settings/guidance (byte 125): expected guidance.md for open-inquiry",
+            ),
+            (
+                with(over, "").replace(r#","destination":"/d""#, ""),
+                "missing_key at /body/settings/destination (byte 0): a required key is missing",
+            ),
+            (
+                with(over, r#","inquiry":1"#),
+                "integer_range at /body/settings/limits/turns (byte 72): the integer exceeds this field's bound 10000",
+            ),
+            (
+                with(r#""turns":1,"input_tokens":1"#, r#","inquiry":1"#),
+                "missing_key at /body/settings/limits/output_tokens (byte 63): a required key is missing",
+            ),
+            (
+                with(good, r#","inquiry":1,"varies":2"#),
+                "type at /body/settings/inquiry (byte 120): expected string, found integer",
+            ),
+            (
+                with(r#""max_placements":2,"placement_timeout_seconds":60"#, ""),
+                "unknown_key at /body/settings/limits/max_placements (byte 81): unknown key; expected keys: turns, input_tokens, output_tokens",
+            ),
+        ] {
+            assert_eq!(first(&text), error, "{text}");
+        }
+    }
+
     fn messages_settings() -> Settings {
         Settings {
-            #[cfg(feature = "claude-code")]
-            harness: None,
             guidance: Some("guidance.md".into()),
             family: "open-inquiry".into(),
             model: "claude-opus-5-5".into(),
             effort: Some("high".into()),
             destination: "/d".into(),
-            turns: 200,
-            input_tokens: 20_000_000,
-            output_tokens: 400_000,
+            runtime: RuntimeSettings::Messages(MessagesLimits {
+                turns: 200,
+                input_tokens: 20_000_000,
+                output_tokens: 400_000,
+            }),
             inquiry: Some("a".into()),
             varies: Some("b".into()),
         }
@@ -829,7 +882,7 @@ mod tests {
             &mcp,
         );
         Settings {
-            harness: Some(crate::claude_code::profile::Selection {
+            runtime: RuntimeSettings::Agent(crate::claude_code::profile::Selection {
                 path: "/fixture/profile.json".into(),
                 limits: crate::claude_code::profile::Limits {
                     max_placements: 2,
@@ -837,9 +890,6 @@ mod tests {
                 },
                 profile: Some(profile),
             }),
-            turns: 0,
-            input_tokens: 0,
-            output_tokens: 0,
             ..messages_settings()
         }
     }
@@ -852,7 +902,10 @@ mod tests {
         assert_eq!(back, s);
         // The captured profile text is escaped inside the runtime member;
         // the rest of the bytes are exact.
-        let profile = s.harness.as_ref().unwrap().profile.clone().unwrap();
+        let RuntimeSettings::Agent(selection) = &s.runtime else {
+            panic!("agent settings");
+        };
+        let profile = selection.profile.clone().unwrap();
         let escaped = J::from(profile.as_str()).string();
         assert!(text.contains(&escaped));
         assert_eq!(
@@ -867,5 +920,40 @@ mod tests {
         let parsed = json::parse(extra.as_bytes()).unwrap();
         let e = decode_settings(&parsed.obj("/body/settings").unwrap()).unwrap_err();
         assert!(e.to_string().contains("/limits/turns"), "{e}");
+    }
+
+    /// With a runtime member, the selection and its limits are checked
+    /// before effort. The profile text, which follows the members checked
+    /// here, makes later byte offsets platform-dependent.
+    #[cfg(feature = "claude-code")]
+    #[test]
+    fn damaged_harness_settings_are_refused_at_the_first_problem() {
+        let text = harness_settings().to_j().string();
+        let first = |text: &str| {
+            let parsed = json::parse(text.as_bytes()).unwrap();
+            decode_settings(&parsed.obj("/body/settings").unwrap())
+                .unwrap_err()
+                .to_string()
+        };
+        let effort = text.replace(r#""effort":"high""#, r#""effort":"extreme""#);
+        let e = first(&effort);
+        assert!(
+            e.starts_with("value at /body/settings/effort (byte ")
+                && e.ends_with("): expected an effort level"),
+            "{e}"
+        );
+        let api = effort.replace(
+            r#"{"max_placements":2,"placement_timeout_seconds":60}"#,
+            r#"{"turns":1,"input_tokens":1,"output_tokens":1}"#,
+        );
+        assert_eq!(
+            first(&api),
+            "unknown_key at /body/settings/limits/turns (byte 88): unknown key; expected keys: max_placements, placement_timeout_seconds"
+        );
+        let kind = api.replace(r#""kind":"claude-code/1""#, r#""kind":"claude-code/2""#);
+        assert_eq!(
+            first(&kind),
+            "value at /body/settings/runtime/kind (byte 144): unsupported runtime"
+        );
     }
 }

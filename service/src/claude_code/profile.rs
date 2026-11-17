@@ -22,12 +22,15 @@ pub const MAX_OUTPUT_TOKENS: u64 = 16_000;
 pub const SELECTOR: &str = "runtime-profile";
 pub const EXTRA_KEYS: [&str; 3] = [SELECTOR, "max-placements", "placement-timeout-seconds"];
 
+/// This runtime's front matter checks, after the common ones. A question
+/// that names the profile field selects this runtime whether or not the
+/// field is valid: the selection is returned exactly when `selected`, and
+/// every problem is added to `defects`.
 pub fn frontmatter(
     fields: &[(String, String, usize)],
     selected: bool,
-    settings: &mut crate::frontmatter::Settings,
     defects: &mut Vec<crate::frontmatter::Defect>,
-) {
+) -> Option<Selection> {
     use crate::frontmatter::Defect;
     let get = |key: &str| fields.iter().find(|(k, _, _)| k == key);
     let mut invalid = |key: &str, message: &str| {
@@ -51,7 +54,7 @@ pub fn frontmatter(
                 );
             }
         }
-        return;
+        return None;
     }
     for key in ["limit-turns", "limit-input-tokens", "limit-output-tokens"] {
         if get(key).is_some() {
@@ -99,11 +102,11 @@ pub fn frontmatter(
             ),
         ));
     }
-    settings.harness = Some(Selection {
+    Some(Selection {
         path: path.into(),
         limits,
         profile: None,
-    });
+    })
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -347,7 +350,7 @@ pub fn open_regular(path: &str) -> Result<(std::fs::File, crate::fsx::Stat), Str
 /// this binary's launch surface, so the digest a check must name is available
 /// without a launch.
 pub fn prepare(settings: &mut crate::frontmatter::Settings) -> Result<(), Fail> {
-    let Some(selection) = &mut settings.harness else {
+    let crate::frontmatter::RuntimeSettings::Agent(selection) = &mut settings.runtime else {
         return Ok(());
     };
     let fail = |e: String| {

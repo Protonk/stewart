@@ -230,13 +230,7 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         t.exactly(&["reminder", "near_limit", "continuation", "compacted"])?;
         let l = b.obj("limits")?;
         l.exactly(&["turns", "input_tokens", "output_tokens"])?;
-        let limits = Limits {
-            #[cfg(feature = "claude-code")]
-            harness: None,
-            turns: l.u64("turns", crate::frontmatter::MAX_TURNS)?,
-            input_tokens: l.u64("input_tokens", crate::frontmatter::MAX_INPUT_TOKENS)?,
-            output_tokens: l.u64("output_tokens", crate::frontmatter::MAX_OUTPUT_TOKENS)?,
-        };
+        let limits = Limits::from(crate::frontmatter::MessagesLimits::decode_values(&l)?);
         // Bounds that keep the run's arithmetic and waits finite; the release
         // pins 4 attempts, 2, 8 and 30 s, 60 s and 600 s.
         let retry = b.obj("retry")?;
@@ -463,22 +457,22 @@ pub(crate) mod tests {
     use super::*;
     use crate::archive::{decode_record, record_bytes};
     use crate::forms::{ArrangementInput, arrangement};
-    use crate::frontmatter::Settings;
+    use crate::frontmatter::{MessagesLimits, RuntimeSettings, Settings};
     use crate::json::J;
     use crate::util;
 
     pub fn settings(family: &str, model: &str) -> Settings {
         Settings {
-            #[cfg(feature = "claude-code")]
-            harness: None,
             guidance: None,
             family: family.into(),
             model: model.into(),
             effort: None,
             destination: "/tmp/returns".into(),
-            turns: 200,
-            input_tokens: 20_000_000,
-            output_tokens: 400_000,
+            runtime: RuntimeSettings::Messages(MessagesLimits {
+                turns: 200,
+                input_tokens: 20_000_000,
+                output_tokens: 400_000,
+            }),
             inquiry: None,
             varies: None,
         }

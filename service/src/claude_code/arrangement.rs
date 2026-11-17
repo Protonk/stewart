@@ -32,9 +32,15 @@ pub struct Harness {
     pub effort: Option<String>,
 }
 
-pub fn build(input: &ArrangementInput, guidance: &str, tools: &[u8]) -> Arrangement {
+/// The arrangement of a question that selected this runtime; `selection` is
+/// its settings' runtime.
+pub fn build(
+    input: &ArrangementInput,
+    selection: &Selection,
+    guidance: &str,
+    tools: &[u8],
+) -> Arrangement {
     let s = input.settings;
-    let selection = s.harness.as_ref().expect("selected runtime");
     let f = forms::family(&s.family).expect("validated family");
     let prompt = surface::system_prompt(&orientation(), guidance);
     let surface_bytes = surface::bytes();
@@ -244,12 +250,7 @@ pub fn decode(b: &Obj, raw: &[u8]) -> Result<Pinned, String> {
         {
             return Err(b.invalid("harness_max_turns", "unsupported harness control values"));
         }
-        let limits = crate::usage::Limits {
-            turns: 0,
-            input_tokens: 0,
-            output_tokens: 0,
-            harness: Some(selection.limits),
-        };
+        let limits = crate::usage::Limits::from(selection.limits);
         let harness = Harness {
             selection,
             profile,
@@ -308,7 +309,7 @@ mod tests {
         let tools = forms::tools(forms::family(family).unwrap()).bytes();
         let mcp = super::super::mcp_tools(&tools).unwrap();
         let settings = crate::frontmatter::Settings {
-            harness: Some(Selection {
+            runtime: crate::frontmatter::RuntimeSettings::Agent(Selection {
                 path: "/fixture/profile.json".into(),
                 limits: profile::Limits {
                     max_placements: 2,
@@ -326,9 +327,6 @@ mod tests {
             model: "fixture-model".into(),
             effort: None,
             destination: "/d".into(),
-            turns: 0,
-            input_tokens: 0,
-            output_tokens: 0,
             inquiry: None,
             varies: None,
         };

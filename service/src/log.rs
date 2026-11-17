@@ -590,31 +590,18 @@ impl LogState {
         }
         u
     }
-    /// The accepted commission's cumulative limits, from the `prepared`
-    /// record of the accepted preparation.
+    /// The accepted commission's cumulative limits, from the settings of the
+    /// accepted preparation's `prepared` record, decoded as reading the log
+    /// decoded them.
     pub fn limits(&self) -> Option<Limits> {
         let prep = match &self.accepted()?.body {
             Body::Accepted { prep, .. } => *prep,
             _ => return None,
         };
         let p = self.prepared(prep)?;
-        let l = p.body_obj().obj("settings").ok()?.obj("limits").ok()?;
-        #[cfg(feature = "claude-code")]
-        if p.body_obj().obj("settings").ok()?.get("runtime").is_some() {
-            return Some(Limits {
-                turns: 0,
-                input_tokens: 0,
-                output_tokens: 0,
-                harness: Some(crate::claude_code::profile::Limits::decode(&l).ok()?),
-            });
-        }
-        Some(Limits {
-            #[cfg(feature = "claude-code")]
-            harness: None,
-            turns: l.u64("turns", u64::MAX).ok()?,
-            input_tokens: l.u64("input_tokens", u64::MAX).ok()?,
-            output_tokens: l.u64("output_tokens", u64::MAX).ok()?,
-        })
+        let settings = p.body_obj().obj("settings").ok()?;
+        let settings = crate::records::decode_settings(&settings).ok()?;
+        Some(settings.runtime.limits())
     }
 }
 
