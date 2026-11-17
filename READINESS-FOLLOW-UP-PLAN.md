@@ -1,10 +1,10 @@
 # Readiness follow-up
 
 **Current status:** The bounded encounters have reviewed outcomes, and the
-selected service repairs and capture-grounded fixtures have native checks.
-The latest OS fixture batch passes all required native suites. Remaining work is
-fixture-gap disposition, a fresh coverage reassessment and Linux qualification
-of changed source. Readiness is not complete; no live packet is active.
+selected service repairs and capture-grounded fixtures have native checks, as do
+the lookback's decided changes. Remaining work is Linux qualification of changed
+source, fixture-gap disposition and a fresh coverage reassessment. Readiness is
+not complete; no live packet is active.
 
 This plan owns residual readiness findings and their disposition.
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
@@ -53,7 +53,10 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 - [ ] Assign each remaining finding a repair, a bounded comparison or an explicit
   limitation/disposition. Keep proposed shared-runtime and question-family
   refactors distinct from demonstrated defects and from decisions that change
-  the product's obligations.
+  the product's obligations. The lookback's
+  [findings](development/LOOKBACK-AUDIT.md#findings-and-dispositions) already
+  give its refactor and public-form candidates a disposition; they are not
+  readiness tasks unless selected.
 
 ## Verify and close the work
 

@@ -77,6 +77,7 @@ and independent-driver work between authors.
   constraints, recommended roles and explanation/remedy text. Derive meanings
   from the existing families, not filenames or an inferred reading of prose.
 - [ ] Apply the [lookback audit questions](LOOKBACK-AUDIT.md#question-families-materials-and-evidence)
+  and its unselected [family-descriptor candidates](LOOKBACK-AUDIT.md#public-form-candidates-not-selected)
   before freezing that registry. Separate material roles, presentation advice,
   mechanical requirements and evidence expectations; identify which facts belong
   in the pinned arrangement and which are derived views. Keep runtime mapping

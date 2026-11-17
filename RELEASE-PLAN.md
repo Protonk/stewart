@@ -1,10 +1,11 @@
 # Release and work plan
 
-**Current status:** Release execution is set aside for the requested developer
-lookback. The [audit guide](development/LOOKBACK-AUDIT.md) is ready for that
-review. Readiness reassessment and qualification of changed source remain open;
-manager-interface implementation and the full model/platform gates remain ahead.
-No live packet is active and the public release is not scheduled by this plan.
+**Current status:** The developer lookback is complete. Its decided changes to
+placement endings, exhausted starts and signal gating landed with native checks
+only; a container run, scheduled by the principal, must qualify the changed
+source. Readiness reassessment resumes next; manager-interface implementation
+and the full model/platform gates remain ahead. No live packet is active and the
+public release is not scheduled by this plan.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -16,12 +17,12 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current review | Assess the session's evidence and opportunities for shared runtime semantics and modular question-family materials/evidence guidance. Record proposed changes and their required decisions before selecting implementation. | [Lookback audit guide](development/LOOKBACK-AUDIT.md) |
-| On resuming readiness | Finish remaining fixture dispositions, coverage reassessment and qualification. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the findings; [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) owns the reusable Messages apparatus. |
+| Current | Finish remaining fixture dispositions, coverage reassessment and qualification, starting with Linux qualification of the lookback's changes. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the findings; [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) owns the reusable Messages apparatus. |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separately scheduled release work | Complete the Messages model gate, platform qualification and acceptance-policy review. | [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and the requirements below |
 | Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
+| Unselected | The lookback's behavior-preserving refactor candidates and public-form candidates. | [Lookback findings](development/LOOKBACK-AUDIT.md#findings-and-dispositions) |
 
 Use the existing apparatus and retained exact writers; reconcile uncertain
 processes or effects before reusing them. Build only the prerequisites needed

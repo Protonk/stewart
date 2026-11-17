@@ -7,6 +7,8 @@ persistent agent easier to develop and test through a shared internal core;
 and make question families better owners of materials presentation and evidence
 expectations. The architecture candidates below are questions to resolve, not
 new public contracts or an instruction to build every proposed abstraction.
+The lookback has been performed; its decisions, landed changes and remaining
+candidates are under [Findings and dispositions](#findings-and-dispositions).
 
 The central finding is that Stewart already shares authoring and custody across
 runtimes. The next useful audit concerns the representations and boundaries
@@ -78,7 +80,7 @@ approvals, writers and original records.
 | Encounter | What happened | What a fresh audit must not infer |
 | --- | --- | --- |
 | M1 wording and inadequate evidence | Four arms submitted and closed; only the report-only direct wording produced an ordinary prose ending and reminder. Citation refusals were repaired in other arms. | Wording cannot be assumed to force the target behavior; successful submission does not exercise an unused reminder path. |
-| M2 effort and response caps | Three initial arms submitted; one stopped on thinking-only `max_tokens` and supplied the retained audit for M3. | A cap stop is not a finished entry, and these few encounters do not isolate effort as its cause. |
+| M2 effort and response caps | Of four reviewed placements, three submitted and closed; one stopped on thinking-only `max_tokens` and supplied the retained audit for M3. | A cap stop is not a finished entry, and these few encounters do not isolate effort as its cause. |
 | M3 interruption and continuation | Recorded entries and spent-reminder state survived a witnessed interruption and fresh conversation. The checklist continued twice, exhausted 64,000 cumulative output tokens, and returned its unchanged partial account through explicit manager seal and close. | The interrupted reminder attempt sent no request bytes; in-flight estimation and a spent-reminder prose ending were not exercised live. Manager sealing did not finish the checklist intellectually. |
 | M4 compaction | A real signed summary crossed the configured 150,000-token trigger, was reused unchanged, and preserved an entry through revision, submission and close. Compaction-iteration usage was charged once. | One bounded Opus encounter is not the 21-audit gate for every release model. Service-owned captures are not an independent provider-wire witness; some citations were weak support for the authored claims. |
 | C1 surface and C2 service | The supplied-surface comparison observed positive use, denial and invariance. Ordinary and inadequate-evidence service inquiries submitted, delivered exact packages and closed. | Surface results do not qualify a whole service; both C2 final usage intervals remained unknown. |
@@ -117,13 +119,15 @@ had a wrong file-count assumption; a qualification-reader test used `skip` where
 the result says `skipped`. Reviews also found stale preview expectations,
 incorrect synthetic aggregate counts and a verifier control retaining success
 stdout while returning altered output. Corrected comparisons and the original
-outputs are located below. A passing retry does not erase the first result.
+failing outputs of the first four are located below; the last three survive
+only as notes in their roots' preflight reviews. A passing retry does not erase
+the first result.
 
 The final OS batch grounded NUL-delimited environments, owned process-group
 presence/absence, a denied signal-0 observation and Linux procfs controls. Its
 host run passed **96 Python tests, 9 Rust protocol tests, 525 release self-checks
 and 434 runtime self-checks**, with no failures or skips. Before/after bindings
-and review covered 367 source files, 132 snapshots, four verified binaries and
+and review covered 367 source files, 132 source-binding snapshot files, four verified binaries and
 two retained writers. This is native offline evidence. Linux qualification of
 the changed source, native WSL2 and the full real-model gate remain outstanding.
 
@@ -298,7 +302,7 @@ purpose ends.
 | `readiness-fidelity-01/` | `3fa45d0` | Original driver failures, repaired fidelity cases, Messages regression and Cargo outputs. |
 | `readiness-close-submit-01/` | `d80ab98` | Close/publication precedence, variant writers and retained-writer invariance. |
 | `readiness-near-limit-01/` | `fb4a747` | Original timing failure and corrected notice-driven comparison; clock scope. |
-| `readiness-observations-01/` | `82ee697` | C5 repeated message IDs, accounting fields and assistant names; file-count repair. |
+| `readiness-observations-01/` | `82ee697` | Accounting fields and assistant names (the repeated message IDs are in that commit's driver guide, not the review); file-count repair. |
 | `readiness-messages-fixtures-01/` | `25cb7f3` | M4 signed-summary baseline and corruption/invariance controls. |
 | `readiness-cap-fixtures-01/` | `4af6cc2` | M2/M3 capped responses, cumulative charges, continuation and refusal. |
 | `readiness-reminder-fixtures-01/` | `09f701c` | Reminder state and citation recovery; known transmission and interrupted charging are synthetic. |
@@ -343,3 +347,97 @@ needs the scheduled Linux suites, and WSL2 and real-model gates retain their own
 scope. The audit is useful when it leaves bounded implementation candidates,
 explicit limitations and decision requests, rather than another broad cleanup
 mandate or a claim of release readiness.
+
+## Findings and dispositions
+
+The lookback ran on 2026-11-16 and 2026-11-17 from implementation-side
+analyses, reproductions in throwaway copies and a specification-only driver
+author. Everything below is native development evidence; none of it is Linux
+qualification. Detailed analyses, diffs, mutation tables and logs are local
+working files, absent from a clone; the decisions and behavior they support
+are in the specifications, tests and commits named here.
+
+### Decided and implemented
+
+The principal decided four questions; the smaller rules below them were
+approved with them. INTERFACE and the
+[runtime contract](../docs/claude-code/CONTRACT.md) own the resulting behavior.
+
+| Finding | Outcome | Commit |
+| --- | --- | --- |
+| A Messages signal let an executing mutation link, so a submit held before its seal still sealed; INTERFACE 6.8 said signals take the close path | Messages adopts the publication gate on signal: an unlinked mutation is refused `placement_stopped` and the placement ends `interrupted`; gating became an explicit core capability | `9465a54` |
+| The agent runtime let a signal, close, deadline or stop-record failure observed during shutdown replace an already decided ending (a late SIGTERM reopened authoring; a quota rejection became `placement_deadline`) | The first observed condition decides; only a seal from the placement and a drain-time reply mismatch on an ordinary ending apply later | `9465a54` |
+| Exhausted placement starts after a non-deadline interruption: status said authoring was open while `run` refused `authoring_ended` without data | The final placement's interruption ends authoring as `limit`; a gone final placement is reconciled, then refused | `9465a54` |
+| While stopping was unknown, advice offered `run` and `close`, which refuse `runtime_stop_unknown` | Advice offers only `status`, from the same per-placement check the refusals use | `9465a54` |
+| A bad launch directory consumed a start and recorded `interrupted` | Checked before the reservation, refusing `runtime_profile_invalid` | `9465a54` |
+| A captured notice whose write failed was `not_sent` | `unknown`; the agent `request` member is the notice's position in its placement | `9465a54` |
+| Implemented agent rules were unwritten: near-limit trigger, reminder trigger, error results, reused MCP IDs, notice inputs, default cause | Written into the runtime contract; an error result's usage stays a reported checkpoint with its interval unknown (principal's decision) | `9465a54` |
+| Refusals at the start reservation lacked the `data` and `next` of INTERFACE 5.7 | Fixed in both runtimes | `9465a54` |
+| A linked notice whose durability was unconfirmed was missing from `run_ended`; `run` and close rebuilt a gone placement's ending differently; the agent's near-limit notice took two clock readings | Fixed | `6f2b862` |
+| Agent start-reservation failures were all `refused record_failed` | Messages mapping shared by both runtimes | `a6656f0` |
+| Family vocabulary, guidance admission, tool union and dispatch were hand-kept copies of the family definitions | Derived from the definitions with exhaustive dispatch | `172792b` |
+| No in-crate test pinned harness record, settings or arrangement bytes | Pinned | `bbf2e36` |
+| Settings carried zero Messages limits for agent questions; limits were re-read from raw JSON | Runtime variant in settings | `b44c833` |
+| The private launch directory survived under load when the owner's bounded stop wait ended first | Removed when the recorded stop observation finds the groups gone | `9465a54` |
+| Driver coverage of the above | Specification-only cases; they fail on the measured property against binaries built before `9465a54` | `6588c4b`, `dfee2e8` |
+
+### Unscheduled behavior-preserving candidates
+
+Each keeps every public byte and needs only the usual checks, but none is
+selected.
+
+- Split the pinned arrangement into common and per-runtime parts. Agent
+  arrangements still carry Messages placeholder members, and an archive with
+  Messages settings beside an agent arrangement, which Stewart cannot
+  produce, panics after `run_started` instead of refusing.
+- Type usage, limits and remaining allowances by runtime. Agent limits can
+  still reach Messages arithmetic (unreachable today), and adding usage
+  across runtimes drops the other runtime's values silently.
+- Move placement outcome types out of the Messages provider module, so the
+  agent runtime stops depending on Messages abort and placement machinery.
+- One notice claim for both runtimes. Their preconditions differ: Messages can
+  claim a reminder after `close_requested`, the agent runtime cannot.
+  Aligning them needs a small decision.
+- One family resolution at preparation with a cross-runtime arrangement byte
+  test; pinned and compiled family facts are not compared at run.
+- Enforce the Messages request timeout from the pinned arrangement rather than
+  an equal constant.
+- Pin the agent readable view in a Cargo test (only a probe checked it), and
+  decide whether a bad API limit beside a profile should keep reporting two
+  defects for one key.
+
+### Public-form candidates, not selected
+
+Each changes a recorded or reply form and needs the principal's decision.
+
+- Agent records without Messages placeholders (`provider`, `requests`,
+  `attempts`), with a top-level runtime and only agent causes.
+- Agent accounting naming its session and accepted checkpoint, with stopping
+  outside usage.
+- Agent notice identity with a durable transmission observation, so recovery
+  could report `sent` rather than `unknown`.
+- Agent `tool_result` without transport coordinates; named agent stop causes
+  instead of one `protocol_anomaly`; a defined
+  `claude-code,fault-injection,sabotage` build.
+- Family descriptor work: verify the pinned arrangement against the compiled
+  family at run; pin answer expectations; family-owned presentation separate
+  from replaceable guidance; role-aware reading presentation; tool identity on
+  refusal paths; a presentation-advice channel. Role declarations belong to
+  the manager interface's registry stage.
+- Smaller wording and form gaps: sealed advice says "An ordinary close confirms
+  where the delivered copy is" when `run` did not deliver; an agent seal on a
+  damaged log reports delivery `unknown` where Messages gives `none`; `run`'s
+  binding refusal `runtime_profile_invalid` carries no `data.surface`, which
+  the contract requires only of `prepare`.
+
+### Test reliability and evidence notes
+
+- Two tests failed once each under heavy machine load and passed on every
+  rerun: the delivery test of a run still holding the lock (its stand-in found
+  the lock held) and the Messages credential-descriptor deadline test.
+- Accepted mutation survivors: equivalent mutants in the gate and settings
+  slices; three agent races reachable only at the exact deadline instant and a
+  failed final checkpoint write, for which no fault point exists.
+- A host restart on 2026-11-16 cleared `/private/tmp`, including
+  `/private/tmp/stewart-*` work directories some reviews name. The `.tmp`
+  roots keep the retained copies.
