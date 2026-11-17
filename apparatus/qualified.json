@@ -211,6 +211,232 @@
       }
     },
     {
+      "id": "acceptance-lookback-02",
+      "kind": "suite",
+      "suite": "acceptance",
+      "script": {
+        "path": "apparatus/acceptance.sh",
+        "sha256": "4088d3dab41a8b090348010c20c4b4f12282d08379c315bbdf102a6708f0774d"
+      },
+      "source_commit": "95f4d60bbd679f1ef11373a938907333041bec43",
+      "source_archive_sha256": "3695ba067568787a4f7b2de3b87393f5126f98c6907bbc4408ce959b3541285e",
+      "date": "2026-11-17T17:29:09Z",
+      "outcome": "failed",
+      "failures": [
+        "host/DONE reports failures=6",
+        "host/driver.log: FAILED: driver-arm64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-lookback-02/driver-arm64/)",
+        "host/driver.log: FAILED: arm64: synthetic runtime driver (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-lookback-02/driver-arm64/runtime-driver.exit)",
+        "host/driver.log: FAILED: arm64: synthetic runtime has no skipped or unselected cases (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-lookback-02/driver-arm64/runtime-complete.exit)",
+        "host/driver.log: FAILED: driver-amd64: the self-test or the driver reported failures or broken checks (see /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-lookback-02/driver-amd64/)",
+        "host/driver.log: FAILED: amd64: synthetic runtime driver (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-lookback-02/driver-amd64/runtime-driver.exit)",
+        "host/driver.log: FAILED: amd64: synthetic runtime has no skipped or unselected cases (expected 0, found 1 in /Users/raccoon/Desktop/Experiments/stewart/.scratch/acceptance-lookback-02/driver-amd64/runtime-complete.exit)"
+      ],
+      "python_image": "sha256:2c90493710bd462e097441e60b0218430d8f7e2b46779bfca3742b2efd386feb",
+      "platforms": {
+        "linux-aarch64": {
+          "execution": "native",
+          "outcome": "failed",
+          "failures": [
+            "host/driver-arm64.exit is 1",
+            "driver-arm64/driver-final.exit is 1",
+            "driver-arm64/runtime-driver.exit is 1, expected 0 (arm64: synthetic runtime driver)",
+            "driver-arm64/runtime-complete.exit is 1, expected 0 (arm64: synthetic runtime has no skipped or unselected cases)",
+            "runtime: cases/checks/controls are missing, failed, skipped or unfired"
+          ],
+          "toolchain_image": "sha256:03baac7fedd2437d0b448415a1e7352b670f03c8ca85be480940e71d972dae8a",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 39,
+            "total": 41,
+            "controls_fired": 11,
+            "controls_total": 11
+          },
+          "self_test": {
+            "checks": 531,
+            "passed": 531,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 146,
+            "ran": 146,
+            "passed": 146,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 281,
+            "passed": 185,
+            "failed": 96,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 244227,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 1390
+          },
+          "controls": {
+            "fired": 96,
+            "total": 96
+          },
+          "driver_controls": {
+            "fired": 21,
+            "total": 21
+          },
+          "timing_gate": {
+            "enabled": true,
+            "passed": true,
+            "threshold_ms": 100.0,
+            "worst_ms": 27.267,
+            "protocol_passed": true,
+            "protocol_worst_ms": 94.729,
+            "protocol_threshold_ms": 200.0
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 872,
+            "checks_failed": 0
+          },
+          "release_sha256": "f309cd21f69a425cf4e3ee09438e7677bd8c0811a7de55a75f0dfde582ec0a1e",
+          "test_sha256": "8ddfd94e95eaaca3dcfe47a63985a129a99280b7ec7ed888519a5e6db393adf9",
+          "result_sha256": "d42486aafde639c224609750d2b5c5b2c9bef8e2424b87f8fae78815921d6b1d",
+          "runtime": {
+            "self_test": {
+              "passed": 484,
+              "failed": 0,
+              "skipped": 0
+            },
+            "counts": {
+              "cases": 47,
+              "passed": 46,
+              "failed": 1,
+              "skipped": 0,
+              "checks": 101250,
+              "checks_passed": 101249,
+              "checks_failed": 1,
+              "controls": 122,
+              "controls_fired": 122
+            },
+            "result_sha256": "0193c6099c1662c748b9af374dde8daa5dc17616f0031d6498e95dee1b722914",
+            "environment_sha256": "21e95b000b6894b9efc50fa5cd044b2cfb850a13e2f49948ac600195ba8b98f2",
+            "work_sha256": "75b765b6f2e855be9ea945f8c3e4fbe979c02339b6620896e8ef6945b178ece3",
+            "evidence": {
+              "files": 6322,
+              "listing_sha256": "7fdedabcede3a0ae9da17bbf3219c1fc4c2d85413664f1d93d838aaefc201936"
+            },
+            "development_sha256": "86563638d0ee2d2ff240d21905c4a0975be4e70392f613f62b47853472d9d9fa",
+            "release_sha256": "f309cd21f69a425cf4e3ee09438e7677bd8c0811a7de55a75f0dfde582ec0a1e",
+            "variant_sha256": "89711d9e646f6059fc0bfe15ba5820c77310e3a1dcae6535638bfb1c357f6a8b",
+            "driver_sha256": "c24319e73029bb2bd97df7b730d18b603d7cd8a202663b1ccb241765c87d17b0"
+          }
+        },
+        "linux-x86_64": {
+          "execution": "emulated (Rosetta)",
+          "outcome": "failed",
+          "failures": [
+            "host/driver-amd64.exit is 1",
+            "driver-amd64/driver-final.exit is 1",
+            "driver-amd64/runtime-driver.exit is 1, expected 0 (amd64: synthetic runtime driver)",
+            "driver-amd64/runtime-complete.exit is 1, expected 0 (amd64: synthetic runtime has no skipped or unselected cases)",
+            "runtime: cases/checks/controls are missing, failed, skipped or unfired"
+          ],
+          "toolchain_image": "sha256:15ecee566d9ed3c6da79edce13738babb3861206fcad068cd9214fcf737916f4",
+          "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+          "script_checks": {
+            "passed": 39,
+            "total": 41,
+            "controls_fired": 11,
+            "controls_total": 11
+          },
+          "self_test": {
+            "checks": 531,
+            "passed": 531,
+            "failed": 0,
+            "skipped": 0
+          },
+          "cases": {
+            "selected": 144,
+            "ran": 144,
+            "passed": 144,
+            "failed": 0,
+            "skipped": 0
+          },
+          "variants": {
+            "ran": 281,
+            "passed": 185,
+            "failed": 96,
+            "skipped": 0
+          },
+          "checks": {
+            "passed": 244227,
+            "failed_outside_controls": 0,
+            "failed_inside_controls": 1390
+          },
+          "controls": {
+            "fired": 96,
+            "total": 96
+          },
+          "driver_controls": {
+            "fired": 21,
+            "total": 21
+          },
+          "timing_gate": {
+            "enabled": false,
+            "passed": null,
+            "threshold_ms": 100.0,
+            "worst_ms": 43.631,
+            "protocol_passed": null,
+            "protocol_worst_ms": 148.289,
+            "protocol_threshold_ms": 200.0
+          },
+          "e2e": {
+            "case": "e2e.reacting-audit",
+            "outcome": "pass",
+            "checks_passed": 872,
+            "checks_failed": 0
+          },
+          "release_sha256": "8fc8c6c80762bc5e656e619fca8e1acb80682173cf3dcfef464f84f1f2a6cba5",
+          "test_sha256": "943739f328a9d909bffedddac30d869c68583e9dabfbe8517044530a380f6f33",
+          "result_sha256": "7d4e8c926b476201b1143168c7dbd5b5ff86b034a4cf46e55ec4d1c0c4b1366a",
+          "runtime": {
+            "self_test": {
+              "passed": 484,
+              "failed": 0,
+              "skipped": 0
+            },
+            "counts": {
+              "cases": 47,
+              "passed": 46,
+              "failed": 1,
+              "skipped": 0,
+              "checks": 101250,
+              "checks_passed": 101249,
+              "checks_failed": 1,
+              "controls": 122,
+              "controls_fired": 122
+            },
+            "result_sha256": "667d46b53ba9ac28414f032db3a998886d3e78bd3e0765c589b9f0186efa121b",
+            "environment_sha256": "c26f1c185e614c4c2a71a497a6671ea8ba518cbc02149455b0b7c3158c07815a",
+            "work_sha256": "23b2d07e59b587c5774aff4aa604a94e6cb3219ec5c8aab8ee03461ffeb32542",
+            "evidence": {
+              "files": 6322,
+              "listing_sha256": "93bb39b1b1673e6d37a92df69e6fb314660cfef9e75e02ddfa6b1c11102f06c3"
+            },
+            "development_sha256": "d51d03d1f50f38c987daa49a3e08a3656e6462dc56d3bc3e215e52eaaae13ff6",
+            "release_sha256": "8fc8c6c80762bc5e656e619fca8e1acb80682173cf3dcfef464f84f1f2a6cba5",
+            "variant_sha256": "4e94f12fab698f42ef0f5543ffef437689b6cfc32d4b61fa76e92e84933e48f6",
+            "driver_sha256": "c24319e73029bb2bd97df7b730d18b603d7cd8a202663b1ccb241765c87d17b0"
+          }
+        }
+      },
+      "evidence": {
+        "path": ".scratch/acceptance-lookback-02",
+        "where": "local: only on the machine that ran it; clones do not carry it"
+      },
+      "pin": null
+    },
+    {
       "id": "toolchain-runtime-01",
       "kind": "suite",
       "suite": "toolchain",
