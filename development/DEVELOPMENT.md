@@ -42,11 +42,18 @@ CARGO_TARGET_DIR=target-test cargo test --locked --offline --features fault-inje
 ```
 
 Changes to service code or build configuration also need the development
-configuration, from `service/`:
+configurations, from `service/`:
 
 ```sh
 CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-code
+CARGO_TARGET_DIR=target-runtime-fault cargo test --locked --offline --features claude-code,fault-injection
 ```
+
+The second runs the development runtime's failure-point tests, such as a
+notice whose publication is linked but unconfirmed, which no other
+configuration compiles. Some runtime tests start a placement whose fake harness
+connects through a private Unix socket, so run both where binding a Unix socket
+is permitted; a sandbox that denies the bind fails those tests.
 
 | What changed | What to run |
 | --- | --- |
@@ -54,7 +61,7 @@ CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-co
 | `docs/INTERFACE.md` or `docs/QUESTION-FORMS.md` | The link check, both cargo configurations and the driver's self-test. A test in `service/src/forms.rs` compares the service's pinned texts and tool descriptions with QUESTION-FORMS; one in `service/src/fault.rs`, built only in the fault and sabotage configuration, compares its failure points, actions and sabotage controls, and the names in its variable table, with INTERFACE Appendix C. The driver's self-test compares its own copies of the pinned texts and tool descriptions with QUESTION-FORMS, and its answer witness reproduces the structured answer and rendering examples of QUESTION-FORMS and the manifest example of INTERFACE 8.2 byte for byte. A changed pinned text or tool description needs the service's copy changed too (then the `service/` row applies); a changed pinned text or example needs the driver's copy updated, under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | Worked example materials: `question.md` and `materials/` under `examples/questions/*/submission/` | No check reads them. The walkthroughs, `CITATION-CONTROLS.md`, QUESTION-FORMS and INTERFACE cite their sizes, byte ranges and line numbers, and the driver's answer witness pins the examples in those docs, so recheck every citation of a changed file; a changed example in the docs then needs the row above. |
 | `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. Changing what Stewart promises is the user's decision. |
-| `service/src/` or `service/tests/` | All three cargo configurations above. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once all three configurations pass. |
+| `service/src/` or `service/tests/` | All four cargo configurations above. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once all four configurations pass. |
 | Release driver and shared helpers in `apparatus/driver/` | `stewart_driver.py --self-test` and `--list`, which loads every release case module. Shared helpers used by the standalone runtime driver also need that driver's checks below. Release-driver qualification needs the next container run of `acceptance.sh`, which the user schedules and batches; the change can land once its native checks pass. Edit only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | `apparatus/driver/claude_code.py` or its `CLAUDE-CODE.md` | `python3 -I -B apparatus/driver/claude_code.py --self-test` and `--list`. Runtime behavior changes also need the affected synthetic cases against the gated binary, retaining witnesses as described in the driver guide. The complete run needs a second binary built with `claude-code,fault-injection` as `--variant-binary` for deterministic publication races as well as writer invariance. Linux qualification needs the next container run of `acceptance.sh`, which also runs this standalone driver on both architectures. |
 | `apparatus/driver/claude_code_surface.py` or its `CLAUDE-CODE-SURFACE.md` | `python3 -I -B apparatus/driver/claude_code_surface.py --self-test`, then its synthetic rehearsal with `--binary /absolute/gated-stewart --work /absolute/fresh-evidence` on the native host where Unix sockets and process observation are permitted. Run `apparatus/claude-code/test_profile.py` too when changing the shared check inventory or artifact interface. These exercise the independent fixture and actual transport helpers; they do not establish real-harness conformance or Linux qualification. |
@@ -71,7 +78,7 @@ CARGO_TARGET_DIR=target-local cargo test --locked --offline --features claude-co
 | `apparatus/check-build-markers.sh`, `apparatus/test_build_markers.py` or `apparatus/claude-code-markers.txt` | `sh -n apparatus/check-build-markers.sh` and `python3 -I -B apparatus/test_build_markers.py`; run the marker check against release-profile release/test/development binaries, with expected absence/absence/presence. Linux qualification needs the next container acceptance run. |
 | `apparatus/check_links.py` | `python3 -I -B apparatus/check_links.py --self-test`, then the link check. |
 | `apparatus/qualified.py` | `python3 -I -B apparatus/qualified.py --self-test`, then `python3 -I -B apparatus/qualified.py check`. |
-| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | The user's run of `step2.sh`, which rebuilds the toolchain images, vendors the crates named by the committed `Cargo.lock` into `service/vendor`, and builds and checks the release binary for both architectures. It refuses while `service/vendor` exists, so the old tree has to be moved out of the way first. Then all three cargo configurations, and the next container run of `acceptance.sh`. The change is unqualified until those container runs, which the user schedules and batches; it can land and be pushed once all three configurations pass, which after a dependency change needs the tree that `step2.sh` vendors. |
+| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | The user's run of `step2.sh`, which rebuilds the toolchain images, vendors the crates named by the committed `Cargo.lock` into `service/vendor`, and builds and checks the release binary for both architectures. It refuses while `service/vendor` exists, so the old tree has to be moved out of the way first. Then all four cargo configurations, and the next container run of `acceptance.sh`. The change is unqualified until those container runs, which the user schedules and batches; it can land and be pushed once all four configurations pass, which after a dependency change needs the tree that `step2.sh` vendors. |
 
 `apparatus/qualified.py` keeps the qualification record ([Evidence and
 retention](#evidence-and-retention)). After a container run of `acceptance.sh`

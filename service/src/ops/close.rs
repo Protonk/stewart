@@ -20,12 +20,12 @@
 //! and not in the preparation folder. A seal alone never counts as stopped
 //! execution, and a copy existing now never turns a repeat into confirmation.
 
-use super::{accepted_settings, headline, seal_j};
+use super::{accepted_settings, gone_run_ended, headline, seal_j};
 use crate::answer::{self, PrepareError, Preparer, SealError, Sealer};
 use crate::archive::{self, Audit, Fail};
 use crate::bodies::{
     CloseFlags, CloseRequested, Closed, ClosedAfterLaunch, ClosedDelivery, ClosedSeal,
-    DeliveryEnded, NoticeReport, RunEnded, Surrendered,
+    DeliveryEnded, Surrendered,
 };
 use crate::delivery::{self, AttemptView, By, Destination, Request};
 use crate::json::J;
@@ -708,62 +708,6 @@ fn lock_failure(audit: &Audit, e: &std::io::Error, effects: Effects) -> Reply {
 
 // ---------------------------------------------------------------------------
 // Reconciliation under a free lock: the end of work whose process is gone.
-
-/// The `run_ended` of a placement whose process is gone (6.4, 6.7): usage
-/// accounted from its run directory, its notices with what their requests
-/// show, and the seal published during it. A run directory that was never
-/// created (a crash right after `run_started`) accounts nothing.
-pub fn gone_run_ended(audit: &Audit, state: &LogState, p: &log::Placement, by: By) -> RunEnded {
-    let account = crate::runs::account(audit, p.run);
-    let missing_dir = crate::runs::open(audit, p.run)
-        .err()
-        .is_some_and(|e| e.raw_os_error() == Some(libc::ENOENT));
-    let notices = state
-        .notices()
-        .iter()
-        .filter(|(_, n)| n.run == p.run)
-        .map(|(rec, n)| NoticeReport {
-            kind: n.kind.clone(),
-            record: rec.name(),
-            sent: match &account {
-                Ok(a) => a.notice_sent(n.request),
-                Err(_) if missing_dir => "not_sent",
-                Err(_) => "unknown",
-            }
-            .to_string(),
-        })
-        .collect();
-    let seal = state
-        .seal()
-        .filter(|(rec, _)| rec.n > p.started.n)
-        .map(|(rec, _)| rec.name());
-    let (usage, requests, attempts, note) = match &account {
-        Ok(a) => (a.usage, a.requests, a.attempts, String::new()),
-        Err(why) => (
-            Default::default(),
-            0,
-            0,
-            format!(" Its run directory could not be accounted ({why})."),
-        ),
-    };
-    RunEnded {
-        run: p.run,
-        ending: "interrupted".to_string(),
-        cause: Some("process_gone".to_string()),
-        recorded_by: by.name().to_string(),
-        provider: None,
-        requests,
-        attempts,
-        usage,
-        notices,
-        seal,
-        message: format!(
-            "Placement {}'s process ended without recording its ending; reconciled by {} under a free lock.{note}",
-            p.run,
-            by.name()
-        ),
-    }
-}
 
 /// Record the end of every intake, placement and delivery attempt whose
 /// process is gone. The caller holds the active lock.

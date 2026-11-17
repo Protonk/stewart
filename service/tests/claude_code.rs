@@ -898,3 +898,166 @@ fn a_failed_start_leaves_the_harness_records_and_usage_checkpoint() {
     let checkpoint = format!("{}/runs/1/runtime-usage-1.json", p.env.audit_dir(&p.reference));
     assert_eq!(std::fs::read_to_string(checkpoint).unwrap(), summary);
 }
+
+/// A commissioned audit whose pinned harness is the synthetic `executable`,
+/// with two placements of 60 seconds each.
+fn commissioned(executable: &str) -> Prepared {
+    let p = Prepared::with(executable, &Prepared::fields);
+    // The runtime refuses a launch directory under project instructions.
+    if std::path::Path::new(&p.env.path("tmp"))
+        .ancestors()
+        .any(|a| {
+            [".git", "CLAUDE.md", "AGENTS.md", ".claude"]
+                .iter()
+                .any(|m| a.join(m).symlink_metadata().is_ok())
+        })
+    {
+        panic!(
+            "required scratch directory is under a project or configuration tree; rerun with a clean TMPDIR"
+        );
+    }
+    p.profile(
+        "stewart.claude-code.profile/2",
+        "surface_sha256",
+        SURFACE_SHA256,
+    );
+    let reply = p.prepare().json();
+    let out = p
+        .env
+        .commission(&p.reference, common::s(&reply, &["data", "prepared"]));
+    assert_eq!(out.code, Some(0), "{}{}", out.text(), out.stderr);
+    p
+}
+
+/// The startup event a synthetic harness prints, as the runtime validates
+/// it: the profile's version and model, the commission's tools, the Stewart
+/// MCP server and the built-in plugins.
+fn init_event() -> String {
+    let family = stewart::forms::family("open-inquiry").unwrap();
+    let tools = json::parse(&stewart::forms::tools(family).bytes()).unwrap();
+    let names: Vec<String> = tools
+        .as_arr()
+        .unwrap()
+        .iter()
+        .map(|t| format!(r#""mcp__stewart__{}""#, common::s(t, &["name"])))
+        .collect();
+    let plugins: Vec<String> = [
+        "cc-plugin-agents-md",
+        "cc-plugin-privacy",
+        "cc-plugin-plugin-authoring",
+    ]
+    .iter()
+    .map(|n| format!(r#"{{"name":"{n}","path":"builtin","source":"{n}@builtin"}}"#))
+    .collect();
+    format!(
+        r#"{{"type":"system","subtype":"init","session_id":"s1","apiKeySource":"none","claude_code_version":"2.1.322","model":"fixture-model","permissionMode":"dontAsk","tools":[{}],"mcp_servers":[{{"name":"stewart","status":"connected"}}],"plugins":[{}]}}"#,
+        names.join(","),
+        plugins.join(",")
+    )
+}
+
+/// A synthetic harness that passes the authentication check, then reads the
+/// question, starts and ends its first turn. Given the reminder, it ends a
+/// second turn and waits to be stopped.
+fn two_turns() -> String {
+    let result = |turns: u64| {
+        format!(
+            r#"{{"type":"result","session_id":"s1","is_error":false,"num_turns":{turns},"usage":{{"input_tokens":{turns},"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":{turns}}}}}"#
+        )
+    };
+    format!(
+        concat!(
+            "#!/bin/sh\n",
+            "if [ \"$1\" = auth ]; then\n",
+            "  printf '{{\"loggedIn\":true,\"authMethod\":\"claude.ai\",\"configDirectory\":\"%s\"}}\\n' \"$CLAUDE_CONFIG_DIR\"\n",
+            "  exit 0\n",
+            "fi\n",
+            "IFS= read -r question\n",
+            "printf '%s\\n' '{}'\n",
+            "printf '%s\\n' '{}'\n",
+            "IFS= read -r reminder || exit 0\n",
+            "printf '%s\\n' '{}'\n",
+            "while :; do sleep 1; done\n",
+        ),
+        init_event(),
+        result(1),
+        result(2)
+    )
+}
+
+/// The harness's placement claims the reminder as its first notice, sends
+/// it, and lists it as sent; the harness's second turn then ends the
+/// placement without a submission.
+#[test]
+fn a_transmitted_reminder_is_listed_by_its_placement_as_sent() {
+    let p = commissioned(&two_turns());
+    let reply = p.env.run(&["run", &p.reference, "--json"]).json();
+    let kinds = p.env.log_kinds(&p.reference);
+    let ended = p.env.log_record(&p.reference, kinds.len());
+    // A refused Unix socket, as in a sandbox, ends the placement early;
+    // the recorded message says so.
+    assert_eq!(
+        common::s(&reply, &["data", "ending"]),
+        "ended_unsubmitted",
+        "{}",
+        common::s(&ended, &["body", "message"])
+    );
+    assert_eq!(kinds[4..], ["run_started", "notice", "run_ended"]);
+    let notice = p.env.log_record(&p.reference, 6);
+    assert_eq!(common::s(&notice, &["body", "type"]), "reminder");
+    assert_eq!(common::at(&notice, &["body", "request"]).as_u64(), Some(1));
+    assert_eq!(
+        common::s(&ended, &["body", "notices", "0", "record"]),
+        "log/6.json"
+    );
+    assert_eq!(common::s(&ended, &["body", "notices", "0", "sent"]), "sent");
+    assert_eq!(common::s(&reply, &["data", "notices", "0", "sent"]), "sent");
+}
+
+/// A reminder claim linked without confirmed durability stands in the log:
+/// the placement stops before sending it, and its `run_ended` and the run
+/// reply list it as `not_sent`. The control's claim was never linked, so
+/// nothing lists it.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_linked_but_unconfirmed_reminder_is_listed_by_its_placement_as_not_sent() {
+    for (fault, linked) in [
+        ("log.dirsync:notice=eio", true),
+        ("log.publish:notice=eio", false),
+    ] {
+        let p = commissioned(&two_turns());
+        let reply = p
+            .env
+            .run_env(
+                &["run", &p.reference, "--json"],
+                &[("STEWART_TEST_FAULT", fault)],
+            )
+            .json();
+        let kinds = p.env.log_kinds(&p.reference);
+        let ended = p.env.log_record(&p.reference, kinds.len());
+        assert_eq!(
+            common::s(&reply, &["data", "cause"]),
+            "archive_write_failed",
+            "{fault}: {}",
+            common::s(&ended, &["body", "message"])
+        );
+        let in_record = common::at(&ended, &["body", "notices"]).as_arr().unwrap();
+        let in_reply = common::at(&reply, &["data", "notices"]).as_arr().unwrap();
+        if linked {
+            assert_eq!(
+                kinds[4..],
+                ["run_started", "notice", "run_ended"],
+                "{fault}"
+            );
+            assert_eq!((in_record.len(), in_reply.len()), (1, 1), "{fault}");
+            assert_eq!(common::s(&in_record[0], &["type"]), "reminder");
+            assert_eq!(common::s(&in_record[0], &["record"]), "log/6.json");
+            assert_eq!(common::s(&in_record[0], &["sent"]), "not_sent");
+            assert_eq!(common::s(&in_reply[0], &["type"]), "reminder");
+            assert_eq!(common::s(&in_reply[0], &["sent"]), "not_sent");
+        } else {
+            assert_eq!(kinds[4..], ["run_started", "run_ended"], "{fault}");
+            assert!(in_record.is_empty() && in_reply.is_empty(), "{fault}");
+        }
+    }
+}

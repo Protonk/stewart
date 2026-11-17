@@ -106,7 +106,7 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
         }
     };
     if let Some(p) = state.open_placement() {
-        if let Err(f) = crate::ops::run::reconcile(&audit, &state, p.run, p.started.n) {
+        if let Err(f) = crate::ops::run::reconcile(&audit, &state, &p) {
             return crate::ops::run::refuse(&audit, f, Some(&state));
         }
     }
@@ -185,7 +185,6 @@ pub fn run(audit: Audit, state: log::LogState, input: crate::credential::Input) 
             harness: Some(Summary::reserved()),
             ..Usage::default()
         },
-        notices: vec![],
         seen: BTreeMap::new(),
         entries: false,
         seal: None,
@@ -804,28 +803,24 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                     };
                     return Err("placement deadline reached; stopping the harness group".into());
                 }
-                let seconds = live
-                    .deadline
-                    .saturating_duration_since(Instant::now())
-                    .as_secs();
-                if observed.initialized
-                    && !state.notice_used("near_limit")
-                    && seconds <= h.selection.limits.placement_timeout_seconds / 5
-                {
-                    let text = live
-                        .world
-                        .arrangement
-                        .near_limit
-                        .replace("{seconds}", &seconds.to_string())
-                        .replace(
-                            "{placements}",
-                            &h.selection
-                                .limits
-                                .max_placements
-                                .saturating_sub(live.run)
-                                .to_string(),
-                        );
-                    notice(live, ended, &mut cap, &mut stdin, "near_limit", &text)?;
+                if observed.initialized && !state.notice_used("near_limit") {
+                    let left = live.deadline.saturating_duration_since(Instant::now());
+                    if let Some((text, remaining)) = near_limit_notice(
+                        left,
+                        h.selection.limits,
+                        live.run,
+                        &live.world.arrangement.near_limit,
+                    ) {
+                        notice(
+                            live,
+                            ended,
+                            &mut cap,
+                            &mut stdin,
+                            "near_limit",
+                            &text,
+                            Some(remaining),
+                        )?;
+                    }
                 }
                 let event = match rx.recv_timeout(Duration::from_millis(25)) {
                     Ok(e) => e,
@@ -946,6 +941,7 @@ fn execute(live: &Live, ended: &mut Ended) -> Result<(), String> {
                                                 &mut stdin,
                                                 "reminder",
                                                 &live.world.arrangement.reminder,
+                                                None,
                                             )?;
                                             observed.usage.unknown_intervals = 1;
                                         } else {
@@ -1321,6 +1317,40 @@ fn retain_tool(live: &Live, p: &Pending, result: &answer::Executed) -> Result<()
     Ok(())
 }
 
+/// The near-limit notice due when `left` remains before the placement
+/// deadline, from that one observation: its text and its record's
+/// `remaining` both give the whole seconds left, rounded down, and the
+/// unused placement slots. It is due once those seconds are at most a fifth
+/// of the placement time, itself rounded down to whole seconds.
+fn near_limit_notice(
+    left: Duration,
+    limits: profile::Limits,
+    run: u64,
+    template: &str,
+) -> Option<(String, crate::usage::Remaining)> {
+    let seconds = left.as_secs();
+    if seconds > limits.placement_timeout_seconds / 5 {
+        return None;
+    }
+    let placements = limits.max_placements.saturating_sub(run);
+    let text = template
+        .replace("{seconds}", &seconds.to_string())
+        .replace("{placements}", &placements.to_string());
+    let remaining = crate::usage::Remaining {
+        turns: 0,
+        input_tokens: 0,
+        output_tokens: 0,
+        harness: Some((seconds, placements)),
+    };
+    Some((text, remaining))
+}
+
+/// Claim the audit-wide `kind` allowance with a `notice` record, then send
+/// `text` to the harness. The record's `request` numbers this placement's
+/// notices in log order. Only a text written to the harness counts as
+/// sent. A failed claim ends the placement before anything is sent; one
+/// that was linked although its durability is unconfirmed stays in the
+/// log, and the placement's `run_ended` lists it as `not_sent`.
 fn notice(
     live: &Live,
     ended: &mut Ended,
@@ -1328,35 +1358,10 @@ fn notice(
     out: &mut impl Write,
     kind: &'static str,
     text: &str,
+    remaining: Option<crate::usage::Remaining>,
 ) -> Result<(), String> {
-    let n = ended.notices.len() as u64 + 1;
-    let limits = live
-        .world
-        .arrangement
-        .harness
-        .as_ref()
-        .unwrap()
-        .selection
-        .limits;
-    let remaining = (kind == "near_limit").then(|| crate::usage::Remaining {
-        turns: 0,
-        input_tokens: 0,
-        output_tokens: 0,
-        harness: Some((
-            live.deadline
-                .saturating_duration_since(Instant::now())
-                .as_secs(),
-            limits.max_placements.saturating_sub(live.run),
-        )),
-    });
-    let body = bodies::Notice {
-        run: live.run,
-        kind: kind.into(),
-        request: n,
-        text: text.into(),
-        remaining,
-    };
-    let record = log::publish(live.audit, "notice", |s| {
+    let mut n = 0;
+    log::publish(live.audit, "notice", |s| {
         if s.close_requested().is_some() || s.seal().is_some() || Instant::now() >= live.deadline {
             return Err(Fail::refused(
                 "placement_stopped",
@@ -1369,6 +1374,19 @@ fn notice(
                 "The notice allowance is already used.",
             ));
         }
+        n = s
+            .notices()
+            .iter()
+            .filter(|(_, x)| x.run == live.run)
+            .count() as u64
+            + 1;
+        let body = bodies::Notice {
+            run: live.run,
+            kind: kind.into(),
+            request: n,
+            text: text.into(),
+            remaining,
+        };
         Ok(body.to_j())
     })
     .map_err(|e| {
@@ -1377,11 +1395,6 @@ fn notice(
         }
         format!("notice claim failed: {}", publication_error(e))
     })?;
-    ended.notices.push(crate::provider::placement::Published {
-        kind,
-        record: format!("log/{}.json", record.n),
-        request: n,
-    });
     cap.send("input", out, &wire::user(text))?;
     ended.seen.insert(
         n,
@@ -1555,6 +1568,76 @@ mod tests {
         assert_eq!(waiting.bytes, 0);
         assert!(waiting.pop().is_none());
         std::fs::remove_dir_all(path).unwrap();
+    }
+
+    fn limits(placement_timeout_seconds: u64) -> profile::Limits {
+        profile::Limits {
+            max_placements: 3,
+            placement_timeout_seconds,
+        }
+    }
+
+    #[test]
+    fn a_near_limit_notice_states_one_observation_in_its_text_and_record() {
+        // Either edge of the whole second: a second clock reading, earlier
+        // or later, would state another second in one of the two.
+        for millis in [12_000, 12_999] {
+            let left = Duration::from_millis(millis);
+            let (text, remaining) = near_limit_notice(
+                left,
+                limits(60),
+                1,
+                crate::claude_code::arrangement::NEAR_LIMIT,
+            )
+            .expect("due at 12 of 60 seconds");
+            assert_eq!(
+                text,
+                "Allowance notice: 12 seconds remain before this placement's deadline, and 2 further placement starts remain for this audit. When execution stops, an unsubmitted answer stays unsubmitted.",
+                "{millis} ms"
+            );
+            assert_eq!(
+                String::from_utf8(remaining.to_j().bytes()).unwrap(),
+                r#"{"runtime":"claude-code/1","seconds":12,"placements":2}"#,
+                "{millis} ms"
+            );
+            // The last permitted placement has no further starts.
+            let (text, remaining) =
+                near_limit_notice(left, limits(60), 3, "{seconds}/{placements}")
+                    .expect("due at 12 of 60 seconds");
+            assert_eq!((text.as_str(), remaining.harness), ("12/0", Some((12, 0))));
+        }
+    }
+
+    #[test]
+    fn a_near_limit_notice_is_due_at_a_fifth_of_the_placement_time_in_whole_seconds() {
+        // (placement time, time left, whole seconds stated or not yet due)
+        let cases = [
+            (60, 13_000, None),
+            (60, 12_999, Some(12)),
+            (60, 0, Some(0)),
+            // A fifth of 9 seconds is 1 whole second, so 1.999 s is due.
+            (9, 2_000, None),
+            (9, 1_999, Some(1)),
+            // Below 5 seconds, only the final partial second is due.
+            (4, 1_000, None),
+            (4, 999, Some(0)),
+        ];
+        for (timeout, millis, due) in cases {
+            let notice = near_limit_notice(
+                Duration::from_millis(millis),
+                limits(timeout),
+                1,
+                "{seconds}",
+            );
+            assert_eq!(
+                notice.as_ref().map(|(_, r)| r.harness.unwrap().0),
+                due,
+                "{millis} ms of {timeout} s"
+            );
+            if let Some((text, _)) = notice {
+                assert_eq!(text, due.unwrap().to_string());
+            }
+        }
     }
 
     #[test]

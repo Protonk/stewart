@@ -20,6 +20,7 @@ use std::time::Duration;
 use crate::answer::NoticesUsed;
 use crate::archive::{Audit, Fail};
 use crate::bodies::{NoticeReport, ProviderUse, RunEnded, RunObservations, RunStarted};
+use crate::delivery::By;
 use crate::json::J;
 use crate::log::{self, Body, EndedBy, LogState, PubErr};
 use crate::ops::close::delivery_value;
@@ -255,50 +256,9 @@ pub(crate) fn destination(state: &LogState) -> Option<String> {
 
 /// Record the ending of a placement whose process is gone (6.7): accounted
 /// from its run directory as 6.4 states.
-pub(crate) fn reconcile(
-    audit: &Audit,
-    state: &LogState,
-    run: u64,
-    started_n: u64,
-) -> Result<(), Fail> {
-    let (acc, problem) = match runs::account(audit, run) {
-        Ok(a) => (a, None),
-        Err(e) => (runs::Account::default(), Some(e)),
-    };
-    let notices = state
-        .notices()
-        .iter()
-        .filter(|(_, n)| n.run == run)
-        .map(|(r, n)| NoticeReport {
-            kind: n.kind.clone(),
-            record: r.name(),
-            sent: acc.notice_sent(n.request).to_string(),
-        })
-        .collect();
-    let seal = state
-        .seal()
-        .filter(|(r, _)| r.n > started_n)
-        .map(|(r, _)| r.name());
-    let mut message = format!(
-        "Placement {run}'s process was gone with the active lock free; run recorded its ending, accounted from runs/{run}."
-    );
-    let problems: Vec<String> = problem.into_iter().chain(acc.problems.clone()).collect();
-    if !problems.is_empty() {
-        message.push_str(&format!(" Not readable: {}.", problems.join("; ")));
-    }
-    let body = RunEnded {
-        run,
-        ending: "interrupted".into(),
-        cause: Some("process_gone".into()),
-        recorded_by: "run".into(),
-        provider: None,
-        requests: acc.requests,
-        attempts: acc.attempts,
-        usage: acc.usage,
-        notices,
-        seal,
-        message,
-    };
+pub(crate) fn reconcile(audit: &Audit, state: &LogState, p: &log::Placement) -> Result<(), Fail> {
+    let run = p.run;
+    let body = super::gone_run_ended(audit, state, p, By::Run);
     publish_ended(audit, run, &body).map(|_| ()).map_err(|e| match e {
         PubErr::Damaged(s) => log::damaged_fail(audit, &s),
         PubErr::Refused(f) => f,
@@ -517,7 +477,7 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
 
     // A dead placement's ending is recorded first (6.7).
     if let Some(p) = state.open_placement() {
-        if let Err(f) = reconcile(&audit, &state, p.run, p.started.n) {
+        if let Err(f) = reconcile(&audit, &state, &p) {
             return refuse(&audit, f, Some(&state));
         }
     }
@@ -642,7 +602,6 @@ pub fn run(reference: &str, key_fd: Option<i32>) -> Reply {
             requests: 0,
             attempts: 0,
             usage: Usage::default(),
-            notices: Vec::new(),
             seen: Default::default(),
             entries: false,
             seal: None,
@@ -754,15 +713,10 @@ pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply
         audit.diagnose(&mut reply, J::obj().with("run", run));
         return reply;
     }
-    let notices = e
-        .notices
-        .iter()
-        .map(|n| NoticeReport {
-            kind: n.kind.to_string(),
-            record: n.record.clone(),
-            sent: e.sent(n.request).to_string(),
-        })
-        .collect();
+    // Every notice record the placement linked, including one whose
+    // durability its publication could not confirm, with what this
+    // invocation observed of its planned request (4.4, 6.4).
+    let notices = super::placement_notices(&log::read(audit), run, |request| e.sent(request));
     let body = RunEnded {
         run,
         ending: e.ending.as_str().to_string(),
@@ -872,7 +826,7 @@ pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply
         )
         .with("seal", seal)
         .with("delivery", delivery)
-        .with("notices", placement::notices_j(&e));
+        .with("notices", notices_j(&body.notices));
     if !diagnostics.is_empty() {
         data.push("diagnostics", J::Arr(diagnostics));
     }
@@ -881,6 +835,20 @@ pub(crate) fn finish(audit: &Audit, run: u64, started_n: u64, e: Ended) -> Reply
     let mut reply = Reply::completed(OP, effects("ended"), data);
     reply.next = next_calls(audit, &e, unavailable.is_none());
     reply
+}
+
+/// The run reply's `notices`: those of its `run_ended`, without `record`.
+fn notices_j(notices: &[NoticeReport]) -> J {
+    J::Arr(
+        notices
+            .iter()
+            .map(|n| {
+                J::obj()
+                    .with("type", n.kind.as_str())
+                    .with("sent", n.sent.as_str())
+            })
+            .collect(),
+    )
 }
 
 fn next_calls(audit: &Audit, e: &Ended, request_available: bool) -> Vec<Next> {

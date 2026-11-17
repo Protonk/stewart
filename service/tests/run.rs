@@ -2341,6 +2341,194 @@ fn an_ending_that_cannot_be_recorded_fails_with_its_cause_and_locations() {
     assert_eq!(sj(&body_of(&e, &r, first_end), &["cause"]), "process_gone");
 }
 
+/// How a dead placement's run directory is left before its ending is
+/// reconciled.
+#[cfg(feature = "fault-injection")]
+#[derive(Clone, Copy, Debug)]
+enum RunDirectory {
+    Intact,
+    /// Removed, as when the process died before creating it.
+    Missing,
+    /// Replaced by a regular file: it exists but cannot be opened.
+    Unreadable,
+}
+
+/// Placement 1 killed after its reminder was published for request 2 and
+/// before that request was captured, its run directory left as `left`, then
+/// reconciled by `by` (`run` or `close`). Returns that placement's
+/// `run_ended` body and the raw bytes of every member both recorders
+/// share, which excludes `recorded_by` and `message`.
+#[cfg(feature = "fault-injection")]
+fn reconciled_after_the_reminder(test: &str, left: RunDirectory, by: &str) -> (Json, Vec<String>) {
+    let p = Provider::start(
+        listener(test).unwrap(),
+        vec![text_turn("end_turn"), text_turn("end_turn")],
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    assert_eq!(
+        run_killed(
+            &e,
+            &r,
+            &p,
+            &[("STEWART_TEST_FAULT", "run.between_turns:1=kill")]
+        ),
+        None
+    );
+    let dir = format!("{}/runs/1", e.audit_dir(&r));
+    match left {
+        RunDirectory::Intact => {}
+        RunDirectory::Missing => std::fs::remove_dir_all(&dir).unwrap(),
+        RunDirectory::Unreadable => {
+            std::fs::rename(&dir, format!("{dir}.aside")).unwrap();
+            std::fs::write(&dir, b"not a directory\n").unwrap();
+        }
+    }
+    match by {
+        "run" => {
+            let o = run(&e, &r, &p, &[]);
+            assert_eq!(o.code, Some(0), "{}", o.stderr);
+        }
+        _ => {
+            let o = e.run(&["close", &r, "--json"]);
+            assert!(o.code.is_some(), "{}", o.stderr);
+        }
+    }
+    let kinds = e.log_kinds(&r);
+    let first_end = kinds.iter().position(|k| k == "run_ended").unwrap() + 1;
+    let raw = std::fs::read(format!("{}/log/{first_end}.json", e.audit_dir(&r))).unwrap();
+    let record = json::parse(&raw).unwrap();
+    let body = at(&record, &["body"]).clone();
+    assert_eq!(n(&body, &["run"]), 1);
+    assert_eq!(sj(&body, &["cause"]), "process_gone");
+    assert_eq!(sj(&body, &["recorded_by"]), by);
+    let shared = [
+        "run", "ending", "cause", "provider", "requests", "attempts", "usage", "notices", "seal",
+    ]
+    .iter()
+    .map(|k| {
+        let v = at(&body, &[k]);
+        String::from_utf8(raw[v.start..v.end].to_vec()).unwrap()
+    })
+    .collect();
+    (body, shared)
+}
+
+/// A dead placement's run directory that exists but cannot be read shows
+/// nothing about whether its notice was sent, so both recorders report it
+/// `unknown` (6.4) and record the same ending apart from their names and
+/// messages.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn an_unreadable_run_directory_leaves_a_dead_placements_notice_unknown() {
+    let test = "an_unreadable_run_directory_leaves_a_dead_placements_notice_unknown";
+    let (by_run, run_shared) = reconciled_after_the_reminder(test, RunDirectory::Unreadable, "run");
+    let (by_close, close_shared) =
+        reconciled_after_the_reminder(test, RunDirectory::Unreadable, "close");
+    for ended in [&by_run, &by_close] {
+        assert_eq!(sj(ended, &["notices", "0", "type"]), "reminder");
+        assert_eq!(sj(ended, &["notices", "0", "record"]), "log/6.json");
+        assert_eq!(sj(ended, &["notices", "0", "sent"]), "unknown");
+        assert_eq!((n(ended, &["requests"]), n(ended, &["attempts"])), (0, 0));
+        assert_eq!(n(ended, &["usage", "turns", "estimated"]), 0);
+        assert!(
+            sj(ended, &["message"]).contains("runs/1 cannot be opened"),
+            "{}",
+            sj(ended, &["message"])
+        );
+    }
+    assert_eq!(run_shared, close_shared);
+}
+
+/// Controls for the case above: a run directory that was never created
+/// shows that no request carried the notice, and an intact one shows its
+/// request was never captured; either way the notice is `not_sent`.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_missing_or_intact_run_directory_shows_a_dead_placements_notice_unsent() {
+    let test = "a_missing_or_intact_run_directory_shows_a_dead_placements_notice_unsent";
+    for (left, counts) in [
+        (RunDirectory::Missing, (0, 0)),
+        (RunDirectory::Intact, (1, 1)),
+    ] {
+        let (by_run, run_shared) = reconciled_after_the_reminder(test, left, "run");
+        let (by_close, close_shared) = reconciled_after_the_reminder(test, left, "close");
+        for ended in [&by_run, &by_close] {
+            assert_eq!(sj(ended, &["notices", "0", "sent"]), "not_sent", "{left:?}");
+            assert_eq!(
+                (n(ended, &["requests"]), n(ended, &["attempts"])),
+                counts,
+                "{left:?}"
+            );
+        }
+        assert_eq!(run_shared, close_shared, "{left:?}");
+    }
+}
+
+/// A notice record whose link succeeded but whose durability could not be
+/// confirmed stands in the log, so its placement's `run_ended` and the run
+/// reply list it, `not_sent`, since its request was never sent (4.4, 6.4).
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_linked_but_unconfirmed_notice_is_listed_by_its_placement_as_not_sent() {
+    let p = provider!(
+        "a_linked_but_unconfirmed_notice_is_listed_by_its_placement_as_not_sent",
+        vec![text_turn("end_turn"), text_turn("end_turn")]
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let o = run(
+        &e,
+        &r,
+        &p,
+        &[("STEWART_TEST_FAULT", "log.dirsync:notice=eio")],
+    );
+    assert_eq!(o.code, Some(5), "{}", o.stderr);
+    assert_eq!(sj(&o.reply, &["data", "cause"]), "archive_write_failed");
+    let notice = last_of(&e, &r, "notice");
+    assert_eq!(n(&body_of(&e, &r, notice), &["request"]), 2);
+    let ended = body_of(&e, &r, last_of(&e, &r, "run_ended"));
+    assert_eq!(sj(&ended, &["cause"]), "archive_write_failed");
+    assert_eq!(at(&ended, &["notices"]).as_arr().unwrap().len(), 1);
+    assert_eq!(sj(&ended, &["notices", "0", "type"]), "reminder");
+    assert_eq!(
+        sj(&ended, &["notices", "0", "record"]),
+        format!("log/{notice}.json")
+    );
+    assert_eq!(sj(&ended, &["notices", "0", "sent"]), "not_sent");
+    let listed = at(&o.reply, &["data", "notices"]).as_arr().unwrap();
+    assert_eq!(listed.len(), 1);
+    assert_eq!(sj(&listed[0], &["type"]), "reminder");
+    assert_eq!(sj(&listed[0], &["sent"]), "not_sent");
+    assert_eq!(p.requests().len(), 1, "request 2 was never sent");
+}
+
+/// Control for the case above: a notice record that was never linked is
+/// not in the log, so nothing lists it.
+#[cfg(feature = "fault-injection")]
+#[test]
+fn a_notice_that_was_never_linked_is_not_listed() {
+    let p = provider!(
+        "a_notice_that_was_never_linked_is_not_listed",
+        vec![text_turn("end_turn"), text_turn("end_turn")]
+    );
+    let e = Env::new();
+    let r = commissioned(&e, DEFAULT_LIMITS);
+    let o = run(
+        &e,
+        &r,
+        &p,
+        &[("STEWART_TEST_FAULT", "log.publish:notice=eio")],
+    );
+    assert_eq!(o.code, Some(5), "{}", o.stderr);
+    assert!(!e.log_kinds(&r).iter().any(|k| k == "notice"));
+    let ended = body_of(&e, &r, last_of(&e, &r, "run_ended"));
+    assert_eq!(sj(&ended, &["cause"]), "archive_write_failed");
+    for listed in [at(&ended, &["notices"]), at(&o.reply, &["data", "notices"])] {
+        assert!(listed.as_arr().unwrap().is_empty());
+    }
+}
+
 /// Whether request 1 carried exactly the pinned system, tools and question.
 #[cfg(feature = "sabotage")]
 fn sent_as_pinned(e: &Env, r: &str, body: &[u8]) -> (bool, bool, bool) {

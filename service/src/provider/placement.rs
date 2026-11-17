@@ -35,7 +35,6 @@ use crate::answer::{self, Call, Executed, NoticesUsed};
 use crate::archive::{Audit, Fail};
 use crate::bodies::{Notice, ProviderFacts};
 use crate::delivery::{self, By, Delivered, Destination};
-use crate::json::J;
 use crate::log::{self, LogState, PubErr};
 use crate::provider::policy::{self, Next, RetryPolicy, Then};
 use crate::provider::request::{Conversation, Parts, first_user_message, turn, user_message};
@@ -73,17 +72,6 @@ pub struct Live<'a> {
     pub revision: u64,
 }
 
-/// A `notice` record this placement published.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Published {
-    /// `reminder` or `near_limit`.
-    pub kind: &'static str,
-    /// `log/<n>.json`.
-    pub record: String,
-    /// The request planned to carry it.
-    pub request: u64,
-}
-
 /// What this placement's records establish about one request (6.4).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Seen {
@@ -109,7 +97,8 @@ pub struct Ended {
     pub attempts: u64,
     /// This placement's charge.
     pub usage: Usage,
-    pub notices: Vec<Published>,
+    /// What this placement observed of each request, the evidence for its
+    /// notices' `sent`. The notices themselves are read from the log.
     pub seen: BTreeMap<u64, Seen>,
     /// This invocation recorded an entry.
     pub entries: bool,
@@ -187,7 +176,6 @@ struct State<'l, 'a> {
     requests: u64,
     attempts: u64,
     seen: BTreeMap<u64, Seen>,
-    notices: Vec<Published>,
     reminder_used: bool,
     near_used: bool,
     /// The near-limit text and the request planned to carry it.
@@ -209,7 +197,6 @@ pub fn run(live: &Live) -> Ended {
         requests: 0,
         attempts: 0,
         seen: BTreeMap::new(),
-        notices: Vec::new(),
         reminder_used: live.notices_used.reminder,
         near_used: live.notices_used.near_limit,
         pending: None,
@@ -235,7 +222,6 @@ pub fn run(live: &Live) -> Ended {
         requests: s.requests,
         attempts: s.attempts,
         usage: s.usage,
-        notices: s.notices,
         seen: s.seen,
         entries: s.entries,
         seal: s.seal,
@@ -523,7 +509,7 @@ impl State<'_, '_> {
         }
     }
 
-    /// Publish a notice record of `kind` for `request`. `Ok(None)`: it was
+    /// Publish a notice record of `kind` for `request`. `Ok(false)`: it was
     /// not published because the notice is already used.
     fn publish_notice(
         &mut self,
@@ -531,7 +517,7 @@ impl State<'_, '_> {
         request: u64,
         text: &str,
         remaining: Option<Remaining>,
-    ) -> Result<Option<String>, Stop> {
+    ) -> Result<bool, Stop> {
         let live = self.live;
         let body = Notice {
             kind: kind.to_string(),
@@ -567,15 +553,7 @@ impl State<'_, '_> {
             Ok(body.to_j())
         });
         match published {
-            Ok(p) => {
-                let record = format!("log/{}.json", p.n);
-                self.notices.push(Published {
-                    kind,
-                    record: record.clone(),
-                    request,
-                });
-                Ok(Some(record))
-            }
+            Ok(_) => Ok(true),
             Err(PubErr::Refused(f)) if f.reason == "sealed" => {
                 let state = log::read(live.audit);
                 if state.damaged() {
@@ -583,14 +561,17 @@ impl State<'_, '_> {
                 }
                 match self.sealed_in_log(&state) {
                     Some(stop) => Err(stop),
-                    None => Ok(None),
+                    None => Ok(false),
                 }
             }
-            Err(PubErr::Refused(_)) => Ok(None),
+            Err(PubErr::Refused(_)) => Ok(false),
             Err(PubErr::Damaged(state)) => Err(Stop::LogDamaged(format!(
                 "The audit log was found damaged ({}) while recording a notice; the run published nothing more.",
                 state.bad_names()
             ))),
+            // A notice linked without confirmed durability stands in the
+            // log, where the placement's `run_ended` finds it; its request
+            // is never sent.
             Err(PubErr::NotPublished(c)) | Err(PubErr::Uncertain { cause: c, .. }) => {
                 Err(archive_failed(&c))
             }
@@ -611,12 +592,12 @@ impl State<'_, '_> {
         let remaining = pinned.limits.remaining(&used);
         let text = remaining.fill(&pinned.near_limit);
         match self.publish_notice("near_limit", next, &text, Some(remaining)) {
-            Ok(Some(_)) => {
+            Ok(true) => {
                 self.near_used = true;
                 self.pending = Some((next, text));
                 None
             }
-            Ok(None) => {
+            Ok(false) => {
                 self.near_used = true;
                 None
             }
@@ -699,9 +680,9 @@ impl State<'_, '_> {
             }
             Next::SendReminder => {
                 let reminder = self.pinned().reminder.clone();
-                let sent = self.publish_notice("reminder", k + 1, &reminder, None)?;
+                let published = self.publish_notice("reminder", k + 1, &reminder, None)?;
                 self.reminder_used = true;
-                if sent.is_none() {
+                if !published {
                     // The reminder was already used: an ordinary ending.
                     return Err(Stop::Ending(
                         Ending::EndedUnsubmitted,
@@ -1063,19 +1044,4 @@ fn stop_reason_message(e: Ending, msg: &Message) -> String {
         ),
         other => format!("The run ended {}.", other.as_str()),
     }
-}
-
-/// The run reply's `notices`: each notice published during the placement
-/// with its `sent` value.
-pub fn notices_j(e: &Ended) -> J {
-    J::Arr(
-        e.notices
-            .iter()
-            .map(|n| {
-                J::obj()
-                    .with("type", n.kind)
-                    .with("sent", e.sent(n.request))
-            })
-            .collect(),
-    )
 }

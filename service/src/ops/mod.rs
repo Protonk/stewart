@@ -11,9 +11,11 @@ pub mod run;
 pub mod status;
 
 use crate::archive::{Audit, Fail};
+use crate::bodies::{NoticeReport, RunEnded};
+use crate::delivery::By;
 use crate::fsx::Dir;
 use crate::json::J;
-use crate::log::LogState;
+use crate::log::{LogState, Placement};
 use crate::util;
 
 /// What `run` needs from its environment (commission and receipt replies).
@@ -352,4 +354,97 @@ pub fn answer_j(state: &LogState) -> J {
     J::obj()
         .with("revision", state.revision())
         .with("entries", state.selection().len() as u64)
+}
+
+// ---------------------------------------------------------------------------
+// Placement endings.
+
+/// The `notices` of placement `run`'s `run_ended` (4.4): every `notice`
+/// record the log holds for that placement, in log order, each with `sent`
+/// as `sent` judges its planned request from the evidence the recorder has
+/// (6.4). Only the placement's own process links its notices, so this is
+/// exactly what the placement published, whether or not that process
+/// confirmed the publication.
+pub(crate) fn placement_notices(
+    state: &LogState,
+    run: u64,
+    sent: impl Fn(u64) -> &'static str,
+) -> Vec<NoticeReport> {
+    state
+        .notices()
+        .iter()
+        .filter(|(_, n)| n.run == run)
+        .map(|(rec, n)| NoticeReport {
+            kind: n.kind.clone(),
+            record: rec.name(),
+            sent: sent(n.request).to_string(),
+        })
+        .collect()
+}
+
+/// The `run_ended` of a placement whose process is gone (6.4, 6.7), as `by`
+/// records it under a free lock: usage accounted from its run directory,
+/// its notices with what their requests show and the seal published during
+/// it. The recorders differ only in `recorded_by` and their message.
+///
+/// A run directory that cannot be accounted charges nothing. Its notices
+/// are `not_sent` when it was never created (a crash right after
+/// `run_started`), since no request carried them, and `unknown` when it
+/// exists but cannot be read.
+pub fn gone_run_ended(audit: &Audit, state: &LogState, p: &Placement, by: By) -> RunEnded {
+    let run = p.run;
+    let account = crate::runs::account(audit, run);
+    let missing_dir = crate::runs::open(audit, run)
+        .err()
+        .is_some_and(|e| e.raw_os_error() == Some(libc::ENOENT));
+    let notices = placement_notices(state, run, |request| match &account {
+        Ok(a) => a.notice_sent(request),
+        Err(_) if missing_dir => "not_sent",
+        Err(_) => "unknown",
+    });
+    let seal = state
+        .seal()
+        .filter(|(rec, _)| rec.n > p.started.n)
+        .map(|(rec, _)| rec.name());
+    let message = match by {
+        By::Run => {
+            let mut m = format!(
+                "Placement {run}'s process was gone with the active lock free; run recorded its ending, accounted from runs/{run}."
+            );
+            let problems: Vec<&str> = match &account {
+                Ok(a) => a.problems.iter().map(String::as_str).collect(),
+                Err(why) => vec![why.as_str()],
+            };
+            if !problems.is_empty() {
+                m.push_str(&format!(" Not readable: {}.", problems.join("; ")));
+            }
+            m
+        }
+        By::Close => {
+            let note = match &account {
+                Ok(_) => String::new(),
+                Err(why) => format!(" Its run directory could not be accounted ({why})."),
+            };
+            format!(
+                "Placement {run}'s process ended without recording its ending; reconciled by close under a free lock.{note}"
+            )
+        }
+    };
+    let (usage, requests, attempts) = match &account {
+        Ok(a) => (a.usage, a.requests, a.attempts),
+        Err(_) => (Default::default(), 0, 0),
+    };
+    RunEnded {
+        run,
+        ending: "interrupted".to_string(),
+        cause: Some("process_gone".to_string()),
+        recorded_by: by.name().to_string(),
+        provider: None,
+        requests,
+        attempts,
+        usage,
+        notices,
+        seal,
+        message,
+    }
 }
