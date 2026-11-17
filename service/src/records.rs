@@ -57,9 +57,18 @@ pub fn decode_settings(s: &Obj) -> Result<Settings, JsonError> {
         }
     }
     let guidance = s.opt_str("guidance")?;
-    if guidance.is_some() && (guidance != Some("guidance.md") || s.str("family")? != "open-inquiry")
+    if guidance.is_some()
+        && (guidance != Some("guidance.md")
+            || !crate::forms::family(s.str("family")?)
+                .is_some_and(crate::forms::Family::admits_guidance_file))
     {
-        return Err(s.invalid("guidance", "expected guidance.md for open-inquiry"));
+        return Err(s.invalid(
+            "guidance",
+            format!(
+                "expected guidance.md for {}",
+                crate::forms::guidance_family_ids()
+            ),
+        ));
     }
     Ok(Settings {
         #[cfg(feature = "claude-code")]

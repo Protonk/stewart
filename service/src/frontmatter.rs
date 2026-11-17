@@ -4,7 +4,13 @@ use crate::ids;
 use crate::json::J;
 use crate::util;
 
-pub const FAMILIES: [&str; 3] = ["open-inquiry", "inquiry-framing", "comparison"];
+/// The values `family:` accepts: the IDs of the families this release
+/// defines, in their order, which the refusal lists and `nearest` breaks
+/// ties by.
+pub fn family_ids() -> Vec<&'static str> {
+    crate::forms::FAMILIES.iter().map(|f| f.id).collect()
+}
+
 pub const KEYS: [&str; 11] = [
     "stewart",
     "family",
@@ -365,28 +371,33 @@ pub fn parse(bytes: &[u8]) -> Result<Question, Vec<Defect>> {
         }
     }
     if let Some((v, l)) = get("family") {
-        if FAMILIES.contains(&v) {
+        let ids = family_ids();
+        if ids.contains(&v) {
             settings.family = v.to_string();
         } else {
             invalid(
                 "family",
                 l,
                 format!(
-                    "line {l}: family must be open-inquiry, inquiry-framing or comparison; {v:?} is none of these (nearest: {}).",
-                    util::nearest(v, &FAMILIES)
+                    "line {l}: family must be {}; {v:?} is none of these (nearest: {}).",
+                    util::alternatives(&ids),
+                    util::nearest(v, &ids)
                 ),
             );
         }
     }
     if let Some((v, l)) = get("guidance") {
-        if v == "guidance.md" && settings.family == "open-inquiry" {
+        let admitted = crate::forms::family(&settings.family)
+            .is_some_and(crate::forms::Family::admits_guidance_file);
+        if v == "guidance.md" && admitted {
             settings.guidance = Some(v.to_string());
         } else {
             invalid(
                 "guidance",
                 l,
                 format!(
-                    "line {l}: guidance must be exactly guidance.md and requires family: open-inquiry; no other path or family is supported."
+                    "line {l}: guidance must be exactly guidance.md and requires family: {}; no other path or family is supported.",
+                    crate::forms::guidance_family_ids()
                 ),
             );
         }
@@ -902,7 +913,7 @@ mod tests {
     #[test]
     fn family_vocabulary_is_the_forms_families() {
         let ids: Vec<&str> = crate::forms::FAMILIES.iter().map(|f| f.id).collect();
-        assert_eq!(FAMILIES.to_vec(), ids);
+        assert_eq!(family_ids(), ids);
         let scaffold = scaffold();
         let commands = crate::help::topic("commands").unwrap();
         for id in ids {

@@ -163,12 +163,15 @@ pub fn render(entries: &[(&Item, &[u8])]) -> Vec<u8> {
     out.into_bytes()
 }
 
+/// Prepare's counts and notices for `items`: one count per recording kind of
+/// the family in tools order, then `record_artifact`; a `section_unfilled`
+/// notice per expected section without an entry, or the single
+/// `answer_empty`.
 fn counts_and_notices(family: &Family, items: &[Item]) -> (Vec<(String, u64)>, Vec<PrepareNotice>) {
     let count = |t: &str| items.iter().filter(|i| i.kind == t).count() as u64;
     let mut counts: Vec<(String, u64)> = family
-        .tools
-        .iter()
-        .map(|t| (t.to_string(), count(t)))
+        .kinds()
+        .map(|k| (k.tool.to_string(), count(k.tool)))
         .collect();
     counts.push((ARTIFACT_TOOL.to_string(), count(ARTIFACT_TOOL)));
     let notices = if items.is_empty() {
@@ -179,13 +182,12 @@ fn counts_and_notices(family: &Family, items: &[Item]) -> (Vec<(String, u64)>, V
         }]
     } else {
         family
-            .sections
-            .iter()
-            .filter(|t| count(t) == 0)
-            .map(|t| PrepareNotice {
+            .sections()
+            .filter(|k| count(k.tool) == 0)
+            .map(|k| PrepareNotice {
                 reason: "section_unfilled".into(),
-                tool: Some(t.to_string()),
-                message: format!("No {t} entries are recorded."),
+                tool: Some(k.tool.to_string()),
+                message: format!("No {} entries are recorded.", k.tool),
             })
             .collect()
     };
@@ -400,7 +402,6 @@ fn prepared_from(ctx: &Ctx, f: &PrepFiles) -> Result<Prepared, Fail> {
     let entries = o.arr("entries").map_err(|e| damaged(&e.to_string()))?;
     let mut artifacts = Vec::new();
     let mut payloads = Vec::new();
-    let mut items = Vec::new();
     for e in entries {
         let eo = e.obj("").map_err(|e| damaged(&e.to_string()))?;
         let id = eo.str("id").map_err(|e| damaged(&e.to_string()))?;
@@ -423,25 +424,16 @@ fn prepared_from(ctx: &Ctx, f: &PrepFiles) -> Result<Prepared, Fail> {
                 p.file.clone(),
             ));
         }
-        items.push(created.version.kind.clone());
         payloads.push(p);
     }
-    let family = ctx
-        .world
-        .arrangement
-        .family()
-        .ok_or_else(|| damaged("the family is unknown"))?;
-    let count = |t: &str| items.iter().filter(|k| *k == t).count() as u64;
-    let mut counts: Vec<(String, u64)> = family
-        .tools
-        .iter()
-        .map(|t| (t.to_string(), count(t)))
-        .collect();
-    counts.push((ARTIFACT_TOOL.into(), count(ARTIFACT_TOOL)));
+    // A preparation is read back only under a family this release knows.
+    if ctx.world.arrangement.family().is_none() {
+        return Err(damaged("the family is unknown"));
+    }
     Ok(Prepared {
         n: f.n,
         revision: f.revision,
-        entry_count: items.len() as u64,
+        entry_count: entries.len() as u64,
         answer: Member {
             name: returns::ANSWER_MEMBER.into(),
             role: "answer".into(),
@@ -456,7 +448,7 @@ fn prepared_from(ctx: &Ctx, f: &PrepFiles) -> Result<Prepared, Fail> {
         }),
         artifacts,
         unproduced: Vec::new(),
-        counts,
+        counts: Vec::new(),
         notices: Vec::new(),
         payloads,
     })

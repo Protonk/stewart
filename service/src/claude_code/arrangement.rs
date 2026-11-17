@@ -220,7 +220,9 @@ pub fn decode(b: &Obj, raw: &[u8]) -> Result<Pinned, String> {
             return Err(b.invalid("runtime", "profile model or tool binding differs"));
         }
         if !["builtin", "guidance.md"].contains(&g.str("source")?)
-            || (g.str("source")? == "guidance.md" && b.str("family")? != "open-inquiry/1")
+            || (g.str("source")? == "guidance.md"
+                && !forms::pinned_family(b.str("family")?)
+                    .is_some_and(forms::Family::admits_guidance_file))
         {
             return Err(b.invalid("guidance", "unsupported guidance source for the family"));
         }
@@ -511,8 +513,14 @@ mod tests {
             pinned.guidance_sha256,
             util::sha256_hex(supplied.as_bytes())
         );
-        // The same bytes under another family's identity are refused.
-        for other in ["comparison/1", "inquiry-framing/1"] {
+        // The same bytes under another family's identity, another version
+        // of open inquiry or no version are refused.
+        for other in [
+            "comparison/1",
+            "inquiry-framing/1",
+            "open-inquiry/9",
+            "open-inquiry",
+        ] {
             let moved = replace(open.clone(), "family", J::from(other));
             let refusal = decode_arrangement(&record(moved)).unwrap_err();
             assert!(

@@ -54,15 +54,107 @@ pub const NEAR_LIMIT: &str = "Allowance notice: {turns} turns, {input_tokens} in
 pub const CONTINUATION: &str = "This audit is continuing in a new conversation after an earlier run ended. Your recorded work is preserved, but this conversation does not contain it. Call what_am_i_working_with to see what you have recorded. Your last action before the interruption may or may not have been recorded; check before repeating it.";
 pub const COMPACTED: &str = "The provider has summarized your earlier conversation. Continue this audit. Call what_am_i_working_with to check your recorded work before repeating an action.";
 
+/// Where a family's second system block may come from (INTERFACE 3.2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GuidanceAdmission {
+    /// Always the family's own instructions.
+    BuiltinOnly,
+    /// The family's instructions, or the root file `guidance.md` when the
+    /// front matter selects it; the file replaces the whole block.
+    RootFile,
+}
+
+/// How a recording kind's input is shaped and recorded.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EntrySchema {
+    /// `text`, optional `citations` and optional `label`: the `record_<kind>`
+    /// rows of QUESTION-FORMS' schema table.
+    TextCitationsLabel,
+}
+
+/// A recording kind: a tool whose entries carry its name as their `kind`.
+/// Each tool name has exactly one definition, shared by every family that
+/// offers it.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Kind {
+    pub tool: &'static str,
+    pub description: &'static str,
+    pub schema: EntrySchema,
+}
+
+/// The recording kinds the families draw on.
+pub mod kinds {
+    use super::{EntrySchema, Kind};
+
+    pub const ACCOUNT: Kind = Kind {
+        tool: "record_account",
+        description: "Record your account: the direct response to the question and its reach, including any inability to answer it as asked.",
+        schema: EntrySchema::TextCitationsLabel,
+    };
+    pub const OBSERVATION: Kind = Kind {
+        tool: "record_observation",
+        description: "Record one observation and its basis in the materials.",
+        schema: EntrySchema::TextCitationsLabel,
+    };
+    pub const LIMIT: Kind = Kind {
+        tool: "record_limit",
+        description: "Record a limit on what the materials let you establish.",
+        schema: EntrySchema::TextCitationsLabel,
+    };
+    pub const WORKING_QUESTION: Kind = Kind {
+        tool: "record_working_question",
+        description: "Record the working question you will investigate.",
+        schema: EntrySchema::TextCitationsLabel,
+    };
+    pub const RELATION: Kind = Kind {
+        tool: "record_relation",
+        description: "Record how the working question relates to the manager's original concern.",
+        schema: EntrySchema::TextCitationsLabel,
+    };
+    pub const CRITERION: Kind = Kind {
+        tool: "record_criterion",
+        description: "Record the criterion for the comparison, saying what the manager supplied and what is your interpretation.",
+        schema: EntrySchema::TextCitationsLabel,
+    };
+    pub const COMPARISON: Kind = Kind {
+        tool: "record_comparison",
+        description: "Record a finding that relates the alternatives to each other.",
+        schema: EntrySchema::TextCitationsLabel,
+    };
+}
+
+/// A kind's place in a family: its position in the tools array, and whether
+/// prepare notes an answer that has no entry of it.
+pub struct Slot {
+    pub kind: &'static Kind,
+    /// An expected section: prepare's notices name it when it is unfilled.
+    pub expected: bool,
+}
+
+const fn section(kind: &'static Kind) -> Slot {
+    Slot {
+        kind,
+        expected: true,
+    }
+}
+
+const fn auxiliary(kind: &'static Kind) -> Slot {
+    Slot {
+        kind,
+        expected: false,
+    }
+}
+
 pub struct Family {
     pub id: &'static str,
     pub version: u32,
     pub title: &'static str,
     pub instructions: &'static str,
-    /// Recording tools, in tools-array order.
-    pub tools: &'static [&'static str],
-    /// Recording tools whose absence prepare's notices name.
-    pub sections: &'static [&'static str],
+    /// Whether a selected `guidance.md` may replace the instructions. Front
+    /// matter, recorded settings and both arrangement decoders ask this.
+    pub guidance: GuidanceAdmission,
+    /// The recording kinds, in tools-array order.
+    pub slots: &'static [Slot],
 }
 
 pub const FAMILIES: [Family; 3] = [
@@ -71,27 +163,25 @@ pub const FAMILIES: [Family; 3] = [
         version: 1,
         title: "Open inquiry",
         instructions: OPEN_INQUIRY,
-        tools: &["record_account", "record_observation", "record_limit"],
-        sections: &["record_account", "record_observation", "record_limit"],
+        guidance: GuidanceAdmission::RootFile,
+        slots: &[
+            section(&kinds::ACCOUNT),
+            section(&kinds::OBSERVATION),
+            section(&kinds::LIMIT),
+        ],
     },
     Family {
         id: "inquiry-framing",
         version: 1,
         title: "Inquiry framing",
         instructions: INQUIRY_FRAMING,
-        tools: &[
-            "record_working_question",
-            "record_relation",
-            "record_observation",
-            "record_account",
-            "record_limit",
-        ],
-        sections: &[
-            "record_working_question",
-            "record_relation",
-            "record_observation",
-            "record_account",
-            "record_limit",
+        guidance: GuidanceAdmission::BuiltinOnly,
+        slots: &[
+            section(&kinds::WORKING_QUESTION),
+            section(&kinds::RELATION),
+            section(&kinds::OBSERVATION),
+            section(&kinds::ACCOUNT),
+            section(&kinds::LIMIT),
         ],
     },
     Family {
@@ -99,18 +189,13 @@ pub const FAMILIES: [Family; 3] = [
         version: 1,
         title: "Comparison",
         instructions: COMPARISON,
-        tools: &[
-            "record_criterion",
-            "record_comparison",
-            "record_observation",
-            "record_account",
-            "record_limit",
-        ],
-        sections: &[
-            "record_criterion",
-            "record_comparison",
-            "record_account",
-            "record_limit",
+        guidance: GuidanceAdmission::BuiltinOnly,
+        slots: &[
+            section(&kinds::CRITERION),
+            section(&kinds::COMPARISON),
+            auxiliary(&kinds::OBSERVATION),
+            section(&kinds::ACCOUNT),
+            section(&kinds::LIMIT),
         ],
     },
 ];
@@ -119,54 +204,169 @@ pub fn family(id: &str) -> Option<&'static Family> {
     FAMILIES.iter().find(|f| f.id == id)
 }
 
+/// The family an arrangement pins by versioned ID (`open-inquiry/1`), if
+/// this release defines that version.
+pub fn pinned_family(versioned: &str) -> Option<&'static Family> {
+    let (id, version) = versioned.split_once('/')?;
+    family(id).filter(|f| f.version.to_string() == version)
+}
+
 impl Family {
     pub fn versioned_id(&self) -> String {
         format!("{}/{}", self.id, self.version)
     }
+
+    /// Whether a selected `guidance.md` may replace this family's
+    /// instructions.
+    pub fn admits_guidance_file(&self) -> bool {
+        self.guidance == GuidanceAdmission::RootFile
+    }
+
+    /// The recording kinds, in tools-array order: what prepare counts.
+    pub fn kinds(&self) -> impl Iterator<Item = &'static Kind> + use<> {
+        let slots: &'static [Slot] = self.slots;
+        slots.iter().map(|s| s.kind)
+    }
+
+    /// The expected sections, in tools-array order: what prepare's notices
+    /// name when unfilled.
+    pub fn sections(&self) -> impl Iterator<Item = &'static Kind> + use<> {
+        let slots: &'static [Slot] = self.slots;
+        slots.iter().filter(|s| s.expected).map(|s| s.kind)
+    }
 }
 
-pub fn tool_description(name: &str) -> &'static str {
-    match name {
-        "list" => {
-            "List the captured materials: their names (materials/…), sizes and line counts. Long lists come in pages."
+/// The families that admit a selected `guidance.md`, by ID, as a refusal of
+/// the selection names them (`open-inquiry`).
+pub fn guidance_family_ids() -> String {
+    guidance_families(|f| f.id.to_string())
+}
+
+/// The same by versioned ID, as arrangements pin them (`open-inquiry/1`).
+pub fn guidance_family_versions() -> String {
+    guidance_families(Family::versioned_id)
+}
+
+fn guidance_families(name: impl Fn(&Family) -> String) -> String {
+    let names: Vec<String> = FAMILIES
+        .iter()
+        .filter(|f| f.admits_guidance_file())
+        .map(name)
+        .collect();
+    crate::util::alternatives(&names.iter().map(String::as_str).collect::<Vec<_>>())
+}
+
+/// The tools every family offers around its recording kinds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Common {
+    List,
+    Read,
+    Search,
+    Artifact,
+    Replace,
+    Delete,
+    Reentry,
+    Prepare,
+    Submit,
+}
+
+impl Common {
+    /// The common tools before the family's kinds, in tools-array order.
+    pub const HEAD: [Common; 3] = [Common::List, Common::Read, Common::Search];
+    /// The common tools after the family's kinds, in tools-array order.
+    pub const TAIL: [Common; 6] = [
+        Common::Artifact,
+        Common::Replace,
+        Common::Delete,
+        Common::Reentry,
+        Common::Prepare,
+        Common::Submit,
+    ];
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Common::List => "list",
+            Common::Read => "read",
+            Common::Search => "search",
+            Common::Artifact => crate::bodies::ARTIFACT_TOOL,
+            Common::Replace => "replace",
+            Common::Delete => "delete",
+            Common::Reentry => "what_am_i_working_with",
+            Common::Prepare => "prepare",
+            Common::Submit => "submit",
         }
-        "read" => {
-            "Read exact text from the question (source \"question\"), a material (materials/…), one of your entries (its handle) or a prepared view. Returns up to 64 KiB per call, and a next call when more remains. For the question and materials, the reply's cite is a ready citation for what was returned. The exact text is the second content block, or the reply's text field when the page is blank; bytes recorded as base64 come in its base64 field."
-        }
-        "search" => {
-            "Find exact, case-sensitive text in the question and all materials, or in the sources you name. Each hit's cite is a ready citation. The reply says whether the whole scope was searched; an incomplete search does not show that text is absent."
-        }
-        "record_account" => {
-            "Record your account: the direct response to the question and its reach, including any inability to answer it as asked."
-        }
-        "record_observation" => "Record one observation and its basis in the materials.",
-        "record_limit" => "Record a limit on what the materials let you establish.",
-        "record_working_question" => "Record the working question you will investigate.",
-        "record_relation" => {
-            "Record how the working question relates to the manager's original concern."
-        }
-        "record_criterion" => {
-            "Record the criterion for the comparison, saying what the manager supplied and what is your interpretation."
-        }
-        "record_comparison" => "Record a finding that relates the alternatives to each other.",
-        "record_artifact" => {
-            "Record a free-form artifact with a label: text, or base64 for bytes that are not text. It belongs to your answer but fills no section."
-        }
-        "replace" => {
-            "Replace exactly one version of an entry, given its handle. Supply every field: text, citations and label for a recorded entry; label and text or base64 for an artifact. The entry keeps its place."
-        }
-        "delete" => "Remove exactly one version of an entry from your answer.",
-        "what_am_i_working_with" => {
-            "Show the audit's state: what you have recorded and its handles, recent edits and refusals, the question and materials, and your remaining allowances. Use it when continuing or after your context was summarized."
-        }
-        "prepare" => {
-            "Make the exact candidate that submit would seal, with its Markdown rendering and factual notes on empty sections. It changes nothing, and you can keep editing."
-        }
-        "submit" => {
-            "Seal a prepared candidate as your answer. Without confirm set to true this is a dry run. After a confirmed submit the answer cannot be edited."
-        }
-        _ => "",
     }
+
+    pub fn description(self) -> &'static str {
+        match self {
+            Common::List => {
+                "List the captured materials: their names (materials/…), sizes and line counts. Long lists come in pages."
+            }
+            Common::Read => {
+                "Read exact text from the question (source \"question\"), a material (materials/…), one of your entries (its handle) or a prepared view. Returns up to 64 KiB per call, and a next call when more remains. For the question and materials, the reply's cite is a ready citation for what was returned. The exact text is the second content block, or the reply's text field when the page is blank; bytes recorded as base64 come in its base64 field."
+            }
+            Common::Search => {
+                "Find exact, case-sensitive text in the question and all materials, or in the sources you name. Each hit's cite is a ready citation. The reply says whether the whole scope was searched; an incomplete search does not show that text is absent."
+            }
+            Common::Artifact => {
+                "Record a free-form artifact with a label: text, or base64 for bytes that are not text. It belongs to your answer but fills no section."
+            }
+            Common::Replace => {
+                "Replace exactly one version of an entry, given its handle. Supply every field: text, citations and label for a recorded entry; label and text or base64 for an artifact. The entry keeps its place."
+            }
+            Common::Delete => "Remove exactly one version of an entry from your answer.",
+            Common::Reentry => {
+                "Show the audit's state: what you have recorded and its handles, recent edits and refusals, the question and materials, and your remaining allowances. Use it when continuing or after your context was summarized."
+            }
+            Common::Prepare => {
+                "Make the exact candidate that submit would seal, with its Markdown rendering and factual notes on empty sections. It changes nothing, and you can keep editing."
+            }
+            Common::Submit => {
+                "Seal a prepared candidate as your answer. Without confirm set to true this is a dry run. After a confirmed submit the answer cannot be edited."
+            }
+        }
+    }
+}
+
+/// A tool some family offers: a common tool or a recording kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tool {
+    Common(Common),
+    Kind(&'static Kind),
+}
+
+impl Tool {
+    pub fn name(self) -> &'static str {
+        match self {
+            Tool::Common(c) => c.name(),
+            Tool::Kind(k) => k.tool,
+        }
+    }
+
+    pub fn description(self) -> &'static str {
+        match self {
+            Tool::Common(c) => c.description(),
+            Tool::Kind(k) => k.description,
+        }
+    }
+}
+
+/// The tool with this name among the common tools and every family's kinds,
+/// whichever family pins it. Whether an arrangement offers it is the
+/// arrangement's own tool list.
+pub fn tool(name: &str) -> Option<Tool> {
+    Common::HEAD
+        .iter()
+        .chain(Common::TAIL.iter())
+        .map(|c| Tool::Common(*c))
+        .chain(FAMILIES.iter().flat_map(Family::kinds).map(Tool::Kind))
+        .find(|t| t.name() == name)
+}
+
+/// The exact description of a tool some family offers; empty for any other
+/// name.
+pub fn tool_description(name: &str) -> &'static str {
+    tool(name).map_or("", Tool::description)
 }
 
 fn prop(ty: &str, description: &str) -> J {
@@ -207,10 +407,11 @@ pub fn citation_schema() -> J {
         .with("additionalProperties", false)
 }
 
-fn tool(name: &str, properties: J, required: &[&str]) -> J {
+/// One tool definition: name, description and a strict input schema.
+fn definition(name: &str, description: &str, properties: J, required: &[&str]) -> J {
     J::obj()
         .with("name", name)
-        .with("description", tool_description(name))
+        .with("description", description)
         .with(
             "input_schema",
             J::obj()
@@ -221,109 +422,118 @@ fn tool(name: &str, properties: J, required: &[&str]) -> J {
         )
 }
 
-fn record_tool(name: &str) -> J {
-    tool(
-        name,
-        J::obj()
-            .with("text", prop("string", "Entry text. It may be empty."))
-            .with(
-                "citations",
-                arr_prop(citation_schema(), 64, "Citations: {source, start, end, quote?} from read or search, or {source, quote} with exact text."),
-            )
-            .with("label", prop("string", "Optional short label shown in the rendering.")),
-        &["text"],
-    )
+impl Common {
+    /// The definition the tools array carries.
+    fn definition(self) -> J {
+        let (properties, required): (J, &[&str]) = match self {
+            Common::List => (
+                J::obj().with("cursor", prop("string", "Cursor from the previous list reply's next call, for the next page.")),
+                &[],
+            ),
+            Common::Read => (
+                J::obj()
+                    .with("source", prop("string", "What to read: question, materials/<name>, one of your entry handles or a prepared view."))
+                    .with("start", int_prop(0, "Byte offset to start from. Default 0; use the start that a reply's next call gives.")),
+                &["source"],
+            ),
+            Common::Search => (
+                J::obj()
+                    .with("text", prop("string", "Exact text to find. Matching is literal and case-sensitive."))
+                    .with("sources", arr_prop(J::obj().with("type", "string"), 128, "Sources to search. Default: the question and every material."))
+                    .with("cursor", prop("string", "Cursor from the previous search reply's next call. Give it with the same text and sources.")),
+                &["text"],
+            ),
+            Common::Artifact => (
+                J::obj()
+                    .with(
+                        "label",
+                        prop(
+                            "string",
+                            "Required short label for the artifact, shown in the rendering.",
+                        ),
+                    )
+                    .with("text", prop("string", "Artifact content as text."))
+                    .with(
+                        "base64",
+                        prop(
+                            "string",
+                            "Artifact bytes as base64, for content that is not text.",
+                        ),
+                    ),
+                &["label"],
+            ),
+            Common::Replace => (
+                J::obj()
+                    .with("entry", prop("string", "The exact handle of the entry version to replace."))
+                    .with("label", prop("string", "Required label for the replacement, shown in the rendering. Give the current label to keep it."))
+                    .with("text", prop("string", "Replacement text."))
+                    .with("citations", arr_prop(citation_schema(), 64, "Replacement citations, as for the record tools. Use [] for none."))
+                    .with("base64", prop("string", "Replacement artifact bytes as base64.")),
+                &["entry", "label"],
+            ),
+            Common::Delete => (
+                J::obj().with(
+                    "entry",
+                    prop("string", "The exact handle of the entry version to remove."),
+                ),
+                &["entry"],
+            ),
+            Common::Reentry => (
+                J::obj().with(
+                    "page",
+                    prop(
+                        "string",
+                        "Cursor from the previous reply's next call, for the next page of entries.",
+                    ),
+                ),
+                &[],
+            ),
+            Common::Prepare => (J::obj(), &[]),
+            Common::Submit => (
+                J::obj()
+                    .with(
+                        "prepared",
+                        prop("string", "The handle that prepare returned."),
+                    )
+                    .with(
+                        "confirm",
+                        prop(
+                            "boolean",
+                            "Set to true to seal. Otherwise this is a dry run.",
+                        ),
+                    ),
+                &["prepared"],
+            ),
+        };
+        definition(self.name(), self.description(), properties, required)
+    }
 }
 
-/// The tools array for a family, in the pinned order.
-pub fn tools(f: &Family) -> J {
-    let mut out = vec![
-        tool("list", J::obj().with("cursor", prop("string", "Cursor from the previous list reply's next call, for the next page.")), &[]),
-        tool(
-            "read",
-            J::obj()
-                .with("source", prop("string", "What to read: question, materials/<name>, one of your entry handles or a prepared view."))
-                .with("start", int_prop(0, "Byte offset to start from. Default 0; use the start that a reply's next call gives.")),
-            &["source"],
-        ),
-        tool(
-            "search",
-            J::obj()
-                .with("text", prop("string", "Exact text to find. Matching is literal and case-sensitive."))
-                .with("sources", arr_prop(J::obj().with("type", "string"), 128, "Sources to search. Default: the question and every material."))
-                .with("cursor", prop("string", "Cursor from the previous search reply's next call. Give it with the same text and sources.")),
-            &["text"],
-        ),
-    ];
-    for t in f.tools {
-        out.push(record_tool(t));
+impl Kind {
+    /// The definition the tools array carries, shaped by the kind's schema.
+    fn definition(&self) -> J {
+        let (properties, required): (J, &[&str]) = match self.schema {
+            EntrySchema::TextCitationsLabel => (
+                J::obj()
+                    .with("text", prop("string", "Entry text. It may be empty."))
+                    .with(
+                        "citations",
+                        arr_prop(citation_schema(), 64, "Citations: {source, start, end, quote?} from read or search, or {source, quote} with exact text."),
+                    )
+                    .with("label", prop("string", "Optional short label shown in the rendering.")),
+                &["text"],
+            ),
+        };
+        definition(self.tool, self.description, properties, required)
     }
-    out.push(tool(
-        "record_artifact",
-        J::obj()
-            .with(
-                "label",
-                prop(
-                    "string",
-                    "Required short label for the artifact, shown in the rendering.",
-                ),
-            )
-            .with("text", prop("string", "Artifact content as text."))
-            .with(
-                "base64",
-                prop(
-                    "string",
-                    "Artifact bytes as base64, for content that is not text.",
-                ),
-            ),
-        &["label"],
-    ));
-    out.push(tool(
-        "replace",
-        J::obj()
-            .with("entry", prop("string", "The exact handle of the entry version to replace."))
-            .with("label", prop("string", "Required label for the replacement, shown in the rendering. Give the current label to keep it."))
-            .with("text", prop("string", "Replacement text."))
-            .with("citations", arr_prop(citation_schema(), 64, "Replacement citations, as for the record tools. Use [] for none."))
-            .with("base64", prop("string", "Replacement artifact bytes as base64.")),
-        &["entry", "label"],
-    ));
-    out.push(tool(
-        "delete",
-        J::obj().with(
-            "entry",
-            prop("string", "The exact handle of the entry version to remove."),
-        ),
-        &["entry"],
-    ));
-    out.push(tool(
-        "what_am_i_working_with",
-        J::obj().with(
-            "page",
-            prop(
-                "string",
-                "Cursor from the previous reply's next call, for the next page of entries.",
-            ),
-        ),
-        &[],
-    ));
-    out.push(tool("prepare", J::obj(), &[]));
-    out.push(tool(
-        "submit",
-        J::obj()
-            .with(
-                "prepared",
-                prop("string", "The handle that prepare returned."),
-            )
-            .with(
-                "confirm",
-                prop(
-                    "boolean",
-                    "Set to true to seal. Otherwise this is a dry run.",
-                ),
-            ),
-        &["prepared"],
-    ));
+}
+
+/// The tools array for a family, in the pinned order: the common head, the
+/// family's kinds, then the common tail.
+pub fn tools(f: &Family) -> J {
+    let mut out: Vec<J> = Common::HEAD.iter().map(|c| c.definition()).collect();
+    out.extend(f.kinds().map(Kind::definition));
+    out.extend(Common::TAIL.iter().map(|c| c.definition()));
     J::Arr(out)
 }
 
@@ -895,7 +1105,9 @@ mod tests {
         for (f, row) in FAMILIES.iter().zip(&rows) {
             assert_eq!(row[0], f.title);
             let tools: Vec<&str> = row[1].split(", ").map(unticked).collect();
-            assert_eq!(tools, f.tools, "{} tools", f.id);
+            let kinds: Vec<&str> = f.kinds().map(|k| k.tool).collect();
+            let expected: Vec<&str> = f.sections().map(|k| k.tool).collect();
+            assert_eq!(tools, kinds, "{} tools", f.id);
             // "all three" or a list of short section names.
             let sections: Vec<String> = match row[2].strip_prefix("all ") {
                 Some(count) => {
@@ -904,12 +1116,12 @@ mod tests {
                         .position(|w| *w == count)
                         .expect("a spelled-out count")
                         + 1;
-                    assert_eq!(n, f.tools.len(), "{} count", f.id);
-                    f.tools.iter().map(|t| t.to_string()).collect()
+                    assert_eq!(n, kinds.len(), "{} count", f.id);
+                    kinds.iter().map(|t| t.to_string()).collect()
                 }
                 None => row[2].split(", ").map(|n| format!("record_{n}")).collect(),
             };
-            assert_eq!(sections, f.sections, "{} sections", f.id);
+            assert_eq!(sections, expected, "{} sections", f.id);
         }
     }
 
@@ -989,6 +1201,90 @@ mod tests {
         }
     }
 
+    /// A family's kinds are distinct and fill the tools array between the
+    /// common head and tail in slot order; its sections are the expected
+    /// slots in that same order, which is the order of prepare's notices.
+    #[test]
+    fn slots_put_sections_in_tool_order() {
+        for f in &FAMILIES {
+            let kinds: Vec<&str> = f.kinds().map(|k| k.tool).collect();
+            for (i, k) in kinds.iter().enumerate() {
+                assert!(!kinds[..i].contains(k), "{} offers {k} twice", f.id);
+            }
+            let parsed = crate::json::parse(&tools(f).bytes()).unwrap();
+            let names: Vec<&str> = parsed
+                .as_arr()
+                .unwrap()
+                .iter()
+                .map(|t| t.obj("").unwrap().str("name").unwrap())
+                .collect();
+            let head = Common::HEAD.len();
+            assert_eq!(names.len(), head + kinds.len() + Common::TAIL.len());
+            assert_eq!(names[head..head + kinds.len()], kinds[..], "{}", f.id);
+            let sections: Vec<&str> = f.sections().map(|k| k.tool).collect();
+            let expected: Vec<&str> = f
+                .slots
+                .iter()
+                .filter(|s| s.expected)
+                .map(|s| s.kind.tool)
+                .collect();
+            assert_eq!(sections, expected, "{}", f.id);
+            let at: Vec<usize> = sections
+                .iter()
+                .map(|s| kinds.iter().position(|k| k == s).unwrap())
+                .collect();
+            assert!(at.windows(2).all(|w| w[0] < w[1]), "{}", f.id);
+        }
+    }
+
+    /// One definition per tool name: a kind several families offer is one
+    /// value, no kind takes a common tool's name, and `tool` resolves each
+    /// name to its definition and nothing else.
+    #[test]
+    fn each_tool_name_has_one_definition() {
+        let common: Vec<Common> = Common::HEAD
+            .iter()
+            .chain(Common::TAIL.iter())
+            .copied()
+            .collect();
+        for (i, c) in common.iter().enumerate() {
+            assert!(!common[..i].contains(c), "{c:?} twice");
+            assert_eq!(tool(c.name()), Some(Tool::Common(*c)));
+        }
+        let mut seen: Vec<&Kind> = Vec::new();
+        for f in &FAMILIES {
+            for k in f.kinds() {
+                assert!(common.iter().all(|c| c.name() != k.tool), "{}", k.tool);
+                match seen.iter().find(|s| s.tool == k.tool) {
+                    Some(s) => assert_eq!(*s, k, "{} has two definitions", k.tool),
+                    None => seen.push(k),
+                }
+                assert_eq!(tool(k.tool), Some(Tool::Kind(k)));
+            }
+        }
+        for name in ["record_survey", "Record_account", "", "tool_unknown"] {
+            assert_eq!(tool(name), None, "{name}");
+            assert_eq!(tool_description(name), "", "{name}");
+        }
+    }
+
+    #[test]
+    fn a_pinned_family_needs_its_exact_version() {
+        for f in &FAMILIES {
+            let pinned = pinned_family(&f.versioned_id()).map(|g| g.versioned_id());
+            assert_eq!(pinned, Some(f.versioned_id()));
+        }
+        for other in [
+            "open-inquiry/9",
+            "open-inquiry/01",
+            "open-inquiry",
+            "open-inquiry/1/x",
+            "",
+        ] {
+            assert!(pinned_family(other).is_none(), "{other}");
+        }
+    }
+
     const ORIENTATION_DIGEST: &str =
         "15a7e9ee0a5f67caddda664ec616c184e7a27d8f59b761a76ec0d75a4a702193";
     // Digests of the tools array, the system array, the instructions and the
@@ -1030,7 +1326,13 @@ mod tests {
                 sha256_hex(&tools(f).bytes()),
                 sha256_hex(&system(f)),
                 sha256_hex(f.instructions.as_bytes()),
-                sha256_hex(f.sections.join("\n").as_bytes()),
+                sha256_hex(
+                    f.sections()
+                        .map(|k| k.tool)
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                        .as_bytes(),
+                ),
             ];
             assert_eq!(got, digests, "{id}: tools, system, instructions, sections");
         }

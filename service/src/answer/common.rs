@@ -19,8 +19,6 @@ pub struct Ctx<'a> {
     pub world: &'a World,
     pub placement: &'a Placement,
     pub call: &'a Call<'a>,
-    /// The tool's name, one of the arrangement's tools.
-    pub tool: &'static str,
     /// The log as read when the call began.
     pub state: LogState,
 }

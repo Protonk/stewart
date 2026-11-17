@@ -18,6 +18,7 @@ use super::{
 };
 use crate::archive::Fail;
 use crate::bodies::{ARTIFACT_TOOL, Action, Citation, EntryRec, Located, Payload, Target, Version};
+use crate::forms::Kind;
 use crate::json::{self, J, Json, Obj};
 use crate::log::{self, LogState, PubErr, VersionState};
 use crate::names;
@@ -587,8 +588,8 @@ fn merged(
     Some(Out::done(data))
 }
 
-/// `record_<kind>(text, citations = [], label = "")`.
-pub fn record(ctx: &Ctx, v: &Json) -> Out {
+/// `record_<kind>(text, citations = [], label = "")`: one entry of `kind`.
+pub fn record(ctx: &Ctx, kind: &Kind, v: &Json) -> Out {
     let go = || -> Result<Out, Fail> {
         let o = input::object(v, &["text", "citations", "label"], &["text"])?;
         let text = input::req_str(&o, "text")?;
@@ -600,7 +601,7 @@ pub fn record(ctx: &Ctx, v: &Json) -> Out {
         if let Some(m) = merged(
             ctx,
             &sel,
-            ctx.tool,
+            kind.tool,
             &label,
             text.as_bytes(),
             &Some(cits.clone()),
@@ -610,12 +611,12 @@ pub fn record(ctx: &Ctx, v: &Json) -> Out {
         Ok(publish(
             ctx,
             Action::Add,
-            ctx.tool,
+            kind.tool,
             None,
             Some(New {
                 id: ctx.state.next_entry_id(),
                 version: 1,
-                kind: ctx.tool.to_string(),
+                kind: kind.tool.to_string(),
                 label,
                 bytes: text.as_bytes().to_vec(),
                 encoding: None,

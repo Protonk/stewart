@@ -145,6 +145,16 @@ pub fn edit_distance(a: &str, b: &str) -> usize {
     prev[b.len()]
 }
 
+/// Alternatives as prose: `a`, `a or b`, `a, b or c`.
+pub fn alternatives(words: &[&str]) -> String {
+    match words.split_last() {
+        None => String::new(),
+        Some((last, [])) => last.to_string(),
+        Some((last, rest)) => format!("{} or {last}", rest.join(", ")),
+    }
+}
+
+/// The choice closest to `word` by edit distance; the earliest on a tie.
 pub fn nearest<'a>(word: &str, choices: &[&'a str]) -> &'a str {
     choices
         .iter()
@@ -175,5 +185,16 @@ mod tests {
             nearest("limit-turn", &["limit-turns", "model"]),
             "limit-turns"
         );
+        // A tie goes to the earlier choice.
+        assert_eq!(nearest("ab", &["ax", "ay"]), "ax");
+        assert_eq!(nearest("ab", &["ay", "ax"]), "ay");
+    }
+
+    #[test]
+    fn alternatives_read_as_prose() {
+        assert_eq!(alternatives(&[]), "");
+        assert_eq!(alternatives(&["a"]), "a");
+        assert_eq!(alternatives(&["a", "b"]), "a or b");
+        assert_eq!(alternatives(&["a", "b", "c"]), "a, b or c");
     }
 }

@@ -211,13 +211,13 @@ Orientation (stewart.orientation/1), given in every family:
         ));
         s.push_str(&indent(f.instructions));
         s.push_str("\n\nRecording tools:\n");
-        for t in f.tools {
-            s.push_str(&format!("  {t}: {}\n", forms::tool_description(t)));
+        for k in f.kinds() {
+            s.push_str(&format!("  {}: {}\n", k.tool, k.description));
         }
         s.push_str("  record_artifact: ");
-        s.push_str(forms::tool_description("record_artifact"));
+        s.push_str(forms::Common::Artifact.description());
         s.push('\n');
-        let missing: Vec<&str> = f.sections.to_vec();
+        let missing: Vec<&str> = f.sections().map(|k| k.tool).collect();
         s.push_str(&format!(
             "Prepare notes (without refusing) when no entries of these are recorded: {}.\n",
             missing.join(", ")
@@ -402,6 +402,18 @@ mod tests {
         assert!(all.contains("leave the folder unchanged"));
         assert!(!all.contains("STEWART_TEST"));
         assert!(super::topic("nope").is_none());
+    }
+
+    /// The forms topic is built from the family definitions; any change to
+    /// how they are held must leave its released bytes alone.
+    #[test]
+    fn help_forms_bytes_are_unchanged() {
+        let text = super::topic("forms").unwrap();
+        assert_eq!(text.len(), 7093);
+        assert_eq!(
+            crate::util::sha256_hex(text.as_bytes()),
+            "3f86f81f550ad41f3135830a76a2e31b96aa4cb11e70708f571e67724ad10bc7"
+        );
     }
 
     #[cfg(not(feature = "claude-code"))]

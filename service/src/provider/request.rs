@@ -85,8 +85,7 @@ pub fn admitted_extra(raw: &[u8]) -> Option<Vec<Vec<u8>>> {
 impl Pinned {
     /// The family this arrangement pins, if this release knows it.
     pub fn family(&self) -> Option<&'static Family> {
-        let (id, version) = self.family.split_once('/')?;
-        forms::family(id).filter(|f| f.version.to_string() == version)
+        forms::pinned_family(&self.family)
     }
 
     /// The pinned retry policy (6.6).
@@ -172,11 +171,16 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
         g.exactly(&["source", "size", "sha256"])?;
         let guidance_source = g.str("source")?;
         if !["builtin", "guidance.md"].contains(&guidance_source)
-            || (guidance_source == "guidance.md" && b.str("family")? != "open-inquiry/1")
+            || (guidance_source == "guidance.md"
+                && !forms::pinned_family(b.str("family")?)
+                    .is_some_and(Family::admits_guidance_file))
         {
             return Err(g.invalid(
                 "source",
-                "expected builtin or guidance.md for open-inquiry/1",
+                format!(
+                    "expected builtin or guidance.md for {}",
+                    forms::guidance_family_versions()
+                ),
             ));
         }
         let guidance_size = g.u64("size", crate::scan::GUIDANCE_BYTES)?;
@@ -783,9 +787,15 @@ pub(crate) mod tests {
         assert_eq!(p.guidance_source, "guidance.md");
         assert_eq!(p.guidance_size, supplied.len() as u64);
         assert_eq!(p.guidance_sha256, util::sha256_hex(supplied.as_bytes()));
-        // The same bytes under another family's identity are refused.
+        // The same bytes under another family's identity, another version
+        // of open inquiry or no version are refused.
         let text = String::from_utf8(open).unwrap();
-        for other in ["comparison/1", "inquiry-framing/1"] {
+        for other in [
+            "comparison/1",
+            "inquiry-framing/1",
+            "open-inquiry/9",
+            "open-inquiry",
+        ] {
             let moved = text.replace(
                 r#""family":"open-inquiry/1""#,
                 &format!(r#""family":"{other}""#),

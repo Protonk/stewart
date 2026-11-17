@@ -17,7 +17,7 @@
 
 use crate::archive::{Audit, Fail};
 use crate::bodies::{Actor, Invocation, Payload};
-use crate::forms::Family;
+use crate::forms::{Common, EntrySchema, Family, Tool};
 use crate::json::J;
 use crate::log::{EndedBy, LogState};
 use crate::reply::{Cause, Outcome, Reply};
@@ -159,32 +159,14 @@ pub struct Executed {
     pub end: Option<End>,
 }
 
-/// Every tool name a family's arrangement can hold.
-const TOOLS: [&str; 16] = [
-    "list",
-    "read",
-    "search",
-    "record_account",
-    "record_observation",
-    "record_limit",
-    "record_working_question",
-    "record_relation",
-    "record_criterion",
-    "record_comparison",
-    "record_artifact",
-    "replace",
-    "delete",
-    "what_am_i_working_with",
-    "prepare",
-    "submit",
-];
-
 /// The operation name a reply uses internally for a block that names no
 /// tool of the arrangement; the envelope shows the name the block gave.
 const NO_TOOL: &str = "tool_unknown";
 
-fn known(name: Option<&str>) -> Option<&'static str> {
-    TOOLS.iter().copied().find(|t| Some(*t) == name)
+/// The tool a block names among every tool some family offers, whether or
+/// not this arrangement offers it.
+fn known(name: Option<&str>) -> Option<Tool> {
+    name.and_then(crate::forms::tool)
 }
 
 /// Assemble the account of a call: the envelope (with `effects` for the
@@ -265,7 +247,8 @@ pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call)
             return refused_before_execution(call, revision, failure);
         }
     }
-    let tool = known(call.name).filter(|t| world.arrangement.tool_names.iter().any(|n| n == t));
+    let tool =
+        known(call.name).filter(|t| world.arrangement.tool_names.iter().any(|n| n == t.name()));
     let Some(tool) = tool else {
         let tools = &world.arrangement.tool_names;
         let out: common::Out = common::refused(
@@ -298,6 +281,7 @@ pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call)
             out,
         );
     };
+    let op = tool.name();
     if state.damaged() {
         let out = common::Out::fail(Fail::failed(
             "log_damaged",
@@ -307,20 +291,12 @@ pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call)
             ),
         ))
         .end(End::LogDamaged);
-        return finish(Some(audit), tool, None, call, "recorded", revision, out);
+        return finish(Some(audit), op, None, call, "recorded", revision, out);
     }
     let v = match input::decode(call.input) {
         Ok(v) => v,
         Err(f) => {
-            return finish(
-                Some(audit),
-                tool,
-                None,
-                call,
-                "recorded",
-                revision,
-                f.into(),
-            );
+            return finish(Some(audit), op, None, call, "recorded", revision, f.into());
         }
     };
     let ctx = common::Ctx {
@@ -328,20 +304,23 @@ pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call)
         world,
         placement,
         call,
-        tool,
         state,
     };
+    // Every tool has its own arm: a tool added to the forms does not compile
+    // until it is handled here.
     let mut out = match tool {
-        "list" => reading::list(&ctx, &v),
-        "read" => reading::read(&ctx, &v),
-        "search" => reading::search(&ctx, &v),
-        "record_artifact" => edit::artifact(&ctx, &v),
-        "replace" => edit::replace(&ctx, &v),
-        "delete" => edit::delete(&ctx, &v),
-        "what_am_i_working_with" => reentry::what_am_i_working_with(&ctx, &v),
-        "prepare" => prep::prepare_tool(&ctx, &v),
-        "submit" => prep::submit(&ctx, &v),
-        _ => edit::record(&ctx, &v),
+        Tool::Common(Common::List) => reading::list(&ctx, &v),
+        Tool::Common(Common::Read) => reading::read(&ctx, &v),
+        Tool::Common(Common::Search) => reading::search(&ctx, &v),
+        Tool::Common(Common::Artifact) => edit::artifact(&ctx, &v),
+        Tool::Common(Common::Replace) => edit::replace(&ctx, &v),
+        Tool::Common(Common::Delete) => edit::delete(&ctx, &v),
+        Tool::Common(Common::Reentry) => reentry::what_am_i_working_with(&ctx, &v),
+        Tool::Common(Common::Prepare) => prep::prepare_tool(&ctx, &v),
+        Tool::Common(Common::Submit) => prep::submit(&ctx, &v),
+        Tool::Kind(kind) => match kind.schema {
+            EntrySchema::TextCitationsLabel => edit::record(&ctx, kind, &v),
+        },
     };
     if out.revision.is_none() && (out.answer == "unknown" || out.seal == "unknown") {
         let st = crate::log::read(audit);
@@ -349,14 +328,14 @@ pub fn execute(audit: &Audit, world: &World, placement: &Placement, call: &Call)
             out.revision = Some(st.revision());
         }
     }
-    finish(Some(audit), tool, None, call, "recorded", revision, out)
+    finish(Some(audit), op, None, call, "recorded", revision, out)
 }
 
 /// A captured runtime call stopped before dispatch. Preserve its ordinary
 /// auditor envelope without entering a handler or claiming an answer effect.
 #[cfg(feature = "claude-code")]
 pub(crate) fn refused_before_execution(call: &Call, revision: u64, failure: Fail) -> Executed {
-    let op = known(call.name).unwrap_or(NO_TOOL);
+    let op = known(call.name).map_or(NO_TOOL, Tool::name);
     let shown = (op == NO_TOOL).then(|| call.name.unwrap_or(""));
     finish(None, op, shown, call, "recorded", revision, failure.into())
 }
@@ -367,7 +346,7 @@ pub(crate) fn refused_before_execution(call: &Call, revision: u64, failure: Fail
 /// diagnostic is attempted here: the archive is failing, and the run's own
 /// account of the ending covers it.
 pub fn capture_failed(call: &Call, cause: &Cause, revision: u64) -> Executed {
-    let op = known(call.name).unwrap_or(NO_TOOL);
+    let op = known(call.name).map_or(NO_TOOL, Tool::name);
     let mut out = common::Out::fail(
         Fail::failed(
             "record_failed",
@@ -388,7 +367,7 @@ pub fn capture_failed(call: &Call, cause: &Cause, revision: u64) -> Executed {
 /// placement with a different name or input (`invocation_id_reused`, 6.3).
 /// `original` is the call number that executed the ID.
 pub fn reused(call: &Call, original: u64, revision: u64) -> Executed {
-    let op = known(call.name).unwrap_or(NO_TOOL);
+    let op = known(call.name).map_or(NO_TOOL, Tool::name);
     let mut out = common::Out::fail(
         common::refused(
             "invocation_id_reused",
@@ -438,11 +417,13 @@ pub struct Prepared {
     /// Unproduced entries in selection order, then an unproduced rendering,
     /// as the return manifest lists them. Empty for the auditor.
     pub unproduced: Vec<Unproduced>,
-    /// One count per recording tool of the family, then `record_artifact`,
-    /// in tools order.
+    /// One count per recording kind of the family, then `record_artifact`,
+    /// in tools order. Empty when submit rebuilds a preparation from its
+    /// files to seal it: only the `prepare` tool reports counts.
     pub counts: Vec<(String, u64)>,
     /// Prepare's notices, in tools order: `section_unfilled` per expected
-    /// section without an entry, or the single `answer_empty`.
+    /// section without an entry, or the single `answer_empty`. Empty when
+    /// submit rebuilds a preparation, as for `counts`.
     pub notices: Vec<PrepareNotice>,
     /// The payloads of the produced entries, which the seal re-verifies.
     pub payloads: Vec<Payload>,
@@ -562,9 +543,9 @@ mod tests {
     use super::*;
     use crate::forms::{FAMILIES, tools};
 
-    /// The nine tools every family offers, then each family's recording
-    /// tools: `TOOLS` is exactly their union, so a tool a family adds is
-    /// dispatched and a tool no family offers is not accepted.
+    /// The nine tools every family offers and each family's recording kinds
+    /// are known, each as itself, so every tool an arrangement offers is
+    /// dispatched; a name no family offers is not known.
     #[test]
     fn tool_union_is_common_tools_and_family_kinds() {
         let common = [
@@ -578,20 +559,15 @@ mod tests {
             "prepare",
             "submit",
         ];
-        let mut want: Vec<&str> = common.to_vec();
-        for f in &FAMILIES {
-            for t in f.tools {
-                if !want.contains(t) {
-                    want.push(t);
-                }
-            }
+        for name in common {
+            let t = known(Some(name));
+            assert!(matches!(t, Some(Tool::Common(_))), "{name}");
+            assert_eq!(t.map(Tool::name), Some(name));
         }
-        let mut have = TOOLS.to_vec();
-        have.sort();
-        want.sort();
-        assert_eq!(have, want, "TOOLS holds each name once");
-        assert_eq!(TOOLS.len(), 16);
         for f in &FAMILIES {
+            for k in f.kinds() {
+                assert_eq!(known(Some(k.tool)), Some(Tool::Kind(k)), "{}", f.id);
+            }
             let parsed = crate::json::parse(&tools(f).bytes()).unwrap();
             let offered: Vec<&str> = parsed
                 .as_arr()
@@ -600,10 +576,16 @@ mod tests {
                 .map(|t| t.obj("").unwrap().str("name").unwrap())
                 .collect();
             for name in offered {
-                assert_eq!(known(Some(name)), Some(name), "{} {name}", f.id);
+                assert_eq!(
+                    known(Some(name)).map(Tool::name),
+                    Some(name),
+                    "{} {name}",
+                    f.id
+                );
             }
         }
         assert_eq!(known(Some("record_survey")), None);
+        assert_eq!(known(Some(NO_TOOL)), None);
         assert_eq!(known(None), None);
     }
 }
