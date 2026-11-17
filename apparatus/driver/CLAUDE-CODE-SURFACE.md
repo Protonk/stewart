@@ -4,7 +4,7 @@
 launch-surface files from the [runtime contract](../../docs/claude-code/CONTRACT.md).
 Its independent author does not read the service implementation or tests.
 It invokes only the gated Stewart binary's actual relay and hook helpers, using
-the [specified private transport](../../docs/claude-code/RUNTIME-REFERENCE.md#private-helper-transport-for-independent-fixtures)
+the [specified private transport](../../docs/claude-code/CONTRACT.md#private-helper-transport-for-independent-fixtures)
 against fixture-owned sockets. It has no Claude, authentication or model launcher.
 
 Run with an explicit isolated Python interpreter:

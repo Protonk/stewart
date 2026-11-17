@@ -4,7 +4,7 @@
 relay and hook helpers. It is a synthetic replacement for the CLI process;
 it never invokes Claude, reads credentials or grants invocation authority.
 Its checks come from the [runtime contract](../../docs/claude-code/CONTRACT.md)
-and [private helper interface](../../docs/claude-code/RUNTIME-REFERENCE.md#private-helper-transport-for-independent-fixtures).
+and [private helper interface](../../docs/claude-code/CONTRACT.md#private-helper-transport-for-independent-fixtures).
 The [independent observer](CLAUDE-CODE-OBSERVER.md) owns the fixture and assesses
 the controlled attempts. Fixture effects remain separate from service effects.
 

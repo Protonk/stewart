@@ -299,9 +299,8 @@ own acceptance scope; this fake-provider result does not claim them.
 
 This work exercises question families and the manager workflow with the existing
 default-off development adapter. The [runtime contract](../docs/claude-code/CONTRACT.md)
-owns its permissions, authentication, placement limits and observation promises;
-the [runtime reference](../docs/claude-code/RUNTIME-REFERENCE.md) owns technical
-limitations. The distributed binary continues to exclude this adapter. Its
+owns its permissions, authentication, placement limits, observation promises
+and the limitations not yet demonstrated with the real harness. The distributed binary continues to exclude this adapter. Its
 auditor-facing MCP tools do not expose or depend on the manager preparation MCP.
 
 A prepared packet, successful synthetic rehearsal or previous model placement

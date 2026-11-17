@@ -46,6 +46,28 @@ compaction, submission and stopping comparisons remain necessary for the claims
 they exercise. Messages API results do not qualify the harness profile. The common
 [rules every check follows](../../ACCEPTANCE.md#rules-every-check-follows) apply.
 
+Not yet demonstrated with the real harness under the selected launch:
+
+- a supported configuration check before the first message is sent; the
+  observed `system/init` arrives only after input;
+- failure recovery beyond the observed quotation refusals and a
+  harness-reported output-cap sequence, and complete provider accounting;
+- relay loss, MCP cancellation, usage checkpoints across placements, and
+  compaction with re-entry, its notice and the one-reminder policy; the
+  synthetic suite exercises each against the actual core, which says nothing
+  about how the real harness issues calls, reports usage or delivers a notice;
+- how the harness issues several tool calls of one model response (the runtime
+  answers a call that arrives while another is pending with an error);
+- whether `--max-turns` gates a model call before consumption or detects an
+  excess afterwards, and whether a crash result's zeroed totals leave lost
+  internal-call consumption boundable;
+- what an interrupt leaves queued (the documented receipt can list queued
+  messages that still run), and whether a tool handler in flight receives a
+  usable cancellation signal; Stewart's own publication gate refuses a late
+  effect either way;
+- launching the binary from an already-open descriptor, given that it reads
+  its executable from disk while running.
+
 ## Arrangement and observation
 
 The profile pins the native executable, model, local launch configuration,
@@ -75,6 +97,18 @@ shortened or refused to fit this setting. Compare captured conversation
 tool-result content with supplied MCP replies, separately from auxiliary result
 copies, when assessing fidelity. An exact auxiliary copy or valid source
 citation alone does not establish what the auditor received.
+
+The annotation exists because the harness's documented default persists a
+successful text result above 50,000 characters to a file and gives the
+conversation a pointer and short preview instead; the per-tool annotation
+raises that threshold up to 500,000 characters, and `MAX_MCP_OUTPUT_TOKENS`
+alone does not change it. Without the annotation, a native encounter saw both
+full 64 KiB material pages replaced by previews in the conversation while the
+MCP replies were exact, and the harness wrote the full replies under its
+configuration directory despite `--no-session-persistence`. With it, one
+bounded native encounter delivered the same pages whole. The
+[qualification record](../../apparatus/qualified.md) identifies both
+encounters (`readiness-c3-01`, `readiness-pages-service-01`).
 
 The harness may add reminders, built-in instructions or managed policy that
 Stewart cannot fully inspect. Accordingly, this profile promises exact capture
@@ -306,6 +340,51 @@ on quota rejection or observed overage enablement/use; do not switch models,
 wait for a reset and restart, or fall back to API billing. Account settings are
 the principal's declaration plus exposed harness observations, not independently
 verified billing state.
+
+### Documented harness facts the launch relies on
+
+These are statements of Anthropic's documentation for the pinned version, not
+observed behavior. Recheck them at every harness pin.
+
+- **Credential precedence.** Cloud-provider selection, `ANTHROPIC_AUTH_TOKEN`,
+  `ANTHROPIC_API_KEY`, `apiKeyHelper`, `CLAUDE_CODE_OAUTH_TOKEN`, profile or
+  federation credentials, then the `/login` credential. Under `-p` a present
+  API key is always used, and a run given no credential uses whatever login its
+  configuration directory holds; either direction can select a billing route
+  silently. Hence the explicit child environment and the authentication-status
+  and `apiKeySource` checks.
+- **Bare mode excludes subscription login.** It never reads OAuth credentials,
+  the keychain or `CLAUDE_CODE_OAUTH_TOKEN`, and it disables configured hooks,
+  so this route is non-bare and controls hooks, skills, plugins, MCP discovery,
+  memory, instruction files and background tasks individually. The
+  documentation says bare mode will become the default for `-p`.
+- **Restricted mode is not a sandbox.** `--restricted`, `--tools ''`,
+  `--setting-sources ''` and `--strict-mcp-config` are complementary controls;
+  managed and server-managed policy still load. The pinned binary's three
+  built-in plugins (an instruction loader, a privacy guard and plugin-authoring
+  support) remain, by decision, with the privacy guard preserved.
+- **Login storage.** A `/login` credential is stored in the macOS Keychain, or in
+  `.credentials.json` under the configuration directory on Linux. Stewart
+  never reads either.
+- **Binary integrity.** Each release from 2.1.89 publishes `manifest.json` with
+  a SHA-256 per platform binary and a detached GPG signature by the release key
+  (fingerprint `31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE`, a profile's
+  `installation.signer`). Linux binaries carry no code signature of their own; the manifest, or a
+  signed apt, dnf or apk repository, is the integrity check there. Linux x64 and
+  arm64 are supported, including musl.
+- **Updates and redirection.** `DISABLE_AUTOUPDATER` stops only the background
+  check; `DISABLE_UPDATES` blocks every update path. `ANTHROPIC_BASE_URL`, a
+  settings `env` block, `apiKeyHelper`, hooks, managed settings, a preloaded
+  library or another `claude` earlier on `PATH` can each change what runs; a
+  digest establishes which file ran, not how it was configured.
+- **Included usage is not a spending cap.** Usage credits can keep a paid plan
+  running at consumption prices after included usage is exhausted, so the
+  manager's confirmation that paid overflow is disabled remains required.
+- **Terms.** OAuth login is for subscribers' ordinary use of Claude Code and
+  Anthropic's own applications; third parties may not offer Claude.ai login or
+  route requests through others' plan credentials. An end user signing in to
+  the unmodified binary with their own subscription is not prevented. Read the
+  legal page itself before relying on this summary.
 
 ## Development input and preparation schema
 
@@ -759,6 +838,29 @@ retain the actual core reply; `request` and `attempt` are 1 and `block` is C
 for this single MCP connection. These are transport coordinates, not HTTP
 requests. Harness `run_ended.requests` and `attempts` are zero. No harness
 accounting record is interpreted as an API charge.
+
+### Private helper transport for independent fixtures
+
+An independent fixture can own the private sockets while invoking the gated
+binary's actual helpers. `__stewart-cc-relay m` connects to the Unix socket
+`m` relative to its working directory. It forwards stdin bytes unchanged and
+shuts down the socket's write half at stdin EOF. Replies are forwarded unchanged
+to stdout, with each available chunk flushed before another read; socket EOF
+ends the reply stream. The helper does not parse MCP or own an audit.
+
+`__stewart-cc-hook h` connects to socket `h`, reads stdin through EOF with an
+8 MiB input bound, forwards those bytes unchanged, then shuts down the socket's
+write half. The owner replies and closes its connection. The helper copies a
+nonempty reply of at most 64 KiB unchanged to stdout. Each socket read has a
+four-second timeout; this is not an overall invocation deadline. An empty or
+oversized reply, connection/read failure or oversized input produces a diagnostic
+and exit 2. Successful transport exits zero. The owner supplies the
+LF-terminated hook JSON above; the helper itself does not interpret it.
+
+The fixture must retain independent request, reply and effect witnesses, own
+its overall timeout and observe stopping. Using actual helpers exercises their
+transport; fixture-owned sockets and simulated tool effects establish no core
+publication, custody or service-conformance result.
 
 ## Launch surface
 
