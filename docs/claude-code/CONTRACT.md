@@ -582,7 +582,10 @@ A placement's ending is decided by the first stopping condition its owner
 observes: the auditor's confirmed submission, an ordinary ending, a harness
 error, exit or violation, a reply mismatch, an archive-write failure, close, a
 signal or the deadline. When the owner observes several at the same point,
-close precedes a signal and a signal precedes the deadline. A condition first
+close precedes a signal and a signal precedes the deadline. The supervisor
+stops the harness group at the deadline on its own clock, so a harness exit,
+or a failed write to the harness, that the owner first observes once the
+deadline has passed is the deadline, not a harness error. A condition first
 observed later, including during shutdown and drain, does not replace the
 decided ending. A later signal or close does not change the recorded ending,
 so a later signal cannot reopen authoring, while a close request still ends it

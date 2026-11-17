@@ -627,7 +627,23 @@ impl Capture<'_> {
     fn send(&mut self, channel: &str, out: &mut impl Write, bytes: &[u8]) -> Result<(), Stopped> {
         self.for_send(channel, bytes)?;
         out.write_all(bytes)
-            .map_err(|e| Stopped::from(format!("{channel} write failed: {e}")))
+            .map_err(|e| self.write_failed(channel, e))
+    }
+    /// The stop a failed write on `channel` gives. The supervisor stops the
+    /// harness group at the deadline on its own clock, so a write found
+    /// failed once the deadline has passed failed at that stop: the
+    /// deadline is the condition observed, as for a harness exit. Before
+    /// it the failure is unexplained.
+    fn write_failed(&self, channel: &str, e: std::io::Error) -> Stopped {
+        let message = format!("{channel} write failed: {e}");
+        if Instant::now() >= self.deadline {
+            Stopped {
+                condition: Condition::Deadline,
+                message,
+            }
+        } else {
+            message.into()
+        }
     }
     fn for_send(&mut self, channel: &str, bytes: &[u8]) -> Result<(), Stopped> {
         if !self.outgoing(channel, bytes)? {
@@ -658,7 +674,7 @@ fn transmit(
         return Err(CAPTURE_EXCEEDED.into());
     }
     out.write_all(frame)
-        .map_err(|e| Stopped::from(format!("input write failed: {e}")))?;
+        .map_err(|e| cap.write_failed("input", e))?;
     *seen = Some(crate::provider::placement::Seen {
         captured: true,
         written: true,
@@ -2103,6 +2119,52 @@ mod tests {
         assert!(out.is_empty());
         assert!(failed.load(Ordering::SeqCst));
         assert_eq!(sent_as(seen), "not_sent");
+        // A write blocked until the supervisor's deadline stop, then found
+        // failed: the deadline is the condition observed, not a harness
+        // error, and the captured frame stays unknown. The unexplained
+        // failure above, found before the deadline, is the invariance case.
+        struct BrokenAt(Instant);
+        impl Write for BrokenAt {
+            fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
+                std::thread::sleep(self.0.saturating_duration_since(Instant::now()));
+                Err(std::io::ErrorKind::BrokenPipe.into())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        let later = runs::RunDir::create(&audit, 2).unwrap();
+        let mut blocked = Capture {
+            dir: &later,
+            sequence: 0,
+            bytes: 0,
+            record_failed: &AtomicBool::new(false),
+            deadline: Instant::now() + Duration::from_millis(50),
+        };
+        let stop = blocked.deadline + Duration::from_millis(50);
+        let mut seen = None;
+        let stopped = transmit(&mut blocked, &mut BrokenAt(stop), frame, &mut seen).unwrap_err();
+        assert_eq!(stopped.condition, Condition::Deadline);
+        assert_eq!(stopped.message, "input write failed: broken pipe");
+        assert_eq!(
+            later
+                .dir
+                .read_regular("runtime-1-input.bin", 100)
+                .unwrap()
+                .0,
+            frame
+        );
+        assert_eq!(sent_as(seen), "unknown");
+        // Every write to the harness follows the same rule.
+        blocked.deadline = Instant::now() + Duration::from_millis(50);
+        let stop = blocked.deadline + Duration::from_millis(50);
+        let stopped = blocked
+            .send("mcp-out", &mut BrokenAt(stop), frame)
+            .unwrap_err();
+        assert_eq!(stopped.condition, Condition::Deadline);
+        blocked.deadline = Instant::now() + Duration::from_secs(60);
+        let stopped = blocked.send("mcp-out", &mut Broken, frame).unwrap_err();
+        assert_eq!(stopped.condition, Condition::Unexplained);
         std::fs::remove_dir_all(path).unwrap();
     }
 
