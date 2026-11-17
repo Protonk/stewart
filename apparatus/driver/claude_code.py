@@ -187,6 +187,28 @@ CASES = (
                                        "the seal and delivery stand"),
     ("runtime-sealed-late-close", "Close while an auditor seal's delivery is paused keeps the seal; "
                                   "the later copy awaits confirmation"),
+    ("runtime-start-races-close", "Close winning the log order while run holds its start: refused reference_closed, "
+                                  "nothing launched, no start used"),
+    ("runtime-first-condition", "The first stopping condition decides: a later signal keeps an ordinary ending; "
+                                "a violation keeps its cause when shutdown outlasts the deadline"),
+    ("runtime-late-close", "A close requested after an ordinary ending was decided ends authoring by its record "
+                           "and leaves the ending"),
+    ("runtime-final-interruption", "An interrupted final placement ends authoring as limit; a remaining start "
+                                   "leaves it open"),
+    ("runtime-unknown-stop-advice", "While stopping is unknown, status and run offer only status; observed absence "
+                                    "restores run and close"),
+    ("runtime-launch-directory", "Instruction entries above the launch directory, or one within custody, refuse "
+                                 "before reservation; clean directories start"),
+    ("runtime-notice-transmission", "Notices are sent when claimed and numbered by position; unknown after recovery "
+                                    "or a blocked write; never due by placements"),
+    ("runtime-notice-not-sent", "A claim whose directory sync fails stops the placement before capture and "
+                                "is listed not_sent"),
+    ("runtime-result-rules", "An error result interrupts whatever its subtype; is_error false with any subtype "
+                             "receives the reminder"),
+    ("runtime-result-during-call", "A result while a call executes stops the placement; the held call is refused "
+                                   "at its link"),
+    ("runtime-fidelity-drain-ending", "A drain-time reply mismatch turns a decided ordinary ending into a protocol "
+                                      "anomaly; other decided endings keep their value"),
 )
 
 
@@ -655,6 +677,30 @@ def scripted_selftest(check):
                                "core": {"data": {"text": ""}}}) == b"")
 
 
+def sequence_selftest(check):
+    """Pure checks of the sequence helpers, with controls."""
+    for text, kind in ((REMINDER, "reminder"), (CONTINUATION, "continuation"), (COMPACTED, "compacted"),
+                       (NEAR_LIMIT.format(seconds=4, placements=2), "near_limit"),
+                       (REMINDER + " ", "other"), (NEAR_LIMIT, "other"), (None, "other")):
+        check("sequence.input-kind." + kind + ("-control" if kind == "other" else ""), input_kind(text) == kind)
+    frame = lambda text: compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
+                                  "message": {"role": "user", "content": text}}) + b"\n"
+    check("sequence.input-frames", input_frames(frame("q") + frame(REMINDER)) == ["q", REMINDER])
+    check("sequence.input-frames.cut-off-is-not-a-frame", input_frames(frame("q") + frame(REMINDER)[:-1]) == ["q"])
+    read_end, write_end = os.pipe()
+    child = subprocess.Popen(["/bin/sleep", "20"], stdin=read_end)
+    try:
+        held = pipe_readers(read_end)
+        check("sequence.pipe-readers.other-holder", held is None or held == [[child.pid, 0]])
+    finally:
+        child.kill()
+        child.wait(timeout=5)
+    alone = pipe_readers(read_end)
+    check("sequence.pipe-readers.sole-holder-control", alone is None or alone == [])
+    os.close(read_end)
+    os.close(write_end)
+
+
 def snapshot(root):
     """Observe names, types and regular-file identities without following links."""
     result = {}
@@ -694,6 +740,95 @@ def near_limit_values(text):
     pattern = pattern.replace(re.escape("{placements}"), r"(?P<placements>0|[1-9][0-9]*)")
     match = re.fullmatch(pattern, text)
     return {key: int(value) for key, value in match.groupdict().items()} if match else None
+
+
+def input_kind(content):
+    """Classify one supplied input by the pinned texts (CONTRACT, runtime texts)."""
+    if content == REMINDER:
+        return "reminder"
+    if content == CONTINUATION:
+        return "continuation"
+    if content == COMPACTED:
+        return "compacted"
+    if near_limit_values(content) is not None:
+        return "near_limit"
+    return "other"
+
+
+def input_frames(stream):
+    """The decoded contents of the complete LF-terminated input frames in a captured
+    input stream; an unterminated tail is not a frame."""
+    contents = []
+    for raw in stream.split(b"\n")[:-1]:
+        try:
+            value = strict_loads(raw + b"\n")
+        except ValueError:
+            contents.append(None)
+            continue
+        contents.append(value.get("message", {}).get("content") if isinstance(value, dict) else None)
+    return contents
+
+
+def pipe_readers(fd=0):
+    """Other processes holding the read side of the pipe on this process's descriptor fd,
+    as sorted [pid, fd] pairs; None when this host gives no such observation. Linux reads
+    /proc; macOS lists open files with lsof, whose device field names one pipe end."""
+    me = os.getpid()
+    if sys.platform.startswith("linux"):
+        try:
+            target = os.readlink("/proc/self/fd/%d" % fd)
+        except OSError:
+            return None
+        if not target.startswith("pipe:"):
+            return None
+        holders = []
+        for pid in os.listdir("/proc"):
+            if not pid.isdigit() or int(pid) == me:
+                continue
+            try:
+                names = os.listdir("/proc/%s/fd" % pid)
+            except OSError:
+                continue
+            for name in names:
+                try:
+                    if os.readlink("/proc/%s/fd/%s" % (pid, name)) != target:
+                        continue
+                    with open("/proc/%s/fdinfo/%s" % (pid, name)) as info:
+                        flags = next(int(line.split()[1], 8) for line in info if line.startswith("flags:"))
+                except (OSError, StopIteration, ValueError, IndexError):
+                    continue
+                if flags & 3 != os.O_WRONLY:
+                    holders.append([int(pid), int(name)])
+        return sorted(holders)
+    if sys.platform == "darwin" and os.path.exists("/usr/sbin/lsof"):
+        def listing(arguments):
+            try:
+                # lsof must not inherit the descriptor under observation.
+                done = subprocess.run(["/usr/sbin/lsof", "-b", "-w", "-nP", "-F", "ftd"] + arguments,
+                                      stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                      stderr=subprocess.DEVNULL, timeout=10)
+            except (OSError, subprocess.TimeoutExpired):
+                return None
+            rows, pid, name, kind = [], None, None, None
+            for line in done.stdout.decode("utf-8", "replace").splitlines():
+                tag, value = line[:1], line[1:]
+                if tag == "p":
+                    pid = int(value)
+                elif tag == "f":
+                    name, kind = value, None
+                elif tag == "t":
+                    kind = value
+                elif tag == "d" and kind == "PIPE":
+                    rows.append((pid, name, value))
+            return rows
+        own = listing(["-a", "-p", str(me), "-d", str(fd)])
+        own = [device for _, name, device in own or [] if name == str(fd)]
+        everyone = listing([]) if len(own) == 1 else None
+        if everyone is None:
+            return None
+        return sorted([pid, int(name)] for pid, name, device in everyone
+                      if device == own[0] and name.isdigit() and (pid, name) != (me, str(fd)))
+    return None
 
 
 def release_fault_pauses(directory, observe):
@@ -1107,10 +1242,20 @@ def relay_traffic(binary, variant, env, workspace, witness):
         witness.event("after-worker-cleanup")
 
 
+INSTRUCTION_ENTRIES = (".git", "CLAUDE.md", "AGENTS.md", ".claude")
+
+
 def validate_work_path(work):
-    """Reject known project ancestry before constructing launch fixtures."""
+    """Reject known project ancestry before constructing launch fixtures. The profiles'
+    temporary directories lie under --work, and run refuses one with an instruction entry
+    in any ancestor (CONTRACT, wire and process), so such ancestry would refuse every start."""
     if work.resolve().is_relative_to(HERE.parent.parent.resolve()):
         raise ValueError("--work must be outside the driver repository; use a fresh physical temporary directory")
+    for ancestor in work.resolve().parents:
+        for name in INSTRUCTION_ENTRIES:
+            if os.path.lexists(ancestor / name):
+                raise ValueError("--work has %s in its ancestor %s; run refuses such a launch directory"
+                                 % (name, ancestor))
 
 
 class Driver:
@@ -1302,7 +1447,10 @@ class Driver:
             self.check(label + ".states." + word.replace(" ", "-")[:32], word.lower() in lowered, text[:600])
 
     def fixture(self, label, family="open-inquiry", binary=None, scenario=None, timeout=600, placements=3,
-                effort=None, *, python=None):
+                effort=None, *, python=None, temporary=None):
+        """A prepared submission, archive and profile. temporary, when given, names the
+        profile's temporary_directory from (root, folder, archive) in place of the default
+        empty directory beside the synthetic executable."""
         root = self.work / label
         root.mkdir()
         witness = self.witness / label
@@ -1336,7 +1484,8 @@ class Driver:
         launch = {"executable": str(executable), "sha256": sha(executable.read_bytes()),
                   "version": "synthetic-offline-1", "platform": platform_name(),
                   "config_directory": str(launch_dir / "config"), "home": str(launch_dir / "home"),
-                  "temporary_directory": str(launch_dir / "temporary")}
+                  "temporary_directory": str(temporary(root, folder, archive) if temporary
+                                             else launch_dir / "temporary")}
         # Noncompact launch bytes make reserialization an observable binding error.
         launch_raw = json.dumps(launch, ensure_ascii=False, indent=2).encode()
         tools = compact(expected_tools(family))
@@ -3948,6 +4097,7 @@ class Driver:
         second = [script_step("again", "record_account", note, id="identity-same"),
                   script_step("duplicate", "record_account", note, id="identity-same"),
                   script_step("fresh-id", "record_account", note, id="identity-fresh"),
+                  script_step("reused-ping", None, method="ping", id="identity-fresh"),
                   script_step("prepare", "prepare"),
                   script_step("submit", "submit", {"prepared": {"$ref": ["prepare", "data", "prepared"]},
                                                    "confirm": True}, final=True)]
@@ -3969,6 +4119,21 @@ class Driver:
                    again)
         self.check(label + ".duplicate-answered", bool(answered), "no reply to a reused request ID")
         self.check(label + ".duplicate-not-completed", duplicate.get("outcome") != "completed", duplicate)
+        # CONTRACT, wire and process: a request reusing an ID, whatever its method or
+        # arguments, receives JSON-RPC error -32600 naming the reuse, with that ID. It executes
+        # nothing, takes no call number and writes no call-C.json. The identical repeat is not
+        # a replay of the earlier reply.
+        self.reused_id_error(label + ".duplicate", answered, "identity-same")
+        self.reused_id_error(label + ".reused-ping", step("reused-ping")[1], "identity-fresh")
+        rundir = self.audit_path(f) / "runs" / "2"
+        def numbered(prefix):
+            return sorted(int(m.group(1)) for p in rundir.glob(prefix + "-*.json")
+                          for m in [re.fullmatch(prefix + r"-([1-9][0-9]*)\.json", p.name)] if m)
+        calls = numbered("call")
+        self.eq(label + ".call-numbers-contiguous", calls, list(range(1, len(calls) + 1)))
+        self.eq(label + ".results-match-calls", numbered("result"), calls)
+        ids = [transport_loads((rundir / ("call-%d.json" % n)).read_bytes()).get("id") for n in calls]
+        self.eq(label + ".one-call-file-per-id", (ids.count("identity-same"), ids.count("identity-fresh")), (1, 1))
         self.eq(label + ".fresh-id", (fresh.get("outcome"), (fresh.get("data") or {}).get("id"),
                                       (fresh.get("data") or {}).get("revision")), ("completed", "e3", 3))
         self.eq(label + ".ending", (reply.get("data") or {}).get("ending"), "sealed")
@@ -3976,6 +4141,15 @@ class Driver:
         package = self.check_package_bytes(f, self.inspect_runtime(f, placements=2), entries, 3)
         self.control("reused-id-in-placement-has-no-effect", duplicate.get("outcome") != "completed"
                      and (package / "answer.json").read_bytes() == aw.answer_json(3, entries))
+
+    def reused_id_error(self, label, response, identity):
+        response = response if isinstance(response, dict) else {}
+        error = response.get("error") if isinstance(response.get("error"), dict) else {}
+        self.eq(label + ".jsonrpc-error", (response.get("id"), error.get("code"), "result" in response),
+                (identity, -32600, False))
+        message = error.get("message")
+        self.check(label + ".names-reuse", isinstance(message, str)
+                   and re.search(r"reus|duplicate|already", message, re.I) is not None, error)
 
     def runtime_fidelity_drain_unknown(self):
         """Missing and duplicate echoes during the shutdown drain stay unknown and leave a
@@ -4000,6 +4174,60 @@ class Driver:
             status = self.inspect_runtime(f)
             self.check(label + ".summary-fidelity", "fidelity" in status["data"].get("summary", "").lower(), status["data"])
             self.close_after_delivery(f, self.check_delivery(f, status))
+
+    def runtime_fidelity_drain_ending(self):
+        """A reply mismatch first observed during drain turns a decided ended_unsubmitted into
+        interrupted with cause protocol_anomaly; with an exact drain echo the ordinary ending
+        stands; a decided signal ending keeps its value and cause despite the same late
+        mismatch (CONTRACT, observed reply fidelity; wire and process)."""
+        expected = {"drain-ordinary-exact": ("ended_unsubmitted", None, 0),
+                    "drain-ordinary-mismatch": ("interrupted", "protocol_anomaly", 5),
+                    "drain-signal-mismatch": ("interrupted", "signal", 5)}
+        seen = {}
+        for variant, want in expected.items():
+            f = self.fidelity_fixture("fidelity-" + variant, variant)
+            label = f["label"]
+            run = self.spawn(f, "run", ["run", f["reference"]])
+            try:
+                if variant == "drain-signal-mismatch":
+                    self.require(label + ".pages-read", self.await_fact(
+                        lambda: (f["witness"] / "pages-read.json").exists(), run["process"], 30), str(f["witness"]))
+                    run["process"].send_signal(signal.SIGTERM)
+                    self.boundary(f, "signal-sent", owner_pid=run["process"].pid)
+                reply = self.collect(run, 60) or {}
+            finally:
+                self.stop_leftovers(run)
+            self.groups_absent(f)
+            events = self.harness_clean(f)
+            self.fidelity_page_witness(f)
+            late = f["witness"] / "late-echo.bin"
+            self.require(label + ".echo-in-drain", late.exists() and late.stat().st_size > 0, str(late))
+            self.check(label + ".echo-captured", late.read_bytes() in self.captured_channel(f, "stdout"), str(late))
+            mismatch = variant.endswith("-mismatch")
+            self.fidelity_record(f, 3 if mismatch else 4, int(mismatch))
+            self.fidelity_diagnostics(f, mismatch, phase="drain" if mismatch else None)
+            data = reply.get("data", {})
+            got = (data.get("ending"), data.get("cause"), run["process"].returncode)
+            self.eq(label + ".ending", got, want)
+            body = (self.run_ended_record(f, 1)[1] or {}).get("body", {})
+            self.eq(label + ".run_ended", (body.get("ending"), body.get("cause")), want[:2])
+            status = self.cmd(label + ".status", ["status", f["reference"]])
+            authoring = status["data"].get("headline", {}).get("authoring")
+            if variant.startswith("drain-ordinary"):
+                self.eq(label + ".reminder-sent", (data.get("notices"),
+                        sum(e["event"] == "drain-second-turn-ended" for e in events)),
+                        ([{"type": "reminder", "sent": "sent"}], 1))
+            if variant == "drain-ordinary-exact":
+                self.eq(label + ".authoring", authoring, {"state": "ended", "ended_by": "ordinary_ending"})
+            else:
+                self.eq(label + ".authoring-open", authoring, {"state": "open", "ended_by": None})
+                self.eq(label + ".next", self.next_tools(status), ["close", "run"])
+                self.check(label + ".mismatch-warning", "mismatch" in status["data"].get("summary", "").lower(),
+                           status["data"].get("summary"))
+            seen[variant] = got
+        self.control("drain-mismatch-turns-ordinary-ending",
+                     seen.get("drain-ordinary-exact") == expected["drain-ordinary-exact"]
+                     and seen.get("drain-ordinary-mismatch") == expected["drain-ordinary-mismatch"])
 
     def runtime_sealed_late_close(self):
         if self.variant is None or b"STEWART_TEST_FAULT" not in self.variant.read_bytes():
@@ -4102,6 +4330,895 @@ class Driver:
                 ("complete", "confirmed", "auditor"))
         self.eq(label + ".package-unchanged", self.package_identity(package), delivered)
         self.eq(label + ".one-package", [p.name for p in sorted(package.parent.iterdir())], [package.name])
+
+    # -- Sequences: specification-derived schedules of harness events --------------------
+
+    def sequence_fixture(self, label, steps, *, timeout=60, placements=3, **extra):
+        f = self.fixture(label, scenario="sequence", timeout=timeout, placements=placements)
+        self.change_scenario(f, steps=list(steps), **extra)
+        return f
+
+    def spawn(self, f, name, args, env=None):
+        """A manager command in the background; argv, environment and output are retained."""
+        out = (f["witness"] / (name + ".stdout")).open("wb")
+        err = (f["witness"] / (name + ".stderr")).open("wb")
+        argv = [str(self.binary)] + [str(a) for a in args] + ["--json"]
+        process = subprocess.Popen(argv, stdout=out, stderr=err, env=env or self.env, cwd=self.cwd)
+        return {"process": process, "argv": argv, "env": env or self.env, "name": name, "files": (out, err),
+                "stdout": f["witness"] / (name + ".stdout"), "label": f["label"], "started": time.monotonic()}
+
+    def collect(self, h, seconds=60):
+        """Wait for a background command and return its decoded reply, or None."""
+        try:
+            h["process"].wait(timeout=seconds)
+        except subprocess.TimeoutExpired:
+            h["process"].kill()
+            h["process"].wait(timeout=5)
+            self.check(h["label"] + "." + h["name"] + ".bounded", False, "still running after %s seconds" % seconds)
+        for stream in h["files"]:
+            stream.close()
+        self.save("witness/%s/%s-command.json" % (h["label"], h["name"]),
+                  {"argv": h["argv"], "env": h["env"], "exit": h["process"].returncode,
+                   "elapsed_seconds": time.monotonic() - h["started"]})
+        raw = h["stdout"].read_bytes()
+        try:
+            return strict_loads(raw) if raw.strip() else None
+        except ValueError as exc:
+            self.check(h["label"] + "." + h["name"] + ".reply", False, str(exc))
+            return None
+
+    def stop_leftovers(self, *handles):
+        for h in handles:
+            if h is None:
+                continue
+            if h["process"].poll() is None:
+                h["process"].kill()
+                h["process"].wait(timeout=5)
+            for stream in h["files"]:
+                if not stream.closed:
+                    stream.close()
+
+    @staticmethod
+    def await_fact(predicate, owner=None, seconds=15):
+        until = time.monotonic() + seconds
+        while time.monotonic() < until:
+            if predicate():
+                return True
+            if owner is not None and owner.poll() is not None:
+                break
+            time.sleep(0.01)
+        return bool(predicate())
+
+    def boundary(self, f, event, **facts):
+        with (f["witness"] / "sequence-boundary.jsonl").open("ab") as stream:
+            stream.write(compact({"event": event, "monotonic_ns": time.monotonic_ns(), **facts}) + b"\n")
+
+    def log_records(self, f):
+        return [(int(p.stem), strict_loads(p.read_bytes()))
+                for p in sorted((self.audit_path(f) / "log").glob("*.json"), key=lambda p: int(p.stem))]
+
+    def log_kinds(self, f):
+        return [record.get("kind") for _, record in self.log_records(f)]
+
+    def run_ended_record(self, f, run):
+        found = [(n, r) for n, r in self.log_records(f) if r.get("kind") == "run_ended" and r["body"].get("run") == run]
+        return found[0] if len(found) == 1 else (None, None)
+
+    def notice_records(self, f):
+        return [(n, r["body"]) for n, r in self.log_records(f) if r.get("kind") == "notice"]
+
+    @staticmethod
+    def next_tools(reply):
+        """The manager commands a reply's next calls offer, by name."""
+        return sorted({item["argv"][1] for item in (reply or {}).get("next", [])
+                       if isinstance(item, dict) and isinstance(item.get("argv"), list) and len(item["argv"]) > 1})
+
+    def sequence_inputs(self, f, run=None):
+        events = self.harness_events(f)
+        if run is not None:
+            models = [e for e in events if e["event"] == "launch" and e["role"] == "model"]
+            pid = models[run - 1]["pid"] if len(models) >= run else None
+            events = [e for e in events if e.get("pid") == pid]
+        return [e["value"].get("message", {}).get("content") for e in events if e["event"] == "input"]
+
+    def refusal_without_start(self, f, label, reply, reason, launches):
+        """A run refusal before any reservation (INTERFACE 5.7; CONTRACT): nothing changed,
+        no harness was started, no run_started exists and no placement start was used."""
+        self.eq(label + ".reason", (reply or {}).get("reason"), reason)
+        self.eq(label + ".effects", {k: v for k, v in (reply or {}).get("effects", {}).items() if k != "diagnostic"},
+                {"run": "not_started", "answer": "unchanged", "seal": "none", "delivery": "none"})
+        self.eq(label + ".no-harness-launch", self.launch_count(f), launches)
+        self.eq(label + ".no-run-started", "run_started" in self.log_kinds(f), False)
+        self.eq(label + ".no-run-directory", (self.audit_path(f) / "runs" / "1").exists(), False)
+        status = self.cmd(label + ".status", ["status", f["reference"]])
+        self.eq(label + ".runs", status["data"].get("runs", {}).get("count"), 0)
+        self.runtime_allowances(label + ".status", status["data"], 0, f)
+        return status
+
+    # -- 5.7: close winning the start reservation ------------------------------------------
+
+    def runtime_start_races_close(self):
+        if self.variant is None or b"STEWART_TEST_FAULT" not in self.variant.read_bytes():
+            return "--variant-binary with claude-code,fault-injection is required to hold run before its start"
+        original = self.binary
+        self.binary = self.variant
+        try:
+            seen = {arm: self.start_race(arm) for arm in ("close-wins", "close-before-run", "run-wins")}
+        finally:
+            self.binary = original
+        self.eq("start-race.invariance", seen["close-wins"], seen["close-before-run"])
+        self.control("start-race-close-wins", seen["close-wins"] is not None
+                     and seen["close-wins"][:2] == ("refused", "reference_closed") and seen["run-wins"] is None)
+
+    def start_race(self, arm):
+        """close-wins: run is held at log.publish:run_started (Appendix C.1) after its checks;
+        close publishes close_requested and is held after it; run is released and must refuse
+        reference_closed with close and status next (INTERFACE 4.4, 5.7), launching nothing and
+        using no start. close-before-run: the same reply without a race. run-wins: the same
+        hold without close starts the placement, which seals."""
+        label = "start-race-" + arm
+        f = self.fixture(label, scenario="submit")
+        self.accept(f)
+        run_faults, close_faults = f["witness"] / "run-faults", f["witness"] / "close-faults"
+        run_faults.mkdir()
+        close_faults.mkdir()
+        run_env = dict(self.env, STEWART_TEST_FAULT="log.publish:run_started=pause",
+                       STEWART_TEST_FAULT_DIR=str(run_faults))
+        close_env = dict(self.env, STEWART_TEST_FAULT="close.after_requested=pause",
+                         STEWART_TEST_FAULT_DIR=str(close_faults))
+        launches = self.launch_count(f)
+        run = close = None
+        observe = lambda event, **facts: self.boundary(f, event, **facts)
+        try:
+            if arm == "close-before-run":
+                close = self.spawn(f, "close", ["close", f["reference"]], close_env)
+                self.require(label + ".close-held", self.await_fact(
+                    lambda: bool(list(close_faults.glob("close.after_requested*.paused"))), close["process"]))
+                reply = self.cmd(label + ".run", ["run", f["reference"]], outcome="refused")
+            else:
+                run = self.spawn(f, "run", ["run", f["reference"]], run_env)
+                self.require(label + ".run-held", self.await_fact(
+                    lambda: bool(list(run_faults.glob("log.publish*.paused"))), run["process"]),
+                    (f["witness"] / "run.stderr").read_text(errors="replace"))
+                self.eq(label + ".held-before-start", "run_started" in self.log_kinds(f), False)
+                if arm == "close-wins":
+                    close = self.spawn(f, "close", ["close", f["reference"]], close_env)
+                    self.require(label + ".close-held", self.await_fact(
+                        lambda: bool(list(close_faults.glob("close.after_requested*.paused"))), close["process"]))
+                    self.eq(label + ".close-requested-first",
+                            [k for k in self.log_kinds(f) if k in ("close_requested", "run_started")], ["close_requested"])
+                release_fault_pauses(run_faults, observe)
+                reply = self.collect(run)
+                self.eq(label + ".run-exit", run["process"].returncode,
+                        0 if arm == "run-wins" else 3)
+            if arm == "run-wins":
+                self.eq(label + ".ending", (reply or {}).get("data", {}).get("ending"), "sealed")
+                self.groups_absent(f)
+                self.check_delivery(f, self.inspect_runtime(f))
+                return None
+            self.eq(label + ".outcome", (reply or {}).get("outcome"), "refused")
+            self.refusal_without_start(f, label + ".refused", reply, "reference_closed", launches)
+            writer = str(self.binary)
+            self.eq(label + ".next", sorted(item.get("argv") for item in (reply or {}).get("next", [])),
+                    sorted([[writer, "close", f["reference"]], [writer, "status", f["reference"]]]))
+            release_fault_pauses(close_faults, observe)
+            closing = self.collect(close)
+            self.eq(label + ".close", ((closing or {}).get("outcome"), (closing or {}).get("data", {}).get("closure"),
+                                       (closing or {}).get("data", {}).get("before_launch")), ("completed", "complete", True))
+            self.eq(label + ".launches-after-close", self.launch_count(f), launches)
+            return ((reply or {}).get("outcome"), (reply or {}).get("reason"),
+                    {k: v for k, v in (reply or {}).get("effects", {}).items() if k != "diagnostic"},
+                    self.next_tools(reply))
+        finally:
+            release_fault_pauses(run_faults, observe)
+            release_fault_pauses(close_faults, observe)
+            self.stop_leftovers(run, close)
+
+    # -- First stopping condition decides the ending (CONTRACT, wire and process) -----------
+
+    def term_received(self, f):
+        path = f["witness"] / "term-received.jsonl"
+        return path.exists() and path.stat().st_size > 0
+
+    def late_after_ordinary(self, label, late, placements=3):
+        """The harness resists TERM, then ends its second turn after the reminder: the ordinary
+        ending is decided and shutdown waits two seconds before KILL. A later signal or close
+        arrives inside that window, before run_ended."""
+        steps = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
+                 {"op": "await_input", "expect": "reminder"}, {"op": "resist_term"},
+                 {"op": "result", "is_error": False, "checkpoint": 1}, {"op": "hang"}]
+        f = self.sequence_fixture(label, steps, placements=placements)
+        self.accept(f)
+        run = close = None
+        close_faults = f["witness"] / "close-faults"
+        close_faults.mkdir()
+        observe = lambda event, **facts: self.boundary(f, event, **facts)
+        try:
+            run = self.spawn(f, "run", ["run", f["reference"]])
+            self.require(label + ".shutdown-began", self.await_fact(lambda: self.term_received(f), run["process"], 20),
+                         str(f["witness"]))
+            if late == "signal":
+                ended_before = self.run_ended_record(f, 1)[0] is not None
+                run["process"].send_signal(signal.SIGTERM)
+                self.boundary(f, "late-signal-sent", owner_pid=run["process"].pid, run_ended_before=ended_before)
+            else:
+                env = dict(self.env, STEWART_TEST_FAULT="close.after_requested=pause",
+                           STEWART_TEST_FAULT_DIR=str(close_faults))
+                close = self.spawn(f, "close", ["close", f["reference"]], env)
+                self.require(label + ".close-held", self.await_fact(
+                    lambda: bool(list(close_faults.glob("close.after_requested*.paused"))), close["process"]))
+                ended_before = self.run_ended_record(f, 1)[0] is not None
+                self.boundary(f, "late-close-requested", run_ended_before=ended_before)
+            # Construction: the late condition preceded the recorded ending.
+            self.require(label + ".late-before-run-ended", not ended_before and run["process"].poll() is None,
+                         {"run_ended_before": ended_before, "owner_exit": run["process"].poll()})
+            reply = self.collect(run, 30) or {}
+            closing = None
+            if close is not None:
+                release_fault_pauses(close_faults, observe)
+                closing = self.collect(close)
+        finally:
+            release_fault_pauses(close_faults, observe)
+            self.stop_leftovers(run, close)
+        data = (reply or {}).get("data", {})
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause"), run["process"].returncode),
+                ("ended_unsubmitted", None, 0))
+        number, ended = self.run_ended_record(f, 1)
+        self.eq(label + ".run_ended", ((ended or {}).get("body", {}).get("ending"), (ended or {}).get("body", {}).get("cause")),
+                ("ended_unsubmitted", None))
+        self.groups_absent(f)
+        return f, reply, closing
+
+    def violation_near_deadline(self, label, placements, timeout=8):
+        """The harness resists TERM and names an unprefixed tool one second before the earliest
+        possible deadline (the reservation follows the driver's spawn), so the violation is the
+        first condition and shutdown outlasts the deadline."""
+        steps = [{"op": "record"}, {"op": "resist_term"}, {"op": "wait_until", "key": "violation_at"},
+                 {"op": "assistant_tool", "name": "record_account"}, {"op": "hang"}]
+        f = self.sequence_fixture(label, steps, timeout=timeout, placements=placements)
+        self.accept(f)
+        started = time.time_ns()
+        self.change_scenario(f, violation_at=started + (timeout - 1) * 1_000_000_000)
+        run = self.spawn(f, "run", ["run", f["reference"]])
+        try:
+            reply = self.collect(run, timeout + 20) or {}
+        finally:
+            self.stop_leftovers(run)
+        reached = [e for e in self.harness_events(f) if e["event"] == "seq-time-reached"]
+        self.require(label + ".violation-before-deadline", len(reached) == 1
+                     and reached[0]["wall_ns"] < started + timeout * 1_000_000_000, reached)
+        self.require(label + ".shutdown-began", self.term_received(f), str(f["witness"]))
+        self.groups_absent(f)
+        stop = strict_loads((self.audit_path(f) / "runs" / "1" / "runtime-stop.json").read_bytes())
+        self.require(label + ".shutdown-outlasted-deadline", stop.get("elapsed_ms", 0) > stop.get("deadline_ms", 0), stop)
+        data = (reply or {}).get("data", {})
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause"), run["process"].returncode),
+                ("interrupted", "protocol_anomaly", 5))
+        return f, reply
+
+    def runtime_first_condition(self):
+        # A signal after the decided ordinary ending changes nothing and cannot reopen authoring.
+        f, reply, _ = self.late_after_ordinary("first-condition-late-signal", "signal")
+        label = f["label"]
+        self.eq(label + ".authoring", reply.get("data", {}).get("headline", {}).get("authoring"),
+                {"state": "ended", "ended_by": "ordinary_ending"})
+        status = self.cmd(label + ".status", ["status", f["reference"]])
+        self.eq(label + ".condition", status["data"].get("condition"), "ended_unsubmitted")
+        late_kept = reply.get("data", {}).get("ending") == "ended_unsubmitted"
+        if late_kept:
+            launches = self.launch_count(f)
+            again = self.cmd(label + ".run-again", ["run", f["reference"]], outcome="refused")
+            self.eq(label + ".not-reopened", (again.get("reason"), again.get("data", {}).get("ended_by")),
+                    ("authoring_ended", "ordinary_ending"))
+            self.eq(label + ".no-launch", self.launch_count(f), launches)
+        else:
+            self.note(label + ".run-again", "not run: the late signal already replaced the recorded ending")
+        # Control: the signal first, while the placement is live, decides interrupted/signal.
+        steps = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
+                 {"op": "await_input", "expect": "reminder"}, {"op": "marker", "name": "reminder-received"},
+                 {"op": "hang"}]
+        f = self.sequence_fixture("first-condition-signal-first", steps)
+        label = f["label"]
+        self.accept(f)
+        run = self.spawn(f, "run", ["run", f["reference"]])
+        try:
+            self.require(label + ".reminder-received", self.await_fact(
+                lambda: (f["witness"] / "reminder-received").exists(), run["process"], 20), str(f["witness"]))
+            run["process"].send_signal(signal.SIGTERM)
+            reply = self.collect(run, 30)
+        finally:
+            self.stop_leftovers(run)
+        data = (reply or {}).get("data", {})
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause"), run["process"].returncode),
+                ("interrupted", "signal", 5))
+        self.eq(label + ".authoring-open", data.get("headline", {}).get("authoring"), {"state": "open", "ended_by": None})
+        self.groups_absent(f)
+        self.control("first-condition-signal", late_kept and data.get("cause") == "signal")
+        # A violation decided before the deadline keeps its cause when shutdown outlasts it.
+        f, reply = self.violation_near_deadline("first-condition-violation", placements=3)
+        self.eq(f["label"] + ".authoring-open", reply.get("data", {}).get("headline", {}).get("authoring"),
+                {"state": "open", "ended_by": None})
+        kept = reply.get("data", {}).get("cause") == "protocol_anomaly"
+        f, reply = self.violation_near_deadline("first-condition-violation-last", placements=1)
+        self.eq(f["label"] + ".not-limit-reached", reply.get("data", {}).get("ending"), "interrupted")
+        # Control: with no earlier condition the deadline decides.
+        f = self.sequence_fixture("first-condition-deadline", [{"op": "record"}, {"op": "hang"}], timeout=6)
+        self.accept(f)
+        reply = self.cmd(f["label"] + ".run", ["run", f["reference"]], outcome=None, timeout=40)
+        data = reply.get("data", {})
+        self.eq(f["label"] + ".ending", (data.get("ending"), data.get("cause")), ("interrupted", "placement_deadline"))
+        self.groups_absent(f)
+        self.control("first-condition-deadline", kept and data.get("cause") == "placement_deadline")
+
+    def runtime_late_close(self):
+        if self.variant is None or b"STEWART_TEST_FAULT" not in self.variant.read_bytes():
+            return "--variant-binary with claude-code,fault-injection is required to hold close after its request"
+        original = self.binary
+        self.binary = self.variant
+        try:
+            f, reply, closing = self.late_after_ordinary("late-close-after-ordinary", "close")
+            label = f["label"]
+            records = self.log_records(f)
+            order = [r["kind"] for _, r in records if r.get("kind") in ("close_requested", "run_ended", "seal")]
+            self.eq(label + ".log-order", order, ["close_requested", "run_ended", "seal"])
+            # INTERFACE 1.6: the first recorded ending in log order is the close request.
+            self.eq(label + ".authoring", reply.get("data", {}).get("headline", {}).get("authoring"),
+                    {"state": "ended", "ended_by": "close"})
+            self.eq(label + ".close", ((closing or {}).get("outcome"), (closing or {}).get("effects", {}).get("seal"),
+                                       ((closing or {}).get("data", {}).get("seal") or {}).get("actor")),
+                    ("completed", "recorded", "manager"))
+            kept = reply.get("data", {}).get("ending") == "ended_unsubmitted"
+            # Control: the close request first, while the placement is live.
+            steps = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
+                     {"op": "await_input", "expect": "reminder"}, {"op": "marker", "name": "reminder-received"},
+                     {"op": "hang"}]
+            f = self.sequence_fixture("late-close-control", steps)
+            label = f["label"]
+            self.accept(f)
+            faults = f["witness"] / "close-faults"
+            faults.mkdir()
+            observe = lambda event, **facts: self.boundary(f, event, **facts)
+            run = close = None
+            try:
+                run = self.spawn(f, "run", ["run", f["reference"]])
+                self.require(label + ".reminder-received", self.await_fact(
+                    lambda: (f["witness"] / "reminder-received").exists(), run["process"], 20), str(f["witness"]))
+                close = self.spawn(f, "close", ["close", f["reference"]], dict(
+                    self.env, STEWART_TEST_FAULT="close.after_requested=pause", STEWART_TEST_FAULT_DIR=str(faults)))
+                self.require(label + ".close-held", self.await_fact(
+                    lambda: bool(list(faults.glob("close.after_requested*.paused"))), close["process"]))
+                reply = self.collect(run, 30)
+                release_fault_pauses(faults, observe)
+                self.collect(close)
+            finally:
+                release_fault_pauses(faults, observe)
+                self.stop_leftovers(run, close)
+            data = (reply or {}).get("data", {})
+            self.eq(label + ".ending", (data.get("ending"), run["process"].returncode), ("stopped_by_close", 0))
+            self.groups_absent(f)
+            self.control("late-close-keeps-ordinary-ending", kept and data.get("ending") == "stopped_by_close")
+        finally:
+            self.binary = original
+
+    # -- The final permitted placement's interruption ends authoring as limit ----------------
+
+    def final_interruption(self, label, placements, scenario, **changes):
+        f = self.fixture(label, scenario=scenario, timeout=30, placements=placements)
+        if changes:
+            self.change_scenario(f, **changes)
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]], outcome="completed")
+        self.groups_absent(f)
+        data = reply.get("data", {})
+        # A harness exit and an unprefixed tool are stopping conditions with no other cause
+        # (CONTRACT, wire and process).
+        self.eq(label + ".interrupted", (data.get("ending"), data.get("cause")), ("interrupted", "protocol_anomaly"))
+        status = self.cmd(label + ".status", ["status", f["reference"]])
+        sdata = status["data"]
+        last = sdata.get("runs", {}).get("last") or {}
+        self.eq(label + ".status-keeps-ending", (sdata.get("condition"), last.get("ending"), last.get("cause")),
+                ("interrupted", "interrupted", data.get("cause")))
+        return f, reply, status
+
+    def runtime_final_interruption(self):
+        launches_ok = []
+        for label, scenario, changes in (("final-interruption-exit", "sequence",
+                                          {"steps": [{"op": "record"}, {"op": "exit", "code": 7}]}),
+                                         ("final-interruption-violation", "tool-name",
+                                          {"assistant_tool": "record_account"})):
+            f, reply, status = self.final_interruption(label, 1, scenario, **changes)
+            data, sdata = reply.get("data", {}), status["data"]
+            limit = {"state": "ended", "ended_by": "limit"}
+            self.eq(label + ".run-authoring", data.get("headline", {}).get("authoring"), limit)
+            self.eq(label + ".status-authoring", sdata.get("headline", {}).get("authoring"), limit)
+            self.eq(label + ".run-next", self.next_tools(reply), ["close"])
+            self.eq(label + ".status-next", self.next_tools(status), ["close"])
+            self.summary_facts(label + ".summary", sdata.get("summary"), f, 1)
+            number, _ = self.run_ended_record(f, 1)
+            launches = self.launch_count(f)
+            again = self.cmd(label + ".run-again", ["run", f["reference"]], outcome="refused")
+            self.eq(label + ".refusal", (again.get("reason"), again.get("data")),
+                    ("authoring_ended", {"ended_by": "limit", "record": "log/%s.json" % number}))
+            self.eq(label + ".refusal-next", self.next_tools(again), ["close", "status"])
+            self.eq(label + ".refusal-effects", {k: v for k, v in again.get("effects", {}).items() if k != "diagnostic"},
+                    {"run": "ended", "answer": "unchanged", "seal": "none", "delivery": "none"})
+            self.eq(label + ".no-launch", self.launch_count(f), launches)
+            launches_ok.append(again.get("reason") == "authoring_ended" and again.get("data", {}).get("ended_by") == "limit")
+        # Differing: a start remains, so the same interruption leaves authoring open.
+        f, reply, status = self.final_interruption("final-interruption-slots-remain", 2, "sequence",
+                                                   steps=[{"op": "record"}, {"op": "exit", "code": 7}])
+        label = f["label"]
+        self.eq(label + ".authoring-open", status["data"].get("headline", {}).get("authoring"),
+                {"state": "open", "ended_by": None})
+        self.eq(label + ".status-next", self.next_tools(status), ["close", "run"])
+        self.change_scenario(f, mode="submit", skip_record=True, session=label + "-session-2")
+        second = self.cmd(label + ".run-2", ["run", f["reference"]])
+        self.eq(label + ".continued", second.get("data", {}).get("ending"), "sealed")
+        self.groups_absent(f, run=2)
+        self.control("final-interruption-ends-authoring", all(launches_ok)
+                     and second.get("data", {}).get("ending") == "sealed")
+        # The final placement's process is gone without run_ended: run reconciles it and then
+        # refuses authoring_ended at its start reservation, naming that record (CONTRACT,
+        # limits; INTERFACE 5.7, 6.7). Differing: with a start left it reconciles and starts.
+        refused = None
+        for label, placements in (("final-interruption-process-gone", 1), ("process-gone-slots-remain", 2)):
+            f = self.fixture(label, scenario="hang", placements=placements)
+            self.accept(f)
+            self.kill_run_owner(f)
+            self.require(label + ".groups-gone", not self.groups_absent(f, stop_record=False))
+            self.eq(label + ".no-run-ended-yet", self.run_ended_record(f, 1)[0], None)
+            launches = self.launch_count(f)
+            if placements == 1:
+                reply = self.cmd(label + ".run", ["run", f["reference"]], outcome="refused")
+                number, ended = self.run_ended_record(f, 1)
+                body = (ended or {}).get("body", {})
+                self.eq(label + ".reconciled", (body.get("ending"), body.get("cause"), body.get("recorded_by")),
+                        ("interrupted", "process_gone", "run"))
+                self.eq(label + ".refusal", (reply.get("reason"), reply.get("data")),
+                        ("authoring_ended", {"ended_by": "limit", "record": "log/%s.json" % number}))
+                self.eq(label + ".refusal-next", self.next_tools(reply), ["close", "status"])
+                self.eq(label + ".refusal-effects",
+                        {k: v for k, v in reply.get("effects", {}).items() if k != "diagnostic"},
+                        {"run": "ended", "answer": "unchanged", "seal": "none", "delivery": "none"})
+                self.eq(label + ".no-launch", self.launch_count(f), launches)
+                self.eq(label + ".one-start", self.log_kinds(f).count("run_started"), 1)
+                status = self.cmd(label + ".status", ["status", f["reference"]])
+                self.eq(label + ".status-authoring", status["data"].get("headline", {}).get("authoring"),
+                        {"state": "ended", "ended_by": "limit"})
+                self.eq(label + ".status-next", self.next_tools(status), ["close"])
+                refused = reply.get("reason") == "authoring_ended" and (reply.get("data") or {}).get("ended_by") == "limit"
+            else:
+                self.change_scenario(f, mode="submit", session=label + "-session-2")
+                reply = self.cmd(label + ".run", ["run", f["reference"]])
+                body = (self.run_ended_record(f, 1)[1] or {}).get("body", {})
+                self.eq(label + ".reconciled", (body.get("ending"), body.get("cause"), body.get("recorded_by")),
+                        ("interrupted", "process_gone", "run"))
+                self.eq(label + ".continued", reply.get("data", {}).get("ending"), "sealed")
+                self.groups_absent(f, run=2)
+                self.control("final-process-gone-refused-at-reservation",
+                             refused and reply.get("data", {}).get("ending") == "sealed")
+
+    # -- Advice while stopping is unknown ------------------------------------------------------
+
+    def runtime_unknown_stop_advice(self):
+        f = self.fixture("unknown-stop-advice", scenario="hang")
+        label = f["label"]
+        self.accept(f)
+        self.kill_run_owner(f)
+        self.require(label + ".original-groups-gone", not self.groups_absent(f, stop_record=False))
+        process_record = self.audit_path(f) / "runs" / "1" / "process-model.json"
+        original = process_record.read_bytes()
+        (f["witness"] / "original-process-model.json").write_bytes(original)
+        stop_record = self.audit_path(f) / "runs" / "1" / "runtime-stop.json"
+        if stop_record.exists():
+            (f["witness"] / "original-runtime-stop.json").write_bytes(stop_record.read_bytes())
+            stop_record.unlink()
+        # The same controlled damage as runtime-unknown-stop: the recorded group names a live
+        # group this driver owns, which recovery must neither treat as stopped nor signal.
+        unrelated = subprocess.Popen(["/bin/sleep", "60"], start_new_session=True)
+        try:
+            changed = strict_loads(original)
+            changed["group"] = unrelated.pid
+            process_record.write_bytes(compact(changed) + b"\n")
+            self.eq(label + ".unrelated-present", group_observation(unrelated.pid), "present")
+            status = self.cmd(label + ".status-unknown", ["status", f["reference"]])
+            self.eq(label + ".status-next-unknown", self.next_tools(status), ["status"])
+            summary = status["data"].get("summary", "")
+            self.check(label + ".summary-names-placement",
+                       re.search(r"\b(?:placement|run)\s+1\b", summary, re.I) is not None, summary)
+            refused = self.cmd(label + ".run-unknown", ["run", f["reference"]], outcome="refused")
+            self.eq(label + ".run-refusal", refused.get("reason"), "runtime_stop_unknown")
+            self.eq(label + ".run-next-unknown", self.next_tools(refused), ["status"])
+            unknown_advice = self.next_tools(status) == ["status"] and self.next_tools(refused) == ["status"]
+        finally:
+            if unrelated.poll() is None:
+                unrelated.terminate()
+            unrelated.wait(timeout=5)
+        self.require(label + ".unrelated-absent", self.await_fact(lambda: group_observation(unrelated.pid) == "absent",
+                                                                  seconds=5))
+        # Differing: once the recorded groups are observed absent the ordinary advice applies.
+        status = self.cmd(label + ".status-known", ["status", f["reference"]])
+        self.eq(label + ".status-next-known", self.next_tools(status), ["close", "run"])
+        self.control("unknown-stop-advice", unknown_advice and self.next_tools(status) == ["close", "run"])
+        self.change_scenario(f, mode="submit", session=label + "-session-2")
+        continued = self.cmd(label + ".run-known", ["run", f["reference"]])
+        self.eq(label + ".continued", continued.get("data", {}).get("ending"), "sealed")
+        self.groups_absent(f, run=2)
+
+    # -- Launch-directory checks before the reservation -----------------------------------------
+
+    def launch_refused(self, f, label):
+        launches = self.launch_count(f)
+        log_before = snapshot(self.audit_path(f) / "log")
+        reply = self.cmd(label + ".run", ["run", f["reference"]], outcome="refused")
+        self.refusal_without_start(f, label, reply, "runtime_profile_invalid", launches)
+        self.eq(label + ".log-unchanged", snapshot(self.audit_path(f) / "log"), log_before)
+        return reply.get("reason") == "runtime_profile_invalid" and self.launch_count(f) == launches
+
+    def runtime_launch_directory(self):
+        fired = []
+        # An instruction entry in the temporary directory or an ancestor refuses before the
+        # reservation; removing it lets the same audit start (CONTRACT, wire and process).
+        for label, up, name, kind in (("launch-dir-git-self", 0, ".git", "dir"),
+                                      ("launch-dir-claude-md-parent", 1, "CLAUDE.md", "file"),
+                                      ("launch-dir-agents-md-root", 2, "AGENTS.md", "file"),
+                                      ("launch-dir-dot-claude-parent", 1, ".claude", "dir"),
+                                      ("launch-dir-git-file-root", 2, ".git", "file")):
+            f = self.fixture(label, scenario="submit", placements=2)
+            self.accept(f)
+            temporary = Path(f["launch"]["temporary_directory"])
+            entry = (temporary.parents[up - 1] if up else temporary) / name
+            if kind == "dir":
+                entry.mkdir()
+            else:
+                entry.write_bytes(b"gitdir: /nonexistent\n" if name == ".git" else b"# Instructions.\n")
+            (f["witness"] / "planted-entry.json").write_bytes(compact({"path": str(entry), "kind": kind}) + b"\n")
+            refused = self.launch_refused(f, label + ".planted")
+            entry.rmdir() if kind == "dir" else entry.unlink()
+            number = self.cmd(label + ".before-clean", ["status", f["reference"]])["data"]["runs"]["count"] + 1
+            reply = self.cmd(label + ".clean-run", ["run", f["reference"]])
+            self.eq(label + ".clean-run-ending", reply.get("data", {}).get("ending"), "sealed")
+            self.groups_absent(f, run=number)
+            fired.append(refused and reply.get("data", {}).get("ending") == "sealed")
+        # Invariance: near-miss names are not instruction entries.
+        f = self.fixture("launch-dir-near-miss", scenario="submit", placements=2)
+        self.accept(f)
+        temporary = Path(f["launch"]["temporary_directory"])
+        (temporary / ".gitignore").write_bytes(b"*\n")
+        (temporary.parent / "CLAUDE.md.orig").write_bytes(b"# Not instructions.\n")
+        (temporary.parents[1] / ".claude-old").mkdir()
+        (temporary.parents[1] / "AGENTS").write_bytes(b"not instructions\n")
+        reply = self.cmd("launch-dir-near-miss.run", ["run", f["reference"]])
+        self.eq("launch-dir-near-miss.ending", reply.get("data", {}).get("ending"), "sealed")
+        self.groups_absent(f)
+        # A temporary directory that is or lies within the archive or the submission folder.
+        for label, place in (("launch-dir-archive", lambda root, folder, archive: archive),
+                             ("launch-dir-within-archive", lambda root, folder, archive: archive / "audits"),
+                             ("launch-dir-submission", lambda root, folder, archive: folder),
+                             ("launch-dir-within-submission", lambda root, folder, archive: folder / "materials")):
+            f = self.fixture(label, scenario="submit", placements=2, temporary=place)
+            self.accept(f)
+            fired.append(self.launch_refused(f, label))
+        # The writer's directory: a byte-identical writer in a directory the profile names.
+        writer_dir = self.work / "launch-dir-writer-bin"
+        writer_dir.mkdir()
+        copy_path = writer_dir / "stewart"
+        copy_path.write_bytes(self.binary.read_bytes())
+        copy_path.chmod(0o700)
+        original = self.binary
+        self.binary = copy_path
+        try:
+            f = self.fixture("launch-dir-writer", binary=copy_path, scenario="submit", placements=2,
+                             temporary=lambda root, folder, archive: writer_dir)
+            self.accept(f)
+            fired.append(self.launch_refused(f, "launch-dir-writer"))
+        finally:
+            self.binary = original
+        self.control("launch-directory-refused-before-reservation", all(fired) and len(fired) == 10)
+
+    # -- Notice transmission and request positions (CONTRACT, accounting record) ---------------
+
+    def notice_expectations(self, f, run, label, *, types, sent, timeout):
+        """Each notice record of the placement in log order: its type, request position from 1,
+        text and, for the near-limit notice, remaining values; run_ended.notices lists them
+        with the expected transmission. Returns the records' names."""
+        records = [(n, b) for n, b in self.notice_records(f) if b.get("run") == run]
+        self.eq(label + ".notice-types", [b.get("type") for _, b in records], types)
+        self.eq(label + ".notice-requests", [b.get("request") for _, b in records], list(range(1, len(records) + 1)))
+        for n, body in records:
+            if body.get("type") == "reminder":
+                self.eq(label + ".reminder-record", (body.get("text"), body.get("remaining")), (REMINDER, None))
+            else:
+                values = near_limit_values(body.get("text"))
+                self.check(label + ".near-limit-text", values is not None, body.get("text"))
+                values = values or {}
+                self.eq(label + ".near-limit-remaining", body.get("remaining"), {"runtime": "claude-code/1", **values})
+                self.eq(label + ".near-limit-placements", values.get("placements"), f["limits"]["max_placements"] - run)
+                # Due only at or below a fifth of the placement timeout, rounded down.
+                self.check(label + ".near-limit-due", 0 <= values.get("seconds", -1) <= timeout // 5, values)
+        _, ended = self.run_ended_record(f, run)
+        self.eq(label + ".run_ended-notices", (ended or {}).get("body", {}).get("notices"),
+                [{"type": b.get("type"), "record": "log/%d.json" % n, "sent": state}
+                 for (n, b), state in zip(records, sent)])
+        return records
+
+    def runtime_notice_transmission(self):
+        timeout = 25
+        # Reminder first, each notice followed by a compaction boundary: every notice is sent
+        # when claimed, before the harness emits anything more, and none is resent.
+        steps = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
+                 {"op": "await_input", "expect": "reminder"}, {"op": "compact", "serial": 1},
+                 {"op": "await_input", "expect": "compacted"},
+                 {"op": "await_input", "expect": "near_limit", "timeout": 30}, {"op": "compact", "serial": 2},
+                 {"op": "await_input", "expect": "compacted"}, {"op": "submit"}]
+        f = self.sequence_fixture("notice-order-reminder-first", steps, timeout=timeout)
+        label = f["label"]
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]], timeout=60)
+        self.groups_absent(f)
+        self.harness_clean(f)
+        self.eq(label + ".ending", reply.get("data", {}).get("ending"), "sealed")
+        inputs = self.sequence_inputs(f)
+        self.eq(label + ".input-kinds", [input_kind(c) for c in inputs[1:]],
+                ["reminder", "compacted", "near_limit", "compacted"])
+        self.eq(label + ".no-timeouts", [e for e in self.harness_events(f) if e["event"] == "seq-input-timeout"], [])
+        self.notice_expectations(f, 1, label, types=["reminder", "near_limit"], sent=["sent", "sent"], timeout=timeout)
+        self.eq(label + ".reply-notices", reply.get("data", {}).get("notices"),
+                [{"type": "reminder", "sent": "sent"}, {"type": "near_limit", "sent": "sent"}])
+        self.eq(label + ".input-capture", self.captured_channel(f, "input").hex(), b"".join(
+            bytes.fromhex(e["raw_hex"]) for e in self.harness_events(f) if e["event"] == "input").hex())
+        sent_first = reply.get("data", {}).get("notices")
+        # Near-limit first, then the reminder; then the owner dies. Recovery has no
+        # transmission observation, so every claimed notice of that placement is unknown.
+        steps = [{"op": "record"}, {"op": "await_input", "expect": "near_limit", "timeout": 30},
+                 {"op": "result", "is_error": False, "checkpoint": 0}, {"op": "await_input", "expect": "reminder"},
+                 {"op": "marker", "name": "ready.json"}, {"op": "hang"}]
+        f = self.sequence_fixture("notice-order-near-limit-first", steps, timeout=timeout)
+        label = f["label"]
+        self.accept(f)
+        self.kill_run_owner_after(f, 40)
+        self.require(label + ".groups-gone", not self.groups_absent(f, stop_record=False))
+        self.change_scenario(f, mode="submit", skip_record=True, session=label + "-session-2")
+        second = self.cmd(label + ".recover", ["run", f["reference"]])
+        self.eq(label + ".recovered-ending", second.get("data", {}).get("ending"), "sealed")
+        self.groups_absent(f, run=2)
+        number, ended = self.run_ended_record(f, 1)
+        body = (ended or {}).get("body", {})
+        self.eq(label + ".reconciled", (body.get("ending"), body.get("cause"), body.get("recorded_by")),
+                ("interrupted", "process_gone", "run"))
+        self.notice_expectations(f, 1, label, types=["near_limit", "reminder"], sent=["unknown", "unknown"],
+                                 timeout=timeout)
+        inputs = self.sequence_inputs(f, run=2)
+        self.eq(label + ".continuation-inputs", [input_kind(c) for c in inputs[1:]], ["continuation"])
+        # Never due by placements: the final placement with a long timeout gets no notice.
+        steps = [{"op": "record"}, {"op": "await_input", "expect": "near_limit", "timeout": 4, "on_timeout": "continue"},
+                 {"op": "submit"}]
+        f = self.sequence_fixture("notice-final-placement-long", steps, timeout=200, placements=1)
+        label = f["label"]
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]])
+        self.groups_absent(f)
+        self.eq(label + ".ending", reply.get("data", {}).get("ending"), "sealed")
+        self.eq(label + ".no-notice", ([input_kind(c) for c in self.sequence_inputs(f)[1:]],
+                                       self.notice_records(f), reply.get("data", {}).get("notices")), ([], [], []))
+        self.control("near-limit-due-by-time-not-placements",
+                      sent_first == [{"type": "reminder", "sent": "sent"}, {"type": "near_limit", "sent": "sent"}]
+                      and not self.notice_records(f))
+        # A captured frame whose write cannot complete differs from one written in full.
+        self.control("notice-write-incomplete-differs", self.notice_write_incomplete() != "sent"
+                     and sent_first[0]["sent"] == "sent")
+
+    def kill_run_owner_after(self, f, seconds):
+        """Start run, wait for the harness's ready.json marker, then SIGKILL the owner."""
+        run = self.spawn(f, "owner", ["run", f["reference"]])
+        try:
+            self.require(f["label"] + ".ready-before-owner-kill", self.await_fact(
+                lambda: (f["witness"] / "ready.json").exists(), run["process"], seconds), str(f["witness"]))
+            run["process"].kill()
+            run["process"].wait(timeout=5)
+            self.boundary(f, "owner-killed", pid=run["process"].pid, exit=run["process"].returncode)
+        finally:
+            self.stop_leftovers(run)
+            self.collect(run, 5)
+
+    def captured_reminder(self, f, run=1):
+        """Whether the placement's input capture holds the reminder as a complete frame."""
+        return REMINDER in input_frames(self.captured_channel(f, "input", run))
+
+    def runtime_notice_not_sent(self):
+        if self.variant is None or b"STEWART_TEST_FAULT" not in self.variant.read_bytes():
+            return "--variant-binary with claude-code,fault-injection is required for the notice fault point"
+        original = self.binary
+        self.binary = self.variant
+        try:
+            self.notice_not_sent()
+        finally:
+            self.binary = original
+
+    def notice_not_sent(self):
+        """log.dirsync:notice=eio links the reminder's claim and fails its directory sync: an
+        archive-write failure stops the placement before the frame is captured, so the claim
+        is listed not_sent and no complete reminder frame is in the input capture."""
+        steps = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
+                 {"op": "await_input", "expect": "reminder", "timeout": 8}, {"op": "hang"}]
+        f = self.sequence_fixture("notice-not-sent", steps, timeout=30)
+        label = f["label"]
+        self.accept(f)
+        faults = f["witness"] / "faults"
+        faults.mkdir()
+        env = dict(self.env, STEWART_TEST_FAULT="log.dirsync:notice=eio", STEWART_TEST_FAULT_DIR=str(faults))
+        reply = self.cmd(label + ".run", ["run", f["reference"]], outcome=None, env=env, timeout=60)
+        self.groups_absent(f)
+        data = reply.get("data", {})
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause")), ("interrupted", "archive_write_failed"))
+        self.eq(label + ".not-captured", self.captured_reminder(f), False)
+        self.notice_expectations(f, 1, label, types=["reminder"], sent=["not_sent"], timeout=30)
+        self.eq(label + ".reply-notices", data.get("notices"), [{"type": "reminder", "sent": "not_sent"}])
+        self.control("notice-not-sent", data.get("notices") == [{"type": "reminder", "sent": "not_sent"}])
+
+    def notice_write_incomplete(self):
+        """The harness stops reading its input, then exposes as many compaction boundaries as
+        their pinned notices fit in the input pipe, then ends a turn. The reminder is claimed
+        when its frame no longer fits, so no write of it can complete: a complete capture is
+        listed unknown, a frame never captured not_sent (CONTRACT, accounting record). The
+        unread bytes before it, from the capture, show it could not fit. This assumes no other
+        holder of the pipe's read side reads the harness's input."""
+        timeout = 12
+        frame = compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
+                         "message": {"role": "user", "content": COMPACTED}}) + b"\n"
+        steps = [{"op": "record"}, {"op": "stop_reading"}, {"op": "fill_input", "frame_bytes": len(frame)},
+                 {"op": "result", "is_error": False, "checkpoint": 0}, {"op": "marker", "name": "result-emitted"},
+                 {"op": "hang"}]
+        f = self.sequence_fixture("notice-write-incomplete", steps, timeout=timeout)
+        label = f["label"]
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]], outcome=None, timeout=timeout + 30)
+        self.groups_absent(f)
+        stopped = [e for e in self.harness_events(f) if e["event"] == "seq-stopped-reading"]
+        self.require(label + ".stopped-reading", len(stopped) == 1 and not stopped[0]["reader_alive"], stopped)
+        self.require(label + ".result-emitted", (f["witness"] / "result-emitted").exists(),
+                     "the harness could not emit its result; its output was not read")
+        claims = self.notice_records(f)
+        self.require(label + ".reminder-claimed", [b.get("type") for _, b in claims] == ["reminder"],
+                     "no reminder claim while input was blocked; the incomplete-write path was not exercised")
+        captured = self.captured_reminder(f)
+        if captured:
+            # A write can be incomplete only if the unread input before the reminder exceeds
+            # the pipe's capacity: Linux reports it; 65,536 bytes is the macOS pipe bound.
+            stream = self.captured_channel(f, "input")
+            frame = compact({"type": "user", "session_id": "", "parent_tool_use_id": None,
+                             "message": {"role": "user", "content": REMINDER}}) + b"\n"
+            offsets = [i for i, content in enumerate(input_frames(stream)) if content == REMINDER]
+            before = sum(len(line) + 1 for line in stream.split(b"\n")[:offsets[0]]) if offsets else 0
+            read = sum(len(bytes.fromhex(e["raw_hex"])) for e in self.harness_events(f) if e["event"] == "input")
+            filled = [e for e in self.harness_events(f) if e["event"] == "seq-filled"]
+            capacity = filled[0]["capacity"] if filled else 65536
+            self.boundary(f, "input-pipe", unread_before_reminder=before - read, capacity=capacity,
+                          reminder_frame_bytes=len(frame))
+            self.require(label + ".input-pipe-full", before - read <= capacity < before - read + len(frame),
+                         {"unread_before_reminder": before - read, "capacity": capacity, "reminder": len(frame)})
+        expected = "unknown" if captured else "not_sent"
+        if not captured:
+            self.note(label + ".path", "the reminder frame was never captured; not_sent applies and the "
+                      "incomplete-write path was not reached")
+        self.notice_expectations(f, 1, label, types=["reminder"], sent=[expected], timeout=timeout)
+        self.eq(label + ".reply-notices", (reply or {}).get("data", {}).get("notices"),
+                [{"type": "reminder", "sent": expected}])
+        return expected
+
+    # -- Result rules (CONTRACT, runtime texts) -------------------------------------------------
+
+    def runtime_result_rules(self):
+        # is_error true decides interruption whatever the subtype.
+        steps = [{"op": "record"}, {"op": "result", "is_error": True, "subtype": "success", "checkpoint": 0},
+                 {"op": "await_input", "expect": "reminder", "timeout": 4, "on_timeout": "continue"}, {"op": "hang"}]
+        f = self.sequence_fixture("result-error", steps, timeout=20)
+        label = f["label"]
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]], outcome=None, timeout=60)
+        self.groups_absent(f)
+        data = reply.get("data", {})
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause")), ("interrupted", "protocol_anomaly"))
+        self.eq(label + ".no-reminder", ([input_kind(c) for c in self.sequence_inputs(f)[1:]], self.notice_records(f),
+                                         data.get("notices")), ([], [], []))
+        # A well-formed error result is the session's latest reported checkpoint, but not a
+        # valid terminal one: the interval it ends stays unknown (CONTRACT, wire and process).
+        usage = self.usage_of(self.cmd(label + ".status", ["status", f["reference"]]))
+        self.eq(label + ".reported-not-terminal", (usage.get("reported_main_loop"), usage.get("unknown_intervals")),
+                (dict(CHECKPOINTS[0]["usage"], harness_turns=CHECKPOINTS[0]["num_turns"]), 1))
+        errored = data.get("cause") == "protocol_anomaly"
+        # Differing: an ordinary ending whose last result has is_error false is a valid terminal
+        # checkpoint, so no interval is unknown.
+        steps = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
+                 {"op": "await_input", "expect": "reminder"}, {"op": "result", "is_error": False, "checkpoint": 1},
+                 {"op": "hang"}]
+        f = self.sequence_fixture("result-terminal-valid", steps, timeout=60)
+        self.accept(f)
+        reply = self.cmd(f["label"] + ".run", ["run", f["reference"]])
+        self.groups_absent(f)
+        self.eq(f["label"] + ".ending", reply.get("data", {}).get("ending"), "ended_unsubmitted")
+        usage = self.usage_of(self.cmd(f["label"] + ".status", ["status", f["reference"]]))
+        self.eq(f["label"] + ".terminal", (usage.get("reported_main_loop"), usage.get("unknown_intervals")),
+                (dict(CHECKPOINTS[1]["usage"], harness_turns=CHECKPOINTS[1]["num_turns"]), 0))
+        # Differing: is_error false with an error subtype is an ordinary turn end.
+        steps = [{"op": "record"}, {"op": "result", "is_error": False, "subtype": "error_max_turns", "checkpoint": 0},
+                 {"op": "await_input", "expect": "reminder"}, {"op": "submit"}]
+        f = self.sequence_fixture("result-subtype-ignored", steps, timeout=60)
+        label = f["label"]
+        self.accept(f)
+        reply = self.cmd(label + ".run", ["run", f["reference"]])
+        self.groups_absent(f)
+        data = reply.get("data", {})
+        self.eq(label + ".ending", data.get("ending"), "sealed")
+        self.eq(label + ".reminder", ([input_kind(c) for c in self.sequence_inputs(f)[1:]], data.get("notices")),
+                (["reminder"], [{"type": "reminder", "sent": "sent"}]))
+        usage = self.usage_of(self.cmd(label + ".status", ["status", f["reference"]]))
+        self.eq(label + ".checkpoint", usage.get("reported_main_loop"),
+                dict(CHECKPOINTS[0]["usage"], harness_turns=CHECKPOINTS[0]["num_turns"]))
+        self.control("result-is-error-decides", errored and data.get("ending") == "sealed")
+
+    def runtime_result_during_call(self):
+        if self.variant is None or b"STEWART_TEST_FAULT" not in self.variant.read_bytes():
+            return "--variant-binary with claude-code,fault-injection is required to hold a call in execution"
+        original = self.binary
+        self.binary = self.variant
+        try:
+            self.result_during_call()
+        finally:
+            self.binary = original
+
+    def result_during_call(self):
+        """A record call is held at log.publish:entry while it executes; the harness then
+        emits an ordinary result. That stops the placement interrupted, protocol_anomaly; the
+        held call is refused placement_stopped at its link and no reminder is claimed."""
+        steps = [{"op": "call_begin", "label": "held", "tool": "record_account", "arguments": {"text": ACCOUNT}},
+                 {"op": "wait_file", "name": "emit-result"},
+                 {"op": "result", "is_error": False, "checkpoint": 0}, {"op": "marker", "name": "result-emitted"},
+                 {"op": "hang"}]
+        f = self.sequence_fixture("result-during-call", steps, timeout=60)
+        label = f["label"]
+        self.accept(f)
+        faults = f["witness"] / "faults"
+        faults.mkdir()
+        env = dict(self.env, STEWART_TEST_FAULT="log.publish:entry=pause", STEWART_TEST_FAULT_DIR=str(faults))
+        observe = lambda event, **facts: self.boundary(f, event, **facts)
+        run = self.spawn(f, "run", ["run", f["reference"]], env)
+        try:
+            self.require(label + ".call-held", self.await_fact(
+                lambda: bool(list(faults.glob("log.publish*.paused"))), run["process"], 20),
+                (f["witness"] / "run.stderr").read_text(errors="replace"))
+            sent = [e for e in self.harness_events(f) if e["event"] == "seq-call-sent"]
+            self.require(label + ".call-sent", len(sent) == 1, sent)
+            group = sent[0]["group"]
+            (f["witness"] / "emit-result").write_bytes(b"")
+            self.require(label + ".result-emitted", self.await_fact(
+                lambda: (f["witness"] / "result-emitted").exists(), run["process"], 10), str(f["witness"]))
+            stopped = self.await_fact(lambda: group_observation(group) == "absent", run["process"], 10)
+            held = all(not p.with_suffix(".go").exists() for p in faults.glob("*.paused"))
+            self.boundary(f, "stopping-before-release", group_absent=stopped, owner_alive=run["process"].poll() is None,
+                          still_held=held)
+            self.check(label + ".stopped-while-call-executes", stopped and held and run["process"].poll() is None,
+                       {"group_absent": stopped, "held": held, "owner_exit": run["process"].poll()})
+            release_fault_pauses(faults, observe)
+            reply = self.collect(run, 30)
+        finally:
+            release_fault_pauses(faults, observe)
+            self.stop_leftovers(run)
+        self.groups_absent(f)
+        data = (reply or {}).get("data", {})
+        self.eq(label + ".ending", (data.get("ending"), data.get("cause")), ("interrupted", "protocol_anomaly"))
+        self.eq(label + ".no-reminder", (self.notice_records(f), data.get("notices")), ([], []))
+        self.eq(label + ".no-entry", "entry" in self.log_kinds(f), False)
+        call_id = sent[0]["id"]
+        rundir = self.audit_path(f) / "runs" / "1"
+        calls = [p for p in rundir.glob("call-*.json") if transport_loads(p.read_bytes()).get("id") == call_id]
+        self.require(label + ".held-call-retained", len(calls) == 1, [p.name for p in calls])
+        result = strict_loads((rundir / calls[0].name.replace("call-", "result-")).read_bytes())["body"]
+        core = strict_loads(result["content"][0]["text"].encode())
+        self.eq(label + ".held-call-refused", (core.get("outcome"), core.get("reason"), result.get("log_record")),
+                ("refused", "placement_stopped", None))
+        self.control("result-during-call-stops", data.get("cause") == "protocol_anomaly"
+                     and core.get("reason") == "placement_stopped")
 
     def run(self):
         for name, _ in CASES:
@@ -4477,8 +5594,11 @@ def synthetic_harness(scenario_path, environment_path, argv):
                     return 9
                 page = 0
                 while True:
-                    value = frame("tools/call", {"name": name, "arguments": arguments},
-                                  identity=step.get("id") if page == 0 else None)
+                    if step.get("method"):
+                        value = frame(step["method"], step.get("params"), identity=step.get("id"))
+                    else:
+                        value = frame("tools/call", {"name": name, "arguments": arguments},
+                                      identity=step.get("id") if page == 0 else None)
                     send_frames([value])
                     try:
                         response = receive(value["id"])
@@ -4498,6 +5618,118 @@ def synthetic_harness(scenario_path, environment_path, argv):
                 event("deliberate-interruption")
                 return 7
             raise RuntimeError("a script without a final submit must end by exit")
+
+        if scenario["mode"] == "sequence":
+            # A specification-derived schedule of harness events from the outer driver
+            # (CLAUDE-CODE.md, "Sequences"). The harness records what it emitted and
+            # received; every expectation is in the outer case.
+            pending = {}
+            for index, step in enumerate(scenario["steps"]):
+                op = step["op"]
+                event("seq-step", index=index, op=op)
+                if op == "record":
+                    event("seq-record", reply=tool("record_account", {"text": step.get("text", scenario["account"])}))
+                elif op == "result":
+                    value = {"type": "result", "subtype": step.get("subtype", "success"),
+                             "is_error": step["is_error"], "session_id": scenario["session"]}
+                    if step.get("checkpoint") is not None:
+                        checkpoint = CHECKPOINTS[step["checkpoint"]]
+                        value.update(num_turns=checkpoint["num_turns"], usage=checkpoint["usage"])
+                    emit(value)
+                elif op == "await_input":
+                    deadline = time.monotonic() + step.get("timeout", 10)
+                    received = None
+                    while received is None:
+                        try:
+                            value = incoming.get(timeout=max(0.01, deadline - time.monotonic()))
+                        except queue.Empty:
+                            break
+                        kind = input_kind(value.get("message", {}).get("content"))
+                        event("seq-input", expect=step["expect"], classified=kind)
+                        if kind == step["expect"]:
+                            received = value
+                    if received is None:
+                        event("seq-input-timeout", expect=step["expect"])
+                        if step.get("on_timeout", "hang") == "hang":
+                            event("seq-hang")
+                            time.sleep(600)
+                            return 9
+                elif op == "compact":
+                    for serial in range(step["serial"], step["serial"] + step.get("count", 1)):
+                        compacted(serial)
+                elif op == "fill_input":
+                    # Expose as many boundaries as their pinned notices fit in the unread
+                    # input pipe: Linux reports its capacity; 65,536 bytes is the macOS bound.
+                    capacity = 65536
+                    if sys.platform.startswith("linux"):
+                        import fcntl
+                        capacity = fcntl.fcntl(0, 1032)  # F_GETPIPE_SZ
+                    count = capacity // step["frame_bytes"]
+                    for serial in range(1, count + 1):
+                        compacted(serial)
+                    event("seq-filled", count=count, capacity=capacity)
+                elif op == "call_begin":
+                    value = frame("tools/call", {"name": step["tool"], "arguments": step.get("arguments", {})})
+                    send_frames([value])
+                    pending[step["label"]] = value["id"]
+                    event("seq-call-sent", label=step["label"], id=value["id"], group=os.getpgrp())
+                elif op == "marker":
+                    publish_witness(witness / step["name"], compact({"model_pid": os.getpid(), "group": os.getpgrp(),
+                                    "monotonic_ns": time.monotonic_ns()}) + b"\n")
+                elif op == "wait_file":
+                    until = time.monotonic() + step.get("timeout", 30)
+                    while not (witness / step["name"]).exists():
+                        if time.monotonic() >= until:
+                            raise TimeoutError("the outer driver never wrote " + step["name"])
+                        time.sleep(0.01)
+                    event("seq-file-observed", name=step["name"])
+                elif op == "wait_until":
+                    # An absolute wall-clock instant the outer driver wrote before starting run;
+                    # monotonic clocks need not be shared between processes.
+                    while time.time_ns() < scenario[step["key"]]:
+                        time.sleep(0.005)
+                    event("seq-time-reached", key=step["key"], wall_ns=time.time_ns())
+                elif op == "resist_term":
+                    # Shutdown must then escalate to KILL. The handler shares no lock with
+                    # event(); its separate witness records each TERM received.
+                    term_fd = os.open(witness / "term-received.jsonl", os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+                    def resisted(signum, frame_, fd=term_fd):
+                        os.write(fd, compact({"signal": signum, "monotonic_ns": time.monotonic_ns()}) + b"\n")
+                    signal.signal(signal.SIGTERM, resisted)
+                    event("seq-resisting-term")
+                elif op == "assistant_tool":
+                    emit({"type": "assistant", "session_id": scenario["session"], "parent_tool_use_id": None,
+                          "message": {"model": scenario["model"], "id": "sequence-%d" % index, "role": "assistant",
+                                      "content": [{"type": "tool_use", "id": "toolu_sequence_%d" % index,
+                                                   "name": step["name"], "input": {"text": scenario["account"]}}]}})
+                elif op == "stop_reading":
+                    # Input stays open and unread, so the pipe fills; other holders of its
+                    # read side are recorded for review.
+                    stop_inputs.set()
+                    input_thread.join(timeout=2)
+                    capacity = None
+                    if sys.platform.startswith("linux"):
+                        import fcntl
+                        capacity = fcntl.fcntl(0, 1032)  # F_GETPIPE_SZ
+                    event("seq-stopped-reading", readers=pipe_readers(0), parent=os.getppid(),
+                          reader_alive=input_thread.is_alive(), pipe_capacity=capacity)
+                elif op == "submit":
+                    prepared = tool("prepare", {})
+                    send("tools/call", {"name": "submit", "arguments": {
+                        "prepared": prepared["data"]["prepared"], "confirm": True}})
+                    event("seq-submit", group=os.getpgrp())
+                    time.sleep(600)  # Only Stewart's stop after a confirmed submit ends this process.
+                    return 9
+                elif op == "exit":
+                    event("deliberate-interruption")
+                    return step.get("code", 7)
+                elif op == "hang":
+                    event("seq-hang")
+                    time.sleep(600)
+                    return 9
+                else:
+                    raise ValueError("unknown sequence operation: %r" % op)
+            raise RuntimeError("a sequence must end by submit, exit or hang")
 
         if scenario["mode"] == "captured-accounting":
             variant = scenario["accounting_variant"]
@@ -4625,7 +5857,7 @@ def synthetic_harness(scenario_path, environment_path, argv):
                 if index == target:
                     change = variant if variant in ("changed-text", "wrong-error", "success-flat", "c3-one",
                                                     "c3-two", "reordered", "missing", "duplicate") else "exact"
-                    if variant.startswith(("paused-", "late-")):
+                    if variant.startswith(("paused-", "late-", "drain-")):
                         change = "held"
                 core, message, response = fidelity_call("read", {"source": specimen[3], "start": specimen[4]}, change)
                 if core.get("outcome") != "completed":
@@ -4645,6 +5877,33 @@ def synthetic_harness(scenario_path, environment_path, argv):
                 if variant == "error-wrong-flag":
                     time.sleep(600)
                     return 9
+            if variant.startswith("drain-"):
+                # The held page's echo appears only once Stewart's shutdown TERM arrives:
+                # exact for drain-*-exact, the C3 substitution for drain-*-mismatch. The
+                # ending is decided first, by an ordinary ending or by the driver's signal.
+                message, result = held
+                if variant.endswith("-mismatch"):
+                    message = fidelity_message(message["message"]["content"][0]["tool_use_id"], result, "c3-two")
+                raw = compact(message) + b"\n"
+                drain_fd = os.open(witness / "late-echo.bin", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                def drain_echo(signum, frame_, raw=raw, fd=drain_fd):
+                    offset = 0
+                    while offset < len(raw):
+                        offset += os.write(sys.stdout.fileno(), raw[offset:])
+                    os.write(fd, raw)
+                    os.fsync(fd)
+                    os._exit(0)
+                signal.signal(signal.SIGTERM, drain_echo)
+                if variant.startswith("drain-ordinary"):
+                    turn_ended(CHECKPOINTS[0])
+                    event("drain-reminder", value=incoming.get(timeout=10))
+                    turn_ended(CHECKPOINTS[1])
+                    event("drain-second-turn-ended")
+                else:
+                    publish_witness(witness / "pages-read.json", compact({"model_pid": os.getpid(),
+                                    "group": os.getpgrp(), "monotonic_ns": time.monotonic_ns()}) + b"\n")
+                time.sleep(600)
+                return 9
             prepared, _, _ = fidelity_call("prepare", {})
             if prepared.get("outcome") != "completed":
                 raise RuntimeError("fidelity fixture could not prepare submission")
@@ -5187,6 +6446,7 @@ def self_test():
         checks.append((name, bool(value)))
     authoring_selftest(check)
     scripted_selftest(check)
+    sequence_selftest(check)
     check("c5.partial-usage-size", len(compact(C5_PARTIAL_USAGE)) == 251)
     check("c5.partial-usage-digest", sha(compact(C5_PARTIAL_USAGE)) ==
           "db6136588bc9b971abaf7a1a6da35f877e3a05253ddad40d54e5b0ec018272c9")
@@ -5277,6 +6537,15 @@ def self_test():
         else:
             normalized_refused = False
         check("work-preflight.normalized-descendant-refused", normalized_refused)
+        (outside / "instructions").mkdir()
+        (outside / "instructions" / "AGENTS.md").write_bytes(b"# Instructions.\n")
+        try:
+            validate_work_path(outside / "instructions" / "nested" / "work")
+        except ValueError as exc:
+            ancestry_refused = "AGENTS.md" in str(exc)
+        else:
+            ancestry_refused = False
+        check("work-preflight.instruction-ancestry-refused", ancestry_refused)
     with tempfile.TemporaryDirectory(prefix="stewart-release-witness-") as directory:
         root = Path(directory)
         paused = root / "log.publish:seal.paused"
@@ -5642,6 +6911,8 @@ for raw in sys.stdin.buffer:
         ("no-submit", 2, lambda e: e["event"] == "output-transmitted" and e.get("last")),
         ("scripted", 1, lambda e: e["event"] == "script-final"),
         ("scripted-exit", 1, None),
+        ("sequence", 3, submitted),
+        ("sequence-controls", 1, None),
     )
     for mode, inputs, finished in modes:
         with tempfile.TemporaryDirectory(prefix="stewart-synthetic-mode-") as directory:
@@ -5679,6 +6950,19 @@ for raw in sys.stdin.buffer:
                         "submit", "submit", {"prepared": {"$ref": ["prepare", "data", "prepared"]}, "confirm": True},
                         final=True)]
                 scenario["script_end"] = "exit" if mode == "scripted-exit" else None
+            if mode == "sequence":
+                scenario["steps"] = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
+                                     {"op": "await_input", "expect": "reminder"}, {"op": "compact", "serial": 1},
+                                     {"op": "await_input", "expect": "compacted"},
+                                     {"op": "marker", "name": "sequence-marker"}, {"op": "submit"}]
+            if mode == "sequence-controls":
+                scenario["mode"] = "sequence"
+                scenario["reached"] = time.time_ns()
+                scenario["steps"] = [{"op": "wait_until", "key": "reached"}, {"op": "resist_term"},
+                                     {"op": "assistant_tool", "name": "record_account"}, {"op": "stop_reading"},
+                                     {"op": "compact", "serial": 1, "count": 3},
+                                     {"op": "fill_input", "frame_bytes": 30000},
+                                     {"op": "marker", "name": "stopped-reading"}, {"op": "exit", "code": 7}]
             (root / "scenario.json").write_bytes(compact(scenario))
             (root / "peer.py").write_text("publication=%r\n" % (mode == "submit-publication") + mode_peer)
             (root / "settings.json").write_bytes(compact({"hooks": {"PreToolUse": [{"matcher": "*", "hooks": [
@@ -5699,6 +6983,8 @@ for raw in sys.stdin.buffer:
                 supplied_inputs[1] = user(NEAR_LIMIT.format(seconds=12, placements=2))
             if mode == "captured-accounting-checkpoint":
                 supplied_inputs[1] = user(REMINDER)
+            if mode == "sequence":
+                supplied_inputs[1:] = [user(REMINDER), user(COMPACTED)]
             process.stdin.write(b"".join(supplied_inputs))
             process.stdin.flush()
             deadline = time.monotonic() + 20
@@ -5727,6 +7013,10 @@ for raw in sys.stdin.buffer:
             process.stdin.close()
             process.stdout.close()
             process.stderr.close()
+            if mode.startswith("sequence"):
+                # The loop's last read can precede a quick exit; take the complete record.
+                log = root / "harness.jsonl"
+                events = [json.loads(line) for line in log.read_bytes().splitlines()] if log.exists() else []
             fatal = [e.get("error") for e in events if e["event"] == "fatal"]
             check("mode." + mode + ".no-fatal", not fatal)
             if fatal:
@@ -5842,6 +7132,32 @@ for raw in sys.stdin.buffer:
                           and sum(e["event"] == "deliberate-interruption" for e in events) == 1)
             elif mode == "no-submit":
                 check("mode.no-submit.results", [o["num_turns"] for o in outputs if o.get("type") == "result"] == [2, 3])
+            elif mode == "sequence":
+                check("mode.sequence.outputs", kinds == [("system", "init"), ("result", "success"),
+                                                         ("system", "compact_boundary")])
+                check("mode.sequence.result", [(o["is_error"], o["num_turns"], o["usage"]) for o in outputs
+                      if o.get("type") == "result"] == [(False, 2, CHECKPOINTS[0]["usage"])])
+                check("mode.sequence.inputs", [(e["expect"], e["classified"]) for e in events if e["event"] == "seq-input"]
+                      == [("reminder", "reminder"), ("compacted", "compacted")])
+                check("mode.sequence.marker", (root / "sequence-marker").exists())
+                check("mode.sequence.order", [e["op"] for e in events if e["event"] == "seq-step"] ==
+                      ["record", "result", "await_input", "compact", "await_input", "marker", "submit"])
+                check("mode.sequence.submits", sum(submitted(e) for e in events) == 1
+                      and any(e["event"] == "seq-submit" for e in events))
+            elif mode == "sequence-controls":
+                stopped = [e for e in events if e["event"] == "seq-stopped-reading"]
+                check("mode.sequence-controls.exit", code == 7)
+                check("mode.sequence-controls.time-reached", any(e["event"] == "seq-time-reached" for e in events))
+                check("mode.sequence-controls.resisting", any(e["event"] == "seq-resisting-term" for e in events))
+                check("mode.sequence-controls.violation", [o["message"]["content"][0]["name"] for o in outputs
+                      if o.get("type") == "assistant"] == ["record_account"])
+                check("mode.sequence-controls.stopped-reading", len(stopped) == 1 and not stopped[0]["reader_alive"]
+                      and stopped[0]["readers"] in (None, []) and (root / "stopped-reading").exists())
+                filled = [e for e in events if e["event"] == "seq-filled"]
+                check("mode.sequence-controls.fill", len(filled) == 1 and filled[0]["count"] ==
+                      filled[0]["capacity"] // 30000 and filled[0]["capacity"] >= 4096)
+                check("mode.sequence-controls.compaction-count", kinds.count(("system", "compact_boundary"))
+                      == 3 + (filled[0]["count"] if filled else 0))
     with tempfile.TemporaryDirectory(prefix="stewart-synthetic-protocol-") as directory:
         root = Path(directory)
         scenario = {"mode": "record-then-exit", "witness": str(root), "marker": str(root / "started"),

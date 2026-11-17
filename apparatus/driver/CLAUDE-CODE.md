@@ -30,7 +30,9 @@ python3 -I -B apparatus/driver/claude_code.py \
 without symlink components because the profile contract requires no-follow
 reads. Put the work directory outside the repository checkout so that the
 synthetic launch directory is outside the writer tree. The driver refuses known
-repository descendants before creating its work directory or any fixtures.
+repository descendants, and a work directory with an entry named `.git`,
+`CLAUDE.md`, `AGENTS.md` or `.claude` in any ancestor, before creating its work
+directory or any fixtures: `run` refuses a launch directory with such ancestry.
 Keep the selected
 binaries in a separate directory from the work tree and unchanged during the run.
 `--release-binary` is optional; omitting it reports the featureless-build
@@ -465,6 +467,96 @@ draws no conclusions; every expectation is in the outer case.
   must keep its actor, the run must deliver attempt 1 after `close_requested`,
   close must await confirmation for that copy, and confirmation closes it
   unchanged.
+
+Sequences use the synthetic harness's `sequence` mode. The outer driver writes
+the scenario's `steps`, an ordered list of harness events: record an account,
+emit a `result` with a chosen `is_error`, `subtype` and checkpoint, await an input
+of a named kind (reminder, near-limit, continuation or compaction notice), expose
+compaction boundaries, send a tool call without awaiting its reply, emit an
+assistant tool use with a chosen name, resist TERM (each received TERM is written
+to a separate witness, so shutdown must escalate), stop reading input, wait for a
+driver-written file or a wall-clock instant, fill the unread input pipe with
+compaction notices, publish a marker, then submit, exit or hang. Stopping reading
+records any other process holding the input pipe's read side. Wall-clock instants
+are used because monotonic clocks are not shared between processes on every
+host. The harness draws no conclusions.
+
+- **Start reservation.** With the fault-enabled variant, `runtime-start-races-close`
+  holds `run` immediately before linking `run_started` and holds close after its
+  `close_requested`. Released, `run` must refuse `reference_closed` with exactly
+  `close` and `status` next, launch nothing, create no run directory and use no
+  placement start; close then completes before launch. The same reply follows
+  when close was requested before `run` began; the same hold without close starts
+  and seals.
+- **First condition.** `runtime-first-condition` lets the harness end its second
+  turn after the reminder while resisting TERM. SIGTERM sent once shutdown has
+  begun, before `run_ended`, must leave `ended_unsubmitted` and authoring ended;
+  SIGTERM while the placement is live is `interrupted` with cause `signal`. An
+  unprefixed tool name emitted one second before the earliest possible deadline,
+  with shutdown outlasting the deadline (witnessed by `runtime-stop.json`), must
+  stay `protocol_anomaly`, also on the final placement; with no earlier condition
+  the deadline decides. `runtime-late-close` (variant) makes the late condition a
+  close held after its request: the run still records `ended_unsubmitted`, the log
+  orders `close_requested` before `run_ended`, the headline's first ending is
+  `close`, and close seals as manager. A close requested while the placement is
+  live stops it.
+- **Final placement.** `runtime-final-interruption` interrupts the only permitted
+  placement by a harness exit and by an unprefixed tool name. Status keeps the
+  ending, cause and condition, offers only `close` and states no remaining start;
+  both headlines show authoring ended by `limit`; `run` refuses `authoring_ended`
+  with that `run_ended` as `data.record` and `close` and `status` next, launching
+  nothing. With a start remaining, authoring stays open and a continuation seals.
+  When the only placement's owner dies, `run` must record its `run_ended`
+  (`interrupted`, `process_gone`) and then refuse `authoring_ended` naming that
+  record, launching nothing; with a start remaining it reconciles and seals.
+- **Unknown stopping.** `runtime-unknown-stop-advice` repeats the controlled
+  unresolved group of `runtime-unknown-stop`. Status and the refused `run` must
+  offer only `status`, and the summary names placement 1; once the group is gone,
+  status offers `run` and `close` and a continuation seals.
+- **Launch directory.** `runtime-launch-directory` plants `.git` (directory and
+  file), `CLAUDE.md`, `AGENTS.md` or `.claude` in the profile's temporary directory
+  or an ancestor after acceptance. `run` must refuse `runtime_profile_invalid`
+  without `run_started`, a run directory, a harness start or a used placement;
+  removing the entry lets the same audit seal. Near-miss names start normally. A
+  temporary directory that is the archive, the submission folder or the
+  directory of a byte-identical writer copy, or lies within the archive or the
+  submission folder, refuses the same way.
+- **Notices.** `runtime-notice-transmission` sends the reminder, a compaction
+  boundary, the near-limit notice and another boundary, each awaited before the
+  next harness event: both notices are `sent`, numbered 1 and 2 in log order, the
+  near-limit notice's remaining seconds are at most a fifth of the timeout and
+  its starts are the unused ones. The opposite order, followed by owner death,
+  must leave both claims `unknown` after recovery. A final placement with a long
+  timeout gets no notice. A harness that stops reading exposes as many
+  boundaries as their notices fit in its input pipe (65,536 bytes on macOS; the
+  reported capacity on Linux), then ends its turn, so the reminder's frame cannot
+  fit: captured, it is `unknown`; never captured, `not_sent`, and the arm reports
+  that the incomplete write was not reached. The capture must show that the
+  unread input before the reminder left it no room. This assumes that no other
+  holder of the input pipe's read side reads it; the harness records such
+  holders.
+  `runtime-notice-not-sent` (variant) fails the reminder claim's directory sync:
+  the placement ends `archive_write_failed`, the reminder frame is not captured
+  and the claim is `not_sent`.
+- **Results.** `runtime-result-rules`: a `result` with `is_error` true and subtype
+  `success` interrupts with `protocol_anomaly` and claims no reminder; its usage
+  is the latest reported checkpoint but its interval stays unknown. `is_error`
+  false with subtype `error_max_turns` receives the reminder and its usage is the
+  checkpoint; an ordinary ending whose last result has `is_error` false leaves no
+  interval unknown. `runtime-result-during-call` (variant)
+  holds a record call before its entry link and emits an ordinary result: the
+  model group must stop while the call is held, the call is refused
+  `placement_stopped`, and the placement ends `protocol_anomaly` without a
+  reminder.
+- **Drain ending.** `runtime-fidelity-drain-ending` holds a page echo until
+  Stewart's shutdown TERM. After an ordinary ending, a substituted echo must turn
+  `ended_unsubmitted` into `interrupted`/`protocol_anomaly` with a `drain`
+  diagnostic and authoring open; an exact echo leaves `ended_unsubmitted`. After
+  the driver's SIGTERM decided the ending, the same substitution keeps
+  `interrupted`/`signal`.
+- **Request reuse.** `runtime-identity-across-placements` also requires JSON-RPC
+  error `-32600` with the reused ID, for an identical repeated call and for a
+  `ping`, contiguous call numbers and one call file per ID.
 
 Preparation acceptance reads back every selected material, not only the default
 report, against the driver's own bytes.
