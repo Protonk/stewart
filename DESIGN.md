@@ -135,6 +135,6 @@ the same shipped binary.
 failure variants, exact bindings, pagination, writer support and question forms.
 [ACCEPTANCE.md](ACCEPTANCE.md) defines the evidence required of the release
 binary: independently witnessed scripted checks and separately authorized
-real-model procedural conformance. Paper walkthroughs illustrate expression;
+alignment with the real provider endpoint. Paper walkthroughs illustrate expression;
 they do not establish that the service works. [README.md](README.md#status)
 states implementation and qualification status.

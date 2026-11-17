@@ -43,7 +43,7 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   and corrected comparisons. Preserve driver independence under [AGENTS](AGENTS.md)
   and have a fresh reviewer challenge findings.
 - [ ] Report trusted coverage for commissioning, return/lifecycle/custody,
-  runtime comparisons and Messages conformance. Derive it from actual case
+  runtime comparisons and endpoint alignment. Derive it from actual case
   conditions, witnesses and receipts. Counts describe coverage, not a target;
   unexercised behavior cannot count as covered. Treat the earlier untracked
   `.tmp/readiness/a/` classifications and `.tmp/readiness/tools/trusted.py` as
@@ -107,7 +107,7 @@ reviews name; the `.tmp` roots keep the retained copies.
 
 - [ ] Run [DEVELOPMENT's required checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
   for further changes, retaining actual outputs through review. Changed service
-  behavior needs container acceptance before another Messages packet; changed
+  behavior needs container acceptance before another live alignment packet; changed
   runtime surfaces need a newly approved reviewed surface check before service
   use. The acceptance driver and launchers differ from qualified source; a new
   container run, scheduled by the principal, must qualify the changed source.

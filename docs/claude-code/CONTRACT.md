@@ -43,7 +43,10 @@ continuation. An independent author derives driver cases from this contract.
 Native macOS checks remain development checks. Linux qualification applies to
 the recorded synthetic comparisons; separately commissioned real-harness
 compaction, submission and stopping comparisons remain necessary for the claims
-they exercise. Messages API results do not qualify the harness profile. The common
+they exercise. Endpoint alignment for the harness is a reviewed check of the
+pinned version, recorded as the profile's `check`, with the documented facts
+below rechecked; a changed pin needs its own. Messages API results do not
+qualify the harness profile. The common
 [rules every check follows](../../ACCEPTANCE.md#rules-every-check-follows) apply.
 
 Not yet demonstrated with the real harness under the selected launch:

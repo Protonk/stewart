@@ -75,8 +75,8 @@ also defines structured JSON replies for scripts and agent managers.
 
 **Version 0.0.2 — experimental.** Small live commissions have returned answers
 with verified delivery across all three forms. Recorded Linux acceptance runs
-cover their exact builds; full model and platform qualification remains
-outstanding. Bounded Messages continuations preserved recorded work; one audit
+cover their exact builds; endpoint alignment for the models a release will name
+and platform qualification remain outstanding. Bounded Messages continuations preserved recorded work; one audit
 submitted and another exhausted its allowance with a partial account later
 sealed and closed by the manager. A bounded Opus encounter preserved an account
 through real provider compaction, revised it and submitted a verified return.

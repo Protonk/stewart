@@ -5,7 +5,7 @@ This is the current acceptance design for the [Stewart design](DESIGN.md), under
 results. End to end means a manager's submission through the actual release
 binary to an independently verified return. Scripted ordinary paths replace
 the provider; failure and sabotage controls use the specified test-build features.
-Real-model conformance uses the real provider.
+Endpoint alignment uses the real provider.
 
 Every case below is read under the accepted machine interface:
 [docs/INTERFACE.md](docs/INTERFACE.md) and
@@ -33,7 +33,7 @@ failing.
 | C7 | Question families preserve the request, express their evidence expectations and leave open inquiry usable. |
 | C8 | Close works from every state. |
 | C9 | Stewart answers quickly and every reply says what it did. |
-| C10 | Real models can actually use the arrangement and finish. |
+| C10 | Through the real endpoint, each named model can use the arrangement and finish, and the endpoint behaves as the adapter and its test stand-ins assume. |
 | C11 | Help, the scaffold, preparation and the receipt explain the submission boundary and identify the selected material. |
 | C12 | The run is a handoff: a receipt's run line works for whoever holds it, from anywhere. |
 | C13 | A dead run continues: the audit is its ledger, and `run` again picks it up. |
@@ -53,7 +53,7 @@ don't either.
 | Tier | Runs | Model | Gate? |
 | --- | --- | --- | --- |
 | **Scripted** | Container qualification of changed source, on every required platform | A fake provider replaying scripted turns | Yes |
-| **Real-model conformance** | Commissioned conformance run, each release, each supported model | The real provider | Yes |
+| **Endpoint alignment** | Commissioned alignment run before a release names a model, and again when its pinned endpoint inputs change | The real provider | Yes |
 | **Experiments** | Commissioned study, when someone has a question | The real provider | No |
 
 The principal schedules and batches container qualification. Passing the
@@ -63,7 +63,9 @@ an earlier suite result to new source. The release and model gates remain owed.
 The apparatus documentation owns the pinned build and runner images.
 
 The scripted tier tests Stewart's behavior within its covered cases. The
-conformance tier tests whether the named models can use the arrangement. Experiments are where research
+alignment tier tests whether the real endpoint behaves as the scripted tier's
+stand-ins assume and whether the named models can use the arrangement through
+it. Experiments are where research
 happens, such as whether read-only investigation is enough. They inform design
 and never block a release.
 
@@ -101,8 +103,8 @@ and its reads, and adds only the goals it cannot see recorded. The return must
 contain each goal exactly once, so a re-entry that omits an element produces a
 duplicate that the witness comparison catches. Fixed scripts remain for exact
 protocol-shape cases. This shows that re-entry carries enough for a mechanical
-agent to resume; whether real models use it well is the conformance tier's
-question.
+agent to resume; whether real models use it well is a question for the
+alignment tier's compaction run and for experiments.
 
 ### C1 — The world is the arrangement
 
@@ -671,27 +673,36 @@ procedure also proves that contaminated or uncertain evidence is withheld from
 export, retaining its original container and independent witness through review.
 Literal recursive scanning alone does not establish the process or memory claims.
 
-## The real-model conformance tier
+## The endpoint alignment tier
 
-This tier answers C10. It checks procedure, never answer quality.
+This tier answers C10. Stewart's provider adapter and the fake provider that
+stands in for it in the scripted tier both encode assumptions about the real
+endpoint: request and response forms, compaction, usage reporting, errors,
+limits and model identifiers. Alignment observes the real endpoint through the
+release binary and compares what it saw with those assumptions. It checks
+procedure and form, never answer quality.
 
-**Fixed commissions.** The apparatus will contain small commissions covering the
-three selected families: open inquiry, inquiry framing and comparison. Each
-specimen includes a manager submission, actual auditor tools and an example
-return, with an inadequate-evidence case. Executable fixtures follow the form
-specification; planted evidence may help inspection but finding it is not a
-required substantive outcome.
+**When.** Before a release names a model, and again when the model, the API or
+beta versions, or a request setting the release pins changes. A record stays
+current while those inputs are unchanged.
 
-The compaction specimen must run long enough to reach the arrangement's pinned
-trigger. A successful run must show an actual provider summary request, the
-signed summary reused on the next ordinary request and its accounted usage;
-forgetting state inside the fake auditor is not real-model compaction evidence.
+**Runs.** For each model: one commission per implemented family, small enough
+to finish within modest limits and including an inadequate-evidence case among
+them; one compaction run long enough to reach the arrangement's pinned trigger;
+and one run with each request setting a manager can choose, such as effort.
+These are planning quantities, not authorization to spend; each alignment
+commission fixes its model coverage and budget before launch.
 
-**Runs.** For each model a release supports: each commission three times without
-an effort setting, so at the provider's default, plus one run with an effort
-set, one with compaction forced and one killed midway and continued. These are
-planning quantities, not authorization to spend; the bounded conformance
-commission fixes model coverage and budget before launch.
+The compaction run must show an actual provider summary request, the signed
+summary reused unchanged on the next ordinary request, the replaced context and
+its accounted usage, and recorded work preserved across it; forgetting state
+inside the fake auditor is not real-model compaction evidence.
+
+**Comparison.** Every response, usage, error, compaction and stop shape a run
+observes is compared with what the adapter decodes and what the fake provider
+replays. Each difference is resolved before the record is current: by an adapter
+fix, by an updated stand-in fixture captured from the run with its provenance,
+or by a limitation the release states.
 
 **The gate passes when, for every run:**
 
@@ -699,11 +710,12 @@ commission fixes model coverage and budget before launch.
   or a second unsubmitted stop;
 - structured material citations satisfy the mechanical locator/quote rules;
   evidential support is never graded by Stewart;
-- after compaction, and after a kill and continuation, no element recorded
-  before it is added again, and the submission still contains them;
+- after compaction, no element recorded before it is added again, and the
+  submission still contains them;
 - the answer follows the specified authoring/submission procedure; missing form
   coverage and empty answers remain admissible and no substantive finding is
-  required.
+  required;
+- no difference from the stand-ins' assumptions remains unresolved.
 
 Report the operations actually exercised. An allowed empty submission can show
 submission conformance but supplies no evidence about unused entry/edit/citation
@@ -713,9 +725,12 @@ with a content-completeness grade.
 **Reported but not gating:** whether the planted fact or the unsupported premise
 was found, turns and tokens used, how often `what_am_i_working_with` was called and
 when, reminders sent, and cost. These go into the release notes as observations.
+Repetition, effort comparisons and killed-and-continued placements with real
+models are experiment-tier questions.
 
-Every release names the models it passed this gate on. A model the gate hasn't
-seen isn't listed as supported.
+Every release names the models with a current alignment record. A model without
+one isn't listed as supported. A runtime adapter that the distributed binary
+excludes aligns its own endpoint under its leaf contract.
 
 Running this tier spends real money on the provider. Each release states its
 cost.
@@ -730,7 +745,7 @@ Each run supplies the following evidence for review:
 - timings;
 - which sabotage controls fired;
 - the witness comparisons;
-- for the conformance tier, the full recorded conversations and actual provider usage/cost.
+- for the alignment tier, the full recorded conversations, actual provider usage/cost and the comparison with the stand-ins' assumptions.
 
 Keep the independent witness and affected originals through review. Afterward,
 retain current results and only the original material selected for a present
@@ -744,4 +759,4 @@ change the application's custody obligations.
 - That answers are good. That's the manager's judgment.
 - That read-only investigation is enough. That's research for the experiment tier.
 - Anything about the person adapter, which isn't in the first release.
-- Anything about a provider's behavior beyond what the conformance gate observed.
+- Anything about a provider's behavior beyond what the alignment runs observed.

@@ -2,7 +2,7 @@
 
 [`c10.py`](c10.py) prepares bounded batches, retains every audit and reviews
 immutable evidence exports. It uses the real Stewart binary through its CLI.
-The procedural obligations come from [ACCEPTANCE C10](../../ACCEPTANCE.md#the-real-model-conformance-tier),
+The procedural obligations come from [ACCEPTANCE C10](../../ACCEPTANCE.md#the-endpoint-alignment-tier),
 [INTERFACE](../../docs/INTERFACE.md) and [QUESTION-FORMS](../../docs/QUESTION-FORMS.md).
 It assigns no answer-quality grade and never declares a model qualified.
 

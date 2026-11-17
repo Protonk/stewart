@@ -3,8 +3,8 @@
 **Current status:** The developer lookback is complete. Its decided changes to
 placement endings, exhausted starts and signal gating landed with native checks
 only; a container run, scheduled by the principal, must qualify the changed
-source. Readiness reassessment resumes next; manager-interface implementation
-and the full model/platform gates remain ahead. No live packet is active and the
+source. Readiness reassessment resumes next; manager-interface implementation,
+endpoint alignment and platform qualification remain ahead. No live packet is active and the
 public release is not scheduled by this plan.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
@@ -17,17 +17,18 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Finish remaining fixture dispositions, coverage reassessment and qualification, starting with Linux qualification of the lookback's changes. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) owns the findings; [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) owns the reusable Messages apparatus. |
+| Current | Finish remaining fixture dispositions, coverage reassessment and qualification, starting with Linux qualification of the lookback's changes. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
-| Separately scheduled release work | Complete the Messages model gate, platform qualification and acceptance-policy review. | [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and the requirements below |
+| Separately scheduled release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
+| Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
 | Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
 | Unselected | The lookback's behavior-preserving refactor candidates and public-form candidates. | [Unselected candidates](#unselected-candidates) |
 
 Use the existing apparatus and retained exact writers; reconcile uncertain
 processes or effects before reusing them. Build only the prerequisites needed
-for the selected comparison. Full model conformance is separate from the
-bounded readiness observations. Live starts need concrete approval; container
+for the selected comparison. Endpoint alignment is separate from the bounded
+readiness observations. Live starts need concrete approval; container
 runs and the public release remain the principal's scheduling decisions.
 
 At the manager transition, enter its specification stage and freeze roles,
@@ -44,7 +45,9 @@ returns is only an option after the manager interface is established and the
 principal selects it, not a pending task. A future study needs a named uncertainty
 and bounded commission. Select its inputs and discriminating comparison from the
 qualification index's evaluation records and the interaction findings
-(`apparatus/studies/interaction/RESULTS.md` at `77375f1`).
+(`apparatus/studies/interaction/RESULTS.md` at `77375f1`). Real-model
+repetition, effort comparisons and killed-and-continued placements, which the
+former conformance matrix required, are such studies now, not release gates.
 
 ## Unselected candidates
 
@@ -97,7 +100,8 @@ Family-descriptor candidates belong to the manager interface's registry stage.
 | --- | --- |
 | Linux container qualification | Run the scripted acceptance suite on the release source and binaries, on both architectures with the required controls. |
 | Native WSL2 qualification | Package the same binary, driver and fake provider; arrange and review the user's native run. |
-| Real-model conformance | Complete [Messages API conformance](MESSAGES-API-CONFORMANCE-PLAN.md) and qualify each model the release names under an authorized budget. |
+| Endpoint alignment | A current [alignment record](ENDPOINT-ALIGNMENT-PLAN.md) for each model the release names, each run under an authorized budget. |
+| Release documentation and source package | Define and build the source archive and finish the outside-reader documentation pass ([below](#release-documentation-and-source-package)). |
 | Public release gate | Set the binary release schedule with the principal. |
 
 The requirements remain those of ACCEPTANCE while its review is open.
@@ -122,7 +126,7 @@ changes require an implementation-independent author.
 Resolve these acceptance-policy questions without silently changing the current
 requirements:
 
-- Confirm the platform and real-model release gates and coverage scope.
+- Confirm the platform and alignment gates and coverage scope.
 - Decide whether to add Linux Cargo tests. Current Linux suites build the crate
   and run the independent driver; an offline Cargo route would need
   `STEWART_IT_TMP` on ext4, xfs or btrfs.
@@ -146,5 +150,21 @@ The native timing gate applies. Native x86_64 is unexercised, so its timings mus
 be measured rather than inferred from Rosetta.
 
 Needs: a package builder, instructions and the user's scheduled run.
+
+### Release documentation and source package
+
+The source archive is the release commit's tracked tree plus `service/vendor`,
+with the vendored files' digests from the `step2.sh` run that produced them, and
+the qualification record of the shipped binaries. Plans are complete and deleted,
+and local working material stays out, before it is cut.
+
+The README covers getting and verifying the binary, the archive filesystem rule
+(the archive on the WSL filesystem, never under `/mnt/`) and a first run that
+needs no provider key. AGENTS, DEVELOPMENT and the crate guide let an outside
+agent find the code, build it from the archive without network access and run
+the checks natively on Linux, knowing which checks qualify nothing.
+
+Needs: the archive recipe, and a final outside-reader pass after the manager
+interface settles the documentation it changes.
 
 Deferred product scope belongs in CONTRACTS; it is not additional release work.

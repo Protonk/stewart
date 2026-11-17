@@ -238,8 +238,8 @@ effort level and the earlier audit this one varies. Prepare decodes it strictly
 and binds every setting with the selection. Commission takes only the prepared
 handle and the affirmation, and `run` takes only the reference. The auditor
 receives the question body, never the front matter. The pinned model serves
-every placement of the audit; a release names the models that passed its
-conformance gate. An effort level is the manager's choice for that audit alone.
+every placement of the audit; a release names the models with a current
+endpoint alignment record. An effort level is the manager's choice for that audit alone.
 Stewart sends it as a request parameter on every request and never as text the
 auditor reads. Without one Stewart sends none and the provider's default for the
 model applies; Stewart has no effort default of its own. It knows the documented
@@ -525,7 +525,7 @@ answer sealed once, limits that never reset, no second investigation. The same
 continuation is what a person auditor does on returning to the work, so one
 protocol serves both adapters. Replaying the earlier conversation
 to a model so it keeps its reading is an adapter optimization to weigh only on
-conformance-tier evidence that re-reading after a kill is costly; it would
+real-model evidence that re-reading after a kill is costly; it would
 change nothing in the record.
 
 ## Answer construction and atomic artifact edits
@@ -746,7 +746,7 @@ these suggestions introduce no new intake gates.
 
 These purposes require neither optimized recipes nor mandatory answer structures.
 The effectiveness of recording tools, material guidance and intellectual returns
-remains an empirical question, separate from procedural conformance.
+remains an empirical question, separate from endpoint alignment.
 
 ## Returned question and answer
 
