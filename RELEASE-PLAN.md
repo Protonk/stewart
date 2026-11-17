@@ -138,8 +138,9 @@ requirements:
   enforced timing gate. Retiring the absolute tripwire or moving performance
   trends into Linux CI remains a later policy option, not implementation
   scheduled now.
-- Decide whether to support running the apparatus from a Linux host; the
-  documented host route uses macOS and Apple `container`.
+- Decide whether to support running the qualification suites from a Linux
+  host; the documented host route uses macOS and Apple `container`, and native
+  Linux runs are documented as development iteration only.
 
 ### WSL2 package
 

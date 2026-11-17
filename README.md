@@ -47,6 +47,9 @@ include a submission you can copy and prepare.
    attribution. If it requests confirmation, inspect the delivered copy and
    follow the returned command to finish.
 
+Steps 1–3, `status`, `receipt` and a `close` before launch are local and need
+no provider key, so they check a new installation without spending anything.
+
 An interrupted run can continue the same audit with its recorded work and
 cumulative limits intact. `stewart receipt REF` recovers the accepted commission;
 `stewart status REF` distinguishes execution, submission, delivery and closure.
@@ -55,6 +58,10 @@ also defines structured JSON replies for scripts and agent managers.
 
 ## Before running
 
+- **Platform:** Linux x86_64 or aarch64, including WSL2. The archive must be on
+  local ext4, xfs or btrfs; on WSL2 keep it on the Linux filesystem, since
+  Windows drives under `/mnt/` are refused for it. The answer destination may
+  be under `/mnt/`.
 - **Access:** the auditor works on accepted text through Stewart's tools. It
   cannot execute supplied code, use a shell or retrieve additional material.
 - **Credentials:** only `run` needs the provider key and network. Supply the key
@@ -83,19 +90,17 @@ through real provider compaction, revised it and submitted a verified return.
 The [qualification record](apparatus/qualified.md)
 identifies those builds and results.
 
-The default-off [Claude Code development adapter](docs/claude-code/CONTRACT.md)
-has also completed native ordinary and inadequate-evidence open inquiries with
-auditor submission, verified delivery and close. Captured usage remains partial;
-a large-page comparison found that the harness substituted previews for full
-64 KiB material pages in the conversation. These limits remain unresolved, and
-live continuation remains unexercised: both audits in a two-deadline comparison
-submitted on their first placement. The encounters do not establish broader
-model or platform qualification.
+A default-off development adapter, included only in source builds, has
+completed native open inquiries through an agent harness with auditor
+submission, verified delivery and close. Its captured usage remains partial and
+live continuation unexercised. Full 64 KiB material pages that the harness once
+replaced with previews arrived whole in one bounded encounter after a transport
+change. These native encounters establish no model or platform qualification.
 
 Stewart is a single Rust binary, supported on Linux x86_64 and aarch64. The
 source also builds on Apple-silicon macOS, without a support or qualification
-claim. See [building and testing](development/DEVELOPMENT.md)
-and [contributing](AGENTS.md), or read the [design](DESIGN.md),
+claim. See [building and testing](development/DEVELOPMENT.md), the
+[crate guide](service/README.md) and [contributing](AGENTS.md), or read the [design](DESIGN.md),
 [behavioral contracts](CONTRACTS.md) and [acceptance requirements](ACCEPTANCE.md).
 
 ## License

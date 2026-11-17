@@ -13,8 +13,9 @@ The product is one statically linked binary for Linux x86_64 and aarch64
 (CONTRACTS, "Platform and auditor access"), built and qualified in Linux
 containers. Linux is the supported platform. `aarch64-apple-darwin` is a build
 target: the crate builds, tests and runs there, with no release, support or
-qualification claim. Work iterates quickly on the development Mac, but native
-runs do not qualify Linux behavior.
+qualification claim. Work iterates quickly natively, on a Linux host or the
+development Mac, but native runs qualify nothing; qualification comes from the
+container suites and, under ACCEPTANCE, the native WSL2 run.
 
 ## What to run for what you changed
 
@@ -90,8 +91,8 @@ Before citing the record, run `python3 -I -B apparatus/qualified.py check`.
 
 ## Layout
 
-- `service/src/`: the service. The crate documentation in `service/src/lib.rs`
-  maps its modules.
+- `service/src/`: the service. The [crate guide](../service/README.md) and the
+  crate documentation in `service/src/lib.rs` map its modules.
 - `service/tests/`: integration tests. Most run the real binary from an
   unrelated working directory; the auditor-tool tests drive the tools in
   process against an audit the real binary commissioned. Each test has its own
@@ -102,11 +103,25 @@ Before citing the record, run `python3 -I -B apparatus/qualified.py check`.
   the container suites.
 - `apparatus/container/`: the toolchain `Containerfile` and the scripts that
   run inside the containers.
-- `apparatus/driver/`: the independent driver and its fake provider.
+- `apparatus/driver/`: the independent drivers: the release driver with its
+  fake provider, the standalone development-runtime driver with its synthetic
+  harness, and the independent fixtures for real-harness checks.
 - `apparatus/check_links.py`: the link check for the repository's Markdown.
 - `apparatus/qualified.json`: the qualification record of what the container
   suites have shown. `apparatus/qualified.py` keeps it and generates
   `apparatus/qualified.md` from it.
+- `apparatus/c10/`, `apparatus/sanity/`, `apparatus/testdata/acceptance/`: the
+  live Messages commission apparatus and its captured inputs.
+- `apparatus/claude-code/`: installation pinning, runtime profiles and the
+  bounded real-harness checks.
+- `docs/`: the interface and question forms; `docs/claude-code/` holds the
+  development runtime's contract.
+- `examples/questions/`: worked submissions and walkthroughs for each family.
+- `development/`: this guide and long-term plans.
+
+To fix the distributed binary, `service/`, `docs/`, the release driver and these
+guides suffice; the development runtime adds its contract under
+`docs/claude-code/` and the standalone runtime driver.
 
 ## Toolchain and dependencies
 
@@ -148,6 +163,11 @@ refuses to start while `service/vendor` exists; after a `Cargo.lock` change the
 vendored tree has to be produced again from the new lock. The other suites
 record the digests of the vendored files they mount.
 
+Without the container route, on a networked host with a Rust toolchain, the
+command `step2.sh` runs produces the tree from `service/`:
+`cargo vendor --locked --versioned-dirs vendor`. Compare its file digests with a
+`step2.sh` run's `host/vendor.sha256` before treating it as the same tree.
+
 Run Cargo from `service/`. Cargo looks for `.cargo/config.toml` from its working
 directory upward, so `--manifest-path service/Cargo.toml` from the repository
 root misses the source replacement, and an offline build cannot resolve the
@@ -155,8 +175,11 @@ crates.
 
 ## Building and testing natively
 
-On the development Mac (Apple silicon) the crate builds and tests with a native
-Rust toolchain and the vendored crates. The Linux-only calls are gathered in
+On a Linux host or the development Mac (Apple silicon) the crate builds and
+tests with a native Rust toolchain and the vendored crates; the commands below
+and the drivers' native commands are the same on both. On Linux they exercise
+the supported code paths, which makes a Linux host the most faithful native
+loop, but its runs are still development evidence, not qualification. The Linux-only calls are gathered in
 `service/src/platform.rs`, whose module documentation lists each one beside its
 macOS fallback: `flock` for the OFD lock, `st_birthtime` for `statx`,
 `getentropy` for `getrandom`, no process start time, and so on. The fallbacks

@@ -6,16 +6,34 @@ as the binary `stewart`. These rules apply to all development work.
 Experimental status leaves room to change the design; it does not cancel custody
 obligations, excuse unreported failures or turn intended behavior into evidence.
 
+## Find your way
+
+- **Code.** The [crate guide](service/README.md) maps the modules by role, the
+  integration tests and the build features. Each module opens with an account
+  of what it does and cites [docs/INTERFACE.md](docs/INTERFACE.md) by section
+  number; read the cited section rather than the whole interface.
+- **Behavior.** [DESIGN.md](DESIGN.md) explains purpose and architecture;
+  [CONTRACTS.md](CONTRACTS.md) owns decided behavior, implementation status and
+  the reasons for boundaries. INTERFACE and
+  [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) define the exact interface
+  and forms. [ACCEPTANCE.md](ACCEPTANCE.md) states the evidence owed.
+- **Builds and checks.** [DEVELOPMENT](development/DEVELOPMENT.md) covers
+  building from the vendored crates, the Cargo configurations, the independent
+  drivers and the container suites. Native runs, on Linux or the development
+  Mac, are for iteration and qualify nothing.
+- **Audits belong to their writer.** Only the exact binary that created an audit
+  can change it. A rebuilt binary can read its receipt and status but refuses
+  every mutation, including `run` and `close`. Keep that binary until its
+  audits close
+  ([version obligations](CONTRACTS.md#versions-and-legacy-obligations)).
+
 ## Start a task
 
 1. **Read the request and inspect the working tree.** Check `git status` and
    preserve unrelated changes. Other sessions may be working in this checkout.
-2. **Read the specification the task touches.** [DESIGN.md](DESIGN.md) explains
-   purpose and architecture; [CONTRACTS.md](CONTRACTS.md) owns decided behavior,
-   implementation status and the reasons for boundaries. [docs/INTERFACE.md](docs/INTERFACE.md)
-   and [docs/QUESTION-FORMS.md](docs/QUESTION-FORMS.md) define the exact interface
-   and forms. [ACCEPTANCE.md](ACCEPTANCE.md) states the evidence owed. Resolve
-   schemas and mechanisms within those decisions.
+2. **Read the specification the task touches.** Resolve schemas and mechanisms
+   within its decisions. For a defect, first reproduce it as a failing test
+   beside the code or under `service/tests/`.
 3. **Find remaining work in tracked `*-PLAN.md` files.** Use
    `git ls-files '*-PLAN.md'`. The coordinating plan owns cross-plan order;
    each topic plan owns its decisions and tasks. Historical conversations,
