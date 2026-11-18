@@ -756,6 +756,11 @@ guidance or operating history to provide that context. This does not expand
 custody of supplied material or alter the auditor's text, citations or selected
 artifacts.
 
+The manifest remains the only member that names the seal actor. Neither the
+rendering nor the question member says whether the auditor submitted the
+selection or the manager sealed it; a reader who needs that fact reads
+`seal.actor` in the manifest.
+
 The current package in [INTERFACE 8.2](docs/INTERFACE.md#82-the-return-package)
 does not yet include the question. Its package specification, implementation and
 independent acceptance checks must be aligned when this addition is implemented;

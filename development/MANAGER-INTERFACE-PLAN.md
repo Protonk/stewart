@@ -148,17 +148,6 @@ status table.
   carries: where materials go, and to finish editing before prepare. A `run`
   refused after a completed close still offers `close` to "Continue the close."
 
-One question is the maintainer's. `answer.md` opens "Rendered by Stewart. Entry
-text is attributed to the auditor." whether the auditor submitted or close
-sealed unsubmitted work as the manager; only `manifest.json` carries
-`seal.actor`. The interaction findings twice describe a finished-looking
-manager-sealed return.
-[The rendering contract](../CONTRACTS.md#readable-answer-rendering) keeps
-operating history out of the rendering and binds the sealer in the manifest.
-Decide whether the returned-question package change also states the seal actor
-in a readable member, or the manifest remains its only place. The decided
-question member is unaffected either way.
-
 #### Family registry design inputs
 
 The family definition already owns identity/version, guidance, ordered
