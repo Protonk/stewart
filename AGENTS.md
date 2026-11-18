@@ -173,8 +173,8 @@ retrieval worked or grant authority to resume an audit.
 
 ## Use the environment correctly
 
-A sandboxed agent shell cannot reach Apple `container` because its Rosetta check
-is denied. Supply the command for the maintainer to run on the host with `!`.
+If the sandbox blocks a required host operation, use the harness's normal
+escalation route for that command.
 
 Run Python with an explicit interpreter and isolated startup (`-I`, plus `-B`
 where bytecode must stay unwritten). Isolated mode ignores `PYTHONPATH`, so

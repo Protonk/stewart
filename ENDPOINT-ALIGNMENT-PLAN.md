@@ -103,3 +103,7 @@ alignment tasks.
 Complete this plan when the mechanism is built, each model the first release
 names and the harness pin have current alignment records, and the enduring
 procedure is documented in `alignment/`. Then delete the plan.
+
+The Messages launcher in step 2 can use a saved connection directly. With
+host access through the harness, alignment needs neither a delegated queue
+nor a manual handoff just to reach Apple `container`.

@@ -1,8 +1,8 @@
 # Delegated host execution
 
-`host_queue.py` lets an operator enable serial C10 operations from an agent that
-cannot use Apple `container` directly. It dispatches the existing launcher and
-operator commands, with retained argv, streams and exits. It does not accept
+`host_queue.py` serializes a campaign's C10 operations on the host and tracks
+its placement allowance across requests. It dispatches the existing launcher
+and operator commands, with retained argv, streams and exits. It does not accept
 shell commands, replace packet/rehearsal checks, judge scientific work, manage
 credits, or confer authority. Use it only under an explicit bounded commission.
 

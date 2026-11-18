@@ -503,9 +503,7 @@ descriptor, works from any
 directory, needs no session, runs in the foreground by default, and refuses with
 a sign when the audit is running or has ended. Status takes a reference and
 answers whoever holds it. Stewart records what it observed about each invocation
-as observations and never labels who the manager is. Agent harnesses escalate
-network commands to a person at their own discretion; Stewart cannot demand or
-enforce that and must plan around it without depending on it, so one session may
+as observations and never labels who the manager is. One session may
 hold an audit the agent ran, one a person ran on its behalf, and one handed back
 and forth.
 

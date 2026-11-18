@@ -275,9 +275,8 @@ second gated build with a different digest for the profile/writer comparison.
 
 ## Container suites
 
-The suites run under Apple `container` 1.6.1 on the development Mac. From a
-sandboxed shell, prepare the command for the maintainer to run on the host
-with `!`. Each script checks the version and that the container services are
+Run the suites on the development Mac with access to Apple `container` 1.6.1.
+Each script checks the version and that the container services are
 running, and stops otherwise. `acceptance.sh`
 also needs the toolchain images and `service/vendor` from
 `step2.sh`. The network is used only to pull pinned images, build the toolchain

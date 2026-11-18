@@ -128,8 +128,7 @@ python3 -I -B apparatus/check_links.py
 ```
 
 Native iteration uses an existing native binary and a new absolute directory.
-It needs permission to listen on loopback; when the agent shell cannot do that,
-the operator runs it on the host. It makes no model calls.
+Run it where the fake provider can listen on loopback. It makes no model calls.
 
 ```sh
 python3 -I -B apparatus/c10/smoke.py \
@@ -328,13 +327,13 @@ python3 -I -B apparatus/c10/c10.py live "$PWD/.scratch/c10-live-NN" \
   --approved-commission APPROVED_SHA256 --rehearsal "$PWD/.scratch/c10-launch-NN"
 ```
 
-Run an authorized live launch in a separate interactive terminal, or use the
-[delegated host queue](HOST-QUEUE.md) under an explicit campaign commission.
-The launcher
-first checks bindings, opens a credential-free TCP connection to the provider
-and completes every intake/readback. It then obtains the key by hidden entry or
-the explicitly selected saved connection and sends it through an inherited
-descriptor. Keys never belong in argv, environment
+For a direct, authorized launch, use a terminal for hidden key entry or select
+a saved connection with `--connection`. For a campaign commissioned to use
+the [host queue](HOST-QUEUE.md), dispatch its placements through that queue.
+The launcher first checks bindings, opens a credential-free TCP connection to
+the provider and completes every intake/readback. It then obtains the key by
+hidden entry or the explicitly selected saved connection and sends it through
+an inherited descriptor. Keys never belong in argv, environment
 variables or chat. Private command records remain in the container. Automatic
 ordinary close occurs only after a checked auditor submission. A failure does
 not authorize restarting the batch.

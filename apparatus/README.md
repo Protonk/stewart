@@ -30,9 +30,8 @@ prepares installation evidence and runtime profiles.
 
 On the development Mac the containers run under Apple `container` 1.6.1. Each
 script checks that version and that the container services are running, and
-stops otherwise. The scripts need Apple `container` on the host. An agent whose
-shell is sandboxed cannot reach it, so the agent prepares the command and the
-user runs it. Each script requires one argument, its evidence folder, and
+stops otherwise. Run the scripts from a shell with access to the host's
+container service. Each script requires one argument, its evidence folder, and
 refuses one that exists; give a new folder directly under `.scratch/` as an
 absolute path. Without the argument a script prints its usage and exits 2
 before doing anything else.
