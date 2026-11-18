@@ -1,11 +1,12 @@
 # Release and work plan
 
-**Current status:** The developer lookback is complete. Its decided changes to
-placement endings, exhausted starts and signal gating landed with native checks
-only; a container run, scheduled by the principal, must qualify the changed
-source. Readiness reassessment resumes next; manager-interface implementation,
-endpoint alignment and platform qualification remain ahead. No live packet is active and the
-public release is not scheduled by this plan.
+**Current status:** The developer lookback is complete. The Linux acceptance
+run qualified its changes to placement endings, exhausted starts and signal
+gating on both architectures at `4530c6c`
+([acceptance-lookback-03](apparatus/qualified.md#acceptance-lookback-03)).
+Readiness reassessment resumes next. Manager-interface implementation, endpoint
+alignment and release qualification remain ahead. No live packet is active and
+the public release is not scheduled by this plan.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -17,7 +18,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Finish remaining fixture dispositions, coverage reassessment and qualification, starting with Linux qualification of the lookback's changes. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) |
+| Current | Resolve the remaining fixture gaps and reassess coverage. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separately scheduled release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
