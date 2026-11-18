@@ -66,12 +66,13 @@ and independent-driver work between authors.
 
 ### 1. Specify the shared commissioning and documentary contracts
 
-- [ ] Walk `new`, `prepare`, `commission`, `run`, `receipt`, `status`, `close`
+- [x] Walk `new`, `prepare`, `commission`, `run`, `receipt`, `status`, `close`
   and the return against the owning contracts and the
   interaction findings (`apparatus/studies/interaction/RESULTS.md` at
-  `77375f1`; the qualification index identifies their originals). Record
-  actionable mismatches here as they are found, without reopening the decided
-  return-context change for another reader study.
+  `77375f1`; the qualification index identifies their originals). The
+  [walk findings](#walk-findings) list the actionable mismatches and name the
+  task that takes each one. The decided return-context change is not reopened
+  for another reader study.
 - [ ] Specify the family registry: identity/version, availability, purpose,
   accepted roles, optional evidence classes, declaration shape, structural
   constraints, recommended roles and explanation/remedy text. Derive meanings
@@ -106,6 +107,57 @@ and independent-driver work between authors.
 **Complete when:** each promised rule has one owner; examples distinguish invalid
 structure from admissible insufficiency; exact schemas and test obligations are
 reviewable before implementation.
+
+#### Walk findings
+
+The walk ran the release build's `new`, `prepare`, `commission`, `receipt`,
+`status`, a credential-less `run` and `close` before launch in a scratch
+archive. It read a completed run, an after-launch close and a manager-sealed
+return from the retained `acceptance-readiness-04` runtime evidence. It started
+no model, so a Messages-path run and its after-launch close were not executed.
+Beyond the items below it showed no mismatch with INTERFACE 5 or the CONTRACTS
+status table.
+
+- **Prepare's defect list is unspecified.** `prepare` reports every
+  front-matter and body defect in one refusal as `data.defects`, each
+  `{reason, line, key, message}`, and takes the reply's `reason` from the
+  first. INTERFACE 5.3 lists the reasons only. Specify this form with the
+  diagnostics split; errors, warnings and suggestions should extend it and not
+  add a second shape.
+- **Recorded refusals stay in every later status.** INTERFACE 4.8 records each
+  manager refusal in `diag/` and 5.6 lists those records. A corrected scaffold
+  refusal and a credential-less `run` therefore remain under status
+  qualifications after acceptance and after close. The interaction findings
+  found explanations of routine custody machinery noisy. Decide with the
+  diagnostics split whether warnings and suggestions are durable, and whether
+  default status keeps showing a refusal that a later success superseded.
+- **The credential refusal names no remedy.** `run` refuses
+  `provider_key_missing` with "The selected provider credential is empty or
+  absent." Its next call says to run again "once the environment is set as the
+  message says". Neither names `--key-fd` or `ANTHROPIC_API_KEY`; the
+  commission reply's `run_needs` does. The `--key-fd` recipe task takes this.
+- **Help omits the per-response output cap.** INTERFACE 6.2 pins
+  `max_tokens_per_request` at 16,000, and the interaction findings observed
+  that thinking counts against it: more than once a whole response went to
+  thinking, nothing was recorded and the placement ended on `max_tokens`.
+  `help limits` describes only the cumulative limits. The effect descriptions
+  take this.
+- **Human output runs string lists together.** `run needs` prints its three
+  entries as one unpunctuated line in the commission and receipt replies.
+- **Smaller wording gaps.** INTERFACE 3.2 omits two comment lines the scaffold
+  carries: where materials go, and to finish editing before prepare. A `run`
+  refused after a completed close still offers `close` to "Continue the close."
+
+One question is the maintainer's. `answer.md` opens "Rendered by Stewart. Entry
+text is attributed to the auditor." whether the auditor submitted or close
+sealed unsubmitted work as the manager; only `manifest.json` carries
+`seal.actor`. The interaction findings twice describe a finished-looking
+manager-sealed return.
+[The rendering contract](../CONTRACTS.md#readable-answer-rendering) keeps
+operating history out of the rendering and binds the sealer in the manifest.
+Decide whether the returned-question package change also states the seal actor
+in a readable member, or the manifest remains its only place. The decided
+question member is unaffected either way.
 
 #### Family registry design inputs
 
