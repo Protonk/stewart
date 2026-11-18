@@ -1,0 +1,21 @@
+HTTP/1.1 407 Proxy Authentication Required
+Proxy-Authenticate: Basic realm="wire-fixture"
+Content-Type: text/html; charset=ISO-8859-1
+Server: WEBrick/1.9.1 (Ruby/2.6.10/2022-04-12)
+Date: Wed, 18 Nov 2026 14:40:32 GMT
+Content-Length: 348
+Connection: close
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<HTML>
+  <HEAD><TITLE>Proxy Authentication Required</TITLE></HEAD>
+  <BODY>
+    <H1>Proxy Authentication Required</H1>
+    WEBrick::HTTPStatus::ProxyAuthenticationRequired
+    <HR>
+    <ADDRESS>
+     WEBrick/1.9.1 (Ruby/2.6.10/2022-04-12) at
+     local-wire.test:0
+    </ADDRESS>
+  </BODY>
+</HTML>

@@ -1,0 +1,6 @@
+HTTP/1.1 200 OK
+Server: WEBrick/1.9.1 (Ruby/2.6.10/2022-04-12)
+Date: Wed, 18 Nov 2026 14:40:32 GMT
+Content-Length: 0
+Connection: close
+

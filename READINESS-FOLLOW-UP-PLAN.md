@@ -1,9 +1,9 @@
 # Readiness follow-up
 
-**Current status:** The bounded encounters have reviewed outcomes.
-[Linux acceptance](apparatus/qualified.md#acceptance-lookback-03) qualified
-the lookback source on both architectures. Fixture gaps and the coverage
-reassessment remain open. No live packet is active.
+**Current status:** The bounded encounters have reviewed outcomes. The host
+development checks passed for the new wire, Keychain and provider-error
+comparisons. Linux acceptance and the offline C10 rehearsal on this source
+remain open. No live packet is active.
 
 This plan owns residual readiness findings and their disposition.
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
@@ -17,36 +17,67 @@ Keep exact writers for open audits, and preserve original captures and receipts.
 
 ## Remaining fixtures and dispositions
 
-- [ ] Ground wire/proxy stand-ins in local HTTP/CONNECT framing and refusal
-  transcripts. Ground Keychain helper exit/error forms without retaining secret
-  lookup output. Neither task needs a model launch.
-- [ ] Give C1's supplied authentication/process-result controls actual helper or
-  launcher observations, or explicitly retain their limited scope. A supplied
-  result does not establish execution of the helper that could produce it.
-- [ ] Inventory the remaining capture groups: provider errors, rejected/overage
-  events, alternative runtime compaction shapes and terminal-cap results. Reuse
-  suitable retained observations after checking provenance. Record what is
-  missing and which claims those gaps limit. Synthetic frames do not establish
-  live forms or cap enforcement.
+- [x] Both new binary comparisons, `c1.captured-wire` and
+  `c9.captured-authentication-error`, passed on the native host. The HTTP server
+  supplied length, chunked and close-delimited replies and the CONNECT proxy
+  accepted and refused the same request. The service exercised its parser
+  and tunnel over socketpairs. The Keychain metadata lookup yielded exit 44
+  with two diagnostics in both host contexts. Its replay and single-line
+  differing case passed. Locked and cancelled lookups remain synthetic.
+- [x] Retain the supplied-result limitation for C1. Across positive,
+  closed-gate and invariance, the sanitized authentication receipts matched
+  their three launcher outputs, the three model process results matched their
+  launcher records and both model streams matched byte for byte. All six
+  guards were reaped and their groups reported gone at observation. The
+  observer tests consume supplied receipts. Historical launcher observations
+  cover those six executions only.
+- [x] Inventory the retained captures. Across 110 digest-verified Messages
+  exports from 62 indexed encounters, 492 distinct attempt records referenced
+  487 verified bodies. There were 486 HTTP 200s, one HTTP 401 and five attempts
+  without a status. No attempt retained a `retry-after` value. The redacted
+  401 grounds the authentication-error fixture. Other error bodies, retry
+  headers and their endpoint currency remain for alignment.
+- [x] Reassemble and inspect the captured stdout from C1–C5 and the two
+  reviewed page-delivery encounters. In 15 streams, all 15 rate events allowed
+  subscription use with overage rejected and unused. The six captured result
+  events reported success. No stream showed rejected subscription use, overage
+  enablement/use, a compaction boundary or a terminal cap result. C5 observed
+  a cap message and same-session recovery. Its threshold and enforcement
+  remain unmeasured. The subscription track owns those open observations.
 
 ## Reassess coverage
 
-- [ ] Challenge repaired and newly grounded tests using independent expected
-  values, firing controls, a differing case and an invariance. Check exact
-  refusal reasons, skipped prerequisites and whether each claimed condition was
-  reached. Use the [working evidence](#working-evidence) to retrieve original failures
-  and corrected comparisons. Preserve driver independence under [AGENTS](AGENTS.md)
-  and have a fresh reviewer challenge findings.
-- [ ] Report trusted coverage for commissioning, return/lifecycle/custody,
-  runtime comparisons and endpoint alignment. Derive it from actual case
-  conditions, witnesses and receipts. Counts describe coverage, not a target;
-  unexercised behavior cannot count as covered. Treat the earlier untracked
-  `.tmp/readiness/a/` classifications and `.tmp/readiness/tools/trusted.py` as
-  provisional inputs, not the current verdict. No backup exists; release that
-  working set only when the reassessment no longer needs it.
-- [ ] For each finding, repair a demonstrated defect, run a comparison that
-  could settle it, or document the limitation it places on the result.
-  Speculative refactors can stay unselected.
+- [x] Challenge repaired and newly grounded tests against independent inputs.
+  The native driver ran both selected cases with zero skips. All 573 wire-case
+  checks passed. The 401 release and test baselines each passed 594/594.
+  Hiding the provider message caused exactly six failures across the three
+  header variants, in the command reply and the recorded placement ending.
+- [x] Report coverage from the qualified receipts and independent witnesses.
+  The fresh review is in `.tmp/readiness-review-20261118/`. Keep the earlier
+  provisional classifications in `.tmp/readiness/a/` until the final checks.
+  - **Commissioning.** The ordinary-file cases detected a same-size edit with
+    restored mtime, refused the stale handle, read back the fresh intake and
+    recovered the existing commission after a lost reply. Scans witness the
+    changes they encounter. Shared roles and manager preparation remain ahead.
+  - **Return and custody.** `c5.package` compared the returned bytes with
+    external expectations. `c18.after-launch-custody` distinguished a valid
+    separate package from a missing archive and checked restoration. The
+    C3 review reconciled the two recorded spill copies and the three corrected
+    delivery members. Its scope ends at the observed paths and process groups.
+  - **Runtime.** The repaired near-limit comparison stopped on the observed
+    notice before the deadline and passed 968/968 checks. Linux qualified the
+    tested submission, close and deadline outcomes. Second-relay refusal during
+    a placement and the exact queue-entry instant remained unobserved. Final
+    usage in the live submitting placements remains partial.
+  - **Endpoint alignment.** The M4 compaction body matched its retained export
+    and synthetic peer bytes. Changing iteration output by one changed the
+    charge, changing top-level input by seven preserved it, and all four named
+    compaction controls fired. The live encounter establishes one direct-TLS
+    observation. The release still needs current per-model alignment records.
+- [x] Disposition the readiness findings within their observed scope. The
+  release coverage review owns residual black-box gaps. Alignment owns
+  unobserved Messages forms. The subscription track owns the remaining
+  harness observations.
 
 ## Working evidence
 
@@ -97,11 +128,17 @@ reviews name; the `.tmp` roots keep the retained copies.
 
 ## Verify and close the work
 
-- [ ] Run [DEVELOPMENT's required checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
-  for further changes, retaining actual outputs through review. Qualify changed
-  service behavior in the container before another live alignment packet.
-  A changed runtime surface needs a matching reviewed surface check before
-  service use. Run live checks only within their bounded commission.
+- [x] Review native verification. In `.tmp/readiness-evidence-01/host.mEwASDr1/`,
+  all four Cargo configurations passed. The C10, placement and launcher suites
+  passed 118, 51 and 31 tests. The driver self-test passed 573/573 with zero
+  skips. Both selected binary cases and their firing control ran. The earlier
+  bind-denied runs and the source captures remain under
+  `.tmp/readiness-evidence-01/`, `.tmp/readiness-wire-01/` and
+  `.tmp/readiness-provider-error-01/` through review.
+- [ ] Run Linux acceptance on both architectures at the committed source and
+  record the result. Use its qualified aarch64 binary for the retained
+  offline C10 rehearsal. Review the actual case and control results for both
+  runs under [DEVELOPMENT](development/DEVELOPMENT.md#what-to-run-for-what-you-changed).
 - [ ] After reassessment, release reproducible working evidence whose inspection
   purpose has ended under [retention rules](development/DEVELOPMENT.md#evidence-and-retention).
   Preserve selected originals, exact writers and unresolved custody witnesses.

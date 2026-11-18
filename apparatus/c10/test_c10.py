@@ -387,6 +387,30 @@ class ConnectionTests(unittest.TestCase):
         self.assertNotIn(self.key.encode(),result.stdout+result.stderr)
         self.assertNotIn('-w',json.loads((self.bin/'calls.jsonl').read_text()))
 
+    def test_metadata_lookup_with_compound_diagnostic(self):
+        path = HERE.parent / 'testdata/keychain/metadata-missing.json'
+        raw = path.read_bytes()
+        self.assertEqual(hashlib.sha256(raw).hexdigest(),
+                         'fbff58d70c4800d936c19ec70a0094a11c7a9d39f4956e5c45c35508c4177373')
+        observed = json.loads(raw)
+        self.assertEqual((observed['exit'], observed['password_requested'], observed['stderr_complete']),
+                         (44, False, True))
+        parameter, missing = observed['stderr'].splitlines(keepends=True)
+        for label, stderr, expected in [
+                ('observed', observed['stderr'], 'lookup_failed'),
+                ('only-missing', missing, 'missing_item'),
+                ('reordered', missing + parameter, 'lookup_failed')]:
+            with self.subTest(label=label):
+                self.configure(exit=observed['exit'], stdout='', stderr=stderr)
+                record = self.records / (label + '.json')
+                with self.assertRaises(connections.ConnectionError) as caught:
+                    connections.status('synthetic', record=record)
+                self.assertEqual(caught.exception.code, expected)
+                receipt = json.loads(record.read_bytes())
+                self.assertEqual((receipt['exit'], receipt['outcome'], receipt['password_requested']),
+                                 (44, expected, False))
+                self.assertNotIn('SecKeychain', record.read_text())
+
     def test_failures_are_distinct_and_never_echo_tool_streams(self):
         for n,(status,message,code) in enumerate([
             (44,'The specified item could not be found in the keychain.','missing_item'),

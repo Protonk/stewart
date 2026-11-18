@@ -1,9 +1,10 @@
-"""Captured Messages cap/refusal forms, from INTERFACE 6.2–6.5 and 7.4–7.5.
+"""Captured Messages responses, from INTERFACE 4.5, 6.2–6.6 and 7.4–7.5.
 
 Original responses are opaque fixtures; the script, account and charge schedule
 are synthetic. Origins and precise projection limits live in testdata/README.md.
 """
 from pathlib import Path
+from types import SimpleNamespace
 
 import answer_witness as aw
 import fake_provider as fp
@@ -15,6 +16,82 @@ from driver_core import CONTINUATION, NEAR_LIMIT, REMINDER, Control, F, case, se
 
 FIXTURES = Path(__file__).parent / "testdata/messages"
 ACCOUNT = b"The supplied report claims success; this synthetic auditor did not witness execution."
+AUTH_BODY_ID = "req_000000000000000000000000"
+
+
+def authentication_error_step(body, header_id):
+    headers = [("request-id", header_id)] if header_id is not None else []
+    return fp.HttpError(401, body=body, request_id_header=False, headers=headers)
+
+
+@selftest
+def captured_authentication_error_selftest():
+    body = (FIXTURES / "sanity-authentication-error.json").read_bytes()
+    out = [("captured.401.projected-body", len(body) == 130 and sha256_hex(body) ==
+            "0366ef8a85e9d5f36b6541f5f64a89a8d785d0242693c9ab256621f6d6c0f380")]
+    for name, header_id, line, reported_id in (
+        ("original", AUTH_BODY_ID, b"request-id: req_000000000000000000000000\r\n", AUTH_BODY_ID),
+        ("different-header", "req_header_test", b"request-id: req_header_test\r\n", "req_header_test"),
+        ("absent-header", None, b"", AUTH_BODY_ID),
+    ):
+        step = authentication_error_step(body, header_id)
+        wire = b"".join(step.framed(None))
+        expected = (b"HTTP/1.1 401 Unauthorized\r\ncontent-type: application/json\r\n" + line +
+                    b"content-length: 130\r\nconnection: close\r\n\r\n" + body)
+        facts = fp.provider_facts(SimpleNamespace(response_raw=wire))
+        out += [("captured.401." + name + ".wire", wire == expected),
+                ("captured.401." + name + ".provider", facts == {
+                    "status": 401, "error_type": "authentication_error", "error_message": "invalid x-api-key",
+                    "request_id": reported_id})]
+    return out
+
+
+@case("c9.captured-authentication-error", ["C9", "C6"],
+      "captured 401 retains its body, uses the header request ID before the body ID and costs nothing",
+      needs=("loopback",), controls=[Control("hide_provider_message", [
+          r"^captured\.401\.original\.(provider|run_ended\.provider)$"])])
+def c_captured_authentication_error(t):
+    """Serve the projected body with its recorded selected headers. Change only the request-id
+    header, then omit it. The attempt keeps the body's ID in all three placements. The run
+    reply and ending prefer the different header ID and fall back to the body ID on omission."""
+    body = (FIXTURES / "sanity-authentication-error.json").read_bytes()
+    for variant, header_id, expected_id in (
+        ("original", AUTH_BODY_ID, AUTH_BODY_ID),
+        ("different-header", "req_synthetic_header_only", "req_synthetic_header_only"),
+        ("absent-header", None, AUTH_BODY_ID),
+    ):
+        name = "captured.401." + variant
+        sub = t.submission([])
+        t.accept(sub, prefix=name + ".")
+        step = authentication_error_step(body, header_id)
+        fx = rs.provider(t, fp.Script([step], then=lambda ex: fp.HttpError(400)), label=variant)
+        rep = rs.run(t, sub, fx, name=name)
+        facts = rs.check_rejection(t, sub, fx, rep, name, run_number=1)
+        t.eq(name + ".witness-provider", facts,
+             {"status": 401, "error_type": "authentication_error", "error_message": "invalid x-api-key",
+              "request_id": expected_id, "request": 1, "attempt": 1})
+        expected_headers = {"content-type": ["application/json"],
+                            "request-id": [header_id] if header_id is not None else [], "retry-after": []}
+        exs = fx.exchanges_of(name)
+        if len(exs) == 1:  # check_rejection checks the exchange count.
+            _, sent_headers, sent_body, complete, _ = fp.parse_response(exs[0].response_raw)
+            selected = {k: [v for n, v in sent_headers if n.lower() == k] for k in expected_headers}
+            t.eq(name + ".witness-headers", selected, expected_headers)
+            t.eq(name + ".witness-body", (complete, sent_body), (True, body))
+        rd = rs.run_dirs(sub).get(1)
+        if rd is None:  # check_rejection checks the run directory.
+            continue
+        t.eq(name + ".archived-attempts", sorted(rd.attempts), [(1, 1)])
+        record = (rd.attempts.get((1, 1)) or {}).get("body") or {}
+        t.eq(name + ".archived-headers", record.get("headers"), expected_headers)
+        t.eq(name + ".archived-error", record.get("error"),
+             {"type": "authentication_error", "message": "invalid x-api-key", "request_id": AUTH_BODY_ID})
+        t.eq(name + ".request-written", record.get("request_written"), "complete")
+        t.eq(name + ".reflection", record.get("credential_reflection"), {"body": False, "headers": []})
+        t.eq(name + ".charge", record.get("charged"),
+             {"basis": "none", "turns": 0, "input_tokens": 0, "output_tokens": 0})
+        t.eq(name + ".ending-usage", (rs.run_ended_of(t, sub, 1) or {}).get("usage"),
+             {k: {"reported": 0, "estimated": 0} for k in ("turns", "input_tokens", "output_tokens")})
 
 
 class CapturedCap(fp.Message):

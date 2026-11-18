@@ -1,0 +1,26 @@
+{
+  "start": "2026-11-18T14:37:57.117379+00:00",
+  "end": "2026-11-18T14:37:57.127572+00:00",
+  "platform": "macOS-26.7.1-arm64-arm-64bit",
+  "argv": [
+    "/usr/bin/security",
+    "find-generic-password",
+    "-s",
+    "stewart-readiness-fixture",
+    "-a",
+    "absent-765a6c400da548e5be0bfecad0e0e1a5"
+  ],
+  "environment_keys": [
+    "HOME",
+    "LC_ALL",
+    "LOGNAME",
+    "PATH",
+    "TMPDIR",
+    "USER"
+  ],
+  "exit": 44,
+  "stderr_complete": true,
+  "stderr": "security: SecKeychainSearchCreateFromAttributes: One or more parameters passed to a function were not valid.\nsecurity: SecKeychainSearchCopyNext: The specified item could not be found in the keychain.\n",
+  "stdout": "discarded",
+  "password_requested": false
+}

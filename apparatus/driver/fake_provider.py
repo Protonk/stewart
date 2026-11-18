@@ -1062,13 +1062,23 @@ class Listener:
 
 class ConnectProxy:
     """A small HTTP CONNECT proxy for HTTPS_PROXY (INTERFACE 6.1). routes maps
-    'host:port' to (ip, port); anything else is answered 502. refuse= answers every
-    CONNECT with that status. It records each CONNECT request byte for byte and the
+    'host:port' to (ip, port); anything else is answered 502. A nonzero refuse=
+    answers every CONNECT with that status. A supplied reply= is sent byte for byte
+    and opens the tunnel on 2xx. The proxy records each request and the
     tunnel's byte counts, and whether the API key ever crossed the tunnel in clear
     (it must not: TLS runs end to end inside the tunnel)."""
 
-    def __init__(self, routes, record_dir=None, refuse=None, key=None, provider=None, connector=None):
+    def __init__(self, routes, record_dir=None, refuse=None, key=None, provider=None, connector=None, *, reply=None):
         self.routes, self.record_dir, self.refuse = dict(routes), record_dir, refuse
+        self.reply, self.status = reply, 200
+        if reply is not None:
+            if refuse:
+                raise ValueError("choose a refusal status or an exact proxy reply")
+            self.status, _, _, complete, _ = parse_response(reply)
+            if self.status is None or not 100 <= self.status <= 599 or not complete:
+                raise ValueError("proxy fixture needs a complete HTTP reply")
+            if not 200 <= self.status < 300:
+                self.refuse = self.status
         self.key = key.encode() if isinstance(key, str) else key
         self.provider = provider           # attribution of upstream connections
         for target in self.routes.values():
@@ -1117,7 +1127,7 @@ class ConnectProxy:
             if self.key and self.key in raw:
                 rec["key_seen_in_clear"] = True
             if self.refuse:
-                sock.sendall(b"HTTP/1.1 %d %s\r\ncontent-length: 0\r\n\r\n" % (
+                sock.sendall(self.reply or b"HTTP/1.1 %d %s\r\ncontent-length: 0\r\n\r\n" % (
                     self.refuse, REASONS.get(self.refuse, "Refused").encode()))
                 rec["answer"] = self.refuse
                 return
@@ -1133,8 +1143,8 @@ class ConnectProxy:
                     self.provider.attribution[lport] = tid
             except (OSError, IndexError, TypeError):
                 pass
-            sock.sendall(b"HTTP/1.1 200 Connection established\r\n\r\n")
-            rec["answer"] = 200
+            sock.sendall(self.reply or b"HTTP/1.1 200 Connection established\r\n\r\n")
+            rec["answer"] = self.status
             rest = bytes(buf[end + 4:])
             if rest:
                 up.sendall(rest)
@@ -1555,14 +1565,17 @@ def fake_provider_selftests():
     out.append(("fake.proxy.recorded", t.get("request") == "CONNECT provider.test:443 HTTP/1.1"
                 and t.get("authority") == "provider.test:443" and t.get("up_bytes", 0) > len(body)))
     out.append(("fake.proxy.key-not-in-clear", t.get("key_seen_in_clear") is False))
-    proxy2 = ConnectProxy({}, refuse=403)
-    p1, p2 = socket.socketpair()
-    pt = threading.Thread(target=proxy2.handle_connection, args=(p1,), daemon=True)
-    pt.start()
-    p2.sendall(b"CONNECT provider.test:443 HTTP/1.1\r\nhost: provider.test:443\r\n\r\n")
-    st = read_response(p2, timeout=5)[0]
-    pt.join(5)
-    out.append(("fake.proxy.refusal", st == 403))
+    # A positional zero disables forced refusal, so an unmapped authority reaches routing.
+    for name, proxy, expected in (("refusal", ConnectProxy({}, refuse=403), 403),
+                                  ("zero-refusal-routes", ConnectProxy({}, None, 0), 502)):
+        server, client = socket.socketpair()
+        worker = threading.Thread(target=proxy.handle_connection, args=(server,), daemon=True)
+        worker.start()
+        with client:
+            client.sendall(b"CONNECT provider.test:443 HTTP/1.1\r\nhost: provider.test:443\r\n\r\n")
+            status = read_response(client, timeout=5)[0]
+        worker.join(5)
+        out.append(("fake.proxy." + name, status == expected, status))
     # A key sent in clear through the tunnel is detected (the firing control for that check).
     proxy3 = ConnectProxy({"provider.test:443": ("127.0.0.1", 1)}, key=key,
                           connector=lambda addr: _sink())

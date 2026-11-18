@@ -1,6 +1,43 @@
 # Driver test data
 
+The [local wire captures](wire/README.md) preserve independent HTTP framing,
+CONNECT acceptance and an authentication challenge, with observations from
+both ends of the successful tunnel.
+
 ## `messages/`: captured provider responses
+
+### Sanity authentication rejection
+
+[`sanity-authentication-error.json`](messages/sanity-authentication-error.json)
+comes from the service-owned archive of the 2026-11-03 sanity run. The attempt
+records HTTP 401 and binds the complete response to its size and digest.
+
+| Origin | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `.scratch/sanity-live-03/container/live/work.tar` | 225280 | `c8f2634d385c512c4f4487c01e6444504113a9b64334d87ab56103bab8a3192e` |
+| `private/archive/audits/aypgwop3w4k2pgemf/runs/1/response-1-1.bin` | 130 | `9432ea7e85517291486c72f1c16920871b4de57da46b258374f083527edcc200` |
+| `private/archive/audits/aypgwop3w4k2pgemf/runs/1/attempt-1-1.json` | 988 | `873f6578f7b4395c54d4b33412534aef43955fcb2b403d7237a4651cedfad86a` |
+| Projected response body | 130 | `0366ef8a85e9d5f36b6541f5f64a89a8d785d0242693c9ab256621f6d6c0f380` |
+
+The projection substitutes `req_000000000000000000000000` for the provider's
+request ID. All other response bytes are original. The attempt's selected
+headers give one `content-type` value of `application/json`, one `request-id`
+matching the body's ID, and no `retry-after`. The release driver serves those
+values with the same substitution. HTTP framing is synthetic. Only the replay
+has an independent peer witness.
+
+In [`c9.captured-authentication-error`](../cases_captured.py), the attempt,
+run reply and `run_ended` must preserve `authentication_error` and
+`invalid x-api-key`. The release must capture the complete body and selected
+headers, charge zero, stop after one attempt with cause `provider_rejected`
+and exit 5. Changing just the header ID must change the reported provider ID
+while preserving the error body's ID in the attempt. Omitting just the header
+must restore the original reported ID through fallback to the body. The
+`hide_provider_message` control must fire on the original rejection.
+This capture grounds one authentication rejection. Endpoint behavior for other
+status codes and the original request's wire framing remain unobserved here.
+
+### M4 compaction
 
 [`messages/m4-summary.json`](messages/m4-summary.json) is the exact HTTP response
 body from the 2026-11-15 M4 encounter, model `claude-opus-5-5`, effort omitted.

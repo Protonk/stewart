@@ -1,10 +1,11 @@
 # Release and work plan
 
-**Current status:** The developer lookback is complete. The Linux acceptance
-run qualified its changes to placement endings, exhausted starts and signal
-gating on both architectures at `4530c6c`
-([acceptance-lookback-03](apparatus/qualified.md#acceptance-lookback-03)).
-Readiness reassessment resumes next. Manager-interface implementation, endpoint
+**Current status:** The developer lookback is complete. Linux acceptance
+qualified its changes to placement endings, exhausted starts and signal
+gating on both architectures at `4530c6c` in `acceptance-lookback-03`.
+The subsequent readiness fixtures passed native verification. Linux acceptance
+and the offline C10 rehearsal remain for the changed source.
+Manager-interface implementation, endpoint
 alignment and release qualification remain ahead. No live packet is active and
 the public release is not scheduled by this plan.
 
@@ -18,7 +19,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Resolve the remaining fixture gaps and reassess coverage. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) |
+| Current | Qualify the readiness fixtures on both Linux architectures, review the offline C10 rehearsal and close readiness. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
@@ -113,18 +114,24 @@ The requirements remain those of ACCEPTANCE while its review is open.
 
 Check driver cases against every ACCEPTANCE claim. Uncovered requirements need a
 case or an explicit disposition. Add independent black-box comparisons for
-interim/folded/conflicting-length response heads, the retained-payload reserve
-boundary and `not_sent` notices; specification text and service-unit checks do
-not establish that coverage. The driver also lacks cases for close's `unknown`
+interim/folded/conflicting-length response heads and the retained-payload reserve
+boundary. The qualified `c7.notice-durability` and `c7.notice-transmission`
+cases already compare `not_sent` with the independent peer's received requests.
+The driver also lacks cases for close's `unknown`
 seal, delivery and closure effects after a failed publication, the `--verify`
 `problem` member and a symbolic link above an item, `receipt_record_failed`
-before the acceptance link, a `checked_at` that is not a timestamp, and a null
-JSON-RPC error `id` from the binary. Reassess unreached/partly reached conditions and
-unclear behavioral promises against the actual cases. Candidate gaps include
-C17's secondary logging errors, blind repetition after reply failure and omitted
-partial effects; C18's pressure pruning, confusion between retained and delivered bytes, and missing
-archives reported clean; and C11's scans presented as snapshot proof. Driver
-changes require an implementation-independent author.
+on failed publication of the acceptance record before its link, a `checked_at`
+that is not a timestamp, and a null JSON-RPC error `id` from the binary.
+The earlier receipt-write error is covered by `c17.capture-failures`.
+
+For C17, `t11-diagnostic-write`, `t1-lost-commission-reply` and
+`reply-write-failure` exercise secondary logging failure and recovery after
+a lost reply. For C18, `missing-archive` and `after-launch-custody` exercise
+archive loss, restoration and separate delivery verification. Review which
+dedicated firing controls still need to detect omitted partial effects, blind
+repetition, or false clean/delivery reports. Actual pressure pruning and C11's
+scan-versus-snapshot distinction also need dispositions. Driver changes require
+an implementation-independent author.
 
 Use the current acceptance claims to assess these test and apparatus choices.
 Any change to the evidence owed belongs in ACCEPTANCE.

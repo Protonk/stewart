@@ -1,0 +1,79 @@
+{
+  "started_utc": "2026-11-18T14:40:32.567067Z",
+  "finished_utc": "2026-11-18T14:40:32.571563Z",
+  "uid": 501,
+  "ruby": "ruby 2.6.10p210 (2022-04-12 revision 67958) [universal.arm64e-darwin25]",
+  "webrick": "1.9.1",
+  "sources": [
+    {
+      "klass": "WEBrick::HTTPServer",
+      "path": "/System/Library/Frameworks/Ruby.framework/Versions/2.6/usr/lib/ruby/2.6.0/webrick/httpserver.rb",
+      "line": 69,
+      "sha256": "9419af401c4380a40df80be92fc9e45e9082f5c652b46f858455cad7ca279adf"
+    },
+    {
+      "klass": "WEBrick::HTTPResponse",
+      "path": "/System/Library/Frameworks/Ruby.framework/Versions/2.6/usr/lib/ruby/2.6.0/webrick/httpresponse.rb",
+      "line": 238,
+      "sha256": "7e34e74665bd7109cfb2ae1b74fa7871fc0a8196f8f23ceadf57c2c01c7e351f"
+    },
+    {
+      "klass": "WEBrick::HTTPProxyServer",
+      "path": "/System/Library/Frameworks/Ruby.framework/Versions/2.6/usr/lib/ruby/2.6.0/webrick/httpproxy.rb",
+      "line": 133,
+      "sha256": "bbf8d1fce3e1c5e7d45f3f22658c45f6bf7d22e3b5f87e8187a09b4edb1973b3"
+    }
+  ],
+  "application_input": {
+    "path": "apparatus/driver/testdata/messages/m3-ordinary-ending.json",
+    "sha256": "ee1df6b283c322424e116e2e9a692a44ebd27e07546d5bd1928f27f407753728"
+  },
+  "connect_input": {
+    "path": ".scratch/acceptance-lookback-03/driver-arm64/evidence/cases/c1.tls-proxy/test/provider-provider/proxy/0001-connect.bin",
+    "sha256": "c38dced31b2e4cd0e5218afa8dce324bbd08a4a0c12fcf3284c61219109d45bc"
+  },
+  "observations": [
+    {
+      "name": "length",
+      "client_read_to_eof": true,
+      "bytes": 1732,
+      "observed_utc": "2026-11-18T14:40:32.567681Z"
+    },
+    {
+      "name": "chunked",
+      "client_read_to_eof": true,
+      "bytes": 1756,
+      "observed_utc": "2026-11-18T14:40:32.568176Z"
+    },
+    {
+      "name": "close",
+      "client_read_to_eof": true,
+      "bytes": 1710,
+      "observed_utc": "2026-11-18T14:40:32.568589Z"
+    },
+    {
+      "name": "unavailable",
+      "client_read_to_eof": true,
+      "bytes": 1749,
+      "observed_utc": "2026-11-18T14:40:32.569037Z"
+    },
+    {
+      "name": "accepted",
+      "upstream_connections": 1,
+      "client_read_to_eof": true,
+      "observed_utc": "2026-11-18T14:40:32.569735Z"
+    },
+    {
+      "name": "refused",
+      "upstream_connections": 0,
+      "client_read_to_eof": true,
+      "observed_utc": "2026-11-18T14:40:32.570088Z"
+    },
+    {
+      "name": "header-case",
+      "upstream_connections": 1,
+      "client_read_to_eof": true,
+      "observed_utc": "2026-11-18T14:40:32.570691Z"
+    }
+  ]
+}

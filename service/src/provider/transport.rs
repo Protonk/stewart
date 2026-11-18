@@ -1180,9 +1180,9 @@ pub(crate) mod tests {
         assert!(a.failure_text().unwrap().contains("handshake"));
     }
 
-    /// Accept a CONNECT, check its exact bytes, answer `status`, and when it
-    /// is 200 serve TLS inside the tunnel.
-    fn proxy_server(mut s: UnixStream, status: &'static str, seen: mpsc::Sender<Vec<u8>>) {
+    /// Accept a CONNECT, return the observed proxy reply, and serve TLS
+    /// through the tunnel when the proxy accepted it.
+    fn proxy_server(mut s: UnixStream, accept: bool, seen: mpsc::Sender<Vec<u8>>) {
         let mut head = Vec::new();
         let mut b = [0u8; 1];
         while !head.ends_with(b"\r\n\r\n") {
@@ -1192,10 +1192,17 @@ pub(crate) mod tests {
             head.push(b[0]);
         }
         seen.send(head).unwrap();
-        s.write_all(format!("HTTP/1.1 {status}\r\nx-proxy: yes\r\n\r\n").as_bytes())
+        if accept {
+            s.write_all(include_bytes!(
+                "../../../apparatus/driver/testdata/wire/connect-accepted.bin"
+            ))
             .unwrap();
-        if status.starts_with("200") {
             tls_server(s, OK);
+        } else {
+            s.write_all(include_bytes!(
+                "../../../apparatus/driver/testdata/wire/connect-refused.bin"
+            ))
+            .unwrap();
         }
     }
 
@@ -1213,7 +1220,7 @@ pub(crate) mod tests {
             b"{\"secret\":\"k\"}",
             &AbortHandle::new(),
             BODY_LIMIT,
-            move |s| proxy_server(s, "200 Connection established", tx),
+            move |s| proxy_server(s, true, tx),
         );
         assert_eq!(
             rx.recv().unwrap(),
@@ -1233,7 +1240,7 @@ pub(crate) mod tests {
         );
         let (tx, rx) = mpsc::channel();
         let a = over_pair(&c, b"{}", &AbortHandle::new(), BODY_LIMIT, move |s| {
-            proxy_server(s, "407 Proxy Authentication Required", tx)
+            proxy_server(s, false, tx)
         });
         assert_eq!(
             rx.recv().unwrap(),
@@ -1341,7 +1348,7 @@ pub(crate) mod tests {
         let far = thread::spawn(move || {
             let (s, _) = l.accept().unwrap();
             let s = unix_bridge(s);
-            proxy_server(s, "200 OK", tx);
+            proxy_server(s, true, tx);
         });
         let c = client(
             "https://api.provider.test",

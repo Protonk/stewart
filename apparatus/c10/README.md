@@ -377,6 +377,15 @@ fixed classification. Raw stdout and stderr are withheld, since unexpected
 diagnostics could contain credentials. An invalid-parameter error followed by
 item-not-found stays unclassified; it does not establish absence.
 
+The [captured metadata lookup](../testdata/keychain/metadata-missing.json)
+records a November 18, 2026 invocation of macOS `security` for a random test
+account. It discarded stdout, requested no password and retained only recognized
+diagnostic lines. The sandbox and host invocations both returned exit 44 with a
+parameter error followed by item-not-found. The offline test replays that pair,
+removes the parameter line to exercise the missing-item classification, and
+reverses the lines to check that parameter failure still takes precedence.
+The locked and cancelled lookup cases use synthetic diagnostics.
+
 Rehearse with a separate item whose value starts with `c10-NONFUNCTIONAL-`.
 Use fresh random characters after the prefix, not text present in the source or
 evidence: the host credential scan must not find the value there. Enter it at

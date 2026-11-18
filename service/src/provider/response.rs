@@ -731,6 +731,18 @@ mod tests {
 
     #[test]
     fn error_bodies() {
+        // Captured 401 body, with the provider request ID replaced throughout
+        // the fixture. The retry and charge decisions are tested separately.
+        let auth = include_bytes!(
+            "../../../apparatus/driver/testdata/messages/sanity-authentication-error.json"
+        );
+        let e = decode_error_body(auth).unwrap();
+        assert_eq!(e.kind.as_deref(), Some("authentication_error"));
+        assert_eq!(e.message.as_deref(), Some("invalid x-api-key"));
+        assert_eq!(
+            e.request_id.as_deref(),
+            Some("req_000000000000000000000000")
+        );
         let e = decode_error_body(
             br#"{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"},"request_id":"req_011"}"#,
         )

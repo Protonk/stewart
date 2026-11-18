@@ -87,7 +87,7 @@ class ProviderFixture:
     'https-unreachable' (https://provider.test, no proxy: resolution fails offline)."""
 
     def __init__(self, t, responder, mode="http", label="provider", path="", cert="provider", proxy_refuse=None,
-                 key=None, url_port=None, accepts=None):
+                 key=None, url_port=None, accepts=None, *, proxy_reply=None):
         self.t, self.mode, self.label, self.path = t, mode, label, path
         self.key = key or test_key()
         self.record_dir = os.path.join(t.evid, "provider-" + label)
@@ -104,6 +104,7 @@ class ProviderFixture:
         if hasattr(responder, "provider") and getattr(responder, "provider") is None:
             responder.provider = self.provider
         self.cert, self.proxy_refuse, self.url_port = cert, proxy_refuse, url_port
+        self.proxy_reply = proxy_reply
         self.listeners = []
         self.proxy = None
         self.marks = []
@@ -132,7 +133,8 @@ class ProviderFixture:
                     authority = "%s:%d" % (PROVIDER_NAME, port)
                     self.proxy = fp.ConnectProxy({authority: ("127.0.0.1", lst.port)},
                                                  record_dir=os.path.join(self.record_dir, "proxy"),
-                                                 refuse=self.proxy_refuse, key=self.key, provider=self.provider)
+                                                 refuse=self.proxy_refuse, key=self.key, provider=self.provider,
+                                                 reply=self.proxy_reply)
                     pl = fp.Listener(lambda s, p, ta: self.proxy.handle_connection(s, p, ta), "proxy").start()
                     self.listeners.append(pl)
                     self.proxy_url = "http://127.0.0.1:%d" % pl.port

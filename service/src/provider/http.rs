@@ -682,6 +682,39 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn local_server_framing_preserves_the_supplied_body() {
+        // These are the local HTTP server's replies. Compare each decoded
+        // body with the file it was given before the exchange.
+        let body =
+            include_bytes!("../../../apparatus/driver/testdata/messages/m3-ordinary-ending.json");
+        let replies: &[(&[u8], u16)] = &[
+            (
+                include_bytes!("../../../apparatus/driver/testdata/wire/http-length.bin"),
+                200,
+            ),
+            (
+                include_bytes!("../../../apparatus/driver/testdata/wire/http-chunked.bin"),
+                200,
+            ),
+            (
+                include_bytes!("../../../apparatus/driver/testdata/wire/http-close.bin"),
+                200,
+            ),
+            (
+                include_bytes!("../../../apparatus/driver/testdata/wire/http-unavailable.bin"),
+                503,
+            ),
+        ];
+        for &(raw, status) in replies {
+            let (reply, stop) = read_all(raw);
+            let reply = reply.unwrap();
+            assert_eq!(stop, None);
+            assert_eq!((reply.status, reply.end), (status, BodyEnd::Complete));
+            assert_eq!(reply.body.as_slice(), body);
+        }
+    }
+
+    #[test]
     fn short_content_length_body_is_cut_off() {
         let (r, stop) = read_all(b"HTTP/1.1 200 OK\r\ncontent-length: 10\r\n\r\nhello");
         let r = r.unwrap();
