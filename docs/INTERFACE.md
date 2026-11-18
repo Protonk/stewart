@@ -433,10 +433,75 @@ Guidance metadata grants no powers and is not a semantic approval of its text.
 
 The scaffold created by `new` contains the front matter above with
 `model: REPLACE-WITH-MODEL` and `destination: REPLACE-WITH-ABSOLUTE-DIRECTORY`,
-a comment line `# Write your question below the closing --- line.`, an empty
+the following final comments, an empty
 body and an empty `materials/`. The model placeholder `REPLACE-WITH-MODEL`
 is refused as `setting_invalid` until replaced. Prepare refuses the
 placeholders as invalid values and the empty body as `question_empty`, naming what to edit.
+
+```text
+# Put the files the auditor may read under materials/. Edit with ordinary tools.
+# Finish editing before prepare, and leave this folder unchanged until commission returns.
+# Write your question below the closing --- line.
+```
+
+#### Declared material roles
+
+The following revision is specified, pending implementation. In both builds
+`stewart: question/2` replaces `question/1`. It adds one optional front matter
+key, `material-roles`. All other grammar, runtime selection, guidance and body
+rules are as above. A release implementing revision 2 refuses revision 1,
+including when the optional key is absent. The original writer owns an
+earlier audit.
+
+The value is a strict JSON array on a single field line (1.2). Each entry is
+an object with required strings `role` and `source`. Only `alternative` takes
+a third, required string `label`, the manager's name for that alternative
+(1–128 UTF-8 bytes, a non-whitespace character, no control characters).
+The selected [family descriptor](QUESTION-FORMS.md#manager-family-registry)
+defines the admitted roles. The decoded `source` must equal the public name
+of a selected regular file, including its `materials/` prefix. Compare UTF-8
+bytes exactly. Do not resolve paths, fold case or infer roles from contents.
+Directories, the question and root guidance cannot be mapped. The array
+admits up to 512 declarations within the existing question-file byte limit.
+Omission and `[]` both declare no roles. Repeating the same decoded
+(`role`, `source`, `label` or absent) is an error. Many-to-many mappings
+are allowed. Source order in the array is preserved as the manager wrote it.
+
+For example, these are the two changed lines in the comparison worked packet:
+
+```text
+stewart: question/2
+material-roles: [{"role":"alternative","source":"materials/a.py","label":"A"},{"role":"alternative","source":"materials/b.py","label":"B"},{"role":"criterion","source":"materials/requirements.txt"}]
+```
+
+If only A is supplied, dropping B's mapping yields one warning. Retaining
+B's mapping refuses the candidate with `role_source_unknown` at
+`/1/source`. Removing every material and declaration yields the alternative
+warning and criterion suggestion, and the selection can still be accepted.
+A renamed file with its declaration updated keeps its role. Every unmentioned
+file remains part of the literal selection.
+
+The exact question file binds the manager's declarations. The Messages
+arrangement becomes `stewart.arrangement/3`, the development arrangement
+`stewart.claude-code.arrangement/3`. Append one `commissioning` member to
+each arrangement body, with keys `registry` (`stewart.family-registry/1`),
+`descriptor` (the selected descriptor) and `material_roles` (decoded
+declarations in input order, keys `role`, `source`, then `label` if present).
+This is the authoritative interpretation retained at preparation and bound
+through acceptance by the existing arrangement digest. The receipt's
+`question-file`, `arrangement` and `arrangement-readable` recover the
+original, the machine interpretation and its readable view without the source
+or the installed registry. Material-role declarations belong to the selection,
+outside runtime settings. The existing preparation, receipt and index record
+layouts already bind these bytes and keep their identifiers.
+
+The readable arrangement groups declarations in descriptor role order,
+preserving manager order within each group, and labels mappings as the
+manager's. Role counts and advice are derived from that captured descriptor
+and mapping. Both runtimes keep the literal material index, reader, citation
+coordinates, effective guidance, ordered tools and section notices of the
+selected family. In this revision the map is manager-facing. Auditor
+instruction text and tool input/output shapes acquire no role fields.
 
 ### 3.3 Material scan
 
@@ -1093,6 +1158,62 @@ Refusals: `folder_incomplete`, `front_matter_invalid`, `setting_missing`,
 `reference_already_accepted`, `reference_closed`, `log_damaged`. Effects:
 `preparation`.
 
+#### Commissioning diagnostics
+
+Today a question parser refusal carries `data.defects`. Each element has
+`reason`, `line` (1-based or null), `key` (front matter key or null), and
+`message`. A grammar error that prevents interpretation stops parsing.
+Otherwise prepare reports the independent setting and body errors together.
+The first defect supplies the reply reason.
+
+The specified manager revision extends that same list. The public envelope
+becomes `stewart.reply/3` for both audiences. Its other envelope fields and
+their effect meanings stay as in 1.3–1.4. On successful manager preparation,
+and on a refusal from the shared question/inventory rules, `data.defects` is
+an array (possibly empty). Each item has the following keys in order:
+
+| Key | Value |
+| --- | --- |
+| `reason`, `line`, `key`, `message` | Stable rule ID, line or null, field name or null, human explanation. |
+| `severity` | `error`, `warning`, `suggestion`. Only an error refuses. |
+| `pointer` | JSON pointer inside the decoded field, or inside the supplied inventory for an inventory error; otherwise null. The empty pointer denotes its root. |
+| `source`, `role` | Affected public source name and role ID, respectively, or null. |
+| `remedy` | A concrete correction or optional improvement in ordinary language. |
+
+Report grammar failure first when fields cannot be decoded. Otherwise report
+independent errors before advice, sorting by source line (absent lines last),
+then declaration index numerically, then by key, pointer and reason in byte
+order (null first). Diagnose a malformed role value once at the point where
+interpretation stops. Skip dependent lookups for a malformed declaration or
+unknown family. Advice requires a valid question, declarations and inventory;
+no advice is inferred from a partial scan. Emit warnings then suggestions in
+descriptor order. The CLI reason is the first error. Filesystem acquisition,
+archive, runtime-profile and custody failures keep their operation-specific
+context, effects and remedies.
+
+| Rule | Meaning and remedy |
+| --- | --- |
+| `role_declaration_invalid` | Malformed array/object, field type, label, or more than 512 declarations. Name the offending member and the expected form. |
+| `role_unsupported` | Role not admitted by this family. Name its admitted roles. |
+| `role_source_unknown` | Source does not name a selected regular material. Correct the exact name, supply the intended file, or remove the mapping. |
+| `role_duplicate` | Repeated declaration. Point to the later occurrence and name the first index. |
+| `role_unmapped` | Fewer mappings than the descriptor recommends. Give the descriptor's severity, role and family-specific remedy. |
+
+For a valid comparison question with just A mapped and a supplied criterion,
+the list has one item, for example:
+
+```json
+{"reason":"role_unmapped","line":null,"key":"material-roles","message":"One alternative is identified by a mapping.","severity":"warning","pointer":null,"source":null,"role":"alternative","remedy":"Identify material for another alternative if available. You can commission a one-sided comparison."}
+```
+
+Warnings and suggestions belong to assessment and preparation. The archived
+arrangement lets a manager recover their basis. They create no refusal or
+separate diagnostic record. Actual refused operations still appear in status
+after a later success. Present each as a dated past invocation, keeping its
+reason, operation and retained location. A historical refusal alone supplies
+no present impediment or retry instruction. MCP assessment records no audit
+diagnostic.
+
 ### 5.4 `commission`
 
 `stewart commission REF HANDLE --i-am-finished` requests acceptance of the
@@ -1671,6 +1792,50 @@ family's instructions and recording tools (`forms`), the limits and bounds
 (`limits`), the reader (`reader`), and every close state with its continuation
 (`close`). Help text ships with the binary and is printed exactly; it involves no
 archive.
+
+### 5.10 Prospective command effects
+
+Specified for the manager interface, pending implementation.
+`stewart describe COMMAND [--json]` describes one command in this binary.
+COMMAND is exactly `new`, `prepare`, `commission`, `receipt`, `status`,
+`run`, `close`, `help`, `describe` or `manager-mcp`. An absent/unknown
+command, a reference, extra operands or unsupported flags give the ordinary
+CLI usage error. The operation reads compiled descriptions and needs no
+reference, source, environment setting, credential or network connection.
+Ordinary command help presents the same facts.
+
+JSON uses the manager reply envelope with `operation:"describe"`,
+`outcome:"completed"`, `effects:{}`, `next:[]`. The keys of `data` are
+`schema:"stewart.command-effects/1"`, `command` and `variants` (array).
+A variant has keys `form` (CLI synopsis), `runtime` (`common`, `messages`
+or, in a build containing the adapter, `claude-code`), and `possible`
+(array). Each possible effect is
+`{"when":TEXT,"kind":KIND,"description":TEXT}`.
+`when` names a condition in ordinary language or is `"always"`.
+The closed set of kinds is `read`, `write`, `process`, `network`,
+`credential`, `transmit`, `limit`, `repeat`, `interruption` and `custody`.
+An empty list means no listed effect for that variant. A description covers
+observable consequences, including possible retained partials and how to
+reconcile a lost reply. The enumeration is prospective. The envelope's own
+`effects` describes only inspection.
+
+For example, the `receipt REF --read ITEM` variant describes reading and
+verifying the captured item and emitting exact bytes on stdout. The `run`
+variant for Messages identifies the key sources, transmission of the question
+and tool results, conditional retry, cumulative allowances, the 16,000-token
+per-response cap (including thinking), interruption and delivery. Describe the
+gated runtime's actual process/authentication and accounting separately when
+built. Describe each distinct mode of receipt, status, close and manager MCP,
+including dry-run and partial writes. Audience/output flags which change only
+presentation can share a variant. No example needs a real credential value.
+
+### 5.11 Manager preparation MCP
+
+Specified for the manager interface, pending implementation. The entry point
+is `stewart manager-mcp [--workspace DIR]`. Its four MCP tool names, in
+listing order, are `discover`, `explain`, `assess`, `assemble`. They apply
+before the CLI acceptance boundary. The [manager preparation protocol](MANAGER-PREPARATION.md)
+defines transport, inputs, results, bounds, refusals and filesystem effects.
 
 ## 6. The run adapter
 
@@ -2499,6 +2664,34 @@ with keys in the order shown and strings escaped as in `stewart.answer/1`:
 The manifest does not contain the seal handle; the handle binds the manifest
 (2.3). It verifies the package without the archive. The question, receipt,
 arrangement, access log, run summaries and conversations are never members.
+
+#### Returned question in revision 2
+
+`stewart.return/2` is specified, pending implementation. In the 8.2 manifest
+replace the schema ID and insert the following as the **first** member of
+`members`. The remaining members keep their order and bytes.
+
+```json
+{"name":"question.md","role":"manager_question","size":46,"sha256":"…"}
+```
+
+Its role attributes the question to the manager. The member is exactly the
+accepted question body, including any body BOM, CRLF or absent final newline.
+Its expected length and digest come from the accepted commission. The seal
+binds that identity even for an empty answer, a manager seal or an unproduced
+rendering. `answer.json`, `answer.md` and the auditor's prepared views keep
+their forms. Only the manifest's `seal.actor` identifies who sealed the answer.
+
+Delivery writes the manifest then the listed members. For `manager_question`,
+the plan's `source` names the accepted question-file capture. Use the
+`question-body` readback rules (5.5): verify the whole capture and its
+accepted body range and digest, write only that range, then verify the
+destination member. A known identity with unavailable source bytes is a
+delivery-stage loss for `question.md` under 8.3–8.4. A failure to establish
+the accepted identity prevents publishing a new seal and is reported with
+the failed binding; an already published seal stands. Neither path substitutes
+the live question, an empty file or the full front matter. Before-launch close
+creates no package. Revision 2 replaces revision 1 in the implementing writer.
 
 ### 8.3 Delivery
 

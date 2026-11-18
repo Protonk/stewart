@@ -15,6 +15,53 @@ The families are open inquiry (`open-inquiry/1`), inquiry framing
 the front matter. The auditor sees the captured family ID/version in re-entry
 and preparation replies, alongside the orientation, its family's instructions and its tools.
 
+## Manager family registry
+
+The following registry is specified for manager preparation and awaits
+implementation. Each row describes one available family. The versioned family
+IDs above identify auditor instructions, tools and expected sections.
+`stewart.family-registry/1` identifies the manager's role vocabulary and
+advisory rules. The declaration grammar and capture are in
+[INTERFACE 3.2](INTERFACE.md#declared-material-roles).
+
+| Family | Purpose | Material roles in presentation order | Advice when a recommended mapping is missing |
+| --- | --- | --- | --- |
+| `open-inquiry` | Investigate the question as written. | `subject`, `context`, `report` | With no subject mapping, suggest identifying what to examine. A broad question needs no justification. |
+| `inquiry-framing` | Formulate and investigate a working question from the concern. | `context`, `subject`, `report` | With no context mapping, suggest identifying material that locates the concern. The manager may leave the working question to the auditor. |
+| `comparison` | Relate the named alternatives to a criterion. | `alternative`, `criterion`, `context`, `report` | With fewer than two distinct alternative labels, warn that the mappings identify fewer than two alternatives. With no criterion mapping, suggest identifying a supplied basis for comparison, which may also be in the question. |
+
+A **subject** is what the manager wants examined. **Context** supplies
+background, such as requirements, circumstances or assumptions. A **report**
+supplies another author's observations or results. **Alternative** identifies
+material for one manager-named alternative. **Criterion** identifies a supplied
+basis for relating alternatives. These meanings follow the manager's
+declarations. A file may serve several roles, and one file may discuss several
+alternatives. The quantity, authorship and relevance of evidence remain matters
+for the inquiry. Source text, requirements and reported observations are
+examples of evidence a manager might supply, never file types Stewart infers.
+
+In discovery order the families are open inquiry, inquiry framing, comparison.
+The machine descriptor has keys `family` (versioned ID), `available` (true),
+`purpose` (text), `roles` (array in table order). Each role has `id`,
+`meaning` (text), `label` (`required` for alternative, otherwise `absent`),
+`minimum_recommended` (2 for alternative, 1 for the other roles with advice
+above, otherwise 0), `severity` (`warning` for alternative, `suggestion` for
+other positive minima, otherwise null) and `remedy` (text for a positive
+minimum, otherwise null). Alternative counts distinct labels. Other roles
+count distinct mapped files. Advice always refers to *declarations*. Human
+wording may improve between builds. Preparation pins the selected descriptor
+including its wording. Changing mechanical meaning or an advisory rule
+requires a new registry version.
+
+For the [worked packets](../examples/questions/README.md), the manager could
+declare `a.py` the subject of the open inquiry and `supplied-report.txt` a
+report. The report-only variant still commissions. For framing,
+`requirements.txt` can supply context in both the full and requirements-only
+packets. Neither needs a formulated working question in the inputs. For
+comparison, `a.py` and `b.py` can identify A and B, and `requirements.txt`
+the criterion. In the absent-B packet remove B's declaration as well as its
+file. Keeping that declaration instead gives a reference error.
+
 ## System blocks
 
 The [development runtime contract](claude-code/CONTRACT.md) specifies the harness

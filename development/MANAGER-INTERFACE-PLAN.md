@@ -1,11 +1,9 @@
 # Manager interface implementation and testing
 
-**Current status:** The ordinary-file commissioning and custody path exists.
-The shared family/role registry, optional preparation MCP, prospective effect
-inspection and returned-question member remain unimplemented. Exact schemas
-must be specified before implementation. Empty or insufficient materials remain
-admissible. Live trials require a concrete bounded commission; this plan grants
-no model or authentication launch authority.
+**Current status:** The file-only commissioning and custody path exists. The
+manager contracts are specified. Implement shared commissioning rules next;
+the new CLI forms, returned-question member and preparation MCP are pending.
+Live trials require a separate bounded commission.
 
 This plan owns the manager CLI, optional preparation MCP server, question-type
 guidance and their integration tests, including separately commissioned Claude
@@ -64,134 +62,35 @@ documentation stage below completes the joint walkthrough; documentation is not
 postponed until code is finished. Freeze shared schemas before splitting service
 and independent-driver work between authors.
 
-### 1. Specify the shared commissioning and documentary contracts
+### 1. Shared contracts specified
 
-- [x] Walk `new`, `prepare`, `commission`, `run`, `receipt`, `status`, `close`
-  and the return against the owning contracts and the
-  interaction findings (`apparatus/studies/interaction/RESULTS.md` at
-  `77375f1`; the qualification index identifies their originals). The
-  [walk findings](#walk-findings) list the actionable mismatches and name the
-  task that takes each one. The decided return-context change is not reopened
-  for another reader study.
-- [ ] Specify the family registry: identity/version, availability, purpose,
-  accepted roles, optional evidence classes, declaration shape, structural
-  constraints, recommended roles and explanation/remedy text. Derive meanings
-  from the existing families, not filenames or an inferred reading of prose.
-- [ ] Apply the [family registry design inputs](#family-registry-design-inputs)
-  before freezing that registry. Separate material roles, presentation advice,
-  mechanical requirements and evidence expectations; identify which facts belong
-  in the pinned arrangement and which are derived views. Keep runtime mapping
-  separate so a family addition does not require another lifecycle implementation.
-  Keep evidence sufficiency advisory and preserve the expressive range of each
-  family.
-- [ ] Specify how the manager declares roles in the ordinary question-file
-  contract, how paths bind to literal selected materials, and what acceptance
-  captures. Preserve the current submission boundary and explicit open-inquiry
-  guidance selection. No MCP-only metadata or silently excluded material.
-- [ ] Separate diagnostics into stable errors, warnings and suggestions, each
-  with its applicable rule, affected field/path/role and concise remedy. Errors
-  cover mechanical invalidity; warnings describe accepted arrangements that may
-  weaken the inquiry; suggestions offer alternatives without silently changing
-  the chosen family, question or selection.
-- [ ] Specify the manager MCP transport and four capability schemas, version
-  identification, per-call `detail`, bounds, refusal semantics and candidate
-  filesystem authority. Define exact command/tool names in INTERFACE. Responses
-  identify the documentary/commissioning contract versions, not an invented
-  approval record or an audit acceptance certificate.
-- [ ] Specify the CLI effect-inspection operation and its machine-readable
-  schema, plus the returned-question package change. Add acceptance claims and
-  examples to their owning documents. Changed forms replace the old form under
-  [version rules](../CONTRACTS.md#versions-and-legacy-obligations); no converters,
-  parallel readers or rewritten historical receipts.
+The [family registry](../docs/QUESTION-FORMS.md#manager-family-registry),
+[declarations and capture](../docs/INTERFACE.md#declared-material-roles),
+[diagnostics](../docs/INTERFACE.md#commissioning-diagnostics),
+[command effects](../docs/INTERFACE.md#510-prospective-command-effects),
+[preparation protocol](../docs/MANAGER-PREPARATION.md) and
+[returned-question member](../docs/INTERFACE.md#returned-question-in-revision-2)
+are the implementation inputs. [C21](../ACCEPTANCE.md#c21--manager-preparation-and-command-inspection)
+owns the new scripted comparisons, alongside C5 and C7.
 
-**Complete when:** each promised rule has one owner; examples distinguish invalid
-structure from admissible insufficiency; exact schemas and test obligations are
-reviewable before implementation.
+The worked-packet change exercise used the framing example. A hypothetical
+new role for incident reports would change the family descriptor and registry
+version, its explanation fixture and family acceptance cases. Editing only
+the presentation advice for an existing role changes the descriptor text and
+new readable/machine arrangements, not existing captures. Neither edit changes
+the material scanner, reader, runtime dispatch, recording tools, answer form
+or close. Preserve that boundary in the shared extraction.
 
-#### Walk findings
-
-The walk ran the release build's `new`, `prepare`, `commission`, `receipt`,
-`status`, a credential-less `run` and `close` before launch in a scratch
-archive. It read a completed run, an after-launch close and a manager-sealed
-return from the retained `acceptance-readiness-04` runtime evidence. It started
-no model, so a Messages-path run and its after-launch close were not executed.
-Beyond the items below it showed no mismatch with INTERFACE 5 or the CONTRACTS
-status table.
-
-- **Prepare's defect list is unspecified.** `prepare` reports every
-  front-matter and body defect in one refusal as `data.defects`, each
-  `{reason, line, key, message}`, and takes the reply's `reason` from the
-  first. INTERFACE 5.3 lists the reasons only. Specify this form with the
-  diagnostics split; errors, warnings and suggestions should extend it and not
-  add a second shape.
-- **Recorded refusals stay in every later status.** INTERFACE 4.8 records each
-  manager refusal in `diag/` and 5.6 lists those records. A corrected scaffold
-  refusal and a credential-less `run` therefore remain under status
-  qualifications after acceptance and after close. The interaction findings
-  found explanations of routine custody machinery noisy. Decide with the
-  diagnostics split whether warnings and suggestions are durable, and whether
-  default status keeps showing a refusal that a later success superseded.
-- **The credential refusal names no remedy.** `run` refuses
-  `provider_key_missing` with "The selected provider credential is empty or
-  absent." Its next call says to run again "once the environment is set as the
-  message says". Neither names `--key-fd` or `ANTHROPIC_API_KEY`; the
-  commission reply's `run_needs` does. The `--key-fd` recipe task takes this.
-- **Help omits the per-response output cap.** INTERFACE 6.2 pins
-  `max_tokens_per_request` at 16,000, and the interaction findings observed
-  that thinking counts against it: more than once a whole response went to
-  thinking, nothing was recorded and the placement ended on `max_tokens`.
-  `help limits` describes only the cumulative limits. The effect descriptions
-  take this.
-- **Human output runs string lists together.** `run needs` prints its three
-  entries as one unpunctuated line in the commission and receipt replies.
-- **Smaller wording gaps.** INTERFACE 3.2 omits two comment lines the scaffold
-  carries: where materials go, and to finish editing before prepare. A `run`
-  refused after a completed close still offers `close` to "Continue the close."
-
-#### Family registry design inputs
-
-The family definition already owns identity/version, guidance, ordered
-recording tools and expected sections, and arrangement construction feeds both
-runtimes. Materials instead share one literal recursive UTF-8 world, and
-citation checks use one exact-locator and quote policy. Start from a typed
-family definition with explicit presentation and evidence-policy descriptors
-that select today's behavior for every family; a plugin loader, a second
-material reader or a family-specific custody path is not needed for that seam.
-
-| Component | What it should be able to express | Boundary to preserve |
-| --- | --- | --- |
-| Material roles | Explicit manager-declared roles and references to selected material; family-specific explanations and remedies. | Meaning comes from declarations, not filename guesses or prose classification. All literal selected bytes remain captured. A missing mapping does not prove evidence absent elsewhere. |
-| Presentation policy | Role grouping, ordering, navigation and guidance about which sources serve which purpose. Identify derived views separately from originals. | Preserve source identity, byte ranges, pagination and search completeness. No silent filtering, truncation, rewritten source or substituted excerpt. |
-| Evidence expectations | Recommended evidence classes, provenance/context prompts, and explanations of what a missing source prevents establishing. | Separate structural invalidity from admissible insufficiency. A supplied report remains its author's claim; a proposed experiment is not witnessed execution. |
-| Mechanical rules | Well-formed declarations, supported roles and valid references, with stable errors, warnings and suggestions. | Empty, unequal and insufficient evidence stays admissible. |
-| Answer vocabulary and rendering | Family-owned authoring kinds, expected-section notices and presentation of the auditor's attributed account. | Missing sections and empty answers remain allowed. Citation validity does not grade support. Do not require a finding, winner, fixed hypothesis or answer endorsement. |
-| Runtime mapping | Render the same effective family facts into Messages system/tools or the agent arrangement. | Family choice grants no extra access, execution, budget or lifecycle authority. Keep supplied open-inquiry guidance distinct from product-owned orientation and tools. |
-
-Decide which descriptors are versioned and pinned at preparation and
-acceptance, which declarations belong in the question file, and which views
-derive from captured facts; a later registry change must not silently alter an
-accepted arrangement. On paper first, use the worked examples for a
-change-impact exercise: add a hypothetical evidence role, change only its
-presentation advice and list every module, pinned document and test that would
-move. The desirable result is a versioned family descriptor with focused tests
-and no new lifecycle or per-runtime authoring branch.
-
-Controls compare valid/invalid references, missing mappings, empty materials,
-unequal evidence and renaming invariance, and detect a lost material, a falsely
-required advisory role, a changed accepted guidance block and a family change
-leaking into runtime permissions. Before any new policy, show that extraction
-preserves each family's exact tool order, schemas, arrangement and section
-notices in both runtimes.
-
-Unselected family-descriptor candidates from the developer lookback: verify the
-pinned arrangement against the compiled family at run; pin answer
-expectations; family-owned presentation separate from replaceable guidance;
-role-aware reading presentation; tool identity on refusal paths; a
-presentation-advice channel.
+The lookback's proposals for comparing the compiled family at run, pinning
+answer expectations, role-aware reading and separate presentation advice,
+and identifying tools on refusal remain unselected. The registry work
+introduces none of those changes to the auditor's interface.
 
 ### 2. Implement one set of production rules
 
-- [ ] Extract pure parsing and validation over explicit candidate bytes and
+- [ ] First compare the three families against fixed pre-extraction bytes for
+  both runtime arrangements, including tools, schemas, effective guidance and
+  section notices. Then extract pure parsing and validation over explicit candidate bytes and
   inventory data. The rule layer cannot open an archive, spawn a process, read a
   credential, query a provider or accept a commission. Filesystem acquisition
   and durable lifecycle operations stay outside it.
@@ -230,7 +129,8 @@ documentary drift without importing that validator as the acceptance oracle.
 - [ ] Keep provider identity and authentication mode explicit, with descriptions
   matching the actual build. Fake-provider tests and the gated subscription
   adapter exercise the same custody core; neither introduces an approval bypass.
-  Add `run --key-fd` help recipes using an existing secret tool, without secret
+  Name both credential routes in the missing-key refusal and add `run --key-fd`
+  help recipes using an existing secret tool, without secret
   persistence or a credential-store dependency. A hidden prompt remains deferred.
 - [ ] Implement the accepted question body in the returned package. Verify exact
   bytes and provenance separately from the auditor's answer; do not add supplied
@@ -293,7 +193,9 @@ information. Human and agent managers can use the same ordinary file handoff.
 - [ ] Publish one file-only walkthrough and an equivalent optional-MCP walkthrough,
   with required fields, advisory roles, diagnostics, creation effects, failure
   remedies and the CLI acceptance boundary. Update scaffold/help/examples and
-  status descriptions to agree with the implemented behavior.
+  status descriptions to agree with the implemented behavior. Print each
+  `run_needs` entry legibly in commission and receipt. A run refused after
+  completed close must give a next action appropriate to the closed state.
 - [ ] Test terse and detailed response examples, effect descriptions and generated
   candidates against the declared schemas and actual rules. Add a check that
   prepares every worked example, including MCP-created candidates.

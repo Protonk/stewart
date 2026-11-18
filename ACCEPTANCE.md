@@ -44,6 +44,7 @@ failing.
 | C18 | Designated custody remains intact through close, with explicit scope and no silent store substitution. |
 | C19 | The initial reader and preparation inspection faithfully expose the literal text submission. |
 | C20 | Machine replies expose exact bindings, effects and uncertainty through the correct role view. |
+| C21 | A manager can inspect command effects and use optional preparation assistance while commissioning and custody remain independently usable through files and the CLI. |
 
 Answer quality is not on the list. Stewart doesn't judge answers, so its tests
 don't either.
@@ -259,6 +260,16 @@ authoring request is handed down as part of the auditor's answer.
   answer; also one that regenerates the rendering at delivery under a different
   form or silently adds a substantive conclusion.
 
+For the specified [return revision 2](docs/INTERFACE.md#returned-question-in-revision-2),
+the expected inventory gains the exact manager question body. Keep an original
+outside the archive. Compare all members and their attribution on auditor and
+manager seals, delivery, replacement delivery and repeated close; include an
+empty answer, edited or removed live question, CRLF, multibyte text and no
+final newline. Detect a substituted question, leaked front matter, missing or
+duplicated member, wrong seal actor and a falsely verified missing capture.
+The sole change of seal actor must not alter the question or rendering of the
+same answer. A before-launch close still owes no return.
+
 ### C6 — The record is honest
 
 - **Pass:** an inventory of the archive before and after every command shows
@@ -281,8 +292,10 @@ closed design, not open policy choices.
 - **Pass:** each implemented family preserves the manager's question verbatim
   and pins its versioned instructions and tools in the prepared arrangement.
   A broad request commissions through open inquiry without extra justification
-  or reduced service. Manager guidance and declared material roles remain
-  specified obligations pending their interface design and implementation.
+  or reduced service. For the specified registry, compare the original
+  question file, full inventory, declared role bindings and exact effective
+  guidance with the pinned arrangement and receipt readback. Replacing source
+  bytes after acceptance cannot alter that view. Exercise both runtime mappings.
 - **Differing:** selecting inquiry framing explicitly commissions formulation
   and investigation within the same undertaking. The original request and the
   auditor's working question remain distinguishable.
@@ -631,6 +644,44 @@ contains only the requested bytes. Missing replies imply unknown effects.
 - **Sabotage:** retarget a stale handle, label preparation auditor-sealed, leak a
   custody path, accept a typo, replace an uncertain effect with absence, omit a
   page, or imply delivery/close from submission. Every corresponding check fires.
+
+### C21 — Manager preparation and command inspection
+
+These are scripted obligations for the specified manager interface.
+
+- Prepare equivalent file-only and MCP-created candidates through the ordinary
+  CLI. Compare literal inputs, role declarations, diagnostics, captured
+  arrangements, fake-provider traffic and delivered bytes against independent
+  originals. Account for generated references, timestamps and paths separately.
+  Change one required field; both routes must identify the same error. Change
+  only a material name and its declaration, prose unrelated to roles, invocation
+  directory, wrapper, or MCP detail; the applicable rule and authority persist.
+- Exercise each family, invalid role/reference/duplicate, absent mappings,
+  one-sided comparison, undeveloped concern and empty materials. Compare
+  accepted advice with structural refusals, including useful field/remedy and
+  the effect of a prior refusal on later status. Detect a role inferred from a
+  filename, required advisory mapping, omitted material or changed guidance.
+  During extraction compare existing family tool order and schemas, system
+  blocks, section notices and both runtime arrangements against fixed originals;
+  account separately for each specified new version/member.
+- Run discovery, explanation, assessment and assembly with audit operations,
+  auditor processes, credentials and provider unavailable. Run every CLI
+  lifecycle operation with MCP unavailable. Use the independent peer,
+  process/filesystem witnesses and controls that actually detect forbidden
+  access. Changing unrelated audit state cannot affect preparation assistance.
+- Compare the prospective command descriptions against actual effects through
+  success, refusal, interruption and reply loss in direct and wrapped CLI runs.
+  Include each build's supported variants and a request made with an empty
+  environment. Inspection itself must have no audit, credential or network
+  access. Detect an omitted partial effect or forecast reported as execution.
+- Inventory inputs, workspace and destinations before and after dry-run,
+  explicit creation, collision, alias, concurrent creation and interrupted
+  creation. Detect an unexpected write, an unreported partial and a changed
+  pre-existing file. Follow a lost creation reply with ordinary inspection
+  and an exclusive retry. Compare repeated close and preserved archive bytes
+  through interrupted, unsubmitted, limited and verified-return workflows.
+  Include the separate gated synthetic-harness comparisons. Human review of
+  prose and a live model's conclusions supply no scripted oracle.
 
 ### Platforms
 

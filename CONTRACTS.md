@@ -173,6 +173,18 @@ never changed or that the source had this complete state at one instant. The
 receipt identifies what Stewart captured and which checks matched, without
 turning the declaration or repeated hashes into an atomic snapshot claim.
 
+**Optional preparation assistance, specified and pending implementation.**
+A manager may discover the implemented families, ask for an explanation,
+assess a proposed question and inventory, or request creation of ordinary
+candidate files. These calls convey no audit authority. File-only preparation
+and assessment apply the same production commissioning rules to the same
+facts. CLI preparation also establishes host facts and binds the proposal.
+The CLI remains responsible for acceptance, launch, readback and close.
+The [manager preparation protocol](docs/MANAGER-PREPARATION.md) identifies
+what each tool observes, which files it can create and what can remain after
+failure. The manager can also inspect a command's possible effects without
+supplying audit operands or executing it.
+
 **Attempts and acceptance remain distinct.** Copying, verification, recording
 acceptance and returning its receipt take time. A complete copy alone establishes
 no acceptance. Each attempt keeps its own fixed selection, partial effects and
@@ -624,8 +636,11 @@ revives a closed reference or grants another investigation.
 **The family carries the pairing.** A family brings together preparation guidance,
 expected material roles, auditor instructions and answer expectations. These are
 where Stewart expresses opinions about asking and answering that kind of question.
-The manager-guidance and material-role design is decided but not yet implemented;
-no role declaration or role-based intake gate exists in the current interface.
+The [manager role registry](docs/QUESTION-FORMS.md#manager-family-registry) and
+[question-file declaration](docs/INTERFACE.md#declared-material-roles) are
+specified, pending implementation. The manager declares a mapping to a
+selected file. A broken declaration refuses preparation; absent mappings,
+empty materials and unequal evidence remain admissible.
 The manager chooses the family; a suggestion does not silently change the choice
 or rewrite the question. Its versioned instructions and means of answering belong
 in the pinned arrangement already available through preparation. Family selection
@@ -761,10 +776,9 @@ rendering nor the question member says whether the auditor submitted the
 selection or the manager sealed it; a reader who needs that fact reads
 `seal.actor` in the manifest.
 
-The current package in [INTERFACE 8.2](docs/INTERFACE.md#82-the-return-package)
-does not yet include the question. Its package specification, implementation and
-independent acceptance checks must be aligned when this addition is implemented;
-the rendering described below is the current behavior.
+The current package omits the question. [INTERFACE 8.2](docs/INTERFACE.md#returned-question-in-revision-2)
+specifies the new member, its binding and delivery failure semantics.
+Implementation and independent acceptance checks remain outstanding.
 
 ## Readable answer rendering
 

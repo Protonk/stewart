@@ -1,6 +1,7 @@
 # Release and work plan
 
-The current task is to specify the manager interface. Linux acceptance qualified
+The current task is to implement the specified manager interface, beginning
+with its shared commissioning rules. Linux acceptance qualified
 the readiness fixtures on both architectures at `ba551c6`. The offline C10
 rehearsal passed with that aarch64 writer. Endpoint alignment and release
 qualification remain open. No live packet is active.
@@ -15,7 +16,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Specify shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration, then implement them. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
+| Current | Implement shared commissioning rules, the independent CLI additions and optional preparation MCP, and demonstrate their integration with the fake provider. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
@@ -28,8 +29,7 @@ processes or effects before reusing them. Build only the prerequisites needed
 for the selected comparison. Endpoint alignment is separate from the bounded
 readiness observations. Live starts require a bounded commission.
 
-Freeze manager roles, diagnostics, MCP and effect-description schemas before
-dependent implementation.
+Use the specified manager schemas for dependent implementation.
 Arrange independent driver authorship where service and driver changes are both
 needed. Give residual work one owner in place; do not create a turnover document.
 
