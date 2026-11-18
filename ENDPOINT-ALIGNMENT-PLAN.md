@@ -4,13 +4,13 @@
 Its sources are the Messages small-commission apparatus (`apparatus/c10`, with
 parts of `apparatus/sanity`) and the harness profile and check tooling
 (`apparatus/claude-code`, with the independent `apparatus/driver/claude_code_*`
-fixtures). No live run is authorized by this plan.
+fixtures).
 
 Stewart talks to two Anthropic endpoints: the Messages API, from the distributed
 binary, and the Claude Code harness, from the source-build development runtime.
 Each adapter, and each stand-in that replaces it in the scripted suites (the fake
 provider, the synthetic harness), encodes assumptions about its endpoint.
-Alignment observes the real endpoint in a small approved run, compares what it
+Alignment observes the real endpoint in a small bounded run, compares what it
 saw with those assumptions, turns the observations into stand-in fixtures and
 records the result. A release names only endpoint versions with a current
 alignment record. The [alignment tier](ACCEPTANCE.md#the-endpoint-alignment-tier)
@@ -19,10 +19,9 @@ adapter, and the [runtime contract](docs/claude-code/CONTRACT.md) the harness
 launch, its documented facts and what remains undemonstrated with the real
 harness.
 
-Routine design, offline rehearsal and carry-over are authorized. Each live
-alignment run needs the principal's approval of its concrete packet and budget;
-container runs remain the principal's to schedule. Keep open audits and their
-exact writers until closure or explicit disposition.
+Design and rehearse the comparisons offline. Before a live start, verify that
+the bounded commission covers the packet, credential route and budget. Keep
+open audits and their exact writers until closure or explicit disposition.
 
 ## 1. Specify the alignment check
 
@@ -40,8 +39,8 @@ exact writers until closure or explicit disposition.
   capture that witnesses each.
 - [ ] State each witness's origin and scope. On the direct TLS route Stewart's
   own captures are correlated, not independent observations of what reached the
-  provider; bring any obligation that needs more to the principal rather than
-  quietly adding a proxy or claiming independence.
+  provider. Where independent observation is required and unavailable, record
+  the unmet requirement. Keep live traffic on the commissioned route.
 - [ ] Define harness alignment: the pinned version's documented facts in the
   runtime contract rechecked against current documentation, a reviewed
   supplied-surface check that produces the profile's `check` attestation, and one
@@ -53,8 +52,8 @@ exact writers until closure or explicit disposition.
   to keep it and check it against its evidence. Historical `c10-*` and
   `readiness-*` records stay as they are.
 
-**Done when:** each run, assumption, witness and record field has an owner and a
-check design, and the principal has approved the run set and its order of cost.
+**Done when:** the check design maps endpoint assumptions to runs, witnesses
+and record fields, and estimates the cost of the proposed run set.
 
 ## 2. Build the mechanism in `alignment/`
 
@@ -91,9 +90,9 @@ its offline controls fire, and the retired apparatus is gone.
 ## 3. Align and record
 
 - [ ] For each model the first release will name, prepare the packet with a dated
-  cost estimate, obtain approval, run, review and record. Resolve every
-  difference by an adapter fix, a stand-in fixture or a limitation the release
-  states before the record counts as current.
+  cost estimate. Execute the commissioned runs, review the observations and
+  record the result. Resolve each difference with an adapter fix, a stand-in
+  fixture or a stated release limitation before counting the record as current.
 - [ ] Align the harness pin the development build uses, through the Linux route,
   producing its profile check.
 

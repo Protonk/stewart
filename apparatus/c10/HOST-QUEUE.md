@@ -125,9 +125,9 @@ the delegated experimenter may write a new `claims/NAME/reconciliation.json`:
 
 The runner checks that the attributed disposition and referenced bytes exist.
 It does not certify the judgment, erase the failure or refund the slot. A claim
-with a zero exit also needs ordinary experimenter review: the launcher can
-legitimately return zero after an unsubmitted limit stop. No exit code grants
-permission to skip that inspection. Reserved decisions still go to the principal.
+with a zero exit also needs experimenter review because the launcher can
+return zero after an unsubmitted limit stop. Any further paid placement must
+fit the campaign's commission and remaining allowance.
 
 Creating `STOP` prevents the next operation; it does not cancel an active one.
 Interrupting the runner can leave uncertain child/container effects. Inspect

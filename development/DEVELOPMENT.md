@@ -20,11 +20,11 @@ container suites and, under ACCEPTANCE, the native WSL2 run.
 ## What to run for what you changed
 
 Find each kind of change you made in the table and run what its row names, from
-the repository root unless it says otherwise. Native runs are for iteration. A
-container suite builds from a `git archive` of `HEAD`, so commit before one is
-run. The suites need Apple `container` on the host; an agent whose shell is
-sandboxed cannot reach it, so the agent prepares the command and the user runs
-it ([Container suites](#container-suites)).
+the repository root unless it says otherwise. A change can land and be pushed
+once its development checks pass. Native runs are for iteration. Each
+container suite builds from `git archive` of `HEAD`, so commit the source
+before running it. See [Container suites](#container-suites) for host access
+and commands.
 
 The link check, the driver's self-test and its case list:
 
@@ -61,25 +61,25 @@ is permitted; a sandbox that denies the bind fails those tests.
 | Prose or Markdown anywhere | The link check. |
 | `docs/INTERFACE.md` or `docs/QUESTION-FORMS.md` | The link check, both cargo configurations and the driver's self-test. A test in `service/src/forms.rs` compares the service's pinned texts and tool descriptions with QUESTION-FORMS; one in `service/src/fault.rs`, built only in the fault and sabotage configuration, compares its failure points, actions and sabotage controls, and the names in its variable table, with INTERFACE Appendix C. The driver's self-test compares its own copies of the pinned texts and tool descriptions with QUESTION-FORMS, and its answer witness reproduces the structured answer and rendering examples of QUESTION-FORMS and the manifest example of INTERFACE 8.2 byte for byte. A changed pinned text or tool description needs the service's copy changed too (then the `service/` row applies); a changed pinned text or example needs the driver's copy updated, under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | Worked example materials: `question.md` and `materials/` under `examples/questions/*/submission/` | No check reads them. The walkthroughs, `CITATION-CONTROLS.md`, QUESTION-FORMS and INTERFACE cite their sizes, byte ranges and line numbers, and the driver's answer witness pins the examples in those docs, so recheck every citation of a changed file; a changed example in the docs then needs the row above. |
-| `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. Changing what Stewart promises is the user's decision. |
-| `service/src/` or `service/tests/` | All four cargo configurations above. A behavior change is unqualified until the next container run of `acceptance.sh`, which the user schedules and batches; it can land and be pushed once all four configurations pass. |
-| Release driver and shared helpers in `apparatus/driver/` | `stewart_driver.py --self-test` and `--list`, which loads every release case module. Shared helpers used by the standalone runtime driver also need that driver's checks below. Release-driver qualification needs the next container run of `acceptance.sh`, which the user schedules and batches; the change can land once its native checks pass. Edit only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
+| `CONTRACTS.md`, `DESIGN.md` or `ACCEPTANCE.md` | The link check. |
+| `service/src/` or `service/tests/` | All four Cargo configurations above. Qualifying a behavior change requires a passing container run of `acceptance.sh` on the changed source. |
+| Release driver and shared helpers in `apparatus/driver/` | `stewart_driver.py --self-test` and `--list`, which loads every release case module. Shared helpers used by the standalone runtime driver also need that driver's checks below. Qualify the changed release driver with the `acceptance.sh` container suite. Edit only under the driver-independence rule in [AGENTS.md](../AGENTS.md). |
 | `apparatus/driver/claude_code.py` or its `CLAUDE-CODE.md` | `python3 -I -B apparatus/driver/claude_code.py --self-test` and `--list`. Runtime behavior changes also need the affected synthetic cases against the gated binary, retaining witnesses as described in the driver guide. The complete run needs a second binary built with `claude-code,fault-injection` as `--variant-binary` for deterministic publication races as well as writer invariance. Linux qualification needs the next container run of `acceptance.sh`, which also runs this standalone driver on both architectures. |
 | `apparatus/driver/claude_code_surface.py` or its `CLAUDE-CODE-SURFACE.md` | `python3 -I -B apparatus/driver/claude_code_surface.py --self-test`, then its synthetic rehearsal with `--binary /absolute/gated-stewart --work /absolute/fresh-evidence` on the native host where Unix sockets and process observation are permitted. Run `apparatus/claude-code/test_profile.py` too when changing the shared check inventory or artifact interface. These exercise the independent fixture and actual transport helpers; they do not establish real-harness conformance or Linux qualification. |
 | `apparatus/driver/claude_code_observer.py` or its `CLAUDE-CODE-OBSERVER.md` | `python3 -I -B apparatus/driver/claude_code_observer.py --self-test`, then `--rehearse-listeners --work /absolute/fresh-evidence` on the native host where Unix socket binding is permitted. Run `apparatus/claude-code/test_bounded.py` when changing the observer/launcher boundary, and `test_profile.py` when changing the shared check inventory or artifact interface. Listener peers, authentication reports and process results in this rehearsal are synthetic controls; they do not establish real-harness conformance, actual helper invocation or Linux qualification. |
 | `apparatus/driver/claude_code_peer.py` or its `CLAUDE-CODE-PEER.md` | `python3 -I -B apparatus/driver/claude_code_peer.py --self-test`, then the controller's native synthetic rehearsals below. Its isolated controls never launch subprocesses; the integrated rehearsal exercises the actual Stewart helpers. |
 | `apparatus/driver/claude_code_service_witness.py` or its `CLAUDE-CODE-SERVICE-WITNESS.md` | `python3 -I -B apparatus/driver/claude_code_service_witness.py --self-test`, then `--rehearse --binary /absolute/gated-stewart --work /absolute/fresh-evidence` on the native host. Review complete independent package expectations and external snapshots through close, continuation without duplication, process observations and all firing corruption controls. This rehearsal uses only synthetic profiles and the existing fake harness; it grants no real-harness authority or Linux qualification. |
 | Runtime schemas or pinned texts in `docs/claude-code/CONTRACT.md` | The link check, the `claude-code` Cargo configuration, and the standalone runtime driver's self-test and list. Update exact service/driver copies when their pinned bytes change, preserving independent authorship. Prose-only status changes need the link check. |
-| `apparatus/c10/` | `python3 -I -B apparatus/c10/test_c10.py`, `python3 -I -B apparatus/c10/test_placements.py`, `python3 -I -B apparatus/sanity/test_launch.py`, and the driver's self-test for the specification-derived helpers it imports. Exercise changed run, reviewer and operator behavior with the native fake-provider commands in [the apparatus instructions](../apparatus/c10/README.md#run-the-offline-checks). The change remains unqualified until its retained Linux `c10.py rehearse` run, scheduled by the user after committing. No model calls are needed for these checks. |
+| `apparatus/c10/` | `python3 -I -B apparatus/c10/test_c10.py`, `python3 -I -B apparatus/c10/test_placements.py`, `python3 -I -B apparatus/sanity/test_launch.py`, and the driver's self-test for the specification-derived helpers it imports. Exercise changed run, reviewer and operator behavior with the native fake-provider commands in [the apparatus instructions](../apparatus/c10/README.md#run-the-offline-checks). Qualify the committed change with a retained Linux `c10.py rehearse` run. No model calls are needed for these checks. |
 | Python in `apparatus/sanity/` | `python3 -I -B apparatus/sanity/test_launch.py`. For shared session or evidence helpers, also run the C10 checks above. The affected launcher needs its retained Linux rehearsal before qualification; source changes invalidate its previous rehearsal binding for live use. |
 | `apparatus/claude-code/` | `python3 -I -B apparatus/claude-code/test_pin.py`, `python3 -I -B apparatus/claude-code/test_profile.py`, `python3 -I -B apparatus/claude-code/test_bounded.py` and `python3 -I -B apparatus/claude-code/test_surface_check.py`, on the native host where process-group observation is permitted. These are offline controls and invoke no Claude process. Any real harness invocation needs bounded authority. Native results establish no Linux qualification. |
 | `apparatus/claude-code/surface_check.py`, its shared controller boundary or synthetic peer | In addition to the apparatus unit checks, run native `prepare-rehearsal` and the frozen controller's `run-rehearsal` for `normal`, `bad-init` and `wrong-auth`, with the actual gated Stewart binary and fresh evidence directories as described in [the controller guide](../apparatus/claude-code/README.md#synthetic-controller-rehearsal). Review exact peer/observer traffic, firing negative controls, unused slots and process stopping. Expected failures must fail for the intended reason, without fixture effects or a later start; a nonzero exit alone is insufficient. No real harness or credential is used. |
 | `apparatus/claude-code/service_check.py` or its tests | In addition to the apparatus unit checks, run `python3 -I -B apparatus/claude-code/test_service_check.py`, then native `prepare-rehearsal` and the positive packet's frozen `rehearse` command from the [procedure guide](../apparatus/claude-code/README.md#native-service-comparison-procedure). Review all six comparisons: early submission, bad-init, three-placement deadline continuation and invariance, final deadline, and ordinary ending. Check original peer witnesses, cumulative account/UTF-8-artifact packages, message snapshots versus result checkpoints, refusal controls and prior archive preservation; close reviewed submissions and retain stopped unsubmitted controls. Run the complete-package witness self-test and native rehearsal when changing that shared witness. No real harness is used, and native results establish no Linux qualification. |
-| Shell scripts in `apparatus/` or `apparatus/container/` | `sh -n` on each changed script. The change is unqualified until the next container run of the suite that uses it, which the user schedules and batches; it can land and be pushed once `sh -n` passes. `step2.sh` runs `container/inner-build.sh` and `acceptance.sh` the `acceptance-inner-` scripts. |
+| Shell scripts in `apparatus/` or `apparatus/container/` | `sh -n` on each changed script. Qualify the change with a passing container run of the suite that uses it. `step2.sh` runs `container/inner-build.sh` and `acceptance.sh` runs the `acceptance-inner-` scripts. |
 | `apparatus/check-build-markers.sh`, `apparatus/test_build_markers.py` or `apparatus/claude-code-markers.txt` | `sh -n apparatus/check-build-markers.sh` and `python3 -I -B apparatus/test_build_markers.py`; run the marker check against release-profile release/test/development binaries, with expected absence/absence/presence. Linux qualification needs the next container acceptance run. |
 | `apparatus/check_links.py` | `python3 -I -B apparatus/check_links.py --self-test`, then the link check. |
 | `apparatus/qualified.py` | `python3 -I -B apparatus/qualified.py --self-test`, then `python3 -I -B apparatus/qualified.py check`. |
-| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | The user's run of `step2.sh`, which rebuilds the toolchain images, vendors the crates named by the committed `Cargo.lock` into `service/vendor`, and builds and checks the release binary for both architectures. It refuses while `service/vendor` exists, so the old tree has to be moved out of the way first. Then all four cargo configurations, and the next container run of `acceptance.sh`. The change is unqualified until those container runs, which the user schedules and batches; it can land and be pushed once all four configurations pass, which after a dependency change needs the tree that `step2.sh` vendors. |
+| `service/Cargo.toml`, `service/Cargo.lock`, the vendored crates or `apparatus/container/Containerfile` | Run `step2.sh` to rebuild the toolchain images, vendor the crates named by the committed `Cargo.lock` into `service/vendor`, and build and check the release binary for both architectures. It refuses while `service/vendor` exists, so move the old tree aside first. Run all four Cargo configurations with the resulting vendor tree. Qualification requires both `step2.sh` and the container run of `acceptance.sh` to pass. |
 
 `apparatus/qualified.py` keeps the qualification record ([Evidence and
 retention](#evidence-and-retention)). After a container run of `acceptance.sh`
@@ -275,10 +275,10 @@ second gated build with a different digest for the profile/writer comparison.
 
 ## Container suites
 
-The suites run under Apple `container` 1.6.1 on the development Mac and need it
-on the host. An agent whose shell is sandboxed cannot reach it, so the agent
-prepares the command and the user runs it. Each script checks the version and
-that the container services are running, and stops otherwise. `acceptance.sh`
+The suites run under Apple `container` 1.6.1 on the development Mac. From a
+sandboxed shell, prepare the command for the maintainer to run on the host
+with `!`. Each script checks the version and that the container services are
+running, and stops otherwise. `acceptance.sh`
 also needs the toolchain images and `service/vendor` from
 `step2.sh`. The network is used only to pull pinned images, build the toolchain
 images and vendor crates; every build and driver run is offline
@@ -344,9 +344,8 @@ emulation: their timings are reported but do not gate (ACCEPTANCE C9), and the
 driver records Rosetta's own cache under the home as an emulator artifact rather
 than a write by Stewart.
 
-Every suite uses the fake provider. The real-model conformance tier of
-ACCEPTANCE needs its own apparatus, and a model-consuming run needs the user's
-explicit permission, with its models and budget named.
+The container suites use the fake provider. Endpoint alignment uses its own
+apparatus and requires explicit authorization for the models and budget used.
 
 ## Evidence and retention
 
@@ -359,8 +358,9 @@ not an archival deliverable.
 
 Container suites and live studies initially use `.scratch/<run>/`. New runs use
 new folders so a failed attempt cannot overwrite evidence still under review.
-Neither `.tmp/` nor `.scratch/` travels with Git. The manager supplies backups
-for any selected original evidence that cannot be reproduced.
+Neither `.tmp/` nor `.scratch/` travels with Git. Back up selected irreplaceable
+originals to an authorized destination. If none is available, retain the
+originals locally and report the missing backup.
 
 ### Current test evidence
 
@@ -404,8 +404,7 @@ acting. A pin protects its named original result, not unrelated caches or
 preparation logs beside it. Preserve exact original records that remain; revise
 the maintained interpretation or retention scope rather than historical bytes.
 
-Routine disposal under these rules is part of maintaining the repository, not a
-new approval procedure. Do not discard unfinished product custody, an archive
-still needed for an active audit, or its exact writer. Finish or explicitly
-dispose of that undertaking first. Retire temporary worktrees when their task
-ends; ordinary Git history retains source without additional working copies.
+Clear disposable evidence when its inspection purpose ends. Preserve material
+under unresolved custody, including an open audit's archive and exact writer.
+Retire temporary worktrees when their task ends. Ordinary Git history retains
+the source.

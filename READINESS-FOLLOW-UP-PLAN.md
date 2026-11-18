@@ -1,10 +1,9 @@
 # Readiness follow-up
 
-**Current status:** The bounded encounters have reviewed outcomes, and the
-selected service repairs and capture-grounded fixtures have native checks, as do
-the lookback's decided changes. Remaining work is Linux qualification of changed
-source, fixture-gap disposition and a fresh coverage reassessment. Readiness is
-not complete; no live packet is active.
+**Current status:** The bounded encounters have reviewed outcomes.
+[Linux acceptance](apparatus/qualified.md#acceptance-lookback-03) qualified
+the lookback source on both architectures. Fixture gaps and the coverage
+reassessment remain open. No live packet is active.
 
 This plan owns residual readiness findings and their disposition.
 [CONTRACTS](CONTRACTS.md), [INTERFACE](docs/INTERFACE.md),
@@ -14,10 +13,6 @@ own behavior and evidence obligations. The [qualification index](apparatus/quali
 owns retained results and binary identities. [Working evidence](#working-evidence)
 locates original failures and corrected comparisons.
 
-Routine preparation, repairs and checks are authorized. The principal retains
-approval of each concrete live commission, container scheduling, new spending,
-changes to promises or expression, and external backup destinations when needed.
-No unused allowance, old packet or retained audit supplies new launch authority.
 Keep exact writers for open audits, and preserve original captures and receipts.
 
 ## Remaining fixtures and dispositions
@@ -30,9 +25,9 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   result does not establish execution of the helper that could produce it.
 - [ ] Inventory the remaining capture groups: provider errors, rejected/overage
   events, alternative runtime compaction shapes and terminal-cap results. Reuse
-  suitable retained observations after checking provenance; give unavailable
-  captures and unexercised conditions an owner or explicit disposition. Synthetic
-  frames do not establish live forms or cap enforcement.
+  suitable retained observations after checking provenance. Record what is
+  missing and which claims those gaps limit. Synthetic frames do not establish
+  live forms or cap enforcement.
 
 ## Reassess coverage
 
@@ -49,12 +44,9 @@ Keep exact writers for open audits, and preserve original captures and receipts.
   `.tmp/readiness/a/` classifications and `.tmp/readiness/tools/trusted.py` as
   provisional inputs, not the current verdict. No backup exists; release that
   working set only when the reassessment no longer needs it.
-- [ ] Assign each remaining finding a repair, a bounded comparison or an explicit
-  limitation/disposition. Keep proposed shared-runtime and question-family
-  refactors distinct from demonstrated defects and from decisions that change
-  the product's obligations. The lookback's refactor and public-form candidates
-  are unselected work under the coordinating plan, not readiness tasks unless
-  selected.
+- [ ] For each finding, repair a demonstrated defect, run a comparison that
+  could settle it, or document the limitation it places on the result.
+  Speculative refactors can stay unselected.
 
 ## Working evidence
 
@@ -106,19 +98,16 @@ reviews name; the `.tmp` roots keep the retained copies.
 ## Verify and close the work
 
 - [ ] Run [DEVELOPMENT's required checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
-  for further changes, retaining actual outputs through review. Changed service
-  behavior needs container acceptance before another live alignment packet; changed
-  runtime surfaces need a newly approved reviewed surface check before service
-  use. The acceptance driver and launchers differ from qualified source; a new
-  container run, scheduled by the principal, must qualify the changed source.
+  for further changes, retaining actual outputs through review. Qualify changed
+  service behavior in the container before another live alignment packet.
+  A changed runtime surface needs a matching reviewed surface check before
+  service use. Run live checks only within their bounded commission.
 - [ ] After reassessment, release reproducible working evidence whose inspection
   purpose has ended under [retention rules](development/DEVELOPMENT.md#evidence-and-retention).
   Preserve selected originals, exact writers and unresolved custody witnesses.
   A guide citation creates no indefinite retention obligation.
 
-**Complete when:** each finding has a repair or explicit disposition, fixtures
-are grounded or assigned, required checks pass, and no stopping/custody
-uncertainty remains. Bring substantive tradeoffs to the principal. Keep enduring
-behavior in specifications/tests; delete this plan and its coordinating
-work-order entry once every remaining task has an outcome or owner. No further
-general readiness approval is needed.
+**Complete when:** the reassessment accounts for each finding and fixture gap,
+required checks pass, and stopping and custody uncertainties are resolved.
+Keep enduring behavior in specifications and tests. Delete this plan and its
+coordinating work-order entry when any remaining work has an owner.

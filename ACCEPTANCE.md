@@ -56,10 +56,9 @@ don't either.
 | **Endpoint alignment** | Commissioned alignment run before a release names a model, and again when its pinned endpoint inputs change | The real provider | Yes |
 | **Experiments** | Commissioned study, when someone has a question | The real provider | No |
 
-The principal schedules and batches container qualification. Passing the
-applicable [development checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
-permits a change to land while it remains unqualified; landing does not transfer
-an earlier suite result to new source. The release and model gates remain owed.
+Passing the applicable [development checks](development/DEVELOPMENT.md#what-to-run-for-what-you-changed)
+permits a change to land. The changed source remains unqualified until its
+required suite passes. The release and model gates remain owed.
 The apparatus documentation owns the pinned build and runner images.
 
 The scripted tier tests Stewart's behavior within its covered cases. The

@@ -38,8 +38,8 @@ obligations, excuse unreported failures or turn intended behavior into evidence.
    `git ls-files '*-PLAN.md'`. The coordinating plan owns cross-plan order;
    each topic plan owns its decisions and tasks. Historical conversations,
    reviews and captured plans are evidence, not assignments or competing design.
-   Removed material is not a gap to repair. Planning alone does not authorize
-   execution.
+   Removed material is not a gap to repair. Work within the current task and
+   leave deferred ideas for later.
 4. **Identify the required checks before editing.** Use
    [What to run for what you changed](development/DEVELOPMENT.md#what-to-run-for-what-you-changed).
    Notice the driver-independence rule below before reading implementation code
@@ -47,23 +47,29 @@ obligations, excuse unreported failures or turn intended behavior into evidence.
 
 ## Decisions and authority
 
-"The user" in development guidance is the development principal. Stewart's users
-are the people who supply material and operate it. Today they are the same person;
-the principal acts as their proxy and decides on their behalf. Documentation for
-Stewart's users must help them operate it, not narrate development administration.
+Exercise your judgment and proceed within the task's scope. You own technical
+design and priorities, including refactoring, internal interfaces, documentation
+and error handling. Choose fixtures, construct tests, assess their coverage and
+decide how to run and improve them. Interpret unexpected failures, fix
+demonstrated defects, and explain any limitation you accept. Use the retention
+rules to clear disposable evidence. Speculative work can stay unselected.
 
-The user retains purpose, scope, spending and protected obligations. Resolve
-routine choices yourself. Bring new authority, substantive restrictions, changes
-to what Stewart promises or what participants can express, and important failures
-back to the user with enough evidence to decide.
+The maintainer (the development principal) sets the project's purpose, scope
+and protected obligations, and controls spending, credential use and external
+effects such as public release and disclosure of sensitive findings. You can
+change public forms and schemas while preserving those obligations, including
+custody, attribution and the substance of what participants can express.
+Decide what merits discussion. If an operation lacks authority, leave it
+unperformed, account for it and continue with the work you can do.
 
-Starting or resuming Claude through a CLI, SDK or another harness, including
-model-consuming probes, requires the user's explicit permission for that bounded
-use. Stay within authorized scope and budget. Deliberate usage-limit studies need
-their own commission. A plan, fixture or previous run is not fresh spending authority.
+Starting or resuming Claude through a CLI, SDK or other harness, including a
+model-consuming probe, requires explicit permission for that bounded use.
+Deliberate usage-limit studies need their own commission. Stay within the
+authorized scope and budget.
 
-Findings that could be sensitive outside the project, such as a toolchain security
-weakness, go to the user, who decides how to route them.
+When only the maintainer has the machine access or credentials for an
+authorized operation, give them the command and its purpose. You still own the
+engineering decision and interpretation of the result.
 
 ## Complete the work
 
@@ -84,9 +90,8 @@ There is one `main` branch, and it moves forward. Use branches or worktrees as
 helpful, and land coherent changes on `main`. Check `git status` before committing
 and commit only the paths you changed. Work is verified when the applicable
 checks in DEVELOPMENT pass; verified work may be pushed. A change whose row calls
-for a container suite remains unqualified until that run, which the user schedules
-and batches; it need not wait for the run to land. The public binary release gate
-is separate, and its schedule remains the user's decision.
+for a container suite can land after its development checks pass. It remains
+unqualified until the suite passes for the changed source.
 
 Do not add compatibility shims, old-form readers, converters or parallel code
 paths, and do not rewrite historical receipts to fit a newer schema. A changed
@@ -114,7 +119,8 @@ and explanations into documentation and tests, and delete the plan.
 
 ## Maintain the documentation
 
-Documentation describes the current product and how to work on it. Prefer direct
+Documentation describes the current product and how to work on it. Write operator
+guidance for the people who supply material and use Stewart. Prefer direct
 statements of behavior, reasons and limits. Distinguish a design commitment, an
 implemented path and a demonstrated result. Keep each fact with its owner and
 link to it rather than duplicating detail. Delete obsolete explanations; Git
@@ -168,7 +174,7 @@ retrieval worked or grant authority to resume an audit.
 ## Use the environment correctly
 
 A sandboxed agent shell cannot reach Apple `container` because its Rosetta check
-is denied. Prepare the command and ask the user to run it with `!`.
+is denied. Supply the command for the maintainer to run on the host with `!`.
 
 Run Python with an explicit interpreter and isolated startup (`-I`, plus `-B`
 where bytecode must stay unwritten). Isolated mode ignores `PYTHONPATH`, so

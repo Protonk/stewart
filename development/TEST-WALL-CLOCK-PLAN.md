@@ -48,8 +48,7 @@ per-case durations, so the slowest cases are not yet known.
 Every firing control, differing case and invariance case keeps running. Timing
 gates keep their meaning: concurrency must not inflate a gated measurement, or
 that measurement runs alone. Results stay comparable with earlier qualification
-records. Any reduction in coverage is the principal's decision, not a speed
-optimization.
+records. Preserve the coverage required by ACCEPTANCE.
 
 Complete this plan when before-and-after times are measured on the same host
 with unchanged outcomes and controls, and DEVELOPMENT describes the faster

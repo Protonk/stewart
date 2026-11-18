@@ -45,11 +45,10 @@ Do not advertise them as commissionable or invent another taxonomy. Their exact
 prompts, tools and specimens remain deferred, rather than becoming prerequisites
 for this interface.
 
-The principal's admission decision applies throughout: role declarations must be
-well formed and refer to selected material, but absent evidence or an unmapped
-expected role does not prevent commissioning. Do not demand invented evidence,
-a waiver, an explanation for choosing open inquiry, or a finished working
-question for inquiry framing. No new exception mechanism is selected. If a
+Role declarations must be well formed and refer to selected material. Absent
+evidence and unmapped expected roles remain admissible. Do not demand invented
+evidence, a waiver, an explanation for choosing open inquiry, or a finished
+working question for inquiry framing. No new exception mechanism is selected. If a
 future contract permits an exception to a structural rule, its rationale must
 be explicit and captured; MCP cannot silently waive CLI rules.
 
@@ -82,8 +81,8 @@ and independent-driver work between authors.
   mechanical requirements and evidence expectations; identify which facts belong
   in the pinned arrangement and which are derived views. Keep runtime mapping
   separate so a family addition does not require another lifecycle implementation.
-  Bring any proposed evidence-sufficiency gate or changed expressive obligation
-  to the principal instead of implementing it as a structural validation rule.
+  Keep evidence sufficiency advisory and preserve the expressive range of each
+  family.
 - [ ] Specify how the manager declares roles in the ordinary question-file
   contract, how paths bind to literal selected materials, and what acceptance
   captures. Preserve the current submission boundary and explicit open-inquiry
@@ -121,9 +120,9 @@ material reader or a family-specific custody path is not needed for that seam.
 | Component | What it should be able to express | Boundary to preserve |
 | --- | --- | --- |
 | Material roles | Explicit manager-declared roles and references to selected material; family-specific explanations and remedies. | Meaning comes from declarations, not filename guesses or prose classification. All literal selected bytes remain captured. A missing mapping does not prove evidence absent elsewhere. |
-| Presentation policy | Role grouping, ordering, navigation and guidance about which sources serve which purpose. Identify derived views separately from originals. | Stable source identity, byte ranges, pagination and search completeness. No silent filtering, truncation, rewritten source or substituted excerpt; a changed access promise requires a decision. |
+| Presentation policy | Role grouping, ordering, navigation and guidance about which sources serve which purpose. Identify derived views separately from originals. | Preserve source identity, byte ranges, pagination and search completeness. No silent filtering, truncation, rewritten source or substituted excerpt. |
 | Evidence expectations | Recommended evidence classes, provenance/context prompts, and explanations of what a missing source prevents establishing. | Separate structural invalidity from admissible insufficiency. A supplied report remains its author's claim; a proposed experiment is not witnessed execution. |
-| Mechanical rules | Well-formed declarations, supported roles and valid references, with stable errors, warnings and suggestions. | Current empty/unequal/insufficient evidence stays admissible. A future mandatory evidence rule needs an explicit predicate and a principal decision about refusal versus advice. |
+| Mechanical rules | Well-formed declarations, supported roles and valid references, with stable errors, warnings and suggestions. | Empty, unequal and insufficient evidence stays admissible. |
 | Answer vocabulary and rendering | Family-owned authoring kinds, expected-section notices and presentation of the auditor's attributed account. | Missing sections and empty answers remain allowed. Citation validity does not grade support. Do not require a finding, winner, fixed hypothesis or answer endorsement. |
 | Runtime mapping | Render the same effective family facts into Messages system/tools or the agent arrangement. | Family choice grants no extra access, execution, budget or lifecycle authority. Keep supplied open-inquiry guidance distinct from product-owned orientation and tools. |
 
@@ -289,7 +288,7 @@ archive, with observation scope and timing recorded. Carry package inventories
 through delivery, close and repeated close. Unexercised behavior, an absent
 witness, failed export or incomplete inspection cannot count as a pass.
 
-**Complete when:** native checks pass and the user-scheduled Linux container
+**Complete when:** native checks pass and the Linux container
 suites qualify the exact release binary on both architectures for the manager
 boundary and lifecycle claims. Test the gated runtime separately with its
 synthetic harness. Native WSL2 and real-model release obligations retain their
@@ -346,8 +345,8 @@ needs its own matching reviewed check. Procedures and profiles grant no starts.
 - [ ] Freeze each proposed commission's exact inputs, binaries, surface/profile
   pins, model, authentication route, paid-extra-usage-disabled setting, maximum
   starts/placements and duration/resource bound, stopping rules, replacement
-  policy and retained witnesses. Present that concrete packet to the principal.
-  Availability probes and authentication launches need bounded authority too.
+  policy and retained witnesses. Include availability probes and authentication
+  launches in the requested allowance.
 
 ### Run only the approved packet and review what occurred
 

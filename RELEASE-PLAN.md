@@ -21,7 +21,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 | Current | Resolve the remaining fixture gaps and reassess coverage. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) |
 | After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
-| Separately scheduled release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
+| Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
 | After the first release | Investigate shortening test and suite wall-clock time. | [Test wall-clock](development/TEST-WALL-CLOCK-PLAN.md) |
 | Unselected | Broader blinded evaluation and family dogfooding. | [Deferred studies](#deferred-studies) |
@@ -30,8 +30,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 Use the existing apparatus and retained exact writers; reconcile uncertain
 processes or effects before reusing them. Build only the prerequisites needed
 for the selected comparison. Endpoint alignment is separate from the bounded
-readiness observations. Live starts need concrete approval; container
-runs and the public release remain the principal's scheduling decisions.
+readiness observations. Live starts require a bounded commission.
 
 At the manager transition, enter its specification stage and freeze roles,
 diagnostics, MCP and effect-description schemas before dependent implementation.
@@ -43,10 +42,10 @@ needed. Give residual work one owner in place; do not create a turnover document
 Broader blinded evaluation and family dogfooding remain deferred; the
 [family contract](CONTRACTS.md#question-families-and-open-inquiry)
 owns their product boundaries. An agent-manager study omitting the question from
-returns is only an option after the manager interface is established and the
-principal selects it, not a pending task. A future study needs a named uncertainty
-and bounded commission. Select its inputs and discriminating comparison from the
-qualification index's evaluation records and the interaction findings
+returns remains an option after the manager interface is established. A future
+study needs a named uncertainty and bounded commission. Select its inputs
+and discriminating comparison from the qualification index's evaluation
+records and the interaction findings
 (`apparatus/studies/interaction/RESULTS.md` at `77375f1`). Real-model
 repetition, effort comparisons and killed-and-continued placements, which the
 former conformance matrix required, are such studies now, not release gates.
@@ -76,8 +75,10 @@ the usual checks:
 - Pin the agent readable view in a Cargo test, and decide whether a bad API
   limit beside a profile should keep reporting two defects for one key.
 
-Public-form candidates change a recorded or reply form and need the
-principal's decision:
+The following candidates affect recorded forms, replies or build configurations.
+If selected, assess them against custody, truthful reporting and what
+participants can express. Apply the [version rules](CONTRACTS.md#versions-and-legacy-obligations)
+when a form changes.
 
 - Agent records without Messages placeholders (`provider`, `requests`,
   `attempts`), with a top-level runtime and only agent causes.
@@ -101,10 +102,10 @@ Family-descriptor candidates belong to the manager interface's registry stage.
 | Requirement | Remaining work |
 | --- | --- |
 | Linux container qualification | Run the scripted acceptance suite on the release source and binaries, on both architectures with the required controls. |
-| Native WSL2 qualification | Package the same binary, driver and fake provider; arrange and review the user's native run. |
+| Native WSL2 qualification | Package the same binary, driver and fake provider and review the results of the native WSL2 run. |
 | Endpoint alignment | A current [alignment record](ENDPOINT-ALIGNMENT-PLAN.md) for each model the release names, each run under an authorized budget. |
 | Release documentation and source package | Define and build the source archive and finish the outside-reader documentation pass ([below](#release-documentation-and-source-package)). |
-| Public release gate | Set the binary release schedule with the principal. |
+| Public release gate | The maintainer decides when to publish the qualified binaries. |
 
 The requirements remain those of ACCEPTANCE while its review is open.
 
@@ -125,10 +126,10 @@ partial effects; C18's pressure pruning, confusion between retained and delivere
 archives reported clean; and C11's scans presented as snapshot proof. Driver
 changes require an implementation-independent author.
 
-Resolve these acceptance-policy questions without silently changing the current
-requirements:
+Use the current acceptance claims to assess these test and apparatus choices.
+Any change to the evidence owed belongs in ACCEPTANCE.
 
-- Confirm the platform and alignment gates and coverage scope.
+- Review whether the platform and alignment gates cover the release claims.
 - Decide whether to add Linux Cargo tests. Current Linux suites build the crate
   and run the independent driver; an offline Cargo route would need
   `STEWART_IT_TMP` on ext4, xfs or btrfs.
@@ -152,7 +153,7 @@ record Windows/WSL versions, distribution, kernel, architecture and filesystems.
 The native timing gate applies. Native x86_64 is unexercised, so its timings must
 be measured rather than inferred from Rosetta.
 
-Needs: a package builder, instructions and the user's scheduled run.
+Build the package and include commands an operator can run on a native WSL2 host.
 
 ### Release documentation and source package
 
