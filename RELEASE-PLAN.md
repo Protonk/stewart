@@ -140,9 +140,22 @@ Any change to the evidence owed belongs in ACCEPTANCE.
   inspections by tag but does not enforce equality with the toolchain record.
 - Review qualification rules for skips, timing gates and failures across
   platforms. The native protocol tripwire is 200 ms; emulated x86_64 has no
-  enforced timing gate. Retiring the absolute tripwire or moving performance
-  trends into Linux CI remains a later policy option, not implementation
-  scheduled now.
+  enforced timing gate. Run conditions move the measurement: with the binary
+  and release driver unchanged, the slowest protocol call, `record_observation`
+  in `c3.limits`, took 111 then 122 ms natively and 176 then 316 ms emulated
+  in `acceptance-readiness-03` and `acceptance-readiness-04`. Retiring the
+  absolute tripwire or moving performance trends into Linux CI remains a later
+  policy option, not implementation scheduled now.
+- Carry the readiness reassessment's accepted limitations. Its surviving
+  mutants were equivalent mutants in the gate and settings slices, and three
+  agent races reachable only at the exact deadline instant or a failed final
+  checkpoint write, for which no fault point exists. Two tests failed once
+  each under heavy machine load and passed on every rerun: the delivery test
+  of a run still holding the lock, and the Messages credential-descriptor
+  deadline test. The runtime's exact queue-entry instant remained unobserved.
+  The mutation logs were released with the readiness working evidence;
+  `READINESS-FOLLOW-UP-PLAN.md` at `ba551c6` keeps the summary. Decide which
+  of these need a case, a fault point or an explicit disposition.
 - Decide whether to support running the qualification suites from a Linux
   host; the documented host route uses macOS and Apple `container`, and native
   Linux runs are documented as development iteration only.
