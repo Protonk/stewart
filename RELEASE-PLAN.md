@@ -1,13 +1,9 @@
 # Release and work plan
 
-**Current status:** The developer lookback is complete. Linux acceptance
-qualified its changes to placement endings, exhausted starts and signal
-gating on both architectures at `4530c6c` in `acceptance-lookback-03`.
-The subsequent readiness fixtures passed native verification. Linux acceptance
-and the offline C10 rehearsal remain for the changed source.
-Manager-interface implementation, endpoint
-alignment and release qualification remain ahead. No live packet is active and
-the public release is not scheduled by this plan.
+The current task is to specify the manager interface. Linux acceptance qualified
+the readiness fixtures on both architectures at `ba551c6`. The offline C10
+rehearsal passed with that aarch64 writer. Endpoint alignment and release
+qualification remain open. No live packet is active.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
@@ -19,8 +15,7 @@ the [qualification index](apparatus/qualified.md) owns retained results.
 
 | Order | Remaining work | Owner |
 | --- | --- | --- |
-| Current | Qualify the readiness fixtures on both Linux architectures, review the offline C10 rehearsal and close readiness. | [Readiness follow-up](READINESS-FOLLOW-UP-PLAN.md) |
-| After readiness dispositions | Specify and implement shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
+| Current | Specify shared commissioning rules, the independent CLI additions, optional preparation MCP and fake-provider integration, then implement them. | [Manager interface](development/MANAGER-INTERFACE-PLAN.md) |
 | Alongside manager work, separately commissioned | Extend procedural question-family and runtime trials. A real-service result is not an entry gate for manager MCP or fake-provider boundary acceptance. | The manager plan's subscription testing track |
 | Separate release work | Build endpoint alignment and align the endpoints the release names; complete platform qualification and acceptance-policy review. | [Endpoint alignment](ENDPOINT-ALIGNMENT-PLAN.md) and the requirements below |
 | Before the release | Prepare the release documentation and source package. | [Release documentation and source package](#release-documentation-and-source-package) |
@@ -33,8 +28,8 @@ processes or effects before reusing them. Build only the prerequisites needed
 for the selected comparison. Endpoint alignment is separate from the bounded
 readiness observations. Live starts require a bounded commission.
 
-At the manager transition, enter its specification stage and freeze roles,
-diagnostics, MCP and effect-description schemas before dependent implementation.
+Freeze manager roles, diagnostics, MCP and effect-description schemas before
+dependent implementation.
 Arrange independent driver authorship where service and driver changes are both
 needed. Give residual work one owner in place; do not create a turnover document.
 
