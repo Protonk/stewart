@@ -499,8 +499,10 @@ not shared between processes on every host. The harness draws no conclusions.
   unprefixed tool name emitted one second before the earliest possible deadline,
   with shutdown outlasting the deadline (witnessed by `runtime-stop.json`), must
   stay `protocol_anomaly`, also on the final placement; with no earlier condition
-  the deadline decides. `runtime-late-close` (variant) makes the late condition a
-  close held after its request: the run still records `ended_unsubmitted`, the log
+  the deadline decides. In `runtime-late-close` (variant), close pauses immediately
+  before publishing its request. The harness then ends its second turn. Once the
+  harness witnesses TERM, the driver lets close publish and holds it after the
+  request. The run still records `ended_unsubmitted`, the log
   orders `close_requested` before `run_ended`, the headline's first ending is
   `close`, and close seals as manager. A close requested while the placement is
   live stops it.

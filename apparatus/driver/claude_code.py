@@ -981,9 +981,9 @@ def pipe_probe(writes, capacity=None):
         os.close(write_end)
 
 
-def release_fault_pauses(directory, observe):
-    """Release each documented pause once, preserving its first release evidence."""
-    for paused in directory.glob("*.paused"):
+def release_fault_pauses(directory, observe, pattern="*.paused"):
+    """Release each selected pause once, preserving its first release evidence."""
+    for paused in directory.glob(pattern):
         go = paused.with_suffix(".go")
         try:
             with go.open("xb"):
@@ -4671,12 +4671,13 @@ class Driver:
         return path.exists() and path.stat().st_size > 0
 
     def late_after_ordinary(self, label, late, placements=3):
-        """The harness resists TERM, then ends its second turn after the reminder: the ordinary
-        ending is decided and shutdown waits two seconds before KILL. A later signal or close
-        arrives inside that window, before run_ended."""
+        """Inject the late condition after witnessed TERM. For close, have the command
+        waiting at its publication point before allowing the harness to end its turn."""
         steps = [{"op": "record"}, {"op": "result", "is_error": False, "checkpoint": 0},
-                 {"op": "await_input", "expect": "reminder"}, {"op": "resist_term"},
-                 {"op": "result", "is_error": False, "checkpoint": 1}, {"op": "hang"}]
+                 {"op": "await_input", "expect": "reminder"}, {"op": "resist_term"}]
+        if late == "close":
+            steps.extend([{"op": "marker", "name": "ready-to-end"}, {"op": "wait_file", "name": "end-turn"}])
+        steps.extend([{"op": "result", "is_error": False, "checkpoint": 1}, {"op": "hang"}])
         f = self.sequence_fixture(label, steps, placements=placements)
         self.accept(f)
         run = close = None
@@ -4685,23 +4686,31 @@ class Driver:
         observe = lambda event, **facts: self.boundary(f, event, **facts)
         try:
             run = self.spawn(f, "run", ["run", f["reference"]])
+            if late == "close":
+                self.require(label + ".ready-to-end", self.await_fact(
+                    lambda: (f["witness"] / "ready-to-end").exists(), run["process"], 20))
+                env = dict(self.env, STEWART_TEST_FAULT="log.publish:close_requested=pause,close.after_requested=pause",
+                           STEWART_TEST_FAULT_DIR=str(close_faults))
+                close = self.spawn(f, "close", ["close", f["reference"]], env)
+                self.require(label + ".close-before-link", self.await_fact(
+                    lambda: bool(list(close_faults.glob("log.publish*.paused"))), close["process"]))
+                self.require(label + ".no-close-request-yet", "close_requested" not in self.log_kinds(f))
+                (f["witness"] / "end-turn").touch()
             self.require(label + ".shutdown-began", self.await_fact(lambda: self.term_received(f), run["process"], 20),
                          str(f["witness"]))
             if late == "signal":
                 ended_before = self.run_ended_record(f, 1)[0] is not None
                 run["process"].send_signal(signal.SIGTERM)
                 self.boundary(f, "late-signal-sent", owner_pid=run["process"].pid, run_ended_before=ended_before)
+                self.require(label + ".late-before-run-ended", not ended_before and run["process"].poll() is None,
+                             {"run_ended_before": ended_before, "owner_exit": run["process"].poll()})
             else:
-                env = dict(self.env, STEWART_TEST_FAULT="close.after_requested=pause",
-                           STEWART_TEST_FAULT_DIR=str(close_faults))
-                close = self.spawn(f, "close", ["close", f["reference"]], env)
+                release_fault_pauses(close_faults, observe, "log.publish*.paused")
                 self.require(label + ".close-held", self.await_fact(
                     lambda: bool(list(close_faults.glob("close.after_requested*.paused"))), close["process"]))
-                ended_before = self.run_ended_record(f, 1)[0] is not None
-                self.boundary(f, "late-close-requested", run_ended_before=ended_before)
-            # Construction: the late condition preceded the recorded ending.
-            self.require(label + ".late-before-run-ended", not ended_before and run["process"].poll() is None,
-                         {"run_ended_before": ended_before, "owner_exit": run["process"].poll()})
+                order = [k for k in self.log_kinds(f) if k in ("close_requested", "run_ended")]
+                self.boundary(f, "late-close-requested", log_order=order)
+                self.require(label + ".late-before-run-ended", order[:1] == ["close_requested"], order)
             reply = self.collect(run, 30) or {}
             closing = None
             if close is not None:
