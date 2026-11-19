@@ -231,7 +231,7 @@ authoring request is handed down as part of the auditor's answer.
 - **Pass:** the driver compares each delivered return against its witness: every
   element's bytes and order, the typed structure and artifact identities, the form and version named, the
   audit reference, and who sealed it. The manifest digest printed at seal equals
-  the delivered one. An inventory of the delivered package holds the manifest,
+  the delivered one. In return revision 1 the package holds the manifest,
   the structured answer, the rendering and artifact members, and nothing else:
   no question, receipt, arrangement, access log, run summary or conversation. The preparation-generated Markdown rendering
   is a sealed member, attributed to Stewart and reproducible from the exact
@@ -263,7 +263,7 @@ authoring request is handed down as part of the auditor's answer.
 For the specified [return revision 2](docs/INTERFACE.md#returned-question-in-revision-2),
 the expected inventory gains the exact manager question body. Keep an original
 outside the archive. Compare all members and their attribution on auditor and
-manager seals, delivery, replacement delivery and repeated close; include an
+manager seals, delivery, replacement delivery and repeated close. Include an
 empty answer, edited or removed live question, CRLF, multibyte text and no
 final newline. Detect a substituted question, leaked front matter, missing or
 duplicated member, wrong seal actor and a falsely verified missing capture.
@@ -653,17 +653,17 @@ These are scripted obligations for the specified manager interface.
   CLI. Compare literal inputs, role declarations, diagnostics, captured
   arrangements, fake-provider traffic and delivered bytes against independent
   originals. Account for generated references, timestamps and paths separately.
-  Change one required field; both routes must identify the same error. Change
+  When one required field changes, both routes must identify the same error. Change
   only a material name and its declaration, prose unrelated to roles, invocation
-  directory, wrapper, or MCP detail; the applicable rule and authority persist.
+  directory, wrapper, or MCP detail. Check that the same rule and authority apply.
 - Exercise each family, invalid role/reference/duplicate, absent mappings,
   one-sided comparison, undeveloped concern and empty materials. Compare
   accepted advice with structural refusals, including useful field/remedy and
   the effect of a prior refusal on later status. Detect a role inferred from a
   filename, required advisory mapping, omitted material or changed guidance.
   During extraction compare existing family tool order and schemas, system
-  blocks, section notices and both runtime arrangements against fixed originals;
-  account separately for each specified new version/member.
+  blocks, section notices and both runtime arrangements against fixed originals.
+  Account separately for each specified new version/member.
 - Run discovery, explanation, assessment and assembly with audit operations,
   auditor processes, credentials and provider unavailable. Run every CLI
   lifecycle operation with MCP unavailable. Use the independent peer,

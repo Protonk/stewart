@@ -183,7 +183,7 @@ pub fn decode_arrangement(bytes: &[u8]) -> Result<Pinned, String> {
                 ),
             ));
         }
-        let guidance_size = g.u64("size", crate::scan::GUIDANCE_BYTES)?;
+        let guidance_size = g.u64("size", crate::intake::GUIDANCE_BYTES)?;
         let guidance_sha256 = g.sha256("sha256")?;
         if text.len() as u64 != guidance_size
             || crate::util::sha256_hex(text.as_bytes()) != guidance_sha256

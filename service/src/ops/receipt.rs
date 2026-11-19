@@ -449,7 +449,7 @@ pub fn read(reference: &str, item: &str) -> ReadResult {
 fn sabotage_regenerate(audit: &Audit, machine: bool) -> Option<Vec<u8>> {
     let folder = crate::fsx::Dir::open_follow(&audit.refile.folder).ok()?;
     let (q, _) = folder
-        .read_regular("question.md", crate::scan::QUESTION_BYTES)
+        .read_regular("question.md", crate::intake::QUESTION_BYTES)
         .ok()?;
     let parsed = crate::frontmatter::parse(&q).ok()?;
     #[cfg(feature = "claude-code")]

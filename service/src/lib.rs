@@ -21,7 +21,7 @@
 //! - `gate`: a placement's publication gate, which a stop closes.
 //! - `answer`, `delivery`: the auditor's tools, preparation and seal; delivery.
 //! - `provider`: the provider transport and the placement loop.
-//! - `frontmatter`, `scan`, `forms`: the submission folder and the arrangement.
+//! - `frontmatter`, `intake`, `scan`, `forms`: the submission rules, folder and arrangement.
 //! - `reply`: the `stewart.reply/2` envelope and its human presentation.
 //! - `ops`, `help`, `cli`: manager operations and their presentation.
 //! - `fault`: test-build failure points and sabotage controls.
@@ -63,6 +63,7 @@ pub mod fsx;
 pub mod gate;
 pub mod help;
 pub mod ids;
+pub mod intake;
 pub mod json;
 pub mod log;
 pub mod names;

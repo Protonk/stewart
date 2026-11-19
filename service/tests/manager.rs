@@ -5,6 +5,82 @@ mod common;
 use common::*;
 
 #[test]
+fn worked_question_packets_prepare_with_full_or_limited_evidence() {
+    let examples = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples/questions");
+    for (packet, family, third_file, omitted) in [
+        (
+            "open",
+            "open-inquiry",
+            "supplied-report.txt",
+            &["a.py", "requirements.txt"][..],
+        ),
+        (
+            "framing",
+            "inquiry-framing",
+            "supplied-report.txt",
+            &["a.py", "supplied-report.txt"][..],
+        ),
+        ("comparison", "comparison", "b.py", &["b.py"][..]),
+    ] {
+        for omitted in [&[][..], omitted] {
+            let e = Env::new();
+            let original = examples.join(packet).join("submission");
+            assert!(
+                std::process::Command::new("cp")
+                    .arg("-R")
+                    .arg(&original)
+                    .arg(&e.folder)
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            let folder = std::path::Path::new(&e.folder);
+            for name in omitted {
+                std::fs::remove_file(folder.join("materials").join(name)).unwrap();
+            }
+            // Only the example's host-specific return destination is replaced.
+            let original_question = std::fs::read_to_string(original.join("question.md")).unwrap();
+            let setting = "\ndestination: /var/tmp\n";
+            assert!(original_question.contains(setting), "{packet}");
+            let question =
+                original_question.replacen(setting, &format!("\ndestination: {}\n", e.dest), 1);
+            std::fs::write(folder.join("question.md"), &question).unwrap();
+            let reference = e.new_ref();
+            let result = e.run(&["prepare", &reference, "--json"]);
+            assert_eq!(
+                result.code,
+                Some(0),
+                "{packet} {omitted:?}: {}",
+                result.text()
+            );
+            let reply = result.json();
+            assert_eq!(s(&reply, &["data", "settings", "family"]), family);
+            let files = at(&reply, &["data", "materials", "files"])
+                .as_arr()
+                .unwrap();
+            let mut expected: Vec<_> = ["a.py", "requirements.txt", third_file]
+                .into_iter()
+                .filter(|name| !omitted.contains(name))
+                .map(|name| format!("materials/{name}"))
+                .collect();
+            expected.sort();
+            assert_eq!(files.len(), expected.len(), "{packet} {omitted:?}");
+            for (file, source) in files.iter().zip(expected) {
+                assert_eq!(s(file, &["name"]), source);
+                let bytes = std::fs::read(original.join(source)).unwrap();
+                assert_eq!(s(file, &["sha256"]), stewart::util::sha256_hex(&bytes));
+            }
+            let body = original_question.split_once("\n---\n").unwrap().1;
+            assert_eq!(
+                s(&reply, &["data", "question", "body_sha256"]),
+                stewart::util::sha256_hex(body.as_bytes())
+            );
+            assert_eq!(e.run(&["close", &reference, "--json"]).code, Some(0));
+        }
+    }
+}
+
+#[test]
 fn the_ordinary_path_from_scaffold_to_close() {
     let e = Env::new();
     let o = e.run(&["new", &e.folder, "--archive", &e.archive, "--json"]);

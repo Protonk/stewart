@@ -8,6 +8,7 @@ use crate::forms::{self, ArrangementInput};
 use crate::frontmatter;
 use crate::fsx::Dir;
 use crate::ids;
+use crate::intake;
 use crate::json::{self, J};
 use crate::log::{self, PubErr};
 use crate::records::{self, MFile, ManifestParts, QInfo};
@@ -40,7 +41,7 @@ pub fn run(reference: &str) -> Reply {
     reply
 }
 
-fn scan_fail(f: scan::Refusal) -> Fail {
+fn scan_fail(f: intake::Refusal) -> Fail {
     Fail::refused(f.reason, f.message).data(f.data)
 }
 
@@ -189,8 +190,8 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
     };
     eprintln!(
         "stewart prepare: scanning {folder_path}/materials (bounds: {} files, {} bytes in total)",
-        scan::FILES,
-        scan::TOTAL_BYTES
+        intake::FILES,
+        intake::TOTAL_BYTES
     );
     let s = scan::scan(&folder, &exclude, settings.guidance.is_some())
         .map_err(scan_fail)
@@ -375,7 +376,7 @@ fn prepare(audit: &Audit) -> Result<Reply, Fail> {
                 .with("files", J::Arr(files.iter().map(|f| f.index_j()).collect())),
         )
         .with("reader", records::reader_j())
-        .with("bounds", scan::bounds_j())
+        .with("bounds", intake::bounds_j())
         .with(
             "arrangement",
             J::obj()

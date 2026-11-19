@@ -145,10 +145,38 @@ const fn auxiliary(kind: &'static Kind) -> Slot {
     }
 }
 
+/// Manager guidance about what a file can contribute to an inquiry. These
+/// descriptions are separate from the auditor's pinned system blocks.
+#[derive(Clone, Copy)]
+pub struct MaterialRole {
+    pub id: &'static str,
+    pub meaning: &'static str,
+    /// A preparation suggestion specific to this family and role.
+    pub advice: Option<&'static str>,
+}
+
+const SUBJECT: MaterialRole = MaterialRole {
+    id: "subject",
+    meaning: "What you want the auditor to examine.",
+    advice: None,
+};
+const CONTEXT: MaterialRole = MaterialRole {
+    id: "context",
+    meaning: "Background such as requirements, circumstances or assumptions.",
+    advice: None,
+};
+const REPORT: MaterialRole = MaterialRole {
+    id: "report",
+    meaning: "Another author's observations or reported results.",
+    advice: None,
+};
+
 pub struct Family {
     pub id: &'static str,
     pub version: u32,
     pub title: &'static str,
+    pub purpose: &'static str,
+    pub material_roles: &'static [MaterialRole],
     pub instructions: &'static str,
     /// Whether a selected `guidance.md` may replace the instructions. Front
     /// matter, recorded settings and both arrangement decoders ask this.
@@ -162,6 +190,17 @@ pub const FAMILIES: [Family; 3] = [
         id: "open-inquiry",
         version: 1,
         title: "Open inquiry",
+        purpose: "Investigate the question as written.",
+        material_roles: &[
+            MaterialRole {
+                advice: Some(
+                    "Identify what you want examined if it is available. A broad question is welcome.",
+                ),
+                ..SUBJECT
+            },
+            CONTEXT,
+            REPORT,
+        ],
         instructions: OPEN_INQUIRY,
         guidance: GuidanceAdmission::RootFile,
         slots: &[
@@ -174,6 +213,17 @@ pub const FAMILIES: [Family; 3] = [
         id: "inquiry-framing",
         version: 1,
         title: "Inquiry framing",
+        purpose: "Formulate and investigate a working question from the concern.",
+        material_roles: &[
+            MaterialRole {
+                advice: Some(
+                    "Include material that locates the concern if you have it. You can leave the working question to the auditor.",
+                ),
+                ..CONTEXT
+            },
+            SUBJECT,
+            REPORT,
+        ],
         instructions: INQUIRY_FRAMING,
         guidance: GuidanceAdmission::BuiltinOnly,
         slots: &[
@@ -188,6 +238,25 @@ pub const FAMILIES: [Family; 3] = [
         id: "comparison",
         version: 1,
         title: "Comparison",
+        purpose: "Relate the named alternatives to a criterion.",
+        material_roles: &[
+            MaterialRole {
+                id: "alternative",
+                meaning: "Material for one named alternative.",
+                advice: Some(
+                    "Identify material for each alternative if available. You can commission a one-sided comparison.",
+                ),
+            },
+            MaterialRole {
+                id: "criterion",
+                meaning: "A supplied basis for relating the alternatives.",
+                advice: Some(
+                    "Identify the basis for comparison if you have one. It may also be in the question.",
+                ),
+            },
+            CONTEXT,
+            REPORT,
+        ],
         instructions: COMPARISON,
         guidance: GuidanceAdmission::BuiltinOnly,
         slots: &[
@@ -914,36 +983,58 @@ mod tests {
     /// The bytes of the arrangement body, as `prepare` records them (the
     /// record header adds a timestamp, so the body is what is pinned).
     #[test]
-    fn a_messages_arrangement_body_is_frozen() {
-        let settings = crate::frontmatter::Settings {
-            guidance: None,
-            family: "comparison".into(),
-            model: "claude-opus-5-5".into(),
-            effort: None,
-            destination: "/d".into(),
-            runtime: crate::frontmatter::RuntimeSettings::Messages(
-                crate::frontmatter::MessagesLimits {
-                    turns: 200,
-                    input_tokens: 20_000_000,
-                    output_tokens: 400_000,
-                },
+    fn messages_arrangement_bodies_are_frozen() {
+        let cases = [
+            (
+                "open-inquiry",
+                None,
+                "45bfd47b010ce59b39c2633d1866371d11e3c9e13488a908481eb61ccd228f4d",
             ),
-            inquiry: None,
-            varies: None,
-        };
-        let body = arrangement(&ArrangementInput {
-            guidance: None,
-            settings: &settings,
-            question_body_sha256: &"1".repeat(64),
-            material_index_sha256: &"2".repeat(64),
-        })
-        .body
-        .bytes();
-        assert_eq!(body.len(), 14565);
-        assert_eq!(
-            crate::util::sha256_hex(&body),
-            "49c1db2b0d586bbf869be5593d24bb3b6c8bee568ff65779aedb9fb27759b065"
-        );
+            (
+                "inquiry-framing",
+                None,
+                "aa9c520b2805d4d2b3cd7a339529b65bc850447d4010a4da80b7fc074123ec96",
+            ),
+            (
+                "comparison",
+                None,
+                "49c1db2b0d586bbf869be5593d24bb3b6c8bee568ff65779aedb9fb27759b065",
+            ),
+            (
+                "open-inquiry",
+                Some("  Supplied guidance.\r\n"),
+                "54974e2f460cf7b2a5fc259f597bb4bec830a36d697b074ebe1c42b6901ba221",
+            ),
+        ];
+        let mut observed = Vec::new();
+        for (family, guidance, _) in cases {
+            let settings = crate::frontmatter::Settings {
+                guidance: guidance.map(|_| "guidance.md".into()),
+                family: family.into(),
+                model: "claude-opus-5-5".into(),
+                effort: None,
+                destination: "/d".into(),
+                runtime: crate::frontmatter::RuntimeSettings::Messages(
+                    crate::frontmatter::MessagesLimits {
+                        turns: 200,
+                        input_tokens: 20_000_000,
+                        output_tokens: 400_000,
+                    },
+                ),
+                inquiry: None,
+                varies: None,
+            };
+            let body = arrangement(&ArrangementInput {
+                guidance,
+                settings: &settings,
+                question_body_sha256: &"1".repeat(64),
+                material_index_sha256: &"2".repeat(64),
+            })
+            .body
+            .bytes();
+            observed.push(crate::util::sha256_hex(&body));
+        }
+        assert_eq!(observed, cases.map(|(_, _, digest)| digest));
     }
 
     /// The readable view of the same settings, parsed from a question: each
@@ -1107,6 +1198,22 @@ mod tests {
                     assert!(doc.contains(d), "{d}");
                 }
             }
+        }
+    }
+
+    #[test]
+    fn manager_guidance_agrees_with_the_family_registry() {
+        let rows = spec_table("| Family | Purpose | Material roles");
+        assert_eq!(rows.len(), FAMILIES.len());
+        for (family, row) in FAMILIES.iter().zip(rows) {
+            assert_eq!(family.id, row[0].trim_matches('`'));
+            assert_eq!(family.purpose, row[1]);
+            let expected: Vec<_> = row[2]
+                .split(", ")
+                .map(|role| role.trim_matches('`'))
+                .collect();
+            let roles: Vec<_> = family.material_roles.iter().map(|role| role.id).collect();
+            assert_eq!(roles, expected, "{}", family.id);
         }
     }
 

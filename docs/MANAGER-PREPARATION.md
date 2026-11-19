@@ -46,10 +46,10 @@ the following required keys:
 | --- | --- |
 | `schema`, `registry`, `question_schema` | `stewart.manager-preparation/1`, `stewart.family-registry/1`, `question/2`. |
 | `tool`, `outcome` | Tool name and `completed`, `refused` or `failed`. `isError` is true for the last two. |
-| `problem` | null, or `{reason,pointer,message,remedy}`; pointer is a JSON pointer in arguments or null. |
+| `problem` | null, or `{reason,pointer,message,remedy}` with a JSON pointer in arguments or null. |
 | `data` | Tool-specific result below, or null when unavailable. |
-| `writes` | `{state,created,incomplete}`. State is `none`, `complete`, `partial` or `unknown`; paths relative to the workspace identify every known created entry, including directories, and incomplete files. Both arrays are empty for a read-only call. |
-| `explanation` | Empty array for brief; for full, an array of explanatory strings. Facts, defects, permissions, uncertainty, planned files and writes are identical at either detail. |
+| `writes` | `{state,created,incomplete}`. State is `none`, `complete`, `partial` or `unknown`. The two arrays identify known created entries (including directories) and incomplete files by workspace-relative path. Both arrays are empty for a read-only call. |
+| `explanation` | An array of explanatory strings, empty for brief. Facts, defects, permissions, uncertainty, planned files and writes are identical at either detail. |
 
 ## Tools
 
@@ -72,10 +72,10 @@ start with `materials/`, no duplicate or file/directory collisions. Order in
 these arrays has no meaning. Check directory/file counts, name, question,
 guidance, per-file and total bounds as at intake, including the root in the
 directory count. Missing `materials` or an implied parent gives
-`folder_incomplete`; malformed names, duplicate names and file/directory
+`folder_incomplete`. Malformed names, duplicate names and file/directory
 collisions give `name_invalid`. Exceeded limits give `bound_exceeded`
 and identify the bound in the message. A selected but missing guidance file
-gives `folder_incomplete`; an unselected supplied one gives `unexpected_root_entry`.
+gives `folder_incomplete`. An unselected supplied one gives `unexpected_root_entry`.
 For inventory diagnostics `source` names the affected entry, `pointer` indexes
 the supplied argument (for example `/files/1/name`), and line and key are null.
 The caller supplies an inventory, so assessment makes no filesystem reads.
@@ -98,9 +98,10 @@ and `destination`. The optional boolean `create` defaults to false.
 - `fields` is an object with the selected build's question keys other than
   `stewart`. Values are strings as written in the front matter except
   `material-roles`, which is its JSON array. Require the same fields and
-  validate the same values as CLI intake. Reject CR/LF in field strings;
-  a string cannot insert a line or end front matter. `body` is the manager's
-  exact question string. `guidance` and `directories` have their assess forms.
+  validate the same values as CLI intake. Reject CR/LF in field strings to
+  prevent a value from inserting a line or ending front matter. `body` is the
+  manager's exact question string. `guidance` and `directories` have their
+  assess forms.
 - Each file is `{name,from}`: `name` is its public material name and `from`
   names a regular source relative to the workspace's `sources/` directory.
   Sources are supplied by the caller ahead of time. Copy exact text bytes.
@@ -115,7 +116,7 @@ and `destination`. The optional boolean `create` defaults to false.
   newline. Keep selected guidance bytes separate.
 - On success data is `{question_file,directories,files,assessment}`.
   `directories` lists all proposed directories relative to the candidate,
-  including `materials`; `files` lists `{name,size,sha256}` for every proposed
+  including `materials`. The `files` array lists `{name,size,sha256}` for every proposed
   file including the question and selected guidance. Both arrays sort by
   UTF-8 name bytes. `assessment` is assess data for the generated snapshot,
   omitting `material_bytes` from `unchecked` once all supplied bytes have
@@ -140,7 +141,7 @@ mapping is a suggestion. A separate call with the same arguments and
 The launcher may designate one existing absolute, candidate-only workspace.
 Relative roots and tool-supplied workspace overrides are invalid. Without a
 workspace, discovery, explanation, assessment and a dry-run without source
-files work; a call needing filesystem access refuses `workspace_required`.
+files work. A call needing filesystem access refuses `workspace_required`.
 The launcher chooses a workspace separate from its archives and delivery
 locations. The server opens only named input files under `sources/` and
 creates at most one explicitly named fresh child and its proposed entries per
@@ -151,16 +152,16 @@ Apply the CLI UTF-8 component/path limits to relative names. Reject absolute
 paths, empty components, `.`, `..` and audit-reference operands. Acquire
 directories through descriptors, verify exact name spelling, exclude symlinks,
 special entries, mount crossings below the workspace, and source files with
-more than one hard link. Check opened identities and sizes; stop on changes
+more than one hard link. Check opened identities and sizes and stop on changes
 or ambiguity. Check the workspace and input ancestry for a Stewart store marker
 or delivery package before admitting it (metadata only: `STORE.json` or the
 reserved `stewart-return-` directory prefix). Reject reserved candidate
 destination names and collisions under the host's actual name rules. In
 particular, a case alias cannot turn exclusive creation into editing an
-existing candidate. These checks fence the supplied workspace; they cannot
-identify the origin of detached, renamed copies or certify arbitrary host
-directories as safe. The ordinary CLI still admits distinct hard-link names
-in a manager's literal submission.
+existing candidate. These checks cover the supplied workspace only. The origin
+of detached, renamed copies and the safety of arbitrary host directories remain
+unknown. The ordinary CLI still admits distinct hard-link names in a manager's
+literal submission.
 
 Read only the listed sources, checking the UTF-8 text and all intake limits
 while acquiring them. Compute the proposed bytes before any creation. Reject
@@ -176,9 +177,10 @@ directories through retained descriptors, and publish each file exclusively
 with its proposed, verified bytes. Use 0700 directories and 0600 files.
 Independent calls racing for the same destination have at most one winner.
 Refuse an existing destination, including an incomplete earlier candidate.
-A path-policy violation refuses `candidate_path_invalid`; source access or
-change fails `candidate_source_failed`; a write or verification failure
-fails `candidate_write_failed`. Name known partials, stop further writes and
-leave them for inspection. A lost reply leaves the caller uncertain.
-Inspect the named directory using ordinary file tools before repeating;
-never adopt it as proof of completion, resume into it or remove it automatically.
+A path-policy violation refuses `candidate_path_invalid`. Source access
+failure or change gives `candidate_source_failed`. A failed write or
+verification gives `candidate_write_failed`. Name known partials, stop further
+writes and leave them for inspection. A lost reply leaves the caller uncertain.
+Inspect the named directory using ordinary file tools before repeating. Its
+presence alone cannot establish completion. Preserve it for the caller and
+require a fresh destination on retry.

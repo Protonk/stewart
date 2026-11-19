@@ -664,7 +664,7 @@ fn decode_body(kind: &str, b: &Obj, audit: &str) -> Result<Body, JsonError> {
                 if g.str("file")? != "guidance.md" {
                     return Err(g.invalid("file", "expected guidance.md"));
                 }
-                g.u64("size", crate::scan::GUIDANCE_BYTES)?;
+                g.u64("size", crate::intake::GUIDANCE_BYTES)?;
                 g.sha256("sha256")?;
             }
             let q = b.obj("question")?;

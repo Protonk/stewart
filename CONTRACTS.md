@@ -636,11 +636,12 @@ revives a closed reference or grants another investigation.
 **The family carries the pairing.** A family brings together preparation guidance,
 expected material roles, auditor instructions and answer expectations. These are
 where Stewart expresses opinions about asking and answering that kind of question.
-The [manager role registry](docs/QUESTION-FORMS.md#manager-family-registry) and
-[question-file declaration](docs/INTERFACE.md#declared-material-roles) are
-specified, pending implementation. The manager declares a mapping to a
-selected file. A broken declaration refuses preparation; absent mappings,
-empty materials and unequal evidence remain admissible.
+The [manager role registry](docs/QUESTION-FORMS.md#manager-family-registry)
+supplies material guidance in CLI help. The
+[question-file declaration](docs/INTERFACE.md#declared-material-roles) and its
+validation are specified, pending implementation. Each declaration maps a
+role to a selected file. A broken declaration refuses preparation. Absent
+mappings, empty materials and unequal evidence remain admissible.
 The manager chooses the family; a suggestion does not silently change the choice
 or rewrite the question. Its versioned instructions and means of answering belong
 in the pinned arrangement already available through preparation. Family selection

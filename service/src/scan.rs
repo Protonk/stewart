@@ -6,64 +6,15 @@
 //! Bounds are enforced while scanning: no directory listing, file read or
 //! running total is allowed to grow past its bound before it is refused.
 
-use crate::frontmatter::first_non_text;
 use crate::fsx::{self, Dir, Kind, ReadError, Stat};
+use crate::intake::{
+    DIRECTORIES, FILE_BYTES, FILES, GUIDANCE_BYTES, PATH_COMPONENTS, QUESTION_BYTES, Refusal,
+    bound, check_directory_count, check_file, check_guidance, check_text, material_path, refusal,
+};
 use crate::json::J;
 use crate::util;
 use std::collections::BTreeMap;
-
-pub const QUESTION_BYTES: u64 = 262_144;
-pub const GUIDANCE_BYTES: u64 = 262_144;
-pub const FILES: usize = 128;
-pub const FILE_BYTES: u64 = 16_777_216;
-pub const TOTAL_BYTES: u64 = 134_217_728;
-pub const DIRECTORIES: usize = 256;
-pub const PATH_BYTES: usize = 1024;
-pub const PATH_COMPONENTS: usize = 32;
-pub const COMPONENT_BYTES: usize = 255;
-
-pub fn bounds_j() -> J {
-    J::obj()
-        .with("question_bytes", QUESTION_BYTES)
-        .with("guidance_bytes", GUIDANCE_BYTES)
-        .with("files", FILES)
-        .with("file_bytes", FILE_BYTES)
-        .with("total_bytes", TOTAL_BYTES)
-        .with("directories", DIRECTORIES)
-        .with("path_bytes", PATH_BYTES)
-        .with("path_components", PATH_COMPONENTS)
-        .with("component_bytes", COMPONENT_BYTES)
-}
-
-/// A mechanical intake refusal: stable reason, sentence, and the entry.
-#[derive(Debug)]
-pub struct Refusal {
-    pub reason: &'static str,
-    pub message: String,
-    pub data: J,
-}
-
-fn refusal(reason: &'static str, message: impl Into<String>, data: J) -> Refusal {
-    Refusal {
-        reason,
-        message: message.into(),
-        data,
-    }
-}
-
-fn bound(name: &'static str, limit: u64, entry: &str, observed: u64) -> Refusal {
-    refusal(
-        "bound_exceeded",
-        format!(
-            "{entry} exceeds the {name} bound of {limit} (observed at least {observed}); nothing was excluded silently."
-        ),
-        J::obj()
-            .with("bound", name)
-            .with("limit", limit)
-            .with("entry", entry)
-            .with("observed", observed),
-    )
-}
+use std::fs::File;
 
 /// Locations a scanned directory must not be (INTERFACE 3.3).
 pub struct Exclude {
@@ -215,9 +166,7 @@ pub fn read_question(folder: &Dir) -> Result<QuestionFile, Refusal> {
         }
         other => source_error("question.md", other),
     })?;
-    if let Some(off) = first_non_text(&bytes) {
-        return Err(not_text("question.md", off));
-    }
+    check_text("question.md", &bytes)?;
     Ok(QuestionFile { bytes, stat: st })
 }
 
@@ -242,31 +191,8 @@ pub fn read_guidance(folder: &Dir) -> Result<QuestionFile, Refusal> {
         }
         other => source_error("guidance.md", other),
     })?;
-    if let Some(off) = first_non_text(&bytes) {
-        return Err(not_text("guidance.md", off));
-    }
-    if !std::str::from_utf8(&bytes)
-        .expect("text checked")
-        .chars()
-        .any(|c| !c.is_whitespace())
-    {
-        return Err(refusal(
-            "guidance_empty",
-            "guidance.md must contain a non-whitespace character; the provider cannot carry a blank text block.",
-            J::obj().with("entry", "guidance.md"),
-        ));
-    }
+    check_guidance(&bytes)?;
     Ok(QuestionFile { bytes, stat: st })
-}
-
-fn not_text(entry: &str, offset: usize) -> Refusal {
-    refusal(
-        "material_not_text",
-        format!(
-            "{entry} is not valid UTF-8 text without NUL: the first invalid byte is at offset {offset}. The reader (utf8-text/1) serves exact text only; supply a text export."
-        ),
-        J::obj().with("entry", entry).with("offset", offset as u64),
-    )
 }
 
 pub fn source_error(entry: &str, e: ReadError) -> Refusal {
@@ -305,40 +231,6 @@ pub fn source_error(entry: &str, e: ReadError) -> Refusal {
     }
 }
 
-fn check_name(raw: &[u8], parent: &str) -> Result<String, Refusal> {
-    let Ok(s) = std::str::from_utf8(raw) else {
-        let shown = format!("{parent}/{}", String::from_utf8_lossy(raw));
-        return Err(refusal(
-            "name_invalid",
-            format!(
-                "{shown:?} is not a valid UTF-8 name; names are kept exactly, so rename it with ordinary tools."
-            ),
-            J::obj().with("entry", shown),
-        ));
-    };
-    if s.chars()
-        .any(|c| (c as u32) <= 0x1F || (0x7F..=0x9F).contains(&(c as u32)))
-    {
-        let shown = format!("{parent}/{s}");
-        return Err(refusal(
-            "name_invalid",
-            format!(
-                "{shown:?} contains a control character; names are kept exactly, so rename it with ordinary tools."
-            ),
-            J::obj().with("entry", shown),
-        ));
-    }
-    if raw.len() > COMPONENT_BYTES {
-        return Err(bound(
-            "component_bytes",
-            COMPONENT_BYTES as u64,
-            &format!("{parent}/{s}"),
-            raw.len() as u64,
-        ));
-    }
-    Ok(s.to_string())
-}
-
 /// Scan `materials/` fully, reading and hashing each file.
 pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<Scan, Refusal> {
     check_root(folder, selected_guidance)?;
@@ -361,8 +253,8 @@ pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<
                 J::obj().with("entry", "materials"),
             )
         })?;
-    // (directory, public name, components below materials/)
-    let mut stack: Vec<(Dir, String, usize)> = Vec::new();
+    // Each directory is paired with its checked public name.
+    let mut stack: Vec<(Dir, String)> = Vec::new();
     let st = root.stat().map_err(|e| {
         refusal(
             "source_unreadable",
@@ -375,9 +267,9 @@ pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<
         name: "materials".into(),
         stat: st,
     });
-    stack.push((root, "materials".into(), 0));
+    stack.push((root, "materials".into()));
 
-    while let Some((dir, public, depth)) = stack.pop() {
+    while let Some((dir, public)) = stack.pop() {
         let budget = FILES + DIRECTORIES + 1;
         let (mut names, _) = dir.names_bounded(budget).map_err(|e| {
             refusal(
@@ -393,25 +285,7 @@ pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<
             if crate::sabotage!("skip_hidden_entries") && raw.starts_with(b".") {
                 continue;
             }
-            let name = check_name(&raw, &public)?;
-            let child = format!("{public}/{name}");
-            let rel_len = child.len() - "materials/".len();
-            if rel_len > PATH_BYTES {
-                return Err(bound(
-                    "path_bytes",
-                    PATH_BYTES as u64,
-                    &child,
-                    rel_len as u64,
-                ));
-            }
-            if depth + 1 > PATH_COMPONENTS {
-                return Err(bound(
-                    "path_components",
-                    PATH_COMPONENTS as u64,
-                    &child,
-                    (depth + 1) as u64,
-                ));
-            }
+            let child = material_path(&public, &raw)?;
             let st = dir.stat_at_bytes(&raw, nofollow()).map_err(|e| {
                 refusal(
                     "source_unreadable",
@@ -423,14 +297,7 @@ pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<
             })?;
             match st.kind {
                 Kind::Dir => {
-                    if dirs.len() + 1 > DIRECTORIES {
-                        return Err(bound(
-                            "directories",
-                            DIRECTORIES as u64,
-                            &child,
-                            (dirs.len() + 1) as u64,
-                        ));
-                    }
+                    check_directory_count(&child, dirs.len() + 1)?;
                     check_excluded(&st, &child, exclude)?;
                     let sub = dir.open_dir_bytes(&raw, nofollow()).map_err(|e| {
                         refusal(
@@ -455,34 +322,18 @@ pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<
                         name: child.clone(),
                         stat: st,
                     });
-                    stack.push((sub, child, depth + 1));
+                    stack.push((sub, child));
                 }
                 Kind::File => {
-                    if files.len() + 1 > FILES {
-                        return Err(bound(
-                            "files",
-                            FILES as u64,
-                            &child,
-                            (files.len() + 1) as u64,
-                        ));
-                    }
-                    if st.size > FILE_BYTES {
-                        return Err(bound("file_bytes", FILE_BYTES, &child, st.size));
-                    }
-                    if total + st.size > TOTAL_BYTES {
-                        return Err(bound("total_bytes", TOTAL_BYTES, &child, total + st.size));
-                    }
+                    check_file(&child, files.len() + 1, st.size, total)?;
                     let (f, held) = dir
                         .open_regular_bytes(&raw, nofollow())
                         .map_err(|e| source_error(&child, e))?;
                     if held.id() != st.id() {
                         return Err(source_error(&child, ReadError::Changed));
                     }
-                    let bytes = fsx::read_bounded(f, &held, FILE_BYTES)
-                        .map_err(|e| source_error(&child, e))?;
-                    if let Some(off) = first_non_text(&bytes) {
-                        return Err(not_text(&child, off));
-                    }
+                    let bytes = read_material(f, &held, &child, total)?;
+                    check_text(&child, &bytes)?;
                     total += bytes.len() as u64;
                     files.push(Material {
                         name: child,
@@ -513,6 +364,26 @@ pub fn scan(folder: &Dir, exclude: &Exclude, selected_guidance: bool) -> Result<
         guidance,
         files,
         dirs,
+    })
+}
+
+/// The directory entry checked before open and the opened file can have
+/// different sizes. Bound the read itself by both remaining allowances.
+fn read_material(
+    file: File,
+    held: &Stat,
+    entry: &str,
+    prior_bytes: u64,
+) -> Result<Vec<u8>, Refusal> {
+    let remaining = crate::intake::TOTAL_BYTES - prior_bytes;
+    fsx::read_bounded(file, held, FILE_BYTES.min(remaining)).map_err(|error| match error {
+        ReadError::TooLarge { size, .. } if remaining < FILE_BYTES => bound(
+            "total_bytes",
+            crate::intake::TOTAL_BYTES,
+            entry,
+            prior_bytes.saturating_add(size),
+        ),
+        other => source_error(entry, other),
     })
 }
 
@@ -637,6 +508,26 @@ mod tests {
         std::fs::create_dir(&p).unwrap();
         let s = p.to_str().unwrap().to_string();
         (Tmp(p), s)
+    }
+
+    #[test]
+    fn an_open_material_is_read_within_the_remaining_intake_budget() {
+        use crate::intake::TOTAL_BYTES;
+        let (_tmp, path) = tmp();
+        std::fs::write(format!("{path}/input"), b"abc").unwrap();
+        let dir = Dir::open_follow(&path).unwrap();
+        let read = |remaining| {
+            let (file, held) = dir.open_regular_bytes(b"input", true).unwrap();
+            read_material(file, &held, "materials/input", TOTAL_BYTES - remaining)
+        };
+        assert_eq!(read(3).unwrap(), b"abc");
+        let refusal = read(2).unwrap_err();
+        assert_eq!(refusal.reason, "bound_exceeded");
+        assert_eq!(refusal.data.get("bound"), Some(&J::from("total_bytes")));
+        assert_eq!(
+            refusal.data.get("observed"),
+            Some(&J::from(TOTAL_BYTES + 1))
+        );
     }
     fn folder(question: &[u8]) -> (Tmp, String) {
         let (t, p) = tmp();

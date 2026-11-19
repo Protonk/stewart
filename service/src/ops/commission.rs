@@ -10,6 +10,7 @@
 use crate::archive::{self, Audit, Fail};
 use crate::fsx::{self, Dir, Kind, ReadError, Stat};
 use crate::ids;
+use crate::intake;
 use crate::json::{self, J};
 use crate::log::{self, Body, LogState, PubErr};
 use crate::records::{self, CHECKS, MFile, Manifest, ReceiptParts};
@@ -805,7 +806,7 @@ fn copy_one(folder: &Dir, idir: &Dir, it: &Item, k: usize, skip: bool) -> Result
         }
     }
     let limit = if skip {
-        scan::FILE_BYTES.max(scan::QUESTION_BYTES)
+        intake::FILE_BYTES.max(intake::QUESTION_BYTES)
     } else {
         it.size
     };

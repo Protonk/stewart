@@ -1176,7 +1176,7 @@ an array (possibly empty). Each item has the following keys in order:
 | --- | --- |
 | `reason`, `line`, `key`, `message` | Stable rule ID, line or null, field name or null, human explanation. |
 | `severity` | `error`, `warning`, `suggestion`. Only an error refuses. |
-| `pointer` | JSON pointer inside the decoded field, or inside the supplied inventory for an inventory error; otherwise null. The empty pointer denotes its root. |
+| `pointer` | JSON pointer inside the decoded field, or inside the supplied inventory for an inventory error. Null when neither applies. The empty pointer denotes its root. |
 | `source`, `role` | Affected public source name and role ID, respectively, or null. |
 | `remedy` | A concrete correction or optional improvement in ordinary language. |
 
@@ -1185,9 +1185,9 @@ independent errors before advice, sorting by source line (absent lines last),
 then declaration index numerically, then by key, pointer and reason in byte
 order (null first). Diagnose a malformed role value once at the point where
 interpretation stops. Skip dependent lookups for a malformed declaration or
-unknown family. Advice requires a valid question, declarations and inventory;
-no advice is inferred from a partial scan. Emit warnings then suggestions in
-descriptor order. The CLI reason is the first error. Filesystem acquisition,
+unknown family. Advice requires a valid question, declarations and complete
+inventory. Emit warnings then suggestions in descriptor order. The CLI reason
+is the first error. Filesystem acquisition,
 archive, runtime-profile and custody failures keep their operation-specific
 context, effects and remedies.
 
@@ -2661,9 +2661,9 @@ with keys in the order shown and strings escaped as in `stewart.answer/1`:
   naming the unproduced entries. An unproduced artifact entry covers its
   `artifact-<id>.bin`. It is `[]` when everything was produced.
 
-The manifest does not contain the seal handle; the handle binds the manifest
-(2.3). It verifies the package without the archive. The question, receipt,
-arrangement, access log, run summaries and conversations are never members.
+The seal handle binds the manifest (2.3) and stays outside it. The manifest
+verifies the package without the archive. Revision 1 excludes the question,
+receipt, arrangement, access log, run summaries and conversations.
 
 #### Returned question in revision 2
 
@@ -2689,7 +2689,7 @@ accepted body range and digest, write only that range, then verify the
 destination member. A known identity with unavailable source bytes is a
 delivery-stage loss for `question.md` under 8.3–8.4. A failure to establish
 the accepted identity prevents publishing a new seal and is reported with
-the failed binding; an already published seal stands. Neither path substitutes
+the failed binding. An already published seal stands. Neither path substitutes
 the live question, an empty file or the full front matter. Before-launch close
 creates no package. Revision 2 replaces revision 1 in the implementing writer.
 

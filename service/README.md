@@ -42,8 +42,9 @@ each tool call, then `delivery/` and `ops/close.rs`.
 - `ops/presentation.rs`: shared read-only resource and lifecycle accounts.
 - `ops/`: one file per command, `new`, `prepare`, `commission`, `receipt`,
   `run`, `status` and `close` (5.2–5.8); `ops/mod.rs` holds what they share.
-- `frontmatter.rs`, `scan.rs`: the submission folder: the `question/1` front
-  matter and the material scan (3). In the development build the same version
+- `frontmatter.rs`, `intake.rs`, `scan.rs`: the `question/1` front matter,
+  mechanical rules over supplied bytes and names, and descriptor-based
+  acquisition of the submission folder (3). In the development build the same version
   takes the three
   [runtime fields](../docs/claude-code/CONTRACT.md#development-input-and-preparation-schema),
   and naming `runtime-profile` selects the runtime.

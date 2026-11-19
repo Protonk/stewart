@@ -2,7 +2,7 @@
 //! Help ships with the binary, is printed exactly and involves no archive.
 
 use crate::forms::{self, FAMILIES};
-use crate::scan;
+use crate::intake;
 
 #[cfg(not(feature = "claude-code"))]
 pub const TOPICS: [&str; 5] = ["commands", "forms", "limits", "reader", "close"];
@@ -196,6 +196,8 @@ Open inquiry accepts an explicitly selected guidance.md replacement; the arrange
 identifies supplied guidance separately from stock family wording. Every family permits answering that the materials are inadequate, that the
 premise is wrong or that nothing supported was found; none requires a defect, a
 winner or a repair. Missing sections and an empty answer can be submitted.
+The material suggestions below are optional. A folder with no material files
+can still be commissioned.
 
 Orientation (stewart.orientation/1), given in every family:
 
@@ -204,11 +206,21 @@ Orientation (stewart.orientation/1), given in every family:
     s.push_str(&indent(forms::ORIENTATION));
     for f in &FAMILIES {
         s.push_str(&format!(
-            "\n\n{} (family: {}, {})\n\nInstructions:\n\n",
+            "\n\n{} (family: {}, {})\n\n{}\n\nMaterial you can supply\n",
             f.title,
             f.id,
-            f.versioned_id()
+            f.versioned_id(),
+            f.purpose
         ));
+        for role in f.material_roles {
+            s.push_str(&format!("  {} — {}\n", role.id, role.meaning));
+            if let Some(advice) = role.advice {
+                s.push_str("    ");
+                s.push_str(advice);
+                s.push('\n');
+            }
+        }
+        s.push_str("\nInstructions:\n\n");
         s.push_str(&indent(f.instructions));
         s.push_str("\n\nRecording tools:\n");
         for k in f.kinds() {
@@ -284,15 +296,15 @@ Auditor reading bounds: 64 KiB of text per read page; 128 search hits and 32 KiB
 of context per page; 128 materials per list page; 4 MiB per tool call. Answers:
 256 entries, 64 MiB per entry, 256 MiB in the current selection.
 ",
-        scan::QUESTION_BYTES,
-        scan::GUIDANCE_BYTES,
-        scan::FILES,
-        scan::FILE_BYTES,
-        scan::TOTAL_BYTES,
-        scan::DIRECTORIES,
-        scan::PATH_BYTES,
-        scan::PATH_COMPONENTS,
-        scan::COMPONENT_BYTES,
+        intake::QUESTION_BYTES,
+        intake::GUIDANCE_BYTES,
+        intake::FILES,
+        intake::FILE_BYTES,
+        intake::TOTAL_BYTES,
+        intake::DIRECTORIES,
+        intake::PATH_BYTES,
+        intake::PATH_COMPONENTS,
+        intake::COMPONENT_BYTES,
         forms::NEAR_LIMIT_PERCENT
     )
 }
@@ -404,15 +416,14 @@ mod tests {
         assert!(super::topic("nope").is_none());
     }
 
-    /// The forms topic is built from the family definitions; any change to
-    /// how they are held must leave its released bytes alone.
+    /// The complete human view of the built-in family definitions.
     #[test]
-    fn help_forms_bytes_are_unchanged() {
+    fn help_forms_has_its_published_text() {
         let text = super::topic("forms").unwrap();
-        assert_eq!(text.len(), 7093);
+        assert_eq!(text.len(), 8451);
         assert_eq!(
             crate::util::sha256_hex(text.as_bytes()),
-            "3f86f81f550ad41f3135830a76a2e31b96aa4cb11e70708f571e67724ad10bc7"
+            "1cb2e7c33b26baeae27280a9be8965c4473e9b6992bbd33c8afabb596a98e26e"
         );
     }
 

@@ -143,7 +143,7 @@ fn decode_guidance(
         }
         o.str(extra)?;
         Ok(GuidanceFile {
-            size: o.u64("size", crate::scan::GUIDANCE_BYTES)?,
+            size: o.u64("size", crate::intake::GUIDANCE_BYTES)?,
             sha256: o.sha256("sha256")?.to_string(),
             mtime: if receipt {
                 String::new()
@@ -277,7 +277,7 @@ pub fn manifest_body(p: &ManifestParts) -> J {
                     ),
                 ),
         )
-        .with("bounds", crate::scan::bounds_j())
+        .with("bounds", crate::intake::bounds_j())
         .with("reader", reader_j())
         .with(
             "arrangement",
@@ -529,7 +529,7 @@ pub fn receipt_body(p: &ReceiptParts) -> J {
             J::obj().with("i_am_finished", p.i_am_finished),
         )
         .with("reader", reader_j())
-        .with("bounds", crate::scan::bounds_j())
+        .with("bounds", crate::intake::bounds_j())
         .with(
             "custody",
             J::obj()

@@ -17,8 +17,9 @@ and preparation replies, alongside the orientation, its family's instructions an
 
 ## Manager family registry
 
-The following registry is specified for manager preparation and awaits
-implementation. Each row describes one available family. The versioned family
+The CLI's `help forms` explains the purpose and material roles of each
+available family. The machine descriptor, role declarations and assessment
+rules below are specified for manager preparation and await implementation. The versioned family
 IDs above identify auditor instructions, tools and expected sections.
 `stewart.family-registry/1` identifies the manager's role vocabulary and
 advisory rules. The declaration grammar and capture are in

@@ -207,7 +207,7 @@ pub fn decode(b: &Obj, raw: &[u8]) -> Result<Pinned, String> {
         }
         let g = b.obj("guidance")?;
         g.exactly(&["source", "size", "sha256"])?;
-        if g.u64("size", crate::scan::GUIDANCE_BYTES)? != guidance.len() as u64
+        if g.u64("size", crate::intake::GUIDANCE_BYTES)? != guidance.len() as u64
             || g.sha256("sha256")? != util::sha256_hex(guidance.as_bytes())
         {
             return Err(b.invalid("guidance", "guidance identity differs"));
@@ -363,13 +363,34 @@ mod tests {
     }
 
     #[test]
-    fn a_harness_arrangement_body_is_frozen() {
-        let text = normalized(&built());
-        assert_eq!(text.len(), 30474);
-        assert_eq!(
-            util::sha256_hex(text.as_bytes()),
-            "c4b78abd491f59764cd67dfe34145af290b8bd93e7c583f28a5ca56a147deeff"
-        );
+    fn harness_arrangement_bodies_are_frozen() {
+        let cases = [
+            (
+                "open-inquiry",
+                None,
+                "b2065e43d658249d97bb5092050eb07535d51318f0143da9faa0479cd22995ab",
+            ),
+            (
+                "inquiry-framing",
+                None,
+                "92be53978f686eaaca06f3bc7a96b42604a3024cbb31e19039eed56a5781fbbd",
+            ),
+            (
+                "comparison",
+                None,
+                "c4b78abd491f59764cd67dfe34145af290b8bd93e7c583f28a5ca56a147deeff",
+            ),
+            (
+                "open-inquiry",
+                Some("  Supplied guidance.\r\n"),
+                "79aea254827571fe010882275eeeeb95fbe238ac4a0b30cf9f810c03f57cd937",
+            ),
+        ];
+        let observed = cases.map(|(family, guidance, _)| {
+            let body = normalized(&built_for(family, guidance));
+            util::sha256_hex(body.as_bytes())
+        });
+        assert_eq!(observed, cases.map(|(_, _, digest)| digest));
     }
 
     /// A decoded harness arrangement fills the Messages-only members of the
