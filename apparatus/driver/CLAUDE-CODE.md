@@ -177,8 +177,12 @@ whose byte references resolve, and interrupt without a seal. Explicit continuati
 submits that unchanged account; exhausted starts offer no direct run.
 
 `runtime-fidelity-publication` withholds a page echo until the documented seal
-publication pause. The mismatch must stop the model group while the owner is
-still paused, then refuse the pending seal with `placement_stopped`. An exact
+publication pause. The synthetic peer writes a timestamped witness after
+transmitting its confirmed submit call. The driver allows the fixture's
+60-second placement bound for startup and setup, then waits up to 12 seconds
+to observe the publication pause. It retains monotonic timestamps for both
+observations. The mismatch must stop the model group while the owner is still
+paused, then refuse the pending seal with `placement_stopped`. An exact
 held echo permits sealing. Separate TERM-triggered echoes exercise shutdown drain:
 the winning seal and its delivered package survive a late mismatch, with warnings
 through close and repeated close. Their independent raw witness sits outside the

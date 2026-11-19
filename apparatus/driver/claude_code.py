@@ -2761,6 +2761,7 @@ class Driver:
         argv = [str(self.binary), "run", f["reference"], "--json"]
         stdout_path, stderr_path = f["witness"] / "run.stdout", f["witness"] / "run.stderr"
         before = snapshot(f["archive"])
+        sent = f["witness"] / "fidelity-submit-sent.json"
         def boundary(event, **facts):
             with (f["witness"] / "publication-boundary.jsonl").open("ab") as stream:
                 stream.write(compact({"event": event, "monotonic_ns": time.monotonic_ns(), **facts}) + b"\n")
@@ -2774,10 +2775,22 @@ class Driver:
                     time.sleep(0.01)
                 return bool(predicate())
             try:
-                self.require(label + ".paused", await_fact(lambda: bool(list(faults.glob("log.publish*.paused")))),
-                             {"exit": process.poll(), "stderr": stderr_path.read_text(errors="replace")})
+                setup_seconds = f["limits"]["placement_timeout_seconds"]
+                boundary("waiting-for-submit", setup_seconds=setup_seconds)
+                ready = await_fact(sent.is_file, setup_seconds)
+                boundary("submit-observation", observed=ready, owner_exit=process.poll())
+                self.require(label + ".submit-transmitted", ready, {"witness": str(sent), "exit": process.poll(),
+                             "stderr": stderr_path.read_text(errors="replace")})
+                marker = strict_loads(sent.read_bytes())
+                paused = await_fact(lambda: bool(list(faults.glob("log.publish*.paused"))))
+                boundary("seal-pause-observation", observed=paused, owner_exit=process.poll(),
+                         submitted_monotonic_ns=marker["monotonic_ns"])
+                self.require(label + ".paused", paused, {"submit": marker, "exit": process.poll(),
+                             "stderr": stderr_path.read_text(errors="replace")})
                 submitted = [e for e in self.harness_events(f) if e.get("event") == "fidelity-submit"]
                 self.require(label + ".submit-witness", len(submitted) == 1, submitted)
+                self.eq(label + ".transmission-identity", [marker[k] for k in ("id", "tool_use_id", "group")],
+                        [submitted[0][k] for k in ("id", "tool_use_id", "group")])
                 group = submitted[0]["group"]
                 self.eq(label + ".live-control", group_observation(group), "present")
                 status = self.cmd(label + ".before-echo", ["status", f["reference"]])
@@ -6290,6 +6303,9 @@ def synthetic_harness(scenario_path, environment_path, argv):
             identity, rpc_id = fidelity_start("submit", {"prepared": prepared["data"]["prepared"], "confirm": True})
             event("fidelity-submit", id=rpc_id, tool_use_id=identity, group=os.getpgrp())
             if variant.startswith("paused-"):
+                publish_witness(witness / "fidelity-submit-sent.json", compact({
+                    "id": rpc_id, "tool_use_id": identity, "group": os.getpgrp(),
+                    "monotonic_ns": time.monotonic_ns()}) + b"\n")
                 until = time.monotonic() + 30
                 while not (witness / "release-echo").exists():
                     if time.monotonic() >= until:
