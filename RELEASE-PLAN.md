@@ -1,13 +1,11 @@
 # Release and work plan
 
-The file-only commissioning path uses the shared `question/2` rules. Linux
-acceptance passed on native aarch64 and emulated x86_64 at `6edd911`, and the
-offline C10 and sanity rehearsals passed with that aarch64 writer. The
-read-only preparation MCP now uses those rules for prospective assessment.
-The next manager task is the independent CLI path, including command-effect
-inspection and returning the accepted question. Endpoint alignment and
-release qualification remain open.
-No live packet is active.
+The file-only CLI and the read-only preparation MCP share the `question/2`
+commissioning rules. Linux acceptance passed on native aarch64 and emulated
+x86_64 at `c3ab38e`, including the comparison between CLI preparation and MCP
+assessment. The next manager task is the independent CLI path, including
+command-effect inspection and returning the accepted question. Endpoint
+alignment and release qualification remain open. No live packet is active.
 
 This plan owns cross-plan order and first-release obligations. Topic plans own
 remaining tasks and decisions. [CONTRACTS](CONTRACTS.md) and
